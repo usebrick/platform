@@ -129,6 +129,27 @@ Latency win for the agent integration: every `slopbrick scan` will persist the p
 - **New MCP tool `slop_suggest_with_memory`** — registers the fast-path variant in `src/mcp/tools.ts`. Documented as faster but requires a prior `slopbrick scan`.
 - **Scan pipeline integration** — at the end of `runScan`, `slopbrick scan` now persists the inventory + constitution (gated by `config.projectMemory !== false`; non-fatal on write failure; quiet under `--json` / `--quiet` / machine-readable output so CI logs stay clean). This is the side-effect that makes `slop_suggest_with_memory`'s fast path actually populate on first use.
 
+### Added (Tier 2 graph-theoretic — Phase 6 of v0.10)
+
+Three engine modules wire peer-reviewed graph methods into the Architecture Consistency Score, completing the v0.10 plan's post-credibility phase. All three backstop the cross-file drift signal that already ships.
+
+- **`engine/louvain.ts`** — Louvain community detection on the import graph (Blondel, Guillaume, Lambiotte & Lefebvre 2008, *J. Stat. Mech.* P10008). Modularity-maximizing partition; outliers in their community = drift signal.
+- **`engine/spectral.ts`** — Fiedler value (second-smallest eigenvalue of the import-graph Laplacian). Low value = fragmented modules = drift. Computed inline from the Louvain adjacency matrix.
+- **`engine/changepoint.ts`** — Bayesian Online Changepoint Detection (Adams & MacKay 2007, *Proc. ICMLA*). Detects regime changes in rule-firing rate over the lines of a file. Surfaces "this PR was authored under a different regime than the rest of the file" — likely AI-assistance mid-edit.
+
+### Added (Phase 8 — `--diff <ref>` flag)
+
+VibeDrift-compatible CLI surface. `slopbrick scan --diff main` returns the delta in pattern inventory, constitution drift count, and per-rule PR Slop Score for the working tree vs. the named git ref.
+
+- **`cli/program.ts`** — `--diff <ref>` option (alias for `--since <ref>`; also adds PR Slop Score to the report). Implemented in `src/cli/scan.ts` via `formatUnifiedDiff`.
+
+### Added (Phase 9 — `find_similar_function` MCP tool)
+
+Foundation for the GIR (Give-Implementation-Reference) pattern in `slop_suggest`. AI agents call `find_similar_function` before writing new code to discover existing implementations they should be referencing.
+
+- **`engine/find-similar.ts`** — given a function/hook signature, find the most similar existing implementations across the codebase. Uses AST fingerprints (no LLM, no embeddings — just hash-based tree similarity per Chilowicz 2009 syntax-tree fingerprinting).
+- **New MCP tool `find_similar_function`** — registered in `src/mcp/tools.ts` and exposed to Claude Code / Cursor / Copilot.
+
 ## [0.10.0] - 2026-06-25 — Credibility milestone
 
 > **v0.10 ships the credibility moat.** Every detection rule now ships with per-rule Precision / Recall / False Positive Rate on the balanced 172k-file v4 corpus, plus peer-reviewed citations behind every threshold. The three numbers that tell you whether a detection rule actually works.
