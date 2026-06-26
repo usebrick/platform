@@ -71,11 +71,10 @@ import { applyFixes, type FixResult } from '../fix';
 import {
   readRuns,
   appendRun,
-  saveInventory,
-  saveConstitution,
   buildInventoryFromScan,
   buildConstitutionFromConfig,
 } from '../engine/memory';
+import { saveInventory, saveConstitution } from '@usebrick/core';
 import { recordTelemetry, readTelemetry } from '../engine/telemetry';
 import {
   computeFlywheelOutput,

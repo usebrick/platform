@@ -69,32 +69,18 @@ export {
   type FindSimilarQuery,
 } from './engine/find-similar';
 
-export {
-  MEMORY_SCHEMA_VERSION,
-  type InventoryFile,
-  type ConstitutionFile,
-  type MemoryCategory,
-  type MemoryPattern,
-  type ComponentFingerprint,
-  type FileMtimeEntry,
-  loadInventory,
-  saveInventory,
-  loadConstitution,
-  saveConstitution,
-  isInventoryFresh,
-  invalidateFile,
-  inventoryPath,
-  constitutionPath,
-  cachePath,
-  INVENTORY_FILENAME,
-  CONSTITUTION_FILENAME,
-  CACHE_FILENAME,
-  isMemoryPattern,
-  isComponentFingerprint,
-  isInventoryFile,
-  isConstitutionFile,
-  isFileMtimeEntry,
-} from '@usebrick/core';
+// NOTE: `.slopbrick/` memory schema + readers are owned by the
+// `@usebrick/core` workspace package. We deliberately do NOT re-export
+// any of its surface here, because `@usebrick/core` is private (`"private":
+// true` in its package.json) and not installable from npm. Re-exporting
+// its names — values or types — would force every TypeScript consumer of
+// slopbrick to depend on a package they cannot install.
+//
+// The runtime functions are still BUNDLED into dist/index.cjs (see
+// tsup.config.ts `noExternal`), so end users calling `slopbrick` never
+// need to know about @usebrick/core. Once @usebrick/core ships as a real
+// published package (the AGENTS.md moat: "defer until schema is earned
+// by ≥2 consumers like stackpick or gir"), we can re-export here.
 
 //   0 = pass (slopIndex below threshold)
 //   1 = threshold breach (blocks git hooks)

@@ -5,6 +5,47 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2] - 2026-06-26 — Prepack guard + workspace dep cleanup
+
+### Fixed
+
+- **`npm install slopbrick@0.11.1` was broken** by a leaked `workspace:*` dep on
+  `@usebrick/core`. npm cannot resolve pnpm's `workspace:` protocol, so installing
+  v0.11.1 failed with `EUNSUPPORTEDPROTOCOL`. v0.11.2 removes the dep entry from
+  `package.json` AND adds a hard guard so the regression cannot recur.
+
+### Added
+
+- **`scripts/prepack-guard.mjs`** — refuses to pack a tarball that contains any
+  `workspace:*` deps in `dependencies` / `devDependencies` / `peerDependencies` /
+  `optionalDependencies`. Wired into `pnpm prepack` (auto-invoked by `npm pack`
+  / `pnpm pack`). Exit code 1 with a clear remediation hint on violation.
+- **`tsup.config.ts` `noExternal: [/^@usebrick\//]`** — bundles the private
+  `@usebrick/core` workspace package into `dist/`, so the published tarball has
+  zero runtime dep on it. AGENTS.md flags `@usebrick/core` as "defer until the
+  schema is earned by ≥2 consumers like stackpick or gir" — bundling keeps that
+  promise while still letting the rest of the monorepo consume it via pnpm.
+
+### Changed
+
+- **`src/index.ts` no longer re-exports types or values from `@usebrick/core`.**
+  Re-exporting would force every TypeScript consumer of slopbrick to depend on
+  a package that is private and not on npm. Runtime functions are still bundled
+  into `dist/index.cjs` via the new `noExternal` rule, so end users never need
+  to know about `@usebrick/core`.
+- **`.gitignore`** — ignore local `slopbrick-*.tgz` tarballs from `pnpm pack`.
+
+### Migration
+
+For users on `slop-audit@*` or `slopbrick@<0.11.2`, upgrade is identical to v0.11.1:
+
+```bash
+npm install --save-dev slopbrick@latest
+npx slopbrick migrate     # only needed if upgrading from slop-audit@≤0.10.1
+```
+
+No code changes are required — v0.11.2 is a pure metadata + build artifact fix.
+
 ## [0.11.1] - 2026-06-25 — CI workflow rename + publish gate
 
 ### Changed

@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Local package tarballs (from pnpm pack / npm pack)
+slopbrick-*.tgz
+packages/slopbrick/slopbrick-*.tgz
+
 # Build output
 dist/
 
@@ -17,17 +21,3 @@ dist/
 .DS_Store
 *.log
 *.tsbuildinfo
-
-# Coverage
-coverage/
-
-# Generated artifacts
-corpus/calibration-report.md
-
-# Internal drafts and state-tracking (not for public release)
-Show HN post draft.md
-docs/strategy-2026.md
-docs/strategy/v1-score-compression.md
-docs/experiment-findings.md
-docs/publishing-state-2026-06-25.md
-docs/launch-blog-post-v4.1.md

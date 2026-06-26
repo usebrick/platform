@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Repository Coherence Scanner for AI-coded codebases — detect cross-file pattern drift, AI-induced design-token violations, and security failures that AI agents introduce disproportionately. Part of the usebrick.dev platform. Ships 8 MCP tools so Claude Code / Cursor / Copilot follow your patterns instead of reinventing them.",
   "type": "module",
   "bin": {
@@ -39,12 +39,12 @@
     "drift:collect": "tsx scripts/collect-drift-signals.ts",
     "drift:compute": "tsx scripts/compute-drift-calibration.ts",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build",
+    "prepack": "node scripts/prepack-guard.mjs",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build && pnpm prepack",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@swc/core": "^1.10.0",
-    "@usebrick/core": "workspace:*",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "globby": "^14.0.0",

@@ -19,6 +19,11 @@ export default defineConfig({
     'globby',
     'minimatch',
   ],
+  // Workspace packages are symlinked into node_modules/@usebrick/* by pnpm,
+  // which makes esbuild treat them as external by default. Force them to be
+  // bundled into dist/ so the published tarball has no runtime dep on
+  // `@usebrick/core` (which is private and cannot be installed by npm).
+  noExternal: [/^@usebrick\//],
   esbuildOptions(options, { format }) {
     if (format === 'cjs') {
       // Provide a working import.meta.url equivalent for the CJS build so
