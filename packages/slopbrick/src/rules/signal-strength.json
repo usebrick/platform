@@ -297,5 +297,65 @@
     "defaultOff": true,
     "verdict": "DORMANT",
     "_calibrationNote": "v5 SQL pilot (2026-06-26): 0 fires on 354 neg + 974 pos. Heuristic may be broken — verify with a known-bad input."
+  },
+  "docs/broken-link": {
+    "recall": 0.0292,
+    "fpRate": 0.043,
+    "ratio": 0.7,
+    "precision": 0.145,
+    "lastCalibratedAt": "2026-06-26T19:30:00Z",
+    "defaultOff": true,
+    "verdict": "INVERTED",
+    "_calibrationNote": "v5 markdown pilot (2026-06-26): 4817 neg + 1197 pos. INVERTED — production docs accumulate broken links over time. Repurpose as production docs hygiene rule, NOT an AI signal."
+  },
+  "docs/expired-code-example": {
+    "recall": 0.0911,
+    "fpRate": 0.1158,
+    "ratio": 0.8,
+    "precision": 0.163,
+    "lastCalibratedAt": "2026-06-26T19:30:00Z",
+    "defaultOff": true,
+    "verdict": "INVERTED",
+    "_calibrationNote": "v5 markdown pilot (2026-06-26): 4817 neg + 1197 pos. INVERTED — production docs reference deprecated APIs (Vue 2 in Vue 3 docs, etc.). Repurpose as production docs hygiene rule."
+  },
+  "docs/stale-function-reference": {
+    "recall": 0.1512,
+    "fpRate": 0.0909,
+    "ratio": 1.7,
+    "precision": 0.292,
+    "lastCalibratedAt": "2026-06-26T19:30:00Z",
+    "defaultOff": true,
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 markdown pilot (2026-06-26): 4817 neg + 1197 pos. NOISY — closest to OK threshold (lift 1.7x) but precision below 30%. Directionality same as docs/*: production worse than AI."
+  },
+  "docs/stale-package-reference": {
+    "recall": 0.0084,
+    "fpRate": 0.0116,
+    "ratio": 0.7,
+    "precision": 0.152,
+    "lastCalibratedAt": "2026-06-26T19:30:00Z",
+    "defaultOff": true,
+    "verdict": "INVERTED",
+    "_calibrationNote": "v5 markdown pilot (2026-06-26): 4817 neg + 1197 pos. INVERTED — production docs reference deprecated/archived packages. Repurpose as production docs hygiene rule."
+  },
+  "product/terminology-drift": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-26T18:30:00Z",
+    "defaultOff": true,
+    "verdict": "DORMANT",
+    "_calibrationNote": "Phase 9 rule (2026-06-26) — cross-file rule that needs per-repo calibration data. Currently no corpus has labeled 'Post/Article/News' drift ground truth. Default off until v5 corpus extension (markdown arm needs docs/* cal first)."
+  },
+  "product/ux-pattern-fragmentation": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-26T18:30:00Z",
+    "defaultOff": true,
+    "verdict": "DORMANT",
+    "_calibrationNote": "Phase 9 rule (2026-06-26) — cross-file rule that needs per-repo calibration data. Currently no corpus has labeled modal/toast/button count ground truth. Default off until a UX-corpus arm is built."
   }
 }
