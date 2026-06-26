@@ -119,6 +119,20 @@ and scan.
 
 ## [Unreleased]
 
+### Changed (MCP tool consolidation — completes the v0.9.x consolidation plan)
+
+Three narrow-axis MCP tools are now marked deprecated in favor of `slop_suggest`, which already returns the same data as a sibling field in its response. The tools continue to work through v0.12.x (backward compatibility) but the server attaches a `_meta.deprecation` notice to the JSON-RPC response so MCP clients can soft-warn the agent. Removal planned for **v0.13.0**.
+
+| Deprecated tool | Replaced by | Why redundant |
+|-----------------|-------------|---------------|
+| `slop_governance` | `slop_suggest` | `slop_suggest` already returns `repositoryHealth` + per-axis breakdown |
+| `slop_architecture_score` | `slop_suggest` | `slop_suggest` already returns `architectureConsistency` |
+| `slop_business_logic_score` | `slop_suggest` | `slop_suggest` already returns `businessLogicCoherence` |
+
+The canonical four-tool surface (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_explain_rule`) plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive) is unchanged — `slop_suggest_with_memory` remains the preferred fast-path variant.
+
+Migration: replace `call('slop_governance', ...)` with `call('slop_suggest', ...)` and read `result.repositoryHealth` instead of `result.score`. No other code changes required.
+
 ### Added (Phase 9 — Product Consistency)
 
 Two cross-file rules that detect AI-induced product copy drift:

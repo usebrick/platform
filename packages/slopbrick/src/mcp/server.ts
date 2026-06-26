@@ -14,7 +14,7 @@ import { builtinRules } from '../rules/builtins.js';
 import { scanFile } from '../engine/worker.js';
 import { DEFAULT_CONFIG } from '../config';
 import type { Rule, ResolvedConfig } from '../types.js';
-import { handleToolCall, TOOL_DEFINITIONS } from './tools.js';
+import { handleToolCall, TOOL_DEFINITIONS, getDeprecation } from './tools.js';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -28,6 +28,12 @@ interface JsonRpcResponse {
   id: number | string | null;
   result?: unknown;
   error?: { code: number; message: string; data?: unknown };
+  /**
+   * Non-standard extension for slopbrick-specific metadata. JSON-RPC 2.0
+   * allows extra top-level fields; we use this slot for deprecation notices
+   * that are not part of the underlying tool's payload.
+   */
+  _meta?: unknown;
 }
 
 const SERVER_INFO = {
@@ -79,6 +85,26 @@ export async function handleRequest(
           return errorResponse(id, -32602, 'tools/call requires params.name');
         }
         const result = await handleToolCall(toolName, args, { cwd, rules, config });
+        // Soft-warn when a deprecated tool is called. The tool's payload
+        // is preserved as `result`; the deprecation notice lives at the
+        // JSON-RPC response level so MCP clients can render a non-intrusive
+        // warning without parsing tool-specific payloads.
+        const deprecation = getDeprecation(toolName);
+        if (deprecation) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            result,
+            _meta: {
+              deprecation: {
+                tool: toolName,
+                replacedBy: deprecation.replacedBy,
+                removedIn: deprecation.removedIn ?? 'next major',
+                reason: deprecation.reason,
+              },
+            },
+          };
+        }
         return { jsonrpc: '2.0', id, result };
       }
 
