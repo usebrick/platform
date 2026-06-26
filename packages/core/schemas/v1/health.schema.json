@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://usebrick.dev/schemas/health.schema.json",
+  "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
   "title": "Repository Memory — Health",
   "description": "Repository health snapshot from a single slopbrick scan. The 'headline' score that lands on dashboards. Future tools (CI integrations, the website's /projects page) consume this schema.",
   "type": "object",

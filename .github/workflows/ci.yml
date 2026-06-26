@@ -8,7 +8,7 @@ name: ci
 #
 # Workspace structure:
 #   packages/core/         @usebrick/core (private, schema spec)
-#   packages/slopbrick/    @usebrick/slopbrick (the published CLI)
+#   packages/slopbrick/    slopbrick (the published CLI)
 #   packages/stackpick/    (future)
 #   packages/gir/          (future)
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build all packages
         # Build core first so slopbrick can resolve its types.
-        run: pnpm -r --filter '@usebrick/core' build && pnpm -r --filter '@usebrick/slopbrick' build
+        run: pnpm -r --filter '@usebrick/core' build && pnpm -r --filter 'slopbrick' build
 
       - name: Typecheck all packages
         run: pnpm -r typecheck

@@ -21,12 +21,35 @@ Splitting these into separate repos would create constant synchronization work. 
 
 | Package | Status | Purpose |
 |---------|--------|---------|
+| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 60+ rules, MCP server, migrate subcommand. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Memory Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
-| `@usebrick/slopbrick` | `published` | The CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, etc. 13 scores, 60+ rules, MCP server. |
-| `@usebrick/stackpick` | (future) | Detects framework from `.slopbrick/inventory.json` + package.json. |
-| `@usebrick/gir` | (future) | **G**ive-**I**mplementation-**R**eference — finds existing similar implementations before an agent writes a new one. |
-| `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools. |
-| `@usebrick/cli` | (future) | Umbrella CLI: `usebrick scan`, `usebrick memory`, `usebrick mcp`, `usebrick stackpick`, `usebrick doctor`, `usebrick update`. |
+| `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
+| `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
+
+## Why unscoped `slopbrick` (not `@usebrick/slopbrick`)
+
+Per a design-review call: **libraries use the `@usebrick/` scope; the flagship CLI stays unscoped**. Reasoning:
+
+- `npx slopbrick` is shorter and more memorable than `npx @usebrick/slopbrick`
+- The CLI is what most users touch; the library boundary is a developer concern
+- Future CLIs (`usebrick` umbrella for `usebrick scan` / `usebrick memory` / `usebrick doctor`) can grow under a separate brand without crowding the `@usebrick/` scope
+- Scope is for libraries that get `import`ed. The CLI gets `npx`'d.
+
+So:
+
+```
+slopbrick              ← the CLI (this monorepo, published)
+@usebrick/core         ← the schema + readers (workspace-only for now)
+@usebrick/mcp          ← future: standalone MCP server (library)
+@usebrick/sdk          ← future: programmatic SDK (library)
+```
+
+## Future package extractions
+
+Two extractions are tracked but **not done yet**:
+
+- `packages/memory/` (or `packages/repository-memory/`) — when the memory module outgrows the schema. See `docs/future-extractions.md`.
+- `packages/contracts/` — when a non-TypeScript consumer needs the schemas (Python stackpick analyzer, Go CI binary). At that point, `contracts/` becomes the language-agnostic spec, `core/` becomes the TypeScript implementation.
 
 ## Quick start (development)
 
@@ -45,11 +68,12 @@ platform/
 │   ├── core/
 │   │   ├── src/                    types + loaders/savers
 │   │   ├── schemas/                canonical JSON Schemas (the platform's API contract)
-│   │   │   ├── inventory.schema.json
-│   │   │   ├── constitution.schema.json
-│   │   │   ├── memory.schema.json
-│   │   │   ├── health.schema.json
-│   │   │   └── index.json
+│   │   │   └── v1/
+│   │   │       ├── inventory.schema.json
+│   │   │       ├── constitution.schema.json
+│   │   │       ├── memory.schema.json
+│   │   │       ├── health.schema.json
+│   │   │       └── index.json
 │   │   └── tests/
 │   └── slopbrick/
 │       ├── src/
@@ -59,8 +83,10 @@ platform/
 │       └── distribute/             (AUR PKGBUILD, Homebrew formula, etc.)
 ├── .github/workflows/
 │   ├── ci.yml                      typecheck + test on every PR/push to main
-│   └── publish.yml                 tag → build → npm publish @usebrick/slopbrick
+│   └── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
 ├── docs/
+│   ├── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
+│   └── future-extractions.md       (packages/memory + packages/contracts criteria)
 ├── examples/
 ├── package.json                    root (private workspace hub)
 ├── pnpm-workspace.yaml
@@ -70,18 +96,20 @@ platform/
 
 ## Repository Memory Platform — the moat
 
-The four JSON Schemas under `packages/core/schemas/` are the platform's canonical data model:
+The four versioned JSON Schemas under `packages/core/schemas/v1/` are the platform's canonical data model:
 
-- **inventory.schema.json** — detected patterns + component fingerprints
-- **constitution.schema.json** — declared project allow-list + deny-list
-- **memory.schema.json** — agent-readable markdown summary
-- **health.schema.json** — per-scan health snapshot
+- **`v1/inventory.schema.json`** — detected patterns + component fingerprints
+- **`v1/constitution.schema.json`** — declared project allow-list + deny-list
+- **`v1/memory.schema.json`** — agent-readable markdown summary
+- **`v1/health.schema.json`** — per-scan health snapshot
 
 Every tool in the platform reads and writes data matching these schemas. Other agents (Claude Code, Cursor, Copilot) consume `memory.md` via MCP. If these schemas become a de-facto standard for "repository memory," every tool in the ecosystem speaks the same language.
 
+The versioned path (`schemas/v1/`, future `schemas/v2/`) is the contract version. Older tools keep reading `v1/` after `v2/` ships. Backward-compatible changes never bump the schema version — only add new optional fields with defaults.
+
 ## Release cadence
 
-- **`@usebrick/slopbrick`** — published on npm. Bumps the patch version for fixes, minor for new scores/rules, major for breaking scan output changes.
+- **`slopbrick`** — published on npm. Bumps the patch version for fixes, minor for new scores/rules, major for breaking scan output changes.
 - **`@usebrick/core`** — private for now. When published, every slopbrick release that depends on a schema bump will release a matching `@usebrick/core` major version bump.
 
 ## User-action checklist
@@ -92,31 +120,55 @@ For the maintainer (you):
 2. **Push from this local repo:**
    ```bash
    cd /Users/cheng/platform
-   git init
-   git add .
-   git commit -m "feat: initial monorepo — usebrick/platform v0.11.1"
-   git branch -M main
    git remote add origin https://github.com/usebrick/platform.git
    git push -u origin main
    ```
-3. **Configure the publish environment** at https://github.com/usebrick/platform/settings/environments/new:
+3. **Configure the `publish` environment** at https://github.com/usebrick/platform/settings/environments/new:
    - Name: `publish`
-   - Deployment branches: `refs/tags/v*` only
    - Required reviewers: `@Dystx`
-4. **Configure npm Trusted Publishers** at https://www.npmjs.com/package/@usebrick/slopbrick/access:
+   - The workflow trigger (`release: published`) is what gates the run; no deployment branch restriction needed
+4. **Configure npm Trusted Publishers** at https://www.npmjs.com/package/slopbrick/access:
    - Add GitHub Actions publisher: `usebrick/platform` / `publish.yml` / environment `publish`
 5. **Deprecate the old npm packages** (zero users per your confirmation, but the packages still exist):
    ```bash
-   npm deprecate slop-audit "Renamed to @usebrick/slopbrick — see https://github.com/usebrick/platform"
-   npm deprecate slopbrick "Renamed to @usebrick/slopbrick — see https://github.com/usebrick/platform"
+   npm deprecate slop-audit "Renamed to slopbrick — see https://github.com/usebrick/platform"
+   npm deprecate slopbrick "Re-published from usebrick/platform monorepo"
    ```
-6. **Tag v0.11.1 + push** to trigger the new publish.yml:
+6. **First monorepo publish — v0.11.1.** Version is already set in `packages/slopbrick/package.json`. Trigger:
    ```bash
-   git tag v0.11.1
-   git push --tags
+   git add . && git commit -m "chore: ready v0.11.1" && git push
+   # Wait for CI to pass on main.
+   # Then create the GitHub Release in the UI:
+   #   https://github.com/usebrick/platform/releases/new
+   #   - Tag: v0.11.1
+   #   - Title: v0.11.1
+   #   - Description: paste the CHANGELOG entry
+   #   - Click "Publish release"
+   # The workflow triggers → waits for your approval in the `publish`
+   # environment → publishes slopbrick@0.11.1 to npm via OIDC.
+   # Two human gates per release: Release creation + env approval.
    ```
-   The workflow runs in the `publish` environment, waits for your approval, then publishes `@usebrick/slopbrick@0.11.1` to npm via OIDC.
-7. **Redirect the old `usebrick/slopbrick` repo**: replace its README with a one-line notice pointing here.
+7. **Verify the install works:**
+   ```bash
+   mkdir /tmp/slopbrick-verify && cd /tmp/slopbrick-verify
+   npm init -y && npm install --save-dev slopbrick
+   npx slopbrick --version          # should print 0.11.1
+   ```
+8. **Update the old `usebrick/slopbrick` repo** (defer archive to **June 2027** — at least 6 months):
+   - Copy `docs/old-repo-redirect.md` from this repo → paste as the README of `usebrick/slopbrick`
+   - **Do NOT** archive/delete yet. GitHub links have a long tail.
+
+## Local cleanup (deferred — do NOT delete yet)
+
+Keep `/Users/cheng/slop-audit/` and `/Users/cheng/core/` around until you've successfully:
+
+1. ✅ Published `slopbrick@0.11.1` from the monorepo via the new workflow
+2. ✅ Tagged the GitHub Release + verified it's visible in the UI
+3. ✅ Cloned the monorepo elsewhere (e.g. `git clone https://github.com/usebrick/platform ~/platform-verify`) and verified it builds + 1521 + 27 tests pass
+4. ✅ Verified CI runs on the new repo (push to a feature branch, see checks pass)
+5. ✅ Verified the **next** release (v0.11.2 or v0.12.0) publishes correctly through the new workflow
+
+Once all five are green, you can safely delete the legacy local repos. Storage is cheap; don't rush it.
 
 ## License
 

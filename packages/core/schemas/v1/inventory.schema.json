@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://usebrick.dev/schemas/inventory.schema.json",
+  "$id": "https://usebrick.dev/schemas/v1/inventory.schema.json",
   "title": "Repository Memory — Inventory",
   "description": "Detected pattern inventory + component fingerprints for a scanned workspace. Written by slopbrick to .slopbrick/inventory.json. Read by slopbrick, stackpick, gir, MCP server, and any future usebrick.dev tool.",
   "type": "object",

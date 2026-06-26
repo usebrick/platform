@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://usebrick.dev/schemas/constitution.schema.json",
+  "$id": "https://usebrick.dev/schemas/v1/constitution.schema.json",
   "title": "Repository Memory — Constitution",
   "description": "Declared project constitution. Mirrors the user-facing `constitution` block in slopbrick.config.mjs. Written by slopbrick to .slopbrick/constitution.json. Read by slopbrick, the constitution-enforcement gate, stackpick (for pattern-suggestion enforcement), and any future tool that needs to know what the project has declared off-limits.",
   "type": "object",

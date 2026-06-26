@@ -1,6 +1,6 @@
 name: publish
 
-# Publishes @usebrick/slopbrick to npm when a v* tag is pushed.
+# Publishes `slopbrick` to npm when a GitHub Release is published.
 #
 # Monorepo note: only `packages/slopbrick` is published. `packages/core`
 # is private until the schema stabilizes (see packages/core/README.md).
@@ -13,22 +13,32 @@ name: publish
 # `usebrick/platform`, workflow `.github/workflows/publish.yml`,
 # environment `publish`.
 #
-# To switch to a legacy NPM_TOKEN: set the `NPM_TOKEN` secret in the
-# `publish` environment, remove `id-token: write` below, and change
-# `npm publish --provenance` to `npm publish` (provenance requires OIDC).
+# Safety gate: this workflow is triggered ONLY by a published GitHub
+# Release (not by tag push). That means: a maintainer has already
+# reviewed the changelog, chosen the version, and explicitly created
+# the Release in the GitHub UI. The `publish` environment then adds
+# a second approval gate before `npm publish` actually runs. Two
+# human gates per release, while the platform is still evolving.
+#
+# Trigger this workflow by:
+#   1. Bump version in packages/slopbrick/package.json + src/types.ts
+#   2. Update CHANGELOG.md
+#   3. Commit + push to main
+#   4. Wait for CI to pass
+#   5. Create a GitHub Release in the UI (or via `gh release create v0.11.1`)
+#   6. Approve the deployment in the `publish` environment
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g. v0.11.1) — leave empty to use the pushed ref'
+        description: 'Tag to release (e.g. v0.11.1) — leave empty to use the published release tag'
         required: false
 
 concurrency:
-  group: publish-${{ github.ref }}
+  group: publish-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -40,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: publish
-      url: https://www.npmjs.com/package/@usebrick/slopbrick
+      url: https://www.npmjs.com/package/slopbrick
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,25 +71,26 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify tag matches packages/slopbrick version
+      - name: Verify release tag matches packages/slopbrick version
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
+          TAG="${RELEASE_TAG#v}"
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
           PKG_VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if [ -z "$TAG" ]; then
-            echo "::error::Could not derive version from ref $GITHUB_REF"
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "::error::Could not derive version from release tag"
             exit 1
           fi
-          if [ "$TAG" != "$PKG_VERSION" ]; then
-            echo "::error::Tag v$TAG does not match packages/slopbrick version $PKG_VERSION"
-            echo "::error::Bump packages/slopbrick/package.json to $TAG and re-tag."
+          if [ "$RELEASE_TAG" != "v$PKG_VERSION" ]; then
+            echo "::error::Release tag $RELEASE_TAG does not match packages/slopbrick version $PKG_VERSION"
+            echo "::error::Bump packages/slopbrick/package.json to $RELEASE_TAG and re-create the release."
             exit 1
           fi
-          echo "Releasing @usebrick/slopbrick v$TAG"
+          echo "Releasing slopbrick v$PKG_VERSION"
 
       - name: Verify version is not already published
         run: |
           VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if npm view "@usebrick/slopbrick@$VERSION" version >/dev/null 2>&1; then
+          if npm view "slopbrick@$VERSION" version >/dev/null 2>&1; then
             echo "::error::Version $VERSION is already on the npm registry. Re-publishing is not allowed."
             exit 1
           fi
@@ -88,7 +99,7 @@ jobs:
         run: pnpm --filter '@usebrick/core' build
 
       - name: Build slopbrick
-        run: pnpm --filter '@usebrick/slopbrick' build
+        run: pnpm --filter slopbrick build
 
       - name: Run slopbrick quality gates
         working-directory: packages/slopbrick
@@ -100,13 +111,6 @@ jobs:
         working-directory: packages/slopbrick
         run: npm pack --dry-run
 
-      - name: Publish @usebrick/slopbrick to npm
+      - name: Publish slopbrick to npm
         working-directory: packages/slopbrick
         run: npm publish --provenance --access public
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true

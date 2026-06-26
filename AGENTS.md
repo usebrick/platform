@@ -13,7 +13,7 @@ The home of every `usebrick.dev` tool:
 | Package | Status | Notes |
 |---------|--------|-------|
 | `packages/core/` | **private** — workspace-only, not on npm | The Repository Memory Platform spec (types + loaders + JSON Schemas). The moat. |
-| `packages/slopbrick/` | **published** as `@usebrick/slopbrick` | The CLI. 13 scores, 60+ rules, MCP server. |
+| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 13 scores, 60+ rules, MCP server. |
 
 Future packages (`stackpick`, `gir`, `mcp`, `cli`) join here as they're built.
 
@@ -64,7 +64,7 @@ pnpm -r test         # every package
 pnpm -r build        # builds core first (workspace dep), then slopbrick
 ```
 
-CI runs the same commands on every PR + push to main. Tag pushes additionally trigger `publish.yml` for the `@usebrick/slopbrick` package.
+CI runs the same commands on every PR + push to main. Tag pushes additionally trigger `publish.yml` for the `slopbrick` package.
 
 ## Conventions for changes touching `core/`
 

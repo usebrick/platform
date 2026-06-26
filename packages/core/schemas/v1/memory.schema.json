@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://usebrick.dev/schemas/memory.schema.json",
+  "$id": "https://usebrick.dev/schemas/v1/memory.schema.json",
   "title": "Repository Memory — Memory Markdown",
   "description": "Agent-readable markdown summary rendered from inventory + constitution. Written by slopbrick to .slopbrick/memory.md. Read by the slop_suggest_with_memory MCP tool for a 100-1000× fast path that avoids re-parsing AST. Future tools (stackpick, gir) will read the same artifact for similar speedups.",
   "type": "object",

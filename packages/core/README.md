@@ -9,16 +9,31 @@
 3. **Loaders/savers** — `loadInventory`/`saveInventory`, `loadConstitution`/`saveConstitution`, atomic `.tmp + rename` writes, freshness check.
 4. **Canonical JSON Schemas** — under `schemas/`. The single source of truth that every tool in the platform must conform to.
 
-## The schemas — `packages/core/schemas/`
+## The schemas — `packages/core/schemas/v1/`
 
 These four JSON Schema files define the **Repository Memory Platform**:
 
 | Schema | Purpose | Produced by | Consumed by |
 |--------|---------|-------------|-------------|
-| [`inventory.schema.json`](./schemas/inventory.schema.json) | Detected patterns + component fingerprints | `slopbrick scan` | `slopbrick`, `stackpick`, `gir`, `mcp` |
-| [`constitution.schema.json`](./schemas/constitution.schema.json) | Declared project constitution | `slopbrick scan` (auto from config) | `slopbrick drift`, `stackpick`, `gir`, `mcp` |
-| [`memory.schema.json`](./schemas/memory.schema.json) | Agent-readable markdown summary | `slopbrick scan` (auto-renders) | `slop_suggest_with_memory` MCP tool |
-| [`health.schema.json`](./schemas/health.schema.json) | Per-scan health snapshot | `slopbrick scan` | website dashboards, CI integrations |
+| [`v1/inventory.schema.json`](./schemas/v1/inventory.schema.json) | Detected patterns + component fingerprints | `slopbrick scan` | `slopbrick`, `stackpick`, `gir`, `mcp` |
+| [`v1/constitution.schema.json`](./schemas/v1/constitution.schema.json) | Declared project constitution | `slopbrick scan` (auto from config) | `slopbrick drift`, `stackpick`, `gir`, `mcp` |
+| [`v1/memory.schema.json`](./schemas/v1/memory.schema.json) | Agent-readable markdown summary | `slopbrick scan` (auto-renders) | `slop_suggest_with_memory` MCP tool |
+| [`v1/health.schema.json`](./schemas/v1/health.schema.json) | Per-scan health snapshot | `slopbrick scan` | website dashboards, CI integrations |
+
+### Versioned schema URLs
+
+Each schema is published under a versioned URL:
+
+```
+https://usebrick.dev/schemas/v1/inventory.schema.json
+https://usebrick.dev/schemas/v1/constitution.schema.json
+https://usebrick.dev/schemas/v1/memory.schema.json
+https://usebrick.dev/schemas/v1/health.schema.json
+```
+
+The version directory (`v1/`, future `v2/`, ...) is the **contract version**. Older tools keep reading `v1/` even after `v2/` ships — that's the whole point of versioning. New tools can opt into `v2/` when ready.
+
+**When to add `v2/`:** when you need to remove a field, rename a field, or change a `required` array. Adding new optional fields with defaults stays in `v1/`. Backward-compatible changes never bump the schema version.
 
 **Why JSON Schema, not just TypeScript types?** JSON Schema is the lingua franca for cross-language validation. Future tools in other languages (Python for `stackpick` data analysis, Go for a CI binary, Rust for a fast indexer) can validate inventory.json / constitution.json without needing TypeScript. The schemas become the platform's API contract — every tool speaks the same language.
 
@@ -34,7 +49,7 @@ These four JSON Schema files define the **Repository Memory Platform**:
 
 ## What's next
 
-For now the monorepo is enough — `@usebrick/core` lives at `packages/core/` and `@usebrick/slopbrick` consumes it as a workspace dep. When the schema stabilizes:
+For now the monorepo is enough — `@usebrick/core` lives at `packages/core/` and `slopbrick` consumes it as a workspace dep. When the schema stabilizes:
 
 1. Remove `"private": true` from `packages/core/package.json`
 2. Add `"publishConfig": { "access": "public" }`
