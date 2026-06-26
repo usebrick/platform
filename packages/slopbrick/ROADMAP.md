@@ -24,7 +24,7 @@ This document tracks the strategic plan. Each phase is independently shippable; 
 | **Documentation Freshness** | 0–100 + categorical `docDrift` | 0.11.x | 6 |
 | **Database Health** | 0–100 (higher = better) | 0.11.x | 8 |
 | **AI Maintenance Cost** | `low` / `medium` / `high` / `critical` + `monthlyUSD` | 0.11.x | memo #4 |
-| **Product Consistency** | 0–100 (higher = better) | 0.9.0 | 9 |
+| **Product Consistency** | 0–100 (higher = better) | 0.11.x | 9 |
 | **Repository Health** (composite) | 0–100 + `AI Debt` band | 0.9.0 | 12 |
 
 The end state (0.9.0): **one composite number + 11 subscores, surfaced through one CLI + 8 MCP tools**. An engineering manager scans the dashboard in five seconds; an AI agent calls `slop_suggest` once and gets everything it needs to write the next file.
@@ -251,7 +251,7 @@ const monthlyUSD = Math.round(
 
 **Why this phase:** directly tracks the kind of debt that AI agents create in 2026 (missing indexes, naive enums, string-concat queries). Drizzle ESLint plugin's 2-rule coverage is the clearest signal that the market is wide open.
 
-### Phase 9 — Product Consistency 🟡 greenfield
+### Phase 9 — Product Consistency ✅ shipped (0.11.x, ahead of 0.9.0 target)
 
 Measure terminology drift + UX pattern fragmentation across the codebase:
 
@@ -503,7 +503,7 @@ Reconciled phase statuses with actual code under `src/`. Several phases marked `
 | 7b — Pattern Fragmentation | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | unchanged |
 | **Memo 4 — AI Maintenance Cost** | 🟡 greenfield (0.8.0) | **✅ shipped (0.11.x)** | `src/cli/maintenance-cost.ts`, `src/engine/maintenance-cost.ts` |
 | **8 — DB Intelligence** | 🟡 greenfield (0.8.0) | **✅ shipped (0.11.x)** | `src/cli/db.ts`, `src/engine/db-health.ts`, 6 rules inline |
-| 9 — Product Consistency | 🟡 greenfield | 🟡 greenfield | confirmed — no `src/rules/product/` or engine |
+| 9 — Product Consistency | 🟡 greenfield | **✅ shipped (0.11.x)** | `src/rules/product/terminology-drift.ts` + `ux-pattern-fragmentation.ts` (added 2026-06-26) |
 | **10 — Cost Intelligence** | ⏸ deferred | ⏸ deferred | confirmed — no `cost-intelligence` CLI, engine, or rules |
 | 11 — PR Governance | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | unchanged |
 | **12 — AI Agent Governance** | 🟡 greenfield (after 11) | **🟡 partial (after 11)** | `slop_governance` MCP tool shipped; composite Repository Health not yet |

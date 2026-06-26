@@ -240,6 +240,10 @@ const RULE_HINTS: Record<string, string> = {
     'When generating tests, cover the alternate path: `else` branches, `catch` blocks, ternary alternates, and `??` fallbacks. Production branches without tests are a CI smell.',
   'test/fake-placeholder':
     'Use domain-specific fixture values (`alice@acme-corp.com`, `Order#48231`) or a factory like @faker-js/faker. Avoid textbook placeholders (`John Doe`, `test@test.com`, `id: 1`).',
+  'product/terminology-drift':
+    'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. AI agents pick slightly different words each invocation; product copy drifts.',
+  'product/ux-pattern-fragmentation':
+    'Keep the per-category count tight: modal ≤3, toast ≤2, button ≤4, input ≤3, card ≤3. Pick the canonical one and alias the rest. `slopbrick patterns` reports the per-category count.',
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

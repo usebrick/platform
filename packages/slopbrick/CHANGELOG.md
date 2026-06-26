@@ -119,6 +119,15 @@ and scan.
 
 ## [Unreleased]
 
+### Added (Phase 9 — Product Consistency)
+
+Two cross-file rules that detect AI-induced product copy drift:
+
+- **`product/terminology-drift`** — flags when 3+ component names share a leading noun but use different suffixes (e.g. `PostList`/`PostDetail`/`PostCard` all on the `Post*` stem). AI agents pick slightly different words each invocation; the product copy drifts. One issue per file (the most divergent variant).
+- **`product/ux-pattern-fragmentation`** — counts distinct UX patterns per category (modal/toast/button/input/card) and fires when the count exceeds a per-category threshold (modal ≥4, toast ≥3, button ≥5, input ≥4, card ≥4). Pick the canonical one and alias the rest.
+
+11 unit tests pass. Both rules have RULE_HINTS entries in `src/snippet/data.ts`. Category is `arch` (cross-file pattern drift) for both; severity is `medium`; both are `aiSpecific: true`.
+
 ### Added (Repository Memory Platform — Phase 7 of v0.10)
 
 Latency win for the agent integration: every `slopbrick scan` will persist the pattern inventory to `.slop-audit/inventory.json` + `.slop-audit/constitution.json`, and MCP `slop_suggest_with_memory` will read it back instead of re-parsing AST. 100–1000× faster on agent invocations.

@@ -23,6 +23,8 @@ import { zombieStateRule } from './logic/zombie-state';
 import { clsImageRule } from './perf/cls-image';
 import { cssBloatRule } from './perf/css-bloat';
 import { halsteadAnomalyRule } from './perf/halstead-anomaly';
+import { terminologyDriftRule } from './product/terminology-drift';
+import { uxPatternFragmentationRule } from './product/ux-pattern-fragmentation';
 import { dangerousCorsRule } from './security/dangerous-cors';
 import { exposedEnvVarRule } from './security/exposed-env-var';
 import { failOpenAuthRule } from './security/fail-open-auth';
@@ -83,6 +85,8 @@ export const builtinRules: Rule[] = [
   clsImageRule,
   cssBloatRule,
   halsteadAnomalyRule,
+  terminologyDriftRule,
+  uxPatternFragmentationRule,
   dangerousCorsRule,
   exposedEnvVarRule,
   failOpenAuthRule,
