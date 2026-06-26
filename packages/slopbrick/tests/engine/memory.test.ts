@@ -5,23 +5,28 @@ import { join } from 'node:path';
 import {
   readRuns,
   appendRun,
-  loadInventory,
+  // `saveInventory` is the SLOPBRICK wrapper — it writes both inventory.json
+  // AND the per-file mtime cache (the wrapper delegates the cache write to
+  // core's writeCacheFromInventory). The bare `saveInventory` from
+  // @usebrick/core only writes inventory.json and would break
+  // isInventoryFresh tests that rely on the cache existing.
   saveInventory,
-  loadConstitution,
-  saveConstitution,
   buildInventoryFromScan,
   buildConstitutionFromConfig,
+} from '../../src/engine/memory';
+import {
+  loadInventory,
+  loadConstitution,
+  saveConstitution,
   isInventoryFresh,
   invalidateFile,
-} from '../../src/engine/memory';
-import { DEFAULT_CONFIG } from '../../src/config';
-import {
   MEMORY_SCHEMA_VERSION,
   type InventoryFile,
   type ConstitutionFile,
   type MemoryPattern,
   type ComponentFingerprint,
 } from '@usebrick/core';
+import { DEFAULT_CONFIG } from '../../src/config';
 import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../src/types';
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-memory-test-'));

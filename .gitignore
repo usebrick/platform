@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Local package tarballs (from pnpm pack / npm pack)
+slopbrick-*.tgz
+packages/slopbrick/slopbrick-*.tgz
+
 # Build output
 dist/
 

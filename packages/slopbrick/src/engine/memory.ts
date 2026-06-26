@@ -48,40 +48,20 @@ import {
   loadInventory,
   loadConstitution,
   saveConstitution,
+  saveInventory as coreSaveInventory,
   readCache,
   writeCacheFromInventory,
   isInventoryFresh,
   invalidateFile,
 } from '@usebrick/core';
 
-// ---------------------------------------------------------------------------
-// Re-exports — preserve the existing import surface so the rest of the
-// codebase + tests don't have to change yet.
-// ---------------------------------------------------------------------------
-
-export {
-  type InventoryFile,
-  type ConstitutionFile,
-  type MemoryPattern,
-  type ComponentFingerprint,
-  type FileMtimeEntry,
-  type MemoryCategory,
-  MEMORY_SCHEMA_VERSION,
-  isMemoryPattern,
-  isComponentFingerprint,
-  isInventoryFile,
-  isConstitutionFile,
-  isFileMtimeEntry,
-  inventoryPath,
-  constitutionPath,
-  cachePath,
-  loadInventory,
-  loadConstitution,
-  saveConstitution,
-  readCache,
-  isInventoryFresh,
-  invalidateFile,
-} from '@usebrick/core';
+// NOTE: No re-exports from `@usebrick/core` here. The internal
+// `import { ... }` block above is for slopbrick-internal use only.
+// Re-exporting types from `@usebrick/core` would force every TypeScript
+// consumer of slopbrick to depend on a package that is private and not
+// on npm. The runtime values are BUNDLED into dist/index.cjs (see
+// tsup.config.ts `noExternal`), so end users never need to know about
+// @usebrick/core.
 
 /** Back-compat shim: `saveInventory` historically ALSO refreshed the
  *  per-file mtime cache so `isInventoryFresh` had a baseline. The
@@ -93,8 +73,7 @@ export async function saveInventory(
   inventory: InventoryFile,
   computeHash: (file: string) => string = computeFileHash,
 ): Promise<void> {
-  const { saveInventory: coreSave } = await import('@usebrick/core');
-  coreSave(workspaceDir, inventory);
+  coreSaveInventory(workspaceDir, inventory);
   writeCacheFromInventory(workspaceDir, inventory, computeHash);
 }
 
