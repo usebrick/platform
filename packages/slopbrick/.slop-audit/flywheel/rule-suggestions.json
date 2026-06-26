@@ -1,0 +1,1586 @@
+[
+  {
+    "pattern": ".slop-audit",
+    "example": ".slop-audit",
+    "count": 9,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "node:crypto",
+    "example": "node:crypto",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "components",
+    "example": "components",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./rules/builtins",
+    "example": "./rules/builtins",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./rules/project",
+    "example": "./rules/project",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "react-native",
+    "example": "react-native",
+    "count": 15,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "hastailwind",
+    "example": "hasTailwind",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "supportsrsc",
+    "example": "supportsRsc",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "categoryweights",
+    "example": "categoryWeights",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "frameworkmultipliers",
+    "example": "frameworkMultipliers",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "ruleconfig",
+    "example": "ruleConfig",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "thresholds",
+    "example": "thresholds",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "spacingscale",
+    "example": "spacingScale",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typographyscale",
+    "example": "typographyScale",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "arbitraryvalueallowlist",
+    "example": "arbitraryValueAllowlist",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "clampallowlist",
+    "example": "clampAllowlist",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "individualslopthreshold",
+    "example": "individualSlopThreshold",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "already-present",
+    "example": "already-present",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typescript",
+    "example": "typescript",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "ecmascript",
+    "example": "ecmascript",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./types.js",
+    "example": "./types.js",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "unknown rule:",
+    "example": "Unknown rule: ",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "see the rule source for the canonical before/after: src/rules/",
+    "example": "See the rule source for the canonical before/after: src/rules/",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "src/rules/",
+    "example": "src/rules/",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": ".slop-audit/flywheel",
+    "example": ".slop-audit/flywheel",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/placeholder-text",
+    "example": "typo/placeholder-text",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "analysis.json",
+    "example": "analysis.json",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "rule-candidates.json",
+    "example": "rule-candidates.json",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "node:child_process",
+    "example": "node:child_process",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--name-only",
+    "example": "--name-only",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "css-anchor",
+    "example": "css-anchor",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "pre-commit",
+    "example": "pre-commit",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "installed pre-commit hook",
+    "example": "Installed pre-commit hook",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "hook not installed",
+    "example": "Hook not installed",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "../engine/worker.js",
+    "example": "../engine/worker.js",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "../types.js",
+    "example": "../types.js",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop_scan_file",
+    "example": "slop_scan_file",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop_explain_rule",
+    "example": "slop_explain_rule",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop_list_rules",
+    "example": "slop_list_rules",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "../rules/builtins.js",
+    "example": "../rules/builtins.js",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop-audit",
+    "example": "slop-audit",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop index",
+    "example": " Slop Index ",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./engine/logger",
+    "example": "./engine/logger",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "css-modules",
+    "example": "css-modules",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "styled-components",
+    "example": "styled-components",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "nativewind",
+    "example": "nativewind",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "permissive",
+    "example": "permissive",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/magic-number-spacing",
+    "example": "visual/magic-number-spacing",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/arbitrary-escape",
+    "example": "visual/arbitrary-escape",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-default-palette",
+    "example": "visual/ai-default-palette",
+    "count": 8,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/raw-style-values",
+    "example": "visual/raw-style-values",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/hardcoded-color",
+    "example": "visual/hardcoded-color",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/important-override",
+    "example": "visual/important-override",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/breakpoint-hardcode",
+    "example": "visual/breakpoint-hardcode",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/boundary-violation",
+    "example": "logic/boundary-violation",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/qwik-hook-leak",
+    "example": "logic/qwik-hook-leak",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/reactive-hook-soup",
+    "example": "logic/reactive-hook-soup",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/zombie-state",
+    "example": "logic/zombie-state",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/ghost-defensive",
+    "example": "logic/ghost-defensive",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/style-sheet-avoidance",
+    "example": "logic/style-sheet-avoidance",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/console-log",
+    "example": "logic/console-log",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/key-prop-missing",
+    "example": "logic/key-prop-missing",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/useeffect-fetch",
+    "example": "logic/useeffect-fetch",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/exhaustive-deps-disable",
+    "example": "logic/exhaustive-deps-disable",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/missing-effect-deps",
+    "example": "logic/missing-effect-deps",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/optimistic-no-rollback",
+    "example": "logic/optimistic-no-rollback",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/mutating-props",
+    "example": "logic/mutating-props",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/raw-fetch",
+    "example": "logic/raw-fetch",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/prop-drilling",
+    "example": "logic/prop-drilling",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/dangerously-set-inner-html",
+    "example": "security/dangerously-set-inner-html",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/eval",
+    "example": "security/eval",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/hardcoded-secrets",
+    "example": "security/hardcoded-secrets",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/insecure-url",
+    "example": "security/insecure-url",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/missing-suspense-boundary",
+    "example": "perf/missing-suspense-boundary",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/target-size",
+    "example": "wcag/target-size",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/focus-appearance",
+    "example": "wcag/focus-appearance",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/focus-obscured",
+    "example": "wcag/focus-obscured",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/dragging-movements",
+    "example": "wcag/dragging-movements",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/color-contrast",
+    "example": "wcag/color-contrast",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/calc-raw-px",
+    "example": "typo/calc-raw-px",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/cls-image",
+    "example": "perf/cls-image",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/gap-monopoly",
+    "example": "layout/gap-monopoly",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/duplicated-screen",
+    "example": "layout/duplicated-screen",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "component/giant-component",
+    "example": "component/giant-component",
+    "count": 9,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/css-bloat",
+    "example": "perf/css-bloat",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "arch/astro-island-leak",
+    "example": "arch/astro-island-leak",
+    "count": 9,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/spacing-grid",
+    "example": "layout/spacing-grid",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/ai-generic-cta",
+    "example": "typo/ai-generic-cta",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/ai-marketing-fluff",
+    "example": "typo/ai-marketing-fluff",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-default-color",
+    "example": "visual/ai-default-color",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-gradient-soup",
+    "example": "visual/ai-gradient-soup",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop-audit.config.mjs",
+    "example": "slop-audit.config.mjs",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "package.json",
+    "example": "package.json",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "pnpm-workspace.yaml",
+    "example": "pnpm-workspace.yaml",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "@pandacss/dev",
+    "example": "@pandacss/dev",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "@emotion/react",
+    "example": "@emotion/react",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "@emotion/styled",
+    "example": "@emotion/styled",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwindcss",
+    "example": "tailwindcss",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/key-prop-index",
+    "example": "logic/key-prop-index",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/object-array-deps",
+    "example": "perf/object-array-deps",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/event-handler-inline",
+    "example": "logic/event-handler-inline",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwind.config.js",
+    "example": "tailwind.config.js",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwind.config.mjs",
+    "example": "tailwind.config.mjs",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwind.config.cjs",
+    "example": "tailwind.config.cjs",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwind.config.ts",
+    "example": "tailwind.config.ts",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typography",
+    "example": "Typography",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "accessibility",
+    "example": "Accessibility",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "architecture",
+    "example": "Architecture",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "performance",
+    "example": "Performance",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "project average",
+    "example": "Project average",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "worst 10% of files",
+    "example": "Worst 10% of files",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "highest single file",
+    "example": "Highest single file",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./extractor",
+    "example": "./extractor",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "tailwind-class",
+    "example": "tailwind-class",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "style-source",
+    "example": "style-source",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "ai-default-palette",
+    "example": "ai-default-palette",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "unmatched-string",
+    "example": "unmatched-string",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsx-element",
+    "example": "jsx-element",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./generator",
+    "example": "./generator",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./provider",
+    "example": "./provider",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "landing-page",
+    "example": "landing-page",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "metadata.json",
+    "example": "metadata.json",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "./analyzer",
+    "example": "./analyzer",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "../../types",
+    "example": "../../types",
+    "count": 93,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "/users/cheng/ai-slop-baseline/extracted/positive",
+    "example": "/Users/cheng/ai-slop-baseline/extracted/positive",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "/users/cheng/ai-slop-baseline/extracted/negative",
+    "example": "/Users/cheng/ai-slop-baseline/extracted/negative",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--no-telemetry",
+    "example": "--no-telemetry",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "** files from `",
+    "example": "** files from `",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "` (precision",
+    "example": "` (precision ",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "calibration-empirical.md",
+    "example": "calibration-empirical.md",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/ai-badge-above-hero",
+    "example": "layout/ai-badge-above-hero",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/ai-container-combo",
+    "example": "layout/ai-container-combo",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/ai-stat-banner",
+    "example": "layout/ai-stat-banner",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "layout/spacer-div",
+    "example": "layout/spacer-div",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/ai-button-no-type",
+    "example": "logic/ai-button-no-type",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "usecontext",
+    "example": "useContext",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/direct-dom-query",
+    "example": "logic/direct-dom-query",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "react-hooks/exhaustive-deps",
+    "example": "react-hooks/exhaustive-deps",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/empty-catch",
+    "example": "logic/empty-catch",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "bg-emerald-500",
+    "example": "bg-emerald-500",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "bg-emerald-600",
+    "example": "bg-emerald-600",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "text-emerald-600",
+    "example": "text-emerald-600",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "text-zinc-800",
+    "example": "text-zinc-800",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "text-gray-800",
+    "example": "text-gray-800",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "fontweight",
+    "example": "fontWeight",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "borderradius",
+    "example": "borderRadius",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "aria-label",
+    "example": "aria-label",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "aria-labelledby",
+    "example": "aria-labelledby",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "aria-describedby",
+    "example": "aria-describedby",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/explicit-any",
+    "example": "logic/explicit-any",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/floating-promise",
+    "example": "logic/floating-promise",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/alert-dialog",
+    "example": "logic/alert-dialog",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "logic/non-null-assertion",
+    "example": "logic/non-null-assertion",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "../../config",
+    "example": "../../config",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "padding-top",
+    "example": "padding-top",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "padding-right",
+    "example": "padding-right",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "padding-bottom",
+    "example": "padding-bottom",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "padding-left",
+    "example": "padding-left",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "margin-top",
+    "example": "margin-top",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "margin-right",
+    "example": "margin-right",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "margin-bottom",
+    "example": "margin-bottom",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "margin-left",
+    "example": "margin-left",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "column-gap",
+    "example": "column-gap",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "use a value from the configured spacing scale or add the value to the scale in your config.",
+    "example": "Use a value from the configured spacing scale or add the value to the scale in your config.",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/bloated-imports",
+    "example": "perf/bloated-imports",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/missing-css-modules",
+    "example": "perf/missing-css-modules",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/reduced-motion",
+    "example": "perf/reduced-motion",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "perf/unoptimized-images",
+    "example": "perf/unoptimized-images",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/client-bundle-secret",
+    "example": "security/client-bundle-secret",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/client-only-auth",
+    "example": "security/client-only-auth",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/csrf-no-credentials-config",
+    "example": "security/csrf-no-credentials-config",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/dangerous-redirect",
+    "example": "security/dangerous-redirect",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/iframe-no-sandbox",
+    "example": "security/iframe-no-sandbox",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/fetch-no-origin-check",
+    "example": "security/fetch-no-origin-check",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/javascript-href",
+    "example": "security/javascript-href",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/postmessage-no-origin-check",
+    "example": "security/postmessage-no-origin-check",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/localstorage-token",
+    "example": "security/localstorage-token",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/target-blank-no-noopener",
+    "example": "security/target-blank-no-noopener",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/sri-missing",
+    "example": "security/sri-missing",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/ai-emoji-titles",
+    "example": "typo/ai-emoji-titles",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/ai-emoji-nav-icons",
+    "example": "typo/ai-emoji-nav-icons",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/ai-instructional-comment",
+    "example": "typo/ai-instructional-comment",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "typo/comment-bloat",
+    "example": "typo/comment-bloat",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-animate-without-motion-safe",
+    "example": "visual/ai-animate-without-motion-safe",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-colored-border-card",
+    "example": "visual/ai-colored-border-card",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-circle-icon",
+    "example": "visual/ai-circle-icon",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "choose a brand-aligned color palette instead of default gradient hues.",
+    "example": "Choose a brand-aligned color palette instead of default gradient hues.",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-flex-no-min-w",
+    "example": "visual/ai-flex-no-min-w",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-scale-hover",
+    "example": "visual/ai-scale-hover",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-rounded-image-no-clip",
+    "example": "visual/ai-rounded-image-no-clip",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-skeleton-pulse",
+    "example": "visual/ai-skeleton-pulse",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-pill-no-overflow",
+    "example": "visual/ai-pill-no-overflow",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-tinted-badge",
+    "example": "visual/ai-tinted-badge",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/ai-vibe-purple",
+    "example": "visual/ai-vibe-purple",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "must be a positive integer",
+    "example": "must be a positive integer",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "invalid selection. please try again.",
+    "example": "Invalid selection. Please try again.\n",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--framework <name>",
+    "example": "--framework <name>",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "framework multiplier to apply",
+    "example": "framework multiplier to apply",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "output format",
+    "example": "output format",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "print remediation advice",
+    "example": "print remediation advice",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--cursorrules",
+    "example": "--cursorrules",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--agents-md",
+    "example": "--agents-md",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--claude-md",
+    "example": "--claude-md",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--windsurf",
+    "example": "--windsurf",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "<!-- slop-audit:begin -->",
+    "example": "<!-- slop-audit:begin -->",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "not a git repository. run `git init` first, or remove --staged from your command.",
+    "example": "Not a Git repository. Run `git init` first, or remove --staged from your command.",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--input-dir <path>",
+    "example": "--input-dir <path>",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "directory with generated samples containing metadata.json",
+    "example": "directory with generated samples containing metadata.json",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--output <path>",
+    "example": "--output <path>",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "--config <path>",
+    "example": "--config <path>",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "slop-audit config path",
+    "example": "slop-audit config path",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/backdrop-blur",
+    "example": "visual/backdrop-blur",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/tailwind-gradient",
+    "example": "visual/tailwind-gradient",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "visual/inline-style-dominance",
+    "example": "visual/inline-style-dominance",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/missing-alt",
+    "example": "wcag/missing-alt",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "backgroundcolor",
+    "example": "backgroundcolor",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "background",
+    "example": "background",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/heading-order",
+    "example": "wcag/heading-order",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/missing-label",
+    "example": "wcag/missing-label",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "wcag/non-semantic-button",
+    "example": "wcag/non-semantic-button",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "security/innerhtml-assignment",
+    "example": "security/innerhtml-assignment",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "fontfamily",
+    "example": "fontFamily",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "lineheight",
+    "example": "lineHeight",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "letterspacing",
+    "example": "letterSpacing",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "replace the magic number with a spacing token from your design system.",
+    "example": "Replace the magic number with a spacing token from your design system.",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "same-origin",
+    "example": "same-origin",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "new-function",
+    "example": "new-function",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "## category-level directives",
+    "example": "## Category-level directives",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "## per-rule directives",
+    "example": "## Per-rule directives",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "avoid patterns that fire rule `",
+    "example": "Avoid patterns that fire rule `",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "conventions.md",
+    "example": "CONVENTIONS.md",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": ".windsurfrules",
+    "example": ".windsurfrules",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": ".cursorrules",
+    "example": ".cursorrules",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "copilot-instructions.md",
+    "example": "copilot-instructions.md",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsxelement",
+    "example": "JSXElement",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "stringliteral",
+    "example": "StringLiteral",
+    "count": 6,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsxattribute",
+    "example": "JSXAttribute",
+    "count": 9,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsxopeningelement",
+    "example": "JSXOpeningElement",
+    "count": 8,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsxexpressioncontainer",
+    "example": "JSXExpressionContainer",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "functiondeclaration",
+    "example": "FunctionDeclaration",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "functionexpression",
+    "example": "FunctionExpression",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "ifstatement",
+    "example": "IfStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "switchstatement",
+    "example": "SwitchStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "forstatement",
+    "example": "ForStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "forinstatement",
+    "example": "ForInStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "forofstatement",
+    "example": "ForOfStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "whilestatement",
+    "example": "WhileStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "dowhilestatement",
+    "example": "DoWhileStatement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "binaryexpression",
+    "example": "BinaryExpression",
+    "count": 7,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "keyvalueproperty",
+    "example": "KeyValueProperty",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "identifier",
+    "example": "Identifier",
+    "count": 24,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "memberexpression",
+    "example": "MemberExpression",
+    "count": 13,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "arrowfunctionexpression",
+    "example": "ArrowFunctionExpression",
+    "count": 4,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "objectexpression",
+    "example": "ObjectExpression",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "jsxtextcontainer",
+    "example": "JSXTextContainer",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "callexpression",
+    "example": "CallExpression",
+    "count": 5,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "forwardref",
+    "example": "forwardRef",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "arraypattern",
+    "example": "ArrayPattern",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "assignmentpatternproperty",
+    "example": "AssignmentPatternProperty",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "objectproperty",
+    "example": "ObjectProperty",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "restelement",
+    "example": "RestElement",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "assignmentpattern",
+    "example": "AssignmentPattern",
+    "count": 3,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "variabledeclarator",
+    "example": "VariableDeclarator",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  },
+  {
+    "pattern": "globalthis",
+    "example": "globalThis",
+    "count": 2,
+    "suggestedRuleId": "typo/placeholder-text"
+  }
+]

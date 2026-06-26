@@ -1,0 +1,242 @@
+{
+  "logic/math-console-log-storm": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 5.25,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "logic/math-any-density": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 3.06,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "logic/boundary-violation": {
+    "recall": 2.14,
+    "fpRate": 0.51,
+    "ratio": 4.21,
+    "precision": 0.808,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z"
+  },
+  "logic/reactive-hook-soup": {
+    "recall": 0.02,
+    "fpRate": 0,
+    "ratio": 4.15,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "logic/optimistic-no-rollback": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 4.12,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "logic/zombie-state": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 21.42,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "logic/math-gini-class-usage": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 4.98,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-color-cluster": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 3.86,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-default-font": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 7.21,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-gradient-hue-rotation": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 99,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-rounded-entropy": {
+    "recall": 0.04,
+    "fpRate": 0.01,
+    "ratio": 5.87,
+    "precision": 0.8,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-font-entropy": {
+    "recall": 0.04,
+    "fpRate": 0.01,
+    "ratio": 4.04,
+    "precision": 0.8,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/math-spacing-entropy": {
+    "recall": 0.01,
+    "fpRate": 0,
+    "ratio": 2.05,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "visual/clamp-soup": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 99,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "component/giant-component": {
+    "recall": 0.06,
+    "fpRate": 0.03,
+    "ratio": 1.87,
+    "precision": 0.667,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "component/shadcn-prop-mismatch": {
+    "recall": 0.02,
+    "fpRate": 0,
+    "ratio": 5.08,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "layout/math-grid-uniformity": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 3.49,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "layout/math-element-uniformity": {
+    "recall": 0.01,
+    "fpRate": 0.01,
+    "ratio": 2.29,
+    "precision": 0.5,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "typo/math-button-label-uniformity": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 3.47,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "perf/css-bloat": {
+    "recall": 0.56,
+    "fpRate": 0.21,
+    "ratio": 2.68,
+    "precision": 0.727,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z"
+  },
+  "wcag/focus-appearance": {
+    "recall": 0.04,
+    "fpRate": 0.01,
+    "ratio": 6.05,
+    "precision": 0.8,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "wcag/target-size": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 99,
+    "precision": 1,
+    "lastCalibratedAt": "2026-06-15T17:13:00Z",
+    "defaultOff": true
+  },
+  "component/multiple-components-per-file": {
+    "recall": 0.1237,
+    "fpRate": 0.1774,
+    "ratio": 0.7,
+    "precision": 0.3584,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "context/import-path-mismatch": {
+    "recall": 0.1171,
+    "fpRate": 0.1694,
+    "ratio": 0.7,
+    "precision": 0.3563,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "logic/key-prop-missing": {
+    "recall": 0.0018,
+    "fpRate": 0.004,
+    "ratio": 0.4,
+    "precision": 0.2591,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "logic/math-variable-name-entropy": {
+    "recall": 0.0001,
+    "fpRate": 0.0004,
+    "ratio": 0.3,
+    "precision": 0.186,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "security/public-admin-route": {
+    "recall": 0.0028,
+    "fpRate": 0.0078,
+    "ratio": 0.4,
+    "precision": 0.2251,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "security/unsafe-html-render": {
+    "recall": 0.0022,
+    "fpRate": 0.003,
+    "ratio": 0.7,
+    "precision": 0.3688,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true
+  },
+  "visual/naturalness-anomaly": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true,
+    "_calibrationNote": "v0.10.1 ship — not yet measured against v4 corpus. Default-off until calibration data lands (per the v0.10 principle: P/R/FPR is the moat; uncalibrated rules stay opt-in)."
+  },
+  "perf/halstead-anomaly": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-25T00:00:00Z",
+    "defaultOff": true,
+    "_calibrationNote": "v0.10.1 ship — not yet measured against v4 corpus. Default-off until calibration data lands."
+  }
+}

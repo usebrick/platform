@@ -1,0 +1,16 @@
+Rule:        visual/math-default-font
+Category:    visual
+Severity:    high
+AI-specific: yes (designed to fire on AI tells)
+Source:      src/rules/visual/math-default-font.ts
+Help:        https://github.com/Dystx/slopbrick/blob/main/src/rules/visual/math-default-font.ts
+
+Pattern:
+  Import a distinctive font (next/font/google, @font-face, or a CSS variable) instead of relying on the framework default.
+
+Remediation:
+  See the rule source for the canonical before/after: src/rules/visual/math-default-font.ts
+
+Suppress / configure in slopbrick.config.mjs:
+  rules: { "visual/math-default-font": "off" }  // or set to a lower severity
+

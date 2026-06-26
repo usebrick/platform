@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/health.schema.json",
+  "title": "Repository Memory — Health",
+  "description": "Repository health snapshot from a single slopbrick scan. The 'headline' score that lands on dashboards. Future tools (CI integrations, the website's /projects page) consume this schema.",
+  "type": "object",
+  "required": ["version", "generatedAt", "workspace", "slopIndex", "categoryScores", "issueCounts"],
+  "properties": {
+    "version": {
+      "description": "Health schema version. Currently '2'.",
+      "const": "2"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "workspace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "slopIndex": {
+      "description": "Slop Index (0-100, lower is better). The headline score.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "categoryScores": {
+      "description": "Per-category scores. Each is 0-100; the exact interpretation depends on the category.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    "issueCounts": {
+      "description": "Number of issues per severity level.",
+      "type": "object",
+      "required": ["high", "medium", "low"],
+      "properties": {
+        "high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "constitutionDrift": {
+      "description": "Number of constitution violations detected in this scan.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "topOffenseIds": {
+      "description": "Top 3 most-firing rule IDs in this scan, sorted by issue count desc.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+/[a-z-]+$"
+      },
+      "maxItems": 3
+    },
+    "scanDurationMs": {
+      "description": "How long the scan took in milliseconds.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

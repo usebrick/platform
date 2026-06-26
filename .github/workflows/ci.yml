@@ -1,0 +1,64 @@
+name: ci
+
+# CI for the usebrick/platform monorepo.
+#
+# Runs on PR + push to main. Builds all packages (workspace deps), runs
+# typecheck + test on every package, then uploads SARIF for code-scanning
+# integration.
+#
+# Workspace structure:
+#   packages/core/         @usebrick/core (private, schema spec)
+#   packages/slopbrick/    @usebrick/slopbrick (the published CLI)
+#   packages/stackpick/    (future)
+#   packages/gir/          (future)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        # Build core first so slopbrick can resolve its types.
+        run: pnpm -r --filter '@usebrick/core' build && pnpm -r --filter '@usebrick/slopbrick' build
+
+      - name: Typecheck all packages
+        run: pnpm -r typecheck
+
+      - name: Test all packages
+        run: pnpm -r test
+
+      - name: Validate schemas (future)
+        # When core's JSON Schemas are validated against test fixtures,
+        # this step runs `ajv` (or similar) against the bundled examples.
+        # Stub for now — the schemas are checked by the consuming tests.
+        run: echo "Schema validation stub — schemas checked by consuming tests today"

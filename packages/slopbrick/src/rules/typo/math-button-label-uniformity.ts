@@ -1,0 +1,60 @@
+import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { createRule } from '../rule';
+import { stddev } from '../math-utils';
+
+/**
+ * Math rule: coefficient of variation of button/CTA text length.
+ *
+ * AI-generated buttons use a small vocabulary of marketing labels:
+ *   "Get started" (11), "Learn more" (10), "Sign up" (7), "Try now" (7), etc.
+ *
+ * Threshold: ≥4 buttons AND length stddev ≤ 4 → flag.
+ */
+
+export const mathButtonLabelUniformityRule = createRule<RuleContext>({
+  id: 'typo/math-button-label-uniformity',
+  category: 'typo',
+  severity: 'medium',
+  aiSpecific: true,
+  description: 'Button text lengths have suspiciously low variance — AI writes "Get started", "Sign up", "Learn more"',
+  create(context) {
+    return context;
+  },
+  analyze(_context, facts): Issue[] {
+    const issues: Issue[] = [];
+    if (!facts.v2) return issues;
+    const lengths: number[] = [];
+    let anchor: { line: number; column: number } | undefined;
+
+    for (const el of facts.v2.jsx.elements) {
+      const tag = el.tag.toLowerCase();
+      if (tag !== 'button') continue;
+      const label = el.attributes.value ?? el.attributes['aria-label'] ?? '';
+      const trimmed = label.trim();
+      if (trimmed.length > 0) lengths.push(trimmed.length);
+      if (!anchor) anchor = { line: el.line, column: el.column };
+    }
+
+    if (lengths.length < 4) return issues;
+    const sd = stddev(lengths);
+    if (sd > 4) return issues;
+
+    issues.push({
+      ruleId: 'typo/math-button-label-uniformity',
+      category: 'typo',
+      severity: 'medium',
+      aiSpecific: true,
+      message:
+        `Button text lengths have low variance (σ=${sd.toFixed(2)}, n=${lengths.length}). ` +
+        `AI reuses a small vocabulary of marketing labels; humans mix long and short action verbs.`,
+      line: anchor?.line ?? 1,
+      column: anchor?.column ?? 1,
+      advice:
+        'Mix button lengths deliberately — pair a short "Save" with a longer "Mark as complete" — instead of repeating the same template.',
+    });
+
+    return issues;
+  },
+});
+
+export default mathButtonLabelUniformityRule satisfies Rule<RuleContext>;

@@ -1,0 +1,1 @@
+Unknown rule: does/not-exist. Run `slopbrick rules` to see all available rules.

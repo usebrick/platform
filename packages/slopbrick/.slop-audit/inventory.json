@@ -1,0 +1,95 @@
+{
+  "version": "1",
+  "generatedAt": "2026-06-26T12:17:14.324Z",
+  "workspace": "/Users/cheng/slop-audit",
+  "scannedFiles": 185,
+  "scanDurationMs": 221,
+  "patterns": [],
+  "components": [
+    {
+      "name": "ActivityIndicator",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-04.tsx"
+      ],
+      "fingerprint": "7ecbb2f86fc10c2a",
+      "hooks": [],
+      "props": [
+        "activity"
+      ],
+      "line": 11,
+      "endLine": 19
+    },
+    {
+      "name": "Card",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-02-vibe-purple.tsx"
+      ],
+      "fingerprint": "3456246dd4b4c1ab",
+      "hooks": [],
+      "props": [],
+      "line": 1,
+      "endLine": 6
+    },
+    {
+      "name": "ChatInput",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-05.tsx"
+      ],
+      "fingerprint": "907d7dda4434b8e2",
+      "hooks": [
+        "useEffect",
+        "useRef",
+        "useState"
+      ],
+      "props": [
+        "hasMessages",
+        "isLoading",
+        "onSend",
+        "onStop"
+      ],
+      "line": 15,
+      "endLine": 78
+    },
+    {
+      "name": "Home",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-03.tsx"
+      ],
+      "fingerprint": "74a8679e75ce5913",
+      "hooks": [],
+      "props": [],
+      "line": 11,
+      "endLine": 16
+    },
+    {
+      "name": "HomeContent",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-03.tsx"
+      ],
+      "fingerprint": "cdb19cd06644577f",
+      "hooks": [
+        "useCallback",
+        "useChat",
+        "useEffect",
+        "useQueryState",
+        "useState"
+      ],
+      "props": [],
+      "line": 19,
+      "endLine": 224
+    },
+    {
+      "name": "RootLayout",
+      "files": [
+        "/private/tmp/real-corpus/ai/krebs-02.tsx"
+      ],
+      "fingerprint": "9b7adfca0b11f655",
+      "hooks": [],
+      "props": [
+        "children"
+      ],
+      "line": 19,
+      "endLine": 32
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Agent session / cache
+.worktrees/
+.kimi-code/
+.slopbrick/
+.slopbrick-cache.json
+
+# Test caches
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+*.log
+
+# Generated artifacts
+corpus/calibration-report.md
+tests/fixtures/frameworks/**/.slopbrick/
+
+# Internal drafts and state-tracking (not for public release)
+# Show HN post draft
+Show HN post draft.md
+# v1 strategy / score compression proposals (v1.0 is far horizon, do not ship)
+docs/strategy-2026.md
+docs/strategy/v1-score-compression.md
+docs/experiment-findings.md
+docs/publishing-state-2026-06-25.md
+# Launch blog post drafts
+docs/launch-blog-post-v4.1.md

@@ -1,0 +1,91 @@
+name: 'slopbrick'
+description: 'Run slopbrick and write the report to a file'
+branding:
+  icon: 'shield'
+  color: 'orange'
+inputs:
+  version:
+    description: 'slopbrick version to install'
+    required: false
+    default: 'latest'
+  config-path:
+    description: 'Path to slopbrick config file'
+    required: false
+    default: 'slopbrick.config.mjs'
+  format:
+    description: 'Output format (pretty, json, html, sarif)'
+    required: false
+    default: 'sarif'
+  fail-on-error:
+    description: 'Set to true to fail the job when slopbrick reports issues (exits non-zero); set to false to never fail'
+    required: false
+    default: 'true'
+  output-path:
+    description: 'Path for the report file (extension should match format)'
+    required: false
+    default: 'slopbrick-report.sarif'
+  pr-comment:
+    description: 'Post a Markdown summary as a PR comment (idempotent across re-runs)'
+    required: false
+    default: 'false'
+  pr-number:
+    description: 'PR number to comment on. Defaults to the pull_request number from the workflow event.'
+    required: false
+    default: ${{ github.event.pull_request.number }}
+outputs:
+  slop-index:
+    description: 'Computed slop index (only populated for json format)'
+    value: ${{ steps.run.outputs.slop-index }}
+  report-path:
+    description: 'Path to generated report file'
+    value: ${{ steps.run.outputs.report-path }}
+  issues-count:
+    description: 'Total number of issues found (only populated for json and sarif formats)'
+    value: ${{ steps.run.outputs.issues-count }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install slopbrick
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+      run: npm install -g "slopbrick@${INPUT_VERSION}"
+    - name: Run slopbrick
+      id: run
+      shell: bash
+      env:
+        INPUT_CONFIG_PATH: ${{ inputs.config-path }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_OUTPUT_PATH: ${{ inputs.output-path }}
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+      run: |
+        set +e
+        CONFIG_ARG=()
+        if [ -f "$INPUT_CONFIG_PATH" ]; then
+          CONFIG_ARG=(--config "$INPUT_CONFIG_PATH")
+        fi
+        slopbrick scan "${CONFIG_ARG[@]}" --format "$INPUT_FORMAT" > "$INPUT_OUTPUT_PATH"
+        EXIT_CODE=$?
+        if [ "$INPUT_FORMAT" = "json" ] || [ "$INPUT_FORMAT" = "sarif" ]; then
+          SLOP_INDEX=$(cat "$INPUT_OUTPUT_PATH" | node -e "let d=''; process.stdin.on('data', c => d+=c); process.stdin.on('end', () => { try { const r = JSON.parse(d); console.log(r.slopIndex ?? ''); } catch { console.log(''); } })")
+          ISSUES=$(cat "$INPUT_OUTPUT_PATH" | node -e "let d=''; process.stdin.on('data', c => d+=c); process.stdin.on('end', () => { try { const r = JSON.parse(d); console.log(Array.isArray(r.issues) ? r.issues.length : (Array.isArray(r.runs?.[0]?.results) ? r.runs[0].results.length : 0)); } catch { console.log(0); } })")
+        else
+          SLOP_INDEX=""
+          ISSUES=0
+        fi
+        echo "slop-index=$SLOP_INDEX" >> "$GITHUB_OUTPUT"
+        echo "report-path=$INPUT_OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+        echo "issues-count=$ISSUES" >> "$GITHUB_OUTPUT"
+        if [ "$EXIT_CODE" -ne 0 ] && [ "$INPUT_FAIL_ON_ERROR" = "true" ]; then
+          exit "$EXIT_CODE"
+        fi
+        exit 0
+    - name: Post PR comment
+      if: inputs.pr-comment == 'true'
+      shell: bash
+      continue-on-error: true
+      env:
+        INPUT_REPORT_PATH: ${{ steps.run.outputs.report-path }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: bash "$GITHUB_ACTION_PATH/post-comment.sh" "$INPUT_REPORT_PATH"

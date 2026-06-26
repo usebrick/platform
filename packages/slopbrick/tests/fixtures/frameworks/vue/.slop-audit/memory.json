@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2026-06-19T21:17:30.882Z",
+    "version": "1.0.0",
+    "slopIndex": 17.76,
+    "categoryScores": {
+      "visual": 4.8,
+      "typo": 2,
+      "wcag": 0,
+      "layout": 0,
+      "component": 0,
+      "logic": 8,
+      "arch": 0,
+      "perf": 0,
+      "security": 0
+    },
+    "topOffenseIds": [
+      "logic/console-log",
+      "typo/hardcoded-strings",
+      "visual/inline-style"
+    ],
+    "thresholdExceeded": false
+  },
+  {
+    "timestamp": "2026-06-19T21:17:30.988Z",
+    "version": "1.0.0",
+    "slopIndex": 17.76,
+    "categoryScores": {
+      "visual": 4.8,
+      "typo": 2,
+      "wcag": 0,
+      "layout": 0,
+      "component": 0,
+      "logic": 8,
+      "arch": 0,
+      "perf": 0,
+      "security": 0
+    },
+    "topOffenseIds": [
+      "logic/console-log",
+      "typo/hardcoded-strings",
+      "visual/inline-style"
+    ],
+    "thresholdExceeded": false
+  }
+]

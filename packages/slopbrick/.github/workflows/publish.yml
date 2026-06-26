@@ -1,0 +1,106 @@
+name: publish
+
+# Publishes to npm and creates a GitHub Release when a v* tag is pushed.
+#
+# Auth: OIDC trusted publishing with provenance attestation (npm 2024+ best practice).
+# To configure: npmjs.com → package settings → Trusted publishing → add GitHub Actions
+# publisher for repo `usebrick/slopbrick`, workflow `.github/workflows/publish.yml`.
+#
+# To switch to a legacy NPM_TOKEN: set the `NPM_TOKEN` secret, remove the
+# `id-token: write` permission below, and change `npm publish --provenance` to
+# `npm publish` (provenance requires OIDC).
+#
+# Environment gate: this job targets the `publish` GitHub Actions environment.
+# Configure in Settings → Environments → publish:
+#   - Required reviewers: at least 1 (your GitHub username) — manually approve
+#     before the workflow can actually publish.
+#   - Deployment branches: restrict to `main` so only tags from main can deploy.
+#   - Add `NPM_TOKEN` (optional fallback) as a deployment-scoped secret.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.11.0) — leave empty to use the pushed ref'
+        required: false
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # for softprops/action-gh-release
+  id-token: write   # for npm OIDC trusted publishing (provenance)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: publish
+      url: https://www.npmjs.com/package/slopbrick
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for provenance + release notes
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ -z "$TAG" ]; then
+            echo "::error::Could not derive version from ref $GITHUB_REF"
+            exit 1
+          fi
+          if [ "$TAG" != "$PKG_VERSION" ]; then
+            echo "::error::Tag v$TAG does not match package.json version $PKG_VERSION"
+            echo "::error::Bump package.json to $TAG and re-tag, or push a tag matching the current version."
+            exit 1
+          fi
+          echo "Releasing v$TAG"
+
+      - name: Verify version is not already published
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "slopbrick@$VERSION" version >/dev/null 2>&1; then
+            echo "::error::Version $VERSION is already on the npm registry. Re-publishing is not allowed."
+            exit 1
+          fi
+
+      - name: Run quality gates
+        # prepublishOnly runs the same checks on `npm publish`, but invoking them
+        # explicitly surfaces failures in the CI log and avoids surprise installs.
+        run: |
+          pnpm typecheck
+          pnpm test
+          pnpm build
+
+      - name: Pack (dry-run) — sanity check the published artifact
+        run: npm pack --dry-run
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true

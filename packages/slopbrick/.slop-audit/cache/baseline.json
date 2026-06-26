@@ -1,0 +1,694 @@
+{
+  "version": "0.9.2",
+  "config_hash": "7a0e8bbf17bdaa484dffc786d0add0bd5f209d2633838c1ed475248f576f3803",
+  "git_head": "2ac6d6ff012c69a6993b56dd7f46282a69c236ec",
+  "baseline_created": "2026-06-25T18:52:28.248Z",
+  "baseline_revision": 1,
+  "totalComponentCount": 0,
+  "scores": {
+    "src/cache.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/business-logic.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/db.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/maintenance-cost.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/docs.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/options.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/patterns.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/init.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/drift.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/render.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/test.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/pr.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config-validation.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/conventions.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/threshold.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/defaults.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/scan.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/detect.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/detect/monorepo.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/detect/stack.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/detect/styling.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/init.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/load.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/cli/program.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/discover.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/ai-security-risk.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/config/presets.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/cluster.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/cache.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/architecture-score.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/coherence.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/logger.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/doc-freshness.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/memory.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/db-health.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/business-logic.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/maintenance-cost.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/normalize.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/metrics.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/patterns.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/parser.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/repository-health.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/telemetry.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/test-quality.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/trend.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/pool.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/types.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/ast-guards.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitor.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/dispatch.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/go.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/internal.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/engine/visitors/python.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/html.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/templates.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/react.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/scan-helpers.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/templates/astro.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/worker.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/explain.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/v2-build.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/focus-ring.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/engine/visitors/templates/positions.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/index.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/use-client.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/visual-codemod.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/layout-token.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/visual-codemods/source.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/visual-codemods/jsx.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/flywheel.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/index.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/installer.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/fix/visual-codemods/tailwind.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/git.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/mcp/server.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/mcp/patterns.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/advice.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/flywheel.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/heatmap.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/html.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/mcp/tools.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/json.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/html/static.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/html/sections.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/markdown.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/html/utils.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/analyzer.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/sarif.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/pretty.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/calibrator.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/report/unified-diff.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/candidates.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/generator.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/extractor.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/index.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/prompts.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/providers/openai.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/arch/astro-island-leak.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/research/provider.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/component/giant-component.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/component/multiple-components-per-file.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/context/import-path-mismatch.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/builtins.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/layout/gap-monopoly.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/component/shadcn-prop-mismatch.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/layout/math-element-uniformity.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/layout/math-grid-uniformity.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/layout/spacing-grid.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/ghost-defensive.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/math-any-density.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/rules/logic/key-prop-missing.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/math-console-log-storm.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/math-gini-class-usage.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/boundary-violation.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/optimistic-no-rollback.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/reactive-hook-soup.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/math-variable-name-entropy.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/qwik-hook-leak.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/logic/zombie-state.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/math-utils.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/perf/css-bloat.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/project.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/perf/cls-image.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/registry-loader.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/registry.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/rule.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/security/dangerous-cors.ts": {
+      "baselineScore": 12,
+      "componentCount": 0
+    },
+    "src/rules/security/exposed-env-var.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/security/fail-open-auth.ts": {
+      "baselineScore": 30,
+      "componentCount": 0
+    },
+    "src/rules/security/missing-auth-check.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/security/public-admin-route.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/security/hardcoded-secret.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/security/sql-construction.ts": {
+      "baselineScore": 20,
+      "componentCount": 0
+    },
+    "src/rules/signal-strength.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/test/fake-placeholder.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/rules/security/unsafe-html-render.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/rules/test/duplicate-setup.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/test/missing-edge-case.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/test/weak-assertion.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/types.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/typo/calc-raw-px.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/test/utils.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/typo/clamp-offscale.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/typo/calc-fontsize.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/typo/math-button-label-uniformity.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/typo/math-cta-vocabulary.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/arbitrary-escape.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/clamp-soup.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/generic-centering.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/utils.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/inline-style-dominance.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/forced-layout.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-color-cluster.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-default-font.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-gradient-hue-rotation.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-font-entropy.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-spacing-entropy.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/radius-scale-violation.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/rules/wcag/dragging-movements.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/math-rounded-entropy.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/wcag/focus-appearance.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/visual/spacing-scale-violation.ts": {
+      "baselineScore": 5,
+      "componentCount": 0
+    },
+    "src/rules/wcag/focus-obscured.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/snippet/generators.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/snippet/render.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/snippet/data.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/rules/wcag/target-size.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/snippet/targets.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/tokens.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    },
+    "src/types.ts": {
+      "baselineScore": 0,
+      "componentCount": 0
+    }
+  }
+}
