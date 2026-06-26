@@ -238,5 +238,64 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "defaultOff": true,
     "_calibrationNote": "v0.10.1 ship — not yet measured against v4 corpus. Default-off until calibration data lands."
+  },
+  "db/duplicate-index": {
+    "recall": 0.0339,
+    "fpRate": 0.0085,
+    "ratio": 4.0,
+    "precision": 0.9167,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): 354 neg + 974 pos. USEFUL — ship enabled. When rule fires, 91.7% of the time it's a real AI schema with duplicate indexes."
+  },
+  "db/missing-fk-index": {
+    "recall": 0.8039,
+    "fpRate": 0.7853,
+    "ratio": 1.0,
+    "precision": 0.7381,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "defaultOff": true,
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): fires on 78.5% of production human schemas. Heuristic likely too broad (catches Drizzle/Prisma auto-naming). Audit before re-calibration."
+  },
+  "db/missing-not-null": {
+    "recall": 0.0431,
+    "fpRate": 0.1893,
+    "ratio": 0.2,
+    "precision": 0.3855,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "defaultOff": true,
+    "verdict": "INVERTED",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): AI-generated schemas are MORE careful with NOT NULL than production. Consider inverting purpose — turn into a 'production schema hygiene' rule rather than an AI signal."
+  },
+  "db/naming-inconsistency": {
+    "recall": 0.0144,
+    "fpRate": 0.0141,
+    "ratio": 1.0,
+    "precision": 0.7368,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "defaultOff": true,
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): equal fire rate on both sides. AI tools are consistent in naming; heuristic likely too broad (catches legitimate cross-language snake/camel mixing)."
+  },
+  "db/enum-sprawl": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "defaultOff": true,
+    "verdict": "DORMANT",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): 0 fires on 354 neg + 974 pos. Heuristic may be broken — verify with a known-bad input."
+  },
+  "db/sql-concat": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-26T15:50:00Z",
+    "defaultOff": true,
+    "verdict": "DORMANT",
+    "_calibrationNote": "v5 SQL pilot (2026-06-26): 0 fires on 354 neg + 974 pos. Heuristic may be broken — verify with a known-bad input."
   }
 }
