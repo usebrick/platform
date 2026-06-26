@@ -21,9 +21,9 @@ This document tracks the strategic plan. Each phase is independently shippable; 
 | **Test Quality** | 0–100 (higher = better) | 0.7.0 | 5 |
 | **Business Logic Coherence** | 0–100 (higher = better) | 0.7.0 | 7 |
 | **Pattern Fragmentation** | 0–100 (higher = better) | 0.7.0 | 7b |
-| **Documentation Freshness** | 0–100 + categorical `docDrift` | 0.8.0 | 6 |
-| **Database Health** | 0–100 (higher = better) | 0.8.0 | 8 |
-| **AI Maintenance Cost** | `low` / `medium` / `high` / `critical` | 0.8.0 | memo #4 |
+| **Documentation Freshness** | 0–100 + categorical `docDrift` | 0.11.x | 6 |
+| **Database Health** | 0–100 (higher = better) | 0.11.x | 8 |
+| **AI Maintenance Cost** | `low` / `medium` / `high` / `critical` + `monthlyUSD` | 0.11.x | memo #4 |
 | **Product Consistency** | 0–100 (higher = better) | 0.9.0 | 9 |
 | **Repository Health** (composite) | 0–100 + `AI Debt` band | 0.9.0 | 12 |
 
@@ -71,12 +71,6 @@ slopbrick test [--format pretty|json] [--strict]
 
 Four rules (`test/weak-assertion`, `test/duplicate-setup`, `test/missing-edge-case`, `test/fake-placeholder`) all short-circuit on non-test files. `--strict` exits 1 on any test issue (CI gate). Score: `100 - ceil(sum(weight) / 5)`, weights `low=1, medium=3, high=5`.
 
-Detect:
-- **Weak assertions** — `expect(x).toBeDefined()` / `expect(x).toBeTruthy()` / `expect(x).not.toBe(null)` instead of value-shape assertions.
-- **Duplicate test setups** — same boilerplate (`renderWithProviders`, `setupServer`, mock factory) repeated across N test files.
-- **Missing edge cases** — components with public props that have no test for empty/error/loading states.
-- **Fake tests** — `it('passes', () => {});` placeholders that should fail CI.
-
 Output:
 
 ```
@@ -90,7 +84,7 @@ Coverage ≠ quality. A 90%-covered repo with `expect(x).toBeDefined()` everywhe
 
 **Why this phase:** reuse existing JSX/React extraction in `facts.v2`; bounded heuristic surface; high value to engineering managers ("do we actually test what we ship?").
 
-### Phase 6 — Documentation Drift 🟡 greenfield (target 0.8.0)
+### Phase 6 — Documentation Drift ✅ shipped (0.11.x, ahead of 0.8.0 target)
 
 **New subcommand:** `slopbrick docs` (6 → 4 rules in v1; `stale-env-var-reference` and `stale-url-reference` deferred to 0.8.x for FP control).
 
@@ -170,7 +164,7 @@ slopbrick patterns [--format text|json|markdown] [--max-files <n>]
 
 Score: `clamp(0, 100, 100 - (deduction / N) * 100)`, `N = sum(weights) * 4`. Always informational (exit 0) in 0.7.0.
 
-### Phase Memo 4 — AI Maintenance Cost 🟡 greenfield (target 0.8.0)
+### Phase Memo 4 — AI Maintenance Cost ✅ shipped (0.11.x, ahead of 0.8.0 target)
 
 **New subcommand:** `slopbrick maintenance-cost`. Categorical headline + numeric `monthlyUSD` sub-score + per-axis health breakdown.
 
@@ -224,7 +218,7 @@ const monthlyUSD = Math.round(
 
 **Why this phase:** the manager-friendly meta-score. The categorical form is deliberate — same reasoning as `aiSecurityRisk`: a single categorical bucket is harder to game than a numeric score, and a manager can read "AI Maintenance Cost: HIGH" in two seconds.
 
-### Phase 8 — Database Intelligence 🟡 greenfield (target 0.8.0)
+### Phase 8 — Database Intelligence ✅ shipped (0.11.x, ahead of 0.8.0 target)
 
 **Reframed as static-only v1** (no live DB connection). Uses `pgsql-parser` (libpg_query port, ~3 MB install, supports PG 13–17, actively maintained as `@pgsql/parser` and `@libpg-query/parser` re-published monthly). Live DB introspection deferred to Phase 8.1.
 
@@ -312,7 +306,7 @@ Three output formats: `text`, `json`, `markdown`.
 governance story. Smallest implementation cost of the remaining
 phases (reuses every score we already ship).
 
-### Phase 12 — AI Agent Governance 🟡 greenfield (after 11)
+### Phase 12 — AI Agent Governance 🟡 partial (after 11)
 
 After PR Governance is in, the meta-feature becomes:
 
@@ -430,7 +424,7 @@ A rule with high precision but 100% FPR is useless. A rule with high recall but 
 | v0.8.0 | 2026-06 | ratio (3.4:1 imbalanced corpus) | `wcag/focus-appearance = 7.98×` | ⚠️ less imbalanced, still ratio |
 | **v0.9.0 (2026-06-25)** | 2026-06 | ratio on 1:1 balanced corpus (95k neg + 77k pos) | `wcag/focus-appearance = 3.01×` | ✅ balanced, 27/44 PASS |
 | **v0.9.x (2026-08)** | 2026-08 | **per-rule Precision / Recall / FPR** (per-file granularity) + INVERTED/NOISY default-off | `security/missing-auth-check: P=92%, R=0.6%, FPR=0.04%` | ✅✅ engineer-trustworthy |
-| **v0.10 (credibility milestone)** | 2026-Q3 (target) | per-rule P/R/FPR + peer-reviewed citation behind every threshold | `18 USEFUL rules with cited thresholds; MDL composite replaces heuristic weights` | ✅✅✅ the credibility moat |
+| **v0.10 (credibility milestone)** | **2026-06-25 ✅ shipped** | per-rule P/R/FPR + peer-reviewed citation behind every threshold | `18 USEFUL rules with cited thresholds; MDL composite replaces heuristic weights` | ✅✅✅ the credibility moat |
 | v1.0 | 2027-Q2 (target, 6+ months post-v0.10) | API freeze + backward compatibility commitment | no new scores; same surface, frozen | ✅✅✅✅ stability commitment |
 
 **The three numbers that tell you whether a detection rule actually works** are **Precision, Recall, False Positive Rate** — and v0.10 ships every rule with all three documented. The earlier ratio metric was misleading: you can have a 322× ratio on a tiny corpus and still have terrible precision on a real codebase. P/R/FPR on the balanced 172k-file corpus is what you actually need to know whether a rule is deployable in production. That's the credibility differentiator and it's why it took months of calibration work to get here.
@@ -488,3 +482,45 @@ The gap we're targeting: **repository coherence**. Nobody owns it. Almost nobody
 | 2026-06-25 | AI Security Risk as categorical, not numeric | A single hardcoded API key outranks everything; categorical is harder to game |
 | 2026-06-25 | Five scores in one tool, all surfaced by `slopbrick scan` | Single CLI invocation = lower friction; manager reads five numbers in 5 seconds |
 | 2026-06-25 | Bump in 0.0.1 increments during feature work | Each commit traceable in `git log` + `npm changelog`; minor bumps reserved for headline-feature releases |
+
+---
+
+## Roadmap audit log
+
+### 2026-06-26 — Status reconciliation against shipped source
+
+Reconciled phase statuses with actual code under `src/`. Several phases marked `🟡 greenfield` had their engine + CLI surface already shipped (rule implementations live inline in `engine/*.ts`, not in `rules/<category>/`). This made them invisible to greps looking for `rules/{docs,db,product}/` directories.
+
+| Phase | Old status | New status | Evidence |
+|-------|------------|------------|----------|
+| 1 — AI Slop Audit | ✅ shipped (0.5.0) | ✅ shipped (0.5.0) | unchanged |
+| 2 — Repository Constitution | ✅ shipped (0.6.2) | ✅ shipped (0.6.2) | unchanged |
+| 3 — Architectural Drift Engine | ✅ shipped (0.6.3) | ✅ shipped (0.6.3) | unchanged |
+| 4 — AI Security Debt | ✅ shipped (0.6.4) | ✅ shipped (0.6.4) | unchanged |
+| 5 — Test Intelligence | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | removed duplicated bullet list |
+| **6 — Doc Drift** | 🟡 greenfield (0.8.0) | **✅ shipped (0.11.x)** | `src/cli/docs.ts`, `src/engine/doc-freshness.ts`, 4 rules inline |
+| 7 — Business Logic Coherence | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | unchanged |
+| 7b — Pattern Fragmentation | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | unchanged |
+| **Memo 4 — AI Maintenance Cost** | 🟡 greenfield (0.8.0) | **✅ shipped (0.11.x)** | `src/cli/maintenance-cost.ts`, `src/engine/maintenance-cost.ts` |
+| **8 — DB Intelligence** | 🟡 greenfield (0.8.0) | **✅ shipped (0.11.x)** | `src/cli/db.ts`, `src/engine/db-health.ts`, 6 rules inline |
+| 9 — Product Consistency | 🟡 greenfield | 🟡 greenfield | confirmed — no `src/rules/product/` or engine |
+| **10 — Cost Intelligence** | ⏸ deferred | ⏸ deferred | confirmed — no `cost-intelligence` CLI, engine, or rules |
+| 11 — PR Governance | ✅ shipped (0.7.0) | ✅ shipped (0.7.0) | unchanged |
+| **12 — AI Agent Governance** | 🟡 greenfield (after 11) | **🟡 partial (after 11)** | `slop_governance` MCP tool shipped; composite Repository Health not yet |
+
+### Phase 10 — Cost Intelligence: deferred rationale (reaffirmed)
+
+Cost Intelligence (cloud waste, LLM costs, query waste, duplicate processing) remains ⏸ deferred because:
+- Requires cloud-provider integration (AWS/GCP/Azure SDKs) or static analysis of compute patterns — a different stack from current rules
+- No clear technical anchor — Squawk/SQLFluff own SQL waste detection; cloud cost is dominated by Vantage/AWS Cost Explorer
+- Speculative — no customer has asked for it
+- Re-evaluate if a customer requests it (per the release train note: "ship only after a real customer asks")
+
+### v0.10 calibration trajectory correction
+
+v0.10 was listed as "2026-Q3 (target)" in the calibration trajectory table. Per `CHANGELOG.md`, **v0.10.0 actually shipped 2026-06-25** alongside the v0.11.0 platform rename. The credibility moat (per-rule P/R/FPR + peer-reviewed thresholds + MDL composite) is live.
+
+### Documentation debt (cross-reference)
+
+The same shipped-but-undocumented work also needs CHANGELOG entries. See CHANGELOG `[Unreleased]` section and `docs/research/v0.10-implementation-plan.md` "Documentation debt" section for the backfill list (Phases 6/8/9/11 of the v0.10 plan).
+
