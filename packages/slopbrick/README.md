@@ -1,10 +1,12 @@
 # slopbrick
 
-> **The AI-coding-agent drift detector.** Stops the `zustand + redux in the same project`, the three-modal-systems, the off-scale `p-[13px]`, the hardcoded `sk-...` keys, and the `expect(x).toBeDefined()` tests that no one wrote and no one will run. Run `npx slopbrick` and get a single Repository Coherence score (0–100) with per-rule precision/recall so you know which findings to fix and which to ignore. Add the MCP server and your AI agent reads your existing patterns before it writes new ones.
+> **Repository Coherence Scanner for AI-coded codebases.** Detects cross-file pattern drift (`zustand + redux in the same project`), AI-induced security failures (`sk-...` keys, `NEXT_PUBLIC_*` secrets, fail-open auth), design-token violations (`p-[13px]`), and AI test smells (`expect(x).toBeDefined()`). Run `npx slopbrick` and get a single **Repository Health** score (0–100) with per-rule precision/recall. Add the MCP server and your AI agent reads your existing patterns before it writes new ones.
+
+**Status:** v0.11.2 (current). The v0.10 credibility milestone shipped 2026-06-25 — every detection rule ships with per-rule P/R/FPR against the balanced 172k-file v4 corpus, and 8 thresholds cite peer-reviewed papers (Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951).
 
 **The problem.** AI coding assistants write logic well, but they drift. Every project ends up with three button variants, a hardcoded API key, inline styles next to Tailwind utilities, and a test file full of `expect(x).toBeDefined()`. The drift isn't the agent's fault — it's that the agent doesn't know your conventions. Existing linters catch syntax; nothing catches "you just invented a fourth modal system when this repo already has three."
 
-**What this does.** `slopbrick` extracts the canonical patterns from your codebase (state lib, form lib, modal system, API client, data-fetching), enforces a declared Constitution at PR time, and exposes the pattern inventory to AI agents via MCP (`slop_suggest`) so they reuse what's there instead of inventing new patterns. The headline Repository Coherence score (0–100) is a proof that the Constitution is being followed — but the actual moat is the Constitution + Pattern Inventory itself, not the number.
+**What this does.** `slopbrick` extracts the canonical patterns from your codebase (state lib, form lib, modal system, API client, data-fetching), enforces a declared Constitution at PR time, and exposes the pattern inventory to AI agents via MCP (`slop_suggest`) so they reuse what's there instead of inventing new patterns. The headline **Repository Health** score (0–100) is a proof that the Constitution is being followed — but the actual moat is the Constitution + Pattern Inventory itself, not the number.
 
 ## What an AI agent gets from `slop_suggest` (the primary entry point)
 
@@ -14,64 +16,83 @@ The MCP tool `slop_suggest` returns, in one call:
 - **Do-not-create list** — explicit `constitution.forbidden` packages + canonical patterns not to duplicate.
 - **Top issues by rule** — what to fix first in the changed files.
 - **Hot files by issue count** — where the slop is concentrated.
-- **Composite Repository Health** — the headline 0-100 score.
+- **Composite Repository Health** — the headline 0-100 score + per-axis breakdown.
 
 > **Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them.**
 
-`src/mcp/tools.ts:69-81`. The MCP server is one command: `slopbrick mcp`.
+The MCP server is one command: `slopbrick mcp`. 14 tools ship in v0.11.2: `slop_suggest`, `slop_suggest_with_memory` (fast-path on `.slopbrick/memory.md`), `slop_scan_file`, `slop_explain_rule`, `slop_list_rules`, `slop_governance`, `slop_check_constitution`, `slop_architecture_score`, `slop_business_logic_score`, `slop_db_health`, `slop_find_similar`, and three more — see `src/mcp/tools.ts`.
 
-## Headline 5-bucket score (compressed from 13 subscores)
+## Headline Repository Health composite
 
-The full diagnostic surface is 13 subscores. The user-facing surface is 5 buckets:
+`Repository Health: 84` with per-axis breakdown + `AI Debt: MEDIUM` band. Composed from up to 8 axes, weights renormalize when axes are missing:
 
-| Bucket | What it measures | One-line question | v4.1 calibration |
-|--------|------------------|-------------------|------------------|
-| **Architecture Consistency** | Cross-file pattern duplication + token usage + component reuse | "Are components and patterns consistent?" | 8 USEFUL rules, top signal: Pattern Fragmentation |
-| **AI Slop Signal** | Ghost defensive code, debug logs, unused state, missing auth, hardcoded secrets | "Does this look like AI wrote it?" | 18 USEFUL rules with measured P/R/FPR |
-| **Security** | Hardcoded secrets, dangerous CORS, unsafe HTML, SQL concat, missing auth | "Are there security holes?" | 4 USEFUL, 3 INVERTED |
-| **Delivery Quality** | Test quality, business-logic coherence, docs freshness | "Can the team ship safely?" | 4 PASS, 3 INVERTED |
-| **Codebase Health** | DB schema, design-token drift, product consistency | "Will this codebase hold up at scale?" | 5 INVERTED/DORMANT — calibration pending |
+| Axis | First shipped | What it measures |
+|------|---------------|------------------|
+| `slopIndex` (inverted) | 0.5.0 | Frontend lint composite |
+| `architectureConsistency` | 0.6.3 | Cross-file pattern duplication |
+| `aiSecurityRisk` (categorical) | 0.6.4 | AI-induced security failures |
+| `designTokenViolations` | 0.6.3 | Spacing/radius off declared scales |
+| `testQuality` | 0.7.0 | AI test smells |
+| `businessLogicCoherence` | 0.7.0 | Pricing precision, validation completeness |
+| `docFreshness` | 0.11.x | Stale READMEs vs code |
+| `dbHealth` | 0.11.x | Postgres schema quality |
+| `productConsistency` | 0.11.x | Terminology drift, UX pattern fragmentation |
+| `mdlLogRatio` (Phase 3 v0.10) | 0.10.0 | Principled MDL log-likelihood ratio |
 
-`Repository Health` (the composite) = `0.25 × Architecture + 0.30 × AI Slop + 0.25 × Security + 0.10 × Delivery + 0.10 × Codebase`.
+The 5-bucket compression (Architecture / AI Slop / Security / Delivery / Codebase) is the proposed v1.0 user-facing surface — not yet shipped, listed in `ROADMAP.md` "Backlog".
 
-The 13-subscore diagnostic surface remains available behind `slopbrick scan --format json` and `--format detailed` for the calibration / power-user audience.
+## Why this works (v0.10 credibility milestone)
 
-## Why this works (calibration evidence, v4.1)
+The rules are calibrated against the **v4 balanced 1:1 corpus**:
 
-The rules are calibrated against a balanced 1:1 corpus:
+- **101,156 human-written files** — 39 production repos (mui 16k, supabase 6.8k, antd 5.5k, storybook 3.5k, react-spectrum 3.3k, refine 6.3k, appsmith 5.5k, heroui 2.1k, …) + 54,980 from `ai-slop-baseline`.
+- **105,563 AI-generated files** — 50 existing repos + **100 NEW shallow-cloned vibe-coded repos** (Claude Code, Cursor, Lovable, Bolt, gpt-pilot, v0, BloopAI, tldraw) in `corpus-expansion/positive/vibe-coded/`.
 
-- **95,467 human-written frontend files** — 39 production repos (mui 16k, supabase 6.8k, antd 5.5k, storybook 3.5k, react-spectrum 3.3k, refine 6.3k, appsmith 5.5k, heroui 2.1k, …) + 54,980 from `ai-slop-baseline`.
-- **76,981 AI-generated frontend files** — 50 existing repos + **100 NEW shallow-cloned vibe-coded repos** (Claude Code, Cursor, Lovable, Bolt, gpt-pilot, v0, BloopAI, tldraw) in `corpus-expansion/positive/vibe-coded/`.
+**62 rules ship in v0.11.2 across 11 categories** (`src/rules/`). Verdict distribution from v4 calibration:
 
-The form engineers actually trust, per-rule (full table in [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md)):
+| Verdict | Count | What it means |
+|---------|------:|---------------|
+| **USEFUL** | **18 (40%)** | P ≥ 50% AND lift ≥ 2 — gate on these |
+| OK | 7 (16%) | P ≥ 30% AND lift ≥ 1.5 |
+| NOISY | 9 (20%) | `defaultOff: true` — fires too rarely on AI |
+| INVERTED | 11 (24%) | `defaultOff: true` — fires more on human than AI |
+| DORMANT | 0 (0%) | — |
 
-> `security/missing-auth-check` fires on **0.63% of AI files** and **0.04% of human files**. When it fires, **92% of the time the file is AI**.
+The form engineers trust (top USEFUL rules):
 
-Top 5 AI signals (v4.1 P/R/FPR):
+| Rule | P | Lift | What it catches |
+|------|--:|-----:|-----------------|
+| `logic/ghost-defensive` | 94.7% | 22.5× | Dead `if (x) return` guards |
+| `security/missing-auth-check` | 92.5% | 15.3× | Auth bypass on API routes |
+| `logic/math-console-log-storm` | 89.8% | 11.0× | Debug `console.log` left in |
+| `logic/zombie-state` | 83.3% | 6.2× | Unused `useState` declarations |
+| `test/duplicate-setup` | 71.0% | 3.1× | Verbatim `beforeEach` copy-paste |
 
-| Rule | Precision | Lift | Verdict |
-|------|----------:|-----:|---------|
-| `logic/ghost-defensive` (dead `if (x) return` guards) | 94.74% | 22.5× | USEFUL |
-| `security/missing-auth-check` (auth bypass) | 92.47% | 15.3× | USEFUL |
-| `logic/math-console-log-storm` (debug logs everywhere) | 89.84% | 11.0× | USEFUL |
-| `logic/zombie-state` (unused `useState`) | 83.33% | 6.2× | USEFUL |
-| `test/duplicate-setup` (`beforeEach` copy-paste) | 70.97% | 3.1× | USEFUL |
+Full per-rule table: [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md). v5 calibration pilot (SQL arm) ran 2026-06-26; results in [`docs/research/v5-sql-pilot-results.md`](./docs/research/v5-sql-pilot-results.md).
 
-The 18 USEFUL rules have **per-file P/R/FPR thresholds** in `tests/integration/calibration-expanded.test.ts` that fail CI when the signal drifts. See [`docs/research/calibration-report-2026.md`](./docs/research/calibration-report-2026.md) for the full calibration trajectory (v1 ratio → v3 ratio → v4 ratio → **v4.1 P/R/FPR**).
+## For humans — 15 subcommands
 
-## For humans
-
-- `slopbrick scan` in CI gates PRs on `slopIndex` and the Constitution.
-- `slopbrick pr` scores the PR itself, weighted by severity.
-- `slopbrick architecture` is the headline consistency number.
-- `slopbrick security` is the categorical security gate.
-- `slopbrick test` / `business-logic` / `patterns` / `db` are specialised subcommands.
-- `slopbrick drift` exits 1 on any Constitution violation.
-- `slopbrick --format json` exposes the 13-subscore diagnostic surface + per-rule P/R/FPR for the calibration audience.
+| Subcommand | What it does |
+|------------|--------------|
+| `slopbrick scan` | The headline. One Repository Health number + per-rule findings. Use in CI. |
+| `slopbrick scan --diff <ref>` | PR diff vs. git ref (VibeDrift-compatible). |
+| `slopbrick pr` | One weighted number per PR. Exits 1 over `--threshold` (default 20). |
+| `slopbrick architecture` | Architecture Consistency Score alone (0–100). |
+| `slopbrick security` | AI Security Risk (categorical: low/medium/high/critical). |
+| `slopbrick drift` | Constitution violations only; exits 1 on any. |
+| `slopbrick test` | Test Quality score + 4 `test/*` rules. |
+| `slopbrick business-logic` | Business Logic Coherence + 8 rules. |
+| `slopbrick patterns` | Pattern Fragmentation; the input to `slop_suggest.doNotCreate`. |
+| `slopbrick docs` | Documentation Freshness + 4 `docs/*` rules. |
+| `slopbrick db` | Database Health (Postgres via pgsql-parser) + 6 `db/*` rules. |
+| `slopbrick maintenance-cost` | AI Maintenance Cost (categorical + `$/month`). |
+| `slopbrick tokens <path>` | Ingest W3C DTCG tokens.json. |
+| `slopbrick migrate` | One-shot migration from `slop-audit@≤0.10.1` to `slopbrick@≥0.11.0`. |
+| `slopbrick mcp` | Start the MCP server (JSON-RPC 2.0 over stdio). |
 
 ## For AI agents
 
-Install the MCP server (`@slopbrick/mcp`), then call `slop_suggest` before writing new code. The agent never has to guess what's already in the codebase.
+Install the MCP server, then call `slop_suggest` before writing new code. The agent never has to guess what's already in the codebase. The fast-path `slop_suggest_with_memory` skips AST re-parsing by reading `.slopbrick/memory.md` (populated by `slopbrick scan`).
 
 ## What it does not do
 
@@ -79,57 +100,28 @@ It does **not** detect whether a human or AI wrote the code. It surfaces pattern
 
 ---
 
-## 13-score diagnostic surface (for the calibration audience)
+## What's shipped across the 12-phase plan
 
-The headline 5-bucket score is a compression of 13 subscores. The full surface is what `slopbrick scan --format json` returns, and what the [`tests/integration/calibration-expanded.test.ts`](./tests/integration/calibration-expanded.test.ts) test guards against drift.
+See [`ROADMAP.md`](./ROADMAP.md) for the full status table. Summary as of 2026-06-26:
 
-**Tier 1 — Deterministic (Constitution enforcement):**
+| Phase | Description | Shipped | Version |
+|-------|-------------|----------|---------|
+| 1 | AI Slop Audit | ✅ | 0.5.0 |
+| 2 | Repository Constitution | ✅ | 0.6.2 |
+| 3 | Architectural Drift Engine | ✅ | 0.6.3 |
+| 4 | AI Security Debt | ✅ | 0.6.4 |
+| 5 | Test Intelligence | ✅ | 0.7.0 |
+| 6 | Documentation Drift | ✅ | 0.11.x |
+| 7 | Business Logic Coherence | ✅ | 0.7.0 |
+| 7b | Pattern Fragmentation | ✅ | 0.7.0 |
+| Memo 4 | AI Maintenance Cost | ✅ | 0.11.x |
+| 8 | Database Intelligence | ✅ | 0.11.x |
+| 9 | Product Consistency | ✅ | 0.11.x |
+| **10** | **Cost Intelligence** | **⏸ deferred** | — |
+| 11 | PR Governance | ✅ | 0.7.0 |
+| 12 | AI Agent Governance | 🟡 partial | 0.11.x |
 
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **Slop Index** | 0–100 | Frontend lint quality (composite) |
-| **Architecture Consistency** | 0–100 | Cross-file pattern duplication |
-| **AI Security Risk** | `low` / `medium` / `high` / `critical` | AI-induced security failures |
-| **Constitution drift** | pass / fail | Imports that violate the declared stack |
-| **Design-token drift** | inline violations | Spacing/radius off declared scales |
-| **Pattern Fragmentation** | 0–100 | How many competing patterns per category (modal / auth / state / api / …) — *the input to `slop_suggest`'s `doNotCreate` list* |
-| **PR Slop Score** | integer | One number per PR, weighted by severity |
-
-**Tier 2 — Heuristic (specialised subcommands):**
-
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **Test Quality** | 0–100 | AI test smells |
-| **Business Logic Coherence** | 0–100 | Pricing precision, validation completeness |
-| **Documentation Freshness** | 0–100 | Stale READMEs, drift between docs and code |
-| **Database Health** | 0–100 | Missing indexes, N+1, soft-delete inconsistencies |
-
-**Tier 3 — Derived (dashboards):**
-
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **Repository Health** | 0–100 | Weighted average of the 5 buckets |
-| **AI Maintenance Cost** | $/month | $ cost of fixing the issues, given velocity |
-| **AI Debt band** | A / B / C / D / F | Letter grade from the above two |
-
----
-
-## What's new in 0.7.0
-
-> **Repository Constitution Engine for AI Coding Agents.** The moat is the Constitution. Everything else is a score that proves it's being followed.
-
-0.7.0 is the **Constitution-first release** — three new specialised subcommands (`test`, `business-logic`, `patterns`), a one-number-per-PR score (`pr`), the `forbidden` deny-list for explicit "never use this", and the rename from `conventions` to `constitution` everywhere.
-
-The 0.6.x series built the foundation. The 0.7.x series turns the Constitution from a config field into a working contract — AI agents that read it via MCP (`slop_suggest`) and humans that enforce it via PR gates.
-
-**What landed in 0.7.0:**
-
-- `slopbrick pr` — one weighted number per PR, gates on `--threshold`
-- `slopbrick test` — Test Quality score (0–100) + 4 `test/*` rules
-- `slopbrick business-logic` — Business Logic Coherence score (0–100) + 8 rules
-- `slopbrick patterns` — Pattern Fragmentation score (0–100), 8 categories
-- `constitution.forbidden` — explicit deny-list (e.g. `['moment', 'lodash']`)
-- `conventions` → `constitution` rename across config, types, MCP tool names, report columns
+v0.10 ships the credibility moat (peer-reviewed thresholds + MDL composite). v1.0 is the stability commitment, 6+ months after v0.10.
 
 ### 0.6.0 – 0.6.4 recap (the foundation)
 

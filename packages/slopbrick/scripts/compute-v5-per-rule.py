@@ -41,8 +41,14 @@ def per_file_counts(report_path):
             or f.get("docFile")
             or f.get("file")
             or f.get("filePath")
-            or "unknown"
         )
+        if not file_key:
+            # Findings without a real file path are typically schema-wide
+            # findings (e.g. project-level duplicate-index counts); skip
+            # from per-file calibration but warn so the user can decide
+            # whether to extend the schema.
+            print(f"WARN: {rid} finding with no file key, skipping", file=sys.stderr)
+            continue
         files_per_rule[rid].add(file_key)
     return data, files_per_rule
 

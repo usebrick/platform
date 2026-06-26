@@ -2,7 +2,12 @@
  * Generates src/rules/builtins.ts from rule modules found in src/rules category folders.
  *
  * Run with: pnpm generate:rules
+ *
+ * --check mode: compare the would-be output against the existing file and exit
+ * non-zero on diff. Wire this into CI to catch the "added a rule, forgot to
+ * regenerate" path with a loud, fast, locally-runnable failure.
  */
+import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +20,8 @@ interface RuleModule {
   category: string;
   file: string;
   name: string;
+  /** Extracted from the `id:` field on the rule, used for duplicate detection. */
+  id: string;
 }
 
 async function discoverRuleModules(): Promise<RuleModule[]> {
@@ -45,7 +52,39 @@ async function discoverRuleModules(): Promise<RuleModule[]> {
             `Rule files must export a const ending in "Rule" (e.g. export const myRule = ...).`,
         );
       }
-      modules.push({ category, file: file.replace(/\.ts$/, ''), name: match[1] });
+      const idMatch = content.match(/\bid:\s*['"]([^'"]+)['"]/);
+      if (!idMatch) {
+        throw new Error(
+          `Could not find an \`id: '...'\` field in ${path.join(category, file)}. ` +
+            `Rule files must declare their id (e.g. id: 'security/my-rule').`,
+        );
+      }
+      modules.push({
+        category,
+        file: file.replace(/\.ts$/, ''),
+        name: match[1],
+        id: idMatch[1],
+      });
+    }
+  }
+
+  // Duplicate-id detection: every rule id must be unique. Two rules with
+  // the same id would silently overwrite each other in `RuleRegistry.set`,
+  // masking the second rule entirely. Fail loudly at generation time
+  // instead of at runtime.
+  const byId = new Map<string, RuleModule[]>();
+  for (const m of modules) {
+    const existing = byId.get(m.id) ?? [];
+    existing.push(m);
+    byId.set(m.id, existing);
+  }
+  for (const [id, owners] of byId) {
+    if (owners.length > 1) {
+      const paths = owners.map((o) => path.join(o.category, o.file + '.ts')).join(', ');
+      throw new Error(
+        `Rule id "${id}" is defined in multiple files: ${paths}. ` +
+          `Rule ids must be unique.`,
+      );
     }
   }
 
@@ -70,8 +109,28 @@ ${arrayItems}
 }
 
 async function main() {
+  const checkMode = process.argv.includes('--check');
+
   const modules = await discoverRuleModules();
   const output = render(modules);
+
+  if (checkMode) {
+    if (!existsSync(OUTPUT_FILE)) {
+      console.error(`❌ ${OUTPUT_FILE} does not exist.`);
+      console.error(`   Run \`pnpm generate:rules\` to create it, then commit.`);
+      process.exit(1);
+    }
+    const existing = await readFile(OUTPUT_FILE, 'utf8');
+    if (existing !== output) {
+      console.error(`❌ ${path.relative(process.cwd(), OUTPUT_FILE)} is out of sync with src/rules/.`);
+      console.error(`   Run \`pnpm generate:rules\` and commit the result.`);
+      console.error(`   (${modules.length} rule(s) discovered; existing file has different content.)`);
+      process.exit(1);
+    }
+    console.log(`✓ ${path.relative(process.cwd(), OUTPUT_FILE)} is in sync (${modules.length} rule(s)).`);
+    return;
+  }
+
   await writeFile(OUTPUT_FILE, output, 'utf8');
   console.log(`Generated ${OUTPUT_FILE} with ${modules.length} rule(s).`);
 }

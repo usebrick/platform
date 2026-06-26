@@ -61,7 +61,8 @@ const CATEGORIES: PatternCategory[] = [
   },
   {
     label: 'card',
-    matches: (n) => /(?:Card|Tile|Panel|Box|Surface|Container)$/i.test(n),
+    // Container is excluded — it's a layout primitive, not a card.
+    matches: (n) => /(?:Card|Tile|Panel|Box|Surface)$/i.test(n),
     threshold: 4,
   },
 ];

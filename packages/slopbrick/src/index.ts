@@ -81,14 +81,3 @@ export {
 // need to know about @usebrick/core. Once @usebrick/core ships as a real
 // published package (the AGENTS.md moat: "defer until schema is earned
 // by ≥2 consumers like stackpick or gir"), we can re-export here.
-
-//   0 = pass (slopIndex below threshold)
-//   1 = threshold breach (blocks git hooks)
-//   2 = tool/usage error (config validation, parse errors that prevent scanning)
-//   3 = unexpected internal error
-process.on('uncaughtException', (err) => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { logger } = require('./engine/logger.js') as typeof import('./engine/logger.js');
-  logger.error(`Unexpected error: ${(err as Error).message}`);
-  process.exit(3);
-});

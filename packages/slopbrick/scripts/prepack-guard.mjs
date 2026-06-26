@@ -12,7 +12,18 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgPath = join(here, '..', 'package.json');
-const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+
+let pkg;
+try {
+  pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+} catch (err) {
+  console.error('\n❌ prepack guard: failed to parse package.json.');
+  console.error('   path:', pkgPath);
+  console.error('   error:', err.message);
+  console.error('\nFix: run `node -e "JSON.parse(require(\'fs\').readFileSync(\'package.json\', \'utf8\'))"`');
+  console.error('   to see the exact parse error, then fix the syntax.');
+  process.exit(2);
+}
 
 const fields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
 const offenders = [];
