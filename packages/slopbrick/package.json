@@ -91,10 +91,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/usebrick/slopbrick.git"
+    "url": "git+https://github.com/usebrick/platform.git"
   },
   "bugs": {
-    "url": "https://github.com/usebrick/slopbrick/issues"
+    "url": "https://github.com/usebrick/platform/issues"
   },
-  "homepage": "https://github.com/usebrick/slopbrick#readme"
+  "homepage": "https://github.com/usebrick/platform#readme"
 }
