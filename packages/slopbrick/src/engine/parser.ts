@@ -13,12 +13,110 @@ export interface ParseResult {
   source: string;
 }
 
-function syntaxFor(filePath: string): { syntax: 'typescript' | 'ecmascript'; jsx: boolean; tsx?: boolean } {
-  const ext = filePath.split('.').pop()?.toLowerCase();
-  if (ext === 'ts' || ext === 'tsx') {
-    return { syntax: 'typescript', jsx: false, tsx: ext === 'tsx' };
+/**
+ * v0.14.5c-fix2: handle every JS/TS dialect a real-world repo throws
+ * at us. Real corpora (especially v7 — React Native, older Facebook
+ * codebases, mixed TS/JS/Flow) include:
+ *   - Flow type annotations in .js / .jsx (e.g. `import type {X}`)
+ *   - TypeScript JSX in .tsx
+ *   - TypeScript declarations in .d.ts (skipped — not source)
+ *   - Mixed CommonJS (.cjs) / ESM (.mjs) / hybrid (.js)
+ *   - Extension-less files (AI snippets, scripts, configs)
+ *   - .cts / .mts (TypeScript ESM variants)
+ *   - Files with "// @flow" / "// @noflow" pragmas
+ *
+ * Strategy: try the most-likely dialect first (TS > Flow > ES), then
+ * fall back to alternatives on parse error. The walker / scan handles
+ * backend extensions (.swift/.kt/.dart/.rs/.cpp/.java/.rb/.php) BEFORE
+ * reaching this parser — so this function only sees JS-family files.
+ */
+type SwcConfig = { syntax: 'typescript' | 'ecmascript' | 'flow'; jsx: boolean; tsx?: boolean };
+
+/** Quick path: skip files that aren't source (declarations only, etc.) */
+function shouldSkipFile(filePath: string): boolean {
+  const base = filePath.split('/').pop() ?? filePath;
+  // .d.ts is TypeScript declaration-only (no runtime code); rules
+  // never fire on it, and parsing it as .ts is misleading. Skip at
+  // the parser layer so the worker returns 0 issues cleanly.
+  if (base.endsWith('.d.ts') || base.endsWith('.d.mts') || base.endsWith('.d.cts')) {
+    return true;
   }
-  return { syntax: 'ecmascript', jsx: ext === 'jsx' };
+  return false;
+}
+
+/** Detect the `// @flow` pragma in the first 5 lines. Flow files have
+ *  an opt-in pragma; without it, default is non-Flow. */
+function hasFlowPragma(source: string): boolean {
+  const head = source.split('\n', 5).join('\n');
+  return /@(?:no)?flow\b/.test(head);
+}
+
+/** Build the ordered list of parser configs to try for a given
+ *  extension. The first one that parses wins. */
+function syntaxCandidates(filePath: string, source: string): SwcConfig[] {
+  const base = filePath.split('/').pop() ?? filePath;
+  const lastDot = base.lastIndexOf('.');
+  const ext = lastDot >= 0 ? base.slice(lastDot + 1).toLowerCase() : '';
+  const isFlowPragma = hasFlowPragma(source);
+
+  switch (ext) {
+    case 'ts':
+    case 'mts':
+    case 'cts':
+      return [
+        { syntax: 'typescript', jsx: false, tsx: false },
+        { syntax: 'flow', jsx: false },
+      ];
+    case 'tsx':
+    case 'mtsx':  // rare but exists
+      return [
+        { syntax: 'typescript', jsx: false, tsx: true },
+        // Flow doesn't use .tsx (Flow projects use .js with JSX); skip
+      ];
+    case 'jsx':
+      return [
+        { syntax: isFlowPragma ? 'flow' : 'ecmascript', jsx: true },
+        // Fall back: if Flow pragma detection was wrong, try plain JSX
+        { syntax: 'ecmascript', jsx: true },
+      ];
+    case 'js':
+    case 'cjs':
+    case 'mjs':
+      // Real-world priority: Flow (React Native) > TS (mixed codebases) > JS.
+      // The @flow pragma is the canonical signal.
+      if (isFlowPragma) {
+        return [
+          { syntax: 'flow', jsx: true },   // Flow + JSX (most common)
+          { syntax: 'flow', jsx: false },  // Flow without JSX
+          { syntax: 'ecmascript', jsx: true },   // pragma was wrong, has JSX
+          { syntax: 'ecmascript', jsx: false },  // pragma was wrong, plain JS
+        ];
+      }
+      return [
+        // Next.js / Remix / SvelteKit often put JSX in .js — try JSX first.
+        { syntax: 'ecmascript', jsx: true },
+        { syntax: 'ecmascript', jsx: false },
+        // Last resort: maybe it's actually TypeScript inside .js (some
+        // monorepos with allowJs). SWC will accept TS syntax in JS mode
+        // for many cases.
+        { syntax: 'typescript', jsx: true },
+        { syntax: 'typescript', jsx: false, tsx: false },
+      ];
+    case 'mjs':
+      return [
+        { syntax: 'ecmascript', jsx: true },
+        { syntax: 'ecmascript', jsx: false },
+      ];
+    default:
+      // Extension-less or unknown. Try TSX → TS → JSX → JS.
+      return [
+        { syntax: 'typescript', jsx: false, tsx: true },
+        { syntax: 'typescript', jsx: false, tsx: false },
+        { syntax: 'ecmascript', jsx: true },
+        { syntax: 'ecmascript', jsx: false },
+        { syntax: 'flow', jsx: true },
+      ];
+  }
 }
 
 function emptyModule(): Module {
@@ -68,14 +166,30 @@ function isTypeScriptScript(openTag: string): boolean {
 }
 
 function parseWithSwc(content: string, filePath: string): ParseResult {
-  const { syntax, jsx, tsx } = syntaxFor(filePath);
-  const ast = parseSync(content, {
-    syntax,
-    jsx,
-    tsx,
-    target: 'es2022',
-  });
-  return { ast, source: content };
+  // v0.14.5c-fix2: try each candidate dialect in order. First success
+  // wins. This handles the 4 real-world failure modes:
+  //   1. Flow type annotations in .js (React Native, old FB code)
+  //   2. JSX in .js (Next.js app router, Remix)
+  //   3. TypeScript in .js (allowJs: true in tsconfig)
+  //   4. .d.ts (declaration-only, returns empty module)
+  if (shouldSkipFile(filePath)) {
+    return { ast: emptyModule(), source: content };
+  }
+  const candidates = syntaxCandidates(filePath, content);
+  let lastError: Error | undefined;
+  for (const cfg of candidates) {
+    try {
+      const ast = parseSync(content, { ...cfg, target: 'es2022' });
+      return { ast, source: content };
+    } catch (err) {
+      lastError = err as Error;
+      // try next candidate
+    }
+  }
+  // All candidates failed. For .d.ts this is fine (declaration files
+  // legitimately have stripped type-only content). For everything
+  // else, surface the last error so the worker can count it.
+  throw lastError ?? new Error('parse failed: no candidate matched');
 }
 
 function parseAstro(source: string): ParseResult {
@@ -198,6 +312,13 @@ function parseSource(source: string, filePath: string): ParseResult {
   const lastDot = base.lastIndexOf('.');
   const ext = lastDot >= 0 ? base.slice(lastDot + 1).toLowerCase() : '';
 
+  // v0.14.5c-fix2: .d.ts is a declaration file, not source. Return an
+  // empty module so the worker counts it as 0 issues (no rule fires
+  // on declaration files) and the scan continues.
+  if (shouldSkipFile(filePath)) {
+    return { ast: emptyModule(), source };
+  }
+
   switch (ext) {
     case 'astro':
       return parseAstro(source);
@@ -208,38 +329,11 @@ function parseSource(source: string, filePath: string): ParseResult {
     case 'svelte':
       return parseSvelte(source);
     default:
-      try {
-        return parseWithSwc(source, filePath);
-      } catch (error) {
-        // Many projects put JSX inside .js files (e.g. Next.js app router).
-        // Retry once with JSX enabled before giving up.
-        if (ext === 'js') {
-          const ast = parseSync(source, {
-            syntax: 'ecmascript',
-            jsx: true,
-            target: 'es2022',
-          });
-          return { ast, source };
-        }
-        // Extension-less file: try TSX → TS → JSX → JS in order. Most
-        // AI snippets are React/TSX so this is the best first guess.
-        if (ext === '') {
-          for (const cfg of [
-            { syntax: 'typescript' as const, jsx: true, tsx: true },
-            { syntax: 'typescript' as const, jsx: false, tsx: false },
-            { syntax: 'ecmascript' as const, jsx: true, tsx: false },
-            { syntax: 'ecmascript' as const, jsx: false, tsx: false },
-          ]) {
-            try {
-              const ast = parseSync(source, { ...cfg, target: 'es2022' });
-              return { ast, source };
-            } catch {
-              // try next
-            }
-          }
-        }
-        throw error;
-      }
+      // parseWithSwc now handles all the candidate-dialect fallback
+      // internally. If every candidate fails, it throws — the worker
+      // counts that as a parseError, which is the right behavior for
+      // genuinely broken files.
+      return parseWithSwc(source, filePath);
   }
 }
 
