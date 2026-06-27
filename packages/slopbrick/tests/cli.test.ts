@@ -53,7 +53,7 @@ const makeReport = (
     logic: 0,
     arch: 0,
     perf: 0,
-    security: 0,    test: 0,    docs: 0,    db: 0,
+    security: 0,    test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
   },
   p90Score: 15,
   peakScore: 20,
@@ -183,7 +183,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(true);
@@ -212,7 +212,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(false);
@@ -240,7 +240,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(false);
@@ -269,7 +269,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     // visual is configured and exceeded → true
@@ -299,7 +299,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     // Aggregate: 0/3, Categories: 2 (visual+layout) → total 2

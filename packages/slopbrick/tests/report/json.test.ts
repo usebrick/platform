@@ -19,7 +19,7 @@ function makeReport(): ProjectReport {
       logic: 21.4,
       arch: 4.2,
       perf: 0,
-      security: 0,      test: 0,    docs: 0,    db: 0,},
+      security: 0,      test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,},
     boundaryScore: 25.0,
     contextScore: 30.0,
     visualScore: 50.0,

@@ -31,6 +31,10 @@ const STRICTNESS_PRESETS: Record<
       test: 1.0,
       docs: 1.0,
       db: 1.0,
+      ai: 1.0,
+      context: 1.0,
+      product: 1.0,
+      i18n: 1.0,
     },
   },
   balanced: {
@@ -52,6 +56,10 @@ const STRICTNESS_PRESETS: Record<
       test: 0.8,
       docs: 0.8,
       db: 0.8,
+      ai: 0.8,
+      context: 0.8,
+      product: 0.8,
+      i18n: 0.8,
     },
   },
 };

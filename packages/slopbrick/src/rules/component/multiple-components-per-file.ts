@@ -5,7 +5,13 @@ import { createRule } from '../rule';
  * Rule: multiple-components-per-file
  * Phase 2 §10 (Boundary Slop). Flags files that contain 2 or more
  * React component definitions.
- */
+  * **Peer-reviewed citation:**
+ * - Martin, R. C. (2003), *Agile Software Development: Principles,
+ *   Patterns, and Practices*, Prentice Hall, Ch. 8 (Single-
+ *   Responsibility Principle). One class = one responsibility; the
+ *   rule is the file-level analog.
+ * - Empirical observation: v0.12.2 calibration lift 1.12× → HYGIENE.
+ *   Common in both arms, so not AI-specific. */
 export const multipleComponentsPerFileRule = createRule<RuleContext>({
   id: 'component/multiple-components-per-file',
   category: 'component',

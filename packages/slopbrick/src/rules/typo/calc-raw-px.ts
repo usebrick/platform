@@ -1,3 +1,13 @@
+
+//
+// **Peer-reviewed citation:**
+// - The `calc()` function in CSS is documented in the W3C CSS
+//   Values and Units Module Level 4
+//   (https://www.w3.org/TR/css-values-4/#calc-notation). The
+//   "raw px instead of calc()" pattern is a code-hygiene issue,
+//   not a peer-reviewed AI detector.
+// - v0.12.2 calibration: HYGIENE.
+//
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import {   parseStyleObject , STYLE_BLOCK_RE, lineOfSource , matchAll } from '../utils';

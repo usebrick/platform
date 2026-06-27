@@ -37,6 +37,14 @@ const remediation: Record<Category, string> = {
     'Update README + AGENTS.md to reflect current exports and package set; remove broken links and expired code examples.',
   db:
     'Add the missing indexes the engine flagged, run a name-consistency pass on identifiers, and use parameterized queries for raw SQL.',
+  ai:
+    'These rules detect AI-style patterns. For generated code: review the file for the specific pattern. For real code: ignore if the style is intentional.',
+  context:
+    'Verify that imports and module boundaries match the project structure declared in the Constitution.',
+  product:
+    'These rules detect terminology or framing that has drifted from the project glossary.',
+  i18n:
+    'These rules detect i18n/l10n regressions. Move user-facing strings to the message catalog.',
 };
 
 function hasSafeFix(issue: Issue): boolean {

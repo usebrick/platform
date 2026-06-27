@@ -39,7 +39,7 @@ function makeReport(overrides?: Partial<ProjectReport>): ProjectReport {
       logic: 0,
       arch: 0,
       perf: 0,
-      security: 0,      test: 0,    docs: 0,    db: 0,},
+      security: 0,      test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,},
     p90Score: 0,
     peakScore: 0,
     boundaryScore: 0,

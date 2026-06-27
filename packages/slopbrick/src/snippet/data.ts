@@ -252,6 +252,27 @@ const RULE_HINTS: Record<string, string> = {
     'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. AI agents pick slightly different words each invocation; product copy drifts.',
   'product/ux-pattern-fragmentation':
     'Keep the per-category count tight: modal ≤3, toast ≤2, button ≤4, input ≤3, card ≤3. Pick the canonical one and alias the rest. `slopbrick patterns` reports the per-category count.',
+  // v0.13.0 — AI-specific rules (peer-reviewed signals).
+  'ai/markdown-leakage':
+    'Delete stray `\\`\\`\\`<lang>\\`\\`\\`` markers; they are Markdown fences, not valid syntax in standalone source files (Yotkova et al. SemEval-2026).',
+  'ai/comment-ratio':
+    'AI tools either skip comments (reductive models) or over-comment (expansive models). Match the corpus mean ± 2σ (Rahman et al. 2024, Bisztray et al. 2025).',
+  'ai/whitespace-regularity':
+    'Vary inter-token spacing (single spaces mostly, occasional alignment in tables). Uniform runs are an AI tell (Shi et al. DetectCodeGPT 2024).',
+  'ai/text-like-ratio':
+    'Move natural-language explanations to README files or doc comments. Inline prose in source code is hard to maintain (Yotkova 2026).',
+  'ai/errors-near-eof':
+    'Check whether the file was truncated by a token limit. Unbalanced delimiters near EOF suggest the model ran out of output budget (Yotkova 2026).',
+  'ai/any-density':
+    'Replace `any` with `unknown`, `Record<string, unknown>`, or a domain type. The `: any` annotation propagates type-errors and defeats TS safety (Lee, Hassan, Hindle MSR 2026).',
+  'ai/renyi-profile':
+    'The token distribution is mass-concentrated on a few high-frequency tokens. Verify authorship if unexpected (Rényi 1961, Moslonka 2025).',
+  'ai/log-rank-histogram':
+    'The token vocabulary is concentrated in the top-1000 most common tokens. Real codebases use more diverse identifiers (Gehrmann 2019 GLTR).',
+  'ai/segment-surprisal-cv':
+    'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (Binoculars, Hans 2024).',
+  'ai/compression-profile':
+    'The file compresses unusually well and lines are highly repetitive — characteristic of AI-generated boilerplate (Cilibrasi 2005, Mahoney 1999).',
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

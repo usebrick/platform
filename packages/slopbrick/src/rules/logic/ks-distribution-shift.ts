@@ -19,7 +19,17 @@ import { getCorpusBaselines } from '../../engine/corpus-baselines';
  * small that KS fired on ~87% of human files (catastrophic FPR). With
  * `n=10000` corpus samples per feature, the rule should fire only on
  * genuinely anomalous files.
- */
+  * **Peer-reviewed citation:**
+ * - Kolmogorov, A. N. (1933), "Sulla determinazione empirica di una
+ *   legge di distribuzione," Giornale dell'Istituto Italiano degli
+ *   Attuari 4:83-91. Smirnov, N. V. (1939), "Sur les écarts de la
+ *   courbe de distribution empirique," Matematicheskii Sbornik
+ *   48:3-26. The two-sample KS test is the canonical non-parametric
+ *   test for distributional equality.
+ * - v0.12.2 calibration: HYGIENE. The KS test correctly identifies
+ *   distributional shift; whether that shift is AI- or
+ *   production-rot-induced is ambiguous (reclassified from
+ *   INVERTED in v0.12.1 to HYGIENE in v0.12.2). */
 const MIN_SAMPLES_PER_FEATURE = 20;
 
 interface FeatureStats {

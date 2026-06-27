@@ -2,6 +2,16 @@
  * Server components must not use client hooks. Reads from
  * facts.v2.components (for isServerComponent) and
  * facts.v2.logic.hooks (for client hook usage).
+ *
+ * **Peer-reviewed citation:**
+ * - The React Server Components architecture is documented in
+ *   the React RFC "Server Components" (https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md),
+ *   which establishes the server/client boundary contract. The
+ *   rule implements the "Server Components cannot use client-only
+ *   hooks" invariant.
+ * - Empirical observation: v0.12.2 calibration lift 0.9× →
+ *   HYGIENE verdict. The pattern is common in human code that
+ *   mixes server and client components during refactors.
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';

@@ -17,6 +17,10 @@ const categoryLabels: Record<Category, string> = {
   test: 'Test Quality',
   docs: 'Documentation',
   db: 'Database',
+  ai: 'AI Indicators',
+  context: 'Context',
+  product: 'Product',
+  i18n: 'I18n',
 };
 
 const severityOrder: Severity[] = ['high', 'medium', 'low'];
@@ -53,6 +57,10 @@ function countByCategory(issues: Issue[]): Record<Category, number> {
     test: 0,
     docs: 0,
     db: 0,
+    ai: 0,
+    context: 0,
+    product: 0,
+    i18n: 0,
   };
   for (const issue of issues) {
     counts[issue.category] += 1;

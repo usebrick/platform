@@ -619,5 +619,105 @@
     "verdict": "HYGIENE",
     "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE \u2014 pos=2110, neg=6820, P=23.6%, FPR=7.84%, lift=0.3.",
     "defaultOff": true
+  },
+  "ai/markdown-leakage": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+  },
+  "ai/comment-ratio": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Rahman 2024 / Bisztray 2025; calibration on v7 corpus pending."
+  },
+  "ai/whitespace-regularity": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Shi 2024 DetectCodeGPT; calibration on v7 corpus pending."
+  },
+  "ai/text-like-ratio": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+  },
+  "ai/errors-near-eof": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+  },
+  "ai/any-density": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Lee, Hassan, Hindle MSR 2026; calibration on v7 corpus pending."
+  },
+  "ai/renyi-profile": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per R\u00e9nyi 1961 / Moslonka 2025; calibration on v7 corpus pending."
+  },
+  "ai/log-rank-histogram": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Gehrmann 2019 GLTR; calibration on v7 corpus pending."
+  },
+  "ai/segment-surprisal-cv": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Hans 2024 Binoculars; calibration on v7 corpus pending."
+  },
+  "ai/compression-profile": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Cilibrasi 2005 / Mahoney 1999; calibration on v7 corpus pending."
   }
 }

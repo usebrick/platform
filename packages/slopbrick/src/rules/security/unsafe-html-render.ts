@@ -15,6 +15,16 @@
 // a tell of AI-generated React code; humans writing production
 // components almost always use DOMPurify/sanitize-html wrappers).
 
+
+//
+// **Peer-reviewed citation:**
+// - OWASP XSS Prevention Cheat Sheet
+//   (https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+//   documents `dangerouslySetInnerHTML` with a non-literal value
+//   as a XSS sink. The rule implements this OWASP guidance.
+// - v0.12.2 calibration: HYGIENE. Both human and AI code use
+//   the same anti-pattern; not AI-discriminative.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';

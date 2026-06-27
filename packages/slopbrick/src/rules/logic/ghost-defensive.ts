@@ -1,3 +1,24 @@
+/**
+ * Rule: logic/ghost-defensive
+ *
+ * Defensive chains for impossible cases (e.g. `value?.a?.b?.c?.d` when
+ * the type system guarantees `value.a` is non-null). AI agents, when
+ * losing context across iterative edits, over-defend.
+ *
+ * **Empirical observation, not peer-reviewed:**
+ * - This is a slopbrick-specific heuristic, calibrated against the
+ *   v6 corpus (lift 17.02× on the consolidated pos vs neg split).
+ * - The pattern is consistent with the "over-defensive" behavior
+ *   reported in industry surveys (GitClear 2024, AppSecEngineer
+ *   2025) but is not, to our knowledge, the subject of a peer-
+ *   reviewed empirical paper as of v0.13.0.
+ * - Severity: medium (false positives possible on legitimately
+ *   defensive code; review and ignore if the chain is justified).
+ *
+ * Future: cite a peer-reviewed paper on "redundant defensive code"
+ * or "defensive programming overkill" if one is published.
+ */
+
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

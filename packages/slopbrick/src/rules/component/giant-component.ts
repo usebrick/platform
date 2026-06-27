@@ -1,3 +1,14 @@
+
+//
+//
+// Rule: component-giant-component
+//
+// **Peer-reviewed citation:**
+// - Martin, R. C. (2003), *Agile Software Development*,
+//   Ch. 8 — Single-Responsibility Principle. A "giant component"
+//   is a SRP violation.
+// - v0.12.2 calibration: NOISY (lift 1.87×). Common in both
+//   arms; not strongly AI-discriminative.
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

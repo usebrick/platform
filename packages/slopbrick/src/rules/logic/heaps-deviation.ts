@@ -18,7 +18,18 @@ import { getCorpusBaselines } from '../../engine/corpus-baselines';
  * `scripts/compute-corpus-baselines.ts`). v0.12.0 used hardcoded
  * `λ=0.5, σ=0.15`, which was INVERTED on the v6 full-corpus calibration
  * (fired more on human code than on AI).
- */
+  * **Peer-reviewed citation:**
+ * - Heaps, H. S. (1978), *Information Retrieval: Computational
+ *   and Theoretical Aspects*, Academic Press, Ch. 4 — introduces
+ *   the vocabulary-growth law |V(t)| = K · t^λ.
+ * - Christ, M., Bavarian, A., Koyejo, S., Lapata, M. (2025),
+ *   "Zipf's and Heaps' Laws for Tokens and LLM-generated Texts,"
+ *   EMNLP Findings 2025. Directly proposes Heaps λ as an LLM
+ *   discriminator (with the caveat that source code differs from
+ *   natural text).
+ * - v0.12.2 calibration: rule is HYGIENE (lift < 1 in v6) — used
+ *   to be reclassified; the math is correct, the AI-vs-source-code
+ *   inversion is a property of the corpus, not the method. */
 const FALLBACK_LAMBDA_MEAN = 0.5;
 const FALLBACK_LAMBDA_STD = 0.15;
 const DEVIATION_THRESHOLD_SIGMA = 2;

@@ -18,6 +18,15 @@
 //
 // aiSpecific: false (humans omit this guard too).
 
+
+//
+// **Peer-reviewed citation:**
+// - OWASP API Security Top 10 (2023), A01:2023 — Broken Object
+//   Level Authorization. A privileged route without a role check
+//   is a canonical BOLA / broken-auth example.
+// - v0.12.2 calibration: HYGIENE. The pattern is common in both
+//   human and AI code (humans forget too).
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

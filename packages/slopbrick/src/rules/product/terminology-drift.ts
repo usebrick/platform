@@ -28,7 +28,14 @@ import { createRule } from '../rule';
  *
  * The 3+ threshold filters out 2-variant coin-flips (e.g. `Header` +
  * `MobileHeader` is intentional; `Post` + `PostList` is one concept).
- */
+  * **Peer-reviewed citation:**
+ * - This rule is a code-hygiene check, not a peer-reviewed AI
+ *   detector. The underlying principle (terminology consistency)
+ *   is documented in technical-writing literature (e.g., The
+ *   Chicago Manual of Style §8.1) and in product-spec best
+ *   practices.
+ * - v0.12.2 calibration: HYGIENE. The pattern appears in both
+ *   AI and human code; not AI-discriminative. */
 
 const MIN_DISTINCT_VARIANTS = 3;
 /** Total cap on issues emitted per scan run. Per-file data only — see

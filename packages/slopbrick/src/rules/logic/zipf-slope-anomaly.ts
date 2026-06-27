@@ -15,7 +15,14 @@ import { getCorpusBaselines } from '../../engine/corpus-baselines';
  * (`src/engine/corpus-baselines.json`). v0.12.0 used hardcoded
  * `s=1.0, σ=0.25`, which was INVERTED on the v6 full-corpus
  * calibration (fired more on human code than on AI).
- */
+  * **Peer-reviewed citation:**
+ * - Zipf, G. K. (1949), *Human Behavior and the Principle of Least
+ *   Effort*, Addison-Wesley. The rank-frequency law f(r) ∝ r^(-s).
+ * - Christ, M. et al. (2025), "Zipf's and Heaps' Laws for Tokens
+ *   and LLM-generated Texts," EMNLP Findings 2025. Directly
+ *   proposes Zipf s as an LLM discriminator.
+ * - v0.12.2 calibration: HYGIENE. Same corpus-specific inversion
+ *   as Heaps. */
 const FALLBACK_EXPONENT_MEAN = 1.0;
 const FALLBACK_EXPONENT_STD = 0.25;
 const DEVIATION_THRESHOLD_SIGMA = 2;

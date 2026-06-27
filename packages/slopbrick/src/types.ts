@@ -248,7 +248,11 @@ export type Category =
   | 'security'
   | 'test'
   | 'docs'
-  | 'db';
+  | 'db'
+  | 'ai'
+  | 'context'
+  | 'product'
+  | 'i18n';
 
 /**
  * `react` covers `.tsx`, `.jsx`, `.ts`, `.js`. Other values are detected
@@ -772,6 +776,37 @@ export interface ProjectReport {
     survivingFiresCount: number;
     totalFiresCount: number;
     fdrAlpha: number;
+    /**
+     * v0.13.0 — Probabilistic AI detection across 3 evidence buckets.
+     * Each file gets a P(AI | date, coding fires, general-practice fires)
+     * via naive Bayes. Range [0, 1]. Buckets:
+     *   - 'likely_ai'     : P >= 0.7
+     *   - 'uncertain'     : 0.4 <= P < 0.7
+     *   - 'likely_human'  : P < 0.4
+     */
+    probabilisticAi?: {
+      /** Per-file P(AI) averaged across the project, weighted by file size. */
+      projectP_ai: number;
+      /** Fraction of files in each bucket. */
+      bucketDistribution: {
+        likely_ai: number;
+        uncertain: number;
+        likely_human: number;
+      };
+      /** Date-based prior: P(AI | lastCommitDate), midpoint 2024-01-01. */
+      datePrior: number;
+      /** Evidence from AI-detector rules (markdown leakage, any density, etc.). */
+      codingLogLr: number;
+      /** Evidence from general-practice rules (low spacing entropy, etc.). */
+      practiceLogLr: number;
+    };
+    /** v0.13.0 — Per-file P(AI) distribution (top 10 by file size). */
+    topP_aiFiles?: Array<{
+      filePath: string;
+      p_ai: number;
+      bucket: 'likely_ai' | 'uncertain' | 'likely_human';
+      lastCommitDate: string;
+    }>;
   };
 }
 

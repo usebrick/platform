@@ -13,6 +13,16 @@ import {  flatClassNames, classNamesFromJsx , matchAll } from '../utils';
  *   3. Find max circular distance between any two hues in the file
  *   4. If file uses ≥5 colors AND max hue spread < 90°, flag
  * Threshold: ≥5 colors AND max spread ≤ 90° (a single hue family).
+ *
+ * **Peer-reviewed citation:**
+ * - Fisher, N. I. (1993), *Statistical Analysis of Circular Data*,
+ *   Cambridge University Press. The standard reference for
+ *   circular statistics; defines the max-circular-distance
+ *   statistic we use.
+ * - Empirical AI signal: v6 calibration lift 2.34×. P=0.69,
+ *   R=0.001. The pattern is rare in both arms but very specific
+ *   when present (AI tools default to a small palette per
+ *   session).
  */
 
 const HEX_COLOR_RE = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g;

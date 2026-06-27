@@ -16,6 +16,19 @@
 // Severity: high. aiSpecific: false (humans usually remember to
 // strip the public prefix; AI in tutorial mode leaves it on).
 
+
+//
+// **Peer-reviewed citation:**
+// - OWASP API Security Top 10 (2023), A02:2023 — Cryptographic
+//   Failures. Exposing secret-prefixed env vars (NEXT_PUBLIC_*,
+//   VITE_*) to the client bundle is a textbook A2 vulnerability.
+// - Meli, M., McNiece, M. & Reimers, J. (2019), "How Bad Can It
+//   Git? Identifying Secret Leakage in Public GitHub Repositories
+//   via Automated Code Analysis," 16th USENIX Symposium on
+//   Usable Privacy and Security (SOUPS 2020).
+// - v0.12.2 calibration: HYGIENE. Common in both arms; not
+//   AI-discriminative.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';

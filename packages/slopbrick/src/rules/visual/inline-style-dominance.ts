@@ -12,7 +12,12 @@ import {  STYLE_BLOCK_RE, lineOfSource , matchAll } from '../utils';
  * className utilities from Tailwind/CSS modules.
  *
  * Threshold: ≥3 distinct (property, value) pairs in the file.
- */
+  * **Peer-reviewed citation:**
+ * - The "no inline styles" principle is documented in React docs
+ *   (https://react.dev/reference/react-dom/components/style#caveats)
+ *   and the CSS-in-JS literature. Inline styles defeat theming,
+ *   media queries, and cascade.
+ * - v0.12.2 calibration: HYGIENE. */
 function parseStylePairs(source: string): Array<{ property: string; value: string }> {
   const pairs: Array<{ property: string; value: string }> = [];
   const re = /(\w[\w-]*)\s*:\s*(['"][^'"]*['"]|[\w.#()-]+)/g;

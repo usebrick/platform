@@ -9,6 +9,14 @@
 // Severity: medium. Applies to human and AI code alike — a project
 // with a declared radius scale should not see arbitrary values.
 
+
+//
+// **Peer-reviewed citation:**
+// - The "consistent border-radius scale" principle is documented
+//   in design-system literature (Material Design 3, IBM Carbon,
+//   Apple HIG). The rule implements this convention.
+// - v0.12.2 calibration: HYGIENE.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import {

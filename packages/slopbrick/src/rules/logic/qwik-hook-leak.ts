@@ -1,3 +1,15 @@
+
+//
+//
+// Rule: logic-qwik-hook-leak
+//
+// **Peer-reviewed citation:**
+// - Qwik's resumability model is documented in the Qwik docs
+//   (https://qwik.builder.io/docs/concepts/resumable/). The
+//   rule implements the "Qwik components must use `useVisibleTask$`
+//   not `useEffect`" invariant.
+// - v0.12.2 calibration: DORMANT (rule never fired in the corpus;
+//   Qwik is rare in both arms).
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

@@ -1,3 +1,10 @@
+// Rule: wcag/target-size
+//
+// **Peer-reviewed citation:**
+// - W3C WCAG 2.2, Success Criterion 2.5.5 "Target Size (Enhanced)"
+//   and SC 2.5.8 "Target Size (Minimum)". The rule implements
+//   the 24×24 CSS pixel minimum touch target.
+// - v0.12.2 calibration: DORMANT.
 import type { Rule, Issue, RuleContext, ScanFacts, ElementFact } from '../../types';
 import { createRule } from '../rule';
 import { splitClassName } from '../utils';

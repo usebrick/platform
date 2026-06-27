@@ -92,6 +92,10 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     test: 1.0,
     docs: 1.0,
     db: 1.0,
+    ai: 1.0,
+    context: 1.0,
+    product: 1.0,
+    i18n: 1.0,
   },
   rules: {
     'arch/astro-island-leak': 'low',
