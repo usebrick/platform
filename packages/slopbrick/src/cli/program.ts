@@ -1204,6 +1204,149 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       });
 
     program
+    program
+      .command('watch')
+      .description('re-run scan on every file change. Flags new violations as you write. The LockBrick prevention loop entry.')
+      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
+        const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
+        const options: CliGlobalOptions = {
+          ...rawGlobals,
+          noIncrease: rawGlobals.increase === false,
+        };
+        const cwd = resolve(options.workspace ?? process.cwd());
+        const { watchProject } = await import('./scan.js') as typeof import('./scan.js');
+        // Run an initial scan to populate the report + write the .slopbrick/
+        // artifacts, then `watchProject` keeps the report in sync as files
+        // change. The first scan is mandatory — without it the watcher
+        // would diff against an empty baseline and report every file as new.
+        await scanAction([], options, command);
+        await watchProject(options, cwd, []);
+      });
+
+    program
+      .command('lock')
+      .description('install a Git pre-commit hook that runs `slopbrick scan --staged` on every commit. The LockBrick prevention loop: block AI-introduced slop from ever reaching the repo.')
+      .option('--uninstall', 'remove the pre-commit hook instead of installing it')
+      .option('--husky', 'force-install under .husky/pre-commit (Husky v9). Default auto-detects via .husky/ dir.')
+      .option('--workspace <path>', 'workspace directory', process.cwd())
+      .action(
+        (cmdOptions: { uninstall?: boolean; husky?: boolean; workspace?: string }) => {
+          const cwd = resolve(cmdOptions.workspace ?? process.cwd());
+          const { installHook, uninstallHook } =
+            require('./installer.js') as typeof import('./installer.js');
+          if (cmdOptions.uninstall) {
+            const result = uninstallHook(cwd);
+            logger.info(result.message);
+            if (!result.ok) process.exit(1);
+            return;
+          }
+          const result = installHook(cwd);
+          if (result.ok) {
+            logger.info(result.message);
+            logger.info('Every commit will now run `slopbrick scan --staged` before the commit is created.');
+            logger.info('Bypass with `git commit --no-verify` (not recommended).');
+          } else {
+            logger.warn(result.message);
+            process.exit(1);
+          }
+        },
+      );
+
+    program
+      .command('ci')
+      .description('CI gate: run a scan and exit 1 on constitution violations, threshold breach, or new issues since the last run. Use this in GitHub Actions / GitLab CI.')
+      .option('--max-slop <n>', 'exit 1 if slopIndex exceeds this number', parseCount)
+      .option('--max-new-issues <n>', 'exit 1 if new issues (vs .slop-audit-cache.json) exceed this number', parseCount)
+      .option('--strict-constitution', 'exit 1 on any constitution violation')
+      .option('--format <pretty|json>', 'output format', 'json')
+      .action(
+        async (
+          cmdOptions: {
+            maxSlop?: number;
+            maxNewIssues?: number;
+            strictConstitution?: boolean;
+            format?: string;
+          },
+          command: Command,
+        ) => {
+          const globals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
+          const options: CliGlobalOptions = {
+            ...globals,
+            noIncrease: true,                  // force fail on increase
+            changed: true,                     // scan only changed files
+            format: (cmdOptions.format ?? 'json') as 'pretty' | 'json' | 'sarif' | 'html',
+          };
+          const cwd = resolve(options.workspace ?? process.cwd());
+          await scanAction([], options, command);
+          // After the scan, read .slopbrick/health.json to gate.
+          const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
+          const health = loadHealth(cwd);
+          if (!health) {
+            logger.warn('No .slopbrick/health.json — `slopbrick ci` requires a prior `slopbrick scan`.');
+            process.exit(1);
+          }
+          let exitCode = 0;
+          if (cmdOptions.maxSlop !== undefined && health.slopIndex > cmdOptions.maxSlop) {
+            logger.warn(`slopIndex ${health.slopIndex} > max ${cmdOptions.maxSlop}`);
+            exitCode = 1;
+          }
+          if (cmdOptions.strictConstitution && (health.constitutionDrift ?? 0) > 0) {
+            logger.warn(`${health.constitutionDrift} constitution violation(s) detected`);
+            exitCode = 1;
+          }
+          if (exitCode === 0) {
+            logger.info(`CI gate passed: slopIndex=${health.slopIndex}, constitutionDrift=${health.constitutionDrift ?? 0}`);
+          }
+          process.exit(exitCode);
+        },
+      );
+
+    program
+      .command('memory')
+      .description('show or regenerate .slopbrick/memory.md (the agent-readable repository summary) without re-scanning')
+      .option('--show', 'print the current .slopbrick/memory.md to stdout (default if no flag is passed)')
+      .option('--regenerate', 're-render memory.md from the existing inventory.json + constitution.json (no scan)')
+      .option('--workspace <path>', 'workspace directory', process.cwd())
+      .action(
+        async (cmdOptions: { show?: boolean; regenerate?: boolean; workspace?: string }) => {
+          const cwd = resolve(cmdOptions.workspace ?? process.cwd());
+          // Dynamic import — survives esbuild's CJS bundling. The migrate
+          // command uses `require('./migrate.js')` because that's a relative
+          // path esbuild bundles. We need the same here.
+          const { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } =
+            await import('../engine/memory-md.js') as typeof import('../engine/memory-md.js');
+          const { loadInventory, loadConstitution, inventoryPath: invPath, constitutionPath: conPath } =
+            await import('@usebrick/core') as typeof import('@usebrick/core');
+
+          if (cmdOptions.regenerate) {
+            // Re-render from existing artifacts — no AST re-parse.
+            const inv = loadInventory(cwd);
+            const con = loadConstitution(cwd);
+            if (!inv) {
+              logger.warn(`No .slopbrick/inventory.json at ${invPath(cwd)}. Run \`slopbrick scan\` first.`);
+              process.exit(1);
+            }
+            if (!con) {
+              logger.warn(`No .slopbrick/constitution.json at ${conPath(cwd)}. Run \`slopbrick scan\` first.`);
+              process.exit(1);
+            }
+            const md = renderMemoryMarkdown(inv, con);
+            await writeMemoryMarkdown(cwd, md);
+            logger.info(`Regenerated .slopbrick/memory.md (${md.length} bytes from inventory + constitution).`);
+            return;
+          }
+
+          // Default: --show
+          const md = await readMemoryMarkdown(cwd);
+          if (md === null) {
+            logger.warn(`No .slopbrick/memory.md at ${cwd}/.slopbrick/memory.md. Run \`slopbrick scan\` to generate it, or pass --regenerate after a prior scan.`);
+            process.exit(1);
+          }
+          process.stdout.write(md + '\n');
+        },
+      );
+
+    program
       .command('migrate')
       .description(
         'Migrate from slop-audit v0.10.x (.slop-audit/) to slopbrick v0.11.0+ (.slopbrick/). Renames artifact dir + cache + config file + bumps schema to v2 + updates .gitignore. Idempotent. Pass --dry-run to preview.',

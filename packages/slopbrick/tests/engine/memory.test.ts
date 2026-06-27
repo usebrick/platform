@@ -7,17 +7,23 @@ import {
   appendRun,
   buildInventoryFromScan,
   buildConstitutionFromConfig,
+  buildHealthFromReport,
   saveInventory,
 } from '../../src/engine/memory';
 import {
   loadInventory,
   loadConstitution,
   saveConstitution,
+  loadHealth,
+  saveHealth,
+  isHealthFile,
   isInventoryFresh,
   invalidateFile,
   MEMORY_SCHEMA_VERSION,
+  healthPath,
   type InventoryFile,
   type ConstitutionFile,
+  type HealthFile,
   type MemoryPattern,
   type ComponentFingerprint,
 } from '@usebrick/core';
@@ -517,6 +523,97 @@ describe('buildConstitutionFromConfig', () => {
     });
     const out = buildConstitutionFromConfig(config, '/w');
     expect(out.declared.forms).toBeUndefined();
+  });
+});
+
+describe('buildHealthFromReport', () => {
+  it('derives slopIndex, categoryScores, issueCounts, and topOffenseIds from a report', () => {
+    const report = makeReport(42, {
+      issues: [
+        { ruleId: 'ai/comment-ratio', severity: 'high' } as any,
+        { ruleId: 'ai/comment-ratio', severity: 'high' } as any,
+        { ruleId: 'ai/comment-ratio', severity: 'medium' } as any,
+        { ruleId: 'logic/long-method', severity: 'medium' } as any,
+        { ruleId: 'logic/long-method', severity: 'low' } as any,
+        { ruleId: 'visual/duplicate-class', severity: 'low' } as any,
+      ],
+    });
+    const out = buildHealthFromReport(report, '/work', { scanDurationMs: 1234 });
+    expect(out.version).toBe('2');
+    expect(out.workspace).toBe('/work');
+    expect(out.slopIndex).toBe(42);
+    expect(out.issueCounts).toEqual({ high: 2, medium: 2, low: 2 });
+    // topOffenseIds is sorted by count desc, then name asc, capped at 3
+    expect(out.topOffenseIds).toEqual([
+      'ai/comment-ratio',
+      'logic/long-method',
+      'visual/duplicate-class',
+    ]);
+    expect(out.scanDurationMs).toBe(1234);
+  });
+
+  it('rounds slopIndex and category scores to integers', () => {
+    const report = makeReport(42.7, {
+      categoryScores: {
+        visual: 12.4, typo: 0, wcag: 0, layout: 0, component: 0,
+        logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0,
+        db: 0, ai: 0, context: 0, product: 0, i18n: 0,
+      },
+      issues: [],
+    });
+    const out = buildHealthFromReport(report, '/w');
+    expect(out.slopIndex).toBe(43);
+    expect(out.categoryScores.visual).toBe(12);
+  });
+
+  it('omits optional fields when not provided', () => {
+    const report = makeReport(0, { issues: [] });
+    const out = buildHealthFromReport(report, '/w');
+    expect(out.constitutionDrift).toBeUndefined();
+    expect(out.scanDurationMs).toBeUndefined();
+    expect(out.topOffenseIds).toEqual([]);
+  });
+});
+
+describe('saveHealth / loadHealth', () => {
+  it('round-trips a HealthFile through disk', () => {
+    const dir = createTmpDir();
+    try {
+      const report = makeReport(15, {
+        issues: [
+          { ruleId: 'ai/keyword-stuffing', severity: 'high' } as any,
+        ],
+      });
+      const health = buildHealthFromReport(report, dir, { scanDurationMs: 500 });
+      saveHealth(dir, health);
+      expect(existsSync(healthPath(dir))).toBe(true);
+      const loaded = loadHealth(dir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.slopIndex).toBe(15);
+      expect(loaded!.topOffenseIds).toEqual(['ai/keyword-stuffing']);
+      expect(loaded!.scanDurationMs).toBe(500);
+      // Round-trip must be valid per the schema validator
+      expect(isHealthFile(loaded)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns null for missing file or corrupted JSON', () => {
+    const dir = createTmpDir();
+    try {
+      // Missing file → null
+      expect(loadHealth(dir)).toBeNull();
+      // Create the parent dir, then write garbage
+      mkdirSync(join(dir, '.slopbrick'), { recursive: true });
+      writeFileSync(healthPath(dir), 'not json');
+      expect(loadHealth(dir)).toBeNull();
+      writeFileSync(healthPath(dir), JSON.stringify({ version: '99' }));
+      // wrong version → null
+      expect(loadHealth(dir)).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

@@ -273,6 +273,20 @@ const RULE_HINTS: Record<string, string> = {
     'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (Binoculars, Hans 2024).',
   'ai/compression-profile':
     'The file compresses unusually well and lines are highly repetitive — characteristic of AI-generated boilerplate (Cilibrasi 2005, Mahoney 1999).',
+  // v0.14.5b — 6 new AI tendency detection rules (DORMANT in v0.14.5b;
+  // reclassified post-v7 calibration in v0.14.5d)
+  'ai/tailwind-color-overuse':
+    "If most utility classes are bg-violet-500, text-violet-600, ring-violet-400 — the project is on the AI-default palette. Audit and replace with the project's design tokens.",
+  'ai/default-react-stack':
+    "Every new file is a Vite + React + Tailwind + Zustand + React Hook Form clone. Verify the project actually needs each piece before adding it.",
+  'ai/library-reinvention':
+    "Re-implementing zustand, react-hook-form, or date-fns inline (custom event emitters, useState reducers, manual date math) is a sign of LLM completion-mode code. Use the libraries the project already depends on.",
+  'ai/state-default-overuse':
+    "Wrapping every component in useState + useEffect for transient UI state is the React tutorial default. Real production code uses refs, uncontrolled inputs, or the project's state lib.",
+  'ai/fetch-default-overuse':
+    "Calling fetch() inline in components instead of going through the project's data-fetching layer (react-query, swr, or your own client) bypasses the cache, error boundary, and abort handling.",
+  'ai/console-debug-storm':
+    "5+ console.log calls in a single file is debug-by-print-statement, the LLM training-data default. Remove before commit; use the project's logger or a real debugger.",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

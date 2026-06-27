@@ -309,3 +309,65 @@ function buildComponentFingerprints(
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
+
+// ---------------------------------------------------------------------------
+// Health snapshot — derived from ProjectReport, persisted to .slopbrick/health.json
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure function: build the headline `HealthFile` snapshot from a
+ * completed `ProjectReport`. The schema (`health.schema.json`) is the
+ * contract dashboards and CI integrations consume; the writer is
+ * `saveHealth()` in `@usebrick/core`. This function does the
+ * transformation only — it does NOT touch the filesystem.
+ *
+ * Why derived (not stored) in the engine: the `ProjectReport` is the
+ * single source of truth. The health file is a normalized view; if the
+ * two ever diverge, the report wins.
+ */
+export function buildHealthFromReport(
+  report: ProjectReport,
+  workspace: string,
+  options: { constitutionDrift?: number; scanDurationMs?: number } = {},
+): {
+  version: '2';
+  generatedAt: string;
+  workspace: string;
+  slopIndex: number;
+  categoryScores: Record<string, number>;
+  issueCounts: { high: number; medium: number; low: number };
+  constitutionDrift?: number;
+  topOffenseIds: string[];
+  scanDurationMs?: number;
+} {
+  // Aggregate issue counts by severity.
+  const issueCounts = { high: 0, medium: 0, low: 0 };
+  const offenseCounts = new Map<string, number>();
+  for (const issue of report.issues) {
+    const sev = (issue.severity ?? 'medium') as 'high' | 'medium' | 'low';
+    if (sev in issueCounts) issueCounts[sev] += 1;
+    offenseCounts.set(issue.ruleId, (offenseCounts.get(issue.ruleId) ?? 0) + 1);
+  }
+  const topOffenseIds = [...offenseCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([id]) => id);
+
+  return {
+    version: '2',
+    generatedAt: report.generatedAt,
+    workspace,
+    slopIndex: Math.round(report.slopIndex),
+    categoryScores: Object.fromEntries(
+      Object.entries(report.categoryScores).map(([k, v]) => [k, Math.round(v)]),
+    ),
+    issueCounts,
+    ...(options.constitutionDrift !== undefined && {
+      constitutionDrift: options.constitutionDrift,
+    }),
+    topOffenseIds,
+    ...(options.scanDurationMs !== undefined && {
+      scanDurationMs: options.scanDurationMs,
+    }),
+  };
+}

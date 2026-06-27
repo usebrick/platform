@@ -127,6 +127,41 @@ export interface FileMtimeEntry {
   hash: string;
 }
 
+/**
+ * .slopbrick/health.json schema (machine-readable).
+ *
+ * Headline repository health snapshot from a single slopbrick scan.
+ * This is the artifact dashboards, CI status checks, and the website
+ * project page consume. Compared to `InventoryFile` (which describes
+ * WHAT exists) and `ConstitutionFile` (which describes WHAT SHOULD
+ * EXIST), `HealthFile` describes HOW GOOD the current state is.
+ *
+ * All fields are derived from a `ProjectReport`; the writer is
+ * `saveHealth()` in `memory.ts`. Schema version bumps are
+ * coordinated with `health.schema.json`.
+ */
+export interface HealthFile {
+  /** Schema version. Bump when adding/removing fields. */
+  version: typeof MEMORY_SCHEMA_VERSION;
+  /** ISO timestamp of when this health snapshot was generated. */
+  generatedAt: string;
+  /** Absolute path of the scanned workspace (informational only). */
+  workspace: string;
+  /** Slop Index (0-100, lower is better). The headline score. */
+  slopIndex: number;
+  /** Per-category scores. Each is 0-100; exact interpretation
+   *  depends on the category. */
+  categoryScores: Record<string, number>;
+  /** Number of issues per severity level. */
+  issueCounts: { high: number; medium: number; low: number };
+  /** Number of constitution violations detected in this scan. */
+  constitutionDrift?: number;
+  /** Top 3 most-firing rule IDs, sorted by issue count desc. */
+  topOffenseIds?: string[];
+  /** How long the scan took in milliseconds. */
+  scanDurationMs?: number;
+}
+
 // ---------------------------------------------------------------------------
 // Validators — every loader runs the parsed JSON through these to refuse
 // silently corrupted or version-mismatched files. Mismatch returns `null`
@@ -203,4 +238,26 @@ export function isFileMtimeEntry(value: unknown): value is FileMtimeEntry {
     typeof v.mtimeMs === 'number' &&
     typeof v.hash === 'string'
   );
+}
+
+export function isHealthFile(value: unknown): value is HealthFile {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Partial<HealthFile>;
+  if (v.version !== MEMORY_SCHEMA_VERSION) return false;
+  if (typeof v.generatedAt !== 'string') return false;
+  if (typeof v.workspace !== 'string') return false;
+  if (typeof v.slopIndex !== 'number') return false;
+  if (typeof v.categoryScores !== 'object' || v.categoryScores === null) return false;
+  if (typeof v.issueCounts !== 'object' || v.issueCounts === null) return false;
+  const counts = v.issueCounts as { high?: unknown; medium?: unknown; low?: unknown };
+  if (typeof counts.high !== 'number') return false;
+  if (typeof counts.medium !== 'number') return false;
+  if (typeof counts.low !== 'number') return false;
+  if (v.constitutionDrift !== undefined && typeof v.constitutionDrift !== 'number') return false;
+  if (v.topOffenseIds !== undefined) {
+    if (!Array.isArray(v.topOffenseIds)) return false;
+    if (!v.topOffenseIds.every((id) => typeof id === 'string')) return false;
+  }
+  if (v.scanDurationMs !== undefined && typeof v.scanDurationMs !== 'number') return false;
+  return true;
 }

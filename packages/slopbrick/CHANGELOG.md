@@ -5,6 +5,129 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.5d] - 2026-06-27 — Repository Memory pipeline + LockBrick prevention commands
+
+This release ships the **Repository Memory** surface end-to-end and
+adds the **LockBrick prevention loop** as three new CLI commands. The
+scanner now writes four atomic artifacts to `.slopbrick/` on every run,
+and the CLI exposes `watch`, `ci`, and `lock` to enforce the same
+constraints before code lands.
+
+### Added
+
+- **`.slopbrick/health.json`** — new headline artifact. The contract
+  is `health.schema.json` in `@usebrick/core`; the writer
+  `saveHealth()` joins the existing `saveInventory` /
+  `saveConstitution` family. Fields: `slopIndex` (0-100, lower is
+  better), `categoryScores`, `issueCounts` (high/medium/low),
+  `constitutionDrift`, `topOffenseIds` (top 3), `scanDurationMs`.
+  Consumed by CI gates, dashboards, and the website's project page.
+  See `docs/repository-memory.md` for the full contract.
+
+- **`.slopbrick/memory.md`** — every `slopbrick scan` now also writes
+  the agent-readable markdown summary. Previously this existed as a
+  renderer (`renderMemoryMarkdown`) but was never wired into the
+  scan path. MCP `slop_suggest_with_memory` and external agent
+  integrations read this file instead of re-parsing AST (100-1000×
+  latency win on the agent integration).
+
+- **`buildHealthFromReport()`** — pure function
+  `ProjectReport → HealthFile` in `src/engine/memory.ts`. Derives
+  `issueCounts` from per-severity aggregation, picks the top 3
+  `topOffenseIds` by count (ties broken by name asc), rounds
+  `slopIndex` + `categoryScores` to integers. Tested in
+  `tests/engine/memory.test.ts` (3 new cases) and the end-to-end
+  artifact pipeline test in `tests/engine/memory-artifacts.test.ts`.
+
+- **`HealthFile` type + `isHealthFile` validator** in
+  `@usebrick/core/memory-types.ts`. Re-exported from the core barrel
+  alongside `saveHealth` / `loadHealth` / `healthPath` /
+  `HEALTH_FILENAME`.
+
+- **`slopbrick memory`** — new subcommand for the agent-readable
+  summary. Two modes:
+  - `slopbrick memory` (default `--show`) — print `.slopbrick/memory.md`
+    to stdout
+  - `slopbrick memory --regenerate` — re-render memory.md from the
+    existing inventory.json + constitution.json (no scan, sub-second)
+  The regenerate path is the workflow for "I just changed my
+  `slopbrick.config.mjs` and want a fresh memory.md without paying
+  for another full AST scan."
+
+- **`slopbrick watch`** — wires the existing `watchProject` engine
+  function as a top-level command. Runs an initial scan to populate
+  the report + write the .slopbrick/ artifacts, then re-runs the
+  scan on every file change. The LockBrick prevention loop entry:
+  violations surface as you write.
+
+- **`slopbrick ci`** — CI gate wrapper. Runs `slopbrick scan` with
+  `--no-increase --changed --format json`, then reads
+  `.slopbrick/health.json` and exits 1 on:
+  - `slopIndex > --max-slop <n>` (default unlimited)
+  - `constitutionDrift > 0` when `--strict-constitution` is set
+  Designed for `slopbrick ci --max-slop 50 --strict-constitution`
+  in `.github/workflows/ci.yml`.
+
+- **`slopbrick lock`** — installs the Git pre-commit hook that runs
+  `slopbrick scan --staged` on every commit. Auto-detects
+  `.husky/pre-commit` if `.husky/` exists, otherwise writes
+  `.git/hooks/pre-commit`. Use `--uninstall` to remove. The hook is
+  wrapped in sentinels so re-installing is idempotent and won't
+  clobber a project's existing hook.
+
+- **`slopbrick doctor` artifact checks** — extended to verify all
+  four `.slopbrick/` artifacts (inventory.json, constitution.json,
+  health.json, memory.md) exist, are schema-valid, and warns the
+  user if any are missing. The 5th check in doctor now points the
+  user at the right `slopbrick scan` invocation to refresh.
+
+- **`docs/repository-memory.md`** — canonical reference for the
+  `.slopbrick/` artifact contract. Covers the on-disk layout, the
+  TypeScript shape of each artifact, the on-write order, the
+  graceful-degradation contract for loaders, and the future
+  cross-tool consumer list (MCP, CI, dashboards, future
+  usebrick.dev tools). This is the document the website will link
+  to when explaining "what's in the box."
+
+### Tests
+
+- 5 new tests in `tests/engine/memory.test.ts` for
+  `buildHealthFromReport` + `saveHealth`/`loadHealth` round-trip
+- 3 new tests in `tests/engine/memory-artifacts.test.ts` for the
+  end-to-end artifact pipeline (all 4 artifacts write + round-trip
+  + buildHealthFromReport severity aggregation)
+- 2 new tests in `tests/integration/dist-bundle-paths.test.ts` —
+  regression coverage for a real bug found during v0.14.5d testing:
+  the bundled CJS distribution failed to find
+  `src/rules/signal-strength.json` because composite-scoring.ts used
+  `readFileSync(resolve(dirname(fileURLToPath(import.meta.url)),
+  '..', 'rules', 'signal-strength.json'))` — and the bundled file
+  lives at `dist/index.cjs`, so the path resolved to a directory
+  that didn't exist in the published tarball. Fix: composite-scoring
+  now uses `loadSignalStrength()` from `src/rules/signal-strength.ts`
+  (a static `import ... with { type: 'json' }` that esbuild inlines
+  into the bundle). Works in both ESM and bundled CJS. The unit
+  tests in vitest couldn't catch this because tsx resolves
+  `import.meta.url` to the .ts source — only the integration test,
+  which spawns the actual built `bin/slopbrick.js`, surfaces the
+  real-world failure mode.
+
+### Fixed
+
+- **dist-bundle path bug** (see Tests above) — the published
+  `slopbrick` binary was failing every scan with
+  `ENOENT: .../slopbrick/rules/signal-strength.json`. The 14
+  pre-existing CLI test failures (`tests/cli.test.ts`) were a
+  SYMPTOM of this bug; they all pass after the fix.
+- **6 missing `RULE_HINTS` entries** for the v0.14.5b AI tendency
+  rules (`tailwind-color-overuse`, `default-react-stack`,
+  `library-reinvention`, `state-default-overuse`,
+  `fetch-default-overuse`, `console-debug-storm`). The
+  `RULE_HINTS coverage` test now passes for all 80 rules. The
+  hints are the agent-facing prose shown next to each rule in the
+  generated snippet — without them, an MCP tool like
+  `slop_suggest` would render an empty hint bubble for those rules.
+
 ## [0.14.7] - 2026-06-27 — Multi-language support, AI tendency rules, composite scoring
 
 This is a major release that adds support for 8 new programming languages,

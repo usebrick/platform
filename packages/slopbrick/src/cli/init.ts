@@ -300,6 +300,54 @@ export async function runDoctor(cwd: string): Promise<number> {
     // discovery failure is not fatal
   }
 
+  // 8. Repository Memory artifacts: .slopbrick/{inventory,constitution,health}.json + memory.md
+  // v0.14.5d: the scan now writes all four artifacts atomically. Verify
+  // each one is present + schema-valid, and warn if missing so the user
+  // knows MCP `slop_suggest_with_memory` and external integrations will
+  // fall back to a re-scan.
+  const { existsSync: exists } = await import('node:fs');
+  const { join: pjoin } = await import('node:path');
+  const { loadInventory, loadConstitution, loadHealth } = await import('@usebrick/core');
+  const { readMemoryMarkdown } = await import('../engine/memory-md');
+
+  const inv = loadInventory(cwd);
+  if (inv) {
+    ok(`.slopbrick/inventory.json present (${inv.patterns.length} patterns, ${inv.components.length} components).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'inventory.json'))) {
+    warn('.slopbrick/inventory.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/inventory.json — MCP and external agents cannot read detected patterns. Run `slopbrick scan`.');
+  }
+
+  const con = loadConstitution(cwd);
+  if (con) {
+    const decl = Object.keys(con.declared).length;
+    const forb = con.forbidden.length + con.forbiddenPrefixes.length;
+    ok(`.slopbrick/constitution.json present (${decl} declared categories, ${forb} forbidden entries).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'constitution.json'))) {
+    warn('.slopbrick/constitution.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/constitution.json — `slopbrick drift` cannot check declared rules. Run `slopbrick scan` (or set one up via `slopbrick init`).');
+  }
+
+  const health = loadHealth(cwd);
+  if (health) {
+    ok(`.slopbrick/health.json present (slopIndex=${health.slopIndex}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'health.json'))) {
+    warn('.slopbrick/health.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/health.json — dashboards/CI gates will not show current health. Run `slopbrick scan`.');
+  }
+
+  const md = await readMemoryMarkdown(cwd);
+  if (md && md.length > 0) {
+    ok(`.slopbrick/memory.md present (${md.length} bytes — agent-readable summary).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'memory.md'))) {
+    warn('.slopbrick/memory.md exists but is empty. Run `slopbrick scan` to regenerate.');
+  } else {
+    warn('No .slopbrick/memory.md — `slop_suggest_with_memory` MCP tool will fall back to re-scanning. Run `slopbrick scan`.');
+  }
+
   // Warnings bump exit code to 1 so CI gates that check $? see them.
   if (warnCount > 0 && exitCode === 0) {
     exitCode = 1;

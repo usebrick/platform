@@ -20,14 +20,17 @@ import {
   type InventoryFile,
   type ConstitutionFile,
   type FileMtimeEntry,
+  type HealthFile,
   isInventoryFile,
   isConstitutionFile,
   isFileMtimeEntry,
+  isHealthFile,
 } from './memory-types';
 
 export const INVENTORY_FILENAME = 'inventory.json';
 export const CONSTITUTION_FILENAME = 'constitution.json';
 export const CACHE_FILENAME = 'cache.json';
+export const HEALTH_FILENAME = 'health.json';
 
 // Re-export the path helpers — useful for tools that want to inspect
 // the .slopbrick/ directory without going through the loaders.
@@ -39,6 +42,9 @@ export function constitutionPath(workspaceDir: string): string {
 }
 export function cachePath(workspaceDir: string): string {
   return join(workspaceDir, '.slopbrick-cache.json');
+}
+export function healthPath(workspaceDir: string): string {
+  return join(workspaceDir, '.slopbrick', HEALTH_FILENAME);
 }
 
 /** Ensure the `.slopbrick/` directory exists. */
@@ -105,6 +111,26 @@ export function loadConstitution(workspaceDir: string): ConstitutionFile | null 
 /** Persist the constitution to `.slopbrick/constitution.json` atomically. */
 export function saveConstitution(workspaceDir: string, constitution: ConstitutionFile): void {
   writeJsonAtomic(constitutionPath(workspaceDir), constitution);
+}
+
+/** Load `.slopbrick/health.json`. Returns `null` when the file is
+ *  missing, malformed, or the schema version doesn't match. */
+export function loadHealth(workspaceDir: string): HealthFile | null {
+  const path = healthPath(workspaceDir);
+  if (!existsSync(path)) return null;
+  try {
+    const raw = readFileSync(path, 'utf-8');
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isHealthFile(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist the health snapshot to `.slopbrick/health.json` atomically. */
+export function saveHealth(workspaceDir: string, health: HealthFile): void {
+  writeJsonAtomic(healthPath(workspaceDir), health);
 }
 
 /** Read the per-file mtime + hash cache. Returns `[]` when missing. */

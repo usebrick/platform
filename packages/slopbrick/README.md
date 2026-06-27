@@ -13,6 +13,20 @@
 Previous major versions:
 - **v0.12.x** — `HYGIENE` verdict, 0 INVERTED, corpus-derived baselines (Heaps λ, Zipf s, line/identifier lengths, comment density) computed from a 5k-file sample of the v6 neg corpus. v0.12.0 shipped 5 new peer-reviewed math foundations (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs). v0.12.1 re-calibrated against the v6 corpus (524k files). v0.12.2 separates `HYGIENE` (24 code-hygiene rules) from the AI-detector buckets. Final v6 distribution: **13 USEFUL, 6 OK, 9 NOISY, 0 INVERTED, 12 DORMANT, 24 HYGIENE**.
 
+## What's new in v0.14.5d
+
+v0.14.5d ships the **Repository Memory pipeline** end-to-end and adds the **LockBrick prevention commands** so the same constraints that surface in `slopbrick scan` can also be enforced **before** code lands:
+
+- **`.slopbrick/memory.md` is now written on every scan** — previously the renderer existed but was never wired into the scan path. MCP `slop_suggest_with_memory` and external agent integrations read this file instead of re-parsing AST (100–1000× latency win on the agent integration).
+- **`.slopbrick/health.json` is a new headline artifact** — `slopIndex` + per-severity issue counts + top-3 most-firing rule IDs. The contract dashboards, CI status checks, and the website's project page consume.
+- **`slopbrick watch`** — re-runs scan on every file change. Violations surface as you write. The LockBrick prevention loop entry.
+- **`slopbrick ci`** — CI gate: scan + exit 1 on threshold breach (`--max-slop N`) or constitution violations (`--strict-constitution`).
+- **`slopbrick lock`** — installs the Git pre-commit hook that runs `slopbrick scan --staged` on every commit. Auto-detects Husky v9. Use `--uninstall` to remove.
+- **`slopbrick memory [--regenerate]`** — print `.slopbrick/memory.md` to stdout, or re-render from existing inventory+constitution (no scan, sub-second) for the "I just changed my config and want a fresh summary" workflow.
+- **`slopbrick doctor` extended** to verify all four artifacts are present and schema-valid.
+
+The full artifact contract is documented at [`docs/repository-memory.md`](./docs/repository-memory.md).
+
 ## What's new in v0.12.1
 
 v0.12.0 added the calibration math; v0.12.1 **runs it against a real corpus**:
@@ -100,12 +114,16 @@ The form engineers trust (top USEFUL rules):
 
 Full per-rule table: [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md). v5 calibration pilot (SQL arm) ran 2026-06-26; results in [`docs/research/v5-sql-pilot-results.md`](./docs/research/v5-sql-pilot-results.md).
 
-## For humans — 15 subcommands
+## For humans — 19 subcommands
 
 | Subcommand | What it does |
 |------------|--------------|
 | `slopbrick scan` | The headline. One Repository Health number + per-rule findings. Use in CI. |
 | `slopbrick scan --diff <ref>` | PR diff vs. git ref (VibeDrift-compatible). |
+| `slopbrick watch` | Re-runs scan on every file change. The LockBrick prevention loop entry. |
+| `slopbrick ci` | CI gate: scan + exit 1 on threshold breach / constitution violations. |
+| `slopbrick lock` | Install a Git pre-commit hook that runs `slopbrick scan --staged`. |
+| `slopbrick memory` | Show or regenerate `.slopbrick/memory.md` (the agent-readable summary). |
 | `slopbrick pr` | One weighted number per PR. Exits 1 over `--threshold` (default 20). |
 | `slopbrick architecture` | Architecture Consistency Score alone (0–100). |
 | `slopbrick security` | AI Security Risk (categorical: low/medium/high/critical). |
@@ -119,6 +137,25 @@ Full per-rule table: [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-
 | `slopbrick tokens <path>` | Ingest W3C DTCG tokens.json. |
 | `slopbrick migrate` | One-shot migration from `slop-audit@≤0.10.1` to `slopbrick@≥0.11.0`. |
 | `slopbrick mcp` | Start the MCP server (JSON-RPC 2.0 over stdio). |
+
+## Repository Memory — the `.slopbrick/` artifact contract
+
+Every `slopbrick scan` writes four atomic artifacts to `.slopbrick/`:
+
+| File | What it is | Who reads it |
+|------|-----------|--------------|
+| `inventory.json` | Detected patterns + component fingerprints | MCP, future tools |
+| `constitution.json` | Declared constitution (mirrors `slopbrick.config.mjs`) | `slopbrick drift`, future tools |
+| `health.json` | Headline score (slopIndex + per-severity issue counts) | Dashboards, CI, `slopbrick ci` |
+| `memory.md` | Agent-readable markdown summary | MCP `slop_suggest_with_memory` |
+
+The schemas are in `packages/core/schemas/v1/`. All four writers are
+atomic (`writeFileSync` to `.tmp` + `renameSync`), so a crash mid-write
+leaves the previous version intact. Loaders return `null` on
+missing/malformed/version-mismatched files — the canonical
+graceful-degradation contract. See
+[`docs/repository-memory.md`](./docs/repository-memory.md) for the
+full reference.
 
 ## For AI agents
 

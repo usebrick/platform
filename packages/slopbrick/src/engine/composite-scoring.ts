@@ -40,9 +40,7 @@
 //   - Cui, Z. et al. (2025), "Who is using AI to code? Global
 //     diffusion and impact of generative AI" (sets the prior at 0.30)
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { loadSignalStrength } from '../rules/signal-strength';
 
 // ---- Constants --------------------------------------------------------
 
@@ -117,22 +115,33 @@ let _signals: Map<string, RuleSignal> | null = null;
 
 function loadSignals(): Map<string, RuleSignal> {
   if (_signals) return _signals;
-  // Resolve relative to this file's location so it works whether the
-  // package is consumed as a workspace dep or from the monorepo root.
-  const here = dirname(fileURLToPath(import.meta.url));
-  const signalPath = resolve(here, '..', 'rules', 'signal-strength.json');
-  const raw = JSON.parse(readFileSync(signalPath, 'utf8')) as Record<string, any>;
+  // v0.14.5d: use the canonical `loadSignalStrength()` from
+  // `src/rules/signal-strength.ts`, which uses a static JSON import that
+  // works in both ESM and bundled CJS. The previous readFileSync fallback
+  // broke in the published tarball because `dist/rules/signal-strength.json`
+  // didn't exist — `__filename` resolves to `dist/index.cjs` so
+  // `../rules/signal-strength.json` looked at the package root, not the
+  // dist subdir.
+  const raw = loadSignalStrength();
   const map = new Map<string, RuleSignal>();
   for (const [ruleId, entry] of Object.entries(raw)) {
+    // The JSON has more fields than the `SignalStrength` interface (e.g.
+    // `verdict`, `_calibrationNote`). Read them as `unknown` to stay
+    // compatible with the typed loader; only the fields we actually
+    // need for the Bayesian math flow downstream.
+    const extended = entry as typeof entry & {
+      verdict?: string;
+      aiSpecific?: boolean;
+    };
     map.set(ruleId, {
       ruleId,
       recall: entry.recall ?? 0,
       fpRate: entry.fpRate ?? 0,
       precision: entry.precision ?? 0,
       ratio: entry.ratio ?? 0,
-      verdict: entry.verdict ?? 'DORMANT',
+      verdict: (extended.verdict ?? 'DORMANT') as RuleSignal['verdict'],
       defaultOff: entry.defaultOff === true,
-      aiSpecific: entry.aiSpecific === true,
+      aiSpecific: extended.aiSpecific === true,
     });
   }
   _signals = map;

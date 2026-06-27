@@ -73,8 +73,10 @@ import {
   appendRun,
   buildInventoryFromScan,
   buildConstitutionFromConfig,
+  buildHealthFromReport,
 } from '../engine/memory';
-import { saveInventory, saveConstitution } from '@usebrick/core';
+import { renderMemoryMarkdown, writeMemoryMarkdown } from '../engine/memory-md';
+import { saveInventory, saveConstitution, saveHealth } from '@usebrick/core';
 import { recordTelemetry, readTelemetry } from '../engine/telemetry';
 import {
   computeFlywheelOutput,
@@ -1043,8 +1045,18 @@ export async function runScan(
       await saveInventory(cwd, inventory);
       const constitution = buildConstitutionFromConfig(config, cwd);
       await saveConstitution(cwd, constitution);
+      // v0.14.5d: also render the agent-readable markdown summary so
+      // MCP `slop_suggest_with_memory` and external agent integrations
+      // can read `.slopbrick/memory.md` without re-parsing AST.
+      const md = renderMemoryMarkdown(inventory, constitution);
+      await writeMemoryMarkdown(cwd, md);
+      // v0.14.5d: also persist the headline health snapshot. Dashboards,
+      // CI status checks, and the website project page consume this —
+      // the format is the contract (`health.schema.json` in core).
+      const health = buildHealthFromReport(report, cwd, { scanDurationMs: durationMs });
+      saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
-        logger.info(`Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components).`);
+        logger.info(`Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of memory.md, health.json: slopIndex=${health.slopIndex}).`);
       }
     } catch (err) {
       if (!options.quiet && !machineReadableStdout) {

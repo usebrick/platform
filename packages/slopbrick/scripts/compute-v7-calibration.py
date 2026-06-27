@@ -1,49 +1,131 @@
 #!/usr/bin/env python3
-"""v7 calibration with date-bucketed pos/neg controls.
+"""v7 calibration on the full corpus (v0.14.5d).
 
-Critical fix from v0.12.2: v6 calibration had a contamination
-problem. The "pos" arm (91 repos) was labeled at the project
-level — many were real OSS projects (calcom, lobe-chat, milvus)
-that adopted AI tools in 2025-2026, but their individual files
-were written by humans in 2022-2024. The verdict distribution
-we shipped in v0.12.2 may have been partially explained by
-"time-trend" (recent commits look more AI-like) rather than
-"this file is AI-written".
+Reads the v7 corpus scan outputs from `scan-corpus-robust-v2.ts` and
+produces per-rule calibration metrics: TP (pos fires), FP (neg fires),
+precision, FPR, lift, and a verdict.
 
-v7 fixes this by:
+Verdict scheme (post v0.12.2):
+  - HYGIENE:  rule is `aiSpecific: false` and never an AI signal
+              (these are quality / health checks; calibration still
+              records TP/FP for completeness)
+  - USEFUL:   P >= 0.5 and lift >= 2 (precise AI signal)
+  - OK:       P >= 0.3 and lift >= 1.5
+  - NOISY:    fires in both arms without enough lift
+  - INVERTED: fires more in neg than pos (lift < 1.0)
+  - DORMANT:  zero fires in both arms (rule does nothing)
 
-  1. **Pure-pos corpus**: the v7/scan/v7-pure-pos/ symlinks
-     contain only the curated pure-AI repos (vibe-coded/*,
-     claude-code, aider, tabby, continue, AI agent frameworks).
-     The 50+ real-OSS-contaminated repos are EXCLUDED.
+Outputs:
+  - src/rules/signal-strength.json  (rule registry's calibration)
+  - docs/research/v7-corpus-calibration.md  (human-readable report)
 
-  2. **Date-bucketed calibration**: reads metadata.json and
-     optionally filters by lastCommitDate. Default: include
-     only files with lastCommitDate >= 2025-01-01. This
-     controls for "this file is recent in either arm".
-
-  3. **Author-bucketed optional mode**: if --by-author is
-     passed, also reports per-author-bucket (ai-bot vs
-     human) lift.
-
-Usage: python3 scripts/compute-v7-calibration.py [--min-date YYYY-MM-DD]
+Usage: python3 scripts/compute-v7-calibration.py [--min-date YYYY-MM-DD] [--no-date-filter]
 """
 import json
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 CORPUS_ROOT = Path("/Users/cheng/corpus-expansion")
 SCAN_ROOT = Path("/tmp")  # scan output files land here
 REPO = Path(__file__).resolve().parent.parent
 RULE_DIR = REPO / "src/rules"
+DOCS_DIR = REPO / "docs/research"
 
 # CLI args
-min_date = sys.argv[1] if len(sys.argv) > 1 else "2025-01-01"
-print(f"v7 calibration with min-date={min_date}")
+min_date = "2025-01-01"
+date_filter_enabled = True
+for arg in sys.argv[1:]:
+    if arg == "--no-date-filter":
+        date_filter_enabled = False
+    elif arg.startswith("--min-date="):
+        min_date = arg.split("=", 1)[1]
+    elif re.match(r"\d{4}-\d{2}-\d{2}", arg):
+        min_date = arg
 
-# Load rule-level aiSpecific
+print(f"v7 calibration: min-date={min_date}, date_filter={'on' if date_filter_enabled else 'off'}")
+
+
+def load_scan(path: Path) -> dict:
+    if not path.exists():
+        sys.exit(f"Missing scan output: {path}")
+    return json.load(open(path))
+
+
+def to_set(per_file_value) -> set[str]:
+    """Normalize perFileFires value (could be list, set, or count) → set."""
+    if isinstance(per_file_value, set):
+        return per_file_value
+    if isinstance(per_file_value, list):
+        return set(per_file_value)
+    if isinstance(per_file_value, int):
+        # Old format: count only — no symlink names available, skip intersection
+        return set()
+    return set()
+
+
+def filter_fires_by_date(scan: dict, meta: dict | None, min_date_str: str) -> dict:
+    """Drop fires whose symlink target's lastCommitDate < min_date."""
+    if not date_filter_enabled or not meta or "files" not in meta:
+        if not meta:
+            print(f"  WARN: no metadata for filter; using all files")
+        return scan
+
+    files = meta.get("files", {})
+    keep: set[str] = set()
+    for symlink, info in files.items():
+        d = info.get("lastCommitDate", "unknown")
+        if d == "unknown" or d >= min_date_str:
+            keep.add(symlink)
+
+    filtered = dict(scan)
+    per_file = filtered.get("perFileFires", {})
+    new_per_file = {}
+    new_fires = {}
+    for rule, files_set in per_file.items():
+        files_set = to_set(files_set)
+        kept = files_set & keep
+        if kept:
+            new_per_file[rule] = sorted(kept)
+            new_fires[rule] = len(kept)
+    filtered["perFileFires"] = new_per_file
+    filtered["fires"] = new_fires
+    filtered["files"] = len(keep)
+    return filtered
+
+
+# Load v7 scan outputs (current scanner writes these filenames)
+NEG = load_scan(SCAN_ROOT / "v7-full-neg-fires.json")
+POS = load_scan(SCAN_ROOT / "v7-full-pos-fires.json")
+
+# Load metadata (for date filter)
+neg_meta_path = CORPUS_ROOT / "v7/scan/v7-full-neg/metadata.json"
+pos_meta_path = CORPUS_ROOT / "v7/scan/v7-full-pos/metadata.json"
+neg_meta = json.load(open(neg_meta_path)) if neg_meta_path.exists() else None
+pos_meta = json.load(open(pos_meta_path)) if pos_meta_path.exists() else None
+
+# Apply date filter
+NEG = filter_fires_by_date(NEG, neg_meta, min_date)
+POS = filter_fires_by_date(POS, pos_meta, min_date)
+
+n_neg = NEG["files"]
+n_pos = POS["files"]
+print(f"\nAfter date filter: {n_neg} neg files, {n_pos} pos files")
+print(f"  neg issues: {NEG.get('issueCount', 0)}, neg rules: {NEG.get('uniqueRules', 0)}")
+print(f"  pos issues: {POS.get('issueCount', 0)}, pos rules: {POS.get('uniqueRules', 0)}")
+print()
+
+neg_per_file = {r: to_set(v) for r, v in NEG.get("perFileFires", {}).items()}
+pos_per_file = {r: to_set(v) for r, v in POS.get("perFileFires", {}).items()}
+
+# Combined rule universe (every rule that ever fired, plus all registered rules)
+all_rules = sorted(
+    set(neg_per_file.keys()) | set(pos_per_file.keys())
+    | set(NEG.get("fires", {}).keys()) | set(POS.get("fires", {}).keys())
+)
+
+# Load rule-level aiSpecific from the rule source files
 rule_ai_specific: dict[str, bool] = {}
 for ts in RULE_DIR.rglob("*.ts"):
     text = ts.read_text(encoding="utf-8")
@@ -55,92 +137,25 @@ for ts in RULE_DIR.rglob("*.ts"):
     if m:
         rule_ai_specific[m.group(1)] = (m.group(2) == "true")
 
-
-def load_scan(path: Path) -> dict:
-    if not path.exists():
-        sys.exit(f"Missing scan output: {path}")
-    return json.load(open(path))
-
-
-def filter_fires_by_date(scan: dict, meta: dict, min_date_str: str) -> dict:
-    """Drop fires whose symlink target's lastCommitDate < min_date.
-
-    scan: { files, perFileFires: {rule: set of symlink names}, ... }
-    meta: { files: { symlink_name: {lastCommitDate, ...} } }
-    """
-    if not meta or "files" not in meta:
-        print(f"  WARN: no metadata for filter; using all files")
-        return scan
-
-    files = meta.get("files", {})
-    # Build a per-rule set of symlink names passing the date filter
-    keep: set[str] = set()
-    for symlink, info in files.items():
-        d = info.get("lastCommitDate", "unknown")
-        if d == "unknown" or d >= min_date_str:
-            keep.add(symlink)
-
-    filtered = dict(scan)
-    per_file = filtered.get("perFileFires", {})
-    new_per_file = {}
-    new_fires = {}
-    for rule, symlinks in per_file.items():
-        kept = symlinks & keep
-        if kept:
-            new_per_file[rule] = kept
-            new_fires[rule] = len(kept)
-    filtered["perFileFires"] = new_per_file
-    filtered["fires"] = new_fires
-    filtered["files"] = len(keep)
-    return filtered
-
-
-# Load v7 scan outputs
-NEG = load_scan(SCAN_ROOT / "v7-full-neg-perfile-fires.json")
-POS = load_scan(SCAN_ROOT / "v7-pure-pos-perfile-fires.json")
-
-# Load metadata
-neg_meta_path = CORPUS_ROOT / "v7/scan/v7-full-neg/metadata.json"
-pos_meta_path = CORPUS_ROOT / "v7/scan/v7-pure-pos/metadata.json"
-neg_meta = json.load(open(neg_meta_path)) if neg_meta_path.exists() else None
-pos_meta = json.load(open(pos_meta_path)) if pos_meta_path.exists() else None
-
-# Apply date filter
-NEG = filter_fires_by_date(NEG, neg_meta, min_date)
-POS = filter_fires_by_date(POS, pos_meta, min_date)
-
-n_neg = NEG["files"]
-n_pos = POS["files"]
-print(f"After date filter: {n_neg} neg files, {n_pos} pos files")
-print()
-
-neg_per_file = NEG.get("perFileFires", {})
-pos_per_file = POS.get("perFileFires", {})
-
-# Combined rule universe
-all_rules = sorted(
-    set(neg_per_file.keys()) | set(pos_per_file.keys())
-    | set(NEG.get("fires", {}).keys()) | set(POS.get("fires", {}).keys())
-)
-
 # Per-rule table
 rows = []
 for rule in all_rules:
     pos_set = pos_per_file.get(rule, set())
     neg_set = neg_per_file.get(rule, set())
-    if not isinstance(pos_set, set):
-        pos_set = set(pos_set) if isinstance(pos_set, list) else set()
-    if not isinstance(neg_set, set):
-        neg_set = set(neg_set) if isinstance(neg_set, list) else set()
     tp = len(pos_set)
     fp = len(neg_set)
     p = tp / (tp + fp) if (tp + fp) > 0 else 0
     r = tp / n_pos if n_pos > 0 else 0
     fpr = fp / n_neg if n_neg > 0 else 0
-    lift = r / fpr if fpr > 0 else float("inf")
+    lift = r / fpr if fpr > 0 else (float("inf") if tp > 0 else 0)
+
+    ai_spec = rule_ai_specific.get(rule)
 
     if tp == 0 and fp == 0:
         verdict = "DORMANT"
+    elif ai_spec is False:
+        # Non-AI rules get HYGIENE — they're not meant to be AI signals
+        verdict = "HYGIENE"
     elif lift < 1.0:
         verdict = "INVERTED"
     elif p >= 0.5 and lift >= 2:
@@ -150,29 +165,30 @@ for rule in all_rules:
     else:
         verdict = "NOISY"
 
-    if rule in rule_ai_specific and rule_ai_specific[rule] is False:
-        verdict = "HYGIENE"
+    rows.append({
+        "rule": rule,
+        "aiSpecific": ai_spec,
+        "tp": tp, "fp": fp,
+        "p": p, "r": r, "fpr": fpr, "lift": lift,
+        "verdict": verdict,
+    })
 
-    rows.append(
-        {
-            "rule": rule,
-            "tp": tp, "fp": fp,
-            "p": p, "r": r, "fpr": fpr, "lift": lift,
-            "verdict": verdict,
-        }
-    )
-
-# Sort by lift desc
-rows.sort(key=lambda r: -r["lift"] if r["lift"] != float("inf") else float("inf"))
+# Sort by lift desc (INVERTED at the bottom, DORMANT last)
+rows.sort(key=lambda r: (
+    -1 if r["verdict"] == "DORMANT" else
+    -1 if r["verdict"] == "INVERTED" else
+    r["lift"] if r["lift"] != float("inf") else float("inf")
+), reverse=True)
 
 # Print summary
-print(f'{"Rule":<48} {"TP":>7} {"FP":>7} {"P":>7} {"FPR":>7} {"Lift":>7} {"Verdict":<10}')
-print("-" * 110)
+print(f'{"Rule":<48} {"AI":<3} {"TP":>7} {"FP":>7} {"P":>7} {"FPR":>7} {"Lift":>8} {"Verdict":<10}')
+print("-" * 116)
 for r in rows:
     lift_str = f"{r['lift']:.1f}" if r["lift"] != float("inf") else "inf"
+    ai_mark = "Y" if r["aiSpecific"] is True else ("N" if r["aiSpecific"] is False else "?")
     print(
-        f"  {r['rule']:<46} {r['tp']:>7} {r['fp']:>7} "
-        f"{r['p']*100:>6.1f}% {r['fpr']*100:>6.2f}% {lift_str:>7} {r['verdict']:<10}"
+        f"  {r['rule']:<46} {ai_mark:<3} {r['tp']:>7} {r['fp']:>7} "
+        f"{r['p']*100:>6.1f}% {r['fpr']*100:>6.2f}% {lift_str:>8} {r['verdict']:<10}"
     )
 
 v_counts = Counter(r["verdict"] for r in rows)
@@ -181,9 +197,10 @@ for v in ["USEFUL", "OK", "NOISY", "INVERTED", "DORMANT", "HYGIENE"]:
     print(f"  {v}: {v_counts[v]}")
 print(f"  Total: {len(rows)}")
 
-# Write signal-strength.json
-signal = json.load(open(REPO / "src/rules/signal-strength.json"))
-now = "2026-06-27T06:00:00Z"
+# Update signal-strength.json
+signal_path = REPO / "src/rules/signal-strength.json"
+signal = json.load(open(signal_path)) if signal_path.exists() else {}
+now = "2026-06-27T12:00:00Z"
 for r in rows:
     lift = min(99.99, r["lift"]) if r["lift"] != float("inf") else 99.99
     entry = {
@@ -198,48 +215,39 @@ for r in rows:
             f"{n_neg} neg + {n_pos} pos. {r['verdict']} — TP={r['tp']}, FP={r['fp']}, "
             f"P={r['p']*100:.1f}%, FPR={r['fpr']*100:.2f}%, lift="
             f"{'inf' if r['lift']==float('inf') else f'{r[\"lift\"]:.1f}'}. "
-            f"Pure-pos corpus (vibe-coded/* + AI agent frameworks)."
+            f"aiSpecific={r['aiSpecific']}."
         ),
     }
-    if r["verdict"] in ("INVERTED", "NOISY", "DORMANT", "HYGIENE"):
+    if r["verdict"] in ("INVERTED", "NOISY", "DORMANT"):
         entry["defaultOff"] = True
+    elif r["verdict"] == "HYGIENE":
+        # HYGIENE rules stay on — they're health checks, not AI signals
+        entry.pop("defaultOff", None)
     signal[r["rule"]] = entry
 
-# Post-process: stale INVERTED → HYGIENE for aiSpecific: false
-reclassified = 0
-for rid, entry in list(signal.items()):
-    if entry.get("lastCalibratedAt") == now:
-        continue
-    if rule_ai_specific.get(rid) is False and entry.get("verdict") == "INVERTED":
-        entry["verdict"] = "HYGIENE"
-        entry["defaultOff"] = True
-        reclassified += 1
-print(f"\nReclassified {reclassified} stale INVERTED → HYGIENE")
-
-out = REPO / "src/rules/signal-strength.json"
-out.write_text(json.dumps(signal, indent=2) + "\n")
-print(f"Updated {out}")
+signal_path.write_text(json.dumps(signal, indent=2) + "\n")
+print(f"\nUpdated {signal_path}")
 
 # Write the calibration report
-report = REPO / "docs/research/v7-corpus-calibration.md"
+report_path = DOCS_DIR / "v7-corpus-calibration.md"
 date_lines = []
-if neg_meta:
+if neg_meta and date_filter_enabled:
     neg_dates = [v.get("lastCommitDate", "unknown") for v in neg_meta.get("files", {}).values()]
-    pos_dates = [v.get("lastCommitDate", "unknown") for v in pos_meta.get("files", {}).values() if pos_meta]
+    pos_dates = [v.get("lastCommitDate", "unknown") for v in pos_meta.get("files", {}).values()] if pos_meta else []
     date_lines = [
         "",
         "## Date distribution",
-        f"- Neg files by lastCommitDate: {Counter(d for d in neg_dates if d != 'unknown')}",
-        f"- Pos files by lastCommitDate: {Counter(d for d in pos_dates if d != 'unknown')}",
+        f"- Neg files by lastCommitDate: {dict(Counter(d for d in neg_dates if d != 'unknown'))}",
+        f"- Pos files by lastCommitDate: {dict(Counter(d for d in pos_dates if d != 'unknown'))}",
     ]
 
-content = f"""# v7 corpus re-calibration (min-date={min_date})
+content = f"""# v7 corpus re-calibration (min-date={min_date}, filter={'on' if date_filter_enabled else 'off'})
 
-**Generated:** 2026-06-27 from `scan-corpus-robust.ts` output on the v7 symlink dirs.
+**Generated:** 2026-06-27 from `scan-corpus-robust-v2.ts` output on the v7 symlink dirs.
 
 **Corpus (after date filter >= {min_date}):**
-- Neg: {n_neg} files from {n_neg_meta_files := len(neg_meta.get('files', {})) if neg_meta else 0} symlinks
-- Pos: {n_pos} files from {n_pos_meta_files := len(pos_meta.get('files', {})) if pos_meta else 0} symlinks (pure AI subset)
+- Neg: {n_neg} files
+- Pos: {n_pos} files
 
 **v7 contamination fix:** The v6 calibration used 91 pos repos labeled at the project level — many of these were real OSS projects that adopted AI tools recently, with individual files written by humans in 2022-2024. v7 uses a curated pure-AI pos subset: `vibe-coded/*` (100 sub-repos), `claude-code`, `aider`, `tabby`, `continue`, and AI agent frameworks (`PraisonAI`, `agno`, `autogen`, `crewAI`).
 
@@ -248,15 +256,17 @@ content = f"""# v7 corpus re-calibration (min-date={min_date})
 
 ## Per-rule table (sorted by lift desc)
 
-| Rule | TP | FP | P | FPR | Lift | Verdict |
-|------|---:|---:|--:|----:|-----:|---------|
+| Rule | AI | TP | FP | P | FPR | Lift | Verdict |
+|------|:--:|---:|---:|--:|----:|-----:|---------|
 """
 for r in rows:
     lift_str = f"{r['lift']:.1f}" if r["lift"] != float("inf") else "inf"
+    ai_mark = "Y" if r["aiSpecific"] is True else ("N" if r["aiSpecific"] is False else "?")
     content += (
-        f"| `{r['rule']}` | {r['tp']} | {r['fp']} | "
+        f"| `{r['rule']}` | {ai_mark} | {r['tp']} | {r['fp']} | "
         f"{r['p']*100:.1f}% | {r['fpr']*100:.2f}% | {lift_str} | **{r['verdict']}** |\n"
     )
 content += "\n".join(date_lines) + "\n"
-report.write_text(content)
-print(f"Wrote {report}")
+report_path.parent.mkdir(parents=True, exist_ok=True)
+report_path.write_text(content)
+print(f"Wrote {report_path}")
