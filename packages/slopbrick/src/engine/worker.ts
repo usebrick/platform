@@ -28,12 +28,20 @@ export async function scanFile(
   registry?: RuleRegistry,
   cwd = process.cwd(),
 ): Promise<FileScanResult> {
-  // v0.9.2 — Backend files (Python, Go) are skipped by the rule engine
-  // because the existing AST visitors only know JS/TSX/Vue/Svelte/Astro/
-  // HTML. The inventory still picks them up via the lazy-imported
-  // backend visitors in buildPatternInventory, so service/route/ormModel
-  // patterns surface in cross-file drift detection — but the main scan
-  // doesn't try to parse them.
+  // v0.14.5c-fix4: Backend files (Swift, Kotlin, Dart, Rust, C++, Java,
+  // Ruby, PHP) are NOT scanned by the rule engine — but they ARE
+  // processed by the backend visitors via buildPatternInventory
+  // (src/mcp/patterns.ts) for cross-file service/route/ormModel
+  // drift detection. Returning a clean empty FileScanResult here
+  // (no parseError, no issues) means:
+  //   - The scan counts the file as 0 issues (not a parseError)
+  //   - The partial output doesn't report false-positive parse errors
+  //   - The pattern inventory still picks up the file separately
+  //
+  // The 30s per-file timeout is critical: SWC cannot parse .swift
+  // etc., and a "try and fail" path would burn the timeout budget
+  // 184k times. The BACKEND_EXTENSIONS early-return saves ~16 hours
+  // per scan arm.
   if (BACKEND_EXTENSIONS.has(extname(filePath).toLowerCase())) {
     return {
       filePath,
