@@ -1,4 +1,4 @@
-export const VERSION = '0.12.1';
+export const VERSION = '0.12.2';
 
 // ---------------------------------------------------------------------------
 // Phase Memo #4 — AI Maintenance Cost (target 0.8.0)

@@ -58,7 +58,7 @@ export const zipfSlopeAnomalyRule = createRule<RuleContext>({
       ruleId: 'logic/zipf-slope-anomaly',
       category: 'logic',
       severity: 'medium',
-      aiSpecific: true,
+      aiSpecific: false,
       message:
         `Zipf exponent s=${fit.exponent.toFixed(3)} is ${direction} than corpus baseline ` +
         `(${exponentMean.toFixed(2)} ± ${exponentStd.toFixed(2)}, z=${z.toFixed(2)}σ, R²=${fit.rSquared.toFixed(2)}). ` +

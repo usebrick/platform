@@ -56,7 +56,7 @@ export const heapsDeviationRule = createRule<RuleContext>({
       ruleId: 'logic/heaps-deviation',
       category: 'logic',
       severity: 'medium',
-      aiSpecific: true,
+      aiSpecific: false,
       message:
         `Heaps exponent λ=${fit.exponent.toFixed(3)} is ${direction} than corpus baseline ` +
         `(${lambdaMean.toFixed(2)} ± ${lambdaStd.toFixed(2)}, z=${z.toFixed(2)}σ). ` +

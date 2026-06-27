@@ -62,7 +62,7 @@ export const exposedEnvVarRule = createRule<RuleContext>({
   id: 'security/exposed-env-var',
   category: 'security',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description:
     'Secret-looking env var name exposed via a client-bundle prefix (NEXT_PUBLIC_*, VITE_*, etc.). Inlined into every browser build.',
   create(context) {
@@ -77,7 +77,7 @@ export const exposedEnvVarRule = createRule<RuleContext>({
         ruleId: 'security/exposed-env-var',
         category: 'security',
         severity: 'high',
-        aiSpecific: true,
+        aiSpecific: false,
         message:
           `Env var '${hit.name}' has a client-bundle prefix but a secret-looking name. ` +
           `It will be inlined into every browser build.`,

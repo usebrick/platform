@@ -5,6 +5,39 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.2] - 2026-06-27 — HYGIENE verdict, 0 INVERTED
+
+### Added
+
+- **`HYGIENE` verdict** for `aiSpecific: false` rules. The verdict distribution now separates "useful AI detector" (USEFUL/OK/NOISY/INVERTED/DORMANT) from "useful code-hygiene check" (HYGIENE). Code-hygiene rules keep their P/R/FPR/lift in the data for reference but are removed from the INVERTED bucket. The verdict is computed by `scripts/compute-v5-full-calibration.py` and the result lands in `src/rules/signal-strength.json`.
+- **Post-processing pass in the calibration script** that reclassifies stale INVERTED entries (rules that no longer fire in the latest corpus) to HYGIENE if their source rule is `aiSpecific: false`. Catches rules that the scan didn't see but that the JSON still has data for from a previous calibration.
+- **`tests/engine/signal-strength-guardrails.test.ts`** — new test asserting every HYGIENE rule is `defaultOff: true` (matches the existing contract for NOISY/DORMANT/INVERTED).
+
+### Changed
+
+- **`security/unsafe-html-render`** and **`security/exposed-env-var`** reclassified as `aiSpecific: false` (code-hygiene). Their comments already said `aiSpecific: false` but the code was `aiSpecific: true`. v6 calibration showed both INVERTED in the v0.12.1 distribution (lift 0.47 and 0.87 respectively) — humans add sanitize-html wrappers and remember to use server-only env vars, so the patterns are not AI-discriminative. They keep firing as security checks, just not as AI detectors.
+- **`logic/heaps-deviation`**, **`logic/zipf-slope-anomaly`**, **`logic/math-variable-name-entropy`** — issue-level `aiSpecific: true` → `aiSpecific: false`. The rule-level was already `false`; this brings the issue tag in line so these issues don't get counted as AI-positive in future calibrations.
+- **Verdict distribution (v0.12.1 → v0.12.2):**
+
+  | Verdict  | v0.12.1 | v0.12.2 | Change | Interpretation |
+  |----------|---------|---------|--------|----------------|
+  | USEFUL   | 22      | **13**  | -9     | 9 were code-hygiene; now in HYGIENE |
+  | OK       | 11      | 6       | -5     | 5 were code-hygiene; now in HYGIENE |
+  | NOISY    | 14      | 9       | -5     | 5 were code-hygiene; now in HYGIENE |
+  | INVERTED | 5       | **0**   | -5     | All reclassified to HYGIENE |
+  | DORMANT  | 12      | 12      | 0      | |
+  | HYGIENE  | —       | **24**  | +24    | New bucket for `aiSpecific: false` rules |
+
+  Net effect: 0 INVERTED, 24 HYGIENE, the rest stay in their AI-detector buckets. Users see clean verdict distribution; the calibration math hasn't changed (lift is still computed), only the reporting.
+
+### Migration notes
+
+- v0.12.2 is **backward-compatible** with v0.12.1 at the API and CLI surface.
+- The `verdict` field in `signal-strength.json` now accepts `'HYGIENE'` in addition to the previous 5 values. Consumers should treat `'HYGIENE'` as "code-hygiene check, not an AI detector" — same as `defaultOff: true` rules.
+- INVERTED is no longer a stable state in the verdict distribution. A rule that's anti-predictive (lift < 1) AND `aiSpecific: false` will be HYGIENE, not INVERTED. The only way to get verdict INVERTED going forward is to be `aiSpecific: true` AND have lift < 1.
+
+---
+
 ## [0.12.1] - 2026-06-27 — v6 Corpus Recalibration (239k neg + 261k pos)
 
 ### Changed

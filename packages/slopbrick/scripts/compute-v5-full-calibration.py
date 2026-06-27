@@ -8,21 +8,24 @@ aggregates per-rule fires, and writes docs/research/v5-full-corpus-calibration.m
 Usage: python3 scripts/compute-v5-full-calibration.py
 """
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-# Prefer the per-file output (more accurate); fall back to the legacy
-# per-fire-count output if the per-file scan hasn't been run yet.
+# v0.12.2: support v6 corpus files (preferred) or fall back to v5.
+# Pass `v6` as the first arg to use v6 files, or `v5` to use v5.
+version = sys.argv[1] if len(sys.argv) > 1 else 'v6'
+prefix = f'/tmp/{version}-full-'
 try:
-    NEG = json.load(open('/tmp/v5-full-neg-perfile-fires.json'))
-    POS = json.load(open('/tmp/v5-full-pos-perfile-fires.json'))
+    NEG = json.load(open(f'{prefix}neg-perfile-fires.json'))
+    POS = json.load(open(f'{prefix}pos-perfile-fires.json'))
     if 'perFileFires' not in NEG or 'perFileFires' not in POS:
         raise FileNotFoundError('per-file fires missing, falling back to legacy output')
 except FileNotFoundError:
-    NEG = json.load(open('/tmp/v5-full-neg-fires.json'))
-    POS = json.load(open('/tmp/v5-full-pos-fires.json'))
+    NEG = json.load(open(f'{prefix}neg-fires.json'))
+    POS = json.load(open(f'{prefix}pos-fires.json'))
 
 # Per-file fires: ruleId -> number of unique files that rule fired on.
 # scan-corpus-direct.ts emits this in the perFileFires field. When
@@ -33,6 +36,21 @@ pos_per_file = POS.get('perFileFires', {})
 
 n_neg = NEG['files']
 n_pos = POS['files']
+
+# v0.12.2: read each rule's `aiSpecific` flag from the source files.
+# Rules with `aiSpecific: false` are code-hygiene checks, not AI
+# detectors. They still fire and report, but they don't get an
+# AI-calibration verdict — they get HYGIENE. The HYGIENE verdict
+# keeps the lift/P/R/FPR numbers in the data for reference, but
+# removes the rule from the INVERTED/USEFUL/OK/NOISY/DORMANT
+# distribution that consumers (lr-combiner, defaultOff logic) act on.
+RULE_DIR = REPO / 'src/rules'
+rule_ai_specific: dict[str, bool] = {}
+for ts in RULE_DIR.rglob('*.ts'):
+    text = ts.read_text(encoding='utf-8')
+    m = re.search(r"id:\s*['\"]([^'\"]+)['\"][^}]*?aiSpecific:\s*(true|false)", text, re.DOTALL)
+    if m:
+        rule_ai_specific[m.group(1)] = (m.group(2) == 'true')
 
 # Combined rule universe
 all_rules = sorted(set(neg_per_file.keys()) | set(pos_per_file.keys())
@@ -77,6 +95,14 @@ for rule in all_rules:
     else:
         verdict = 'NOISY'
 
+    # v0.12.2: code-hygiene rules (aiSpecific: false) get HYGIENE
+    # instead of an AI-calibration verdict. The lift/P/R numbers are
+    # still in the JSON for reference, but the verdict enum separates
+    # "this rule is a useful AI detector" from "this rule is a useful
+    # code-hygiene check that happens to fire more on AI code".
+    if rule in rule_ai_specific and rule_ai_specific[rule] is False:
+        verdict = 'HYGIENE'
+
     rows.append({
         'rule': rule,
         'pos_fires': pos_fires,
@@ -104,15 +130,15 @@ for r in rows:
 from collections import Counter as C
 v_counts = C(r['verdict'] for r in rows)
 print(f'\nVerdict distribution:')
-for v in ['USEFUL', 'OK', 'NOISY', 'INVERTED', 'DORMANT']:
+for v in ['USEFUL', 'OK', 'NOISY', 'INVERTED', 'DORMANT', 'HYGIENE']:
     print(f'  {v}: {v_counts[v]}')
 print(f'  Total: {len(rows)}')
 
 # Write to docs
 out = REPO / 'docs/research/v5-full-corpus-calibration.md'
-content = f'''# v5 full-corpus re-calibration ({n_neg} neg + {n_pos} pos)
+content = f'''# v{version} full-corpus re-calibration ({n_neg} neg + {n_pos} pos)
 
-**Generated:** 2026-06-26 from `scan-corpus-direct.ts` output.
+**Generated:** 2026-06-27 from `scan-corpus-direct.ts` output.
 **Method:** direct scan of each file via `scanFile()`, aggregated per-rule fire counts.
 **Caveat:** these numbers are based on raw fire counts, not per-file granularity. The v4 doc used per-file granularity (a file with rule firing N times counts as 1 file). The two are equivalent when most files fire at most once, which the v4 corpus shows. The P column is therefore `pos_fires / (pos_fires + neg_fires)` — an approximation of the v4 `P = TP / (TP + FP)`.
 
@@ -120,7 +146,7 @@ content = f'''# v5 full-corpus re-calibration ({n_neg} neg + {n_pos} pos)
 
 - Corpus: {n_neg} neg files + {n_pos} pos files
 - Unique rules fired: {len(rows)}
-- USEFUL: {v_counts['USEFUL']} | OK: {v_counts['OK']} | NOISY: {v_counts['NOISY']} | INVERTED: {v_counts['INVERTED']} | DORMANT: {v_counts['DORMANT']}
+- USEFUL: {v_counts['USEFUL']} | OK: {v_counts['OK']} | NOISY: {v_counts['NOISY']} | INVERTED: {v_counts['INVERTED']} | DORMANT: {v_counts['DORMANT']} | HYGIENE: {v_counts['HYGIENE']}
 
 ## Per-rule table (sorted by lift desc)
 
@@ -137,7 +163,7 @@ print(f'\nWrote {out}')
 # Write signal-strength update
 signal = json.load(open(REPO / 'src/rules/signal-strength.json'))
 import datetime
-now = '2026-06-26T23:30:00Z'
+now = '2026-06-27T05:35:00Z'
 for r in rows:
     lift = min(99.99, r['lift']) if r['lift'] != float('inf') else 99.99
     entry = {
@@ -147,11 +173,29 @@ for r in rows:
         'precision': round(r['p'], 4),
         'lastCalibratedAt': now,
         'verdict': r['verdict'],
-        '_calibrationNote': f'v5 full corpus re-calibration (2026-06-26): {n_neg} neg + {n_pos} pos. {r["verdict"]} — pos={r["pos_fires"]}, neg={r["neg_fires"]}, P={r["p"]*100:.1f}%, FPR={r["fpr"]*100:.2f}%, lift={"inf" if r["lift"]==float("inf") else f"{r["lift"]:.1f}"}.',
+        '_calibrationNote': f'v{version} full corpus re-calibration (2026-06-27): {n_neg} neg + {n_pos} pos. {r["verdict"]} — pos={r["pos_fires"]}, neg={r["neg_fires"]}, P={r["p"]*100:.1f}%, FPR={r["fpr"]*100:.2f}%, lift={"inf" if r["lift"]==float("inf") else f"{r["lift"]:.1f}"}.',
     }
-    if r['verdict'] in ('INVERTED', 'NOISY', 'DORMANT'):
+    if r['verdict'] in ('INVERTED', 'NOISY', 'DORMANT', 'HYGIENE'):
         entry['defaultOff'] = True
     signal[r['rule']] = entry
+
+# v0.12.2: post-process. Any rule in signal-strength.json that wasn't
+# seen in the v{version} scan (still has the old lastCalibratedAt
+# timestamp) gets reclassified: if its rule-level aiSpecific is false,
+# override INVERTED/NOISY/OK/USEFUL → HYGIENE. The v{version} scan only
+# updates rules it actually saw; this catches the stale entries.
+v0_calibrated_at = now
+reclassified = 0
+for rid, entry in list(signal.items()):
+    if entry.get('lastCalibratedAt') == v0_calibrated_at:
+        continue  # updated by the v{version} run
+    is_hygiene = rule_ai_specific.get(rid) is False
+    if is_hygiene and entry.get('verdict') == 'INVERTED':
+        entry['verdict'] = 'HYGIENE'
+        entry['defaultOff'] = True
+        entry['_calibrationNote'] = entry.get('_calibrationNote', '') + ' [v0.12.2: reclassified to HYGIENE because rule is aiSpecific: false]'
+        reclassified += 1
+print(f'\nReclassified {reclassified} stale INVERTED rules to HYGIENE (aiSpecific: false in source)')
 out_signal = REPO / 'src/rules/signal-strength.json'
 out_signal.write_text(json.dumps(signal, indent=2) + '\n')
 print(f'Updated {out_signal}')

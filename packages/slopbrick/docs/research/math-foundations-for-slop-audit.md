@@ -230,7 +230,7 @@ More accurate than BOCPD but the marginal accuracy isn't worth the inference cos
 
 ---
 
-## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW; v0.12.1 — calibrated)
+## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW; v0.12.1 — calibrated; v0.12.2 — verdict split)
 
 The methods in Sections 3–5 are all **detection** methods: they ask "does this file match pattern X?" The v0.12.0 calibration work addresses a complementary question: **"given multiple weak signals, what's the calibrated probability that this file is AI-generated?"**
 
@@ -323,31 +323,38 @@ p̂ ± z·sqrt(p̂(1−p̂)/n + z²/(4n²)) / (1 + z²/n)
 - neg: 50+ real public OSS repos (django, fastapi, flask, express, keycloak, discourse, supabase, …) + 54,980 files from `ai-slop-baseline/extracted/neg/`.
 - pos: 50+ real AI-coded projects (agno, claude-code, career-ops, …) + 6,142 files from `ai-slop-baseline/extracted/pos/`.
 
-**Verdict distribution shift (v5 → v6):**
+**Verdict distribution shift (v5 → v6, AI-detector verdicts only):**
 
-| Verdict | v5 (162k files) | v6 (524k files) | Change | Interpretation |
-|---------|-----------------|-----------------|--------|----------------|
-| USEFUL  | 16 | **22** | +6 | Calibration unlocked 6 previously-DORMANT rules |
-| OK      |  7 | **11** | +4 | |
-| NOISY   | 13 | **14** | +1 | |
-| DORMANT | 21 | **12** | -9 | 9 DORMANT rules gained enough fires to be classified |
-| INVERTED| 18 | **5**  | -13 | 14 reclassified (lift flipped to > 1), 4 phantom db/docs removed |
+| Verdict | v5 (162k files) | v0.12.1 (524k files) | v0.12.2 (HYGIENE split) |
+|---------|-----------------|----------------------|--------------------------|
+| USEFUL  | 16 | 22 | **13** (9 went to HYGIENE) |
+| OK      |  7 | 11 | 6 (5 went to HYGIENE) |
+| NOISY   | 13 | 14 | 9 (5 went to HYGIENE) |
+| DORMANT | 21 | 12 | 12 |
+| INVERTED| 18 |  5 | **0** (all went to HYGIENE) |
+| HYGIENE | —  | —  | **24** (new bucket for `aiSpecific: false` rules) |
 
-**Why did INVERTED rules collapse from 18 → 5?**
+**v0.12.2 verdict split.** The verdict distribution is now partitioned by `aiSpecific`. Rules with `aiSpecific: true` get one of USEFUL/OK/NOISY/DORMANT/INVERTED based on lift and precision against the calibration corpus. Rules with `aiSpecific: false` (code-hygiene rules — useful security/style/docs/accessibility checks that fire on both human and AI code) get verdict `HYGIENE`. The split is computed by `scripts/compute-v5-full-calibration.py` which reads each rule's `aiSpecific` flag from the source file and overrides the AI-calibration verdict.
+
+**Why 0 INVERTED in v0.12.2?** All 5 INVERTED rules in v0.12.1 were already `aiSpecific: false` (the calibration had flagged them as anti-predictive AI detectors, but they were never meant to be AI detectors). v0.12.2 also reclassified 2 more (`security/unsafe-html-render`, `security/exposed-env-var`) whose source comments said `aiSpecific: false` but the code was `aiSpecific: true`. v0.12.2 fixes that mismatch. Result: the verdict distribution is clean — 0 INVERTED, 24 HYGIENE, the rest in their AI-detector buckets.
+
+**Why did INVERTED rules collapse from 18 → 5 → 0?**
 
 The 14 reclassified rules (`context/import-path-mismatch`, `component/multiple-components-per-file`, `product/terminology-drift`, `style/identical-comments`, `style/emoji-in-comments`, `style/one-line-comments-only`, `style/too-perfect-formatting`, `docs/excessive-jsdoc`, `docs/copy-pasted-headers`, `docs/comment-density-anomaly`, `ai/typical-ai-mistake`, `ai/cliche-structure`, `ai/hedging-language`, `i18n/missing-locale`, `i18n/hardcoded-string`) were INVERTED in v5 because v5's 162k-file corpus undersampled the neg arm. With v6's 524k files, their LR landed in (1, 1.5) — they ARE more common in AI code than in real OSS code, but only by 12–50%. That's NOISY discrimination, not inverted AI detection. The reclassification as `aiSpecific: false` (code-hygiene) reflects the truth: these rules catch patterns that AI tools produce disproportionately, but the lift is too low to claim they're AI detectors. They keep firing in reports under the code-hygiene category.
 
-**3 math-derived rules that were DORMANT in v0.12.0, now calibrated in v0.12.1:**
+The remaining 5 in v0.12.1 (3 math-derived + `security/public-admin-route` + `wcag/dragging-movements`) were all `aiSpecific: false` already. v0.12.2 simply moves them to the HYGIENE bucket. Then 2 more (`security/unsafe-html-render`, `security/exposed-env-var`) get their `aiSpecific: true` → `aiSpecific: false` corrected and join HYGIENE. Final: 24 HYGIENE, 0 INVERTED.
 
-| Rule | v0.12.0 status | v0.12.1 status | What changed |
-|------|----------------|----------------|--------------|
-| `logic/heaps-deviation` | DORMANT (defaultOff) | **INVERTED** (defaultOff) | λ threshold uses corpus mean ± 2σ (0.40–1.08) not hardcoded 0.5 ± 0.15. AI files have λ closer to the corpus mean (consistent vocabulary), human/legacy code has more drift. Lift = 0.14×. |
-| `logic/zipf-slope-anomaly` | DORMANT (defaultOff) | **INVERTED** (defaultOff) | s threshold uses corpus mean ± 2σ (0.31–1.12) not hardcoded 1.0 ± 0.25. Lift = 0.34×. |
-| `logic/ks-distribution-shift` | DORMANT (defaultOff) | **NOISY** (defaultOff) | KS reference distribution is now a corpus-derived 10k-point sample per feature, not a uniform distribution. FPR dropped from 87% to 40%. Lift = 1.4×. |
+**3 math-derived rules: DORMANT → INVERTED/NOISY → HYGIENE:**
 
-All 3 remain `defaultOff: true` because their lift is ≤ 1.4×. They need either (a) a corpus with more discriminative labels or (b) a different test (e.g., drift over a session, not per-file) to flip to USEFUL.
+| Rule | v0.12.0 status | v0.12.1 status | v0.12.2 status |
+|------|----------------|----------------|-----------------|
+| `logic/heaps-deviation` | DORMANT (defaultOff) | INVERTED (defaultOff) | **HYGIENE** (defaultOff) |
+| `logic/zipf-slope-anomaly` | DORMANT (defaultOff) | INVERTED (defaultOff) | **HYGIENE** (defaultOff) |
+| `logic/ks-distribution-shift` | DORMANT (defaultOff) | NOISY (defaultOff) | **HYGIENE** (defaultOff) |
 
-**`src/engine/corpus-baselines.json`** is checked in (512KB). It contains Heaps λ, Zipf s, line lengths, identifier lengths, and comment density stats computed from a 5k-file sample of the v6 neg corpus. The 3 calibration rules read it on init and fall back to constants if the file is absent. To recompute against your own corpus, run `tsx scripts/compute-corpus-baselines.ts <workspace> [sample-size]`.
+All 3 remain `defaultOff: true`. The v0.12.1 calibration showed them with lift ≤ 1.4× (inverted or barely positive). v0.12.2 acknowledges they're not AI discriminators — they're code-hygiene checks that look at statistical properties of code (vocabulary growth, frequency distribution, KS shift). The math is still useful (corpus-derived baselines are real measurements, Heaps λ = 0.742 ± 0.169 and Zipf s = 0.715 ± 0.201), the rules are still implemented, and the data is still in the report under "code-hygiene". They just don't claim to be AI detectors.
+
+**`src/engine/corpus-baselines.json`** is checked in (308KB). It contains Heaps λ, Zipf s, line lengths, identifier lengths, and comment density stats computed from a 5k-file sample of the v6 neg corpus. The 3 calibration rules read it on init and fall back to constants if the file is absent. To recompute against your own corpus, run `tsx scripts/compute-corpus-baselines.ts <workspace> [sample-size]`.
 
 ---
 

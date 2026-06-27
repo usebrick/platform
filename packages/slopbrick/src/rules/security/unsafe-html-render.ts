@@ -55,7 +55,7 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
   id: 'security/unsafe-html-render',
   category: 'security',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description:
     'dangerouslySetInnerHTML used with a non-literal value (variable, template literal, expression) — unsanitized HTML injection risk.',
   create(context) {
@@ -74,7 +74,7 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
         ruleId: 'security/unsafe-html-render',
         category: 'security',
         severity: 'high',
-        aiSpecific: true,
+        aiSpecific: false,
         message:
           'dangerouslySetInnerHTML fed a non-literal value (variable, template, or expression) — unsanitized HTML will be rendered.',
         line: lineOfSource(source, m.index),

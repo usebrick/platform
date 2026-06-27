@@ -9,7 +9,7 @@ interface SignalStrength {
   precision: number;
   lastCalibratedAt: string;
   defaultOff?: boolean;
-  verdict?: 'USEFUL' | 'OK' | 'NOISY' | 'INVERTED' | 'DORMANT';
+  verdict?: 'USEFUL' | 'OK' | 'NOISY' | 'INVERTED' | 'DORMANT' | 'HYGIENE';
 }
 
 const DATA = signalStrengthData as Record<string, SignalStrength>;
@@ -91,27 +91,43 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL rules count is the v6 corpus baseline (22)', () => {
-    // v6 calibration (2026-06-27): 262k neg + 262k pos = 524k files
-    // (partial scans due to SWC parser panic, but 90%+ complete).
-    // With corpus-derived baselines for the 3 calibration rules and
-    // 14 INVERTED rules reclassified as code-hygiene (aiSpecific: false),
-    // the v6 calibration shows 22 USEFUL rules.
+  it('USEFUL rules count is the v6 corpus baseline (13)', () => {
+    // v0.12.2: v6 calibration (2026-06-27, 524k files) + HYGIENE verdict
+    // for code-hygiene rules. The USEFUL bucket is now strictly
+    // `aiSpecific: true` rules with P >= 0.5 and lift >= 2. Down from
+    // 22 in v0.12.1 because 9 code-hygiene rules that v0.12.1 counted
+    // as USEFUL (e.g. some style/*, docs/*, i18n/* rules with high
+    // lift) are now in the HYGIENE bucket.
     const useful = Object.values(DATA).filter((e) => e.verdict === 'USEFUL').length;
-    expect(useful, 'v6 corpus calibration: 22 USEFUL rules').toBe(22);
+    expect(useful, 'v6 corpus calibration: 13 USEFUL rules').toBe(13);
   });
 
-  it('INVERTED rules count is the v6 corpus baseline (5)', () => {
-    // v6 calibration: 5 INVERTED rules. Down from v5's 18 (which included
-    // 13 core INVERTED + 4 phantom db/docs rules + 1 product). After
-    // reclassifying 14 non-AI INVERTED rules as code-hygiene, the
-    // remaining 5 INVERTED rules are:
-    //   - logic/heaps-deviation (was catastrophic, now improved)
-    //   - logic/zipf-slope-anomaly (still INVERTED with corpus baselines)
-    //   - logic/math-variable-name-entropy
-    //   - wcag/dragging-movements
-    //   - perf/halstead-anomaly (technically USEFUL, but kept DORMANT)
+  it('INVERTED rules count is the v6 corpus baseline (0)', () => {
+    // v0.12.2: every INVERTED rule in v0.12.1 has been reclassified
+    // as code-hygiene (HYGIENE verdict, aiSpecific: false). The
+    // verdict distribution is now clean: 0 INVERTED, all 24
+    // code-hygiene rules in HYGIENE, the rest in USEFUL/OK/NOISY/DORMANT.
     const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
-    expect(inverted, 'v6 corpus calibration: 5 INVERTED rules').toBe(5);
+    expect(inverted, 'v6 corpus calibration: 0 INVERTED rules').toBe(0);
+  });
+
+  it('HYGIENE rules count is the v6 corpus baseline (24)', () => {
+    // v0.12.2: HYGIENE verdict for `aiSpecific: false` rules. 24
+    // code-hygiene rules. These are useful checks (security, style,
+    // docs, etc.) that fire on patterns common in both human and AI
+    // code — they keep firing in reports but don't contribute to
+    // slopIndex. They are defaultOff: true so users opt-in.
+    const hygiene = Object.values(DATA).filter((e) => e.verdict === 'HYGIENE').length;
+    expect(hygiene, 'v6 corpus calibration: 24 HYGIENE rules').toBe(24);
+  });
+
+  it('every HYGIENE rule is defaultOff', () => {
+    const offenders: string[] = [];
+    for (const [ruleId, entry] of Object.entries(DATA)) {
+      if (entry.verdict === 'HYGIENE' && !entry.defaultOff) {
+        offenders.push(ruleId);
+      }
+    }
+    expect(offenders, `HYGIENE rules not defaultOff: ${offenders.join(', ')}`).toEqual([]);
   });
 });
