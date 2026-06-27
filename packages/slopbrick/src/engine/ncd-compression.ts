@@ -47,7 +47,7 @@
  * Used by the v0.13 `ai/compression-profile` rule (to be added).
  */
 
-import { gzipSync, brotliCompressSync } from 'node:zlib';
+import { gzipSync, brotliCompressSync, constants as zlibConstants } from 'node:zlib';
 
 export interface CompressionProfile {
   /** Length of file in bytes. */
@@ -75,7 +75,7 @@ export function computeCompressionProfile(content: string | Buffer): Compression
   }
   const gz = gzipSync(buf, { level: 9 });
   const br = brotliCompressSync(buf, {
-    params: { [require('node:zlib').constants.BROTLI_PARAM_QUALITY]: 11 },
+    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 },
   });
   return {
     bytes,

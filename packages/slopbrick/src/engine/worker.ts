@@ -55,7 +55,27 @@ export async function scanFile(
       activeRegistry.loadBuiltins();
     }
     const rules = activeRegistry.createContexts(config, filePath, cwd);
-    const rawIssues = rules.flatMap(({ rule, context }) => rule.analyze(context, facts));
+    // v0.14.5c-fix3: per-rule try/catch so a buggy rule doesn't take
+    // down the whole file scan. Previously, `rules.flatMap` would
+    // propagate any rule.analyze() exception up to the outer try/catch
+    // where it was mis-categorized as a parseError — so a single
+    // broken rule (e.g., `require()` in an ESM module) made every
+    // file look like a parse failure. Now we isolate each rule.
+    const rawIssues: Issue[] = [];
+    for (const { rule, context } of rules) {
+      try {
+        const issues = rule.analyze(context, facts);
+        rawIssues.push(...issues);
+      } catch (err) {
+        // A buggy rule should not block the scan. Log to stderr in
+        // debug mode (when SLOP_AUDIT_DEBUG=1) but stay silent otherwise
+        // — production scans hit 100k+ files, and a per-rule log line
+        // per file would be noise.
+        if (process.env.SLOP_AUDIT_DEBUG === '1') {
+          console.error(`[worker] rule ${rule.id} threw on ${filePath}: ${(err as Error).message}`);
+        }
+      }
+    }
     const issues = applyRuleOverrides(rawIssues, config.rules);
 
     // v0.14.6: composite AI-likelihood score. Naive Bayes LLR
