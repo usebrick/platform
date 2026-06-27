@@ -3,11 +3,17 @@ import type { Rule } from '../types';
 import { aiAnyDensityRule } from './ai/any-density';
 import { aiCommentRatioRule } from './ai/comment-ratio';
 import { aiCompressionProfileRule } from './ai/compression-profile';
+import { aiConsoleDebugStormRule } from './ai/console-debug-storm';
+import { aiDefaultReactStackRule } from './ai/default-react-stack';
 import { aiErrorsNearEofRule } from './ai/errors-near-eof';
+import { aiFetchDefaultOveruseRule } from './ai/fetch-default-overuse';
+import { aiLibraryReinventionRule } from './ai/library-reinvention';
 import { aiLogRankHistogramRule } from './ai/log-rank-histogram';
 import { aiMarkdownLeakageRule } from './ai/markdown-leakage';
 import { aiRenyiProfileRule } from './ai/renyi-profile';
 import { aiSegmentSurprisalCvRule } from './ai/segment-surprisal-cv';
+import { aiStateDefaultOveruseRule } from './ai/state-default-overuse';
+import { aiTailwindColorOveruseRule } from './ai/tailwind-color-overuse';
 import { aiTextLikeRatioRule } from './ai/text-like-ratio';
 import { aiWhitespaceRegularityRule } from './ai/whitespace-regularity';
 import { astroIslandLeakRule } from './arch/astro-island-leak';
@@ -79,11 +85,17 @@ export const builtinRules: Rule[] = [
   aiAnyDensityRule,
   aiCommentRatioRule,
   aiCompressionProfileRule,
+  aiConsoleDebugStormRule,
+  aiDefaultReactStackRule,
   aiErrorsNearEofRule,
+  aiFetchDefaultOveruseRule,
+  aiLibraryReinventionRule,
   aiLogRankHistogramRule,
   aiMarkdownLeakageRule,
   aiRenyiProfileRule,
   aiSegmentSurprisalCvRule,
+  aiStateDefaultOveruseRule,
+  aiTailwindColorOveruseRule,
   aiTextLikeRatioRule,
   aiWhitespaceRegularityRule,
   astroIslandLeakRule,

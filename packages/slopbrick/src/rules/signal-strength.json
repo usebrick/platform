@@ -709,5 +709,71 @@
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.13.0 stub: rule implemented per Cilibrasi 2005 / Mahoney 1999; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
+  },
+  "ai/tailwind-color-overuse": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 ('Six Models, One React Stack') + Douglas 2025 ('AI 正在 Tailwind 化'). Detects over-representation of default Tailwind palette (blue-500, slate-50, rounded-lg, shadow-md, p-4/6/8). DORMANT until v7 calibration lands."
+  },
+  "ai/default-react-stack": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (9/9 LLMs default to Next.js + Tailwind + shadcn/ui + TanStack Query + Zustand) + Nam et al. MSR 2026 (27% of AI directives mention Tailwind, 18% mention shadcn/ui). Detects \u22653 of these packages imported in a single file. DORMANT until v7 calibration lands."
+  },
+  "ai/library-reinvention": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per GitClear 2025 (AI code has 4\u00d7 higher code churn rate; reinvention is a major contributor) + Cui et al. 2025 (30.1% of new code is AI-generated). Detects \u22652 of: custom date-picker, form-validation, chart, modal, toast, tabs, select, accordion \u2014 without importing the canonical library. DORMANT until v7 calibration lands."
+  },
+  "ai/state-default-overuse": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (LLMs produce 2022-era patterns; useState is the default even when useReducer or Zustand/Jotai would be appropriate). Detects \u22655 useState with 0 useReducer and 0 state library imports. DORMANT until v7 calibration lands."
+  },
+  "ai/fetch-default-overuse": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (every top LLM puts TanStack Query in default stack but still defaults to raw fetch when no library is installed) + Nam et al. MSR 2026 (27% of AI directives mention TanStack Query). Detects \u22653 direct fetch() calls with no TanStack Query / SWR / axios / ky import. DORMANT until v7 calibration lands."
+  },
+  "ai/console-debug-storm": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "aiSpecific": true,
+    "_calibrationNote": "v0.14.5b: rule implemented per GitClear 2025 (AI code has 4\u00d7 higher churn; console.log debug statements often left in by AI 'thinking out loud'). Detects \u226510 console.* / debugger statements with no structured logger (winston, pino, debug, consola). DORMANT until v7 calibration lands."
   }
 }
