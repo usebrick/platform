@@ -1,5 +1,7 @@
 // Rule: visual/naturalness-anomaly
 //
+// Per Hindle, A. et al. (2012), ‘On the Naturalness of Software’, Proc. ICSE 2012, pp. 837-847; Allamanis, M., Barr, E. T., Bird, C. & Sutton, C. (2014), ‘Learning Natural Coding Conventions’, Proc. FSE 2014, pp. 281-293.
+//
 // Phase 2 of v0.10 — Code Naturalness (Hindle et al., ICSE 2012,
 // "On the Naturalness of Software", §3-§5).
 //

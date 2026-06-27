@@ -1,5 +1,7 @@
 // Rule: test/weak-assertion
 //
+// Per Meszaros, G. (2007), *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, Chapter 4 (Test Assertion Patterns); Freeman, S. & Pryce, N. (2009), *Growing Object-Oriented Software, Guided by Tests*, Addison-Wesley.
+//
 // Catches AI-generated test assertions that pass on any code rather
 // than asserting on a specific value or shape. Examples:
 //

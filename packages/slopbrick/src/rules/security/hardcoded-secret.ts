@@ -1,5 +1,7 @@
 // Rule: security/hardcoded-secret
 //
+// Per OWASP Foundation (2023), Top 10 Web Application Security Risks, A07:2021 Identification and Authentication Failures; CWE (2023), CWE-798: Use of Hard-coded Credentials.
+//
 // Catches AI-generated code that ships real-looking secrets as string
 // literals in source. This is a Tier-1 "AI security debt" tell —
 // LLMs in tutorial/prototype mode emit working API keys, JWT

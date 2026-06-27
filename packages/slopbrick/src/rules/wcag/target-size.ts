@@ -1,5 +1,7 @@
 // Rule: wcag/target-size
 //
+// Per W3C (2018), Web Content Accessibility Guidelines (WCAG) 2.1, Success Criterion 2.5.5 (Target Size); Fitts, P. M. (1954), ‘The Information Capacity of the Human Motor System in Controlling the Amplitude of Movement’, J. Exp. Psychol. 47(6):381-391.
+//
 // **Peer-reviewed citation:**
 // - W3C WCAG 2.2, Success Criterion 2.5.5 "Target Size (Enhanced)"
 //   and SC 2.5.8 "Target Size (Minimum)". The rule implements

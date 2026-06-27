@@ -8,6 +8,12 @@ import { createRule } from '../rule';
  * try blocks. If the catch block lacks a setter call (rollback), this
  * rule fires.
  * Per-detection fire.
+ *
+ * Per Chandy, K. M. & Lamport, L. (1985), ‘Distributed Snapshots: Determining
+ * Global States of Distributed Systems’, ACM TOCS 3(1):63-75;
+ * Kleppmann, M. (2017), *Designing Data-Intensive Applications*, O'Reilly, Ch. 9.
+ * Distributed snapshot theory — optimistic updates without rollback violate
+ * the consistency of distributed state.
  */
 
 export const optimisticNoRollbackRule = createRule<RuleContext>({
