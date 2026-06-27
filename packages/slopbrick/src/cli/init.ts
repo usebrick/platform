@@ -70,6 +70,41 @@ const UI_LIBRARY_OPTIONS: UiLibrary[] = ['shadcn/ui', 'mui', 'chakra', 'radix', 
 
 const STRICTNESS_OPTIONS: Strictness[] = ['strict', 'balanced', 'permissive'];
 
+const STRUCTURE_OPTIONS = ['feature-based', 'layer-based', 'flat', 'monorepo', 'other'] as const;
+
+/**
+ * v0.14.5d: free-text prompt for the open PickBrick categories
+ * (state, auth, forms, testing). The PickBrick wizard in the user
+ * brief lists specific canonical libraries (Zustand, NextAuth, etc.)
+ * but in practice teams use any of a long tail. Accepting free text
+ * matches how `slopbrick scan` detects packages — by npm-name
+ * presence, not by whitelist membership — so the user can declare
+ * their actual library.
+ *
+ * Empty input is allowed and returns `undefined`, which
+ * `buildInitConfig` interprets as "this category is deliberately
+ * undeclared" (the Constitution stays empty for the field).
+ */
+function promptText(
+  rl: ReadlineInterface,
+  question: string,
+  detected: string,
+): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const lines = [
+      `? ${question} (detected: ${detected || 'none'}) — npm package name, or Enter to skip:`,
+    ];
+    rl.question(lines.join('\n') + '\n', (answer) => {
+      const trimmed = answer.trim();
+      if (trimmed === '') {
+        resolve(undefined);
+        return;
+      }
+      resolve(trimmed);
+    });
+  });
+}
+
 function promptSingleSelect<T extends string>(
   rl: ReadlineInterface,
   question: string,
@@ -178,6 +213,22 @@ export async function runInitWizard(
 
     const strictness = await promptSingleSelect(rl, 'Strictness', STRICTNESS_OPTIONS, 'balanced');
 
+    // v0.14.5d: PickBrick taxonomy — the four open categories. Free
+    // text (state / auth / forms / testing) so the user can declare
+    // their actual library without a hardcoded whitelist; a 5-option
+    // picker for structure. All optional — Enter-to-skip means the
+    // field is undeclared in the Constitution.
+    const stateManagement = await promptText(rl, 'State management', '');
+    const auth = await promptText(rl, 'Auth', '');
+    const forms = await promptText(rl, 'Forms (validation lib, e.g. zod)', '');
+    const testing = await promptText(rl, 'Testing (e.g. vitest, jest, playwright)', '');
+    const structure = await promptSingleSelect(
+      rl,
+      'Project structure',
+      [...STRUCTURE_OPTIONS],
+      'feature-based',
+    );
+
     // Round 23: surface auto-detected constitution in the wizard's
     // final summary so users see what slopbrick inferred before
     // writing the config file. They can later override any field in
@@ -188,7 +239,17 @@ export async function runInitWizard(
       rl.write(formatConstitution(detectedConstitution) + '\n\n');
     }
 
-    return { framework, styling, uiLibraries, strictness };
+    return {
+      framework,
+      styling,
+      uiLibraries,
+      strictness,
+      stateManagement,
+      auth,
+      forms,
+      testing,
+      structure,
+    };
   } finally {
     rl.close();
   }

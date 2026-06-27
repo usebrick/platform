@@ -34,6 +34,17 @@ export interface WizardAnswers {
   styling: StylingSolution;
   uiLibraries: UiLibrary[];
   strictness: Strictness;
+  // v0.14.5d: extended wizard covers the full PickBrick taxonomy
+  // (Framework / UI / Styling / State / Auth / Forms / Testing / Structure).
+  // The first four are pre-existing; the latter four were added so
+  // `slopbrick init` is a complete PickBrick-equivalent. Each is an
+  // optional free-text value (library name) so the wizard doesn't fail
+  // when none of the canonical options match.
+  stateManagement?: string;
+  auth?: string;
+  forms?: string;
+  testing?: string;
+  structure?: 'feature-based' | 'layer-based' | 'flat' | 'monorepo' | 'other';
 }
 
 export const DEFAULT_SPACING_SCALE = [
