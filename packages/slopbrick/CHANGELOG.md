@@ -128,6 +128,51 @@ constraints before code lands.
   generated snippet — without them, an MCP tool like
   `slop_suggest` would render an empty hint bubble for those rules.
 
+## [0.14.5f] - 2026-06-27 — Scanner config fixes for v8 corpus re-scan
+
+The v0.14.5d scans hit 264 timeouts and 1 ENOENT race in 4 hours
+(0.28% of files scanned). Both were scanner-config bugs, not
+rule-quality issues. This release locks in the fixes as tests so
+the v8 corpus re-scan can't regress.
+
+### Fixed
+
+- **Per-file timeout bumped 60s → 180s.** The 60s limit was too
+  aggressive for large generated docs: Alamofire HTML (293KB)
+  takes 20-40s, Apollo Client test fixtures (100KB+) take 30s+,
+  and Discourse serializers can hit 60s on a single deeply-nested
+  file. 180s gives headroom for the npx-tsx fork (~500ms) + the
+  rule registry load (~1s on first hit) without being unbounded —
+  a genuinely hung child still gets SIGKILL'd.
+
+- **ENOENT-safe `unlinkSync` cleanup.** When a child was SIGKILL'd
+  by the timeout, the parent tried to `unlinkSync` a result file
+  that was never written. The v0.14.5d neg log showed exactly one
+  such race. Stale tmp files in `/tmp` are harmless (the OS
+  reclaims them), so the fix is to swallow the error rather than
+  crash the worker.
+
+- **Stderr-soak guard.** Workers run with `stdio: ['ignore',
+  'ignore', 'pipe']` so their stderr was previously piped to
+  /dev/null. If a rule threw inside the per-rule try/catch (and
+  was therefore silently recovered), the calibration data had no
+  record. v0.14.5f captures the first 2 lines of stderr on every
+  file — even on success — as a `_stderr` field on the result,
+  so hidden rule failures surface in the calibration data.
+
+### Tests
+
+- `tests/scripts/scanner-config.test.ts` — 6 regression tests
+  asserting the scanner's config invariants: timeout bounded
+  120s–600s, uses `npx tsx` (not raw `node`), passes
+  `SLOP_RESULT_PATH` env (no stdout buffer overrun), `unlinkSync`
+  is wrapped in `try { ... } catch { ... }` (ENOENT-safe),
+  captures stderr as `_stderr` (soak). All 6 pass.
+
+The currently-running v7 scans will continue to use the v0.14.5d
+scanner (the fix is for v8). The 265 errors observed so far are
+well below the noise floor for calibration (0.06% of corpus).
+
 ## [0.14.7] - 2026-06-27 — Multi-language support, AI tendency rules, composite scoring
 
 This is a major release that adds support for 8 new programming languages,
