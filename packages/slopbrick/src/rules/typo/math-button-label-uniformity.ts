@@ -15,7 +15,7 @@ export const mathButtonLabelUniformityRule = createRule<RuleContext>({
   id: 'typo/math-button-label-uniformity',
   category: 'typo',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Button text lengths have suspiciously low variance — AI writes "Get started", "Sign up", "Learn more"',
   create(context) {
     return context;

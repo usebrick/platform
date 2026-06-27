@@ -73,7 +73,7 @@ export const terminologyDriftRule = createRule<RuleContext>({
   id: 'product/terminology-drift',
   category: 'arch',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description:
     'Three or more semantically-similar component names differ (e.g. PostList/ArticleList/NewsList on the "List" suffix, or PostList/PostDetail/PostCard on the "Post" prefix). AI agents pick slightly different words each invocation; pick one and standardize.',
   create(context) {

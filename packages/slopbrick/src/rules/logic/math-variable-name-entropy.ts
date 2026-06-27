@@ -28,7 +28,7 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
   id: 'logic/math-variable-name-entropy',
   category: 'logic',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Identifier names show low Shannon entropy — AI defaults to a small vocabulary of generic names',
   create(context) {
     return context;

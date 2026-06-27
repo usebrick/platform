@@ -1,4 +1,4 @@
-# v5 full-corpus re-calibration (86983 neg + 81787 pos)
+# v5 full-corpus re-calibration (290927 neg + 264905 pos)
 
 **Generated:** 2026-06-26 from `scan-corpus-direct.ts` output.
 **Method:** direct scan of each file via `scanFile()`, aggregated per-rule fire counts.
@@ -6,58 +6,61 @@
 
 ## Summary
 
-- Corpus: 86983 neg files + 81787 pos files
-- Unique rules fired: 47
-- USEFUL: 14 | OK: 7 | NOISY: 13 | INVERTED: 13 | DORMANT: 0
+- Corpus: 290927 neg files + 264905 pos files
+- Unique rules fired: 50
+- USEFUL: 21 | OK: 11 | NOISY: 14 | INVERTED: 4 | DORMANT: 0
 
 ## Per-rule table (sorted by lift desc)
 
 | Rule | Pos fires | Neg fires | P | FPR | Lift | Verdict |
 |------|----------:|----------:|--:|----:|-----:|---------|
-| `logic/ghost-defensive` | 73 | 3 | 94.1% | 0.00% | 17.0 | **USEFUL** |
-| `logic/math-console-log-storm` | 718 | 133 | 84.4% | 0.15% | 5.7 | **USEFUL** |
-| `logic/zombie-state` | 42 | 8 | 82.1% | 0.01% | 4.9 | **USEFUL** |
-| `logic/math-gini-class-usage` | 227 | 71 | 76.2% | 0.08% | 3.4 | **USEFUL** |
-| `visual/math-default-font` | 262 | 91 | 74.2% | 0.10% | 3.1 | **USEFUL** |
-| `test/duplicate-setup` | 138 | 30 | 71.0% | 0.01% | 2.6 | **USEFUL** |
-| `visual/math-rounded-entropy` | 786 | 347 | 69.4% | 0.40% | 2.4 | **USEFUL** |
-| `logic/reactive-hook-soup` | 664 | 295 | 68.8% | 0.34% | 2.3 | **USEFUL** |
-| `visual/math-color-cluster` | 44 | 20 | 68.8% | 0.02% | 2.3 | **USEFUL** |
-| `typo/calc-raw-px` | 8 | 3 | 66.7% | 0.00% | 2.1 | **USEFUL** |
-| `component/shadcn-prop-mismatch` | 443 | 187 | 66.3% | 0.16% | 2.1 | **USEFUL** |
-| `wcag/focus-appearance` | 820 | 354 | 65.7% | 0.29% | 2.0 | **USEFUL** |
-| `security/sql-construction` | 1468 | 606 | 64.9% | 0.32% | 2.0 | **OK** |
-| `test/weak-assertion` | 39218 | 18298 | 63.8% | 2.73% | 1.9 | **OK** |
-| `visual/naturalness-anomaly` | 20056 | 12617 | 62.9% | 12.99% | 1.8 | **OK** |
-| `logic/optimistic-no-rollback` | 258 | 152 | 60.9% | 0.15% | 1.7 | **OK** |
-| `visual/math-font-entropy` | 991 | 646 | 60.5% | 0.74% | 1.6 | **OK** |
-| `layout/math-grid-uniformity` | 62 | 42 | 59.6% | 0.05% | 1.6 | **OK** |
-| `perf/css-bloat` | 2177 | 1527 | 58.8% | 1.76% | 1.5 | **OK** |
-| `wcag/focus-obscured` | 704 | 479 | 58.5% | 0.46% | 1.5 | **NOISY** |
-| `logic/math-any-density` | 259 | 184 | 58.5% | 0.21% | 1.5 | **NOISY** |
-| `security/hardcoded-secret` | 191 | 114 | 58.0% | 0.11% | 1.5 | **NOISY** |
-| `security/dangerous-cors` | 98 | 66 | 57.5% | 0.07% | 1.4 | **NOISY** |
-| `visual/arbitrary-escape` | 1720 | 1491 | 55.7% | 0.40% | 1.3 | **NOISY** |
-| `test/fake-placeholder` | 3362 | 4354 | 55.1% | 0.53% | 1.3 | **NOISY** |
-| `component/giant-component` | 2962 | 2531 | 54.5% | 2.59% | 1.3 | **NOISY** |
-| `visual/radius-scale-violation` | 144 | 93 | 54.3% | 0.07% | 1.3 | **NOISY** |
-| `product/ux-pattern-fragmentation` | 26 | 24 | 53.3% | 0.02% | 1.2 | **NOISY** |
-| `visual/math-spacing-entropy` | 290 | 279 | 51.0% | 0.32% | 1.1 | **NOISY** |
-| `layout/spacing-grid` | 113 | 99 | 50.0% | 0.02% | 1.1 | **NOISY** |
-| `perf/cls-image` | 64 | 80 | 50.0% | 0.06% | 1.1 | **NOISY** |
-| `layout/math-element-uniformity` | 407 | 430 | 48.6% | 0.49% | 1.0 | **NOISY** |
-| `typo/math-button-label-uniformity` | 19 | 23 | 45.2% | 0.03% | 0.9 | **INVERTED** |
-| `logic/boundary-violation` | 104057 | 51526 | 45.1% | 5.43% | 0.9 | **INVERTED** |
-| `security/exposed-env-var` | 77 | 106 | 44.9% | 0.10% | 0.9 | **INVERTED** |
-| `visual/spacing-scale-violation` | 2559 | 2852 | 43.6% | 1.96% | 0.8 | **INVERTED** |
-| `layout/gap-monopoly` | 38 | 53 | 41.8% | 0.06% | 0.8 | **INVERTED** |
-| `visual/inline-style-dominance` | 1094 | 1812 | 37.6% | 2.08% | 0.6 | **INVERTED** |
-| `context/import-path-mismatch` | 18849 | 39226 | 34.0% | 17.48% | 0.5 | **INVERTED** |
-| `component/multiple-components-per-file` | 7247 | 14796 | 32.9% | 17.01% | 0.5 | **INVERTED** |
-| `security/unsafe-html-render` | 168 | 411 | 30.7% | 0.31% | 0.5 | **INVERTED** |
-| `logic/key-prop-missing` | 452 | 1081 | 28.7% | 0.34% | 0.4 | **INVERTED** |
-| `product/terminology-drift` | 1654 | 6566 | 22.5% | 1.98% | 0.3 | **INVERTED** |
-| `logic/math-variable-name-entropy` | 5 | 29 | 14.7% | 0.03% | 0.2 | **INVERTED** |
-| `wcag/dragging-movements` | 0 | 3 | 0.0% | 0.00% | 0.0 | **INVERTED** |
-| `perf/halstead-anomaly` | 2 | 0 | 100.0% | 0.00% | inf | **USEFUL** |
+| `logic/zombie-state` | 69 | 8 | 87.0% | 0.00% | 7.4 | **USEFUL** |
+| `logic/math-gini-class-usage` | 385 | 87 | 81.6% | 0.03% | 4.9 | **USEFUL** |
+| `test/weak-assertion` | 122447 | 24762 | 80.6% | 1.22% | 4.6 | **USEFUL** |
+| `test/duplicate-setup` | 232 | 33 | 80.0% | 0.00% | 4.4 | **USEFUL** |
+| `visual/math-color-cluster` | 74 | 22 | 77.1% | 0.01% | 3.7 | **USEFUL** |
+| `visual/math-rounded-entropy` | 1231 | 383 | 76.3% | 0.13% | 3.5 | **USEFUL** |
+| `visual/math-default-font` | 367 | 115 | 76.1% | 0.04% | 3.5 | **USEFUL** |
+| `logic/reactive-hook-soup` | 1089 | 342 | 75.8% | 0.12% | 3.4 | **USEFUL** |
+| `wcag/focus-appearance` | 1433 | 366 | 75.4% | 0.09% | 3.4 | **USEFUL** |
+| `component/shadcn-prop-mismatch` | 644 | 194 | 74.0% | 0.05% | 3.1 | **USEFUL** |
+| `logic/optimistic-no-rollback` | 442 | 184 | 70.3% | 0.05% | 2.6 | **USEFUL** |
+| `logic/math-console-log-storm` | 1977 | 857 | 69.8% | 0.29% | 2.5 | **USEFUL** |
+| `logic/ghost-defensive` | 73 | 27 | 69.6% | 0.00% | 2.5 | **USEFUL** |
+| `wcag/focus-obscured` | 1467 | 599 | 69.0% | 0.17% | 2.4 | **USEFUL** |
+| `security/hardcoded-secret` | 838 | 216 | 68.9% | 0.06% | 2.4 | **USEFUL** |
+| `visual/math-font-entropy` | 1449 | 710 | 67.1% | 0.24% | 2.2 | **USEFUL** |
+| `perf/css-bloat` | 3522 | 1798 | 66.2% | 0.62% | 2.2 | **USEFUL** |
+| `visual/radius-scale-violation` | 206 | 93 | 65.4% | 0.02% | 2.1 | **USEFUL** |
+| `visual/arbitrary-escape` | 3582 | 1809 | 65.3% | 0.14% | 2.1 | **USEFUL** |
+| `visual/naturalness-anomaly` | 51334 | 29514 | 64.5% | 9.29% | 2.0 | **OK** |
+| `component/giant-component` | 5583 | 3479 | 63.0% | 0.99% | 1.9 | **OK** |
+| `security/sql-construction` | 2481 | 1509 | 62.9% | 0.19% | 1.9 | **OK** |
+| `layout/gap-monopoly` | 103 | 61 | 62.8% | 0.02% | 1.9 | **OK** |
+| `product/ux-pattern-fragmentation` | 37 | 25 | 61.4% | 0.01% | 1.7 | **OK** |
+| `visual/math-spacing-entropy` | 511 | 324 | 61.2% | 0.11% | 1.7 | **OK** |
+| `layout/spacing-grid` | 241 | 173 | 60.0% | 0.01% | 1.6 | **OK** |
+| `typo/calc-raw-px` | 11 | 6 | 60.0% | 0.00% | 1.6 | **OK** |
+| `logic/math-any-density` | 590 | 406 | 59.2% | 0.14% | 1.6 | **OK** |
+| `perf/cls-image` | 121 | 150 | 58.8% | 0.02% | 1.6 | **OK** |
+| `layout/math-element-uniformity` | 791 | 561 | 58.5% | 0.19% | 1.5 | **OK** |
+| `logic/boundary-violation` | 204635 | 74022 | 57.4% | 1.90% | 1.5 | **NOISY** |
+| `security/dangerous-cors` | 169 | 192 | 57.1% | 0.04% | 1.5 | **NOISY** |
+| `security/unsafe-html-render` | 525 | 484 | 56.8% | 0.11% | 1.4 | **NOISY** |
+| `test/fake-placeholder` | 16580 | 19550 | 56.7% | 0.51% | 1.4 | **NOISY** |
+| `layout/math-grid-uniformity` | 81 | 62 | 56.6% | 0.02% | 1.4 | **NOISY** |
+| `context/import-path-mismatch` | 54098 | 42965 | 56.0% | 5.72% | 1.4 | **NOISY** |
+| `logic/ks-distribution-shift` | 144889 | 116746 | 55.4% | 40.13% | 1.4 | **NOISY** |
+| `visual/inline-style-dominance` | 2594 | 2172 | 54.4% | 0.75% | 1.3 | **NOISY** |
+| `visual/spacing-scale-violation` | 4780 | 3418 | 53.6% | 0.70% | 1.3 | **NOISY** |
+| `product/terminology-drift` | 8560 | 7369 | 53.5% | 0.67% | 1.3 | **NOISY** |
+| `logic/key-prop-missing` | 1675 | 1522 | 51.4% | 0.15% | 1.2 | **NOISY** |
+| `security/exposed-env-var` | 179 | 176 | 51.2% | 0.05% | 1.2 | **NOISY** |
+| `typo/math-button-label-uniformity` | 43 | 41 | 51.2% | 0.01% | 1.2 | **NOISY** |
+| `component/multiple-components-per-file` | 19260 | 18884 | 50.5% | 6.49% | 1.1 | **NOISY** |
+| `logic/math-variable-name-entropy` | 55 | 163 | 25.2% | 0.06% | 0.4 | **INVERTED** |
+| `logic/zipf-slope-anomaly` | 5460 | 17434 | 23.8% | 5.99% | 0.3 | **INVERTED** |
+| `wcag/dragging-movements` | 2 | 13 | 22.2% | 0.00% | 0.3 | **INVERTED** |
+| `logic/heaps-deviation` | 4238 | 33168 | 11.3% | 11.40% | 0.1 | **INVERTED** |
+| `perf/halstead-anomaly` | 5 | 0 | 100.0% | 0.00% | inf | **USEFUL** |
 | `security/fail-open-auth` | 1 | 0 | 100.0% | 0.00% | inf | **USEFUL** |

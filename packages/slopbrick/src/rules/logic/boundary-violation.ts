@@ -18,7 +18,7 @@ export const boundaryViolationRule = createRule<BoundaryViolationContext>({
   id: 'logic/boundary-violation',
   category: 'logic',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   create(ruleContext: RuleContext): BoundaryViolationContext {
     return { clientHooks: CLIENT_HOOKS, supportsRsc: ruleContext.config.supportsRsc ?? true };
   },

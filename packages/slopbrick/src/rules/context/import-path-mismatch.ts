@@ -14,7 +14,7 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
   id: 'context/import-path-mismatch',
   category: 'arch',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Import path does not match any allowed prefix from brick.config.json.',
   create(context) {
     return {

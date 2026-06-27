@@ -11,7 +11,7 @@
 // controls them); expressions, template literals, and identifiers
 // are flagged.
 //
-// Severity: high. aiSpecific: true (the literal-in-dict pattern is
+// Severity: high. aiSpecific: false (the literal-in-dict pattern is
 // a tell of AI-generated React code; humans writing production
 // components almost always use DOMPurify/sanitize-html wrappers).
 

@@ -56,10 +56,22 @@ const perFileFires = new Map<string, Set<string>>();
 let componentCount = 0;
 let issueCount = 0;
 let parseErrorCount = 0;
+let scanErrorCount = 0;
 const t0 = Date.now();
 const progressInterval = Math.max(1000, Math.floor(files.length / 20));
+let currentFile: string | undefined;
+
+// v0.12.1: Catch unhandled panics (e.g., SWC native panic on certain JSX files).
+// The handler writes partial output and exits cleanly so the calibration
+// can use whatever was collected before the crash.
+process.on('uncaughtException', (err) => {
+  console.error(`\n  FATAL: uncaught exception at file ${currentFile ?? '?'}: ${(err as Error).message}`);
+  writePartialOutput();
+  process.exit(1);
+});
 
 for (let i = 0; i < files.length; i++) {
+  currentFile = files[i];
   try {
     const result = await scanFile(files[i]!, config, registry, absWorkspace);
     componentCount += result.componentCount;
@@ -76,13 +88,20 @@ for (let i = 0; i < files.length; i++) {
       perFileFires.get(ruleId)!.add(files[i]!);
     }
   } catch (err) {
-    console.error(`  scan failed: ${files[i]}: ${(err as Error).message}`);
+    scanErrorCount++;
+    if (scanErrorCount <= 5) {
+      console.error(`  scan failed: ${files[i]}: ${(err as Error).message}`);
+    }
   }
   if (i > 0 && i % progressInterval === 0) {
     const elapsed = (Date.now() - t0) / 1000;
     const rate = i / elapsed;
     const eta = (files.length - i) / rate;
     console.log(`  ${i}/${files.length} files (${elapsed.toFixed(0)}s, ${rate.toFixed(0)} files/s, ETA ${eta.toFixed(0)}s)`);
+  }
+  // Write partial output every 10k files so we have a checkpoint to recover from
+  if ((i + 1) % 10000 === 0) {
+    writePartialOutput();
   }
 }
 
@@ -106,6 +125,26 @@ const out = {
   //   [...perFileFires.entries()].map(([rule, fileSet]) => [rule, [...fileSet]])
   // ),
 };
+
+function writePartialOutput() {
+  const partial = {
+    kind,
+    workspace: absWorkspace,
+    files: files.length,
+    componentCount,
+    issueCount,
+    parseErrorCount,
+    scanErrorCount,
+    uniqueRules: fires.size,
+    elapsedSec: Math.round((Date.now() - t0) / 1000),
+    fires: Object.fromEntries([...fires.entries()].sort((a, b) => b[1] - a[1])),
+    perFileFires: Object.fromEntries(
+      [...perFileFires.entries()].map(([rule, fileSet]) => [rule, fileSet.size])
+    ),
+  };
+  writeFileSync(`/tmp/${outPrefix}-partial-fires.json`, JSON.stringify(partial, null, 2));
+  console.error(`\n  Wrote partial output: /tmp/${outPrefix}-partial-fires.json`);
+}
 
 writeFileSync(`/tmp/${outPrefix}-fires.json`, JSON.stringify(out, null, 2));
 console.log(`\nDone: ${files.length} files, ${issueCount} issues, ${parseErrorCount} parse errors, ${fires.size} unique rules in ${elapsed.toFixed(0)}s`);

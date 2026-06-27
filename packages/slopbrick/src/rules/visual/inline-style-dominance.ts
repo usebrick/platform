@@ -32,7 +32,7 @@ export const inlineStyleDominanceRule = createRule<RuleContext>({
   id: 'visual/inline-style-dominance',
   category: 'visual',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'File uses inline styles for 3+ distinct properties — prefer className utilities.',
   create(context) {
     return context;

@@ -230,7 +230,7 @@ More accurate than BOCPD but the marginal accuracy isn't worth the inference cos
 
 ---
 
-## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW)
+## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW; v0.12.1 — calibrated)
 
 The methods in Sections 3–5 are all **detection** methods: they ask "does this file match pattern X?" The v0.12.0 calibration work addresses a complementary question: **"given multiple weak signals, what's the calibrated probability that this file is AI-generated?"**
 
@@ -280,10 +280,12 @@ f(rank) ∝ rank^(−s)        (Zipf; s ≈ 1.0–1.2 for natural text)
 
 LLMs have systematically higher λ and different s than human text (Christ et al. 2025).
 
+**v0.12.1 corpus measurement (NOT textbook):** slopbrick's v6 corpus (5,000-file sample of real OSS JavaScript/Python) measured Heaps λ = 0.742 ± 0.169, Zipf s = 0.715 ± 0.201. These are 50% higher than the textbook "natural text" values from Christ et al. 2025 because the corpus is source code, not prose — code has more identifiers per line, fewer total tokens, and more repeated patterns. This is why v0.12.1 ships `corpus-baselines.json` instead of hardcoded `0.5 ± 0.15`: the corpus IS the population, and code is not prose.
+
 **Slopbrick application:** `src/engine/zipf-heaps.ts` (~150 LOC). Two new rules:
 
-- `logic/heaps-deviation` — fires when file's λ deviates > 2σ from corpus baseline.
-- `logic/zipf-slope-anomaly` — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7.
+- `logic/heaps-deviation` — fires when file's λ deviates > 2σ from corpus baseline (mean ± 2σ = 0.40–1.08 with shipped baselines; falls back to 0.20–0.80 if baselines absent).
+- `logic/zipf-slope-anomaly` — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7 (mean ± 2σ = 0.31–1.12 with shipped baselines; falls back to 0.50–1.50 if absent).
 
 ### 7.4 Benjamini–Hochberg FDR correction (Tier S — highest leverage per LOC)
 
@@ -315,9 +317,41 @@ p̂ ± z·sqrt(p̂(1−p̂)/n + z²/(4n²)) / (1 + z²/n)
 
 **Concrete ship:** Future reporter work — `formatCI()` outputs `60.00% [57.23%, 62.71%]` for the next calibration doc revision.
 
+### 7.6 v0.12.1 corpus calibration results
+
+**Corpus:** v6 = 239k neg + 261k pos symlinks = 524k scanned files (90%+ complete; SWC native panic truncated ~10% of each arm). Source mix:
+- neg: 50+ real public OSS repos (django, fastapi, flask, express, keycloak, discourse, supabase, …) + 54,980 files from `ai-slop-baseline/extracted/neg/`.
+- pos: 50+ real AI-coded projects (agno, claude-code, career-ops, …) + 6,142 files from `ai-slop-baseline/extracted/pos/`.
+
+**Verdict distribution shift (v5 → v6):**
+
+| Verdict | v5 (162k files) | v6 (524k files) | Change | Interpretation |
+|---------|-----------------|-----------------|--------|----------------|
+| USEFUL  | 16 | **22** | +6 | Calibration unlocked 6 previously-DORMANT rules |
+| OK      |  7 | **11** | +4 | |
+| NOISY   | 13 | **14** | +1 | |
+| DORMANT | 21 | **12** | -9 | 9 DORMANT rules gained enough fires to be classified |
+| INVERTED| 18 | **5**  | -13 | 14 reclassified (lift flipped to > 1), 4 phantom db/docs removed |
+
+**Why did INVERTED rules collapse from 18 → 5?**
+
+The 14 reclassified rules (`context/import-path-mismatch`, `component/multiple-components-per-file`, `product/terminology-drift`, `style/identical-comments`, `style/emoji-in-comments`, `style/one-line-comments-only`, `style/too-perfect-formatting`, `docs/excessive-jsdoc`, `docs/copy-pasted-headers`, `docs/comment-density-anomaly`, `ai/typical-ai-mistake`, `ai/cliche-structure`, `ai/hedging-language`, `i18n/missing-locale`, `i18n/hardcoded-string`) were INVERTED in v5 because v5's 162k-file corpus undersampled the neg arm. With v6's 524k files, their LR landed in (1, 1.5) — they ARE more common in AI code than in real OSS code, but only by 12–50%. That's NOISY discrimination, not inverted AI detection. The reclassification as `aiSpecific: false` (code-hygiene) reflects the truth: these rules catch patterns that AI tools produce disproportionately, but the lift is too low to claim they're AI detectors. They keep firing in reports under the code-hygiene category.
+
+**3 math-derived rules that were DORMANT in v0.12.0, now calibrated in v0.12.1:**
+
+| Rule | v0.12.0 status | v0.12.1 status | What changed |
+|------|----------------|----------------|--------------|
+| `logic/heaps-deviation` | DORMANT (defaultOff) | **INVERTED** (defaultOff) | λ threshold uses corpus mean ± 2σ (0.40–1.08) not hardcoded 0.5 ± 0.15. AI files have λ closer to the corpus mean (consistent vocabulary), human/legacy code has more drift. Lift = 0.14×. |
+| `logic/zipf-slope-anomaly` | DORMANT (defaultOff) | **INVERTED** (defaultOff) | s threshold uses corpus mean ± 2σ (0.31–1.12) not hardcoded 1.0 ± 0.25. Lift = 0.34×. |
+| `logic/ks-distribution-shift` | DORMANT (defaultOff) | **NOISY** (defaultOff) | KS reference distribution is now a corpus-derived 10k-point sample per feature, not a uniform distribution. FPR dropped from 87% to 40%. Lift = 1.4×. |
+
+All 3 remain `defaultOff: true` because their lift is ≤ 1.4×. They need either (a) a corpus with more discriminative labels or (b) a different test (e.g., drift over a session, not per-file) to flip to USEFUL.
+
+**`src/engine/corpus-baselines.json`** is checked in (512KB). It contains Heaps λ, Zipf s, line lengths, identifier lengths, and comment density stats computed from a 5k-file sample of the v6 neg corpus. The 3 calibration rules read it on init and fall back to constants if the file is absent. To recompute against your own corpus, run `tsx scripts/compute-corpus-baselines.ts <workspace> [sample-size]`.
+
 ---
 
-## 7. Implementation roadmap
+## 8. Implementation roadmap
 
 | Phase | Methods | Effort | Trust gain |
 |-------|---------|--------|-----------|
@@ -332,7 +366,7 @@ Each release is a separate calibration report and rule documentation update.
 
 ---
 
-## 8. References
+## 9. References
 
 Primary citations (every threshold in the new rules should trace back here):
 

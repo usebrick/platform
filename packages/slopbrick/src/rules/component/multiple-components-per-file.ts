@@ -10,7 +10,7 @@ export const multipleComponentsPerFileRule = createRule<RuleContext>({
   id: 'component/multiple-components-per-file',
   category: 'component',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'File contains 2+ component definitions — split into separate files.',
   create(context) {
     return context;

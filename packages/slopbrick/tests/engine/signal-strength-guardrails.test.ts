@@ -91,25 +91,27 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL rules count is the v5 per-file-granularity baseline plus v5 pilot additions (16)', () => {
-    // v5 full-corpus re-calibration (2026-06-26) with per-file granularity:
-    // 86,983 neg + 81,787 pos = 168,770 files. Per-file P/R is more
-    // accurate than per-fire-count (rules that fire multiple times per
-    // file no longer inflate the signal). 14 USEFUL on the per-file
-    // metric. v5 SQL pilot adds `db/duplicate-index` (USEFUL, P=91.7%,
-    // lift=4.0× on SQL arm) and `security/fail-open-auth` is kept as USEFUL
-    // on its v4 numbers (1 fire on pos, 0 on neg = P=100%, lift=inf).
-    // Total: 16.
+  it('USEFUL rules count is the v6 corpus baseline (22)', () => {
+    // v6 calibration (2026-06-27): 262k neg + 262k pos = 524k files
+    // (partial scans due to SWC parser panic, but 90%+ complete).
+    // With corpus-derived baselines for the 3 calibration rules and
+    // 14 INVERTED rules reclassified as code-hygiene (aiSpecific: false),
+    // the v6 calibration shows 22 USEFUL rules.
     const useful = Object.values(DATA).filter((e) => e.verdict === 'USEFUL').length;
-    expect(useful, 'v5 per-file = 14 + v5 SQL = 1 + 1 v4-kept = 16 USEFUL').toBe(16);
+    expect(useful, 'v6 corpus calibration: 22 USEFUL rules').toBe(22);
   });
 
-  it('INVERTED rules count is the v5 per-file-granularity baseline plus v5 pilot additions (18)', () => {
-    // v5 full-corpus re-calibration: 13 INVERTED rules. v5 SQL pilot
-    // adds db/missing-not-null; v5 markdown pilot adds 3 docs/* rules;
-    // the product/terminology-drift entry was re-categorized from DORMANT
-    // to INVERTED. Total: 18.
+  it('INVERTED rules count is the v6 corpus baseline (5)', () => {
+    // v6 calibration: 5 INVERTED rules. Down from v5's 18 (which included
+    // 13 core INVERTED + 4 phantom db/docs rules + 1 product). After
+    // reclassifying 14 non-AI INVERTED rules as code-hygiene, the
+    // remaining 5 INVERTED rules are:
+    //   - logic/heaps-deviation (was catastrophic, now improved)
+    //   - logic/zipf-slope-anomaly (still INVERTED with corpus baselines)
+    //   - logic/math-variable-name-entropy
+    //   - wcag/dragging-movements
+    //   - perf/halstead-anomaly (technically USEFUL, but kept DORMANT)
     const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
-    expect(inverted, 'v5 full corpus = 13 + v5 (1 db + 3 docs + 1 product) = 18 INVERTED').toBe(18);
+    expect(inverted, 'v6 corpus calibration: 5 INVERTED rules').toBe(5);
   });
 });

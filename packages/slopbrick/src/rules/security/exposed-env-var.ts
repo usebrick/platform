@@ -13,7 +13,7 @@
 // files because framework config (next.config.js etc.) is a
 // different beast.
 //
-// Severity: high. aiSpecific: true (humans usually remember to
+// Severity: high. aiSpecific: false (humans usually remember to
 // strip the public prefix; AI in tutorial mode leaves it on).
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';

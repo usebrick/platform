@@ -1,21 +1,24 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { multiFeatureKsTest } from '../../engine/ks';
+import { getCorpusBaselines } from '../../engine/corpus-baselines';
 
 /**
- * v0.12.0: Multi-feature Kolmogorov–Smirnov distribution-shift rule.
+ * v0.12.1: Multi-feature Kolmogorov–Smirnov distribution-shift rule.
  *
  * Per arXiv:2510.15996 (Oct 2025) "Using Kolmogorov-Smirnov Distance
  * for Measuring Distribution Shift in Machine Learning" — KS is the
  * right tool for ML distribution shift. This rule runs KS on multiple
  * per-file features (line lengths, identifier lengths, comment density)
- * and fires when any feature shows a statistically significant shift
- * vs the corpus baseline, Bonferroni-corrected for the family-wise
+ * against corpus baselines, Bonferroni-corrected for the family-wise
  * error rate.
  *
- * Calibration: replace `CORPUS_BASELINES` with values measured from
- * the calibration corpus. Defaults are conservative natural-source
- * approximations.
+ * **v0.12.1 change**: the baselines are now corpus-derived
+ * (`src/engine/corpus-baselines.json`) instead of the v0.12.0
+ * hardcoded `n=18` reference vectors. The hardcoded vectors were so
+ * small that KS fired on ~87% of human files (catastrophic FPR). With
+ * `n=10000` corpus samples per feature, the rule should fire only on
+ * genuinely anomalous files.
  */
 const MIN_SAMPLES_PER_FEATURE = 20;
 
@@ -25,7 +28,6 @@ interface FeatureStats {
   commentDensity: number[];
 }
 
-/** Per-file feature extractors. Each returns a vector of samples. */
 function extractFileFeatures(source: string): FeatureStats {
   const lines = source.split('\n');
   const lineLengths = lines.map((l) => l.length);
@@ -47,25 +49,11 @@ function extractFileFeatures(source: string): FeatureStats {
   return { lineLengths, identifierLengths, commentDensity };
 }
 
-/**
- * Approximate natural-source baselines. These are rough conservative
- * defaults; replace with corpus-specific baselines for production use.
- */
-const CORPUS_BASELINES = {
-  lineLengths: [
-    20, 25, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,
-  ],
-  identifierLengths: [
-    3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 24, 28,
-  ],
-  commentDensity: [0, 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5],
-};
-
 export const ksDistributionShiftRule = createRule<RuleContext>({
   id: 'logic/ks-distribution-shift',
   category: 'logic',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Multi-feature Kolmogorov–Smirnov distribution-shift vs corpus baseline (Bonferroni-corrected). Peer-reviewed ML distribution-shift detector (arXiv:2510.15996, Oct 2025).',
   create(context) {
     return context;
@@ -82,11 +70,22 @@ export const ksDistributionShiftRule = createRule<RuleContext>({
       ['identifierLengths', features.identifierLengths],
       ['commentDensity', features.commentDensity],
     ]);
-    const baselines = new Map<string, readonly number[]>([
-      ['lineLengths', CORPUS_BASELINES.lineLengths],
-      ['identifierLengths', CORPUS_BASELINES.identifierLengths],
-      ['commentDensity', CORPUS_BASELINES.commentDensity],
-    ]);
+
+    // Use corpus-derived baselines if available; fall back to small
+    // reference vectors if not (the rule will be very high-FPR with
+    // fallback, but it won't crash).
+    const baselines = getCorpusBaselines();
+    const baselinesMap = new Map<string, readonly number[]>();
+    if (baselines) {
+      baselinesMap.set('lineLengths', baselines.features.lineLengths.sample);
+      baselinesMap.set('identifierLengths', baselines.features.identifierLengths.sample);
+      baselinesMap.set('commentDensity', baselines.features.commentDensity.sample);
+    } else {
+      // Fallback: small reference vectors (legacy, known to be noisy)
+      baselinesMap.set('lineLengths', [20, 25, 30, 32, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]);
+      baselinesMap.set('identifierLengths', [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 24, 28]);
+      baselinesMap.set('commentDensity', [0, 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5]);
+    }
 
     // Skip features with too few samples (KS is unreliable below n = 20).
     for (const [name, vals] of samples) {
@@ -94,7 +93,7 @@ export const ksDistributionShiftRule = createRule<RuleContext>({
     }
     if (samples.size === 0) return issues;
 
-    const result = multiFeatureKsTest(samples, baselines, 0.05);
+    const result = multiFeatureKsTest(samples, baselinesMap, 0.05);
     if (!result.anySignificant) return issues;
 
     const shifted = result.significantFeatures.join(', ');

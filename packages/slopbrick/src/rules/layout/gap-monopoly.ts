@@ -12,7 +12,7 @@ export const gapMonopolyRule = createRule<RuleContext>({
   id: 'layout/gap-monopoly',
   category: 'layout',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'A singular uniform gap configuration dominates the project space.',
   create(context) {
     return context;

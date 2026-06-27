@@ -2,7 +2,17 @@
 
 > **Repository Coherence Scanner for AI-coded codebases.** Detects cross-file pattern drift (`zustand + redux in the same project`), AI-induced security failures (`sk-...` keys, `NEXT_PUBLIC_*` secrets, fail-open auth), design-token violations (`p-[13px]`), and AI test smells (`expect(x).toBeDefined()`). Run `npx slopbrick` and get a single **Repository Health** score (0–100) with per-rule precision/recall. Add the MCP server and your AI agent reads your existing patterns before it writes new ones.
 
-**Status:** v0.12.0 (current). The v0.10 credibility milestone shipped 2026-06-25 — every detection rule ships with per-rule P/R/FPR against the balanced 172k-file v4 corpus, and 8 thresholds cite peer-reviewed papers (Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951). **v0.12.0 ships 5 new peer-reviewed math foundations** (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs) and 4 new rules that close the calibration gap exposed by v0.10. See [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md) §7 for the Tier-1.5 Calibration Methods.
+**Status:** v0.12.1 (current). v0.12.0 shipped 5 new peer-reviewed math foundations (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs). **v0.12.1 re-calibrates against the v6 corpus** (239k neg + 261k pos symlinks = 524k scanned files) and unlocks the 3 math-derived rules that v0.12.0 added as DORMANT. The 3 calibration rules (`heaps-deviation`, `zipf-slope-anomaly`, `ks-distribution-shift`) now use corpus-derived baselines (Heaps λ = 0.742 ± 0.169, Zipf s = 0.715 ± 0.201) shipped in `src/engine/corpus-baselines.json` — not hardcoded constants. 14 rules that v0.12.0 marked INVERTED in v5 are now reclassified as code-hygiene (`aiSpecific: false`) because v6's larger corpus flipped their lift to > 1 (NOISY, not INVERTED). Final v6 verdict distribution: **22 USEFUL, 11 OK, 14 NOISY, 12 DORMANT, 5 INVERTED**. See [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md) §7 for the Tier-1.5 Calibration Methods.
+
+## What's new in v0.12.1
+
+v0.12.0 added the calibration math; v0.12.1 **runs it against a real corpus**:
+
+- **Corpus-derived baselines** — `src/engine/corpus-baselines.json` ships Heaps λ, Zipf s, line-length, identifier-length, and comment-density stats computed from 5,000 real OSS files. The 3 calibration rules (`heaps-deviation`, `zipf-slope-anomaly`, `ks-distribution-shift`) now adapt their threshold to the corpus instead of using hardcoded `0.5 ± 0.15`.
+- **14 INVERTED rules reclassified as code-hygiene** — these rules were calibrated INVERTED in v5's 162k-file corpus, but v6's 524k files revealed they have lift > 1 (NOISY discriminators, not inverted AI detectors). They keep firing and reporting under `aiSpecific: false`; they just don't contribute to `slopIndex`.
+- **10 phantom rules removed** from `signal-strength.json` (4 docs/* and 6 db/* that had no backing rule file and were inflating the INVERTED count).
+- **New `scripts/compute-corpus-baselines.ts`** — run on any neg workspace to extract custom baselines. The shipped JSON is from a 5k-file sample of the v6 neg corpus.
+- **New `scripts/scan-corpus-robust.ts`** — child-process-per-file scanner that survives SWC native panics on certain JSX files (the v0.12.0 scanner would crash and lose ~10% of the corpus).
 
 ## What's new in v0.12.0
 
@@ -10,10 +20,10 @@ v0.10 proved the detection math has peer-reviewed citations. v0.12.0 adds the **
 
 - **`report.v012Stats.bayesianPosterior`** — `P(AI | fired_rules)` via naive-Bayes likelihood-ratio combination per Bento et al. 2024 *Neurocomputing*. Range [0, 1]; > 0.5 = net AI signal.
 - **`report.v012Stats.survivingFiresCount`** — number of fires that survive Benjamini–Hochberg FDR control at α = 0.05. The "free rigor" upgrade that converts the silent 60-rule multi-testing problem into a calibrated number.
-- **4 new rules** (`logic/bayesian-conditional`, `logic/heaps-deviation`, `logic/ks-distribution-shift`, `logic/zipf-slope-anomaly`) — all `defaultOff: true` until v0.12 corpus re-calibration lands.
+- **4 new rules** (`logic/bayesian-conditional`, `logic/heaps-deviation`, `logic/ks-distribution-shift`, `logic/zipf-slope-anomaly`) — calibration-aware, use corpus-derived baselines in v0.12.1.
 - **Wilson score + Clopper-Pearson CIs** — for the next calibration doc revision, every P/R/FPR number ships with a confidence interval.
 
-The existing slopIndex composite score is unchanged in v0.12.0 (backward-compatible). The new math surfaces as diagnostic information in the report and as the new rules — it does not retroactively change any existing score.
+The existing slopIndex composite score is unchanged in v0.12.x (backward-compatible). The new math surfaces as diagnostic information in the report and as the new rules — it does not retroactively change any existing score.
 
 **The problem.** AI coding assistants write logic well, but they drift. Every project ends up with three button variants, a hardcoded API key, inline styles next to Tailwind utilities, and a test file full of `expect(x).toBeDefined()`. The drift isn't the agent's fault — it's that the agent doesn't know your conventions. Existing linters catch syntax; nothing catches "you just invented a fourth modal system when this repo already has three."
 

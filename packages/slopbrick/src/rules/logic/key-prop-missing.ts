@@ -5,7 +5,7 @@ export const keyPropMissingRule = createRule<unknown>({
   id: 'logic/key-prop-missing',
   category: 'logic',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description: "Items in a list missing a React key",
   create() {
     return undefined;
