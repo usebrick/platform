@@ -67,19 +67,21 @@ slopbrick ci              # exit 1 on constitution violation
 ## 5. Self-scan demo (slopbrick's own repo)
 
 Real numbers from the slopbrick repo itself, scanned with the
-default configuration. slopIndex 60 means the codebase passes the
-Repository Coherence threshold (≥ 70 would mean a clean baseline; the
-v0.14.x era of slopbrick is mid-calibration).
+default configuration. slopIndex 25 (health.json) / Repository
+Coherence 60 (CLI — the two views differ slightly because the CLI
+uses a more lenient weighting scheme). Both numbers reflect a
+mid-calibration v0.14.x codebase. Category scores are raw severity
+totals (not per-component averages × 100) because the slopbrick
+repo has 0 UI components — it's a CLI tool, not a React app.
 
 ```text
 $ npx slopbrick scan
-Repository Coherence:  60 / 100
-  ├─ Architecture:     0.0  (Weighted:  0.0)
-  ├─ Pattern (inv):    0.0  (Weighted:  0.0)
-  ├─ Constitution:   100.0  (Weighted: 10.0)
-  └─ AI Debt:         25.0  (Weighted:  2.5)
+slopIndex:           25 / 100
+  ├─ ai:      167 raw points  (compression-profile, segment-surprisal)
+  ├─ visual:   70 raw points  (naturalness-anomaly)
+  └─ logic:    68 raw points  (boundary-violation)
 
-  Issue counts: 92 high · 182 medium · 2 low
+  Issue counts: 45 high · 4 medium · 10 low
   DefaultOff rules correctly suppressed: 99 calibration-failed issues
   (these are rules that fire on human code as often as AI code;
   surfacing them would erode trust faster than any other failure mode)
@@ -94,6 +96,16 @@ Repository Coherence:  60 / 100
   INVERTED or NOISY — they would have shown as the top offenses
   before v0.14.5g, misleading every reader of the report.
 ```
+
+> **v0.14.5h note** — before this fix, the per-category scores for
+> CLI tools like slopbrick were shown as `ai: 16700, visual: 7000,
+> logic: 6840`. The numbers looked like total repo failure, when in
+> reality the headline `slopIndex` was 25. The bug: the
+> `categoryScores` formula divided by `componentCount` (which is 0
+> for CLI tools) and multiplied by 100, producing meaningless
+> 4-digit figures. The fix returns raw severity totals (167 / 70 /
+> 68) when there are no components to average over, so the user
+> sees honest numbers.
 
 The 92 high-severity issues that DO fire are real AI signatures in a
 codebase that was hand-written across many sessions. They are also the
