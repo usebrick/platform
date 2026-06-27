@@ -19,40 +19,41 @@
     "defaultOff": true
   },
   "logic/boundary-violation": {
-    "recall": 1.0,
-    "fpRate": 0.5924,
-    "ratio": 1.69,
-    "precision": 0.6688,
+    "recall": 0.0475,
+    "fpRate": 0.0543,
+    "ratio": 0.87,
+    "precision": 0.4514,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=104057, neg=51526, P=66.9%, FPR=59.24%, lift=1.7."
+    "verdict": "INVERTED",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=104057, neg=51526, P=45.1%, FPR=5.43%, lift=0.9.",
+    "defaultOff": true
   },
   "logic/reactive-hook-soup": {
-    "recall": 0.0081,
+    "recall": 0.0079,
     "fpRate": 0.0034,
-    "ratio": 2.39,
-    "precision": 0.6924,
+    "ratio": 2.35,
+    "precision": 0.6883,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=664, neg=295, P=69.2%, FPR=0.34%, lift=2.4."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=664, neg=295, P=68.8%, FPR=0.34%, lift=2.3."
   },
   "logic/optimistic-no-rollback": {
-    "recall": 0.0032,
-    "fpRate": 0.0017,
-    "ratio": 1.81,
-    "precision": 0.6293,
+    "recall": 0.0025,
+    "fpRate": 0.0015,
+    "ratio": 1.66,
+    "precision": 0.6091,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=258, neg=152, P=62.9%, FPR=0.17%, lift=1.8."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=258, neg=152, P=60.9%, FPR=0.15%, lift=1.7."
   },
   "logic/zombie-state": {
-    "recall": 0.0005,
+    "recall": 0.0004,
     "fpRate": 0.0001,
-    "ratio": 5.58,
-    "precision": 0.84,
+    "ratio": 4.86,
+    "precision": 0.8205,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=42, neg=8, P=84.0%, FPR=0.01%, lift=5.6."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=42, neg=8, P=82.1%, FPR=0.01%, lift=4.9."
   },
   "logic/math-gini-class-usage": {
     "recall": 0.0028,
@@ -130,23 +131,23 @@
     "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands."
   },
   "component/giant-component": {
-    "recall": 0.0362,
-    "fpRate": 0.0291,
-    "ratio": 1.24,
-    "precision": 0.5392,
+    "recall": 0.033,
+    "fpRate": 0.0259,
+    "ratio": 1.27,
+    "precision": 0.5448,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=2962, neg=2531, P=53.9%, FPR=2.91%, lift=1.2.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=2962, neg=2531, P=54.5%, FPR=2.59%, lift=1.3.",
     "defaultOff": true
   },
   "component/shadcn-prop-mismatch": {
-    "recall": 0.0054,
-    "fpRate": 0.0021,
-    "ratio": 2.52,
-    "precision": 0.7032,
+    "recall": 0.0033,
+    "fpRate": 0.0016,
+    "ratio": 2.1,
+    "precision": 0.6634,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=443, neg=187, P=70.3%, FPR=0.21%, lift=2.5."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=443, neg=187, P=66.3%, FPR=0.16%, lift=2.1."
   },
   "layout/math-grid-uniformity": {
     "recall": 0.0008,
@@ -187,13 +188,13 @@
     "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=2177, neg=1527, P=58.8%, FPR=1.76%, lift=1.5."
   },
   "wcag/focus-appearance": {
-    "recall": 0.01,
-    "fpRate": 0.0041,
-    "ratio": 2.46,
-    "precision": 0.6985,
+    "recall": 0.0059,
+    "fpRate": 0.0029,
+    "ratio": 2.04,
+    "precision": 0.6572,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=820, neg=354, P=69.8%, FPR=0.41%, lift=2.5."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=820, neg=354, P=65.7%, FPR=0.29%, lift=2.0."
   },
   "wcag/target-size": {
     "recall": 0,
@@ -216,23 +217,23 @@
     "defaultOff": true
   },
   "context/import-path-mismatch": {
-    "recall": 0.2305,
-    "fpRate": 0.451,
-    "ratio": 0.51,
-    "precision": 0.3246,
+    "recall": 0.0957,
+    "fpRate": 0.1748,
+    "ratio": 0.55,
+    "precision": 0.3398,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=18849, neg=39226, P=32.5%, FPR=45.10%, lift=0.5.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=18849, neg=39226, P=34.0%, FPR=17.48%, lift=0.5.",
     "defaultOff": true
   },
   "logic/key-prop-missing": {
-    "recall": 0.0055,
-    "fpRate": 0.0124,
-    "ratio": 0.44,
-    "precision": 0.2948,
+    "recall": 0.0015,
+    "fpRate": 0.0034,
+    "ratio": 0.43,
+    "precision": 0.2871,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=452, neg=1081, P=29.5%, FPR=1.24%, lift=0.4.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=452, neg=1081, P=28.7%, FPR=0.34%, lift=0.4.",
     "defaultOff": true
   },
   "logic/math-variable-name-entropy": {
@@ -256,23 +257,23 @@
     "defaultOff": true
   },
   "security/unsafe-html-render": {
-    "recall": 0.0021,
-    "fpRate": 0.0047,
-    "ratio": 0.43,
-    "precision": 0.2902,
+    "recall": 0.0015,
+    "fpRate": 0.0031,
+    "ratio": 0.47,
+    "precision": 0.3071,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=168, neg=411, P=29.0%, FPR=0.47%, lift=0.4.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=168, neg=411, P=30.7%, FPR=0.31%, lift=0.5.",
     "defaultOff": true
   },
   "visual/naturalness-anomaly": {
-    "recall": 0.2452,
-    "fpRate": 0.1451,
-    "ratio": 1.69,
-    "precision": 0.6138,
+    "recall": 0.2347,
+    "fpRate": 0.1299,
+    "ratio": 1.81,
+    "precision": 0.6295,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=20056, neg=12617, P=61.4%, FPR=14.51%, lift=1.7."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=20056, neg=12617, P=62.9%, FPR=12.99%, lift=1.8."
   },
   "perf/halstead-anomaly": {
     "recall": 0.0,
@@ -463,33 +464,33 @@
     "_calibrationNote": "v5 markdown pilot (2026-06-26): 4817 neg + 1197 pos. INVERTED \u2014 production docs reference deprecated/archived packages. Repurpose as production docs hygiene rule."
   },
   "product/terminology-drift": {
-    "recall": 0.0202,
-    "fpRate": 0.0755,
-    "ratio": 0.27,
-    "precision": 0.2012,
+    "recall": 0.0061,
+    "fpRate": 0.0198,
+    "ratio": 0.31,
+    "precision": 0.2251,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=1654, neg=6566, P=20.1%, FPR=7.55%, lift=0.3.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=1654, neg=6566, P=22.5%, FPR=1.98%, lift=0.3.",
     "defaultOff": true
   },
   "product/ux-pattern-fragmentation": {
     "recall": 0.0003,
-    "fpRate": 0.0003,
-    "ratio": 1.15,
-    "precision": 0.52,
+    "fpRate": 0.0002,
+    "ratio": 1.22,
+    "precision": 0.5333,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=26, neg=24, P=52.0%, FPR=0.03%, lift=1.2.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=26, neg=24, P=53.3%, FPR=0.02%, lift=1.2.",
     "defaultOff": true
   },
   "security/sql-construction": {
-    "recall": 0.0179,
-    "fpRate": 0.007,
-    "ratio": 2.58,
-    "precision": 0.7078,
+    "recall": 0.0062,
+    "fpRate": 0.0032,
+    "ratio": 1.97,
+    "precision": 0.6492,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=1468, neg=606, P=70.8%, FPR=0.70%, lift=2.6."
+    "verdict": "OK",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=1468, neg=606, P=64.9%, FPR=0.32%, lift=2.0."
   },
   "security/missing-auth-check": {
     "recall": 0.0063,
@@ -501,40 +502,41 @@
     "_calibrationNote": "v4 corpus (2026-06-25): 95,599 neg + 76,550 pos (frontend, TS/TSX/JS/JSX). USEFUL \u2014 TP=479, FP=39, P=92.5%, FPR=0.04%, lift=15.3."
   },
   "security/dangerous-cors": {
-    "recall": 0.0012,
-    "fpRate": 0.0008,
-    "ratio": 1.58,
-    "precision": 0.5976,
+    "recall": 0.001,
+    "fpRate": 0.0007,
+    "ratio": 1.44,
+    "precision": 0.5753,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=98, neg=66, P=59.8%, FPR=0.08%, lift=1.6."
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=98, neg=66, P=57.5%, FPR=0.07%, lift=1.4.",
+    "defaultOff": true
   },
   "test/duplicate-setup": {
-    "recall": 0.0017,
-    "fpRate": 0.0003,
-    "ratio": 4.89,
-    "precision": 0.8214,
+    "recall": 0.0003,
+    "fpRate": 0.0001,
+    "ratio": 2.6,
+    "precision": 0.7097,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=138, neg=30, P=82.1%, FPR=0.03%, lift=4.9."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=138, neg=30, P=71.0%, FPR=0.01%, lift=2.6."
   },
   "logic/ghost-defensive": {
-    "recall": 0.0009,
+    "recall": 0.0002,
     "fpRate": 0.0,
-    "ratio": 25.88,
-    "precision": 0.9605,
+    "ratio": 17.02,
+    "precision": 0.9412,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=73, neg=3, P=96.1%, FPR=0.00%, lift=25.9."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=73, neg=3, P=94.1%, FPR=0.00%, lift=17.0."
   },
   "typo/calc-raw-px": {
-    "recall": 0.0001,
+    "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 2.84,
-    "precision": 0.7273,
+    "ratio": 2.13,
+    "precision": 0.6667,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=8, neg=3, P=72.7%, FPR=0.00%, lift=2.8."
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=8, neg=3, P=66.7%, FPR=0.00%, lift=2.1."
   },
   "security/fail-open-auth": {
     "recall": 0.0,
@@ -546,70 +548,73 @@
     "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=1, neg=0, P=100.0%, FPR=0.00%, lift=inf."
   },
   "wcag/focus-obscured": {
-    "recall": 0.0086,
-    "fpRate": 0.0055,
-    "ratio": 1.56,
-    "precision": 0.5951,
-    "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=704, neg=479, P=59.5%, FPR=0.55%, lift=1.6."
-  },
-  "visual/arbitrary-escape": {
-    "recall": 0.021,
-    "fpRate": 0.0171,
-    "ratio": 1.23,
-    "precision": 0.5357,
+    "recall": 0.0068,
+    "fpRate": 0.0046,
+    "ratio": 1.5,
+    "precision": 0.5849,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=1720, neg=1491, P=53.6%, FPR=1.71%, lift=1.2.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=704, neg=479, P=58.5%, FPR=0.46%, lift=1.5.",
+    "defaultOff": true
+  },
+  "visual/arbitrary-escape": {
+    "recall": 0.0053,
+    "fpRate": 0.004,
+    "ratio": 1.34,
+    "precision": 0.5568,
+    "lastCalibratedAt": "2026-06-26T23:30:00Z",
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=1720, neg=1491, P=55.7%, FPR=0.40%, lift=1.3.",
     "defaultOff": true
   },
   "security/hardcoded-secret": {
-    "recall": 0.0023,
-    "fpRate": 0.0013,
-    "ratio": 1.78,
-    "precision": 0.6262,
+    "recall": 0.0016,
+    "fpRate": 0.0011,
+    "ratio": 1.47,
+    "precision": 0.5799,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=191, neg=114, P=62.6%, FPR=0.13%, lift=1.8."
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=191, neg=114, P=58.0%, FPR=0.11%, lift=1.5.",
+    "defaultOff": true
   },
   "visual/radius-scale-violation": {
-    "recall": 0.0018,
-    "fpRate": 0.0011,
-    "ratio": 1.65,
-    "precision": 0.6076,
+    "recall": 0.0009,
+    "fpRate": 0.0007,
+    "ratio": 1.27,
+    "precision": 0.5435,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=144, neg=93, P=60.8%, FPR=0.11%, lift=1.6."
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=144, neg=93, P=54.3%, FPR=0.07%, lift=1.3.",
+    "defaultOff": true
   },
   "test/fake-placeholder": {
-    "recall": 0.0411,
-    "fpRate": 0.0501,
-    "ratio": 0.82,
-    "precision": 0.4357,
+    "recall": 0.0068,
+    "fpRate": 0.0053,
+    "ratio": 1.3,
+    "precision": 0.5506,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=3362, neg=4354, P=43.6%, FPR=5.01%, lift=0.8.",
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=3362, neg=4354, P=55.1%, FPR=0.53%, lift=1.3.",
     "defaultOff": true
   },
   "security/exposed-env-var": {
     "recall": 0.0009,
-    "fpRate": 0.0012,
-    "ratio": 0.77,
-    "precision": 0.4208,
+    "fpRate": 0.001,
+    "ratio": 0.87,
+    "precision": 0.4487,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=77, neg=106, P=42.1%, FPR=0.12%, lift=0.8.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=77, neg=106, P=44.9%, FPR=0.10%, lift=0.9.",
     "defaultOff": true
   },
   "perf/cls-image": {
-    "recall": 0.0008,
-    "fpRate": 0.0009,
-    "ratio": 0.85,
-    "precision": 0.4444,
+    "recall": 0.0007,
+    "fpRate": 0.0006,
+    "ratio": 1.06,
+    "precision": 0.5,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=64, neg=80, P=44.4%, FPR=0.09%, lift=0.9.",
+    "verdict": "NOISY",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=64, neg=80, P=50.0%, FPR=0.06%, lift=1.1.",
     "defaultOff": true
   },
   "layout/gap-monopoly": {
@@ -623,13 +628,13 @@
     "defaultOff": true
   },
   "visual/spacing-scale-violation": {
-    "recall": 0.0313,
-    "fpRate": 0.0328,
-    "ratio": 0.95,
-    "precision": 0.4729,
+    "recall": 0.0161,
+    "fpRate": 0.0196,
+    "ratio": 0.82,
+    "precision": 0.4356,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "INVERTED",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=2559, neg=2852, P=47.3%, FPR=3.28%, lift=1.0.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. INVERTED \u2014 pos=2559, neg=2852, P=43.6%, FPR=1.96%, lift=0.8.",
     "defaultOff": true
   },
   "visual/inline-style-dominance": {
@@ -643,13 +648,13 @@
     "defaultOff": true
   },
   "layout/spacing-grid": {
-    "recall": 0.0014,
-    "fpRate": 0.0011,
-    "ratio": 1.21,
-    "precision": 0.533,
+    "recall": 0.0003,
+    "fpRate": 0.0002,
+    "ratio": 1.06,
+    "precision": 0.5,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=113, neg=99, P=53.3%, FPR=0.11%, lift=1.2.",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. NOISY \u2014 pos=113, neg=99, P=50.0%, FPR=0.02%, lift=1.1.",
     "defaultOff": true
   },
   "wcag/dragging-movements": {
@@ -663,12 +668,12 @@
     "defaultOff": true
   },
   "test/weak-assertion": {
-    "recall": 0.4795,
-    "fpRate": 0.2104,
-    "ratio": 2.28,
-    "precision": 0.6819,
+    "recall": 0.0512,
+    "fpRate": 0.0273,
+    "ratio": 1.88,
+    "precision": 0.6383,
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
-    "verdict": "USEFUL",
-    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. USEFUL \u2014 pos=39218, neg=18298, P=68.2%, FPR=21.04%, lift=2.3."
+    "verdict": "OK",
+    "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=39218, neg=18298, P=63.8%, FPR=2.73%, lift=1.9."
   }
 }

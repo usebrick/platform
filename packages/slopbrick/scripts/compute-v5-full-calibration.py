@@ -13,45 +13,58 @@ from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-NEG = json.load(open('/tmp/v5-full-neg-fires.json'))
-POS = json.load(open('/tmp/v5-full-pos-fires.json'))
+# Prefer the per-file output (more accurate); fall back to the legacy
+# per-fire-count output if the per-file scan hasn't been run yet.
+try:
+    NEG = json.load(open('/tmp/v5-full-neg-perfile-fires.json'))
+    POS = json.load(open('/tmp/v5-full-pos-perfile-fires.json'))
+    if 'perFileFires' not in NEG or 'perFileFires' not in POS:
+        raise FileNotFoundError('per-file fires missing, falling back to legacy output')
+except FileNotFoundError:
+    NEG = json.load(open('/tmp/v5-full-neg-fires.json'))
+    POS = json.load(open('/tmp/v5-full-pos-fires.json'))
 
-# In the per-arm JSON, `fires` is a dict[ruleId] = total fire COUNT.
-# For per-file P/R we need per-file granularity. But scan-corpus-direct.ts
-# currently reports raw fire count. We need to re-derive per-file from the
-# per-arm reports — but the per-file breakdown is lost in this format.
-# Workaround: treat the count as a lower bound on per-file hits; for
-# per-file granularity we need a re-scan with per-file output. For now,
-# report the raw counts and lift ratio, which is what v4 reported.
+# Per-file fires: ruleId -> number of unique files that rule fired on.
+# scan-corpus-direct.ts emits this in the perFileFires field. When
+# perFileFires is missing (older runs), fall back to raw fire count
+# with a min(1, ratio) cap.
+neg_per_file = NEG.get('perFileFires', {})
+pos_per_file = POS.get('perFileFires', {})
 
 n_neg = NEG['files']
 n_pos = POS['files']
 
 # Combined rule universe
-all_rules = sorted(set(NEG['fires'].keys()) | set(POS['fires'].keys()))
+all_rules = sorted(set(neg_per_file.keys()) | set(pos_per_file.keys())
+                    | set(NEG['fires'].keys()) | set(POS['fires'].keys()))
 
 # Per-rule table
 rows = []
 for rule in all_rules:
     pos_fires = POS['fires'].get(rule, 0)
     neg_fires = NEG['fires'].get(rule, 0)
-    # Without per-file granularity, we can't compute TP/FP/P/R directly.
-    # We can compute: pos_fires_per_file = pos_fires/n_pos,
-    # neg_fires_per_file = neg_fires/n_neg, and lift = pos_rate / neg_rate.
-    # Capped at 1.0: rules that fire >1× per file (boundary-violation has
-    # 1.27 fires/file) would otherwise produce recall >1, which violates
-    # the recall ∈ [0, 1] contract. The cap trades off per-fire-count
-    # precision for in-bounds numbers; for per-file granularity see the
-    # v4 doc.
-    pos_rate = min(1.0, pos_fires / n_pos)
-    neg_rate = neg_fires / n_neg
-    lift = pos_rate / neg_rate if neg_rate > 0 else float('inf')
-
-    # Approximation: P ≈ pos_fires / (pos_fires + neg_fires) when most
-    # files fire at most once (true for v4 corpus — P/R/FPR doc shows
-    # per-file counts close to per-fire counts). Mark as approximation.
-    p = pos_fires / (pos_fires + neg_fires) if (pos_fires + neg_fires) > 0 else 0
-    fpr = neg_rate
+    # Prefer per-file granularity (v4 doc methodology). When unavailable,
+    # fall back to per-fire-count with a 1.0 cap on recall.
+    has_per_file = rule in pos_per_file or rule in neg_per_file
+    if has_per_file:
+        tp = pos_per_file.get(rule, 0)
+        fp = neg_per_file.get(rule, 0)
+        p = tp / (tp + fp) if (tp + fp) > 0 else 0
+        r = tp / n_pos if n_pos > 0 else 0
+        fpr = fp / n_neg if n_neg > 0 else 0
+        lift = r / fpr if fpr > 0 else float('inf')
+        pos_rate = r
+        neg_rate = fpr
+    else:
+        # Fallback: per-fire-count with 1.0 cap on recall. Less accurate
+        # for rules that fire multiple times per file (e.g. boundary-
+        # violation fires 1.27× per AI file).
+        pos_rate = min(1.0, pos_fires / n_pos)
+        neg_rate = neg_fires / n_neg
+        lift = pos_rate / neg_rate if neg_rate > 0 else float('inf')
+        p = pos_fires / (pos_fires + neg_fires) if (pos_fires + neg_fires) > 0 else 0
+        fpr = neg_rate
+        r = pos_rate
 
     if pos_fires == 0 and neg_fires == 0:
         verdict = 'DORMANT'

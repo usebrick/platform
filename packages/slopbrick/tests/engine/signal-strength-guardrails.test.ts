@@ -91,22 +91,25 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL rules count is the v5 full-corpus baseline plus v5 pilot additions (18)', () => {
-    // v5 full-corpus re-calibration (2026-06-26): 86,983 neg + 81,787
-    // pos files, 47 rules fired. The re-calibration produced 17 USEFUL
-    // rules. v5 SQL pilot + DORMANT-backfill entries add `db/duplicate-index`
-    // (USEFUL, P=91.7%, lift=4.0× on SQL arm) and `security/fail-open-auth`
-    // / `perf/halstead-anomaly` (kept USEFUL on v4 numbers) — total 18.
+  it('USEFUL rules count is the v5 per-file-granularity baseline plus v5 pilot additions (16)', () => {
+    // v5 full-corpus re-calibration (2026-06-26) with per-file granularity:
+    // 86,983 neg + 81,787 pos = 168,770 files. Per-file P/R is more
+    // accurate than per-fire-count (rules that fire multiple times per
+    // file no longer inflate the signal). 14 USEFUL on the per-file
+    // metric. v5 SQL pilot adds `db/duplicate-index` (USEFUL, P=91.7%,
+    // lift=4.0× on SQL arm) and `security/fail-open-auth` is kept as USEFUL
+    // on its v4 numbers (1 fire on pos, 0 on neg = P=100%, lift=inf).
+    // Total: 16.
     const useful = Object.values(DATA).filter((e) => e.verdict === 'USEFUL').length;
-    expect(useful, 'v5 full corpus = 17 + v5 SQL = 1 = 18 USEFUL').toBe(18);
+    expect(useful, 'v5 per-file = 14 + v5 SQL = 1 + 1 v4-kept = 16 USEFUL').toBe(16);
   });
 
-  it('INVERTED rules count is the v5 full-corpus baseline plus v5 pilot additions (19)', () => {
-    // v5 full-corpus re-calibration: 14 INVERTED rules. v5 SQL pilot
+  it('INVERTED rules count is the v5 per-file-granularity baseline plus v5 pilot additions (18)', () => {
+    // v5 full-corpus re-calibration: 13 INVERTED rules. v5 SQL pilot
     // adds db/missing-not-null; v5 markdown pilot adds 3 docs/* rules;
     // the product/terminology-drift entry was re-categorized from DORMANT
-    // to INVERTED (1654 pos vs 6566 neg fires = lift 0.3×) — total 19.
+    // to INVERTED. Total: 18.
     const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
-    expect(inverted, 'v5 full corpus = 14 + v5 (1 db + 3 docs + 1 product) = 19 INVERTED').toBe(19);
+    expect(inverted, 'v5 full corpus = 13 + v5 (1 db + 3 docs + 1 product) = 18 INVERTED').toBe(18);
   });
 });

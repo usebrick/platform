@@ -51,6 +51,8 @@ walk(absWorkspace);
 console.log(`Discovered ${files.length} source files. Scanning ${kind} arm...`);
 
 const fires = new Map<string, number>();
+/** Per-file fires: ruleId -> Set of file paths that rule fired on. */
+const perFileFires = new Map<string, Set<string>>();
 let componentCount = 0;
 let issueCount = 0;
 let parseErrorCount = 0;
@@ -62,9 +64,16 @@ for (let i = 0; i < files.length; i++) {
     const result = await scanFile(files[i]!, config, registry, absWorkspace);
     componentCount += result.componentCount;
     if (result.parseError) parseErrorCount++;
+    // Track which rules fired on THIS file (per-file granularity — v4 method)
+    const firedOnThisFile = new Set<string>();
     for (const issue of result.issues) {
       issueCount++;
       fires.set(issue.ruleId, (fires.get(issue.ruleId) ?? 0) + 1);
+      firedOnThisFile.add(issue.ruleId);
+    }
+    for (const ruleId of firedOnThisFile) {
+      if (!perFileFires.has(ruleId)) perFileFires.set(ruleId, new Set());
+      perFileFires.get(ruleId)!.add(files[i]!);
     }
   } catch (err) {
     console.error(`  scan failed: ${files[i]}: ${(err as Error).message}`);
@@ -88,6 +97,14 @@ const out = {
   uniqueRules: fires.size,
   elapsedSec: Math.round(elapsed),
   fires: Object.fromEntries([...fires.entries()].sort((a, b) => b[1] - a[1])),
+  /** Per-file fires: ruleId -> number of unique files that rule fired on. */
+  perFileFires: Object.fromEntries(
+    [...perFileFires.entries()].map(([rule, fileSet]) => [rule, fileSet.size])
+  ),
+  /** For tools that want to verify: the actual file paths (warning: large). */
+  // perFileFirePaths: Object.fromEntries(
+  //   [...perFileFires.entries()].map(([rule, fileSet]) => [rule, [...fileSet]])
+  // ),
 };
 
 writeFileSync(`/tmp/${outPrefix}-fires.json`, JSON.stringify(out, null, 2));
