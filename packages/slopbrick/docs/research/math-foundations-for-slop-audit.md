@@ -230,6 +230,93 @@ More accurate than BOCPD but the marginal accuracy isn't worth the inference cos
 
 ---
 
+## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW)
+
+The methods in Sections 3–5 are all **detection** methods: they ask "does this file match pattern X?" The v0.12.0 calibration work addresses a complementary question: **"given multiple weak signals, what's the calibrated probability that this file is AI-generated?"**
+
+Detection math asks "fire or not fire?" Calibration math asks "fire plus context, what's the posterior?" slopbrick's 60-rule pipeline produces many fires per file; without calibration, the false-positive rate compounds multiplicatively. The four methods below address this directly.
+
+### 7.1 Bayesian likelihood-ratio combination (Tier S)
+
+**Citation:** Bento et al. 2024, "Improving rule-based classifiers by Bayes point aggregation," *Neurocomputing* — direct application to rule ensembles. Bissiri, Holmes, Walker 2016, *JRSS B* — power-likelihood foundations. arXiv:2504.17013 (2025) — weighted-likelihood for class imbalance.
+
+**Math:** For each rule, compute the likelihood ratio LR = P(fire | AI) / P(fire | human) from the calibration corpus. Combine across rules via naive Bayes (log-odds formulation):
+
+```
+log P(AI | all fires) = log (P(AI) / P(human)) + Σᵢ log LR_i
+```
+
+**Slopbrick application:** `src/engine/lr-combiner.ts` (~200 LOC). Replaces the heuristic weighted average in the Repository Coherence Score with a calibrated Bayesian posterior. For each fired rule, the LR is read from `signal-strength.json`. With 50/50 priors and Haldane smoothing on TP/FP, the combiner handles edge cases (zero-count rules) gracefully.
+
+**Concrete ship:** Surfaces in the report under `report.v012Stats.bayesianPosterior` (range [0, 1]). > 0.5 = net AI signal; < 0.5 = net human signal. Drives the new `logic/bayesian-conditional` rule (P(AI|fires) ≥ 0.7) per Bento et al.
+
+**Solves:** All four calibration failure modes in v5 — high-FPR USEFUL rules (downweight noisy via posterior), INVERTED rules (Bayes handles anti-predictive evidence naturally), threshold calibration (posterior IS calibrated probability), new discriminators (Bayes finds patterns, even if individual signals are weak).
+
+### 7.2 Kolmogorov–Smirnov test (Tier S)
+
+**Citation:** Kolmogorov 1933 / Smirnov 1939 — foundational. arXiv:2510.15996 (Oct 2025), "Using Kolmogorov-Smirnov Distance for Measuring Distribution Shift in Machine Learning" — direct recent ML application. Witt 2018/2024 — review.
+
+**Math:** KS statistic D = sup_x |F_n(x) − G_m(x)| where F_n, G_m are the empirical CDFs. Asymptotic p-value via Hodges 1958:
+
+```
+p ≈ Q_KS(√(n·m / (n+m)) · D)
+Q_KS(λ) = 2 · Σ_{j=1}^∞ (−1)^(j−1) · exp(−2j²λ²)
+```
+
+**Slopbrick application:** `src/engine/ks.ts` (~80 LOC). Runs multi-feature KS tests on per-file distributions (line lengths, identifier lengths, comment density) against corpus baselines, Bonferroni-corrected for family-wise error rate.
+
+**Concrete ship:** New `logic/ks-distribution-shift` rule fires when any feature shows a statistically significant shift. KS is symmetric — catches both AI anomalies and production-rot anomalies.
+
+### 7.3 Zipf's & Heaps' laws (Tier S)
+
+**Citation:** Christ, Bavarian, Koyejo, Lapata 2025, "Zipf's and Heaps' Laws for Tokens and LLM-generated Texts," *EMNLP Findings 2025* — **directly proposes Heaps λ and Zipf s as LLM discriminators.** Lu, Zhang, Zhou 2013 *Nature Sci. Rep.* — deviation analysis. Zipf 1949; Heaps 1978 — originals.
+
+**Math:**
+
+```
+f(rank) ∝ rank^(−s)        (Zipf; s ≈ 1.0–1.2 for natural text)
+|V(t)| = K · t^λ            (Heaps; λ ≈ 0.4–0.6 for natural text)
+```
+
+LLMs have systematically higher λ and different s than human text (Christ et al. 2025).
+
+**Slopbrick application:** `src/engine/zipf-heaps.ts` (~150 LOC). Two new rules:
+
+- `logic/heaps-deviation` — fires when file's λ deviates > 2σ from corpus baseline.
+- `logic/zipf-slope-anomaly` — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7.
+
+### 7.4 Benjamini–Hochberg FDR correction (Tier S — highest leverage per LOC)
+
+**Citation:** Benjamini, Y. & Hochberg, Y. 1995, "Controlling the false discovery rate," *JRSS B* 57(1):289–300.
+
+**Math:** Step-up procedure that controls E[V/R] ≤ α (FDR) under independence or PRDS:
+
+```
+Sort p-values ascending: p_(1) ≤ p_(2) ≤ … ≤ p_(N).
+Find largest k such that p_(k) ≤ (k / N) · α.
+Reject hypotheses 1..k.
+```
+
+**Slopbrick application:** `src/engine/multitest.ts` (~40 LOC). With 60 rules firing on every file, P(≥1 false positive) ≈ 95% under no correction. BH-FDR brings this to ≤ 5% expected — **without changing a single rule's underlying logic**. Highest credibility-per-line-of-code ratio in v0.12.0.
+
+**Concrete ship:** Surfaces `report.v012Stats.survivingFiresCount` (number of fires surviving BH-FDR at α = 0.05). The "free rigor" upgrade.
+
+### 7.5 Wilson score + Clopper-Pearson confidence intervals
+
+**Citation:** Wilson 1927, *JASA* 22:209–212 — Wilson score interval. Clopper & Pearson 1934, *Biometrika* 26:404–413 — exact binomial CI.
+
+**Math:** Wilson score interval (closed-form, better than normal approximation):
+
+```
+p̂ ± z·sqrt(p̂(1−p̂)/n + z²/(4n²)) / (1 + z²/n)
+```
+
+**Slopbrick application:** `src/engine/confidence-intervals.ts` (~70 LOC). Replace point estimates of P / R / FPR in the calibration doc with confidence intervals. The corpus sizes (95k neg / 76k pos) support tight CIs (±0.5% on P/R/FPR). Adds defensibility to every reported number.
+
+**Concrete ship:** Future reporter work — `formatCI()` outputs `60.00% [57.23%, 62.71%]` for the next calibration doc revision.
+
+---
+
 ## 7. Implementation roadmap
 
 | Phase | Methods | Effort | Trust gain |

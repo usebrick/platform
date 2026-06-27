@@ -9,9 +9,12 @@ import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
 import { spacingGridRule } from './layout/spacing-grid';
+import { bayesianConditionalRule } from './logic/bayesian-conditional';
 import { boundaryViolationRule } from './logic/boundary-violation';
 import { ghostDefensiveRule } from './logic/ghost-defensive';
+import { heapsDeviationRule } from './logic/heaps-deviation';
 import { keyPropMissingRule } from './logic/key-prop-missing';
+import { ksDistributionShiftRule } from './logic/ks-distribution-shift';
 import { mathAnyDensityRule } from './logic/math-any-density';
 import { mathConsoleLogStormRule } from './logic/math-console-log-storm';
 import { mathGiniClassUsageRule } from './logic/math-gini-class-usage';
@@ -19,6 +22,7 @@ import { mathVariableNameEntropyRule } from './logic/math-variable-name-entropy'
 import { optimisticNoRollbackRule } from './logic/optimistic-no-rollback';
 import { qwikHookLeakRule } from './logic/qwik-hook-leak';
 import { reactiveHookSoupRule } from './logic/reactive-hook-soup';
+import { zipfSlopeAnomalyRule } from './logic/zipf-slope-anomaly';
 import { zombieStateRule } from './logic/zombie-state';
 import { clsImageRule } from './perf/cls-image';
 import { cssBloatRule } from './perf/css-bloat';
@@ -71,9 +75,12 @@ export const builtinRules: Rule[] = [
   mathElementUniformityRule,
   mathGridUniformityRule,
   spacingGridRule,
+  bayesianConditionalRule,
   boundaryViolationRule,
   ghostDefensiveRule,
+  heapsDeviationRule,
   keyPropMissingRule,
+  ksDistributionShiftRule,
   mathAnyDensityRule,
   mathConsoleLogStormRule,
   mathGiniClassUsageRule,
@@ -81,6 +88,7 @@ export const builtinRules: Rule[] = [
   optimisticNoRollbackRule,
   qwikHookLeakRule,
   reactiveHookSoupRule,
+  zipfSlopeAnomalyRule,
   zombieStateRule,
   clsImageRule,
   cssBloatRule,

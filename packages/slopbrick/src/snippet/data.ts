@@ -172,6 +172,14 @@ const RULE_HINTS: Record<string, string> = {
     'Use the configured spacing scale (4px or 8px grid). Avoid arbitrary values like p-[13px] that aren\'t on the scale.',
   'logic/ghost-defensive':
     'Use optional chaining (?.) or early returns instead of deep && guards. If a defensive chain runs 3+ levels deep, refactor.',
+  'logic/bayesian-conditional':
+    'The Bayesian combiner aggregates multiple weak signals into a calibrated posterior P(AI|fires). Treat any fire above 0.7 as evidence of AI authorship; above 0.9 as strong evidence. (v0.12.0 — Bento et al. 2024 *Neurocomputing*.)',
+  'logic/heaps-deviation':
+    "Inspect for LLM-style vocabulary patterns: this file's vocabulary grows faster (high Heaps λ) or slower (low λ) than typical source code. Verify authorship if unexpected. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
+  'logic/ks-distribution-shift':
+    'Inspect the shifted features. KS detects both AI anomalies and production-rot anomalies (it is symmetric); combine with Heaps/Zipf for AI-specific signal. (v0.12.0 — arXiv:2510.15996, Oct 2025.)',
+  'logic/zipf-slope-anomaly':
+    "Inspect for LLM-style frequency distribution: this file's identifier usage is more peaked or flatter than typical human code. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
   'logic/math-any-density':
     'Replace `: any` with proper types. Start with the parameter/return types of the most-used functions.',
   'logic/math-console-log-storm':

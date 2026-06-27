@@ -1,4 +1,4 @@
-export const VERSION = '0.11.2';
+export const VERSION = '0.12.0';
 
 // ---------------------------------------------------------------------------
 // Phase Memo #4 — AI Maintenance Cost (target 0.8.0)
@@ -752,6 +752,27 @@ export interface ProjectReport {
   prSlopScore?: number;
   /** v0.10.1 — the git ref supplied to --diff <ref>. Undefined for full scans. */
   diffRef?: string;
+  /**
+   * v0.12.0 — Diagnostic stats from the new math engines. Surfaced in
+   * HTML/JSON reporters under "v0.12 Calibration Diagnostics". Does
+   * NOT affect slopIndex or any headline score; purely informational.
+   *
+   * bayesianPosterior: P(AI | fired_rules) computed via naive-Bayes
+   *   likelihood-ratio combination per Bento et al. 2024 *Neurocomputing*.
+   *   Range [0, 1]. > 0.5 = net AI signal; < 0.5 = net human signal.
+   * survivingFiresCount: number of fires that survive Benjamini–Hochberg
+   *   FDR control at α = 0.05 across the full rule set. The "free rigor"
+   *   upgrade that converts the silent multi-testing problem into a
+   *   calibrated number.
+   */
+  v012Stats?: {
+    bayesianPosterior: number;
+    bayesianMatchedRules: number;
+    totalLogLr: number;
+    survivingFiresCount: number;
+    totalFiresCount: number;
+    fdrAlpha: number;
+  };
 }
 
 export interface TopOffender {

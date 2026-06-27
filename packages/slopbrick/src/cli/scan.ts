@@ -507,6 +507,69 @@ export async function runScan(
 
   allIssues.sort((a, b) => SEVERITY_WEIGHTS[b.severity] - SEVERITY_WEIGHTS[a.severity]);
 
+  // v0.12.0: Bayesian LR combination + Benjamini–Hochberg FDR correction
+  // over the full fire set. Surfaces calibrated statistics in the report
+  // without changing the existing composite score math (which has its own
+  // backward-compatibility contract). Reported under report.v012Stats.
+  //
+  //   - bayesianPosterior: P(AI | fired_rules) via naive-Bayes log-odds
+  //     combination per Bento et al. 2024 *Neurocomputing*.
+  //   - survivingFiresCount / totalFiresCount: how many of the fires
+  //     survive BH-FDR control at α = 0.05. The "free rigor" upgrade
+  //     that converts the silent multi-testing inflation problem into a
+  //     calibrated number.
+  //
+  // Both numbers are read by the HTML reporter (report.html) and the
+  // JSON reporter (report.json). They do NOT change any issue's severity
+  // or the headline slopIndex — they are diagnostic.
+  let v012Stats:
+    | {
+        bayesianPosterior: number;
+        bayesianMatchedRules: number;
+        totalLogLr: number;
+        survivingFiresCount: number;
+        totalFiresCount: number;
+        fdrAlpha: number;
+      }
+    | undefined;
+  try {
+    const { combineFireSet } = await import('../engine/lr-combiner');
+    const { survivingFires } = await import('../engine/multitest');
+    // Build the fire set from all active issues (not defaultOff'd).
+    const firedRuleIds: string[] = [];
+    const fprMap = new Map<string, number>();
+    for (const issue of allIssues) {
+      // Issue.severity type is 'low' | 'medium' | 'high'; 'off' is set as
+      // a runtime-only marker for defaultOff'd rules (see defaultOffApplied
+      // loop above). Cast via unknown to access the runtime marker.
+      if ((issue.severity as string) === 'off') continue;
+      firedRuleIds.push(issue.ruleId);
+      const strength = issue.signalStrength ?? getSignalStrength(issue.ruleId);
+      if (strength && !fprMap.has(issue.ruleId)) {
+        fprMap.set(issue.ruleId, strength.fpRate);
+      }
+    }
+    const uniqueFires = [...new Set(firedRuleIds)];
+    const combo = combineFireSet(uniqueFires);
+    const survivors = survivingFires(
+      new Map(uniqueFires.map((id) => [id, true])),
+      fprMap,
+      0.05,
+    );
+    v012Stats = {
+      bayesianPosterior: combo.posterior,
+      bayesianMatchedRules: combo.matchedRules,
+      totalLogLr: combo.totalLogLr,
+      survivingFiresCount: survivors.size,
+      totalFiresCount: uniqueFires.length,
+      fdrAlpha: 0.05,
+    };
+  } catch (err) {
+    if (!options.quiet) {
+      logger.warn(`v0.12.0 stats: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   const parseErrors = results
     .filter((result) => result.parseError)
     .map((result) => ({ filePath: result.filePath, error: result.parseError as string }));
@@ -843,6 +906,7 @@ export async function runScan(
     repositoryHealth,
     prSlopScore,
     diffRef: options.diffRef,
+    v012Stats,
     aiDebt,
     repositoryHealthBreakdown,
     repositoryHealthWarnings,

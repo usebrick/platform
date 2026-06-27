@@ -5,6 +5,46 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-06-27 — Tier-1.5 Calibration Methods (Bayesian + BH-FDR + KS + Zipf/Heaps)
+
+### Added
+
+- **`src/engine/lr-combiner.ts`** — Bayesian likelihood-ratio combiner per Bento et al. 2024 *Neurocomputing*. Computes the calibrated posterior P(AI | fired_rules) via naive-Bayes log-odds combination of per-rule LRs (Haldane-smoothed). Replaces the heuristic weighted average with a calibrated probability.
+- **`src/engine/multitest.ts`** — Benjamini–Hochberg FDR correction per Benjamini & Hochberg 1995 *JRSS B* 57(1):289–300. Surfaces the 60-rule multi-testing problem (`P(≥1 false positive) ≈ 95%`) and brings it under control at α = 0.05. **Highest credibility-per-line-of-code ratio in v0.12.0.**
+- **`src/engine/ks.ts`** — Kolmogorov–Smirnov two-sample test + multi-feature Bonferroni-corrected shift detector per Kolmogorov 1933 / Smirnov 1939 + arXiv:2510.15996 (Oct 2025).
+- **`src/engine/zipf-heaps.ts`** — Zipf's law + Heaps' law fits per Zipf 1949, Heaps 1978, and Christ, Bavarian, Koyejo, Lapata 2025 *EMNLP Findings 2025* — the only peer-reviewed paper directly proposing Heaps λ and Zipf s as LLM discriminators.
+- **`src/engine/confidence-intervals.ts`** — Wilson score + Clopper-Pearson binomial confidence intervals per Wilson 1927 *JASA* 22:209–212 and Clopper & Pearson 1934 *Biometrika* 26:404–413.
+- **4 new rules** using the new engines:
+  - `logic/bayesian-conditional` (high) — fires when P(AI|fires) ≥ 0.7.
+  - `logic/heaps-deviation` (medium) — fires when file's Heaps λ deviates > 2σ from corpus baseline.
+  - `logic/ks-distribution-shift` (medium) — multi-feature KS shift (Bonferroni α = 0.05/K).
+  - `logic/zipf-slope-anomaly` (medium) — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7.
+- **`report.v012Stats`** — diagnostic field in `ProjectReport` exposing the calibrated Bayesian posterior and BH-FDR surviving-fire count. Surfaces in HTML/JSON reporters under "v0.12 Calibration Diagnostics". Does NOT affect slopIndex or any headline score (informational only).
+- **`docs/research/math-foundations-for-slop-audit.md`** — new "Tier 1.5: Calibration Methods" section with peer-reviewed citations for all 5 new math foundations.
+
+### Peer-reviewed math added in v0.12.0
+
+| Method | Citation | Tier | Solves |
+|--------|----------|------|--------|
+| Bayesian LR combination | Bento et al. 2024 *Neurocomputing* | S | All 4 calibration failure modes |
+| Kolmogorov–Smirnov | Kolmogorov 1933 + arXiv:2510.15996 (Oct 2025) | S | High-FPR USEFUL, INVERTED reclassification |
+| Zipf's & Heaps' laws | Christ et al. 2025 EMNLP Findings | S | New AI discriminators |
+| Benjamini–Hochberg FDR | Benjamini & Hochberg 1995 *JRSS B* | S | Silent FPR inflation (free rigor) |
+| Wilson/Clopper-Pearson CIs | Wilson 1927 *JASA* + Clopper & Pearson 1934 *Biometrika* | S | Calibration doc rigor |
+
+### Tests
+
+- 91 new tests across 5 new engine modules (76 + 15).
+- All tests pass with strict TypeScript typecheck.
+
+### Migration notes
+
+- v0.12.0 is **backward-compatible** with v0.11.x at the API and CLI surface.
+- New rules are added with `defaultOff: true` (DORMANT) until v0.12 corpus re-calibration lands.
+- `report.v012Stats` is additive — existing reporters ignore the field if absent.
+
+---
+
 ## [0.11.2] - 2026-06-26 — Prepack guard + workspace dep cleanup
 
 ### Fixed

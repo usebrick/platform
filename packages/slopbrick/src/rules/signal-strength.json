@@ -675,5 +675,45 @@
     "lastCalibratedAt": "2026-06-26T23:30:00Z",
     "verdict": "OK",
     "_calibrationNote": "v5 full corpus re-calibration (2026-06-26): 86983 neg + 81787 pos. OK \u2014 pos=39218, neg=18298, P=63.8%, FPR=2.73%, lift=1.9."
+  },
+  "logic/bayesian-conditional": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.12.0 ship \u2014 new Bayesian LR-combiner rule (Bento et al. 2024 *Neurocomputing*). Default-off until v0.12 corpus re-calibration lands. Threshold P(AI|fires) \u2265 0.7; posterior computed from per-rule likelihood ratios."
+  },
+  "logic/heaps-deviation": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.12.0 ship \u2014 new Zipf/Heaps rule (Christ et al. EMNLP Findings 2025). Default-off until v0.12 corpus re-calibration lands. Threshold |\u03bb - 0.5| / 0.15 \u2265 2\u03c3."
+  },
+  "logic/ks-distribution-shift": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.12.0 ship \u2014 new Kolmogorov\u2013Smirnov multi-feature shift detector (arXiv:2510.15996 Oct 2025). Default-off until v0.12 corpus re-calibration lands. Bonferroni-corrected \u03b1=0.05/K over 3 features (line lengths, identifier lengths, comment density)."
+  },
+  "logic/zipf-slope-anomaly": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.12.0 ship \u2014 new Zipf slope anomaly rule (Christ et al. EMNLP Findings 2025). Default-off until v0.12 corpus re-calibration lands. Threshold |s - 1.0| / 0.25 \u2265 2\u03c3, R\u00b2 \u2265 0.7."
   }
 }

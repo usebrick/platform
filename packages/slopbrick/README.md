@@ -2,7 +2,18 @@
 
 > **Repository Coherence Scanner for AI-coded codebases.** Detects cross-file pattern drift (`zustand + redux in the same project`), AI-induced security failures (`sk-...` keys, `NEXT_PUBLIC_*` secrets, fail-open auth), design-token violations (`p-[13px]`), and AI test smells (`expect(x).toBeDefined()`). Run `npx slopbrick` and get a single **Repository Health** score (0–100) with per-rule precision/recall. Add the MCP server and your AI agent reads your existing patterns before it writes new ones.
 
-**Status:** v0.11.2 (current). The v0.10 credibility milestone shipped 2026-06-25 — every detection rule ships with per-rule P/R/FPR against the balanced 172k-file v4 corpus, and 8 thresholds cite peer-reviewed papers (Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951).
+**Status:** v0.12.0 (current). The v0.10 credibility milestone shipped 2026-06-25 — every detection rule ships with per-rule P/R/FPR against the balanced 172k-file v4 corpus, and 8 thresholds cite peer-reviewed papers (Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951). **v0.12.0 ships 5 new peer-reviewed math foundations** (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs) and 4 new rules that close the calibration gap exposed by v0.10. See [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md) §7 for the Tier-1.5 Calibration Methods.
+
+## What's new in v0.12.0
+
+v0.10 proved the detection math has peer-reviewed citations. v0.12.0 adds the **calibration math** — the piece that turns "60 rules fired" into a single calibrated probability that the file is AI-generated. Five new peer-reviewed foundations, four new rules, and one new report field:
+
+- **`report.v012Stats.bayesianPosterior`** — `P(AI | fired_rules)` via naive-Bayes likelihood-ratio combination per Bento et al. 2024 *Neurocomputing*. Range [0, 1]; > 0.5 = net AI signal.
+- **`report.v012Stats.survivingFiresCount`** — number of fires that survive Benjamini–Hochberg FDR control at α = 0.05. The "free rigor" upgrade that converts the silent 60-rule multi-testing problem into a calibrated number.
+- **4 new rules** (`logic/bayesian-conditional`, `logic/heaps-deviation`, `logic/ks-distribution-shift`, `logic/zipf-slope-anomaly`) — all `defaultOff: true` until v0.12 corpus re-calibration lands.
+- **Wilson score + Clopper-Pearson CIs** — for the next calibration doc revision, every P/R/FPR number ships with a confidence interval.
+
+The existing slopIndex composite score is unchanged in v0.12.0 (backward-compatible). The new math surfaces as diagnostic information in the report and as the new rules — it does not retroactively change any existing score.
 
 **The problem.** AI coding assistants write logic well, but they drift. Every project ends up with three button variants, a hardcoded API key, inline styles next to Tailwind utilities, and a test file full of `expect(x).toBeDefined()`. The drift isn't the agent's fault — it's that the agent doesn't know your conventions. Existing linters catch syntax; nothing catches "you just invented a fourth modal system when this repo already has three."
 
@@ -20,7 +31,7 @@ The MCP tool `slop_suggest` returns, in one call:
 
 > **Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them.**
 
-The MCP server is one command: `slopbrick mcp`. 14 tools ship in v0.11.2: `slop_suggest`, `slop_suggest_with_memory` (fast-path on `.slopbrick/memory.md`), `slop_scan_file`, `slop_explain_rule`, `slop_list_rules`, `slop_governance`, `slop_check_constitution`, `slop_architecture_score`, `slop_business_logic_score`, `slop_db_health`, `slop_find_similar`, and three more — see `src/mcp/tools.ts`.
+The MCP server is one command: `slopbrick mcp`. 14 tools ship in v0.12.0: `slop_suggest`, `slop_suggest_with_memory` (fast-path on `.slopbrick/memory.md`), `slop_scan_file`, `slop_explain_rule`, `slop_list_rules`, `slop_governance`, `slop_check_constitution`, `slop_architecture_score`, `slop_business_logic_score`, `slop_db_health`, `slop_find_similar`, and three more — see `src/mcp/tools.ts`.
 
 ## Headline Repository Health composite
 

@@ -21,7 +21,7 @@ Splitting these into separate repos would create constant synchronization work. 
 
 | Package | Status | Purpose |
 |---------|--------|---------|
-| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 60+ rules, MCP server, migrate subcommand. |
+| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 56 rules (52 → 56 in v0.12.0 with 4 new calibration rules), MCP server, migrate subcommand. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Memory Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
