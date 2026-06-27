@@ -391,9 +391,22 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
     program
       .command('badge')
-      .description('print a shields.io slop-index badge')
+      .description('print a shields.io slop-index badge. Reads .slopbrick/health.json if present (no re-scan); falls back to a fresh scan.')
       .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
+        // v0.14.5d: badge reads from the persisted health snapshot when
+        // available so the organic-growth loop is fast enough for CI
+        // badges to refresh on every push. Falls back to a fresh scan.
         const options = command.optsWithGlobals() as CliGlobalOptions;
+        const cwd = resolve(options.workspace ?? process.cwd());
+        const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
+        const health = loadHealth(cwd);
+        if (health) {
+          const synthetic = {
+            slopIndex: health.slopIndex,
+          } as Parameters<typeof formatBadge>[0];
+          logger.info(formatBadge(synthetic));
+          process.exit(0);
+        }
         const { report } = await runScan(options);
         logger.info(formatBadge(report));
         process.exit(0);

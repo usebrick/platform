@@ -1,7 +1,7 @@
 {
   "name": "slopbrick",
   "version": "0.14.5d",
-  "description": "Repository Coherence Scanner for AI-coded codebases — detect cross-file pattern drift, AI-induced design-token violations, and security failures that AI agents introduce disproportionately. Part of the usebrick.dev platform. Ships 8 MCP tools so Claude Code / Cursor / Copilot follow your patterns instead of reinventing them.",
+  "description": "AI agents forget your architecture — every session starts fresh. slopbrick writes .slopbrick/memory.md so the next Claude Code / Cursor / Copilot call reads the canonical patterns from disk instead of re-parsing the AST. 100-1000× faster. Headline Repository Health score, LockBrick pre-commit hook, MCP server. Part of the usebrick.dev platform.",
   "type": "module",
   "bin": {
     "slopbrick": "bin/slopbrick.js"
@@ -68,9 +68,11 @@
     "claude-code",
     "cursor",
     "copilot",
+    "aider",
     "mcp",
     "model-context-protocol",
     "repository-constitution",
+    "repository-memory",
     "drift-detection",
     "pattern-fragmentation",
     "coherence",
@@ -83,9 +85,15 @@
     "typescript",
     "python",
     "go",
+    "swift",
+    "kotlin",
+    "rust",
     "wcag",
     "ai-slop",
-    "ai-debt"
+    "ai-debt",
+    "pre-commit",
+    "ci",
+    "prevention"
   ],
   "author": "usebrick.dev",
   "license": "MIT",

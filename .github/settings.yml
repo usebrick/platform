@@ -1,0 +1,73 @@
+# GitHub repository settings.
+#
+# This file configures the usebrick/platform repo per the GitHub Probot
+# "settings" app (https://github.com/probot/settings). The corresponding
+# GitHub App must be installed on the repo for these settings to take
+# effect; if it's not, the settings are aspirational documentation.
+#
+# Topics drive:
+#   - npm search ranking (npm pulls GitHub topics for package pages)
+#   - GitHub search discoverability (e.g. https://github.com/topics/...)
+#   - https://github.com/usebrick/platform Insights tab
+#   - the GitHub `gh search repos` CLI
+
+# Repository description (also shown in the meta description tag).
+# Concise and human-readable; avoid feature-list sprawl.
+repository:
+  name: platform
+  description: "slopbrick (Repository Coherence Scanner for AI-coded codebases) + shared schemas (@usebrick/core). MCP server, Constitution, LockBrick."
+  homepage: https://github.com/usebrick/platform#readme
+  topics:
+    # Primary positioning — what the tool is
+    - ai-coding-agents
+    - code-quality
+    - linter
+    - static-analysis
+    - repository-constitution
+    - drift-detection
+    - coherence
+    - ai-slop
+    - ai-debt
+
+    # Distribution targets
+    - claude-code
+    - cursor
+    - copilot
+    - aider
+    - mcp
+    - model-context-protocol
+    - pre-commit
+    - ci
+
+    # Framework coverage (drives framework-specific search)
+    - react
+    - vue
+    - svelte
+    - typescript
+    - python
+    - go
+    - rust
+    - swift
+    - kotlin
+    - wcag
+
+# Disable wiki — README + docs/ are the canonical surface.
+features:
+  wiki: false
+  issues: true
+  projects: false
+
+# Default branch name (rename-protection: only honored if the branch
+# doesn't already exist when this file is first applied).
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+      required_status_checks:
+        strict: true
+        contexts:
+          - test
+      enforce_admins: false
+      restrictions: null
