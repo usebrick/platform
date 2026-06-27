@@ -5,6 +5,7 @@ import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';
 import { setLoggerQuiet } from './logger';
+import { compositeScore } from './composite-scoring';
 import type { FileScanResult, Issue, ResolvedConfig, ScanFacts } from '../types';
 
 function applyRuleOverrides(issues: Issue[], rules: ResolvedConfig['rules']): Issue[] {
@@ -57,6 +58,13 @@ export async function scanFile(
     const rawIssues = rules.flatMap(({ rule, context }) => rule.analyze(context, facts));
     const issues = applyRuleOverrides(rawIssues, config.rules);
 
+    // v0.14.6: composite AI-likelihood score. Naive Bayes LLR
+    // combination of the unique rule IDs that fired on this file
+    // (post-severity-override). See src/engine/composite-scoring.ts
+    // for the math and references.
+    const triggeredRuleIds = Array.from(new Set(issues.map((i) => i.ruleId)));
+    const compScore = compositeScore(triggeredRuleIds);
+
     const gapValues = collectGapValues(facts);
     const styleSources = collectStyleSources(facts);
     const elementTags = facts.v2.jsx.elements.map((e) => e.tag);
@@ -71,6 +79,7 @@ export async function scanFile(
       elementTags,
       unmatchedStringLiterals,
       facts,
+      compositeScore: compScore,
     };
   } catch (err) {
     return {

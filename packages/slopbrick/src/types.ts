@@ -1,4 +1,4 @@
-export const VERSION = '0.12.2';
+export const VERSION = '0.14.5e';
 
 // ---------------------------------------------------------------------------
 // Phase Memo #4 — AI Maintenance Cost (target 0.8.0)
@@ -581,6 +581,18 @@ export interface FileScanResult {
   /**
    *  `// slopbrick-disable` directive filtering. */
   facts?: ScanFacts;
+  /**
+   * v0.14.6 — Composite AI-likelihood score for this file.
+   *
+   * Naive Bayes log-likelihood ratio combination of all triggered
+   * rules. `probability` in [0, 1] = P(AI-generated | rules fire);
+   * `confidenceTier` is one of LIKELY_HUMAN / INCONCLUSIVE / LIKELY_AI
+   * / VERY_LIKELY_AI per Jaeschke 1994 JAMA thresholds.
+   *
+   * Populated by the scan pipeline after rule execution. Undefined
+   * when no rules fired (probability stays at the prior prevalence).
+   */
+  compositeScore?: import('./engine/composite-scoring.js').CompositeScore;
 }
 
 export interface ComponentScore {
