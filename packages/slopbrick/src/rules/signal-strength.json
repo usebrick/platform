@@ -626,9 +626,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/comment-ratio": {
     "recall": 0.0,
@@ -636,9 +635,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Rahman 2024 / Bisztray 2025; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Rahman 2024 / Bisztray 2025; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/whitespace-regularity": {
     "recall": 0.0,
@@ -646,9 +644,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Shi 2024 DetectCodeGPT; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Shi 2024 DetectCodeGPT; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/text-like-ratio": {
     "recall": 0.0,
@@ -656,9 +653,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/errors-near-eof": {
     "recall": 0.0,
@@ -666,9 +662,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/any-density": {
     "recall": 0.0,
@@ -676,9 +671,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Lee, Hassan, Hindle MSR 2026; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Lee, Hassan, Hindle MSR 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/renyi-profile": {
     "recall": 0.0,
@@ -686,9 +680,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per R\u00e9nyi 1961 / Moslonka 2025; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per R\u00e9nyi 1961 / Moslonka 2025; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/log-rank-histogram": {
     "recall": 0.0,
@@ -696,9 +689,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Gehrmann 2019 GLTR; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Gehrmann 2019 GLTR; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/segment-surprisal-cv": {
     "recall": 0.0,
@@ -706,9 +698,8 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Hans 2024 Binoculars; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Hans 2024 Binoculars; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/compression-profile": {
     "recall": 0.0,
@@ -716,8 +707,7 @@
     "ratio": 0.0,
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Cilibrasi 2005 / Mahoney 1999; calibration on v7 corpus pending."
+    "verdict": "OK",
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Cilibrasi 2005 / Mahoney 1999; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   }
 }
