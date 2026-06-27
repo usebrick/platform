@@ -43,7 +43,7 @@ const SOURCE_EXT = new Set([
   '.java', '.rb', '.php',
 ]);
 
-const PER_FILE_TIMEOUT_MS = 5_000;
+const PER_FILE_TIMEOUT_MS = 30_000;
 const WORKER_SCRIPT = resolve(__dirname, 'scan-file-worker.ts');
 // PARALLEL = number of CPU cores minus 1 (leave one for the parent).
 // At 8 cores → 7 workers. At 4 cores → 3 workers. Each worker
