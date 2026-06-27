@@ -31,11 +31,27 @@ if (!workspace || !kind || !outPrefix) {
 const absWorkspace = resolve(workspace);
 const PER_FILE_TIMEOUT_MS = 30000;
 
-// v0.13.0: only scan file types that the slopbrick engine supports.
-// The v7 corpus has Swift/Kotlin/Dart/Rust files but those need
-// additional AST visitors before the rule engine can analyze them.
+// v0.14.5a: extend SOURCE_EXT to include the 8 new languages added in
+// v0.14.0 (Swift, Kotlin, Dart, Rust, C++/cc/cxx/c/h/hpp/hxx, Java, Ruby, PHP).
+// The backend visitors in `src/engine/visitors/{lang}.ts` extract
+// service/route/ormModel patterns; the rule engine still skips these
+// extensions (per `BACKEND_EXTENSIONS` in `src/engine/discover.ts`),
+// but the pattern inventory now picks them up. This means the
+// cross-file drift detection surfaces backend patterns from these
+// languages in the per-project scan output.
 const SOURCE_EXT = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte', '.astro', '.html', '.py', '.go',
+  '.ts', '.tsx', '.js', '.jsx',
+  '.vue', '.svelte', '.astro', '.html',
+  '.py', '.go',
+  // v0.14.0 — 8 new languages
+  '.swift',
+  '.kt', '.kts',
+  '.dart',
+  '.rs',
+  '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
+  '.java',
+  '.rb',
+  '.php',
 ]);
 
 function isFileOk(p: string): boolean {

@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.12.2",
+  "version": "0.14.5a",
   "description": "Repository Coherence Scanner for AI-coded codebases — detect cross-file pattern drift, AI-induced design-token violations, and security failures that AI agents introduce disproportionately. Part of the usebrick.dev platform. Ships 8 MCP tools so Claude Code / Cursor / Copilot follow your patterns instead of reinventing them.",
   "type": "module",
   "bin": {
