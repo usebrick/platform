@@ -61,7 +61,7 @@ import {
   baselinePath,
 } from '../engine/cache';
 import { formatJson } from '../report/json';
-import { formatPretty } from '../report/pretty';
+import { formatPretty, formatWhyFailingReport } from '../report/pretty';
 import { formatSarif } from '../report/sarif';
 import { formatHtml } from '../report/html';
 import { formatAdvice } from '../report/advice';
@@ -157,6 +157,9 @@ export interface CliGlobalOptions extends ScanRunOptions {
   // format/json/html are inherited from ScanRunOptions — no need to redeclare.
   suggest?: boolean;
   heatmap?: boolean;
+  /** v0.14.5i (P3): render the top 5 rules dragging the score down
+   *  without the full report. For quick triage on a slow terminal. */
+  whyFailing?: boolean;
 }
 
 export interface ScanRunResult {
@@ -504,14 +507,17 @@ export async function runScan(
     issue.severity = 'off' as Issue['severity'];
     defaultOffApplied += 1;
   }
+  // v0.14.5i: the suppression count is now surfaced in the main scan
+  // output as a trust signal (see formatPretty in src/report/pretty.ts).
+  // The stderr message is kept for backwards compatibility with any
+  // scripts that may have grep'd for it, but the canonical home for
+  // this number is the pretty report itself.
   if (defaultOffApplied > 0 && !options.quiet && !machineReadableStdout) {
-    // Send to stderr so it doesn't pollute `--format json` / `--json` /
-    // `--html` output on stdout. Users running with JSON output want
-    // clean JSON; this message is informational.
     console.error(
-      `Auto-disabling ${defaultOffApplied} calibration-failed issue(s) from ` +
-        `${defaultOff.size} default-off rule(s). Re-enable per-rule via ` +
-        `\`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
+      `[v0.14.5i] auto-suppressed ${defaultOffApplied} INVERTED/NOISY issue(s) ` +
+        `from ${defaultOff.size} default-off rule(s). ` +
+        `See the main output for the trust-signal summary. ` +
+        `Re-enable per-rule via \`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
     );
   }
 
@@ -920,6 +926,10 @@ export async function runScan(
     aiDebt,
     repositoryHealthBreakdown,
     repositoryHealthWarnings,
+    // v0.14.5i: surface in the report so formatPretty can render
+    // the trust-signal line. See src/report/pretty.ts.
+    defaultOffSuppressedCount: defaultOffApplied,
+    defaultOffRuleCount: defaultOff.size,
     p90Score: aggregated.p90Score,
     peakScore: aggregated.peakScore,
     componentCount: aggregated.componentCount,
@@ -1175,6 +1185,17 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
       `Unknown --format value: ${options.format}. Valid: pretty, json, sarif, html.\n`,
     );
     process.exit(2);
+  }
+
+  // v0.14.5i (P3): --why-failing is a quick triage view. Renders just
+  // the top 5 rules dragging the score down, without the full
+  // report. Takes precedence over --suggest / --format because
+  // it's a different output entirely.
+  if (options.whyFailing) {
+    if (!options.quiet) {
+      logger.info(formatWhyFailingReport(report));
+    }
+    return;
   }
 
   if (options.suggest) {

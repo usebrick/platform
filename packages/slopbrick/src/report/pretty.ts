@@ -42,6 +42,154 @@ function formatSummary(report: ProjectReport): string {
   return base;
 }
 
+/**
+ * v0.14.5i — Trust-signal section: surfaces the count of issues
+ * auto-suppressed because their rule was marked `defaultOff: true` in
+ * signal-strength.json (INVERTED or NOISY rules that would erode
+ * trust in the tool if surfaced in CI). Previously went to stderr
+ * where it was easy to miss.
+ */
+function formatDefaultOffSuppression(report: ProjectReport): string | null {
+  const suppressed = report.defaultOffSuppressedCount ?? 0;
+  const total = report.defaultOffRuleCount ?? 0;
+  if (suppressed === 0) return null;
+  return chalk.green(
+    `✓ ${suppressed} INVERTED/NOISY issue(s) correctly suppressed ` +
+      `from ${total} default-off rule(s). ` +
+      `The top offenses below are the ones that matter — re-enable per-rule via ` +
+      `\`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
+  );
+}
+
+/**
+ * v0.14.5i — Per-category breakdown table. The 16 raw categoryScores
+ * are already in the report (and the health.json) but were not visible
+ * in the CLI. Now surfaced as a compact bar chart so the user can see
+ * which categories are driving the score.
+ *
+ * Sort: descending by raw points. Show top N (default 5), then a
+ * "+M more" line if there are more. Categories with 0 points are
+ * counted in a summary line ("K categories not applicable").
+ */
+function formatCategoryBreakdown(report: ProjectReport, topN = 5): string {
+  const scores = report.categoryScores ?? {};
+  const entries = Object.entries(scores)
+    .filter(([, score]) => score > 0)
+    .sort(([, a], [, b]) => b - a);
+
+  if (entries.length === 0) {
+    return chalk.dim('Category breakdown: no active categories (clean codebase).');
+  }
+
+  const max = entries[0]?.[1] ?? 1;
+  const barWidth = 20;
+  const lines: string[] = [];
+  lines.push(chalk.bold('Category breakdown:'));
+  const shown = entries.slice(0, topN);
+  for (const [category, score] of shown) {
+    const padded = category.padEnd(10, ' ');
+    const valueStr = score.toFixed(0).padStart(6, ' ');
+    const filled = Math.round((score / max) * barWidth);
+    const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
+    lines.push(`  ${padded} ${chalk.cyan(bar)} ${valueStr}`);
+  }
+  if (entries.length > topN) {
+    lines.push(chalk.dim(`  +${entries.length - topN} more active categories`));
+  }
+  const inactive = Object.values(scores).filter((s) => s === 0).length;
+  if (inactive > 0) {
+    lines.push(chalk.dim(`  ${inactive} categories not applicable`));
+  }
+  return lines.join('\n');
+}
+
+/**
+ * v0.14.5i — Highest-impact next step. Compute which single action
+ * would most improve the score, based on the report's actual data.
+ * Returns a concrete command line the user can run.
+ */
+function formatNextStep(report: ProjectReport): string {
+  const lines: string[] = [];
+  lines.push(chalk.bold('Next step:'));
+
+  // Compute the dominant impact driver by looking at the top offending
+  // file. The user can target that specifically with --rule.
+  const top = report.topOffenders?.[0];
+  if (top) {
+    const issueWord = top.issueCount === 1 ? 'issue' : 'issues';
+    lines.push(
+      chalk.cyan(`  → \`slopbrick scan --rule ${top.filePath}\` to drill into the worst file (${top.issueCount} ${issueWord})`),
+    );
+  }
+
+  // Always offer the universal "see fixes" / "save baseline" escape hatches.
+  lines.push(
+    chalk.cyan(`  → \`slopbrick scan --suggest\` for auto-fix advice`),
+  );
+  lines.push(
+    chalk.dim(
+      `  → \`slopbrick scan --baseline\` to accept today's scores as the new floor`,
+    ),
+  );
+
+  // Add the why-failing hint when failing
+  const headline = typeof report.coherence === 'number' ? report.coherence : report.slopIndex;
+  if (headline < 70) {
+    lines.push(
+      chalk.dim(
+        `  → \`slopbrick scan --why-failing\` for the top 5 issues dragging the score down`,
+      ),
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * v0.14.5i — Why-failing output. Renders the top 5 rules (by weighted
+ * impact) that are dragging the headline score down. Used by the
+ * `--why-failing` flag for users who want a quick triage view.
+ */
+function formatWhyFailing(report: ProjectReport): string {
+  // Aggregate per-rule weighted impact: sum(severity_weight × count)
+  // for each active rule. Sort descending. This is the same math
+  // the headline slopIndex uses, so the top entries here are the
+  // rules with the most "lift" against the project.
+  const SEVERITY_WEIGHT: Record<Severity, number> = { low: 1, medium: 3, high: 5 };
+  const impact = new Map<string, { count: number; points: number; files: Set<string> }>();
+  for (const issue of report.issues) {
+    if ((issue.severity as string) === 'off') continue;
+    const cur = impact.get(issue.ruleId) ?? { count: 0, points: 0, files: new Set() };
+    cur.count += 1;
+    cur.points += SEVERITY_WEIGHT[issue.severity];
+    if (issue.filePath) cur.files.add(issue.filePath);
+    impact.set(issue.ruleId, cur);
+  }
+  const ranked = [...impact.entries()]
+    .sort(([, a], [, b]) => b.points - a.points)
+    .slice(0, 5);
+
+  if (ranked.length === 0) {
+    return chalk.green('Nothing is failing the threshold. Score is clean.');
+  }
+
+  const headline = typeof report.coherence === 'number' ? report.coherence : report.slopIndex;
+  const lines: string[] = [];
+  lines.push(chalk.bold(`Headline score: ${headline.toFixed(0)}/100 (FAIL — below 70)`));
+  lines.push('');
+  lines.push(chalk.bold('Top 5 rules dragging the score down:'));
+  for (let i = 0; i < ranked.length; i++) {
+    const [ruleId, info] = ranked[i]!;
+    const fileCount = info.files.size;
+    const fileHint = fileCount > 0 ? ` across ${fileCount} file${fileCount === 1 ? '' : 's'}` : '';
+    lines.push(
+      `  ${i + 1}. ${chalk.cyan(ruleId)} — ${info.count} fire${info.count === 1 ? '' : 's'}${fileHint} (${info.points} weighted points)`,
+    );
+  }
+  lines.push('');
+  lines.push(chalk.dim('  Run `slopbrick scan --suggest` for auto-fix advice per rule.'));
+  return lines.join('\n');
+}
+
 function severityBadge(severity: Severity): string {
   const colorize = severityColor(severity);
   const label = severity.toUpperCase().padEnd(8, ' ');
@@ -67,20 +215,46 @@ const COHERENCE_WEIGHTS = {
 } as const;
 
 function formatCompositeScore(report: ProjectReport): string {
-  const coherence = report.coherence;
-  const coherenceValue = (coherence ?? 0).toString().padStart(3, ' ');
-  const passed = coherence !== undefined && coherence >= 70; // B-grade or better
+  // v0.14.5i (P4): the slopIndex is now the SINGLE headline number,
+  // matching what the user sees in .slopbrick/health.json. The
+  // Repository Coherence composite is shown as a secondary line so
+  // the two views are consistent.
+  const slop = report.slopIndex;
+  const slopValue = slop.toFixed(0).padStart(3, ' ');
+  const passed = slop >= 70;
   const status = passed ? chalk.green('[PASS]') : chalk.red('[FAIL]');
 
   const lines: string[] = [];
+  lines.push(chalk.bold(`Slop Index: ${slopValue} / 100 ${status}`));
+  lines.push(
+    chalk.dim(
+      '(composite: 0.40 × boundary + 0.35 × context + 0.25 × visual; this is the same number in health.json)',
+    ),
+  );
+
+  // Show the subscore breakdown
+  lines.push(
+    `  ├─ boundary: ${report.boundaryScore.toFixed(0).padStart(3, ' ')}  (40%)`,
+  );
+  lines.push(
+    `  ├─ context:  ${report.contextScore.toFixed(0).padStart(3, ' ')}  (35%)`,
+  );
+  lines.push(
+    `  └─ visual:   ${report.visualScore.toFixed(0).padStart(3, ' ')}  (25%)`,
+  );
+
+  // Secondary view: Repository Coherence (different formula)
+  const coherence = report.coherence;
   if (typeof coherence === 'number') {
-    lines.push(chalk.bold(`Repository Coherence: ${coherenceValue} / 100 ${status}`));
+    const coherenceValue = coherence.toFixed(0).padStart(3, ' ');
+    const coherenceStatus = coherence >= 70 ? chalk.green('[PASS]') : chalk.red('[FAIL]');
+    lines.push('');
     lines.push(
       chalk.dim(
-        '(v0.9.1 Coherence composite: 0.50 × Arch + 0.30 × (100 − Pattern Fragmentation) + 0.10 × Constitution + 0.10 × AI Debt)',
+        `Repository Coherence: ${coherenceValue} / 100 ${coherenceStatus} ` +
+          `(secondary view: 0.50 × Arch + 0.30 × (100 − Pattern Fragmentation) + 0.10 × Constitution + 0.10 × AI Debt)`,
       ),
     );
-
     const bd = report.coherenceBreakdown;
     const weights = report.coherenceWeights ?? COHERENCE_WEIGHTS;
     if (bd) {
@@ -89,21 +263,19 @@ function formatCompositeScore(report: ProjectReport): string {
       const fragW = (fragInv * weights.patternFragmentation).toFixed(1);
       const constW = (bd.constitutionMapped * weights.constitutionMapped).toFixed(1);
       const debtW = (bd.aiDebtMapped * weights.aiDebtMapped).toFixed(1);
-      lines.push(`  ├─ Architecture:   ${bd.architectureConsistency.toFixed(1).padStart(5, ' ')} (Weighted: ${archW})`);
-      lines.push(`  ├─ Pattern (inv):  ${fragInv.toFixed(1).padStart(5, ' ')} (Weighted: ${fragW})`);
-      lines.push(`  ├─ Constitution:   ${bd.constitutionMapped.toFixed(1).padStart(5, ' ')} (Weighted: ${constW})`);
-      lines.push(`  └─ AI Debt:        ${bd.aiDebtMapped.toFixed(1).padStart(5, ' ')} (Weighted: ${debtW})`);
+      lines.push(chalk.dim(
+        `  ├─ Architecture:   ${bd.architectureConsistency.toFixed(1).padStart(5, ' ')} (Weighted: ${archW})`,
+      ));
+      lines.push(chalk.dim(
+        `  ├─ Pattern (inv):  ${fragInv.toFixed(1).padStart(5, ' ')} (Weighted: ${fragW})`,
+      ));
+      lines.push(chalk.dim(
+        `  ├─ Constitution:   ${bd.constitutionMapped.toFixed(1).padStart(5, ' ')} (Weighted: ${constW})`,
+      ));
+      lines.push(chalk.dim(
+        `  └─ AI Debt:        ${bd.aiDebtMapped.toFixed(1).padStart(5, ' ')} (Weighted: ${debtW})`,
+      ));
     }
-  } else {
-    // Fallback to the legacy Slop Index if the Coherence composite wasn't
-    // computed (e.g. early abort). Keeps the report informative.
-    const slop = report.slopIndex.toFixed(1);
-    const slopValue = report.slopIndex.toFixed(1).padStart(5, ' ');
-    lines.push(chalk.bold(`Slop Index: ${slopValue} / 100 ${status}`));
-    lines.push(
-      chalk.dim('(legacy composite — Coherence unavailable; run with full scan to populate)'),
-    );
-    lines.push(`  Score: ${slop}`);
   }
   return lines.join('\n');
 }
@@ -223,23 +395,24 @@ function formatDriftSection(report: ProjectReport): string | null {
 function formatThresholds(report: ProjectReport): string[] {
   const coherence = report.coherence;
   const limit = report.thresholds.meanSlop; // legacy field; not used for Coherence
-  // For v0.9.1 we report the threshold against the Coherence score; the
-  // legacy slop-index field stays for backward compat with --strict.
-  const headline = typeof coherence === 'number' ? coherence : report.slopIndex;
-  const headlineLabel = typeof coherence === 'number' ? 'Coherence     ' : 'Slop Index   ';
+  // v0.14.5i: the slopIndex is the SINGLE headline number (matches the
+  // health.json). The Repository Coherence composite is shown as
+  // secondary context below. This unifies the scoring direction (one
+  // number, one direction) so the user can read the CLI and the
+  // health.json and see the same thing.
+  const headline = report.slopIndex;
+  const headlineLabel = 'Slop Index  ';
   const passed = headline >= 70;
   const valueText = `${headline.toFixed(1)} ≥ 70`.padStart(12, ' ');
   const status = passed ? chalk.green('pass') : chalk.red('fail');
 
   const result: string[] = ['Thresholds', `  ${headlineLabel}${valueText}  ${status}`];
-  if (!passed) {
-    result.push('');
+  if (typeof coherence === 'number') {
     result.push(
-      'Next step: run `slopbrick scan --suggest` to see fixes, or `slopbrick scan --baseline` to accept today\'s scores as the new baseline.',
+      chalk.dim(
+        `  Coherence  ${coherence.toFixed(1).padStart(5, ' ')} / 100  (secondary view, different formula)`,
+      ),
     );
-  } else {
-    result.push('');
-    result.push(chalk.green('All thresholds passed.'));
   }
   // legacy limit reference (silence unused-variable lint without removing the field)
   void limit;
@@ -300,6 +473,16 @@ export function formatPretty(report: ProjectReport): string {
     sections.push(coherence.join('\n'));
   }
 
+  // v0.14.5i (P5): trust-signal — surface the defaultOff suppression
+  // count in the main output (not stderr) so the user can see the
+  // tool is calibrated.
+  const trustSignal = formatDefaultOffSuppression(report);
+  if (trustSignal) sections.push(trustSignal);
+
+  // v0.14.5i (P1): per-category breakdown table so the user can see
+  // which categories are driving the score without cat'ing health.json.
+  sections.push(formatCategoryBreakdown(report));
+
   // v0.9.2 — Architecture Drift (the user-visible cross-file signal).
   const driftSection = formatDriftSection(report);
   if (driftSection) sections.push(driftSection);
@@ -331,10 +514,25 @@ export function formatPretty(report: ProjectReport): string {
     sections.push(chalk.dim('Tip: add a path to `exclude` in your config to skip files the parser can\'t handle.'));
   }
 
+  // v0.14.5i (P0): next-step footer with the highest-impact action.
+  // Replaces the old "Next step: run --suggest" one-liner with a
+  // prioritized list that adapts to the report's actual data.
+  sections.push(formatNextStep(report));
+
   if (report.issues.length > 0) {
     sections.push(`Issues (${report.issues.length})`);
     sections.push(...report.issues.map(formatIssue));
   }
 
   return sections.join('\n\n');
+}
+
+/**
+ * v0.14.5i (P3) — `--why-failing` flag. Renders just the top 5
+ * rules that are dragging the score down. Standalone output (does
+ * not include the full report) so it's fast to read on a slow
+ * terminal.
+ */
+export function formatWhyFailingReport(report: ProjectReport): string {
+  return formatWhyFailing(report);
 }

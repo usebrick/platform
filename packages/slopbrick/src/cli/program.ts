@@ -182,6 +182,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       .option('--doctor', 'run diagnostics')
       .option('--watch', 'watch files and re-run')
       .option('--suggest', 'print remediation advice')
+      // v0.14.5i (P3): quick triage view — top 5 rules dragging the
+      // score down, without the full report.
+      .option('--why-failing', 'print the top 5 rules dragging the score down')
       .option('--heatmap', 'print migration ROI heatmap')
       .option('--quiet', 'suppress non-error output')
       .option('--verbose', 'enable debug logging (file paths, timings, rule-fire counts)')

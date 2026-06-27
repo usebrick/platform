@@ -820,6 +820,16 @@ export interface ProjectReport {
       lastCommitDate: string;
     }>;
   };
+  /** v0.14.5i — Count of issues auto-suppressed because their rule was
+   *  marked `defaultOff: true` in signal-strength.json (INVERTED or NOISY
+   *  rules that would erode trust in the tool if surfaced in CI). Surfaced
+   *  in the main scan output as a trust signal so the user can see that
+   *  the tool is calibrated, not just noisy. The user can opt back in
+   *  via `rules: { 'rule/id': 'medium' }` in slopbrick.config.mjs. */
+  defaultOffSuppressedCount?: number;
+  /** v0.14.5i — Number of distinct rules marked defaultOff. The ratio
+   *  suppressedCount / defaultOffRuleCount is the calibration coverage. */
+  defaultOffRuleCount?: number;
 }
 
 export interface TopOffender {
