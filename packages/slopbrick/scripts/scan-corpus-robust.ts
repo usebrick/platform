@@ -31,7 +31,12 @@ if (!workspace || !kind || !outPrefix) {
 const absWorkspace = resolve(workspace);
 const PER_FILE_TIMEOUT_MS = 30000;
 
-const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte', '.astro', '.html', '.py', '.go']);
+// v0.13.0: only scan file types that the slopbrick engine supports.
+// The v7 corpus has Swift/Kotlin/Dart/Rust files but those need
+// additional AST visitors before the rule engine can analyze them.
+const SOURCE_EXT = new Set([
+  '.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte', '.astro', '.html', '.py', '.go',
+]);
 
 function isFileOk(p: string): boolean {
   try { return statSync(p).isFile(); } catch { return false; }

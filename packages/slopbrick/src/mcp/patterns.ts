@@ -210,31 +210,29 @@ export async function buildPatternInventory(
       map.set(hit.signal, entry);
     }
 
-    // ---- v0.9.2 — Backend pattern extraction (Python / Go) -----------
+    // ---- v0.9.2 / v0.14.0 — Backend pattern extraction ---------------
     // Detect the file's language by extension and run the appropriate
     // regex-based extractor. The visitors are lazy-imported to avoid
     // forcing parser/babel dependency on pure-frontend projects.
+    //
+    // v0.14.0 — added 8 new languages: Swift, Kotlin, Dart, Rust, C++,
+    // Java, Ruby, PHP. Each language has a dedicated visitor in
+    // `src/engine/visitors/{lang}.ts` exporting the standard
+    // `extractXxxPatterns(filePath, source) → { service, route, ormModel }`
+    // contract. The C++ visitor intentionally returns an empty
+    // `ormModel` array because C++ has no dominant ORM (ODB, SOCI,
+    // Sqlpp11 are rare).
     const ext = extname(file).toLowerCase();
-    if (ext === '.py') {
+    const visitor = await pickBackendVisitor(ext);
+    if (visitor) {
       try {
-        const { extractPythonPatterns } = await import('../engine/visitors/python.js');
-        const result = extractPythonPatterns(rel, source);
+        const result = await visitor(rel, source);
         for (const m of result.service) mergeInto(serviceMap, m, rel);
         for (const m of result.route) mergeInto(routeMap, m, rel);
         for (const m of result.ormModel) mergeInto(ormModelMap, m, rel);
       } catch {
         // Visitor unavailable or threw — skip silently to keep the
         // inventory builder resilient.
-      }
-    } else if (ext === '.go') {
-      try {
-        const { extractGoPatterns } = await import('../engine/visitors/go.js');
-        const result = extractGoPatterns(rel, source);
-        for (const m of result.service) mergeInto(serviceMap, m, rel);
-        for (const m of result.route) mergeInto(routeMap, m, rel);
-        for (const m of result.ormModel) mergeInto(ormModelMap, m, rel);
-      } catch {
-        // Same resilience: skip if visitor fails.
       }
     }
   }
@@ -274,6 +272,116 @@ function mergeInto(
     return;
   }
   map.set(m.name, { ...m, files: [filePath] });
+}
+
+/** Shape of the per-language visitor. Mirrors the signature of
+ *  `extractPythonPatterns` / `extractGoPatterns` so the
+ *  `buildPatternInventory` caller can dispatch generically. */
+type BackendPatternExtractor = (
+  filePath: string,
+  source: string,
+) => Promise<{
+  service: PatternMatch[];
+  route: PatternMatch[];
+  ormModel: PatternMatch[];
+}>;
+
+/**
+ * v0.14.0 — pick the right backend visitor based on file extension.
+ * Returns null for extensions we don't have a visitor for (frontend
+ * extensions, plus rarer languages not in the v0.14.0 set).
+ *
+ * The map is built lazily inside the function body so adding a new
+ * language is a one-line change. We deliberately don't precompute the
+ * map at module load — that would force every consumer to pull in
+ * the visitor modules (some users may only scan Python projects, for
+ * example).
+ */
+async function pickBackendVisitor(
+  ext: string,
+): Promise<BackendPatternExtractor | null> {
+  switch (ext) {
+    case '.py':
+      return async (filePath, source) => {
+        const { extractPythonPatterns } = await import(
+          '../engine/visitors/python.js'
+        );
+        return extractPythonPatterns(filePath, source);
+      };
+    case '.go':
+      return async (filePath, source) => {
+        const { extractGoPatterns } = await import(
+          '../engine/visitors/go.js'
+        );
+        return extractGoPatterns(filePath, source);
+      };
+    // v0.14.0 — 8 new languages
+    case '.swift':
+      return async (filePath, source) => {
+        const { extractSwiftPatterns } = await import(
+          '../engine/visitors/swift.js'
+        );
+        return extractSwiftPatterns(filePath, source);
+      };
+    case '.kt':
+    case '.kts':
+      return async (filePath, source) => {
+        const { extractKotlinPatterns } = await import(
+          '../engine/visitors/kotlin.js'
+        );
+        return extractKotlinPatterns(filePath, source);
+      };
+    case '.dart':
+      return async (filePath, source) => {
+        const { extractDartPatterns } = await import(
+          '../engine/visitors/dart.js'
+        );
+        return extractDartPatterns(filePath, source);
+      };
+    case '.rs':
+      return async (filePath, source) => {
+        const { extractRustPatterns } = await import(
+          '../engine/visitors/rust.js'
+        );
+        return extractRustPatterns(filePath, source);
+      };
+    case '.cpp':
+    case '.cc':
+    case '.cxx':
+    case '.c':
+    case '.h':
+    case '.hpp':
+    case '.hxx':
+      return async (filePath, source) => {
+        const { extractCppPatterns } = await import(
+          '../engine/visitors/cpp.js'
+        );
+        return extractCppPatterns(filePath, source);
+      };
+    case '.java':
+      return async (filePath, source) => {
+        const { extractJavaPatterns } = await import(
+          '../engine/visitors/java.js'
+        );
+        return extractJavaPatterns(filePath, source);
+      };
+    case '.rb':
+      return async (filePath, source) => {
+        const { extractRubyPatterns } = await import(
+          '../engine/visitors/ruby.js'
+        );
+        return extractRubyPatterns(filePath, source);
+      };
+    case '.php':
+      return async (filePath, source) => {
+        const { extractPhpPatterns } = await import(
+          '../engine/visitors/php.js'
+        );
+        return extractPhpPatterns(filePath, source);
+      };
+    default:
+      return null;
+  }
 }
 
 // ---- Constitution checking ------------------------------------------------

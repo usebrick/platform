@@ -10,12 +10,37 @@ export const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', 
  * v0.9.2 — Backend language extensions. Files with these extensions are
  * discovered alongside frontend files but the rule engine skips them
  * (the existing AST visitors target JS/TSX/Vue/Svelte/Astro/HTML only).
- * `buildPatternInventory` lazily imports the Python + Go visitors when
+ * `buildPatternInventory` lazily imports the per-language visitor when
  * it encounters these files and extracts service/route/ormModel
  * patterns from them — that's where backend drift detection will
  * surface in the cross-file lens.
+ *
+ * v0.14.0 — added 8 new languages: Swift, Kotlin, Dart, Rust, C++,
+ * Java, Ruby, PHP. Each has a corresponding visitor in
+ * `src/engine/visitors/{lang}.ts`. The visitor contract is the same
+ * one defined for Python + Go: `extractXxxPatterns(filePath, source) →
+ * { service, route, ormModel }`.
  */
-export const BACKEND_EXTENSIONS = new Set(['.py', '.go']);
+export const BACKEND_EXTENSIONS = new Set([
+  '.py',
+  '.go',
+  // v0.14.0
+  '.swift',
+  '.kt',
+  '.kts',
+  '.dart',
+  '.rs',
+  '.cpp',
+  '.cc',
+  '.cxx',
+  '.c',
+  '.h',
+  '.hpp',
+  '.hxx',
+  '.java',
+  '.rb',
+  '.php',
+]);
 
 /** Union used by the path-arg expansion in `slopbrick scan <dir>`. */
 export const ALL_SOURCE_EXTENSIONS: ReadonlySet<string> = new Set([
