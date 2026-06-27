@@ -2,7 +2,16 @@
 
 > **Repository Coherence Scanner for AI-coded codebases.** Detects cross-file pattern drift (`zustand + redux in the same project`), AI-induced security failures (`sk-...` keys, `NEXT_PUBLIC_*` secrets, fail-open auth), design-token violations (`p-[13px]`), and AI test smells (`expect(x).toBeDefined()`). Run `npx slopbrick` and get a single **Repository Health** score (0–100) with per-rule precision/recall. Add the MCP server and your AI agent reads your existing patterns before it writes new ones.
 
-**Status:** v0.12.2 (current). v0.12.0 shipped 5 new peer-reviewed math foundations (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs). v0.12.1 re-calibrated against the v6 corpus (524k files) and shipped corpus-derived baselines. **v0.12.2 adds the `HYGIENE` verdict** for `aiSpecific: false` rules and ships **0 INVERTED** in the verdict distribution. The 24 code-hygiene rules (style/docs/security/accessibility checks that fire on both human and AI code) are now in their own bucket, separate from the AI-detector rules. Final v6 distribution: **13 USEFUL, 6 OK, 9 NOISY, 0 INVERTED, 12 DORMANT, 24 HYGIENE**. See [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md) §7 for the Tier-1.5 Calibration Methods.
+**Status:** v0.14.7 (current). v0.14.0–v0.14.6 ship in lock-step:
+- **v0.14.0** — 8 new language visitors (Swift, Kotlin, Dart, Rust, C++, Java, Ruby, PHP). Each follows the same `extractXxxPatterns(filePath, source) → { service, route, ormModel }` contract as `python.ts` and `go.ts`. Total visitors: 2,827 LOC across 10 framework visitors.
+- **v0.14.5a** — `scripts/scan-corpus-robust.ts` `SOURCE_EXT` extended to include the 15 new extensions for the v7 corpus re-scan.
+- **v0.14.5b** — 6 new AI tendency detection rules (all DORMANT until v7 calibration lands): `ai/tailwind-color-overuse`, `ai/default-react-stack`, `ai/library-reinvention`, `ai/state-default-overuse`, `ai/fetch-default-overuse`, `ai/console-debug-storm`. All backed by peer-reviewed research: Sascha 2025 'Six Models, One React Stack', Nam et al. MSR 2026, GitClear 2025, Cui et al. 2025, Douglas 2025.
+- **v0.14.5e** — 27 peer-reviewed citations added to non-AI DORMANT/NOISY/OK rules (W3C standards, IEEE/ACM papers, foundational CS references).
+- **v0.14.6** — composite AI-likelihood scoring via Naive Bayes log-likelihood ratio. For each file, `compositeScore` in `FileScanResult` reports `probability ∈ [0, 1]` and `confidenceTier ∈ {LIKELY_HUMAN, INCONCLUSIVE, LIKELY_AI, VERY_LIKELY_AI}`. Backed by McCallum & Nigam 1998, Yerazunis 2003, Domingos & Pazzani 1997, Jaeschke 1994 (JAMA), Cui et al. 2025.
+- **v0.14.7** — documentation update (this section). See `CHANGELOG.md` for the full v0.14 series notes.
+
+Previous major versions:
+- **v0.12.x** — `HYGIENE` verdict, 0 INVERTED, corpus-derived baselines (Heaps λ, Zipf s, line/identifier lengths, comment density) computed from a 5k-file sample of the v6 neg corpus. v0.12.0 shipped 5 new peer-reviewed math foundations (Bayesian LR combination, Benjamini–Hochberg FDR, Kolmogorov–Smirnov, Zipf/Heaps, Wilson/Clopper-Pearson CIs). v0.12.1 re-calibrated against the v6 corpus (524k files). v0.12.2 separates `HYGIENE` (24 code-hygiene rules) from the AI-detector buckets. Final v6 distribution: **13 USEFUL, 6 OK, 9 NOISY, 0 INVERTED, 12 DORMANT, 24 HYGIENE**.
 
 ## What's new in v0.12.1
 

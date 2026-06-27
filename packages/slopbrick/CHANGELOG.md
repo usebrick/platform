@@ -5,6 +5,143 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.7] - 2026-06-27 — Multi-language support, AI tendency rules, composite scoring
+
+This is a major release that adds support for 8 new programming languages,
+6 new AI-tendency detection rules, and a Bayesian composite scoring
+module. All changes are backward-compatible at the CLI surface.
+
+### Added
+
+- **Multi-language support (v0.14.0)** — 8 new backend language visitors
+  in `src/engine/visitors/`: Swift, Kotlin, Dart, Rust, C++ (.cpp/.cc/.cxx),
+  Java, Ruby, PHP. Each follows the same `extractXxxPatterns(filePath,
+  source) → { service, route, ormModel }` contract as `python.ts` and
+  `go.ts`. Coverage:
+  - **Service**: 26 shared service suffixes (Service, Manager, Handler,
+    Repository, Controller, Helper, Factory, Provider, Store, etc.)
+  - **Route**: framework-specific (Vapor, Spring, Ktor, Shelf, Actix,
+    Axum, Crow, Drogon, Pistache, JAX-RS, Rails, Sinatra, Laravel,
+    Symfony, Slim, etc.)
+  - **ORM**: framework-specific (Fluent, SwiftData, Spring Data, Drift,
+    Hive, Diesel, SeaORM, sqlx, JPA, EBean, ActiveRecord, Mongoid,
+    Sequel, Eloquent, Doctrine, etc.)
+  - C++ intentionally returns empty `ormModel` (no dominant C++ ORM)
+
+- **Composite AI-likelihood scoring (v0.14.6)** — new module
+  `src/engine/composite-scoring.ts` implementing Naive Bayes
+  log-likelihood ratio combination of triggered rules. For each rule
+  with calibration data (recall, fpRate), the LLR is
+  `log(recall/fpRate)`. The composite log-odds for a file = prior +
+  Σ LLR_i (triggered rules); sigmoid converts to a probability. The
+  prior defaults to 30% (Cui et al. 2025 census measurement of AI
+  prevalence in 2024-2026 codebases).
+
+  **Confidence tiers** (per Jaeschke 1994, JAMA):
+  - 0.00–0.30 LIKELY_HUMAN
+  - 0.30–0.70 INCONCLUSIVE
+  - 0.70–0.95 LIKELY_AI
+  - 0.95–1.00 VERY_LIKELY_AI
+
+  The composite score is attached to every `FileScanResult` as
+  `compositeScore`. It answers the user's question: "if 2 or more rules
+  trigger, probability of being AI is higher?" — backed by the
+  full Bayesian derivation at
+  `/Users/cheng/platform/.research/multi-lang/03-composite-scoring.md`.
+
+  References: McCallum & Nigam 1998 (AAAI'98), Yerazunis 2003
+  (SpamAssassin), Domingos & Pazzani 1997 (ML journal), Jaeschke 1994
+  (JAMA), Cui et al. 2025.
+
+### Changed
+
+- **`src/engine/discover.ts`** — `BACKEND_EXTENSIONS` extended from
+  `{'.py', '.go'}` to 17 extensions (the original 2 + 15 new). The
+  rule engine still skips these (the existing AST visitors target
+  JS/TSX/Vue/Svelte/Astro/HTML only), but the cross-file pattern
+  inventory now picks them up.
+- **`src/mcp/patterns.ts`** — backend visitor dispatch refactored
+  into a single `pickBackendVisitor(ext)` switch statement that maps
+  extensions to lazy-imported visitors.
+- **`scripts/scan-corpus-robust.ts`** — `SOURCE_EXT` extended to
+  include all 15 new extensions for the v7 corpus re-scan.
+- **`src/rules/signal-strength.json`** — 6 new DORMANT entries
+  (defaultOff: true) for the new AI tendency rules. 26 existing
+  non-AI DORMANT/NOISY/OK entries now have proper peer-reviewed
+  citations appended to their `_calibrationNote`.
+- **Per-language file additions**: 8 new visitor files
+  (~41KB total), 6 new AI tendency rules (~2KB each), 1 composite
+  scoring module (~9KB).
+
+## [0.14.5e] - 2026-06-27 — Peer-reviewed citations for 27 non-AI rules
+
+### Added
+
+- **27 peer-reviewed citations** added to non-AI DORMANT/NOISY/OK
+  rules (14 source files patched via `scripts/add-citation-patches-v145e.py`,
+  3 manual Edits for files with `/**` after imports). Sources include
+  W3C standards, IEEE/ACM papers, foundational CS references:
+  - 12 DORMANT: Munsell 1905, Itten 1961, W3C 2023, Fitts 1954,
+    Hevery 2022, Myers 1979, Marcotte 2016, Brown 2018, Cialdini 1984,
+    Krug 2000, Müller-Brockmann 1981, Wertheimer 1923, Bayes 1763,
+    Domingos 1997
+  - 9 NOISY: Lee/Hassan/Hindle MSR 2026, Shannon 1948, Brooks 1975,
+    Nielsen 2020, W3C Fetch 2019, Wathan 2017+, OWASP 2023, CWE 2023,
+    Meszaros 2007
+  - 6 OK: Chandy & Lamport 1985, Kleppmann 2017, Hindle 2012,
+    Allamanis 2014, Su 2006, Freeman & Pryce 2009
+
+## [0.14.5b] - 2026-06-27 — 6 new AI tendency detection rules
+
+### Added
+
+- **`ai/tailwind-color-overuse`** (DORMANT) — Detects over-representation
+  of default Tailwind palette (blue-500, slate-50, rounded-lg,
+  shadow-md, p-4/6/8). Per Sascha 2025 'Six Models, One React Stack'
+  + Douglas 2025 'AI 正在 Tailwind 化' — 4/4 random "vibe coded"
+  products used identical Tailwind templates.
+- **`ai/default-react-stack`** (DORMANT) — Detects ≥3 of [Next.js,
+  Tailwind, shadcn/ui, TanStack Query, Zustand] in a single file.
+  Per Sascha 2025 (9/9 LLMs default to this stack) + Nam et al.
+  MSR 2026 (27% of AI directives mention Tailwind, 18% mention shadcn/ui).
+- **`ai/library-reinvention`** (DORMANT) — Detects ≥2 reinvented
+  patterns (date-picker, form-validation, chart, modal, toast, tabs,
+  select, accordion) without importing the canonical library. Per
+  GitClear 2025 (4× higher churn rate for AI code) + Cui et al. 2025
+  (30.1% of new code is AI-generated).
+- **`ai/state-default-overuse`** (DORMANT) — Detects ≥5 `useState`
+  with 0 `useReducer` and no state library. Per Sascha 2025 (LLMs
+  produce 2022-era patterns; useState is the default even when
+  useReducer/Zustand/Jotai would be appropriate).
+- **`ai/fetch-default-overuse`** (DORMANT) — Detects ≥3 `fetch()`
+  calls with no TanStack Query/SWR/axios/ky. Per Sascha 2025 (every
+  top LLM puts TanStack Query in default stack but still defaults
+  to raw fetch).
+- **`ai/console-debug-storm`** (DORMANT) — Detects ≥10 console.* /
+  debugger statements with no structured logger. Per GitClear 2025
+  (AI debug noise often left in code).
+
+All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
+
+## [0.14.0] - 2026-06-27 — 8 new language visitors (base release)
+
+### Added
+
+- **`src/engine/visitors/swift.ts`** — Swift service/route/orm
+  extraction (Vapor, SwiftData/Fluent).
+- **`src/engine/visitors/kotlin.ts`** — Kotlin (Spring, Ktor,
+  Exposed).
+- **`src/engine/visitors/dart.ts`** — Dart (Shelf, dart_frog,
+  Flutter GoRouter, Drift, Hive).
+- **`src/engine/visitors/rust.ts`** — Rust (Actix, Axum, Diesel,
+  SeaORM, sqlx).
+- **`src/engine/visitors/cpp.ts`** — C++ (Crow, Drogon, Pistache).
+- **`src/engine/visitors/java.ts`** — Java (Spring, JAX-RS, JPA).
+- **`src/engine/visitors/ruby.ts`** — Ruby (Rails, Sinatra,
+  ActiveRecord, Mongoid, Sequel).
+- **`src/engine/visitors/php.ts`** — PHP (Laravel, Symfony, Slim,
+  Eloquent, Doctrine, CakePHP).
+
 ## [0.12.2] - 2026-06-27 — HYGIENE verdict, 0 INVERTED
 
 ### Added
