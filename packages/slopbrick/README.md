@@ -1,24 +1,35 @@
 # slopbrick
 
-> **AI agents forget your architecture. Every session starts fresh.**
+> ## AI agents forget your architecture. Every session starts fresh.
 >
-> `slopbrick scan` makes your codebase remember itself. It writes
-> `.slopbrick/{inventory.json, constitution.json, health.json,
-> memory.md}` so the next `slop_suggest` MCP call — by Claude Code,
-> Cursor, or Copilot — reads the canonical patterns from disk instead
-> of re-parsing the AST from scratch. **100–1000× faster** on the
-> agent integration, and the agent's first suggestion matches what
-> the project already uses, not what the LLM trained on.
+> SlopBrick gives your codebase persistent memory — so agents follow your
+> patterns instead of reinventing them.
+
+The fix is one command: `npx slopbrick scan` writes
+`.slopbrick/{inventory.json, constitution.json, health.json, memory.md}`.
+The next time your AI agent writes a file — Claude Code, Cursor,
+Copilot, Aider — it reads `.slopbrick/memory.md` instead of re-parsing
+the AST. **100–1000× faster** on the agent integration, and the
+agent's first suggestion matches what the project already uses, not
+what the LLM trained on.
 
 ```bash
-npm install -D slopbrick      # one-time setup
-npx slopbrick scan           # writes .slopbrick/ in ~10s
-npx slopbrick mcp            # start the MCP server (Claude/Cursor)
-npx slopbrick ci             # CI gate: exit 1 on drift
+npm install -D slopbrick
+npx slopbrick init        # write .slopbrick/constitution.json
+npx slopbrick scan        # write .slopbrick/memory.md
+npx slopbrick mcp         # start the MCP server (Claude / Cursor)
+```
+
+For the prevention layer:
+
+```bash
+slopbrick watch           # re-run scan on every file change
+slopbrick lock            # install the Git pre-commit hook
+slopbrick ci              # CI gate: exit 1 on constitution violation
 ```
 
 The headline is the **Repository Health** composite (0–100, lower = better).
-Per-rule Precision/Recall/False-Positive-Rate is published in
+Per-rule Precision / Recall / False-Positive-Rate is published in
 `src/rules/signal-strength.json` so you can audit every number.
 
 **This isn't CLAUDE.md.** CLAUDE.md is a static file the agent reads once
@@ -42,19 +53,36 @@ on every scan — your repository, encoded for the next agent.
 **Status:** v0.14.5d (current). See the [CHANGELOG](./CHANGELOG.md) for
 the full v0.14 series notes.
 
+### Self-scan demo (this repo)
+
+Real numbers from the slopbrick codebase, scanned with the default
+configuration. slopIndex 60 means the codebase is mid-calibration
+(the v7 corpus re-scan is currently running, ~10h ETA).
+
 ```text
 $ npx slopbrick scan
-Repository Coherence:  86 / 100 [PASS]
-  ├─ Architecture:   92.0
-  ├─ Pattern (inv): 88.0
-  ├─ Constitution: 100.0
-  └─ AI Debt:        78.0
+Repository Coherence:  60 / 100
+  ├─ Architecture:     0.0
+  ├─ Pattern (inv):    0.0
+  ├─ Constitution:   100.0
+  └─ AI Debt:         25.0
 
-Code Hygiene          95/100
-Accessibility        98/100
-Performance          92/100
-Business Logic      100/100
+Issue counts: 92 high · 182 medium · 2 low
+DefaultOff rules correctly suppressed: 99 calibration-failed issues
+Top 3 offense rules (defaultOff-filtered):
+  1. ai/compression-profile       (AI boilerplate signature)
+  2. ai/segment-surprisal-cv     (low register-switch entropy)
+  3. visual/naturalness-anomaly  (artificial repetition in tokens)
 ```
+
+**Without** the v0.14.5g defaultOff suppression fix (the bug fixed
+this turn), `slopIndex` was 100 and `topOffenseIds` was dominated
+by `logic/ks-distribution-shift` — an INVERTED rule that fires
+~87% of human files but only ~66% of AI files (less often, despite
+the name). Surfacing it in the report eroded trust in the tool
+faster than any other failure mode. After the fix, the report
+shows what it should: the 99 calibration-failed issues are hidden,
+and the top 3 are real AI signals.
 
 ## What's new in v0.14.5d
 

@@ -381,8 +381,16 @@ export async function runScan(
   registry.loadBuiltins(options.rule);
   if (telemetryEnabled) {
     const flywheelState = loadFlywheelState(cwd);
+    // v0.14.5g: skip autotune entries for rules marked defaultOff in
+    // signal-strength.json. The flywheel is a learning loop that can
+    // promote a rule's severity to 'high' over 3 consecutive scans;
+    // but if a rule is INVERTED or NOISY (calibration-failed), it
+    // must stay off regardless of how many scans observed it. Without
+    // this guard, the flywheel undoes the auto-disable pass below.
+    const defaultOffRules = getDefaultOffRules();
     for (const tuned of flywheelState.autoTuned) {
       if (config.rules[tuned.ruleId] === 'off') continue;
+      if (defaultOffRules.has(tuned.ruleId)) continue;
       config.rules[tuned.ruleId] = tuned.severity;
     }
   }

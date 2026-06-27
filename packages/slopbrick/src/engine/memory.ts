@@ -117,8 +117,15 @@ export function readRuns(cwd: string): SlopAuditRun[] {
 }
 
 function topOffenseIds(report: ProjectReport): string[] {
+  // v0.14.5g: same fix as buildHealthFromReport — skip 'off' severity
+  // issues (rules in signal-strength.json's `defaultOff` set, which
+  // were disabled for a reason). Without this, the persisted
+  // .slop-audit/memory.json topOffenseIds is dominated by INVERTED
+  // or NOISY rules that we deliberately disabled.
   const counts = new Map<string, number>();
   for (const issue of report.issues) {
+    const sev = issue.severity as 'high' | 'medium' | 'low' | 'off' | undefined;
+    if (sev === 'off' || sev === undefined) continue;
     counts.set(issue.ruleId, (counts.get(issue.ruleId) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -340,11 +347,17 @@ export function buildHealthFromReport(
   topOffenseIds: string[];
   scanDurationMs?: number;
 } {
-  // Aggregate issue counts by severity.
+  // Aggregate issue counts by severity. v0.14.5g: skip issues whose
+  // severity has been set to 'off' by the defaultOff auto-disable
+  // pass (see `filterIssues` in `src/cli/scan.ts`). Without this
+  // filter, defaultOff rules — which signal-strength.json marks
+  // as INVERTED or NOISY — show up as top offenses in the health
+  // snapshot, eroding trust in the headline metric.
   const issueCounts = { high: 0, medium: 0, low: 0 };
   const offenseCounts = new Map<string, number>();
   for (const issue of report.issues) {
-    const sev = (issue.severity ?? 'medium') as 'high' | 'medium' | 'low';
+    const sev = issue.severity as 'high' | 'medium' | 'low' | 'off' | undefined;
+    if (sev === 'off' || sev === undefined) continue;
     if (sev in issueCounts) issueCounts[sev] += 1;
     offenseCounts.set(issue.ruleId, (offenseCounts.get(issue.ruleId) ?? 0) + 1);
   }

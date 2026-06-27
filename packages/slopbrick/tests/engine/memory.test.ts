@@ -573,6 +573,60 @@ describe('buildHealthFromReport', () => {
     expect(out.scanDurationMs).toBeUndefined();
     expect(out.topOffenseIds).toEqual([]);
   });
+
+  it('excludes issues with severity=off from issueCounts and topOffenseIds (defaultOff rules)', () => {
+    // The scan pipeline sets issue.severity = 'off' for any ruleId in
+    // signal-strength.json's `defaultOff` set (INVERTED, NOISY, or
+    // rules with ratio<1.0). The health snapshot must not surface
+    // those — they were deliberately disabled for a reason.
+    const report = makeReport(100, {
+      issues: [
+        { ruleId: 'logic/healthy-rule', severity: 'high' } as any,
+        { ruleId: 'logic/healthy-rule', severity: 'high' } as any,
+        { ruleId: 'logic/healthy-rule', severity: 'high' } as any,
+        // defaultOff: true in signal-strength.json — this is the
+        // noisy rule that should NOT show up in topOffenseIds.
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+      ],
+    });
+    const out = buildHealthFromReport(report, '/w');
+    // Only the 3 high-severity healthy-rule issues should count.
+    expect(out.issueCounts).toEqual({ high: 3, medium: 0, low: 0 });
+    // ks-distribution-shift fired 9 times but is 'off' — must NOT
+    // appear in top offenses, even though it has more hits than
+    // healthy-rule.
+    expect(out.topOffenseIds).toEqual(['logic/healthy-rule']);
+  });
+
+  it('appendRun topOffenseIds also filters out severity=off issues', () => {
+    // Same regression as above but for the report-level
+    // topOffenseIds (used by .slop-audit/memory.json history). The
+    // persisted run record must not surface disabled rules in its
+    // headline metric either.
+    const tmpDir = createTmpDir();
+    try {
+      // Wipe any existing runs
+      try { rmSync(join(tmpDir, '.slop-audit', 'memory.json')); } catch { /* ok */ }
+      const report = makeReport(50, {
+        issues: [
+          { ruleId: 'logic/healthy-rule', severity: 'medium' } as any,
+          { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+          { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
+        ],
+      });
+      const run = appendRun(tmpDir, report);
+      expect(run.topOffenseIds).toEqual(['logic/healthy-rule']);
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('saveHealth / loadHealth', () => {

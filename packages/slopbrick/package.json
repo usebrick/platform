@@ -1,7 +1,7 @@
 {
   "name": "slopbrick",
   "version": "0.14.5d",
-  "description": "AI agents forget your architecture — every session starts fresh. slopbrick writes .slopbrick/memory.md so the next Claude Code / Cursor / Copilot call reads the canonical patterns from disk instead of re-parsing the AST. 100-1000× faster. Headline Repository Health score, LockBrick pre-commit hook, MCP server. Part of the usebrick.dev platform.",
+  "description": "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session.",
   "type": "module",
   "bin": {
     "slopbrick": "bin/slopbrick.js"

@@ -15,17 +15,17 @@
 # Concise and human-readable; avoid feature-list sprawl.
 repository:
   name: platform
-  description: "slopbrick (Repository Coherence Scanner for AI-coded codebases) + shared schemas (@usebrick/core). MCP server, Constitution, LockBrick."
+  description: "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session."
   homepage: https://github.com/usebrick/platform#readme
   topics:
-    # Primary positioning — what the tool is
-    - ai-coding-agents
-    - code-quality
+    # Primary positioning — what the tool is (matches npm description)
+    - ai-agents
+    - repository-memory
+    - constitution
+    - drift-detection
     - linter
     - static-analysis
-    - repository-constitution
-    - drift-detection
-    - coherence
+    - code-quality
     - ai-slop
     - ai-debt
 
@@ -36,6 +36,7 @@ repository:
     - aider
     - mcp
     - model-context-protocol
+    - vibe-coding
     - pre-commit
     - ci
 
