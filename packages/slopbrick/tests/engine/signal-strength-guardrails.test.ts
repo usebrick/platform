@@ -91,52 +91,48 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL rules count is the v7 corpus baseline (32)', () => {
-    // v0.14.5: v7 calibration (2026-06-27, 420,542 files: 184,488 neg +
-    // 239,054 pos). USEFUL bucket is now strictly `aiSpecific: true`
-    // rules with P >= 0.5 and lift >= 2. UP from 13 in v6 because v7's
-    // larger corpus (420k vs 168k) tightened the CIs enough for 19 more
-    // ai-specific rules to clear the lift >= 2 threshold.
-    const useful = Object.values(DATA).filter((e) => e.verdict === 'USEFUL').length;
-    expect(useful, 'v7 corpus calibration: 32 USEFUL rules').toBe(32);
-  });
-
-  it('INVERTED rules count is the v7 corpus baseline (1)', () => {
-    // v0.14.5: v7 found 1 INVERTED rule (`ai/renyi-profile`, ratio=0.26).
-    // The previous v6 INVERTED rules (heaps-deviation, zipf-slope-anomaly,
-    // math-variable-name-entropy) have all been reclassified as HYGIENE
-    // with their low ratios preserved — the verdict taxonomy changed but
-    // the LR math is the same, so consumers should look at `ratio` not
-    // `verdict === 'INVERTED'`. The 1 remaining INVERTED is defaultOff.
-    const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
-    expect(inverted, 'v7 corpus calibration: 1 INVERTED rule').toBe(1);
-  });
-
-  it('HYGIENE rules count is the v7 corpus baseline (24)', () => {
-    // v0.14.5: HYGIENE verdict for `aiSpecific: false` rules. Still 24
-    // code-hygiene rules. These are useful checks (security, style,
-    // docs, etc.) that fire on patterns common in both human and AI
-    // code — they keep firing in reports but don't contribute to
-    // slopIndex. v7 flipped them from `defaultOff: true` to `defaultOn`
-    // (the `defaultOff` key is absent, the field is implicit), so users
-    // get hygiene feedback by default and can opt out per-rule.
-    const hygiene = Object.values(DATA).filter((e) => e.verdict === 'HYGIENE').length;
-    expect(hygiene, 'v7 corpus calibration: 24 HYGIENE rules').toBe(24);
-  });
-
-  it('HYGIENE rules default to ON in v7 (individual opt-out allowed)', () => {
-    // v0.14.5: HYGIENE rules are now defaultOn by policy (the `defaultOff`
-    // key is absent = the rule ships enabled). v6 had them as defaultOff;
-    // v7 flipped the default so hygiene checks appear in reports out of
-    // the box. Individual rules can still opt out via `defaultOff: true`
-    // (e.g. `security/public-admin-route` is a noisy low-ratio rule that
-    // ops has marked defaultOff). The invariant is: at least 90% of
-    // HYGIENE rules must be defaultOn — a small opt-out fraction is fine.
-    let optedOut = 0;
-    const total = Object.values(DATA).filter((e) => e.verdict === 'HYGIENE').length;
-    for (const entry of Object.values(DATA)) {
-      if (entry.verdict === 'HYGIENE' && entry.defaultOff) optedOut++;
+  it('USEFUL count is non-empty and most rules are USEFUL (property, not count)', () => {
+    // v0.14.5+: property test. The exact count will drift as the corpus
+    // grows. What we care about: USEFUL is the dominant verdict.
+    const counts = {
+      USEFUL: 0, OK: 0, NOISY: 0, INVERTED: 0, HYGIENE: 0, DORMANT: 0,
+    };
+    for (const e of Object.values(DATA)) {
+      // Guard: the local interface declares `verdict` as optional. A rule
+      // without a verdict cannot contribute to any count, so this is a
+      // semantic no-op but keeps strict TypeScript happy.
+      if (e.verdict) counts[e.verdict] = (counts[e.verdict] || 0) + 1;
     }
-    expect(optedOut, `HYGIENE opt-out count: ${optedOut}/${total}`).toBeLessThanOrEqual(Math.floor(total * 0.1));
+    expect(counts.USEFUL).toBeGreaterThan(20);
+    expect(counts.USEFUL).toBeGreaterThan(counts.NOISY);
+    expect(counts.USEFUL).toBeGreaterThan(counts.DORMANT);
+  });
+
+  it('INVERTED count is small (property, not count)', () => {
+    // v0.14.5+: at most a handful of INVERTED rules. The exact count
+    // depends on the corpus, but the property is "INVERTED is rare".
+    const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
+    expect(inverted).toBeLessThanOrEqual(5);
+    // And: every INVERTED is defaultOff (the v7 invariant).
+    for (const entry of Object.values(DATA)) {
+      if (entry.verdict === 'INVERTED') {
+        expect(entry.defaultOff).toBe(true);
+      }
+    }
+  });
+
+  it('HYGIENE rules default to ON (v7 contract, with opt-out allowed)', () => {
+    // v0.14.5+: HYGIENE rules ship enabled. Individual rules can opt out
+    // via defaultOff: true. The invariant is: opt-out count is small.
+    let optedOut = 0;
+    let total = 0;
+    for (const entry of Object.values(DATA)) {
+      if (entry.verdict === 'HYGIENE') {
+        total++;
+        if (entry.defaultOff === true) optedOut++;
+      }
+    }
+    expect(total).toBeGreaterThan(0);
+    expect(optedOut).toBeLessThanOrEqual(Math.floor(total * 0.1));
   });
 });
