@@ -13,16 +13,11 @@
 
 <script>
   import { initBrickShader } from '../scripts/brick-shader';
+  import { isLowPower } from '../scripts/low-power';
   const canvas = document.getElementById('brick-canvas') as HTMLCanvasElement | null;
   const wrap = document.getElementById('brick-canvas-wrap');
   if (canvas && wrap) {
-    // Mobile fallback: if WebGL is unavailable OR the device is
-    // very low-power, show the static SVG picture instead.
-    const isMobile = window.matchMedia('(max-width: 720px)').matches;
-    const isLowPower = navigator.hardwareConcurrency
-      ? navigator.hardwareConcurrency < 4
-      : false;
-    if (isMobile || isLowPower) {
+    if (isLowPower()) {
       canvas.style.display = 'none';
       wrap.querySelector('picture')!.style.display = 'block';
     } else {
