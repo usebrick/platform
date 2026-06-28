@@ -9,7 +9,7 @@ import {
   buildConstitutionFromConfig,
   buildHealthFromReport,
   saveInventory,
-} from '../../src/engine/memory';
+} from '../../src/engine/structure';
 import {
   loadInventory,
   loadConstitution,

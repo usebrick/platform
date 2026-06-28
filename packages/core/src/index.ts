@@ -26,7 +26,7 @@ export {
   isConstitutionFile,
   isHealthFile,
   isFileMtimeEntry,
-} from './memory-types';
+} from './structure-types';
 
 export {
   INVENTORY_FILENAME,
@@ -48,4 +48,4 @@ export {
   isInventoryFresh,
   invalidateFile,
   writeJsonAtomic,
-} from './memory';
+} from './structure';

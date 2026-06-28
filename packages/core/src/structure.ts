@@ -25,7 +25,7 @@ import {
   isConstitutionFile,
   isFileMtimeEntry,
   isHealthFile,
-} from './memory-types';
+} from './structure-types';
 
 export const INVENTORY_FILENAME = 'inventory.json';
 export const CONSTITUTION_FILENAME = 'constitution.json';

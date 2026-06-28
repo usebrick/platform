@@ -12,7 +12,7 @@
  * agent integrations that call the tool frequently.
  */
 
-import { readMemoryMarkdown } from '../engine/memory-md';
+import { readMemoryMarkdown } from '../engine/structure-md';
 import type { ToolContext } from './tools';
 
 // Inferred return shape from `handleToolCall` in `./tools`. The actual

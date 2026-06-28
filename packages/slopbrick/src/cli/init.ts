@@ -369,7 +369,7 @@ export async function runDoctor(cwd: string): Promise<number> {
   const { existsSync: exists } = await import('node:fs');
   const { join: pjoin } = await import('node:path');
   const { loadInventory, loadConstitution, loadHealth } = await import('@usebrick/core');
-  const { readMemoryMarkdown } = await import('../engine/memory-md');
+  const { readMemoryMarkdown } = await import('../engine/structure-md');
 
   const inv = loadInventory(cwd);
   if (inv) {

@@ -28,7 +28,7 @@ import {
   buildConstitutionFromConfig,
   buildHealthFromReport,
   saveInventory,
-} from '../../src/engine/memory';
+} from '../../src/engine/structure';
 import {
   loadInventory,
   loadConstitution,
@@ -43,7 +43,7 @@ import {
   type ConstitutionFile,
   type HealthFile,
 } from '@usebrick/core';
-import { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } from '../../src/engine/memory-md';
+import { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } from '../../src/engine/structure-md';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../src/types';
 

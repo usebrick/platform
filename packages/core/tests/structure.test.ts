@@ -15,8 +15,8 @@ import {
   isInventoryFresh,
   invalidateFile,
   writeJsonAtomic,
-} from '../src/memory';
-import type { InventoryFile, ConstitutionFile } from '../src/memory-types';
+} from '../src/structure';
+import type { InventoryFile, ConstitutionFile } from '../src/structure-types';
 
 describe('memory — loaders/savers', () => {
   let workspace: string;

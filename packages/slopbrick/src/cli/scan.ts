@@ -74,8 +74,8 @@ import {
   buildInventoryFromScan,
   buildConstitutionFromConfig,
   buildHealthFromReport,
-} from '../engine/memory';
-import { renderMemoryMarkdown, writeMemoryMarkdown } from '../engine/memory-md';
+} from '../engine/structure';
+import { renderMemoryMarkdown, writeMemoryMarkdown } from '../engine/structure-md';
 import { saveInventory, saveConstitution, saveHealth } from '@usebrick/core';
 import { recordTelemetry, readTelemetry } from '../engine/telemetry';
 import {

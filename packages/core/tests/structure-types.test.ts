@@ -6,7 +6,7 @@ import {
   isInventoryFile,
   isConstitutionFile,
   isFileMtimeEntry,
-} from '../src/memory-types';
+} from '../src/structure-types';
 
 describe('memory-types — validators', () => {
   it('MEMORY_SCHEMA_VERSION is "1"', () => {

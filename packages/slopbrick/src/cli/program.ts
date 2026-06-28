@@ -136,7 +136,7 @@ import { formatUnifiedDiff } from '../report/unified-diff';
 import { buildHeatmap, formatHeatmap } from '../report/heatmap';
 import { formatFlywheel, summarizeTelemetry } from '../report/flywheel';
 import { readTelemetry } from '../engine/telemetry';
-import { readRuns } from '../engine/memory';
+import { readRuns } from '../engine/structure';
 import { applyFixes } from '../fix';
 import { saveBaseline, baselinePath, hashConfig } from '../engine/cache';
 import {
@@ -1333,7 +1333,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           // command uses `require('./migrate.js')` because that's a relative
           // path esbuild bundles. We need the same here.
           const { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } =
-            await import('../engine/memory-md.js') as typeof import('../engine/memory-md.js');
+            await import('../engine/structure-md.js') as typeof import('../engine/structure-md.js');
           const { loadInventory, loadConstitution, inventoryPath: invPath, constitutionPath: conPath } =
             await import('@usebrick/core') as typeof import('@usebrick/core');
 

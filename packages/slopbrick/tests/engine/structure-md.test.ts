@@ -7,7 +7,7 @@ import {
   renderMemoryMarkdown,
   writeMemoryMarkdown,
   readMemoryMarkdown,
-} from '../../src/engine/memory-md';
+} from '../../src/engine/structure-md';
 import {
   MEMORY_SCHEMA_VERSION,
   type ComponentFingerprint,
