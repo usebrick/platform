@@ -31,7 +31,7 @@
     "dev": "tsx src/index.ts",
     "generate:rules": "tsx scripts/generate-rule-registry.ts",
     "prebuild": "pnpm --filter @usebrick/engine build",
-    "build": "pnpm generate:rules && tsup",
+    "build": "pnpm --filter @usebrick/engine build && pnpm generate:rules && tsup",
     "test": "pnpm generate:rules && tsup && vitest run",
     "test:watch": "vitest",
     "test:coverage": "pnpm generate:rules && vitest run --coverage",
