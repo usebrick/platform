@@ -1,0 +1,26 @@
+{
+  "name": "@usebrick/website",
+  "version": "0.14.5",
+  "private": true,
+  "type": "module",
+  "description": "usebrick.dev marketing site. Brick-themed, Astro + Lenis + GSAP, WebGL hero shader.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "prebuild": "tsx scripts/prebuild.ts",
+    "astro": "astro",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@tabler/icons-webfont": "^3.18.0",
+    "astro": "^4.16.0",
+    "gsap": "^3.12.5",
+    "lenis": "^1.1.13"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,40 @@
+---
+// Tools — the 4-tool grid section.
+// Each card is interactive (click-to-break); see break-on-hover.ts.
+import ToolCard from './ToolCard.astro';
+
+const tools = [
+  {
+    name: 'pickbrick',
+    desc: 'Pick the right patterns from the curated catalog. Frontend, backend, full-stack — calibrated against 100+ production codebases.',
+    icon: 'pickbrick' as const,
+  },
+  {
+    name: 'mendbrick',
+    desc: 'Migrate legacy code to modern patterns. The repair tool that scores its own confidence on every change it proposes.',
+    icon: 'mendbrick' as const,
+  },
+  {
+    name: 'slopbrick',
+    desc: 'The CLI: detect, classify, score, and report. 60+ rules, 13 scores, JSON Schemas, MCP server, the moat itself.',
+    icon: 'slopbrick' as const,
+  },
+  {
+    name: 'core',
+    desc: 'The shared spec. inventory / constitution / memory / health JSON Schemas that every tool reads and writes.',
+    icon: 'core' as const,
+  },
+];
+---
+
+<section class="section tools reveal-stagger" id="tools">
+  <div class="section-label">the platform</div>
+  <h2 class="section-title">Four tools. One platform. <span style="color: var(--text-accent)">Zero slop.</span></h2>
+  <p class="section-body">
+    Every tool in usebrick.dev reads the same JSON Schemas and writes
+    the same data shape. Click a card to break it.
+  </p>
+  <div class="tools__grid">
+    {tools.map((t) => <ToolCard name={t.name} desc={t.desc} icon={t.icon} />)}
+  </div>
+</section>

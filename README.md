@@ -21,8 +21,9 @@ Splitting these into separate repos would create constant synchronization work. 
 
 | Package | Status | Purpose |
 |---------|--------|---------|
-| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 56 rules (52 → 56 in v0.12.0 with 4 new calibration rules), MCP server, migrate subcommand. |
+| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 60+ rules, MCP server, migrate subcommand. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Memory Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
+| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards. Built to `dist/` and deployed via GitHub Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
 
@@ -75,15 +76,28 @@ platform/
 │   │   │       ├── health.schema.json
 │   │   │       └── index.json
 │   │   └── tests/
-│   └── slopbrick/
+│   ├── slopbrick/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   ├── bin/
+│   │   ├── examples/
+│   │   └── distribute/             (AUR PKGBUILD, Homebrew formula, etc.)
+│   └── website/                    usebrick.dev marketing site (Astro + Lenis + GSAP)
 │       ├── src/
-│       ├── tests/
-│       ├── bin/
-│       ├── examples/
-│       └── distribute/             (AUR PKGBUILD, Homebrew formula, etc.)
+│       │   ├── components/         Nav, Hero, Tools, Compare, Calibration, CTA, Footer
+│       │   ├── layouts/            Base.astro (Lenis + GSAP init)
+│       │   ├── pages/              index.astro (single-page site)
+│       │   ├── scripts/            brick-shader, reveal, counter, break-on-hover, copy-install, lenis
+│       │   ├── styles/             global.css (tokens), theme.css, components.css
+│       │   └── data/               version.json (sourced from sibling packages at build time)
+│       ├── public/                 favicon, logo-mark, brick-pattern SVGs
+│       ├── scripts/                prebuild.ts (version substitution)
+│       ├── astro.config.mjs
+│       └── .github/workflows/      deploy.yml (GitHub Pages)
 ├── .github/workflows/
 │   ├── ci.yml                      typecheck + test on every PR/push to main
-│   └── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
+│   ├── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
+│   └── (per-package deploy workflows under each package)
 ├── docs/
 │   ├── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
 │   └── future-extractions.md       (packages/memory + packages/contracts criteria)

@@ -1,0 +1,617 @@
+/* ============================================================
+   usebrick.dev — per-component styles
+   These style the .astro components in src/components/. Each
+   component is self-contained; if you delete a component, the
+   styles are safe to delete too. Tokens come from global.css.
+   ============================================================ */
+
+/* ============================================================
+   Nav
+   ============================================================ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: var(--space-3) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  background: rgba(26, 14, 8, 0.72);
+  border-bottom: 0.5px solid var(--border);
+  transition: background 0.3s var(--ease-out);
+}
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+.nav__brand-mark {
+  width: 24px;
+  height: 24px;
+}
+.nav__brand-text {
+  color: var(--text-primary);
+}
+.nav__brand-text span {
+  color: var(--text-accent);
+}
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.nav__links a {
+  transition: color 0.2s var(--ease-out);
+}
+.nav__links a:hover {
+  color: var(--text-accent);
+}
+.nav__cta {
+  padding: 0.4rem 0.8rem;
+  border: 0.5px solid var(--border-accent);
+  border-radius: var(--radius);
+  color: var(--text-accent);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s var(--ease-out);
+}
+.nav__cta:hover {
+  background: rgba(220, 74, 38, 0.08);
+}
+@media (max-width: 720px) {
+  .nav__links {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Hero — full-bleed WebGL canvas
+   ============================================================ */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-16) var(--space-6) var(--space-12);
+  overflow: hidden;
+  isolation: isolate;
+}
+.hero__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--surface-0);
+}
+.hero__canvas canvas,
+.hero__canvas picture,
+.hero__canvas img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero__canvas picture {
+  display: none;
+}
+.hero__content {
+  position: relative;
+  max-width: 720px;
+  z-index: 1;
+}
+.hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.3rem 0.7rem;
+  border: 0.5px solid var(--border-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+  background: rgba(26, 14, 8, 0.6);
+  backdrop-filter: blur(4px);
+}
+.hero__eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--text-accent);
+  box-shadow: 0 0 8px var(--text-accent);
+}
+.hero__title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: var(--space-4);
+}
+.hero__title em {
+  font-style: normal;
+  color: var(--text-accent);
+  position: relative;
+}
+.hero__title em::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.08em;
+  height: 0.08em;
+  background: var(--text-accent);
+  opacity: 0.2;
+}
+.hero__subtitle {
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 56ch;
+  margin: 0 auto var(--space-6);
+}
+.hero__install {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.75rem 1.25rem;
+  background: var(--surface-2);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+.hero__install:hover {
+  border-color: var(--border-accent);
+  background: var(--surface-3);
+}
+.hero__install-prompt {
+  color: var(--text-accent);
+  user-select: none;
+}
+.hero__install-cmd {
+  color: var(--text-primary);
+}
+.hero__install-icon {
+  color: var(--text-muted);
+  width: 16px;
+  height: 16px;
+}
+.hero__install.is-copied .hero__install-icon {
+  color: var(--text-success);
+}
+.hero__scroll {
+  position: absolute;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hero__scroll-line {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(180deg, var(--text-accent), transparent);
+  animation: scroll-pulse 2.4s var(--ease-in-out) infinite;
+}
+@keyframes scroll-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ============================================================
+   Tools — 4 tool cards with click-to-break
+   ============================================================ */
+
+.tools {
+  position: relative;
+}
+.tools__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+.tool-card {
+  position: relative;
+  background: var(--surface-1);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  overflow: hidden;
+  cursor: default;
+  transform-origin: center;
+  transition: border-color 0.2s var(--ease-out);
+}
+.tool-card:hover {
+  border-color: var(--border-accent);
+}
+.tool-card__icon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-accent);
+  margin-bottom: var(--space-3);
+}
+.tool-card__name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+.tool-card__name::before {
+  content: '@usebrick/';
+  color: var(--text-muted);
+}
+.tool-card__desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.tool-card__cracks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+}
+.tool-card__cracks.is-broken {
+  opacity: 1;
+}
+.tool-card__crack {
+  stroke: var(--text-accent);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 4px rgba(220, 74, 38, 0.4));
+}
+
+/* ============================================================
+   Terminal — the install command preview
+   ============================================================ */
+
+.terminal {
+  position: relative;
+  background: var(--surface-1);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: var(--space-6);
+  max-width: 560px;
+}
+.terminal__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface-2);
+  border-bottom: 0.5px solid var(--border);
+}
+.terminal__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+.terminal__dot--r { background: rgba(184, 106, 74, 0.6); }
+.terminal__dot--y { background: rgba(200, 144, 96, 0.6); }
+.terminal__dot--g { background: rgba(132, 160, 122, 0.6); }
+.terminal__title {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.terminal__body {
+  padding: var(--space-4) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.terminal__line {
+  display: flex;
+  gap: var(--space-2);
+}
+.terminal__prompt {
+  color: var(--text-accent);
+  user-select: none;
+}
+.terminal__cmd {
+  color: var(--text-primary);
+}
+.terminal__out {
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+.terminal__out--ok { color: var(--text-success); }
+
+/* ============================================================
+   Compare — the "why usebrick" section
+   ============================================================ */
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+@media (max-width: 720px) {
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}
+.compare__col {
+  background: var(--surface-1);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.compare__col--yay {
+  border-color: var(--border-accent);
+  background: linear-gradient(180deg, var(--surface-1) 0%, rgba(220, 74, 38, 0.04) 100%);
+}
+.compare__col--nay {
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+.compare__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+}
+.compare__heading--yay { color: var(--text-accent); }
+.compare__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.compare__check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.15em;
+  color: var(--text-accent);
+}
+.compare__cross {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.15em;
+  color: var(--text-muted);
+}
+.compare__col--nay .compare__item {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted);
+  text-decoration-thickness: 0.5px;
+}
+
+/* ============================================================
+   Calibration — the "30+ tools, 60+ rules" big-number section
+   ============================================================ */
+
+.calibration {
+  position: relative;
+  padding: var(--space-20) var(--space-6);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.calibration::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--surface-1);
+  z-index: -1;
+}
+.calibration__heading {
+  text-align: center;
+  margin-bottom: var(--space-12);
+}
+.calibration__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+}
+.stat {
+  position: relative;
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+.stat__value {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text-accent);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--space-1);
+}
+.stat__label {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.stat__sub {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+.calibration__quote {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--text-primary);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.calibration__quote::before {
+  content: '“';
+  display: block;
+  color: var(--text-accent);
+  font-size: 3em;
+  line-height: 0.5;
+  margin-bottom: var(--space-3);
+  font-family: Georgia, serif;
+}
+.calibration__quote-author {
+  margin-top: var(--space-4);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   CTA — final install + GitHub
+   ============================================================ */
+
+.cta {
+  position: relative;
+  text-align: center;
+  padding: var(--space-20) var(--space-6);
+  isolation: isolate;
+}
+.cta__inner {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto;
+  z-index: 1;
+}
+.cta__title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-3);
+}
+.cta__title em {
+  font-style: normal;
+  color: var(--text-accent);
+}
+.cta__body {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  line-height: 1.6;
+}
+.cta__buttons {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  border: 0.5px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+.btn:hover {
+  border-color: var(--border-accent);
+}
+.btn--primary {
+  background: var(--text-accent);
+  color: var(--text-on-accent);
+  border-color: transparent;
+  font-weight: 600;
+}
+.btn--primary:hover {
+  background: var(--fill-accent-hover);
+}
+.btn__icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+
+.footer {
+  border-top: 0.5px solid var(--border);
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.footer__row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+.footer__row a {
+  color: var(--text-secondary);
+  transition: color 0.2s var(--ease-out);
+}
+.footer__row a:hover {
+  color: var(--text-accent);
+}
+.footer__version {
+  margin-top: var(--space-2);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.footer__version span {
+  color: var(--text-accent);
+}

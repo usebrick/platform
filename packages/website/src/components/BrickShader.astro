@@ -1,0 +1,32 @@
+---
+// BrickShader — the full-bleed WebGL canvas behind the hero.
+// Renders a procedural brick wall; initialized by an inline
+// script that hydrates the canvas on page load.
+---
+
+<div class="hero__canvas" id="brick-canvas-wrap">
+  <canvas id="brick-canvas" aria-hidden="true"></canvas>
+  <picture>
+    <img src="/brick-pattern.svg" alt="" />
+  </picture>
+</div>
+
+<script>
+  import { initBrickShader } from '../scripts/brick-shader';
+  const canvas = document.getElementById('brick-canvas') as HTMLCanvasElement | null;
+  const wrap = document.getElementById('brick-canvas-wrap');
+  if (canvas && wrap) {
+    // Mobile fallback: if WebGL is unavailable OR the device is
+    // very low-power, show the static SVG picture instead.
+    const isMobile = window.matchMedia('(max-width: 720px)').matches;
+    const isLowPower = navigator.hardwareConcurrency
+      ? navigator.hardwareConcurrency < 4
+      : false;
+    if (isMobile || isLowPower) {
+      canvas.style.display = 'none';
+      wrap.querySelector('picture')!.style.display = 'block';
+    } else {
+      initBrickShader(canvas);
+    }
+  }
+</script>

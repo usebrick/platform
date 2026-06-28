@@ -1,0 +1,89 @@
+/* ============================================================
+   usebrick.dev — theme utilities
+   Brick-pattern backgrounds, masonry utilities, the per-section
+   brick-color tokens (calibration section uses a slightly
+   different mortar color so the section feels distinct but
+   related to the hero).
+   ============================================================ */
+
+/* The brick-pattern SVG inlined as a data URI. The colors are
+   terracotta at 18% opacity so the pattern is visible but never
+   competes with the text. The half-bond offset (every other row
+   shifted by half a brick) is the running-bond pattern — the
+   standard brick-work course. */
+.brick-bg {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40' viewBox='0 0 120 40'><defs><pattern id='brick' width='120' height='40' patternUnits='userSpaceOnUse'><rect x='0' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='62' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='-30' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='32' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='92' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/></pattern></defs><rect width='120' height='40' fill='url(%23brick)'/></svg>");
+  background-repeat: repeat;
+}
+
+/* Variant of the brick pattern with a slightly different mortar
+   color (warmer, #3a2418) so the calibration section feels
+   distinct from the hero while staying in the same palette. */
+.brick-bg-warm {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40' viewBox='0 0 120 40'><defs><pattern id='brick' width='120' height='40' patternUnits='userSpaceOnUse'><rect x='0' y='2' width='58' height='18' fill='none' stroke='rgba(160, 90, 60, 0.12)' stroke-width='0.5'/><rect x='62' y='2' width='58' height='18' fill='none' stroke='rgba(160, 90, 60, 0.12)' stroke-width='0.5'/><rect x='-30' y='22' width='58' height='18' fill='none' stroke='rgba(160, 90, 60, 0.12)' stroke-width='0.5'/><rect x='32' y='22' width='58' height='18' fill='none' stroke='rgba(160, 90, 60, 0.12)' stroke-width='0.5'/><rect x='92' y='22' width='58' height='18' fill='none' stroke='rgba(160, 90, 60, 0.12)' stroke-width='0.5'/></pattern></defs><rect width='120' height='40' fill='url(%23brick)'/></svg>");
+  background-repeat: repeat;
+}
+
+/* The full-bleed gradient that anchors the CTA section.
+   From terracotta at the top fading into the mortar below. */
+.cta-gradient {
+  background: linear-gradient(
+    180deg,
+    var(--surface-0) 0%,
+    #2a1209 35%,
+    #3a1a0e 70%,
+    var(--surface-0) 100%
+  );
+  position: relative;
+}
+.cta-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40' viewBox='0 0 120 40'><defs><pattern id='brick-cta' width='120' height='40' patternUnits='userSpaceOnUse'><rect x='0' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='62' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='-30' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='32' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='92' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/></pattern></defs><rect width='120' height='40' fill='url(%23brick-cta)'/></svg>");
+  pointer-events: none;
+}
+
+/* Section spacing — shared between all the .section elements */
+.section {
+  padding: var(--space-16) var(--space-6);
+  max-width: 1080px;
+  margin: 0 auto;
+  position: relative;
+}
+@media (max-width: 720px) {
+  .section {
+    padding: var(--space-12) var(--space-4);
+  }
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  margin-bottom: var(--space-3);
+}
+
+.section-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin-bottom: var(--space-3);
+  line-height: 1.25;
+}
+
+.section-body {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 16px;
+  max-width: 60ch;
+}
+
+.divider {
+  border: none;
+  border-top: 0.5px solid var(--border);
+  margin: 0 var(--space-6);
+}

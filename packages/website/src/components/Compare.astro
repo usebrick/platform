@@ -1,0 +1,76 @@
+---
+// Compare — the "why usebrick" section.
+// Two columns: brick-themed positive list vs. generic lint list.
+// Crossed-out negatives reinforce the "zero slop" positioning.
+import Terminal from './Terminal.astro';
+---
+
+<section class="section reveal-stagger" id="compare">
+  <div class="section-label">the difference</div>
+  <h2 class="section-title">Static analysis, but it <em style="color: var(--text-accent); font-style: normal">remembers</em>.</h2>
+  <p class="section-body">
+    Linters check syntax. We check architecture. usebrick.dev reads
+    your repo once, writes a memory file, and never re-discovers what
+    it already knows about you.
+  </p>
+  <div class="compare">
+    <div class="compare__col compare__col--yay">
+      <div class="compare__heading compare__heading--yay">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span>usebrick</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+        <span>Calibrated against 100+ production codebases</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+        <span>Inventory / Constitution / Memory / Health — 4 schemas, one contract</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+        <span>MCP server — your editor, our memory</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+        <span>Confidence-scored every change it proposes</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+        <span>Cross-language JSON Schemas, not just TypeScript types</span>
+      </div>
+    </div>
+    <div class="compare__col compare__col--nay">
+      <div class="compare__heading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+        <span>everything else</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <span>Re-scans the same file 47 times per session</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <span>Rules with FP rates you have to memorize</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <span>Vendor lock-in to a single editor</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <span>"100% coverage" with the floor(0.5) rounding bug</span>
+      </div>
+      <div class="compare__item">
+        <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <span>TypeScript types that lie about the JSON</span>
+      </div>
+    </div>
+  </div>
+  <Terminal />
+</section>

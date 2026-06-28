@@ -1,0 +1,35 @@
+---
+// CTASection — the final install block.
+// Two buttons: install (copies to clipboard) and GitHub.
+// The gradient + brick pattern overlay make this section feel
+// like a brick wall behind the call to action.
+---
+
+<section class="cta cta-gradient brick-bg" id="install">
+  <div class="cta__inner">
+    <div class="section-label" style="text-align: center;">ship it</div>
+    <h2 class="cta__title">
+      Stop <em>guessing</em> your codebase.<br />Start <em>remembering</em> it.
+    </h2>
+    <p class="cta__body">
+      13.4 kB on npm. One command to install, one command to scan,
+      one JSON to ship. Open source, MIT licensed, no telemetry.
+    </p>
+    <div class="cta__buttons">
+      <button class="btn btn--primary" data-copy="npm install -g slopbrick">
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="8 17 12 21 16 17" />
+          <line x1="12" y1="12" x2="12" y2="21" />
+          <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29" />
+        </svg>
+        npm install -g slopbrick
+      </button>
+      <a class="btn" href="https://github.com/usebrick/platform" rel="noopener">
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.02C6.7 21.6 6.1 19.6 6.1 19.6c-.55-1.4-1.35-1.77-1.35-1.77-1.1-.75.08-.74.08-.74 1.22.08 1.86 1.25 1.86 1.25 1.08 1.85 2.84 1.32 3.53 1 .1-.78.42-1.32.77-1.62-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.58A12 12 0 0 0 12 .3z" />
+        </svg>
+        github
+      </a>
+    </div>
+  </div>
+</section>

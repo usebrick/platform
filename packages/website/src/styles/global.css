@@ -1,0 +1,187 @@
+/* ============================================================
+   usebrick.dev — global styles
+   The token block is the load-bearing piece. Everything else
+   references these custom properties; change a value here, the
+   whole site re-themes.
+   ============================================================ */
+
+:root {
+  /* Surfaces — warm dark mortar */
+  --surface-0: #1a0e08;
+  --surface-1: #231511;
+  --surface-2: #2d1c17;
+  --surface-3: #38201a;
+
+  /* Text — warm off-whites */
+  --text-primary:   #f3e9e1;
+  --text-secondary: #d4c4b6;
+  --text-muted:     #8a7868;
+  --text-on-accent: #1a0e08;
+
+  /* Accent — terracotta red (the brick color) */
+  --text-accent:    #dc4a26;
+  --fill-accent:    #c2410c;
+  --fill-accent-hover: #9a3409;
+
+  /* Semantic state — brick-compatible palette (not red/green/blue) */
+  --text-success: #84a07a;
+  --bg-success:   #1f2a22;
+  --text-warning: #c89060;
+  --bg-warning:   #2a1f15;
+  --text-danger:  #b86a4a;
+  --bg-danger:    #2a1612;
+  --text-info:    #b09c8a;
+  --bg-info:      #251a15;
+
+  /* Borders — terracotta at various opacities */
+  --border:         rgba(220, 74, 38, 0.10);
+  --border-strong:  rgba(220, 74, 38, 0.18);
+  --border-accent:  rgba(220, 74, 38, 0.35);
+  --border-danger:  rgba(184, 106, 74, 0.40);
+
+  /* Type */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Radii */
+  --radius:    6px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* Easing — used by both CSS transitions and GSAP */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shadows — warm-tinted to fit the brick palette */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 24px rgba(220, 74, 38, 0.25);
+}
+
+/* ============================================================
+   Reset
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: auto; /* Lenis handles smooth scroll */
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The masonry offset — used by .compare and .tools grids to
+   echo brick coursework (every other "brick" is offset by half
+   the row height). The reveal animation respects the offset
+   because GSAP animates from computed positions. */
+.masonry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+.masonry > *:nth-child(even) {
+  margin-top: 0.5rem;
+}
+
+/* Stagger reveal — applied to a parent; each child fades + slides
+   in. The animation is fired by `src/scripts/reveal.ts` once
+   ScrollTrigger detects the parent at the top of the viewport. */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.reveal-stagger.is-revealed > * {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+/* ============================================================
+   Reduced motion — disable the showy animations for users who
+   prefer reduced motion. The content is still readable; the
+   scroll is still smooth; just the parallax/shake/transitions
+   are toned down.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal-stagger > * {
+    opacity: 1;
+    transform: none;
+  }
+}
