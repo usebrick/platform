@@ -94,8 +94,18 @@ export function initBreakOnHover(): () => void {
       }, 1600);
     };
 
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick(e as unknown as MouseEvent);
+      }
+    };
     card.addEventListener('click', onClick);
-    cleanups.push(() => card.removeEventListener('click', onClick));
+    card.addEventListener('keydown', onKey);
+    cleanups.push(() => {
+      card.removeEventListener('click', onClick);
+      card.removeEventListener('keydown', onKey);
+    });
   }
 
   return () => cleanups.forEach((c) => c());

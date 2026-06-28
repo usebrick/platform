@@ -246,6 +246,11 @@
 .tool-card:hover {
   border-color: var(--border-accent);
 }
+.tool-card:focus-visible {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+  border-color: var(--border-accent);
+}
 .tool-card__icon {
   width: 28px;
   height: 28px;
