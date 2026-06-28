@@ -552,6 +552,223 @@ and scan.
 
 ## [Unreleased]
 
+### Added (Documentation suite — v0.14.5m)
+
+The public documentation set was missing several standard OSS files
+and had stale references. This release adds the missing docs and
+fixes the references.
+
+- **`CONTRIBUTING.md`** — how to add a new rule (copy a template,
+  edit `analyze()`, add a test, add to `signal-strength.json` with
+  `defaultOff: true`), how to run the v0.14.5k calibration locally,
+  dev setup, project structure, code style. 8.6K.
+- **`SECURITY.md`** — vulnerability reporting to `security@usebrick.dev`,
+  supported versions, security best practices for slopbrick users
+  (don't commit `.slopbrick/` to public repos, MCP server trust
+  model, the `ai/security-risk` band is a heuristic not a SAST).
+  3.8K.
+- **`CODE_OF_CONDUCT.md`** — Contributor Covenant 2.1. 5.6K.
+- **`EXAMPLES.md`** — copy-paste `slopbrick.config.mjs` patterns for
+  strict CI, monorepo, per-rule severity, exclude test fixtures,
+  include Python/Go, disable defaultOff, enable dormant, custom
+  category weights, MCP server settings. 8.7K.
+- **`docs/MCP.md`** — full reference for the 10 MCP tools:
+  `slop_suggest`, `slop_suggest_with_memory`, `slop_scan_file`,
+  `slop_explain_rule`, `slop_list_rules`, `slop_governance`,
+  `slop_check_constitution`, `slop_architecture_score`,
+  `slop_business_logic_score`, `slop_find_similar`. Each with
+  input/output schemas, when-to-use, and a typical agent flow.
+  9.3K.
+- **`docs/scoring-explained.md`** — what the two scores actually
+  measure, the 2×2 quadrant of (Slop × Coherence) combinations,
+  which one to focus on, the threshold rationale. 4.9K.
+- **`docs/repository-memory.md`** — the 4 `.slopbrick/` artifacts
+  contract, on-write order, graceful-degradation. 8.5K.
+
+### Fixed (Documentation drift)
+
+- **README.md**: corrected "14 tools" → "10 tools" for the MCP server
+  (was true in v0.12.0 when 4 tools were added on top of 10).
+  Replaced the v0.9.1 "Repository Health: 84" example with the
+  v0.14.5j-correct output (Slop Index primary, Coherence secondary).
+  Added a Documentation index table linking all 14 public docs.
+- **`docs/website-copy-v0.14.5d.md`**: replaced the bad
+  `ai: 16700, visual: 7000, logic: 6840` numbers with the
+  v0.14.5h-correct raw totals (167 / 70 / 68) and a footnote
+  explaining the 0-component fix.
+
+### Changed (Scan UX — v0.14.5i)
+
+Five UX improvements for the scan → see → fix → re-scan loop. The
+self-scan revealed that the numbers were correct but the user
+had no idea what to do with them. Fixes:
+
+- **P5** — DefaultOff suppression count moved from stderr to the
+  main output as a green ✓ trust signal: `✓ 99 INVERTED/NOISY
+  issues correctly suppressed from 24 default-off rules. The top
+  offenses below are the ones that matter.`
+- **P0** — Next-step footer with the highest-impact action. Replaces
+  the one-line "run --suggest" with a prioritized list that
+  adapts to the report's data: top offending file, --suggest,
+  --baseline, --why-failing (when score < 70).
+- **P1** — Per-category breakdown table with bar charts. The 16 raw
+  categoryScores (visible in `health.json`) are now shown in the
+  CLI as `ai: 167 ████████████  visual: 70 ██████  logic: 68 ████`.
+- **P4** — Slop Index is now the SINGLE headline number. Repository
+  Coherence is shown as a secondary "different formula" line. The
+  CLI and `health.json` now show the same number.
+- **P3** — `--why-failing` flag. Quick triage view: top 5 rules
+  ranked by weighted impact (severity × count) that are dragging
+  the score down. Takes precedence over `--format pretty`.
+
+### Fixed (--why-failing bug)
+
+- `--why-failing` was reading `coherence` (60) instead of `slopIndex`
+  (25), giving a different number than the main scan output. Now
+  reads slopIndex, matches the main output. The bug was introduced
+  in v0.14.5i and fixed in v0.14.5j.
+
+### Added (At-a-glance + with-help UX — v0.14.5j)
+
+Five more UX improvements, focused on making the output
+self-explanatory:
+
+- **P6** — Plain-language verdict at the top. First line is a
+  one-sentence answer to "is my code OK?": `Repo is concerning
+  (25/100). The biggest problem is AI patterns — worst file is
+  src/cli/scan.ts.`
+- **P7** — Inline glossary for category labels. Each of the 16
+  categories now has a plain-language label + one-line description
+  in the bar chart: `AI patterns — signatures of LLM-generated
+  code`, `visual style — colors, spacing, font sizes, layout`.
+- **P8** — Better status labels. `[PASS] / [FAIL]` replaced with
+  `[EXCELLENT] / [PASSING] / [NEEDS WORK] / [CONCERNING]`. The
+  `[pass] / [fail]` text is kept in the `Threshold (CI gate)`
+  section so CI scripts that grep for it still work.
+- **P9** — Trajectory delta `↓5 (cleaner)` on the headline. The
+  previous run is read from the run log and the delta rendered
+  on every re-scan. Noise floor ±0.5 to avoid spurious "↑0".
+- **P10** — `--brief` flag. 4-5 line terse output for CI/scripts:
+  verdict + headline + threshold + delta + Coherence + suppression
+  count. No category breakdown, no top offenders, no issues dump.
+
+### Fixed (Scan UX bugs)
+
+- The "AI patterns patterns" double word in the verdict
+  (catGloss.short already includes the noun).
+- Small-project warning was firing on 0 components; now requires
+  `> 0 && ≤ 10`.
+- "Thresholds" section showed both Slop Index AND Coherence; now
+  only the Slop Index (the gate) is shown in that section.
+- Coherence formula was dumped into the output; now a one-line
+  plain-English explanation.
+- `formatThresholds` lost the coherence line; restored with
+  "different formula" annotation.
+- `formatSummary` pluralization for "1 issue" vs "N issues".
+
+### Changed (Rule coverage — v0.14.5l)
+
+The v0.14.5k gap analysis revealed a major coverage gap: the
+worker had a `BACKEND_EXTENSIONS` early-return that stripped out
+Python, Go, Java, Rust, etc. before any rules ran. So the v7
+calibration was measuring 80 rules against only ~30% of the
+corpus (TS/JS only). The 70% gap (44,956 Python files + 14,536
+Go files + 90,000+ others) was unmeasured.
+
+- **`src/engine/worker.ts`** — split the backend early-return.
+  Languages we have visitors for (`.py`, `.go`) now fall through
+  to the rule engine. Languages we DON'T have visitors for
+  (`.swift`, `.kt`, `.dart`, `.rs`, `.cpp`, `.java`, `.rb`,
+  `.php`) still get the early-return.
+- **`src/engine/parser.ts`** — added `parseBlankModule()` for
+  `.py` and `.go`. Same trick as `parseAstro`/`parseHtml` —
+  blank-pad the source to preserve line offsets, parse as an
+  empty SWC module. AST-dependent rules silently produce 0
+  issues; regex-only rules (markdown-leakage, comment-ratio,
+  etc.) can fire.
+- **Expected impact**: 0/44,956 Python files fired any rule →
+  ~30% should fire (regex-only AI markers) → 13,000+ new data
+  points for the v0.14.5d calibration.
+
+### Added (Calibration automation — v0.14.5k)
+
+The v7 corpus scans are running (~7-13h ETAs). To get
+actionable signal while waiting, two new tools:
+
+- **`scripts/compute-v7-calibration-partial.py`** — runs on the
+  in-progress partial-fires.json files. Produces
+  `docs/research/v7-partial-calibration-<timestamp>.md` with
+  USEFUL / OK / NOISY / INVERTED / DORMANT / HYGIENE verdict
+  per rule based on precision, recall, FPR, and lift. MONITORING
+  ONLY — does not update `signal-strength.json`. The final
+  calibration (when scans finish) will update the rule registry.
+- **`scripts/find-rule-coverage-gaps.py`** — computes fire rate
+  by extension, repo, and file size bucket. Identifies the lowest-
+  fire-rate clusters (e.g. agent harness repos, Python test
+  files) where new rules are needed. Produces
+  `docs/research/v7-coverage-gaps-<timestamp>.md`.
+- **Partial calibration result** (v0.14.5k, on the 95k neg +
+  89.5k pos sample): 21 USEFUL, 7 OK, 5 NOISY, 8 INVERTED,
+  0 DORMANT, 22 HYGIENE. The 8 INVERTED rules will be auto-
+  defaultOff in the final calibration, which should reduce
+  noise in the user-facing score by ~5-15 points.
+
+### Fixed (v0.14.5h — categoryScores bug)
+
+`categoryScores` exploded to 16700 / 7000 / 6840 when
+`componentCount=0` (the case for CLI tools, pure backend, or
+libraries without React/Vue/Astro UI). The bug: the per-
+component-average normalization `sum / 1 * 100` produced
+wildly wrong numbers. The fix: when `componentCount=0`, return
+raw severity totals (sum of severity × weight) instead of
+dividing by 1 and multiplying by 100. For codebases WITH
+components, the per-component normalization is preserved so
+scores stay comparable across project sizes.
+
+3 regression tests in `tests/engine/metrics.test.ts`. 17 user-
+facing numbers updated (in `health.json`, `website-copy-v0.14.5d.md`,
+README example) from `ai: 16700, visual: 7000, logic: 6840` to
+`ai: 167, visual: 70, logic: 68`.
+
+### Fixed (v0.14.5g — self-scan fix)
+
+Three bugs in series caused the self-scan to show a misleading
+slopIndex 100 / Repository Coherence 0:
+
+- **`src/config/validation.ts`** — the `VALID_CATEGORIES` whitelist
+  was missing 7 categories (`product`, `i18n`, `visual`, `typo`,
+  `wcag`, `layout`, `context`). The scanner silently dropped issues
+  whose category wasn't in the whitelist. Now all 16 are accepted.
+- **`src/engine/memory.ts` (`buildHealthFromReport`)** — was
+  including issues with `severity='off'` (defaultOff rules) in
+  `issueCounts` and `topOffenseIds`. The suppressed issues were
+  the INVERTED/NOISY rules that fire on human code as often as
+  AI code. Now excluded.
+- **`src/cli/scan.ts` (autotune loop)** — was overwriting
+  `severity='off'` on issues from defaultOff rules. Now skips
+  those rules entirely.
+
+Result: self-scan slopIndex 100 → 60, defaultOff suppression
+count surfaced in the headline (99 suppressed), topOffenseIds
+filtered to the rules that matter.
+
+### Fixed (v0.14.5f — scanner config for v8 corpus re-scan)
+
+The v0.12.0 scanner would crash and lose ~10% of the corpus
+on certain JSX files (SWC native panic). v0.14.5f:
+
+- **PER_FILE_TIMEOUT_MS bounded 120-600s** (was unbounded, could
+  hang the worker for hours on a bad file).
+- **Uses `npx tsx`** for the worker subprocess (was `node` with
+  CommonJS — broke when the package switched to ESM).
+- **Passes `SLOP_RESULT_PATH` env var** for file-based output
+  (was stdout pipe — buffered and lost on partial completion).
+- **ENOENT-safe `unlinkSync`** when cleaning up worker tmp files.
+- **Captures stderr as `_stderr`** in the result, so worker
+  crashes show in the output instead of being swallowed.
+
+6 regression tests in `tests/scripts/scanner-config.test.ts`.
+
 ### Changed (MCP tool consolidation — completes the v0.9.x consolidation plan)
 
 Three narrow-axis MCP tools are now marked deprecated in favor of `slop_suggest`, which already returns the same data as a sibling field in its response. The tools continue to work through v0.12.x (backward compatibility) but the server attaches a `_meta.deprecation` notice to the JSON-RPC response so MCP clients can soft-warn the agent. Removal planned for **v0.13.0**.

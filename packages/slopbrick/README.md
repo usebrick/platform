@@ -84,6 +84,24 @@ faster than any other failure mode. After the fix, the report
 shows what it should: the 99 calibration-failed issues are hidden,
 and the top 3 are real AI signals.
 
+## Documentation
+
+| Doc | What's in it |
+|-----|--------------|
+| [`README.md`](./README.md) | Quick start, what it does, headline scores, CLI reference (this file) |
+| [`docs/scoring-explained.md`](./docs/scoring-explained.md) | What the two scores actually measure, the 2×2 quadrant, when to focus on which |
+| [`docs/MCP.md`](./docs/MCP.md) | The 10 MCP tools, when to use each, typical agent flow, setup for Claude Code / Cursor |
+| [`docs/repository-memory.md`](./docs/repository-memory.md) | The 4 `.slopbrick/` artifacts, when each is read/written, JSON schemas |
+| [`docs/rule-catalog.md`](./docs/rule-catalog.md) | The 80 rules across 16 categories, with citations |
+| [`docs/architecture.md`](./docs/architecture.md) | How the engine works: parser → facts → rules → aggregation → formatter |
+| [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) | Which frameworks are supported and at what depth |
+| [`EXAMPLES.md`](./EXAMPLES.md) | Copy-paste `slopbrick.config.mjs` patterns for common scenarios |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to add a new rule, how to run calibration, dev setup |
+| [`SECURITY.md`](./SECURITY.md) | Vulnerability reporting, supported versions, security best practices |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Release history (Keep a Changelog format) |
+| [`ROADMAP.md`](./ROADMAP.md) | Strategic plan: 0.14.x → 0.15 → 1.0 |
+| [`docs/research/`](./docs/research/) | Calibration reports, math foundations, gap analysis |
+
 ## What's new in v0.14.5d
 
 v0.14.5d ships the **Repository Memory pipeline** end-to-end and adds the **LockBrick prevention commands** so the same constraints that surface in `slopbrick scan` can also be enforced **before** code lands:
@@ -135,11 +153,19 @@ The MCP tool `slop_suggest` returns, in one call:
 
 > **Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them.**
 
-The MCP server is one command: `slopbrick mcp`. 14 tools ship in v0.12.0: `slop_suggest`, `slop_suggest_with_memory` (fast-path on `.slopbrick/memory.md`), `slop_scan_file`, `slop_explain_rule`, `slop_list_rules`, `slop_governance`, `slop_check_constitution`, `slop_architecture_score`, `slop_business_logic_score`, `slop_db_health`, `slop_find_similar`, and three more — see `src/mcp/tools.ts`.
+The MCP server is one command: `slopbrick mcp`. **10 tools** ship in v0.14.x: `slop_suggest`, `slop_suggest_with_memory` (fast-path on `.slopbrick/memory.md`), `slop_scan_file`, `slop_explain_rule`, `slop_list_rules`, `slop_governance`, `slop_check_constitution`, `slop_architecture_score`, `slop_business_logic_score`, `slop_find_similar`. See [`docs/MCP.md`](docs/MCP.md) for the full reference.
 
-## Headline Repository Health composite
+## Headline scores
 
-`Repository Health: 84` with per-axis breakdown + `AI Debt: MEDIUM` band. Composed from up to 8 axes, weights renormalize when axes are missing:
+**`Slop Index`** is the primary headline (v0.14.5i+). 0-100, **lower = better**. 70 is the CI gate. Composed of:
+
+| Subscore | Weight | What it measures |
+|---|---|---|
+| `boundary` | 40% | structural integrity |
+| `context` | 35% | props / state / imports |
+| `visual` | 25% | CSS / a11y / layout |
+
+`Repository Coherence` is a secondary view (0-100, **higher = better**) measuring internal consistency. See [`docs/scoring-explained.md`](docs/scoring-explained.md) for the full math and the 2×2 quadrant of possible combinations.
 
 | Axis | First shipped | What it measures |
 |------|---------------|------------------|
