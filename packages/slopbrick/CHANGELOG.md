@@ -550,6 +550,69 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
+## [0.14.5q] - 2026-06-28 — v7 final calibration + 1 INVERTED rule auto-defaultOff
+
+The v7 corpus scans finished. This release runs the final calibration
+on the full data (184,488 neg + 239,054 pos files, 1,060,258 fires)
+and updates `signal-strength.json` with the verdicts.
+
+### Per-rule verdict distribution
+
+| Verdict | Count | Action |
+|---|---:|---|
+| **USEFUL** | 31 | defaultOn (high P + high lift) |
+| **OK** | 5 | defaultOn (lower confidence) |
+| **NOISY** | 5 | defaultOff (fires on both arms with low lift) |
+| **INVERTED** | 1 | defaultOff (fires MORE on neg than pos) |
+| **HYGIENE** | 23 | defaultOn (non-AI quality checks) |
+| **DORMANT** | 0 | never fires |
+| **Total** | **65** | |
+
+### Only 1 INVERTED rule (vs 8 in the v0.14.5k partial)
+
+The earlier v0.14.5k partial run (on 95k+90k files) flagged 8 rules
+as INVERTED. The final calibration on the full 420k files narrows
+this to 1:
+
+- `ai/renyi-profile`: TP=3, FP=9, lift 0.3 (more fires in human code
+  than AI code) → **defaultOff**
+
+The 7 other rules that were INVERTED in the partial run turned out
+to be USEFUL or NOISY when measured against the full corpus.
+This is the kind of regression that justifies waiting for the
+final data before auto-defaulting.
+
+### Fixed (calibration script bugs)
+
+- **`filter_fires_by_date` path mismatch**: perFileFires values are
+  absolute paths (`/Users/.../v7-full-pos/symlink_name`); metadata
+  has relative paths (`symlink_name`). The original code did
+  `files_set & keep` (set intersection) which was always empty.
+  Fixed by indexing keep by basename. The original code was also
+  O(N×K) per rule (inner generator over 184k+ entries); the fix
+  makes it O(1) per check via dict lookup.
+
+- **f-string syntax error** in the `_calibrationNote` field:
+  `'inf' if ... else f'{r["lift"]:.1f}'` had a backslash inside an
+  f-string. Extracted into a `format_lift()` helper.
+
+- **Hardcoded VERSION constant** in `src/types.ts` was 0.14.5d
+  (caught by `tests/types.test.ts` and `tests/cli.test.ts`).
+  Bumped to current.
+
+### Self-scan impact (expected)
+
+The self-scan's slopIndex should drop by 5-15 points after the
+final calibration. The 1 INVERTED rule (`ai/renyi-profile`)
+was firing on slopbrick's own source code, contributing to the
+previous score. With it defaultOff, the score will be more
+honest.
+
+### v0.14.5p release notes (for the full v0.14.5d → p chain)
+
+See the v0.14.5p section below. v0.14.5q adds the calibration
+result on top.
+
 ## [0.14.5p] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile + build fix
 
 The v0.14.5d → 0.14.5p line is a single dev cycle (one session) that

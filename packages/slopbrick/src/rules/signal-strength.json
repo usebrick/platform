@@ -1,86 +1,85 @@
 {
   "logic/math-console-log-storm": {
-    "recall": 0.0088,
-    "fpRate": 0.0015,
-    "ratio": 5.74,
-    "precision": 0.8437,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.007,
+    "fpRate": 0.001,
+    "ratio": 6.71,
+    "precision": 0.8968,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=718, neg=133, P=84.4%, FPR=0.15%, lift=5.7."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1678, FP=193, P=89.7%, FPR=0.10%, lift=6.7. aiSpecific=True."
   },
   "logic/math-any-density": {
-    "recall": 0.0032,
-    "fpRate": 0.0021,
-    "ratio": 1.5,
-    "precision": 0.5847,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0016,
+    "fpRate": 0.0013,
+    "ratio": 1.17,
+    "precision": 0.6035,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=259, neg=184, P=58.5%, FPR=0.21%, lift=1.5. Backed by: Lee, M., Hassan, A. E., & Hindle, A. (2026), ‘Mining Type Constructs Using Patterns in AI-Generated Code’, Proc. MSR 2026, arXiv:2602.17955. (TypeScript `any` over-representation in AI code (already cited in ai/any-density).)",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. NOISY \u2014 TP=376, FP=247, P=60.4%, FPR=0.13%, lift=1.2. aiSpecific=True.",
     "defaultOff": true
   },
   "logic/boundary-violation": {
-    "recall": 0.0475,
-    "fpRate": 0.0543,
-    "ratio": 0.87,
-    "precision": 0.4514,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0263,
+    "fpRate": 0.0175,
+    "ratio": 1.5,
+    "precision": 0.6601,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=104057, neg=51526, P=45.1%, FPR=5.43%, lift=0.9.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=6282, FP=3235, P=66.0%, FPR=1.75%, lift=1.5. aiSpecific=False."
   },
   "logic/reactive-hook-soup": {
-    "recall": 0.0079,
-    "fpRate": 0.0034,
-    "ratio": 2.35,
-    "precision": 0.6883,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0038,
+    "fpRate": 0.0009,
+    "ratio": 4.29,
+    "precision": 0.8476,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=664, neg=295, P=68.8%, FPR=0.34%, lift=2.3."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=901, FP=162, P=84.8%, FPR=0.09%, lift=4.3. aiSpecific=True."
   },
   "logic/optimistic-no-rollback": {
-    "recall": 0.0025,
-    "fpRate": 0.0015,
-    "ratio": 1.66,
-    "precision": 0.6091,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=258, neg=152, P=60.9%, FPR=0.15%, lift=1.7. Backed by: Chandy, K. M. & Lamport, L. (1985), ‘Distributed Snapshots: Determining Global States of Distributed Systems’, ACM TOCS 3(1):63-75; Kleppmann, M. (2017), *Designing Data-Intensive Applications*, O'Reilly, Chapter 9. (Distributed snapshot theory — optimistic updates without rollback are dangerous.)"
+    "recall": 0.0012,
+    "fpRate": 0.0003,
+    "ratio": 3.61,
+    "precision": 0.824,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=281, FP=60, P=82.4%, FPR=0.03%, lift=3.6. aiSpecific=True."
   },
   "logic/zombie-state": {
-    "recall": 0.0004,
-    "fpRate": 0.0001,
-    "ratio": 4.86,
-    "precision": 0.8205,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0001,
+    "fpRate": 0.0,
+    "ratio": 9.26,
+    "precision": 0.9231,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=42, neg=8, P=82.1%, FPR=0.01%, lift=4.9."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=24, FP=2, P=92.3%, FPR=0.00%, lift=9.3. aiSpecific=True."
   },
   "logic/math-gini-class-usage": {
-    "recall": 0.0028,
-    "fpRate": 0.0008,
-    "ratio": 3.4,
-    "precision": 0.7617,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0013,
+    "fpRate": 0.0003,
+    "ratio": 5.09,
+    "precision": 0.8683,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=227, neg=71, P=76.2%, FPR=0.08%, lift=3.4."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=310, FP=47, P=86.8%, FPR=0.03%, lift=5.1. aiSpecific=True."
   },
   "visual/math-color-cluster": {
-    "recall": 0.0005,
-    "fpRate": 0.0002,
-    "ratio": 2.34,
-    "precision": 0.6875,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0002,
+    "fpRate": 0.0,
+    "ratio": 8.95,
+    "precision": 0.9206,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=44, neg=20, P=68.8%, FPR=0.02%, lift=2.3."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=58, FP=5, P=92.1%, FPR=0.00%, lift=9.0. aiSpecific=True."
   },
   "visual/math-default-font": {
-    "recall": 0.0032,
-    "fpRate": 0.001,
-    "ratio": 3.06,
-    "precision": 0.7422,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0013,
+    "fpRate": 0.0004,
+    "ratio": 3.4,
+    "precision": 0.8151,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=262, neg=91, P=74.2%, FPR=0.10%, lift=3.1."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=313, FP=71, P=81.5%, FPR=0.04%, lift=3.4. aiSpecific=True."
   },
   "visual/math-gradient-hue-rotation": {
     "recall": 0,
@@ -90,35 +89,34 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Munsell, A. H. (1905), *A Color Notation*, Munsell Color Company; Itten, J. (1961), *The Art of Color*, Van Nostrand Reinhold. (Munsell color space + Itten color wheel — hue rotation analysis.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Munsell, A. H. (1905), *A Color Notation*, Munsell Color Company; Itten, J. (1961), *The Art of Color*, Van Nostrand Reinhold. (Munsell color space + Itten color wheel \u2014 hue rotation analysis.)"
   },
   "visual/math-rounded-entropy": {
-    "recall": 0.0096,
-    "fpRate": 0.004,
-    "ratio": 2.41,
-    "precision": 0.6937,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0037,
+    "fpRate": 0.0003,
+    "ratio": 10.9,
+    "precision": 0.9339,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=786, neg=347, P=69.4%, FPR=0.40%, lift=2.4."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=876, FP=62, P=93.4%, FPR=0.03%, lift=10.9. aiSpecific=True."
   },
   "visual/math-font-entropy": {
-    "recall": 0.0121,
-    "fpRate": 0.0074,
-    "ratio": 1.63,
-    "precision": 0.6054,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=991, neg=646, P=60.5%, FPR=0.74%, lift=1.6. Backed by: Shannon, C. E. (1948), ‘A Mathematical Theory of Communication’, Bell System Tech. J. 27(3):379-423. (Shannon entropy — font usage entropy as design signal.)"
+    "recall": 0.0045,
+    "fpRate": 0.0013,
+    "ratio": 3.32,
+    "precision": 0.8114,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1067, FP=248, P=81.1%, FPR=0.13%, lift=3.3. aiSpecific=True."
   },
   "visual/math-spacing-entropy": {
-    "recall": 0.0035,
-    "fpRate": 0.0032,
-    "ratio": 1.11,
-    "precision": 0.5097,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=290, neg=279, P=51.0%, FPR=0.32%, lift=1.1. Backed by: Shannon, C. E. (1948), ‘A Mathematical Theory of Communication’, Bell System Tech. J. 27(3):379-423. (Shannon entropy — spacing irregularity as low-entropy signal.)",
-    "defaultOff": true
+    "recall": 0.0018,
+    "fpRate": 0.0006,
+    "ratio": 3.01,
+    "precision": 0.7959,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=425, FP=109, P=79.6%, FPR=0.06%, lift=3.0. aiSpecific=True."
   },
   "visual/clamp-soup": {
     "recall": 0,
@@ -128,75 +126,70 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2023), CSS Values and Units Module Level 4, W3C CR-css-values-4-20231218. (W3C clamp() spec — overuse is a code-smell, not a feature.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2023), CSS Values and Units Module Level 4, W3C CR-css-values-4-20231218. (W3C clamp() spec \u2014 overuse is a code-smell, not a feature.)"
   },
   "component/giant-component": {
-    "recall": 0.033,
-    "fpRate": 0.0259,
-    "ratio": 1.27,
-    "precision": 0.5448,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=2962, neg=2531, P=54.5%, FPR=2.59%, lift=1.3. Backed by: Brooks, F. P. (1975), *The Mythical Man-Month*, Addison-Wesley, Chapter 5 (Second-system effect); Hopkins, A. (2003), ‘Component Naming and Discoverability’, OOPSLA workshop. (Brooks' second-system effect — large components accumulate complexity.)",
-    "defaultOff": true
+    "recall": 0.0176,
+    "fpRate": 0.0077,
+    "ratio": 2.3,
+    "precision": 0.7485,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=4205, FP=1413, P=74.8%, FPR=0.77%, lift=2.3. aiSpecific=True."
   },
   "component/shadcn-prop-mismatch": {
-    "recall": 0.0033,
-    "fpRate": 0.0016,
-    "ratio": 2.1,
-    "precision": 0.6634,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0013,
+    "fpRate": 0.0001,
+    "ratio": 10.1,
+    "precision": 0.929,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=443, neg=187, P=66.3%, FPR=0.16%, lift=2.1."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=314, FP=24, P=92.9%, FPR=0.01%, lift=10.1. aiSpecific=True."
   },
   "layout/math-grid-uniformity": {
-    "recall": 0.0008,
-    "fpRate": 0.0005,
-    "ratio": 1.57,
-    "precision": 0.5962,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0003,
+    "fpRate": 0.0002,
+    "ratio": 1.72,
+    "precision": 0.6907,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=62, neg=42, P=59.6%, FPR=0.05%, lift=1.6. Backed by: Müller-Brockmann, J. (1981), *Grid Systems in Graphic Design*, Niggli. (Grid systems — uniformity is a design goal, not noise.)"
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. OK \u2014 TP=67, FP=30, P=69.1%, FPR=0.02%, lift=1.7. aiSpecific=True."
   },
   "layout/math-element-uniformity": {
-    "recall": 0.005,
-    "fpRate": 0.0049,
-    "ratio": 1.01,
-    "precision": 0.4863,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=407, neg=430, P=48.6%, FPR=0.49%, lift=1.0. Backed by: Müller-Brockmann, J. (1981), *Grid Systems in Graphic Design*, Niggli; Lidwell, W. et al. (2010), *Universal Principles of Design*, Rockport. (Grid systems — uniformity is a design goal, not noise.)",
-    "defaultOff": true
+    "recall": 0.0028,
+    "fpRate": 0.0012,
+    "ratio": 2.28,
+    "precision": 0.7475,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=666, FP=225, P=74.7%, FPR=0.12%, lift=2.3. aiSpecific=True."
   },
   "typo/math-button-label-uniformity": {
     "recall": 0.0002,
-    "fpRate": 0.0003,
-    "ratio": 0.88,
-    "precision": 0.4524,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "fpRate": 0.0001,
+    "ratio": 1.36,
+    "precision": 0.6379,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=19, neg=23, P=45.2%, FPR=0.03%, lift=0.9.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=37, FP=21, P=63.8%, FPR=0.01%, lift=1.4. aiSpecific=False."
   },
   "perf/css-bloat": {
-    "recall": 0.0266,
-    "fpRate": 0.0176,
-    "ratio": 1.52,
-    "precision": 0.5877,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0117,
+    "fpRate": 0.0032,
+    "ratio": 3.64,
+    "precision": 0.8252,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=2177, neg=1527, P=58.8%, FPR=1.76%, lift=1.5.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=2790, FP=591, P=82.5%, FPR=0.32%, lift=3.6. aiSpecific=False."
   },
   "wcag/focus-appearance": {
-    "recall": 0.0059,
-    "fpRate": 0.0029,
-    "ratio": 2.04,
-    "precision": 0.6572,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0026,
+    "fpRate": 0.0001,
+    "ratio": 19.68,
+    "precision": 0.9623,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=820, neg=354, P=65.7%, FPR=0.29%, lift=2.0.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=612, FP=24, P=96.2%, FPR=0.01%, lift=19.7. aiSpecific=False."
   },
   "wcag/target-size": {
     "recall": 0,
@@ -206,47 +199,43 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2018), Web Content Accessibility Guidelines (WCAG) 2.1, Success Criterion 2.5.5 (Target Size); Fitts, P. M. (1954), ‘The Information Capacity of the Human Motor System in Controlling the Amplitude of Movement’, J. Exp. Psychol. 47(6):381-391. (WCAG 2.5.5 + Fitts's Law — minimum 24×24 CSS px tap target.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2018), Web Content Accessibility Guidelines (WCAG) 2.1, Success Criterion 2.5.5 (Target Size); Fitts, P. M. (1954), \u2018The Information Capacity of the Human Motor System in Controlling the Amplitude of Movement\u2019, J. Exp. Psychol. 47(6):381-391. (WCAG 2.5.5 + Fitts's Law \u2014 minimum 24\u00d724 CSS px tap target.)"
   },
   "component/multiple-components-per-file": {
-    "recall": 0.0886,
-    "fpRate": 0.1701,
-    "ratio": 0.52,
-    "precision": 0.3288,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0681,
+    "fpRate": 0.052,
+    "ratio": 1.31,
+    "precision": 0.6294,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=7247, neg=14796, P=32.9%, FPR=17.01%, lift=0.5.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=16288, FP=9589, P=62.9%, FPR=5.20%, lift=1.3. aiSpecific=False."
   },
   "context/import-path-mismatch": {
-    "recall": 0.0957,
-    "fpRate": 0.1748,
-    "ratio": 0.55,
-    "precision": 0.3398,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0739,
+    "fpRate": 0.0228,
+    "ratio": 3.25,
+    "precision": 0.8079,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=18849, neg=39226, P=34.0%, FPR=17.48%, lift=0.5.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=17672, FP=4202, P=80.8%, FPR=2.28%, lift=3.2. aiSpecific=False."
   },
   "logic/key-prop-missing": {
-    "recall": 0.0015,
-    "fpRate": 0.0034,
-    "ratio": 0.43,
-    "precision": 0.2871,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0017,
+    "fpRate": 0.0014,
+    "ratio": 1.28,
+    "precision": 0.6246,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=452, neg=1081, P=28.7%, FPR=0.34%, lift=0.4.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=416, FP=250, P=62.5%, FPR=0.14%, lift=1.3. aiSpecific=False."
   },
   "logic/math-variable-name-entropy": {
-    "recall": 0.0001,
-    "fpRate": 0.0003,
-    "ratio": 0.18,
-    "precision": 0.1471,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0002,
+    "fpRate": 0.0001,
+    "ratio": 1.07,
+    "precision": 0.5806,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=5, neg=29, P=14.7%, FPR=0.03%, lift=0.2.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=36, FP=26, P=58.1%, FPR=0.01%, lift=1.1. aiSpecific=False."
   },
   "security/public-admin-route": {
     "recall": 0.0028,
@@ -255,36 +244,35 @@
     "precision": 0.2251,
     "lastCalibratedAt": "2026-06-26T22:30:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "v4 corpus (2026-06-25): 95,599 neg + 76,550 pos (frontend, TS/TSX/JS/JSX). INVERTED — TP=217, FP=747, P=22.5%, FPR=0.78%, lift=0.4. [v0.12.2: reclassified to HYGIENE because rule is aiSpecific: false]",
+    "_calibrationNote": "v4 corpus (2026-06-25): 95,599 neg + 76,550 pos (frontend, TS/TSX/JS/JSX). INVERTED \u2014 TP=217, FP=747, P=22.5%, FPR=0.78%, lift=0.4. [v0.12.2: reclassified to HYGIENE because rule is aiSpecific: false]",
     "defaultOff": true
   },
   "security/unsafe-html-render": {
-    "recall": 0.0015,
-    "fpRate": 0.0031,
-    "ratio": 0.47,
-    "precision": 0.3071,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0013,
+    "fpRate": 0.0009,
+    "ratio": 1.5,
+    "precision": 0.661,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=168, neg=411, P=30.7%, FPR=0.31%, lift=0.5.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=312, FP=160, P=66.1%, FPR=0.09%, lift=1.5. aiSpecific=False."
   },
   "visual/naturalness-anomaly": {
-    "recall": 0.2347,
-    "fpRate": 0.1299,
-    "ratio": 1.81,
-    "precision": 0.6295,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=20056, neg=12617, P=62.9%, FPR=12.99%, lift=1.8. Backed by: Hindle, A. et al. (2012), ‘On the Naturalness of Software’, Proc. ICSE 2012, pp. 837-847; Allamanis, M., Barr, E. T., Bird, C. & Sutton, C. (2014), ‘Learning Natural Coding Conventions’, Proc. FSE 2014, pp. 281-293. (Hindle ICSE 2012 'naturalness of software' + Allamanis FSE 2014.)"
+    "recall": 0.1645,
+    "fpRate": 0.0617,
+    "ratio": 2.67,
+    "precision": 0.7755,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=39319, FP=11382, P=77.6%, FPR=6.17%, lift=2.7. aiSpecific=True."
   },
   "perf/halstead-anomaly": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 99.99,
-    "precision": 1.0,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "ratio": 2.32,
+    "precision": 0.75,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=2, neg=0, P=100.0%, FPR=0.00%, lift=inf."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=3, FP=1, P=75.0%, FPR=0.00%, lift=2.3. aiSpecific=True."
   },
   "arch/astro-island-leak": {
     "recall": 0,
@@ -294,7 +282,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Hevery, M. (2022), ‘Islands Architecture: A New Pattern for Server-Component Frameworks’, ACM SIGPLAN International Conference on Object-Oriented Programming, Systems, Languages & Applications (OOPSLA), invited talk; Astro Documentation (2023), https://docs.astro.build. (Astro Islands architecture — client JS should not leak into server components.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Hevery, M. (2022), \u2018Islands Architecture: A New Pattern for Server-Component Frameworks\u2019, ACM SIGPLAN International Conference on Object-Oriented Programming, Systems, Languages & Applications (OOPSLA), invited talk; Astro Documentation (2023), https://docs.astro.build. (Astro Islands architecture \u2014 client JS should not leak into server components.)"
   },
   "logic/qwik-hook-leak": {
     "recall": 0,
@@ -304,7 +292,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Hevery, M. (2022), ‘Qwik: A Resumable JavaScript Framework’, ACM SIGPLAN OOPSLA companion; Builder.io Technical Report. (Qwik resumability — serializing state avoids hydration cost.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Hevery, M. (2022), \u2018Qwik: A Resumable JavaScript Framework\u2019, ACM SIGPLAN OOPSLA companion; Builder.io Technical Report. (Qwik resumability \u2014 serializing state avoids hydration cost.)"
   },
   "test/missing-edge-case": {
     "recall": 0,
@@ -314,7 +302,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Myers, G. J. (1979), *The Art of Software Testing*, Wiley-Interscience (canonical boundary value analysis reference); Beizer, B. (1990), *Software Testing Techniques*, 2nd ed., Van Nostrand Reinhold. (Boundary value analysis — empty / zero / max / null / type-boundary cases.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Myers, G. J. (1979), *The Art of Software Testing*, Wiley-Interscience (canonical boundary value analysis reference); Beizer, B. (1990), *Software Testing Techniques*, 2nd ed., Van Nostrand Reinhold. (Boundary value analysis \u2014 empty / zero / max / null / type-boundary cases.)"
   },
   "typo/calc-fontsize": {
     "recall": 0,
@@ -324,7 +312,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Marcotte, E. (2016), *Responsive Design: Patterns & Principles*, A Book Apart; Brown, J. (2018), *Every Layout*, self-published (rel='https://every-layout.dev'). (Fluid typography via clamp(min, preferred, max).)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Marcotte, E. (2016), *Responsive Design: Patterns & Principles*, A Book Apart; Brown, J. (2018), *Every Layout*, self-published (rel='https://every-layout.dev'). (Fluid typography via clamp(min, preferred, max).)"
   },
   "typo/clamp-offscale": {
     "recall": 0,
@@ -334,7 +322,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2023), CSS Values 4 §7.2 (Functional Notations: clamp()); Brown, J. (2018), *Every Layout*. (CSS clamp() — off-scale (negative, >10rem) values are typos.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: W3C (2023), CSS Values 4 \u00a77.2 (Functional Notations: clamp()); Brown, J. (2018), *Every Layout*. (CSS clamp() \u2014 off-scale (negative, >10rem) values are typos.)"
   },
   "typo/math-cta-vocabulary": {
     "recall": 0,
@@ -344,7 +332,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Cialdini, R. B. (1984), *Influence: The Psychology of Persuasion*, Harper Business; Krug, S. (2000), *Don't Make Me Think*, 2nd ed., New Riders. (CTA wording — vague labels reduce click-through per Cialdini commitment/consistency.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Cialdini, R. B. (1984), *Influence: The Psychology of Persuasion*, Harper Business; Krug, S. (2000), *Don't Make Me Think*, 2nd ed., New Riders. (CTA wording \u2014 vague labels reduce click-through per Cialdini commitment/consistency.)"
   },
   "layout/forced-layout": {
     "recall": 0,
@@ -354,7 +342,7 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Mozilla Developer Network (2023), CSS Grid Layout, https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout; W3C (2023), CSS Grid Layout Module Level 3, W3C CR-css-grid-3-20231218. (CSS Grid spec — forced layout is a fallback hack, not the idiomatic approach.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Mozilla Developer Network (2023), CSS Grid Layout, https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout; W3C (2023), CSS Grid Layout Module Level 3, W3C CR-css-grid-3-20231218. (CSS Grid spec \u2014 forced layout is a fallback hack, not the idiomatic approach.)"
   },
   "visual/generic-centering": {
     "recall": 0,
@@ -364,36 +352,34 @@
     "lastCalibratedAt": "2026-06-25T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.10.1 ship — not in v4 per-rule table. Default-off until calibration data lands. Backed by: Wertheimer, M. (1923), ‘Untersuchungen zur Lehre von der Gestalt II’, Psychologische Forschung 4:301-350; Müller-Brockmann, J. (1981), *Grid Systems in Graphic Design*, Niggli. (Gestalt centering + grid systems — generic centering is anti-grid.)"
+    "_calibrationNote": "v0.10.1 ship \u2014 not in v4 per-rule table. Default-off until calibration data lands. Backed by: Wertheimer, M. (1923), \u2018Untersuchungen zur Lehre von der Gestalt II\u2019, Psychologische Forschung 4:301-350; M\u00fcller-Brockmann, J. (1981), *Grid Systems in Graphic Design*, Niggli. (Gestalt centering + grid systems \u2014 generic centering is anti-grid.)"
   },
   "product/terminology-drift": {
-    "recall": 0.0061,
-    "fpRate": 0.0198,
-    "ratio": 0.31,
-    "precision": 0.2251,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0085,
+    "fpRate": 0.0028,
+    "ratio": 3.0,
+    "precision": 0.7956,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=1654, neg=6566, P=22.5%, FPR=1.98%, lift=0.3.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=2028, FP=521, P=79.6%, FPR=0.28%, lift=3.0. aiSpecific=False."
   },
   "product/ux-pattern-fragmentation": {
-    "recall": 0.0003,
-    "fpRate": 0.0002,
-    "ratio": 1.22,
-    "precision": 0.5333,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=26, neg=24, P=53.3%, FPR=0.02%, lift=1.2. Backed by: Nielsen, J. (2020), ‘10 Usability Heuristics for User Interface Design’, Nielsen Norman Group; Krug, S. (2014), *Don't Make Me Think, Revisited*, New Riders. (Nielsen heuristic #4 (consistency and standards) — fragmented UX is harder to learn.)",
-    "defaultOff": true
+    "recall": 0.0001,
+    "fpRate": 0.0,
+    "ratio": 3.09,
+    "precision": 0.8,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=32, FP=8, P=80.0%, FPR=0.00%, lift=3.1. aiSpecific=True."
   },
   "security/sql-construction": {
-    "recall": 0.0062,
-    "fpRate": 0.0032,
-    "ratio": 1.97,
-    "precision": 0.6492,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.003,
+    "fpRate": 0.0018,
+    "ratio": 1.63,
+    "precision": 0.6788,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=1468, neg=606, P=64.9%, FPR=0.32%, lift=2.0. Backed by: Su, Z. & Wassermann, G. (2006), ‘The Essence of Command Injection Attacks in Web Applications’, Proc. POPL 2006, pp. 372-382; OWASP Foundation (2023), A03:2021 Injection. (Su 2006 + OWASP — string-concatenated SQL is the canonical injection vector.)"
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. OK \u2014 TP=710, FP=336, P=67.9%, FPR=0.18%, lift=1.6. aiSpecific=True."
   },
   "security/missing-auth-check": {
     "recall": 0.0063,
@@ -402,183 +388,170 @@
     "precision": 0.9247,
     "lastCalibratedAt": "2026-06-26T22:30:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v4 corpus (2026-06-25): 95,599 neg + 76,550 pos (frontend, TS/TSX/JS/JSX). USEFUL — TP=479, FP=39, P=92.5%, FPR=0.04%, lift=15.3."
+    "_calibrationNote": "v4 corpus (2026-06-25): 95,599 neg + 76,550 pos (frontend, TS/TSX/JS/JSX). USEFUL \u2014 TP=479, FP=39, P=92.5%, FPR=0.04%, lift=15.3."
   },
   "security/dangerous-cors": {
-    "recall": 0.001,
-    "fpRate": 0.0007,
-    "ratio": 1.44,
-    "precision": 0.5753,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0005,
+    "fpRate": 0.0005,
+    "ratio": 1.05,
+    "precision": 0.5758,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=98, neg=66, P=57.5%, FPR=0.07%, lift=1.4. Backed by: W3C (2019), Fetch Standard §3.2.6 (CORS Protocol); OWASP Foundation (2023), Cross-Origin Resource Sharing Cheat Sheet. (W3C Fetch CORS spec — wildcard origins + credentials = vulnerability.)",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. NOISY \u2014 TP=114, FP=84, P=57.6%, FPR=0.05%, lift=1.0. aiSpecific=True.",
     "defaultOff": true
   },
   "test/duplicate-setup": {
-    "recall": 0.0003,
-    "fpRate": 0.0001,
-    "ratio": 2.6,
-    "precision": 0.7097,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0001,
+    "fpRate": 0.0,
+    "ratio": 3.6,
+    "precision": 0.8235,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=138, neg=30, P=71.0%, FPR=0.01%, lift=2.6."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=14, FP=3, P=82.4%, FPR=0.00%, lift=3.6. aiSpecific=True."
   },
   "logic/ghost-defensive": {
-    "recall": 0.0002,
+    "recall": 0.0001,
     "fpRate": 0.0,
-    "ratio": 17.02,
-    "precision": 0.9412,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "ratio": 5.79,
+    "precision": 0.8824,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=73, neg=3, P=94.1%, FPR=0.00%, lift=17.0."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=15, FP=2, P=88.2%, FPR=0.00%, lift=5.8. aiSpecific=True."
   },
   "typo/calc-raw-px": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 2.13,
-    "precision": 0.6667,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "ratio": 2.32,
+    "precision": 0.75,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=8, neg=3, P=66.7%, FPR=0.00%, lift=2.1.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=3, FP=1, P=75.0%, FPR=0.00%, lift=2.3. aiSpecific=False."
   },
   "security/fail-open-auth": {
     "recall": 0.0,
     "fpRate": 0.0,
     "ratio": 99.99,
     "precision": 1.0,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. USEFUL — pos=1, neg=0, P=100.0%, FPR=0.00%, lift=inf."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1, FP=0, P=100.0%, FPR=0.00%, lift=inf. aiSpecific=True."
   },
   "wcag/focus-obscured": {
-    "recall": 0.0068,
-    "fpRate": 0.0046,
-    "ratio": 1.5,
-    "precision": 0.5849,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0033,
+    "fpRate": 0.0009,
+    "ratio": 3.51,
+    "precision": 0.82,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=704, neg=479, P=58.5%, FPR=0.46%, lift=1.5.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=797, FP=175, P=82.0%, FPR=0.09%, lift=3.5. aiSpecific=False."
   },
   "visual/arbitrary-escape": {
-    "recall": 0.0053,
-    "fpRate": 0.004,
-    "ratio": 1.34,
-    "precision": 0.5568,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=1720, neg=1491, P=55.7%, FPR=0.40%, lift=1.3. Backed by: Wathan, A. & Schoger, S. (2017+), *Refactoring UI*, self-published; Mäntylä, M. V. (2003), ‘A Taxonomy for ‘Bad Code Smells’’, MSc thesis, Univ. of Helsinki. (Tailwind arbitrary values + Mäntylä code smell taxonomy.)",
-    "defaultOff": true
+    "recall": 0.0025,
+    "fpRate": 0.0009,
+    "ratio": 2.74,
+    "precision": 0.7802,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=600, FP=169, P=78.0%, FPR=0.09%, lift=2.7. aiSpecific=True."
   },
   "security/hardcoded-secret": {
-    "recall": 0.0016,
-    "fpRate": 0.0011,
-    "ratio": 1.47,
-    "precision": 0.5799,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=191, neg=114, P=58.0%, FPR=0.11%, lift=1.5. Backed by: OWASP Foundation (2023), Top 10 Web Application Security Risks, A07:2021 Identification and Authentication Failures; CWE (2023), CWE-798: Use of Hard-coded Credentials. (OWASP + CWE-798 — hardcoded credentials are the most common secret-leak vector.)",
-    "defaultOff": true
+    "recall": 0.0013,
+    "fpRate": 0.0007,
+    "ratio": 1.72,
+    "precision": 0.6899,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "OK",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. OK \u2014 TP=307, FP=138, P=69.0%, FPR=0.07%, lift=1.7. aiSpecific=True."
   },
   "visual/radius-scale-violation": {
-    "recall": 0.0009,
-    "fpRate": 0.0007,
-    "ratio": 1.27,
-    "precision": 0.5435,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0004,
+    "fpRate": 0.0,
+    "ratio": 24.7,
+    "precision": 0.9697,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=144, neg=93, P=54.3%, FPR=0.07%, lift=1.3.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=96, FP=3, P=97.0%, FPR=0.00%, lift=24.7. aiSpecific=False."
   },
   "test/fake-placeholder": {
-    "recall": 0.0068,
-    "fpRate": 0.0053,
-    "ratio": 1.3,
-    "precision": 0.5506,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. NOISY — pos=3362, neg=4354, P=55.1%, FPR=0.53%, lift=1.3. Backed by: Meszaros, G. (2007), *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley; Freeman, S. & Pryce, N. (2009), *Growing Object-Oriented Software, Guided by Tests*, Addison-Wesley. (Test double taxonomy (Meszaros 2007) — fake/placeholder tests have low signal.)",
-    "defaultOff": true
+    "recall": 0.0053,
+    "fpRate": 0.0019,
+    "ratio": 2.82,
+    "precision": 0.7854,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1259, FP=344, P=78.5%, FPR=0.19%, lift=2.8. aiSpecific=True."
   },
   "security/exposed-env-var": {
-    "recall": 0.0009,
-    "fpRate": 0.001,
-    "ratio": 0.87,
-    "precision": 0.4487,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0006,
+    "fpRate": 0.0007,
+    "ratio": 0.9,
+    "precision": 0.5387,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=77, neg=106, P=44.9%, FPR=0.10%, lift=0.9.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=146, FP=125, P=53.9%, FPR=0.07%, lift=0.9. aiSpecific=False."
   },
   "perf/cls-image": {
-    "recall": 0.0007,
-    "fpRate": 0.0006,
-    "ratio": 1.06,
-    "precision": 0.5,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0002,
+    "fpRate": 0.0003,
+    "ratio": 0.8,
+    "precision": 0.5104,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=64, neg=80, P=50.0%, FPR=0.06%, lift=1.1.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=49, FP=47, P=51.0%, FPR=0.03%, lift=0.8. aiSpecific=False."
   },
   "layout/gap-monopoly": {
-    "recall": 0.0005,
-    "fpRate": 0.0006,
-    "ratio": 0.76,
-    "precision": 0.4176,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0004,
+    "fpRate": 0.0001,
+    "ratio": 2.95,
+    "precision": 0.7928,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=38, neg=53, P=41.8%, FPR=0.06%, lift=0.8.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=88, FP=23, P=79.3%, FPR=0.01%, lift=3.0. aiSpecific=False."
   },
   "visual/spacing-scale-violation": {
-    "recall": 0.0161,
-    "fpRate": 0.0196,
-    "ratio": 0.82,
-    "precision": 0.4356,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0083,
+    "fpRate": 0.0039,
+    "ratio": 2.13,
+    "precision": 0.7342,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=2559, neg=2852, P=43.6%, FPR=1.96%, lift=0.8.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=1981, FP=717, P=73.4%, FPR=0.39%, lift=2.1. aiSpecific=False."
   },
   "visual/inline-style-dominance": {
-    "recall": 0.0134,
-    "fpRate": 0.0208,
-    "ratio": 0.64,
-    "precision": 0.3765,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0096,
+    "fpRate": 0.0066,
+    "ratio": 1.46,
+    "precision": 0.6535,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=1094, neg=1812, P=37.6%, FPR=2.08%, lift=0.6.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=2303, FP=1221, P=65.4%, FPR=0.66%, lift=1.5. aiSpecific=False."
   },
   "layout/spacing-grid": {
-    "recall": 0.0003,
-    "fpRate": 0.0002,
-    "ratio": 1.06,
-    "precision": 0.5,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0002,
+    "fpRate": 0.0001,
+    "ratio": 2.01,
+    "precision": 0.7222,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=113, neg=99, P=50.0%, FPR=0.02%, lift=1.1.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=39, FP=15, P=72.2%, FPR=0.01%, lift=2.0. aiSpecific=False."
   },
   "wcag/dragging-movements": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "ratio": 0.51,
+    "precision": 0.4,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=0, neg=3, P=0.0%, FPR=0.00%, lift=0.0.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=2, FP=3, P=40.0%, FPR=0.00%, lift=0.5. aiSpecific=False."
   },
   "test/weak-assertion": {
-    "recall": 0.0512,
-    "fpRate": 0.0273,
-    "ratio": 1.88,
-    "precision": 0.6383,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. OK — pos=39218, neg=18298, P=63.8%, FPR=2.73%, lift=1.9. Backed by: Meszaros, G. (2007), *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley, Chapter 4 (Test Assertion Patterns); Freeman, S. & Pryce, N. (2009), *Growing Object-Oriented Software, Guided by Tests*, Addison-Wesley. (Meszaros + Freeman — weak assertions mask real test failures.)"
+    "recall": 0.0414,
+    "fpRate": 0.0086,
+    "ratio": 4.83,
+    "precision": 0.8622,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=9906, FP=1583, P=86.2%, FPR=0.86%, lift=4.8. aiSpecific=True."
   },
   "logic/bayesian-conditional": {
     "recall": 0.0,
@@ -588,100 +561,101 @@
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
     "verdict": "DORMANT",
     "defaultOff": true,
-    "_calibrationNote": "v0.12.0 ship — new Bayesian LR-combiner rule (Bento et al. 2024 *Neurocomputing*). Default-off until v0.12 corpus re-calibration lands. Threshold P(AI|fires) ≥ 0.7; posterior computed from per-rule likelihood ratios."
+    "_calibrationNote": "v0.12.0 ship \u2014 new Bayesian LR-combiner rule (Bento et al. 2024 *Neurocomputing*). Default-off until v0.12 corpus re-calibration lands. Threshold P(AI|fires) \u2265 0.7; posterior computed from per-rule likelihood ratios."
   },
   "logic/heaps-deviation": {
-    "recall": 0.1301,
-    "fpRate": 0.1741,
-    "ratio": 0.75,
-    "precision": 0.4127,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0122,
+    "fpRate": 0.0132,
+    "ratio": 0.93,
+    "precision": 0.5461,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=10641, neg=15141, P=41.3%, FPR=17.41%, lift=0.7.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=2924, FP=2430, P=54.6%, FPR=1.32%, lift=0.9. aiSpecific=False."
   },
   "logic/ks-distribution-shift": {
-    "recall": 0.6572,
-    "fpRate": 0.869,
-    "ratio": 0.76,
-    "precision": 0.4156,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.6375,
+    "fpRate": 0.338,
+    "ratio": 1.89,
+    "precision": 0.7096,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=53751, neg=75590, P=41.6%, FPR=86.90%, lift=0.8.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=152391, FP=62358, P=71.0%, FPR=33.80%, lift=1.9. aiSpecific=False."
   },
   "logic/zipf-slope-anomaly": {
-    "recall": 0.0258,
-    "fpRate": 0.0784,
-    "ratio": 0.33,
-    "precision": 0.2363,
-    "lastCalibratedAt": "2026-06-27T05:35:00Z",
+    "recall": 0.0156,
+    "fpRate": 0.0087,
+    "ratio": 1.79,
+    "precision": 0.6983,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "HYGIENE",
-    "_calibrationNote": "vv6 full corpus re-calibration (2026-06-27): 86983 neg + 81787 pos. HYGIENE — pos=2110, neg=6820, P=23.6%, FPR=7.84%, lift=0.3.",
-    "defaultOff": true
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. HYGIENE \u2014 TP=3718, FP=1606, P=69.8%, FPR=0.87%, lift=1.8. aiSpecific=False."
   },
   "ai/markdown-leakage": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "ratio": 1.93,
+    "precision": 0.7143,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. OK \u2014 TP=5, FP=2, P=71.4%, FPR=0.00%, lift=1.9. aiSpecific=True."
   },
   "ai/comment-ratio": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
+    "recall": 0.2523,
+    "fpRate": 0.1619,
+    "ratio": 1.56,
+    "precision": 0.6687,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Rahman 2024 / Bisztray 2025; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. OK \u2014 TP=60308, FP=29876, P=66.9%, FPR=16.19%, lift=1.6. aiSpecific=True."
   },
   "ai/whitespace-regularity": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Shi 2024 DetectCodeGPT; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "recall": 0.0731,
+    "fpRate": 0.0728,
+    "ratio": 1.0,
+    "precision": 0.5652,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "NOISY",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. NOISY \u2014 TP=17466, FP=13438, P=56.5%, FPR=7.28%, lift=1.0. aiSpecific=True.",
+    "defaultOff": true
   },
   "ai/text-like-ratio": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "ratio": 2.32,
+    "precision": 0.75,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=3, FP=1, P=75.0%, FPR=0.00%, lift=2.3. aiSpecific=True."
   },
   "ai/errors-near-eof": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Yotkova 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "recall": 0.0697,
+    "fpRate": 0.0548,
+    "ratio": 1.27,
+    "precision": 0.6225,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "NOISY",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. NOISY \u2014 TP=16673, FP=10112, P=62.2%, FPR=5.48%, lift=1.3. aiSpecific=True.",
+    "defaultOff": true
   },
   "ai/any-density": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Lee, Hassan, Hindle MSR 2026; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "recall": 0.0055,
+    "fpRate": 0.0041,
+    "ratio": 1.34,
+    "precision": 0.634,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "NOISY",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. NOISY \u2014 TP=1313, FP=758, P=63.4%, FPR=0.41%, lift=1.3. aiSpecific=True.",
+    "defaultOff": true
   },
   "ai/renyi-profile": {
     "recall": 0.0,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Rényi 1961 / Moslonka 2025; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "ratio": 0.26,
+    "precision": 0.25,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "INVERTED",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. INVERTED \u2014 TP=3, FP=9, P=25.0%, FPR=0.00%, lift=0.3. aiSpecific=True.",
+    "defaultOff": true
   },
   "ai/log-rank-histogram": {
     "recall": 0.0,
@@ -690,90 +664,78 @@
     "precision": 0.0,
     "lastCalibratedAt": "2026-06-27T00:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Gehrmann 2019 GLTR; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "_calibrationNote": "v0.13.0 stub: rule implemented per Gehrmann 2019 GLTR; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet \u2014 will be re-evaluated)."
   },
   "ai/segment-surprisal-cv": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Hans 2024 Binoculars; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "recall": 0.182,
+    "fpRate": 0.0812,
+    "ratio": 2.24,
+    "precision": 0.7438,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=43498, FP=14983, P=74.4%, FPR=8.12%, lift=2.2. aiSpecific=True."
   },
   "ai/compression-profile": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "OK",
-    "_calibrationNote": "v0.13.0 stub: rule implemented per Cilibrasi 2005 / Mahoney 1999; calibration on v7 corpus pending. v0.13.0: marked OK (peer-reviewed math backing; lift=0 because v7 calibration has not been run yet — will be re-evaluated)."
+    "recall": 0.3139,
+    "fpRate": 0.1489,
+    "ratio": 2.11,
+    "precision": 0.732,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=75031, FP=27473, P=73.2%, FPR=14.89%, lift=2.1. aiSpecific=True."
   },
   "ai/tailwind-color-overuse": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 ('Six Models, One React Stack') + Douglas 2025 ('AI 正在 Tailwind 化'). Detects over-representation of default Tailwind palette (blue-500, slate-50, rounded-lg, shadow-md, p-4/6/8). DORMANT until v7 calibration lands."
+    "recall": 0.0216,
+    "fpRate": 0.0052,
+    "ratio": 4.16,
+    "precision": 0.8436,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=5169, FP=958, P=84.4%, FPR=0.52%, lift=4.2. aiSpecific=True."
   },
   "ai/default-react-stack": {
-    "recall": 0.0,
+    "recall": 0.001,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (9/9 LLMs default to Next.js + Tailwind + shadcn/ui + TanStack Query + Zustand) + Nam et al. MSR 2026 (27% of AI directives mention Tailwind, 18% mention shadcn/ui). Detects ≥3 of these packages imported in a single file. DORMANT until v7 calibration lands."
+    "ratio": 99.99,
+    "precision": 0.9957,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=231, FP=1, P=99.6%, FPR=0.00%, lift=178.3. aiSpecific=True."
   },
   "ai/library-reinvention": {
-    "recall": 0.0,
+    "recall": 0.0003,
     "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per GitClear 2025 (AI code has 4× higher code churn rate; reinvention is a major contributor) + Cui et al. 2025 (30.1% of new code is AI-generated). Detects ≥2 of: custom date-picker, form-validation, chart, modal, toast, tabs, select, accordion — without importing the canonical library. DORMANT until v7 calibration lands."
+    "ratio": 9.88,
+    "precision": 0.9275,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=64, FP=5, P=92.8%, FPR=0.00%, lift=9.9. aiSpecific=True."
   },
   "ai/state-default-overuse": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (LLMs produce 2022-era patterns; useState is the default even when useReducer or Zustand/Jotai would be appropriate). Detects ≥5 useState with 0 useReducer and 0 state library imports. DORMANT until v7 calibration lands."
+    "recall": 0.0029,
+    "fpRate": 0.0009,
+    "ratio": 3.42,
+    "precision": 0.8161,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=701, FP=158, P=81.6%, FPR=0.09%, lift=3.4. aiSpecific=True."
   },
   "ai/fetch-default-overuse": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per Sascha 2025 (every top LLM puts TanStack Query in default stack but still defaults to raw fetch when no library is installed) + Nam et al. MSR 2026 (27% of AI directives mention TanStack Query). Detects ≥3 direct fetch() calls with no TanStack Query / SWR / axios / ky import. DORMANT until v7 calibration lands."
+    "recall": 0.0028,
+    "fpRate": 0.0004,
+    "ratio": 6.76,
+    "precision": 0.8976,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=666, FP=76, P=89.8%, FPR=0.04%, lift=6.8. aiSpecific=True."
   },
   "ai/console-debug-storm": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-06-27T00:00:00Z",
-    "verdict": "DORMANT",
-    "defaultOff": true,
-    "aiSpecific": true,
-    "_calibrationNote": "v0.14.5b: rule implemented per GitClear 2025 (AI code has 4× higher churn; console.log debug statements often left in by AI 'thinking out loud'). Detects ≥10 console.* / debugger statements with no structured logger (winston, pino, debug, consola). DORMANT until v7 calibration lands."
+    "recall": 0.008,
+    "fpRate": 0.0009,
+    "ratio": 8.43,
+    "precision": 0.9161,
+    "lastCalibratedAt": "2026-06-27T12:00:00Z",
+    "verdict": "USEFUL",
+    "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1912, FP=175, P=91.6%, FPR=0.09%, lift=8.4. aiSpecific=True."
   }
 }

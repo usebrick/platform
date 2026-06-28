@@ -65,6 +65,15 @@ def to_set(per_file_value) -> set[str]:
     return set()
 
 
+def format_lift(value: float) -> str:
+    """Format a lift value (potentially infinite) as a 1-decimal string."""
+    if value == float("inf"):
+        return "inf"
+    if value == float("-inf"):
+        return "-inf"
+    return f"{value:.1f}"
+
+
 def filter_fires_by_date(scan: dict, meta: dict | None, min_date_str: str) -> dict:
     """Drop fires whose symlink target's lastCommitDate < min_date."""
     if not date_filter_enabled or not meta or "files" not in meta:
@@ -79,13 +88,34 @@ def filter_fires_by_date(scan: dict, meta: dict | None, min_date_str: str) -> di
         if d == "unknown" or d >= min_date_str:
             keep.add(symlink)
 
+    # preFileFires values are absolute paths; keep has relative
+    # symlink names. Build a short-form lookup: for each perFileFires
+    # value, strip the corpus root prefix once, then check keep.
+    # We don't know the prefix at filter time, so use the filename
+    # component (which is what `__` symlink names encode).
+    # For 184k files × 64 rules, the inner loop is O(64 × N) total.
+    # We make each check O(1) by indexing keep by filename.
+    keep_by_basename: dict[str, set[str]] = {}
+    for k in keep:
+        basename = k.rsplit("/", 1)[-1]
+        keep_by_basename.setdefault(basename, set()).add(k)
+    # Also full-path key for rare exact matches.
+    keep_full: set[str] = set(keep)
+
     filtered = dict(scan)
     per_file = filtered.get("perFileFires", {})
     new_per_file = {}
     new_fires = {}
     for rule, files_set in per_file.items():
         files_set = to_set(files_set)
-        kept = files_set & keep
+        kept: set[str] = set()
+        for f in files_set:
+            if f in keep_full:
+                kept.add(f)
+                continue
+            basename = f.rsplit("/", 1)[-1]
+            if basename in keep_by_basename:
+                kept.add(f)
         if kept:
             new_per_file[rule] = sorted(kept)
             new_fires[rule] = len(kept)
@@ -214,7 +244,7 @@ for r in rows:
             f"v7 corpus re-calibration (2026-06-27, min-date={min_date}): "
             f"{n_neg} neg + {n_pos} pos. {r['verdict']} — TP={r['tp']}, FP={r['fp']}, "
             f"P={r['p']*100:.1f}%, FPR={r['fpr']*100:.2f}%, lift="
-            f"{'inf' if r['lift']==float('inf') else f'{r[\"lift\"]:.1f}'}. "
+            f"{'inf' if r['lift'] == float('inf') else format_lift(r['lift'])}. "
             f"aiSpecific={r['aiSpecific']}."
         ),
     }
