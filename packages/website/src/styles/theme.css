@@ -6,13 +6,15 @@
    related to the hero).
    ============================================================ */
 
-/* The brick-pattern SVG inlined as a data URI. The colors are
-   terracotta at 18% opacity so the pattern is visible but never
-   competes with the text. The half-bond offset (every other row
+/* The brick-pattern SVG, referenced as a URL so the browser
+   fetches and caches it across pages (preloaded via <link
+   rel="preload"> in Base.astro). The colors are terracotta at
+   18% opacity so the pattern is visible but never competes
+   with the text. The half-bond offset (every other row
    shifted by half a brick) is the running-bond pattern — the
    standard brick-work course. */
 .brick-bg {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40' viewBox='0 0 120 40'><defs><pattern id='brick' width='120' height='40' patternUnits='userSpaceOnUse'><rect x='0' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='62' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='-30' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='32' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/><rect x='92' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.18)' stroke-width='0.5'/></pattern></defs><rect width='120' height='40' fill='url(%23brick)'/></svg>");
+  background-image: url("/brick-pattern.svg");
   background-repeat: repeat;
 }
 
@@ -40,7 +42,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40' viewBox='0 0 120 40'><defs><pattern id='brick-cta' width='120' height='40' patternUnits='userSpaceOnUse'><rect x='0' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='62' y='2' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='-30' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='32' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/><rect x='92' y='22' width='58' height='18' fill='none' stroke='rgba(220,74,38,0.10)' stroke-width='0.5'/></pattern></defs><rect width='120' height='40' fill='url(%23brick-cta)'/></svg>");
+  background-image: url("/brick-pattern.svg");
   pointer-events: none;
 }
 
