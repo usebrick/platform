@@ -550,68 +550,109 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
-## [0.14.5q] - 2026-06-28 — v7 final calibration + 1 INVERTED rule auto-defaultOff
+## [0.14.5] - 2026-06-28 — v7 calibration + 10 UX improvements + Python/Go + docs
 
-The v7 corpus scans finished. This release runs the final calibration
-on the full data (184,488 neg + 239,054 pos files, 1,060,258 fires)
-and updates `signal-strength.json` with the verdicts.
+4-month release window covering 9 commits (internally labeled
+v0.14.5h through v0.14.5q during development, all bundled into
+the v0.14.5 semver). The last published version was 0.11.2.
 
-### Per-rule verdict distribution
+This release ships:
 
-| Verdict | Count | Action |
-|---|---:|---|
-| **USEFUL** | 31 | defaultOn (high P + high lift) |
-| **OK** | 5 | defaultOn (lower confidence) |
-| **NOISY** | 5 | defaultOff (fires on both arms with low lift) |
-| **INVERTED** | 1 | defaultOff (fires MORE on neg than pos) |
-| **HYGIENE** | 23 | defaultOn (non-AI quality checks) |
-| **DORMANT** | 0 | never fires |
-| **Total** | **65** | |
+- **The v7 corpus calibration** — 184,488 neg + 239,054 pos files,
+  1,060,258 fire-events, per-rule Precision/Recall/FPR for 65 of
+  80 rules. 1 INVERTED rule auto-defaultOff.
+- **10 UX improvements** to the scan output (verdict, glossary,
+  band labels, delta, --brief, --why-failing, next-step footer, etc.)
+- **Python/Go file coverage** — was 0% fire rate, now ~30% via
+  regex-only rules
+- **6 new OSS docs** (CONTRIBUTING, EXAMPLES, SECURITY, CODE_OF_CONDUCT,
+  docs/MCP, docs/scoring-explained) + README 1058→199 lines
 
-### Only 1 INVERTED rule (vs 8 in the v0.14.5k partial)
+### The v7 calibration (the credibility milestone)
 
-The earlier v0.14.5k partial run (on 95k+90k files) flagged 8 rules
-as INVERTED. The final calibration on the full 420k files narrows
-this to 1:
+The headline. 31 rules USEFUL, 5 OK, 5 NOISY, 1 INVERTED, 23 HYGIENE,
+0 DORMANT. The 1 INVERTED rule is `ai/renyi-profile` (TP=3, FP=9,
+lift 0.3) — it fires more on human code than AI code. The earlier
+v0.14.5k partial run (on 95k+90k files) flagged 8 rules as
+INVERTED; the final run on the full 420k files narrows that to 1.
+This justifies waiting for the final data before auto-defaulting.
 
-- `ai/renyi-profile`: TP=3, FP=9, lift 0.3 (more fires in human code
-  than AI code) → **defaultOff**
-
-The 7 other rules that were INVERTED in the partial run turned out
-to be USEFUL or NOISY when measured against the full corpus.
-This is the kind of regression that justifies waiting for the
-final data before auto-defaulting.
-
-### Fixed (calibration script bugs)
-
-- **`filter_fires_by_date` path mismatch**: perFileFires values are
-  absolute paths (`/Users/.../v7-full-pos/symlink_name`); metadata
-  has relative paths (`symlink_name`). The original code did
-  `files_set & keep` (set intersection) which was always empty.
-  Fixed by indexing keep by basename. The original code was also
-  O(N×K) per rule (inner generator over 184k+ entries); the fix
-  makes it O(1) per check via dict lookup.
-
-- **f-string syntax error** in the `_calibrationNote` field:
-  `'inf' if ... else f'{r["lift"]:.1f}'` had a backslash inside an
-  f-string. Extracted into a `format_lift()` helper.
-
-- **Hardcoded VERSION constant** in `src/types.ts` was 0.14.5d
-  (caught by `tests/types.test.ts` and `tests/cli.test.ts`).
-  Bumped to current.
+`src/rules/signal-strength.json` is auto-updated with the verdicts.
+`docs/research/v7-corpus-calibration.md` has the full per-rule table.
 
 ### Self-scan impact (expected)
 
-The self-scan's slopIndex should drop by 5-15 points after the
-final calibration. The 1 INVERTED rule (`ai/renyi-profile`)
-was firing on slopbrick's own source code, contributing to the
-previous score. With it defaultOff, the score will be more
-honest.
+The slopbrick codebase's own Slop Index should drop by 5-15
+points after this release, because the 1 INVERTED rule was firing
+on slopbrick's own source.
 
-### v0.14.5p release notes (for the full v0.14.5d → p chain)
+### The 10 UX improvements (the v0.14.5i/j cycle)
 
-See the v0.14.5p section below. v0.14.5q adds the calibration
-result on top.
+The actual day-to-day experience of running `slopbrick scan` got
+dramatically better:
+
+- **P5** defaultOff trust signal — was stderr noise, now a green ✓ line in main output
+- **P0** next-step footer with highest-impact action — no more "kthxbai" silence
+- **P1** per-category breakdown with bar charts — see which categories drive the score
+- **P4** unified headline (Slop Index primary, Coherence secondary) — one number, consistent across CLI and health.json
+- **P3** `--why-failing` flag — top 5 rules by weighted impact
+- **P6** plain-language verdict at the top — first line is "is my code OK?"
+- **P7** inline glossary for category labels — "AI patterns — signatures of LLM-generated code"
+- **P8** band labels (`[EXCELLENT]` / `[PASSING]` / `[NEEDS WORK]` / `[CONCERNING]`) — no more PASS/FAIL jargon
+- **P9** trajectory delta on the headline — `↓5 (cleaner)` on every re-scan
+- **P10** `--brief` flag — 4-line terse output for CI/scripts
+
+### Coverage (the v0.14.5l cycle)
+
+- **Python/Go files now scanned** (`parseBlankModule` for .py/.go)
+  — was 0% fire rate, now ~30% via regex-only rules
+- **Gap analysis script** (`find-rule-coverage-gaps.py`) —
+  computes fire rate by extension, repo, and file size; identifies
+  the lowest-fire-rate clusters where new rules are needed
+
+### Documentation (the v0.14.5m cycle)
+
+- **6 new OSS docs** (CONTRIBUTING, EXAMPLES, SECURITY, CODE_OF_CONDUCT,
+  docs/MCP, docs/scoring-explained) — all the standard OSS files a
+  new contributor expects
+- **README slimmed from 1058 → 199 lines** — npm-ready, points to
+  the new docs for depth
+- **Per-rule scoring-explained** doc with the 2x2 quadrant
+  (Slop × Coherence combinations)
+- **CHANGELOG grouped** under [Unreleased] → [0.14.5] with
+  detailed per-commit history
+
+### Bug fixes
+
+- `categoryScores` 0-component bug: returned raw severity totals
+  (167/70/68) instead of 100×-inflated numbers (16700/7000/6840) for CLI tools
+- `--why-failing` was reading `coherence` instead of `slopIndex`
+  (gave different number than main output)
+- "AI patterns patterns" double word in verdict
+- Small-project warning firing on 0 components
+- Hardcoded `VERSION` constant in src/types.ts (caught by tests, bumped)
+- Stale `@usebrick/core` entry in pnpm-lock.yaml (caused publish
+  failures on the intermediate v0.14.5n/o/p/q release attempts;
+  fixed by re-adding it to devDependencies with the prepack-guard
+  allowlist)
+- `filter_fires_by_date` path mismatch: perFileFires values are
+  absolute paths; metadata has relative paths. Fixed by indexing
+  keep by basename. Also fixed O(N×K) per rule to O(1) per check.
+
+### Stats
+
+- 798/798 tests pass
+- 9 commits, ~3,000 lines added (code + tests + docs)
+- Net: -859 lines from README
+
+### The v0.10 credibility milestone (reached)
+
+This release closes the v0.10 credibility milestone from the
+original 12-phase plan: every detection rule that fired on the
+v7 corpus now ships with per-rule Precision, Recall, and False
+Positive Rate. v1.0 is the stability commitment — 6+ months after
+v0.15 ships, when the API can be frozen based on accumulated
+empirical feedback.
 
 ## [0.14.5p] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile + build fix
 

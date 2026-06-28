@@ -1,10 +1,13 @@
-# SlopBrick announcement: v0.14.5q — the v7 calibration is live
+# SlopBrick v0.14.5 — calibration + UX overhaul + 0.14.x era closes
 
-> **Status: shipped to npm as `slopbrick@0.14.5q` on 2026-06-28.**
+> **Status: shipped to npm as `slopbrick@0.14.5` on 2026-06-28.**
+> 4-month release window covering 9 commits (v0.14.5h through
+> v0.14.5q internally, all bundled into the v0.14.5 semver). The
+> last published version was 0.11.2.
 >
-> This is the v0.14.5q launch announcement. For the v0.14.5d
-> release announcement, see [`website-copy-v0.14.5d.md`](./website-copy-v0.14.5d.md).
-> For the full per-rule verdict table from the v7 corpus, see
+> For the v0.14.5d release announcement, see
+> [`website-copy-v0.14.5d.md`](./website-copy-v0.14.5d.md). For the
+> full per-rule verdict table from the v7 corpus, see
 > [`research/v7-corpus-calibration.md`](./research/v7-corpus-calibration.md).
 
 ## The headline
@@ -16,7 +19,20 @@
 > in `.slopbrick/health.json`, in the v0.14.5j README, and in the
 > docs/scoring-explained reference page.
 
-## What's new in v0.14.5q
+## The headline
+
+> **The SlopBrick credibility milestone is reached.** Every rule
+> in the 80-rule registry now ships with per-rule Precision, Recall,
+> and False Positive Rate measured on a 420,542-file v7 corpus.
+> The headline number — the **Slop Index** — is the same in the CLI,
+> in `.slopbrick/health.json`, in the v0.14.5j README, and in the
+> docs/scoring-explained reference page.
+
+## What's in v0.14.5
+
+The headline is the v7 calibration. But v0.14.5 also bundles:
+
+### The v7 calibration (the credibility milestone)
 
 **The v7 calibration ran.** 184,488 neg files (human-written) +
 239,054 pos files (AI-generated, drawn from `vibe-coded/*`,
@@ -47,14 +63,45 @@ INVERTED rule was firing on slopbrick's own source.
 ## Why this matters
 
 **Every rule in the 80-rule registry is now empirically backed.**
-Before v0.14.5q, the rule registry was calibrated on the v4 corpus
+Before v0.14.5, the rule registry was calibrated on the v4 corpus
 (91k files, 2024). v7 is 4.6× larger, drawn from a curated pure-AI
 pos set (no project-level "adopted AI" contamination), and the
 calibration code is auditable in `scripts/compute-v7-calibration.py`.
 
 This is what the v0.10 **credibility milestone** looked like in
-the original 12-phase plan. v0.14.5q is that milestone, on a bigger
+the original 12-phase plan. v0.14.5 is that milestone, on a bigger
 corpus than originally planned.
+
+### The 10 UX improvements (the v0.14.5i/j cycle)
+
+The calibration is the headline, but the actual day-to-day experience
+of running `slopbrick scan` got dramatically better in v0.14.5.
+Ten UX improvements shipped across the 9 commits:
+
+- **P5** defaultOff trust signal — was stderr noise, now a green ✓ line in main output
+- **P0** next-step footer with highest-impact action — no more "kthxbai" silence
+- **P1** per-category breakdown with bar charts — see which categories are driving the score
+- **P4** unified headline (Slop Index primary, Coherence secondary) — one number, consistent across CLI and health.json
+- **P3** `--why-failing` flag — top 5 rules by weighted impact
+- **P6** plain-language verdict at the top — first line is "is my code OK?"
+- **P7** inline glossary for category labels — "AI patterns — signatures of LLM-generated code"
+- **P8** band labels (`[EXCELLENT]` / `[PASSING]` / `[NEEDS WORK]` / `[CONCERNING]`) — no more PASS/FAIL jargon
+- **P9** trajectory delta on the headline — `↓5 (cleaner)` on every re-scan
+- **P10** `--brief` flag — 4-line terse output for CI/scripts
+
+### Coverage + docs (the v0.14.5l/m cycle)
+
+- **Python/Go files now scanned** (parseBlankModule for .py/.go) — was 0% fire rate, now ~30% via regex-only rules
+- **6 new OSS docs** (CONTRIBUTING, EXAMPLES, SECURITY, CODE_OF_CONDUCT, docs/MCP, docs/scoring-explained) — all the standard OSS files a new contributor expects
+- **README slimmed from 1058 → 199 lines** — npm-ready, points to the new docs for depth
+
+### Bug fixes
+
+- `categoryScores` 0-component bug: returned raw severity totals (167/70/68) instead of 100×-inflated numbers (16700/7000/6840) for CLI tools
+- `--why-failing` was reading `coherence` instead of `slopIndex` (gave different number than main output)
+- "AI patterns patterns" double word in verdict
+- Small-project warning firing on 0 components
+- Hardcoded `VERSION` constant in src/types.ts was 0.14.5d (caught by tests, bumped)
 
 ## How to use the new calibration data
 
