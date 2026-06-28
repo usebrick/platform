@@ -3,12 +3,13 @@
 //
 // Composition order is fixed by ../html.ts (formatHtml entry point):
 //
-//   header → thresholds → category → top-offenders →
-//   files → issues → parse-errors
+//   header → thresholds → repository-health (4 named scores) → buckets →
+//   category → top-offenders → files → issues → parse-errors
 //
 // Helpers (escape, count, class names, signal badge) live in ./utils.ts.
 // Static assets (CSS, JS) live in ./static.ts.
 
+import type { Verdict } from '@usebrick/core';
 import type { Category, ComponentScore, Issue, ProjectReport, Severity } from '../../types.js';
 import {
   categoryLabels,
@@ -21,15 +22,19 @@ import {
   thresholdStatusClass,
   renderSignalBadge,
 } from './utils.js';
+import { bucketForVerdict, bucketDistribution } from '../buckets.js';
 
 function renderHeader(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
-  const roundedSlop = Math.round(report.slopIndex);
   const roundedHealth = Math.round(report.assemblyHealth);
-  const passed = report.slopIndex <= report.thresholds.meanSlop;
-  const boundaryWeighted = (report.boundaryScore * 0.40).toFixed(1);
-  const contextWeighted = (report.contextScore * 0.35).toFixed(1);
-  const visualWeighted = (report.visualScore * 0.25).toFixed(1);
+
+  // v0.15.0+: 4 named scores replace the single `slopIndex`.
+  // `repositoryHealth` is the only one already on `ProjectReport` — the
+  // other three (aiQuality, engineeringHygiene, security) live on the new
+  // composite object that U.5 introduces. Until U.5 lands, we cast
+  // through `unknown` so the typecheck stays clean while the HTML
+  // surfaces the new labels.
+  const namedScores = extractNamedScores(report);
 
   return `
   <header class="report-header">
@@ -42,25 +47,25 @@ function renderHeader(report: ProjectReport): string {
         <span class="score-value">${report.coherence ?? '–'}</span>
         <span class="score-label">Repository Coherence ${report.coherence !== undefined ? (report.coherence >= 70 ? '[PASS]' : '[FAIL]') : ''}</span>
       </div>
-      <div class="score-card slop-index">
-        <span class="score-value">${roundedSlop}</span>
-        <span class="score-label">Slop Index (informational)</span>
+      <div class="score-card repository-health-card">
+        <span class="score-value">${namedScores.repositoryHealth}</span>
+        <span class="score-label">Repository Health (composite)</span>
+      </div>
+      <div class="score-card ai-quality">
+        <span class="score-value">${namedScores.aiQuality}</span>
+        <span class="score-label">AI Quality</span>
+      </div>
+      <div class="score-card engineering-hygiene">
+        <span class="score-value">${namedScores.engineeringHygiene}</span>
+        <span class="score-label">Engineering Hygiene</span>
+      </div>
+      <div class="score-card security-score">
+        <span class="score-value">${namedScores.security}</span>
+        <span class="score-label">Security</span>
       </div>
       <div class="score-card health">
         <span class="score-value">${roundedHealth}</span>
         <span class="score-label">Assembly Health</span>
-      </div>
-      <div class="score-card boundary">
-        <span class="score-value">${report.boundaryScore.toFixed(1)}</span>
-        <span class="score-label">Boundary (×0.40 = ${boundaryWeighted})</span>
-      </div>
-      <div class="score-card context">
-        <span class="score-value">${report.contextScore.toFixed(1)}</span>
-        <span class="score-label">Context (×0.35 = ${contextWeighted})</span>
-      </div>
-      <div class="score-card visual">
-        <span class="score-value">${report.visualScore.toFixed(1)}</span>
-        <span class="score-label">Visual (×0.25 = ${visualWeighted})</span>
       </div>
     </div>
     <div class="severity-counts">
@@ -77,10 +82,49 @@ function renderHeader(report: ProjectReport): string {
   </header>`;
 }
 
+interface NamedScores {
+  aiQuality: string;
+  engineeringHygiene: string;
+  security: string;
+  repositoryHealth: string;
+}
+
+/**
+ * v0.15.0+: Extract the 4 named scores from the report. Each field is
+ * optional on the report until U.5 lands; we read through `unknown` so
+ * typecheck passes today. Numbers are rounded to integers for display.
+ */
+function extractNamedScores(report: ProjectReport): NamedScores {
+  const score = (v: unknown): string =>
+    typeof v === 'number' && !Number.isNaN(v) ? Math.round(v).toString() : '–';
+
+  // Cast to a record shape that holds the optional v0.15.0 fields. The
+  // real fields land in U.5; until then we surface the new labels and
+  // fall back to the legacy `repositoryHealth` for the composite.
+  const r = report as unknown as {
+    aiQuality?: number;
+    engineeringHygiene?: number;
+    security?: number;
+    repositoryHealth?: number;
+  };
+
+  return {
+    aiQuality: score(r.aiQuality),
+    engineeringHygiene: score(r.engineeringHygiene),
+    security: score(r.security),
+    repositoryHealth: score(r.repositoryHealth ?? report.repositoryHealth),
+  };
+}
+
 function renderThresholds(report: ProjectReport): string {
-  const slop = report.slopIndex;
-  const limit = report.thresholds.meanSlop;
-  const failed = slop > limit;
+  // v0.15.0+: threshold table now gates on `repositoryHealth` (higher = better,
+  // composite 0-100). The old `slopIndex` row was removed because the
+  // single-score model is gone.
+  const r = report as unknown as { repositoryHealth?: number };
+  const score = typeof r.repositoryHealth === 'number' ? r.repositoryHealth : report.repositoryHealth;
+  const limit = 70; // soft band; --strict for CI gating
+  const available = typeof score === 'number';
+  const failed = available && score! < limit;
 
   return `
   <section class="thresholds-section">
@@ -95,13 +139,157 @@ function renderThresholds(report: ProjectReport): string {
       </thead>
       <tbody>
         <tr>
-          <td>Composite Slop Index</td>
-          <td>${slop.toFixed(1)} / ${limit}</td>
-          <td><span class="status-badge ${thresholdStatusClass(failed)}">${failed ? 'fail' : 'pass'}</span></td>
+          <td>Repository Health (composite)</td>
+          <td>${available ? `${score!.toFixed(1)} / ${limit}` : '–'}</td>
+          <td><span class="status-badge ${thresholdStatusClass(failed)}">${available ? (failed ? 'fail' : 'pass') : 'n/a'}</span></td>
         </tr>
       </tbody>
     </table>
   </section>`;
+}
+
+/**
+ * v0.15.0+: Render the 3-bucket taxonomy (AI Findings / Engineering
+ * Hygiene / Suppressed). Rules are grouped via `bucketForVerdict()`
+ * and counts come from `bucketDistribution()`. The `verdicts` field
+ * is new on `ProjectReport` and lands in U.5; until then we cast
+ * through `unknown`.
+ */
+function renderBuckets(report: ProjectReport): string {
+  const verdicts = extractVerdicts(report);
+  const distribution = bucketDistribution(verdicts);
+  const rules = extractRuleVerdicts(report);
+
+  const aiRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'ai');
+  const hygieneRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'hygiene');
+  const suppressedRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'suppressed');
+
+  const aiCounts = countVerdicts(aiRules.map((r) => r.verdict));
+  const hygieneCounts = countVerdicts(hygieneRules.map((r) => r.verdict));
+  const suppressedCounts = countVerdicts(suppressedRules.map((r) => r.verdict));
+
+  return `
+  <section class="buckets-section">
+    <h2>Findings by bucket</h2>
+    <div class="bucket-grid">
+      <section class="ai-findings">
+        <h3>AI Findings <span class="bucket-count">${distribution.ai}</span></h3>
+        <p class="bucket-summary">${formatVerdictCounts(aiCounts, ['USEFUL', 'OK'])}</p>
+        ${renderBucketList(aiRules)}
+      </section>
+      <section class="engineering-hygiene-bucket">
+        <h3>Engineering Hygiene <span class="bucket-count">${distribution.hygiene}</span></h3>
+        <p class="bucket-summary">${formatVerdictCounts(hygieneCounts, ['HYGIENE', 'INVERTED'])}</p>
+        ${renderBucketList(hygieneRules)}
+      </section>
+      <section class="suppressed-bucket">
+        <h3>Suppressed Rules <span class="bucket-count">${distribution.suppressed}</span></h3>
+        <p class="bucket-summary">${formatVerdictCounts(suppressedCounts, ['NOISY', 'DORMANT'])}</p>
+        ${renderSuppressedList(suppressedRules)}
+      </section>
+    </div>
+  </section>`;
+}
+
+interface RuleVerdict {
+  ruleId: string;
+  verdict: Verdict;
+  confidence?: string;
+  message?: string;
+}
+
+/**
+ * Pull the per-rule verdict list off the report. The new field lands
+ * in U.5; until then we accept the empty array (buckets show 0/0/0).
+ */
+function extractVerdicts(report: ProjectReport): Verdict[] {
+  const r = report as unknown as { verdicts?: Verdict[] };
+  return Array.isArray(r.verdicts) ? r.verdicts : [];
+}
+
+/**
+ * Pull the richer per-rule list (ruleId + verdict + optional
+ * confidence/message) off the report. Used by the bucket sections to
+ * render one row per rule. New field lands in U.5.
+ */
+function extractRuleVerdicts(report: ProjectReport): RuleVerdict[] {
+  const r = report as unknown as { ruleVerdicts?: RuleVerdict[] };
+  return Array.isArray(r.ruleVerdicts) ? r.ruleVerdicts : [];
+}
+
+function countVerdicts(verdicts: Verdict[]): Record<Verdict, number> {
+  const counts: Record<Verdict, number> = {
+    USEFUL: 0,
+    OK: 0,
+    NOISY: 0,
+    INVERTED: 0,
+    HYGIENE: 0,
+    DORMANT: 0,
+  };
+  for (const v of verdicts) counts[v]++;
+  return counts;
+}
+
+function formatVerdictCounts(counts: Record<Verdict, number>, keys: Verdict[]): string {
+  const parts = keys
+    .filter((k) => counts[k] > 0)
+    .map((k) => `${counts[k]} ${displayVerdictLabel(k)}`);
+  return parts.length > 0 ? parts.join(' · ') : 'No items';
+}
+
+/**
+ * Display label for a verdict in the bucket summary. Spec uses
+ * "Useful" + "OK" — i.e. title-case everything except OK, which is
+ * conventionally all-caps. (Follow the spec verbatim so users can
+ * match the headline to the doc.)
+ */
+function displayVerdictLabel(value: Verdict): string {
+  if (value === 'OK') return 'OK';
+  return titleCase(value);
+}
+
+function titleCase(value: string): string {
+  if (value.length === 0) return value;
+  return value[0]!.toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function renderBucketList(rules: RuleVerdict[]): string {
+  if (rules.length === 0) {
+    return '<p class="bucket-empty">No rules in this bucket.</p>';
+  }
+  const items = rules
+    .map(
+      (r) => `
+      <li>
+        <span class="rule-id">${escapeHtml(r.ruleId)}</span>
+        <span class="rule-verdict verdict-${escapeHtml(r.verdict.toLowerCase())}">${escapeHtml(r.verdict)}</span>
+        ${r.confidence ? `<span class="rule-confidence">Confidence: ${escapeHtml(r.confidence)}</span>` : ''}
+        ${r.message ? `<span class="rule-message">${escapeHtml(r.message)}</span>` : ''}
+      </li>`,
+    )
+    .join('');
+  return `<ul class="bucket-list">${items}</ul>`;
+}
+
+function renderSuppressedList(rules: RuleVerdict[]): string {
+  if (rules.length === 0) {
+    return '<p class="bucket-empty">No suppressed rules.</p>';
+  }
+  const items = rules
+    .map(
+      (r) => `
+      <li>
+        <span class="rule-id">${escapeHtml(r.ruleId)}</span>
+        <span class="rule-verdict verdict-${escapeHtml(r.verdict.toLowerCase())}">${escapeHtml(r.verdict)}</span>
+        ${r.message ? `<span class="rule-message">${escapeHtml(r.message)}</span>` : ''}
+      </li>`,
+    )
+    .join('');
+  return `
+    <details>
+      <summary>Show suppressed rules (${rules.length})</summary>
+      <ul class="bucket-list">${items}</ul>
+    </details>`;
 }
 
 interface CategoryRow {
@@ -382,6 +570,7 @@ function renderParseErrors(report: ProjectReport): string {
 export {
   renderHeader,
   renderThresholds,
+  renderBuckets,
   renderCategoryBreakdown,
   renderTopOffenders,
   renderFiles,

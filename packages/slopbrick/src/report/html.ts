@@ -2,8 +2,9 @@
 //
 // Implementation is split across ./html/:
 //   - utils.ts   — small data helpers + category / severity labels
-//   - sections.ts — renderHeader / renderThresholds / renderCategoryBreakdown /
-//                   renderTopOffenders / renderFiles / renderIssues / renderParseErrors
+//   - sections.ts — renderHeader / renderThresholds / renderBuckets /
+//                   renderCategoryBreakdown / renderTopOffenders /
+//                   renderFiles / renderIssues / renderParseErrors
 //   - static.ts  — renderStyles (CSS) + renderScripts (interactive JS)
 //
 // This file is intentionally tiny — it just composes the section
@@ -13,6 +14,7 @@ import type { ProjectReport } from '../types.js';
 import {
   renderHeader,
   renderThresholds,
+  renderBuckets,
   renderCategoryBreakdown,
   renderTopOffenders,
   renderFiles,
@@ -33,6 +35,7 @@ export function formatHtml(report: ProjectReport): string {
 <body>
   ${renderHeader(report)}
   ${renderThresholds(report)}
+  ${renderBuckets(report)}
   ${renderCategoryBreakdown(report)}
   ${renderTopOffenders(report)}
   ${renderFiles(report)}
