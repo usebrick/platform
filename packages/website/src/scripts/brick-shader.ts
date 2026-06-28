@@ -181,5 +181,8 @@ export function initBrickShader(canvas: HTMLCanvasElement): () => void {
     window.removeEventListener('mousemove', onMouse);
     window.removeEventListener('scroll', onScroll);
     ro.disconnect();
+    // Free GPU memory by losing the WebGL context.
+    const ext = gl.getExtension('WEBGL_lose_context');
+    if (ext) ext.loseContext();
   };
 }
