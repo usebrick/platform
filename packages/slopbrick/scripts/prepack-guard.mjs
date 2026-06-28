@@ -26,12 +26,19 @@ try {
 }
 
 const fields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+// Allowlist: these are private workspace packages that tsup
+// bundles into dist/ via `noExternal`. Listing them as workspace
+// deps keeps pnpm-lock.yaml in sync so tsup can find the source
+// during the bundle step. They're not published to npm; the
+// bundle means the dist/ doesn't need them at runtime.
+const ALLOWED_WORKSPACE_BUNDLE_DEPS = new Set(['@usebrick/core']);
 const offenders = [];
 
 for (const field of fields) {
   const deps = pkg[field] ?? {};
   for (const [name, range] of Object.entries(deps)) {
     if (typeof range === 'string' && range.startsWith('workspace:')) {
+      if (ALLOWED_WORKSPACE_BUNDLE_DEPS.has(name)) continue;
       offenders.push(`${field}.${name} = "${range}"`);
     }
   }
@@ -51,4 +58,7 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
-console.log('✓ prepack guard: no workspace:* deps in package.json.');
+console.log(`✓ prepack guard: no non-allowlisted workspace:* deps in package.json.`);
+if (ALLOWED_WORKSPACE_BUNDLE_DEPS.size > 0) {
+  console.log(`  (allowlisted: ${[...ALLOWED_WORKSPACE_BUNDLE_DEPS].join(', ')} — these are bundled by tsup)`);
+}

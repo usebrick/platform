@@ -550,27 +550,63 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
-## [0.14.5o] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile fix
+## [0.14.5p] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile + build fix
 
-The v0.14.5d → 0.14.5o line is a single dev cycle (one session) that
+The v0.14.5d → 0.14.5p line is a single dev cycle (one session) that
 shipped 9 commits addressing the scan flywheel UX, a categoryScores
 display bug, Python/Go coverage gaps, a partial v7 calibration
-report, a full documentation suite, and a lockfile fix. Pushed as
-one release because the commits are interdependent and the
-CHANGELOG groups them as a single "calibration update".
+report, a full documentation suite, a lockfile fix, and a build
+fix. Pushed as one release because the commits are interdependent
+and the CHANGELOG groups them as a single "calibration update".
 
 v0.14.5n was tagged first but its publish failed due to a stale
-`@usebrick/core` entry in the lockfile. Rather than re-publish
-under the same version, this release renumbers to 0.14.5o and
-absorbs the lockfile fix as a first-class commit.
+`@usebrick/core` entry in the lockfile. v0.14.5o was tagged next
+and failed at the build step because removing the lockfile entry
+also broke tsup's ability to bundle `@usebrick/core` (which the
+slopbrick source code imports in 4 files). This release (0.14.5p)
+fixes both: it adds `@usebrick/core` back to `devDependencies` as
+a `workspace:*` dep (with an explicit allowlist in
+`scripts/prepack-guard.mjs`), regenerates the lockfile, and bumps
+the version so npm publish can succeed.
 
-### Fixed (Lockfile — release commit)
+### Fixed (Build — release commit)
+
+The v0.14.5o build failed at step 5 of publish.yml:
+`Could not resolve "@usebrick/core"`. esbuild (used by tsup) needs
+the workspace package's source to be installed in `node_modules` so
+it can be bundled via `noExternal: [/^@usebrick\//]`. Removing
+the lockfile entry caused pnpm install to skip the workspace link,
+which broke the bundle. The right architecture (per v0.11.2 intent)
+is: `@usebrick/core` is listed in `devDependencies` as
+`workspace:*`, the lockfile has the matching `link:../core` entry,
+tsup bundles it, and the published tarball never has the
+`workspace:*` because it's stripped at install time (the bundle
+is the runtime artifact).
+
+The `prepack-guard.mjs` was updated to allowlist `@usebrick/core`
+explicitly, with a comment explaining why this is safe (it's
+bundled, not a runtime dep).
+
+The v0.14.5p commit chain (relative to v0.14.5d):
+- 5h: categoryScores 0-component bug fix
+- 5i: 5 UX improvements (P0/P1/P3/P4/P5)
+- 5j: 5 more UX (P6/P7/P8/P9/P10) + 2 bug fixes + scoring-explained.md
+- 5k: partial v7 calibration (21 USEFUL, 8 INVERTED)
+- 5l: Python/Go coverage fix (parseBlankModule)
+- 5m: 6 new OSS docs (CONTRIBUTING, EXAMPLES, MCP, SECURITY, etc.)
+- 5n: README 1058→199 lines (-859 net)
+- 98b30df: lockfile fix (stale @usebrick/core entry) — WRONG, see 5p
+- 5o (abandoned): see above
+- 5p: build fix (added @usebrick/core back to devDeps; updated prepack-guard)
+
+### Fixed (Lockfile — partial fix from 98b30df, superseded by 5p)
 
 `pnpm-lock.yaml` had a stale `@usebrick/core: workspace:*` entry
-that wasn't in `packages/slopbrick/package.json`. This caused
-`pnpm install --frozen-lockfile` to fail in publish.yml on the
-v0.14.5n tag. Removed the stale entry; `pnpm install` now reports
-the lockfile is up to date. 3 lines deleted.
+that wasn't in `packages/slopbrick/package.json`. The original
+`98b30df` commit removed the entry, which fixed the install drift
+but broke tsup's bundle (see above). The 5p fix is the correct
+version: keep `@usebrick/core` in the lockfile, but list it in
+`devDependencies` so pnpm install doesn't strip it.
 
 ### Changed (README slim-down — v0.14.5n)
 
