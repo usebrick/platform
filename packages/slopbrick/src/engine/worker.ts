@@ -5,7 +5,8 @@ import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';
 import { setLoggerQuiet } from './logger';
-import { compositeScore } from './composite-scoring';
+import { compositeScore } from '@usebrick/engine';
+import { loadSignalStrength } from '../rules/signal-strength.js';
 import type { FileScanResult, Issue, ResolvedConfig, ScanFacts } from '../types';
 
 function applyRuleOverrides(issues: Issue[], rules: ResolvedConfig['rules']): Issue[] {
@@ -94,7 +95,7 @@ export async function scanFile(
     // (post-severity-override). See src/engine/composite-scoring.ts
     // for the math and references.
     const triggeredRuleIds = Array.from(new Set(issues.map((i) => i.ruleId)));
-    const compScore = compositeScore(triggeredRuleIds);
+    const compScore = compositeScore(triggeredRuleIds, loadSignalStrength());
 
     const gapValues = collectGapValues(facts);
     const styleSources = collectStyleSources(facts);

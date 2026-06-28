@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@swc/core": "^1.10.0",
-    "@usebrick/core": "workspace:*"
+    "@usebrick/core": "workspace:*",
+    "globby": "^14.0.0"
   },
   "devDependencies": {
     "tsup": "^8.5",

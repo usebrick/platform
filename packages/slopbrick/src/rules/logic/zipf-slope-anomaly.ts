@@ -1,6 +1,6 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import { computeZipfExponent, tokenizeIdentifiers } from '../../engine/zipf-heaps';
+import { computeZipfExponent, tokenizeIdentifiers } from '@usebrick/engine';
 import { getCorpusBaselines } from '../../engine/corpus-baselines';
 
 /**

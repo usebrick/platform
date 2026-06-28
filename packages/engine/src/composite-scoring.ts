@@ -40,7 +40,7 @@
 //   - Cui, Z. et al. (2025), "Who is using AI to code? Global
 //     diffusion and impact of generative AI" (sets the prior at 0.30)
 
-import { loadSignalStrength } from '../rules/signal-strength';
+import type { SignalStrengthEntry } from '@usebrick/core';
 
 // ---- Constants --------------------------------------------------------
 
@@ -110,21 +110,13 @@ export interface CompositeScore {
 
 // ---- Signal-strength loader -----------------------------------------
 
-/** Cached lookup of ruleId → RuleSignal. Lazy-loaded on first use. */
-let _signals: Map<string, RuleSignal> | null = null;
-
-function loadSignals(): Map<string, RuleSignal> {
-  if (_signals) return _signals;
-  // v0.14.5d: use the canonical `loadSignalStrength()` from
-  // `src/rules/signal-strength.ts`, which uses a static JSON import that
-  // works in both ESM and bundled CJS. The previous readFileSync fallback
-  // broke in the published tarball because `dist/rules/signal-strength.json`
-  // didn't exist — `__filename` resolves to `dist/index.cjs` so
-  // `../rules/signal-strength.json` looked at the package root, not the
-  // dist subdir.
-  const raw = loadSignalStrength();
+/** Build the ruleId → RuleSignal map from a signal-strength record.
+ *  Pure: the caller provides the data (loaded via
+ *  `loadSignalStrength()` in slopbrick's `rules/signal-strength.ts`).
+ *  The engine has no I/O. */
+function loadSignals(signalData: Readonly<Record<string, SignalStrengthEntry>>): Map<string, RuleSignal> {
   const map = new Map<string, RuleSignal>();
-  for (const [ruleId, entry] of Object.entries(raw)) {
+  for (const [ruleId, entry] of Object.entries(signalData)) {
     // The JSON has more fields than the `SignalStrength` interface (e.g.
     // `verdict`, `_calibrationNote`). Read them as `unknown` to stay
     // compatible with the typed loader; only the fields we actually
@@ -144,7 +136,6 @@ function loadSignals(): Map<string, RuleSignal> {
       aiSpecific: extended.aiSpecific === true,
     });
   }
-  _signals = map;
   return map;
 }
 
@@ -179,25 +170,32 @@ export function ruleLLR(rule: RuleSignal): number {
 
 /**
  * Look up a rule's signal by id. Returns undefined if the rule is
- * not in signal-strength.json.
+ * not in the signal-strength data.
  */
-export function getRuleSignal(ruleId: string): RuleSignal | undefined {
-  return loadSignals().get(ruleId);
+export function getRuleSignal(
+  ruleId: string,
+  signalData: Readonly<Record<string, SignalStrengthEntry>>,
+): RuleSignal | undefined {
+  return loadSignals(signalData).get(ruleId);
 }
 
 /**
  * Compute the composite score for a file given the rules that fired.
  *
  * @param triggeredRuleIds — list of rule IDs that fired on this file
- * @param priorPrevalence — codebase AI prevalence (default 0.30)
+ * @param signalData       — the signal-strength record (from
+ *                           `loadSignalStrength()` in slopbrick's
+ *                           `rules/signal-strength.ts`)
+ * @param priorPrevalence  — codebase AI prevalence (default 0.30)
  * @returns CompositeScore with probability, tier, and contributing rules
  */
 export function compositeScore(
   triggeredRuleIds: string[],
+  signalData: Readonly<Record<string, SignalStrengthEntry>>,
   priorPrevalence: number = DEFAULT_PRIOR_PREVALENCE,
 ): CompositeScore {
   const prior = buildPriorLogOdds(priorPrevalence);
-  const signals = loadSignals();
+  const signals = loadSignals(signalData);
 
   const triggered: TriggeredRule[] = [];
   for (const ruleId of triggeredRuleIds) {
@@ -243,10 +241,11 @@ export function compositeScore(
  */
 export function directoryScore(
   fileScores: CompositeScore[],
+  signalData: Readonly<Record<string, SignalStrengthEntry>>,
   priorPrevalence: number = DEFAULT_PRIOR_PREVALENCE,
 ): CompositeScore {
   if (fileScores.length === 0) {
-    return compositeScore([], priorPrevalence);
+    return compositeScore([], signalData, priorPrevalence);
   }
   return fileScores.reduce((max, s) =>
     s.probability > max.probability ? s : max,

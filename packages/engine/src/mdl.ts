@@ -40,8 +40,18 @@
 //
 // Pure functions. No I/O.
 
-import type { Rule } from '../types';
-import { builtinRules } from '../rules/builtins.js';
+/** Local minimal type — the engine doesn't import `Rule` from
+ *  slopbrick's `types.ts` (would create a workspace-level circular
+ *  dep). Callers pass rules in.
+ *
+ *  The `id: string` is the only field the MDL math actually reads.
+ *  We use a loose `object` type for the rest so that slopbrick's
+ *  generic `Rule<unknown>` (from `@usebrick/core`) satisfies this
+ *  interface without an explicit cast. */
+export interface Rule {
+  id: string;
+  [key: string]: any;
+}
 
 /** Per-model probability distribution over rule IDs. Each map gives
  *  P(rule_id | model); the sum over the model's vocabulary is 1.0. */
@@ -153,10 +163,11 @@ export function buildDefaultMdlPriors(
   return { m_ai, m_human };
 }
 
-/** Default priors constructed from the builtin rule registry at
- *  module load time. Tests and reporters that don't have their own
- *  rules array can use this directly. */
-export const DEFAULT_MDL_PRIORS: MdlModelProbs = buildDefaultMdlPriors(builtinRules);
+// Note: the previous `DEFAULT_MDL_PRIORS` constant was built at module
+// load time from slopbrick's `builtinRules`. After the move, the
+// engine has no access to slopbrick's rule registry, so callers
+// (slopbrick's CLI) construct `DEFAULT_MDL_PRIORS` themselves via
+// `buildDefaultMdlPriors(builtinRules)` and pass it in.
 
 /** Look up the model probability for a rule ID, falling back to the
  *  Laplace smoothing floor for rules outside the model's vocabulary

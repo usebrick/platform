@@ -15,7 +15,28 @@
 // Pure functions. No I/O. Consumed by scan.ts to surface drift in the
 // Architecture Drift section of the pretty report.
 
-import type { PatternInventory, PatternMatch } from '../mcp/patterns.js';
+/** Local minimal types — mirror the shapes in slopbrick's
+ *  `mcp/patterns.ts`. The engine doesn't import from mcp/patterns to
+ *  avoid a circular dep at the workspace level. */
+export interface PatternMatch {
+  name: string;
+  files: string[];
+  imports?: string[];
+}
+
+export interface PatternInventory {
+  scannedFiles: number;
+  patterns: {
+    modal: PatternMatch[];
+    button: PatternMatch[];
+    api: PatternMatch[];
+    state: PatternMatch[];
+    dataFetching: PatternMatch[];
+    service: PatternMatch[];
+    route: PatternMatch[];
+    ormModel: PatternMatch[];
+  };
+}
 
 /** Common suffixes stripped from class/struct/function names to derive the
  *  stem. Order matters: longer suffixes are matched first so

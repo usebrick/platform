@@ -142,7 +142,7 @@ export function computeHeapsExponent(tokens: readonly string[]): HeapsFit {
   for (let i = 0; i < numSamples; i++) {
     const t = Math.floor((i + 1) * n / numSamples);
     for (let j = (i === 0 ? 0 : Math.floor(i * n / numSamples)); j < t; j++) {
-      seen.add(tokens[j]);
+      seen.add(tokens[j]!);
     }
     samples.push({ t, vocabulary: seen.size });
   }
@@ -222,10 +222,10 @@ function linearRegression(
   let sumXY = 0;
   let sumXX = 0;
   for (let i = 0; i < n; i++) {
-    sumX += xs[i];
-    sumY += ys[i];
-    sumXY += xs[i] * ys[i];
-    sumXX += xs[i] * xs[i];
+    sumX += xs[i]!;
+    sumY += ys[i]!;
+    sumXY += xs[i]! * ys[i]!;
+    sumXX += xs[i]! * xs[i]!;
   }
   const meanX = sumX / n;
   const meanY = sumY / n;
@@ -239,9 +239,9 @@ function linearRegression(
   let ssRes = 0;
   let ssTot = 0;
   for (let i = 0; i < n; i++) {
-    const predicted = slope * xs[i] + intercept;
-    ssRes += (ys[i] - predicted) ** 2;
-    ssTot += (ys[i] - meanY) ** 2;
+    const predicted = slope * xs[i]! + intercept;
+    ssRes += (ys[i]! - predicted) ** 2;
+    ssTot += (ys[i]! - meanY) ** 2;
   }
   const rSquared = ssTot > 0 ? 1 - ssRes / ssTot : 0;
   return { slope, intercept, rSquared };

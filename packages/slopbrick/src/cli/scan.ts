@@ -558,7 +558,7 @@ export async function runScan(
     | undefined;
   try {
     const { combineFireSet } = await import('@usebrick/engine');
-    const { survivingFires } = await import('../engine/multitest');
+    const { survivingFires } = await import('@usebrick/engine');
     // Build the fire set from all active issues (not defaultOff'd).
     const firedRuleIds: string[] = [];
     const fprMap = new Map<string, number>();

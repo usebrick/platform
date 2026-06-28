@@ -52,17 +52,17 @@ export function buildLaplacian(graph: Graph): number[][] {
   const { nodes, edges } = graph;
   const n = nodes.length;
   const index = new Map<string, number>();
-  for (let i = 0; i < n; i++) index.set(nodes[i], i);
+  for (let i = 0; i < n; i++) index.set(nodes[i]!, i);
 
   const L: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));
   for (const [u, v, w] of edges) {
     const i = index.get(u);
     const j = index.get(v);
     if (i === undefined || j === undefined) continue;
-    L[i][j] -= w;
-    L[j][i] -= w;
-    L[i][i] += w;
-    L[j][j] += w;
+    L[i]![j]! -= w;
+    L[j]![i]! -= w;
+    L[i]![i]! += w;
+    L[j]![j]! += w;
   }
   return L;
 }

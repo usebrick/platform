@@ -27,7 +27,12 @@ import {
   REPOSITORY_HEALTH_WEIGHTS,
   AI_SECURITY_NUMERIC,
 } from '../types';
-import { DEFAULT_MDL_PRIORS, computeMDLikelihood } from './mdl.js';
+import { computeMDLikelihood } from '@usebrick/engine';
+import { builtinRules } from '../rules/builtins.js';
+import { loadSignalStrength } from '../rules/signal-strength.js';
+import { buildDefaultMdlPriors } from '@usebrick/engine';
+
+const DEFAULT_MDL_PRIORS = buildDefaultMdlPriors(builtinRules);
 
 function clamp100(n: number): number {
   if (Number.isNaN(n)) return 0;

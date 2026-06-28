@@ -3,7 +3,7 @@ import {
   detectCrossFileDrift,
   detectCrossCategoryDrift,
   type CrossFileDriftSignal,
-} from '../../src/engine/cluster';
+} from '@usebrick/engine';
 import type { PatternInventory } from '../../src/mcp/patterns';
 
 function emptyInventory(): PatternInventory {

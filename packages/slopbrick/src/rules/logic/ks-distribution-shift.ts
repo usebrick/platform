@@ -1,6 +1,6 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import { multiFeatureKsTest } from '../../engine/ks';
+import { multiFeatureKsTest } from '@usebrick/engine';
 import { getCorpusBaselines } from '../../engine/corpus-baselines';
 
 /**

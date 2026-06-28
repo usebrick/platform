@@ -36,7 +36,7 @@ import {
   defaultModel,
   type NaturalnessMetrics,
   type NaturalnessModel,
-} from '../../engine/naturalness';
+} from '@usebrick/engine';
 import { buildLineOffsets } from '../../engine/visitor';
 
 export interface NaturalnessAnomalyContext {

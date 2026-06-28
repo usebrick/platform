@@ -28,7 +28,7 @@ import {
   ksStatistic,
   ksTest,
   multiFeatureKsTest,
-} from '../../src/engine/ks';
+} from '@usebrick/engine';
 
 describe('ksStatistic', () => {
   it('returns 0 for identical samples', () => {

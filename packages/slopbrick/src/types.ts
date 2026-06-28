@@ -592,7 +592,7 @@ export interface FileScanResult {
    * Populated by the scan pipeline after rule execution. Undefined
    * when no rules fired (probability stays at the prior prevalence).
    */
-  compositeScore?: import('./engine/composite-scoring.js').CompositeScore;
+  compositeScore?: import('@usebrick/engine').CompositeScore;
 }
 
 export interface ComponentScore {

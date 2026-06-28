@@ -27,7 +27,7 @@ import {
   computeHeapsExponent,
   computeZipfExponent,
   tokenizeIdentifiers,
-} from '../src/engine/zipf-heaps';
+} from '@usebrick/engine';
 
 const [, , workspace, sampleArg] = process.argv;
 if (!workspace) {

@@ -525,7 +525,7 @@ async function runFindSimilar(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
-  const { findSimilarFunctions } = await import('../engine/find-similar.js');
+  const { findSimilarFunctions } = await import('@usebrick/engine');
   const hooks = Array.isArray(args.hooks) ? (args.hooks as string[]) : [];
   const props = Array.isArray(args.props) ? (args.props as string[]) : [];
   const limitRaw = args.limit;

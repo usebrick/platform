@@ -5,7 +5,7 @@ import {
   computeNaturalnessForRange,
   defaultModel,
   tokenizeAstToks,
-} from '../../src/engine/naturalness';
+} from '@usebrick/engine';
 
 describe('engine/naturalness — tokenizeAstToks', () => {
   it('extracts identifiers, keywords, and numeric literals', () => {

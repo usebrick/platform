@@ -42,7 +42,7 @@ import {
   detectCrossCategoryDrift,
   type CrossFileDriftSignal,
   type CrossCategoryDrift as CrossCategoryDriftSignal,
-} from './cluster.js';
+} from '@usebrick/engine';
 import { parseFile } from '@usebrick/engine';
 import { extractFacts } from './visitor.js';
 import { spacingScaleViolationRule } from '../rules/visual/spacing-scale-violation.js';

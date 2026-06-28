@@ -38,9 +38,50 @@
  * the same graph return the same partition.
  */
 
-import type { Community, CommunityDetection } from './graph-types.js';
 import type { InventoryFile } from '@usebrick/core';
-import { normalizeEdgeWeights, totalEdgeWeight } from './graph-helpers.js';
+
+/** Local minimal types — mirror the shapes in slopbrick's
+ *  `engine/graph-types.ts`. The engine doesn't import from there to
+ *  avoid a workspace-level dep. */
+export interface Community {
+  id: number;
+  files: string[];
+  internalEdges: number;
+}
+
+export interface CommunityDetection {
+  communities: Community[];
+  modularity: number;
+  iterations: number;
+}
+
+/** Local copies of the two edge-weight helpers from slopbrick's
+ *  `engine/graph-helpers.ts`. Tiny pure functions; inlining keeps the
+ *  engine self-contained. */
+function normalizeEdgeWeights(
+  edges: ReadonlyArray<readonly [string, string, number]>,
+): Map<string, number> {
+  const weights = new Map<string, number>();
+  for (const [u, v, w] of edges) {
+    const key = u < v ? `${u}|${v}` : `${v}|${u}`;
+    weights.set(key, (weights.get(key) ?? 0) + w);
+  }
+  return weights;
+}
+
+function totalEdgeWeight(
+  edges: ReadonlyArray<readonly [string, string, number]>,
+): number {
+  let total = 0;
+  const seen = new Set<string>();
+  for (const [u, v, w] of edges) {
+    const key = u < v ? `${u}|${v}` : `${v}|${u}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    total += w;
+  }
+  return total;
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -71,9 +112,9 @@ export function buildImportGraph(
   const edges: Array<[string, string, number]> = [];
 
   for (let i = 0; i < patterns.length; i++) {
+    const a = patterns[i]!;
     for (let j = i + 1; j < patterns.length; j++) {
-      const a = patterns[i];
-      const b = patterns[j];
+      const b = patterns[j]!;
       if (a.fileCount === 0 || b.fileCount === 0) continue;
       // min(fileCount_a, fileCount_b) is the maximum possible number of
       // files that import both — the strongest signal available from

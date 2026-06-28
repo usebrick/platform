@@ -64,7 +64,7 @@ function ecdfAt(sortedSamples: readonly number[], x: number): number {
   let hi = sortedSamples.length;
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
-    if (sortedSamples[mid] <= x) lo = mid + 1;
+    if (sortedSamples[mid]! <= x) lo = mid + 1;
     else hi = mid;
   }
   return lo / sortedSamples.length;

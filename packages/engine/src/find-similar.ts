@@ -28,7 +28,15 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { matchAll } from '../rules/utils';
+
+/** Local `matchAll` — copied from slopbrick's `rules/utils.ts` to
+ *  avoid a workspace-level dep. The engine can't import from slopbrick
+ *  (would create a circular dep). */
+function matchAll(re: RegExp, source: string): RegExpExecArray[] {
+  // String.prototype.matchAll requires the regex to have the g flag.
+  const gRe = re.global ? re : new RegExp(re.source, re.flags + 'g');
+  return Array.from(source.matchAll(gRe));
+}
 
 /**
  * Normalized signature for a single function/component in the codebase.

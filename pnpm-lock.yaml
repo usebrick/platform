@@ -38,9 +38,15 @@ importers:
 
   packages/engine:
     dependencies:
+      '@swc/core':
+        specifier: ^1.10.0
+        version: 1.15.43
       '@usebrick/core':
         specifier: workspace:*
         version: link:../core
+      globby:
+        specifier: ^14.0.0
+        version: 14.1.0
     devDependencies:
       tsup:
         specifier: ^8.5

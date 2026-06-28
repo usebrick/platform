@@ -87,14 +87,14 @@ export function benjaminiHochberg(pvalues: readonly number[], alpha: number): BH
   // All hypotheses 1..k are rejected (including k itself).
   let maxK = -1;
   for (let k = 0; k < n; k++) {
-    if (indexed[k].pValue <= criticalValues[k]) {
+    if (indexed[k]!.pValue <= criticalValues[k]!) {
       maxK = k;
     }
   }
 
   const rejected = new Set<number>();
   for (let k = 0; k <= maxK; k++) {
-    rejected.add(indexed[k].originalIndex);
+    rejected.add(indexed[k]!.originalIndex);
   }
 
   return { rejected, criticalValues, sortedPValues: indexed, alpha };

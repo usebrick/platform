@@ -25,7 +25,7 @@ import {
   pValuesFromFires,
   survivingFires,
   type BHResult,
-} from '../../src/engine/multitest';
+} from '@usebrick/engine';
 
 describe('benjaminiHochberg', () => {
   it('returns empty rejected set for empty input', () => {

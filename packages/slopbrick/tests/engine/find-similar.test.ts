@@ -22,7 +22,7 @@ import {
   signatureSimilarity,
   fingerprintSignature,
   findSimilarFunctions,
-} from '../../src/engine/find-similar';
+} from '@usebrick/engine';
 
 describe('extractSignatures', () => {
   it('extracts named function declarations', () => {

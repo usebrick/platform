@@ -3,7 +3,7 @@ import {
   louvainCommunityDetection,
   buildImportGraph,
   computeModularityForTest,
-} from '../../src/engine/louvain';
+} from '@usebrick/engine';
 import { normalizeEdgeWeights, totalEdgeWeight } from '../../src/engine/graph-helpers';
 import { STRUCTURE_SCHEMA_VERSION, type InventoryFile } from '@usebrick/core';
 import type { CommunityDetection } from '../../src/engine/graph-types';

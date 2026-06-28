@@ -65,15 +65,11 @@ export {
 // `@usebrick/core` package (used to live in `src/engine/memory-types.ts`).
 // slopbrick depends on `@usebrick/core` and re-exports its surface
 // here so callers don't need a second import.
-export {
-  findSimilarFunctions,
-  extractSignatures,
-  signatureSimilarity,
-  fingerprintSignature,
-  type ComponentSignature,
-  type SimilarMatch,
-  type FindSimilarQuery,
-} from './engine/find-similar';
+//
+// v0.15.0 B.5: `findSimilarFunctions` and friends moved to
+// `@usebrick/engine` (see packages/engine/src/find-similar.ts). They
+// are still re-exported from slopbrick via the wildcard
+// `export * from '@usebrick/engine'` at the top of this file.
 
 // NOTE: `.slopbrick/` memory schema + readers are owned by the
 // `@usebrick/core` workspace package. We deliberately do NOT re-export

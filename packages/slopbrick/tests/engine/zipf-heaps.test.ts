@@ -27,7 +27,7 @@ import {
   computeZipfHeaps,
   heapsDeviationZScore,
   tokenizeIdentifiers,
-} from '../../src/engine/zipf-heaps';
+} from '@usebrick/engine';
 
 describe('computeZipfExponent', () => {
   it('fits exponent ≈ 1 for an artificially Zipf-distributed sample', () => {
