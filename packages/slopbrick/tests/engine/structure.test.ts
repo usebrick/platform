@@ -9,7 +9,11 @@ import {
   buildConstitutionFromConfig,
   buildHealthFromReport,
   saveInventory,
-} from '../../src/engine/structure';
+  type MemoryIO,
+  type MemoryPatternInventory,
+  type MemoryPatternMatch,
+} from '@usebrick/engine';
+import { fsMemoryIO } from '../../src/cli/memory-io.js';
 import {
   loadInventory,
   loadConstitution,
@@ -29,6 +33,21 @@ import {
 } from '@usebrick/core';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../src/types';
+import { computeFileHash } from '../../src/engine/cache-incremental.js';
+
+const emptyPatternInventory: MemoryPatternInventory = {
+  scannedFiles: 1,
+  patterns: {
+    modal: [],
+    button: [],
+    api: [],
+    state: [],
+    dataFetching: [],
+    service: [],
+    route: [],
+    ormModel: [],
+  },
+};
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-memory-test-'));
 
@@ -74,15 +93,15 @@ describe('readRuns', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('returns an empty array when no memory file exists', () => {
-    expect(readRuns(dir)).toEqual([]);
+  it('returns an empty array when no memory file exists', async () => {
+    expect(await readRuns(dir, fsMemoryIO)).toEqual([]);
   });
 
-  it('reads runs appended by appendRun', () => {
-    appendRun(dir, makeReport(10), false);
-    appendRun(dir, makeReport(20), true);
+  it('reads runs appended by appendRun', async () => {
+    await appendRun(dir, makeReport(10), VERSION, fsMemoryIO, false);
+    await appendRun(dir, makeReport(20), VERSION, fsMemoryIO, true);
 
-    const runs = readRuns(dir);
+    const runs = await readRuns(dir, fsMemoryIO);
     expect(runs).toHaveLength(2);
     expect(runs[0].slopIndex).toBe(10);
     expect(runs[0].thresholdExceeded).toBe(false);
@@ -90,23 +109,23 @@ describe('readRuns', () => {
     expect(runs[1].thresholdExceeded).toBe(true);
   });
 
-  it('filters out malformed entries', () => {
-    appendRun(dir, makeReport(5), false);
+  it('filters out malformed entries', async () => {
+    await appendRun(dir, makeReport(5), VERSION, fsMemoryIO, false);
     const memoryPath = join(dir, '.slopbrick', 'structure.json');
-    const existing = readRuns(dir);
+    const existing = await readRuns(dir, fsMemoryIO);
     // Intentionally writing invalid data to test filtering.
     writeFileSync(memoryPath, JSON.stringify([...existing, { invalid: true }]));
 
-    const runs = readRuns(dir);
+    const runs = await readRuns(dir, fsMemoryIO);
     expect(runs).toHaveLength(1);
     expect(runs[0].slopIndex).toBe(5);
   });
 
-  it('caps the log at 1000 runs, dropping oldest entries', () => {
+  it('caps the log at 1000 runs, dropping oldest entries', async () => {
     for (let i = 0; i < 1002; i++) {
-      appendRun(dir, makeReport(i), false);
+      await appendRun(dir, makeReport(i), VERSION, fsMemoryIO, false);
     }
-    const runs = readRuns(dir);
+    const runs = await readRuns(dir, fsMemoryIO);
     expect(runs).toHaveLength(1000);
     expect(runs[0].slopIndex).toBe(2);
     expect(runs[runs.length - 1].slopIndex).toBe(1001);
@@ -124,7 +143,7 @@ describe('appendRun', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('stores timestamp, version, category scores, and top offense ids', () => {
+  it('stores timestamp, version, category scores, and top offense ids', async () => {
     const report = makeReport(42, {
       issues: [
         {
@@ -148,9 +167,9 @@ describe('appendRun', () => {
       ],
     });
 
-    appendRun(dir, report, true);
+    await appendRun(dir, report, VERSION, fsMemoryIO, true);
 
-    const [run] = readRuns(dir);
+    const [run] = await readRuns(dir, fsMemoryIO);
     expect(run.timestamp).toBe(report.generatedAt);
     expect(run.version).toBe(report.version);
     expect(run.slopIndex).toBe(42);
@@ -237,7 +256,7 @@ describe('loadInventory + saveInventory', () => {
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileB];
 
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
     const loaded = await loadInventory(dir);
 
     expect(loaded).not.toBeNull();
@@ -272,7 +291,7 @@ describe('loadInventory + saveInventory', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
 
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     // .tmp must be gone (renamed to canonical path).
     expect(existsSync(join(slopDir, 'inventory.json.tmp'))).toBe(false);
@@ -398,7 +417,7 @@ describe('buildInventoryFromScan', () => {
     const config = makeConfig();
     const results = [makeComponentResult(fileA, 'Button')];
 
-    const inv = await buildInventoryFromScan({ cwd: dir, results }, config, 250);
+    const inv = buildInventoryFromScan({ cwd: dir, results }, emptyPatternInventory, 250);
 
     expect(inv.version).toBe(STRUCTURE_SCHEMA_VERSION);
     expect(inv.workspace).toBe(dir);
@@ -413,7 +432,7 @@ describe('buildInventoryFromScan', () => {
     const config = makeConfig();
     const results = [makeComponentResult(fileA, 'Button'), makeComponentResult(fileB, 'Card')];
 
-    const inv = await buildInventoryFromScan({ cwd: dir, results }, config, 100);
+    const inv = buildInventoryFromScan({ cwd: dir, results }, emptyPatternInventory, 100);
 
     const names = inv.components.map((c) => c.name).sort();
     expect(names).toEqual(['Button', 'Card']);
@@ -428,14 +447,14 @@ describe('buildInventoryFromScan', () => {
   it('produces stable fingerprints for components with the same hooks + props', async () => {
     const fileA = writeFile(dir, 'src/A.tsx', 'export const A = () => null;\n');
     const config = makeConfig();
-    const r1 = await buildInventoryFromScan(
+    const r1 = buildInventoryFromScan(
       { cwd: dir, results: [makeComponentResult(fileA, 'Same')] },
-      config,
+      emptyPatternInventory,
       10,
     );
-    const r2 = await buildInventoryFromScan(
+    const r2 = buildInventoryFromScan(
       { cwd: dir, results: [makeComponentResult(fileA, 'Same')] },
-      config,
+      emptyPatternInventory,
       20,
     );
 
@@ -448,7 +467,7 @@ describe('buildInventoryFromScan', () => {
     const config = makeConfig();
     const results = [makeComponentResult(fileA, 'Shared'), makeComponentResult(fileB, 'Shared')];
 
-    const inv = await buildInventoryFromScan({ cwd: dir, results }, config, 10);
+    const inv = buildInventoryFromScan({ cwd: dir, results }, emptyPatternInventory, 10);
 
     expect(inv.components).toHaveLength(1);
     expect(inv.components[0].name).toBe('Shared');
@@ -457,7 +476,7 @@ describe('buildInventoryFromScan', () => {
 
   it('handles empty results without throwing', async () => {
     const config = makeConfig();
-    const inv = await buildInventoryFromScan({ cwd: dir, results: [] }, config, 0);
+    const inv = buildInventoryFromScan({ cwd: dir, results: [] }, emptyPatternInventory, 0);
 
     expect(inv.components).toEqual([]);
     expect(Array.isArray(inv.patterns)).toBe(true);
@@ -465,7 +484,7 @@ describe('buildInventoryFromScan', () => {
 });
 
 describe('buildConstitutionFromConfig', () => {
-  it('copies declared, forbidden, forbiddenPrefixes from a ResolvedConfig', () => {
+  it('copies declared, forbidden, forbiddenPrefixes from a ResolvedConfig', async () => {
     const config = makeConfig({
       constitution: {
         stateManagement: ['zustand', 'jotai'],
@@ -605,7 +624,7 @@ describe('buildHealthFromReport', () => {
     expect(out.topOffenseIds).toEqual(['logic/healthy-rule']);
   });
 
-  it('appendRun topOffenseIds also filters out severity=off issues', () => {
+  it('appendRun topOffenseIds also filters out severity=off issues', async () => {
     // Same regression as above but for the report-level
     // topOffenseIds (used by .slop-audit/memory.json history). The
     // persisted run record must not surface disabled rules in its
@@ -621,7 +640,7 @@ describe('buildHealthFromReport', () => {
           { ruleId: 'logic/ks-distribution-shift', severity: 'off' } as any,
         ],
       });
-      const run = appendRun(tmpDir, report);
+      const run = await appendRun(tmpDir, report, VERSION, fsMemoryIO);
       expect(run.topOffenseIds).toEqual(['logic/healthy-rule']);
     } finally {
       rmSync(tmpDir, { recursive: true, force: true });
@@ -687,7 +706,7 @@ describe('isInventoryFresh', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     const loaded = await loadInventory(dir);
     expect(loaded).not.toBeNull();
@@ -699,7 +718,7 @@ describe('isInventoryFresh', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     // Bump mtimeMs to a later value — file content is irrelevant.
     const future = (Date.now() + 60_000) / 1000;
@@ -714,7 +733,7 @@ describe('isInventoryFresh', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     // Wipe the cache to simulate the first call after a fresh clone.
     // v0.11.0+: cache file moved to top-level (`.slopbrick-cache.json`)
@@ -730,7 +749,7 @@ describe('isInventoryFresh', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     rmSync(fileA);
 
@@ -756,7 +775,7 @@ describe('invalidateFile', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileB];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     await invalidateFile(dir, fileA);
 
@@ -772,7 +791,7 @@ describe('invalidateFile', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     expect(invalidateFile(dir, join(dir, 'src', 'nope.tsx'))).toBeUndefined();
   });
@@ -782,7 +801,7 @@ describe('invalidateFile', () => {
     const fixture = makeInventoryFixture(dir);
     fixture.components[0].files = [fileA];
     fixture.components[1].files = [fileA];
-    await saveInventory(dir, fixture);
+    saveInventory(dir, fixture, computeFileHash);
 
     const loaded = await loadInventory(dir);
     expect(await isInventoryFresh(loaded as InventoryFile, dir)).toBe(true);

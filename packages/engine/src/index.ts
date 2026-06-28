@@ -27,3 +27,25 @@ export {
   parseFile,
   type ParseResult,
 } from './parser';
+
+// v0.15.0 B.4: Memory Platform bridge (ConstitutionFile /
+// InventoryFile / HealthFile builders + telemetry log).
+//
+// Note: `Category` is intentionally NOT re-exported here — slopbrick
+// owns its `Category` type, and re-exporting our `string` alias would
+// collide when both packages are re-exported through the same barrel.
+export {
+  saveInventory,
+  readRuns,
+  appendRun,
+  buildInventoryFromScan,
+  buildConstitutionFromConfig,
+  buildHealthFromReport,
+  type MemoryIO,
+  type MemoryReport,
+  type MemoryConfig,
+  type MemoryScanResult,
+  type MemoryAuditRun,
+  type MemoryPatternInventory,
+  type MemoryPatternMatch,
+} from './structure';

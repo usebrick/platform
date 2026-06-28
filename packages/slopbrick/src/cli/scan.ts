@@ -74,9 +74,13 @@ import {
   buildInventoryFromScan,
   buildConstitutionFromConfig,
   buildHealthFromReport,
-} from '../engine/structure';
+  saveInventory as engineSaveInventory,
+  type MemoryPatternInventory,
+} from '@usebrick/engine';
+import { fsMemoryIO } from './memory-io.js';
 import { renderStructureMarkdown, writeStructureMarkdown } from '../engine/structure-md';
-import { saveInventory, saveConstitution, saveHealth } from '@usebrick/core';
+import { saveConstitution, saveHealth } from '@usebrick/core';
+import { buildPatternInventory } from '../mcp/patterns.js';
 import { recordTelemetry, readTelemetry } from '../engine/telemetry';
 import {
   computeFlywheelOutput,
@@ -602,7 +606,7 @@ export async function runScan(
   // is undefined and the delta line is omitted from the output.
   let previousRun: { slopIndex: number; timestamp: string } | undefined;
   try {
-    const runs = readRuns(cwd);
+    const runs = await readRuns(cwd, fsMemoryIO);
     const last = runs.at(-1);
     if (last) {
       previousRun = { slopIndex: last.slopIndex, timestamp: last.timestamp };
@@ -978,7 +982,7 @@ export async function runScan(
 
   let noIncreaseFailure = false;
   if (options.noIncrease) {
-    const previous = readRuns(cwd).at(-1);
+    const previous = (await readRuns(cwd, fsMemoryIO)).at(-1);
     if (previous) {
       if (report.slopIndex > previous.slopIndex) {
         noIncreaseFailure = true;
@@ -994,7 +998,7 @@ export async function runScan(
   }
 
   if (config.projectMemory !== false) {
-    appendRun(cwd, report, thresholdExceeded(report, config));
+    await appendRun(cwd, report, VERSION, fsMemoryIO, thresholdExceeded(report, config));
   }
 
   // for files that were actually scanned this run. Files in the old
@@ -1025,7 +1029,7 @@ export async function runScan(
   }
 
   if (telemetryEnabled) {
-    const runs = readRuns(cwd);
+    const runs = await readRuns(cwd, fsMemoryIO);
     const telemetryPayloads = readTelemetry(cwd);
     const recentTopHashes = telemetryPayloads.map((payload) =>
       [...payload.files]
@@ -1079,12 +1083,13 @@ export async function runScan(
   if (config.projectMemory !== false) {
     try {
       const durationMs = Date.now() - startTime;
-      const inventory = await buildInventoryFromScan(
+      const patternInventory = await buildPatternInventory(cwd, config);
+      const inventory = buildInventoryFromScan(
         { cwd, results },
-        config,
+        patternInventory,
         durationMs,
       );
-      await saveInventory(cwd, inventory);
+      engineSaveInventory(cwd, inventory, computeFileHash);
       const constitution = buildConstitutionFromConfig(config, cwd);
       await saveConstitution(cwd, constitution);
       // v0.14.5d: also render the agent-readable markdown summary so

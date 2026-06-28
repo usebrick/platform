@@ -1,84 +1,177 @@
 /**
- * slopbrick — Memory Platform bridge.
+ * v0.15.0 B.4: slopbrick Memory Platform bridge (moved from
+ * `packages/slopbrick/src/engine/structure.ts`).
  *
- * The shared contract lives in `@usebrick/core`. This module:
+ * The shared schema contracts live in `@usebrick/core`. This module:
  *
- *  1. Re-exports the core loaders/savers/validators so existing
- *     `from '../engine/memory'` and `from './memory'` imports keep working.
- *  2. Implements the slopbrick-specific pieces:
- *     - `readRuns` / `appendRun` — historical telemetry in
- *       `.slopbrick/memory.json` (not part of the Repository Memory
- *       Platform; only slopbrick reads it)
- *     - `buildInventoryFromScan` / `buildConstitutionFromConfig` —
- *       bridge from slopbrick's scan results to the core schemas
- *     - `buildComponentFingerprints` — derives `ComponentFingerprint`s
- *       from `facts.v2` (slopbrick's per-file AST facts)
+ *  1. Builds a `ConstitutionFile` / `InventoryFile` / `HealthFile` from
+ *     scan data (pure, no I/O).
+ *  2. Reads and writes the slopbrick historical-telemetry log
+ *     (`.slopbrick/structure.json`) via a `MemoryIO` callback so the
+ *     engine itself never touches the filesystem.
+ *  3. Re-exports the engine-friendly subset of the core loaders.
+ *
+ * The `MemoryIO` indirection is the v0.15.0 change: callers (the
+ * slopbrick CLI, future web IDEs, the MCP server) provide an I/O
+ * implementation, and the engine stays pure. The default
+ * `fsMemoryIO` lives in `packages/slopbrick/src/cli/memory-io.ts`.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
-import {
-  type Category,
-  type ProjectReport,
-  type ResolvedConfig,
-  type FileScanResult,
-  type SlopAuditRun,
-  VERSION,
-} from '../types';
-import { buildPatternInventory } from '../mcp/patterns.js';
-import { computeFileHash } from './cache-incremental.js';
 import {
   type InventoryFile,
   type ConstitutionFile,
   type StructurePattern,
   type ComponentFingerprint,
-  type FileMtimeEntry,
   type StructureCategory,
   STRUCTURE_SCHEMA_VERSION,
-  isStructurePattern,
-  isComponentFingerprint,
-  isInventoryFile,
-  isConstitutionFile,
-  isFileMtimeEntry,
-  inventoryPath,
-  constitutionPath,
-  cachePath,
-  loadInventory,
-  loadConstitution,
-  saveConstitution,
   saveInventory as coreSaveInventory,
-  readCache,
   writeCacheFromInventory,
-  isInventoryFresh,
-  invalidateFile,
 } from '@usebrick/core';
 
-// NOTE: No re-exports from `@usebrick/core` here. The internal
-// `import { ... }` block above is for slopbrick-internal use only.
-// Re-exporting types from `@usebrick/core` would force every TypeScript
-// consumer of slopbrick to depend on a package that is private and not
-// on npm. The runtime values are BUNDLED into dist/index.cjs (see
-// tsup.config.ts `noExternal`), so end users never need to know about
-// @usebrick/core.
+// ---------------------------------------------------------------------------
+// I/O abstraction
+// ---------------------------------------------------------------------------
 
-/** Back-compat shim: `saveInventory` historically ALSO refreshed the
- *  per-file mtime cache so `isInventoryFresh` had a baseline. The
- *  underlying writer now lives in core's `writeCacheFromInventory`,
- *  which takes a `computeHash` callback. This wrapper preserves the
- *  old slopbrick behavior: write the inventory, then refresh the cache. */
-export async function saveInventory(
+/**
+ * Minimal filesystem surface the engine needs for read-only inventory
+ * access and the historical-telemetry log. Concrete implementations
+ * (e.g. `fsMemoryIO` in slopbrick's `cli/memory-io.ts`) wrap `node:fs`
+ * in async, error-tolerant helpers.
+ *
+ * The interface is deliberately tiny — just the three operations the
+ * engine needs — so it can be backed by anything (in-memory map, R2
+ * blob, IndexedDB, etc.) without dragging the engine into the host's
+ * I/O model.
+ */
+export interface MemoryIO {
+  /** Read a file's contents. Returns `null` on missing / unreadable
+   *  file (never throws). The engine treats `null` as "not found". */
+  read(path: string): Promise<string | null>;
+  /** Write a file's contents. Creates parent directories as needed. */
+  write(path: string, content: string): Promise<void>;
+  /** Cheap existence check. */
+  exists(path: string): Promise<boolean>;
+}
+
+// ---------------------------------------------------------------------------
+// Engine-friendly input types
+// ---------------------------------------------------------------------------
+//
+// These are minimal subsets of the slopbrick types. Structural typing
+// means a slopbrick `ProjectReport` / `ResolvedConfig` /
+// `FileScanResult` satisfies these interfaces without an explicit
+// cast. Keeping the types local to the engine means we never need to
+// import from `slopbrick/src/types` (which would create a circular
+// dep at the workspace level).
+
+/** A category name — the key of `ProjectReport.categoryScores`. */
+export type Category = string;
+
+/** A scan report, minimal fields used by `buildHealthFromReport`. */
+export interface MemoryReport {
+  generatedAt: string;
+  slopIndex: number;
+  categoryScores: Record<string, number>;
+  issues: ReadonlyArray<{ ruleId: string; severity: string }>;
+}
+
+/** Resolved config, minimal fields used by `buildConstitutionFromConfig`. */
+export interface MemoryConfig {
+  constitution?: {
+    stateManagement?: readonly string[];
+    dataFetching?: readonly string[];
+    uiLibrary?: readonly string[];
+    forms?: readonly string[];
+    styling?: readonly string[];
+    routing?: readonly string[];
+    forbidden?: readonly string[];
+  } | null;
+}
+
+/** Per-file scan result, minimal fields used by
+ *  `buildInventoryFromScan` / `buildComponentFingerprints`. */
+export interface MemoryScanResult {
+  filePath: string;
+  facts?: {
+    v2?: {
+      components: ReadonlyArray<{
+        name?: string;
+        line: number;
+        loc: number;
+        hookCalls: ReadonlyArray<{ name: string }>;
+        props: ReadonlyArray<{ name: string }>;
+      }>;
+    };
+  };
+}
+
+/** A historical scan run record (telemetry). */
+export interface MemoryAuditRun {
+  timestamp: string;
+  version: string;
+  slopIndex: number;
+  categoryScores: Record<string, number>;
+  topOffenseIds: string[];
+  thresholdExceeded: boolean;
+}
+
+/** Pattern inventory shape returned by `buildPatternInventory` in
+ *  slopbrick's mcp module. The engine doesn't import it (to keep the
+ *  dep graph acyclic); the caller passes the result in. */
+export interface MemoryPatternInventory {
+  scannedFiles: number;
+  patterns: {
+    modal: ReadonlyArray<MemoryPatternMatch>;
+    button: ReadonlyArray<MemoryPatternMatch>;
+    api: ReadonlyArray<MemoryPatternMatch>;
+    state: ReadonlyArray<MemoryPatternMatch>;
+    dataFetching: ReadonlyArray<MemoryPatternMatch>;
+    service: ReadonlyArray<MemoryPatternMatch>;
+    route: ReadonlyArray<MemoryPatternMatch>;
+    ormModel: ReadonlyArray<MemoryPatternMatch>;
+  };
+}
+
+export interface MemoryPatternMatch {
+  name: string;
+  imports: readonly string[];
+  files: readonly string[];
+}
+
+// ---------------------------------------------------------------------------
+// saveInventory — thin shim that re-uses core's writer + cache refresh
+// ---------------------------------------------------------------------------
+
+/**
+ * Write an `InventoryFile` to `<workspace>/.slopbrick/inventory.json`
+ * and refresh the per-file mtime cache so `isInventoryFresh` (in
+ * core) has a baseline.
+ *
+ * The underlying writers (`saveInventory` + `writeCacheFromInventory`)
+ * live in core and own the actual JSON serialization + atomic-rename
+ * semantics. This wrapper preserves the historical slopbrick behavior:
+ * write the inventory, then refresh the cache.
+ *
+ * Note: this function does not use the `MemoryIO` callback because
+ * core's writers are synchronous `node:fs`-backed functions. The
+ * `MemoryIO` abstraction covers the telemetry log (`readRuns` /
+ * `appendRun`) which the engine owns end-to-end; the inventory file
+ * is owned by core and uses core's I/O model.
+ */
+export function saveInventory(
   workspaceDir: string,
   inventory: InventoryFile,
-  computeHash: (file: string) => string = computeFileHash,
-): Promise<void> {
+  computeHash: (file: string) => string,
+): void {
   coreSaveInventory(workspaceDir, inventory);
   writeCacheFromInventory(workspaceDir, inventory, computeHash);
 }
 
 // ---------------------------------------------------------------------------
-// slopbrick historical telemetry (.slopbrick/memory.json)
+// Historical telemetry (.slopbrick/structure.json)
 // ---------------------------------------------------------------------------
 
 const TELEMETRY_FILE = join('.slopbrick', 'structure.json');
@@ -88,9 +181,9 @@ function telemetryPath(cwd: string): string {
   return join(cwd, TELEMETRY_FILE);
 }
 
-function isSlopAuditRun(value: unknown): value is SlopAuditRun {
+function isMemoryAuditRun(value: unknown): value is MemoryAuditRun {
   if (typeof value !== 'object' || value === null) return false;
-  const run = value as Partial<SlopAuditRun>;
+  const run = value as Partial<MemoryAuditRun>;
   return (
     typeof run.timestamp === 'string' &&
     typeof run.version === 'string' &&
@@ -103,25 +196,32 @@ function isSlopAuditRun(value: unknown): value is SlopAuditRun {
   );
 }
 
-export function readRuns(cwd: string): SlopAuditRun[] {
+/**
+ * Read the historical run log. Returns `[]` on a missing or malformed
+ * file. The `MemoryIO.read` callback never throws on missing files, so
+ * the function itself is total.
+ */
+export async function readRuns(
+  cwd: string,
+  io: MemoryIO,
+): Promise<MemoryAuditRun[]> {
   const path = telemetryPath(cwd);
-  if (!existsSync(path)) return [];
+  const raw = await io.read(path);
+  if (raw === null) return [];
   try {
-    const raw = readFileSync(path, 'utf-8');
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isSlopAuditRun);
+    return parsed.filter(isMemoryAuditRun);
   } catch {
     return [];
   }
 }
 
-function topOffenseIds(report: ProjectReport): string[] {
-  // v0.14.5g: same fix as buildHealthFromReport — skip 'off' severity
-  // issues (rules in signal-strength.json's `defaultOff` set, which
-  // were disabled for a reason). Without this, the persisted
-  // .slop-audit/memory.json topOffenseIds is dominated by INVERTED
-  // or NOISY rules that we deliberately disabled.
+function topOffenseIds(report: MemoryReport): string[] {
+  // v0.14.5g: skip 'off' severity issues (rules in signal-strength.json's
+  // `defaultOff` set, which were disabled for a reason). Without this,
+  // the persisted topOffenseIds is dominated by INVERTED or NOISY
+  // rules that we deliberately disabled.
   const counts = new Map<string, number>();
   for (const issue of report.issues) {
     const sev = issue.severity as 'high' | 'medium' | 'low' | 'off' | undefined;
@@ -134,17 +234,24 @@ function topOffenseIds(report: ProjectReport): string[] {
     .map(([ruleId]) => ruleId);
 }
 
-export function appendRun(
+/**
+ * Append a run to the historical log. Reads the current log via
+ * `io.read`, appends the new run, trims to `MAX_RUNS`, then writes
+ * back via `io.write`.
+ */
+export async function appendRun(
   cwd: string,
-  report: ProjectReport,
+  report: MemoryReport,
+  version: string,
+  io: MemoryIO,
   thresholdExceeded?: boolean,
-): SlopAuditRun {
-  const runs = readRuns(cwd);
-  const run: SlopAuditRun = {
+): Promise<MemoryAuditRun> {
+  const runs = await readRuns(cwd, io);
+  const run: MemoryAuditRun = {
     timestamp: report.generatedAt,
-    version: VERSION,
+    version,
     slopIndex: report.slopIndex,
-    categoryScores: { ...report.categoryScores } as Record<Category, number>,
+    categoryScores: { ...report.categoryScores },
     topOffenseIds: topOffenseIds(report),
     thresholdExceeded: thresholdExceeded ?? report.slopIndex > 0,
   };
@@ -152,9 +259,7 @@ export function appendRun(
   if (runs.length > MAX_RUNS) {
     runs.splice(0, runs.length - MAX_RUNS);
   }
-  const path = telemetryPath(cwd);
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(runs, null, 2));
+  await io.write(telemetryPath(cwd), JSON.stringify(runs, null, 2));
   return run;
 }
 
@@ -163,23 +268,20 @@ export function appendRun(
 // ---------------------------------------------------------------------------
 
 /**
- * Pure-ish: read a scan result + config, return an `InventoryFile` ready
- * for `saveInventory`. The `buildPatternInventory` call inside reads files
- * (cheap, ~200ms on 500 files), so the function is async.
+ * Pure: read a pattern inventory (already-computed by the slopbrick
+ * MCP layer) + a list of per-file scan results, return an
+ * `InventoryFile` ready for `saveInventory`.
  *
- * Component fingerprints are derived from `facts.v2.components` — the same
- * grouped shape the engine already extracts during the scan. The
- * fingerprint is a 16-char hex prefix of sha256 over the canonical name +
- * sorted hooks + sorted props, so two components with the same signature
- * dedupe to one `ComponentFingerprint` (with both files listed).
+ * Why the caller passes the pattern inventory: the engine does not
+ * depend on `slopbrick/src/mcp/patterns.js` (would create a circular
+ * dep at the workspace level). The slopbrick CLI computes the
+ * inventory once and hands it in.
  */
-export async function buildInventoryFromScan(
-  scanResult: { cwd: string; results: readonly FileScanResult[] },
-  config: ResolvedConfig,
+export function buildInventoryFromScan(
+  scanResult: { cwd: string; results: readonly MemoryScanResult[] },
+  inventory: MemoryPatternInventory,
   durationMs: number,
-): Promise<InventoryFile> {
-  const inventory = await buildPatternInventory(scanResult.cwd, config);
-
+): InventoryFile {
   const BUCKET_TO_CATEGORY: Record<keyof typeof inventory.patterns, StructureCategory> = {
     modal: 'modal',
     button: 'button',
@@ -221,8 +323,8 @@ export async function buildInventoryFromScan(
   };
 }
 
-/** Pure function: copy the declared/forbidden/forbiddenPrefixes fields from
- *  a `ResolvedConfig.constitution` into a standalone `ConstitutionFile`.
+/** Pure: copy the declared/forbidden/forbiddenPrefixes fields from a
+ *  `ResolvedConfig.constitution` into a standalone `ConstitutionFile`.
  *
  *  - `declared[category]` takes the first entry of the per-category array
  *    (the canonical choice) — multi-allow-list projects degrade gracefully
@@ -231,7 +333,7 @@ export async function buildInventoryFromScan(
  *  - `forbiddenPrefixes` keeps entries ending with `/` (e.g. `@scope/`).
  */
 export function buildConstitutionFromConfig(
-  config: ResolvedConfig,
+  config: MemoryConfig,
   workspace: string,
 ): ConstitutionFile {
   const c = config.constitution;
@@ -280,7 +382,7 @@ function fingerprintFor(component: {
 }
 
 function buildComponentFingerprints(
-  results: readonly FileScanResult[],
+  results: readonly MemoryScanResult[],
 ): ComponentFingerprint[] {
   const byName = new Map<string, ComponentFingerprint>();
   for (const result of results) {
@@ -288,7 +390,11 @@ function buildComponentFingerprints(
     if (!v2) continue;
     for (const component of v2.components) {
       if (!component.name) continue;
-      const fp = fingerprintFor(component);
+      // `component.name` is narrowed to `string` here, but TypeScript
+      // doesn't always narrow across interface boundaries, so we
+      // re-bind to a local with the narrowed type.
+      const name: string = component.name;
+      const fp = fingerprintFor({ ...component, name });
       const hooks = [...new Set(component.hookCalls.map((h) => h.name))].sort();
       const props = [...new Set(component.props.map((p) => p.name))].sort();
       const line = component.line;
@@ -323,17 +429,13 @@ function buildComponentFingerprints(
 
 /**
  * Pure function: build the headline `HealthFile` snapshot from a
- * completed `ProjectReport`. The schema (`health.schema.json`) is the
+ * completed scan report. The schema (`health.schema.json`) is the
  * contract dashboards and CI integrations consume; the writer is
  * `saveHealth()` in `@usebrick/core`. This function does the
  * transformation only — it does NOT touch the filesystem.
- *
- * Why derived (not stored) in the engine: the `ProjectReport` is the
- * single source of truth. The health file is a normalized view; if the
- * two ever diverge, the report wins.
  */
 export function buildHealthFromReport(
-  report: ProjectReport,
+  report: MemoryReport,
   workspace: string,
   options: { constitutionDrift?: number; scanDurationMs?: number } = {},
 ): {
@@ -349,10 +451,7 @@ export function buildHealthFromReport(
 } {
   // Aggregate issue counts by severity. v0.14.5g: skip issues whose
   // severity has been set to 'off' by the defaultOff auto-disable
-  // pass (see `filterIssues` in `src/cli/scan.ts`). Without this
-  // filter, defaultOff rules — which signal-strength.json marks
-  // as INVERTED or NOISY — show up as top offenses in the health
-  // snapshot, eroding trust in the headline metric.
+  // pass (see `filterIssues` in `src/cli/scan.ts`).
   const issueCounts = { high: 0, medium: 0, low: 0 };
   const offenseCounts = new Map<string, number>();
   for (const issue of report.issues) {

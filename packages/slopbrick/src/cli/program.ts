@@ -136,7 +136,8 @@ import { formatUnifiedDiff } from '../report/unified-diff';
 import { buildHeatmap, formatHeatmap } from '../report/heatmap';
 import { formatFlywheel, summarizeTelemetry } from '../report/flywheel';
 import { readTelemetry } from '../engine/telemetry';
-import { readRuns } from '../engine/structure';
+import { readRuns } from '@usebrick/engine';
+import { fsMemoryIO } from './memory-io.js';
 import { applyFixes } from '../fix';
 import { saveBaseline, baselinePath, hashConfig } from '../engine/cache';
 import {
@@ -483,7 +484,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       const cwd = resolve(options.workspace ?? process.cwd());
 
       if (options.trend !== undefined) {
-        const runs = readRuns(cwd);
+        const runs = await readRuns(cwd, fsMemoryIO);
         if (runs.length === 0) {
           logger.info('No trend data available.');
         } else {

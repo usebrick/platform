@@ -28,7 +28,23 @@ import {
   buildConstitutionFromConfig,
   buildHealthFromReport,
   saveInventory,
-} from '../../src/engine/structure';
+  type MemoryPatternInventory,
+} from '@usebrick/engine';
+import { computeFileHash } from '../../src/engine/cache-incremental.js';
+
+const emptyPatternInventory: MemoryPatternInventory = {
+  scannedFiles: 1,
+  patterns: {
+    modal: [],
+    button: [],
+    api: [],
+    state: [],
+    dataFetching: [],
+    service: [],
+    route: [],
+    ormModel: [],
+  },
+};
 import {
   loadInventory,
   loadConstitution,
@@ -100,10 +116,10 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     const durationMs = 250;
 
     // 1. inventory
-    const inventory: InventoryFile = await buildInventoryFromScan(
-      scanResult, config, durationMs,
+    const inventory: InventoryFile = buildInventoryFromScan(
+      scanResult, emptyPatternInventory, durationMs,
     );
-    saveInventory(dir, inventory);
+    saveInventory(dir, inventory, computeFileHash);
 
     // 2. constitution
     const constitution: ConstitutionFile = buildConstitutionFromConfig(config, dir);
