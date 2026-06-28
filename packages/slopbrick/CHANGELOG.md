@@ -552,6 +552,38 @@ and scan.
 
 ## [Unreleased]
 
+### Changed (README slim-down — v0.14.5n)
+
+The README had grown to 1,058 lines / 28 sections and was behaving
+like a user manual. The v0.14.5m commit added 6 separate docs
+(`CONTRIBUTING.md`, `EXAMPLES.md`, `docs/MCP.md`, `SECURITY.md`,
+`CODE_OF_CONDUCT.md`, `docs/scoring-explained.md`) that covered
+~70% of the README's content. This release slims the README to
+199 lines (the 5-min version: hero, install, what you get,
+quick start, headlines, example output, docs index, contributing,
+license). Net change: -945 lines from the README. All content
+preserved in the existing separate docs (CONTRIBUTING, EXAMPLES,
+docs/MCP, docs/scoring-explained, docs/repository-memory,
+docs/rule-catalog, docs/architecture, CHANGELOG, ROADMAP).
+
+Why: the README displays on the npm package page. Users coming
+from npm want the 5-min version. The detailed material is for
+users who actually install the tool and want to go deeper — they
+get it via the docs index, which is now the second section of
+the README.
+
+The 14 linked files are all present (verified). No content lost
+(verified by cross-referencing every removed line to a destination
+doc). The "Comprehensive manual" sections removed:
+- 19 subcommands — `slopbrick --help` (live, auto-generated)
+- Composite Slop Index math — `docs/scoring-explained.md`
+- CLI reference — `docs/MCP.md` (per-tool reference) +
+  `EXAMPLES.md` (config reference)
+- Architecture — `docs/architecture.md`
+- Adding new rules — `CONTRIBUTING.md`
+- Calibration details — `docs/research/calibration-report-2026.md`
+- What's new in v0.12.0/v0.12.1 — `CHANGELOG.md`
+
 ### Added (Documentation suite — v0.14.5m)
 
 The public documentation set was missing several standard OSS files
