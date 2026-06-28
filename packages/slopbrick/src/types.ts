@@ -1,6 +1,44 @@
 export const VERSION = '0.15.0';
 
 // ---------------------------------------------------------------------------
+// v0.15.0 U.4 — Repository Memory Platform Health snapshot
+// ---------------------------------------------------------------------------
+
+/**
+ * Runtime shape of `.slopbrick/health.json`. The on-disk JSON
+ * matches `packages/core/schemas/v1/health.schema.json` (v3); this
+ * interface is the slopbrick-side runtime companion. Schema is the
+ * source of truth — keep this in sync with the codegen output in
+ * `packages/core/src/generated/health.ts` (RepositoryMemoryHealth).
+ *
+ * v3 dropped the single `slopIndex` headline in favor of four named
+ * scores:
+ *   - `aiQuality`           — AI-specific findings (USEFUL + OK verdicts)
+ *   - `engineeringHygiene`  — HYGIENE + INVERTED rules
+ *   - `security`            — security/* rules
+ *   - `repositoryHealth`    — composite (0.5*aiQ + 0.3*eng + 0.2*sec)
+ *
+ * Plus optional verdict + bucket distributions for agent-readable
+ * insight.
+ */
+export interface HealthFile {
+  version: typeof import('@usebrick/core').STRUCTURE_SCHEMA_VERSION;
+  generatedAt: string;
+  workspace: string;
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
+  verdictDistribution?: Record<import('@usebrick/core').Verdict, number>;
+  bucketDistribution?: Record<import('./report/buckets').Bucket, number>;
+  categoryScores: Record<string, number>;
+  issueCounts: { high: number; medium: number; low: number };
+  constitutionDrift?: number;
+  topOffenseIds?: string[];
+  scanDurationMs?: number;
+}
+
+// ---------------------------------------------------------------------------
 // Phase Memo #4 — AI Maintenance Cost (target 0.8.0)
 // ---------------------------------------------------------------------------
 
@@ -614,9 +652,17 @@ export interface ProjectReport {
   version: string;
   generatedAt: string;
   configPath?: string;
-  slopIndex: number;
+  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
   assemblyHealth: number;
   totalScore: number;
+  /** @deprecated v0.15.0: use aiQuality. Kept as optional for backward
+   *  compat with existing test fixtures and historical telemetry. Will be
+   *  removed in v0.16.0. */
+  slopIndex?: number;
   categoryScores: Record<Category, number>;
   /** Phase 2 §10: composite subscores. Each is in 0-100 (capped).
    *  slopIndex = 0.40 × boundaryScore + 0.35 × contextScore + 0.25 × visualScore. */

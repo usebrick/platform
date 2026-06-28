@@ -190,7 +190,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
         logger.info(
-          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: slopIndex=${health.slopIndex}).`,
+          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiQuality} eng=${health.engineeringHygiene} sec=${health.security}).`,
         );
       }
     } catch (err) {

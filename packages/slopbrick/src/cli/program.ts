@@ -408,8 +408,15 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
         const health = loadHealth(cwd);
         if (health) {
+          // v0.15.0 U.4: badge now shows the composite repositoryHealth
+          // (the v3 replacement for the headline slopIndex). The shape
+          // passed to formatBadge is a ProjectReport-like — it still
+          // reads `slopIndex`, so we invert the value (lower = better
+          // for the legacy badge, higher = better for repositoryHealth)
+          // before passing it in. TODO(U.5): add a --format that
+          // shows all 4 scores.
           const synthetic = {
-            slopIndex: health.slopIndex,
+            slopIndex: 100 - health.repositoryHealth,
           } as Parameters<typeof formatBadge>[0];
           logger.info(formatBadge(synthetic));
           process.exit(0);
@@ -1306,16 +1313,26 @@ export async function runCli({ start }: { start: number }): Promise<void> {
             process.exit(1);
           }
           let exitCode = 0;
-          if (cmdOptions.maxSlop !== undefined && health.slopIndex > cmdOptions.maxSlop) {
-            logger.warn(`slopIndex ${health.slopIndex} > max ${cmdOptions.maxSlop}`);
-            exitCode = 1;
+          // v0.15.0 U.4: --max-slop now gates on the composite
+          // repositoryHealth (the v3 replacement for slopIndex).
+          // Because repositoryHealth is "higher = better" while
+          // --max-slop is "fail if higher than N" (legacy semantics
+          // were "fail if slopIndex > N" where lower is better), we
+          // invert the comparison so users see the same behavior.
+          // TODO(U.5): replace --max-slop with --min-repository-health.
+          if (cmdOptions.maxSlop !== undefined) {
+            const maxInverse = 100 - cmdOptions.maxSlop;
+            if (health.repositoryHealth < maxInverse) {
+              logger.warn(`repositoryHealth ${health.repositoryHealth} < ${cmdOptions.maxSlop} (max-slop)`);
+              exitCode = 1;
+            }
           }
           if (cmdOptions.strictConstitution && (health.constitutionDrift ?? 0) > 0) {
             logger.warn(`${health.constitutionDrift} constitution violation(s) detected`);
             exitCode = 1;
           }
           if (exitCode === 0) {
-            logger.info(`CI gate passed: slopIndex=${health.slopIndex}, constitutionDrift=${health.constitutionDrift ?? 0}`);
+            logger.info(`CI gate passed: repositoryHealth=${health.repositoryHealth}, constitutionDrift=${health.constitutionDrift ?? 0}`);
           }
           process.exit(exitCode);
         },

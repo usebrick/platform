@@ -69,9 +69,11 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: VERSION,
     generatedAt: new Date().toISOString(),
-    slopIndex: 12,
+    aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
+    engineeringHygiene: 12,
+    security: 12,
+    repositoryHealth: 12,
     assemblyHealth: 88,
-    totalScore: 12,
     categoryScores: {
       visual: 5, typo: 0, wcag: 0, layout: 0, component: 0,
       logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0,
@@ -131,7 +133,10 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
       version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: inventory.generatedAt,
       workspace: dir,
-      slopIndex: 12,
+      aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
+      engineeringHygiene: 12,
+      security: 12,
+      repositoryHealth: 12,
       categoryScores: { ai: 7, visual: 5 },
       issueCounts: { high: 1, medium: 1, low: 1 },
       topOffenseIds: ['ai/comment-ratio', 'visual/duplicate-class'],
@@ -163,7 +168,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     const loadedHealth = loadHealth(dir);
     expect(loadedHealth).not.toBeNull();
     expect(isHealthFile(loadedHealth)).toBe(true);
-    expect(loadedHealth!.slopIndex).toBe(12);
+    expect(loadedHealth!.aiQuality).toBe(12);
     expect(loadedHealth!.issueCounts).toEqual({ high: 1, medium: 1, low: 1 });
     expect(loadedHealth!.topOffenseIds).toEqual(['ai/comment-ratio', 'visual/duplicate-class']);
 

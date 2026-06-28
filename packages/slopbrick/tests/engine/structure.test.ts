@@ -51,13 +51,15 @@ const emptyPatternInventory: MemoryPatternInventory = {
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-memory-test-'));
 
-function makeReport(slopIndex = 10, overrides: Partial<ProjectReport> = {}): ProjectReport {
+function makeReport(aiQuality = 10, overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: VERSION,
     generatedAt: new Date().toISOString(),
-    slopIndex,
+    aiQuality,
+    engineeringHygiene: aiQuality,
+    security: aiQuality,
+    repositoryHealth: aiQuality,
     assemblyHealth: 90,
-    totalScore: slopIndex,
     categoryScores: {
       visual: 0,
       typo: 0,
@@ -560,7 +562,7 @@ describe('buildHealthFromReport', () => {
     const out = buildHealthFromReport(report, '/work', { scanDurationMs: 1234 });
     expect(out.version).toBe('3');
     expect(out.workspace).toBe('/work');
-    expect(out.slopIndex).toBe(42);
+    expect(out.aiQuality).toBe(42);
     expect(out.issueCounts).toEqual({ high: 2, medium: 2, low: 2 });
     // topOffenseIds is sorted by count desc, then name asc, capped at 3
     expect(out.topOffenseIds).toEqual([
@@ -581,7 +583,7 @@ describe('buildHealthFromReport', () => {
       issues: [],
     });
     const out = buildHealthFromReport(report, '/w');
-    expect(out.slopIndex).toBe(43);
+    expect(out.aiQuality).toBe(43);
     expect(out.categoryScores.visual).toBe(12);
   });
 
@@ -662,7 +664,7 @@ describe('saveHealth / loadHealth', () => {
       expect(existsSync(healthPath(dir))).toBe(true);
       const loaded = loadHealth(dir);
       expect(loaded).not.toBeNull();
-      expect(loaded!.slopIndex).toBe(15);
+      expect(loaded!.aiQuality).toBe(15);
       expect(loaded!.topOffenseIds).toEqual(['ai/keyword-stuffing']);
       expect(loaded!.scanDurationMs).toBe(500);
       // Round-trip must be valid per the schema validator

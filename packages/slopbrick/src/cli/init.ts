@@ -393,7 +393,7 @@ export async function runDoctor(cwd: string): Promise<number> {
 
   const health = loadHealth(cwd);
   if (health) {
-    ok(`.slopbrick/health.json present (slopIndex=${health.slopIndex}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
+    ok(`.slopbrick/health.json present (repositoryHealth=${health.repositoryHealth}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
   } else if (exists(pjoin(cwd, '.slopbrick', 'health.json'))) {
     warn('.slopbrick/health.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
   } else {

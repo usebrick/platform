@@ -6,7 +6,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: '0.14.5i',
     generatedAt: '2026-06-28T00:00:00.000Z',
-    slopIndex: 25,
+    aiQuality: 25, engineeringHygiene: 25, security: 25, repositoryHealth: 25,
     assemblyHealth: 75,
     totalScore: 0,
     categoryScores: {
@@ -51,7 +51,7 @@ describe('v0.14.5i UX improvements', () => {
   // P4: slopIndex is the SINGLE headline, matches health.json
   describe('P4: unified headline number', () => {
     it('renders Slop Index as the primary headline', () => {
-      const out = formatPretty(makeReport({ slopIndex: 25 }));
+      const out = formatPretty(makeReport({ aiQuality: 25 }));
       expect(out).toContain('Slop Index:');
       expect(out).toContain('25');
       expect(out).toMatch(/Slop Index: \s*25 \/ 100/);
@@ -59,7 +59,7 @@ describe('v0.14.5i UX improvements', () => {
 
     it('shows Coherence as secondary view when present', () => {
       const out = formatPretty(
-        makeReport({ slopIndex: 25, coherence: 60, coherenceBreakdown: { architectureConsistency: 0, patternFragmentation: 0, constitutionMapped: 100, aiDebtMapped: 50 } }),
+        makeReport({ aiQuality: 25, coherence: 60, coherenceBreakdown: { architectureConsistency: 0, patternFragmentation: 0, constitutionMapped: 100, aiDebtMapped: 50 } }),
       );
       expect(out).toContain('Slop Index:');
       expect(out).toContain('Repository Coherence:');
@@ -67,10 +67,10 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('uses plain-language band labels (v0.14.5j) instead of [PASS] / [FAIL]', () => {
-      const excellent = formatPretty(makeReport({ slopIndex: 95 }));
-      const passing = formatPretty(makeReport({ slopIndex: 75 }));
-      const needsWork = formatPretty(makeReport({ slopIndex: 50 }));
-      const concerning = formatPretty(makeReport({ slopIndex: 25 }));
+      const excellent = formatPretty(makeReport({ aiQuality: 95 }));
+      const passing = formatPretty(makeReport({ aiQuality: 75 }));
+      const needsWork = formatPretty(makeReport({ aiQuality: 50 }));
+      const concerning = formatPretty(makeReport({ aiQuality: 25 }));
       expect(excellent).toContain('[EXCELLENT]');
       expect(passing).toContain('[PASSING]');
       expect(needsWork).toContain('[NEEDS WORK]');
@@ -80,8 +80,8 @@ describe('v0.14.5i UX improvements', () => {
     it('uses [PASS] / [FAIL] in the Threshold section (CI gate)', () => {
       // v0.14.5j kept the [PASS]/[FAIL] in the Threshold (CI gate)
       // section because that's the bit CI scripts grep for.
-      const pass = formatPretty(makeReport({ slopIndex: 75 }));
-      const fail = formatPretty(makeReport({ slopIndex: 25 }));
+      const pass = formatPretty(makeReport({ aiQuality: 75 }));
+      const fail = formatPretty(makeReport({ aiQuality: 25 }));
       expect(pass).toContain('pass');
       expect(fail).toContain('fail');
     });
@@ -176,12 +176,12 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('mentions --why-failing when score is below 70', () => {
-      const out = formatPretty(makeReport({ slopIndex: 25 }));
+      const out = formatPretty(makeReport({ aiQuality: 25 }));
       expect(out).toContain('--why-failing');
     });
 
     it('does NOT mention --why-failing when score is at/above 70', () => {
-      const out = formatPretty(makeReport({ slopIndex: 75 }));
+      const out = formatPretty(makeReport({ aiQuality: 75 }));
       expect(out).not.toContain('--why-failing');
     });
   });
@@ -199,7 +199,7 @@ describe('v0.14.5i UX improvements', () => {
         // rule C: 5 low = 5 points
         ...Array.from({ length: 5 }, () => makeIssue({ ruleId: 'rule/c', severity: 'low' })),
       ];
-      const out = formatWhyFailingReport(makeReport({ issues, slopIndex: 15 }));
+      const out = formatWhyFailingReport(makeReport({ issues, aiQuality: 15 }));
       const aPos = out.indexOf('rule/a');
       const bPos = out.indexOf('rule/b');
       const cPos = out.indexOf('rule/c');
@@ -221,13 +221,13 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('returns clean message when no active issues', () => {
-      const out = formatWhyFailingReport(makeReport({ issues: [], slopIndex: 100 }));
+      const out = formatWhyFailingReport(makeReport({ issues: [], aiQuality: 100 }));
       expect(out).toContain('Nothing is failing');
     });
 
     it('shows the headline score in the output', () => {
       const out = formatWhyFailingReport(
-        makeReport({ slopIndex: 15, issues: [makeIssue({ ruleId: 'rule/test', severity: 'high' })] }),
+        makeReport({ aiQuality: 15, issues: [makeIssue({ ruleId: 'rule/test', severity: 'high' })] }),
       );
       expect(out).toContain('15/100');
     });
@@ -261,7 +261,7 @@ describe('v0.14.5i UX improvements', () => {
   describe('v0.14.5j: at-a-glance + with-help', () => {
     // P6: plain-language verdict at the top
     it('P6: opens with a one-sentence verdict answering "is my code OK?"', () => {
-      const out = formatPretty(makeReport({ issues: [makeIssue()], slopIndex: 25 }));
+      const out = formatPretty(makeReport({ issues: [makeIssue()], aiQuality: 25 }));
       // First non-empty line should answer the user's actual question
       const firstLine = out.split('\n').find((l) => l.trim().length > 0) ?? '';
       expect(firstLine).toMatch(/Repo is/i);
@@ -269,7 +269,7 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('P6: clean report gets a "all clean" verdict', () => {
-      const out = formatPretty(makeReport({ issues: [], slopIndex: 0 }));
+      const out = formatPretty(makeReport({ issues: [], aiQuality: 0 }));
       expect(out).toContain('Clean');
     });
 
@@ -277,7 +277,7 @@ describe('v0.14.5i UX improvements', () => {
       const out = formatPretty(
         makeReport({
           issues: [makeIssue({ ruleId: 'ai/x', category: 'ai', severity: 'high', filePath: 'src/bad.ts' })],
-          slopIndex: 50,
+          aiQuality: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
           topOffenders: [{ filePath: 'src/bad.ts', adjustedScore: 100, issueCount: 1 }],
         }),
       );
@@ -328,7 +328,7 @@ describe('v0.14.5i UX improvements', () => {
     // P9: trajectory delta
     it('P9: shows ↓N (cleaner) when score improved from last run', () => {
       const out = formatPretty(
-        makeReport({ slopIndex: 20, previousSlopIndex: 25 }),
+        makeReport({ aiQuality: 20, previousSlopIndex: 25 }),
       );
       expect(out).toMatch(/↓5/);
       expect(out).toMatch(/cleaner/);
@@ -336,27 +336,27 @@ describe('v0.14.5i UX improvements', () => {
 
     it('P9: shows ↑N (sloppier) when score regressed from last run', () => {
       const out = formatPretty(
-        makeReport({ slopIndex: 30, previousSlopIndex: 25 }),
+        makeReport({ aiQuality: 30, previousSlopIndex: 25 }),
       );
       expect(out).toMatch(/↑5/);
       expect(out).toMatch(/sloppier/);
     });
 
     it('P9: no delta line when no previous run', () => {
-      const out = formatPretty(makeReport({ slopIndex: 25, previousSlopIndex: undefined }));
+      const out = formatPretty(makeReport({ aiQuality: 25, previousSlopIndex: undefined }));
       expect(out).not.toMatch(/↓|↑/);
     });
 
     it('P9: no delta line for tiny change (noise floor ±0.5)', () => {
       const out = formatPretty(
-        makeReport({ slopIndex: 25.3, previousSlopIndex: 25.0 }),
+        makeReport({ aiQuality: 25.3, previousSlopIndex: 25.0 }),
       );
       expect(out).not.toMatch(/↓|↑/);
     });
 
     // P10: --brief flag
     it('P10: formatBriefReport is a 4-5 line terse summary', () => {
-      const out = formatBriefReport(makeReport({ slopIndex: 25, coherence: 60 }));
+      const out = formatBriefReport(makeReport({ aiQuality: 25, coherence: 60 }));
       const lines = out.split('\n').filter((l) => l.trim().length > 0);
       // Verdict (1) + headline (1) + coherence (1) + trust signal (1) = 4-5 lines
       expect(lines.length).toBeLessThanOrEqual(5);
@@ -365,7 +365,7 @@ describe('v0.14.5i UX improvements', () => {
 
     it('P10: formatBriefReport includes the verdict, headline, threshold, and delta', () => {
       const out = formatBriefReport(
-        makeReport({ slopIndex: 20, previousSlopIndex: 25, coherence: 60 }),
+        makeReport({ aiQuality: 20, previousSlopIndex: 25, coherence: 60 }),
       );
       expect(out).toMatch(/Repo is/i);
       expect(out).toContain('Slop Index: 20/100');
