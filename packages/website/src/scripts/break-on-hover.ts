@@ -26,7 +26,11 @@ export function initBreakOnHover(): () => void {
       line.setAttribute('y2', line.getAttribute('y1') || '0');
     });
 
+    let lastClickAt = 0;
     const onClick = (e: MouseEvent) => {
+      if (Date.now() - lastClickAt < 200) return; // debounce
+      lastClickAt = Date.now();
+
       if (reduced) {
         cracks.classList.add('is-broken');
         return;
