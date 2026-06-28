@@ -89,7 +89,7 @@ import { logger, setLoggerQuiet } from '../engine/logger';
 import { runProjectRules } from '../rules/project';
 import { RuleRegistry } from '../rules/registry';
 import { builtinRules } from '../rules/builtins';
-import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
+import { getSignalStrength, getDefaultOffRules, loadSignalStrength } from '../rules/signal-strength.js';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import {
   VERSION,
@@ -553,7 +553,7 @@ export async function runScan(
       }
     | undefined;
   try {
-    const { combineFireSet } = await import('../engine/lr-combiner');
+    const { combineFireSet } = await import('@usebrick/engine');
     const { survivingFires } = await import('../engine/multitest');
     // Build the fire set from all active issues (not defaultOff'd).
     const firedRuleIds: string[] = [];
@@ -570,7 +570,7 @@ export async function runScan(
       }
     }
     const uniqueFires = [...new Set(firedRuleIds)];
-    const combo = combineFireSet(uniqueFires);
+    const combo = combineFireSet(uniqueFires, loadSignalStrength());
     const survivors = survivingFires(
       new Map(uniqueFires.map((id) => [id, true])),
       fprMap,

@@ -54,9 +54,15 @@
  *
  * This is the same independence assumption used by spam filters, sentiment
  * classifiers, and Bento et al. 2024's rule ensemble.
+ *
+ * v0.15.0 B.2: moved from `packages/slopbrick/src/engine/lr-combiner.ts`
+ * to `@usebrick/engine`. The signal-strength data is now passed in as
+ * a parameter (the engine has no I/O and does not depend on slopbrick's
+ * loader). Callers fetch the data via `loadSignalStrength()` from
+ * `slopbrick/src/rules/signal-strength.ts` and pass it in.
  */
 
-import { getSignalStrength } from '../rules/signal-strength';
+import type { SignalStrengthEntry } from '@usebrick/core';
 
 /**
  * Per-rule likelihood ratio computed from the calibration corpus.
@@ -92,12 +98,22 @@ export interface BayesPrior {
 export const DEFAULT_PRIOR: BayesPrior = { pAI: 0.5, pHuman: 0.5 };
 
 /**
- * Compute per-rule likelihood ratios from signal-strength.json plus the
- * corpus sizes. The corpus sizes can be passed in from the calibrator
+ * Compute per-rule likelihood ratios from the signal-strength data plus
+ * the corpus sizes. The signal data is passed in (the engine is pure —
+ * no I/O). The corpus sizes can be passed in from the calibrator
  * (preferred) or fall back to the v4 calibration defaults.
+ *
+ * @param ruleIds     - Rule IDs to compute LRs for.
+ * @param signalData  - The `loadSignalStrength()` record from
+ *                      `@usebrick/slopbrick/rules/signal-strength`. Each
+ *                      entry's `recall` and `fpRate` are the per-rule
+ *                      empirical estimates.
+ * @param corpus      - Optional corpus sizes for the calibrator's
+ *                      TP/FP denominators. Defaults to v4.
  */
 export function computeLikelihoodRatios(
   ruleIds: readonly string[],
+  signalData: Readonly<Record<string, SignalStrengthEntry>>,
   corpus?: { nPositive: number; nNegative: number },
 ): RuleLikelihoodRatio[] {
   // Default to v4 corpus sizes if not provided.
@@ -105,7 +121,7 @@ export function computeLikelihoodRatios(
   const nNeg = corpus?.nNegative ?? 86983;
   const out: RuleLikelihoodRatio[] = [];
   for (const id of ruleIds) {
-    const s = getSignalStrength(id);
+    const s = signalData[id];
     if (!s) continue;
     const tp = s.recall * nPos;
     const fp = s.fpRate * nNeg;
@@ -157,11 +173,13 @@ export function bayesianPosterior(
 }
 
 /**
- * Convenience: combine in one call given the fire set and (optional)
- * corpus sizes. Reads from signal-strength.json internally.
+ * Convenience: combine in one call given the fire set, the signal
+ * data, and (optional) corpus sizes. Pure — the signal data is passed
+ * in, not loaded.
  */
 export function combineFireSet(
   firedRuleIds: readonly string[],
+  signalData: Readonly<Record<string, SignalStrengthEntry>>,
   corpus?: { nPositive: number; nNegative: number },
   prior: BayesPrior = DEFAULT_PRIOR,
 ): {
@@ -173,7 +191,7 @@ export function combineFireSet(
   // Get LRs for all fired rules. If a fired rule has no calibration data,
   // we still report it in perRuleLrs as null and skip it from the sum.
   const allRelevantRuleIds = firedRuleIds;
-  const perRuleLrs = computeLikelihoodRatios(allRelevantRuleIds, corpus);
+  const perRuleLrs = computeLikelihoodRatios(allRelevantRuleIds, signalData, corpus);
   const lrByRule = new Map(perRuleLrs.map((l) => [l.ruleId, l]));
   const matchedIds = firedRuleIds.filter((id) => lrByRule.has(id));
   const posterior = bayesianPosterior(firedRuleIds, perRuleLrs, prior);

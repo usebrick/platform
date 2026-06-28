@@ -12,6 +12,12 @@
 export * from './types';
 export { loadConfig, DEFAULT_CONFIG } from './config';
 
+// v0.15.0: re-export @usebrick/engine so existing slopbrick consumers
+// (tests, the CLI's internal lazy imports, and downstream integrations
+// that use the engine functions via `from 'slopbrick'`) keep working
+// as the engine modules migrate out of `src/engine/`.
+export * from '@usebrick/engine';
+
 // Re-export the public CLI API. Library consumers who want to call
 // scanProject() or read saved JSON reports use these.
 export {

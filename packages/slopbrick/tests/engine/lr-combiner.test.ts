@@ -28,28 +28,23 @@ import {
   computeLikelihoodRatios,
   DEFAULT_PRIOR,
   type RuleLikelihoodRatio,
-} from '../../src/engine/lr-combiner';
+} from '@usebrick/engine';
 import signalStrengthData from '../../src/rules/signal-strength.json';
+import type { SignalStrengthEntry } from '@usebrick/core';
 
-interface SignalStrength {
-  ratio: number;
-  defaultOff?: boolean;
-  verdict?: string;
-}
-
-const DATA = signalStrengthData as Record<string, SignalStrength>;
+const DATA = signalStrengthData as Record<string, SignalStrengthEntry>;
 
 const CORPUS = { nPositive: 76787, nNegative: 86983 };
 
 describe('computeLikelihoodRatios', () => {
   it('skips rules with no calibration data', () => {
-    const lrs = computeLikelihoodRatios(['rule/does-not-exist'], CORPUS);
+    const lrs = computeLikelihoodRatios(['rule/does-not-exist'], DATA, CORPUS);
     expect(lrs).toEqual([]);
   });
 
   it('returns LR > 1 for high-precision rules', () => {
     // logic/ghost-defensive has recall=0.94, fpRate=0.054 on v5 per-file.
-    const lrs = computeLikelihoodRatios(['logic/ghost-defensive'], CORPUS);
+    const lrs = computeLikelihoodRatios(['logic/ghost-defensive'], DATA, CORPUS);
     expect(lrs.length).toBe(1);
     expect(lrs[0].lr).toBeGreaterThan(1);
     expect(lrs[0].logLr).toBeGreaterThan(0);
@@ -60,7 +55,7 @@ describe('computeLikelihoodRatios', () => {
     // The reclassified rules (context/import-path-mismatch, etc.) are
     // now NOISY because the larger corpus + corpus-derived baselines
     // for the 3 calibration rules improved their lift above 1.
-    const lrs = computeLikelihoodRatios(['logic/heaps-deviation'], CORPUS);
+    const lrs = computeLikelihoodRatios(['logic/heaps-deviation'], DATA, CORPUS);
     expect(lrs.length).toBe(1);
     expect(lrs[0].lr).toBeLessThan(1);
     expect(lrs[0].logLr).toBeLessThan(0);
@@ -69,12 +64,13 @@ describe('computeLikelihoodRatios', () => {
   it('applies Haldane smoothing to avoid division by zero', () => {
     // A rule with recall=0 (no AI fires) and fpRate=0 (no human fires)
     // should still produce a finite, sensible LR via smoothing.
-    // getSignalStrength returns undefined for unknown rule IDs, so the
+    // signal-strength lookup returns undefined for unknown rule IDs, so the
     // result is empty — verifying the empty path here.
-    const lrs = computeLikelihoodRatios(['logic/zero-fires-test'], {
-      nPositive: 1000,
-      nNegative: 1000,
-    });
+    const lrs = computeLikelihoodRatios(
+      ['logic/zero-fires-test'],
+      DATA,
+      { nPositive: 1000, nNegative: 1000 },
+    );
     expect(lrs).toEqual([]);
   });
 
@@ -85,7 +81,7 @@ describe('computeLikelihoodRatios', () => {
     //   fpSmooth = (fpRate × nNeg + 0.5) / (nNeg + 1)
     // The actual values change with each calibration. We assert the
     // structure (Haldane formula) rather than specific numbers.
-    const lrs = computeLikelihoodRatios(['logic/ghost-defensive'], CORPUS);
+    const lrs = computeLikelihoodRatios(['logic/ghost-defensive'], DATA, CORPUS);
     expect(lrs.length).toBe(1);
     // tpRate is positive (smoothing prevents 0)
     expect(lrs[0].tpRate).toBeGreaterThan(0);
@@ -105,6 +101,7 @@ describe('bayesianPosterior', () => {
   // logic/heaps-deviation: INVERTED in v6 (regression from v0.12.0)
   const lrs = computeLikelihoodRatios(
     ['logic/ghost-defensive', 'logic/zombie-state', 'logic/heaps-deviation'],
+    DATA,
     CORPUS,
   );
 
@@ -160,7 +157,7 @@ describe('bayesianPosterior', () => {
 
 describe('combineFireSet', () => {
   it('returns matchedRules=0 and prior posterior when no calibrated rules fire', () => {
-    const result = combineFireSet(['rule/unknown'], CORPUS);
+    const result = combineFireSet(['rule/unknown'], DATA, CORPUS);
     expect(result.posterior).toBe(0.5);
     expect(result.matchedRules).toBe(0);
     expect(result.totalLogLr).toBe(0);
@@ -174,7 +171,7 @@ describe('combineFireSet', () => {
       'logic/zombie-state',
       'logic/heaps-deviation', // INVERTED in v6
     ];
-    const result = combineFireSet(fired, CORPUS);
+    const result = combineFireSet(fired, DATA, CORPUS);
     expect(result.matchedRules).toBeGreaterThan(0);
     expect(result.posterior).toBeGreaterThan(0);
     expect(result.posterior).toBeLessThan(1);
@@ -182,7 +179,7 @@ describe('combineFireSet', () => {
 
   it('totalLogLr is the sum of matched rules\' logLr values', () => {
     const fired = ['logic/ghost-defensive', 'logic/zombie-state'];
-    const result = combineFireSet(fired, CORPUS);
+    const result = combineFireSet(fired, DATA, CORPUS);
     const expectedSum = result.perRuleLrs
       .filter((l) => fired.includes(l.ruleId))
       .reduce((acc, l) => acc + l.logLr, 0);
@@ -217,7 +214,7 @@ describe('properties of the Bayesian combiner', () => {
     'wcag/dragging-movements',
     'perf/cls-image',
   ];
-  const lrs = computeLikelihoodRatios(allRuleIds, CORPUS);
+  const lrs = computeLikelihoodRatios(allRuleIds, DATA, CORPUS);
 
   it('low-LR fires decrease the posterior; high-LR fires increase it', () => {
     // v0.14.5 (v7 calibration): the previous v6-INVERTED rules
@@ -261,6 +258,7 @@ describe('properties of the Bayesian combiner', () => {
         .filter((e) => e.ratio < 1 && e.defaultOff === true && e.verdict !== 'DORMANT')
         .slice(0, 3)
         .map((_, i) => Object.keys(DATA).find((k) => DATA[k] === _)!),
+      DATA,
       CORPUS,
     );
     if (lrs.length === 3) {
