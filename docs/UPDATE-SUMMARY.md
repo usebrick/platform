@@ -106,7 +106,7 @@ The template documents the corpus contract (location, structure, latest calibrat
 
 ## What needs to happen next
 
-The user has approved both specs (architectural refactor + rebrand). The next step is to **invoke `writing-plans` to merge them into one consolidated implementation plan** that respects the sequencing:
+The user has approved both specs (architectural refactor + rebrand). The merged implementation plan is **committed at `docs/superpowers/plans/2026-06-26-v0.15.0-merged-plan.md`** (commit b93d5cb, 1,314 lines, 55 tasks across 7 phases). It respects the sequencing constraints:
 
 1. **Phase 0**: Rebrand (12 tasks, ~1 day) — file renames, type renames, version bump
 2. **Phase 1**: Verdict type safety (8 tasks, ~3 hours) — A.1-A.4 + F.1-F.4
@@ -114,9 +114,9 @@ The user has approved both specs (architectural refactor + rebrand). The next st
 4. **Phase 3**: Engine extraction (8 tasks, ~5 hours) — B.1-B.8
 5. **Phase 4**: Shader + LCP-swap (3 tasks, ~3 hours) — E.1, G.1, G.2
 6. **Phase 5** (new): Positioning copy (5 tasks, ~4 hours) — S.1-S.5
-7. **Phase 6** (new): Engine/UI split + multi-score (7 tasks, ~3 days) — taxonomy seam, 3 scores, 3-bucket reports
+7. **Phase 6** (new): Engine/UI split + multi-score (7 tasks, ~3 days) — U.1-U.7 (taxonomy seam, 3 scores, 3-bucket reports)
 
-**Total**: 5-6 days, 6 PRs to v0.14.5d, ~70 files modified.
+**Total**: 5-6 days, 7 PRs to v0.14.5d, ~80 files modified.
 
 ---
 
