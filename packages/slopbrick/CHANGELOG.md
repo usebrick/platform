@@ -550,7 +550,14 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
-## [Unreleased]
+## [0.14.5n] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down
+
+The v0.14.5d → 0.14.5n line is a single dev cycle (one session) that
+shipped 9 commits addressing the scan flywheel UX, a categoryScores
+display bug, Python/Go coverage gaps, a partial v7 calibration
+report, and a full documentation suite. Pushed as one release
+because the commits are interdependent and the CHANGELOG groups
+them as a single "calibration update".
 
 ### Changed (README slim-down — v0.14.5n)
 
