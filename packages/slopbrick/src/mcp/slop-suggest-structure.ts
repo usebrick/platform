@@ -5,14 +5,14 @@
  * that prefers a persisted `.slopbrick/memory.md` over re-scanning.
  * On the fast path the agent gets the markdown in O(read file); on
  * the slow path (no persisted memory yet) it falls back to the
- * existing re-scan behavior, with a `memoryHint` annotation so the
+ * existing re-scan behavior, with a `structureHint` annotation so the
  * caller knows what to do next time.
  *
  * Latency win: O(re-parse AST) → O(read file). 100–1000× faster on
  * agent integrations that call the tool frequently.
  */
 
-import { readMemoryMarkdown } from '../engine/structure-md';
+import { readStructureMarkdown } from '../engine/structure-md';
 import type { ToolContext } from './tools';
 
 // Inferred return shape from `handleToolCall` in `./tools`. The actual
@@ -23,23 +23,23 @@ type ToolResult = {
   isError?: boolean;
 };
 
-const MEMORY_NOT_FOUND_HINT =
-  'No .slopbrick/memory.md found. Run `slopbrick scan` to persist the pattern inventory, then call this tool again for the O(read file) fast path.';
+const STRUCTURE_NOT_FOUND_HINT =
+  'No .slopbrick/structure.md found. Run `slopbrick scan` to persist the pattern inventory, then call this tool again for the O(read file) fast path.';
 
 /**
  * Run the fast-path `slop_suggest` if `.slopbrick/memory.md` exists,
  * otherwise delegate to the existing `slop_suggest` (re-scan). The
- * slow-path response is annotated with `memoryHint` so the caller can
+ * slow-path response is annotated with `structureHint` so the caller can
  * surface the upgrade path to the user.
  */
-export async function runSuggestWithMemory(
+export async function runSuggestWithStructure(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
-  const cached = await readMemoryMarkdown(ctx.cwd);
+  const cached = await readStructureMarkdown(ctx.cwd);
   if (cached !== null) {
     // Fast path: the markdown is already a complete agent-readable
-    // summary (rendered by `renderMemoryMarkdown`). Return it as a
+    // summary (rendered by `renderStructureMarkdown`). Return it as a
     // single text block — MCP clients render it inline so the agent
     // sees the patterns directly without parsing JSON.
     return {
@@ -58,7 +58,7 @@ export async function runSuggestWithMemory(
   try {
     const parsed: unknown = JSON.parse(result.content[0].text);
     if (parsed !== null && typeof parsed === 'object') {
-      (parsed as Record<string, unknown>).memoryHint = MEMORY_NOT_FOUND_HINT;
+      (parsed as Record<string, unknown>).structureHint = STRUCTURE_NOT_FOUND_HINT;
       return {
         content: [{ type: 'text', text: JSON.stringify(parsed, null, 2) }],
       };

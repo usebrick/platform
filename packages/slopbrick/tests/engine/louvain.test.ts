@@ -5,7 +5,7 @@ import {
   computeModularityForTest,
 } from '../../src/engine/louvain';
 import { normalizeEdgeWeights, totalEdgeWeight } from '../../src/engine/graph-helpers';
-import { MEMORY_SCHEMA_VERSION, type InventoryFile } from '@usebrick/core';
+import { STRUCTURE_SCHEMA_VERSION, type InventoryFile } from '@usebrick/core';
 import type { CommunityDetection } from '../../src/engine/graph-types';
 
 /**
@@ -35,7 +35,7 @@ function makeInventory(
   patterns: Array<{ name: string; fileCount: number; imports?: string[] }>,
 ): InventoryFile {
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: new Date('2026-06-25T00:00:00.000Z').toISOString(),
     workspace: '/tmp/fake-workspace',
     scannedFiles: patterns.reduce((s, p) => s + p.fileCount, 0),

@@ -11,16 +11,16 @@
 // for the contract.
 
 export {
-  MEMORY_SCHEMA_VERSION,
-  type MemoryCategory,
-  type MemoryPattern,
+  STRUCTURE_SCHEMA_VERSION,
+  type StructureCategory,
+  type StructurePattern,
   type ComponentFingerprint,
   type InventoryFile,
   type ConstitutionFile,
   type HealthFile,
   type FileMtimeEntry,
   // validators
-  isMemoryPattern,
+  isStructurePattern,
   isComponentFingerprint,
   isInventoryFile,
   isConstitutionFile,

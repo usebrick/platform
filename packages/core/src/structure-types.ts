@@ -22,11 +22,11 @@
  * loader. Migration: `slopbrick migrate` rewrites a v1 project to v2.
  */
 
-export const MEMORY_SCHEMA_VERSION = '2' as const;
+export const STRUCTURE_SCHEMA_VERSION = '2' as const;
 
 /** Categories tracked in the inventory. Mirrors Constitution field
  * names so the same key set is used for declared vs detected. */
-export type MemoryCategory =
+export type StructureCategory =
   | 'stateManagement'
   | 'dataFetching'
   | 'uiLibrary'
@@ -44,8 +44,8 @@ export type MemoryCategory =
  * A single detected pattern: which category, which canonical name,
  * which bare import specifiers in this project contribute to it.
  */
-export interface MemoryPattern {
-  category: MemoryCategory;
+export interface StructurePattern {
+  category: StructureCategory;
   /** Canonical pattern name (e.g. "zustand", "@radix-ui/react-dialog"). */
   name: string;
   /** Bare import specifiers in the project that matched this pattern. */
@@ -81,7 +81,7 @@ export interface ComponentFingerprint {
  */
 export interface InventoryFile {
   /** Schema version. Bump when adding/removing fields. */
-  version: typeof MEMORY_SCHEMA_VERSION;
+  version: typeof STRUCTURE_SCHEMA_VERSION;
   /** ISO timestamp of when this inventory was generated. */
   generatedAt: string;
   /** Absolute path of the scanned workspace (informational only). */
@@ -91,7 +91,7 @@ export interface InventoryFile {
   /** Duration of the scan in milliseconds (informational). */
   scanDurationMs: number;
   /** Detected patterns grouped by category, sorted by fileCount desc. */
-  patterns: MemoryPattern[];
+  patterns: StructurePattern[];
   /** Component fingerprints, sorted by name. */
   components: ComponentFingerprint[];
 }
@@ -100,14 +100,14 @@ export interface InventoryFile {
  * .slop-audit/constitution.json schema (machine-readable).
  */
 export interface ConstitutionFile {
-  version: typeof MEMORY_SCHEMA_VERSION;
+  version: typeof STRUCTURE_SCHEMA_VERSION;
   generatedAt: string;
   workspace: string;
   /**
    * Declared canonical patterns per category. Empty string or omitted
    * means "we deliberately don't use this category."
    */
-  declared: Partial<Record<MemoryCategory, string>>;
+  declared: Partial<Record<StructureCategory, string>>;
   /** Packages that any PR introducing must fail (deny-list). */
   forbidden: string[];
   /** Scope prefix that any PR introducing must fail (e.g. "@scope/"). */
@@ -142,7 +142,7 @@ export interface FileMtimeEntry {
  */
 export interface HealthFile {
   /** Schema version. Bump when adding/removing fields. */
-  version: typeof MEMORY_SCHEMA_VERSION;
+  version: typeof STRUCTURE_SCHEMA_VERSION;
   /** ISO timestamp of when this health snapshot was generated. */
   generatedAt: string;
   /** Absolute path of the scanned workspace (informational only). */
@@ -169,9 +169,9 @@ export interface HealthFile {
 // gracefully (e.g. rebuild the inventory instead of crashing).
 // ---------------------------------------------------------------------------
 
-export function isMemoryPattern(value: unknown): value is MemoryPattern {
+export function isStructurePattern(value: unknown): value is StructurePattern {
   if (typeof value !== 'object' || value === null) return false;
-  const v = value as Partial<MemoryPattern>;
+  const v = value as Partial<StructurePattern>;
   return (
     typeof v.category === 'string' &&
     typeof v.name === 'string' &&
@@ -202,14 +202,14 @@ export function isInventoryFile(value: unknown): value is InventoryFile {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Partial<InventoryFile>;
   return (
-    v.version === MEMORY_SCHEMA_VERSION &&
+    v.version === STRUCTURE_SCHEMA_VERSION &&
     typeof v.generatedAt === 'string' &&
     typeof v.workspace === 'string' &&
     typeof v.scannedFiles === 'number' &&
     typeof v.scanDurationMs === 'number' &&
     Array.isArray(v.patterns) &&
     Array.isArray(v.components) &&
-    v.patterns.every(isMemoryPattern) &&
+    v.patterns.every(isStructurePattern) &&
     v.components.every(isComponentFingerprint)
   );
 }
@@ -218,7 +218,7 @@ export function isConstitutionFile(value: unknown): value is ConstitutionFile {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Partial<ConstitutionFile>;
   return (
-    v.version === MEMORY_SCHEMA_VERSION &&
+    v.version === STRUCTURE_SCHEMA_VERSION &&
     typeof v.generatedAt === 'string' &&
     typeof v.workspace === 'string' &&
     typeof v.declared === 'object' &&
@@ -243,7 +243,7 @@ export function isFileMtimeEntry(value: unknown): value is FileMtimeEntry {
 export function isHealthFile(value: unknown): value is HealthFile {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Partial<HealthFile>;
-  if (v.version !== MEMORY_SCHEMA_VERSION) return false;
+  if (v.version !== STRUCTURE_SCHEMA_VERSION) return false;
   if (typeof v.generatedAt !== 'string') return false;
   if (typeof v.workspace !== 'string') return false;
   if (typeof v.slopIndex !== 'number') return false;

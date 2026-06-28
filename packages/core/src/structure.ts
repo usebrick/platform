@@ -70,7 +70,7 @@ export function writeJsonAtomic(filePath: string, payload: unknown): void {
  * Load `.slopbrick/inventory.json`. Returns `null` when:
  *  - the file is missing,
  *  - JSON parsing fails,
- *  - the schema version doesn't match `MEMORY_SCHEMA_VERSION`.
+ *  - the schema version doesn't match `STRUCTURE_SCHEMA_VERSION`.
  *
  * The version guard lets future format bumps migrate without crashing
  * older binaries on mismatched files.
@@ -213,7 +213,7 @@ export function invalidateFile(workspaceDir: string, file: string): void {
 
 /**
  * File list used for the freshness check. Limited to `ComponentFingerprint.files`
- * because `MemoryPattern` deliberately keeps only `fileCount` — the file
+ * because `StructurePattern` deliberately keeps only `fileCount` — the file
  * list is reconstructed from per-component occurrences. Projects whose
  * scan finds patterns but zero components (e.g. import-only files) end
  * up with an empty freshness baseline; that's an acceptable trade-off

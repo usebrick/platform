@@ -51,7 +51,7 @@ export {
 // `constitution.json`) or call its detection engines without wanting
 // to bundle the full scanner.
 //
-// Anything exported here is API-stable per `MEMORY_SCHEMA_VERSION` and
+// Anything exported here is API-stable per `STRUCTURE_SCHEMA_VERSION` and
 // the engine function signatures. Internal modules under src/engine/
 // may change; the re-exports below are the contract.
 //

@@ -19,12 +19,12 @@ import {
   isHealthFile,
   isInventoryFresh,
   invalidateFile,
-  MEMORY_SCHEMA_VERSION,
+  STRUCTURE_SCHEMA_VERSION,
   healthPath,
   type InventoryFile,
   type ConstitutionFile,
   type HealthFile,
-  type MemoryPattern,
+  type StructurePattern,
   type ComponentFingerprint,
 } from '@usebrick/core';
 import { DEFAULT_CONFIG } from '../../src/config';
@@ -92,7 +92,7 @@ describe('readRuns', () => {
 
   it('filters out malformed entries', () => {
     appendRun(dir, makeReport(5), false);
-    const memoryPath = join(dir, '.slopbrick', 'memory.json');
+    const memoryPath = join(dir, '.slopbrick', 'structure.json');
     const existing = readRuns(dir);
     // Intentionally writing invalid data to test filtering.
     writeFileSync(memoryPath, JSON.stringify([...existing, { invalid: true }]));
@@ -172,7 +172,7 @@ function makeConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
 function makeInventoryFixture(dir: string): InventoryFile {
   const fileA = join(dir, 'src', 'Button.tsx');
   const fileB = join(dir, 'src', 'ConfirmModal.tsx');
-  const patterns: MemoryPattern[] = [
+  const patterns: StructurePattern[] = [
     { category: 'button', name: 'Button', imports: ['react'], fileCount: 1 },
     { category: 'modal', name: 'ConfirmModal', imports: ['react'], fileCount: 1 },
   ];
@@ -197,7 +197,7 @@ function makeInventoryFixture(dir: string): InventoryFile {
     },
   ];
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     workspace: dir,
     scannedFiles: 2,
@@ -241,7 +241,7 @@ describe('loadInventory + saveInventory', () => {
     const loaded = await loadInventory(dir);
 
     expect(loaded).not.toBeNull();
-    expect(loaded?.version).toBe(MEMORY_SCHEMA_VERSION);
+    expect(loaded?.version).toBe(STRUCTURE_SCHEMA_VERSION);
     expect(loaded?.workspace).toBe(dir);
     expect(loaded?.scannedFiles).toBe(2);
     expect(loaded?.scanDurationMs).toBe(123);
@@ -250,12 +250,12 @@ describe('loadInventory + saveInventory', () => {
     expect(loaded?.components.map((c) => c.name).sort()).toEqual(['Button', 'ConfirmModal']);
   });
 
-  it('returns null when the inventory version does not match MEMORY_SCHEMA_VERSION', async () => {
+  it('returns null when the inventory version does not match STRUCTURE_SCHEMA_VERSION', async () => {
     const inventoryPath = join(dir, '.slopbrick', 'inventory.json');
     mkdirSync(join(dir, '.slopbrick'), { recursive: true });
     const stale = {
       ...makeInventoryFixture(dir),
-      version: '0' as typeof MEMORY_SCHEMA_VERSION,
+      version: '0' as typeof STRUCTURE_SCHEMA_VERSION,
     };
     writeFileSync(inventoryPath, JSON.stringify(stale, null, 2));
 
@@ -300,7 +300,7 @@ describe('loadConstitution + saveConstitution', () => {
 
   it('round-trips every field on ConstitutionFile', async () => {
     const fixture: ConstitutionFile = {
-      version: MEMORY_SCHEMA_VERSION,
+      version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: new Date().toISOString(),
       workspace: dir,
       declared: {
@@ -400,7 +400,7 @@ describe('buildInventoryFromScan', () => {
 
     const inv = await buildInventoryFromScan({ cwd: dir, results }, config, 250);
 
-    expect(inv.version).toBe(MEMORY_SCHEMA_VERSION);
+    expect(inv.version).toBe(STRUCTURE_SCHEMA_VERSION);
     expect(inv.workspace).toBe(dir);
     expect(inv.scanDurationMs).toBe(250);
     expect(typeof inv.generatedAt).toBe('string');
@@ -480,7 +480,7 @@ describe('buildConstitutionFromConfig', () => {
 
     const out = buildConstitutionFromConfig(config, '/workspace');
 
-    expect(out.version).toBe(MEMORY_SCHEMA_VERSION);
+    expect(out.version).toBe(STRUCTURE_SCHEMA_VERSION);
     expect(out.workspace).toBe('/workspace');
     expect(out.declared).toEqual({
       stateManagement: 'zustand',

@@ -18,12 +18,12 @@ describe('MCP tool consolidation (v0.11.2)', () => {
     expect(canonical).toContain('slop_find_similar');
   });
 
-  it('marks slop_suggest_with_memory as canonical (the fast-path variant)', () => {
+  it('marks slop_suggest_with_structure as canonical (the fast-path variant)', () => {
     // slop_suggest_with_memory is the preferred path on warm cache; it
     // is NOT a narrow axis collapse, it's a perf-optimized twin of
     // slop_suggest.
-    expect(getDeprecation('slop_suggest_with_memory')).toBeUndefined();
-    expect(canonicalToolNames()).toContain('slop_suggest_with_memory');
+    expect(getDeprecation('slop_suggest_with_structure')).toBeUndefined();
+    expect(canonicalToolNames()).toContain('slop_suggest_with_structure');
   });
 
   it('deprecates slop_governance in favor of slop_suggest', () => {

@@ -369,7 +369,7 @@ export async function runDoctor(cwd: string): Promise<number> {
   const { existsSync: exists } = await import('node:fs');
   const { join: pjoin } = await import('node:path');
   const { loadInventory, loadConstitution, loadHealth } = await import('@usebrick/core');
-  const { readMemoryMarkdown } = await import('../engine/structure-md');
+  const { readStructureMarkdown } = await import('../engine/structure-md');
 
   const inv = loadInventory(cwd);
   if (inv) {
@@ -400,13 +400,13 @@ export async function runDoctor(cwd: string): Promise<number> {
     warn('No .slopbrick/health.json — dashboards/CI gates will not show current health. Run `slopbrick scan`.');
   }
 
-  const md = await readMemoryMarkdown(cwd);
+  const md = await readStructureMarkdown(cwd);
   if (md && md.length > 0) {
-    ok(`.slopbrick/memory.md present (${md.length} bytes — agent-readable summary).`);
-  } else if (exists(pjoin(cwd, '.slopbrick', 'memory.md'))) {
-    warn('.slopbrick/memory.md exists but is empty. Run `slopbrick scan` to regenerate.');
+    ok(`.slopbrick/structure.md present (${md.length} bytes — agent-readable summary).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'structure.md'))) {
+    warn('.slopbrick/structure.md exists but is empty. Run `slopbrick scan` to regenerate.');
   } else {
-    warn('No .slopbrick/memory.md — `slop_suggest_with_memory` MCP tool will fall back to re-scanning. Run `slopbrick scan`.');
+    warn('No .slopbrick/structure.md — `slop_suggest_with_structure` MCP tool will fall back to re-scanning. Run `slopbrick scan`.');
   }
 
   // Warnings bump exit code to 1 so CI gates that check $? see them.

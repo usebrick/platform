@@ -51,7 +51,7 @@
     "minimatch": "^9.0.5",
     "pgsql-parser": "^17.9.15"
   },
-  "//_usebrick_core_note": "Listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts noExternal bundles it; the prepack-guard.mjs allowlist includes @usebrick/core. See https://github.com/usebrick/platform/blob/main/docs/repository-memory.md",
+  "//_usebrick_core_note": "Listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts noExternal bundles it; the prepack-guard.mjs allowlist includes @usebrick/core. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@usebrick/core": "workspace:*",

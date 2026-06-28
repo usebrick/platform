@@ -32,12 +32,12 @@ import { computeFileHash } from './cache-incremental.js';
 import {
   type InventoryFile,
   type ConstitutionFile,
-  type MemoryPattern,
+  type StructurePattern,
   type ComponentFingerprint,
   type FileMtimeEntry,
-  type MemoryCategory,
-  MEMORY_SCHEMA_VERSION,
-  isMemoryPattern,
+  type StructureCategory,
+  STRUCTURE_SCHEMA_VERSION,
+  isStructurePattern,
   isComponentFingerprint,
   isInventoryFile,
   isConstitutionFile,
@@ -81,7 +81,7 @@ export async function saveInventory(
 // slopbrick historical telemetry (.slopbrick/memory.json)
 // ---------------------------------------------------------------------------
 
-const TELEMETRY_FILE = join('.slopbrick', 'memory.json');
+const TELEMETRY_FILE = join('.slopbrick', 'structure.json');
 const MAX_RUNS = 1000;
 
 function telemetryPath(cwd: string): string {
@@ -180,7 +180,7 @@ export async function buildInventoryFromScan(
 ): Promise<InventoryFile> {
   const inventory = await buildPatternInventory(scanResult.cwd, config);
 
-  const BUCKET_TO_CATEGORY: Record<keyof typeof inventory.patterns, MemoryCategory> = {
+  const BUCKET_TO_CATEGORY: Record<keyof typeof inventory.patterns, StructureCategory> = {
     modal: 'modal',
     button: 'button',
     api: 'api',
@@ -191,9 +191,9 @@ export async function buildInventoryFromScan(
     ormModel: 'ormModel',
   };
 
-  const patterns: MemoryPattern[] = [];
+  const patterns: StructurePattern[] = [];
   for (const [bucket, category] of Object.entries(BUCKET_TO_CATEGORY) as Array<
-    [keyof typeof BUCKET_TO_CATEGORY, MemoryCategory]
+    [keyof typeof BUCKET_TO_CATEGORY, StructureCategory]
   >) {
     for (const m of inventory.patterns[bucket]) {
       patterns.push({
@@ -211,7 +211,7 @@ export async function buildInventoryFromScan(
   const components = buildComponentFingerprints(scanResult.results);
 
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     workspace: scanResult.cwd,
     scannedFiles: inventory.scannedFiles,
@@ -235,9 +235,9 @@ export function buildConstitutionFromConfig(
   workspace: string,
 ): ConstitutionFile {
   const c = config.constitution;
-  const declared: Partial<Record<MemoryCategory, string>> = {};
+  const declared: Partial<Record<StructureCategory, string>> = {};
   if (c) {
-    const mapping: Record<string, MemoryCategory> = {
+    const mapping: Record<string, StructureCategory> = {
       stateManagement: 'stateManagement',
       dataFetching: 'dataFetching',
       uiLibrary: 'uiLibrary',
@@ -259,7 +259,7 @@ export function buildConstitutionFromConfig(
   const forbidden = forbiddenList.filter((e) => !e.endsWith('/'));
   const forbiddenPrefixes = forbiddenList.filter((e) => e.endsWith('/'));
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     workspace,
     declared,

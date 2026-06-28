@@ -1,13 +1,13 @@
 /**
  * v0.10.7: Repository Memory Platform — markdown renderer.
  *
- * `renderMemoryMarkdown(inventory, constitution)` is a pure function
+ * `renderStructureMarkdown(inventory, constitution)` is a pure function
  * that turns the persisted `InventoryFile` + `ConstitutionFile` schemas
  * into a single human + agent-readable markdown summary. The output is
  * what `slop_suggest_with_memory` returns to the agent on the fast path
  * (no re-scan needed).
  *
- * `writeMemoryMarkdown` + `readMemoryMarkdown` are the on-disk helpers
+ * `writeStructureMarkdown` + `readStructureMarkdown` are the on-disk helpers
  * that persist the rendered summary to `.slopbrick/memory.md`. Read
  * returns `null` if the file is missing or unreadable — the caller
  * decides whether that means "fall back to re-scanning" or "fail".
@@ -33,13 +33,13 @@ import type {
   ComponentFingerprint,
   ConstitutionFile,
   InventoryFile,
-  MemoryCategory,
+  StructureCategory,
 } from '@usebrick/core';
 
-const MEMORY_MD_FILE = join('.slopbrick', 'memory.md');
+const STRUCTURE_MD_FILE = join('.slopbrick', 'structure.md');
 
 /** Human-readable labels for each memory category, in display order. */
-const CATEGORY_LABELS: Record<MemoryCategory, string> = {
+const CATEGORY_LABELS: Record<StructureCategory, string> = {
   stateManagement: 'State management',
   dataFetching: 'Data fetching',
   uiLibrary: 'UI library',
@@ -56,7 +56,7 @@ const CATEGORY_LABELS: Record<MemoryCategory, string> = {
 
 /** Display order for the patterns section. Frontend canonical first,
  *  then component categories, then backend service categories. */
-const CATEGORY_ORDER: readonly MemoryCategory[] = [
+const CATEGORY_ORDER: readonly StructureCategory[] = [
   'stateManagement',
   'dataFetching',
   'uiLibrary',
@@ -75,7 +75,7 @@ const CATEGORY_ORDER: readonly MemoryCategory[] = [
  *  backend categories (modal/button/api/service/route/ormModel) come
  *  from the inventory; the canonical stack categories come from the
  *  user's declaration in `slopbrick.config.mjs`. */
-const DECLARED_FIELDS: readonly MemoryCategory[] = [
+const DECLARED_FIELDS: readonly StructureCategory[] = [
   'stateManagement',
   'dataFetching',
   'uiLibrary',
@@ -181,7 +181,7 @@ function formatComponent(c: ComponentFingerprint): string {
  * downstream tools (MCP clients, agent prompts) can pattern-match on
  * the section headings without parsing the body.
  */
-export function renderMemoryMarkdown(
+export function renderStructureMarkdown(
   inventory: InventoryFile,
   constitution: ConstitutionFile,
 ): string {
@@ -286,13 +286,13 @@ export function renderMemoryMarkdown(
  * (single `write()` call below `PIPE_BUF`); on crash the file is
  * either the old content or the new content, never half-written.
  */
-export async function writeMemoryMarkdown(
+export async function writeStructureMarkdown(
   workspaceDir: string,
   md: string,
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     try {
-      const path = join(workspaceDir, MEMORY_MD_FILE);
+      const path = join(workspaceDir, STRUCTURE_MD_FILE);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, md, 'utf-8');
       resolve();
@@ -307,12 +307,12 @@ export async function writeMemoryMarkdown(
  * the file doesn't exist or can't be read — never throws. The caller
  * decides whether `null` means "fall back to re-scanning" or "fail".
  */
-export async function readMemoryMarkdown(
+export async function readStructureMarkdown(
   workspaceDir: string,
 ): Promise<string | null> {
   return new Promise<string | null>((resolve) => {
     try {
-      const path = join(workspaceDir, MEMORY_MD_FILE);
+      const path = join(workspaceDir, STRUCTURE_MD_FILE);
       if (!existsSync(path)) {
         resolve(null);
         return;

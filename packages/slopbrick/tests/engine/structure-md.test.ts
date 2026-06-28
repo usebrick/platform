@@ -4,16 +4,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-  renderMemoryMarkdown,
-  writeMemoryMarkdown,
-  readMemoryMarkdown,
+  renderStructureMarkdown,
+  writeStructureMarkdown,
+  readStructureMarkdown,
 } from '../../src/engine/structure-md';
 import {
-  MEMORY_SCHEMA_VERSION,
+  STRUCTURE_SCHEMA_VERSION,
   type ComponentFingerprint,
   type ConstitutionFile,
   type InventoryFile,
-  type MemoryPattern,
+  type StructurePattern,
 } from '@usebrick/core';
 
 function freshDir(): string {
@@ -22,7 +22,7 @@ function freshDir(): string {
 
 function makeInventory(overrides: Partial<InventoryFile> = {}): InventoryFile {
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: '2026-06-25T12:00:00.000Z',
     workspace: '/repo',
     scannedFiles: 10,
@@ -37,7 +37,7 @@ function makeConstitution(
   overrides: Partial<ConstitutionFile> = {},
 ): ConstitutionFile {
   return {
-    version: MEMORY_SCHEMA_VERSION,
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: '2026-06-25T12:00:00.000Z',
     workspace: '/repo',
     declared: {},
@@ -47,7 +47,7 @@ function makeConstitution(
   };
 }
 
-function makePattern(overrides: Partial<MemoryPattern>): MemoryPattern {
+function makePattern(overrides: Partial<StructurePattern>): StructurePattern {
   return {
     category: 'stateManagement',
     name: 'zustand',
@@ -72,9 +72,9 @@ function makeComponent(
   };
 }
 
-describe('renderMemoryMarkdown', () => {
+describe('renderStructureMarkdown', () => {
   it('produces all sections in the documented order', () => {
-    const md = renderMemoryMarkdown(makeInventory(), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory(), makeConstitution());
     const sections = [
       '# slopbrick memory',
       '## Detected patterns (canonical, use these)',
@@ -92,7 +92,7 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it('produces a valid empty markdown for an empty inventory + constitution', () => {
-    const md = renderMemoryMarkdown(makeInventory(), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory(), makeConstitution());
     expect(md).toContain('# slopbrick memory');
     expect(md).toContain('_No patterns detected._');
     expect(md).toContain('_No components detected._');
@@ -102,7 +102,7 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it('emits the correct header metadata (Generated, Workspace, Scanned files, Scan duration)', () => {
-    const md = renderMemoryMarkdown(
+    const md = renderStructureMarkdown(
       makeInventory({
         generatedAt: '2026-06-25T12:00:00.000Z',
         workspace: '/path/to/repo',
@@ -118,21 +118,21 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it('formats scan duration as ms, seconds, or minutes+seconds', () => {
-    const ms = renderMemoryMarkdown(makeInventory({ scanDurationMs: 250 }), makeConstitution());
+    const ms = renderStructureMarkdown(makeInventory({ scanDurationMs: 250 }), makeConstitution());
     expect(ms).toContain('Scan duration: 250ms');
-    const sec = renderMemoryMarkdown(makeInventory({ scanDurationMs: 14200 }), makeConstitution());
+    const sec = renderStructureMarkdown(makeInventory({ scanDurationMs: 14200 }), makeConstitution());
     expect(sec).toContain('Scan duration: 14.2s');
-    const min = renderMemoryMarkdown(makeInventory({ scanDurationMs: 83_000 }), makeConstitution());
+    const min = renderStructureMarkdown(makeInventory({ scanDurationMs: 83_000 }), makeConstitution());
     expect(min).toContain('Scan duration: 1m 23s');
   });
 
   it('sorts patterns within a category by fileCount desc, name asc tiebreak', () => {
-    const patterns: MemoryPattern[] = [
+    const patterns: StructurePattern[] = [
       makePattern({ category: 'dataFetching', name: 'swr', fileCount: 3, imports: ['swr'] }),
       makePattern({ category: 'dataFetching', name: 'react-query', fileCount: 15, imports: ['@tanstack/react-query'] }),
       makePattern({ category: 'dataFetching', name: 'apollo', fileCount: 15, imports: ['@apollo/client'] }),
     ];
-    const md = renderMemoryMarkdown(
+    const md = renderStructureMarkdown(
       makeInventory({ patterns }),
       makeConstitution(),
     );
@@ -154,7 +154,7 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it("lists the constitution's forbidden entries under DO NOT CREATE", () => {
-    const md = renderMemoryMarkdown(
+    const md = renderStructureMarkdown(
       makeInventory(),
       makeConstitution({ forbidden: ['redux', 'mobx'] }),
     );
@@ -163,7 +163,7 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it("lists the constitution's forbiddenPrefixes with the documented scope format", () => {
-    const md = renderMemoryMarkdown(
+    const md = renderStructureMarkdown(
       makeInventory(),
       makeConstitution({ forbiddenPrefixes: ['@scope/', '@internal/'] }),
     );
@@ -195,7 +195,7 @@ describe('renderMemoryMarkdown', () => {
         fingerprint: 'fp-C',
       }),
     ];
-    const md = renderMemoryMarkdown(makeInventory({ components }), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory({ components }), makeConstitution());
     // Only one Button bullet. Use a non-word-boundary anchor: `**Button**`
     // is followed by a space, not a word character, so `\b` would not match.
     const buttonMatches = md.match(/^- \*\*Button\*\* \(/gm);
@@ -217,7 +217,7 @@ describe('renderMemoryMarkdown', () => {
         props: ['open', 'onClose'],
       }),
     ];
-    const md = renderMemoryMarkdown(makeInventory({ components }), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory({ components }), makeConstitution());
     expect(md).toContain(
       '- **Modal** (defined in 1 file; props: open, onClose; hooks: useState, useEffect)',
     );
@@ -227,14 +227,14 @@ describe('renderMemoryMarkdown', () => {
     const components: ComponentFingerprint[] = [
       makeComponent({ name: 'Plain', files: ['src/Plain.tsx'] }),
     ];
-    const md = renderMemoryMarkdown(makeInventory({ components }), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory({ components }), makeConstitution());
     expect(md).toContain('- **Plain** (defined in 1 file)');
     expect(md).not.toContain('props:');
     expect(md).not.toContain('hooks:');
   });
 
   it('escapes markdown-significant characters in component names, props, hooks, declared values, and forbidden entries', () => {
-    const patterns: MemoryPattern[] = [
+    const patterns: StructurePattern[] = [
       makePattern({
         category: 'stateManagement',
         name: 'weird`name',
@@ -250,7 +250,7 @@ describe('renderMemoryMarkdown', () => {
         props: ['a`b', 'c|d'],
       }),
     ];
-    const md = renderMemoryMarkdown(
+    const md = renderStructureMarkdown(
       makeInventory({ patterns, components }),
       makeConstitution({
         declared: { stateManagement: 'cool`state' },
@@ -274,17 +274,17 @@ describe('renderMemoryMarkdown', () => {
   });
 
   it('uses singular "file"/"import" and plural forms based on counts', () => {
-    const patterns: MemoryPattern[] = [
+    const patterns: StructurePattern[] = [
       makePattern({ category: 'stateManagement', name: 'one', fileCount: 1, imports: ['x'] }),
       makePattern({ category: 'stateManagement', name: 'many', fileCount: 7, imports: ['x', 'y'] }),
     ];
-    const md = renderMemoryMarkdown(makeInventory({ patterns }), makeConstitution());
+    const md = renderStructureMarkdown(makeInventory({ patterns }), makeConstitution());
     expect(md).toContain('(1 file, 1 import)');
     expect(md).toContain('(7 files, 2 imports)');
   });
 });
 
-describe('writeMemoryMarkdown + readMemoryMarkdown', () => {
+describe('writeStructureMarkdown + readStructureMarkdown', () => {
   let dir: string;
 
   beforeEach(() => {
@@ -296,51 +296,51 @@ describe('writeMemoryMarkdown + readMemoryMarkdown', () => {
   });
 
   it('round-trips the rendered markdown content', async () => {
-    const md = renderMemoryMarkdown(makeInventory(), makeConstitution());
-    await writeMemoryMarkdown(dir, md);
-    const read = await readMemoryMarkdown(dir);
+    const md = renderStructureMarkdown(makeInventory(), makeConstitution());
+    await writeStructureMarkdown(dir, md);
+    const read = await readStructureMarkdown(dir);
     expect(read).toBe(md);
   });
 
   it('creates the .slopbrick directory if it does not exist', async () => {
-    await writeMemoryMarkdown(dir, '# hello\n');
+    await writeStructureMarkdown(dir, '# hello\n');
     // The file should be readable.
-    const read = await readMemoryMarkdown(dir);
+    const read = await readStructureMarkdown(dir);
     expect(read).toBe('# hello\n');
     // And the directory should exist on disk.
     const fs = await import('node:fs');
     expect(fs.existsSync(join(dir, '.slopbrick'))).toBe(true);
   });
 
-  it('overwrites an existing memory.md without losing data', async () => {
-    await writeMemoryMarkdown(dir, 'first version\n');
-    await writeMemoryMarkdown(dir, 'second version\n');
-    const read = await readMemoryMarkdown(dir);
+  it('overwrites an existing structure.md without losing data', async () => {
+    await writeStructureMarkdown(dir, 'first version\n');
+    await writeStructureMarkdown(dir, 'second version\n');
+    const read = await readStructureMarkdown(dir);
     expect(read).toBe('second version\n');
   });
 
-  it('returns null when .slopbrick/memory.md does not exist', async () => {
-    const read = await readMemoryMarkdown(dir);
+  it('returns null when .slopbrick/structure.md does not exist', async () => {
+    const read = await readStructureMarkdown(dir);
     expect(read).toBeNull();
   });
 
-  it('readMemoryMarkdown does not throw on a malformed file', async () => {
+  it('readStructureMarkdown does not throw on a malformed file', async () => {
     // writeFileSync at a path that's actually a directory would throw on read;
     // we just ensure the helper catches any error and returns null instead.
     const { mkdirSync } = await import('node:fs');
     mkdirSync(join(dir, '.slopbrick'), { recursive: true });
-    // Make memory.md point at a directory — readFileSync will throw ENOTDIR/EISDIR.
-    mkdirSync(join(dir, '.slopbrick', 'memory.md'), { recursive: true });
-    const read = await readMemoryMarkdown(dir);
+    // Make structure.md point at a directory — readFileSync will throw ENOTDIR/EISDIR.
+    mkdirSync(join(dir, '.slopbrick', 'structure.md'), { recursive: true });
+    const read = await readStructureMarkdown(dir);
     expect(read).toBeNull();
   });
 });
 
-describe('readMemoryMarkdown (additional)', () => {
+describe('readStructureMarkdown (additional)', () => {
   it('returns null for a workspace that has no .slopbrick directory', async () => {
     const dir = freshDir();
     try {
-      const read = await readMemoryMarkdown(dir);
+      const read = await readStructureMarkdown(dir);
       expect(read).toBeNull();
     } finally {
       rmSync(dir, { recursive: true, force: true });

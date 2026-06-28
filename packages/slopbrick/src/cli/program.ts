@@ -1322,9 +1322,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
     program
       .command('memory')
-      .description('show or regenerate .slopbrick/memory.md (the agent-readable repository summary) without re-scanning')
-      .option('--show', 'print the current .slopbrick/memory.md to stdout (default if no flag is passed)')
-      .option('--regenerate', 're-render memory.md from the existing inventory.json + constitution.json (no scan)')
+      .description('show or regenerate .slopbrick/structure.md (the agent-readable repository summary) without re-scanning')
+      .option('--show', 'print the current .slopbrick/structure.md to stdout (default if no flag is passed)')
+      .option('--regenerate', 're-render structure.md from the existing inventory.json + constitution.json (no scan)')
       .option('--workspace <path>', 'workspace directory', process.cwd())
       .action(
         async (cmdOptions: { show?: boolean; regenerate?: boolean; workspace?: string }) => {
@@ -1332,7 +1332,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           // Dynamic import — survives esbuild's CJS bundling. The migrate
           // command uses `require('./migrate.js')` because that's a relative
           // path esbuild bundles. We need the same here.
-          const { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } =
+          const { renderStructureMarkdown, readStructureMarkdown, writeStructureMarkdown } =
             await import('../engine/structure-md.js') as typeof import('../engine/structure-md.js');
           const { loadInventory, loadConstitution, inventoryPath: invPath, constitutionPath: conPath } =
             await import('@usebrick/core') as typeof import('@usebrick/core');
@@ -1349,16 +1349,16 @@ export async function runCli({ start }: { start: number }): Promise<void> {
               logger.warn(`No .slopbrick/constitution.json at ${conPath(cwd)}. Run \`slopbrick scan\` first.`);
               process.exit(1);
             }
-            const md = renderMemoryMarkdown(inv, con);
-            await writeMemoryMarkdown(cwd, md);
-            logger.info(`Regenerated .slopbrick/memory.md (${md.length} bytes from inventory + constitution).`);
+            const md = renderStructureMarkdown(inv, con);
+            await writeStructureMarkdown(cwd, md);
+            logger.info(`Regenerated .slopbrick/structure.md (${md.length} bytes from inventory + constitution).`);
             return;
           }
 
           // Default: --show
-          const md = await readMemoryMarkdown(cwd);
+          const md = await readStructureMarkdown(cwd);
           if (md === null) {
-            logger.warn(`No .slopbrick/memory.md at ${cwd}/.slopbrick/memory.md. Run \`slopbrick scan\` to generate it, or pass --regenerate after a prior scan.`);
+            logger.warn(`No .slopbrick/structure.md at ${cwd}/.slopbrick/structure.md. Run \`slopbrick scan\` to generate it, or pass --regenerate after a prior scan.`);
             process.exit(1);
           }
           process.stdout.write(md + '\n');

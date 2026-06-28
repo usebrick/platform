@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MEMORY_SCHEMA_VERSION,
-  isMemoryPattern,
+  STRUCTURE_SCHEMA_VERSION,
+  isStructurePattern,
   isComponentFingerprint,
   isInventoryFile,
   isConstitutionFile,
@@ -9,14 +9,14 @@ import {
 } from '../src/structure-types';
 
 describe('memory-types — validators', () => {
-  it('MEMORY_SCHEMA_VERSION is "1"', () => {
-    expect(MEMORY_SCHEMA_VERSION).toBe('2');
+  it('STRUCTURE_SCHEMA_VERSION is "1"', () => {
+    expect(STRUCTURE_SCHEMA_VERSION).toBe('2');
   });
 
-  describe('isMemoryPattern', () => {
-    it('accepts a valid MemoryPattern', () => {
+  describe('isStructurePattern', () => {
+    it('accepts a valid StructurePattern', () => {
       expect(
-        isMemoryPattern({
+        isStructurePattern({
           category: 'stateManagement',
           name: 'zustand',
           imports: ['zustand'],
@@ -26,17 +26,17 @@ describe('memory-types — validators', () => {
     });
 
     it('rejects when category is missing', () => {
-      expect(isMemoryPattern({ name: 'x', imports: ['x'], fileCount: 1 })).toBe(false);
+      expect(isStructurePattern({ name: 'x', imports: ['x'], fileCount: 1 })).toBe(false);
     });
 
     it('rejects when imports is not an array of strings', () => {
       expect(
-        isMemoryPattern({ category: 'stateManagement', name: 'x', imports: 'not-array', fileCount: 1 }),
+        isStructurePattern({ category: 'stateManagement', name: 'x', imports: 'not-array', fileCount: 1 }),
       ).toBe(false);
     });
 
     it('rejects null', () => {
-      expect(isMemoryPattern(null)).toBe(false);
+      expect(isStructurePattern(null)).toBe(false);
     });
   });
 
@@ -66,7 +66,7 @@ describe('memory-types — validators', () => {
 
   describe('isInventoryFile', () => {
     const valid = {
-      version: MEMORY_SCHEMA_VERSION,
+      version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace: '/tmp',
       scannedFiles: 1,
@@ -95,7 +95,7 @@ describe('memory-types — validators', () => {
 
   describe('isConstitutionFile', () => {
     const valid = {
-      version: MEMORY_SCHEMA_VERSION,
+      version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace: '/tmp',
       declared: { stateManagement: 'zustand' },

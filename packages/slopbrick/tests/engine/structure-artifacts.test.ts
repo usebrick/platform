@@ -5,7 +5,7 @@
  *   1. buildInventoryFromScan → saveInventory → .slopbrick/inventory.json
  *   2. buildConstitutionFromConfig → saveConstitution → .slopbrick/constitution.json
  *   3. buildHealthFromReport → saveHealth → .slopbrick/health.json
- *   4. renderMemoryMarkdown → writeMemoryMarkdown → .slopbrick/memory.md
+ *   4. renderStructureMarkdown → writeStructureMarkdown → .slopbrick/structure.md
  *
  * Then loads each one back and verifies the schema-valid round-trip.
  * No actual file scanning is performed — we synthesize a ProjectReport
@@ -38,12 +38,12 @@ import {
   isInventoryFile,
   isConstitutionFile,
   isHealthFile,
-  MEMORY_SCHEMA_VERSION,
+  STRUCTURE_SCHEMA_VERSION,
   type InventoryFile,
   type ConstitutionFile,
   type HealthFile,
 } from '@usebrick/core';
-import { renderMemoryMarkdown, readMemoryMarkdown, writeMemoryMarkdown } from '../../src/engine/structure-md';
+import { renderStructureMarkdown, readStructureMarkdown, writeStructureMarkdown } from '../../src/engine/structure-md';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../src/types';
 
@@ -90,7 +90,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
   beforeEach(() => { dir = createTmpDir(); });
   afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
 
-  it('writes all 4 artifacts (inventory, constitution, health, memory.md) and round-trips each', async () => {
+  it('writes all 4 artifacts (inventory, constitution, health, structure.md) and round-trips each', async () => {
     // Minimal scan-result shape — engine/memory's buildInventoryFromScan
     // needs `cwd` + `results` (an array of FileScanResult). Empty is fine
     // for the inventory build; the health snapshot comes straight from
@@ -112,7 +112,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     // 3. health
     const report = makeReport({ generatedAt: inventory.generatedAt });
     const health: HealthFile = {
-      version: MEMORY_SCHEMA_VERSION,
+      version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: inventory.generatedAt,
       workspace: dir,
       slopIndex: 12,
@@ -123,15 +123,15 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     };
     saveHealth(dir, health);
 
-    // 4. memory.md (agent-readable summary)
-    const md = renderMemoryMarkdown(inventory, constitution);
-    await writeMemoryMarkdown(dir, md);
+    // 4. structure.md (agent-readable summary)
+    const md = renderStructureMarkdown(inventory, constitution);
+    await writeStructureMarkdown(dir, md);
 
     // ---- Verify all 4 exist on disk ------------------------------------
     expect(existsSync(join(dir, '.slopbrick', 'inventory.json'))).toBe(true);
     expect(existsSync(join(dir, '.slopbrick', 'constitution.json'))).toBe(true);
     expect(existsSync(join(dir, '.slopbrick', 'health.json'))).toBe(true);
-    expect(existsSync(join(dir, '.slopbrick', 'memory.md'))).toBe(true);
+    expect(existsSync(join(dir, '.slopbrick', 'structure.md'))).toBe(true);
 
     // ---- Verify each round-trips through the loader + validator ---------
     const loadedInv = loadInventory(dir);
@@ -151,7 +151,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     expect(loadedHealth!.issueCounts).toEqual({ high: 1, medium: 1, low: 1 });
     expect(loadedHealth!.topOffenseIds).toEqual(['ai/comment-ratio', 'visual/duplicate-class']);
 
-    const loadedMd = await readMemoryMarkdown(dir);
+    const loadedMd = await readStructureMarkdown(dir);
     expect(loadedMd).not.toBeNull();
     expect(loadedMd!.length).toBeGreaterThan(100);
     expect(loadedMd).toContain('# slopbrick memory');
