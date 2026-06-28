@@ -284,7 +284,7 @@ export interface Issue {
   fixes?: FixSuggestion[];
   // Set by reporters that consume `getSignalStrength(ruleId)`. Omitted
   // when no metadata is available so JSON stays lean for known rules.
-  signalStrength?: import('./rules/signal-strength').SignalStrength;
+  signalStrength?: import('./rules/signal-strength').SignalStrengthEntry;
 }
 
 // subsequent runs can skip unchanged files. Cache invalidates on

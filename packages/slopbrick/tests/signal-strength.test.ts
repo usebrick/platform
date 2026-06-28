@@ -34,9 +34,9 @@ describe('signal-strength loader', () => {
   });
 
   it('isReliableSignal flags low precision', () => {
-    expect(isReliableSignal({ precision: 0.1, recall: 0.5, fpRate: 0.4, ratio: 1.25, lastCalibratedAt: 'x' })).toBe(false);
-    expect(isReliableSignal({ precision: 0.9, recall: 0.5, fpRate: 0.05, ratio: 10, lastCalibratedAt: 'x' })).toBe(true);
-    expect(isReliableSignal({ precision: 0.7, recall: 0.05, fpRate: 0.02, ratio: 2.5, lastCalibratedAt: 'x' })).toBe(false);
+    expect(isReliableSignal({ precision: 0.1, recall: 0.5, fpRate: 0.4, ratio: 1.25, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(false);
+    expect(isReliableSignal({ precision: 0.9, recall: 0.5, fpRate: 0.05, ratio: 10, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(true);
+    expect(isReliableSignal({ precision: 0.7, recall: 0.05, fpRate: 0.02, ratio: 2.5, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(false);
   });
 
   it('treats missing signalStrength as reliable (no flag)', () => {
