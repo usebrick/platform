@@ -51,6 +51,8 @@ A clean, deterministic positioning: "We continuously model and govern repository
 - **G4**: Keep the 4 product names (PickBrick, SlopBrick, MendBrick, future LockBrick) — the "Brick" brand is intact.
 - **G5**: Preserve outcome language: "BRICK gives AI persistent understanding of your repository" stays (the outcome is understanding, the underlying asset is structure).
 - **G6**: The rebrand runs as Phase 0 of the architectural refactor — new files use "structure" naming from the start.
+- **G7**: Engine/UI taxonomy split: keep the 6 engine verdicts for LR math and calibration, but expose a 3-bucket UI taxonomy (AI Findings / Engineering Hygiene / Suppressed) to the user. INVERTED is in the same UI bucket as HYGIENE (Engineering Hygiene) per the user's design intent ("INVERTED is basically HYGIENE").
+- **G8**: Multi-dimensional health scoring: replace the single Slop Score with 3 independent scores (AI Quality / Engineering Hygiene / Security) plus a Repository Health composite. Hygiene does not affect the AI Slop Score.
 
 ### Non-Goals
 - **NG1**: Rewriting git history (immutable; commit messages that said "memory" stay as-is).
@@ -199,6 +201,157 @@ The flywheel (calibration → rules → flywheel) is unchanged. Only the `flywhe
 - Old: `slopbrick/src/mcp/slop-suggest-memory.ts` exports MCP tool `slop_suggest_memory`
 - New: `slopbrick/src/mcp/slop-suggest-structure.ts` exports MCP tool `slop_suggest_structure`
 - Any MCP client calling the old name will fail. The user accepts this.
+
+---
+
+## The Engine/UI Taxonomy Split (added 2026-06-26)
+
+The user's deepest design insight: **"Calibration categories are for the engine. Health categories are for the user."** The engine's internal taxonomy (used for calibration, LR math, rule management) and the user-facing taxonomy (used for the report, the website, the schema) **should not be identical.** This is a deliberate seam, not an oversight.
+
+### Engine taxonomy (internal — unchanged)
+
+The 6 verdicts stay. They describe statistical behavior of rules against the corpus. The engine uses them to compute LRs, decide what's `defaultOff`, and emit `signal-strength.json`.
+
+```
+USEFUL   — high precision + high lift
+OK       — moderate signal
+NOISY    — fires on both classes
+INVERTED — fires MORE on negative class
+HYGIENE  — non-AI quality check
+DORMANT  — never fires
+```
+
+### Presentation taxonomy (user-facing — new)
+
+The report should answer: **"What should I do?"** Not "How was this rule calibrated?" So the user sees 3 buckets, not 6.
+
+```
+┌─ AI Findings ────────────────┐
+│ ✓ 11 Useful                  │
+│ ✓ 2 OK                       │
+└───────────────────────────────┘
+┌─ Engineering Hygiene ────────┐
+│ ✓ 6 Issues                   │
+└───────────────────────────────┘
+┌─ Suppressed ─────────────────┐
+│ ✓ 1 Noisy                   │
+└───────────────────────────────┘
+```
+
+The mapping is:
+
+| Engine verdict | User bucket | Why |
+|----------------|-------------|-----|
+| USEFUL | AI Findings | High-precision AI detection |
+| OK | AI Findings | Moderate AI signal |
+| HYGIENE | Engineering Hygiene | Non-AI code quality check |
+| INVERTED | Engineering Hygiene | Non-AI code quality check (same action as HYGIENE for the user; engine still distinguishes for LR math) |
+| NOISY | Suppressed | Fires on both classes — suppressed from slopIndex |
+| DORMANT | Suppressed | Never fires — hidden |
+
+**Decision recorded (Q1')**: The user explicitly said "INVERTED is basically HYGIENE" — they see these as the same kind of thing from an action perspective. The engine still distinguishes (INVERTED rules have LR < 1 and invert the Bayesian posterior; HYGIENE rules have LR ≈ 1 and are neutral), but the user bucket merges them. **Engineering Hygiene is the visible bucket for both.** NOISY and DORMANT stay hidden because they truly are engine noise (inconsistent or absent fires, with no useful action for the user).
+
+**Verdict names are hidden from the user.** Developers don't care whether something is "USEFUL" or "OK" — they care about the rule's action ("Zombie State: Confidence High"). The rule name matters more than the calibration label.
+
+### Multiple scores, not one Slop Score (NEW)
+
+The v0.14.5 single-number "Slop Score" is replaced with 3 (or more) independent scores:
+
+```
+Repository Health
+├── AI Quality       81/100   (USEFUL + OK only)
+├── Engineering Hygiene  94/100   (HYGIENE only)
+└── Security         100/100  (security/* rules regardless of verdict)
+```
+
+This is a critical separation. Two repositories:
+
+```
+Repository A:  AI 95  Hygiene 40
+Repository B:  AI 40  Hygiene 95
+```
+
+These are very different problems. Repository A has excellent AI discipline but poor engineering cleanliness. Repository B has clean engineering practices but significant AI-induced architectural drift. **A single combined Slop Score would hide that distinction.**
+
+The "Slop Score" name itself stays for the AI Quality dimension (it's the historical name and the user knows it), but it's now ONE of several scores, not THE score.
+
+### Why hygiene doesn't affect the AI Slop Score
+
+Concrete example: "My Slop Score went up because I forgot to remove a console.log." That's mixing two different concepts. The new taxonomy makes this impossible:
+
+- AI Quality = computed from rules that detect AI-induced patterns (zombie state, ghost defensive, default React stack, etc.)
+- Engineering Hygiene = computed from rules that detect non-AI code quality (console logs, missing FK indexes, hardcoded secrets — but security is its own dimension)
+- Security = computed from security/* rules (regardless of verdict — a security issue is always a security issue)
+
+### Implementation seam
+
+The seam between engine and presentation is a new mapping function:
+
+```ts
+// packages/slopbrick/src/report/buckets.ts (new file)
+export type Bucket = 'ai' | 'hygiene' | 'suppressed';
+
+export function bucketForVerdict(verdict: Verdict): Bucket {
+  switch (verdict) {
+    case 'USEFUL':
+    case 'OK':
+      return 'ai';
+    case 'HYGIENE':
+    case 'INVERTED':
+      return 'hygiene';
+    case 'NOISY':
+    case 'DORMANT':
+      return 'suppressed';
+  }
+}
+```
+
+The mapping reflects the user's intent: "INVERTED is basically HYGIENE" from the action perspective. The engine's internal `verdict` is still preserved (so the Bayesian combiner can apply INVERTED's LR < 1 correctly), but the report groups them.
+
+The HTML + Markdown + JSON reports all use `bucketForVerdict()` to group rules. The JSON consumers can read either the raw `verdict` (engine) or the derived `bucket` (UI).
+
+### Schema impact
+
+The v0.14.5 schema (`health.schema.json`) currently has a single `slopIndex` field. After the rebrand:
+
+```json
+{
+  "version": "3",
+  "aiQuality": 81,
+  "engineeringHygiene": 94,
+  "security": 100,
+  "repositoryHealth": 91,  // weighted composite (configurable)
+  "verdictDistribution": { ... },  // engine — for advanced consumers
+  "bucketDistribution": { ... }    // UI — for default consumers
+}
+```
+
+The `slopIndex` field is replaced by `aiQuality`. The `bucketDistribution` mirrors `verdictDistribution` but uses the 3-bucket taxonomy. **Breaking change** for any consumer that reads `slopIndex`; the migration path is to read `aiQuality` instead. (No alias per Q4 — hard break.)
+
+### Scope impact
+
+This is a **new sub-project** added to the merged refactor plan:
+
+- **Phase 6 (NEW)**: Multi-dimensional health scoring
+  - S.1  Add `bucketForVerdict()` function in `slopbrick/src/report/buckets.ts`
+  - S.2  Update HTML report to show 3 buckets + 3 scores
+  - S.3  Update Markdown report to match
+  - S.4  Update JSON schema (`health.schema.json`) to expose `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`
+  - S.5  Update slopIndex → aiQuality everywhere
+  - S.6  Update tests that assert on `slopIndex`
+  - S.7  Update the website's "Slop Score" copy to "Repository Health" with the 3-component breakdown
+
+~3 days of additional work. Total merged refactor + rebrand: **5-6 days** (was 1-2 days for refactor alone, then +1 for rebrand, now +1 more for the multi-score refactor).
+
+### Why this scales
+
+This architecture is the same pattern mature dev tools use:
+
+- **Engine**: rich internal classifications, used for calibration, rule management, math
+- **UI**: simple action-oriented view, hides calibration labels, shows scores per dimension
+- **Schema**: exposes both, so advanced consumers (CI, dashboards) can use the engine view while default consumers (terminal, IDE) use the UI view
+
+The seam is small (`bucketForVerdict()` + the `bucketDistribution` field) and the value is high: freedom to evolve the engine taxonomy (e.g. add a 7th verdict) without changing what users see.
 
 ---
 
