@@ -95,8 +95,11 @@ jobs:
             exit 1
           fi
 
-      - name: Build core (workspace dep must be built before slopbrick)
+      - name: Build core (workspace dep must be built before engine)
         run: pnpm --filter '@usebrick/core' build
+
+      - name: Build engine (workspace dep must be built before slopbrick)
+        run: pnpm --filter '@usebrick/engine' build
 
       - name: Build slopbrick
         run: pnpm --filter slopbrick build
