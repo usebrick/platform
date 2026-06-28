@@ -16,12 +16,35 @@
   import { isLowPower } from '../scripts/low-power';
   const canvas = document.getElementById('brick-canvas') as HTMLCanvasElement | null;
   const wrap = document.getElementById('brick-canvas-wrap');
-  if (canvas && wrap) {
-    if (isLowPower()) {
-      canvas.style.display = 'none';
-      wrap.querySelector('picture')!.style.display = 'block';
-    } else {
-      initBrickShader(canvas);
+  const picture = wrap?.querySelector('picture') as HTMLElement | null;
+  if (canvas && wrap && picture) {
+    // Show the static SVG first; swap to WebGL after LCP.
+    canvas.style.display = 'none';
+    picture.style.display = 'block';
+
+    // Wait for LCP before swapping — but only if the device can handle WebGL.
+    // (Top-level `return` is illegal in an ES module, so we use a guard.)
+    if (!isLowPower()) {
+      const lcpPromise = new Promise<void>((resolve) => {
+        try {
+          new PerformanceObserver((list) => {
+            if (list.getEntries().length > 0) resolve();
+          }).observe({ type: 'largest-contentful-paint', buffered: true });
+        } catch {
+          resolve(); // no LCP observer; swap immediately
+        }
+      });
+
+      lcpPromise.then(() => {
+        canvas.style.display = 'block';
+        picture.style.display = 'none';
+        initBrickShader(canvas);
+        // If the shader failed to compile, fall back to the static SVG (from E.1)
+        if (canvas.dataset.shaderFailed === 'true') {
+          canvas.style.display = 'none';
+          picture.style.display = 'block';
+        }
+      });
     }
   }
 </script>
