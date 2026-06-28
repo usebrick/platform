@@ -82,12 +82,29 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     machineReadableStdout,
   } = input;
 
+  // Build a MemoryReport-shaped projection so the engine accepts it
+  // regardless of whether the caller has computed all 4 scores.
+  // Declared at function scope so both the run-history append and the
+  // Repository Memory Platform persistence can reuse the same value.
+  // v0.15.0 U.4+: `slopIndex` is kept on the projection for backward
+  // compat with historical telemetry (engine's MemoryAuditRun field).
+  const memoryReport = {
+    generatedAt: report.generatedAt,
+    aiQuality: report.aiQuality ?? 0,
+    engineeringHygiene: report.engineeringHygiene ?? 0,
+    security: report.security ?? 0,
+    repositoryHealth: report.repositoryHealth ?? 0,
+    slopIndex: report.slopIndex ?? report.aiQuality ?? 0,
+    categoryScores: report.categoryScores,
+    issues: report.issues ?? [],
+  };
+
   // Append to run history (`.slopbrick/runs.json`). Skip when
   // projectMemory is explicitly disabled in config.
   if (config.projectMemory !== false) {
     await appendRun(
       cwd,
-      report,
+      memoryReport,
       VERSION,
       fsMemoryIO,
       thresholdExceeded(report, config),
@@ -186,7 +203,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       await saveConstitution(cwd, constitution);
       const md = renderStructureMarkdown(inventory, constitution);
       await writeStructureMarkdown(cwd, md);
-      const health = buildHealthFromReport(report, cwd, { scanDurationMs: durationMs });
+      const health = buildHealthFromReport(memoryReport, cwd, { scanDurationMs: durationMs });
       saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
         logger.info(

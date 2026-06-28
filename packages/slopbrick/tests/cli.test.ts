@@ -41,7 +41,7 @@ const makeReport = (
 ): ProjectReport => ({
   version: '0.5.2',
   generatedAt,
-  slopIndex: 10,
+  aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
   assemblyHealth: 90,
   totalScore: 10,
   categoryScores: {
@@ -137,24 +137,24 @@ describe('thresholdExceeded', () => {
   };
 
   it('returns false when all thresholds are respected', () => {
-    const report = makeReport({ slopIndex: 20, p90Score: 40, peakScore: 45 });
+    const report = makeReport({ aiQuality: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
   it('returns true when slop index exceeds mean threshold', () => {
-    const report = makeReport({ slopIndex: 26, p90Score: 40, peakScore: 45 });
+    const report = makeReport({ aiQuality: 26, engineeringHygiene: 26, security: 26, repositoryHealth: 26, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(true);
   });
 
   it('does NOT trip on p90 alone (Phase 2 §10: only composite Slop Index drives threshold)', () => {
     // p90=51 (above p90Slop=50) but slopIndex=20 (below meanSlop=25) → not exceeded
-    const report = makeReport({ slopIndex: 20, p90Score: 51, peakScore: 45 });
+    const report = makeReport({ aiQuality: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 51, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
   it('does NOT trip on peak alone (Phase 2 §10)', () => {
     // peak=51 (above individualSlopThreshold=50) but slopIndex=20 → not exceeded
-    const report = makeReport({ slopIndex: 20, p90Score: 40, peakScore: 51 });
+    const report = makeReport({ aiQuality: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 40, peakScore: 51 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 });
@@ -171,7 +171,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -200,7 +200,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -228,7 +228,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -257,7 +257,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -287,7 +287,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {

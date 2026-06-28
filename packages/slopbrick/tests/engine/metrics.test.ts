@@ -153,8 +153,11 @@ describe('aggregateReport', () => {
       0.25 * report.visualScore;
 
     expect(report.componentCount).toBe(2);
-    expect(report.slopIndex).toBeCloseTo(expectedSlopIndex, 5);
-    expect(report.assemblyHealth).toBeCloseTo(Math.max(0, 100 - report.slopIndex), 5);
+    // v0.15.0 U.4+: slopIndex is optional on ProjectReport (kept for
+    // backward compat with historical telemetry). aggregateReport
+    // always computes it, but the Pick type widens it to optional.
+    expect(report.slopIndex ?? 0).toBeCloseTo(expectedSlopIndex, 5);
+    expect(report.assemblyHealth).toBeCloseTo(Math.max(0, 100 - (report.slopIndex ?? 0)), 5);
     expect(report.peakScore).toBe(Math.max(scores[0].adjustedScore, scores[1].adjustedScore));
     expect(report.p90Score).toBeGreaterThanOrEqual(
       Math.min(scores[0].adjustedScore, scores[1].adjustedScore),
@@ -201,12 +204,12 @@ describe('aggregateReport', () => {
       DEFAULT_CONFIG,
     );
     expect(report.boundaryScore).toBeLessThanOrEqual(100);
-    expect(report.slopIndex).toBeLessThanOrEqual(100);
+    expect(report.slopIndex ?? 0).toBeLessThanOrEqual(100);
   });
 
   it('returns zero subscores on empty input', () => {
     const report = aggregateReport([], [], DEFAULT_CONFIG);
-    expect(report.slopIndex).toBe(0);
+    expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.boundaryScore).toBe(0);
     expect(report.contextScore).toBe(0);
@@ -283,7 +286,7 @@ describe('aggregateReport', () => {
 
   it('handles empty scores gracefully', () => {
     const report = aggregateReport([], [], DEFAULT_CONFIG);
-    expect(report.slopIndex).toBe(0);
+    expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.peakScore).toBe(0);
     expect(report.p90Score).toBe(0);

@@ -60,6 +60,7 @@ function makeReport(aiQuality = 10, overrides: Partial<ProjectReport> = {}): Pro
     security: aiQuality,
     repositoryHealth: aiQuality,
     assemblyHealth: 90,
+    totalScore: 0, // legacy field, removed in the v0.15.0 cleanup
     categoryScores: {
       visual: 0,
       typo: 0,

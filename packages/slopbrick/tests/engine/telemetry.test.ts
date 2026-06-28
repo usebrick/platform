@@ -19,7 +19,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: '0.6.0',
     generatedAt: '2026-06-17T00:00:00.000Z',
-    slopIndex: 5,
+    aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
     assemblyHealth: 95,
     totalScore: 5,
     categoryScores: {

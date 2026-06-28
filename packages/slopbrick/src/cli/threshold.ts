@@ -20,7 +20,7 @@ export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig)
   // Composite Slop Index is the single threshold metric. p90Slop and
   // individualSlopThreshold are kept in config for backward compat but
   // no longer gate the exit code.
-  if (report.slopIndex > config.thresholds.meanSlop) {
+  if ((report.aiQuality ?? 0) < config.thresholds.meanSlop) {
     return true;
   }
   return categoryThresholdBreached(report, config.thresholds.categoryThresholds);
@@ -28,7 +28,11 @@ export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig)
 
 export function failedThresholdCount(report: ProjectReport, config: ResolvedConfig): number {
   let count = 0;
-  if (report.slopIndex > config.thresholds.meanSlop) count += 1;
+  // v0.15.0 U.4+: aiQuality (0-100, higher is better) replaces
+  // slopIndex as the headline threshold metric. The legacy
+  // `meanSlop` field on the config is kept for backward compat;
+  // the comparison direction flips: aiQuality < meanSlop now fails.
+  if (report.aiQuality < config.thresholds.meanSlop) count += 1;
   if (report.p90Score > config.thresholds.p90Slop) count += 1;
   if (report.peakScore > config.thresholds.individualSlopThreshold) count += 1;
   const cat = config.thresholds.categoryThresholds;

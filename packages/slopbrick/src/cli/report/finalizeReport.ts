@@ -46,6 +46,10 @@ export interface FinalizeReportInput {
   results: FileScanResult[];
   aggregated: Pick<
     ProjectReport,
+    | 'aiQuality'
+    | 'engineeringHygiene'
+    | 'security'
+    | 'repositoryHealth'
     | 'slopIndex'
     | 'assemblyHealth'
     | 'totalScore'
@@ -147,7 +151,10 @@ export async function finalizeReport(
     config,
     results,
     aggregated: {
-      slopIndex: aggregated.slopIndex,
+      aiQuality: aggregated.aiQuality,
+      engineeringHygiene: aggregated.engineeringHygiene,
+      security: aggregated.security,
+      repositoryHealth: aggregated.repositoryHealth,
       components: aggregated.components,
       categoryScores: aggregated.categoryScores,
     },
@@ -174,16 +181,21 @@ export async function finalizeReport(
     enrichment,
   });
 
-  // --no-increase check: fail the run if the slopIndex went UP.
+  // --no-increase check: fail the run if the AI Quality went DOWN.
   let noIncreaseFailure = false;
   if (options.noIncrease) {
     const previous = (await readRuns(cwd, fsMemoryIO)).at(-1);
     if (previous) {
-      if (report.slopIndex > previous.slopIndex) {
+      if ((report.aiQuality ?? 0) < previous.slopIndex) {
         noIncreaseFailure = true;
         if (!options.quiet) {
+          // v0.15.0 U.4+: aiQuality is the new headline score. The
+          // comparison is still against `previous.slopIndex` for
+          // backward compat with historical telemetry, but the
+          // current-run value is aiQuality (higher is better; a
+          // lower number means the code got sloppier).
           logger.error(
-            `Slop Index went UP from ${previous.slopIndex.toFixed(1)} to ${report.slopIndex.toFixed(1)} — your code got sloppier. See which files changed and fix the new issues.`,
+            `AI Quality went DOWN from ${previous.slopIndex.toFixed(1)} to ${(report.aiQuality ?? 0).toFixed(1)} — your code got sloppier. See which files changed and fix the new issues.`,
           );
         }
       }

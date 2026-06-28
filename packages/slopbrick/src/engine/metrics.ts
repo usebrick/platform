@@ -151,6 +151,10 @@ export function aggregateReport(
   config: ResolvedConfig,
 ): Pick<
   ProjectReport,
+  | 'aiQuality'
+  | 'engineeringHygiene'
+  | 'security'
+  | 'repositoryHealth'
   | 'slopIndex'
   | 'assemblyHealth'
   | 'totalScore'
@@ -228,7 +232,19 @@ export function aggregateReport(
   // gets honest "167 AI points" instead of "16700 (which is
   // meaningless without components to average over)".
 
+  // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
+  // aiQuality is the inverted slopIndex (higher = better). The other
+  // 3 scores (engineeringHygiene, security, repositoryHealth) are
+  // computed in the enrichment phase from their respective
+  // sub-scores; for now we default them to aiQuality so the
+  // ProjectReport type is satisfied before enrichment runs.
+  const aiQuality = Math.max(0, Math.min(100, 100 - slopIndex));
+
   return {
+    aiQuality,
+    engineeringHygiene: aiQuality,
+    security: aiQuality,
+    repositoryHealth: aiQuality,
     slopIndex,
     assemblyHealth,
     totalScore: 0, // legacy field, removed in the cleanup

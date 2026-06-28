@@ -74,7 +74,19 @@ export interface MaintenanceAxisHealth {
 
 /** Inputs to the pure `computeAiMaintenanceCost` function. Every axis is optional. */
 export interface MaintenanceAxes {
-  /** 0-100, lower = better. The headline `slopIndex` from `ProjectReport`. */
+  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
+   *  that replaces slopIndex. Tests and callers should pass this
+   *  going forward. */
+  aiQuality?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  engineeringHygiene?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  security?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  repositoryHealth?: number;
+  /** 0-100, lower = better. @deprecated v0.15.0: use aiQuality. Kept
+   *  for backward compat with existing test fixtures and historical
+   *  telemetry. The axis inverts it internally. */
   slopIndex?: number;
   /** 0-100, higher = better. From `buildArchitectureScore`. */
   architectureConsistency?: number;
@@ -204,7 +216,18 @@ export const AI_SECURITY_NUMERIC: Record<'low' | 'medium' | 'high' | 'critical',
 
 /** Inputs to the pure `buildRepositoryHealth` function. Every input is optional. */
 export interface RepositoryHealthInputs {
-  /** 0-100, lower = better. Inverted to 100 - x for the composite. */
+  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
+   *  that replaces slopIndex. Tests and callers should pass this
+   *  going forward. */
+  aiQuality?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  engineeringHygiene?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  security?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  repositoryHealth?: number;
+  /** 0-100, lower = better. Inverted to 100 - x for the composite.
+   *  @deprecated v0.15.0: use aiQuality. Kept for backward compat. */
   slopIndex?: number;
   /** 0-100, higher = better. */
   architectureConsistency?: number;
@@ -726,10 +749,6 @@ export interface ProjectReport {
   dbDrift?: DbDriftLevel;
   /** Per-finding list behind the db-health score. */
   dbFindings?: DbFinding[];
-  /** Phase 12 — Repository Health (composite 0-100). The endgame score
-   *  that aggregates every prior sub-score into one number a manager
-   *  reads in two seconds. Always informational; --strict for CI gating. */
-  repositoryHealth?: number;
   /** Categorical AI Debt band, derived from `repositoryHealth`. */
   aiDebt?: AiDebt;
   /** Per-axis breakdown of the composite. */

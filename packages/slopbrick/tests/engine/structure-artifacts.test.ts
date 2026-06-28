@@ -69,10 +69,8 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: VERSION,
     generatedAt: new Date().toISOString(),
+    // v0.15.0 U.4+: 4-score model replaces single slopIndex.
     aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
-    engineeringHygiene: 12,
-    security: 12,
-    repositoryHealth: 12,
     assemblyHealth: 88,
     categoryScores: {
       visual: 5, typo: 0, wcag: 0, layout: 0, component: 0,
@@ -86,6 +84,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
     visualScore: 0,
     componentCount: 1,
     fileCount: 1,
+    totalScore: 0, // legacy field, removed in the v0.15.0 cleanup
     thresholds: { meanSlop: 25, p90Slop: 50, individualSlopThreshold: 50 },
     components: [],
     issues: [
@@ -133,10 +132,8 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
       version: STRUCTURE_SCHEMA_VERSION,
       generatedAt: inventory.generatedAt,
       workspace: dir,
+      // v0.15.0 U.4+: 4-score model replaces single slopIndex.
       aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
-      engineeringHygiene: 12,
-      security: 12,
-      repositoryHealth: 12,
       categoryScores: { ai: 7, visual: 5 },
       issueCounts: { high: 1, medium: 1, low: 1 },
       topOffenseIds: ['ai/comment-ratio', 'visual/duplicate-class'],

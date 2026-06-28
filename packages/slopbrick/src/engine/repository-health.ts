@@ -210,7 +210,10 @@ export function buildRepositoryHealth(
 export function buildRepositoryHealthFromReport(
   report: Pick<
     ProjectReport,
-    | 'slopIndex'
+    | 'aiQuality'
+    | 'engineeringHygiene'
+    | 'security'
+    | 'repositoryHealth'
     | 'architectureConsistency'
     | 'aiSecurityRisk'
     | 'testQuality'
@@ -230,7 +233,10 @@ export function buildRepositoryHealthFromReport(
   const totalDesignTokens =
     (options.spacingViolations ?? 0) + (options.radiusViolations ?? 0);
   const inputs: RepositoryHealthInputs = {
-    slopIndex: report.slopIndex,
+    // v0.15.0 U.4+: the axis is named slopIndex for historical
+    // naming, but the value is now aiQuality (0-100, higher is
+    // better; the axis inverts it internally).
+    slopIndex: report.aiQuality,
     architectureConsistency: report.architectureConsistency,
     aiSecurityRisk: report.aiSecurityRisk,
     designTokenViolations:

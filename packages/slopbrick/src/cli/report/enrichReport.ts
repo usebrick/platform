@@ -43,7 +43,13 @@ export interface EnrichmentInput {
   config: ResolvedConfig;
   results: FileScanResult[];
   aggregated: {
-    slopIndex: number;
+    /** v0.15.0 U.4+: replaces the legacy slopIndex. */
+    aiQuality: number;
+    engineeringHygiene: number;
+    security: number;
+    repositoryHealth: number;
+    /** @deprecated use aiQuality */
+    slopIndex?: number;
     components: ComponentScore[];
     categoryScores: ProjectReport['categoryScores'];
   };
@@ -252,7 +258,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     const aiSignalCount = sortedIssues.filter((i) => i.aiSpecific === true).length;
     aiMaintenanceCost = computeAiMaintenanceCostFromReport(
       {
-        slopIndex: aggregated.slopIndex,
+        aiQuality: aggregated.aiQuality ?? 0,
         architectureConsistency,
         aiSecurityRisk,
         highSeverityIssueCount: sortedIssues.filter((i) => i.severity === 'high').length,
@@ -304,7 +310,11 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   }
 
   // Repository Health composite + AI Debt band. Failure is non-fatal.
-  let repositoryHealth: ProjectReport['repositoryHealth'];
+  // v0.15.0 U.4+: repositoryHealth is now a required number (one of
+  // the 4 primary scores). Initialize with the input value as a
+  // fallback so the return type is satisfied even if the composite
+  // computation throws.
+  let repositoryHealth: ProjectReport['repositoryHealth'] = aggregated.repositoryHealth;
   let aiDebt: ProjectReport['aiDebt'];
   let repositoryHealthBreakdown: ProjectReport['repositoryHealthBreakdown'];
   let repositoryHealthWarnings: ProjectReport['repositoryHealthWarnings'];
@@ -320,7 +330,10 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     )?.count ?? 0;
     const composite = buildRepositoryHealthFromReport(
       {
-        slopIndex: aggregated.slopIndex,
+        aiQuality: aggregated.aiQuality ?? 0,
+        engineeringHygiene: aggregated.engineeringHygiene ?? 0,
+        security: aggregated.security ?? 0,
+        repositoryHealth: aggregated.repositoryHealth ?? 0,
         architectureConsistency,
         aiSecurityRisk,
         testQuality,

@@ -28,7 +28,10 @@ export interface AssembleScanReportInput {
   results: FileScanResult[];
   aggregated: Pick<
     ProjectReport,
-    | 'slopIndex'
+    | 'aiQuality'
+    | 'engineeringHygiene'
+    | 'security'
+    | 'repositoryHealth'
     | 'assemblyHealth'
     | 'totalScore'
     | 'categoryScores'
@@ -94,7 +97,9 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     aiQuality: aggregated.aiQuality,
     engineeringHygiene: aggregated.engineeringHygiene,
     security: aggregated.security,
-    repositoryHealth: aggregated.repositoryHealth,
+    // repositoryHealth is set later from `enrichment.repositoryHealth`
+    // (the computed composite); the `aggregated` value is just the
+    // default seed that enrichment may override.
     assemblyHealth: aggregated.assemblyHealth,
     totalScore: aggregated.totalScore,
     categoryScores: aggregated.categoryScores,
@@ -125,6 +130,10 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     repositoryHealthWarnings: enrichment.repositoryHealthWarnings,
     defaultOffSuppressedCount: defaultOffApplied,
     defaultOffRuleCount,
+    // v0.15.0 U.4+: the previous-run value is stored as
+    // `previousSlopIndex` on ProjectReport for backward compat with
+    // historical telemetry. The value itself is the previous run's
+    // aiQuality (higher = better).
     previousSlopIndex: previousRun?.slopIndex,
     previousRunTimestamp: previousRun?.timestamp,
     p90Score: aggregated.p90Score,

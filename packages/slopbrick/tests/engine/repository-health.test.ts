@@ -41,7 +41,7 @@ describe('aiDebtFromScore', () => {
 describe('buildRepositoryHealth', () => {
   it('returns the "low" bucket for a clean repo with all axes', () => {
     const result = buildRepositoryHealth({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       architectureConsistency: 95,
       aiSecurityRisk: 'low',
       designTokenViolations: { spacing: 0, radius: 0 },
@@ -58,7 +58,7 @@ describe('buildRepositoryHealth', () => {
 
   it('returns "critical" when aiSecurityRisk is critical (penalty applied)', () => {
     const result = buildRepositoryHealth({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       architectureConsistency: 95,
       aiSecurityRisk: 'critical',
     });
@@ -72,7 +72,7 @@ describe('buildRepositoryHealth', () => {
   it('renormalizes weights when optional axes are missing', () => {
     // Only slopIndex + architecture present.
     const a = buildRepositoryHealth({
-      slopIndex: 30,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       architectureConsistency: 70,
     });
     expect(Object.keys(a.breakdown)).toHaveLength(2);
@@ -82,13 +82,13 @@ describe('buildRepositoryHealth', () => {
 
   it('applies a high-severity penalty', () => {
     const a = buildRepositoryHealth({
-      slopIndex: 30,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       architectureConsistency: 80,
       aiSecurityRisk: 'low',
       highSeverityIssueCount: 0,
     });
     const b = buildRepositoryHealth({
-      slopIndex: 30,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       architectureConsistency: 80,
       aiSecurityRisk: 'low',
       highSeverityIssueCount: 10,
@@ -98,7 +98,7 @@ describe('buildRepositoryHealth', () => {
 
   it('clamps to [0, 100]', () => {
     const a = buildRepositoryHealth({
-      slopIndex: 100,
+      aiQuality: 100, engineeringHygiene: 100, security: 100, repositoryHealth: 100,
       aiSecurityRisk: 'critical',
       highSeverityIssueCount: 100,
     });
@@ -119,7 +119,7 @@ describe('buildRepositoryHealth', () => {
 describe('buildRepositoryHealthFromReport', () => {
   it('extracts testQuality + businessLogicCoherence + docFreshness + dbHealth from the report', () => {
     const result = buildRepositoryHealthFromReport({
-      slopIndex: 10,
+      aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       testQuality: 85,
@@ -139,7 +139,7 @@ describe('buildRepositoryHealthFromReport', () => {
 
   it('handles a report with no issues', () => {
     const result = buildRepositoryHealthFromReport({
-      slopIndex: 20,
+      aiQuality: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       issues: [],
@@ -152,7 +152,7 @@ describe('buildRepositoryHealthFromReport', () => {
 describe('formatRepositoryHealth', () => {
   it('renders headline, per-axis breakdown, and warnings', () => {
     const result = buildRepositoryHealth({
-      slopIndex: 10,
+      aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
       architectureConsistency: 90,
       aiSecurityRisk: 'critical',
     });

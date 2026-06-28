@@ -78,6 +78,11 @@ export async function watchProject(
       version: VERSION,
       generatedAt: new Date().toISOString(),
       configPath,
+      // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
+      aiQuality: aggregated.aiQuality,
+      engineeringHygiene: aggregated.engineeringHygiene,
+      security: aggregated.security,
+      repositoryHealth: aggregated.repositoryHealth,
       slopIndex: aggregated.slopIndex,
       assemblyHealth: aggregated.assemblyHealth,
       totalScore: aggregated.totalScore,

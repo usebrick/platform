@@ -84,12 +84,17 @@ function scoreBand(score: number): { label: string; color: (s: string) => string
  */
 function formatDeltaSuffix(report: ProjectReport): string {
   if (typeof report.previousSlopIndex !== 'number') return '';
-  const delta = report.slopIndex - report.previousSlopIndex;
+  // v0.15.0 U.4+: slopIndex → aiQuality (higher is better; sign
+  // conventions for the arrow flip accordingly).
+  const delta = report.aiQuality - report.previousSlopIndex;
   if (Math.abs(delta) < 0.5) return ''; // noise floor
   const arrow = delta < 0 ? '↓' : '↑';
   const absDelta = Math.abs(delta).toFixed(0);
-  const word = delta < 0 ? 'cleaner' : 'sloppier';
-  const color = delta < 0 ? chalk.green : chalk.red;
+  // aiQuality higher = better; delta > 0 means improved → show as
+  // "cleaner" with a down-arrow (consistent with the v0.14.5j
+  // convention of down = good).
+  const word = delta > 0 ? 'cleaner' : 'worse';
+  const color = delta > 0 ? chalk.green : chalk.red;
   return color(`  ${arrow}${absDelta} (${word})`);
 }
 
@@ -106,7 +111,8 @@ function formatDeltaSuffix(report: ProjectReport): string {
  * - If no issues: explicit "all clean" verdict
  */
 function formatVerdict(report: ProjectReport): string {
-  const score = report.slopIndex;
+  // v0.15.0 U.4+: slopIndex → aiQuality (0-100, higher is better).
+  const score = report.aiQuality;
   const band = scoreBand(score);
 
   // Build context: dominant category + rule + file
@@ -263,9 +269,9 @@ function formatNextStep(report: ProjectReport): string {
     ),
   );
 
-  // Add the why-failing hint when failing. v0.14.5j: use slopIndex
-  // (the SINGLE headline number, not coherence).
-  if (report.slopIndex < 70) {
+  // Add the why-failing hint when failing. v0.15.0 U.4+: use
+  // aiQuality (the SINGLE headline number, not coherence).
+  if (report.aiQuality < 70) {
     lines.push(
       chalk.dim(
         `  → \`slopbrick scan --why-failing\` for the top 5 issues dragging the score down`,
@@ -302,10 +308,8 @@ function formatWhyFailing(report: ProjectReport): string {
     return chalk.green('Nothing is failing the threshold. Score is clean.');
   }
 
-  // v0.14.5j: use slopIndex (the SINGLE headline number) — previously
-  // this read `coherence` which gave a different number than the
-  // main scan output.
-  const headline = report.slopIndex;
+  // v0.15.0 U.4+: use aiQuality (the SINGLE headline number).
+  const headline = report.aiQuality;
   const status = headline >= 70 ? 'PASS' : 'FAIL';
   const colorize = headline >= 70 ? chalk.green : chalk.red;
   const lines: string[] = [];
@@ -351,22 +355,22 @@ function severityBadge(severity: Severity): string {
  */
 
 function formatCompositeScore(report: ProjectReport): string {
-  // v0.14.5i (P4): the slopIndex is now the SINGLE headline number,
-  // matching what the user sees in .slopbrick/health.json. The
-  // Repository Coherence composite is shown as a secondary line so
-  // the two views are consistent.
+  // v0.15.0 U.4+: aiQuality is the SINGLE headline number, matching
+  // what the user sees in .slopbrick/health.json. The Repository
+  // Coherence composite is shown as a secondary line so the two
+  // views are consistent.
   //
   // v0.14.5j (P8): replaced [PASS]/[FAIL] with plain-language band
   // labels (excellent / passing / needs work / concerning).
   //
-  // v0.14.5j (P9): explicit "lower = better" / "higher = better"
-  // labels so the two opposite-direction scores don't confuse the
-  // user. The headline is the gate; Coherence is informational.
+  // v0.15.0 U.4+: aiQuality is higher-is-better (the opposite of
+  // the legacy slopIndex direction). The band label / color already
+  // encode this.
   //
   // v0.14.5j (P9): trajectory delta "±N from last run" appended to
   // the headline so the user can see the trend without grep'ing
   // the run log.
-  const slop = report.slopIndex;
+  const slop = report.aiQuality;
   const slopValue = slop.toFixed(0).padStart(3, ' ');
   const band = scoreBand(slop);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
@@ -374,11 +378,11 @@ function formatCompositeScore(report: ProjectReport): string {
   const lines: string[] = [];
   const deltaSuffix = formatDeltaSuffix(report);
   lines.push(
-    chalk.bold(`Slop Index: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
+    chalk.bold(`AI Quality: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
   );
   lines.push(
     chalk.dim(
-      'lower = better · measures AI-slop signatures. The same number in .slopbrick/health.json.',
+      'higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.',
     ),
   );
 
@@ -526,17 +530,17 @@ function formatDriftSection(report: ProjectReport): string | null {
 }
 
 function formatThresholds(report: ProjectReport): string[] {
-  // v0.14.5j: simplified. The Thresholds section is the CI gate —
-  // it should show ONLY the Slop Index, since that's the gate. The
-  // previous version showed Coherence here too, which made the
-  // gate look ambiguous.
+  // v0.15.0 U.4+: the Thresholds section is the CI gate — it shows
+  // ONLY the AI Quality score, since that's the gate. The previous
+  // version showed Coherence here too, which made the gate look
+  // ambiguous.
   const limit = report.thresholds.meanSlop; // legacy field; not used anymore
-  const headline = report.slopIndex;
+  const headline = report.aiQuality;
   const passed = headline >= 70;
   const valueText = `${headline.toFixed(1)} ≥ 70`.padStart(12, ' ');
   const status = passed ? chalk.green('pass') : chalk.red('fail');
 
-  const result: string[] = ['Threshold (CI gate)', `  Slop Index  ${valueText}  ${status}`];
+  const result: string[] = ['Threshold (CI gate)', `  AI Quality  ${valueText}  ${status}`];
   // legacy limit reference (silence unused-variable lint without removing the field)
   void limit;
   return result;
@@ -705,7 +709,8 @@ export function formatWhyFailingReport(report: ProjectReport): string {
  * in 4-5 lines on a terminal.
  */
 export function formatBriefReport(report: ProjectReport): string {
-  const slop = report.slopIndex;
+  // v0.15.0 U.4+: slopIndex → aiQuality.
+  const slop = report.aiQuality;
   const band = scoreBand(slop);
   const passed = slop >= 70;
   const deltaSuffix = formatDeltaSuffix(report);
@@ -716,7 +721,7 @@ export function formatBriefReport(report: ProjectReport): string {
   lines.push('');
   // Headline + threshold
   lines.push(
-    `Slop Index: ${slop.toFixed(0)}/100 ${chalk.bold(`[${band.label.toUpperCase()}]`)}${deltaSuffix} ` +
+    `AI Quality: ${slop.toFixed(0)}/100 ${chalk.bold(`[${band.label.toUpperCase()}]`)}${deltaSuffix} ` +
     `(threshold 70: ${passed ? chalk.green('pass') : chalk.red('fail')})`,
   );
 
