@@ -18,8 +18,8 @@
       "consumedBy": ["slopbrick drift", "stackpick", "gir", "mcp"]
     },
     "memory": {
-      "$id": "https://usebrick.dev/schemas/v1/memory.schema.json",
-      "file": "memory.schema.json",
+      "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
+      "file": "structure.schema.json",
       "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
       "producedBy": ["slopbrick scan (auto-renders to .slopbrick/memory.md)"],
       "consumedBy": ["slop_suggest_with_memory MCP tool", "future agent-fast-path tools"]
