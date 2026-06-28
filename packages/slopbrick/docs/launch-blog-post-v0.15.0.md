@@ -1,7 +1,7 @@
-# slopbrick v0.14.5d — Repository Memory ships
+# slopbrick v0.14.5d — Repository Structure ships
 
 > **Historical release (2026-06-27).** v0.14.5d shipped the
-> Repository Memory surface (`.slopbrick/{inventory,constitution,health,memory}`)
+> Repository Structure surface (`.slopbrick/{inventory,constitution,health,structure}`)
 > and the LockBrick prevention loop. For the v0.14.5q follow-up —
 > v7 calibration complete, 31 USEFUL rules, 1 INVERTED rule
 > auto-defaultOff, self-scan impact — see
@@ -9,17 +9,17 @@
 > [`research/v7-corpus-calibration.md`](./research/v7-corpus-calibration.md).
 
 > **AI agents forget your architecture. Every session starts fresh.**
-> Today we're shipping the fix: `.slopbrick/memory.md`, the artifact
+> Today we're shipping the fix: `.slopbrick/structure.md`, the artifact
 > your codebase writes for the next agent.
 
 This is the post for the v0.14.5d release of
 [slopbrick](https://github.com/usebrick/platform). v0.14.5d is the
-release that makes slopbrick not just a linter but a **memory layer**
+release that makes slopbrick not just a linter but a **structure layer**
 for AI-coded projects.
 
 ## The problem
 
-Your AI agent doesn't remember your architecture. It writes code that
+Your AI agent doesn't structure your architecture. It writes code that
 duplicates `zustand` with `redux`, opens a fourth modal system next to
 the three you already have, drops a hardcoded `sk-...` key into a
 client bundle, ships a test that asserts `expect(x).toBeDefined()`,
@@ -44,11 +44,11 @@ refactors.
 ├── inventory.json     # detected patterns + component fingerprints
 ├── constitution.json  # declared stack (mirrors slopbrick.config.mjs)
 ├── health.json        # slopIndex + per-severity issue counts
-└── memory.md          # agent-readable markdown summary
+└── structure.md          # agent-readable markdown summary
 ```
 
 The next time Claude Code, Cursor, or Copilot calls
-`slop_suggest_with_memory`, it reads `memory.md` from disk instead of
+`slop_suggest_with_structure`, it reads `structure.md` from disk instead of
 re-parsing the AST. **100–1000× faster** on the agent integration, and
 the agent's first suggestion matches what the project already uses,
 not what the LLM trained on.
@@ -61,8 +61,8 @@ Repository Coherence:  86 / 100
   ├─ Constitution: 100.0
   └─ AI Debt:        78.0
 
-$ cat .slopbrick/memory.md        # what the next agent reads
-# slopbrick memory
+$ cat .slopbrick/structure.md        # what the next agent reads
+# slopbrick structure
 Generated: 2026-06-27T18:00:00Z
 
 ## Detected patterns (canonical, use these)
@@ -160,7 +160,7 @@ slopbrick ci         # CI gate (already in v0.14.5d)
 After that, we're publishing the schemas (`@usebrick/core`) so other
 tools — PickBrick for declaring rules at project-init, MendBrick for
 repairing drift in legacy codebases, third-party agent integrations
-— can read the same `.slopbrick/memory.md` instead of re-implementing
+— can read the same `.slopbrick/structure.md` instead of re-implementing
 the pattern detection.
 
 ## Try it
@@ -168,11 +168,11 @@ the pattern detection.
 ```bash
 npm install -D slopbrick
 npx slopbrick scan
-cat .slopbrick/memory.md
+cat .slopbrick/structure.md
 ```
 
 Or just add the MCP server and let your agent call
-`slop_suggest_with_memory` on the next session:
+`slop_suggest_with_structure` on the next session:
 
 ```bash
 npx slopbrick mcp

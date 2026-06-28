@@ -294,9 +294,9 @@ differently:
 ```js
 export default defineConfig({
   mcp: {
-    // Pre-load `.slopbrick/memory.md` at server start so
-    // `slop_suggest_with_memory` is fast. Default: true.
-    preloadMemory: true,
+    // Pre-load `.slopbrick/structure.md` at server start so
+    // `slop_suggest_with_structure` is fast. Default: true.
+    preloadStructure: true,
 
     // When the agent calls `slop_scan_file`, also include
     // `defaultOff` rules. Default: false (silent).
@@ -324,7 +324,7 @@ everything slopbrick knows. Most teams should leave it off.
 | `rules` | `Record<string, Severity\|'off'>` | `{}` | Per-rule severity overrides |
 | `thresholds` | `{ meanSlop, p90Slop, individualSlopThreshold }` | `{ 15, 30, 60 }` | CI gate thresholds |
 | `categoryWeights` | `Record<string, number>` | `{ boundary: 0.40, context: 0.35, visual: 0.25 }` | Slop Index weights |
-| `mcp` | `{ preloadMemory, includeDefaultOff, trustMode }` | `{ true, false, false }` | MCP server settings |
+| `mcp` | `{ preloadStructure, includeDefaultOff, trustMode }` | `{ true, false, false }` | MCP server settings |
 | `constitution` | `string` | `null` | Path to a custom `.slopbrick/constitution.json` |
 | `output` | `{ format, dir }` | `{ format: 'pretty', dir: '.slopbrick' }` | Output settings |
 

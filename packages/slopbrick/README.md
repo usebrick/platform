@@ -2,13 +2,13 @@
 
 > **AI agents forget your architecture. Every session starts fresh.**
 >
-> SlopBrick gives your codebase persistent memory — so agents follow your
+> SlopBrick gives your codebase persistent structure — so agents follow your
 > patterns instead of reinventing them.
 
 The fix is one command: `npx slopbrick scan` writes
-`.slopbrick/{inventory.json, constitution.json, health.json, memory.md}`.
+`.slopbrick/{inventory.json, constitution.json, health.json, structure.md}`.
 The next time your AI agent writes a file — Claude Code, Cursor,
-Copilot, Aider — it reads `.slopbrick/memory.md` instead of re-parsing
+Copilot, Aider — it reads `.slopbrick/structure.md` instead of re-parsing
 the AST. **100–1000× faster** on the agent integration, and the
 agent's first suggestion matches what the project already uses, not
 what the LLM trained on.
@@ -16,7 +16,7 @@ what the LLM trained on.
 ```bash
 npm install -D slopbrick
 npx slopbrick init        # write .slopbrick/constitution.json
-npx slopbrick scan        # write .slopbrick/memory.md
+npx slopbrick scan        # write .slopbrick/structure.md
 npx slopbrick mcp         # start the MCP server (Claude / Cursor)
 ```
 
@@ -29,14 +29,14 @@ slopbrick ci              # CI gate: exit 1 on constitution violation
 ```
 
 **This isn't CLAUDE.md.** CLAUDE.md is a static file the agent reads once
-per session. `.slopbrick/memory.md` is a generated artifact that updates
+per session. `.slopbrick/structure.md` is a generated artifact that updates
 on every scan — your repository, encoded for the next agent.
 
 ---
 
 ## What you get
 
-- **Repository Memory** — the four `.slopbrick/` artifacts (memory,
+- **Repository Structure** — the four `.slopbrick/` artifacts (structure,
   inventory, constitution, health) make your codebase queryable by
   any AI agent in O(read file) instead of O(parse AST).
 - **LockBrick prevention** — `slopbrick watch` flags violations as you
@@ -143,7 +143,7 @@ Next step:
 | Configure for strict CI, monorepo, Python, etc. | [`EXAMPLES.md`](./EXAMPLES.md) |
 | Understand the Slop Index vs Coherence | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
-| See the 4 `.slopbrick/` artifacts (memory, inventory, ...) | [`docs/repository-memory.md`](./docs/repository-memory.md) |
+| See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
 | See the 80 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |

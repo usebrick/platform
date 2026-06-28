@@ -2,7 +2,7 @@
 
 > **AI agents forget your architecture. Every session starts fresh.**
 >
-> SlopBrick gives your codebase persistent memory —
+> SlopBrick gives your codebase persistent structure —
 > so agents follow your patterns instead of reinventing them.
 
 The hero is two lines: a problem statement and a one-sentence resolution. The
@@ -12,13 +12,13 @@ The hero is two lines: a problem statement and a one-sentence resolution. The
 
 > ## AI agents forget your architecture. Every session starts fresh.
 >
-> SlopBrick gives your codebase persistent memory — so agents follow your
+> SlopBrick gives your codebase persistent structure — so agents follow your
 > patterns instead of reinventing them.
 
 ## 2. Problem statement (three sentences)
 
 > What happens to a codebase after six months of AI-assisted development with
-> no memory system. Four modal systems, three API clients, hardcoded API keys.
+> no structure system. Four modal systems, three API clients, hardcoded API keys.
 > The fourth `useState` reducer replaces `useReducer`; the second fetch call
 > bypasses the cache; the `sk-...` key in the bundle ships to production.
 > None of it was wrong when it was written — the agent didn't know what
@@ -26,13 +26,13 @@ The hero is two lines: a problem statement and a one-sentence resolution. The
 
 ## 3. The one-minute explanation (kitchen analogy)
 
-> Your kitchen has a recipe drawer. The drawer is how the kitchen remembers
+> Your kitchen has a recipe drawer. The drawer is how the kitchen structures
 > itself — it's what tells the next person cooking there that the salt is in
 > the third cabinet, that the oven runs 25° hotter than the dial says, that
 > the dough needs an extra rise on humid days. The drawer isn't the meal,
 > but the meal is unreliable without it.
 >
-> `.slopbrick/memory.md` is the recipe drawer for your codebase. `slopbrick
+> `.slopbrick/structure.md` is the recipe drawer for your codebase. `slopbrick
 > scan` writes it: the canonical patterns your project uses, the
 > components the codebase actually has, the constitution of rules the team
 > has agreed on, the health snapshot of where the code is. The next time
@@ -52,7 +52,7 @@ The hero is two lines: a problem statement and a one-sentence resolution. The
 ```bash
 npm install -D slopbrick
 npx slopbrick init        # write .slopbrick/constitution.json
-npx slopbrick scan        # write .slopbrick/memory.md
+npx slopbrick scan        # write .slopbrick/structure.md
 npx slopbrick mcp         # start the MCP server (Claude / Cursor)
 ```
 
@@ -142,7 +142,7 @@ SlopBrick is different because:
 
 1. **Generated, not hand-written.** `slopbrick scan` extracts the
    patterns from the actual codebase. Refactors update the
-   `memory.md` on the next scan.
+   `structure.md` on the next scan.
 2. **Enforced by the same tool that detects.** `slopbrick drift` exits
    1 on any Constitution violation. `slopbrick ci` is a CI gate.
    `slopbrick lock` is a pre-commit hook. The agent's output is

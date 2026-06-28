@@ -12,7 +12,7 @@ The home of every `usebrick.dev` tool:
 
 | Package | Status | Notes |
 |---------|--------|-------|
-| `packages/core/` | **private** — workspace-only, not on npm | The Repository Memory Platform spec (types + loaders + JSON Schemas). The moat. |
+| `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure Platform spec (types + loaders + JSON Schemas). The moat. |
 | `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 13 scores, 60+ rules, MCP server. |
 | `packages/website/` | **private** — workspace-only, deployed to GitHub Pages | The usebrick.dev marketing site. Astro + Lenis + GSAP, WebGL brick shader hero. |
 
@@ -30,13 +30,13 @@ Future packages (`stackpick`, `gir`, `mcp`, `cli`) join here as they're built.
 
 - `inventory.schema.json` — detected patterns + component fingerprints
 - `constitution.schema.json` — declared allow-list + deny-list
-- `memory.schema.json` — agent-readable markdown summary
+- `structure.schema.json` — agent-readable markdown summary
 - `health.schema.json` — per-scan health snapshot
 
 **These schemas are the API.** Every tool in the platform reads and writes data matching them. Changing a schema field is a breaking change for every consumer. When you need to add a field:
 
 1. Add it as **optional** with a sensible default in the schema
-2. Bump `MEMORY_SCHEMA_VERSION` only if the new field is **required**
+2. Bump `STRUCTURE_SCHEMA_VERSION` only if the new field is **required**
 3. Bump the consuming package's version + emit a CHANGELOG entry
 
 ## Conventions for new packages
@@ -71,11 +71,11 @@ CI runs the same commands on every PR + push to main. Tag pushes additionally tr
 
 `packages/core/` is the shared spec. Touch it sparingly:
 
-1. **Bump `MEMORY_SCHEMA_VERSION` only on a breaking schema change** (renaming a field, removing a field, changing a required→optional in the wrong direction).
+1. **Bump `STRUCTURE_SCHEMA_VERSION` only on a breaking schema change** (renaming a field, removing a field, changing a required→optional in the wrong direction).
 2. **Always add new fields as optional with defaults.** Never add a required field to an existing schema.
-3. **Update the validator** in `packages/core/src/memory-types.ts` to match.
+3. **Update the validator** in `packages/core/src/structure-types.ts` to match.
 4. **Update the schema file** in `packages/core/schemas/`.
-5. **Add a test in `packages/core/tests/memory-types.test.ts`** for the new validator behavior.
+5. **Add a test in `packages/core/tests/structure-types.test.ts`** for the new validator behavior.
 6. **Update the consuming package(s)** to write/read the new field.
 7. **CHANGELOG entry** in the consuming package(s).
 

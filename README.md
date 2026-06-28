@@ -2,13 +2,13 @@
 
 **Monorepo for the [usebrick.dev](https://usebrick.dev) platform.**
 
-`slopbrick` (the CLI) and `@usebrick/core` (the Repository Memory spec) live here as workspace packages. Future tools — `stackpick`, `gir`, `mcp`, `cli` — will join the same monorepo.
+`slopbrick` (the CLI) and `@usebrick/core` (the Repository Structure spec) live here as workspace packages. Future tools — `stackpick`, `gir`, `mcp`, `cli` — will join the same monorepo.
 
 ## Why one monorepo
 
 The platform's tools all share:
 
-- **Repository Memory Platform schema** (`.slopbrick/inventory.json`, `constitution.json`, `memory.md`)
+- **Repository Structure Platform schema** (`.slopbrick/inventory.json`, `constitution.json`, `structure.md`)
 - **AST models** (React, Vue, Svelte, Astro, HTML visitors)
 - **MCP contracts** (slop_suggest, slop_suggest_with_memory, slop_check_constitution, slop_find_similar)
 - **Test fixtures + corpus**
@@ -22,7 +22,7 @@ Splitting these into separate repos would create constant synchronization work. 
 | Package | Status | Purpose |
 |---------|--------|---------|
 | `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 60+ rules, MCP server, migrate subcommand. |
-| `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Memory Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
+| `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards. Built to `dist/` and deployed via GitHub Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
@@ -49,7 +49,7 @@ slopbrick              ← the CLI (this monorepo, published)
 
 Two extractions are tracked but **not done yet**:
 
-- `packages/memory/` (or `packages/repository-memory/`) — when the memory module outgrows the schema. See `docs/future-extractions.md`.
+- `packages/structure/` (or `packages/repository-structure/`) — when the structure module outgrows the schema. See `docs/future-extractions.md`.
 - `packages/contracts/` — when a non-TypeScript consumer needs the schemas (Python stackpick analyzer, Go CI binary). At that point, `contracts/` becomes the language-agnostic spec, `core/` becomes the TypeScript implementation.
 
 ## Quick start (development)
@@ -72,7 +72,7 @@ platform/
 │   │   │   └── v1/
 │   │   │       ├── inventory.schema.json
 │   │   │       ├── constitution.schema.json
-│   │   │       ├── memory.schema.json
+│   │   │       ├── structure.schema.json
 │   │   │       ├── health.schema.json
 │   │   │       └── index.json
 │   │   └── tests/
@@ -100,7 +100,7 @@ platform/
 │   └── (per-package deploy workflows under each package)
 ├── docs/
 │   ├── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
-│   └── future-extractions.md       (packages/memory + packages/contracts criteria)
+│   └── future-extractions.md       (packages/structure + packages/contracts criteria)
 ├── examples/
 ├── package.json                    root (private workspace hub)
 ├── pnpm-workspace.yaml
@@ -108,16 +108,16 @@ platform/
 └── README.md
 ```
 
-## Repository Memory Platform — the moat
+## Repository Structure Platform — the moat
 
 The four versioned JSON Schemas under `packages/core/schemas/v1/` are the platform's canonical data model:
 
 - **`v1/inventory.schema.json`** — detected patterns + component fingerprints
 - **`v1/constitution.schema.json`** — declared project allow-list + deny-list
-- **`v1/memory.schema.json`** — agent-readable markdown summary
+- **`v1/structure.schema.json`** — agent-readable markdown summary
 - **`v1/health.schema.json`** — per-scan health snapshot
 
-Every tool in the platform reads and writes data matching these schemas. Other agents (Claude Code, Cursor, Copilot) consume `memory.md` via MCP. If these schemas become a de-facto standard for "repository memory," every tool in the ecosystem speaks the same language.
+Every tool in the platform reads and writes data matching these schemas. Other agents (Claude Code, Cursor, Copilot) consume `structure.md` via MCP. If these schemas become a de-facto standard for "repository structure," every tool in the ecosystem speaks the same language.
 
 The versioned path (`schemas/v1/`, future `schemas/v2/`) is the contract version. Older tools keep reading `v1/` after `v2/` ships. Backward-compatible changes never bump the schema version — only add new optional fields with defaults.
 
