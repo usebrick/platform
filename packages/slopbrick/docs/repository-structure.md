@@ -1,10 +1,15 @@
-# Repository Memory — the `.slopbrick/` artifact contract
+# Repository Structure — the `.slopbrick/` artifact contract
 
 Every `slopbrick scan` writes four artifacts to `.slopbrick/` (and one
 sibling to the project root). Together they form the **Repository
-Memory** — a structured summary of the codebase that downstream
+Structure** — a structured summary of the codebase that downstream
 consumers (MCP tools, CI gates, dashboards, future usebrick.dev tools)
 read **instead of re-parsing the AST**.
+
+> **v0.15.0+:** The on-disk artifact `.slopbrick/memory.md` is renamed to
+> `.slopbrick/structure.md`. The schema version bumps from `'2'` to `'3'`.
+> Types: `MemoryFile` → `StructureFile`, `MemoryPattern` → `StructurePattern`.
+> Functions: `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`.
 
 This is the contract. Every artifact is JSON, every artifact has a
 schema in `packages/core/schemas/v1/`, every loader is graceful
@@ -17,33 +22,33 @@ schema in `packages/core/schemas/v1/`, every loader is graceful
 ├── .slopbrick/
 │   ├── inventory.json     # detected patterns + component fingerprints
 │   ├── constitution.json  # declared constitution (mirrors config.constitution)
-│   ├── health.json        # headline score + per-severity issue counts
-│   └── memory.md          # agent-readable summary (markdown)
+│   ├── health.json        # 4-score model + per-severity issue counts
+│   └── structure.md       # agent-readable summary (markdown, was memory.md)
 └── .slopbrick-cache.json  # per-file mtime + hash (NOT in public schema)
 ```
 
 `.slopbrick-cache.json` lives at the project root, not under
 `.slopbrick/`, because it's a per-file refresh cache that's safe to
-delete without losing project memory. The other four files are the
+delete without losing project structure. The other four files are the
 **public** surface.
 
 ## `inventory.json`
 
-**Schema:** [`memory.schema.json`](../core/schemas/v1/inventory.schema.json) (v0.14.5d)
+**Schema:** [`inventory.schema.json`](../core/schemas/v1/inventory.schema.json) (v0.15.0)
 
 ```ts
 interface InventoryFile {
-  version: '2';
+  version: '3';
   generatedAt: string;        // ISO 8601
   workspace: string;          // absolute path
   scannedFiles: number;
   scanDurationMs: number;
-  patterns: MemoryPattern[];  // sorted by fileCount desc
+  patterns: StructurePattern[];  // sorted by fileCount desc
   components: ComponentFingerprint[];  // sorted by name
 }
 ```
 
-A `MemoryPattern` records *what the codebase uses* (e.g.
+A `StructurePattern` records *what the codebase uses* (e.g.
 `"zustand"` for state management, `"react-hook-form"` for forms). The
 list comes from `buildPatternInventory()` in `src/mcp/patterns.ts` and
 groups imports by category.
@@ -96,22 +101,22 @@ and `constitution.json` (what should exist) — `health.json` is **how
 good the current state is**.
 
 Built by `buildHealthFromReport(report, workspace, options)` in
-`src/engine/memory.ts` — a pure function over the `ProjectReport`.
+`@usebrick/engine/src/structure.ts` — a pure function over the `ProjectReport`.
 
-## `memory.md`
+## `structure.md` (was `memory.md` in v0.14.5)
 
-**Renderer:** [`renderMemoryMarkdown()`](../src/engine/memory-md.ts) (pure function)
+**Renderer:** [`renderStructureMarkdown()`](../src/engine/structure-md.ts) (pure function, was `renderMemoryMarkdown()` in v0.14.5)
 
 A markdown summary that AI agents read **directly** to ground their
 decisions in the codebase's actual architecture. Used by MCP
-`slop_suggest_with_memory` for a 100–1000× latency win over a
+`slop_suggest_with_structure` for a 100–1000× latency win over a
 fresh re-scan.
 
 Stable section structure — downstream tools can pattern-match on the
 headings without parsing the body:
 
 ```markdown
-# slopbrick memory
+# slopbrick structure
 Generated: 2026-06-27T18:00:00Z
 Workspace: /path/to/repo
 Scanned files: 226
@@ -165,29 +170,29 @@ import { readMemoryMarkdown } from 'slopbrick/internals';
 const inv = loadInventory(cwd);        // null on missing/malformed
 const con = loadConstitution(cwd);     // null on missing/malformed
 const health = loadHealth(cwd);        // null on missing/malformed
-const md = await readMemoryMarkdown(cwd);  // null on missing/malformed
+const md = await readStructureMarkdown(cwd);  // null on missing/malformed
 ```
 
 The loaders all return `null` on:
 - file missing
 - JSON parse error
-- schema version mismatch (different `MEMORY_SCHEMA_VERSION`)
+- schema version mismatch (different `STRUCTURE_SCHEMA_VERSION`)
 
 This is the **graceful degradation** contract — readers fall back to
 re-scanning instead of crashing.
 
-## The `slopbrick memory` subcommand
+## The `slopbrick structure` subcommand (was `slopbrick memory` in v0.14.5)
 
-v0.14.5d adds a `slopbrick memory` CLI for the agent-readable
-artifact:
+v0.15.0 renames the subcommand to `slopbrick structure` to match the
+artifact name:
 
 ```bash
-slopbrick memory             # print .slopbrick/memory.md to stdout
-slopbrick memory --regenerate   # re-render from inventory+constitution (no scan)
+slopbrick structure             # print .slopbrick/structure.md to stdout
+slopbrick structure --regenerate   # re-render from inventory+constitution (no scan)
 ```
 
 `--regenerate` is the workflow for "I just changed my
-`slopbrick.config.mjs` and want a fresh memory.md without paying for
+`slopbrick.config.mjs` and want a fresh structure.md without paying for
 another full AST scan." It runs the pure renderer over the existing
 inventory + constitution, which is sub-second.
 
@@ -195,16 +200,16 @@ inventory + constitution, which is sub-second.
 
 `slopbrick doctor` now verifies the four artifacts and warns if any
 are missing. This is the user-facing health check for the artifact
-pipeline itself — if memory.md is stale or missing, the warning
+pipeline itself — if structure.md is stale or missing, the warning
 points the user at `slopbrick scan` to refresh.
 
 ## Versioning
 
-The artifacts are versioned via the top-level `version: '2'` field
-(`MEMORY_SCHEMA_VERSION` in `@usebrick/core`). Adding an optional
-field is non-breaking. Renaming a required field, or changing the
-on-disk directory from `.slopbrick/` to something else, requires a
-version bump + a `slopbrick migrate` path.
+The artifacts are versioned via the top-level `version: '3'` field
+(`STRUCTURE_SCHEMA_VERSION` in `@usebrick/core`, was `'2'` in v0.14.5).
+Adding an optional field is non-breaking. Renaming a required field,
+or changing the on-disk directory from `.slopbrick/` to something
+else, requires a version bump + a `slopbrick migrate` path.
 
 Until `@usebrick/core` ships as a public npm package, the schema is
 **internal** to the monorepo. The contract is what the schemas
@@ -217,8 +222,8 @@ validators are the canonical type guards.
 
 The schemas are designed to be consumed by:
 
-- **MCP tools** (slop_suggest_with_memory reads `memory.md`)
-- **CI status checks** (read `health.json`, fail on slopIndex > N)
+- **MCP tools** (slop_suggest_with_structure reads `structure.md`)
+- **CI status checks** (read `health.json`, fail on aiQuality < N)
 - **The website's `/projects` page** (read `health.json` for badges)
 - **Future usebrick.dev tools** (stackpick, gir, mendbrick) — all
   read these artifacts instead of re-scanning

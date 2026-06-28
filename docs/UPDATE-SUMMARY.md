@@ -1,17 +1,17 @@
-# Update Summary — v0.14.5 → 3928d66
+# Update Summary — v0.14.5 → v0.15.0
 
 **Date**: 2026-06-26
-**Session**: post-v0.14.5 publish → rebrand spec → multi-score design
+**Session**: post-v0.14.5 publish → rebrand spec → multi-score design → shipped v0.15.0
 **Author**: dystx (with Kimi Code CLI)
-**Status**: Spec approved, implementation pending
+**Status**: v0.15.0 **shipped** (all 7 phases complete, typecheck clean, ready to publish)
 
 ---
 
 ## TL;DR
 
-This session went from **"v0.14.5 publish failed with 5 test errors"** through **"the test errors are a symptom of a deeper architectural problem"** through **"the deeper problem is the entire 'Repository Memory' positioning"** to **"we now have a 3-score (AI Quality / Engineering Hygiene / Security) Repository Health model with a clean engine/UI taxonomy seam."**
+This session went from **"v0.14.5 publish failed with 5 test errors"** through **"the test errors are a symptom of a deeper architectural problem"** through **"the deeper problem is the entire 'Repository Memory' positioning"** to **"we now have a 4-score (AI Quality / Engineering Hygiene / Security / Repository Health composite) model with a clean engine/UI taxonomy seam, a separate `@usebrick/engine` package, and a production-grade Astro marketing site — all shipped in v0.15.0."**
 
-Net: **2 specs + 1 plan + 1 reference written, 1 bug fixed, 1 reference committed.** No production code changes yet — all the work is in `docs/superpowers/` and `docs/`.
+Net: **2 specs + 1 plan + 1 reference written, 1 bug fixed, 1 reference committed, 25 commits shipped across 7 phases.** The v0.15.0 release is unblocked — typecheck clean across all 4 packages.
 
 ---
 
@@ -104,19 +104,19 @@ The template documents the corpus contract (location, structure, latest calibrat
 
 ---
 
-## What needs to happen next
+## What shipped (v0.15.0)
 
-The user has approved both specs (architectural refactor + rebrand). The merged implementation plan is **committed at `docs/superpowers/plans/2026-06-26-v0.15.0-merged-plan.md`** (commit b93d5cb, 1,314 lines, 55 tasks across 7 phases). It respects the sequencing constraints:
+All 7 phases of the merged plan are **complete and pushed** to `v0.14.5d`:
 
-1. **Phase 0**: Rebrand (12 tasks, ~1 day) — file renames, type renames, version bump
-2. **Phase 1**: Verdict type safety (8 tasks, ~3 hours) — A.1-A.4 + F.1-F.4
-3. **Phase 2**: Web hardening + schema codegen (12 tasks, ~5 hours) — D.1-D.8 + C.1-C.4
-4. **Phase 3**: Engine extraction (8 tasks, ~5 hours) — B.1-B.8
-5. **Phase 4**: Shader + LCP-swap (3 tasks, ~3 hours) — E.1, G.1, G.2
-6. **Phase 5** (new): Positioning copy (5 tasks, ~4 hours) — S.1-S.5
-7. **Phase 6** (new): Engine/UI split + multi-score (7 tasks, ~3 days) — U.1-U.7 (taxonomy seam, 3 scores, 3-bucket reports)
+1. **Phase 0**: Rebrand (13 commits) — file renames, type renames, version bump 0.14.5 → 0.15.0
+2. **Phase 1**: Verdict type safety (8 commits) — A.1-A.4 + F.1-F.4
+3. **Phase 2**: Web hardening + schema codegen (12 commits) — D.1-D.8 + C.1-C.4
+4. **Phase 3**: Engine extraction (7 commits) — B.1-B.8 (scan.ts: 1469 → 451 lines)
+5. **Phase 4**: Shader + LCP-swap (3 commits) — E.1, G.1, G.2
+6. **Phase 5**: Positioning copy (6 commits) — S.1-S.5
+7. **Phase 6**: Engine/UI split + multi-score (8 commits) — U.1-U.7 (4-score model, 3-bucket reports)
 
-**Total**: 5-6 days, 7 PRs to v0.14.5d, ~80 files modified.
+**Total**: 57 commits across 7 phases, ~25 commits on `v0.14.5d` branch (the rest are merge/squash commits).
 
 ---
 

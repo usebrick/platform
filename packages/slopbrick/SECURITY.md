@@ -50,10 +50,10 @@ within 14 days and a public advisory after the fix ships.
 
 ## Security best practices for slopbrick users
 
-The `.slopbrick/memory.md` and `.slopbrick/inventory.json` files
-contain **codebase metadata** — file paths, library versions,
-patterns. They do NOT contain secrets by design (slopbrick redacts
-common secret patterns at scan time). But:
+The `.slopbrick/structure.md` (was `.slopbrick/memory.md` in v0.14.5)
+and `.slopbrick/inventory.json` files contain **codebase metadata** —
+file paths, library versions, patterns. They do NOT contain secrets by
+design (slopbrick redacts common secret patterns at scan time). But:
 
 1. **Don't commit `.slopbrick/` to public repos** unless you
    intend to share the metadata publicly. The `health.json`
@@ -63,7 +63,7 @@ common secret patterns at scan time). But:
    configure it to only connect to trusted AI agents. The MCP
    server speaks JSON-RPC 2.0 over stdio — any process that can
    read the agent's stdin can call `slop_suggest` and read
-   `.slopbrick/memory.md`.
+   `.slopbrick/structure.md`.
 3. **Watch for false positives in `security/*` rules.** slopbrick
    catches secrets, XSS, and SQL injection patterns. If you have
    a known-safe file that fires (e.g. a test fixture), add it
@@ -80,7 +80,7 @@ regular issues:
 
 - "The `slop_check_constitution` tool returns paths that don't
   exist" — bug report
-- "The `slop_suggest_with_memory` doesn't include my new rule" —
+- "The `slop_suggest_with_structure` doesn't include my new rule" —
   bug report
 - "I'd like a rule that catches X" — feature request
 - "False positive: rule Y fired on Z" — calibration feedback

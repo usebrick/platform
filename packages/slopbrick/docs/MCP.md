@@ -165,7 +165,7 @@ List all registered rules, with optional category filter.
 
 Get the project's `doNotCreate` list + patterns to follow.
 
-**Input:** none (reads `.slopbrick/constitution.json` + `.slopbrick/memory.md`)
+**Input:** none (reads `.slopbrick/constitution.json` + `.slopbrick/structure.md`)
 
 **Output:**
 ```json
@@ -195,20 +195,25 @@ this before writing any new file. It tells the agent what
 NOT to create (the block list) and what TO use (the canonical
 patterns).
 
-#### `slop_suggest_with_memory`
+#### `slop_suggest_with_structure`
 
 Fast-path version of `slop_suggest` that reads from
-`.slopbrick/memory.md` (the pre-computed artifact) instead of
-re-parsing the AST. **100-1000× faster** than `slop_suggest` on
+`.slopbrick/structure.md` (the pre-computed artifact, was `memory.md` in v0.14.5)
+instead of re-parsing the AST. **100-1000× faster** than `slop_suggest` on
 large codebases. **Use this one in production.**
+
+> **v0.15.0 breaking change:** Renamed from `slop_suggest_with_structure` to
+> `slop_suggest_with_structure`. The on-disk artifact `.slopbrick/structure.md`
+> is now `.slopbrick/structure.md`. Any MCP client calling the old name
+> breaks.
 
 **Input:** none
 
 **Output:** same as `slop_suggest`.
 
 **When to use:** same as `slop_suggest`. Always prefer this version
-if `.slopbrick/memory.md` exists. Run `slopbrick scan` once to
-generate it, then `slop_suggest_with_memory` works on every agent
+if `.slopbrick/structure.md` exists. Run `slopbrick scan` once to
+generate it, then `slop_suggest_with_structure` works on every agent
 call.
 
 #### `slop_check_constitution`
@@ -280,7 +285,7 @@ for a new team member.
 #### `slop_governance`
 
 Get the project's governance state — Constitution declared,
-memory.md generated, defaultOff rules.
+structure.md generated, defaultOff rules.
 
 **Input:** none
 
@@ -294,7 +299,7 @@ memory.md generated, defaultOff rules.
   },
   "memory": {
     "generated": true,
-    "path": ".slopbrick/memory.md",
+    "path": ".slopbrick/structure.md",
     "updated": "2026-06-26T22:00:00Z",
     "stale": false
   },
@@ -339,7 +344,7 @@ to know "what's the closest pattern to follow?"
 
 ```
 1. slop_governance          — check the project is set up
-2. slop_suggest_with_memory  — get the doNotCreate list (always)
+2. slop_suggest_with_structure  — get the doNotCreate list (always)
 3. slop_scan_file           — scan a draft before writing
 4. slop_explain_rule        — for each issue, understand why
 5. (fix the file)
@@ -352,14 +357,14 @@ to know "what's the closest pattern to follow?"
 
 The server requires `npx` to be in PATH. If running in a container,
 ensure Node.js is installed. The server needs read access to
-`.slopbrick/constitution.json` and `.slopbrick/memory.md` in the
+`.slopbrick/constitution.json` and `.slopbrick/structure.md` in the
 project root.
 
 ### "Tool returns no results"
 
 - `slop_suggest` requires `.slopbrick/constitution.json` to exist.
   Run `slopbrick init` first.
-- `slop_suggest_with_memory` requires `.slopbrick/memory.md` to
+- `slop_suggest_with_structure` requires `.slopbrick/structure.md` to
   exist. Run `slopbrick scan` first.
 - `slop_scan_file` requires the file to be parseable by slopbrick.
   Check the file extension is supported (`.ts`, `.tsx`, `.js`,

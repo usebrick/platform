@@ -1,18 +1,23 @@
 # SlopBrick scoring explained
 
-A short, plain-language reference for the two scores that `slopbrick scan`
+A short, plain-language reference for the four scores that `slopbrick scan`
 reports. Read this if the numbers in the CLI output don't make sense.
 
-## The two scores
+> **v0.15.0+:** The single `Slop Index` was replaced by **4 independent scores**:
+> `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth` (composite).
+> The legacy `slopIndex` field is kept as optional on `ProjectReport` for
+> backward compat with existing test fixtures and historical telemetry; will be
+> removed in v0.16.0.
 
-### `Slop Index` — the CI gate (0-100, **lower = better**)
+## The four scores
 
-**What it measures:** how much AI-generated slop is in the codebase.
+### `AI Quality` — the CI gate (0-100, **higher = better**)
 
-The Slop Index is the **headline number** and the one used by
+**What it measures:** how good the AI-generated code in the codebase is.
+
+`aiQuality` is the **headline number** and the one used by
 `--strict` and the `slopbrick ci` subcommand. It is also the number
-in `.slopbrick/health.json`. **70 passes.** 0 is clean, 100 is the
-worst case.
+in `.slopbrick/health.json`. **70 passes.** 0 is the worst case, 100 is clean.
 
 **How it's computed:** weighted average of three sub-scores, each
 capped at 0-100:
@@ -29,11 +34,11 @@ codebases with **0 components** (CLI tools, pure backend,
 libraries), the raw severity totals are returned so the user sees
 honest numbers (e.g. `ai: 167`, not `ai: 16700` — the v0.14.5h fix).
 
-### `Repository Coherence` — the secondary view (0-100, **higher = better**)
+### `Engineering Hygiene` — the secondary view (0-100, **higher = better**)
 
-**What it measures:** internal consistency of the codebase.
+**What it measures:** internal consistency of the codebase's engineering practices.
 
-Coherence is informational. It does NOT affect the CI gate. It uses
+Hygiene is informational. It does NOT affect the CI gate. It uses
 a different formula because it asks a different question:
 
 > "Is this codebase internally consistent — one modal system, one

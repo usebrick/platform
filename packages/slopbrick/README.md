@@ -46,8 +46,8 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.14.5 (current). See the [CHANGELOG](./CHANGELOG.md) for
-the full v0.14 series notes.
+**Status:** v0.15.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
+the full release notes.
 
 ---
 
@@ -76,14 +76,24 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 ---
 
-## The headlines
+## The headlines (v0.15.0+ — 4-score model)
 
-**`Slop Index`** is the primary headline (0-100, **lower = better**). 70
-is the CI gate. Composed of boundary (40%) + context (35%) + visual
-(25%).
+> **v0.15.0 breaking change:** The single `Slop Index` is replaced by
+> **4 independent scores** (all 0-100, **higher = better**). The legacy
+> `slopIndex` field is kept as optional on `ProjectReport` for backward
+> compat with existing test fixtures and historical telemetry; will be
+> removed in v0.16.0.
 
-**`Repository Coherence`** is a secondary view (0-100, **higher = better**)
-measuring internal consistency. Same number is in `.slopbrick/health.json`.
+| Score | What it measures | CI gate? |
+|-------|------------------|----------|
+| **`AI Quality`** | How good the AI-generated code is (USEFUL + OK rules) | **Yes** (≥ 70 passes) |
+| **`Engineering Hygiene`** | Internal consistency — one stack, one pattern, no drift | No (informational) |
+| **`Security`** | Security findings (security/* rules) | No (informational) |
+| **`Repository Health`** (composite) | Weighted sum of the 3 + secondary signals | No (informational) |
+
+`AI Quality` is composed of boundary (40%) + context (35%) + visual (25%).
+
+The same numbers are in `.slopbrick/health.json`.
 
 For the full math, the 2×2 quadrant, and which one to focus on, see
 [`docs/scoring-explained.md`](./docs/scoring-explained.md).
@@ -99,13 +109,13 @@ For per-rule precision/recall/FPR (auditable), see
 $ npx slopbrick scan
 Repo is concerning (25/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts. Run `slopbrick scan --why-failing` for the top 5 rules, or `slopbrick scan --suggest` for fixes.
 
-Slop Index:  25 / 100 [CONCERNING]  ↓5 (cleaner)
-lower = better · measures AI-slop signatures. The same number in .slopbrick/health.json.
+AI Quality:  25 / 100 [CONCERNING]  ↑5 (worse)
+higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.
   ├─ boundary:  10  (40%)  — structural integrity
   ├─ context:   50  (35%)  — props / state / imports
   └─ visual:     5  (25%)  — CSS / a11y / layout
 
-Repository Coherence:  60 / 100 [NEEDS WORK] — higher = better · measures internal consistency. This is a secondary view; the Slop Index above is the gate.
+Engineering Hygiene:  60 / 100 [NEEDS WORK] — higher = better · measures internal consistency. This is a secondary view; the AI Quality above is the gate.
 
 Other signals (not the gate):
   Code Hygiene          75/100

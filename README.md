@@ -8,9 +8,9 @@
 
 The platform's tools all share:
 
-- **Repository Structure Platform schema** (`.slopbrick/inventory.json`, `constitution.json`, `structure.md`)
+- **Repository Structure Platform schema** (`.slopbrick/inventory.json`, `constitution.json`, `structure.md`, `health.json`)
 - **AST models** (React, Vue, Svelte, Astro, HTML visitors)
-- **MCP contracts** (slop_suggest, slop_suggest_with_memory, slop_check_constitution, slop_find_similar)
+- **MCP contracts** (slop_suggest, slop_suggest_with_structure, slop_check_constitution, slop_find_similar)
 - **Test fixtures + corpus**
 - **Calibration pipeline** (recall/FP ratio per rule)
 - **Release cadence** (slopbrick releases today; future tools will share the version stream)
@@ -21,9 +21,10 @@ Splitting these into separate repos would create constant synchronization work. 
 
 | Package | Status | Purpose |
 |---------|--------|---------|
-| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 13 scores, 60+ rules, MCP server, migrate subcommand. |
+| `slopbrick` | `published` | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 4-score model (aiQuality / engineeringHygiene / security / repositoryHealth), 60+ rules, MCP server, migrate subcommand. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
-| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards. Built to `dist/` and deployed via GitHub Pages. |
+| `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | The pure scanning engine extracted from slopbrick. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs. |
+| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed via GitHub Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
 
@@ -52,6 +53,17 @@ Two extractions are tracked but **not done yet**:
 - `packages/structure/` (or `packages/repository-structure/`) — when the structure module outgrows the schema. See `docs/future-extractions.md`.
 - `packages/contracts/` — when a non-TypeScript consumer needs the schemas (Python stackpick analyzer, Go CI binary). At that point, `contracts/` becomes the language-agnostic spec, `core/` becomes the TypeScript implementation.
 
+## v0.15.0 — what's new
+
+v0.15.0 is a **hard-break release** that ships the full v0.15.0 plan:
+
+- **Rebrand**: "Repository Memory Platform" → **"Repository Structure Platform"**. The on-disk artifact `.slopbrick/memory.md` is now `.slopbrick/structure.md`. Types renamed: `MemoryFile` → `StructureFile`, `loadMemory` → `loadStructure`, etc.
+- **Engine extraction**: `packages/engine/` is a new workspace package containing the pure scanning logic (parser, scoring, LR combiner, structure persistence). No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs.
+- **Multi-score model**: The single `slopIndex` is replaced by 4 independent scores: `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth` (composite). The legacy `slopIndex` field is kept as optional on `ProjectReport` for backward compat with existing test fixtures and historical telemetry; will be removed in v0.16.0.
+- **Engine/UI taxonomy seam**: The engine's 6 verdict taxonomy (USEFUL/OK/NOISY/INVERTED/HYGIENE/DORMANT) is decoupled from the user-facing 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) via `bucketForVerdict()`.
+- **Schema codegen**: JSON Schemas are now the single source of truth; TypeScript types are codegen'd from them. CI fails if schemas and types drift.
+- **Website hardening**: Skip-to-content link, keyboard-accessible tool cards, axe-core a11y in CI, `LowPowerDetector` to skip WebGL on low-power devices, LCP-swap for WebGL initialization.
+
 ## Quick start (development)
 
 ```bash
@@ -66,8 +78,8 @@ pnpm -r test
 ```
 platform/
 ├── packages/
-│   ├── core/
-│   │   ├── src/                    types + loaders/savers
+│   ├── core/                       @usebrick/core — schemas + types (private)
+│   │   ├── src/                    types + loaders/savers + verdicts
 │   │   ├── schemas/                canonical JSON Schemas (the platform's API contract)
 │   │   │   └── v1/
 │   │   │       ├── inventory.schema.json
@@ -75,9 +87,19 @@ platform/
 │   │   │       ├── structure.schema.json
 │   │   │       ├── health.schema.json
 │   │   │       └── index.json
+│   │   ├── scripts/                codegen-types.ts (JSON Schema → TypeScript)
 │   │   └── tests/
-│   ├── slopbrick/
+│   ├── engine/                     @usebrick/engine — pure scanning logic (private, new in v0.15.0)
+│   │   ├── src/                    parser, scoring, lr-combiner, structure persistence
+│   │   └── tests/
+│   ├── slopbrick/                  slopbrick CLI (published as `slopbrick`)
 │   │   ├── src/
+│   │   │   ├── cli/                19 command modules + program.ts
+│   │   │   ├── rules/              80 rules in 14 categories
+│   │   │   ├── mcp/                MCP server
+│   │   │   ├── report/             pretty, JSON, HTML, markdown reporters
+│   │   │   ├── engine/             CLI-side I/O adapters
+│   │   │   └── types.ts
 │   │   ├── tests/
 │   │   ├── bin/
 │   │   ├── examples/
@@ -87,7 +109,7 @@ platform/
 │       │   ├── components/         Nav, Hero, Tools, Compare, Calibration, CTA, Footer
 │       │   ├── layouts/            Base.astro (Lenis + GSAP init)
 │       │   ├── pages/              index.astro (single-page site)
-│       │   ├── scripts/            brick-shader, reveal, counter, break-on-hover, copy-install, lenis
+│       │   ├── scripts/            brick-shader, reveal, counter, break-on-hover, copy-install, lenis, low-power
 │       │   ├── styles/             global.css (tokens), theme.css, components.css
 │       │   └── data/               version.json (sourced from sibling packages at build time)
 │       ├── public/                 favicon, logo-mark, brick-pattern SVGs
@@ -99,12 +121,15 @@ platform/
 │   ├── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
 │   └── (per-package deploy workflows under each package)
 ├── docs/
-│   ├── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
-│   └── future-extractions.md       (packages/structure + packages/contracts criteria)
+│   ├── ARCHITECTURE.md             full architectural reference
+│   ├── UPDATE-SUMMARY.md           v0.14.5 → v0.15.0 changelog
+│   ├── future-extractions.md       packages/structure + packages/contracts criteria
+│   └── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
 ├── examples/
 ├── package.json                    root (private workspace hub)
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
+├── AGENTS.md
 └── README.md
 ```
 

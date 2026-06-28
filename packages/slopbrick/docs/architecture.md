@@ -1,6 +1,6 @@
-# slopbrick Architecture (v0.9.0)
+# slopbrick Architecture (v0.15.0)
 
-> **Repository Coherence Scanner.** Cross-file pattern drift detection + Constitution enforcement + 8 MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The Repository Coherence score (0–100) is a proof that the Constitution is being followed. 1.0 is reserved for the stability commitment after 6 months of empirical feedback.
+> **Repository Structure Scanner.** Cross-file pattern drift detection + Constitution enforcement + MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (aiQuality / engineeringHygiene / security / repositoryHealth) is a proof that the Constitution is being followed. v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 
 ## 1. Positioning
 

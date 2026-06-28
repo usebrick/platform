@@ -1,7 +1,7 @@
 # usebrick — Architecture & Functional Reference
 
 **Date**: 2026-06-26
-**Status**: v0.14.5 stable, v0.15.0 planned (rebrand + architectural refactor)
+**Status**: v0.15.0 shipped (rebrand + engine extraction + multi-score)
 **Author**: dystx (with Kimi Code CLI)
 **Source of truth for future changes**: `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` + `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md`
 
@@ -43,7 +43,7 @@ Repository
 
 usebrick was originally named "Repository Memory Platform" — the word "memory" was meant in the sense of "persistent understanding." But it consistently led users to think of LLM memory, chat history, vector databases, RAG, embeddings. None of that is what usebrick does.
 
-**v0.15.0** (planned) renames the platform to **Repository Structure Platform (RSP)**. The 4 product names (PickBrick, SlopBrick, MendBrick, LockBrick) are unchanged. The internal file/type/function names change from `memory*` → `structure*`. The on-disk artifact `memory.md` becomes `structure.md`. The schema version bumps from `MEMORY_SCHEMA_VERSION = '2'` to `STRUCTURE_SCHEMA_VERSION = '3'`. The single `slopIndex` score is replaced by 3 independent scores (AI Quality, Engineering Hygiene, Security) plus a Repository Health composite.
+**v0.15.0** renames the platform to **Repository Structure Platform (RSP)**. The 4 product names (PickBrick, SlopBrick, MendBrick, LockBrick) are unchanged. The internal file/type/function names change from `memory*` → `structure*`. The on-disk artifact `memory.md` becomes `structure.md`. The schema version bumps from `MEMORY_SCHEMA_VERSION = '2'` to `STRUCTURE_SCHEMA_VERSION = '3'`. The single `slopIndex` score is replaced by 4 independent scores (AI Quality, Engineering Hygiene, Security, Repository Health composite).
 
 The change is **hard break, no aliases**. There are no known external consumers of the schema (slopbrick is the only writer; the website doesn't read it). The MCP tool name `slop_suggest_memory` becomes `slop_suggest_structure` — any client calling the old name breaks. The user accepted this.
 
@@ -99,16 +99,16 @@ The schema contract. Defines the cross-language data model that every tool in th
 
 **Corpus reference** (`packages/core/corpus-manifest.template.json` + gitignored `.local.json`): where the calibration corpus lives, what calibration is current.
 
-**v0.15.0 plans**: add Zod schemas for the JSON Schemas themselves, codegen TS types from the JSON Schemas, make the generated types the public API. The verdict enum is the single source of truth for the calibration pipeline.
+**v0.15.0 shipped**: add Zod schemas for the JSON Schemas themselves, codegen TS types from the JSON Schemas, make the generated types the public API. The verdict enum is the single source of truth for the calibration pipeline.
 
 ### 4.2 `slopbrick` (published as `slopbrick` on npm)
 
 The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick/`.
 
-**One-liner** (current README, will change in v0.15.0):
+**One-liner** (v0.14.5 README, replaced in v0.15.0):
 > "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session."
 
-**v0.15.0 one-liner** (planned):
+**v0.15.0 one-liner** (shipped):
 > "Discovered, modeled, and governed repository structure — deterministic analysis, no LLM in the loop."
 
 **Commands** (bin: `slopbrick`):
@@ -138,7 +138,7 @@ The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick
 - `src/config/` — config validation, defaults
 - `src/research/` — the calibration flywheel (candidates, generator, prompts, provider)
 
-**v0.15.0 plans**: extract `src/engine/` to a new `packages/engine/` package. Slim `src/cli/scan.ts` from 1469 lines to ~500 by extracting report generation. Add the engine/UI taxonomy seam. Multi-score: replace `slopIndex` with `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+**v0.15.0 shipped**: extracted `src/engine/` to a new `packages/engine/` package. Slimmed `src/cli/scan.ts` from 1469 lines to 451 by extracting report generation. Added the engine/UI taxonomy seam via `bucketForVerdict()`. Multi-score: replaced `slopIndex` with `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
 
 ### 4.3 `@usebrick/engine` (workspace-only, NEW in v0.15.0)
 
@@ -174,7 +174,7 @@ The [usebrick.dev](https://usebrick.dev) marketing site. Lives at `packages/webs
 - Terracotta `#dc4a26` (accent — the brick color)
 - Running-bond brick pattern overlays on hero, calibration, CTA
 
-**v0.15.0 plans**: update copy to "Repository Structure Platform" (Hero, Compare, CTA, Footer, tagline, title, meta). Add skip-to-content link, button role on tool cards, axe-core in CI. WebGL context cleanup. LowPowerDetector.
+**v0.15.0 shipped**: update copy to "Repository Structure Platform" (Hero, Compare, CTA, Footer, tagline, title, meta). Add skip-to-content link, button role on tool cards, axe-core in CI. WebGL context cleanup. LowPowerDetector.
 
 ---
 
@@ -246,7 +246,7 @@ The verdict drives:
 - LR math in the Bayesian combiner: INVERTED rules have LR < 1 and invert the AI signal
 - HTML/JSON report color-coding: USEFUL/OK badges are different colors from NOISY/INVERTED
 
-**v0.15.0 plans**: extract `VERDICTS` and `Verdict` to `packages/core/src/verdicts.ts` as the single source of truth. Add Zod schema for `signal-strength.json`. Replace exact-count tests with property-based assertions.
+**v0.15.0 shipped**: extract `VERDICTS` and `Verdict` to `packages/core/src/verdicts.ts` as the single source of truth. Add Zod schema for `signal-strength.json`. Replace exact-count tests with property-based assertions.
 
 ---
 
@@ -296,7 +296,7 @@ Slop Score: 78/100
 
 Computed from rules with `verdict ∈ {USEFUL, OK}` only (HYGIENE was supposed to be opt-out but the v7 calibration made it defaultOn, which made the score unpredictable).
 
-### v0.15.0 (planned): three numbers + composite
+### v0.15.0 (shipped): three numbers + composite
 
 ```
 Repository Health
