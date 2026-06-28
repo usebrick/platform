@@ -73,7 +73,11 @@ export type Category = string;
 /** A scan report, minimal fields used by `buildHealthFromReport`. */
 export interface MemoryReport {
   generatedAt: string;
-  slopIndex: number;
+  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
   categoryScores: Record<string, number>;
   issues: ReadonlyArray<{ ruleId: string; severity: string }>;
 }
@@ -250,10 +254,10 @@ export async function appendRun(
   const run: MemoryAuditRun = {
     timestamp: report.generatedAt,
     version,
-    slopIndex: report.slopIndex,
+    slopIndex: report.aiQuality, // MemoryAuditRun keeps slopIndex as a historical legacy field
     categoryScores: { ...report.categoryScores },
     topOffenseIds: topOffenseIds(report),
-    thresholdExceeded: thresholdExceeded ?? report.slopIndex > 0,
+    thresholdExceeded: thresholdExceeded ?? report.aiQuality > 0,
   };
   runs.push(run);
   if (runs.length > MAX_RUNS) {
@@ -442,7 +446,10 @@ export function buildHealthFromReport(
   version: typeof STRUCTURE_SCHEMA_VERSION;
   generatedAt: string;
   workspace: string;
-  slopIndex: number;
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
   categoryScores: Record<string, number>;
   issueCounts: { high: number; medium: number; low: number };
   constitutionDrift?: number;
@@ -469,7 +476,10 @@ export function buildHealthFromReport(
     version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: report.generatedAt,
     workspace,
-    slopIndex: Math.round(report.slopIndex),
+    aiQuality: Math.round(report.aiQuality),
+    engineeringHygiene: Math.round(report.engineeringHygiene),
+    security: Math.round(report.security),
+    repositoryHealth: Math.round(report.repositoryHealth),
     categoryScores: Object.fromEntries(
       Object.entries(report.categoryScores).map(([k, v]) => [k, Math.round(v)]),
     ),

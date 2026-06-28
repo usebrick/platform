@@ -7,7 +7,7 @@ function makeReport(): ProjectReport {
     version: '0.6.0',
     generatedAt: '2026-06-15T00:00:00.000Z',
     configPath: 'slopbrick.config.js',
-    slopIndex: 34.2,
+    aiQuality: 34.2, engineeringHygiene: 34.2, security: 34.2, repositoryHealth: 34.2,
     assemblyHealth: 65.8,
     totalScore: 34.2,
     categoryScores: {

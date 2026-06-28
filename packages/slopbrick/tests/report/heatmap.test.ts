@@ -9,7 +9,7 @@ function makeReport(components: ComponentScore[]): ProjectReport {
   return {
     version: '0.6.0',
     generatedAt: GENERATED_AT,
-    slopIndex: 50,
+    aiQuality: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
     assemblyHealth: 50,
     totalScore: 50,
     categoryScores: {

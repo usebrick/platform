@@ -19,9 +19,10 @@ export function colorForSlop(slopIndex: number): string {
 }
 
 export function formatBadge(report: ProjectReport): string {
-  const rounded = Math.round(report.slopIndex);
-  const color = colorForSlop(report.slopIndex);
-  return `[![Slop Index](https://img.shields.io/badge/slop--index-${rounded}-${color})](https://github.com/usebrick/platform)`;
+  const score = report.aiQuality ?? 0;
+  const rounded = Math.round(score);
+  const color = colorForSlop(score);
+  return `[![Repository Health](https://img.shields.io/badge/repository--health-${rounded}-${color})](https://github.com/usebrick/platform)`;
 }
 
 /** Render an array of values as a Unicode sparkline (▁▂▃▄▅▆▇█). */
