@@ -1,9 +1,9 @@
 # Architectural Refactor — usebrick/platform
 
 **Date**: 2026-06-26
-**Status**: Draft — awaiting user review
-**Scope**: `packages/core/`, `packages/slopbrick/`, `packages/website/`
-**Effort estimate**: 1-2 days across 7 independent sub-projects (A–G)
+**Status**: Approved — proceeding to implementation plan
+**Scope**: `packages/core/`, `packages/slopbrick/`, `packages/engine/` (new), `packages/website/`
+**Effort estimate**: 1-2 days across 7 sub-projects (A, B, C, D, E, F, G) — G1 dropped per Q4
 **Author**: dystx (post-v0.14.5 audit, brainstorming session with Kimi Code CLI)
 
 ---
@@ -743,12 +743,31 @@ When all 7 sub-projects ship:
 
 ## Open Questions for User Review
 
-1. **For Sub-project B**: Do we want a `packages/engine/` extraction (clean break) or a "compat layer" inside `slopbrick` (no break, gradual refactor)? Clean break is faster but risks one big PR. Compat layer is slower but safer.
+## Decisions (resolved 2026-06-26)
 
-2. **For Sub-project C**: Should the generated types be **public** (exported from `@usebrick/core` directly) or **internal** (only the hand-written re-exports stay public)? Generated types as public is cleaner but means a schema bump is an immediate breaking change for consumers.
+All 5 open questions have been resolved:
 
-3. **For Sub-project D**: Should we add automated a11y testing (axe-core via Playwright) or just rely on manual checks? Manual is faster; automated catches regressions but adds a test dependency.
+1. **Q1 (engine extraction)**: **Clean break → `packages/engine/`**. New workspace package. Engine becomes a real product surface reusable from non-CLI tools.
+2. **Q2 (generated types)**: **Public**. Generated types ARE the public API; the JSON Schemas ARE the contract. A schema bump is an immediate breaking change (semver major).
+3. **Q3 (a11y testing)**: **axe-core via Playwright in CI**. New dev dep in `packages/website/`. Runs on every PR to catch regressions.
+4. **Q4 (GSAP removal)**: **SKIPPED**. GSAP stays in the bundle. The 5-line RAF replacement was considered and rejected — the bundle is already small (53.5 kB gzipped) for a marketing site, the shake is a delight (not a critical path), and `elastic.out(1, 0.3)` is non-trivial to reimplement. Removing GSAP for 41 kB would regress animation quality for a non-problem. Sub-project G1 is removed from scope; G2 (LCP-swap) and G3 (preload brick pattern SVG) remain.
+5. **Q5 (session scope)**: **All 7, 1-2 days, this session**. Big lift; may need to pause mid-way and resume tomorrow. Spec is approved; implementation plan will follow.
 
-4. **For Sub-project G**: If GSAP removal regresses animation quality, are we OK reverting that sub-project and shipping the rest? Or do we want to commit to GSAP removal as a hard requirement?
+## Implementation Order (per the decisions)
 
-5. **Sequencing**: Do you want all 7 in this session (1-2 days, may need to pause mid-way), or should we lock down the spec now and execute across multiple sessions?
+```
+Phase 1 (P0, ship first):
+  A — verdict type safety + Zod schema + property-based tests
+  F — docs (independent, parallel to A)
+
+Phase 2 (P1, next):
+  D — WebGL hardening + axe-core a11y testing in CI
+  C — schema → TS codegen (depends on A's Zod)
+
+Phase 3 (P1, the big lift):
+  B — packages/engine/ extraction (depends on A's type safety)
+
+Phase 4 (P2, polish):
+  E — per-brick shader variation
+  G — LCP-swap + preload brick pattern (G1 GSAP-removal skipped)
+```
