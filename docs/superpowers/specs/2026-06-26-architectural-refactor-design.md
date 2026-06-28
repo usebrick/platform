@@ -4,7 +4,7 @@
 **Status**: Draft — awaiting user review
 **Scope**: `packages/core/`, `packages/slopbrick/`, `packages/website/`
 **Effort estimate**: 1-2 days across 7 independent sub-projects (A–G)
-**Author**: Kimi Code CLI (post-v0.14.5 audit)
+**Author**: dystx (post-v0.14.5 audit, brainstorming session with Kimi Code CLI)
 
 ---
 
@@ -638,43 +638,15 @@ Sections:
 **Risk**: Medium (can regress visuals if not careful)
 
 ### Problem
-The website bundle is 53.5 kB gzipped (141 kB raw). The hero canvas is 100vh of WebGL. The bundle includes full GSAP (40+ kB gzipped) for a single shake animation. Lighthouse score unknown.
+The website bundle is 53.5 kB gzipped (141 kB raw). The hero canvas is 100vh of WebGL. Lighthouse score unknown. There are two specific perf improvements that don't require removing dependencies:
+- The WebGL canvas paints on first load, which is expensive; the user sees a blank canvas until the shader compiles.
+- The brick pattern is inlined as a data URI in 2 CSS files, so the browser can't cache it across page loads.
+
+**GSAP stays.** The 5-line RAF replacement was considered and rejected (Q4 user decision): the bundle is already small for a marketing site, the shake animation is a delight (not a critical path), and `elastic.out(1, 0.3)` is non-trivial to reimplement correctly. Removing GSAP for 41 kB would regress animation quality for a non-problem.
 
 ### Design
 
-**G1. Replace GSAP with a 5-line RAF function for the shake.**
-
-GSAP is a 40+ kB library. The shake in `break-on-hover.ts` does:
-```ts
-gsap.fromTo(card, { x: 0, y: 0, rotation: 0 }, {
-  x: ..., y: ..., rotation: ...,
-  duration: 0.5, ease: 'elastic.out(1, 0.3)',
-  onComplete: () => { /* settle back */ },
-});
-```
-
-A 5-line RAF function does the same:
-```ts
-function elasticShake(el: HTMLElement): Promise<void> {
-  return new Promise((resolve) => {
-    const start = performance.now();
-    const dur = 500;
-    const dx = (Math.random() - 0.5) * 8;
-    const dy = (Math.random() - 0.5) * 6;
-    const dr = (Math.random() - 0.5) * 1.5;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / dur);
-      const e = elasticOut(t, 1, 0.3);
-      el.style.transform = `translate(${dx*e}px, ${dy*e}px) rotate(${dr*e}deg)`;
-      if (t < 1) requestAnimationFrame(tick);
-      else { el.style.transform = ''; resolve(); }
-    };
-    requestAnimationFrame(tick);
-  });
-}
-```
-
-This removes GSAP from the bundle entirely. **41 kB gzipped savings.** The crack-line animation (SVG attr animation) is the only GSAP usage left; that can be replaced with native `element.animate()`.
+**G1. SKIPPED (per Q4 user decision — keep GSAP).** The 5-line RAF replacement code is documented in the spec appendix for future reference, but not implemented.
 
 **G2. Render the WebGL hero as a static image on first paint, hydrate to WebGL after LCP.**
 
@@ -704,15 +676,14 @@ lcpPromise.then(() => {
 Currently the brick pattern is inlined as a data URI in 2 CSS files. The browser can't cache it. Move to a single `<link rel="preload" as="image" href="/brick-pattern.svg">` in `<head>`, then reference the URL in CSS.
 
 ### Acceptance criteria for G
-- Bundle size drops to ~12 kB gzipped (from 53.5)
-- Lighthouse score: 100/100/100/100
-- First paint shows the static SVG; WebGL kicks in after LCP
-- No visual regression on desktop (the WebGL effect is still the same)
+- First paint shows the static SVG; WebGL kicks in after LCP (target: < 2.5s LCP)
+- The brick-pattern SVG is fetched once and cached across navigations
+- No visual regression on desktop
+- GSAP stays in the bundle (no change)
 
 ### Risk mitigation
-- Replace GSAP in a separate commit. If it breaks the shake, easy to revert.
 - The LCP-swap is purely additive. If the WebGL never kicks in (LCP never fires), the user sees the static SVG only.
-- The bundle size reduction is the primary metric. If GSAP is needed for future animations, we can add it back selectively (the 41 kB is the *core*, not tree-shaken).
+- The preload link is a browser hint, not a hard requirement. If the SVG fails to fetch, the page falls back to the data URI.
 
 ---
 
@@ -766,7 +737,7 @@ When all 7 sub-projects ship:
 - The core schemas drive the TS types via codegen; no more hand-maintained drift
 - The website works on every device (a11y, low-power, debounced)
 - The architecture is documented and discoverable
-- Bundle size drops to ~12 kB gzipped; Lighthouse is 100/100/100/100
+- Bundle size stays at 53.5 kB gzipped (GSAP stays); WebGL LCP-swap brings the first paint under 2.5s
 
 ---
 
