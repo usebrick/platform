@@ -1,5 +1,13 @@
 # slopbrick v0.14.5d — Repository Memory ships
 
+> **Historical release (2026-06-27).** v0.14.5d shipped the
+> Repository Memory surface (`.slopbrick/{inventory,constitution,health,memory}`)
+> and the LockBrick prevention loop. For the v0.14.5q follow-up —
+> v7 calibration complete, 31 USEFUL rules, 1 INVERTED rule
+> auto-defaultOff, self-scan impact — see
+> [`website-copy-v0.14.5q.md`](./website-copy-v0.14.5q.md) and
+> [`research/v7-corpus-calibration.md`](./research/v7-corpus-calibration.md).
+
 > **AI agents forget your architecture. Every session starts fresh.**
 > Today we're shipping the fix: `.slopbrick/memory.md`, the artifact
 > your codebase writes for the next agent.

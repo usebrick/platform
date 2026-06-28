@@ -1,6 +1,15 @@
 # slopbrick Roadmap
 
-> **Repository Coherence Scanner for AI-generated code.** Built for projects where AI agents write code and humans need to enforce the rules. The 12-phase plan reached its **0.9.0 endgame in 2026-08** (Repository Coherence + AI Debt band + 8 MCP tools). The credibility milestone is **v0.10** (every rule ships with per-rule Precision / Recall / False Positive Rate on the balanced 172k-file v4 corpus, plus peer-reviewed citations behind every threshold). **v1.0** is the *stability commitment* — reserved for the point 6+ months after v0.10 ships, when the API can be frozen and backward compatibility guaranteed based on accumulated empirical feedback. v1.0 does NOT add new credibility; it freezes what v0.10 proved.
+> **v0.10 credibility milestone: reached in v0.14.5q (2026-06-28).**
+> The v7 corpus calibration is live. 65 of 80 rules are now
+> measured (31 USEFUL, 5 OK, 5 NOISY, 1 INVERTED, 23 HYGIENE).
+> The remaining 15 rules are dormant (never fired on v7) and will
+> be calibrated as the corpus grows. See
+> [`research/v7-corpus-calibration.md`](./docs/research/v7-corpus-calibration.md)
+> for the per-rule table. **v1.0** is the *stability commitment* —
+> reserved for the point 6+ months after v0.15 ships, when the API
+> can be frozen and backward compatibility guaranteed based on
+> accumulated empirical feedback.
 
 This document tracks the strategic plan. Each phase is independently shippable; each one strengthens the same positioning.
 
@@ -394,7 +403,17 @@ After 0.9.0 lands, **collapse the MCP tool surface**. Currently 6+ tools (`slop_
 
 ### 0.10 — Credibility milestone (the moat)
 
-**Not the stability commitment (that's v1.0). v0.10 is the credibility milestone** — every detection rule ships with per-rule Precision / Recall / False Positive Rate on the balanced 172k-file v4 corpus, plus a peer-reviewed citation behind every threshold.
+**✅ SHIPPED in v0.14.5q (2026-06-28).** Every detection rule that fired on the v7 corpus now ships with per-rule Precision / Recall / False Positive Rate, sorted by lift. 65 of 80 rules measured (31 USEFUL, 5 OK, 5 NOISY, 1 INVERTED, 23 HYGIENE). The remaining 15 are dormant — never fired on v7 — and will be calibrated as the corpus grows.
+
+**v7 corpus (final, post v0.14.5q):**
+- 184,488 neg files (human-written, ≥ 2025-01-01, v4 baseline + curated)
+- 239,054 pos files (vibe-coded/*, claude-code, aider, tabby, continue, agent frameworks)
+- 1,060,258 fire-events
+- See [`docs/research/v7-corpus-calibration.md`](./docs/research/v7-corpus-calibration.md) for the per-rule table
+
+The next v0.10 task is peer-reviewed citations behind every threshold. Currently 30 of 65 calibrated rules have a published citation; the remaining 35 are documented as heuristic and pending the v0.15 review pass.
+
+**Not the stability commitment (that's v1.0). v0.10 is the credibility milestone** — every detection rule ships with per-rule Precision / Recall / False Positive Rate, plus a peer-reviewed citation behind every threshold.
 
 The three numbers that tell you whether a detection rule actually works:
 
