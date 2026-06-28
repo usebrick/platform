@@ -550,14 +550,27 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
-## [0.14.5n] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down
+## [0.14.5o] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile fix
 
-The v0.14.5d → 0.14.5n line is a single dev cycle (one session) that
+The v0.14.5d → 0.14.5o line is a single dev cycle (one session) that
 shipped 9 commits addressing the scan flywheel UX, a categoryScores
 display bug, Python/Go coverage gaps, a partial v7 calibration
-report, and a full documentation suite. Pushed as one release
-because the commits are interdependent and the CHANGELOG groups
-them as a single "calibration update".
+report, a full documentation suite, and a lockfile fix. Pushed as
+one release because the commits are interdependent and the
+CHANGELOG groups them as a single "calibration update".
+
+v0.14.5n was tagged first but its publish failed due to a stale
+`@usebrick/core` entry in the lockfile. Rather than re-publish
+under the same version, this release renumbers to 0.14.5o and
+absorbs the lockfile fix as a first-class commit.
+
+### Fixed (Lockfile — release commit)
+
+`pnpm-lock.yaml` had a stale `@usebrick/core: workspace:*` entry
+that wasn't in `packages/slopbrick/package.json`. This caused
+`pnpm install --frozen-lockfile` to fail in publish.yml on the
+v0.14.5n tag. Removed the stale entry; `pnpm install` now reports
+the lockfile is up to date. 3 lines deleted.
 
 ### Changed (README slim-down — v0.14.5n)
 

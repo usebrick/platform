@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.14.5n",
+  "version": "0.14.5o",
   "description": "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session.",
   "type": "module",
   "bin": {
