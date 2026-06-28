@@ -337,7 +337,7 @@ export function buildHealthFromReport(
   workspace: string,
   options: { constitutionDrift?: number; scanDurationMs?: number } = {},
 ): {
-  version: '2';
+  version: typeof STRUCTURE_SCHEMA_VERSION;
   generatedAt: string;
   workspace: string;
   slopIndex: number;
@@ -367,7 +367,7 @@ export function buildHealthFromReport(
     .map(([id]) => id);
 
   return {
-    version: '2',
+    version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: report.generatedAt,
     workspace,
     slopIndex: Math.round(report.slopIndex),

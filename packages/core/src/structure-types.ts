@@ -22,7 +22,7 @@
  * loader. Migration: `slopbrick migrate` rewrites a v1 project to v2.
  */
 
-export const STRUCTURE_SCHEMA_VERSION = '2' as const;
+export const STRUCTURE_SCHEMA_VERSION = '3' as const;
 
 /** Categories tracked in the inventory. Mirrors Constitution field
  * names so the same key set is used for declared vs detected. */

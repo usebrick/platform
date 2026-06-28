@@ -137,7 +137,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     const loadedInv = loadInventory(dir);
     expect(loadedInv).not.toBeNull();
     expect(isInventoryFile(loadedInv)).toBe(true);
-    expect(loadedInv!.version).toBe('2');
+    expect(loadedInv!.version).toBe('3');
     expect(loadedInv!.workspace).toBe(dir);
 
     const loadedCon = loadConstitution(dir);

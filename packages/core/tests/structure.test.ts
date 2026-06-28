@@ -32,7 +32,7 @@ describe('memory — loaders/savers', () => {
 
   function buildInventory(): InventoryFile {
     return {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       scannedFiles: 5,
@@ -88,7 +88,7 @@ describe('memory — loaders/savers', () => {
 
   it('loadConstitution + saveConstitution round-trip', () => {
     const c: ConstitutionFile = {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       declared: { stateManagement: 'zustand' },
@@ -121,7 +121,7 @@ describe('memory — freshness check', () => {
 
   it('isInventoryFresh returns false when no cache exists', () => {
     const inv: InventoryFile = {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       scannedFiles: 0,
@@ -138,7 +138,7 @@ describe('memory — freshness check', () => {
     const file = join(workspace, 'B.tsx');
     await writeFile(file, 'export function B() {}');
     const inv: InventoryFile = {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       scannedFiles: 1,
@@ -156,7 +156,7 @@ describe('memory — freshness check', () => {
     const file = join(workspace, 'B.tsx');
     await writeFile(file, 'export function B() {}');
     const inv: InventoryFile = {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       scannedFiles: 1,
@@ -180,7 +180,7 @@ describe('memory — freshness check', () => {
     const file = join(workspace, 'B.tsx');
     await writeFile(file, 'x');
     const inv: InventoryFile = {
-      version: '2',
+      version: '3',
       generatedAt: '2026-06-25T00:00:00.000Z',
       workspace,
       scannedFiles: 1,

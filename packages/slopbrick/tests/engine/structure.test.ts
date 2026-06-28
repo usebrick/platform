@@ -539,7 +539,7 @@ describe('buildHealthFromReport', () => {
       ],
     });
     const out = buildHealthFromReport(report, '/work', { scanDurationMs: 1234 });
-    expect(out.version).toBe('2');
+    expect(out.version).toBe('3');
     expect(out.workspace).toBe('/work');
     expect(out.slopIndex).toBe(42);
     expect(out.issueCounts).toEqual({ high: 2, medium: 2, low: 2 });

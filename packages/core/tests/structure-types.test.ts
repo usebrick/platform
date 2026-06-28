@@ -9,8 +9,8 @@ import {
 } from '../src/structure-types';
 
 describe('memory-types — validators', () => {
-  it('STRUCTURE_SCHEMA_VERSION is "1"', () => {
-    expect(STRUCTURE_SCHEMA_VERSION).toBe('2');
+  it('STRUCTURE_SCHEMA_VERSION is "3"', () => {
+    expect(STRUCTURE_SCHEMA_VERSION).toBe('3');
   });
 
   describe('isStructurePattern', () => {
