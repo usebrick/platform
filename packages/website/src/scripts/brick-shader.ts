@@ -26,6 +26,12 @@ const FRAGMENT = `
   uniform float u_time;
   uniform float u_scroll;
 
+  // 1D hash — maps a vec2 to [0, 1) deterministically.
+  // Used to give each brick a stable color offset.
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
@@ -35,11 +41,12 @@ const FRAGMENT = `
     // Half-bond stagger — every other row offset by half a brick
     if (mod(cell.y, 2.0) > 0.5) cell.x += 0.5;
 
-    // Brick color varies with vertical position (mortar darkens bottom)
+    // Per-brick jitter — hash the cell coord for stable variation per brick
+    float brickSeed = hash(cell);
     vec3 brickColor = mix(
       vec3(0.42, 0.18, 0.10),
       vec3(0.72, 0.35, 0.18),
-      uv.y
+      uv.y + brickSeed * 0.15
     );
 
     // Per-brick position within the cell (0..1)
@@ -92,6 +99,8 @@ export function initBrickShader(canvas: HTMLCanvasElement): () => void {
   gl.compileShader(fs);
   if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
     console.error('fragment shader:', gl.getShaderInfoLog(fs));
+    // Fallback: tell BrickShader.astro to show the static SVG
+    canvas.dataset.shaderFailed = 'true';
     return () => {};
   }
 
