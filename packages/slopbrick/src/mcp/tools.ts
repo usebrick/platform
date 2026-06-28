@@ -6,7 +6,7 @@ import { scanFile } from '../engine/worker.js';
 import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore, formatArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
-import { runSuggestWithMemory } from './slop-suggest-memory.js';
+import { runSuggestWithMemory } from './slop-suggest-structure.js';
 import type { Rule, ResolvedConfig } from '../types.js';
 
 export interface ToolContext {
@@ -94,9 +94,9 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: 'slop_suggest_with_memory',
+    name: 'slop_suggest_with_structure',
     description:
-      'Fast-path variant of `slop_suggest` that reads `.slopbrick/memory.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `memory.md` is missing, falls back to `slop_suggest` and annotates the response with `memoryHint` so the caller knows to run `slopbrick scan` first.',
+      'Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `memoryHint` so the caller knows to run `slopbrick scan` first.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -602,7 +602,7 @@ export async function handleToolCall(
       return listRules(args, ctx);
     case 'slop_suggest':
       return runSuggest(args, ctx);
-    case 'slop_suggest_with_memory':
+    case 'slop_suggest_with_structure':
       return runSuggestWithMemory(args, ctx);
     case 'slop_governance':
       return runGovernance(args, ctx);
@@ -625,7 +625,7 @@ export async function handleToolCall(
  * documentation, or when deciding whether to gate a tool behind a feature
  * flag. The four canonical tools in v0.11.x are:
  *
- *   - `slop_suggest` / `slop_suggest_with_memory` — primary entry points
+ *   - `slop_suggest` / `slop_suggest_with_structure` — primary entry points
  *   - `slop_scan_file` — single-file scan (for editor integration)
  *   - `slop_check_constitution` — pre-commit gate on declared stack
  *   - `slop_explain_rule` — rule documentation lookup
