@@ -1,7 +1,7 @@
 {
   "name": "slopbrick",
-  "version": "0.14.5",
-  "description": "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session.",
+  "version": "0.15.0",
+  "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 60+ rules and 13 scores, and persists the structure for AI agents and CI.",
   "type": "module",
   "bin": {
     "slopbrick": "bin/slopbrick.js"
