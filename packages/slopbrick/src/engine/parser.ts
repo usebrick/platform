@@ -219,6 +219,27 @@ function parseHtml(source: string): ParseResult {
   return { ast, source };
 }
 
+/**
+ * v0.14.5l: Parse a backend file (.py, .go) as an empty module
+ * with line-preserving whitespace. Same trick as parseAstro/parseHtml.
+ *
+ * SWC cannot parse Python or Go. Returning an empty module lets
+ * regex-only rules (markdown-leakage, comment-ratio, etc.) still
+ * run on the raw source, while AST-dependent rules silently
+ * produce 0 issues. This means Python/Go files now get measured
+ * by the rule engine (with reduced power) instead of being skipped
+ * entirely by the BACKEND_EXTENSIONS early-return.
+ */
+function parseBlankModule(source: string): ParseResult {
+  const replaced = source.replace(/[^\r\n]/g, ' ');
+  const ast = parseSync(replaced, {
+    syntax: 'typescript',
+    tsx: false,
+    target: 'es2022',
+  });
+  return { ast, source: replaced };
+}
+
 function parseScriptContent(content: string, isTypeScript: boolean): Module {
   if (isTypeScript) {
     return parseSync(content, {
@@ -328,6 +349,13 @@ function parseSource(source: string, filePath: string): ParseResult {
       return parseVue(source);
     case 'svelte':
       return parseSvelte(source);
+    // v0.14.5l: backend languages we have visitors for (.py, .go)
+    // but no SWC support. Return a blank-padded empty module so
+    // regex-only rules can still fire (markdown-leakage, comment-
+    // ratio, etc.) without burning the parseError path.
+    case 'py':
+    case 'go':
+      return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback
       // internally. If every candidate fails, it throws — the worker

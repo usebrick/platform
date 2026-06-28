@@ -28,21 +28,24 @@ export async function scanFile(
   registry?: RuleRegistry,
   cwd = process.cwd(),
 ): Promise<FileScanResult> {
-  // v0.14.5c-fix4: Backend files (Swift, Kotlin, Dart, Rust, C++, Java,
-  // Ruby, PHP) are NOT scanned by the rule engine — but they ARE
-  // processed by the backend visitors via buildPatternInventory
-  // (src/mcp/patterns.ts) for cross-file service/route/ormModel
-  // drift detection. Returning a clean empty FileScanResult here
-  // (no parseError, no issues) means:
-  //   - The scan counts the file as 0 issues (not a parseError)
-  //   - The partial output doesn't report false-positive parse errors
-  //   - The pattern inventory still picks up the file separately
+  // v0.14.5l: split the backend early-return. Languages we have
+  // visitors for (.py, .go) get the rule engine pass — rules that
+  // need SWC silently produce 0 issues for those files, but
+  // regex-based rules (markdown-leakage, comment-ratio, etc.) can
+  // fire. Languages we have NO visitor for (.swift, .kt, .dart,
+  // .rs, .cpp, .java, .rb, .php) still get the early-return
+  // because every rule attempt would burn the parseError path.
   //
-  // The 30s per-file timeout is critical: SWC cannot parse .swift
-  // etc., and a "try and fail" path would burn the timeout budget
-  // 184k times. The BACKEND_EXTENSIONS early-return saves ~16 hours
-  // per scan arm.
-  if (BACKEND_EXTENSIONS.has(extname(filePath).toLowerCase())) {
+  // Tradeoff: the corpus scans now process ~70% more files, but
+  // the v7 calibration sees more ground truth. v0.15 will add
+  // real Python + Go AST support.
+  const ext = extname(filePath).toLowerCase();
+  const UNSUPPORTED_LANGS = new Set([
+    '.swift', '.kt', '.kts', '.dart', '.rs',
+    '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
+    '.java', '.rb', '.php',
+  ]);
+  if (UNSUPPORTED_LANGS.has(ext)) {
     return {
       filePath,
       componentCount: 0,
