@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 import { missingAuthCheckRule } from '../../src/rules/security/missing-auth-check';
 import type { Issue, ResolvedConfig, RuleContext } from '../../src/types';

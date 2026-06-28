@@ -21,3 +21,9 @@ export {
   type RuleLikelihoodRatio,
   type BayesPrior,
 } from './lr-combiner';
+
+// v0.15.0 B.3: SWC-backed source file parser.
+export {
+  parseFile,
+  type ParseResult,
+} from './parser';

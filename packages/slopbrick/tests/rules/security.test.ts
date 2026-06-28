@@ -3,7 +3,7 @@ import { writeFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 import { hardcodedSecretRule } from '../../src/rules/security/hardcoded-secret';
 import { unsafeHtmlRenderRule } from '../../src/rules/security/unsafe-html-render';

@@ -43,7 +43,7 @@ import {
   type CrossFileDriftSignal,
   type CrossCategoryDrift as CrossCategoryDriftSignal,
 } from './cluster.js';
-import { parseFile } from './parser.js';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from './visitor.js';
 import { spacingScaleViolationRule } from '../rules/visual/spacing-scale-violation.js';
 import { radiusScaleViolationRule } from '../rules/visual/radius-scale-violation.js';

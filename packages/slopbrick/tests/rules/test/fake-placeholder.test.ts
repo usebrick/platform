@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { writeFileSync, mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseFile } from '../../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../../src/engine/visitor';
 import { fakePlaceholderRule } from '../../../src/rules/test/fake-placeholder';
 import type { Issue, ResolvedConfig, RuleContext } from '../../../src/types';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 import { scoreFile, aggregateReport } from '../../src/engine/metrics';
 import { SEVERITY_WEIGHTS } from '../../src/engine/metrics';

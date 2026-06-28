@@ -306,7 +306,7 @@ export async function runDoctor(cwd: string): Promise<number> {
 
   // 4. SWC parser bindings
   try {
-    const { parseFile: tryParse } = await import('../engine/parser');
+    const { parseFile: tryParse } = await import('@usebrick/engine');
     const testFile = join(cwd, '.slopbrick', '.doctor-test.ts');
     mkdirSync(dirname(testFile), { recursive: true });
     writeFileSync(testFile, 'export const x = 1;\n');

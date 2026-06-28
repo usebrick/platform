@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 
 async function extract(fileName: string, source: string) {

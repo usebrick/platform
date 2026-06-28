@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { writeFileSync, mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 import { DEFAULT_CONFIG } from '../../src/config';
 

@@ -1,6 +1,6 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { extname } from 'node:path';
-import { parseFile } from './parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';

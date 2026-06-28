@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { writeFileSync, mkdirSync, rmSync } from 'fs';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
