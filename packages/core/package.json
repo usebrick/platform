@@ -22,7 +22,8 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "codegen": "tsx scripts/codegen-types.ts"
   },
   "keywords": [
     "usebrick",
