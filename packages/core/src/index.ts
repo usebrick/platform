@@ -49,3 +49,5 @@ export {
   invalidateFile,
   writeJsonAtomic,
 } from './structure';
+
+export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
