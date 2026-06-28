@@ -19,11 +19,13 @@
     "README.md"
   ],
   "scripts": {
+    "prebuild": "pnpm codegen && pnpm test:contract && tsup",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "codegen": "tsx scripts/codegen-types.ts"
+    "codegen": "tsx scripts/codegen-types.ts",
+    "test:contract": "tsx scripts/verify-codegen-fresh.ts"
   },
   "keywords": [
     "usebrick",
