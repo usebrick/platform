@@ -51,3 +51,5 @@ export {
 } from './structure';
 
 export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
+
+export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
