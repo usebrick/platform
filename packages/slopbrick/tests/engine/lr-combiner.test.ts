@@ -204,25 +204,32 @@ describe('properties of the Bayesian combiner', () => {
     'logic/ghost-defensive',
     'logic/zombie-state',
     'logic/math-console-log-storm',
-    'logic/heaps-deviation',
-    'logic/zipf-slope-anomaly',
-    'logic/math-variable-name-entropy',
+    'security/public-admin-route',
+    'wcag/dragging-movements',
+    'perf/cls-image',
   ];
   const lrs = computeLikelihoodRatios(allRuleIds, CORPUS);
 
-  it('INVERTED fires decrease the posterior; USEFUL fires increase it', () => {
-    // v6 calibration: logic/heaps-deviation and logic/zipf-slope-anomaly
-    // are still INVERTED. Use them instead of the reclassified rules.
-    const invertedOnly = bayesianPosterior(
-      ['logic/heaps-deviation', 'logic/zipf-slope-anomaly'],
+  it('low-LR fires decrease the posterior; high-LR fires increase it', () => {
+    // v0.14.5 (v7 calibration): the previous v6-INVERTED rules
+    // (heaps-deviation, zipf-slope-anomaly, math-variable-name-entropy)
+    // have all been reclassified as HYGIENE. The verdict taxonomy
+    // changed, but the LR math is preserved — these rules still have
+    // ratio < 1, meaning they fire MORE on the negative class than
+    // the positive. The test now uses HYGIENE rules as the low-LR
+    // stand-ins (security/public-admin-route ratio=0.40, perf/cls-image
+    // ratio=0.80) and USEFUL rules as the high-LR stand-ins
+    // (logic/ghost-defensive ratio=5.79, logic/zombie-state ratio=9.26).
+    const lowLrOnly = bayesianPosterior(
+      ['security/public-admin-route', 'perf/cls-image'],
       lrs,
     );
-    const usefulOnly = bayesianPosterior(
+    const highLrOnly = bayesianPosterior(
       ['logic/ghost-defensive', 'logic/zombie-state'],
       lrs,
     );
-    expect(invertedOnly).toBeLessThan(0.5);
-    expect(usefulOnly).toBeGreaterThan(0.5);
+    expect(lowLrOnly).toBeLessThan(0.5);
+    expect(highLrOnly).toBeGreaterThan(0.5);
   });
 
   it('with all-USEFUL fires, posterior → 1', () => {
@@ -233,16 +240,19 @@ describe('properties of the Bayesian combiner', () => {
     expect(posterior).toBeGreaterThan(0.99);
   });
 
-  it('with all-INVERTED fires, posterior → well below prior', () => {
-    // v6 calibration: the remaining INVERTED rules have LR < 1.
-    // Fire three of them; the posterior should drop well below 0.5.
+  it('with all-low-LR fires, posterior → well below prior', () => {
+    // v0.14.5 (v7 calibration): no INVERTED-only test possible because
+    // v7 has only 1 INVERTED rule (ai/renyi-profile) and the rest of
+    // the v6-INVERTED rules are now HYGIENE. The semantic check is the
+    // same: fire a set of low-LR rules and verify the posterior drops
+    // below 0.5. We use 3 HYGIENE rules with the lowest ratios.
     // We don't assert a specific threshold because the exact LRs depend
     // on the calibration data.
     const posterior = bayesianPosterior(
       [
-        'logic/heaps-deviation',
-        'logic/zipf-slope-anomaly',
-        'logic/math-variable-name-entropy',
+        'security/public-admin-route',
+        'wcag/dragging-movements',
+        'perf/cls-image',
       ],
       lrs,
     );

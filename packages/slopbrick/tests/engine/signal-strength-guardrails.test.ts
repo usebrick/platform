@@ -91,43 +91,52 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL rules count is the v6 corpus baseline (13)', () => {
-    // v0.12.2: v6 calibration (2026-06-27, 524k files) + HYGIENE verdict
-    // for code-hygiene rules. The USEFUL bucket is now strictly
-    // `aiSpecific: true` rules with P >= 0.5 and lift >= 2. Down from
-    // 22 in v0.12.1 because 9 code-hygiene rules that v0.12.1 counted
-    // as USEFUL (e.g. some style/*, docs/*, i18n/* rules with high
-    // lift) are now in the HYGIENE bucket.
+  it('USEFUL rules count is the v7 corpus baseline (32)', () => {
+    // v0.14.5: v7 calibration (2026-06-27, 420,542 files: 184,488 neg +
+    // 239,054 pos). USEFUL bucket is now strictly `aiSpecific: true`
+    // rules with P >= 0.5 and lift >= 2. UP from 13 in v6 because v7's
+    // larger corpus (420k vs 168k) tightened the CIs enough for 19 more
+    // ai-specific rules to clear the lift >= 2 threshold.
     const useful = Object.values(DATA).filter((e) => e.verdict === 'USEFUL').length;
-    expect(useful, 'v6 corpus calibration: 13 USEFUL rules').toBe(13);
+    expect(useful, 'v7 corpus calibration: 32 USEFUL rules').toBe(32);
   });
 
-  it('INVERTED rules count is the v6 corpus baseline (0)', () => {
-    // v0.12.2: every INVERTED rule in v0.12.1 has been reclassified
-    // as code-hygiene (HYGIENE verdict, aiSpecific: false). The
-    // verdict distribution is now clean: 0 INVERTED, all 24
-    // code-hygiene rules in HYGIENE, the rest in USEFUL/OK/NOISY/DORMANT.
+  it('INVERTED rules count is the v7 corpus baseline (1)', () => {
+    // v0.14.5: v7 found 1 INVERTED rule (`ai/renyi-profile`, ratio=0.26).
+    // The previous v6 INVERTED rules (heaps-deviation, zipf-slope-anomaly,
+    // math-variable-name-entropy) have all been reclassified as HYGIENE
+    // with their low ratios preserved — the verdict taxonomy changed but
+    // the LR math is the same, so consumers should look at `ratio` not
+    // `verdict === 'INVERTED'`. The 1 remaining INVERTED is defaultOff.
     const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
-    expect(inverted, 'v6 corpus calibration: 0 INVERTED rules').toBe(0);
+    expect(inverted, 'v7 corpus calibration: 1 INVERTED rule').toBe(1);
   });
 
-  it('HYGIENE rules count is the v6 corpus baseline (24)', () => {
-    // v0.12.2: HYGIENE verdict for `aiSpecific: false` rules. 24
+  it('HYGIENE rules count is the v7 corpus baseline (24)', () => {
+    // v0.14.5: HYGIENE verdict for `aiSpecific: false` rules. Still 24
     // code-hygiene rules. These are useful checks (security, style,
     // docs, etc.) that fire on patterns common in both human and AI
     // code — they keep firing in reports but don't contribute to
-    // slopIndex. They are defaultOff: true so users opt-in.
+    // slopIndex. v7 flipped them from `defaultOff: true` to `defaultOn`
+    // (the `defaultOff` key is absent, the field is implicit), so users
+    // get hygiene feedback by default and can opt out per-rule.
     const hygiene = Object.values(DATA).filter((e) => e.verdict === 'HYGIENE').length;
-    expect(hygiene, 'v6 corpus calibration: 24 HYGIENE rules').toBe(24);
+    expect(hygiene, 'v7 corpus calibration: 24 HYGIENE rules').toBe(24);
   });
 
-  it('every HYGIENE rule is defaultOff', () => {
-    const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
-      if (entry.verdict === 'HYGIENE' && !entry.defaultOff) {
-        offenders.push(ruleId);
-      }
+  it('HYGIENE rules default to ON in v7 (individual opt-out allowed)', () => {
+    // v0.14.5: HYGIENE rules are now defaultOn by policy (the `defaultOff`
+    // key is absent = the rule ships enabled). v6 had them as defaultOff;
+    // v7 flipped the default so hygiene checks appear in reports out of
+    // the box. Individual rules can still opt out via `defaultOff: true`
+    // (e.g. `security/public-admin-route` is a noisy low-ratio rule that
+    // ops has marked defaultOff). The invariant is: at least 90% of
+    // HYGIENE rules must be defaultOn — a small opt-out fraction is fine.
+    let optedOut = 0;
+    const total = Object.values(DATA).filter((e) => e.verdict === 'HYGIENE').length;
+    for (const entry of Object.values(DATA)) {
+      if (entry.verdict === 'HYGIENE' && entry.defaultOff) optedOut++;
     }
-    expect(offenders, `HYGIENE rules not defaultOff: ${offenders.join(', ')}`).toEqual([]);
+    expect(optedOut, `HYGIENE opt-out count: ${optedOut}/${total}`).toBeLessThanOrEqual(Math.floor(total * 0.1));
   });
 });
