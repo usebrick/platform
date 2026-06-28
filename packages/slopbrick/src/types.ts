@@ -830,6 +830,13 @@ export interface ProjectReport {
   /** v0.14.5i — Number of distinct rules marked defaultOff. The ratio
    *  suppressedCount / defaultOffRuleCount is the calibration coverage. */
   defaultOffRuleCount?: number;
+  /** v0.14.5j — The previous run's Slop Index, if any. Used by
+   *  formatPretty to render a "±N from last run" delta so the user
+   *  can see the trajectory without grep'ing the run log. */
+  previousSlopIndex?: number;
+  /** v0.14.5j — ISO timestamp of the previous run, paired with
+   *  previousSlopIndex so the delta line can say "vs 2026-06-27". */
+  previousRunTimestamp?: string;
 }
 
 export interface TopOffender {

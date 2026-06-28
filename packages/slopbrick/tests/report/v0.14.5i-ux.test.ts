@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatPretty, formatWhyFailingReport } from '../../src/report/pretty';
+import { formatPretty, formatWhyFailingReport, formatBriefReport } from '../../src/report/pretty';
 import type { ProjectReport, Issue } from '../../src/types';
 
 function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
@@ -66,11 +66,24 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('60');
     });
 
-    it('uses [PASS] / [FAIL] status based on slopIndex >= 70', () => {
+    it('uses plain-language band labels (v0.14.5j) instead of [PASS] / [FAIL]', () => {
+      const excellent = formatPretty(makeReport({ slopIndex: 95 }));
+      const passing = formatPretty(makeReport({ slopIndex: 75 }));
+      const needsWork = formatPretty(makeReport({ slopIndex: 50 }));
+      const concerning = formatPretty(makeReport({ slopIndex: 25 }));
+      expect(excellent).toContain('[EXCELLENT]');
+      expect(passing).toContain('[PASSING]');
+      expect(needsWork).toContain('[NEEDS WORK]');
+      expect(concerning).toContain('[CONCERNING]');
+    });
+
+    it('uses [PASS] / [FAIL] in the Threshold section (CI gate)', () => {
+      // v0.14.5j kept the [PASS]/[FAIL] in the Threshold (CI gate)
+      // section because that's the bit CI scripts grep for.
       const pass = formatPretty(makeReport({ slopIndex: 75 }));
       const fail = formatPretty(makeReport({ slopIndex: 25 }));
-      expect(pass).toContain('[PASS]');
-      expect(fail).toContain('[FAIL]');
+      expect(pass).toContain('pass');
+      expect(fail).toContain('fail');
     });
 
     it('shows subscore breakdown (boundary/context/visual)', () => {
@@ -236,10 +249,142 @@ describe('v0.14.5i UX improvements', () => {
       expect(out.indexOf('99 INVERTED')).toBeGreaterThan(out.indexOf('Slop Index:'));
       // P1 third (category breakdown)
       expect(out.indexOf('Category breakdown')).toBeGreaterThan(out.indexOf('99 INVERTED'));
-      // Thresholds
-      expect(out.indexOf('Thresholds')).toBeGreaterThan(out.indexOf('Category breakdown'));
+      // Thresholds (v0.14.5j renamed to "Threshold (CI gate)")
+      expect(out.indexOf('Threshold (CI gate)')).toBeGreaterThan(out.indexOf('Category breakdown'));
       // P0 last (next step)
-      expect(out.indexOf('Next step')).toBeGreaterThan(out.indexOf('Thresholds'));
+      expect(out.indexOf('Next step')).toBeGreaterThan(out.indexOf('Threshold (CI gate)'));
+    });
+  });
+
+  // v0.14.5j UX improvements: P6 (verdict), P7 (glossary),
+  // P8 (band labels), P9 (delta), P10 (--brief).
+  describe('v0.14.5j: at-a-glance + with-help', () => {
+    // P6: plain-language verdict at the top
+    it('P6: opens with a one-sentence verdict answering "is my code OK?"', () => {
+      const out = formatPretty(makeReport({ issues: [makeIssue()], slopIndex: 25 }));
+      // First non-empty line should answer the user's actual question
+      const firstLine = out.split('\n').find((l) => l.trim().length > 0) ?? '';
+      expect(firstLine).toMatch(/Repo is/i);
+      expect(firstLine).toMatch(/concerning|passing|excellent|needs work/);
+    });
+
+    it('P6: clean report gets a "all clean" verdict', () => {
+      const out = formatPretty(makeReport({ issues: [], slopIndex: 0 }));
+      expect(out).toContain('Clean');
+    });
+
+    it('P6: failing report names the dominant category + file', () => {
+      const out = formatPretty(
+        makeReport({
+          issues: [makeIssue({ ruleId: 'ai/x', category: 'ai', severity: 'high', filePath: 'src/bad.ts' })],
+          slopIndex: 50,
+          topOffenders: [{ filePath: 'src/bad.ts', adjustedScore: 100, issueCount: 1 }],
+        }),
+      );
+      const verdict = out.split('\n').find((l) => l.includes('needs work') || l.includes('concerning')) ?? '';
+      expect(verdict).toContain('src/bad.ts');
+      // Should not have the "AI patterns patterns" double word
+      expect(verdict).not.toContain('patterns patterns');
+    });
+
+    // P7: inline glossary for category labels
+    it('P7: category breakdown uses plain-language labels (not jargon)', () => {
+      const out = formatPretty(makeReport());
+      // 'ai' → "AI patterns" (with description)
+      expect(out).toContain('AI patterns');
+      expect(out).toContain('signatures of LLM-generated code');
+      // 'visual' → "visual style"
+      expect(out).toContain('visual style');
+      // 'logic' → "logic patterns"
+      expect(out).toContain('logic patterns');
+    });
+
+    it('P7: shows explanation for each active category', () => {
+      const out = formatPretty(makeReport());
+      // 3 active categories: ai, visual, logic — each gets a description
+      expect(out).toContain('— signatures of LLM-generated code');
+      expect(out).toContain('— colors, spacing, font sizes, layout');
+      expect(out).toContain('— state, hooks, prop usage');
+    });
+
+    // P8: explicit lower=better / higher=better labels
+    it('P8: Slop Index shows "lower = better"', () => {
+      const out = formatPretty(makeReport());
+      expect(out).toContain('lower = better');
+    });
+
+    it('P8: Repository Coherence shows "higher = better"', () => {
+      const out = formatPretty(makeReport({ coherence: 60 }));
+      expect(out).toContain('higher = better');
+    });
+
+    it('P8: subscore breakdown uses plain-language labels', () => {
+      const out = formatPretty(makeReport());
+      expect(out).toContain('— structural integrity');
+      expect(out).toContain('— props / state / imports');
+      expect(out).toContain('— CSS / a11y / layout');
+    });
+
+    // P9: trajectory delta
+    it('P9: shows ↓N (cleaner) when score improved from last run', () => {
+      const out = formatPretty(
+        makeReport({ slopIndex: 20, previousSlopIndex: 25 }),
+      );
+      expect(out).toMatch(/↓5/);
+      expect(out).toMatch(/cleaner/);
+    });
+
+    it('P9: shows ↑N (sloppier) when score regressed from last run', () => {
+      const out = formatPretty(
+        makeReport({ slopIndex: 30, previousSlopIndex: 25 }),
+      );
+      expect(out).toMatch(/↑5/);
+      expect(out).toMatch(/sloppier/);
+    });
+
+    it('P9: no delta line when no previous run', () => {
+      const out = formatPretty(makeReport({ slopIndex: 25, previousSlopIndex: undefined }));
+      expect(out).not.toMatch(/↓|↑/);
+    });
+
+    it('P9: no delta line for tiny change (noise floor ±0.5)', () => {
+      const out = formatPretty(
+        makeReport({ slopIndex: 25.3, previousSlopIndex: 25.0 }),
+      );
+      expect(out).not.toMatch(/↓|↑/);
+    });
+
+    // P10: --brief flag
+    it('P10: formatBriefReport is a 4-5 line terse summary', () => {
+      const out = formatBriefReport(makeReport({ slopIndex: 25, coherence: 60 }));
+      const lines = out.split('\n').filter((l) => l.trim().length > 0);
+      // Verdict (1) + headline (1) + coherence (1) + trust signal (1) = 4-5 lines
+      expect(lines.length).toBeLessThanOrEqual(5);
+      expect(lines.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('P10: formatBriefReport includes the verdict, headline, threshold, and delta', () => {
+      const out = formatBriefReport(
+        makeReport({ slopIndex: 20, previousSlopIndex: 25, coherence: 60 }),
+      );
+      expect(out).toMatch(/Repo is/i);
+      expect(out).toContain('Slop Index: 20/100');
+      expect(out).toContain('↓5');
+      expect(out).toContain('Coherence:');
+      expect(out).toMatch(/pass|fail/);
+    });
+
+    it('P10: formatBriefReport omits the category breakdown and issues dump', () => {
+      const out = formatBriefReport(makeReport({ issues: [makeIssue(), makeIssue(), makeIssue()] }));
+      expect(out).not.toContain('Category breakdown');
+      expect(out).not.toContain('Issues (');
+    });
+
+    // Why two scores? footer
+    it('explains why there are two scores in a footnote at the bottom', () => {
+      const out = formatPretty(makeReport({ coherence: 60 }));
+      expect(out).toContain('Why two scores?');
+      expect(out).toContain('docs/scoring-explained.md');
     });
   });
 });

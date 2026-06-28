@@ -61,7 +61,7 @@ import {
   baselinePath,
 } from '../engine/cache';
 import { formatJson } from '../report/json';
-import { formatPretty, formatWhyFailingReport } from '../report/pretty';
+import { formatPretty, formatWhyFailingReport, formatBriefReport } from '../report/pretty';
 import { formatSarif } from '../report/sarif';
 import { formatHtml } from '../report/html';
 import { formatAdvice } from '../report/advice';
@@ -160,6 +160,10 @@ export interface CliGlobalOptions extends ScanRunOptions {
   /** v0.14.5i (P3): render the top 5 rules dragging the score down
    *  without the full report. For quick triage on a slow terminal. */
   whyFailing?: boolean;
+  /** v0.14.5j (P10): terse output for CI / scripts. Just the headline,
+   *  the verdict, the threshold, and the delta. No category breakdown,
+   *  no top offenders, no issues dump. */
+  brief?: boolean;
 }
 
 export interface ScanRunResult {
@@ -592,6 +596,21 @@ export async function runScan(
 
   const configPath = findConfigPath(cwd);
 
+  // v0.14.5j (P9): read the previous run so formatPretty can render
+  // a "±N from last run" delta. Capped at 1 read because we only
+  // need the most-recent run. If no previous run exists, the field
+  // is undefined and the delta line is omitted from the output.
+  let previousRun: { slopIndex: number; timestamp: string } | undefined;
+  try {
+    const runs = readRuns(cwd);
+    const last = runs.at(-1);
+    if (last) {
+      previousRun = { slopIndex: last.slopIndex, timestamp: last.timestamp };
+    }
+  } catch {
+    // No prior run log — that's fine, just no delta.
+  }
+
   // (which always has filePath) instead of filtered from `allIssues`
   // (project-level rules may emit issues without filePath, leading to
   // undercounts).
@@ -930,6 +949,11 @@ export async function runScan(
     // the trust-signal line. See src/report/pretty.ts.
     defaultOffSuppressedCount: defaultOffApplied,
     defaultOffRuleCount: defaultOff.size,
+    // v0.14.5j (P9): trajectory delta. Read in this scope so the
+    // report is self-contained — formatPretty can render the
+    // "±N from last run" line without doing I/O.
+    previousSlopIndex: previousRun?.slopIndex,
+    previousRunTimestamp: previousRun?.timestamp,
     p90Score: aggregated.p90Score,
     peakScore: aggregated.peakScore,
     componentCount: aggregated.componentCount,
@@ -1194,6 +1218,17 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   if (options.whyFailing) {
     if (!options.quiet) {
       logger.info(formatWhyFailingReport(report));
+    }
+    return;
+  }
+
+  // v0.14.5j (P10): --brief is the terse output for CI / scripts.
+  // Just the verdict, headline, threshold, delta, and trust signal.
+  // Takes precedence over --format pretty for the same reason as
+  // --why-failing.
+  if (options.brief) {
+    if (!options.quiet) {
+      logger.info(formatBriefReport(report));
     }
     return;
   }
