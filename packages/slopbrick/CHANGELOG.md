@@ -5,9 +5,41 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.14.5d] - 2026-06-27 — Repository Memory pipeline + LockBrick prevention commands
+## [0.15.0] - 2026-06-26 — Repository Structure Platform (BREAKING)
 
-This release ships the **Repository Memory** surface end-to-end and
+This is a hard-break release. The platform is renamed from "Repository Memory Platform" to "Repository Structure Platform (RSP)". The `memory*` names are replaced with `structure*` everywhere. **Slop Score is replaced by 3 independent scores** (AI Quality / Engineering Hygiene / Security + a Repository Health composite).
+
+### Breaking changes
+
+- `MEMORY_SCHEMA_VERSION` (value 2) is replaced by `STRUCTURE_SCHEMA_VERSION` (value 3). The schema field `slopIndex` is replaced by `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+- The on-disk artifact `.slopbrick/memory.md` is renamed to `.slopbrick/structure.md`.
+- Types: `MemoryFile` → `StructureFile`; `MemoryCategory` → `StructureCategory`; `MemoryPattern` → `StructurePattern`.
+- Functions: `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`.
+- MCP tool `slop_suggest_with_memory` → `slop_suggest_with_structure` (the tool identifier changes).
+- The verdict enum is unchanged (6 values) but the user-facing report now exposes a 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) instead of the 6 verdict names. The engine/UI seam is a new `bucketForVerdict()` function in `packages/slopbrick/src/report/buckets.ts`.
+- New `packages/engine/` workspace package — the pure scanning logic is extracted from `slopbrick/src/engine/`.
+
+### Migration
+
+There is no automatic migration. Update any code that reads `.slopbrick/memory.md` to read `.slopbrick/structure.md`. Update any consumers of the `slop_suggest_with_memory` MCP tool to call `slop_suggest_with_structure` instead.
+
+### Added
+- `Verdict` enum, `isDefaultOff()`, and `VERDICTS` are now exported from `packages/core/src/verdicts.ts` as a single source of truth.
+- Zod schema `signalStrengthSchema` validates the calibration data at load time.
+- Schema codegen: `packages/core/scripts/codegen-types.ts` reads `schemas/v1/*.json` and writes TypeScript types to `packages/core/src/generated/`. CI fails if schemas and types are out of sync.
+- WebGL cleanup: `brick-shader.ts` calls `WEBGL_lose_context?.loseContext()` on unmount.
+- Tool cards are keyboard-accessible (button role + Enter/Space + focus-visible).
+- Skip-to-content link.
+- axe-core via Playwright in CI for the website.
+- `LowPowerDetector` skips WebGL on devices with `deviceMemory < 4` / `hardwareConcurrency < 4` / `prefers-reduced-motion`.
+- Per-brick jitter in the WebGL shader.
+- LCP-swap: WebGL canvas waits for `largest-contentful-paint` before initializing.
+- `bucketForVerdict()` — the engine/UI taxonomy seam.
+- Multi-score: `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+
+## [0.14.5d] - 2026-06-27 — Repository Structure pipeline + LockBrick prevention commands
+
+This release ships the **Repository Structure** surface end-to-end and
 adds the **LockBrick prevention loop** as three new CLI commands. The
 scanner now writes four atomic artifacts to `.slopbrick/` on every run,
 and the CLI exposes `watch`, `ci`, and `lock` to enforce the same
@@ -22,12 +54,12 @@ constraints before code lands.
   better), `categoryScores`, `issueCounts` (high/medium/low),
   `constitutionDrift`, `topOffenseIds` (top 3), `scanDurationMs`.
   Consumed by CI gates, dashboards, and the website's project page.
-  See `docs/repository-memory.md` for the full contract.
+  See `docs/repository-structure.md` for the full contract.
 
-- **`.slopbrick/memory.md`** — every `slopbrick scan` now also writes
+- **`.slopbrick/structure.md`** — every `slopbrick scan` now also writes
   the agent-readable markdown summary. Previously this existed as a
-  renderer (`renderMemoryMarkdown`) but was never wired into the
-  scan path. MCP `slop_suggest_with_memory` and external agent
+  renderer (`renderStructureMarkdown`) but was never wired into the
+  scan path. MCP `slop_suggest_with_structure` and external agent
   integrations read this file instead of re-parsing AST (100-1000×
   latency win on the agent integration).
 
@@ -46,12 +78,12 @@ constraints before code lands.
 
 - **`slopbrick memory`** — new subcommand for the agent-readable
   summary. Two modes:
-  - `slopbrick memory` (default `--show`) — print `.slopbrick/memory.md`
+  - `slopbrick memory` (default `--show`) — print `.slopbrick/structure.md`
     to stdout
-  - `slopbrick memory --regenerate` — re-render memory.md from the
+  - `slopbrick memory --regenerate` — re-render structure.md from the
     existing inventory.json + constitution.json (no scan, sub-second)
   The regenerate path is the workflow for "I just changed my
-  `slopbrick.config.mjs` and want a fresh memory.md without paying
+  `slopbrick.config.mjs` and want a fresh structure.md without paying
   for another full AST scan."
 
 - **`slopbrick watch`** — wires the existing `watchProject` engine
@@ -77,11 +109,11 @@ constraints before code lands.
 
 - **`slopbrick doctor` artifact checks** — extended to verify all
   four `.slopbrick/` artifacts (inventory.json, constitution.json,
-  health.json, memory.md) exist, are schema-valid, and warns the
+  health.json, structure.md) exist, are schema-valid, and warns the
   user if any are missing. The 5th check in doctor now points the
   user at the right `slopbrick scan` invocation to refresh.
 
-- **`docs/repository-memory.md`** — canonical reference for the
+- **`docs/repository-structure.md`** — canonical reference for the
   `.slopbrick/` artifact contract. Covers the on-disk layout, the
   TypeScript shape of each artifact, the on-write order, the
   graceful-degradation contract for loaders, and the future
@@ -765,7 +797,7 @@ fixes the references.
   include Python/Go, disable defaultOff, enable dormant, custom
   category weights, MCP server settings. 8.7K.
 - **`docs/MCP.md`** — full reference for the 10 MCP tools:
-  `slop_suggest`, `slop_suggest_with_memory`, `slop_scan_file`,
+  `slop_suggest`, `slop_suggest_with_structure`, `slop_scan_file`,
   `slop_explain_rule`, `slop_list_rules`, `slop_governance`,
   `slop_check_constitution`, `slop_architecture_score`,
   `slop_business_logic_score`, `slop_find_similar`. Each with
@@ -774,7 +806,7 @@ fixes the references.
 - **`docs/scoring-explained.md`** — what the two scores actually
   measure, the 2×2 quadrant of (Slop × Coherence) combinations,
   which one to focus on, the threshold rationale. 4.9K.
-- **`docs/repository-memory.md`** — the 4 `.slopbrick/` artifacts
+- **`docs/repository-structure.md`** — the 4 `.slopbrick/` artifacts
   contract, on-write order, graceful-degradation. 8.5K.
 
 ### Fixed (Documentation drift)
@@ -971,7 +1003,7 @@ Three narrow-axis MCP tools are now marked deprecated in favor of `slop_suggest`
 | `slop_architecture_score` | `slop_suggest` | `slop_suggest` already returns `architectureConsistency` |
 | `slop_business_logic_score` | `slop_suggest` | `slop_suggest` already returns `businessLogicCoherence` |
 
-The canonical four-tool surface (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_explain_rule`) plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive) is unchanged — `slop_suggest_with_memory` remains the preferred fast-path variant.
+The canonical four-tool surface (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_explain_rule`) plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive) is unchanged — `slop_suggest_with_structure` remains the preferred fast-path variant.
 
 Migration: replace `call('slop_governance', ...)` with `call('slop_suggest', ...)` and read `result.repositoryHealth` instead of `result.score`. No other code changes required.
 
@@ -984,15 +1016,15 @@ Two cross-file rules that detect AI-induced product copy drift:
 
 11 unit tests pass. Both rules have RULE_HINTS entries in `src/snippet/data.ts`. Category is `arch` (cross-file pattern drift) for both; severity is `medium`; both are `aiSpecific: true`.
 
-### Added (Repository Memory Platform — Phase 7 of v0.10)
+### Added (Repository Structure Platform — Phase 7 of v0.10)
 
-Latency win for the agent integration: every `slopbrick scan` will persist the pattern inventory to `.slop-audit/inventory.json` + `.slop-audit/constitution.json`, and MCP `slop_suggest_with_memory` will read it back instead of re-parsing AST. 100–1000× faster on agent invocations.
+Latency win for the agent integration: every `slopbrick scan` will persist the pattern inventory to `.slop-audit/inventory.json` + `.slop-audit/constitution.json`, and MCP `slop_suggest_with_structure` will read it back instead of re-parsing AST. 100–1000× faster on agent invocations.
 
-- **`engine/memory.ts`** — `loadInventory` / `saveInventory` / `loadConstitution` / `saveConstitution` with atomic `.tmp + rename` writes; `buildInventoryFromScan` (reuses `buildPatternInventory` for pattern extraction + component fingerprints from `facts.v2.components`, sha256 hash of sorted hooks + sorted props truncated to 16 chars); `buildConstitutionFromConfig` (declared/forbidden/forbiddenPrefixes; forbidden entries ending in `/` split into the prefix allowlist); `isInventoryFresh` + `invalidateFile` backed by a per-file `mtimeMs` map in `.slop-audit/cache.json`. Schema-gated by `MEMORY_SCHEMA_VERSION` so future format bumps migrate gracefully.
-- **`engine/memory-md.ts`** — pure `renderMemoryMarkdown(inventory, constitution)` renderer. Produces a stable, agent-readable markdown summary (detected patterns sorted by fileCount desc, canonical components merged by name, declared constitution, DO NOT CREATE list). Plus `writeMemoryMarkdown` + `readMemoryMarkdown` for atomic `.slop-audit/memory.md` persistence.
-- **`mcp/slop-suggest-memory.ts`** — `runSuggestWithMemory` wrapper. Reads the persisted markdown on the fast path; falls back to the existing `slop_suggest` (with a `memoryHint` annotation) when `.slop-audit/memory.md` is missing.
-- **New MCP tool `slop_suggest_with_memory`** — registers the fast-path variant in `src/mcp/tools.ts`. Documented as faster but requires a prior `slopbrick scan`.
-- **Scan pipeline integration** — at the end of `runScan`, `slopbrick scan` now persists the inventory + constitution (gated by `config.projectMemory !== false`; non-fatal on write failure; quiet under `--json` / `--quiet` / machine-readable output so CI logs stay clean). This is the side-effect that makes `slop_suggest_with_memory`'s fast path actually populate on first use.
+- **`engine/memory.ts`** — `loadInventory` / `saveInventory` / `loadConstitution` / `saveConstitution` with atomic `.tmp + rename` writes; `buildInventoryFromScan` (reuses `buildPatternInventory` for pattern extraction + component fingerprints from `facts.v2.components`, sha256 hash of sorted hooks + sorted props truncated to 16 chars); `buildConstitutionFromConfig` (declared/forbidden/forbiddenPrefixes; forbidden entries ending in `/` split into the prefix allowlist); `isInventoryFresh` + `invalidateFile` backed by a per-file `mtimeMs` map in `.slop-audit/cache.json`. Schema-gated by `STRUCTURE_SCHEMA_VERSION` so future format bumps migrate gracefully.
+- **`engine/memory-md.ts`** — pure `renderStructureMarkdown(inventory, constitution)` renderer. Produces a stable, agent-readable markdown summary (detected patterns sorted by fileCount desc, canonical components merged by name, declared constitution, DO NOT CREATE list). Plus `writeStructureMarkdown` + `readStructureMarkdown` for atomic `.slop-audit/structure.md` persistence.
+- **`mcp/slop-suggest-memory.ts`** — `runSuggestWithStructure` wrapper. Reads the persisted markdown on the fast path; falls back to the existing `slop_suggest` (with a `structureHint` annotation) when `.slop-audit/structure.md` is missing.
+- **New MCP tool `slop_suggest_with_structure`** — registers the fast-path variant in `src/mcp/tools.ts`. Documented as faster but requires a prior `slopbrick scan`.
+- **Scan pipeline integration** — at the end of `runScan`, `slopbrick scan` now persists the inventory + constitution (gated by `config.projectMemory !== false`; non-fatal on write failure; quiet under `--json` / `--quiet` / machine-readable output so CI logs stay clean). This is the side-effect that makes `slop_suggest_with_structure`'s fast path actually populate on first use.
 
 ### Added (Tier 2 graph-theoretic — Phase 6 of v0.10)
 
