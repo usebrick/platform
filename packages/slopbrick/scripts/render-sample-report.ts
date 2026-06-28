@@ -14,7 +14,7 @@ import type { ProjectReport, Issue } from '../src/types';
 const sample: ProjectReport = {
   version: '0.14.5j',
   generatedAt: '2026-06-28T01:00:00.000Z',
-  slopIndex: 25,
+  aiQuality: 25, engineeringHygiene: 25, security: 25, repositoryHealth: 25,
   assemblyHealth: 75,
   totalScore: 0,
   categoryScores: {
