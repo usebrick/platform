@@ -14,6 +14,11 @@ dist/
 .slopbrick/
 .slopbrick-cache.json
 
+# Local corpus reference — contains absolute paths + repo lists that are
+# private to each maintainer's machine. Commit the .template.json sibling
+# instead; copy + fill in to create the .local.json.
+**/corpus-manifest.local.json
+
 # Test caches
 .pytest_cache/
 

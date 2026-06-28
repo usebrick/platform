@@ -1,0 +1,106 @@
+{
+  "schema": "https://usebrick.dev/schemas/corpus-manifest/v1",
+  "schemaVersion": "1",
+  "name": "usebrick corpus (LOCAL TEMPLATE)",
+  "description": "Template for corpus-manifest.local.json. Copy this file to corpus-manifest.local.json and fill in the location-specific values. The local file is gitignored because the absolute path + size estimates + repo list are private to each maintainer's machine. The contract surface (this template) is committed so the format is documented and stable.",
+  "instructions": [
+    "1. Copy this file to corpus-manifest.local.json",
+    "2. Fill in the 'location.path' with your absolute path to the corpus",
+    "3. Update 'revision' to today's date (YYYY-MM-DD)",
+    "4. Update 'latestCalibration' with the current v# run",
+    "5. List the categories you have on disk in 'structure.negative.categories'",
+    "6. List the AI-coded repos in 'structure.positive.notable'",
+    "7. Update 'sizeEstimate' to match your local totals"
+  ],
+  "location": {
+    "type": "absolute-path",
+    "path": "/absolute/path/to/your/corpus"
+  },
+  "revision": "YYYY-MM-DD",
+  "owner": "your-name",
+  "latestCalibration": {
+    "name": "vN",
+    "runAt": "YYYY-MM-DD",
+    "signalStrengthFile": "packages/slopbrick/src/rules/signal-strength.json",
+    "verdictDistribution": {
+      "USEFUL": 0,
+      "OK": 0,
+      "NOISY": 0,
+      "INVERTED": 0,
+      "HYGIENE": 0,
+      "DORMANT": 0
+    },
+    "totalRules": 0
+  },
+  "structure": {
+    "negative": {
+      "path": "negative/",
+      "description": "Human-written code samples, organized by category.",
+      "categories": ["react", "python", "express"]
+    },
+    "positive": {
+      "path": "positive/",
+      "description": "AI-generated / AI-assisted code samples.",
+      "notable": ["anthropic-cookbook", "aider", "ai-chatbot"]
+    },
+    "v5": {
+      "path": "v5/",
+      "description": "v5 calibration outputs (older contract).",
+      "contents": ["filelists", "markdown", "scan"]
+    },
+    "v7": {
+      "path": "v7/",
+      "description": "v7 calibration outputs (current contract).",
+      "contents": ["negative", "positive", "scan"]
+    },
+    "filelists": {
+      "path": "filelists/",
+      "description": "Pre-computed file lists for each negative/positive source."
+    },
+    "scan": {
+      "path": "scan/",
+      "description": "Scan output dirs (symlinks to source files for the calibration pipeline)."
+    },
+    "labeled": {
+      "path": "labeled/",
+      "description": "Manually labeled subsets. Empty until curation work is done."
+    },
+    "tools": {
+      "path": "tools/baseline/",
+      "description": "Calibration tooling (classify.py, extract_*.py, rank_*.py)."
+    },
+    "output": {
+      "path": "output/",
+      "description": "Pipeline outputs (calibration reports, classification results)."
+    }
+  },
+  "scripts": {
+    "scanCorpus": "scan-corpus.py",
+    "scanCorpusParallel": "scan-corpus-parallel.py",
+    "scanFrontendOnly": "scan-frontend-only.py",
+    "buildFilelist": "build-filelist.sh",
+    "buildFilelistsV2": "build-filelists-v2.sh",
+    "buildSymlinksV6": "build-symlinks-v6.sh",
+    "buildSymlinksV7": "build-symlinks-v7.sh",
+    "buildPurePosV7": "build-pure-pos-v7.py"
+  },
+  "contract": {
+    "verdictTaxonomy": "packages/core/src/verdicts.ts",
+    "schemaPath": "packages/core/schemas/v1/",
+    "schemaVersion": "2",
+    "signalStrengthSchema": "packages/core/src/signal-strength-schema.ts",
+    "calibrationContract": "docs/superpowers/specs/2026-06-26-architectural-refactor-design.md"
+  },
+  "sizeEstimate": {
+    "negative": "X GB",
+    "positive": "Y GB",
+    "v5": "Z GB",
+    "v7": "W GB",
+    "totalApprox": "T GB"
+  },
+  "notes": [
+    "The corpus is intentionally OUTSIDE the git repo. It is too large to version, and a shallow clone is faster than a checkout for the calibration pipeline.",
+    "The 'location' field uses an absolute path. To move the corpus, update corpus-manifest.local.json (and the symlinks inside v5/scan and v7/scan).",
+    "The corpus is not a contract in the JSON-Schema sense — slopbrick reads source files from it but doesn't validate against a schema. The 'contract' field documents the related (but separate) types/schemas that the calibration output must conform to."
+  ]
+}
