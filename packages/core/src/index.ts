@@ -53,3 +53,15 @@ export {
 export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 
 export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
+
+// v0.15.0+: Types generated from schemas/v1/*.schema.json. The hand-written
+// equivalents in './structure-types' are @deprecated. Consumers should import
+// the generated types from '@usebrick/core' (re-exports below).
+//
+// Note: the generated names (RepositoryMemory*) are derived from the JSON
+// Schema 'title' field. In a future v0.16.0 the schema titles will be
+// updated to match the hand-written names (InventoryFile, etc.) so the
+// public API names align with the generated names without aliases.
+export type { RepositoryMemoryInventory } from './generated/inventory';
+export type { RepositoryMemoryConstitution } from './generated/constitution';
+export type { RepositoryMemoryHealth } from './generated/health';

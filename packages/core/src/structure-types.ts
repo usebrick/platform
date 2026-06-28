@@ -79,6 +79,7 @@ export interface ComponentFingerprint {
 /**
  * .slop-audit/inventory.json schema (machine-readable).
  */
+/** @deprecated Import from '@usebrick/core' (re-export of generated/inventory) */
 export interface InventoryFile {
   /** Schema version. Bump when adding/removing fields. */
   version: typeof STRUCTURE_SCHEMA_VERSION;
@@ -99,6 +100,7 @@ export interface InventoryFile {
 /**
  * .slop-audit/constitution.json schema (machine-readable).
  */
+/** @deprecated Import from '@usebrick/core' (re-export of generated/constitution) */
 export interface ConstitutionFile {
   version: typeof STRUCTURE_SCHEMA_VERSION;
   generatedAt: string;
@@ -140,6 +142,7 @@ export interface FileMtimeEntry {
  * `saveHealth()` in `memory.ts`. Schema version bumps are
  * coordinated with `health.schema.json`.
  */
+/** @deprecated Import from '@usebrick/core' (re-export of generated/health) */
 export interface HealthFile {
   /** Schema version. Bump when adding/removing fields. */
   version: typeof STRUCTURE_SCHEMA_VERSION;
