@@ -36,7 +36,9 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          # Reads packageManager from root package.json (pnpm@9.15.0).
+          # Don't pin a version here — v4 of this action errors on the
+          # duplicate, and v3 silently picks one of the two values.
 
       - name: Use Node.js 24
         uses: actions/setup-node@v4
