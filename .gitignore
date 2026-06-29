@@ -62,3 +62,14 @@ packages/slopbrick/docs/research/
 
 # Internal distribution / packaging notes
 packages/slopbrick/distribute/README.md
+
+# External corpus repos — cloned into the repo root for slopbrick
+# calibration work, but they are full third-party checkouts (each
+# has its own .git/, node_modules/, build artifacts). Not part of
+# the usebrick codebase. Add to .gitignore to prevent accidental
+# `git add -A` from committing ~1.4 GB of third-party code.
+research/
+automatic1111/
+chatglm/
+comfyui/
+elevenlabs-js/
