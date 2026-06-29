@@ -1,4 +1,10 @@
-export const VERSION = '0.15.0';
+// Read VERSION from package.json so a release-version bump propagates
+// without a separate code change here. The build's noExternal rule
+// inlines this at compile time, so the value is baked in.
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
+export const VERSION = pkg.version;
 
 // ---------------------------------------------------------------------------
 // v0.15.0 U.4 — Repository Memory Platform Health snapshot
