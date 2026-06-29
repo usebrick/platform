@@ -81,13 +81,21 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Verify dist/ exists
+        run: |
+          if [ ! -d packages/website/dist ]; then
+            echo "::error::Build did not produce packages/website/dist"
+            exit 1
+          fi
+          echo "dist/ contents:"
+          ls -la packages/website/dist
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
         with:
+          name: website-dist
           path: packages/website/dist
+          retention-days: 7
 
   deploy:
     needs: build
@@ -96,6 +104,12 @@ jobs:
       name: cloudflare-pages
       url: ${{ steps.deploy.outputs.deployment-url }}
     steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: website-dist
+          path: packages/website/dist
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         uses: cloudflare/wrangler-action@v3
