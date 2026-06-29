@@ -1,40 +1,50 @@
 ---
-// Calibration — the "stats" section.
-// Warm dark background, terracotta brick pattern overlay,
-// four big numbers that count up on first reveal.
+// Calibration — the calibration ritual.
+// The 4 score bricks count up from 0 to their target. The score
+// values are not just numbers; each one is a "calibrated" verdict
+// that the user can read into (87 = good, 92 = strong, 95 = solid,
+// 91 = ready to ship). Below the stats, the live `structure.json`
+// demo shows what the tool actually produces.
+import StructureDemo from './StructureDemo.astro';
 ---
 
-<section class="calibration brick-bg-warm reveal-stagger" id="calibration">
-  <div class="calibration__heading">
-    <div class="section-label" style="text-align: center; margin-bottom: var(--space-2);">calibrated, not guessed</div>
-    <h2 class="section-title" style="text-align: center;">The numbers that earn the name <em style="color: var(--text-accent); font-style: normal">usebrick</em>.</h2>
-  </div>
+<section class="section calibration" id="calibration">
+  <header class="calibration__head">
+    <span class="calibration__label">calibrated, not guessed</span>
+    <h2 class="calibration__title">
+      The numbers that earn the name <span class="calibration__accent">usebrick</span>.
+    </h2>
+  </header>
+
   <div class="calibration__stats">
-    <div class="stat">
-      <div class="stat__value" data-target="60" data-suffix="+">0</div>
-      <div class="stat__label">AI Quality</div>
-      <div class="stat__sub">detection rules</div>
+    <div class="calibration__stat">
+      <div class="calibration__value" data-target="87" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">aiQuality</div>
+      <div class="calibration__verdict">good</div>
     </div>
-    <div class="stat">
-      <div class="stat__value" data-target="13">0</div>
-      <div class="stat__label">Engineering Hygiene</div>
-      <div class="stat__sub">rules in dimension</div>
+    <div class="calibration__stat">
+      <div class="calibration__value" data-target="92" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">engineeringHygiene</div>
+      <div class="calibration__verdict">strong</div>
     </div>
-    <div class="stat">
-      <div class="stat__value" data-target="4">0</div>
-      <div class="stat__label">Security</div>
-      <div class="stat__sub">rules in dimension</div>
+    <div class="calibration__stat">
+      <div class="calibration__value" data-target="95" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">security</div>
+      <div class="calibration__verdict">solid</div>
     </div>
-    <div class="stat">
-      <div class="stat__value" data-target="100" data-suffix="+">0</div>
-      <div class="stat__label">Repository Health</div>
-      <div class="stat__sub">codebases calibrated</div>
+    <div class="calibration__stat">
+      <div class="calibration__value" data-target="91" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">repositoryHealth</div>
+      <div class="calibration__verdict">ready to ship</div>
     </div>
   </div>
+
+  <StructureDemo />
+
   <blockquote class="calibration__quote">
-    Every rule ships with a recall / FP ratio. A rule that fires
-    more noise than signal goes back to <em style="color: var(--text-accent); font-style: normal">defaultOff</em>
-    until it earns its way on.
-    <footer class="calibration__quote-author">— the usebrick calibration contract</footer>
+    Every rule ships with a recall/FP ratio. A rule that fires more
+    noise than signal goes back to <em>defaultOff</em> until it earns
+    its way on.
+    <cite class="calibration__cite">the usebrick calibration contract</cite>
   </blockquote>
 </section>

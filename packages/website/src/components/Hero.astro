@@ -1,36 +1,73 @@
 ---
-// Hero — eyebrow + title + subtitle + click-to-copy install.
-// The WebGL canvas (BrickShader) is its background; the .hero
-// class positions the content above it.
-import BrickShader from './BrickShader.astro';
+// Hero — the first brick of the wall.
+// One oversized brick centered in the viewport. The title sits
+// inside it; the install button is the visual anchor; the meta
+// row lives at the bottom edge of the brick. The wall behind
+// the brick is rendered by CSS (see `.hero__wall` in components.css).
+
+import Logo from './Logo.astro';
 ---
 
 <header class="hero" id="top">
-  <BrickShader />
-  <div class="hero__content">
-    <div class="hero__eyebrow">
-      <span class="hero__eyebrow-dot"></span>
-      <span>v0.15.0 — 4 tools, 60+ rules, 13 scores</span>
+  <div class="hero__wall" aria-hidden="true"></div>
+
+  <div class="brick brick--hero brick--raised hero__brick">
+    <div class="hero__nav-row">
+      <Logo size="md" />
     </div>
-    <h1 class="hero__title">
-      A <em>repository structure</em> for your code.
-    </h1>
-    <p class="hero__subtitle">
-      Detect, classify, and ship with confidence. usebrick.dev is a
-      four-tool platform that turns an LLM-augmented codebase into a
-      continuously-modeled codebase — one that knows its frameworks,
-      its patterns, its smells, and the rules that catch them.
-    </p>
-    <button class="hero__install" data-copy="npm install -g slopbrick" aria-label="Copy install command">
-      <span class="hero__install-prompt">$</span>
-      <span class="hero__install-cmd">npm install -g slopbrick</span>
-      <svg class="hero__install-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-      </svg>
-    </button>
+
+    <div class="hero__content">
+      <span class="hero__eyebrow">
+        <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+        v0.15.0 · 4 tools, 60+ rules, 13 scores
+      </span>
+
+      <h1 class="hero__title">
+        A <span class="hero__title-accent">repository structure</span> for your code.
+      </h1>
+
+      <p class="hero__subtitle">
+        Detect, classify, ship. usebrick.dev turns an LLM-augmented codebase
+        into one that knows its frameworks, patterns, smells, and the rules
+        that catch them.
+      </p>
+
+      <button
+        class="hero__install"
+        data-copy="npm install -g slopbrick"
+        data-magnetic
+        aria-label="Copy install command"
+      >
+        <span class="hero__install-prompt" aria-hidden="true">$</span>
+        <span class="hero__install-cmd">npm install -g slopbrick</span>
+        <svg
+          class="hero__install-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="hero__meta">
+      <span>MIT</span>
+      <span class="hero__meta-sep" aria-hidden="true">·</span>
+      <span>13.4 kB</span>
+      <span class="hero__meta-sep" aria-hidden="true">·</span>
+      <span>no telemetry</span>
+      <span class="hero__meta-sep" aria-hidden="true">·</span>
+      <span>Node &ge; 20</span>
+    </div>
   </div>
-  <div class="hero__scroll">
+
+  <div class="hero__scroll-hint" aria-hidden="true">
     <span>scroll</span>
     <span class="hero__scroll-line"></span>
   </div>

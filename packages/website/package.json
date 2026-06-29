@@ -3,7 +3,7 @@
   "version": "0.14.5",
   "private": true,
   "type": "module",
-  "description": "usebrick.dev marketing site. Brick-themed, Astro + Lenis + GSAP, WebGL hero shader.",
+  "description": "usebrick.dev marketing site. Brick-themed Astro site, no runtime deps beyond Astro itself.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -19,9 +19,7 @@
   },
   "dependencies": {
     "@tabler/icons-webfont": "^3.18.0",
-    "astro": "^4.16.0",
-    "gsap": "^3.12.5",
-    "lenis": "^1.1.13"
+    "astro": "^4.16.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
@@ -32,3 +30,4 @@
     "vitest": "^2"
   }
 }
+

@@ -1,0 +1,83 @@
+---
+// Logo — usebrick wordmark. Two pieces:
+//   1. The 2x2 brick mark (logo-mark.svg) — 4 bricks with a U
+//      letterform carved out. The mark IS the product.
+//   2. The wordmark "usebrick/dev" — a typeset name with a
+//      slash separator in the accent color.
+//
+// Sizes scale the mark + the text together.
+interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  href?: string | null;
+  ariaLabel?: string;
+}
+const { size = 'md', href = '/', ariaLabel = 'usebrick home' } = Astro.props;
+
+const markSize = size === 'sm' ? 18 : size === 'md' ? 22 : 48;
+const fontSize = size === 'sm' ? 12 : size === 'md' ? 14 : 32;
+---
+
+{href ? (
+  <a class:list={['logo', `logo--${size}`]} href={href} aria-label={ariaLabel}>
+    <span class="logo__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width={markSize} height={markSize}>
+        <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="var(--text-accent)" />
+        <rect x="13" y="0"  width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.85" />
+        <rect x="0"  y="13" width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.7" />
+        <rect x="13" y="13" width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.55" />
+        <path d="M7 7v6a5 5 0 0 0 10 0V7" stroke="var(--text-on-accent)" stroke-width="2" fill="none" stroke-linecap="round" />
+      </svg>
+    </span>
+    <span class="logo__wordmark" style={`--logo-fs: ${fontSize}px`}>
+      usebrick<span class="logo__slash">/</span><span class="logo__suffix">dev</span>
+    </span>
+  </a>
+) : (
+  <span class:list={['logo', `logo--${size}`]} aria-label={ariaLabel}>
+    <span class="logo__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width={markSize} height={markSize}>
+        <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="var(--text-accent)" />
+        <rect x="13" y="0"  width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.85" />
+        <rect x="0"  y="13" width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.7" />
+        <rect x="13" y="13" width="11" height="11" rx="1.5" fill="var(--text-accent)" opacity="0.55" />
+        <path d="M7 7v6a5 5 0 0 0 10 0V7" stroke="var(--text-on-accent)" stroke-width="2" fill="none" stroke-linecap="round" />
+      </svg>
+    </span>
+    <span class="logo__wordmark" style={`--logo-fs: ${fontSize}px`}>
+      usebrick<span class="logo__slash">/</span><span class="logo__suffix">dev</span>
+    </span>
+  </span>
+)}
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .logo__mark {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  .logo__wordmark {
+    font-size: var(--logo-fs, 14px);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .logo__slash {
+    color: var(--text-accent);
+    margin: 0 1px;
+  }
+  .logo__suffix {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .logo:hover .logo__suffix {
+    color: var(--text-primary);
+  }
+</style>

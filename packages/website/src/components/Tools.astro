@@ -1,12 +1,16 @@
 ---
-// Tools — the 4-tool grid section.
-// Each card is interactive (click-to-break); see break-on-hover.ts.
-import ToolCard from './ToolCard.astro';
+// Tools — the 2x2 brick course.
+// Each tool is a brick. The first brick (`pickbrick`) is a header
+// brick that spans both columns, so the section reads top-down:
+// big intro, then four tools, then the wall continues to the next
+// section.
+
+import BrickLayout from './BrickLayout.astro';
 
 const tools = [
   {
     name: 'pickbrick',
-    desc: 'Pick the right patterns from the curated catalog. Frontend, backend, full-stack — calibrated against 100+ production codebases.',
+    desc: 'Pick the right patterns from a curated catalog of frontend, backend, and full-stack recipes. Calibrated against 100+ production codebases.',
     icon: 'pickbrick' as const,
   },
   {
@@ -16,25 +20,86 @@ const tools = [
   },
   {
     name: 'slopbrick',
-    desc: 'The CLI: detect, classify, score, and report. 60+ rules, 13 scores, JSON Schemas, MCP server, the moat itself.',
+    desc: 'The CLI. Detect, classify, score, and report. 60+ rules, 13 scores, JSON Schemas, MCP server. The moat itself.',
     icon: 'slopbrick' as const,
   },
   {
     name: 'core',
-    desc: 'The shared spec. inventory / constitution / structure / health JSON Schemas that every tool reads and writes.',
+    desc: 'The shared spec. inventory, constitution, structure, and health JSON Schemas that every tool reads and writes.',
     icon: 'core' as const,
   },
 ];
 ---
 
-<section class="section tools reveal-stagger" id="tools">
-  <div class="section-label">the platform</div>
-  <h2 class="section-title">Four tools. One platform. <span style="color: var(--text-accent)">Zero slop.</span></h2>
-  <p class="section-body">
-    Every tool in usebrick.dev reads the same JSON Schemas and writes
-    the same data shape. Click a card to break it.
-  </p>
-  <div class="tools__grid">
-    {tools.map((t) => <ToolCard name={t.name} desc={t.desc} icon={t.icon} />)}
+<section class="section tools" id="tools">
+  <div class="brick-wall tools__wall">
+    <BrickLayout as="header" tone="raised" class="tools__head" span={2}>
+      <div class="tools__head-inner">
+        <span class="tools__label">the platform</span>
+        <h2 class="tools__title">Four tools. One platform. <span class="tools__title-accent">Zero slop.</span></h2>
+        <p class="tools__body">
+          Every tool reads the same JSON Schemas and writes the same shape.
+          Click a brick to crack it.
+        </p>
+      </div>
+    </BrickLayout>
+
+    {tools.map((t, i) => (
+      <BrickLayout
+        as="article"
+        tone="default"
+        interactive
+        class={`tools__brick tools__brick--${i + 1}`}
+        ariaLabel={`${t.name} — click to crack`}
+      >
+        <article
+          class="tool-card"
+          data-tool={t.name}
+          role="button"
+          tabindex="0"
+          aria-label={`Trigger crack animation on ${t.name} brick`}
+        >
+          <svg class="tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            {t.icon === 'pickbrick' && (
+              <>
+                <path d="M3 6h18l-2 12H5L3 6z" />
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="9" y1="11" x2="15" y2="11" />
+              </>
+            )}
+            {t.icon === 'mendbrick' && (
+              <>
+                <path d="M14 7l3-3 3 3-3 3-3-3z" />
+                <path d="M10 14l-3 3 3 3 3-3-3-3z" />
+                <line x1="13" y1="10" x2="11" y2="14" />
+              </>
+            )}
+            {t.icon === 'slopbrick' && (
+              <>
+                <path d="M4 17l6-6 4 4 6-6" />
+                <path d="M14 9h6v6" />
+                <circle cx="6" cy="6" r="1" fill="currentColor" />
+              </>
+            )}
+            {t.icon === 'core' && (
+              <>
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </>
+            )}
+          </svg>
+          <h3 class="tool-card__name">{t.name}</h3>
+          <p class="tool-card__desc">{t.desc}</p>
+          <span class="tool-card__hint">click to crack</span>
+          <svg class="tool-card__cracks" viewBox="0 0 280 160" preserveAspectRatio="none" aria-hidden="true">
+            <line class="tool-card__crack" x1="140" y1="80" x2="140" y2="80" />
+            <line class="tool-card__crack" x1="140" y1="80" x2="140" y2="80" />
+            <line class="tool-card__crack" x1="140" y1="80" x2="140" y2="80" />
+          </svg>
+        </article>
+      </BrickLayout>
+    ))}
   </div>
 </section>

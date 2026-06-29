@@ -12,7 +12,7 @@ interface StatEl extends HTMLElement {
 }
 
 export function initCounters(): () => void {
-  const stats = document.querySelectorAll<StatEl>('.stat__value[data-target]');
+  const stats = document.querySelectorAll<StatEl>('.calibration__value[data-target]');
   if (stats.length === 0) return () => {};
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

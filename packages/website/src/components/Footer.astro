@@ -1,19 +1,21 @@
 ---
-// Footer — minimal. The version is sourced from the prebuild
-// script (`scripts/prebuild.ts`) which reads slopbrick's
-// package.json so the two stay in sync.
+// Footer — the final mortar line. Thin, technical, and direct.
+// Version is sourced from the prebuild script so it stays in sync
+// with the package.json releases.
 import version from '../data/version.json';
 ---
 
 <footer class="footer">
-  <div class="footer__row">
-    <a href="https://github.com/usebrick/platform" rel="noopener">github</a>
-    <a href="https://www.npmjs.com/package/slopbrick" rel="noopener">npm</a>
-    <a href="https://github.com/usebrick/platform/blob/main/LICENSE" rel="noopener">license</a>
-    <a href="https://github.com/usebrick/platform/blob/main/CHANGELOG.md" rel="noopener">changelog</a>
-  </div>
-  <div>© usebrick — repository structure, one codebase at a time</div>
-  <div class="footer__version">
-    slopbrick <span>{version.slopbrick}</span> · core <span>{version.core}</span> · built {version.built}
+  <div class="brick brick--footer brick--muted">
+    <div class="footer__row">
+      <a href="https://github.com/usebrick/platform" rel="noopener">github</a>
+      <a href="https://www.npmjs.com/package/slopbrick" rel="noopener">npm</a>
+      <a href="https://github.com/usebrick/platform/blob/main/LICENSE" rel="noopener">license</a>
+      <a href="https://github.com/usebrick/platform/blob/main/CHANGELOG.md" rel="noopener">changelog</a>
+    </div>
+    <div class="footer__tag">usebrick. repository structure, one codebase at a time.</div>
+    <div class="footer__version">
+      slopbrick <span>{version.slopbrick}</span> · core <span>{version.core}</span> · built {version.built}
+    </div>
   </div>
 </footer>

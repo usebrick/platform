@@ -1,5 +1,5 @@
 /* ============================================================
-   usebrick.dev — global styles
+   usebrick.dev — design tokens + reset
    The token block is the load-bearing piece. Everything else
    references these custom properties; change a value here, the
    whole site re-themes.
@@ -15,10 +15,10 @@
   /* Text — warm off-whites */
   --text-primary:   #f3e9e1;
   --text-secondary: #d4c4b6;
-  --text-muted:     #8a7868;
+  --text-muted:     #9a8978;
   --text-on-accent: #1a0e08;
 
-  /* Accent — terracotta red (the brick color) */
+  /* Accent — terracotta (the brick color) */
   --text-accent:    #dc4a26;
   --fill-accent:    #c2410c;
   --fill-accent-hover: #9a3409;
@@ -34,19 +34,19 @@
   --bg-info:      #251a15;
 
   /* Borders — terracotta at various opacities */
-  --border:         rgba(220, 74, 38, 0.10);
-  --border-strong:  rgba(220, 74, 38, 0.18);
-  --border-accent:  rgba(220, 74, 38, 0.35);
+  --border:         rgba(220, 74, 38, 0.12);
+  --border-strong:  rgba(220, 74, 38, 0.22);
+  --border-accent:  rgba(220, 74, 38, 0.40);
   --border-danger:  rgba(184, 106, 74, 0.40);
 
   /* Type */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Radii */
-  --radius:    6px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
+  /* Radii — bricks have small (3px) radii so they read as cut stone */
+  --radius:    3px;
+  --radius-lg: 6px;
+  --radius-xl: 10px;
 
   /* Spacing scale (4px base) */
   --space-1: 0.25rem;
@@ -59,15 +59,19 @@
   --space-16: 4rem;
   --space-20: 5rem;
 
-  /* Easing — used by both CSS transitions and GSAP */
+  /* Mortar — the dark gap between bricks. The whole layout
+     reads as a wall because the mortar is everywhere. */
+  --mortar: 6px;
+
+  /* Easing */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Shadows — warm-tinted to fit the brick palette */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 24px rgba(220, 74, 38, 0.25);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 28px rgba(220, 74, 38, 0.30);
 }
 
 /* ============================================================
@@ -83,7 +87,7 @@
 }
 
 html {
-  scroll-behavior: auto; /* Lenis handles smooth scroll */
+  scroll-behavior: smooth;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
@@ -107,6 +111,9 @@ a {
 button {
   font-family: inherit;
   cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
 }
 
 img,
@@ -138,32 +145,6 @@ pre,
   border: 0;
 }
 
-/* The masonry offset — used by .compare and .tools grids to
-   echo brick coursework (every other "brick" is offset by half
-   the row height). The reveal animation respects the offset
-   because GSAP animates from computed positions. */
-.masonry {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
-}
-.masonry > *:nth-child(even) {
-  margin-top: 0.5rem;
-}
-
-/* Stagger reveal — applied to a parent; each child fades + slides
-   in. The animation is fired by `src/scripts/reveal.ts` once
-   ScrollTrigger detects the parent at the top of the viewport. */
-.reveal-stagger > * {
-  opacity: 0;
-  transform: translateY(20px);
-}
-.reveal-stagger.is-revealed > * {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
-}
-
 .skip-to-content {
   position: absolute;
   top: -100px;
@@ -181,10 +162,7 @@ pre,
 }
 
 /* ============================================================
-   Reduced motion — disable the showy animations for users who
-   prefer reduced motion. The content is still readable; the
-   scroll is still smooth; just the parallax/shake/transitions
-   are toned down.
+   Reduced motion
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -195,9 +173,5 @@ pre,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-  .reveal-stagger > * {
-    opacity: 1;
-    transform: none;
   }
 }
