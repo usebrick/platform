@@ -1,0 +1,103 @@
+name: Deploy usebrick.dev (Cloudflare Pages)
+
+# Builds packages/website and deploys the static dist/ to
+# Cloudflare Pages. Two paths to use this:
+#
+#   1. Cloudflare Dashboard (recommended for the initial setup):
+#      - Sign in to https://dash.cloudflare.com/ → Workers & Pages →
+#        Create application → Pages → Connect to Git → pick
+#        usebrick/platform, production branch = main.
+#      - Build command:
+#          pnpm install --frozen-lockfile \
+#          && pnpm --filter @usebrick/core build \
+#          && pnpm --filter @usebrick/website run build
+#      - Build output directory: packages/website/dist
+#      - Root directory: /
+#      - Environment variables: (none required for the build)
+#      - Custom domain: usebrick.dev (and www.usebrick.dev as a
+#        redirect to the apex).
+#      - Cloudflare will build and deploy on every push to main
+#        without needing this workflow. Skip step 2.
+#
+#   2. GitHub Actions (this workflow) — use when you want CI
+#      control over the build (e.g. a staging environment, an
+#      approval gate, or a different cadence than "every push to
+#      main"). Requires:
+#        - CLOUDFLARE_API_TOKEN  (Pages:Edit permission on the
+#          account) — get it from dash.cloudflare.com → My Profile
+#          → API Tokens → Create Token → Pages:Edit template
+#        - CLOUDFLARE_ACCOUNT_ID  (the account that owns the
+#          Pages project) — find it on the Workers & Pages
+#          overview page right sidebar
+#        - CLOUDFLARE_PAGES_PROJECT_NAME (e.g. "usebrick-dev")
+#      Add all three as GitHub Actions secrets (Settings →
+#      Secrets and variables → Actions → New repository secret).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/website/**'
+      - 'packages/core/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+# Allow only one concurrent deploy; cancel in-progress on new push.
+concurrency:
+  group: deploy-website
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # pnpm needs the monorepo, not just packages/website
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build core (workspace dep)
+        run: pnpm --filter @usebrick/core build
+
+      - name: Build website
+        run: pnpm --filter @usebrick/website run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: cloudflare-pages
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy packages/website/dist --project-name=${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main --commit-dirty=true
