@@ -35,7 +35,7 @@ test('LiveTerminal: slopbrick scan prints the calibration ritual', async ({ page
   // The output types character by character (~20ms each). 8 lines of
   // ~50 chars each = ~8s worst case. Generous timeout.
   await expect(term.locator('text=aiQuality')).toBeVisible({ timeout: 15_000 });
-  await expect(term.locator('text=writing .usebrick/structure.json')).toBeVisible();
+  await expect(term.locator('text=.usebrick/structure.json')).toBeVisible();
 });
 
 test('LiveTerminal: ArrowUp recalls the previous command', async ({ page }) => {

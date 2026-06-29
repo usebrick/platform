@@ -62,13 +62,12 @@ const COMMANDS: CommandSpec[] = [
     match: 'slopbrick scan',
     run: () => [
       { kind: 'output', text: '       ▸ resolving workspace @ /your-repo' },
-      { kind: 'output', text: '       ▸ loading 13 scores, 60+ rules' },
+      { kind: 'output', text: '       ▸ loading 4 scores, 80+ rules' },
       { kind: 'muted',  text: '       ▸ aiQuality .......... 87   good' },
       { kind: 'muted',  text: '       ▸ engineeringHygiene . 92   strong' },
       { kind: 'muted',  text: '       ▸ security ........... 95   solid' },
       { kind: 'muted',  text: '       ▸ repositoryHealth ... 91   ready to ship' },
-      { kind: 'output', text: '       ▸ writing .usebrick/structure.json' },
-      { kind: 'success', text: '✓ done in 1.42s' },
+      { kind: 'success', text: '✓ done in 1.42s — wrote .usebrick/structure.json' },
     ],
   },
   {
@@ -86,7 +85,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '13 categories · 60+ rules' },
+      { kind: 'accent', text: '13 categories · 80+ rules' },
       { kind: 'output', text: '  security     18   sql-injection, xss, ssrf, secret-leak, ...' },
       { kind: 'output', text: '  logic        14   null-check, await-promise, type-coerce, ...' },
       { kind: 'output', text: '  layout       12   dead-code, magic-number, naming-conv, ...' },
@@ -211,7 +210,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.15.0 · 13 scores · 60+ rules · no telemetry');
+    appendLine('muted', 'slopbrick 0.16.0 · 4 scores · 80+ rules · no telemetry');
     appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
     renderInputLine();
   };

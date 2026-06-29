@@ -87,22 +87,20 @@ Every `slopbrick scan` writes four atomic artifacts (and one cache file at the p
 
 ---
 
-## The 4-score model (v0.15.0+)
+## The 4-score model (v0.16.0+)
 
 The single `slopIndex` (lower = better) is replaced by **4 independent scores** (all 0-100, **higher = better**):
 
 | Score | What it measures | CI gate? |
 |-------|------------------|----------|
-| **`AI Quality`** | How good the AI-generated code is (USEFUL + OK rules) | **Yes** (≥ 70 passes) |
-| **`Engineering Hygiene`** | Internal consistency — one stack, one pattern, no drift | No (informational) |
-| **`Security`** | Security findings (security/* rules) | No (informational) |
-| **`Repository Health`** (composite) | Weighted sum of the 3 + secondary signals | No (informational) |
-
-`AI Quality` is composed of boundary (40%) + context (35%) + visual (25%).
+| **`aiQuality`** | AI-slop signatures (16 `ai/*` rules). INVERTED from legacy Slop Index. | **Yes** (≥ 70 passes) |
+| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | No (informational) |
+| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | No (informational) |
+| **`repositoryHealth`** (composite) | Weighted: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | No (informational) |
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem.
 
-The legacy `slopIndex` field is kept as optional on `ProjectReport` for backward compat with existing test fixtures and historical telemetry; will be removed in v0.16.0.
+The legacy `slopIndex` field is kept as optional on `ProjectReport` for backward compat with existing test fixtures and historical telemetry; the v0.14-compat removal is tracked separately.
 
 ---
 
