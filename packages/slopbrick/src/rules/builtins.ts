@@ -21,6 +21,16 @@ import { giantComponentRule } from './component/giant-component';
 import { multipleComponentsPerFileRule } from './component/multiple-components-per-file';
 import { shadcnPropMismatchRule } from './component/shadcn-prop-mismatch';
 import { importPathMismatchRule } from './context/import-path-mismatch';
+import { duplicateIndexRule } from './db/duplicate-index';
+import { enumSprawlRule } from './db/enum-sprawl';
+import { missingFkIndexRule } from './db/missing-fk-index';
+import { missingNotNullRule } from './db/missing-not-null';
+import { namingInconsistencyRule } from './db/naming-inconsistency';
+import { sqlConcatRule } from './db/sql-concat';
+import { brokenLinkRule } from './docs/broken-link';
+import { expiredCodeExampleRule } from './docs/expired-code-example';
+import { staleFunctionReferenceRule } from './docs/stale-function-reference';
+import { stalePackageReferenceRule } from './docs/stale-package-reference';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -46,12 +56,15 @@ import { halsteadAnomalyRule } from './perf/halstead-anomaly';
 import { terminologyDriftRule } from './product/terminology-drift';
 import { uxPatternFragmentationRule } from './product/ux-pattern-fragmentation';
 import { dangerousCorsRule } from './security/dangerous-cors';
+import { evalRule } from './security/eval';
 import { exposedEnvVarRule } from './security/exposed-env-var';
 import { failOpenAuthRule } from './security/fail-open-auth';
 import { hardcodedSecretRule } from './security/hardcoded-secret';
+import { localstorageTokenRule } from './security/localstorage-token';
 import { missingAuthCheckRule } from './security/missing-auth-check';
 import { publicAdminRouteRule } from './security/public-admin-route';
 import { sqlConstructionRule } from './security/sql-construction';
+import { targetBlankNoNoopenerRule } from './security/target-blank-no-noopener';
 import { unsafeHtmlRenderRule } from './security/unsafe-html-render';
 import { duplicateSetupRule } from './test/duplicate-setup';
 import { fakePlaceholderRule } from './test/fake-placeholder';
@@ -62,6 +75,7 @@ import { calcRawPxRule } from './typo/calc-raw-px';
 import { clampOffscaleRule } from './typo/clamp-offscale';
 import { mathButtonLabelUniformityRule } from './typo/math-button-label-uniformity';
 import { mathCtaVocabularyRule } from './typo/math-cta-vocabulary';
+import { placeholderTextRule } from './typo/placeholder-text';
 import { arbitraryEscapeRule } from './visual/arbitrary-escape';
 import { clampSoupRule } from './visual/clamp-soup';
 import { forcedLayoutRule } from './visual/forced-layout';
@@ -79,6 +93,7 @@ import { spacingScaleViolationRule } from './visual/spacing-scale-violation';
 import { draggingMovementsRule } from './wcag/dragging-movements';
 import { focusAppearanceRule } from './wcag/focus-appearance';
 import { focusObscuredRule } from './wcag/focus-obscured';
+import { missingAltRule } from './wcag/missing-alt';
 import { targetSizeRule } from './wcag/target-size';
 
 export const builtinRules: Rule[] = [
@@ -103,6 +118,16 @@ export const builtinRules: Rule[] = [
   multipleComponentsPerFileRule,
   shadcnPropMismatchRule,
   importPathMismatchRule,
+  duplicateIndexRule,
+  enumSprawlRule,
+  missingFkIndexRule,
+  missingNotNullRule,
+  namingInconsistencyRule,
+  sqlConcatRule,
+  brokenLinkRule,
+  expiredCodeExampleRule,
+  staleFunctionReferenceRule,
+  stalePackageReferenceRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
@@ -128,12 +153,15 @@ export const builtinRules: Rule[] = [
   terminologyDriftRule,
   uxPatternFragmentationRule,
   dangerousCorsRule,
+  evalRule,
   exposedEnvVarRule,
   failOpenAuthRule,
   hardcodedSecretRule,
+  localstorageTokenRule,
   missingAuthCheckRule,
   publicAdminRouteRule,
   sqlConstructionRule,
+  targetBlankNoNoopenerRule,
   unsafeHtmlRenderRule,
   duplicateSetupRule,
   fakePlaceholderRule,
@@ -144,6 +172,7 @@ export const builtinRules: Rule[] = [
   clampOffscaleRule,
   mathButtonLabelUniformityRule,
   mathCtaVocabularyRule,
+  placeholderTextRule,
   arbitraryEscapeRule,
   clampSoupRule,
   forcedLayoutRule,
@@ -161,5 +190,6 @@ export const builtinRules: Rule[] = [
   draggingMovementsRule,
   focusAppearanceRule,
   focusObscuredRule,
+  missingAltRule,
   targetSizeRule,
 ];

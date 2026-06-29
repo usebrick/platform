@@ -26,23 +26,22 @@ This is a deliberate choice. The two-user framing has been the source of design 
 
 The 0.9.0 release resolves this in favour of the agent. The 8 MCP tools are the canonical surface; the CLI subcommands are a thin wrapper. The composite Repository Health headline is the only number humans need to read; agents consume the per-axis breakdown.
 
-## 3. Score tiers (13 scores, 3 tiers)
+## 3. The 4 headline scores and 13 categories (v0.16.0+)
 
-The 13 scores are not equivalent. Treating them as a flat list would mislead readers into thinking all 13 carry the same weight or require the same validation depth. They fall into three tiers:
+The legacy v0.15.0 model had a single "Slop Index" composite plus 12 sub-scores, totalling 13 numbers split across 3 tiers. That model conflated AI-specific findings with engineering hygiene. v0.16.0 R3 replaced it with 4 orthogonal scores backed by 80+ rules across 13 categories.
 
-### Tier 1 — Deterministic (Constitution enforcement)
+### Tier 1 — Headline scores (the 4-score model)
 
-These scores are mechanical: same inputs always produce the same output, and the user can verify any finding by reading the code.
+These are the 4 numbers humans and CI gates read. Each is 0–100, **higher is better** (inverted from the legacy v0.15.0 Slop Index).
 
 | Score | Shape | Source | Confidence |
 |-------|-------|--------|------------|
-| **Slop Index** | 0–100 (lower = better) | Sum of severity-weighted issues | High — calibrated corpus |
-| **Architecture Consistency** | 0–100 (higher = better) | Pattern-duplication deductions | High — AST-derived |
-| **AI Security Risk** | categorical | Counts of 8 `security/*` rules | High — categorical, not gamed |
-| **Constitution drift** | pass / fail | `constitution.forbidden` + per-category | High — deterministic |
-| **Design-token drift** | inline violations | `visual/spacing-scale-violation` + `visual/radius-scale-violation` | High — value comparison |
-| **Pattern Fragmentation** | 0–100 | Per-category pattern inventory | High — AST-derived |
-| **PR Slop Score** | integer (lower = better) | Per-file weighted issue count | High — per-PR |
+| **aiQuality** | 0–100 | 16 `ai/*` rules (slop signatures, LLM-detection math) | High — calibrated corpus, INVERTED |
+| **engineeringHygiene** | 0–100 | Average of 6 category scores: arch, logic, layout, visual, component, test | High — 80+ deterministic rules |
+| **security** | 0–100 | AI Security Risk band (low=100, medium=67, high=33, critical=0) | High — categorical, not gamed |
+| **repositoryHealth** | 0–100 | Weighted composite: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | High — pure aggregation |
+
+The composite `repositoryHealth` is the single number for dashboards. The other three are the actionable axes: if `aiQuality` is low, the team has AI-slop; if `engineeringHygiene` is low, the structure is drifting; if `security` is low, fix the security findings.
 
 ### Tier 2 — Heuristic (specialised subcommands)
 

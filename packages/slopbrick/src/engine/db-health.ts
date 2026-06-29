@@ -22,7 +22,13 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { globby } from 'globby';
 import { parse as parseSql, loadModule as loadSqlModule } from 'pgsql-parser';
-import type { ResolvedConfig, DbFinding } from '../types';
+import type { ResolvedConfig, DbFinding, Issue, Rule } from '../types';
+import { duplicateIndexRule } from '../rules/db/duplicate-index';
+import { enumSprawlRule } from '../rules/db/enum-sprawl';
+import { missingFkIndexRule, moduleReady as fkModuleReady } from '../rules/db/missing-fk-index';
+import { missingNotNullRule, moduleReady as notNullModuleReady } from '../rules/db/missing-not-null';
+import { namingInconsistencyRule, moduleReady as namingModuleReady } from '../rules/db/naming-inconsistency';
+import { sqlConcatRule } from '../rules/db/sql-concat';
 
 // pgsql-parser is backed by a WASM module (libpg-query). It must be
 // loaded once before the first parse call. Loading is idempotent and
@@ -400,16 +406,41 @@ export async function buildDbHealth(
     }
   }
 
-  // Phase 2: run SQL rules
+  // Phase 2: run SQL rules (v0.17.0: call first-class Rule objects)
   const findings: DbFinding[] = [];
+  const dbRulesById: Record<DbFinding['ruleId'], Rule> = {
+    'db/missing-fk-index': missingFkIndexRule,
+    'db/duplicate-index': duplicateIndexRule,
+    'db/missing-not-null': missingNotNullRule,
+    'db/enum-sprawl': enumSprawlRule,
+    'db/naming-inconsistency': namingInconsistencyRule,
+    'db/sql-concat': sqlConcatRule,
+  };
+  // Ensure pgsql-parser WASM is loaded before any rule analyzes a SQL file.
+  await Promise.all([
+    fkModuleReady,
+    notNullModuleReady,
+    namingModuleReady,
+  ]);
   for (const { relPath, parsed } of parsedFiles) {
-    findings.push(
-      ...detectMissingFkIndexes(parsed, fkColumnsByTable, indexColumnsByTable, relPath),
-    );
-    findings.push(...detectDuplicateIndexes(parsed, relPath));
-    findings.push(...detectMissingNotNull(parsed, relPath));
-    findings.push(...detectEnumSprawl(parsed, relPath));
-    findings.push(...detectNamingInconsistency(parsed, relPath));
+    const context = { config: _config, filePath: relPath, cwd };
+    const facts = { filePath: relPath, v2: { _source: parsed.raw } as any };
+    for (const ruleId of ['db/missing-fk-index', 'db/duplicate-index', 'db/missing-not-null', 'db/enum-sprawl', 'db/naming-inconsistency'] as const) {
+      const rule = dbRulesById[ruleId];
+      const ruleContext = rule.create(context);
+      const issues: Issue[] = rule.analyze(ruleContext, facts);
+      for (const issue of issues) {
+        findings.push({
+          ruleId: issue.ruleId as DbFinding['ruleId'],
+          severity: issue.severity,
+          dbFile: relPath,
+          line: issue.line,
+          column: issue.column,
+          message: issue.message,
+          advice: issue.advice ?? '',
+        });
+      }
+    }
   }
 
   // Phase 3: TS files for SQL concat
@@ -420,7 +451,22 @@ export async function buildDbHealth(
     } catch {
       continue;
     }
-    findings.push(...detectSqlConcatInTs(source, relative(cwd, abs)));
+    const relPath = relative(cwd, abs);
+    const context = { config: _config, filePath: relPath, cwd };
+    const facts = { filePath: relPath, v2: { _source: source } as any };
+    const ruleContext = sqlConcatRule.create(context);
+    const issues: Issue[] = sqlConcatRule.analyze(ruleContext, facts);
+    for (const issue of issues) {
+      findings.push({
+        ruleId: 'db/sql-concat',
+        severity: issue.severity,
+        dbFile: relPath,
+        line: issue.line,
+        column: issue.column,
+        message: issue.message,
+        advice: issue.advice ?? '',
+      });
+    }
   }
 
   // Score

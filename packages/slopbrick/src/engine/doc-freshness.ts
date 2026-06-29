@@ -25,8 +25,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { globby } from 'globby';
-import type { DocFinding, DocDriftLevel, ResolvedConfig } from '../types';
+import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../types';
 import { extractImports } from '../mcp/patterns';
+import { brokenLinkRule } from '../rules/docs/broken-link';
+import { expiredCodeExampleRule } from '../rules/docs/expired-code-example';
+import { staleFunctionReferenceRule } from '../rules/docs/stale-function-reference';
+import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -532,10 +536,30 @@ export async function buildDocFreshness(
       continue;
     }
     const relPath = relative(cwd, abs);
-    findings.push(...detectStalePackages(source, relPath, packages));
-    findings.push(...detectStaleFunctions(source, relPath, exports));
-    findings.push(...detectExpiredCodeExamples(source, relPath, cwd, packages));
-    findings.push(...detectBrokenLinks(source, relPath, cwd));
+    // v0.17.0: call first-class Rule objects instead of internal detect* fns.
+    const context = { config, filePath: relPath, cwd };
+    const facts = { filePath: relPath, v2: { _source: source } as any };
+    const ruleConfigs: Array<{ rule: Rule; ruleId: DocFinding['ruleId'] }> = [
+      { rule: stalePackageReferenceRule, ruleId: 'docs/stale-package-reference' },
+      { rule: staleFunctionReferenceRule, ruleId: 'docs/stale-function-reference' },
+      { rule: expiredCodeExampleRule, ruleId: 'docs/expired-code-example' },
+      { rule: brokenLinkRule, ruleId: 'docs/broken-link' },
+    ];
+    for (const { rule, ruleId } of ruleConfigs) {
+      const ruleContext = rule.create(context as any);
+      const issues: Issue[] = rule.analyze(ruleContext, facts as any);
+      for (const issue of issues) {
+        findings.push({
+          ruleId: ruleId,
+          severity: issue.severity,
+          docFile: relPath,
+          line: issue.line,
+          column: issue.column,
+          message: issue.message,
+          advice: issue.advice ?? '',
+        });
+      }
+    }
     scanned++;
   }
 

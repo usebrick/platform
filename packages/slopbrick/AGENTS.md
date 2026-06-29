@@ -8,19 +8,16 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 
 ## What this project is
 
-`slopbrick` is a **Repository Constitution Engine for AI Coding Agents**. It scans React, Vue, Svelte, Solid, Qwik, Astro, and HTML files and surfaces 13 scores across three tiers — but the moat is the **Constitution** (the `slopbrick.config.mjs` block that declares your stack), and every other score is a proof that the Constitution is being followed.
+`slopbrick` is a **Repository Constitution Engine for AI Coding Agents**. It scans React, Vue, Svelte, Solid, Qwik, Astro, and HTML files and computes **4 headline scores** (`aiQuality`, `engineeringHygiene`, `security`, `repositoryHealth`) backed by 80+ rules across 13 categories — but the moat is the **Constitution** (the `slopbrick.config.mjs` block that declares your stack), and every other score is a proof that the Constitution is being followed.
 
-**Tier 1 — Deterministic (Constitution enforcement):**
+**Tier 1 — Headline scores (the 4-score model, v0.16.0+):**
 
 | Score | Shape | Use it for |
 |-------|-------|------------|
-| **Slop Index** | 0–100 (lower = better) | Frontend lint quality |
-| **Architecture Consistency** | 0–100 (higher = better) | Cross-file pattern duplication |
-| **AI Security Risk** | `low` / `medium` / `high` / `critical` | AI-induced security failures |
-| **Constitution drift** | pass / fail + per-category | Imports that violate the declared stack |
-| **Design-token drift** | inline violations | Spacing/radius off declared scales |
-| **Pattern Fragmentation** | 0–100 | Distinct patterns per category — input to `slop_suggest` |
-| **PR Slop Score** | integer (lower = better) | One number per PR, weighted by severity |
+| **aiQuality** | 0–100 (higher = better) | AI-slop signatures (16 `ai/*` rules) — INVERTED from legacy Slop Index |
+| **engineeringHygiene** | 0–100 (higher = better) | Boundary / logic / layout / visual / component / test categories |
+| **security** | 0–100 (higher = better) | AI Security Risk (low/medium/high/critical → 100/67/33/0) |
+| **repositoryHealth** | 0–100 (higher = better) | Weighted composite: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test |
 
 **Tier 2 — Heuristic (specialised subcommands):**
 

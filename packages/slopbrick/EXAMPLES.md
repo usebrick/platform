@@ -249,30 +249,31 @@ be updated based on the corpus data.
 
 ## Custom category weights
 
-The default weights for the headline Slop Index:
+The default weights for the headline `repositoryHealth` (v0.16.0+):
 
 | Subscore | Default weight |
 |---|---|
-| `boundary` | 40% |
-| `context` | 35% |
-| `visual` | 25% |
+| `aiQuality` | 40% |
+| `engineeringHygiene` | 30% |
+| `security` | 20% |
+| `testQuality` | 10% |
 
-To change them (e.g. you care more about visual than boundary):
+To change them (e.g. you care more about AI quality than security):
 
 ```js
 export default defineConfig({
   categoryWeights: {
-    visual: 0.50,
-    boundary: 0.30,
-    context: 0.20,
+    aiQuality: 0.50,
+    security: 0.10,
+    engineeringHygiene: 0.30,
+    testQuality: 0.10,
   },
 });
 ```
 
-Weights must sum to 1.0. The Slop Index is recalculated using
-your weights.
+Weights must sum to 1.0. The `repositoryHealth` composite is recalculated using your weights.
 
-For per-category importance (not the headline weight):
+For per-category importance (adjusts the engineeringHygiene sub-score, not the headline):
 
 ```js
 export default defineConfig({
@@ -323,7 +324,7 @@ everything slopbrick knows. Most teams should leave it off.
 | `workspaces` | `string[]` | `[]` | Monorepo workspace globs |
 | `rules` | `Record<string, Severity\|'off'>` | `{}` | Per-rule severity overrides |
 | `thresholds` | `{ meanSlop, p90Slop, individualSlopThreshold }` | `{ 15, 30, 60 }` | CI gate thresholds |
-| `categoryWeights` | `Record<string, number>` | `{ boundary: 0.40, context: 0.35, visual: 0.25 }` | Slop Index weights |
+| `categoryWeights` | `Record<string, number>` | `{ aiQuality: 0.40, engineeringHygiene: 0.30, security: 0.20, testQuality: 0.10 }` | repositoryHealth composite weights |
 | `mcp` | `{ preloadStructure, includeDefaultOff, trustMode }` | `{ true, false, false }` | MCP server settings |
 | `constitution` | `string` | `null` | Path to a custom `.slopbrick/constitution.json` |
 | `output` | `{ format, dir }` | `{ format: 'pretty', dir: '.slopbrick' }` | Output settings |

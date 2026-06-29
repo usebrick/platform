@@ -147,6 +147,7 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     'wcag/dragging-movements': 'medium',
     'wcag/focus-appearance': 'high',
     'wcag/focus-obscured': 'low',
+    'wcag/missing-alt': 'medium',
     'wcag/target-size': 'high',
     'test/weak-assertion': 'medium',
     'test/duplicate-setup': 'medium',

@@ -1,7 +1,7 @@
 {
   "name": "slopbrick",
   "version": "0.16.0",
-  "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 60+ rules and 13 scores, and persists the structure for AI agents and CI.",
+  "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 80+ rules across 13 categories, computes 4 scores (aiQuality, engineeringHygiene, security, repositoryHealth), and persists the structure for AI agents and CI.",
   "type": "module",
   "bin": {
     "slopbrick": "bin/slopbrick.js"
@@ -31,6 +31,7 @@
     "dev": "tsx src/index.ts",
     "generate:rules": "tsx scripts/generate-rule-registry.ts && tsx scripts/generate-rule-catalog.ts",
     "generate:rules:catalog": "tsx scripts/generate-rule-catalog.ts",
+    "bench:scan": "tsx scripts/bench-scan.ts",
     "prebuild": "pnpm --filter @usebrick/engine build",
     "build": "pnpm --filter @usebrick/engine build && pnpm generate:rules && tsup",
     "test": "pnpm generate:rules && tsup && vitest run",
