@@ -31,7 +31,15 @@ const fields = ['dependencies', 'devDependencies', 'peerDependencies', 'optional
 // deps keeps pnpm-lock.yaml in sync so tsup can find the source
 // during the bundle step. They're not published to npm; the
 // bundle means the dist/ doesn't need them at runtime.
-const ALLOWED_WORKSPACE_BUNDLE_DEPS = new Set(['@usebrick/core']);
+const ALLOWED_WORKSPACE_BUNDLE_DEPS = new Set([
+  '@usebrick/core',
+  // v0.15.0: @usebrick/engine was extracted into a private
+  // workspace package. tsup.config.ts → noExternal bundles it
+  // into dist/ so the published tarball has no runtime dep on
+  // it; the workspace:* entry here just keeps pnpm-lock.yaml in
+  // sync so tsup can resolve the source during the bundle step.
+  '@usebrick/engine',
+]);
 const offenders = [];
 
 for (const field of fields) {
