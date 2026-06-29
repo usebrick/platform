@@ -72,9 +72,25 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Verify release tag matches packages/slopbrick version
+        # Resolve the release tag from whichever event triggered
+        # the run. `release: published` provides
+        # `github.event.release.tag_name`; `workflow_dispatch`
+        # provides `github.event.inputs.tag` (and `GITHUB_REF`
+        # when the dispatch was started from a tag context).
+        # Falling back in that order keeps both trigger paths
+        # working without duplicating the version-mismatch check.
         run: |
-          TAG="${RELEASE_TAG#v}"
-          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            RELEASE_TAG="${{ github.event.release.tag_name }}"
+          elif [ -n "${{ github.event.inputs.tag }}" ]; then
+            RELEASE_TAG="${{ github.event.inputs.tag }}"
+          elif [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
+            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
+          else
+            echo "::error::Could not derive version from release tag (no release event, no inputs.tag, no refs/tags/v*)"
+            echo "::error::Trigger via 'gh release create' (preferred) or pass --input tag=vX.Y.Z to workflow_dispatch."
+            exit 1
+          fi
           PKG_VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
           if [ -z "$RELEASE_TAG" ]; then
             echo "::error::Could not derive version from release tag"
@@ -86,6 +102,7 @@ jobs:
             exit 1
           fi
           echo "Releasing slopbrick v$PKG_VERSION"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
 
       - name: Verify version is not already published
         run: |
