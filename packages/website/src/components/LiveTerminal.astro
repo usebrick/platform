@@ -1,0 +1,44 @@
+---
+// LiveTerminal — a real, typeable terminal the visitor can drive.
+// The static markup is just the chrome. The script (live-terminal.ts)
+// renders the seed banner, then takes over for typing and history.
+---
+
+<section class="section live-terminal-section" id="terminal" aria-label="Interactive terminal demo">
+  <header class="live-terminal-section__head">
+    <span class="live-terminal-section__label">try it</span>
+    <h2 class="live-terminal-section__title">
+      Run it. <span class="live-terminal-section__accent">Right here.</span>
+    </h2>
+    <p class="live-terminal-section__body">
+      The full CLI runs in your terminal. So does this one. Click in, type a command, press Enter.
+    </p>
+  </header>
+
+  <div class="live-terminal" data-live-terminal>
+    <div class="structure-demo__panel">
+      <div class="structure-demo__bar">
+        <span class="structure-demo__dot" aria-hidden="true"></span>
+        <span class="structure-demo__dot" aria-hidden="true"></span>
+        <span class="structure-demo__dot" aria-hidden="true"></span>
+        <span class="structure-demo__path" data-live-terminal-path>~ /your-repo</span>
+      </div>
+      <div
+        class="live-terminal__body"
+        data-live-terminal-body
+        tabindex="0"
+        role="application"
+        aria-label="Interactive terminal. Focus and type a command, then press Enter. Use Up and Down arrows to recall history."
+      >
+        <noscript>
+          <span class="lt-line lt-line--muted">
+            This terminal needs JavaScript. The CLI itself runs without it: `npm install -g slopbrick`.
+          </span>
+        </noscript>
+      </div>
+    </div>
+    <p class="lt-hint" aria-hidden="true">
+      type <kbd>help</kbd> to list commands, <kbd>↑</kbd>/<kbd>↓</kbd> for history, <kbd>clear</kbd> to reset
+    </p>
+  </div>
+</section>

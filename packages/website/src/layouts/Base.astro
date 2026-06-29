@@ -48,12 +48,14 @@ const {
       import { initCopyInstall } from '../scripts/copy-install';
       import { initBreakOnHover } from '../scripts/break-on-hover';
       import { initStructureDemo } from '../scripts/structure-demo';
+      import { initLiveTerminal } from '../scripts/live-terminal';
 
       const start = () => {
         initCounters();
         initCopyInstall();
         initBreakOnHover();
         initStructureDemo();
+        initLiveTerminal();
       };
 
       if (document.readyState === 'loading') {

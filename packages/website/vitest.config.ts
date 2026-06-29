@@ -4,6 +4,10 @@
 // Without this scope, `pnpm test` picks up the .spec.ts files
 // and Playwright chokes when vitest tries to import them.
 //
+// Tests use the jsdom environment so DOM globals (document,
+// window, IntersectionObserver mocks, etc.) are available —
+// these are pure browser scripts, not Node code.
+//
 // passWithNoTests: true lets `pnpm test` succeed when the website
 // has no unit tests (the case after deleting the WebGL test suite).
 // When new unit tests are added, they will run automatically.
@@ -14,5 +18,6 @@ export default defineConfig({
     include: ['tests/unit/**/*.{test,spec}.{ts,tsx,js,jsx}'],
     exclude: ['node_modules', 'dist', '.astro', 'tests/a11y/**'],
     passWithNoTests: true,
+    environment: 'jsdom',
   },
 });
