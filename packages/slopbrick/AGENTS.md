@@ -41,7 +41,7 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 
 **It does not detect AI authorship.** It detects code-quality patterns (arbitrary Tailwind values, inline styles, hook soup, missing accessibility, duplicated components, hardcoded secrets, off-scale spacing, constitution violations, architectural drift) that are strongly correlated with AI-generated code — AND that AI agents can fix or avoid with the right signals.
 
-**Primary user is the AI agent.** The killer feature is `slop_suggest` — agents call it before writing code, get the project's `doNotCreate` list, follow the existing patterns, never violate the Constitution. The human-facing CLI is the enforcement layer.
+**Primary user is the AI agent.** The core workflow is `slop_suggest`: agents call it before writing code, get the project's `doNotCreate` list, follow the existing patterns, never violate the Constitution. The human-facing CLI is the enforcement layer.
 
 **Industry context (2024–2026):**
 
@@ -53,7 +53,7 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 - AWS Kiro outage (Dec 2025): agentic coding tool deleted production, 13-hour outage. "Predictable given unchecked AI permissions."
 - Sonar 2025: **$306,000/yr per 1M LoC** of code-level technical debt. The calibration baseline for `slopbrick maintenance-cost` in 0.8.0.
 
-**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the 12-phase plan. Current state: Phases 1–12 shipped in v0.9.0 (Slop Index, Constitution, Architecture Consistency, AI Security Risk, Test Quality, Business Logic, Pattern Fragmentation, PR Slop Score, Documentation Freshness, Database Health, AI Maintenance Cost, Product Consistency, Repository Health composite + AI Debt band, MCP tool consolidation). **Next milestone: v0.10 — the credibility milestone** (per-rule P/R/FPR + peer-reviewed thresholds). See [`docs/research/v0.10-implementation-plan.md`](./docs/research/v0.10-implementation-plan.md). **v1.0 is the far-horizon stability commitment** (6+ months after v0.10) and is NOT in this release train.
+**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the 12-phase plan. Current state: Phases 1–12 shipped in v0.9.0 (Slop Index, Constitution, Architecture Consistency, AI Security Risk, Test Quality, Business Logic, Pattern Fragmentation, PR Slop Score, Documentation Freshness, Database Health, AI Maintenance Cost, Product Consistency, Repository Health composite + AI Debt band, MCP tool consolidation). Next milestone is v0.10 (the credibility milestone: per-rule P/R/FPR + peer-reviewed thresholds). v1.0 is the far-horizon stability commitment, at least six months after v0.10, and is not in this release train.
 
 ---
 
@@ -217,7 +217,7 @@ pnpm test
 - Add explicit return types to exported functions.
 - Keep IO and business logic separate.
 - Prefer small, focused files.
-- **When bumping VERSION** in `src/types.ts`, also bump `package.json` and search fixtures for hardcoded versions. Update `tests/types.test.ts`, `tests/cli.test.ts`, `tests/cache-orphan-tmp.test.ts`, `tests/engine/structure.test.ts` to use the live `VERSION` constant — don't hardcode `0.5.2`.
+- When bumping `VERSION` in `src/types.ts`, also bump `package.json` and search fixtures for hardcoded versions. Update `tests/types.test.ts`, `tests/cli.test.ts`, `tests/cache-orphan-tmp.test.ts`, `tests/engine/structure.test.ts` to use the live `VERSION` constant. Don't hardcode `0.5.2`.
 
 ---
 

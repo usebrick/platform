@@ -52,21 +52,30 @@ Beyond the headline scores, each rule has a measured per-rule P/R/FPR against th
 | **INVERTED** | lift < 1.0 | 11 | fires more on human than AI; needs different corpus |
 | **DORMANT** | 0 fires both | 1 | needs new corpus (DnD-heavy) |
 
-Full per-rule table in [`docs/research/v4-per-rule-pr-fpr.md`](./research/v4-per-rule-pr-fpr.md).
+Per-rule precision / recall / FPR numbers are kept in the
+operator's local calibration log (not in the public repo).
 
 ---
 
-## 1. Slop Index
+## 1. AI Quality (v0.15.0+ replacement for `slopIndex`)
 
-`slopIndex` aggregates per-file, per-rule, per-category issue densities into one number in [0, 100]. **Lower is better.**
+`aiQuality` aggregates per-file, per-rule, per-category issue
+densities into one number in [0, 100]. **Higher is better.**
+`aiQuality = 100 − slopIndex` (the v0.15.0 model inverts the
+v0.14 single-axis, where lower was better).
 
-### Formula (Phase 2 §10)
+### Formula
+
+`aiQuality` is computed as the inverted version of the v0.14
+`slopIndex` formula: `100 − S`, where
 
 ```
 S = (0.40 × S_boundary) + (0.35 × S_context) + (0.25 × S_visual)
 ```
 
-Each subscore = `min(100, severityPoints / componentCount)`, where `severityPoints = sum(SEVERITY_WEIGHTS[issue.severity])` for issues in that bucket.
+Each subscore = `min(100, severityPoints / componentCount)`,
+where `severityPoints = sum(SEVERITY_WEIGHTS[issue.severity])`
+for issues in that bucket.
 
 **Bucket mappings:**
 - **Boundary (40%)** — structural integrity: file-size limits, multiple components per file, direct API calls in UI.
@@ -75,12 +84,13 @@ Each subscore = `min(100, severityPoints / componentCount)`, where `severityPoin
 
 ### Interpretation bands
 
-The bands below use the raw `slopIndex` value reported by `slopbrick scan`.
+The bands below use the `aiQuality` value reported by
+`slopbrick scan` (higher is better — opposite of v0.14).
 
-- **0–10:** Very clean; likely hand-maintained or heavily reviewed.
-- **10–25:** Typical AI-assisted codebase; address high/critical issues first.
-- **25–50:** Visible drift; treat as technical debt with active cleanup.
-- **50+:** High slop; prioritize refactoring and rule tuning before adding features.
+- **90–100:** Very clean; likely hand-maintained or heavily reviewed.
+- **75–89:** Typical AI-assisted codebase; address high/critical issues first.
+- **50–74:** Visible drift; treat as technical debt with active cleanup.
+- **0–49:** High slop; prioritize refactoring and rule tuning before adding features.
 
 ### CI gates
 
@@ -88,17 +98,28 @@ The bands below use the raw `slopIndex` value reported by `slopbrick scan`.
 
 ```js
 thresholds: {
-  meanSlop: 25,             // fail if project average exceeds this
-  p90Slop: 45,              // fail if worst-10% average exceeds this
-  individualSlopThreshold: 70,  // fail if any single file exceeds this
+  // v0.15.0+: breach when aiQuality DROPS below the threshold
+  // (legacy `meanSlop` field is kept for backward compat; the
+  // comparison direction flipped)
+  meanSlop: 25,             // fail if aiQuality < this
+  p90Slop: 45,              // fail if the 90th-percentile composite > this
+  individualSlopThreshold: 70,  // fail if any single file > this (per-file)
 }
 ```
 
-A threshold breach exits **1**. The `--no-increase` flag exits **2** if the score grew since the last run.
+A threshold breach exits **1**. The `--no-increase` flag exits
+**2** if `aiQuality` dropped since the last run.
 
-### Empirical calibration
+### Empirical calibration (carried over from v0.14)
 
-Tested against 6,142 AI-generated samples vs. 54,980 human-written samples (shadcn/ui, calcom, dub, mantine, excalidraw, lobehub). **Mean Slop Index is 5× higher on AI code than human code** — clean separation without manual tuning.
+Tested against 6,142 AI-generated samples vs. 54,980
+human-written samples (shadcn/ui, calcom, dub, mantine,
+excalidraw, lobehub). **Mean `aiQuality` is 5× lower on AI
+code than human code** — clean separation without manual
+tuning. The v0.15.0 split (AI Quality / Engineering Hygiene
+/ Security / Repository Health) lets users see the actual
+problem (AI drift vs. internal-consistency drift) when
+separation breaks down.
 
 ---
 
@@ -141,7 +162,7 @@ Drift detection is wired into the headline score as of v0.9.2. Two new deduction
 - **`crossFileDrift` (-10 per extra variant per stem):** same conceptual entity realized as 2+ distinct names in one category across files. Example: `UserService` + `UserManager` + `UserHandler` all strip to stem `User` → 3 variants → 2 extras → -20.
 - **`crossCategoryDrift` (-15 per stem in 2+ categories):** same stem appears with 2+ variants in 2+ categories. Example: `User` exists as both a service (3 variants) and an ormModel (2 variants) → the stem spans roles → -15.
 
-**Status: experimental.** Empirically calibrated against 10 Python + Go repos ([drift-calibration-v0.9.2.md](./research/drift-calibration-v0.9.2.md)):
+**Status: experimental.** Empirically calibrated against 10 Python + Go repos (calibration log kept in the operator's local notes):
 
 | Category | Raw precision | Prod-only precision | Verdict |
 |----------|---------------|---------------------|---------|

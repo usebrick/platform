@@ -82,13 +82,22 @@ tools can read it without parsing TS/JS.
 **Schema:** [`health.schema.json`](../core/schemas/v1/health.schema.json) (new in v0.14.5d)
 
 ```ts
+// v0.15.0+ (schema version '3')
 interface HealthFile {
-  version: '2';
+  version: '3';
   generatedAt: string;
   workspace: string;
-  slopIndex: number;                       // 0-100, lower is better
-  categoryScores: Record<string, number>;  // 0-100 per category
+  // The v0.15.0 4-score model — each is 0-100, higher is better.
+  // aiQuality replaces the legacy v0.14 slopIndex.
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
   issueCounts: { high: number; medium: number; low: number };
+  // v0.15.0+ kept these optional for backward compat with v0.14
+  // dashboards. Will be removed in v0.16.0.
+  slopIndex?: number;                      // 0-100, lower is better (legacy)
+  categoryScores?: Record<string, number>; // per-category (legacy)
   constitutionDrift?: number;              // # of constitution violations
   topOffenseIds?: string[];                // top 3 most-firing rule IDs
   scanDurationMs?: number;

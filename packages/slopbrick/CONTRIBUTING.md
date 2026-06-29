@@ -8,15 +8,12 @@
 Thanks for your interest in making slopbrick better. The most useful
 contributions are:
 
-1. **New rules** — patterns we don't catch yet (the [coverage gap
-   report](docs/research/v7-coverage-gaps-20260628-013717.md) lists
-   the biggest ones).
+1. **New rules** — patterns we don't catch yet. The current coverage gaps are tracked in the operator's local calibration log (not in the public repo).
 2. **Rule calibration data** — running `slopbrick scan` on a
    real codebase and reporting what fires.
 3. **Bug reports** — especially: "this rule fired on something
    that's not the pattern."
-4. **New framework parsers** — see [docs/framework-parity-matrix.md](docs/framework-parity-matrix.md)
-   for which ones we support.
+4. **New framework parsers** — the supported-framework matrix is in the operator's local notes (not in the public repo). The currently supported set: React, Vue, Svelte, Solid, Qwik, Astro, HTML, plus Python and Go (regex-only).
 
 For anything else (docs, refactors, new commands), open an issue
 first so we can align on scope.

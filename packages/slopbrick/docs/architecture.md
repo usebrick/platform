@@ -1,6 +1,6 @@
 # slopbrick Architecture (v0.15.0)
 
-> **Repository Structure Scanner.** Cross-file pattern drift detection + Constitution enforcement + MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (aiQuality / engineeringHygiene / security / repositoryHealth) is a proof that the Constitution is being followed. v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
+> **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 
 ## 1. Positioning
 
@@ -17,7 +17,7 @@ The moat is **the Constitution** — the `slopbrick.config.mjs` block that decla
 
 ## 2. Primary user
 
-**The AI agent.** The killer feature is `slop_suggest` (MCP) — agents call it before writing new code, get the project's `doNotCreate` list, follow the existing patterns, never violate the Constitution. The human-facing CLI is the enforcement layer.
+**The AI agent.** The headline workflow is `slop_suggest` (MCP): agents call it before writing new code, get the project's `doNotCreate` list, follow the existing patterns, never violate the Constitution. The human-facing CLI is the enforcement layer.
 
 This is a deliberate choice. The two-user framing has been the source of design tension throughout the project:
 

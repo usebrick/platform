@@ -127,16 +127,16 @@ The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick
 - `slopbrick calibrate` — (research) run the calibration pipeline against the corpus
 - `slopbrick migrate` — migrate v1 (`.slop-audit/`) projects to v2 (`.slopbrick/`)
 
-**Source layout** (current):
-- `src/cli/` — 19 command modules, plus `program.ts` (Commander wiring) and `scan.ts` (1469 lines — the biggest file)
-- `src/engine/` — 30+ pure-function modules (parser, memory.md, lr-combiner, scoring, visitors)
+**Source layout** (v0.15.0):
+- `src/cli/` — 19 command modules, plus `program.ts` (Commander wiring) and `scan.ts` (451 lines after the v0.15.0 extraction)
+- `packages/engine/src/` — the 30+ pure-function modules (parser, structure.ts, lr-combiner, scoring, visitors). Extracted from `slopbrick/src/engine/` in v0.15.0; now a workspace-only package, no I/O, no `console.log`, reusable from CLI / MCP / future web IDEs.
 - `src/rules/` — 80 rules in 14 categories (ai/, arch/, component/, context/, db/, layout/, logic/, perf/, product/, security/, sql/, test/, typo/, visual/, wcag/)
 - `src/rules/builtins.ts` — auto-generated registry of all rules (rebuilt by `pnpm generate:rules`)
 - `src/rules/signal-strength.json` — the v7 calibration data (the only consumer of the corpus)
-- `src/mcp/` — MCP server exposing `slop_suggest`, `slop_suggest_with_memory` (→ `slop_suggest_with_structure` in v0.15.0), `slop_check_constitution`, `slop_find_similar`
-- `src/types.ts` — 1010 lines of public types
+- `src/mcp/` — MCP server exposing `slop_suggest`, `slop_suggest_with_structure` (was `slop_suggest_with_memory` pre-v0.15.0), `slop_check_constitution`, `slop_find_similar`
+- `src/types.ts` — public types
 - `src/config/` — config validation, defaults
-- `src/research/` — the calibration flywheel (candidates, generator, prompts, provider)
+- `src/research/` — the calibration flywheel (candidates, generator, prompts, provider) — kept in `slopbrick` because it's I/O-bound and CLI-tied, not the pure engine
 
 **v0.15.0 shipped**: extracted `src/engine/` to a new `packages/engine/` package. Slimmed `src/cli/scan.ts` from 1469 lines to 451 by extracting report generation. Added the engine/UI taxonomy seam via `bucketForVerdict()`. Multi-score: replaced `slopIndex` with `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
 

@@ -202,8 +202,8 @@ Fast-path version of `slop_suggest` that reads from
 instead of re-parsing the AST. **100-1000× faster** than `slop_suggest` on
 large codebases. **Use this one in production.**
 
-> **v0.15.0 breaking change:** Renamed from `slop_suggest_with_structure` to
-> `slop_suggest_with_structure`. The on-disk artifact `.slopbrick/structure.md`
+> **v0.15.0 breaking change:** Renamed from `slop_suggest_with_memory` to
+> `slop_suggest_with_structure`. The on-disk artifact `.slopbrick/memory.md`
 > is now `.slopbrick/structure.md`. Any MCP client calling the old name
 > breaks.
 
@@ -297,7 +297,7 @@ structure.md generated, defaultOff rules.
     "path": ".slopbrick/constitution.json",
     "categories": ["modal", "state", "fetch"]
   },
-  "memory": {
+  "structure": {
     "generated": true,
     "path": ".slopbrick/structure.md",
     "updated": "2026-06-26T22:00:00Z",

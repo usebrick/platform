@@ -129,7 +129,7 @@ See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for f
 | `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`. 4-score model, 60+ rules, MCP server, migrate subcommand. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers + verdict taxonomy for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | The pure scanning engine extracted from slopbrick. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs. |
-| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed via GitHub Pages. |
+| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
 
@@ -266,7 +266,7 @@ platform/
 │       ├── public/                 favicon, logo-mark, brick-pattern SVGs
 │       ├── scripts/                prebuild.ts (version substitution)
 │       ├── astro.config.mjs
-│       └── .github/workflows/      deploy.yml (GitHub Pages)
+│       └── .github/workflows/      (deployed to Cloudflare Pages via the workflow at /github/workflows/deploy-website.yml)
 ├── .github/workflows/
 │   ├── ci.yml                      typecheck + test on every PR/push to main
 │   ├── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
