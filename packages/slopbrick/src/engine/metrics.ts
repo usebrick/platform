@@ -1,4 +1,6 @@
 import { isAbsolute, relative } from 'node:path';
+import { computeAiSecurityRisk } from './ai-security-risk';
+import { buildTestQualityScore } from './test-quality';
 import type {
   BaselineCache,
   Category,
@@ -235,16 +237,80 @@ export function aggregateReport(
   // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
   // aiQuality is the inverted slopIndex (higher = better). The other
   // 3 scores (engineeringHygiene, security, repositoryHealth) are
-  // computed in the enrichment phase from their respective
-  // sub-scores; for now we default them to aiQuality so the
-  // ProjectReport type is satisfied before enrichment runs.
+  // computed here from the issue stream, not aliased to aiQuality.
   const aiQuality = Math.max(0, Math.min(100, 100 - slopIndex));
+
+  // Flatten issueGroups into a single Issue[] for the score helpers.
+  // The Issue type requires message/line/column; aggregateReport
+  // receives only ruleId/category/severity from the scan phase, so
+  // synthesize placeholders for the fields the helpers don't need.
+  const flatIssues: Issue[] = [];
+  for (const group of issueGroups) {
+    for (const issue of group.issues) {
+      flatIssues.push({
+        ruleId: issue.ruleId,
+        category: issue.category,
+        severity: issue.severity,
+        aiSpecific: issue.category === 'ai',
+        filePath: group.filePath,
+        message: '',
+        line: 0,
+        column: 0,
+      });
+    }
+  }
+
+  // security = invert the AI Security Risk categorical.
+  // Map low → 100, med → 67, high → 33, critical → 0.
+  const { risk } = computeAiSecurityRisk(flatIssues);
+  const securityFromRisk: Record<typeof risk, number> = {
+    low: 100,
+    medium: 67,
+    high: 33,
+    critical: 0,
+  };
+  const security = securityFromRisk[risk];
+
+  // engineeringHygiene = average of arch + logic + layout + visual
+  // category scores (the four "engineering" categories that catch
+  // code-quality issues). Each is 0-100. Result is 0-100.
+  const engineeringCategoryScores = [
+    categoryScores.arch ?? 0,
+    categoryScores.logic ?? 0,
+    categoryScores.layout ?? 0,
+    categoryScores.visual ?? 0,
+    categoryScores.component ?? 0,
+    categoryScores.test ?? 0,
+  ];
+  const engineeringRaw =
+    engineeringCategoryScores.reduce((sum, s) => sum + s, 0) /
+    engineeringCategoryScores.length;
+  // Higher categoryScores means more issue points (worse). Invert
+  // so engineeringHygiene is "higher is better", matching the
+  // other 3 scores.
+  const engineeringHygiene = Math.max(0, Math.min(100, 100 - engineeringRaw));
+
+  // testQuality = 100 - (deduction/5 capped at 100). Use the helper.
+  // scannedFiles defaults to 0; we pass componentCount to scale.
+  const testQualityResult = buildTestQualityScore(flatIssues, componentCount);
+  const testQuality = Math.max(0, Math.min(100, testQualityResult.score));
+
+  // repositoryHealth = weighted composite of the 4 scores.
+  // 0.40 × aiQuality + 0.30 × engineeringHygiene
+  //   + 0.20 × security + 0.10 × testQuality.
+  // Already 0-100.
+  const repositoryHealthRaw =
+    0.4 * aiQuality +
+    0.3 * engineeringHygiene +
+    0.2 * security +
+    0.1 * testQuality;
+  const repositoryHealth = Math.max(0, Math.min(100, repositoryHealthRaw));
 
   return {
     aiQuality,
-    engineeringHygiene: aiQuality,
-    security: aiQuality,
-    repositoryHealth: aiQuality,
+    engineeringHygiene,
+    security,
+    repositoryHealth,
     slopIndex,
     assemblyHealth,
     totalScore: 0, // legacy field, removed in the cleanup

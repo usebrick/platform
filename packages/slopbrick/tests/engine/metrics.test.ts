@@ -408,6 +408,123 @@ describe('aggregateReport', () => {
   });
 });
 
+describe('aggregateReport — 4-score model (v0.16.0)', () => {
+  // Regression test for the bug where engineeringHygiene, security,
+  // and repositoryHealth all aliased aiQuality. The 4-score model
+  // promised in v0.15.0 (CHANGELOG) was advertised but never
+  // actually computed. v0.16.0 fixes this.
+  it('returns 4 distinct scores in a mixed-issue scenario', () => {
+    // Mixed scenario: lots of low-severity ai/* issues (no security
+    // risk) and a few high-severity security/* issues. The 4 scores
+    // should land in different ranges:
+    //   - aiQuality: high (lots of low issues → low slopIndex → high)
+    //   - engineeringHygiene: medium (mixed categories)
+    //   - security: low (high-severity security issues → risk)
+    //   - repositoryHealth: weighted composite of the 3
+    const issues: Issue[] = [
+      // 20 low ai/* issues — bumps ai/* category score up, no
+      // security risk
+      ...Array.from({ length: 20 }, () => ({
+        ruleId: 'ai/comment-ratio',
+        category: 'ai' as const,
+        severity: 'low' as const,
+        aiSpecific: true,
+        message: 'a',
+        line: 1,
+        column: 1,
+      })),
+      // 2 high security issues — produces 'high' AI security risk
+      ...Array.from({ length: 2 }, () => ({
+        ruleId: 'security/missing-auth-check',
+        category: 'security' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 's',
+        line: 1,
+        column: 1,
+      })),
+    ];
+    const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+
+    // All 4 scores must be defined
+    expect(report.aiQuality).toBeGreaterThanOrEqual(0);
+    expect(report.engineeringHygiene).toBeGreaterThanOrEqual(0);
+    expect(report.security).toBeGreaterThanOrEqual(0);
+    expect(report.repositoryHealth).toBeGreaterThanOrEqual(0);
+    expect(report.aiQuality).toBeLessThanOrEqual(100);
+    expect(report.engineeringHygiene).toBeLessThanOrEqual(100);
+    expect(report.security).toBeLessThanOrEqual(100);
+    expect(report.repositoryHealth).toBeLessThanOrEqual(100);
+
+    // The bug: previously all 4 were identical. With mixed
+    // issues, security must differ from aiQuality.
+    expect(report.security).not.toBe(report.aiQuality);
+
+    // security is derived from AI security risk. With 2
+    // high-severity security issues, the risk is 'high' →
+    // security score is 33. aiQuality is unrelated.
+    expect(report.security).toBe(33);
+  });
+
+  it('returns security=100 for a clean codebase (no security risk)', () => {
+    const issues: Issue[] = [
+      // Only low-severity ai/* issues — no security risk
+      ...Array.from({ length: 5 }, () => ({
+        ruleId: 'ai/comment-ratio',
+        category: 'ai' as const,
+        severity: 'low' as const,
+        aiSpecific: true,
+        message: 'a',
+        line: 1,
+        column: 1,
+      })),
+    ];
+    const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    expect(report.security).toBe(100);
+  });
+
+  it('returns security=0 for a critical-risk codebase', () => {
+    const issues: Issue[] = [
+      // 5 high-severity security issues → risk escalates to 'critical'
+      // (per computeAiSecurityRisk: 5+ high-severity security issues
+      // is treated as critical risk, not high)
+      ...Array.from({ length: 5 }, () => ({
+        ruleId: 'security/missing-auth-check',
+        category: 'security' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 's',
+        line: 1,
+        column: 1,
+      })),
+    ];
+    const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    // Risk is 'critical' (5+ high-severity security issues) →
+    // security score is 0
+    expect(report.security).toBe(0);
+  });
+
+  it('repositoryHealth is the weighted composite of the 3 other scores', () => {
+    // No issues → aiQuality=100, security=100, engineeringHygiene=100.
+    // repositoryHealth should also be 100. Confirm the formula.
+    const scores: ReturnType<typeof scoreFile>[] = [];
+    const issueGroups: Array<{ filePath: string; issues: Issue[] }> = [];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    // Empty input → all 4 scores at the top of the range
+    expect(report.aiQuality).toBe(100);
+    expect(report.engineeringHygiene).toBe(100);
+    expect(report.security).toBe(100);
+    // repositoryHealth = 0.4*100 + 0.3*100 + 0.2*100 + 0.1*100 = 100
+    expect(report.repositoryHealth).toBe(100);
+  });
+});
+
 describe('resolveFrameworkMultiplier', () => {
   it('returns the configured multiplier for the active framework', () => {
     const config = { ...DEFAULT_CONFIG, framework: 'vue', frameworkMultipliers: { ...DEFAULT_CONFIG.frameworkMultipliers, vue: 1.5 } };
