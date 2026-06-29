@@ -29,6 +29,7 @@ export const boundaryViolationRule = createRule<BoundaryViolationContext>({
   category: 'logic',
   severity: 'high',
   aiSpecific: false,
+  description: 'Server-side data-layer / DB import leaked into a client component, or a client React hook used inside a server file (RSC boundary violation)',
   create(ruleContext: RuleContext): BoundaryViolationContext {
     return { clientHooks: CLIENT_HOOKS, supportsRsc: ruleContext.config.supportsRsc ?? true };
   },

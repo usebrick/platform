@@ -26,6 +26,7 @@ export const arbitraryEscapeRule = createRule<ArbitraryEscapeContext>({
   category: 'visual',
   severity: 'medium',
   aiSpecific: true,
+  description: 'Bracket-notation Tailwind values (e.g. `p-[13px]`, `bg-[#7c3aed]`) — AI agents reach for arbitrary escapes instead of design tokens (Refactoring UI; Mäntylä 2003)',
   create(context: RuleContext): ArbitraryEscapeContext {
     return {
       allowlist: context.config.arbitraryValueAllowlist,

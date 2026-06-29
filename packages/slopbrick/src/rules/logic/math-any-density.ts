@@ -40,7 +40,11 @@ export const mathAnyDensityRule = createRule<RuleContext>({
   category: 'logic',
   severity: 'high',
   aiSpecific: true,
-  description: RULE_DESCRIPTION,
+  // Self-match avoidance: the source uses string concatenation to keep the
+  // literal ": any" sequence out of the regex match — the description
+  // metadata is for humans, not the rule engine, so we keep it as a regular
+  // string literal here.
+  description: '`: any` density ≥ 3 per 100 lines — AI sprinkling of `any` types',
   create(context) {
     return context;
   },
