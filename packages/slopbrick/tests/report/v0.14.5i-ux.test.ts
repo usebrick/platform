@@ -373,22 +373,31 @@ describe('v0.14.5i UX improvements', () => {
     it('P10: formatBriefReport is a 4-5 line terse summary', () => {
       const out = formatBriefReport(makeReport({ aiQuality: 25, coherence: 60 }));
       const lines = out.split('\n').filter((l) => l.trim().length > 0);
-      // Verdict (1) + headline (1) + coherence (1) + trust signal (1) = 4-5 lines
-      expect(lines.length).toBeLessThanOrEqual(5);
-      expect(lines.length).toBeGreaterThanOrEqual(3);
+      // v0.17.0: 4-score model is naturally longer (verdict + 4 scores + gate + footer = 6-9 lines).
+      // Still terse vs the full formatPretty output (50+ lines).
+      expect(lines.length).toBeLessThanOrEqual(10);
+      expect(lines.length).toBeGreaterThanOrEqual(5);
     });
 
-    it('P10: formatBriefReport includes the verdict, headline, threshold, and delta', () => {
-      // v0.15.0 U.4: the brief headline is "AI Quality" (not
-      // "Slop Index"). The trajectory delta now uses ↑N for
-      // improvement (aiQuality is higher = better).
+    it('P10: formatBriefReport includes the verdict, 4 scores, threshold, and delta', () => {
+      // v0.17.0: 4-score model (aiQuality, engineeringHygiene, security, repositoryHealth).
+      // The previous v0.15.0 "AI Quality + Coherence" dual-scoring was confusing;
+      // the 4-score model shows all 4 orthogonal axes up front.
       const out = formatBriefReport(
-        makeReport({ aiQuality: 30, previousSlopIndex: 25, coherence: 60 }),
+        makeReport({
+          aiQuality: 30,
+          engineeringHygiene: 70,
+          security: 95,
+          repositoryHealth: 40,
+          previousSlopIndex: 25,
+        }),
       );
       expect(out).toMatch(/Repo is/i);
-      expect(out).toContain('AI Quality: 30/100');
+      expect(out).toContain('aiQuality');
+      expect(out).toContain('engineeringHygiene');
+      expect(out).toContain('security');
+      expect(out).toContain('repositoryHealth');
       expect(out).toContain('↑5');
-      expect(out).toContain('Coherence:');
       expect(out).toMatch(/pass|fail/);
     });
 

@@ -709,35 +709,62 @@ export function formatWhyFailingReport(report: ProjectReport): string {
  * in 4-5 lines on a terminal.
  */
 export function formatBriefReport(report: ProjectReport): string {
-  // v0.15.0 U.4+: slopIndex → aiQuality.
-  const slop = report.aiQuality;
-  const band = scoreBand(slop);
-  const passed = slop >= 70;
-  const deltaSuffix = formatDeltaSuffix(report);
+  // v0.17.0: 4-score model (aiQuality, engineeringHygiene, security, repositoryHealth).
+  // The previous v0.15.0 "AI Quality + Coherence" dual-scoring was confusing;
+  // the 4-score model shows all 4 orthogonal axes up front.
   const lines: string[] = [];
 
   // One-line verdict
   lines.push(formatVerdict(report));
   lines.push('');
-  // Headline + threshold
-  lines.push(
-    `AI Quality: ${slop.toFixed(0)}/100 ${chalk.bold(`[${band.label.toUpperCase()}]`)}${deltaSuffix} ` +
-    `(threshold 70: ${passed ? chalk.green('pass') : chalk.red('fail')})`,
-  );
 
-  // Coherence as a one-line secondary, only if computed
-  if (typeof report.coherence === 'number') {
-    const cohBand = scoreBand(report.coherence);
-    lines.push(chalk.dim(
-      `Coherence:  ${report.coherence.toFixed(0)}/100 [${cohBand.label.toUpperCase()}] (informational)`,
-    ));
-  }
+  // 4 named scores, each on its own line with band label.
+  // The aiQuality line also gets the trajectory delta (↑N cleaner /
+  // ↓N worse) since aiQuality is the CI gate.
+  const scoreLines: Array<{ name: string; value: number }> = [
+    { name: 'aiQuality',           value: report.aiQuality },
+    { name: 'engineeringHygiene',  value: report.engineeringHygiene },
+    { name: 'security',            value: report.security },
+    { name: 'repositoryHealth',    value: report.repositoryHealth },
+  ];
+  const deltaSuffix = formatDeltaSuffix(report);
+  scoreLines.forEach(({ name, value }, idx) => {
+    const band = scoreBand(value);
+    const paddedName = name.padEnd(20, ' ');
+    const valueStr = value.toFixed(0).padStart(3, ' ');
+    const delta = idx === 0 ? deltaSuffix : '';
+    lines.push(
+      `  ${paddedName} ${band.color(valueStr)}   ${chalk.dim(band.label)}${delta}`,
+    );
+  });
+
+  // Gate info: aiQuality >= 70 is the CI gate (inherited from v0.15.0).
+  const passed = report.aiQuality >= 70;
+  lines.push('');
+  lines.push(
+    chalk.dim(
+      `  CI gate: aiQuality >= 70 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
+    ),
+  );
 
   // Suppression trust signal
   const suppressed = report.defaultOffSuppressedCount ?? 0;
   if (suppressed > 0) {
-    lines.push(chalk.green(`✓ ${suppressed} INVERTED/NOISY issue(s) suppressed`));
+    lines.push('');
+    lines.push(
+      chalk.green(
+        `  ✓ ${suppressed} INVERTED/NOISY issue(s) suppressed from ${report.defaultOffRuleCount ?? 0} default-off rule(s)`,
+      ),
+    );
   }
+
+  // Footer: where to find more
+  lines.push('');
+  lines.push(
+    chalk.dim(
+      `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${report.issues.length} issue${report.issues.length === 1 ? '' : 's'}. Run with --all for the full report.`,
+    ),
+  );
 
   return lines.join('\n');
 }
