@@ -8,7 +8,9 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "scan": "node packages/slopbrick/bin/slopbrick.js scan",
+    "bench:scan": "pnpm --filter slopbrick bench:scan"
   },
   "engines": {
     "node": ">=20.0.0",
