@@ -44,6 +44,14 @@ const CATEGORY_DIRECTIVES: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const RULE_HINTS: Record<string, string> = {
+  // v0.16.0 hygiene: 35 out-of-scope orphan hints (keys with no matching
+  // rule in src/rules/builtins.ts) were moved out of this map. The
+  // verbatim source text is preserved in
+  //   docs/research/backlog-rule-hints.md
+  // so future implementers can paste a hint back when the corresponding
+  // rule ships. The 5 in-scope orphans (`security/eval`,
+  // `security/localstorage-token`, `security/target-blank-no-noopener`,
+  // `wcag/missing-alt`, `typo/placeholder-text`) are kept here for v0.16.0.
   'security/hardcoded-secret':
     'Never inline API keys, JWT secrets, or database passwords in source. Load them from env vars and never commit a .env file. Assume any published secret is compromised and rotate it.',
   'security/exposed-env-var':
@@ -60,98 +68,29 @@ const RULE_HINTS: Record<string, string> = {
     'Never build SQL with string concatenation or template-literal interpolation. Use parameterized queries: pg client.query("... WHERE id = $1", [id]) or your ORM query builder.',
   'security/public-admin-route':
     'Routes under /admin, /internal, /debug, /staff, /manage, /private need an explicit role check on top of standard auth — auth alone is not enough for privileged paths.',
-  'visual/ai-default-palette':
-    'Don\'t reach for slate/gray/zinc/stone/neutral as defaults — they\'re a tell of AI-default palette.',
-  'visual/ai-vibe-purple':
-    'Specifically avoid the violet-500/indigo-500/purple-500 saturated cluster.',
-  'visual/ai-colored-border-card':
-    'Don\'t use border-t-2 border-violet-500 on cards — use a subtle full-border or bg tint instead.',
-  'visual/ai-rounded-image-no-clip':
-    'If you use rounded-full on an <img>, wrap it in overflow-hidden or set a clip-path.',
   'visual/arbitrary-escape':
     'Never use bracket-notation values like text-[13px] or bg-[#7c3aed]. Use design tokens instead.',
   'visual/spacing-scale-violation':
     'Use spacing scale tokens (p-2, gap-4, etc.) instead of arbitrary values like p-[13px] or gap-[1.75rem].',
   'visual/radius-scale-violation':
     'Use radius scale tokens (rounded-md, rounded-lg, etc.) instead of arbitrary values like rounded-[7px].',
-  'visual/tailwind-gradient':
-    'Prefer solid backgrounds over linear-gradient/radial-gradient/conic-gradient on body sections.',
-  'layout/ai-badge-above-hero':
-    'Don\'t open hero sections with <Badge>New</Badge><h1>...</h1>. Open with a hook sentence or subhead instead.',
-  'layout/ai-stat-banner':
-    'Don\'t default to "10K+ users | 99.9% uptime | $5M revenue" rows. Use testimonials or screenshots.',
-  'layout/ai-container-combo':
-    'Avoid mx-auto max-w-screen-xl combos — use the project\'s container primitive.',
+  // v0.16.0 — in-scope orphans kept here (corresponding rule ships in v0.16.0).
   'typo/placeholder-text':
     'Never leave "TODO", "placeholder", "change me", "your text here" in shipped UI.',
-  'visual/ai-default-color':
-    'Use the design system\'s color tokens. Don\'t write bg-[#7c3aed] or text-slate-300 by hand.',
-  'visual/ai-gradient-soup':
-    'Pick one gradient direction. Don\'t stack 3+ bg-gradients with different angles.',
-  'typo/ai-emoji-nav-icons':
-    'Don\'t use emoji (🏠 ⚙️ etc.) in nav items — use lucide or heroicons SVGs.',
-  'logic/console-log':
-    'Never ship console.log in production code. Remove debug logs before committing.',
-  'logic/explicit-any':
-    'Never use `any`. Use `unknown` and narrow with type guards. If generics are needed, use <T extends ...>.',
-  'logic/non-null-assertion':
-    'Avoid `!` non-null assertions. Use proper narrowing or default values.',
-  'logic/ai-button-no-type':
-    'Every <button> inside a <form> must have type="button" (or type="submit").',
   'logic/key-prop-missing':
     'Always provide a stable `key` prop when rendering lists.',
-  'logic/event-handler-inline':
-    'Avoid inline arrow functions on frequently-rendered components — extract or useCallback.',
-  'logic/raw-fetch':
-    'Every fetch should: have AbortSignal on cleanup, check `response.ok`, and handle errors.',
   'logic/boundary-violation':
     'Don\'t import data-layer / DB code into UI components. Server-side only.',
-  'logic/prop-drilling':
-    'Don\'t pass props through 3+ layers. Use context, composition, or a state library.',
-  'wcag/missing-label':
-    'Every <input>, <select>, <textarea> needs a <label> or aria-label.',
   'wcag/missing-alt':
     'Every <img> needs alt text. Decorative: alt="". Informative: describe the image.',
-  'wcag/non-semantic-button':
-    'Use <button> for clickable elements, not <div onClick> or <a onClick>.',
   'security/localstorage-token':
     'Never store JWT / access token / refresh token in localStorage or sessionStorage. Issue as httpOnly cookie.',
-  'security/iframe-no-sandbox':
-    'Always add sandbox="" to <iframe>. Whitelist specific permissions with sandbox="allow-scripts" etc.',
-  'security/dangerously-set-inner-html':
-    'Never use dangerouslySetInnerHTML with user input. Sanitize with DOMPurify or use a markdown renderer.',
   'security/eval':
     'Never use eval() or new Function(). These are RCE vectors if the input is ever attacker-controlled.',
-  'security/insecure-url':
-    'Never reference http:// URLs in code. Use https://.',
   'security/target-blank-no-noopener':
     'Always add rel="noopener" (or rel="noreferrer") to target="_blank" links.',
-  'security/javascript-href':
-    'Never use href="javascript:...". Use onClick handlers instead.',
-  'security/sri-missing':
-    'External <script src> tags must have integrity="sha384-..." and crossorigin="anonymous" (SRI).',
-  'security/postmessage-no-origin-check':
-    'postMessage handlers must verify event.origin against an allowlist.',
-  'security/dangerous-redirect':
-    'Never redirect to user-controlled URLs without an allowlist. Validate before window.location =.',
-  'security/client-only-auth':
-    'Auth checks must hit a server endpoint (/api/me) to verify the token. Client-only checks are decorative.',
-  'security/client-bundle-secret':
-    'Never put secrets in NEXT_PUBLIC_* / REACT_APP_* / VITE_* / import.meta.env.* env vars.',
-  'security/fetch-no-origin-check':
-    'Never fetch with credentials:"include" to dynamic or external origins.',
-  'security/csrf-no-credentials-config':
-    'State-changing fetches (POST/PUT/PATCH/DELETE) must explicitly set credentials.',
-  'security/innerhtml-assignment':
-    'Never assign user input to element.innerHTML — it\'s an XSS vector.',
   'arch/astro-island-leak':
     'For Astro: server-render everything by default. Only opt-in to client islands when interactivity is needed.',
-  'arch/multiple-state-systems':
-    'Pick one state management library per project (zustand, redux, jotai, …) and reuse it everywhere. Don\'t introduce a second state library "just for this feature".',
-  'arch/multiple-modal-systems':
-    'Pick one modal mechanism per project (radix-dialog, headlessui Dialog, react-modal, raw <dialog>) and reuse it everywhere. Don\'t mix libraries.',
-  'arch/multiple-api-clients':
-    'Pick one HTTP client (axios, ky, fetch) and one data-fetching layer (react-query, swr, apollo) per project. Don\'t stack libraries that do the same job.',
   'component/giant-component':
     'Don\'t build components > 200 lines. Extract shared subcomponents.',
   'component/multiple-components-per-file':

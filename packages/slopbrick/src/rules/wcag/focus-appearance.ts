@@ -23,6 +23,7 @@ export const focusAppearanceRule = createRule<FocusAppearanceContext>({
   category: 'wcag',
   severity: 'high',
   aiSpecific: false,
+  description: 'Inject a global focus-ring CSS block (`*:focus-visible { outline: ... }`) — WCAG 2.4.7 (Focus Visible)',
   create(context: RuleContext): FocusAppearanceContext {
     return { globalCssTarget: context.config.globalCssTarget };
   },
