@@ -59,11 +59,11 @@ jobs:
           # pnpm needs the monorepo, not just packages/website
           fetch-depth: 0
 
+      # pnpm version comes from the root package.json's
+      # `packageManager` field (pnpm@9.15.0). Pinning version: 9 here
+      # triggers ERR_PNPM_BAD_PM_VERSION in v4 because the action
+      # refuses to run when both are set.
       - uses: pnpm/action-setup@v4
-        with:
-          # Reads packageManager from root package.json (pnpm@9.15.0).
-          # Pinning version: 9 here triggers ERR_PNPM_BAD_PM_VERSION
-          # in v4 because package.json also pins pnpm@9.15.0.
 
       - uses: actions/setup-node@v4
         with:

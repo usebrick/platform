@@ -58,11 +58,11 @@ jobs:
           fetch-depth: 0   # full history for provenance + release notes
 
       - name: Install pnpm
+        # pnpm version comes from the root package.json's
+        # `packageManager` field (pnpm@9.15.0). Don't pin a version
+        # here — pnpm/action-setup@v4 errors on the duplicate, and v3
+        # silently picks one of the two values.
         uses: pnpm/action-setup@v3
-        with:
-          # Reads packageManager from root package.json (pnpm@9.15.0).
-          # Don't pin a version here — v4 of this action errors on the
-          # duplicate, and v3 silently picks one of the two values.
 
       - name: Use Node.js 24
         uses: actions/setup-node@v4
