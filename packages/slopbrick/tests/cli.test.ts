@@ -41,7 +41,12 @@ const makeReport = (
 ): ProjectReport => ({
   version: '0.5.2',
   generatedAt,
-  slopIndex: 10,
+  // v0.15.0 U.4+: the four headline scores follow the
+  // "higher = better" convention. Default to a healthy
+  // repository so threshold-driven integration tests (which
+  // expect exit code 0 when thresholds are respected) pass
+  // without explicit overrides.
+  aiQuality: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
   assemblyHealth: 90,
   totalScore: 10,
   categoryScores: {
@@ -53,7 +58,7 @@ const makeReport = (
     logic: 0,
     arch: 0,
     perf: 0,
-    security: 0,    test: 0,    docs: 0,    db: 0,
+    security: 0,    test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
   },
   p90Score: 15,
   peakScore: 20,
@@ -107,20 +112,26 @@ describe('colorForSlop', () => {
 
 describe('formatBadge', () => {
   it('produces a shields.io markdown badge', () => {
-    const report = makeReport({ slopIndex: 34.2 });
+    // v0.15.0 U.4: badge now reflects aiQuality (higher = better)
+    // and uses the inverted color logic. aiQuality=34 is in the
+    // "warning" range (26-50 → orange).
+    const report = makeReport({ aiQuality: 34 });
     const badge = formatBadge(report);
-    expect(badge).toContain('https://img.shields.io/badge/slop--index-34-yellow');
+    expect(badge).toContain('https://img.shields.io/badge/repository--health-34-orange');
     expect(badge).toContain('[![');
   });
 
-  it('uses orange color for high slop index', () => {
-    const report = makeReport({ slopIndex: 75 });
+  it('uses orange color for low aiQuality (v0.15.0 inversion)', () => {
+    // Low aiQuality is the v0.15.0 equivalent of "high slop index"
+    // in v0.14. aiQuality=30 sits in the 26-50 range → orange.
+    const report = makeReport({ aiQuality: 30 });
     const badge = formatBadge(report);
     expect(badge).toContain('orange');
   });
 
-  it('uses red color for severe slop index', () => {
-    const report = makeReport({ slopIndex: 76 });
+  it('uses red color for very low aiQuality (v0.15.0 inversion)', () => {
+    // aiQuality=10 is below the 26 threshold → red.
+    const report = makeReport({ aiQuality: 10 });
     const badge = formatBadge(report);
     expect(badge).toContain('red');
   });
@@ -137,24 +148,29 @@ describe('thresholdExceeded', () => {
   };
 
   it('returns false when all thresholds are respected', () => {
-    const report = makeReport({ slopIndex: 20, p90Score: 40, peakScore: 45 });
+    // v0.15.0 U.4: threshold breach = aiQuality < meanSlop.
+    // aiQuality=30 sits above meanSlop=25 → respected, not breached.
+    const report = makeReport({ aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
-  it('returns true when slop index exceeds mean threshold', () => {
-    const report = makeReport({ slopIndex: 26, p90Score: 40, peakScore: 45 });
+  it('returns true when aiQuality drops below the mean threshold', () => {
+    // aiQuality=20 sits below meanSlop=25 → breach.
+    const report = makeReport({ aiQuality: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(true);
   });
 
-  it('does NOT trip on p90 alone (Phase 2 §10: only composite Slop Index drives threshold)', () => {
-    // p90=51 (above p90Slop=50) but slopIndex=20 (below meanSlop=25) → not exceeded
-    const report = makeReport({ slopIndex: 20, p90Score: 51, peakScore: 45 });
+  it('does NOT trip on p90 alone (v0.15.0 U.4: only aiQuality drives threshold)', () => {
+    // aiQuality=30 (above meanSlop=25) → respected; p90=51 alone
+    // does not trigger the v0.15.0 threshold.
+    const report = makeReport({ aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 51, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
-  it('does NOT trip on peak alone (Phase 2 §10)', () => {
-    // peak=51 (above individualSlopThreshold=50) but slopIndex=20 → not exceeded
-    const report = makeReport({ slopIndex: 20, p90Score: 40, peakScore: 51 });
+  it('does NOT trip on peak alone (v0.15.0 U.4)', () => {
+    // aiQuality=30 (above meanSlop=25) → respected; peak=51 alone
+    // does not trigger the v0.15.0 threshold.
+    const report = makeReport({ aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 51 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 });
@@ -171,7 +187,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -183,7 +199,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(true);
@@ -199,8 +215,11 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         categoryThresholds: { visual: 60, layout: 30 },
       },
     };
+    // v0.15.0 U.4: keep aiQuality above meanSlop so the aggregate
+    // threshold doesn't fire — only the per-category thresholds
+    // should be in play.
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -212,7 +231,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(false);
@@ -227,8 +246,10 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         individualSlopThreshold: 50,
       },
     };
+    // v0.15.0 U.4: keep aiQuality above meanSlop so the test
+    // isolates the "no categoryThresholds configured" path.
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -240,7 +261,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     expect(thresholdExceeded(report, cfg)).toBe(false);
@@ -257,7 +278,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
       },
     };
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -269,7 +290,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     // visual is configured and exceeded → true
@@ -286,8 +307,11 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         categoryThresholds: { visual: 60, layout: 30 },
       },
     };
+    // v0.15.0 U.4: keep aiQuality above meanSlop so the aggregate
+    // count stays at 0; only visual+layout category breaches
+    // should contribute to the total.
     const report = makeReport({
-      slopIndex: 5,
+      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -299,7 +323,7 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         logic: 0,
         arch: 0,
         perf: 0,
-        security: 0,        test: 0,    docs: 0,    db: 0,
+        security: 0,        test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,
       },
     });
     // Aggregate: 0/3, Categories: 2 (visual+layout) → total 2
@@ -373,7 +397,15 @@ describe('scanProject', () => {
       await import('node:fs').then((m) => m.readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')),
     ) as { version: string };
     expect(report.version).toBe(pkg.version);
-    expect(report.slopIndex).toBe(0);
+    // v0.15.0 U.4: an empty project has perfect (highest) quality
+    // on all four headline scores. The legacy `slopIndex` field is
+    // also kept (0 = no slop detected) for backward compat with
+    // v0.14 readers; both should agree.
+    expect(report.aiQuality).toBe(100);
+    expect(report.engineeringHygiene).toBe(100);
+    expect(report.security).toBe(100);
+    expect(report.repositoryHealth).toBe(100);
+    expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.issues).toEqual([]);
     expect(report.components).toEqual([]);
@@ -543,6 +575,40 @@ function writeHighSeverityFixture(dir: string): void {
   );
 }
 
+/**
+ * v0.15.0 U.4: write a slopbrick.config.cjs that makes the
+ * threshold "always breach". The comparison direction was
+ * inverted in the v0.15 model:
+ *   - meanSlop: 999  → `aiQuality < 999` always true (max 100)
+ *   - p90Slop:  0    → `p90Score > 0` always true
+ *   - individualSlopThreshold: 0 → `adjustedScore > 0` always true
+ * Used by integration tests that exercise the threshold-exit
+ * path on fixtures that may otherwise produce a healthy-enough
+ * aiQuality to slip under the default `meanSlop: 25`.
+ */
+function writeAlwaysBreachConfig(dir: string): void {
+  writeFileSync(
+    join(dir, 'slopbrick.config.cjs'),
+    'module.exports = { thresholds: { meanSlop: 999, p90Slop: 0, individualSlopThreshold: 0 } };\n',
+  );
+}
+
+/**
+ * v0.15.0 U.4: write a slopbrick.config.cjs that makes the
+ * threshold "never breach":
+ *   - meanSlop: 0 → `aiQuality < 0` never true (min 0)
+ *   - p90Slop: 999 → `p90Score > 999` never true
+ *   - individualSlopThreshold: 999 → `adjustedScore > 999` never true
+ * Used by integration tests that focus on file discovery and
+ * want to suppress threshold-driven exits (e.g. --staged, --changed).
+ */
+function writeNeverBreachConfig(dir: string): void {
+  writeFileSync(
+    join(dir, 'slopbrick.config.cjs'),
+    'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+  );
+}
+
 function writeSloppyProject(dir: string): void {
   const srcDir = join(dir, 'src');
   mkdirSync(srcDir, { recursive: true });
@@ -577,6 +643,11 @@ describe('--strict', () => {
   beforeEach(() => {
     dir = createTmpDir();
     writeSloppyProject(dir);
+    // v0.15.0 U.4: force the threshold to always breach so the
+    // sloppy fixture is guaranteed to fail the gate (the default
+    // `meanSlop: 25` is satisfied by a sloppy project's aiQuality
+    // and would otherwise yield exit 0).
+    writeAlwaysBreachConfig(dir);
   });
 
   afterEach(() => {
@@ -601,6 +672,8 @@ describe('threshold failure wording', () => {
   beforeEach(() => {
     dir = createTmpDir();
     writeSloppyProject(dir);
+    // v0.15.0 U.4: see the --strict describe for rationale.
+    writeAlwaysBreachConfig(dir);
   });
 
   afterEach(() => {
@@ -623,6 +696,13 @@ describe('--include / --exclude', () => {
     const libDir = join(dir, 'lib');
     mkdirSync(libDir, { recursive: true });
     writeFileSync(join(libDir, 'Helper.tsx'), 'export function Helper() { return <button>ok</button>; }');
+    // v0.15.0 U.4: the "skips --exclude" test expects exit 1 from
+    // the still-sloppy WcagSlop.tsx. Force a threshold breach
+    // here so the sloppy file (excluded or not) still trips the
+    // gate. The "discovers --include" test below overrides
+    // `meanSlop` to 0 via writeNeverBreachConfig since it scans
+    // only the clean Helper.tsx.
+    writeAlwaysBreachConfig(dir);
   });
 
   afterEach(() => {
@@ -630,6 +710,11 @@ describe('--include / --exclude', () => {
   });
 
   it('discovers only files matching --include patterns', async () => {
+    // v0.15.0 U.4: this test scans only the clean Helper.tsx
+    // via --include, so the threshold should NOT fire. Override
+    // the beforeEach's alwaysBreach config with a neverBreach
+    // one so the clean scan yields exit 0.
+    writeNeverBreachConfig(dir);
     const { exitCode, stdout } = await run([
       '--workspace',
       dir,
@@ -714,7 +799,12 @@ describe('--no-increase', () => {
     expect(stderr).toContain('no previous run found');
   });
 
-  it('exits 2 when slop index increased since the previous run', async () => {
+  it('exits 2 when aiQuality dropped since the previous run', async () => {
+    // v0.15.0 U.4: --no-increase now tracks aiQuality (higher =
+    // better), so "worse than before" is rendered as
+    // "AI Quality went DOWN" with a "your code got sloppier"
+    // follow-up. The v0.14 "Slop Index went UP" wording is
+    // replaced.
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir, { recursive: true });
     writeFileSync(join(srcDir, 'LowSlop.tsx'), 'export function LowSlop() { return <div>hi</div>; }');
@@ -725,7 +815,7 @@ describe('--no-increase', () => {
     writeHighSeverityFixture(dir);
     const second = await run(['--workspace', dir, '--no-increase', '--json']);
     expect(second.exitCode).toBe(2);
-    expect(second.stderr).toMatch(/Slop Index went UP from [\d.]+ to [\d.]+/);
+    expect(second.stderr).toMatch(/AI Quality went DOWN from [\d.]+ to [\d.]+/);
   });
 });
 
@@ -904,9 +994,18 @@ describe('--staged', () => {
         'export function U() { return <div className="w-[100px] p-[13px] m-[21px] gap-[9px]"><button className="outline-none focus:ring-2">x</button></div>; }',
       );
       // Disable threshold gating so this test focuses on file discovery, not scoring.
+      // v0.15.0 U.4: in the legacy v0.14 model, `meanSlop: 999` meant
+      // "no slop can ever breach this gate" (slopIndex ranges 0-100).
+      // The v0.15.0 model inverts the meanSlop comparison
+      // (`aiQuality < meanSlop` is the new breach) but keeps the
+      // p90Slop / individualSlopThreshold comparisons in the v0.14
+      // direction (`x > threshold` = breach). To suppress all three,
+      // use meanSlop: 0 (breach is never true) AND p90Slop /
+      // individualSlopThreshold at 999 (their breach comparisons
+      // never hold).
       writeFileSync(
         join(dir, 'slopbrick.config.cjs'),
-        'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+        'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
       );
       const { exitCode, stdout } = await run([
         '--workspace',
@@ -951,9 +1050,13 @@ describe('--changed (round 21)', () => {
         'export function U() { return <div className="w-[100px] p-[13px] m-[21px] gap-[9px]"><button className="outline-none focus:ring-2">x</button></div>; }',
       );
       // Disable threshold gating so this test focuses on file discovery, not scoring.
+      // v0.15.0 U.4: see the --staged describe for the v0.14 → v0.15
+      // inversion rationale (meanSlop is now compared as
+      // `aiQuality < meanSlop`; p90Slop / individualSlopThreshold
+      // keep the legacy `x > threshold` direction).
       writeFileSync(
         join(dir, 'slopbrick.config.cjs'),
-        'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+        'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
       );
 
       const { exitCode, stdout } = await run([

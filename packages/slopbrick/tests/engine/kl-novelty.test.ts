@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeKLNovelty,
   KL_NOVELTY_EPSILON,
-} from '../../src/engine/kl-novelty';
+} from '@usebrick/engine';
 
 describe('computeKLNovelty', () => {
   it('returns 0 for identical distributions (KL = 0 by Gibbs inequality)', () => {

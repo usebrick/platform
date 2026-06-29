@@ -1,20 +1,19 @@
 # slopbrick Scoring Runbook
 
-> `slopbrick` reports a **headline 5-bucket score** for the user-facing surface and a **13-subscore diagnostic surface** behind `--format json` / `--format detailed`. This runbook covers both.
+> **v0.15.0+:** `slopbrick` reports a **headline 4-score model** for the user-facing surface and a **13-subscore diagnostic surface** behind `--format json` / `--format detailed`. This runbook covers both.
 
-## The 5-bucket headline (user-facing surface)
+## The 4-score headline (user-facing surface)
 
-| Bucket | Weight | Direction | One-line question |
-|--------|-------:|-----------|-------------------|
-| **Architecture Consistency** | 25% | Higher is better | "Are components and patterns consistent across this repo?" |
-| **AI Slop Signal** | 30% | Lower is better | "Does this look like AI wrote it?" |
-| **Security** | 25% | Lower is better | "Are there security holes?" |
-| **Delivery Quality** | 10% | Higher is better | "Can the team ship safely?" |
-| **Codebase Health** | 10% | Higher is better | "Will the codebase hold up at scale?" |
+| Score | Direction | One-line question |
+|-------|-----------|-------------------|
+| **AI Quality** | Higher is better | "Does this look like AI wrote it? And is it any good?" |
+| **Engineering Hygiene** | Higher is better | "Is this codebase internally consistent — one stack, one pattern, no drift?" |
+| **Security** | Higher is better | "Are there security holes?" |
+| **Repository Health** (composite) | Higher is better | "Will the codebase hold up at scale?" |
 
-`Repository Health` (composite) = `0.25 + 0.30 + 0.25 + 0.10 + 0.10` weighted sum.
+`Repository Health` (composite) is a weighted sum of the 3 sub-scores plus secondary signals (architecture consistency, test quality, business logic coherence, doc freshness, DB health).
 
-**Why 5 buckets, not 13:** A product manager can track 3-5 numbers. The 13-subscore surface is preserved behind `--format json` and `--format detailed` for the calibration / power-user audience. See [`docs/strategy/v1-score-compression.md`](./strategy/v1-score-compression.md) for the full v1 launch plan.
+**Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem. See [`docs/scoring-explained.md`](./scoring-explained.md) for the full math.
 
 ---
 
@@ -22,7 +21,7 @@
 
 | Score | Shape | Direction | Drives |
 |-------|-------|-----------|--------|
-| **Slop Index** | 0–100 | **Lower is better** | Threshold gates in CI (`meanSlop`, `p90Slop`, `individualSlopThreshold`) |
+| **AI Quality** | 0–100 | **Higher is better** | Threshold gates in CI (`meanSlop`, `p90Slop`, `individualSlopThreshold`) |
 | **Architecture Consistency** | 0–100 | **Higher is better** | `slopbrick architecture` subcommand + dashboard trend |
 | **Pattern Fragmentation** | 0–100 | **Higher is better** | `slopbrick patterns` + input to `slop_suggest`'s doNotCreate list |
 | **AI Security Risk** | categorical | Ordered: `low < medium < high < critical` | `slopbrick security [--strict]` CI gate |
@@ -32,11 +31,12 @@
 | **Business Logic Coherence** | 0–100 | **Higher is better** | `slopbrick business-logic` subcommand |
 | **Documentation Freshness** | 0–100 | **Higher is better** | `slopbrick docs` subcommand |
 | **Database Health** | 0–100 | **Higher is better** | `slopbrick db` subcommand |
+| **Engineering Hygiene** | 0–100 | **Higher is better** | Composite of architecture + patterns + constitution + AI debt |
 | **Repository Health** (composite) | 0–100 + `AI Debt` band | **Higher is better** | Headline number |
 | **AI Maintenance Cost** | `$/month` | **Lower is better** | `slopbrick maintenance-cost` |
 | **AI Debt band** | A / B / C / D / F | **Higher is better** | Letter grade from composite |
 
-The 13 are computed independently. A project can score `Slop Index 90` (great code quality) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
+The 4 headline scores + 9 secondary scores are computed independently. A project can score `AI Quality 90` (great code quality) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
 
 ---
 

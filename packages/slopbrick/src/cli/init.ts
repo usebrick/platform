@@ -70,6 +70,41 @@ const UI_LIBRARY_OPTIONS: UiLibrary[] = ['shadcn/ui', 'mui', 'chakra', 'radix', 
 
 const STRICTNESS_OPTIONS: Strictness[] = ['strict', 'balanced', 'permissive'];
 
+const STRUCTURE_OPTIONS = ['feature-based', 'layer-based', 'flat', 'monorepo', 'other'] as const;
+
+/**
+ * v0.14.5d: free-text prompt for the open PickBrick categories
+ * (state, auth, forms, testing). The PickBrick wizard in the user
+ * brief lists specific canonical libraries (Zustand, NextAuth, etc.)
+ * but in practice teams use any of a long tail. Accepting free text
+ * matches how `slopbrick scan` detects packages — by npm-name
+ * presence, not by whitelist membership — so the user can declare
+ * their actual library.
+ *
+ * Empty input is allowed and returns `undefined`, which
+ * `buildInitConfig` interprets as "this category is deliberately
+ * undeclared" (the Constitution stays empty for the field).
+ */
+function promptText(
+  rl: ReadlineInterface,
+  question: string,
+  detected: string,
+): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const lines = [
+      `? ${question} (detected: ${detected || 'none'}) — npm package name, or Enter to skip:`,
+    ];
+    rl.question(lines.join('\n') + '\n', (answer) => {
+      const trimmed = answer.trim();
+      if (trimmed === '') {
+        resolve(undefined);
+        return;
+      }
+      resolve(trimmed);
+    });
+  });
+}
+
 function promptSingleSelect<T extends string>(
   rl: ReadlineInterface,
   question: string,
@@ -178,6 +213,22 @@ export async function runInitWizard(
 
     const strictness = await promptSingleSelect(rl, 'Strictness', STRICTNESS_OPTIONS, 'balanced');
 
+    // v0.14.5d: PickBrick taxonomy — the four open categories. Free
+    // text (state / auth / forms / testing) so the user can declare
+    // their actual library without a hardcoded whitelist; a 5-option
+    // picker for structure. All optional — Enter-to-skip means the
+    // field is undeclared in the Constitution.
+    const stateManagement = await promptText(rl, 'State management', '');
+    const auth = await promptText(rl, 'Auth', '');
+    const forms = await promptText(rl, 'Forms (validation lib, e.g. zod)', '');
+    const testing = await promptText(rl, 'Testing (e.g. vitest, jest, playwright)', '');
+    const structure = await promptSingleSelect(
+      rl,
+      'Project structure',
+      [...STRUCTURE_OPTIONS],
+      'feature-based',
+    );
+
     // Round 23: surface auto-detected constitution in the wizard's
     // final summary so users see what slopbrick inferred before
     // writing the config file. They can later override any field in
@@ -188,7 +239,17 @@ export async function runInitWizard(
       rl.write(formatConstitution(detectedConstitution) + '\n\n');
     }
 
-    return { framework, styling, uiLibraries, strictness };
+    return {
+      framework,
+      styling,
+      uiLibraries,
+      strictness,
+      stateManagement,
+      auth,
+      forms,
+      testing,
+      structure,
+    };
   } finally {
     rl.close();
   }
@@ -245,7 +306,7 @@ export async function runDoctor(cwd: string): Promise<number> {
 
   // 4. SWC parser bindings
   try {
-    const { parseFile: tryParse } = await import('../engine/parser');
+    const { parseFile: tryParse } = await import('@usebrick/engine');
     const testFile = join(cwd, '.slopbrick', '.doctor-test.ts');
     mkdirSync(dirname(testFile), { recursive: true });
     writeFileSync(testFile, 'export const x = 1;\n');
@@ -298,6 +359,54 @@ export async function runDoctor(cwd: string): Promise<number> {
     }
   } catch {
     // discovery failure is not fatal
+  }
+
+  // 8. Repository Memory artifacts: .slopbrick/{inventory,constitution,health}.json + memory.md
+  // v0.14.5d: the scan now writes all four artifacts atomically. Verify
+  // each one is present + schema-valid, and warn if missing so the user
+  // knows MCP `slop_suggest_with_memory` and external integrations will
+  // fall back to a re-scan.
+  const { existsSync: exists } = await import('node:fs');
+  const { join: pjoin } = await import('node:path');
+  const { loadInventory, loadConstitution, loadHealth } = await import('@usebrick/core');
+  const { readStructureMarkdown } = await import('../engine/structure-md');
+
+  const inv = loadInventory(cwd);
+  if (inv) {
+    ok(`.slopbrick/inventory.json present (${inv.patterns.length} patterns, ${inv.components.length} components).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'inventory.json'))) {
+    warn('.slopbrick/inventory.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/inventory.json — MCP and external agents cannot read detected patterns. Run `slopbrick scan`.');
+  }
+
+  const con = loadConstitution(cwd);
+  if (con) {
+    const decl = Object.keys(con.declared).length;
+    const forb = con.forbidden.length + con.forbiddenPrefixes.length;
+    ok(`.slopbrick/constitution.json present (${decl} declared categories, ${forb} forbidden entries).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'constitution.json'))) {
+    warn('.slopbrick/constitution.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/constitution.json — `slopbrick drift` cannot check declared rules. Run `slopbrick scan` (or set one up via `slopbrick init`).');
+  }
+
+  const health = loadHealth(cwd);
+  if (health) {
+    ok(`.slopbrick/health.json present (repositoryHealth=${health.repositoryHealth}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'health.json'))) {
+    warn('.slopbrick/health.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
+  } else {
+    warn('No .slopbrick/health.json — dashboards/CI gates will not show current health. Run `slopbrick scan`.');
+  }
+
+  const md = await readStructureMarkdown(cwd);
+  if (md && md.length > 0) {
+    ok(`.slopbrick/structure.md present (${md.length} bytes — agent-readable summary).`);
+  } else if (exists(pjoin(cwd, '.slopbrick', 'structure.md'))) {
+    warn('.slopbrick/structure.md exists but is empty. Run `slopbrick scan` to regenerate.');
+  } else {
+    warn('No .slopbrick/structure.md — `slop_suggest_with_structure` MCP tool will fall back to re-scanning. Run `slopbrick scan`.');
   }
 
   // Warnings bump exit code to 1 so CI gates that check $? see them.

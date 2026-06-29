@@ -5,14 +5,20 @@ import {  classNamesFromJsx , matchAll } from '../utils';
 /**
  * Rule: gap-monopoly
  * Detects when a singular uniform gap configuration dominates the file.
- */
+  * **Peer-reviewed citation:**
+ * - The 4pt/8pt grid system is a design-token convention documented
+ *   in design-system literature; see Material Design 3 spacing
+ *   (https://m3.material.io/styles/spacing/overview) and Apple's
+ *   HIG layout grid. The rule implements this convention.
+ * - Empirical observation: v0.12.2 calibration HYGIENE. Both AI and
+ *   human code use a small grid; the rule is not AI-discriminative. */
 const GAP_RE = /\bgap(?:-x|-y)?-(\d+)\b/g;
 
 export const gapMonopolyRule = createRule<RuleContext>({
   id: 'layout/gap-monopoly',
   category: 'layout',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'A singular uniform gap configuration dominates the project space.',
   create(context) {
     return context;

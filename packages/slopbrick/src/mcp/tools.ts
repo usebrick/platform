@@ -6,7 +6,7 @@ import { scanFile } from '../engine/worker.js';
 import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore, formatArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
-import { runSuggestWithMemory } from './slop-suggest-memory.js';
+import { runSuggestWithStructure } from './slop-suggest-structure.js';
 import type { Rule, ResolvedConfig } from '../types.js';
 
 export interface ToolContext {
@@ -22,6 +22,19 @@ export interface ToolDefinition {
     type: 'object';
     properties: Record<string, unknown>;
     required?: string[];
+  };
+  /**
+   * If set, this tool is a deprecated alias for another tool. The value
+   * is the canonical tool name. MCP clients see a soft deprecation warning
+   * in the tool description and are routed to the canonical tool.
+   */
+  deprecated?: {
+    /** Canonical replacement tool. */
+    replacedBy: string;
+    /** When the tool will be removed (semver-style). */
+    removedIn?: string;
+    /** Short user-facing reason. */
+    reason: string;
   };
 }
 
@@ -81,9 +94,9 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: 'slop_suggest_with_memory',
+    name: 'slop_suggest_with_structure',
     description:
-      'Fast-path variant of `slop_suggest` that reads `.slopbrick/memory.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `memory.md` is missing, falls back to `slop_suggest` and annotates the response with `memoryHint` so the caller knows to run `slopbrick scan` first.',
+      'Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -97,7 +110,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_governance',
     description:
-      'Returns the composite Repository Health score (0-100) + AI Debt band + per-axis breakdown + warnings. Use this when the agent only needs the headline number, not the full pattern inventory.',
+      '[DEPRECATED — use `slop_suggest` and read `repositoryHealth` from the response. Removal planned for v0.13.0.] Returns the composite Repository Health score (0-100) + AI Debt band + per-axis breakdown + warnings. This is now a strict subset of what `slop_suggest` returns; call `slop_suggest` once and read the `repositoryHealth` field instead of making a second round-trip.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -106,6 +119,12 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: 'Cap on files scanned. Defaults to 500.',
         },
       },
+    },
+    deprecated: {
+      replacedBy: 'slop_suggest',
+      removedIn: '0.13.0',
+      reason:
+        '`slop_suggest` already returns `repositoryHealth` in its response. Calling both is redundant.',
     },
   },
   {
@@ -123,7 +142,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_architecture_score',
     description:
-      'Compute the Architecture Consistency Score (0-100) — one number that reflects how consistent the repository\'s patterns are (modal systems, button variants, api clients, state libraries, data-fetching libraries, design-token violations). 100 = one of each, no drift. Returns the score plus per-category deductions.',
+      '[DEPRECATED — use `slop_suggest` and read `architectureConsistency` from the response. Removal planned for v0.13.0.] Compute the Architecture Consistency Score (0-100) — one number that reflects how consistent the repository\'s patterns are (modal systems, button variants, api clients, state libraries, data-fetching libraries, design-token violations). 100 = one of each, no drift. Returns the score plus per-category deductions. This is now a strict subset of what `slop_suggest` returns.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -133,11 +152,17 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
       },
     },
+    deprecated: {
+      replacedBy: 'slop_suggest',
+      removedIn: '0.13.0',
+      reason:
+        '`slop_suggest` already returns `architectureConsistency` in its response. Calling both is redundant.',
+    },
   },
   {
     name: 'slop_business_logic_score',
     description:
-      'Compute the Business Logic Coherence (0-100) — surfaces naming and structural anti-patterns in pricing, validation, and formatting code that AI-generated code emits disproportionately (Math.round(price*100)/100, z.string() without constraints, hardcoded ISO dates, etc.). 100 = no anti-patterns detected. Returns the score, scanned file count, per-category counts, and the full issue list.',
+      '[DEPRECATED — use `slop_suggest` and read `businessLogicCoherence` from the response. Removal planned for v0.13.0.] Compute the Business Logic Coherence (0-100) — surfaces naming and structural anti-patterns in pricing, validation, and formatting code that AI-generated code emits disproportionately (Math.round(price*100)/100, z.string() without constraints, hardcoded ISO dates, etc.). 100 = no anti-patterns detected. Returns the score, scanned file count, per-category counts, and the full issue list. This is now a strict subset of what `slop_suggest` returns.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -146,6 +171,12 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
           description: 'Cap on files scanned. Defaults to 500.',
         },
       },
+    },
+    deprecated: {
+      replacedBy: 'slop_suggest',
+      removedIn: '0.13.0',
+      reason:
+        '`slop_suggest` already returns `businessLogicCoherence` in its response. Calling both is redundant.',
     },
   },
   {
@@ -494,7 +525,7 @@ async function runFindSimilar(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
-  const { findSimilarFunctions } = await import('../engine/find-similar.js');
+  const { findSimilarFunctions } = await import('@usebrick/engine');
   const hooks = Array.isArray(args.hooks) ? (args.hooks as string[]) : [];
   const props = Array.isArray(args.props) ? (args.props as string[]) : [];
   const limitRaw = args.limit;
@@ -549,6 +580,19 @@ export async function handleToolCall(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
+  // Soft-warn the agent when a deprecated tool is called. The call still
+  // succeeds (we keep backward compatibility through v0.12.x) but the
+  // response carries a `deprecation` field the MCP client can surface.
+  const deprecation = getDeprecation(toolName);
+  const deprecationNotice = deprecation
+    ? {
+        tool: toolName,
+        replacedBy: deprecation.replacedBy,
+        removedIn: deprecation.removedIn ?? 'next major',
+        reason: deprecation.reason,
+      }
+    : undefined;
+
   switch (toolName) {
     case 'slop_scan_file':
       return runScanFile(args, ctx);
@@ -558,8 +602,8 @@ export async function handleToolCall(
       return listRules(args, ctx);
     case 'slop_suggest':
       return runSuggest(args, ctx);
-    case 'slop_suggest_with_memory':
-      return runSuggestWithMemory(args, ctx);
+    case 'slop_suggest_with_structure':
+      return runSuggestWithStructure(args, ctx);
     case 'slop_governance':
       return runGovernance(args, ctx);
     case 'slop_check_constitution':
@@ -573,4 +617,33 @@ export async function handleToolCall(
     default:
       return toolError('Unknown tool: ' + toolName);
   }
+}
+
+/**
+ * Returns the set of canonical (non-deprecated) MCP tool names. Use this
+ * when validating an MCP client's requested tool name, when emitting
+ * documentation, or when deciding whether to gate a tool behind a feature
+ * flag. The four canonical tools in v0.11.x are:
+ *
+ *   - `slop_suggest` / `slop_suggest_with_structure` — primary entry points
+ *   - `slop_scan_file` — single-file scan (for editor integration)
+ *   - `slop_check_constitution` — pre-commit gate on declared stack
+ *   - `slop_explain_rule` — rule documentation lookup
+ *
+ * Plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive)
+ * which are unique-purpose tools that don't fit the axis-score pattern.
+ */
+export function canonicalToolNames(): string[] {
+  return TOOL_DEFINITIONS.filter((t) => !t.deprecated).map((t) => t.name);
+}
+
+/**
+ * Returns the deprecation metadata for a tool, or undefined if the tool
+ * is canonical. MCP clients can use this to soft-warn users in their UI
+ * before the tool is removed in v0.13.0.
+ */
+export function getDeprecation(toolName: string):
+  | { replacedBy: string; removedIn?: string; reason: string }
+  | undefined {
+  return TOOL_DEFINITIONS.find((t) => t.name === toolName)?.deprecated;
 }

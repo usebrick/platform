@@ -172,6 +172,14 @@ const RULE_HINTS: Record<string, string> = {
     'Use the configured spacing scale (4px or 8px grid). Avoid arbitrary values like p-[13px] that aren\'t on the scale.',
   'logic/ghost-defensive':
     'Use optional chaining (?.) or early returns instead of deep && guards. If a defensive chain runs 3+ levels deep, refactor.',
+  'logic/bayesian-conditional':
+    'The Bayesian combiner aggregates multiple weak signals into a calibrated posterior P(AI|fires). Treat any fire above 0.7 as evidence of AI authorship; above 0.9 as strong evidence. (v0.12.0 — Bento et al. 2024 *Neurocomputing*.)',
+  'logic/heaps-deviation':
+    "Inspect for LLM-style vocabulary patterns: this file's vocabulary grows faster (high Heaps λ) or slower (low λ) than typical source code. Verify authorship if unexpected. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
+  'logic/ks-distribution-shift':
+    'Inspect the shifted features. KS detects both AI anomalies and production-rot anomalies (it is symmetric); combine with Heaps/Zipf for AI-specific signal. (v0.12.0 — arXiv:2510.15996, Oct 2025.)',
+  'logic/zipf-slope-anomaly':
+    "Inspect for LLM-style frequency distribution: this file's identifier usage is more peaked or flatter than typical human code. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
   'logic/math-any-density':
     'Replace `: any` with proper types. Start with the parameter/return types of the most-used functions.',
   'logic/math-console-log-storm':
@@ -240,6 +248,45 @@ const RULE_HINTS: Record<string, string> = {
     'When generating tests, cover the alternate path: `else` branches, `catch` blocks, ternary alternates, and `??` fallbacks. Production branches without tests are a CI smell.',
   'test/fake-placeholder':
     'Use domain-specific fixture values (`alice@acme-corp.com`, `Order#48231`) or a factory like @faker-js/faker. Avoid textbook placeholders (`John Doe`, `test@test.com`, `id: 1`).',
+  'product/terminology-drift':
+    'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. AI agents pick slightly different words each invocation; product copy drifts.',
+  'product/ux-pattern-fragmentation':
+    'Keep the per-category count tight: modal ≤3, toast ≤2, button ≤4, input ≤3, card ≤3. Pick the canonical one and alias the rest. `slopbrick patterns` reports the per-category count.',
+  // v0.13.0 — AI-specific rules (peer-reviewed signals).
+  'ai/markdown-leakage':
+    'Delete stray `\\`\\`\\`<lang>\\`\\`\\`` markers; they are Markdown fences, not valid syntax in standalone source files (Yotkova et al. SemEval-2026).',
+  'ai/comment-ratio':
+    'AI tools either skip comments (reductive models) or over-comment (expansive models). Match the corpus mean ± 2σ (Rahman et al. 2024, Bisztray et al. 2025).',
+  'ai/whitespace-regularity':
+    'Vary inter-token spacing (single spaces mostly, occasional alignment in tables). Uniform runs are an AI tell (Shi et al. DetectCodeGPT 2024).',
+  'ai/text-like-ratio':
+    'Move natural-language explanations to README files or doc comments. Inline prose in source code is hard to maintain (Yotkova 2026).',
+  'ai/errors-near-eof':
+    'Check whether the file was truncated by a token limit. Unbalanced delimiters near EOF suggest the model ran out of output budget (Yotkova 2026).',
+  'ai/any-density':
+    'Replace `any` with `unknown`, `Record<string, unknown>`, or a domain type. The `: any` annotation propagates type-errors and defeats TS safety (Lee, Hassan, Hindle MSR 2026).',
+  'ai/renyi-profile':
+    'The token distribution is mass-concentrated on a few high-frequency tokens. Verify authorship if unexpected (Rényi 1961, Moslonka 2025).',
+  'ai/log-rank-histogram':
+    'The token vocabulary is concentrated in the top-1000 most common tokens. Real codebases use more diverse identifiers (Gehrmann 2019 GLTR).',
+  'ai/segment-surprisal-cv':
+    'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (Binoculars, Hans 2024).',
+  'ai/compression-profile':
+    'The file compresses unusually well and lines are highly repetitive — characteristic of AI-generated boilerplate (Cilibrasi 2005, Mahoney 1999).',
+  // v0.14.5b — 6 new AI tendency detection rules (DORMANT in v0.14.5b;
+  // reclassified post-v7 calibration in v0.14.5d)
+  'ai/tailwind-color-overuse':
+    "If most utility classes are bg-violet-500, text-violet-600, ring-violet-400 — the project is on the AI-default palette. Audit and replace with the project's design tokens.",
+  'ai/default-react-stack':
+    "Every new file is a Vite + React + Tailwind + Zustand + React Hook Form clone. Verify the project actually needs each piece before adding it.",
+  'ai/library-reinvention':
+    "Re-implementing zustand, react-hook-form, or date-fns inline (custom event emitters, useState reducers, manual date math) is a sign of LLM completion-mode code. Use the libraries the project already depends on.",
+  'ai/state-default-overuse':
+    "Wrapping every component in useState + useEffect for transient UI state is the React tutorial default. Real production code uses refs, uncontrolled inputs, or the project's state lib.",
+  'ai/fetch-default-overuse':
+    "Calling fetch() inline in components instead of going through the project's data-fetching layer (react-query, swr, or your own client) bypasses the cache, error boundary, and abort handling.",
+  'ai/console-debug-storm':
+    "5+ console.log calls in a single file is debug-by-print-statement, the LLM training-data default. Remove before commit; use the project's logger or a real debugger.",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

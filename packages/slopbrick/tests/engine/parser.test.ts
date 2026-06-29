@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { writeFileSync, mkdirSync, rmSync } from 'fs';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
@@ -114,6 +114,42 @@ describe('parseFile', () => {
         writeFileSync(file, 'export const x = 1;\r\nexport const y = 2;\r\n');
         const result = await parseFile(file);
         expect(result.ast.type).toBe('Module');
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    // v0.14.5l: backend files (.py, .go) parse as blank-padded empty
+    // modules so the rule engine can still run on them (rules that
+    // need SWC will silently produce 0 issues, but regex-only rules
+    // like markdown-leakage and comment-ratio can fire).
+    it('parses .py files as empty modules (line offsets preserved)', async () => {
+      const dir = createTmpDir();
+      try {
+        const file = join(dir, 'sample.py');
+        const source = 'def hello():\n    """A docstring."""\n    print("hi")\n';
+        writeFileSync(file, source);
+        const result = await parseFile(file);
+        // AST is an empty Module (no body), but line offsets are preserved
+        expect(result.ast.type).toBe('Module');
+        // The source has been blank-padded: every non-newline char is ' '
+        expect(result.source).toContain('\n');
+        // Lines still exist (line offset preservation)
+        expect(result.source.split('\n').length).toBe(source.split('\n').length);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('parses .go files as empty modules (line offsets preserved)', async () => {
+      const dir = createTmpDir();
+      try {
+        const file = join(dir, 'main.go');
+        const source = 'package main\n\nfunc main() {\n    println("hi")\n}\n';
+        writeFileSync(file, source);
+        const result = await parseFile(file);
+        expect(result.ast.type).toBe('Module');
+        expect(result.source.split('\n').length).toBe(source.split('\n').length);
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

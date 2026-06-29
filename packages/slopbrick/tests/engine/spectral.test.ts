@@ -5,7 +5,7 @@ import {
   buildLaplacian,
   lanczosFiedler,
   type Graph,
-} from '../../src/engine/spectral';
+} from '@usebrick/engine';
 
 /**
  * v0.10.1 Phase 6.2 — Spectral graph theory tests.

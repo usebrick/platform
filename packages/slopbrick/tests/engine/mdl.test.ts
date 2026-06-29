@@ -5,9 +5,14 @@ import {
   MDL_SMOOTHING_FLOOR,
   buildDefaultMdlPriors,
   computeMDLikelihood,
-  DEFAULT_MDL_PRIORS,
-} from '../../src/engine/mdl';
+} from '@usebrick/engine';
 import { builtinRules } from '../../src/rules/builtins';
+
+// v0.15.0 B.5: the engine no longer exports a default `DEFAULT_MDL_PRIORS`
+// because it depends on slopbrick's `builtinRules` (which would create a
+// workspace-level circular dep). Tests that need the default priors
+// build them locally.
+const DEFAULT_MDL_PRIORS = buildDefaultMdlPriors(builtinRules);
 
 describe('AI_FAVORED_RULE_IDS / HUMAN_FAVORED_RULE_IDS', () => {
   it('contains the 18 v4-USEFUL rules from the calibration table', () => {
@@ -189,7 +194,7 @@ describe('computeMDLikelihood', () => {
     ];
     const withExplicit = buildRepositoryHealthFromReport(
       {
-        slopIndex: 10,
+        aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
         architectureConsistency: 90,
         aiSecurityRisk: 'low',
         issues,
@@ -205,7 +210,7 @@ describe('computeMDLikelihood', () => {
 
     // Auto-compute path: omit mdlLogRatio, derive from issues.
     const auto = buildRepositoryHealthFromReport({
-      slopIndex: 10,
+      aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       issues,

@@ -7,7 +7,7 @@ function makeReport(overrides: Partial<ProjectReport> & { issues?: Issue[] } = {
     version: '0.6.0',
     generatedAt: '2026-06-15T00:00:00.000Z',
     configPath: 'slopbrick.config.js',
-    slopIndex: 34.2,
+    aiQuality: 34.2, engineeringHygiene: 34.2, security: 34.2, repositoryHealth: 34.2,
     assemblyHealth: 65.8,
     totalScore: 34.2,
     categoryScores: {
@@ -19,7 +19,7 @@ function makeReport(overrides: Partial<ProjectReport> & { issues?: Issue[] } = {
       logic: 21.4,
       arch: 4.2,
       perf: 0,
-      security: 0,      test: 0,    docs: 0,    db: 0,},
+      security: 0,      test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,},
     boundaryScore: 25.0,
     contextScore: 30.0,
     visualScore: 50.0,
@@ -73,18 +73,60 @@ describe('formatHtml', () => {
     const output = formatHtml(makeReport());
     expect(output).toContain('Version 0.6.0');
     expect(output).toContain('2026-06-15T00:00:00.000Z');
-    expect(output).toContain('34'); // rounded slop index
-    expect(output).toContain('66'); // rounded health
+    expect(output).toContain('66'); // rounded assembly health
     expect(output).toContain('high');
     expect(output).toContain('medium');
     expect(output).toContain('low');
   });
 
+  it('renders the 4 named scores (v0.15.0+) replacing the single slopIndex', () => {
+    const output = formatHtml(makeReport({
+      // v0.15.0+: provide the 4 named scores so they render with
+      // numeric values. These fields are added to ProjectReport in U.5;
+      // until then the renderer reads them through a temporary cast.
+      repositoryHealth: 81,
+    } as Partial<ProjectReport>));
+    expect(output).toContain('Repository Health (composite)');
+    expect(output).toContain('AI Quality');
+    expect(output).toContain('Engineering Hygiene');
+    expect(output).toContain('Security');
+    expect(output).toContain('81'); // repositoryHealth rounded
+    expect(output).not.toContain('Slop Index');
+    expect(output).not.toContain('slop-index');
+  });
+
   it('renders threshold rows with pass or fail status', () => {
-    const output = formatHtml(makeReport());
-    expect(output).toContain('Composite Slop Index');
+    const output = formatHtml(makeReport({
+      repositoryHealth: 85,
+    } as Partial<ProjectReport>));
+    expect(output).toContain('Repository Health (composite)');
     expect(output).toContain('status-pass');
     expect(output).toContain('status-fail');
+  });
+
+  it('renders the 3-bucket taxonomy (v0.15.0+ U.2)', () => {
+    const output = formatHtml(makeReport({
+      // v0.15.0+: provide verdict data so the bucket sections render
+      // with non-zero counts. These fields land on ProjectReport in U.5.
+      verdicts: ['USEFUL', 'USEFUL', 'OK', 'HYGIENE', 'INVERTED', 'NOISY'],
+      ruleVerdicts: [
+        { ruleId: 'zombie-state', verdict: 'USEFUL', confidence: 'High' },
+        { ruleId: 'placeholder-density', verdict: 'USEFUL' },
+        { ruleId: 'leaky-meta', verdict: 'OK' },
+        { ruleId: 'css-bloat', verdict: 'HYGIENE', message: 'CSS Bloat' },
+        { ruleId: 'unused-export', verdict: 'INVERTED' },
+        { ruleId: 'false-positive-x', verdict: 'NOISY' },
+      ],
+    } as Partial<ProjectReport>));
+    expect(output).toContain('Findings by bucket');
+    expect(output).toContain('AI Findings');
+    expect(output).toContain('Engineering Hygiene');
+    expect(output).toContain('Suppressed Rules');
+    expect(output).toContain('zombie-state');
+    expect(output).toContain('css-bloat');
+    expect(output).toContain('2 Useful · 1 OK'); // ai bucket summary (per spec)
+    expect(output).toContain('1 Hygiene · 1 Inverted'); // engineering hygiene bucket
+    expect(output).toContain('1 Noisy'); // suppressed bucket summary
   });
 
   it('renders category breakdown with labels and bars', () => {

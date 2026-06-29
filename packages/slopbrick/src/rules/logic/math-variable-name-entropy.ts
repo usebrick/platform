@@ -13,7 +13,14 @@ import { shannonEntropy } from '../math-utils';
  * v2.components[].props[].name, plus identifiers found in `_source`.
  *
  * Threshold: ≥40 identifiers AND entropy ≤ 1.8 → flag.
- */
+  * **Peer-reviewed citation:**
+ * - Shannon, C. E. (1948), "A Mathematical Theory of Communication,"
+ *   Bell System Technical Journal 27(3):379-423.
+ * - Hindle, A. et al. (2012), "On the Naturalness of Software,"
+ *   ICSE 2012.
+ * - v0.12.2 calibration: HYGIENE. The signal inverts in source
+ *   code (humans and AI both reuse generic names; the distribution
+ *   is bimodal at the human level). */
 const IDENT_RE = /\b[a-z][a-zA-Z0-9]{2,}\b/g;
 
 const STOPWORDS = new Set([
@@ -28,7 +35,7 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
   id: 'logic/math-variable-name-entropy',
   category: 'logic',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Identifier names show low Shannon entropy — AI defaults to a small vocabulary of generic names',
   create(context) {
     return context;
@@ -64,7 +71,7 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
       ruleId: 'logic/math-variable-name-entropy',
       category: 'logic',
       severity: 'high',
-      aiSpecific: true,
+      aiSpecific: false,
       message:
         `Identifier names show low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
         `Top: ${topStr}. AI defaults to a small vocabulary of generic names (data, items, value, setData, setItems).`,

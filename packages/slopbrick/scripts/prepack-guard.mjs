@@ -12,35 +12,36 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgPath = join(here, '..', 'package.json');
-const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
 
-const fields = ['dependencies', 'peerDependencies', 'optionalDependencies'];
+let pkg;
+try {
+  pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+} catch (err) {
+  console.error('\n❌ prepack guard: failed to parse package.json.');
+  console.error('   path:', pkgPath);
+  console.error('   error:', err.message);
+  console.error('\nFix: run `node -e "JSON.parse(require(\'fs\').readFileSync(\'package.json\', \'utf8\'))"`');
+  console.error('   to see the exact parse error, then fix the syntax.');
+  process.exit(2);
+}
+
+const fields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+// Allowlist: these are private workspace packages that tsup
+// bundles into dist/ via `noExternal`. Listing them as workspace
+// deps keeps pnpm-lock.yaml in sync so tsup can find the source
+// during the bundle step. They're not published to npm; the
+// bundle means the dist/ doesn't need them at runtime.
+const ALLOWED_WORKSPACE_BUNDLE_DEPS = new Set(['@usebrick/core']);
 const offenders = [];
-const devOffenders = [];
 
 for (const field of fields) {
   const deps = pkg[field] ?? {};
   for (const [name, range] of Object.entries(deps)) {
     if (typeof range === 'string' && range.startsWith('workspace:')) {
+      if (ALLOWED_WORKSPACE_BUNDLE_DEPS.has(name)) continue;
       offenders.push(`${field}.${name} = "${range}"`);
     }
   }
-}
-
-// devDependencies are NOT installed by end users (npm skips them by default),
-// so workspace:* is allowed there. The build still installs them locally via
-// pnpm so tsup's `noExternal` can bundle them. Only fail on devDep workspace:*
-// if the build manifest explicitly opts into shipping devDeps to npm.
-for (const [name, range] of Object.entries(pkg.devDependencies ?? {})) {
-  if (typeof range === 'string' && range.startsWith('workspace:')) {
-    devOffenders.push(`devDependencies.${name} = "${range}"`);
-  }
-}
-
-if (devOffenders.length > 0) {
-  console.log('ℹ️  devDependencies with workspace:* (allowed — not published):');
-  for (const o of devOffenders) console.log('  - ' + o);
-  console.log();
 }
 
 if (offenders.length > 0) {
@@ -57,4 +58,7 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
-console.log('✓ prepack guard: no workspace:* deps in package.json.');
+console.log(`✓ prepack guard: no non-allowlisted workspace:* deps in package.json.`);
+if (ALLOWED_WORKSPACE_BUNDLE_DEPS.size > 0) {
+  console.log(`  (allowlisted: ${[...ALLOWED_WORKSPACE_BUNDLE_DEPS].join(', ')} — these are bundled by tsup)`);
+}

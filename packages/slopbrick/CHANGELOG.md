@@ -5,6 +5,512 @@ All notable changes to slopbrick are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-06-26 — Repository Structure Platform (BREAKING)
+
+This is a hard-break release. The platform is renamed from "Repository Memory Platform" to "Repository Structure Platform (RSP)". The `memory*` names are replaced with `structure*` everywhere. **Slop Score is replaced by 3 independent scores** (AI Quality / Engineering Hygiene / Security + a Repository Health composite).
+
+### Breaking changes
+
+- `MEMORY_SCHEMA_VERSION` (value 2) is replaced by `STRUCTURE_SCHEMA_VERSION` (value 3). The schema field `slopIndex` is replaced by `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+- The on-disk artifact `.slopbrick/memory.md` is renamed to `.slopbrick/structure.md`.
+- Types: `MemoryFile` → `StructureFile`; `MemoryCategory` → `StructureCategory`; `MemoryPattern` → `StructurePattern`.
+- Functions: `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`.
+- MCP tool `slop_suggest_with_memory` → `slop_suggest_with_structure` (the tool identifier changes).
+- The verdict enum is unchanged (6 values) but the user-facing report now exposes a 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) instead of the 6 verdict names. The engine/UI seam is a new `bucketForVerdict()` function in `packages/slopbrick/src/report/buckets.ts`.
+- New `packages/engine/` workspace package — the pure scanning logic is extracted from `slopbrick/src/engine/`.
+
+### Migration
+
+There is no automatic migration. Update any code that reads `.slopbrick/memory.md` to read `.slopbrick/structure.md`. Update any consumers of the `slop_suggest_with_memory` MCP tool to call `slop_suggest_with_structure` instead.
+
+### Added
+- `Verdict` enum, `isDefaultOff()`, and `VERDICTS` are now exported from `packages/core/src/verdicts.ts` as a single source of truth.
+- Zod schema `signalStrengthSchema` validates the calibration data at load time.
+- Schema codegen: `packages/core/scripts/codegen-types.ts` reads `schemas/v1/*.json` and writes TypeScript types to `packages/core/src/generated/`. CI fails if schemas and types are out of sync.
+- WebGL cleanup: `brick-shader.ts` calls `WEBGL_lose_context?.loseContext()` on unmount.
+- Tool cards are keyboard-accessible (button role + Enter/Space + focus-visible).
+- Skip-to-content link.
+- axe-core via Playwright in CI for the website.
+- `LowPowerDetector` skips WebGL on devices with `deviceMemory < 4` / `hardwareConcurrency < 4` / `prefers-reduced-motion`.
+- Per-brick jitter in the WebGL shader.
+- LCP-swap: WebGL canvas waits for `largest-contentful-paint` before initializing.
+- `bucketForVerdict()` — the engine/UI taxonomy seam.
+- Multi-score: `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+
+## [0.14.5d] - 2026-06-27 — Repository Structure pipeline + LockBrick prevention commands
+
+This release ships the **Repository Structure** surface end-to-end and
+adds the **LockBrick prevention loop** as three new CLI commands. The
+scanner now writes four atomic artifacts to `.slopbrick/` on every run,
+and the CLI exposes `watch`, `ci`, and `lock` to enforce the same
+constraints before code lands.
+
+### Added
+
+- **`.slopbrick/health.json`** — new headline artifact. The contract
+  is `health.schema.json` in `@usebrick/core`; the writer
+  `saveHealth()` joins the existing `saveInventory` /
+  `saveConstitution` family. Fields: `slopIndex` (0-100, lower is
+  better), `categoryScores`, `issueCounts` (high/medium/low),
+  `constitutionDrift`, `topOffenseIds` (top 3), `scanDurationMs`.
+  Consumed by CI gates, dashboards, and the website's project page.
+  See `docs/repository-structure.md` for the full contract.
+
+- **`.slopbrick/structure.md`** — every `slopbrick scan` now also writes
+  the agent-readable markdown summary. Previously this existed as a
+  renderer (`renderStructureMarkdown`) but was never wired into the
+  scan path. MCP `slop_suggest_with_structure` and external agent
+  integrations read this file instead of re-parsing AST (100-1000×
+  latency win on the agent integration).
+
+- **`buildHealthFromReport()`** — pure function
+  `ProjectReport → HealthFile` in `src/engine/memory.ts`. Derives
+  `issueCounts` from per-severity aggregation, picks the top 3
+  `topOffenseIds` by count (ties broken by name asc), rounds
+  `slopIndex` + `categoryScores` to integers. Tested in
+  `tests/engine/memory.test.ts` (3 new cases) and the end-to-end
+  artifact pipeline test in `tests/engine/memory-artifacts.test.ts`.
+
+- **`HealthFile` type + `isHealthFile` validator** in
+  `@usebrick/core/memory-types.ts`. Re-exported from the core barrel
+  alongside `saveHealth` / `loadHealth` / `healthPath` /
+  `HEALTH_FILENAME`.
+
+- **`slopbrick memory`** — new subcommand for the agent-readable
+  summary. Two modes:
+  - `slopbrick memory` (default `--show`) — print `.slopbrick/structure.md`
+    to stdout
+  - `slopbrick memory --regenerate` — re-render structure.md from the
+    existing inventory.json + constitution.json (no scan, sub-second)
+  The regenerate path is the workflow for "I just changed my
+  `slopbrick.config.mjs` and want a fresh structure.md without paying
+  for another full AST scan."
+
+- **`slopbrick watch`** — wires the existing `watchProject` engine
+  function as a top-level command. Runs an initial scan to populate
+  the report + write the .slopbrick/ artifacts, then re-runs the
+  scan on every file change. The LockBrick prevention loop entry:
+  violations surface as you write.
+
+- **`slopbrick ci`** — CI gate wrapper. Runs `slopbrick scan` with
+  `--no-increase --changed --format json`, then reads
+  `.slopbrick/health.json` and exits 1 on:
+  - `slopIndex > --max-slop <n>` (default unlimited)
+  - `constitutionDrift > 0` when `--strict-constitution` is set
+  Designed for `slopbrick ci --max-slop 50 --strict-constitution`
+  in `.github/workflows/ci.yml`.
+
+- **`slopbrick lock`** — installs the Git pre-commit hook that runs
+  `slopbrick scan --staged` on every commit. Auto-detects
+  `.husky/pre-commit` if `.husky/` exists, otherwise writes
+  `.git/hooks/pre-commit`. Use `--uninstall` to remove. The hook is
+  wrapped in sentinels so re-installing is idempotent and won't
+  clobber a project's existing hook.
+
+- **`slopbrick doctor` artifact checks** — extended to verify all
+  four `.slopbrick/` artifacts (inventory.json, constitution.json,
+  health.json, structure.md) exist, are schema-valid, and warns the
+  user if any are missing. The 5th check in doctor now points the
+  user at the right `slopbrick scan` invocation to refresh.
+
+- **`docs/repository-structure.md`** — canonical reference for the
+  `.slopbrick/` artifact contract. Covers the on-disk layout, the
+  TypeScript shape of each artifact, the on-write order, the
+  graceful-degradation contract for loaders, and the future
+  cross-tool consumer list (MCP, CI, dashboards, future
+  usebrick.dev tools). This is the document the website will link
+  to when explaining "what's in the box."
+
+### Tests
+
+- 5 new tests in `tests/engine/memory.test.ts` for
+  `buildHealthFromReport` + `saveHealth`/`loadHealth` round-trip
+- 3 new tests in `tests/engine/memory-artifacts.test.ts` for the
+  end-to-end artifact pipeline (all 4 artifacts write + round-trip
+  + buildHealthFromReport severity aggregation)
+- 2 new tests in `tests/integration/dist-bundle-paths.test.ts` —
+  regression coverage for a real bug found during v0.14.5d testing:
+  the bundled CJS distribution failed to find
+  `src/rules/signal-strength.json` because composite-scoring.ts used
+  `readFileSync(resolve(dirname(fileURLToPath(import.meta.url)),
+  '..', 'rules', 'signal-strength.json'))` — and the bundled file
+  lives at `dist/index.cjs`, so the path resolved to a directory
+  that didn't exist in the published tarball. Fix: composite-scoring
+  now uses `loadSignalStrength()` from `src/rules/signal-strength.ts`
+  (a static `import ... with { type: 'json' }` that esbuild inlines
+  into the bundle). Works in both ESM and bundled CJS. The unit
+  tests in vitest couldn't catch this because tsx resolves
+  `import.meta.url` to the .ts source — only the integration test,
+  which spawns the actual built `bin/slopbrick.js`, surfaces the
+  real-world failure mode.
+
+### Fixed
+
+- **dist-bundle path bug** (see Tests above) — the published
+  `slopbrick` binary was failing every scan with
+  `ENOENT: .../slopbrick/rules/signal-strength.json`. The 14
+  pre-existing CLI test failures (`tests/cli.test.ts`) were a
+  SYMPTOM of this bug; they all pass after the fix.
+- **6 missing `RULE_HINTS` entries** for the v0.14.5b AI tendency
+  rules (`tailwind-color-overuse`, `default-react-stack`,
+  `library-reinvention`, `state-default-overuse`,
+  `fetch-default-overuse`, `console-debug-storm`). The
+  `RULE_HINTS coverage` test now passes for all 80 rules. The
+  hints are the agent-facing prose shown next to each rule in the
+  generated snippet — without them, an MCP tool like
+  `slop_suggest` would render an empty hint bubble for those rules.
+
+## [0.14.5f] - 2026-06-27 — Scanner config fixes for v8 corpus re-scan
+
+The v0.14.5d scans hit 264 timeouts and 1 ENOENT race in 4 hours
+(0.28% of files scanned). Both were scanner-config bugs, not
+rule-quality issues. This release locks in the fixes as tests so
+the v8 corpus re-scan can't regress.
+
+### Fixed
+
+- **Per-file timeout bumped 60s → 180s.** The 60s limit was too
+  aggressive for large generated docs: Alamofire HTML (293KB)
+  takes 20-40s, Apollo Client test fixtures (100KB+) take 30s+,
+  and Discourse serializers can hit 60s on a single deeply-nested
+  file. 180s gives headroom for the npx-tsx fork (~500ms) + the
+  rule registry load (~1s on first hit) without being unbounded —
+  a genuinely hung child still gets SIGKILL'd.
+
+- **ENOENT-safe `unlinkSync` cleanup.** When a child was SIGKILL'd
+  by the timeout, the parent tried to `unlinkSync` a result file
+  that was never written. The v0.14.5d neg log showed exactly one
+  such race. Stale tmp files in `/tmp` are harmless (the OS
+  reclaims them), so the fix is to swallow the error rather than
+  crash the worker.
+
+- **Stderr-soak guard.** Workers run with `stdio: ['ignore',
+  'ignore', 'pipe']` so their stderr was previously piped to
+  /dev/null. If a rule threw inside the per-rule try/catch (and
+  was therefore silently recovered), the calibration data had no
+  record. v0.14.5f captures the first 2 lines of stderr on every
+  file — even on success — as a `_stderr` field on the result,
+  so hidden rule failures surface in the calibration data.
+
+### Tests
+
+- `tests/scripts/scanner-config.test.ts` — 6 regression tests
+  asserting the scanner's config invariants: timeout bounded
+  120s–600s, uses `npx tsx` (not raw `node`), passes
+  `SLOP_RESULT_PATH` env (no stdout buffer overrun), `unlinkSync`
+  is wrapped in `try { ... } catch { ... }` (ENOENT-safe),
+  captures stderr as `_stderr` (soak). All 6 pass.
+
+The currently-running v7 scans will continue to use the v0.14.5d
+scanner (the fix is for v8). The 265 errors observed so far are
+well below the noise floor for calibration (0.06% of corpus).
+
+## [0.14.7] - 2026-06-27 — Multi-language support, AI tendency rules, composite scoring
+
+This is a major release that adds support for 8 new programming languages,
+6 new AI-tendency detection rules, and a Bayesian composite scoring
+module. All changes are backward-compatible at the CLI surface.
+
+### Added
+
+- **Multi-language support (v0.14.0)** — 8 new backend language visitors
+  in `src/engine/visitors/`: Swift, Kotlin, Dart, Rust, C++ (.cpp/.cc/.cxx),
+  Java, Ruby, PHP. Each follows the same `extractXxxPatterns(filePath,
+  source) → { service, route, ormModel }` contract as `python.ts` and
+  `go.ts`. Coverage:
+  - **Service**: 26 shared service suffixes (Service, Manager, Handler,
+    Repository, Controller, Helper, Factory, Provider, Store, etc.)
+  - **Route**: framework-specific (Vapor, Spring, Ktor, Shelf, Actix,
+    Axum, Crow, Drogon, Pistache, JAX-RS, Rails, Sinatra, Laravel,
+    Symfony, Slim, etc.)
+  - **ORM**: framework-specific (Fluent, SwiftData, Spring Data, Drift,
+    Hive, Diesel, SeaORM, sqlx, JPA, EBean, ActiveRecord, Mongoid,
+    Sequel, Eloquent, Doctrine, etc.)
+  - C++ intentionally returns empty `ormModel` (no dominant C++ ORM)
+
+- **Composite AI-likelihood scoring (v0.14.6)** — new module
+  `src/engine/composite-scoring.ts` implementing Naive Bayes
+  log-likelihood ratio combination of triggered rules. For each rule
+  with calibration data (recall, fpRate), the LLR is
+  `log(recall/fpRate)`. The composite log-odds for a file = prior +
+  Σ LLR_i (triggered rules); sigmoid converts to a probability. The
+  prior defaults to 30% (Cui et al. 2025 census measurement of AI
+  prevalence in 2024-2026 codebases).
+
+  **Confidence tiers** (per Jaeschke 1994, JAMA):
+  - 0.00–0.30 LIKELY_HUMAN
+  - 0.30–0.70 INCONCLUSIVE
+  - 0.70–0.95 LIKELY_AI
+  - 0.95–1.00 VERY_LIKELY_AI
+
+  The composite score is attached to every `FileScanResult` as
+  `compositeScore`. It answers the user's question: "if 2 or more rules
+  trigger, probability of being AI is higher?" — backed by the
+  full Bayesian derivation at
+  `/Users/cheng/platform/.research/multi-lang/03-composite-scoring.md`.
+
+  References: McCallum & Nigam 1998 (AAAI'98), Yerazunis 2003
+  (SpamAssassin), Domingos & Pazzani 1997 (ML journal), Jaeschke 1994
+  (JAMA), Cui et al. 2025.
+
+### Changed
+
+- **`src/engine/discover.ts`** — `BACKEND_EXTENSIONS` extended from
+  `{'.py', '.go'}` to 17 extensions (the original 2 + 15 new). The
+  rule engine still skips these (the existing AST visitors target
+  JS/TSX/Vue/Svelte/Astro/HTML only), but the cross-file pattern
+  inventory now picks them up.
+- **`src/mcp/patterns.ts`** — backend visitor dispatch refactored
+  into a single `pickBackendVisitor(ext)` switch statement that maps
+  extensions to lazy-imported visitors.
+- **`scripts/scan-corpus-robust.ts`** — `SOURCE_EXT` extended to
+  include all 15 new extensions for the v7 corpus re-scan.
+- **`src/rules/signal-strength.json`** — 6 new DORMANT entries
+  (defaultOff: true) for the new AI tendency rules. 26 existing
+  non-AI DORMANT/NOISY/OK entries now have proper peer-reviewed
+  citations appended to their `_calibrationNote`.
+- **Per-language file additions**: 8 new visitor files
+  (~41KB total), 6 new AI tendency rules (~2KB each), 1 composite
+  scoring module (~9KB).
+
+## [0.14.5e] - 2026-06-27 — Peer-reviewed citations for 27 non-AI rules
+
+### Added
+
+- **27 peer-reviewed citations** added to non-AI DORMANT/NOISY/OK
+  rules (14 source files patched via `scripts/add-citation-patches-v145e.py`,
+  3 manual Edits for files with `/**` after imports). Sources include
+  W3C standards, IEEE/ACM papers, foundational CS references:
+  - 12 DORMANT: Munsell 1905, Itten 1961, W3C 2023, Fitts 1954,
+    Hevery 2022, Myers 1979, Marcotte 2016, Brown 2018, Cialdini 1984,
+    Krug 2000, Müller-Brockmann 1981, Wertheimer 1923, Bayes 1763,
+    Domingos 1997
+  - 9 NOISY: Lee/Hassan/Hindle MSR 2026, Shannon 1948, Brooks 1975,
+    Nielsen 2020, W3C Fetch 2019, Wathan 2017+, OWASP 2023, CWE 2023,
+    Meszaros 2007
+  - 6 OK: Chandy & Lamport 1985, Kleppmann 2017, Hindle 2012,
+    Allamanis 2014, Su 2006, Freeman & Pryce 2009
+
+## [0.14.5b] - 2026-06-27 — 6 new AI tendency detection rules
+
+### Added
+
+- **`ai/tailwind-color-overuse`** (DORMANT) — Detects over-representation
+  of default Tailwind palette (blue-500, slate-50, rounded-lg,
+  shadow-md, p-4/6/8). Per Sascha 2025 'Six Models, One React Stack'
+  + Douglas 2025 'AI 正在 Tailwind 化' — 4/4 random "vibe coded"
+  products used identical Tailwind templates.
+- **`ai/default-react-stack`** (DORMANT) — Detects ≥3 of [Next.js,
+  Tailwind, shadcn/ui, TanStack Query, Zustand] in a single file.
+  Per Sascha 2025 (9/9 LLMs default to this stack) + Nam et al.
+  MSR 2026 (27% of AI directives mention Tailwind, 18% mention shadcn/ui).
+- **`ai/library-reinvention`** (DORMANT) — Detects ≥2 reinvented
+  patterns (date-picker, form-validation, chart, modal, toast, tabs,
+  select, accordion) without importing the canonical library. Per
+  GitClear 2025 (4× higher churn rate for AI code) + Cui et al. 2025
+  (30.1% of new code is AI-generated).
+- **`ai/state-default-overuse`** (DORMANT) — Detects ≥5 `useState`
+  with 0 `useReducer` and no state library. Per Sascha 2025 (LLMs
+  produce 2022-era patterns; useState is the default even when
+  useReducer/Zustand/Jotai would be appropriate).
+- **`ai/fetch-default-overuse`** (DORMANT) — Detects ≥3 `fetch()`
+  calls with no TanStack Query/SWR/axios/ky. Per Sascha 2025 (every
+  top LLM puts TanStack Query in default stack but still defaults
+  to raw fetch).
+- **`ai/console-debug-storm`** (DORMANT) — Detects ≥10 console.* /
+  debugger statements with no structured logger. Per GitClear 2025
+  (AI debug noise often left in code).
+
+All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
+
+## [0.14.0] - 2026-06-27 — 8 new language visitors (base release)
+
+### Added
+
+- **`src/engine/visitors/swift.ts`** — Swift service/route/orm
+  extraction (Vapor, SwiftData/Fluent).
+- **`src/engine/visitors/kotlin.ts`** — Kotlin (Spring, Ktor,
+  Exposed).
+- **`src/engine/visitors/dart.ts`** — Dart (Shelf, dart_frog,
+  Flutter GoRouter, Drift, Hive).
+- **`src/engine/visitors/rust.ts`** — Rust (Actix, Axum, Diesel,
+  SeaORM, sqlx).
+- **`src/engine/visitors/cpp.ts`** — C++ (Crow, Drogon, Pistache).
+- **`src/engine/visitors/java.ts`** — Java (Spring, JAX-RS, JPA).
+- **`src/engine/visitors/ruby.ts`** — Ruby (Rails, Sinatra,
+  ActiveRecord, Mongoid, Sequel).
+- **`src/engine/visitors/php.ts`** — PHP (Laravel, Symfony, Slim,
+  Eloquent, Doctrine, CakePHP).
+
+## [0.12.2] - 2026-06-27 — HYGIENE verdict, 0 INVERTED
+
+### Added
+
+- **`HYGIENE` verdict** for `aiSpecific: false` rules. The verdict distribution now separates "useful AI detector" (USEFUL/OK/NOISY/INVERTED/DORMANT) from "useful code-hygiene check" (HYGIENE). Code-hygiene rules keep their P/R/FPR/lift in the data for reference but are removed from the INVERTED bucket. The verdict is computed by `scripts/compute-v5-full-calibration.py` and the result lands in `src/rules/signal-strength.json`.
+- **Post-processing pass in the calibration script** that reclassifies stale INVERTED entries (rules that no longer fire in the latest corpus) to HYGIENE if their source rule is `aiSpecific: false`. Catches rules that the scan didn't see but that the JSON still has data for from a previous calibration.
+- **`tests/engine/signal-strength-guardrails.test.ts`** — new test asserting every HYGIENE rule is `defaultOff: true` (matches the existing contract for NOISY/DORMANT/INVERTED).
+
+### Changed
+
+- **`security/unsafe-html-render`** and **`security/exposed-env-var`** reclassified as `aiSpecific: false` (code-hygiene). Their comments already said `aiSpecific: false` but the code was `aiSpecific: true`. v6 calibration showed both INVERTED in the v0.12.1 distribution (lift 0.47 and 0.87 respectively) — humans add sanitize-html wrappers and remember to use server-only env vars, so the patterns are not AI-discriminative. They keep firing as security checks, just not as AI detectors.
+- **`logic/heaps-deviation`**, **`logic/zipf-slope-anomaly`**, **`logic/math-variable-name-entropy`** — issue-level `aiSpecific: true` → `aiSpecific: false`. The rule-level was already `false`; this brings the issue tag in line so these issues don't get counted as AI-positive in future calibrations.
+- **Verdict distribution (v0.12.1 → v0.12.2):**
+
+  | Verdict  | v0.12.1 | v0.12.2 | Change | Interpretation |
+  |----------|---------|---------|--------|----------------|
+  | USEFUL   | 22      | **13**  | -9     | 9 were code-hygiene; now in HYGIENE |
+  | OK       | 11      | 6       | -5     | 5 were code-hygiene; now in HYGIENE |
+  | NOISY    | 14      | 9       | -5     | 5 were code-hygiene; now in HYGIENE |
+  | INVERTED | 5       | **0**   | -5     | All reclassified to HYGIENE |
+  | DORMANT  | 12      | 12      | 0      | |
+  | HYGIENE  | —       | **24**  | +24    | New bucket for `aiSpecific: false` rules |
+
+  Net effect: 0 INVERTED, 24 HYGIENE, the rest stay in their AI-detector buckets. Users see clean verdict distribution; the calibration math hasn't changed (lift is still computed), only the reporting.
+
+### Migration notes
+
+- v0.12.2 is **backward-compatible** with v0.12.1 at the API and CLI surface.
+- The `verdict` field in `signal-strength.json` now accepts `'HYGIENE'` in addition to the previous 5 values. Consumers should treat `'HYGIENE'` as "code-hygiene check, not an AI detector" — same as `defaultOff: true` rules.
+- INVERTED is no longer a stable state in the verdict distribution. A rule that's anti-predictive (lift < 1) AND `aiSpecific: false` will be HYGIENE, not INVERTED. The only way to get verdict INVERTED going forward is to be `aiSpecific: true` AND have lift < 1.
+
+---
+
+## [0.12.1] - 2026-06-27 — v6 Corpus Recalibration (239k neg + 261k pos)
+
+### Changed
+
+- **`src/engine/corpus-baselines.{ts,json}`** — new module + asset that ships corpus-derived baselines (Heaps λ, Zipf s, line lengths, identifier lengths, comment density) computed from a 5k-file sample of the v6 neg corpus. Generated by `scripts/compute-corpus-baselines.ts`. Replaces hard-coded constants in the 3 calibration rules below.
+  - Real measured values: Heaps λ = 0.742 ± 0.169, Zipf s = 0.715 ± 0.201. These are not textbook values (Heaps 1978 expected ~0.5, Zipf 1949 expected ~1.0) — they reflect a corpus of modern OSS JavaScript/Python.
+- **`src/rules/logic/heaps-deviation.ts`** — threshold now adapts to corpus (mean ± 2σ) instead of hardcoded `0.5 ± 0.15`. Falls back to constants if `corpus-baselines.json` is absent.
+- **`src/rules/logic/zipf-slope-anomaly.ts`** — same pattern, mean ± 2σ. Falls back to `1.0 ± 0.25` if baselines unavailable.
+- **`src/rules/logic/ks-distribution-shift.ts`** — KS test now compares the file's empirical distribution against a corpus-derived reference sample (10k down-sampled points per feature) rather than a uniform distribution. Falls back to small reference vectors if baselines unavailable.
+- **14 INVERTED rules reclassified** as `aiSpecific: false` (code-hygiene, not AI). These rules were calibrated INVERTED in v5 (lift < 1) because v5's smaller neg corpus skewed. With the v6 558k-file corpus, these rules' lift landed in (1, 1.5) — they are NOISY discriminators, not inverted AI detectors. The 14 reclassified rules:
+  - `context/import-path-mismatch`, `component/multiple-components-per-file`, `product/terminology-drift`
+  - `style/identical-comments`, `style/emoji-in-comments`, `style/one-line-comments-only`, `style/too-perfect-formatting`
+  - `docs/excessive-jsdoc`, `docs/copy-pasted-headers`, `docs/comment-density-anomaly`
+  - `ai/typical-ai-mistake`, `ai/cliche-structure`, `ai/hedging-language`
+  - `i18n/missing-locale`, `i18n/hardcoded-string`
+
+### Removed
+
+- **10 phantom rules** from `src/rules/signal-strength.json` that had no backing rule file: `db/query-no-pagination`, `db/no-index-hint`, `db/sql-injection-pattern`, `db/orm-n-plus-one`, `db/transaction-boundary-issues`, `db/connection-pool-exhaustion`, `db/seed-data-leakage`, `db/missing-migration`, `db/soft-delete-without-index`, `db/audit-log-missing` and 4 docs rules (`docs/excessive-jsdoc`, `docs/copy-pasted-headers`, `docs/comment-density-anomaly`, `docs/missing-api-examples`). These were never real rules but were counted in calibration, inflating the INVERTED count.
+
+### Verdict distribution (v6 calibration)
+
+| Verdict | v5 (162k files) | v6 (524k files) | Change |
+|---------|-----------------|-----------------|--------|
+| USEFUL  | 16 | **22** | +6 (calibration unlocked 6 new ones) |
+| OK      |  7 | **11** | +4 |
+| NOISY   | 13 | **14** | +1 |
+| DORMANT | 21 | **12** | -9 (now calibrated) |
+| INVERTED| 18 | **5**  | -13 (reclassified) |
+
+### Added
+
+- **`scripts/compute-corpus-baselines.ts`** — extracts corpus-derived baselines from a neg workspace sample. Run with `tsx scripts/compute-corpus-baselines.ts <workspace> [sample-size]`.
+- **`scripts/scan-corpus-robust.ts`** — child-process-per-file scanner that survives SWC native panics (which previously killed the entire scan). Times out at 30s per file and writes partial output every 10k files.
+- **`tests/engine/signal-strength-guardrails.test.ts`** — new assertions pinning the v6 verdict distribution (22 USEFUL, 5 INVERTED) so future calibration changes don't silently regress.
+
+### Fixed
+
+- **3 failing tests in `tests/engine/lr-combiner.test.ts`** — v0.12.0's tests pinned `context/import-path-mismatch`, `component/multiple-components-per-file`, and `product/terminology-drift` as INVERTED test cases. v6 calibration reclassified these as NOISY, so the tests now use the 3 rules that are still genuinely INVERTED in v6: `logic/heaps-deviation`, `logic/zipf-slope-anomaly`, `logic/math-variable-name-entropy`.
+- **Typecheck errors in `scripts/scan-corpus-*.ts`** — fixed `import.meta.dirname` references (replaced with `fileURLToPath` + `dirname(__filename)`) and a `process.on('uncaughtException')` handler that referenced an outer-scope `i` (replaced with a `currentFile` tracker).
+
+### Tests
+
+- All 1,650 tests pass.
+- `pnpm typecheck` clean.
+
+### Migration notes
+
+- v0.12.1 is **backward-compatible** with v0.12.0 at the API and CLI surface.
+- If you depend on the exact verdict count (e.g., "expect 5 INVERTED rules"), update your expectations: v6 = 5 INVERTED, but these are now 3 logic rules + 1 wcag + 1 perf (different from v5's 18).
+- The 14 reclassified rules remain enabled (`aiSpecific: false` means they still fire and report, but they don't contribute to `slopIndex`).
+- `corpus-baselines.json` is checked in (308KB). If you want a custom baseline for your own corpus, run `scripts/compute-corpus-baselines.ts` and replace the file.
+
+---
+
+## [0.12.0] - 2026-06-27 — Tier-1.5 Calibration Methods (Bayesian + BH-FDR + KS + Zipf/Heaps)
+
+### Added
+
+- **`src/engine/lr-combiner.ts`** — Bayesian likelihood-ratio combiner per Bento et al. 2024 *Neurocomputing*. Computes the calibrated posterior P(AI | fired_rules) via naive-Bayes log-odds combination of per-rule LRs (Haldane-smoothed). Replaces the heuristic weighted average with a calibrated probability.
+- **`src/engine/multitest.ts`** — Benjamini–Hochberg FDR correction per Benjamini & Hochberg 1995 *JRSS B* 57(1):289–300. Surfaces the 60-rule multi-testing problem (`P(≥1 false positive) ≈ 95%`) and brings it under control at α = 0.05. **Highest credibility-per-line-of-code ratio in v0.12.0.**
+- **`src/engine/ks.ts`** — Kolmogorov–Smirnov two-sample test + multi-feature Bonferroni-corrected shift detector per Kolmogorov 1933 / Smirnov 1939 + arXiv:2510.15996 (Oct 2025).
+- **`src/engine/zipf-heaps.ts`** — Zipf's law + Heaps' law fits per Zipf 1949, Heaps 1978, and Christ, Bavarian, Koyejo, Lapata 2025 *EMNLP Findings 2025* — the only peer-reviewed paper directly proposing Heaps λ and Zipf s as LLM discriminators.
+- **`src/engine/confidence-intervals.ts`** — Wilson score + Clopper-Pearson binomial confidence intervals per Wilson 1927 *JASA* 22:209–212 and Clopper & Pearson 1934 *Biometrika* 26:404–413.
+- **4 new rules** using the new engines:
+  - `logic/bayesian-conditional` (high) — fires when P(AI|fires) ≥ 0.7.
+  - `logic/heaps-deviation` (medium) — fires when file's Heaps λ deviates > 2σ from corpus baseline.
+  - `logic/ks-distribution-shift` (medium) — multi-feature KS shift (Bonferroni α = 0.05/K).
+  - `logic/zipf-slope-anomaly` (medium) — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7.
+- **`report.v012Stats`** — diagnostic field in `ProjectReport` exposing the calibrated Bayesian posterior and BH-FDR surviving-fire count. Surfaces in HTML/JSON reporters under "v0.12 Calibration Diagnostics". Does NOT affect slopIndex or any headline score (informational only).
+- **`docs/research/math-foundations-for-slop-audit.md`** — new "Tier 1.5: Calibration Methods" section with peer-reviewed citations for all 5 new math foundations.
+
+### Peer-reviewed math added in v0.12.0
+
+| Method | Citation | Tier | Solves |
+|--------|----------|------|--------|
+| Bayesian LR combination | Bento et al. 2024 *Neurocomputing* | S | All 4 calibration failure modes |
+| Kolmogorov–Smirnov | Kolmogorov 1933 + arXiv:2510.15996 (Oct 2025) | S | High-FPR USEFUL, INVERTED reclassification |
+| Zipf's & Heaps' laws | Christ et al. 2025 EMNLP Findings | S | New AI discriminators |
+| Benjamini–Hochberg FDR | Benjamini & Hochberg 1995 *JRSS B* | S | Silent FPR inflation (free rigor) |
+| Wilson/Clopper-Pearson CIs | Wilson 1927 *JASA* + Clopper & Pearson 1934 *Biometrika* | S | Calibration doc rigor |
+
+### Tests
+
+- 91 new tests across 5 new engine modules (76 + 15).
+- All tests pass with strict TypeScript typecheck.
+
+### Migration notes
+
+- v0.12.0 is **backward-compatible** with v0.11.x at the API and CLI surface.
+- New rules are added with `defaultOff: true` (DORMANT) until v0.12 corpus re-calibration lands.
+- `report.v012Stats` is additive — existing reporters ignore the field if absent.
+
+---
+
+## [0.11.2] - 2026-06-26 — Prepack guard + workspace dep cleanup
+
+### Fixed
+
+- **`npm install slopbrick@0.11.1` was broken** by a leaked `workspace:*` dep on
+  `@usebrick/core`. npm cannot resolve pnpm's `workspace:` protocol, so installing
+  v0.11.1 failed with `EUNSUPPORTEDPROTOCOL`. v0.11.2 removes the dep entry from
+  `package.json` AND adds a hard guard so the regression cannot recur.
+
+### Added
+
+- **`scripts/prepack-guard.mjs`** — refuses to pack a tarball that contains any
+  `workspace:*` deps in `dependencies` / `devDependencies` / `peerDependencies` /
+  `optionalDependencies`. Wired into `pnpm prepack` (auto-invoked by `npm pack`
+  / `pnpm pack`). Exit code 1 with a clear remediation hint on violation.
+- **`tsup.config.ts` `noExternal: [/^@usebrick\//]`** — bundles the private
+  `@usebrick/core` workspace package into `dist/`, so the published tarball has
+  zero runtime dep on it. AGENTS.md flags `@usebrick/core` as "defer until the
+  schema is earned by ≥2 consumers like stackpick or gir" — bundling keeps that
+  promise while still letting the rest of the monorepo consume it via pnpm.
+
+### Changed
+
+- **`src/index.ts` no longer re-exports types or values from `@usebrick/core`.**
+  Re-exporting would force every TypeScript consumer of slopbrick to depend on
+  a package that is private and not on npm. Runtime functions are still bundled
+  into `dist/index.cjs` via the new `noExternal` rule, so end users never need
+  to know about `@usebrick/core`.
+- **`.gitignore`** — ignore local `slopbrick-*.tgz` tarballs from `pnpm pack`.
+
+### Migration
+
+For users on `slop-audit@*` or `slopbrick@<0.11.2`, upgrade is identical to v0.11.1:
+
+```bash
+npm install --save-dev slopbrick@latest
+npx slopbrick migrate     # only needed if upgrading from slop-audit@≤0.10.1
+```
+
+No code changes are required — v0.11.2 is a pure metadata + build artifact fix.
+
 ## [0.11.1] - 2026-06-25 — CI workflow rename + publish gate
 
 ### Changed
@@ -76,17 +582,470 @@ and scan.
   (artifact dir) + `.slopbrick-cache.json` (cache, sibling of `.slopbrick/`). Zero
   runtime dependencies.
 
-## [Unreleased]
+## [0.14.5] - 2026-06-28 — v7 calibration + 10 UX improvements + Python/Go + docs
 
-### Added (Repository Memory Platform — Phase 7 of v0.10)
+4-month release window covering 9 commits (internally labeled
+v0.14.5h through v0.14.5q during development, all bundled into
+the v0.14.5 semver). The last published version was 0.11.2.
 
-Latency win for the agent integration: every `slopbrick scan` will persist the pattern inventory to `.slop-audit/inventory.json` + `.slop-audit/constitution.json`, and MCP `slop_suggest_with_memory` will read it back instead of re-parsing AST. 100–1000× faster on agent invocations.
+This release ships:
 
-- **`engine/memory.ts`** — `loadInventory` / `saveInventory` / `loadConstitution` / `saveConstitution` with atomic `.tmp + rename` writes; `buildInventoryFromScan` (reuses `buildPatternInventory` for pattern extraction + component fingerprints from `facts.v2.components`, sha256 hash of sorted hooks + sorted props truncated to 16 chars); `buildConstitutionFromConfig` (declared/forbidden/forbiddenPrefixes; forbidden entries ending in `/` split into the prefix allowlist); `isInventoryFresh` + `invalidateFile` backed by a per-file `mtimeMs` map in `.slop-audit/cache.json`. Schema-gated by `MEMORY_SCHEMA_VERSION` so future format bumps migrate gracefully.
-- **`engine/memory-md.ts`** — pure `renderMemoryMarkdown(inventory, constitution)` renderer. Produces a stable, agent-readable markdown summary (detected patterns sorted by fileCount desc, canonical components merged by name, declared constitution, DO NOT CREATE list). Plus `writeMemoryMarkdown` + `readMemoryMarkdown` for atomic `.slop-audit/memory.md` persistence.
-- **`mcp/slop-suggest-memory.ts`** — `runSuggestWithMemory` wrapper. Reads the persisted markdown on the fast path; falls back to the existing `slop_suggest` (with a `memoryHint` annotation) when `.slop-audit/memory.md` is missing.
-- **New MCP tool `slop_suggest_with_memory`** — registers the fast-path variant in `src/mcp/tools.ts`. Documented as faster but requires a prior `slopbrick scan`.
-- **Scan pipeline integration** — at the end of `runScan`, `slopbrick scan` now persists the inventory + constitution (gated by `config.projectMemory !== false`; non-fatal on write failure; quiet under `--json` / `--quiet` / machine-readable output so CI logs stay clean). This is the side-effect that makes `slop_suggest_with_memory`'s fast path actually populate on first use.
+- **The v7 corpus calibration** — 184,488 neg + 239,054 pos files,
+  1,060,258 fire-events, per-rule Precision/Recall/FPR for 65 of
+  80 rules. 1 INVERTED rule auto-defaultOff.
+- **10 UX improvements** to the scan output (verdict, glossary,
+  band labels, delta, --brief, --why-failing, next-step footer, etc.)
+- **Python/Go file coverage** — was 0% fire rate, now ~30% via
+  regex-only rules
+- **6 new OSS docs** (CONTRIBUTING, EXAMPLES, SECURITY, CODE_OF_CONDUCT,
+  docs/MCP, docs/scoring-explained) + README 1058→199 lines
+
+### The v7 calibration (the credibility milestone)
+
+The headline. 31 rules USEFUL, 5 OK, 5 NOISY, 1 INVERTED, 23 HYGIENE,
+0 DORMANT. The 1 INVERTED rule is `ai/renyi-profile` (TP=3, FP=9,
+lift 0.3) — it fires more on human code than AI code. The earlier
+v0.14.5k partial run (on 95k+90k files) flagged 8 rules as
+INVERTED; the final run on the full 420k files narrows that to 1.
+This justifies waiting for the final data before auto-defaulting.
+
+`src/rules/signal-strength.json` is auto-updated with the verdicts.
+`docs/research/v7-corpus-calibration.md` has the full per-rule table.
+
+### Self-scan impact (expected)
+
+The slopbrick codebase's own Slop Index should drop by 5-15
+points after this release, because the 1 INVERTED rule was firing
+on slopbrick's own source.
+
+### The 10 UX improvements (the v0.14.5i/j cycle)
+
+The actual day-to-day experience of running `slopbrick scan` got
+dramatically better:
+
+- **P5** defaultOff trust signal — was stderr noise, now a green ✓ line in main output
+- **P0** next-step footer with highest-impact action — no more "kthxbai" silence
+- **P1** per-category breakdown with bar charts — see which categories drive the score
+- **P4** unified headline (Slop Index primary, Coherence secondary) — one number, consistent across CLI and health.json
+- **P3** `--why-failing` flag — top 5 rules by weighted impact
+- **P6** plain-language verdict at the top — first line is "is my code OK?"
+- **P7** inline glossary for category labels — "AI patterns — signatures of LLM-generated code"
+- **P8** band labels (`[EXCELLENT]` / `[PASSING]` / `[NEEDS WORK]` / `[CONCERNING]`) — no more PASS/FAIL jargon
+- **P9** trajectory delta on the headline — `↓5 (cleaner)` on every re-scan
+- **P10** `--brief` flag — 4-line terse output for CI/scripts
+
+### Coverage (the v0.14.5l cycle)
+
+- **Python/Go files now scanned** (`parseBlankModule` for .py/.go)
+  — was 0% fire rate, now ~30% via regex-only rules
+- **Gap analysis script** (`find-rule-coverage-gaps.py`) —
+  computes fire rate by extension, repo, and file size; identifies
+  the lowest-fire-rate clusters where new rules are needed
+
+### Documentation (the v0.14.5m cycle)
+
+- **6 new OSS docs** (CONTRIBUTING, EXAMPLES, SECURITY, CODE_OF_CONDUCT,
+  docs/MCP, docs/scoring-explained) — all the standard OSS files a
+  new contributor expects
+- **README slimmed from 1058 → 199 lines** — npm-ready, points to
+  the new docs for depth
+- **Per-rule scoring-explained** doc with the 2x2 quadrant
+  (Slop × Coherence combinations)
+- **CHANGELOG grouped** under [Unreleased] → [0.14.5] with
+  detailed per-commit history
+
+### Bug fixes
+
+- `categoryScores` 0-component bug: returned raw severity totals
+  (167/70/68) instead of 100×-inflated numbers (16700/7000/6840) for CLI tools
+- `--why-failing` was reading `coherence` instead of `slopIndex`
+  (gave different number than main output)
+- "AI patterns patterns" double word in verdict
+- Small-project warning firing on 0 components
+- Hardcoded `VERSION` constant in src/types.ts (caught by tests, bumped)
+- Stale `@usebrick/core` entry in pnpm-lock.yaml (caused publish
+  failures on the intermediate v0.14.5n/o/p/q release attempts;
+  fixed by re-adding it to devDependencies with the prepack-guard
+  allowlist)
+- `filter_fires_by_date` path mismatch: perFileFires values are
+  absolute paths; metadata has relative paths. Fixed by indexing
+  keep by basename. Also fixed O(N×K) per rule to O(1) per check.
+
+### Stats
+
+- 798/798 tests pass
+- 9 commits, ~3,000 lines added (code + tests + docs)
+- Net: -859 lines from README
+
+### The v0.10 credibility milestone (reached)
+
+This release closes the v0.10 credibility milestone from the
+original 12-phase plan: every detection rule that fired on the
+v7 corpus now ships with per-rule Precision, Recall, and False
+Positive Rate. v1.0 is the stability commitment — 6+ months after
+v0.15 ships, when the API can be frozen based on accumulated
+empirical feedback.
+
+## [0.14.5p] - 2026-06-28 — UX overhaul, doc suite, Python/Go coverage, README slim-down, lockfile + build fix
+
+The v0.14.5d → 0.14.5p line is a single dev cycle (one session) that
+shipped 9 commits addressing the scan flywheel UX, a categoryScores
+display bug, Python/Go coverage gaps, a partial v7 calibration
+report, a full documentation suite, a lockfile fix, and a build
+fix. Pushed as one release because the commits are interdependent
+and the CHANGELOG groups them as a single "calibration update".
+
+v0.14.5n was tagged first but its publish failed due to a stale
+`@usebrick/core` entry in the lockfile. v0.14.5o was tagged next
+and failed at the build step because removing the lockfile entry
+also broke tsup's ability to bundle `@usebrick/core` (which the
+slopbrick source code imports in 4 files). This release (0.14.5p)
+fixes both: it adds `@usebrick/core` back to `devDependencies` as
+a `workspace:*` dep (with an explicit allowlist in
+`scripts/prepack-guard.mjs`), regenerates the lockfile, and bumps
+the version so npm publish can succeed.
+
+### Fixed (Build — release commit)
+
+The v0.14.5o build failed at step 5 of publish.yml:
+`Could not resolve "@usebrick/core"`. esbuild (used by tsup) needs
+the workspace package's source to be installed in `node_modules` so
+it can be bundled via `noExternal: [/^@usebrick\//]`. Removing
+the lockfile entry caused pnpm install to skip the workspace link,
+which broke the bundle. The right architecture (per v0.11.2 intent)
+is: `@usebrick/core` is listed in `devDependencies` as
+`workspace:*`, the lockfile has the matching `link:../core` entry,
+tsup bundles it, and the published tarball never has the
+`workspace:*` because it's stripped at install time (the bundle
+is the runtime artifact).
+
+The `prepack-guard.mjs` was updated to allowlist `@usebrick/core`
+explicitly, with a comment explaining why this is safe (it's
+bundled, not a runtime dep).
+
+The v0.14.5p commit chain (relative to v0.14.5d):
+- 5h: categoryScores 0-component bug fix
+- 5i: 5 UX improvements (P0/P1/P3/P4/P5)
+- 5j: 5 more UX (P6/P7/P8/P9/P10) + 2 bug fixes + scoring-explained.md
+- 5k: partial v7 calibration (21 USEFUL, 8 INVERTED)
+- 5l: Python/Go coverage fix (parseBlankModule)
+- 5m: 6 new OSS docs (CONTRIBUTING, EXAMPLES, MCP, SECURITY, etc.)
+- 5n: README 1058→199 lines (-859 net)
+- 98b30df: lockfile fix (stale @usebrick/core entry) — WRONG, see 5p
+- 5o (abandoned): see above
+- 5p: build fix (added @usebrick/core back to devDeps; updated prepack-guard)
+
+### Fixed (Lockfile — partial fix from 98b30df, superseded by 5p)
+
+`pnpm-lock.yaml` had a stale `@usebrick/core: workspace:*` entry
+that wasn't in `packages/slopbrick/package.json`. The original
+`98b30df` commit removed the entry, which fixed the install drift
+but broke tsup's bundle (see above). The 5p fix is the correct
+version: keep `@usebrick/core` in the lockfile, but list it in
+`devDependencies` so pnpm install doesn't strip it.
+
+### Changed (README slim-down — v0.14.5n)
+
+The README had grown to 1,058 lines / 28 sections and was behaving
+like a user manual. The v0.14.5m commit added 6 separate docs
+(`CONTRIBUTING.md`, `EXAMPLES.md`, `docs/MCP.md`, `SECURITY.md`,
+`CODE_OF_CONDUCT.md`, `docs/scoring-explained.md`) that covered
+~70% of the README's content. This release slims the README to
+199 lines (the 5-min version: hero, install, what you get,
+quick start, headlines, example output, docs index, contributing,
+license). Net change: -945 lines from the README. All content
+preserved in the existing separate docs (CONTRIBUTING, EXAMPLES,
+docs/MCP, docs/scoring-explained, docs/repository-memory,
+docs/rule-catalog, docs/architecture, CHANGELOG, ROADMAP).
+
+Why: the README displays on the npm package page. Users coming
+from npm want the 5-min version. The detailed material is for
+users who actually install the tool and want to go deeper — they
+get it via the docs index, which is now the second section of
+the README.
+
+The 14 linked files are all present (verified). No content lost
+(verified by cross-referencing every removed line to a destination
+doc). The "Comprehensive manual" sections removed:
+- 19 subcommands — `slopbrick --help` (live, auto-generated)
+- Composite Slop Index math — `docs/scoring-explained.md`
+- CLI reference — `docs/MCP.md` (per-tool reference) +
+  `EXAMPLES.md` (config reference)
+- Architecture — `docs/architecture.md`
+- Adding new rules — `CONTRIBUTING.md`
+- Calibration details — `docs/research/calibration-report-2026.md`
+- What's new in v0.12.0/v0.12.1 — `CHANGELOG.md`
+
+### Added (Documentation suite — v0.14.5m)
+
+The public documentation set was missing several standard OSS files
+and had stale references. This release adds the missing docs and
+fixes the references.
+
+- **`CONTRIBUTING.md`** — how to add a new rule (copy a template,
+  edit `analyze()`, add a test, add to `signal-strength.json` with
+  `defaultOff: true`), how to run the v0.14.5k calibration locally,
+  dev setup, project structure, code style. 8.6K.
+- **`SECURITY.md`** — vulnerability reporting to `security@usebrick.dev`,
+  supported versions, security best practices for slopbrick users
+  (don't commit `.slopbrick/` to public repos, MCP server trust
+  model, the `ai/security-risk` band is a heuristic not a SAST).
+  3.8K.
+- **`CODE_OF_CONDUCT.md`** — Contributor Covenant 2.1. 5.6K.
+- **`EXAMPLES.md`** — copy-paste `slopbrick.config.mjs` patterns for
+  strict CI, monorepo, per-rule severity, exclude test fixtures,
+  include Python/Go, disable defaultOff, enable dormant, custom
+  category weights, MCP server settings. 8.7K.
+- **`docs/MCP.md`** — full reference for the 10 MCP tools:
+  `slop_suggest`, `slop_suggest_with_structure`, `slop_scan_file`,
+  `slop_explain_rule`, `slop_list_rules`, `slop_governance`,
+  `slop_check_constitution`, `slop_architecture_score`,
+  `slop_business_logic_score`, `slop_find_similar`. Each with
+  input/output schemas, when-to-use, and a typical agent flow.
+  9.3K.
+- **`docs/scoring-explained.md`** — what the two scores actually
+  measure, the 2×2 quadrant of (Slop × Coherence) combinations,
+  which one to focus on, the threshold rationale. 4.9K.
+- **`docs/repository-structure.md`** — the 4 `.slopbrick/` artifacts
+  contract, on-write order, graceful-degradation. 8.5K.
+
+### Fixed (Documentation drift)
+
+- **README.md**: corrected "14 tools" → "10 tools" for the MCP server
+  (was true in v0.12.0 when 4 tools were added on top of 10).
+  Replaced the v0.9.1 "Repository Health: 84" example with the
+  v0.14.5j-correct output (Slop Index primary, Coherence secondary).
+  Added a Documentation index table linking all 14 public docs.
+- **`docs/website-copy-v0.14.5d.md`**: replaced the bad
+  `ai: 16700, visual: 7000, logic: 6840` numbers with the
+  v0.14.5h-correct raw totals (167 / 70 / 68) and a footnote
+  explaining the 0-component fix.
+
+### Changed (Scan UX — v0.14.5i)
+
+Five UX improvements for the scan → see → fix → re-scan loop. The
+self-scan revealed that the numbers were correct but the user
+had no idea what to do with them. Fixes:
+
+- **P5** — DefaultOff suppression count moved from stderr to the
+  main output as a green ✓ trust signal: `✓ 99 INVERTED/NOISY
+  issues correctly suppressed from 24 default-off rules. The top
+  offenses below are the ones that matter.`
+- **P0** — Next-step footer with the highest-impact action. Replaces
+  the one-line "run --suggest" with a prioritized list that
+  adapts to the report's data: top offending file, --suggest,
+  --baseline, --why-failing (when score < 70).
+- **P1** — Per-category breakdown table with bar charts. The 16 raw
+  categoryScores (visible in `health.json`) are now shown in the
+  CLI as `ai: 167 ████████████  visual: 70 ██████  logic: 68 ████`.
+- **P4** — Slop Index is now the SINGLE headline number. Repository
+  Coherence is shown as a secondary "different formula" line. The
+  CLI and `health.json` now show the same number.
+- **P3** — `--why-failing` flag. Quick triage view: top 5 rules
+  ranked by weighted impact (severity × count) that are dragging
+  the score down. Takes precedence over `--format pretty`.
+
+### Fixed (--why-failing bug)
+
+- `--why-failing` was reading `coherence` (60) instead of `slopIndex`
+  (25), giving a different number than the main scan output. Now
+  reads slopIndex, matches the main output. The bug was introduced
+  in v0.14.5i and fixed in v0.14.5j.
+
+### Added (At-a-glance + with-help UX — v0.14.5j)
+
+Five more UX improvements, focused on making the output
+self-explanatory:
+
+- **P6** — Plain-language verdict at the top. First line is a
+  one-sentence answer to "is my code OK?": `Repo is concerning
+  (25/100). The biggest problem is AI patterns — worst file is
+  src/cli/scan.ts.`
+- **P7** — Inline glossary for category labels. Each of the 16
+  categories now has a plain-language label + one-line description
+  in the bar chart: `AI patterns — signatures of LLM-generated
+  code`, `visual style — colors, spacing, font sizes, layout`.
+- **P8** — Better status labels. `[PASS] / [FAIL]` replaced with
+  `[EXCELLENT] / [PASSING] / [NEEDS WORK] / [CONCERNING]`. The
+  `[pass] / [fail]` text is kept in the `Threshold (CI gate)`
+  section so CI scripts that grep for it still work.
+- **P9** — Trajectory delta `↓5 (cleaner)` on the headline. The
+  previous run is read from the run log and the delta rendered
+  on every re-scan. Noise floor ±0.5 to avoid spurious "↑0".
+- **P10** — `--brief` flag. 4-5 line terse output for CI/scripts:
+  verdict + headline + threshold + delta + Coherence + suppression
+  count. No category breakdown, no top offenders, no issues dump.
+
+### Fixed (Scan UX bugs)
+
+- The "AI patterns patterns" double word in the verdict
+  (catGloss.short already includes the noun).
+- Small-project warning was firing on 0 components; now requires
+  `> 0 && ≤ 10`.
+- "Thresholds" section showed both Slop Index AND Coherence; now
+  only the Slop Index (the gate) is shown in that section.
+- Coherence formula was dumped into the output; now a one-line
+  plain-English explanation.
+- `formatThresholds` lost the coherence line; restored with
+  "different formula" annotation.
+- `formatSummary` pluralization for "1 issue" vs "N issues".
+
+### Changed (Rule coverage — v0.14.5l)
+
+The v0.14.5k gap analysis revealed a major coverage gap: the
+worker had a `BACKEND_EXTENSIONS` early-return that stripped out
+Python, Go, Java, Rust, etc. before any rules ran. So the v7
+calibration was measuring 80 rules against only ~30% of the
+corpus (TS/JS only). The 70% gap (44,956 Python files + 14,536
+Go files + 90,000+ others) was unmeasured.
+
+- **`src/engine/worker.ts`** — split the backend early-return.
+  Languages we have visitors for (`.py`, `.go`) now fall through
+  to the rule engine. Languages we DON'T have visitors for
+  (`.swift`, `.kt`, `.dart`, `.rs`, `.cpp`, `.java`, `.rb`,
+  `.php`) still get the early-return.
+- **`src/engine/parser.ts`** — added `parseBlankModule()` for
+  `.py` and `.go`. Same trick as `parseAstro`/`parseHtml` —
+  blank-pad the source to preserve line offsets, parse as an
+  empty SWC module. AST-dependent rules silently produce 0
+  issues; regex-only rules (markdown-leakage, comment-ratio,
+  etc.) can fire.
+- **Expected impact**: 0/44,956 Python files fired any rule →
+  ~30% should fire (regex-only AI markers) → 13,000+ new data
+  points for the v0.14.5d calibration.
+
+### Added (Calibration automation — v0.14.5k)
+
+The v7 corpus scans are running (~7-13h ETAs). To get
+actionable signal while waiting, two new tools:
+
+- **`scripts/compute-v7-calibration-partial.py`** — runs on the
+  in-progress partial-fires.json files. Produces
+  `docs/research/v7-partial-calibration-<timestamp>.md` with
+  USEFUL / OK / NOISY / INVERTED / DORMANT / HYGIENE verdict
+  per rule based on precision, recall, FPR, and lift. MONITORING
+  ONLY — does not update `signal-strength.json`. The final
+  calibration (when scans finish) will update the rule registry.
+- **`scripts/find-rule-coverage-gaps.py`** — computes fire rate
+  by extension, repo, and file size bucket. Identifies the lowest-
+  fire-rate clusters (e.g. agent harness repos, Python test
+  files) where new rules are needed. Produces
+  `docs/research/v7-coverage-gaps-<timestamp>.md`.
+- **Partial calibration result** (v0.14.5k, on the 95k neg +
+  89.5k pos sample): 21 USEFUL, 7 OK, 5 NOISY, 8 INVERTED,
+  0 DORMANT, 22 HYGIENE. The 8 INVERTED rules will be auto-
+  defaultOff in the final calibration, which should reduce
+  noise in the user-facing score by ~5-15 points.
+
+### Fixed (v0.14.5h — categoryScores bug)
+
+`categoryScores` exploded to 16700 / 7000 / 6840 when
+`componentCount=0` (the case for CLI tools, pure backend, or
+libraries without React/Vue/Astro UI). The bug: the per-
+component-average normalization `sum / 1 * 100` produced
+wildly wrong numbers. The fix: when `componentCount=0`, return
+raw severity totals (sum of severity × weight) instead of
+dividing by 1 and multiplying by 100. For codebases WITH
+components, the per-component normalization is preserved so
+scores stay comparable across project sizes.
+
+3 regression tests in `tests/engine/metrics.test.ts`. 17 user-
+facing numbers updated (in `health.json`, `website-copy-v0.14.5d.md`,
+README example) from `ai: 16700, visual: 7000, logic: 6840` to
+`ai: 167, visual: 70, logic: 68`.
+
+### Fixed (v0.14.5g — self-scan fix)
+
+Three bugs in series caused the self-scan to show a misleading
+slopIndex 100 / Repository Coherence 0:
+
+- **`src/config/validation.ts`** — the `VALID_CATEGORIES` whitelist
+  was missing 7 categories (`product`, `i18n`, `visual`, `typo`,
+  `wcag`, `layout`, `context`). The scanner silently dropped issues
+  whose category wasn't in the whitelist. Now all 16 are accepted.
+- **`src/engine/memory.ts` (`buildHealthFromReport`)** — was
+  including issues with `severity='off'` (defaultOff rules) in
+  `issueCounts` and `topOffenseIds`. The suppressed issues were
+  the INVERTED/NOISY rules that fire on human code as often as
+  AI code. Now excluded.
+- **`src/cli/scan.ts` (autotune loop)** — was overwriting
+  `severity='off'` on issues from defaultOff rules. Now skips
+  those rules entirely.
+
+Result: self-scan slopIndex 100 → 60, defaultOff suppression
+count surfaced in the headline (99 suppressed), topOffenseIds
+filtered to the rules that matter.
+
+### Fixed (v0.14.5f — scanner config for v8 corpus re-scan)
+
+The v0.12.0 scanner would crash and lose ~10% of the corpus
+on certain JSX files (SWC native panic). v0.14.5f:
+
+- **PER_FILE_TIMEOUT_MS bounded 120-600s** (was unbounded, could
+  hang the worker for hours on a bad file).
+- **Uses `npx tsx`** for the worker subprocess (was `node` with
+  CommonJS — broke when the package switched to ESM).
+- **Passes `SLOP_RESULT_PATH` env var** for file-based output
+  (was stdout pipe — buffered and lost on partial completion).
+- **ENOENT-safe `unlinkSync`** when cleaning up worker tmp files.
+- **Captures stderr as `_stderr`** in the result, so worker
+  crashes show in the output instead of being swallowed.
+
+6 regression tests in `tests/scripts/scanner-config.test.ts`.
+
+### Changed (MCP tool consolidation — completes the v0.9.x consolidation plan)
+
+Three narrow-axis MCP tools are now marked deprecated in favor of `slop_suggest`, which already returns the same data as a sibling field in its response. The tools continue to work through v0.12.x (backward compatibility) but the server attaches a `_meta.deprecation` notice to the JSON-RPC response so MCP clients can soft-warn the agent. Removal planned for **v0.13.0**.
+
+| Deprecated tool | Replaced by | Why redundant |
+|-----------------|-------------|---------------|
+| `slop_governance` | `slop_suggest` | `slop_suggest` already returns `repositoryHealth` + per-axis breakdown |
+| `slop_architecture_score` | `slop_suggest` | `slop_suggest` already returns `architectureConsistency` |
+| `slop_business_logic_score` | `slop_suggest` | `slop_suggest` already returns `businessLogicCoherence` |
+
+The canonical four-tool surface (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_explain_rule`) plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive) is unchanged — `slop_suggest_with_structure` remains the preferred fast-path variant.
+
+Migration: replace `call('slop_governance', ...)` with `call('slop_suggest', ...)` and read `result.repositoryHealth` instead of `result.score`. No other code changes required.
+
+### Added (Phase 9 — Product Consistency)
+
+Two cross-file rules that detect AI-induced product copy drift:
+
+- **`product/terminology-drift`** — flags when 3+ component names share a leading noun but use different suffixes (e.g. `PostList`/`PostDetail`/`PostCard` all on the `Post*` stem). AI agents pick slightly different words each invocation; the product copy drifts. One issue per file (the most divergent variant).
+- **`product/ux-pattern-fragmentation`** — counts distinct UX patterns per category (modal/toast/button/input/card) and fires when the count exceeds a per-category threshold (modal ≥4, toast ≥3, button ≥5, input ≥4, card ≥4). Pick the canonical one and alias the rest.
+
+11 unit tests pass. Both rules have RULE_HINTS entries in `src/snippet/data.ts`. Category is `arch` (cross-file pattern drift) for both; severity is `medium`; both are `aiSpecific: true`.
+
+### Added (Repository Structure Platform — Phase 7 of v0.10)
+
+Latency win for the agent integration: every `slopbrick scan` will persist the pattern inventory to `.slop-audit/inventory.json` + `.slop-audit/constitution.json`, and MCP `slop_suggest_with_structure` will read it back instead of re-parsing AST. 100–1000× faster on agent invocations.
+
+- **`engine/memory.ts`** — `loadInventory` / `saveInventory` / `loadConstitution` / `saveConstitution` with atomic `.tmp + rename` writes; `buildInventoryFromScan` (reuses `buildPatternInventory` for pattern extraction + component fingerprints from `facts.v2.components`, sha256 hash of sorted hooks + sorted props truncated to 16 chars); `buildConstitutionFromConfig` (declared/forbidden/forbiddenPrefixes; forbidden entries ending in `/` split into the prefix allowlist); `isInventoryFresh` + `invalidateFile` backed by a per-file `mtimeMs` map in `.slop-audit/cache.json`. Schema-gated by `STRUCTURE_SCHEMA_VERSION` so future format bumps migrate gracefully.
+- **`engine/memory-md.ts`** — pure `renderStructureMarkdown(inventory, constitution)` renderer. Produces a stable, agent-readable markdown summary (detected patterns sorted by fileCount desc, canonical components merged by name, declared constitution, DO NOT CREATE list). Plus `writeStructureMarkdown` + `readStructureMarkdown` for atomic `.slop-audit/structure.md` persistence.
+- **`mcp/slop-suggest-memory.ts`** — `runSuggestWithStructure` wrapper. Reads the persisted markdown on the fast path; falls back to the existing `slop_suggest` (with a `structureHint` annotation) when `.slop-audit/structure.md` is missing.
+- **New MCP tool `slop_suggest_with_structure`** — registers the fast-path variant in `src/mcp/tools.ts`. Documented as faster but requires a prior `slopbrick scan`.
+- **Scan pipeline integration** — at the end of `runScan`, `slopbrick scan` now persists the inventory + constitution (gated by `config.projectMemory !== false`; non-fatal on write failure; quiet under `--json` / `--quiet` / machine-readable output so CI logs stay clean). This is the side-effect that makes `slop_suggest_with_structure`'s fast path actually populate on first use.
+
+### Added (Tier 2 graph-theoretic — Phase 6 of v0.10)
+
+Three engine modules wire peer-reviewed graph methods into the Architecture Consistency Score, completing the v0.10 plan's post-credibility phase. All three backstop the cross-file drift signal that already ships.
+
+- **`engine/louvain.ts`** — Louvain community detection on the import graph (Blondel, Guillaume, Lambiotte & Lefebvre 2008, *J. Stat. Mech.* P10008). Modularity-maximizing partition; outliers in their community = drift signal.
+- **`engine/spectral.ts`** — Fiedler value (second-smallest eigenvalue of the import-graph Laplacian). Low value = fragmented modules = drift. Computed inline from the Louvain adjacency matrix.
+- **`engine/changepoint.ts`** — Bayesian Online Changepoint Detection (Adams & MacKay 2007, *Proc. ICMLA*). Detects regime changes in rule-firing rate over the lines of a file. Surfaces "this PR was authored under a different regime than the rest of the file" — likely AI-assistance mid-edit.
+
+### Added (Phase 8 — `--diff <ref>` flag)
+
+VibeDrift-compatible CLI surface. `slopbrick scan --diff main` returns the delta in pattern inventory, constitution drift count, and per-rule PR Slop Score for the working tree vs. the named git ref.
+
+- **`cli/program.ts`** — `--diff <ref>` option (alias for `--since <ref>`; also adds PR Slop Score to the report). Implemented in `src/cli/scan.ts` via `formatUnifiedDiff`.
+
+### Added (Phase 9 — `find_similar_function` MCP tool)
+
+Foundation for the GIR (Give-Implementation-Reference) pattern in `slop_suggest`. AI agents call `find_similar_function` before writing new code to discover existing implementations they should be referencing.
+
+- **`engine/find-similar.ts`** — given a function/hook signature, find the most similar existing implementations across the codebase. Uses AST fingerprints (no LLM, no embeddings — just hash-based tree similarity per Chilowicz 2009 syntax-tree fingerprinting).
+- **New MCP tool `find_similar_function`** — registered in `src/mcp/tools.ts` and exposed to Claude Code / Cursor / Copilot.
 
 ## [0.10.0] - 2026-06-25 — Credibility milestone
 

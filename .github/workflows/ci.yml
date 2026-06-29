@@ -51,6 +51,12 @@ jobs:
         # Build core first so slopbrick can resolve its types.
         run: pnpm -r --filter '@usebrick/core' build && pnpm -r --filter 'slopbrick' build
 
+      - name: Check rule registry is in sync
+        # Catches the "added a rule, forgot to regenerate builtins.ts" path
+        # with a loud, fast, locally-runnable failure. Run `pnpm generate:rules`
+        # locally and commit the result if this step fails.
+        run: pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
+
       - name: Typecheck all packages
         run: pnpm -r typecheck
 

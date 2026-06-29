@@ -9,10 +9,10 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: VERSION,
     generatedAt: '2026-06-25T00:00:00.000Z',
-    slopIndex: 30,
+    aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
     assemblyHealth: 70,
     totalScore: 0,
-    categoryScores: { visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0 },
+    categoryScores: { visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0, ai: 0, context: 0, product: 0, i18n: 0 },
     boundaryScore: 0,
     contextScore: 0,
     visualScore: 0,

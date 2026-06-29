@@ -218,7 +218,17 @@ export class WorkerPool {
           inFlight.delete(worker);
           const index = workers.indexOf(worker);
           if (index !== -1) workers.splice(index, 1);
-          maybeResolve();
+          // If work is still pending, spawn a replacement worker so the
+          // pool doesn't starve. Without this, a worker that exits cleanly
+          // after one file would be removed from `workers` but no new
+          // worker would replace it — `pending` would still have 99+ files
+          // and `maybeResolve()` would return false forever, leaving the
+          // pool stuck.
+          if (pending.length > 0) {
+            spawnWorker();
+          } else {
+            maybeResolve();
+          }
         } else {
           onWorkerFailure(
             worker,

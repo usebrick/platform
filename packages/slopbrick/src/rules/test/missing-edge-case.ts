@@ -1,5 +1,7 @@
 // Rule: test/missing-edge-case (opt-in)
 //
+// Per Myers, G. J. (1979), *The Art of Software Testing*, Wiley-Interscience (canonical boundary value analysis reference); Beizer, B. (1990), *Software Testing Techniques*, 2nd ed., Van Nostrand Reinhold.
+//
 // Catches production-code branches (if/else, try/catch, ternary, ??)
 // whose function has no test coverage for the alternate path. AI test
 // generation favors the happy path and forgets else-branches, catch

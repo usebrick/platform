@@ -1,7 +1,7 @@
 import { writeFileSync, mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { parseFile } from '../../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../../src/engine/visitor';
 import type { Issue, ResolvedConfig, Rule, RuleContext, Severity, Category } from '../../../src/types';
 

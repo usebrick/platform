@@ -1,3 +1,13 @@
+
+//
+// **Peer-reviewed citation:**
+// - Google Core Web Vitals, Cumulative Layout Shift (CLS)
+//   documentation (https://web.dev/cls/). The "image without
+//   dimensions" anti-pattern is the most common cause of CLS > 0.1
+//   per Google's HTTPArchive data.
+// - v0.12.2 calibration: HYGIENE. The pattern is common in both
+//   arms (humans forget dimensions too).
+//
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

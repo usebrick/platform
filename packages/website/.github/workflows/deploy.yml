@@ -1,0 +1,84 @@
+name: Deploy usebrick.dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/website/**'
+  workflow_dispatch:
+
+# Allow only one concurrent deploy; cancel in-progress on new push.
+concurrency:
+  group: deploy-website
+  cancel-in-progress: true
+
+# The Pages workflow needs read on the repo and write on pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # pnpm needs the monorepo, not just packages/website
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build core (workspace dep)
+        run: pnpm --filter @usebrick/core build
+
+      - name: Build website
+        run: pnpm --filter @usebrick/website run build
+        env:
+          # Astro reads public/*; nothing secret here
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/website/dist
+
+  a11y:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @usebrick/core build
+      - run: pnpm --filter @usebrick/website run test:a11y:ci
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

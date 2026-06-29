@@ -1,4 +1,42 @@
-export const VERSION = '0.11.2';
+export const VERSION = '0.15.0';
+
+// ---------------------------------------------------------------------------
+// v0.15.0 U.4 — Repository Memory Platform Health snapshot
+// ---------------------------------------------------------------------------
+
+/**
+ * Runtime shape of `.slopbrick/health.json`. The on-disk JSON
+ * matches `packages/core/schemas/v1/health.schema.json` (v3); this
+ * interface is the slopbrick-side runtime companion. Schema is the
+ * source of truth — keep this in sync with the codegen output in
+ * `packages/core/src/generated/health.ts` (RepositoryMemoryHealth).
+ *
+ * v3 dropped the single `slopIndex` headline in favor of four named
+ * scores:
+ *   - `aiQuality`           — AI-specific findings (USEFUL + OK verdicts)
+ *   - `engineeringHygiene`  — HYGIENE + INVERTED rules
+ *   - `security`            — security/* rules
+ *   - `repositoryHealth`    — composite (0.5*aiQ + 0.3*eng + 0.2*sec)
+ *
+ * Plus optional verdict + bucket distributions for agent-readable
+ * insight.
+ */
+export interface HealthFile {
+  version: typeof import('@usebrick/core').STRUCTURE_SCHEMA_VERSION;
+  generatedAt: string;
+  workspace: string;
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
+  verdictDistribution?: Record<import('@usebrick/core').Verdict, number>;
+  bucketDistribution?: Record<import('./report/buckets').Bucket, number>;
+  categoryScores: Record<string, number>;
+  issueCounts: { high: number; medium: number; low: number };
+  constitutionDrift?: number;
+  topOffenseIds?: string[];
+  scanDurationMs?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Phase Memo #4 — AI Maintenance Cost (target 0.8.0)
@@ -36,7 +74,19 @@ export interface MaintenanceAxisHealth {
 
 /** Inputs to the pure `computeAiMaintenanceCost` function. Every axis is optional. */
 export interface MaintenanceAxes {
-  /** 0-100, lower = better. The headline `slopIndex` from `ProjectReport`. */
+  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
+   *  that replaces slopIndex. Tests and callers should pass this
+   *  going forward. */
+  aiQuality?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  engineeringHygiene?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  security?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  repositoryHealth?: number;
+  /** 0-100, lower = better. @deprecated v0.15.0: use aiQuality. Kept
+   *  for backward compat with existing test fixtures and historical
+   *  telemetry. The axis inverts it internally. */
   slopIndex?: number;
   /** 0-100, higher = better. From `buildArchitectureScore`. */
   architectureConsistency?: number;
@@ -166,7 +216,18 @@ export const AI_SECURITY_NUMERIC: Record<'low' | 'medium' | 'high' | 'critical',
 
 /** Inputs to the pure `buildRepositoryHealth` function. Every input is optional. */
 export interface RepositoryHealthInputs {
-  /** 0-100, lower = better. Inverted to 100 - x for the composite. */
+  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
+   *  that replaces slopIndex. Tests and callers should pass this
+   *  going forward. */
+  aiQuality?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  engineeringHygiene?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  security?: number;
+  /** v0.15.0 U.4+: 0-100, higher = better. */
+  repositoryHealth?: number;
+  /** 0-100, lower = better. Inverted to 100 - x for the composite.
+   *  @deprecated v0.15.0: use aiQuality. Kept for backward compat. */
   slopIndex?: number;
   /** 0-100, higher = better. */
   architectureConsistency?: number;
@@ -248,7 +309,11 @@ export type Category =
   | 'security'
   | 'test'
   | 'docs'
-  | 'db';
+  | 'db'
+  | 'ai'
+  | 'context'
+  | 'product'
+  | 'i18n';
 
 /**
  * `react` covers `.tsx`, `.jsx`, `.ts`, `.js`. Other values are detected
@@ -280,7 +345,7 @@ export interface Issue {
   fixes?: FixSuggestion[];
   // Set by reporters that consume `getSignalStrength(ruleId)`. Omitted
   // when no metadata is available so JSON stays lean for known rules.
-  signalStrength?: import('./rules/signal-strength').SignalStrength;
+  signalStrength?: import('./rules/signal-strength').SignalStrengthEntry;
 }
 
 // subsequent runs can skip unchanged files. Cache invalidates on
@@ -577,6 +642,18 @@ export interface FileScanResult {
   /**
    *  `// slopbrick-disable` directive filtering. */
   facts?: ScanFacts;
+  /**
+   * v0.14.6 — Composite AI-likelihood score for this file.
+   *
+   * Naive Bayes log-likelihood ratio combination of all triggered
+   * rules. `probability` in [0, 1] = P(AI-generated | rules fire);
+   * `confidenceTier` is one of LIKELY_HUMAN / INCONCLUSIVE / LIKELY_AI
+   * / VERY_LIKELY_AI per Jaeschke 1994 JAMA thresholds.
+   *
+   * Populated by the scan pipeline after rule execution. Undefined
+   * when no rules fired (probability stays at the prior prevalence).
+   */
+  compositeScore?: import('@usebrick/engine').CompositeScore;
 }
 
 export interface ComponentScore {
@@ -598,9 +675,17 @@ export interface ProjectReport {
   version: string;
   generatedAt: string;
   configPath?: string;
-  slopIndex: number;
+  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
+  aiQuality: number;
+  engineeringHygiene: number;
+  security: number;
+  repositoryHealth: number;
   assemblyHealth: number;
   totalScore: number;
+  /** @deprecated v0.15.0: use aiQuality. Kept as optional for backward
+   *  compat with existing test fixtures and historical telemetry. Will be
+   *  removed in v0.16.0. */
+  slopIndex?: number;
   categoryScores: Record<Category, number>;
   /** Phase 2 §10: composite subscores. Each is in 0-100 (capped).
    *  slopIndex = 0.40 × boundaryScore + 0.35 × contextScore + 0.25 × visualScore. */
@@ -664,10 +749,6 @@ export interface ProjectReport {
   dbDrift?: DbDriftLevel;
   /** Per-finding list behind the db-health score. */
   dbFindings?: DbFinding[];
-  /** Phase 12 — Repository Health (composite 0-100). The endgame score
-   *  that aggregates every prior sub-score into one number a manager
-   *  reads in two seconds. Always informational; --strict for CI gating. */
-  repositoryHealth?: number;
   /** Categorical AI Debt band, derived from `repositoryHealth`. */
   aiDebt?: AiDebt;
   /** Per-axis breakdown of the composite. */
@@ -752,6 +833,75 @@ export interface ProjectReport {
   prSlopScore?: number;
   /** v0.10.1 — the git ref supplied to --diff <ref>. Undefined for full scans. */
   diffRef?: string;
+  /**
+   * v0.12.0 — Diagnostic stats from the new math engines. Surfaced in
+   * HTML/JSON reporters under "v0.12 Calibration Diagnostics". Does
+   * NOT affect slopIndex or any headline score; purely informational.
+   *
+   * bayesianPosterior: P(AI | fired_rules) computed via naive-Bayes
+   *   likelihood-ratio combination per Bento et al. 2024 *Neurocomputing*.
+   *   Range [0, 1]. > 0.5 = net AI signal; < 0.5 = net human signal.
+   * survivingFiresCount: number of fires that survive Benjamini–Hochberg
+   *   FDR control at α = 0.05 across the full rule set. The "free rigor"
+   *   upgrade that converts the silent multi-testing problem into a
+   *   calibrated number.
+   */
+  v012Stats?: {
+    bayesianPosterior: number;
+    bayesianMatchedRules: number;
+    totalLogLr: number;
+    survivingFiresCount: number;
+    totalFiresCount: number;
+    fdrAlpha: number;
+    /**
+     * v0.13.0 — Probabilistic AI detection across 3 evidence buckets.
+     * Each file gets a P(AI | date, coding fires, general-practice fires)
+     * via naive Bayes. Range [0, 1]. Buckets:
+     *   - 'likely_ai'     : P >= 0.7
+     *   - 'uncertain'     : 0.4 <= P < 0.7
+     *   - 'likely_human'  : P < 0.4
+     */
+    probabilisticAi?: {
+      /** Per-file P(AI) averaged across the project, weighted by file size. */
+      projectP_ai: number;
+      /** Fraction of files in each bucket. */
+      bucketDistribution: {
+        likely_ai: number;
+        uncertain: number;
+        likely_human: number;
+      };
+      /** Date-based prior: P(AI | lastCommitDate), midpoint 2024-01-01. */
+      datePrior: number;
+      /** Evidence from AI-detector rules (markdown leakage, any density, etc.). */
+      codingLogLr: number;
+      /** Evidence from general-practice rules (low spacing entropy, etc.). */
+      practiceLogLr: number;
+    };
+    /** v0.13.0 — Per-file P(AI) distribution (top 10 by file size). */
+    topP_aiFiles?: Array<{
+      filePath: string;
+      p_ai: number;
+      bucket: 'likely_ai' | 'uncertain' | 'likely_human';
+      lastCommitDate: string;
+    }>;
+  };
+  /** v0.14.5i — Count of issues auto-suppressed because their rule was
+   *  marked `defaultOff: true` in signal-strength.json (INVERTED or NOISY
+   *  rules that would erode trust in the tool if surfaced in CI). Surfaced
+   *  in the main scan output as a trust signal so the user can see that
+   *  the tool is calibrated, not just noisy. The user can opt back in
+   *  via `rules: { 'rule/id': 'medium' }` in slopbrick.config.mjs. */
+  defaultOffSuppressedCount?: number;
+  /** v0.14.5i — Number of distinct rules marked defaultOff. The ratio
+   *  suppressedCount / defaultOffRuleCount is the calibration coverage. */
+  defaultOffRuleCount?: number;
+  /** v0.14.5j — The previous run's Slop Index, if any. Used by
+   *  formatPretty to render a "±N from last run" delta so the user
+   *  can see the trajectory without grep'ing the run log. */
+  previousSlopIndex?: number;
+  /** v0.14.5j — ISO timestamp of the previous run, paired with
+   *  previousSlopIndex so the delta line can say "vs 2026-06-27". */
+  previousRunTimestamp?: string;
 }
 
 export interface TopOffender {

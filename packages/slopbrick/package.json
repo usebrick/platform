@@ -1,7 +1,7 @@
 {
   "name": "slopbrick",
-  "version": "0.11.2",
-  "description": "Repository Coherence Scanner for AI-coded codebases — detect cross-file pattern drift, AI-induced design-token violations, and security failures that AI agents introduce disproportionately. Part of the usebrick.dev platform. Ships 8 MCP tools so Claude Code / Cursor / Copilot follow your patterns instead of reinventing them.",
+  "version": "0.15.0",
+  "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 60+ rules and 13 scores, and persists the structure for AI agents and CI.",
   "type": "module",
   "bin": {
     "slopbrick": "bin/slopbrick.js"
@@ -30,7 +30,8 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "generate:rules": "tsx scripts/generate-rule-registry.ts",
-    "build": "pnpm generate:rules && tsup",
+    "prebuild": "pnpm --filter @usebrick/engine build",
+    "build": "pnpm --filter @usebrick/engine build && pnpm generate:rules && tsup",
     "test": "pnpm generate:rules && tsup && vitest run",
     "test:watch": "vitest",
     "test:coverage": "pnpm generate:rules && vitest run --coverage",
@@ -45,12 +46,14 @@
   },
   "dependencies": {
     "@swc/core": "^1.10.0",
+    "@usebrick/engine": "workspace:^",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "globby": "^14.0.0",
     "minimatch": "^9.0.5",
     "pgsql-parser": "^17.9.15"
   },
+  "//_usebrick_core_note": "Listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts noExternal bundles it; the prepack-guard.mjs allowlist includes @usebrick/core. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@usebrick/core": "workspace:*",
@@ -69,9 +72,11 @@
     "claude-code",
     "cursor",
     "copilot",
+    "aider",
     "mcp",
     "model-context-protocol",
     "repository-constitution",
+    "repository-memory",
     "drift-detection",
     "pattern-fragmentation",
     "coherence",
@@ -84,9 +89,15 @@
     "typescript",
     "python",
     "go",
+    "swift",
+    "kotlin",
+    "rust",
     "wcag",
     "ai-slop",
-    "ai-debt"
+    "ai-debt",
+    "pre-commit",
+    "ci",
+    "prevention"
   ],
   "author": "usebrick.dev",
   "license": "MIT",

@@ -1,10 +1,12 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { extname } from 'node:path';
-import { parseFile } from './parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';
 import { setLoggerQuiet } from './logger';
+import { compositeScore } from '@usebrick/engine';
+import { loadSignalStrength } from '../rules/signal-strength.js';
 import type { FileScanResult, Issue, ResolvedConfig, ScanFacts } from '../types';
 
 function applyRuleOverrides(issues: Issue[], rules: ResolvedConfig['rules']): Issue[] {
@@ -27,13 +29,24 @@ export async function scanFile(
   registry?: RuleRegistry,
   cwd = process.cwd(),
 ): Promise<FileScanResult> {
-  // v0.9.2 — Backend files (Python, Go) are skipped by the rule engine
-  // because the existing AST visitors only know JS/TSX/Vue/Svelte/Astro/
-  // HTML. The inventory still picks them up via the lazy-imported
-  // backend visitors in buildPatternInventory, so service/route/ormModel
-  // patterns surface in cross-file drift detection — but the main scan
-  // doesn't try to parse them.
-  if (BACKEND_EXTENSIONS.has(extname(filePath).toLowerCase())) {
+  // v0.14.5l: split the backend early-return. Languages we have
+  // visitors for (.py, .go) get the rule engine pass — rules that
+  // need SWC silently produce 0 issues for those files, but
+  // regex-based rules (markdown-leakage, comment-ratio, etc.) can
+  // fire. Languages we have NO visitor for (.swift, .kt, .dart,
+  // .rs, .cpp, .java, .rb, .php) still get the early-return
+  // because every rule attempt would burn the parseError path.
+  //
+  // Tradeoff: the corpus scans now process ~70% more files, but
+  // the v7 calibration sees more ground truth. v0.15 will add
+  // real Python + Go AST support.
+  const ext = extname(filePath).toLowerCase();
+  const UNSUPPORTED_LANGS = new Set([
+    '.swift', '.kt', '.kts', '.dart', '.rs',
+    '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
+    '.java', '.rb', '.php',
+  ]);
+  if (UNSUPPORTED_LANGS.has(ext)) {
     return {
       filePath,
       componentCount: 0,
@@ -54,8 +67,35 @@ export async function scanFile(
       activeRegistry.loadBuiltins();
     }
     const rules = activeRegistry.createContexts(config, filePath, cwd);
-    const rawIssues = rules.flatMap(({ rule, context }) => rule.analyze(context, facts));
+    // v0.14.5c-fix3: per-rule try/catch so a buggy rule doesn't take
+    // down the whole file scan. Previously, `rules.flatMap` would
+    // propagate any rule.analyze() exception up to the outer try/catch
+    // where it was mis-categorized as a parseError — so a single
+    // broken rule (e.g., `require()` in an ESM module) made every
+    // file look like a parse failure. Now we isolate each rule.
+    const rawIssues: Issue[] = [];
+    for (const { rule, context } of rules) {
+      try {
+        const issues = rule.analyze(context, facts);
+        rawIssues.push(...issues);
+      } catch (err) {
+        // A buggy rule should not block the scan. Log to stderr in
+        // debug mode (when SLOP_AUDIT_DEBUG=1) but stay silent otherwise
+        // — production scans hit 100k+ files, and a per-rule log line
+        // per file would be noise.
+        if (process.env.SLOP_AUDIT_DEBUG === '1') {
+          console.error(`[worker] rule ${rule.id} threw on ${filePath}: ${(err as Error).message}`);
+        }
+      }
+    }
     const issues = applyRuleOverrides(rawIssues, config.rules);
+
+    // v0.14.6: composite AI-likelihood score. Naive Bayes LLR
+    // combination of the unique rule IDs that fired on this file
+    // (post-severity-override). See src/engine/composite-scoring.ts
+    // for the math and references.
+    const triggeredRuleIds = Array.from(new Set(issues.map((i) => i.ruleId)));
+    const compScore = compositeScore(triggeredRuleIds, loadSignalStrength());
 
     const gapValues = collectGapValues(facts);
     const styleSources = collectStyleSources(facts);
@@ -71,6 +111,7 @@ export async function scanFile(
       elementTags,
       unmatchedStringLiterals,
       facts,
+      compositeScore: compScore,
     };
   } catch (err) {
     return {

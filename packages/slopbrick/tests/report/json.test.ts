@@ -7,7 +7,7 @@ function makeReport(): ProjectReport {
     version: '0.6.0',
     generatedAt: '2026-06-15T00:00:00.000Z',
     configPath: 'slopbrick.config.js',
-    slopIndex: 34.2,
+    aiQuality: 34.2, engineeringHygiene: 34.2, security: 34.2, repositoryHealth: 34.2,
     assemblyHealth: 65.8,
     totalScore: 34.2,
     categoryScores: {
@@ -19,7 +19,7 @@ function makeReport(): ProjectReport {
       logic: 21.4,
       arch: 4.2,
       perf: 0,
-      security: 0,      test: 0,    docs: 0,    db: 0,},
+      security: 0,      test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,},
     boundaryScore: 25.0,
     contextScore: 30.0,
     visualScore: 50.0,
@@ -51,7 +51,15 @@ describe('formatJson', () => {
     const parsed = JSON.parse(output) as ProjectReport;
 
     expect(parsed.version).toBe('0.6.0');
-    expect(parsed.slopIndex).toBe(34.2);
+    // v0.15.0 U.4: the v3 headline score is aiQuality (0-100,
+    // higher = better). The legacy `slopIndex` field is also
+    // kept on the wire for backward compat with v0.14
+    // consumers; it should mirror aiQuality (the value is
+    // sourced from aiQuality for historical payload compat).
+    expect(parsed.aiQuality).toBe(34.2);
+    expect(parsed.engineeringHygiene).toBe(34.2);
+    expect(parsed.security).toBe(34.2);
+    expect(parsed.repositoryHealth).toBe(34.2);
     expect(parsed.assemblyHealth).toBe(65.8);
     expect(parsed.componentCount).toBe(12);
     expect(parsed.categoryScores.logic).toBe(21.4);

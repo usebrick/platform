@@ -92,7 +92,10 @@ export async function runMaintenanceCostScan(
   // Use the convenience wrapper that pulls everything from the report.
   const result = computeAiMaintenanceCostFromReport(
     {
-      slopIndex: scan.report.slopIndex,
+      aiQuality: scan.report.aiQuality,
+      engineeringHygiene: scan.report.engineeringHygiene,
+      security: scan.report.security,
+      repositoryHealth: scan.report.repositoryHealth,
       architectureConsistency: scan.report.architectureConsistency,
       aiSecurityRisk: scan.report.aiSecurityRisk,
       highSeverityIssueCount: scan.report.issues.filter(

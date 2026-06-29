@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 
 // Round 25: smoke test that the AST cache works end-to-end. We don't
 // assert exact timing (CI flake risk) — just that the second parse is

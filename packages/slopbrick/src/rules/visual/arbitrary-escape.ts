@@ -1,4 +1,6 @@
 /**
+ *
+ * Per Wathan, A. & Schoger, S. (2017+), *Refactoring UI*, self-published; Mäntylä, M. V. (2003), ‘A Taxonomy for ‘Bad Code Smells’’, MSc thesis, Univ. of Helsinki.
  * example: visual/arbitrary-escape reads from the grouped
  * ScanFactsV2 shape (`facts.v2.jsx.elements[].arbitraryValues`).
  * This is the first rule migrated to v2. It demonstrates that rules can

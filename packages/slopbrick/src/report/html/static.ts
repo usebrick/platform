@@ -77,7 +77,10 @@ function renderStyles(): string {
       font-weight: 700;
     }
 
-    .slop-index .score-value { color: var(--high); }
+    .repository-health-card .score-value { color: var(--pass); }
+    .ai-quality .score-value { color: var(--accent); }
+    .engineering-hygiene .score-value { color: var(--medium); }
+    .security-score .score-value { color: var(--pass); }
     .health .score-value { color: var(--pass); }
 
     .score-label {
@@ -259,6 +262,109 @@ function renderStyles(): string {
     }
 
     .parse-errors-section td { color: var(--high); }
+
+    /* v0.15.0+ — 3-bucket taxonomy (AI Findings / Engineering Hygiene /
+       Suppressed). Grouped via bucketForVerdict(); counts come from
+       bucketDistribution(). */
+    .bucket-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .bucket-grid section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 0;
+    }
+
+    .bucket-grid h3 {
+      font-size: 1rem;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bucket-count {
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+    }
+
+    .bucket-summary {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .bucket-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .bucket-list li {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+
+    .bucket-list li:last-child { border-bottom: none; }
+
+    .rule-id {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .rule-verdict {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--surface-2);
+    }
+
+    .rule-verdict.verdict-useful { background: rgba(52, 211, 153, 0.15); color: var(--pass); }
+    .rule-verdict.verdict-ok { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+    .rule-verdict.verdict-noisy { background: rgba(248, 113, 113, 0.15); color: var(--fail); }
+    .rule-verdict.verdict-inverted { background: rgba(251, 191, 36, 0.15); color: var(--medium); }
+    .rule-verdict.verdict-hygiene { background: rgba(148, 163, 184, 0.15); color: var(--low); }
+    .rule-verdict.verdict-dormant { background: rgba(148, 163, 184, 0.08); color: var(--muted); }
+
+    .rule-confidence, .rule-message {
+      color: var(--muted);
+      font-size: 0.8125rem;
+    }
+
+    .bucket-empty {
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-style: italic;
+      margin: 0;
+    }
+
+    .suppressed-bucket details summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.8125rem;
+      padding: 0.25rem 0;
+    }
+
+    .suppressed-bucket details summary:hover { color: var(--accent); }
 
     @media (max-width: 720px) {
       body { padding: 0.5rem; }

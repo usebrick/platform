@@ -11,10 +11,20 @@
 // controls them); expressions, template literals, and identifiers
 // are flagged.
 //
-// Severity: high. aiSpecific: true (the literal-in-dict pattern is
+// Severity: high. aiSpecific: false (the literal-in-dict pattern is
 // a tell of AI-generated React code; humans writing production
 // components almost always use DOMPurify/sanitize-html wrappers).
 
+
+//
+// **Peer-reviewed citation:**
+// - OWASP XSS Prevention Cheat Sheet
+//   (https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+//   documents `dangerouslySetInnerHTML` with a non-literal value
+//   as a XSS sink. The rule implements this OWASP guidance.
+// - v0.12.2 calibration: HYGIENE. Both human and AI code use
+//   the same anti-pattern; not AI-discriminative.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
@@ -55,7 +65,7 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
   id: 'security/unsafe-html-render',
   category: 'security',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description:
     'dangerouslySetInnerHTML used with a non-literal value (variable, template literal, expression) — unsanitized HTML injection risk.',
   create(context) {
@@ -74,7 +84,7 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
         ruleId: 'security/unsafe-html-render',
         category: 'security',
         severity: 'high',
-        aiSpecific: true,
+        aiSpecific: false,
         message:
           'dangerouslySetInnerHTML fed a non-literal value (variable, template, or expression) — unsanitized HTML will be rendered.',
         line: lineOfSource(source, m.index),

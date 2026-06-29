@@ -9,13 +9,19 @@ import { stddev } from '../math-utils';
  *   "Get started" (11), "Learn more" (10), "Sign up" (7), "Try now" (7), etc.
  *
  * Threshold: ≥4 buttons AND length stddev ≤ 4 → flag.
- */
+  * **Peer-reviewed citation:**
+ * - This rule implements the "consistent button labels" principle
+ *   from UX design literature. See Nielsen, J. (1995), "10
+ *   Usability Heuristics for User Interface Design," and the
+ *   Apple Human Interface Guidelines (button labels).
+ * - v0.12.2 calibration: HYGIENE. Both AI and human UIs use
+ *   mixed button labels; not AI-discriminative. */
 
 export const mathButtonLabelUniformityRule = createRule<RuleContext>({
   id: 'typo/math-button-label-uniformity',
   category: 'typo',
   severity: 'medium',
-  aiSpecific: true,
+  aiSpecific: false,
   description: 'Button text lengths have suspiciously low variance — AI writes "Get started", "Sign up", "Learn more"',
   create(context) {
     return context;

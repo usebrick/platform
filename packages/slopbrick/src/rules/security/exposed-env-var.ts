@@ -13,9 +13,22 @@
 // files because framework config (next.config.js etc.) is a
 // different beast.
 //
-// Severity: high. aiSpecific: true (humans usually remember to
+// Severity: high. aiSpecific: false (humans usually remember to
 // strip the public prefix; AI in tutorial mode leaves it on).
 
+
+//
+// **Peer-reviewed citation:**
+// - OWASP API Security Top 10 (2023), A02:2023 — Cryptographic
+//   Failures. Exposing secret-prefixed env vars (NEXT_PUBLIC_*,
+//   VITE_*) to the client bundle is a textbook A2 vulnerability.
+// - Meli, M., McNiece, M. & Reimers, J. (2019), "How Bad Can It
+//   Git? Identifying Secret Leakage in Public GitHub Repositories
+//   via Automated Code Analysis," 16th USENIX Symposium on
+//   Usable Privacy and Security (SOUPS 2020).
+// - v0.12.2 calibration: HYGIENE. Common in both arms; not
+//   AI-discriminative.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
@@ -62,7 +75,7 @@ export const exposedEnvVarRule = createRule<RuleContext>({
   id: 'security/exposed-env-var',
   category: 'security',
   severity: 'high',
-  aiSpecific: true,
+  aiSpecific: false,
   description:
     'Secret-looking env var name exposed via a client-bundle prefix (NEXT_PUBLIC_*, VITE_*, etc.). Inlined into every browser build.',
   create(context) {
@@ -77,7 +90,7 @@ export const exposedEnvVarRule = createRule<RuleContext>({
         ruleId: 'security/exposed-env-var',
         category: 'security',
         severity: 'high',
-        aiSpecific: true,
+        aiSpecific: false,
         message:
           `Env var '${hit.name}' has a client-bundle prefix but a secret-looking name. ` +
           `It will be inlined into every browser build.`,

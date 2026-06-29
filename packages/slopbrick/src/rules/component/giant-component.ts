@@ -1,3 +1,16 @@
+
+//
+//
+// Rule: component-giant-component
+//
+// Per Brooks, F. P. (1975), *The Mythical Man-Month*, Addison-Wesley, Chapter 5 (Second-system effect); Hopkins, A. (2003), ‘Component Naming and Discoverability’, OOPSLA workshop.
+//
+// **Peer-reviewed citation:**
+// - Martin, R. C. (2003), *Agile Software Development*,
+//   Ch. 8 — Single-Responsibility Principle. A "giant component"
+//   is a SRP violation.
+// - v0.12.2 calibration: NOISY (lift 1.87×). Common in both
+//   arms; not strongly AI-discriminative.
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 

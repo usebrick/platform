@@ -120,6 +120,12 @@ const HARDCODED_CURRENCY_SYMBOL =
 // The "not followed within 80 chars" check lives in
 // `findUnconstrainedZodSchemas` because regex lookahead with character
 // limits is awkward to express inline.
+//
+// File-extension gate (analyzeBusinessLogic at the bottom): all
+// regex-based detectors below are designed for JS/TS/Vue/Svelte/Astro
+// source files. Matching literal text in markdown code blocks, README
+// examples, or prose produces false positives.
+const SOURCE_EXTENSION = /\.(tsx?|jsx?|vue|svelte|astro)$/i;
 const ZOD_STRING = /z\.string\s*\(\s*\)/;
 
 // 5. validation/missing-error-message — file-level proxy: if a file has
@@ -404,6 +410,22 @@ function detectRawCurrencyInTemplate(ctx: DetectorContext): BusinessLogicIssue[]
  * the report output ordering).
  */
 export function analyzeBusinessLogic(source: string, filePath: string): BusinessLogicIssue[] {
+  // File-extension guard: business-logic regex patterns (z.string(),
+  // Math.round, .toLocaleString, etc.) match literal text. Without this
+  // guard they fire on `z.string()` snippets inside markdown code blocks,
+  // README examples, and prose documentation — polluting the calibration
+  // data and producing false positives in user reports. The rules are
+  // designed for JS/TS/Vue/Svelte/Astro source files only.
+  //
+  // This was the root cause of the v5 markdown pilot's
+  // `business-logic/unconstrained-zod-string` firing 317× on production
+  // markdown (z.string() in code examples) but only 2× on AI markdown
+  // (almost no docs have zod snippets). The lift was 158×, an
+  // apparent USEFUL signal — but it was a calibration artifact from
+  // matching prose, not code.
+  if (!SOURCE_EXTENSION.test(filePath)) {
+    return [];
+  }
   const ctx: DetectorContext = { filePath, source };
   const issues: BusinessLogicIssue[] = [
     ...detectMathRoundCents(ctx),

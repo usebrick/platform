@@ -31,6 +31,10 @@ const STRICTNESS_PRESETS: Record<
       test: 1.0,
       docs: 1.0,
       db: 1.0,
+      ai: 1.0,
+      context: 1.0,
+      product: 1.0,
+      i18n: 1.0,
     },
   },
   balanced: {
@@ -52,6 +56,10 @@ const STRICTNESS_PRESETS: Record<
       test: 0.8,
       docs: 0.8,
       db: 0.8,
+      ai: 0.8,
+      context: 0.8,
+      product: 0.8,
+      i18n: 0.8,
     },
   },
 };
@@ -113,6 +121,53 @@ export function buildInitConfig(
   }
   if (uiSet.has('nativewind')) {
     config.rules = { ...config.rules, 'logic/boundary-violation': 'off' };
+  }
+
+  // v0.14.5d: PickBrick-equivalent wizard categories (state, auth,
+  // forms, testing, structure). These don't currently drive any
+  // rule overrides — they go straight into the Constitution block
+  // for `slopbrick drift` to check at PR time. Surfacing them in
+  // the config makes the WizardAnswers the single source of truth
+  // for "what does this project use".
+  const constitutionExtras: Partial<NonNullable<ResolvedConfig['constitution']>> = {};
+  if (answers.stateManagement) {
+    constitutionExtras.stateManagement = [answers.stateManagement];
+  }
+  if (answers.auth) {
+    // Constitution doesn't have an `auth` field today; the nearest
+    // canonical field is `routing` (auth often lives next to routing).
+    // Defer to leaving it in the constitution object for forward
+    // compat: if the schema gains `auth`, the user doesn't need to
+    // re-run the wizard. For now we stash it in `custom`.
+    constitutionExtras.custom = {
+      ...(constitutionExtras.custom ?? {}),
+      auth: [answers.auth],
+    };
+  }
+  if (answers.forms) {
+    constitutionExtras.forms = [answers.forms];
+  }
+  if (answers.testing) {
+    // testing isn't a Constitution field either; stash in `custom`.
+    constitutionExtras.custom = {
+      ...(constitutionExtras.custom ?? {}),
+      testing: [answers.testing],
+    };
+  }
+  if (answers.structure) {
+    // Structure is project layout, not a library — stash as a custom
+    // string so it's preserved in the Constitution for downstream
+    // tools to read.
+    constitutionExtras.custom = {
+      ...(constitutionExtras.custom ?? {}),
+      structure: [answers.structure],
+    };
+  }
+  if (Object.keys(constitutionExtras).length > 0) {
+    config.constitution = {
+      ...config.constitution,
+      ...constitutionExtras,
+    };
   }
 
   return config;

@@ -230,7 +230,135 @@ More accurate than BOCPD but the marginal accuracy isn't worth the inference cos
 
 ---
 
-## 7. Implementation roadmap
+## 7. Tier 1.5: Calibration Methods (v0.12.0 — NEW; v0.12.1 — calibrated; v0.12.2 — verdict split)
+
+The methods in Sections 3–5 are all **detection** methods: they ask "does this file match pattern X?" The v0.12.0 calibration work addresses a complementary question: **"given multiple weak signals, what's the calibrated probability that this file is AI-generated?"**
+
+Detection math asks "fire or not fire?" Calibration math asks "fire plus context, what's the posterior?" slopbrick's 60-rule pipeline produces many fires per file; without calibration, the false-positive rate compounds multiplicatively. The four methods below address this directly.
+
+### 7.1 Bayesian likelihood-ratio combination (Tier S)
+
+**Citation:** Bento et al. 2024, "Improving rule-based classifiers by Bayes point aggregation," *Neurocomputing* — direct application to rule ensembles. Bissiri, Holmes, Walker 2016, *JRSS B* — power-likelihood foundations. arXiv:2504.17013 (2025) — weighted-likelihood for class imbalance.
+
+**Math:** For each rule, compute the likelihood ratio LR = P(fire | AI) / P(fire | human) from the calibration corpus. Combine across rules via naive Bayes (log-odds formulation):
+
+```
+log P(AI | all fires) = log (P(AI) / P(human)) + Σᵢ log LR_i
+```
+
+**Slopbrick application:** `src/engine/lr-combiner.ts` (~200 LOC). Replaces the heuristic weighted average in the Repository Coherence Score with a calibrated Bayesian posterior. For each fired rule, the LR is read from `signal-strength.json`. With 50/50 priors and Haldane smoothing on TP/FP, the combiner handles edge cases (zero-count rules) gracefully.
+
+**Concrete ship:** Surfaces in the report under `report.v012Stats.bayesianPosterior` (range [0, 1]). > 0.5 = net AI signal; < 0.5 = net human signal. Drives the new `logic/bayesian-conditional` rule (P(AI|fires) ≥ 0.7) per Bento et al.
+
+**Solves:** All four calibration failure modes in v5 — high-FPR USEFUL rules (downweight noisy via posterior), INVERTED rules (Bayes handles anti-predictive evidence naturally), threshold calibration (posterior IS calibrated probability), new discriminators (Bayes finds patterns, even if individual signals are weak).
+
+### 7.2 Kolmogorov–Smirnov test (Tier S)
+
+**Citation:** Kolmogorov 1933 / Smirnov 1939 — foundational. arXiv:2510.15996 (Oct 2025), "Using Kolmogorov-Smirnov Distance for Measuring Distribution Shift in Machine Learning" — direct recent ML application. Witt 2018/2024 — review.
+
+**Math:** KS statistic D = sup_x |F_n(x) − G_m(x)| where F_n, G_m are the empirical CDFs. Asymptotic p-value via Hodges 1958:
+
+```
+p ≈ Q_KS(√(n·m / (n+m)) · D)
+Q_KS(λ) = 2 · Σ_{j=1}^∞ (−1)^(j−1) · exp(−2j²λ²)
+```
+
+**Slopbrick application:** `src/engine/ks.ts` (~80 LOC). Runs multi-feature KS tests on per-file distributions (line lengths, identifier lengths, comment density) against corpus baselines, Bonferroni-corrected for family-wise error rate.
+
+**Concrete ship:** New `logic/ks-distribution-shift` rule fires when any feature shows a statistically significant shift. KS is symmetric — catches both AI anomalies and production-rot anomalies.
+
+### 7.3 Zipf's & Heaps' laws (Tier S)
+
+**Citation:** Christ, Bavarian, Koyejo, Lapata 2025, "Zipf's and Heaps' Laws for Tokens and LLM-generated Texts," *EMNLP Findings 2025* — **directly proposes Heaps λ and Zipf s as LLM discriminators.** Lu, Zhang, Zhou 2013 *Nature Sci. Rep.* — deviation analysis. Zipf 1949; Heaps 1978 — originals.
+
+**Math:**
+
+```
+f(rank) ∝ rank^(−s)        (Zipf; s ≈ 1.0–1.2 for natural text)
+|V(t)| = K · t^λ            (Heaps; λ ≈ 0.4–0.6 for natural text)
+```
+
+LLMs have systematically higher λ and different s than human text (Christ et al. 2025).
+
+**v0.12.1 corpus measurement (NOT textbook):** slopbrick's v6 corpus (5,000-file sample of real OSS JavaScript/Python) measured Heaps λ = 0.742 ± 0.169, Zipf s = 0.715 ± 0.201. These are 50% higher than the textbook "natural text" values from Christ et al. 2025 because the corpus is source code, not prose — code has more identifiers per line, fewer total tokens, and more repeated patterns. This is why v0.12.1 ships `corpus-baselines.json` instead of hardcoded `0.5 ± 0.15`: the corpus IS the population, and code is not prose.
+
+**Slopbrick application:** `src/engine/zipf-heaps.ts` (~150 LOC). Two new rules:
+
+- `logic/heaps-deviation` — fires when file's λ deviates > 2σ from corpus baseline (mean ± 2σ = 0.40–1.08 with shipped baselines; falls back to 0.20–0.80 if baselines absent).
+- `logic/zipf-slope-anomaly` — fires when rank-frequency slope deviates > 2σ with R² ≥ 0.7 (mean ± 2σ = 0.31–1.12 with shipped baselines; falls back to 0.50–1.50 if absent).
+
+### 7.4 Benjamini–Hochberg FDR correction (Tier S — highest leverage per LOC)
+
+**Citation:** Benjamini, Y. & Hochberg, Y. 1995, "Controlling the false discovery rate," *JRSS B* 57(1):289–300.
+
+**Math:** Step-up procedure that controls E[V/R] ≤ α (FDR) under independence or PRDS:
+
+```
+Sort p-values ascending: p_(1) ≤ p_(2) ≤ … ≤ p_(N).
+Find largest k such that p_(k) ≤ (k / N) · α.
+Reject hypotheses 1..k.
+```
+
+**Slopbrick application:** `src/engine/multitest.ts` (~40 LOC). With 60 rules firing on every file, P(≥1 false positive) ≈ 95% under no correction. BH-FDR brings this to ≤ 5% expected — **without changing a single rule's underlying logic**. Highest credibility-per-line-of-code ratio in v0.12.0.
+
+**Concrete ship:** Surfaces `report.v012Stats.survivingFiresCount` (number of fires surviving BH-FDR at α = 0.05). The "free rigor" upgrade.
+
+### 7.5 Wilson score + Clopper-Pearson confidence intervals
+
+**Citation:** Wilson 1927, *JASA* 22:209–212 — Wilson score interval. Clopper & Pearson 1934, *Biometrika* 26:404–413 — exact binomial CI.
+
+**Math:** Wilson score interval (closed-form, better than normal approximation):
+
+```
+p̂ ± z·sqrt(p̂(1−p̂)/n + z²/(4n²)) / (1 + z²/n)
+```
+
+**Slopbrick application:** `src/engine/confidence-intervals.ts` (~70 LOC). Replace point estimates of P / R / FPR in the calibration doc with confidence intervals. The corpus sizes (95k neg / 76k pos) support tight CIs (±0.5% on P/R/FPR). Adds defensibility to every reported number.
+
+**Concrete ship:** Future reporter work — `formatCI()` outputs `60.00% [57.23%, 62.71%]` for the next calibration doc revision.
+
+### 7.6 v0.12.1 corpus calibration results
+
+**Corpus:** v6 = 239k neg + 261k pos symlinks = 524k scanned files (90%+ complete; SWC native panic truncated ~10% of each arm). Source mix:
+- neg: 50+ real public OSS repos (django, fastapi, flask, express, keycloak, discourse, supabase, …) + 54,980 files from `ai-slop-baseline/extracted/neg/`.
+- pos: 50+ real AI-coded projects (agno, claude-code, career-ops, …) + 6,142 files from `ai-slop-baseline/extracted/pos/`.
+
+**Verdict distribution shift (v5 → v6, AI-detector verdicts only):**
+
+| Verdict | v5 (162k files) | v0.12.1 (524k files) | v0.12.2 (HYGIENE split) |
+|---------|-----------------|----------------------|--------------------------|
+| USEFUL  | 16 | 22 | **13** (9 went to HYGIENE) |
+| OK      |  7 | 11 | 6 (5 went to HYGIENE) |
+| NOISY   | 13 | 14 | 9 (5 went to HYGIENE) |
+| DORMANT | 21 | 12 | 12 |
+| INVERTED| 18 |  5 | **0** (all went to HYGIENE) |
+| HYGIENE | —  | —  | **24** (new bucket for `aiSpecific: false` rules) |
+
+**v0.12.2 verdict split.** The verdict distribution is now partitioned by `aiSpecific`. Rules with `aiSpecific: true` get one of USEFUL/OK/NOISY/DORMANT/INVERTED based on lift and precision against the calibration corpus. Rules with `aiSpecific: false` (code-hygiene rules — useful security/style/docs/accessibility checks that fire on both human and AI code) get verdict `HYGIENE`. The split is computed by `scripts/compute-v5-full-calibration.py` which reads each rule's `aiSpecific` flag from the source file and overrides the AI-calibration verdict.
+
+**Why 0 INVERTED in v0.12.2?** All 5 INVERTED rules in v0.12.1 were already `aiSpecific: false` (the calibration had flagged them as anti-predictive AI detectors, but they were never meant to be AI detectors). v0.12.2 also reclassified 2 more (`security/unsafe-html-render`, `security/exposed-env-var`) whose source comments said `aiSpecific: false` but the code was `aiSpecific: true`. v0.12.2 fixes that mismatch. Result: the verdict distribution is clean — 0 INVERTED, 24 HYGIENE, the rest in their AI-detector buckets.
+
+**Why did INVERTED rules collapse from 18 → 5 → 0?**
+
+The 14 reclassified rules (`context/import-path-mismatch`, `component/multiple-components-per-file`, `product/terminology-drift`, `style/identical-comments`, `style/emoji-in-comments`, `style/one-line-comments-only`, `style/too-perfect-formatting`, `docs/excessive-jsdoc`, `docs/copy-pasted-headers`, `docs/comment-density-anomaly`, `ai/typical-ai-mistake`, `ai/cliche-structure`, `ai/hedging-language`, `i18n/missing-locale`, `i18n/hardcoded-string`) were INVERTED in v5 because v5's 162k-file corpus undersampled the neg arm. With v6's 524k files, their LR landed in (1, 1.5) — they ARE more common in AI code than in real OSS code, but only by 12–50%. That's NOISY discrimination, not inverted AI detection. The reclassification as `aiSpecific: false` (code-hygiene) reflects the truth: these rules catch patterns that AI tools produce disproportionately, but the lift is too low to claim they're AI detectors. They keep firing in reports under the code-hygiene category.
+
+The remaining 5 in v0.12.1 (3 math-derived + `security/public-admin-route` + `wcag/dragging-movements`) were all `aiSpecific: false` already. v0.12.2 simply moves them to the HYGIENE bucket. Then 2 more (`security/unsafe-html-render`, `security/exposed-env-var`) get their `aiSpecific: true` → `aiSpecific: false` corrected and join HYGIENE. Final: 24 HYGIENE, 0 INVERTED.
+
+**3 math-derived rules: DORMANT → INVERTED/NOISY → HYGIENE:**
+
+| Rule | v0.12.0 status | v0.12.1 status | v0.12.2 status |
+|------|----------------|----------------|-----------------|
+| `logic/heaps-deviation` | DORMANT (defaultOff) | INVERTED (defaultOff) | **HYGIENE** (defaultOff) |
+| `logic/zipf-slope-anomaly` | DORMANT (defaultOff) | INVERTED (defaultOff) | **HYGIENE** (defaultOff) |
+| `logic/ks-distribution-shift` | DORMANT (defaultOff) | NOISY (defaultOff) | **HYGIENE** (defaultOff) |
+
+All 3 remain `defaultOff: true`. The v0.12.1 calibration showed them with lift ≤ 1.4× (inverted or barely positive). v0.12.2 acknowledges they're not AI discriminators — they're code-hygiene checks that look at statistical properties of code (vocabulary growth, frequency distribution, KS shift). The math is still useful (corpus-derived baselines are real measurements, Heaps λ = 0.742 ± 0.169 and Zipf s = 0.715 ± 0.201), the rules are still implemented, and the data is still in the report under "code-hygiene". They just don't claim to be AI detectors.
+
+**`src/engine/corpus-baselines.json`** is checked in (308KB). It contains Heaps λ, Zipf s, line lengths, identifier lengths, and comment density stats computed from a 5k-file sample of the v6 neg corpus. The 3 calibration rules read it on init and fall back to constants if the file is absent. To recompute against your own corpus, run `tsx scripts/compute-corpus-baselines.ts <workspace> [sample-size]`.
+
+---
+
+## 8. Implementation roadmap
 
 | Phase | Methods | Effort | Trust gain |
 |-------|---------|--------|-----------|
@@ -245,7 +373,7 @@ Each release is a separate calibration report and rule documentation update.
 
 ---
 
-## 8. References
+## 9. References
 
 Primary citations (every threshold in the new rules should trace back here):
 

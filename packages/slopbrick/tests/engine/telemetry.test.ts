@@ -19,7 +19,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: '0.6.0',
     generatedAt: '2026-06-17T00:00:00.000Z',
-    slopIndex: 5,
+    aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
     assemblyHealth: 95,
     totalScore: 5,
     categoryScores: {
@@ -31,7 +31,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
       logic: 0,
       arch: 0,
       perf: 0,
-      security: 0,      test: 0,    docs: 0,    db: 0,},
+      security: 0,      test: 0,    docs: 0,    db: 0,    ai: 0,    context: 0,    product: 0,    i18n: 0,},
     p90Score: 10,
     peakScore: 20,
     boundaryScore: 0,
@@ -148,8 +148,12 @@ describe('telemetry', () => {
   });
 
   it('reads back telemetry payloads', () => {
+    // v0.15.0 U.4: the telemetry `slopIndex` field is now sourced
+    // from `report.aiQuality` (the legacy field name is kept for
+    // backward compat with historical payloads). Override aiQuality
+    // here, not the deprecated slopIndex.
     const report1 = makeReport();
-    const report2 = makeReport({ generatedAt: '2026-06-17T02:00:00.000Z', slopIndex: 7 });
+    const report2 = makeReport({ generatedAt: '2026-06-17T02:00:00.000Z', aiQuality: 7, engineeringHygiene: 7, security: 7, repositoryHealth: 7 });
     const results = [makeResult('/project/src/A.tsx', report1.issues), makeResult('/project/src/B.tsx')];
 
     recordTelemetry(cwd, report1, results, baseConfig);

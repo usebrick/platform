@@ -217,7 +217,7 @@ pnpm test
 - Add explicit return types to exported functions.
 - Keep IO and business logic separate.
 - Prefer small, focused files.
-- **When bumping VERSION** in `src/types.ts`, also bump `package.json` and search fixtures for hardcoded versions. Update `tests/types.test.ts`, `tests/cli.test.ts`, `tests/cache-orphan-tmp.test.ts`, `tests/engine/memory.test.ts` to use the live `VERSION` constant — don't hardcode `0.5.2`.
+- **When bumping VERSION** in `src/types.ts`, also bump `package.json` and search fixtures for hardcoded versions. Update `tests/types.test.ts`, `tests/cli.test.ts`, `tests/cache-orphan-tmp.test.ts`, `tests/engine/structure.test.ts` to use the live `VERSION` constant — don't hardcode `0.5.2`.
 
 ---
 

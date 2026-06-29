@@ -1,0 +1,74 @@
+---
+// Base layout — sets up the document shell and wires up the
+// global scripts (Lenis, GSAP, reveal, copy). Component scripts
+// (brick-shader, counter, break-on-hover) are loaded by their
+// own islands; this layout only handles the "ambient" scripts
+// that apply to the whole page.
+import '../styles/global.css';
+import '../styles/theme.css';
+import '../styles/components.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'usebrick.dev — repository structure for your code',
+  description = 'A four-tool platform that continuously models and governs your repository\'s structure. Detect, classify, ship with confidence.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://usebrick.dev" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#1a0e08" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" as="image" href="/brick-pattern.svg" />
+  </head>
+  <body>
+    <a class="skip-to-content" href="#top">Skip to content</a>
+    <slot />
+
+    <!-- Lenis + ambient scripts — inline so they load before any island -->
+    <script>
+      import { initLenis } from '../scripts/lenis';
+      import { initReveal } from '../scripts/reveal';
+      import { initCounters } from '../scripts/counter';
+      import { initCopyInstall } from '../scripts/copy-install';
+      import { initBreakOnHover } from '../scripts/break-on-hover';
+
+      // Wait for DOM (Astro's default script timing is 'after-render')
+      const cleanups: Array<() => void> = [];
+      const start = () => {
+        cleanups.push(initLenis());
+        cleanups.push(initReveal());
+        cleanups.push(initCounters());
+        cleanups.push(initCopyInstall());
+        cleanups.push(initBreakOnHover());
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+      } else {
+        start();
+      }
+    </script>
+  </body>
+</html>

@@ -1,5 +1,7 @@
 // Rule: test/fake-placeholder
 //
+// Per Meszaros, G. (2007), *xUnit Test Patterns: Refactoring Test Code*, Addison-Wesley; Freeman, S. & Pryce, N. (2009), *Growing Object-Oriented Software, Guided by Tests*, Addison-Wesley.
+//
 // Catches AI-default fixture data: `'John Doe'`, `'test@test.com'`,
 // `id: 1`, `password: 'password'`, `createdAt: new Date('2020-01-01')`.
 // Human tests usually reflect domain entities (e.g. `email:

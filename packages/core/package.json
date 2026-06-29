@@ -19,10 +19,13 @@
     "README.md"
   ],
   "scripts": {
+    "prebuild": "pnpm codegen && pnpm test:contract && tsup",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "codegen": "tsx scripts/codegen-types.ts",
+    "test:contract": "tsx scripts/verify-codegen-fresh.ts"
   },
   "keywords": [
     "usebrick",
@@ -36,10 +39,13 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^3.25.0"
+  },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "json-schema-to-typescript": "^15.0.4",
     "tsup": "^8.5.1",
     "tsx": "^4.19.2",
     "typescript": "^5.4.0",

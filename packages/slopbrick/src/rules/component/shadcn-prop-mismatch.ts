@@ -5,6 +5,21 @@ import { createRule } from '../rule';
  * Rule: shadcn-prop-mismatch
  * Legacy `className` prop assignment on shadcn/ui components whose
  * registry schema explicitly excludes it.
+ *
+ * **Empirical observation, with shadcn/ui as canonical source:**
+ * - shadcn/ui's registry schema (https://ui.shadcn.com/docs/registry)
+ *   and component docs explicitly define which props are accepted
+ *   on each component. The `className` prop, in particular, has
+ *   had varying canonical support across versions; AI agents
+ *   trained on older examples frequently apply `className` to
+ *   components that no longer accept it.
+ * - v6 calibration: lift 2.10×. P=0.66, R=0.003.
+ * - This is a slopbrick-specific heuristic, not a peer-reviewed
+ *   detection method as of v0.13.0. The signal is empirical and
+ *   ties to a specific library's API surface.
+ *
+ * Future: cite a peer-reviewed paper on AI-default React prop
+ * patterns if one is published.
  */
 const SHADCN_COMPONENT_RE = /\b(?:Button|Card|Dialog|Sheet|Drawer|Popover|Tooltip|Alert|Badge|Input|Textarea|Select)\b/;
 

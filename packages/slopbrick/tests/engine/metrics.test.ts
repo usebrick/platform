@@ -6,7 +6,7 @@ import {
   scoreFile,
   SEVERITY_WEIGHTS,
 } from '../../src/engine/metrics';
-import type { BaselineCache, FileScanResult, Issue, ResolvedConfig } from '../../src/types';
+import type { BaselineCache, Category, FileScanResult, Issue, ResolvedConfig } from '../../src/types';
 
 const baselineCache = (
   scores: Record<string, { baselineScore: number; componentCount?: number }>,
@@ -153,8 +153,11 @@ describe('aggregateReport', () => {
       0.25 * report.visualScore;
 
     expect(report.componentCount).toBe(2);
-    expect(report.slopIndex).toBeCloseTo(expectedSlopIndex, 5);
-    expect(report.assemblyHealth).toBeCloseTo(Math.max(0, 100 - report.slopIndex), 5);
+    // v0.15.0 U.4+: slopIndex is optional on ProjectReport (kept for
+    // backward compat with historical telemetry). aggregateReport
+    // always computes it, but the Pick type widens it to optional.
+    expect(report.slopIndex ?? 0).toBeCloseTo(expectedSlopIndex, 5);
+    expect(report.assemblyHealth).toBeCloseTo(Math.max(0, 100 - (report.slopIndex ?? 0)), 5);
     expect(report.peakScore).toBe(Math.max(scores[0].adjustedScore, scores[1].adjustedScore));
     expect(report.p90Score).toBeGreaterThanOrEqual(
       Math.min(scores[0].adjustedScore, scores[1].adjustedScore),
@@ -201,12 +204,12 @@ describe('aggregateReport', () => {
       DEFAULT_CONFIG,
     );
     expect(report.boundaryScore).toBeLessThanOrEqual(100);
-    expect(report.slopIndex).toBeLessThanOrEqual(100);
+    expect(report.slopIndex ?? 0).toBeLessThanOrEqual(100);
   });
 
   it('returns zero subscores on empty input', () => {
     const report = aggregateReport([], [], DEFAULT_CONFIG);
-    expect(report.slopIndex).toBe(0);
+    expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.boundaryScore).toBe(0);
     expect(report.contextScore).toBe(0);
@@ -283,11 +286,125 @@ describe('aggregateReport', () => {
 
   it('handles empty scores gracefully', () => {
     const report = aggregateReport([], [], DEFAULT_CONFIG);
-    expect(report.slopIndex).toBe(0);
+    expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.peakScore).toBe(0);
     expect(report.p90Score).toBe(0);
     expect(report.componentCount).toBe(0);
+  });
+
+  // v0.14.5h regression: when componentCount=0 (CLI tools, pure backend,
+  // libraries with no UI), the per-component-average normalization
+  // `sum / 1 * 100` exploded to 16700 / 7000 / 6840 in self-scans.
+  // The fix: return raw totals (severity × weight) when there are no
+  // components to average over, so the user sees honest numbers like
+  // 167 / 70 / 68 instead of meaningless 4-digit figures.
+  it('returns raw severity totals for categoryScores when componentCount=0 (v0.14.5h)', () => {
+    // Simulate a CLI tool that fires 1 high (5pts) + 1 medium (3pts) +
+    // 1 low (1pt) AI issue. rawScore=9 points. With componentCount=0,
+    // the old code returned (9/1)*100 = 900 (or 9*100 = 900). The
+    // new code returns 9.
+    const aiIssues: Issue[] = [
+      { ruleId: 'ai/x', category: 'ai', severity: 'high', aiSpecific: true, message: 'a', line: 1, column: 1 },
+      { ruleId: 'ai/y', category: 'ai', severity: 'medium', aiSpecific: true, message: 'b', line: 1, column: 1 },
+      { ruleId: 'ai/z', category: 'ai', severity: 'low', aiSpecific: true, message: 'c', line: 1, column: 1 },
+    ];
+    // scoreFile is called with componentCount: 0 (CLI tool — no components)
+    const scores = [scoreFile(fileResult({ filePath: 'cli.ts', componentCount: 0, issues: aiIssues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'cli.ts', issues: aiIssues }];
+
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    expect(report.componentCount).toBe(0);
+    // 5 + 3 + 1 = 9 raw points. NOT 900.
+    expect(report.categoryScores.ai).toBe(9);
+    expect(report.categoryScores.ai).toBeLessThan(100);
+  });
+
+  it('returns raw category totals mirroring real self-scan numbers (v0.14.5h)', () => {
+    // Real self-scan numbers (slopbrick's own repo, 0 components):
+    //   ai: 167, visual: 70, logic: 68
+    // Pre-fix: ai: 16700, visual: 7000, logic: 6840 (looked like total
+    // repo failure — caused user pushback).
+    // Post-fix: raw severity totals, honest, small, and clearly tied
+    // to the headline slopIndex (which IS 25 / 100).
+    //
+    // The bug guard: the score must equal the raw total (sum of
+    // severity × weight), NOT (raw total / 1) * 100 which would
+    // produce a 100×-inflated value.
+    //
+    // We use a uniform-weight config so the test math is clear.
+    // DEFAULT_CONFIG has per-category weights (e.g. visual × 1.2)
+    // that would otherwise distort the expected values.
+    const flatConfig: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      categoryWeights: {
+        visual: 1, typo: 1, wcag: 1, layout: 1, component: 1, logic: 1,
+        arch: 1, perf: 1, security: 1, test: 1, docs: 1, db: 1,
+        ai: 1, context: 1, product: 1, i18n: 1,
+      } satisfies Record<Category, number>,
+    };
+    const aiIssues: Issue[] = Array.from({ length: 35 }, () => ({
+      ruleId: 'ai/compression-profile', category: 'ai' as const, severity: 'high' as const, aiSpecific: true, message: 'a', line: 1, column: 1,
+    }));
+    // 35 high AI = 35 * 5 = 175 raw points
+    const visualIssues: Issue[] = Array.from({ length: 23 }, () => ({
+      ruleId: 'visual/naturalness-anomaly', category: 'visual' as const, severity: 'medium' as const, aiSpecific: true, message: 'v', line: 1, column: 1,
+    }));
+    // 23 medium visual = 23 * 3 = 69 raw points
+    const logicIssues: Issue[] = Array.from({ length: 68 }, () => ({
+      ruleId: 'logic/boundary-violation', category: 'logic' as const, severity: 'low' as const, aiSpecific: true, message: 'l', line: 1, column: 1,
+    }));
+    // 68 low logic = 68 * 1 = 68 raw points
+
+    const allIssues = [...aiIssues, ...visualIssues, ...logicIssues];
+    const scores = [scoreFile(fileResult({ filePath: 'src/cli.ts', componentCount: 0, issues: allIssues }), 1.0, flatConfig)];
+    const issueGroups = [{ filePath: 'src/cli.ts', issues: allIssues }];
+
+    const report = aggregateReport(scores, issueGroups, flatConfig);
+    expect(report.componentCount).toBe(0);
+
+    // The bug guard: every score is the raw total, NOT 100× the raw
+    // total. Pre-fix these were 17500 / 6900 / 6800.
+    const expectedAi = 35 * SEVERITY_WEIGHTS.high;        // 175
+    const expectedVisual = 23 * SEVERITY_WEIGHTS.medium;  // 69
+    const expectedLogic = 68 * SEVERITY_WEIGHTS.low;      // 68
+
+    // Verify the score equals the raw total (not 100×)
+    expect(report.categoryScores.ai).toBe(expectedAi);
+    expect(report.categoryScores.visual).toBe(expectedVisual);
+    expect(report.categoryScores.logic).toBe(expectedLogic);
+
+    // Regression guard: scores must NOT be 100× larger
+    expect(report.categoryScores.ai).toBeLessThan(expectedAi * 2);
+  });
+
+  it('preserves per-component normalization when componentCount>0 (v0.14.5h)', () => {
+    // The fix only changes the 0-component case. When components
+    // exist, categoryScores should still be (sum / componentCount) * 100
+    // so scores are comparable across project sizes.
+    const aIssues: Issue[] = [
+      { ruleId: 'test/rule', category: 'ai', severity: 'high', aiSpecific: true, message: 'a', line: 1, column: 1 },
+    ];
+    const scores = [
+      scoreFile(fileResult({ filePath: 'A.tsx', componentCount: 1, issues: aIssues }), 1.0, DEFAULT_CONFIG),
+      scoreFile(fileResult({ filePath: 'B.tsx', componentCount: 1 }), 1.0, DEFAULT_CONFIG),
+    ];
+    const issueGroups = [
+      { filePath: 'A.tsx', issues: aIssues },
+      { filePath: 'B.tsx', issues: [] },
+    ];
+
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    expect(report.componentCount).toBe(2);
+    // 5 raw points / 2 components * 100 = 250, but with
+    // categoryWeights default this should land around 250
+    // (which is large but not the 16700-style inflation).
+    expect(report.categoryScores.ai).toBeGreaterThan(0);
+    // Regression guard: with 2 components, scores follow the
+    // per-component formula, NOT the 0-component raw-total path.
+    expect(report.categoryScores.ai).toBe(
+      (SEVERITY_WEIGHTS.high / 2) * 100,
+    );
   });
 });
 

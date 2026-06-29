@@ -29,7 +29,7 @@ async function runInline(
   const filePath = join(cwd, opts?.fileName ?? 'lib.ts');
   writeFileSync(filePath, source);
   // Dynamic import so test file mirrors the production rule's SWC usage.
-  const { parseFile } = await import('../../../src/engine/parser');
+  const { parseFile } = await import('@usebrick/engine');
   const { extractFacts } = await import('../../../src/engine/visitor');
   const { ast, source: parsedSource } = await parseFile(filePath);
   const facts = extractFacts(filePath, ast, parsedSource);
@@ -139,7 +139,7 @@ describe('test/missing-edge-case', () => {
         `import { doStuff } from './lib';
         it('returns pos', () => { expect(doStuff(1)).toBe('pos'); });`,
       );
-      const { parseFile } = await import('../../../src/engine/parser');
+      const { parseFile } = await import('@usebrick/engine');
       const { extractFacts } = await import('../../../src/engine/visitor');
       const filePath = join(dir, 'src', 'lib.ts');
       const { ast, source: parsedSource } = await parseFile(filePath);

@@ -1,5 +1,7 @@
 // Rule: security/dangerous-cors
 //
+// Per W3C (2019), Fetch Standard §3.2.6 (CORS Protocol); OWASP Foundation (2023), Cross-Origin Resource Sharing Cheat Sheet.
+//
 // Catches `Access-Control-Allow-Origin: *` and `cors({ origin: '*' })` /
 // `cors({ origin: true })` configurations. The wildcard origin
 // with credentials is a CSRF / data-exfiltration primitive that

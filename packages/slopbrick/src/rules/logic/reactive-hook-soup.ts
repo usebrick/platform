@@ -10,6 +10,24 @@ import { createRule } from '../rule';
  * component is a strong tell.
  *
  * Per-component fire.
+ *
+ * **Empirical observation, with related peer-reviewed work:**
+ * - The general phenomenon of "useEffect overuse" is discussed
+ *   in the React community but, to our knowledge, has not been
+ *   the subject of a peer-reviewed empirical paper as of v0.13.0.
+ * - This is a slopbrick-specific heuristic, calibrated against
+ *   the v6 corpus (lift 2.35× on the consolidated pos vs neg
+ *   split).
+ * - Related: the React team's official docs warn that
+ *   `useEffect` is an "escape hatch" that should be used
+ *   sparingly. A clustering of effects in one component is a
+ *   well-known anti-pattern even if it lacks a formal paper.
+ *   See: https://react.dev/learn/you-might-not-need-an-effect
+ * - Severity: medium (the chain may be intentional; review
+ *   before refactoring).
+ *
+ * Future: cite a peer-reviewed paper on React useEffect anti-
+ * patterns in AI-generated code if one is published.
  */
 const MIN_EFFECTS = 3;
 

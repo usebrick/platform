@@ -151,6 +151,10 @@ export function aggregateReport(
   config: ResolvedConfig,
 ): Pick<
   ProjectReport,
+  | 'aiQuality'
+  | 'engineeringHygiene'
+  | 'security'
+  | 'repositoryHealth'
   | 'slopIndex'
   | 'assemblyHealth'
   | 'totalScore'
@@ -198,9 +202,17 @@ export function aggregateReport(
     compositeWeights.visual * subscore.visual;
   const assemblyHealth = Math.max(0, 100 - slopIndex);
 
-  // Per-category score (×100, no cap) — kept for backward compat.
+  // Per-category score. v0.14.5h: when the codebase has 0 components
+  // (CLI tools, pure backend, no UI), the per-component-average
+  // normalization (sum / componentCount) * 100 produces wildly
+  // wrong numbers — e.g. 167 severity points × 100 = 16700, which
+  // looks like the worst possible score when in reality the
+  // headline `slopIndex` is fine. In that case, fall back to
+  // raw totals (no normalization) so the user sees honest numbers.
+  // For codebases WITH components, keep the per-component average
+  // × 100 so the score is comparable across project sizes.
   const categoryPoints: Record<Category, number> = {
-    visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0,
+    visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0, ai: 0, context: 0, product: 0, i18n: 0,
   };
   for (const group of issueGroups) {
     for (const issue of group.issues) {
@@ -209,11 +221,30 @@ export function aggregateReport(
     }
   }
   const categoryScores: Record<Category, number> = { ...categoryPoints };
-  for (const category of Object.keys(categoryScores) as Category[]) {
-    categoryScores[category] = (categoryScores[category] / denominator) * 100;
+  if (componentCount > 0) {
+    // Codebase has UI components — normalize to per-component
+    // average × 100 so scores are comparable across project sizes.
+    for (const category of Object.keys(categoryScores) as Category[]) {
+      categoryScores[category] = (categoryScores[category] / componentCount) * 100;
+    }
   }
+  // else: keep raw totals (sum of severity × weight) — the user
+  // gets honest "167 AI points" instead of "16700 (which is
+  // meaningless without components to average over)".
+
+  // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
+  // aiQuality is the inverted slopIndex (higher = better). The other
+  // 3 scores (engineeringHygiene, security, repositoryHealth) are
+  // computed in the enrichment phase from their respective
+  // sub-scores; for now we default them to aiQuality so the
+  // ProjectReport type is satisfied before enrichment runs.
+  const aiQuality = Math.max(0, Math.min(100, 100 - slopIndex));
 
   return {
+    aiQuality,
+    engineeringHygiene: aiQuality,
+    security: aiQuality,
+    repositoryHealth: aiQuality,
     slopIndex,
     assemblyHealth,
     totalScore: 0, // legacy field, removed in the cleanup

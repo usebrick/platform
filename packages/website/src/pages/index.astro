@@ -1,0 +1,28 @@
+---
+// index.astro — the only page in the site.
+// All sections are statically rendered; only the brick shader
+// canvas hydrates (client:load) and the tool-card click handlers
+// hydrate (client:visible). Everything else is pure HTML.
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Tools from '../components/Tools.astro';
+import Compare from '../components/Compare.astro';
+import Calibration from '../components/Calibration.astro';
+import CTASection from '../components/CTASection.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base>
+  <Nav />
+  <main>
+    <Hero />
+    <Tools />
+    <hr class="divider" />
+    <Compare />
+    <hr class="divider" />
+    <Calibration />
+    <CTASection />
+  </main>
+  <Footer />
+</Base>

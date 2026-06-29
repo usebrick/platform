@@ -31,14 +31,14 @@ describe('downgradeSeverity (v0.5.2)', () => {
 
 describe('isReliableSignal (v0.5.2)', () => {
   it('reliable when precision >= 0.5 AND recall >= 0.1', () => {
-    expect(isReliableSignal({ precision: 0.5, recall: 0.1, fpRate: 0, ratio: 0, lastCalibratedAt: 'x' })).toBe(true);
-    expect(isReliableSignal({ precision: 1.0, recall: 0.5, fpRate: 0, ratio: 0, lastCalibratedAt: 'x' })).toBe(true);
+    expect(isReliableSignal({ precision: 0.5, recall: 0.1, fpRate: 0, ratio: 0, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(true);
+    expect(isReliableSignal({ precision: 1.0, recall: 0.5, fpRate: 0, ratio: 0, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(true);
   });
   it('unreliable when precision < 0.5', () => {
-    expect(isReliableSignal({ precision: 0.4, recall: 0.5, fpRate: 0, ratio: 0, lastCalibratedAt: 'x' })).toBe(false);
+    expect(isReliableSignal({ precision: 0.4, recall: 0.5, fpRate: 0, ratio: 0, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(false);
   });
   it('unreliable when recall < 0.1', () => {
-    expect(isReliableSignal({ precision: 0.9, recall: 0.05, fpRate: 0, ratio: 0, lastCalibratedAt: 'x' })).toBe(false);
+    expect(isReliableSignal({ precision: 0.9, recall: 0.05, fpRate: 0, ratio: 0, lastCalibratedAt: 'x', verdict: 'USEFUL' })).toBe(false);
   });
   it('unknown (undefined) defaults to reliable (no flag)', () => {
     expect(isReliableSignal(undefined)).toBe(true);

@@ -2,13 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
   "title": "Repository Memory — Health",
-  "description": "Repository health snapshot from a single slopbrick scan. The 'headline' score that lands on dashboards. Future tools (CI integrations, the website's /projects page) consume this schema.",
+  "description": "Repository health snapshot from a single slopbrick scan. v3 (v0.15.0) replaces the legacy slopIndex/categoryScores pair with four orthogonal scores: aiQuality, engineeringHygiene, security, repositoryHealth. Legacy fields kept optional for backward compat; will be removed in v0.16.0.",
   "type": "object",
-  "required": ["version", "generatedAt", "workspace", "slopIndex", "categoryScores", "issueCounts"],
+  "required": [
+    "version",
+    "generatedAt",
+    "workspace",
+    "aiQuality",
+    "engineeringHygiene",
+    "security",
+    "repositoryHealth",
+    "issueCounts"
+  ],
   "properties": {
     "version": {
-      "description": "Health schema version. Currently '2'.",
-      "const": "2"
+      "description": "Health schema version. Currently '3'.",
+      "const": "3"
     },
     "generatedAt": {
       "type": "string",
@@ -18,20 +27,29 @@
       "type": "string",
       "minLength": 1
     },
-    "slopIndex": {
-      "description": "Slop Index (0-100, lower is better). The headline score.",
+    "aiQuality": {
+      "description": "v0.15.0: AI/agent-friendliness score (0-100, higher is better). How easily an LLM can navigate, refactor, and extend this codebase.",
       "type": "integer",
       "minimum": 0,
       "maximum": 100
     },
-    "categoryScores": {
-      "description": "Per-category scores. Each is 0-100; the exact interpretation depends on the category.",
-      "type": "object",
-      "additionalProperties": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 100
-      }
+    "engineeringHygiene": {
+      "description": "v0.15.0: engineering hygiene score (0-100, higher is better). Code organization, naming, dead code, complexity, test coverage, type safety.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "security": {
+      "description": "v0.15.0: security posture score (0-100, higher is better). Dependency vulnerabilities, secret leaks, OWASP anti-patterns.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "repositoryHealth": {
+      "description": "v0.15.0: repository health composite (0-100, higher is better). The v3 replacement for the headline slopIndex. Weighted blend of the three scores above.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
     },
     "issueCounts": {
       "description": "Number of issues per severity level.",
@@ -41,6 +59,21 @@
         "high": { "type": "integer", "minimum": 0 },
         "medium": { "type": "integer", "minimum": 0 },
         "low": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "slopIndex": {
+      "description": "DEPRECATED (v0.15.0). Legacy composite (0-100, lower is better). Kept optional for backward compat with v0.14 dashboards; will be removed in v0.16.0. New readers should ignore.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "categoryScores": {
+      "description": "DEPRECATED (v0.15.0). Legacy per-category breakdown. Kept optional for backward compat; will be removed in v0.16.0.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
       }
     },
     "constitutionDrift": {

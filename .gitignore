@@ -14,6 +14,11 @@ dist/
 .slopbrick/
 .slopbrick-cache.json
 
+# Local corpus reference — contains absolute paths + repo lists that are
+# private to each maintainer's machine. Commit the .template.json sibling
+# instead; copy + fill in to create the .local.json.
+**/corpus-manifest.local.json
+
 # Test caches
 .pytest_cache/
 
@@ -21,17 +26,3 @@ dist/
 .DS_Store
 *.log
 *.tsbuildinfo
-
-# Coverage
-coverage/
-
-# Generated artifacts
-corpus/calibration-report.md
-
-# Internal drafts and state-tracking (not for public release)
-Show HN post draft.md
-docs/strategy-2026.md
-docs/strategy/v1-score-compression.md
-docs/experiment-findings.md
-docs/publishing-state-2026-06-25.md
-docs/launch-blog-post-v4.1.md

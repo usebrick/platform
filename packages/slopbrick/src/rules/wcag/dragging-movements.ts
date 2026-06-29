@@ -5,7 +5,12 @@ import { createRule } from '../rule';
  * Rule: dragging-movements
  *
  * Draggable element without a pointer/keyboard alternative. WCAG 2.1 SC 2.1.1.
- */
+  * **Peer-reviewed citation:**
+ * - W3C Web Content Accessibility Guidelines (WCAG) 2.2,
+ *   Success Criterion 2.5.7 "Dragging Movements" (Level AA).
+ *   The rule implements the WCAG 2.2 SC 2.5.7 success criterion.
+ * - v0.12.2 calibration: HYGIENE. Both human and AI code use
+ *   drag-only patterns; not AI-discriminative. */
 const ALT_HANDLER_RE = /^(?:onClick|onPointerDown|onKey(?:Down|Up|Press))$/;
 const ALT_ROLE_RE = /^(?:button|application|tab|menuitem)$/;
 

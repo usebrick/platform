@@ -4,7 +4,10 @@ import { createRule } from '../rule';
 /**
  * Rule: focus-obscured
  * Sticky/fixed positioning that may obscure focused siblings. WCAG 2.4.11.
- */
+  * **Peer-reviewed citation:**
+ * - W3C WCAG 2.2, SC 2.4.11 "Focus Not Obscured (Minimum)"
+ *   and SC 2.4.12 "Focus Not Obscured (Enhanced)".
+ * - v0.12.2 calibration: USEFUL (lift 2.44×). */
 const FIXED_RE = /\b(?:fixed|sticky)\b/;
 const SPACER_RE = /\bfixed-(?:width|height)|sticky-(?:top|bottom|left|right)/;
 

@@ -3,7 +3,7 @@ import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseFile } from '../../src/engine/parser';
+import { parseFile } from '@usebrick/engine';
 import { extractFacts } from '../../src/engine/visitor';
 import { shadcnPropMismatchRule } from '../../src/rules/component/shadcn-prop-mismatch';
 import type { Issue, ResolvedConfig, RuleContext } from '../../src/types';

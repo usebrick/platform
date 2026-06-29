@@ -13,6 +13,10 @@ import {  flatClassNames, classNamesFromJsx , matchAll } from '../utils';
  *   xs=12, sm=14, base=16, lg=18, xl=20, 2xl=24, 3xl=30, 4xl=36, 5xl=48, 6xl=60
  *
  * Threshold: ≥5 text tokens AND entropy ≤ 1.6.
+ *
+ * Per Shannon, C. E. (1948), ‘A Mathematical Theory of Communication’,
+ * Bell System Tech. J. 27(3):379-423. Entropy as a measure of information /
+ * design diversity.
  */
 const TEXT_SIZE_MAP: Record<string, number> = {
   'text-xs': 12,

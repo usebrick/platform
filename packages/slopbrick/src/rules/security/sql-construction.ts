@@ -1,5 +1,7 @@
 // Rule: security/sql-construction
 //
+// Per Su, Z. & Wassermann, G. (2006), ‘The Essence of Command Injection Attacks in Web Applications’, Proc. POPL 2006, pp. 372-382; OWASP Foundation (2023), A03:2021 Injection.
+//
 // Catches string-concatenated SQL: queries built by interpolating
 // variables or expressions into a SQL string instead of using
 // parameterized queries / prepared statements.

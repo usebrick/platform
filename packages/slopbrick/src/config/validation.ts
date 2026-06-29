@@ -21,6 +21,13 @@ export const VALID_CATEGORIES: Category[] = [
   'arch',
   'perf',
   'security',
+  'test',
+  'docs',
+  'db',
+  'ai',
+  'context',
+  'product',
+  'i18n',
 ];
 
 export const VALID_FRAMEWORKS: string[] = [

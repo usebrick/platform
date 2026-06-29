@@ -27,7 +27,12 @@ import {
   REPOSITORY_HEALTH_WEIGHTS,
   AI_SECURITY_NUMERIC,
 } from '../types';
-import { DEFAULT_MDL_PRIORS, computeMDLikelihood } from './mdl.js';
+import { computeMDLikelihood } from '@usebrick/engine';
+import { builtinRules } from '../rules/builtins.js';
+import { loadSignalStrength } from '../rules/signal-strength.js';
+import { buildDefaultMdlPriors } from '@usebrick/engine';
+
+const DEFAULT_MDL_PRIORS = buildDefaultMdlPriors(builtinRules);
 
 function clamp100(n: number): number {
   if (Number.isNaN(n)) return 0;
@@ -54,8 +59,21 @@ function perAxis(
 ): Array<{ axis: string; health: number; weight: number }> {
   const out: Array<{ axis: string; health: number; weight: number }> = [];
 
-  // slopIndex: lower = better. Invert.
-  if (inputs.slopIndex !== undefined && !Number.isNaN(inputs.slopIndex)) {
+  // v0.15.0 U.4: prefer the new `aiQuality` input (0-100,
+  // higher = better). Fall back to the legacy `slopIndex`
+  // field (which is also kept optional on the inputs type for
+  // backward compat with v0.14 callers) and apply the v0.14
+  // inversion only on that path. The axis name stays
+  // "slopIndex" so existing dashboards and per-axis
+  // breakdowns don't have to migrate.
+  if (inputs.aiQuality !== undefined && !Number.isNaN(inputs.aiQuality)) {
+    out.push({
+      axis: 'slopIndex',
+      health: clamp100(inputs.aiQuality),
+      weight: REPOSITORY_HEALTH_WEIGHTS.slopIndex,
+    });
+  } else if (inputs.slopIndex !== undefined && !Number.isNaN(inputs.slopIndex)) {
+    // Legacy v0.14 path: slopIndex is lower = better, so invert.
     out.push({
       axis: 'slopIndex',
       health: clamp100(100 - inputs.slopIndex),
@@ -205,7 +223,10 @@ export function buildRepositoryHealth(
 export function buildRepositoryHealthFromReport(
   report: Pick<
     ProjectReport,
-    | 'slopIndex'
+    | 'aiQuality'
+    | 'engineeringHygiene'
+    | 'security'
+    | 'repositoryHealth'
     | 'architectureConsistency'
     | 'aiSecurityRisk'
     | 'testQuality'
@@ -225,7 +246,11 @@ export function buildRepositoryHealthFromReport(
   const totalDesignTokens =
     (options.spacingViolations ?? 0) + (options.radiusViolations ?? 0);
   const inputs: RepositoryHealthInputs = {
-    slopIndex: report.slopIndex,
+    // v0.15.0 U.4+: the v3 headline score. Passed as the
+    // `aiQuality` input (higher = better). The perAxis handler
+    // maps it to the "slopIndex" axis in the breakdown so
+    // dashboards don't have to migrate.
+    aiQuality: report.aiQuality,
     architectureConsistency: report.architectureConsistency,
     aiSecurityRisk: report.aiSecurityRisk,
     designTokenViolations:

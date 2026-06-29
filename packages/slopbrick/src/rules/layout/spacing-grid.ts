@@ -1,3 +1,12 @@
+
+//
+// **Peer-reviewed citation:**
+// - The 4pt/8pt grid system: Material Design 3
+//   (https://m3.material.io/styles/spacing/overview), IBM Carbon
+//   Design System, Apple HIG. The rule implements this convention.
+// - v0.12.2 calibration: HYGIENE. Both AI and human code use
+//   a small grid; the rule is not AI-discriminative.
+//
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import {   splitClassName, parseStyleObject, classNamesFromJsx , STYLE_BLOCK_RE, lineOfSource , matchAll } from '../utils';

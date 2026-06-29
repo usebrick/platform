@@ -18,8 +18,8 @@
       "consumedBy": ["slopbrick drift", "stackpick", "gir", "mcp"]
     },
     "memory": {
-      "$id": "https://usebrick.dev/schemas/v1/memory.schema.json",
-      "file": "memory.schema.json",
+      "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
+      "file": "structure.schema.json",
       "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
       "producedBy": ["slopbrick scan (auto-renders to .slopbrick/memory.md)"],
       "consumedBy": ["slop_suggest_with_memory MCP tool", "future agent-fast-path tools"]
@@ -27,7 +27,7 @@
     "health": {
       "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
       "file": "health.schema.json",
-      "description": "Repository health snapshot from a single scan (Slop Index + per-category scores + issue counts).",
+      "description": "Repository health snapshot from a single scan. v3 (v0.15.0): four orthogonal scores — aiQuality, engineeringHygiene, security, repositoryHealth (each 0-100, higher is better) — plus issue counts. Legacy slopIndex/categoryScores kept optional for v0.14 compat.",
       "producedBy": ["slopbrick scan"],
       "consumedBy": ["website dashboards", "CI integrations", "future /projects pages"]
     }

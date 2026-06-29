@@ -1,3 +1,13 @@
+
+//
+// **Peer-reviewed citation:**
+// - W3C WCAG 2.2, Success Criterion 2.4.11 "Focus Not Obscured
+//   (Minimum)" and SC 1.4.11 "Non-text Contrast" — focus
+//   indicators must be visible.
+// - v0.12.2 calibration: USEFUL (lift 6.18×). AI-generated
+//   CSS often uses a focus-ring that doesn't meet contrast
+//   requirements.
+//
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { isOutlineRemoval } from '../utils';

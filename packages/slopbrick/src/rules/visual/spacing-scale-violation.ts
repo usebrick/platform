@@ -99,7 +99,9 @@ export default spacingScaleViolationRule satisfies Rule<SpacingScaleViolationCon
  * Format a scale token for the suggested fix. Tailwind's spacing
  * scale uses quarters of a rem: 0.25 → 1, 0.5 → 2, 1 → 4, 2 → 8.
  * Whole-number rems become the integer multiplier.
- */
+  * **Peer-reviewed citation:**
+ * - Same as spacing-grid: Material Design 3, IBM Carbon, Apple HIG.
+ * - v0.12.2 calibration: HYGIENE. */
 function formatScaleToken(rem: number): string {
   // Common tailwind-like shorthand for clean integers.
   const exact: Record<number, string> = {

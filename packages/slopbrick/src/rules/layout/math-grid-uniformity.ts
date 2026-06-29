@@ -11,6 +11,11 @@ import {  flatClassNames, classNamesFromJsx , matchAll } from '../utils';
  * mix 2, 3, 4, 6 depending on content density.
  *
  * Threshold: ≥4 grid-cols tokens AND entropy ≤ 1.0.
+ *
+ * Per Shannon, C. E. (1948), ‘A Mathematical Theory of Communication’,
+ * Bell System Tech. J. 27(3):379-423; Müller-Brockmann, J. (1981),
+ * *Grid Systems in Graphic Design*, Niggli. Entropy as a measure of
+ * grid-system diversity.
  */
 const GRID_COLS_RE = /\bgrid-cols-(\d+)\b/g;
 

@@ -12,6 +12,12 @@
 export * from './types';
 export { loadConfig, DEFAULT_CONFIG } from './config';
 
+// v0.15.0: re-export @usebrick/engine so existing slopbrick consumers
+// (tests, the CLI's internal lazy imports, and downstream integrations
+// that use the engine functions via `from 'slopbrick'`) keep working
+// as the engine modules migrate out of `src/engine/`.
+export * from '@usebrick/engine';
+
 // Re-export the public CLI API. Library consumers who want to call
 // scanProject() or read saved JSON reports use these.
 export {
@@ -51,7 +57,7 @@ export {
 // `constitution.json`) or call its detection engines without wanting
 // to bundle the full scanner.
 //
-// Anything exported here is API-stable per `MEMORY_SCHEMA_VERSION` and
+// Anything exported here is API-stable per `STRUCTURE_SCHEMA_VERSION` and
 // the engine function signatures. Internal modules under src/engine/
 // may change; the re-exports below are the contract.
 //
@@ -59,15 +65,11 @@ export {
 // `@usebrick/core` package (used to live in `src/engine/memory-types.ts`).
 // slopbrick depends on `@usebrick/core` and re-exports its surface
 // here so callers don't need a second import.
-export {
-  findSimilarFunctions,
-  extractSignatures,
-  signatureSimilarity,
-  fingerprintSignature,
-  type ComponentSignature,
-  type SimilarMatch,
-  type FindSimilarQuery,
-} from './engine/find-similar';
+//
+// v0.15.0 B.5: `findSimilarFunctions` and friends moved to
+// `@usebrick/engine` (see packages/engine/src/find-similar.ts). They
+// are still re-exported from slopbrick via the wildcard
+// `export * from '@usebrick/engine'` at the top of this file.
 
 // NOTE: `.slopbrick/` memory schema + readers are owned by the
 // `@usebrick/core` workspace package. We deliberately do NOT re-export
@@ -81,14 +83,3 @@ export {
 // need to know about @usebrick/core. Once @usebrick/core ships as a real
 // published package (the AGENTS.md moat: "defer until schema is earned
 // by ≥2 consumers like stackpick or gir"), we can re-export here.
-
-//   0 = pass (slopIndex below threshold)
-//   1 = threshold breach (blocks git hooks)
-//   2 = tool/usage error (config validation, parse errors that prevent scanning)
-//   3 = unexpected internal error
-process.on('uncaughtException', (err) => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { logger } = require('./engine/logger.js') as typeof import('./engine/logger.js');
-  logger.error(`Unexpected error: ${(err as Error).message}`);
-  process.exit(3);
-});
