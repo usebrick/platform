@@ -26,3 +26,39 @@ dist/
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# ── Operator-only / internal docs ──────────────────────────────────
+# These are kept on the maintainer's local machine for reference
+# but never tracked. Public visitors don't need them; the maintainer
+# does. Add to this list (instead of deleting the file) when a doc
+# is too specific to the current maintainer's workflow to be useful
+# to a cloner, user, or contributor.
+
+# Setup runbooks and operator how-tos
+docs/operations/
+
+# Internal AI-agent plans and design specs (superpowers)
+docs/superpowers/
+
+# Pre-launch marketing copy, draft blog posts, Show HN drafts
+packages/slopbrick/Show HN post draft.md
+packages/slopbrick/docs/launch-blog-post-*.md
+packages/slopbrick/docs/website-copy-*.md
+
+# Internal scoring / dev runbooks
+packages/slopbrick/docs/experiment-findings.md
+packages/slopbrick/docs/framework-parity-matrix.md
+packages/slopbrick/docs/rename-checklist.md
+packages/slopbrick/docs/pre-commit.md
+
+# Internal strategy memos (founder analysis, roadmap drafting)
+packages/slopbrick/docs/strategy-2026.md
+packages/slopbrick/docs/strategy/
+
+# Internal research notes — calibration, plan drafts, status reports.
+# These are useful to the maintainer during the v0.x development
+# cycle but are not part of the public docs surface.
+packages/slopbrick/docs/research/
+
+# Internal distribution / packaging notes
+packages/slopbrick/distribute/README.md
