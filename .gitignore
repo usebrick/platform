@@ -69,7 +69,20 @@ packages/slopbrick/distribute/README.md
 # the usebrick codebase. Add to .gitignore to prevent accidental
 # `git add -A` from committing ~1.4 GB of third-party code.
 research/
+.research/
 automatic1111/
 chatglm/
 comfyui/
 elevenlabs-js/
+elevenlabs-python/
+fastchat/
+fooocus/
+gpt-academic/
+gradio/
+helix/
+llama-index2/
+lmnr/
+mastra/
+oobabooga/
+supabase/
+vercel-ai/

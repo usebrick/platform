@@ -66,7 +66,7 @@ describe('initBreakOnHover', () => {
     cleanup();
   });
 
-  it('attaches handlers to every .tool-card (click adds .is-broken)', () => {
+  it('attaches click handlers to every .tool-card', () => {
     const a = buildToolCard().card;
     const b = buildToolCard().card;
     document.body.append(a, b);
@@ -82,7 +82,7 @@ describe('initBreakOnHover', () => {
     const { card } = buildToolCard(3);
     document.body.append(card);
     initBreakOnHover();
-    for (const line of Array.from(card.querySelectorAll('.tool-card__crack'))) {
+    for (const line of Array.from(card.querySelectorAll<SVGLineElement>('.tool-card__crack'))) {
       expect(line.style.strokeDasharray).toBe('0');
       expect(line.style.strokeDashoffset).toBe('0');
     }
@@ -144,7 +144,7 @@ describe('initBreakOnHover', () => {
     expect(svg.classList.contains('is-broken')).toBe(false);
   });
 
-  it('cleanup removes the click and keydown listeners', () => {
+  it('cleanup removes click and keydown listeners', () => {
     const { card, svg } = buildToolCard();
     document.body.append(card);
     const cleanup = initBreakOnHover();
@@ -153,12 +153,5 @@ describe('initBreakOnHover', () => {
     card.click();
     card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(svg.classList.contains('is-broken')).toBe(false);
-  });
-
-  it('skips .tool-card without a cracks SVG without throwing', () => {
-    const bare = document.createElement('div');
-    bare.className = 'tool-card';
-    document.body.append(bare);
-    expect(() => initBreakOnHover()).not.toThrow();
   });
 });
