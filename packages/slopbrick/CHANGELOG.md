@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.17.0] - 2026-06-30 — 95 rules, extracted db/docs, bench:scan
+
+v0.17.0 is a quality + coverage release. No breaking changes.
+
+### Added
+- **R1**: 16 test files for the `ai/*` rules (52 new tests). The `ai/*` rules now have first-class regression coverage. text-like-ratio has a known TODO for the "should flag" positive test (SWC parse limitation with prose-only source inside `/* */` block comments).
+- **R2**: 5 new rules that were previously RULE_HINTS-only (now first-class Rule objects with tests):
+  - `security/eval` — `eval()` / `new Function()` / `window.eval()` (RCE)
+  - `wcag/missing-alt` — `<img>` without `alt` (WCAG SC 1.1.1)
+  - `security/target-blank-no-noopener` — missing `rel="noopener"` on `target="_blank"`
+  - `security/localstorage-token` — auth tokens in `localStorage` (XSS)
+  - `typo/placeholder-text` — `Lorem ipsum` / `TODO` / `Enter text here`
+- **R3**: 10 rules extracted from `src/engine/{db-health,doc-freshness}.ts` to first-class Rule objects in `src/rules/{db,docs}/`:
+  - `db/`: `missing-fk-index`, `duplicate-index`, `missing-not-null`, `enum-sprawl`, `naming-inconsistency`, `sql-concat`
+  - `docs/`: `stale-package-reference`, `stale-function-reference`, `expired-code-example`, `broken-link`
+  - Orchestration migration: `db-health.ts` and `doc-freshness.ts` now call the new rules via the standard `analyze()` interface. pgsql-parser WASM is loaded once via `Promise.all([...moduleReady])` before any SQL analysis.
+- **R4**: `pnpm bench:scan` regression script (`scripts/bench-scan.ts`). Asserts: 4 scores in [0,100] + finite, distinct when issues > 0 (catches the v0.16.0 R3 placeholder bug if it ever returns), stable across runs (delta ≤ 2), issueCounts non-negative integers.
+- **R5**: `formatBriefReport` now uses the 4-score model (verdict + 4 scores + CI gate + footer). Trajectory delta (↑N cleaner / ↓N worse) restored on the aiQuality line.
+- **R7**: SEO + security infrastructure for usebrick.dev: `sitemap.xml`, `robots.txt`, Cloudflare Pages `_headers` (X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy, Permissions-Policy, CSP, cache-control).
+- **R8**: `pnpm scan` dogfooding in root `package.json`. Runs `slopbrick scan` against the platform itself.
+- **R9**: Open Graph image (1200×630) for social shares — `public/og-image.svg` (SVG, works on Twitter/LinkedIn/Slack/Discord).
+
+### Fixed
+- Website stale text: "slopbrick 0.15.0 · 13 scores" → "slopbrick 0.16.0 · 4 scores · 80+ rules" (LiveTerminal demo). 7 docs updated to use the 4-score model.
+- `docs/old-repo-redirect.md` bumped from v0.15.0 → v0.17.0.
+- 3 bugs in `v0.17.0-plan.md` caught during execution: R3 count (was 8 db + 4 docs = 12, actual is 6 + 4 = 10), R12 contradiction (slopbrick explain already shipped in v0.16.0), R15 internal contradiction (was in both Defer and Day 4).
+
+### Changed
+- `package.json` description: "60+ rules and 13 scores" → "80+ rules across 13 categories, computes 4 scores (aiQuality, engineeringHygiene, security, repositoryHealth)"
+- `rules-catalog.md` auto-regenerated to show 95 rules (was 85).
+
+### Test count
+- 1244 → 1797 tests (+553)
+- Rules: 80 → 95 (+15)
+- Test files: 68 → 89 (+21)
+
+### Migration notes
+- The orchestration in `db-health.ts` and `doc-freshness.ts` now calls the new Rule objects. The `DbFinding` / `DocFinding` extra fields (`table`, `columnName`, `package`, `identifier`, `link`) are not populated by the new rules in v0.17.0; the report still works without them. A v0.18.0 task can populate them by encoding the extra data in `Issue.advice` or extending the `Issue` type.
+- Cross-file FK index check lost: the new `db/missing-fk-index` rule does single-file only. The global `fkColumnsByTable` / `indexColumnsByTable` map in the old orchestration is no longer used. Documented in the rule's comment as a known v1 limitation.
+
 All notable changes to slopbrick are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
