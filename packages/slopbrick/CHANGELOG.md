@@ -170,6 +170,94 @@ siblings), not a multi-file search-and-replace.
 - `pnpm exec vitest run tests/engine/ tests/cli/ tests/report/ tests/rules/` → 1492/1492 pass
 - `pnpm bench:scan` PASS (v0.18.1 regression intact)
 
+### PR-2: `aiSpecific` single source of truth — fixed silent compositeScore collapse
+
+**G1 verification (before scope, per rev 3 review gate):**
+
+The bug was discovered while writing the drift detector for
+PR-2. The `signal-strength.json` data file is the runtime
+source of truth for the engine's composite scoring — the
+engine reads `entry.aiSpecific` (added in v0.17.3 B5) and
+uses it to weight each rule's contribution. But the v0.18.1
+`signal-strength.json` had **zero** top-level `aiSpecific`
+fields:
+
+```bash
+$ grep -c '"aiSpecific":' packages/slopbrick/src/rules/signal-strength.json
+0     # ← the engine was reading false for every rule,
+      #   compositeScore collapsed to the constant prior
+      #   (0.428) for every file, every scan
+```
+
+**Root cause:** the calibration script
+(`scripts/compute-v7-calibration.py`) builds a new
+`entry` dict for each rule and assigns it to
+`signal[r["rule"]]` — but the entry dict
+(lines 240-258 in v0.18.1) only had
+`recall`/`fpRate`/`ratio`/`precision`/`lastCalibratedAt`/
+`verdict`/`_calibrationNote`. **The `aiSpecific` field
+was not in the dict.** Every calibration run wiped the
+field, the Zod schema treated absent as undefined, and
+the engine's `extended.aiSpecific === true` evaluated to
+`false` for every rule. The composite probability was
+the constant prior. v0.17.3 B5 added the field to the
+schema but the data was never actually written.
+
+**Severity:** this is a silent regression. v0.18.1's
+"compositeScore" feature (v0.18.0+ work) was effectively
+dead. The score moved on real scans only when the
+`compositeScore` field in the JSON was hand-patched
+separately (which is why the B5 test passed — the test
+fixture had the field, but no production JSON had it).
+
+**Fix (v0.18.2 PR-2):**
+1. The calibration script now writes
+   `entry["aiSpecific"] = r["aiSpecific"]` (the row
+   dict's `aiSpecific` is populated from the rule-source
+   scan at line 162-172). Future calibration runs preserve
+   the field.
+2. The existing `signal-strength.json` was hand-migrated
+   (a one-off node script) to add the `aiSpecific` field
+   to all 95 entries by reading the rule source. Future
+   runs are idempotent.
+3. Dropped the redundant `aiSpecific={...}` suffix from
+   the `_calibrationNote` text — the field is now a real
+   top-level property; the textual repetition was a drift
+   hazard.
+4. New drift detector: `tests/ai-specific-drift.test.ts`
+   (2 cases, 5ms each) reads every rule source and
+   compares against the JSON. Fails CI on drift, forcing
+   the calibrator to re-run. The detector also enforces
+   "every rule in the JSON must exist in the source" —
+   catches hand-rolled JSON entries that drift from the
+   rule registry.
+
+**Design decision (the "single source of truth" answer):**
+- **Source of truth (design time):** TS rule source files
+  (`src/rules/**/*.ts`). The rule author declares
+  `aiSpecific: true|false` in the meta object. This is the
+  intent — "this rule is an AI tell".
+- **Runtime cache:** `signal-strength.json`. The engine
+  reads from here at scan time (no TS source load in the
+  scan hot path). The calibration script regenerates
+  this file from the corpus + the rule source.
+- **Drift detector:** `tests/ai-specific-drift.test.ts`
+  enforces the source ↔ cache contract on every CI run.
+
+This is the "rule registry is the source of truth, JSON
+is a compiled cache" model. It's the same pattern as
+TypeScript's `.d.ts` files (compiled from `.ts` source)
+with a type-checker as the drift detector. Future
+maintenance: re-run `scripts/compute-v7-calibration.py`
+after any `aiSpecific` change.
+
+**Verification:**
+- Drift detector: 95/95 rules match between source and JSON
+- Engine's `composite-scoring.ts:141` reads the field correctly
+- All 1494 tests pass (added 2 new test cases in the drift detector)
+- `pnpm bench:scan` PASS (v0.18.1 regression intact)
+- `pnpm -r typecheck` clean across all 4 packages
+
 ## [0.18.1] - 2026-06-30 — Two verified critical bugfixes (rev 3 G1-verified)
 
 v0.18.1 closes two user-visible bugs in the shipped report. Both

@@ -244,12 +244,32 @@ for r in rows:
         "precision": round(r["p"], 4),
         "lastCalibratedAt": now,
         "verdict": r["verdict"],
+        # v0.18.2 PR-2: write the rule's `aiSpecific` to the entry.
+        # This was missing before — the entry dict (lines 240-258
+        # in v0.18.1) only had recall/fpRate/ratio/precision/
+        # lastCalibratedAt/verdict/_calibrationNote, and the script
+        # overwrote `signal[r["rule"]]` on every run. Result: the
+        # JSON's `aiSpecific` field was wiped on every calibration,
+        # the Zod schema accepted the absent field, and the engine
+        # read `aiSpecific === true` as false for every rule —
+        # making compositeScore return the constant prior (0.428)
+        # for every file, every time. v0.17.3 B5 added the field to
+        # the Zod schema but the data was never actually written.
+        # r["aiSpecific"] is set at line 202-204 (the row dict),
+        # populated from rule_ai_specific (line 162-172, regex scan
+        # of the rule source).
+        "aiSpecific": r["aiSpecific"],
         "_calibrationNote": (
             f"v7 corpus re-calibration (2026-06-27, min-date={min_date}): "
             f"{n_neg} neg + {n_pos} pos. {r['verdict']} — TP={r['tp']}, FP={r['fp']}, "
             f"P={r['p']*100:.1f}%, FPR={r['fpr']*100:.2f}%, lift="
-            f"{'inf' if r['lift'] == float('inf') else format_lift(r['lift'])}. "
-            f"aiSpecific={r['aiSpecific']}."
+            f"{'inf' if r['lift'] == float('inf') else format_lift(r['lift'])}."
+            # v0.18.2 PR-2: dropped the redundant `aiSpecific={...}` suffix.
+            # The rule's `aiSpecific` is a real top-level field on this
+            # entry (written just above); the textual repetition here
+            # was a drift hazard — the drift detector in
+            # `tests/ai-specific-drift.test.ts` is the single
+            # source-of-truth check.
         ),
     }
     if r["verdict"] in ("INVERTED", "NOISY", "DORMANT"):
