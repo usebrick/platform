@@ -95,6 +95,9 @@ import { registerRules } from './commands/rules.js';
 import { registerValidateConfig } from './commands/validate-config.js';
 import { registerTokens } from './commands/tokens.js';
 import { registerReport } from './commands/report.js';
+import { registerCalibrate } from './commands/calibrate.js';
+import { registerTrend } from './commands/trend.js';
+import { registerDrift } from './commands/drift.js';
 
 import {
   loadConfig,
@@ -704,104 +707,14 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
       });
 
-    research
-      .command('calibrate')
-      .description('empirical precision/recall/F1 calibration from held-out positive and negative corpora')
-      .option('--positive-dir <path>', 'path to positive (AI-generated) corpus', '/Users/cheng/ai-slop-baseline/extracted/positive')
-      .option('--negative-dir <path>', 'path to negative (real human) corpus', '/Users/cheng/ai-slop-baseline/extracted/negative')
-      .option('--positive-limit <n>', 'limit positive files scanned', parseCount)
-      .option('--negative-limit <n>', 'limit negative files scanned', parseCount)
-      .option('--output <path>', 'markdown output path', 'corpus/calibration-empirical.md')
-      .action(async (cmdOptions) => {
-        try {
-          const cwd = process.cwd();
-          const report = await calibrate(cwd, {
-            positiveDir: cmdOptions.positiveDir,
-            negativeDir: cmdOptions.negativeDir,
-            positiveLimit: cmdOptions.positiveLimit,
-            negativeLimit: cmdOptions.negativeLimit,
-          });
-          const outputPath = cmdOptions.output
-            ? resolve(cwd, cmdOptions.output)
-            : resolve(cwd, 'corpus', 'calibration-empirical.md');
-          mkdirSync(dirname(outputPath), { recursive: true });
-          writeFileSync(outputPath, reportToMarkdown(report), 'utf8');
-          logger.info(
-            'Calibrated ' +
-              report.rules.length +
-              ' rules across ' +
-              report.positiveFileCount +
-              ' positive + ' +
-              report.negativeFileCount +
-              ' negative files.',
-          );
-          const strong = report.rules.filter((r) => r.signal === 'strong').length;
-          const weak = report.rules.filter((r) => r.signal === 'weak').length;
-          const inverted = report.rules.filter((r) => r.signal === 'inverted').length;
-          const dormant = report.rules.filter((r) => r.signal === 'dormant').length;
-          logger.info('  strong: ' + strong + ', weak: ' + weak + ', inverted: ' + inverted + ', dormant: ' + dormant);
-          logger.info('Wrote ' + outputPath);
-        } catch (error) {
-          logger.error(error instanceof Error ? error.message : String(error));
-          process.exit(2);
-        }
-      });
+    // v0.18.x (R-H1): calibrate action moved to ./commands/calibrate.ts
+    // (was previously nested under the `research` sub-command chain
+    //  by accident — the indent was wrong. Top-level now.)
+    registerCalibrate(program);
 
-    program
-      .command('trend')
-      .description('Slop Index over time, from .slopbrick/flywheel/scans.jsonl')
-      .option('--max-points <n>', 'how many recent scans to plot', parseCount, 30)
-      // Renamed from --format to --render: a global --format option
-      // collides with this subcommand's option and Commander silently
-      // drops the value, so the local flag was never honored.
-      .option('--render <kind>', 'output rendering: text | markdown', 'text')
-      .action((cmdOptions) => {
-        try {
-          const cwd = process.cwd();
-          const report = buildTrend(cwd, cmdOptions.maxPoints);
-          const out = cmdOptions.render === 'markdown' ? trendToMarkdown(report) : trendToText(report);
-          logger.info(out);
-          if (report.delta > 1) {
-            logger.info('');
-            logger.info('Warning: Slop Index increased by ' + report.delta.toFixed(1) + ' points over this period.');
-          }
-        } catch (error) {
-          logger.error(error instanceof Error ? error.message : String(error));
-          process.exit(2);
-        }
-      });
-
-    program
-      .command('drift')
-      .description(
-        'detect imports that violate declared constitution (state, data-fetching, UI, forms, styling, routing) or import forbidden packages',
-      )
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 1000)
-      .action(
-        async (cmdOptions: { format?: 'pretty' | 'json'; maxFiles?: number }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            // Read --format from the merged opts because the global
-            // scan --format shadowed the subcommand's local option in
-            // Commander. Same trap as `trend` had.
-            const rawFormat = options.format ?? cmdOptions.format ?? 'pretty';
-            const format: 'pretty' | 'json' =
-              rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runDrift(cwd, config, { maxFiles: cmdOptions.maxFiles });
-            logger.info(formatDrift(result, { json: format === 'json' }));
-            process.exit(driftExitCode(result));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
+    // v0.18.x (R-H1): trend and drift actions moved to ./commands/{trend,drift}.ts
+    registerTrend(program);
+    registerDrift(program);
 
     program
       .command('pr')

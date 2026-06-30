@@ -25,8 +25,10 @@ export function registerMemory(program: Command): void {
         // Dynamic import — survives esbuild's CJS bundling. The migrate
         // command uses `require('./migrate.js')` because that's a relative
         // path esbuild bundles. We need the same here.
+        // Path is `../../engine/...` from cli/commands/ (one extra .. vs
+        // cli/program.ts, where the original lived).
         const { renderStructureMarkdown, readStructureMarkdown, writeStructureMarkdown } =
-          await import('../engine/structure-md.js') as typeof import('../engine/structure-md.js');
+          await import('../../engine/structure-md.js') as typeof import('../../engine/structure-md.js');
         const { loadInventory, loadConstitution, inventoryPath: invPath, constitutionPath: conPath } =
           await import('@usebrick/core') as typeof import('@usebrick/core');
 
