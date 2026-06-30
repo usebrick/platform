@@ -40,7 +40,7 @@
 //   - Cui, Z. et al. (2025), "Who is using AI to code? Global
 //     diffusion and impact of generative AI" (sets the prior at 0.30)
 
-import type { SignalStrengthEntry } from '@usebrick/core';
+import { isDefaultOff, type SignalStrengthEntry, type Verdict } from '@usebrick/core';
 
 // ---- Constants --------------------------------------------------------
 
@@ -57,12 +57,17 @@ const LLR_CAP = 13.8;
 /** Default prior — AI prevalence in a typical 2024-2026 codebase. */
 const DEFAULT_PRIOR_PREVALENCE = 0.30;
 
-/** Verdicts eligible for composite scoring. */
-const ELIGIBLE_VERDICTS = new Set(['USEFUL', 'OK']);
+/** Verdicts eligible for composite scoring. Imported from @usebrick/core
+ *  (single source of truth for the verdict taxonomy). A verdict is
+ *  eligible iff it's NOT defaultOff AND it's not HYGIENE (HYGIENE is
+ *  a code-quality check, not an AI signal — see verdicts.ts:11). */
+const ELIGIBLE_VERDICTS = new Set<Verdict>(
+  (['USEFUL', 'OK', 'NOISY', 'INVERTED', 'HYGIENE', 'DORMANT'] as const).filter(
+    (v) => v !== 'HYGIENE' && !isDefaultOff(v),
+  ),
+);
 
 // ---- Types ------------------------------------------------------------
-
-export type Verdict = 'USEFUL' | 'OK' | 'NOISY' | 'HYGIENE' | 'DORMANT' | 'INVERTED';
 
 export interface RuleSignal {
   ruleId: string;

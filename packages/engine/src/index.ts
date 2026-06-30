@@ -60,6 +60,9 @@ export {
 // for this commit — see the B.5 commit message for details.
 
 // B.5.1: composite AI-likelihood scoring (Naive Bayes LLR).
+// v0.17.4 (R-H2): `Verdict` is re-exported from @usebrick/core (the
+// canonical source). Don't re-export it from composite-scoring — that
+// creates a duplicate type that can drift.
 export {
   buildPriorLogOdds,
   ruleLLR,
@@ -67,7 +70,6 @@ export {
   compositeScore,
   directoryScore,
   formatComposite,
-  type Verdict,
   type RuleSignal,
   type ConfidenceTier,
   type TriggeredRule,
