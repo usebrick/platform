@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
-  "title": "Repository Memory — Health",
+  "title": "Repository Structure \u2014 Health",
   "description": "Repository health snapshot from a single slopbrick scan. v3 (v0.15.0) replaces the legacy slopIndex/categoryScores pair with four orthogonal scores: aiQuality, engineeringHygiene, security, repositoryHealth. Legacy fields kept optional for backward compat; will be removed in v0.16.0.",
   "type": "object",
   "required": [
@@ -54,11 +54,24 @@
     "issueCounts": {
       "description": "Number of issues per severity level.",
       "type": "object",
-      "required": ["high", "medium", "low"],
+      "required": [
+        "high",
+        "medium",
+        "low"
+      ],
       "properties": {
-        "high": { "type": "integer", "minimum": 0 },
-        "medium": { "type": "integer", "minimum": 0 },
-        "low": { "type": "integer", "minimum": 0 }
+        "high": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medium": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "low": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "slopIndex": {

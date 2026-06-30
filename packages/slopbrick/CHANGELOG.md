@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.17.3] - 2026-06-30 — Schema fix cascade (B3 + B4 + B5) + LOW items
+
+v0.17.3 is a focused PR that closes the B3, B4, and B5 BLOCKERs from the v0.17.0 review, plus the LOW `case 'mjs':` duplicate in `packages/engine/src/parser.ts`. **BREAKING for cross-language consumers of the JSON Schemas** (the schema `version` constant bumps from `2` to `3`, and the public type names rename from `RepositoryMemory*` to `RepositoryStructure*`). TypeScript consumers re-resolve through `@usebrick/core`; the old aliases are gone.
+
+### B3 — Schema version mismatch
+
+- `packages/core/schemas/v1/inventory.schema.json`: `version const` was `2` but the engine writes `3` on every scan. Now `const: "3"`.
+- `packages/core/schemas/v1/constitution.schema.json`: same fix. Now `const: "3"`.
+- `packages/core/schemas/v1/structure.schema.json`: frontmatter `schemaVersion const` was `2` but the renderer writes `3`. Now `const: "3"`.
+
+After this commit, every artifact the scanner writes passes core's own JSON Schema validators. The "schemas are the API" promise (AGENTS.md) is now actually true.
+
+### B4 — structure.schema.json `$id` + index.json key + titles
+
+- `structure.schema.json:3` `$id` was `.../memory.schema.json` (the v0.15.0 rename hit the filename but not the `$id`). Now `.../structure.schema.json`.
+- `index.json:20` key was `memory` with a stale description. Now `structure` with matching `$id`, description, `producedBy: ["slopbrick scan (auto-renders to .slopbrick/structure.md)"]`, and `consumedBy: ["slop_suggest_with_structure MCP tool", ...]`.
+- `inventory.schema.json`, `constitution.schema.json`, `health.schema.json` titles were all `"Repository Memory — X"`. Now `"Repository Structure — X"`.
+- Codegen cascade: `src/generated/{inventory,constitution,health}.ts` type names rename from `RepositoryMemory*` to `RepositoryStructure*` (the 4th, `structure.ts`, was already renamed in a prior commit). `packages/core/src/index.ts:65-67` re-exports updated.
+
+### B5 — `compositeScore` was effectively dead
+
+- `signal-strength-schema.ts` was missing `aiSpecific: z.boolean().optional()`. Without it, Zod's `.parse()` strips the field — even if a rule has `aiSpecific: true` in `signal-strength.json`, the engine never sees it, every LLR returns `0`, and the composite probability collapses to the constant prior `0.428`.
+- Fix: 2-line change to the Zod schema. The `signal-strength.json` data already has `aiSpecific: true` on all 16 `ai/*` rules, so the field is now read end-to-end and the composite score returns a real signal (driven by the AI-tendency rules, weighted by their calibration).
+
+### LOW — `parser.ts` duplicate `case 'mjs':`
+
+- The second `case 'mjs':` (line 105) was unreachable — the same case is at line 84. Removed the unreachable block. No behavior change.
+
+### Verified
+
+- `pnpm --filter @usebrick/core codegen` runs clean; all 4 generated types regenerate with the new names
+- `pnpm -r typecheck` — clean across `core`, `engine`, `slopbrick`, `website`
+- `vitest run` — 200/200 pass (164 slopbrick + 35 core + 1 engine)
+- `tsup` builds `core`, `engine`, `slopbrick` successfully
+- End-to-end: a clean `slopbrick scan --brief` against the platform now shows the composite scores moving with the rule signal (was constant prior `0.428` before B5)
+
+### Installation
+
+```bash
+npm install -D slopbrick@0.17.3
+```
+
+**Breaking for cross-language consumers.** Python/Go/Rust consumers reading the schemas must update:
+- `version` field expectations from `2` → `3` (inventory, constitution, health)
+- `frontmatter.schemaVersion` from `"2"` → `"3"` (structure)
+- `$id` resolution: `.../memory.schema.json` → `.../structure.schema.json`
+- Generated type names (if using `json-schema-to-typescript` codegen): `RepositoryMemory*` → `RepositoryStructure*`
+
+TypeScript consumers: bump to v0.17.3, rebuild, fix the 3 type re-exports in your code (`RepositoryMemoryInventory` → `RepositoryStructureInventory`, etc.).
+
 ## [0.17.2] - 2026-06-30 — UX fixes (brief labels + website scroll-jump)
 
 v0.17.2 is a small UX patch on top of v0.17.1. No breaking changes. No new rules. No schema bumps. The on-disk artifacts are unchanged. The display format is unchanged from v0.17.1.

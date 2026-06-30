@@ -1,35 +1,60 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Repository Memory — Schema Index",
-  "description": "Pointer to the four canonical schemas that define the usebrick.dev Repository Memory Platform. Every tool in the platform — slopbrick, stackpick, gir, the MCP server, future CI integrations — reads and writes data matching these schemas.",
+  "title": "Repository Structure \u2014 Schema Index",
+  "description": "Pointer to the four canonical schemas that define the usebrick.dev Repository Structure Platform. Every tool in the platform \u2014 slopbrick, stackpick, gir, the MCP server, future CI integrations \u2014 reads and writes data matching these schemas.",
   "schemas": {
     "inventory": {
       "$id": "https://usebrick.dev/schemas/v1/inventory.schema.json",
       "file": "inventory.schema.json",
       "description": "Detected pattern inventory + component fingerprints.",
-      "producedBy": ["slopbrick scan"],
-      "consumedBy": ["slopbrick", "stackpick", "gir", "mcp"]
+      "producedBy": [
+        "slopbrick scan"
+      ],
+      "consumedBy": [
+        "slopbrick",
+        "stackpick",
+        "gir",
+        "mcp"
+      ]
     },
     "constitution": {
       "$id": "https://usebrick.dev/schemas/v1/constitution.schema.json",
       "file": "constitution.schema.json",
       "description": "Declared project constitution (allow-list + deny-list).",
-      "producedBy": ["slopbrick scan (auto-detect from slopbrick.config.mjs)"],
-      "consumedBy": ["slopbrick drift", "stackpick", "gir", "mcp"]
-    },
-    "memory": {
-      "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
-      "file": "structure.schema.json",
-      "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
-      "producedBy": ["slopbrick scan (auto-renders to .slopbrick/memory.md)"],
-      "consumedBy": ["slop_suggest_with_memory MCP tool", "future agent-fast-path tools"]
+      "producedBy": [
+        "slopbrick scan (auto-detect from slopbrick.config.mjs)"
+      ],
+      "consumedBy": [
+        "slopbrick drift",
+        "stackpick",
+        "gir",
+        "mcp"
+      ]
     },
     "health": {
       "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
       "file": "health.schema.json",
-      "description": "Repository health snapshot from a single scan. v3 (v0.15.0): four orthogonal scores — aiQuality, engineeringHygiene, security, repositoryHealth (each 0-100, higher is better) — plus issue counts. Legacy slopIndex/categoryScores kept optional for v0.14 compat.",
-      "producedBy": ["slopbrick scan"],
-      "consumedBy": ["website dashboards", "CI integrations", "future /projects pages"]
+      "description": "Repository health snapshot from a single scan. v3 (v0.15.0): four orthogonal scores \u2014 aiQuality, engineeringHygiene, security, repositoryHealth (each 0-100, higher is better) \u2014 plus issue counts. Legacy slopIndex/categoryScores kept optional for v0.14 compat.",
+      "producedBy": [
+        "slopbrick scan"
+      ],
+      "consumedBy": [
+        "website dashboards",
+        "CI integrations",
+        "future /projects pages"
+      ]
+    },
+    "structure": {
+      "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
+      "file": "structure.schema.json",
+      "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
+      "producedBy": [
+        "slopbrick scan (auto-renders to .slopbrick/structure.md)"
+      ],
+      "consumedBy": [
+        "slop_suggest_with_structure MCP tool",
+        "future agent-fast-path tools"
+      ]
     }
   }
 }

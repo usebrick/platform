@@ -1,14 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/inventory.schema.json",
-  "title": "Repository Memory — Inventory",
+  "title": "Repository Structure \u2014 Inventory",
   "description": "Detected pattern inventory + component fingerprints for a scanned workspace. Written by slopbrick to .slopbrick/inventory.json. Read by slopbrick, stackpick, gir, MCP server, and any future usebrick.dev tool.",
   "type": "object",
-  "required": ["version", "generatedAt", "workspace", "scannedFiles", "scanDurationMs", "patterns", "components"],
+  "required": [
+    "version",
+    "generatedAt",
+    "workspace",
+    "scannedFiles",
+    "scanDurationMs",
+    "patterns",
+    "components"
+  ],
   "properties": {
     "version": {
-      "description": "Schema version. Currently '2'. Bump when adding/removing fields or changing the on-disk directory name.",
-      "const": "2"
+      "description": "Schema version. Bump when adding/removing fields. Currently \"3\".",
+      "const": "3"
     },
     "generatedAt": {
       "description": "ISO 8601 timestamp of when this inventory was generated.",
@@ -33,12 +41,16 @@
     "patterns": {
       "type": "array",
       "description": "Detected patterns grouped by category, sorted by fileCount desc within each category.",
-      "items": { "$ref": "#/$defs/pattern" }
+      "items": {
+        "$ref": "#/$defs/pattern"
+      }
     },
     "components": {
       "type": "array",
       "description": "Component fingerprints, sorted by name.",
-      "items": { "$ref": "#/$defs/component" }
+      "items": {
+        "$ref": "#/$defs/component"
+      }
     }
   },
   "$defs": {
@@ -62,9 +74,16 @@
     },
     "pattern": {
       "type": "object",
-      "required": ["category", "name", "imports", "fileCount"],
+      "required": [
+        "category",
+        "name",
+        "imports",
+        "fileCount"
+      ],
       "properties": {
-        "category": { "$ref": "#/$defs/category" },
+        "category": {
+          "$ref": "#/$defs/category"
+        },
         "name": {
           "description": "Canonical pattern name (e.g. 'zustand', '@radix-ui/react-dialog').",
           "type": "string",
@@ -73,7 +92,10 @@
         "imports": {
           "description": "Bare import specifiers in the project that matched this pattern.",
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         },
         "fileCount": {
@@ -85,7 +107,15 @@
     },
     "component": {
       "type": "object",
-      "required": ["name", "files", "fingerprint", "hooks", "props", "line", "endLine"],
+      "required": [
+        "name",
+        "files",
+        "fingerprint",
+        "hooks",
+        "props",
+        "line",
+        "endLine"
+      ],
       "properties": {
         "name": {
           "description": "Canonical component name (PascalCase as exported).",
@@ -95,7 +125,10 @@
         "files": {
           "description": "Files in the project that export this component.",
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "minItems": 1
         },
         "fingerprint": {
@@ -106,13 +139,17 @@
         "hooks": {
           "description": "React hooks the component uses.",
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "uniqueItems": true
         },
         "props": {
           "description": "Prop names the component accepts.",
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "uniqueItems": true
         },
         "line": {

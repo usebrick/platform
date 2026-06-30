@@ -9,9 +9,9 @@ export interface RepositoryStructureStructureMarkdown {
    */
   frontmatter: {
     /**
-     * memory.md format version. Currently '2'.
+     * structure.md format version. Currently "3".
      */
-    schemaVersion: "2";
+    schemaVersion: "3";
     generatedAt: string;
     workspace: string;
     /**

@@ -1,14 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/constitution.schema.json",
-  "title": "Repository Memory — Constitution",
+  "title": "Repository Structure \u2014 Constitution",
   "description": "Declared project constitution. Mirrors the user-facing `constitution` block in slopbrick.config.mjs. Written by slopbrick to .slopbrick/constitution.json. Read by slopbrick, the constitution-enforcement gate, stackpick (for pattern-suggestion enforcement), and any future tool that needs to know what the project has declared off-limits.",
   "type": "object",
-  "required": ["version", "generatedAt", "workspace", "declared", "forbidden", "forbiddenPrefixes"],
+  "required": [
+    "version",
+    "generatedAt",
+    "workspace",
+    "declared",
+    "forbidden",
+    "forbiddenPrefixes"
+  ],
   "properties": {
     "version": {
-      "description": "Schema version. Currently '2'. Bump when adding/removing fields.",
-      "const": "2"
+      "description": "Schema version. Bump when adding/removing fields. Currently \"3\".",
+      "const": "3"
     },
     "generatedAt": {
       "description": "ISO 8601 timestamp of when this constitution was generated.",
@@ -23,12 +30,18 @@
     "declared": {
       "description": "Declared canonical pattern per category. Empty or omitted means 'we deliberately don't use this category.' The category keys match the `category` enum in inventory.schema.json.",
       "type": "object",
-      "additionalProperties": { "type": "string", "minLength": 1 }
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "forbidden": {
       "description": "Bare package specifiers that any PR introducing must fail (deny-list). Matched against import strings during constitution enforcement.",
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "forbiddenPrefixes": {
