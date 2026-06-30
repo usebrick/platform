@@ -19,11 +19,6 @@ export const signalStrengthSchema = z.record(
     // defaultOff is opt-in per-rule. Absent = the rule follows
     // isDefaultOff(verdict). Present (true or false) = user override.
     defaultOff: z.boolean().optional(),
-    // aiSpecific is opt-in. Absent = derived from verdict
-    // (USEFUL/OK → true, others → false) in loadSignals().
-    // Present (true or false) = user override. v0.17.1: added to
-    // the Zod schema so .parse() no longer strips the field.
-    aiSpecific: z.boolean().optional(),
   }),
 );
 
