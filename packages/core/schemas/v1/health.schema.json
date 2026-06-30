@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
-  "title": "Repository Structure — Health",
+  "title": "Repository Memory — Health",
   "description": "Repository health snapshot from a single slopbrick scan. v3 (v0.15.0) replaces the legacy slopIndex/categoryScores pair with four orthogonal scores: aiQuality, engineeringHygiene, security, repositoryHealth. Legacy fields kept optional for backward compat; will be removed in v0.16.0.",
   "type": "object",
   "required": [

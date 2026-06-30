@@ -5,30 +5,57 @@
  */
 export interface RepositoryStructureStructureMarkdown {
   /**
-   * YAML frontmatter at the top of structure.md. Machine-parseable metadata about the rendered summary.
+   * YAML frontmatter at the top of memory.md. Machine-parseable metadata about the rendered summary.
    */
   frontmatter: {
     /**
-     * structure.md format version. Currently '3' (bumped in v0.15.0 rebrand from memory.md → structure.md).
+     * memory.md format version. Currently '2'.
      */
-    schemaVersion: "3";
+    schemaVersion: "2";
     generatedAt: string;
     workspace: string;
     /**
-     * Schema version of the inventory this structure.md was rendered from.
+     * Schema version of the inventory this memory.md was rendered from.
      */
     inventoryVersion?: string;
     /**
-     * Schema version of the constitution this structure.md was rendered from.
+     * Schema version of the constitution this memory.md was rendered from.
      */
     constitutionVersion?: string;
   };
   /**
-   * Ordered sections in structure.md. Renderers MUST emit sections in this order. Readers MUST tolerate missing optional sections.
+   * Ordered sections in memory.md. Renderers MUST emit sections in this order. Readers MUST tolerate missing optional sections.
+   *
+   * @minItems 1
    */
-  sections: {
-    id: string;
-    title: string;
-    body?: string;
-  }[];
+  sections: [
+    {
+      id:
+        | "patterns"
+        | "components"
+        | "constitution-declared"
+        | "constitution-forbidden"
+        | "do-not-create"
+        | "migrate-notice";
+      title: string;
+      /**
+       * Free-form markdown body. Renderers should use bullet lists for pattern/component listings.
+       */
+      body?: string;
+    },
+    ...{
+      id:
+        | "patterns"
+        | "components"
+        | "constitution-declared"
+        | "constitution-forbidden"
+        | "do-not-create"
+        | "migrate-notice";
+      title: string;
+      /**
+       * Free-form markdown body. Renderers should use bullet lists for pattern/component listings.
+       */
+      body?: string;
+    }[]
+  ];
 }

@@ -58,12 +58,10 @@ export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strengt
 // equivalents in './structure-types' are @deprecated. Consumers should import
 // the generated types from '@usebrick/core' (re-exports below).
 //
-// v0.17.1: after the B3+B4 schema rename (Repository Memory →
-// Repository Structure), the codegen-derived type names changed
-// from `RepositoryMemory*` to `RepositoryStructure*`. The
-// hand-written types (`InventoryFile`, `ConstitutionFile`,
-// `HealthFile`) remain `@deprecated` below for back-compat but
-// the generated names are now the canonical public API.
-export type { RepositoryStructureInventory } from './generated/inventory';
-export type { RepositoryStructureConstitution } from './generated/constitution';
-export type { RepositoryStructureHealth } from './generated/health';
+// Note: the generated names (RepositoryMemory*) are derived from the JSON
+// Schema 'title' field. In a future v0.16.0 the schema titles will be
+// updated to match the hand-written names (InventoryFile, etc.) so the
+// public API names align with the generated names without aliases.
+export type { RepositoryMemoryInventory } from './generated/inventory';
+export type { RepositoryMemoryConstitution } from './generated/constitution';
+export type { RepositoryMemoryHealth } from './generated/health';
