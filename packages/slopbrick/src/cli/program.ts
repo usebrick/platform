@@ -73,6 +73,15 @@ import {
   watchProject,
 } from './scan';
 import { runInitWizard, runDoctor, isInteractive } from './init';
+// v0.17.5 (R-H1): per-command wiring lives in `cli/commands/<name>.ts`.
+// `program.ts` is the single source of truth for which commands exist;
+// the action callbacks (and their inline option lists) are now in
+// focused modules. This commit moves badge / suggest / explain — the
+// three smallest, simplest commands — as the template. The other 14
+// commands will follow in subsequent PRs.
+import { registerBadge } from './commands/badge.js';
+import { registerSuggest } from './commands/suggest.js';
+import { registerExplain } from './commands/explain.js';
 
 import {
   loadConfig,
@@ -122,7 +131,6 @@ import {
   resolveTargetPath,
   renderMatrix,
 } from '../snippet/targets.js';
-import { explainRule, formatExplain } from './explain.js';
 import { validateConfig as validateConfigSchema, formatConfigValidationErrors } from '../config/validation.js';
 import { getSignalStrength, isReliableSignal, loadSignalStrength } from '../rules/signal-strength.js';
 import { readDtcgTokensFile, summarizeTokens, formatSummary } from './tokens.js';
@@ -131,7 +139,6 @@ import { formatPretty } from '../report/pretty';
 import { formatMarkdown } from '../report/markdown';
 import { formatSarif } from '../report/sarif';
 import { formatHtml } from '../report/html';
-import { formatAdvice } from '../report/advice';
 import { formatUnifiedDiff } from '../report/unified-diff';
 import { buildHeatmap, formatHeatmap } from '../report/heatmap';
 import { formatFlywheel, summarizeTelemetry } from '../report/flywheel';
@@ -409,48 +416,14 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         process.exit(result.exitCode);
       });
 
-    program
-      .command('badge')
-      .description('print a shields.io slop-index badge. Reads .slopbrick/health.json if present (no re-scan); falls back to a fresh scan.')
-      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
-        // v0.14.5d: badge reads from the persisted health snapshot when
-        // available so the organic-growth loop is fast enough for CI
-        // badges to refresh on every push. Falls back to a fresh scan.
-        const options = command.optsWithGlobals() as CliGlobalOptions;
-        const cwd = resolve(options.workspace ?? process.cwd());
-        const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
-        const health = loadHealth(cwd);
-        if (health) {
-          // v0.15.0 U.4: badge now shows the composite repositoryHealth
-          // (the v3 replacement for the headline slopIndex). The shape
-          // passed to formatBadge is a ProjectReport-like — it still
-          // reads `slopIndex`, so we invert the value (lower = better
-          // for the legacy badge, higher = better for repositoryHealth)
-          // before passing it in. TODO(U.5): add a --format that
-          // shows all 4 scores.
-          const synthetic = {
-            slopIndex: 100 - health.repositoryHealth,
-          } as Parameters<typeof formatBadge>[0];
-          logger.info(formatBadge(synthetic));
-          process.exit(0);
-        }
-        const { report } = await runScan(options);
-        logger.info(formatBadge(report));
-        process.exit(0);
-      });
-
-    program
-      .command('suggest')
-      .description('print remediation advice')
-      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
-        const options = command.optsWithGlobals() as CliGlobalOptions;
-        const { report } = await runScan(options);
-        const cwd = resolve(options.workspace ?? process.cwd());
-        logger.info(formatAdvice(report));
-        const diff = formatUnifiedDiff(report, cwd);
-        if (diff) logger.info(diff);
-        process.exit(0);
-      });
+    // v0.17.5 (R-H1): badge/suggest/explain actions moved to ./commands/*.ts
+    registerBadge(program);
+    registerSuggest(program);
+    registerExplain(program);
+    // explain registration above is the one in effect (line ~1500 was the old
+    // duplicate that triggered "cannot add command 'explain' as already have
+    // command 'explain'"). Removed the inline pre-creation; registerExplain
+    // now owns the full command shape.
 
     program
       .command('flywheel')
@@ -1526,14 +1499,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         logger.info(lines.join('\n'));
       });
 
-    program
-      .command('explain <ruleId>')
-      .description('Print rationale, pattern, and remediation for a single rule')
-      .action((ruleId: string) => {
-        const result = explainRule(ruleId, builtinRules, RULE_HINTS);
-        logger.info(formatExplain(result));
-        if ('error' in result) process.exit(2);
-      });
+    // v0.17.5 (R-H1): explain action moved to ./commands/explain.ts (declared above near badge/suggest)
 
     //
     // Runs the same schema check that `slopbrick scan` performs at the
