@@ -8,9 +8,7 @@ import { SEVERITY_WEIGHTS } from '../../src/engine/metrics';
 import { builtinRules } from '../../src/rules/builtins';
 import { RuleRegistry } from '../../src/rules/registry';
 import type { ResolvedConfig, ScanFacts } from '../../src/types';
-
-const POSITIVE_DIR = '/Users/cheng/ai-slop-baseline/extracted/positive';
-const NEGATIVE_DIR = '/Users/cheng/ai-slop-baseline/extracted/negative';
+import { POSITIVE_DIR, NEGATIVE_DIR } from '../../src/corpus-paths';
 
 const DEFAULT_CONFIG: ResolvedConfig = {
   include: [],

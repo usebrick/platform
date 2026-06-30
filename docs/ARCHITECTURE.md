@@ -346,7 +346,7 @@ usebrick's calibration is data-driven: every rule's `recall` (TP per AI file) an
 - `positive/` — 91 directories of AI-generated / AI-assisted code (anthropic-cookbook, aider, ai-chatbot, etc.)
 - `v5/`, `v7/` — calibration outputs (older + current)
 - `filelists/` — pre-computed file lists for each source
-- `tools/baseline/` — calibration tooling (classify.py, extract_*.py, rank_*.py) — was at `/Users/cheng/ai-slop-baseline/`
+- `tools/baseline/` — calibration tooling (classify.py, extract_*.py, rank_*.py) — lives at `/Users/cheng/corpus-expansion/` (consolidated from the earlier `/Users/cheng/ai-slop-baseline/` layout)
 - `output/`, `labeled/` — pipeline outputs and manually labeled subsets
 
 The corpus is referenced (but not vendored) by `signal-strength.json` via rule IDs.

@@ -675,6 +675,72 @@ describe('saveHealth / loadHealth', () => {
     }
   });
 
+  // v0.18.2 PR-1: round-trip the new optional compositeScore
+  // aggregate. The validator (isHealthFile) must accept the shape
+  // and the writer (buildHealthFromReport) must emit it.
+  it('round-trips a HealthFile with compositeScore (v0.18.2)', () => {
+    const dir = createTmpDir();
+    try {
+      const report = makeReport(50);
+      const health = buildHealthFromReport(report, dir, {
+        scanDurationMs: 200,
+        compositeScore: {
+          mean: 0.78,
+          max: 0.92,
+          tier: 'LIKELY_AI',
+          fileCount: 7,
+        },
+      });
+      saveHealth(dir, health);
+      const loaded = loadHealth(dir);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.compositeScore).toBeDefined();
+      expect(loaded!.compositeScore!.mean).toBe(0.78);
+      expect(loaded!.compositeScore!.max).toBe(0.92);
+      expect(loaded!.compositeScore!.tier).toBe('LIKELY_AI');
+      expect(loaded!.compositeScore!.fileCount).toBe(7);
+      // Validator must accept the shape
+      expect(isHealthFile(loaded)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  // v0.18.2 PR-1: validator must reject malformed compositeScore.
+  it('rejects a HealthFile with malformed compositeScore', () => {
+    const base = {
+      version: '3',
+      generatedAt: new Date().toISOString(),
+      workspace: '/tmp/x',
+      aiQuality: 50,
+      engineeringHygiene: 50,
+      security: 50,
+      repositoryHealth: 50,
+      issueCounts: { high: 0, medium: 0, low: 0 },
+    };
+    // Bad tier
+    expect(
+      isHealthFile({
+        ...base,
+        compositeScore: { mean: 0.5, max: 0.5, tier: 'MAYBE_AI', fileCount: 1 },
+      }),
+    ).toBe(false);
+    // Missing field
+    expect(
+      isHealthFile({
+        ...base,
+        compositeScore: { mean: 0.5, max: 0.5, tier: 'LIKELY_AI' },
+      }),
+    ).toBe(false);
+    // Wrong type
+    expect(
+      isHealthFile({
+        ...base,
+        compositeScore: { mean: '0.5', max: 0.5, tier: 'LIKELY_AI', fileCount: 1 },
+      }),
+    ).toBe(false);
+  });
+
   it('returns null for missing file or corrupted JSON', () => {
     const dir = createTmpDir();
     try {

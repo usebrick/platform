@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { calibrate, reportToMarkdown } from '../../research';
+import { POSITIVE_DIR, NEGATIVE_DIR } from '../../corpus-paths';
 import { parseCount } from '../options.js';
 
 /**
@@ -16,8 +17,8 @@ export function registerCalibrate(program: Command): void {
   program
     .command('calibrate')
     .description('empirical precision/recall/F1 calibration from held-out positive and negative corpora')
-    .option('--positive-dir <path>', 'path to positive (AI-generated) corpus', '/Users/cheng/ai-slop-baseline/extracted/positive')
-    .option('--negative-dir <path>', 'path to negative (real human) corpus', '/Users/cheng/ai-slop-baseline/extracted/negative')
+    .option('--positive-dir <path>', 'path to positive (AI-generated) corpus', POSITIVE_DIR)
+    .option('--negative-dir <path>', 'path to negative (real human) corpus', NEGATIVE_DIR)
     .option('--positive-limit <n>', 'limit positive files scanned', parseCount)
     .option('--negative-limit <n>', 'limit negative files scanned', parseCount)
     .option('--output <path>', 'markdown output path', 'corpus/calibration-empirical.md')

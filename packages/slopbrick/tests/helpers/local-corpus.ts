@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { POSITIVE_DIR } from '../../src/corpus-paths';
 
-const POSITIVE_DIR = '/Users/cheng/ai-slop-baseline/extracted/positive';
 const TARGET_DIR = '/tmp/real-corpus/ai';
 const SECURITY_PREFIX = 'security-';
 const KREBS_PREFIX = 'krebs-';

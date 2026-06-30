@@ -203,11 +203,27 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       await saveConstitution(cwd, constitution);
       const md = renderStructureMarkdown(inventory, constitution);
       await writeStructureMarkdown(cwd, md);
-      const health = buildHealthFromReport(memoryReport, cwd, { scanDurationMs: durationMs });
+      const health = buildHealthFromReport(memoryReport, cwd, {
+        scanDurationMs: durationMs,
+        // v0.18.2: thread the Bayesian composite aggregate from
+        // `aggregateReport` (scan.ts:374) into health.json. Optional
+        // for backward compat with v0.18.1 readers. The
+        // `buildHealthFromReport` writer itself does the
+        // `...(options.compositeScore && { compositeScore: ... })`
+        // spread so that `undefined` doesn't pollute the JSON.
+        ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
+      });
       saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
+        // v0.18.2: include the Bayesian composite aggregate in the
+        // log line so users can see the per-scan probability without
+        // having to crack open health.json. Off by default — only
+        // present when the scan produced a non-empty aggregate.
+        const compositeSuffix = health.compositeScore
+          ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
+          : '';
         logger.info(
-          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiQuality} eng=${health.engineeringHygiene} sec=${health.security}).`,
+          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiQuality} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
         );
       }
     } catch (err) {

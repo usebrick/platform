@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { POSITIVE_DIR, NEGATIVE_DIR } from '../corpus-paths';
 
 // Round 16: Empirical precision/recall calibration.
 //
@@ -33,8 +34,10 @@ export interface CalibrationReport {
   rules: RuleCalibration[];
 }
 
-const DEFAULT_POSITIVE = '/Users/cheng/ai-slop-baseline/extracted/positive';
-const DEFAULT_NEGATIVE = '/Users/cheng/ai-slop-baseline/extracted/negative';
+// v0.18.2 PR-1k: imported from src/corpus-paths.ts (single source
+// of truth, env-overridable via SLOPBRICK_CORPUS_DIR).
+const DEFAULT_POSITIVE = POSITIVE_DIR;
+const DEFAULT_NEGATIVE = NEGATIVE_DIR;
 
 function buildFileList(dir: string, extensions: string[]): string[] {
   // Round-16: write the file list directly to /tmp via find to avoid

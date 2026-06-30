@@ -127,10 +127,18 @@ Design-token drift:       7 violations  (5 spacing, 2 radius)
 
 ## Calibration (v4.1, 2026-06-25)
 
-The rule catalog is calibrated against a balanced 1:1 corpus:
+The rule catalog is calibrated against a balanced 1:1 corpus
+lives at `/Users/cheng/corpus-expansion/` (override with the
+`SLOPBRICK_CORPUS_DIR` env var). All corpus paths are
+centralized in [`src/corpus-paths.ts`](./src/corpus-paths.ts)
+— import `POSITIVE_DIR`, `NEGATIVE_DIR`, `FILELISTS_DIR`,
+or `filelistPath(name)` rather than hardcoding
+`/Users/cheng/corpus-expansion/...`. Python scripts in
+`scripts/` mirror the same constant via
+`os.environ.get('SLOPBRICK_CORPUS_DIR', '/Users/cheng/corpus-expansion')`.
 
-- **Negative:** 95,467 frontend files (39 production repos: mui 16k, supabase 6.8k, antd 5.5k, storybook 3.5k, react-spectrum 3.3k, refine 6.3k, appsmith 5.5k, heroui 2.1k, …) + 54,980 from `ai-slop-baseline`.
-- **Positive:** 76,981 frontend files (50 existing repos + 100 NEW shallow-cloned vibe-coded repos in `corpus-expansion/positive/vibe-coded/`).
+- **Negative:** 95,467 frontend files (39 production repos: mui 16k, supabase 6.8k, antd 5.5k, storybook 3.5k, react-spectrum 3.3k, refine 6.3k, appsmith 5.5k, heroui 2.1k, …) + 54,980 from `corpus-expansion/negative/baseline/`.
+- **Positive:** 76,981 frontend files (50 existing repos + 100 NEW shallow-cloned vibe-coded repos in `corpus-expansion/positive/`).
 
 Per-rule Precision/Recall/FPR is the form engineers actually trust. See:
 - [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md) — full per-rule P/R/FPR table

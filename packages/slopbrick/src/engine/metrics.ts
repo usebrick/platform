@@ -11,6 +11,7 @@ import type {
   ResolvedConfig,
   Severity,
 } from '../types';
+import type { CompositeScore, ConfidenceTier } from '@usebrick/engine';
 
 
 // Severity weights aligned with the 3-tier scoring model. Critical tier
@@ -151,6 +152,12 @@ export function aggregateReport(
   scores: ComponentScore[],
   issueGroups: Array<{ filePath: string; issues: Array<{ category: Category; severity: Severity; ruleId: string }> }>,
   config: ResolvedConfig,
+  // v0.18.2: per-file Bayesian composite scores from worker.ts:98.
+  // Optional for backward compat with existing test fixtures. When
+  // provided, emit a project-level aggregate (mean, max, tier,
+  // fileCount) into the report. Informational — does not affect the
+  // 4 headline scores.
+  compositeScores?: ReadonlyArray<CompositeScore | undefined>,
 ): Pick<
   ProjectReport,
   | 'aiQuality'
@@ -169,6 +176,7 @@ export function aggregateReport(
   | 'peakScore'
   | 'componentCount'
   | 'components'
+  | 'compositeScore'
 > {
   const adjustedScores = scores.map((s) => s.adjustedScore);
   const componentCount = scores.reduce((sum, s) => sum + s.componentCount, 0);
@@ -306,6 +314,44 @@ export function aggregateReport(
     0.1 * testQuality;
   const repositoryHealth = Math.max(0, Math.min(100, repositoryHealthRaw));
 
+  // v0.18.2: project-level composite aggregate. Per-file composite
+  // scores are computed at worker.ts:98 and attached to each
+  // FileScanResult. They were previously dropped on the floor here
+  // (aggregateReport received only `issueGroups`, not `results`).
+  // We now accept them as an optional parameter and emit a single
+  // mean + max + tier aggregate. The tier is taken from the
+  // mean's confidenceTier (per Jaeschke 1994 JAMA thresholds).
+  // Informational: not used to compute the 4 headline scores.
+  let compositeAggregate: ProjectReport['compositeScore'];
+  if (compositeScores && compositeScores.length > 0) {
+    const defined = compositeScores.filter(
+      (s): s is CompositeScore => s !== undefined,
+    );
+    if (defined.length > 0) {
+      const probs = defined.map((s) => s.probability);
+      const mean = probs.reduce((sum, p) => sum + p, 0) / probs.length;
+      const max = probs.reduce((m, p) => (p > m ? p : m), 0);
+      // Tier from the mean: re-derive rather than averaging tiers.
+      // Per the engine's own classification logic (composite-scoring.ts),
+      // < 0.10 = LIKELY_HUMAN, 0.10-0.50 = INCONCLUSIVE,
+      // 0.50-0.90 = LIKELY_AI, >= 0.90 = VERY_LIKELY_AI.
+      const tier: ConfidenceTier =
+        mean < 0.10
+          ? 'LIKELY_HUMAN'
+          : mean < 0.50
+            ? 'INCONCLUSIVE'
+            : mean < 0.90
+              ? 'LIKELY_AI'
+              : 'VERY_LIKELY_AI';
+      compositeAggregate = {
+        mean,
+        max,
+        tier,
+        fileCount: defined.length,
+      };
+    }
+  }
+
   return {
     aiQuality,
     engineeringHygiene,
@@ -323,5 +369,6 @@ export function aggregateReport(
     peakScore,
     componentCount,
     components: [...scores],
+    ...(compositeAggregate && { compositeScore: compositeAggregate }),
   };
 }

@@ -171,5 +171,17 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
     if (!isStringArray(value.topOffenseIds)) return false;
   }
   if (value.scanDurationMs !== undefined && !isNumber(value.scanDurationMs)) return false;
+  // v0.18.2: optional Bayesian composite aggregate. Validate the
+  // shape when present (G6 schema/writer/validator coherence).
+  // Omitted in v0.18.1 and earlier health.json files; readers
+  // should treat it as informational.
+  if (value.compositeScore !== undefined) {
+    if (!isRecord(value.compositeScore)) return false;
+    const cs = value.compositeScore as { mean?: unknown; max?: unknown; tier?: unknown; fileCount?: unknown };
+    if (typeof cs.mean !== 'number') return false;
+    if (typeof cs.max !== 'number') return false;
+    if (cs.tier !== 'LIKELY_HUMAN' && cs.tier !== 'INCONCLUSIVE' && cs.tier !== 'LIKELY_AI' && cs.tier !== 'VERY_LIKELY_AI') return false;
+    if (typeof cs.fileCount !== 'number') return false;
+  }
   return true;
 }

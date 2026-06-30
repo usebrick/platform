@@ -31,13 +31,15 @@ for a "slop_suggest"-style call that says "this file is 87% likely
 to be AI-generated" instead of "rule X fired."
 """
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from datetime import datetime
 
-CORPUS_ROOT = Path("/Users/cheng/corpus-expansion")
+# v0.18.2 PR-1k: see src/corpus-paths.ts (TS sibling).
+CORPUS_ROOT = Path(os.environ.get("SLOPBRICK_CORPUS_DIR", "/Users/cheng/corpus-expansion"))
 SCAN_ROOT = Path("/tmp")
 REPO = Path(__file__).resolve().parent.parent
 RULE_DIR = REPO / "src/rules"

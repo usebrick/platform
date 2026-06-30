@@ -710,6 +710,23 @@ export interface ProjectReport {
   /** Phase 2 §10: ruleId → subscore bucket, used by the composite formula.
    *  Each issue contributes to exactly one bucket. */
   subscores?: Record<string, number>;
+  /** v0.18.2: project-level aggregate of the per-file Bayesian
+   *  composite scores (worker.ts:98 produces them; previously dropped
+   *  on the floor). The mean is the headline "is this codebase AI?"
+   *  signal; max catches the single worst file. Informational, does
+   *  not affect the 4 headline scores (those are deterministic).
+   *
+   *  Kept optional for backward compat with existing fixtures. */
+  compositeScore?: {
+    /** Mean across all files that fired at least one rule. */
+    mean: number;
+    /** Highest per-file probability in the scan. */
+    max: number;
+    /** Confidence tier of the mean (per Jaeschke 1994 JAMA). */
+    tier: 'LIKELY_HUMAN' | 'INCONCLUSIVE' | 'LIKELY_AI' | 'VERY_LIKELY_AI';
+    /** Number of files that contributed a composite score. */
+    fileCount: number;
+  };
   /** Architecture Consistency Score (0-100). 100 = one modal system, one
    * button variant, one api client, one state lib, one fetch lib, no
    * off-scale values. Optional because it requires a deeper scan and

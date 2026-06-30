@@ -5,9 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { binPath, repoRoot, assertDistBuilt } from '../helpers/cli';
 import { bootstrapLocalCorpus } from '../helpers/local-corpus';
-
-const POSITIVE_DIR = '/Users/cheng/ai-slop-baseline/extracted/positive';
-const NEGATIVE_DIR = '/Users/cheng/ai-slop-baseline/extracted/negative';
+import { POSITIVE_DIR, NEGATIVE_DIR } from '../../src/corpus-paths';
 // Local security samples — round-13 expansion. The main positive corpus
 // (5,524 files) is dominated by tiny vibe-coded apps that don't implement
 // auth flows, so security rules have no signal there. These 20 local
@@ -210,7 +208,7 @@ describe('corpus calibration', () => {
       // eslint-disable-next-line no-console
       console.warn('Local corpus was auto-bootstrapped; skipping inverted-rule check.');
     }
-    // Build the positive corpus: main /Users/cheng/ai-slop-baseline/extracted/positive/.
+    // Build the positive corpus: main /Users/cheng/corpus-expansion/positive/.
     // The main corpus is dominated by tiny vibe-coded apps without auth flows,
     // so security rules have no signal there. Round-13 added 20 local security
     // samples under /tmp/real-corpus/ai/security-*.tsx that cover the new

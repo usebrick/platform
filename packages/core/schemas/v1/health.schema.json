@@ -107,6 +107,35 @@
       "description": "How long the scan took in milliseconds.",
       "type": "integer",
       "minimum": 0
+    },
+    "compositeScore": {
+      "description": "v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.",
+      "type": "object",
+      "required": ["mean", "max", "tier", "fileCount"],
+      "properties": {
+        "mean": {
+          "description": "Mean of per-file probabilities across all files that fired at least one rule. In [0,1].",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "max": {
+          "description": "Highest per-file probability in the scan. In [0,1].",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tier": {
+          "description": "Confidence tier of the mean, per Jaeschke 1994 JAMA thresholds: <0.10 LIKELY_HUMAN, <0.50 INCONCLUSIVE, <0.90 LIKELY_AI, else VERY_LIKELY_AI.",
+          "type": "string",
+          "enum": ["LIKELY_HUMAN", "INCONCLUSIVE", "LIKELY_AI", "VERY_LIKELY_AI"]
+        },
+        "fileCount": {
+          "description": "Number of files that contributed a composite score.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   }
 }

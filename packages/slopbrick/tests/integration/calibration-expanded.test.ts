@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assertDistBuilt, repoRoot } from '../helpers/cli';
+import { FILELISTS_DIR, filelistPath } from '../../src/corpus-paths';
 
 /**
  * Expanded-corpus calibration.
@@ -14,7 +15,7 @@ import { assertDistBuilt, repoRoot } from '../helpers/cli';
  *   - Negative: 39 large, well-maintained OSS repos in /Users/cheng/corpus-expansion/negative/
  *               (mui 16k, supabase 6.8k, refine 6.3k, appsmith 5.5k, storybook 3.5k,
  *                react-spectrum 3.3k, tanstack-router 3.2k, saleor 2.6k, discourse 2.3k,
- *                heroui 2.1k, builderio 1.8k, antd 1.2k, ...) + 54,980 from ai-slop-baseline.
+ *                heroui 2.1k, builderio 1.8k, antd 1.2k, ...) + 54,980 from corpus-expansion.
  *   - Positive: 50 existing repos + 100 NEW AI-coded repos in /Users/cheng/corpus-expansion/positive/vibe-coded/
  *               (tiann/hapi 100MB, thedotmack/claude-mem, nextify-limited/libra,
  *                dyad, eastlondoner/vibe-tools, refly, Vibe-Trading, ORG2, PraisonAI,
@@ -33,9 +34,8 @@ import { assertDistBuilt, repoRoot } from '../helpers/cli';
  *   - perf/cls-image (image-heavy corpus needed)
  */
 
-const EXPANDED_NEG_LIST = '/Users/cheng/corpus-expansion/filelists/neg-frontend-all.txt';
-const EXPANDED_POS_LIST = '/Users/cheng/corpus-expansion/filelists/pos-frontend-all.txt';
-const FILELISTS_DIR = '/Users/cheng/corpus-expansion/filelists';
+const EXPANDED_NEG_LIST = filelistPath('neg-frontend-all.txt');
+const EXPANDED_POS_LIST = filelistPath('pos-frontend-all.txt');
 
 function expandedCorpusAvailable(): boolean {
   return existsSync(EXPANDED_NEG_LIST) && existsSync(EXPANDED_POS_LIST);

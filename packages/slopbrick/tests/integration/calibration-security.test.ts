@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assertDistBuilt, repoRoot } from '../helpers/cli';
+import { filelistPath } from '../../src/corpus-paths';
 
 /**
  * Backend / security / test / business-logic corpus calibration.
@@ -35,8 +36,8 @@ import { assertDistBuilt, repoRoot } from '../helpers/cli';
  * If you don't have this corpus cloned, the test skips.
  */
 
-const EXPANDED_NEG = '/Users/cheng/corpus-expansion/filelists/neg-all-files.txt';
-const EXPANDED_POS = '/Users/cheng/corpus-expansion/filelists/pos-all-files.txt';
+const EXPANDED_NEG = filelistPath('neg-all-files.txt');
+const EXPANDED_POS = filelistPath('pos-all-files.txt');
 
 // Cached shard paths from the v4 full-corpus scan (101k neg + 106k pos multi-language).
 // To regenerate: python3 corpus-expansion/scan-corpus-parallel.py neg v4neg --workers 4

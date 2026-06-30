@@ -1,5 +1,175 @@
 # Changelog
 
+## [0.18.2] - Unreleased — surface the per-file Bayesian compositeScore (rev 3 G1-verified)
+
+v0.18.2 PR-1 is a **data-flow only** change: a `compositeScore`
+field that's already been computed at `worker.ts:98` (per-file
+Bayesian probability in [0, 1] with a Jaeschke 1994 confidence
+tier) was being **dropped on the floor** between the per-file
+result and the project-level report. v0.18.2 PR-1 surfaces it
+into `ProjectReport` and `health.json` as an informational
+addition. The 4 headline scores (aiQuality, engineeringHygiene,
+security, repositoryHealth) remain deterministic and
+unchanged — the v0.18.0 rev 3 decision was "expose, don't
+replace", and PR-1 is the expose step.
+
+### G1 verification (before scope, per rev 3 review gate)
+
+The data-flow trace that motivated this PR:
+
+```bash
+# 1. Where the composite score is computed (per file, in [0,1])
+$ grep -n "compositeScore\s*[:?]" packages/slopbrick/src/worker.ts | head -5
+98:    compositeScore?: CompositeScore;  // per-file probability + tier
+
+# 2. Where aggregateReport consumed it (nowhere — only issueGroups)
+$ grep -n "compositeScore" packages/slopbrick/src/engine/metrics.ts
+# before: 0 hits — the score was silently discarded at the boundary
+
+# 3. Where health.json was written (no composite field)
+$ grep -n "compositeScore" packages/core/schemas/v1/health.schema.json
+# before: 0 hits
+```
+
+So v0.18.2 PR-1 is **additive only**: thread the already-computed
+value through `aggregateReport` → `ProjectReport` → `buildHealthFromReport`
+→ `health.json`. No computation moves, no heuristic changes,
+no thresholds touched. The 4 headline scores compute exactly
+the same way they did in v0.18.1; `bench:scan` still PASSes
+with all 4 at 100/100/100/100 on the clean fixture.
+
+### Added: project-level `compositeScore` aggregate on `ProjectReport` and `health.json`
+
+A new optional field on both `ProjectReport` and the
+`RepositoryStructureHealth` health.json schema:
+
+```typescript
+compositeScore?: {
+  mean: number;                           // mean of per-file probabilities
+  max: number;                            // highest per-file probability
+  tier: 'LIKELY_HUMAN' | 'INCONCLUSIVE'
+      | 'LIKELY_AI' | 'VERY_LIKELY_AI';   // Jaeschke 1994 tier of the mean
+  fileCount: number;                      // files that contributed
+};
+```
+
+The mean is the headline "is this codebase AI?" signal; `max`
+catches the single worst file; `tier` is re-derived from the
+mean (not averaged) using Jaeschke 1994 JAMA thresholds
+(`<0.10 LIKELY_HUMAN, <0.50 INCONCLUSIVE, <0.90 LIKELY_AI,
+else VERY_LIKELY_AI`). The aggregate is omitted from the
+report entirely when no per-file scores were produced
+(backward compat: v0.18.1 and earlier readers see no change).
+
+The field is **optional** in both `ProjectReport` and the
+health.json schema (G6 schema/validator/writer coherence —
+AGENTS.md rule for new fields: "always add as optional with
+defaults"). `isHealthFile` validates the shape when present
+and ignores it when absent.
+
+### Fixed: dead-on-arrival compositeScore at the aggregate boundary
+
+Before this PR, the per-file Bayesian probability computed
+at `worker.ts:98` was attached to each `FileScanResult` but
+never threaded into `aggregateReport`. The aggregate function
+(`metrics.ts:150`) only received `issueGroups`, not `results`,
+so there was no path for the per-file scores to reach the
+project level. The fix: `aggregateReport` now accepts an
+optional 4th parameter `compositeScores?: ReadonlyArray<CompositeScore | undefined>`,
+`scan.ts:369` maps `scorableResults.map((r) => r.compositeScore)`
+into it, and the aggregate emits the `compositeScore` field
+on the returned `ProjectReport`. The writer
+(`buildHealthFromReport` in `engine/src/structure.ts:442`) and
+the schema (`core/schemas/v1/health.schema.json`) and the
+validator (`core/src/validators.ts:isHealthFile`) all agree on
+the shape (G6 schema-touch coherence).
+
+The new field also appears in the scan log line:
+`composite=LIKELY_AI@0.78` is appended when present, omitted
+when not. Backward compat: v0.18.1 readers see the same JSON
+keys they did before (the new field is opt-in via the
+optional spread in `buildHealthFromReport`).
+
+### Tests added (7 new test cases, 716/716 → 723/723)
+
+- `aggregateReport — compositeScore aggregate` (6 cases):
+  omits when no per-file scores, omits when all undefined,
+  known-AI fixture (mean=0.885, tier=LIKELY_AI), clean
+  fixture (mean=0.03, tier=LIKELY_HUMAN), Jaeschke boundary
+  checks at 0.10/0.50/0.90, mixed defined+undefined
+  (fileCount over defined only), and "does not affect the 4
+  headline scores" (informational-only invariant).
+- `saveHealth / loadHealth` (2 cases): round-trips
+  `compositeScore` through disk; rejects malformed
+  `compositeScore` (bad tier / missing field / wrong type).
+
+`bench:scan` regression: PASS (all 4 headline scores at
+100/100/100/100, no compositeScore on the clean fixture —
+correct, since no rules fire there).
+
+### Doc-hygiene (PR-1j)
+
+Updated all `ai-slop-baseline` references in source code,
+tests, and docs to point to `/Users/cheng/corpus-expansion/`
+(the consolidated corpus layout):
+
+- `src/cli/commands/calibrate.ts` — default `--positive-dir` and `--negative-dir`
+- `tests/integration/calibration.test.ts` + `category-separation.test.ts` — corpus paths
+- `tests/helpers/local-corpus.ts` — bootstrap source dir
+- `tests/integration/calibration-expanded.test.ts` — comment refresh
+- `docs/ARCHITECTURE.md` + `packages/slopbrick/AGENTS.md` — corpus layout notes
+
+Legacy mentions kept as historical context in
+`docs/ARCHITECTURE.md:349` ("consolidated from the earlier
+`/Users/cheng/ai-slop-baseline/` layout") so readers can
+follow the migration. A separate doc-hygiene task remains
+for v0.18.4: the `corpus-expansion/filelists/*.txt` files
+themselves are stale and still reference the old
+`ai-slop-baseline/extracted/` paths — they need to be
+regenerated with `build-filelists-v2.sh`.
+
+### Centralized corpus path (PR-1k) — single source of truth
+
+After the PR-1j sweep, the corpus path string was still
+duplicated across 6 test files, 3 Python scripts, 1 TS
+script, and the `calibrate` command — 11 hardcoded
+`/Users/cheng/corpus-expansion/...` references. PR-1k
+collapses them into a single source of truth.
+
+**New file:** `src/corpus-paths.ts` exports
+`CORPUS_ROOT`, `POSITIVE_DIR`, `NEGATIVE_DIR`,
+`FILELISTS_DIR`, and a `filelistPath(name)` helper.
+`CORPUS_ROOT` defaults to
+`/Users/cheng/corpus-expansion` and is overridable via
+the `SLOPBRICK_CORPUS_DIR` env var (for forks, CI runners,
+or read-only mirrors).
+
+**Refactored callers:**
+- `src/cli/commands/calibrate.ts` (CLI defaults)
+- `src/research/calibrator.ts` (empirical calibration)
+- `tests/integration/calibration*.test.ts` (4 files)
+- `tests/integration/category-separation.test.ts`
+- `tests/helpers/local-corpus.ts`
+- `scripts/collect-drift-signals.ts` (10 repo paths)
+- `scripts/compute-v7-calibration.py`,
+  `compute-v7-probabilistic.py`,
+  `find-rule-coverage-gaps.py` (Python sibling — same
+  env-var + same default, see the comment in
+  `src/corpus-paths.ts` for the cross-language contract)
+
+**Why this matters:** the bug class that motivated the
+sweep was "the corpus was renamed from `ai-slop-baseline/`
+to `corpus-expansion/` and 7 files had stale references".
+Centralizing means the next corpus relocation is a one-line
+change in `src/corpus-paths.ts` (and the Python
+siblings), not a multi-file search-and-replace.
+
+**Verification:**
+- `SLOPBRICK_CORPUS_DIR=/tmp/test pnpm exec tsx -e "import { ... } from '.../corpus-paths.ts'"` returns the override path
+- `pnpm -r typecheck` clean
+- `pnpm exec vitest run tests/engine/ tests/cli/ tests/report/ tests/rules/` → 1492/1492 pass
+- `pnpm bench:scan` PASS (v0.18.1 regression intact)
+
 ## [0.18.1] - 2026-06-30 — Two verified critical bugfixes (rev 3 G1-verified)
 
 v0.18.1 closes two user-visible bugs in the shipped report. Both

@@ -58,4 +58,25 @@ export interface RepositoryStructureHealth {
    * How long the scan took in milliseconds.
    */
   scanDurationMs?: number;
+  /**
+   * v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.
+   */
+  compositeScore?: {
+    /**
+     * Mean of per-file probabilities across all files that fired at least one rule. In [0,1].
+     */
+    mean: number;
+    /**
+     * Highest per-file probability in the scan. In [0,1].
+     */
+    max: number;
+    /**
+     * Confidence tier of the mean, per Jaeschke 1994 JAMA thresholds: <0.10 LIKELY_HUMAN, <0.50 INCONCLUSIVE, <0.90 LIKELY_AI, else VERY_LIKELY_AI.
+     */
+    tier: "LIKELY_HUMAN" | "INCONCLUSIVE" | "LIKELY_AI" | "VERY_LIKELY_AI";
+    /**
+     * Number of files that contributed a composite score.
+     */
+    fileCount: number;
+  };
 }

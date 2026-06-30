@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assertDistBuilt, repoRoot } from '../helpers/cli';
+import { filelistPath } from '../../src/corpus-paths';
 
 /**
  * db/* corpus calibration using .sql files via the `db` subcommand.
@@ -31,10 +32,10 @@ import { assertDistBuilt, repoRoot } from '../helpers/cli';
  * .sql files are cloned, the per-rule thresholds tighten.
  */
 
-const NEG_SQL = '/Users/cheng/corpus-expansion/filelists/neg-sql-all.txt';
-const POS_SQL = '/Users/cheng/corpus-expansion/filelists/pos-sql-all.txt';
-const NEG_TS = '/Users/cheng/corpus-expansion/filelists/neg-frontend-all.txt';
-const POS_TS = '/Users/cheng/corpus-expansion/filelists/pos-frontend-all.txt';
+const NEG_SQL = filelistPath('neg-sql-all.txt');
+const POS_SQL = filelistPath('pos-sql-all.txt');
+const NEG_TS = filelistPath('neg-frontend-all.txt');
+const POS_TS = filelistPath('pos-frontend-all.txt');
 
 // Cached db-report.json paths. To regenerate: run this test once (it will save the
 // output), or run slopbrick db manually. The cache invalidates if the corpus

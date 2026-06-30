@@ -19,6 +19,10 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+// v0.18.2 PR-1k: see src/corpus-paths.ts. Imports POSITIVE_DIR
+// and NEGATIVE_DIR (both derive from CORPUS_ROOT, which honors
+// SLOPBRICK_CORPUS_DIR).
+import { POSITIVE_DIR, NEGATIVE_DIR } from '../src/corpus-paths';
 
 interface RepoTarget {
   /** Human-readable label used in the report. */
@@ -76,21 +80,21 @@ const REPOS: RepoTarget[] = [
     label: 'chatgpt-retrieval-plugin',
     partition: 'positive',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/positive/python-ai/chatgpt-retrieval-plugin',
+    path: join(POSITIVE_DIR, 'python-ai/chatgpt-retrieval-plugin'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'fastapi (ai-fork)',
     partition: 'positive',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/positive/python-ai/fastapi',
+    path: join(POSITIVE_DIR, 'python-ai/fastapi'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'axolotl',
     partition: 'positive',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/positive/python-ai/axolotl',
+    path: join(POSITIVE_DIR, 'python-ai/axolotl'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   // Python negative (human-written, popular OSS) — expect less drift.
@@ -98,21 +102,21 @@ const REPOS: RepoTarget[] = [
     label: 'click',
     partition: 'negative',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/negative/python/click',
+    path: join(NEGATIVE_DIR, 'python/click'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'pyjwt',
     partition: 'negative',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/negative/python/pyjwt',
+    path: join(NEGATIVE_DIR, 'python/pyjwt'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'sqlalchemy',
     partition: 'negative',
     language: 'python',
-    path: '/Users/cheng/corpus-expansion/negative/python/sqlalchemy',
+    path: join(NEGATIVE_DIR, 'python/sqlalchemy'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   // Go positive (AI-authored).
@@ -120,14 +124,14 @@ const REPOS: RepoTarget[] = [
     label: 'langchaingo',
     partition: 'positive',
     language: 'go',
-    path: '/Users/cheng/corpus-expansion/positive/go-ai/langchaingo',
+    path: join(POSITIVE_DIR, 'go-ai/langchaingo'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'go-gin-clean-starter',
     partition: 'positive',
     language: 'go',
-    path: '/Users/cheng/corpus-expansion/positive/go-ai/go-gin-clean-starter',
+    path: join(POSITIVE_DIR, 'go-ai/go-gin-clean-starter'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   // Go negative (human-written, popular OSS).
@@ -135,14 +139,14 @@ const REPOS: RepoTarget[] = [
     label: 'cobra',
     partition: 'negative',
     language: 'go',
-    path: '/Users/cheng/corpus-expansion/negative/go/cobra',
+    path: join(NEGATIVE_DIR, 'go/cobra'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
   {
     label: 'client_golang',
     partition: 'negative',
     language: 'go',
-    path: '/Users/cheng/corpus-expansion/negative/go/client_golang',
+    path: join(NEGATIVE_DIR, 'go/client_golang'),
     productionOnlyExclude: [...PRODUCTION_EXCLUDES],
   },
 ];

@@ -22,12 +22,16 @@ Outputs:
 Usage: python3 scripts/compute-v7-calibration.py [--min-date YYYY-MM-DD] [--no-date-filter]
 """
 import json
+import os
 import re
 import sys
 from collections import Counter
 from pathlib import Path
 
-CORPUS_ROOT = Path("/Users/cheng/corpus-expansion")
+# v0.18.2 PR-1k: read CORPUS_ROOT from the same env var the TS
+# code uses (src/corpus-paths.ts → SLOPBRICK_CORPUS_DIR).
+# Default matches the TS default. If you change one, change both.
+CORPUS_ROOT = Path(os.environ.get("SLOPBRICK_CORPUS_DIR", "/Users/cheng/corpus-expansion"))
 SCAN_ROOT = Path("/tmp")  # scan output files land here
 REPO = Path(__file__).resolve().parent.parent
 RULE_DIR = REPO / "src/rules"

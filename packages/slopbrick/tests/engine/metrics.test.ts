@@ -541,3 +541,180 @@ describe('resolveFrameworkMultiplier', () => {
     expect(resolveFrameworkMultiplier(config)).toBe(1.0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.18.2: project-level compositeScore aggregate (PR-1)
+// ---------------------------------------------------------------------------
+//
+// Per-file composite scores (CompositeScore from
+// `@usebrick/engine`) are produced at worker.ts:98 and were
+// previously dropped on the floor — aggregateReport received
+// `issueGroups` but not `results`, so there was no path to the
+// per-file scores at all. v0.18.2 PR-1 threads them through and
+// emits a single { mean, max, tier, fileCount } on the
+// ProjectReport. The aggregate is informational; the 4 headline
+// scores (aiQuality, engineeringHygiene, security,
+// repositoryHealth) remain deterministic.
+
+import type { CompositeScore } from '@usebrick/engine';
+
+/** Build a minimal CompositeScore fixture for testing. We only
+ *  set the fields the aggregate actually reads (probability,
+ *  confidenceTier). Other fields are zeroed to satisfy the
+ *  interface. */
+const composite = (
+  probability: number,
+  tier: CompositeScore['confidenceTier'] = 'INCONCLUSIVE',
+): CompositeScore => ({
+  logOddsPrior: 0,
+  logOddsPosterior: 0,
+  probability,
+  triggeredRules: [],
+  ruleCount: 0,
+  confidenceTier: tier,
+  priorPrevalence: 0.5,
+});
+
+describe('aggregateReport — compositeScore aggregate (v0.18.2 PR-1)', () => {
+  it('omits compositeScore when no per-file scores are provided', () => {
+    // Backward compat: callers that don't pass the 4th arg
+    // (e.g. the existing test corpus) should see no compositeScore
+    // on the report. Mirrors the v0.18.1 shape exactly.
+    const scores = [scoreFile(fileResult(), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues: [] as Issue[] }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    expect(report.compositeScore).toBeUndefined();
+  });
+
+  it('omits compositeScore when all per-file scores are undefined', () => {
+    // Files that fired zero rules have no CompositeScore (worker.ts
+    // sets compositeScore to undefined in that case). Those
+    // undefineds must not pollute the aggregate — we filter to
+    // defined-only.
+    const scores = [scoreFile(fileResult(), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues: [] as Issue[] }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, [undefined]);
+    expect(report.compositeScore).toBeUndefined();
+  });
+
+  it('emits mean+max+tier+fileCount for a known-AI scan (>0.5)', () => {
+    // Known-AI fixture: every file has a high probability. The
+    // mean should be > 0.5 (LIKELY_AI or VERY_LIKELY_AI tier per
+    // Jaeschke 1994 thresholds). 0.85 and 0.92 mean = 0.885,
+    // tier = LIKELY_AI.
+    const scores = [
+      scoreFile(fileResult({ filePath: 'A.tsx' }), 1.0, DEFAULT_CONFIG),
+      scoreFile(fileResult({ filePath: 'B.tsx' }), 1.0, DEFAULT_CONFIG),
+    ];
+    const issueGroups = [
+      { filePath: 'A.tsx', issues: [] as Issue[] },
+      { filePath: 'B.tsx', issues: [] as Issue[] },
+    ];
+    const perFile = [composite(0.85, 'LIKELY_AI'), composite(0.92, 'LIKELY_AI')];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, perFile);
+
+    expect(report.compositeScore).toBeDefined();
+    expect(report.compositeScore!.mean).toBeCloseTo(0.885, 5);
+    expect(report.compositeScore!.max).toBe(0.92);
+    expect(report.compositeScore!.tier).toBe('LIKELY_AI');
+    expect(report.compositeScore!.fileCount).toBe(2);
+  });
+
+  it('emits mean+max+tier+fileCount for a clean scan (<0.5)', () => {
+    // Clean fixture: low probability across the board. Mean = 0.03,
+    // tier = LIKELY_HUMAN (Jaeschke: <0.10 → LIKELY_HUMAN).
+    const scores = [
+      scoreFile(fileResult({ filePath: 'A.tsx' }), 1.0, DEFAULT_CONFIG),
+      scoreFile(fileResult({ filePath: 'B.tsx' }), 1.0, DEFAULT_CONFIG),
+    ];
+    const issueGroups = [
+      { filePath: 'A.tsx', issues: [] as Issue[] },
+      { filePath: 'B.tsx', issues: [] as Issue[] },
+    ];
+    const perFile = [composite(0.02), composite(0.04)];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, perFile);
+
+    expect(report.compositeScore).toBeDefined();
+    expect(report.compositeScore!.mean).toBeCloseTo(0.03, 5);
+    expect(report.compositeScore!.max).toBe(0.04);
+    expect(report.compositeScore!.tier).toBe('LIKELY_HUMAN');
+    expect(report.compositeScore!.fileCount).toBe(2);
+  });
+
+  it('uses Jaeschke 1994 thresholds for tier derivation', () => {
+    // Boundary checks for the 4 tier cutoffs:
+    //   <0.10           LIKELY_HUMAN
+    //   <0.50           INCONCLUSIVE
+    //   <0.90           LIKELY_AI
+    //   else            VERY_LIKELY_AI
+    const scores = [scoreFile(fileResult(), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues: [] as Issue[] }];
+
+    // Exactly 0.10 → INCONCLUSIVE (strictly less-than boundary)
+    let report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, [composite(0.10)]);
+    expect(report.compositeScore!.tier).toBe('INCONCLUSIVE');
+
+    // Exactly 0.50 → LIKELY_AI
+    report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, [composite(0.50)]);
+    expect(report.compositeScore!.tier).toBe('LIKELY_AI');
+
+    // Exactly 0.90 → VERY_LIKELY_AI
+    report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, [composite(0.90)]);
+    expect(report.compositeScore!.tier).toBe('VERY_LIKELY_AI');
+
+    // 0.99 → VERY_LIKELY_AI
+    report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, [composite(0.99)]);
+    expect(report.compositeScore!.tier).toBe('VERY_LIKELY_AI');
+  });
+
+  it('mixes defined and undefined per-file scores (undefineds excluded from mean)', () => {
+    // 2 defined + 3 undefined: fileCount should be 2, not 5. The
+    // mean is over the 2 defined scores only. This matches the
+    // "files that fired at least one rule" definition (worker.ts
+    // sets compositeScore to undefined for files with zero
+    // triggered rules).
+    const scores = [
+      scoreFile(fileResult({ filePath: 'A.tsx' }), 1.0, DEFAULT_CONFIG),
+      scoreFile(fileResult({ filePath: 'B.tsx' }), 1.0, DEFAULT_CONFIG),
+    ];
+    const issueGroups = [
+      { filePath: 'A.tsx', issues: [] as Issue[] },
+      { filePath: 'B.tsx', issues: [] as Issue[] },
+    ];
+    const perFile: Array<CompositeScore | undefined> = [
+      composite(0.6),
+      composite(0.8),
+      undefined,
+      undefined,
+      undefined,
+    ];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, perFile);
+
+    expect(report.compositeScore).toBeDefined();
+    expect(report.compositeScore!.fileCount).toBe(2);
+    expect(report.compositeScore!.mean).toBeCloseTo((0.6 + 0.8) / 2, 5);
+    expect(report.compositeScore!.max).toBe(0.8);
+    expect(report.compositeScore!.tier).toBe('LIKELY_AI'); // 0.7 < 0.90
+  });
+
+  it('does not affect the 4 headline scores (informational only)', () => {
+    // The composite aggregate is informational. Passing
+    // perFileCompositeScores must not change aiQuality,
+    // engineeringHygiene, security, or repositoryHealth relative
+    // to the v0.18.1 baseline.
+    const issues: Issue[] = [issue('high', 'logic'), issue('low', 'visual')];
+    const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues }];
+    const baseline = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    const withComposite = aggregateReport(
+      scores,
+      issueGroups,
+      DEFAULT_CONFIG,
+      [composite(0.99, 'VERY_LIKELY_AI')],
+    );
+    expect(withComposite.aiQuality).toBe(baseline.aiQuality);
+    expect(withComposite.engineeringHygiene).toBe(baseline.engineeringHygiene);
+    expect(withComposite.security).toBe(baseline.security);
+    expect(withComposite.repositoryHealth).toBe(baseline.repositoryHealth);
+  });
+});

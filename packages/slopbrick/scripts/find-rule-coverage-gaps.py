@@ -16,6 +16,7 @@ Output: docs/research/v7-coverage-gaps-<timestamp>.md
 Usage: python3 scripts/find-rule-coverage-gaps.py
 """
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
@@ -23,7 +24,8 @@ from datetime import datetime
 from pathlib import Path
 
 SCAN_ROOT = Path("/tmp")
-CORPUS_ROOT = Path("/Users/cheng/corpus-expansion")
+# v0.18.2 PR-1k: see src/corpus-paths.ts (TS sibling).
+CORPUS_ROOT = Path(os.environ.get("SLOPBRICK_CORPUS_DIR", "/Users/cheng/corpus-expansion"))
 REPO = Path(__file__).resolve().parent.parent
 DOCS_DIR = REPO / "docs/research"
 

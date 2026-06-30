@@ -442,7 +442,19 @@ function buildComponentFingerprints(
 export function buildHealthFromReport(
   report: MemoryReport,
   workspace: string,
-  options: { constitutionDrift?: number; scanDurationMs?: number } = {},
+  options: {
+    constitutionDrift?: number;
+    scanDurationMs?: number;
+    // v0.18.2: optional Bayesian composite aggregate from the scan
+    // pipeline. The deterministic 4-score model is unchanged; this
+    // is an informational addition. Optional for backward compat.
+    compositeScore?: {
+      mean: number;
+      max: number;
+      tier: 'LIKELY_HUMAN' | 'INCONCLUSIVE' | 'LIKELY_AI' | 'VERY_LIKELY_AI';
+      fileCount: number;
+    };
+  } = {},
 ): RepositoryStructureHealth {
   // Aggregate issue counts by severity. v0.14.5g: skip issues whose
   // severity has been set to 'off' by the defaultOff auto-disable
@@ -482,5 +494,6 @@ export function buildHealthFromReport(
     ...(options.scanDurationMs !== undefined && {
       scanDurationMs: options.scanDurationMs,
     }),
+    ...(options.compositeScore && { compositeScore: options.compositeScore }),
   };
 }
