@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.18.1] - unreleased — Two verified critical bugfixes (rev 3 G1-verified)
+## [0.18.1] - 2026-06-30 — Two verified critical bugfixes (rev 3 G1-verified)
 
 v0.18.1 closes two user-visible bugs in the shipped report. Both
 were verified against current code with G1 (reproduction) before
