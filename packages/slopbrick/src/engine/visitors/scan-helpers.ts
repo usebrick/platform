@@ -17,7 +17,7 @@ import type {
   DisabledLintRuleFact,
   OptimisticUpdateFact,
 } from '../../types';
-import type { JsxElementRecord } from '../types';
+import type { JsxElementRecord, UnreachableStatementRecord } from '../types';
 import { positionFromCharOffset } from './templates.js';
 
 /**
@@ -465,4 +465,112 @@ export function extractStateBinding(
     valueReferenced: false,
     setterReferenced: false,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Unreachable-statement detector (v0.18.5b)
+// ---------------------------------------------------------------------------
+
+/**
+ * Walk the source's AST once after the main visitor pass and
+ * collect statements that are unreachable because an earlier
+ * statement in the same function body unconditionally exited
+ * (`return`, `throw`, `break`, `continue`).
+ *
+ * Why a post-pass: the visitor's dispatch table runs handlers
+ * in pre-order. By the time we see a `return` statement, the
+ * siblings that come after it have not been visited yet, so
+ * we can't mark them in the same pass. Doing a second pass is
+ * simpler than threading a "we just saw a terminator" flag
+ * through the dispatch table.
+ *
+ * Scope: only walks top-level statements of each function body,
+ * not nested blocks. This catches the common case (`return;
+ * someUnreachableCall();` inside a function) and avoids the
+ * exponential complexity of tracking terminators across nested
+ * `if/try/while` blocks.
+ */
+export function findUnreachableStatements(
+  ast: unknown,
+  source: string,
+  lineOffsets: number[],
+): UnreachableStatementRecord[] {
+  const out: UnreachableStatementRecord[] = [];
+
+  function isTerminator(node: Record<string, unknown>): 'return' | 'throw' | 'break' | 'continue' | null {
+    if (node.type === 'ReturnStatement') return 'return';
+    if (node.type === 'ThrowStatement') return 'throw';
+    if (node.type === 'BreakStatement') return 'break';
+    if (node.type === 'ContinueStatement') return 'continue';
+    return null;
+  }
+
+  function snippetFor(node: Record<string, unknown>, src: string): string {
+    const span = node.span as { start?: number; end?: number } | undefined;
+    if (!span || typeof span.start !== 'number' || typeof span.end !== 'number') {
+      return '<unreachable>';
+    }
+    const text = src.slice(span.start, Math.min(span.end, span.start + 60));
+    return text.replace(/\s+/g, ' ').trim() || '<unreachable>';
+  }
+
+  function lineColumn(offset: number): { line: number; column: number } {
+    // Binary search for the line containing the offset.
+    let lo = 0;
+    let hi = lineOffsets.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >>> 1;
+      const midVal = lineOffsets[mid];
+      const loVal = lineOffsets[lo];
+      if (midVal === undefined) break;
+      if (midVal <= offset) lo = mid;
+      else hi = mid - 1;
+      void loVal;
+    }
+    const baseOffset = lineOffsets[lo] ?? 0;
+    return { line: lo + 1, column: offset - baseOffset };
+  }
+
+  function visitBody(body: unknown): void {
+    if (!Array.isArray(body)) return;
+    let lastTerminator: 'return' | 'throw' | 'break' | 'continue' | null = null;
+    for (const stmt of body) {
+      if (!isObject(stmt)) continue;
+      if (lastTerminator && stmt.type !== 'EmptyStatement') {
+        const span = stmt.span as { start?: number } | undefined;
+        const offset = typeof span?.start === 'number' ? span.start : 0;
+        const { line, column } = lineColumn(offset);
+        out.push({
+          terminator: lastTerminator,
+          line,
+          column,
+          snippet: snippetFor(stmt, source),
+        });
+      }
+      const t = isTerminator(stmt);
+      if (t) lastTerminator = t;
+    }
+  }
+
+  function walk(node: unknown): void {
+    if (!isObject(node)) return;
+    // BlockStatement uses `stmts`, not `body`. Module uses `body`.
+    if (node.type === 'BlockStatement') {
+      visitBody((node as Record<string, unknown>).stmts);
+    } else if (node.type === 'Module') {
+      visitBody((node as Record<string, unknown>).body);
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'parent' || key === 'span' || key === 'ctxt') continue;
+      const child = (node as Record<string, unknown>)[key];
+      if (Array.isArray(child)) {
+        for (const c of child) walk(c);
+      } else {
+        walk(child);
+      }
+    }
+  }
+
+  walk(ast);
+  return out;
 }

@@ -137,6 +137,14 @@ const RULE_HINTS: Record<string, string> = {
     'Remove unused useState or wire it into the component. Don\'t leave declared-but-never-read state bindings.',
   'dead/unused-import':
     'Remove the import or use the symbol somewhere. Unused imports are the most common AI-iteration signature — the model added it for a feature, then rewrote the function without cleaning up.',
+  'dead/unused-local':
+    'Remove the declaration or use the variable. AI-iteration signature: the model declared a binding for a feature, then rewrote the function without cleaning up.',
+  'dead/unused-parameter':
+    'Remove the parameter (and update every call site) or use it in the function body. AI-iteration signature: the model added a parameter for a feature, then rewrote the function without removing parameters the new code does not need.',
+  'dead/dead-branch':
+    'Replace the literal boolean with a real condition, or remove the dead branch. AI-iteration signature: a feature flag toggled to a constant, or a wrapper from a previous refactor that was never cleaned up.',
+  'dead/unreachable':
+    'Remove this statement — code after a return/throw/break/continue is unreachable. AI-iteration signature: the model added an early return for a new error path, then forgot the rest of the function body was still sitting below it.',
   'perf/cls-image':
     'Add width/height attributes or an aspect-ratio utility to prevent layout shift.',
   'perf/css-bloat':

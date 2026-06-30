@@ -825,6 +825,61 @@ export function handleVariableDeclarator(
  * own. All 9 per-node-type handler blocks from the original
  * processNode() are now in this table.
  */
+/**
+ *  dead-code detector. Detect `if (true)` / `if (false)` /
+ * `while (true)` / `while (false)` — the condition is a literal
+ * boolean so the branch is statically decidable and one side is
+ * dead code by construction. Records to `deadCode.constantConditions`
+ * for the `dead/dead-branch` rule to consume.
+ */
+export function handleIfStatement(
+  node: AnyNode,
+  _parent: AnyNode,
+  _path: AnyNode[],
+  vctx: VisitorCtx,
+): boolean {
+  if (!isObject(node)) return false;
+  const test = node.test as AnyNode;
+  if (!isObject(test)) return false;
+  if (test.type === 'BooleanLiteral' && typeof test.value === 'boolean') {
+    const { line, column } = positionFrom(test, vctx.lineOffsets);
+    vctx.facts.deadCode.constantConditions.push({
+      kind: test.value ? 'if-true' : 'if-false',
+      condition: String(test.value),
+      line,
+      column,
+    });
+  }
+  return false;
+}
+
+/**
+ *  dead-code detector. Same logic as `if` but for `while` /
+ * `do...while`. `while (true)` is sometimes legitimate (event
+ * loops), so the rule downgrades the severity in that case
+ * (handled in the rule itself, not here).
+ */
+export function handleWhileStatement(
+  node: AnyNode,
+  _parent: AnyNode,
+  _path: AnyNode[],
+  vctx: VisitorCtx,
+): boolean {
+  if (!isObject(node)) return false;
+  const test = node.test as AnyNode;
+  if (!isObject(test)) return false;
+  if (test.type === 'BooleanLiteral' && typeof test.value === 'boolean') {
+    const { line, column } = positionFrom(test, vctx.lineOffsets);
+    vctx.facts.deadCode.constantConditions.push({
+      kind: test.value ? 'while-true' : 'while-false',
+      condition: String(test.value),
+      line,
+      column,
+    });
+  }
+  return false;
+}
+
 export const HANDLERS: Record<string, DispatchHandler> = {
   ExpressionStatement: handleExpressionStatement,
   ImportDeclaration: handleImportDeclaration,
@@ -835,6 +890,8 @@ export const HANDLERS: Record<string, DispatchHandler> = {
   JSXAttribute: handleJSXAttribute,
   JSXOpeningElement: handleJSXOpeningElement,
   VariableDeclarator: handleVariableDeclarator,
+  IfStatement: handleIfStatement,
+  WhileStatement: handleWhileStatement,
 };
 
 /** Top-level dispatch helper. Returns true if a handler ran and

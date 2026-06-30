@@ -64,17 +64,19 @@ function vctx(source = '// hi'): VisitorCtx {
 }
 
 describe('dispatch table (v2.0.1)', () => {
-  it('HANDLERS table covers the 9 dispatched types (v0.5.0: +JSXAttribute, +JSXOpeningElement, +VariableDeclarator)', () => {
+  it('HANDLERS table covers the 11 dispatched types (v0.18.5b: +IfStatement, +WhileStatement for dead-code detector)', () => {
     expect(Object.keys(HANDLERS).sort()).toEqual([
       'BinaryExpression',
       'CallExpression',
       'ExpressionStatement',
       'Identifier',
+      'IfStatement',
       'ImportDeclaration',
       'JSXAttribute',
       'JSXOpeningElement',
       'MemberExpression',
       'VariableDeclarator',
+      'WhileStatement',
     ]);
   });
 

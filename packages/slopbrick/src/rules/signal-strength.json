@@ -895,6 +895,50 @@
     "_calibrationNote": "v0.18.5 ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The first of 5 planned `dead/*` rules (this one + dead/unused-local + dead/unused-parameter + dead/dead-branch + dead/unreachable). The pattern is the canonical AI-iteration rot: the model adds an import when introducing a feature, then rewrites the function later without cleaning up. Most real-world tsconfig.json files have `noUnusedLocals: false`, so tsc never fires.",
     "aiSpecific": true
   },
+  "dead/unused-local": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.5b ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The second of 5 planned `dead/*` rules. Muchnick 1997 Ch. 13 'liveness analysis' (textbook compiler optimization).",
+    "aiSpecific": true
+  },
+  "dead/unused-parameter": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.5b ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The third of 5 planned `dead/*` rules. AI agents add parameters when introducing features, then rewrite the function without removing parameters the new code does not need.",
+    "aiSpecific": true
+  },
+  "dead/dead-branch": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.5b ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The fourth of 5 planned `dead/*` rules. AI-iteration signature: feature flag toggled to a constant, or wrapper from a previous refactor.",
+    "aiSpecific": true
+  },
+  "dead/unreachable": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.5b ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The fifth of 5 planned `dead/*` rules. AI-iteration signature: model added an early return for a new error path, then forgot the rest of the function body was still sitting below it.",
+    "aiSpecific": true
+  },
   "docs/stale-package-reference": {
     "recall": 0,
     "fpRate": 0,

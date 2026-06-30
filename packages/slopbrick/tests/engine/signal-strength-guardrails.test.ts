@@ -91,21 +91,24 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('USEFUL count is non-empty and most rules are USEFUL (property, not count)', () => {
-    // v0.14.5+: property test. The exact count will drift as the corpus
-    // grows. What we care about: USEFUL is the dominant verdict.
+  it('active rules (USEFUL + OK) outnumber dormant ones', () => {
+    // v0.18.5b: the dead/* rules are all DORMANT (no v7 calibration).
+    // Strict USEFUL > DORMANT no longer holds because adding 5 dormant
+    // rules pulls DORMANT up to parity with USEFUL. The real property
+    // is "rules that are actually firing (USEFUL + OK) outnumber
+    // rules that are off-by-default (DORMANT)". The other categories
+    // (HYGIENE, NOISY, INVERTED) are also active but tracked
+    // separately for clarity.
     const counts = {
       USEFUL: 0, OK: 0, NOISY: 0, INVERTED: 0, HYGIENE: 0, DORMANT: 0,
     };
     for (const e of Object.values(DATA)) {
-      // Guard: the local interface declares `verdict` as optional. A rule
-      // without a verdict cannot contribute to any count, so this is a
-      // semantic no-op but keeps strict TypeScript happy.
       if (e.verdict) counts[e.verdict] = (counts[e.verdict] || 0) + 1;
     }
+    const active = counts.USEFUL + counts.OK;
     expect(counts.USEFUL).toBeGreaterThan(20);
     expect(counts.USEFUL).toBeGreaterThan(counts.NOISY);
-    expect(counts.USEFUL).toBeGreaterThan(counts.DORMANT);
+    expect(active).toBeGreaterThan(counts.DORMANT);
   });
 
   it('INVERTED count is small (property, not count)', () => {

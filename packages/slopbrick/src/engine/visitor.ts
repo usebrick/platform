@@ -98,6 +98,7 @@ import {
   maxJsxNestingDepth,
   extractDepNames,
   deriveFramework,
+  findUnreachableStatements,
 } from './visitors/scan-helpers.js';
 // v0.6.0: ScanFactsV2 assembler (was inline in extractFacts()).
 // Pure function of InternalFacts + source + ext + framework + config.
@@ -380,6 +381,23 @@ export function extractFacts(
             propBindingSet.add(bindingName);
           }
         }
+        //  dead-code detector. Push each parameter name
+        //  to the deadCode.bindings list with kind: 'parameter' so
+        //  the `dead/unused-parameter` rule can flag it if no
+        //  identifier reference appears in the function body. We
+        //  use the parameter node's own position (not the
+        //  function's) so the issue points at the parameter, not
+        //  the `function` keyword.
+        const { line: pLine, column: pCol } = positionFrom(param, lineOffsets);
+        for (const bindingName of collectBindingNames(param)) {
+          facts.deadCode.bindings.push({
+            name: bindingName,
+            kind: 'parameter',
+            line: pLine,
+            column: pCol,
+            isReferenced: false,
+          });
+        }
         // Round 23: dropped the missing-annotation branch. Real human code
         // has tons of untyped lambda params; the rule should fire only on
         // the explicit `: any` keyword.
@@ -548,6 +566,17 @@ export function extractFacts(
   const { ext } = splitFilePath(filePath);
 
   facts._source = source;
+
+  //  dead-code detector (v0.18.5b). Post-pass to find
+  //  statements after a `return` / `throw` / `break` / `continue`
+  //  in function bodies. The visitor's pre-order walk can't see
+  //  this in a single pass (the terminator's siblings haven't
+  //  been visited yet), so we do a second walk over the AST.
+  facts.deadCode.unreachableStatements = findUnreachableStatements(
+    ast as unknown,
+    source,
+    lineOffsets,
+  );
 
   // v0.6.0: v2 build is now a single pure call into
   // ./visitors/v2-build.ts. The walker no longer needs to know about
