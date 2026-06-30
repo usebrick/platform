@@ -10,7 +10,7 @@
 // This file is intentionally tiny — it just composes the section
 // renderers inside a single self-contained HTML document.
 
-import type { ProjectReport } from '../types.js';
+import type { ProjectReport } from '../types';
 import {
   renderHeader,
   renderThresholds,

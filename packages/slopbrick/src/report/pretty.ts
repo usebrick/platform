@@ -5,7 +5,7 @@ import type {
   ProjectReport,
   Severity,
   TopOffender,
-} from '../types.js';
+} from '../types';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.

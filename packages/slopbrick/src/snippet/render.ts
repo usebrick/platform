@@ -9,7 +9,7 @@
 // The 9 per-target generators in ./generators.ts wrap baseContent with
 // tool-specific titles, intros, and footers.
 
-import type { Rule } from '../types.js';
+import type { Rule } from '../types';
 import { CATEGORY_DIRECTIVES, RULE_HINTS } from './data.js';
 
 function aiSpecificRules(rules: Rule[]): Rule[] {

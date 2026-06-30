@@ -17,7 +17,7 @@ import type {
   DisabledLintRuleFact,
   OptimisticUpdateFact,
 } from '../../types';
-import type { JsxElementRecord } from '../types.js';
+import type { JsxElementRecord } from '../types';
 import { positionFromCharOffset } from './templates.js';
 
 /**

@@ -40,7 +40,7 @@ import { basename, relative } from 'node:path';
 import { buildPatternInventory, extractImports, categorizeImport } from '../mcp/patterns.js';
 import type { PatternMatch } from '../mcp/patterns.js';
 import { discoverFiles } from './discover.js';
-import type { ResolvedConfig } from '../types.js';
+import type { ResolvedConfig } from '../types';
 
 // -----------------------------------------------------------------------------
 // Public types

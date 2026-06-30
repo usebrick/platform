@@ -20,7 +20,7 @@
 // takes the issue list (already filtered to security-category)
 // and computes the categorical label.
 
-import type { Issue } from '../types.js';
+import type { Issue } from '../types';
 
 export type AiSecurityRisk = 'low' | 'medium' | 'high' | 'critical';
 

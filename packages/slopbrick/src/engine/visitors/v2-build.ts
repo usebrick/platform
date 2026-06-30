@@ -42,7 +42,7 @@ import type {
   ScanFactsV2,
   FileMeta,
   JsxElementRecord,
-} from '../types.js';
+} from '../types';
 import {
   extractDisabledRules,
   extractDepNames,

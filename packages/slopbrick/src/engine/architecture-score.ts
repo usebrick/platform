@@ -48,7 +48,7 @@ import { extractFacts } from './visitor.js';
 import { spacingScaleViolationRule } from '../rules/visual/spacing-scale-violation.js';
 import { radiusScaleViolationRule } from '../rules/visual/radius-scale-violation.js';
 import { discoverFiles } from './discover.js';
-import type { ResolvedConfig, RuleContext, FileScanResult } from '../types.js';
+import type { ResolvedConfig, RuleContext, FileScanResult } from '../types';
 
 export interface CategoryDeduction {
   category: string;

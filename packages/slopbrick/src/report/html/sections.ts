@@ -10,7 +10,7 @@
 // Static assets (CSS, JS) live in ./static.ts.
 
 import type { Verdict } from '@usebrick/core';
-import type { Category, ComponentScore, Issue, ProjectReport, Severity } from '../../types.js';
+import type { Category, ComponentScore, Issue, ProjectReport, Severity } from '../../types';
 import {
   categoryLabels,
   severityOrder,

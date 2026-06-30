@@ -7,7 +7,7 @@ import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore, formatArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
 import { runSuggestWithStructure } from './slop-suggest-structure.js';
-import type { Rule, ResolvedConfig } from '../types.js';
+import type { Rule, ResolvedConfig } from '../types';
 
 export interface ToolContext {
   cwd: string;

@@ -30,7 +30,7 @@ import {
   type BusinessLogicIssue,
   type BusinessLogicReport,
 } from '../engine/business-logic.js';
-import type { ResolvedConfig } from '../types.js';
+import type { ResolvedConfig } from '../types';
 
 export interface BusinessLogicScanOptions {
   /** Cap on files scanned. Defaults to 500 — matches `architecture`. */

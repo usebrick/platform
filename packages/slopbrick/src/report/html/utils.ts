@@ -2,7 +2,7 @@
 // Kept separate from ./sections so section renderers can import them
 // without dragging the section list with them.
 
-import type { Category, Issue, Severity } from '../../types.js';
+import type { Category, Issue, Severity } from '../../types';
 
 const categoryLabels: Record<Category, string> = {
   visual: 'Visual',

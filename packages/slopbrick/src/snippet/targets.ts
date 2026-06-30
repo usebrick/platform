@@ -11,7 +11,7 @@
 // calls resolveTargetPath(target) + target.generator(rules).
 
 import { join } from 'node:path';
-import type { Rule } from '../types.js';
+import type { Rule } from '../types';
 import {
   generateAgentsMdSnippet,
   generateAiderSnippet,

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
-import type { Category, Issue, ProjectReport, Severity } from '../types.js';
+import type { Category, Issue, ProjectReport, Severity } from '../types';
 
 interface SarifArtifactLocation {
   uri: string;

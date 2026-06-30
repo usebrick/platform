@@ -5,7 +5,7 @@
 // configure it. Pulled live from the rule registry + the shared
 // RULE_HINTS map (also used by snippets).
 
-import type { Rule, RuleSeverity } from '../types.js';
+import type { Rule, RuleSeverity } from '../types';
 
 export interface ExplainResult {
   ruleId: string;

@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { basename, extname } from 'node:path';
 import { discoverFiles } from '../engine/discover.js';
 import { CONSTITUTION_SIGNALS, matchForbidden } from '../config/conventions.js';
-import type { Constitution, ResolvedConfig } from '../types.js';
+import type { Constitution, ResolvedConfig } from '../types';
 
 // ---- Types ----------------------------------------------------------------
 

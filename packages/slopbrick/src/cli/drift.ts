@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { basename, relative } from 'node:path';
 import { discoverFiles } from '../engine/discover.js';
 import { checkFileConstitution } from '../mcp/patterns.js';
-import type { Constitution, ResolvedConfig } from '../types.js';
+import type { Constitution, ResolvedConfig } from '../types';
 
 export interface DriftOptions {
   /** Cap on files scanned. Defaults to 1000 — drift is cheap. */

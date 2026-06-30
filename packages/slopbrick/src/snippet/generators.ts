@@ -19,7 +19,7 @@
 // The target registry that maps each function to a CLI flag, file
 // path, and human-readable agent name lives in ./targets.ts.
 
-import type { Rule } from '../types.js';
+import type { Rule } from '../types';
 import { CATEGORY_DIRECTIVES, RULE_HINTS } from './data.js';
 import { aiSpecificRules, categorizeRules, baseContent } from './render.js';
 

@@ -13,7 +13,7 @@
 import { builtinRules } from '../rules/builtins.js';
 import { scanFile } from '../engine/worker.js';
 import { DEFAULT_CONFIG } from '../config';
-import type { Rule, ResolvedConfig } from '../types.js';
+import type { Rule, ResolvedConfig } from '../types';
 import { handleToolCall, TOOL_DEFINITIONS, getDeprecation } from './tools.js';
 
 interface JsonRpcRequest {

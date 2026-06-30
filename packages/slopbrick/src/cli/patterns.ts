@@ -22,7 +22,7 @@ import type {
   PatternCategoryStats,
   PatternFragmentationReport,
 } from '../engine/patterns.js';
-import type { ResolvedConfig } from '../types.js';
+import type { ResolvedConfig } from '../types';
 
 export type PatternsFormat = 'text' | 'json' | 'markdown';
 

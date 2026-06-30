@@ -1,4 +1,4 @@
-import type { Category, Issue, ProjectReport } from '../types.js';
+import type { Category, Issue, ProjectReport } from '../types';
 
 const fixHints: Record<string, string> = {
   'logic/key-prop-missing': 'Move the hook call outside the conditional block.',
