@@ -110,6 +110,7 @@ import { registerPatterns } from './commands/patterns.js';
 import { registerResearch } from './commands/research.js';
 import { registerInit } from './commands/init.js';
 import { registerFlywheel } from './commands/flywheel.js';
+import { registerScan } from './commands/scan.js';
 
 import {
   loadConfig,
@@ -522,15 +523,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // v0.18.x (R-H1): report action moved to ./commands/report.ts
     registerReport(program);
 
-    program
-      .command('scan [paths...]', { isDefault: true })
-      .description('scan files for slop')
-      .option('--no-telemetry', 'disable telemetry collection for this run')
-      .option(
-        '--rule <ruleId>',
-        'run only a single rule by id (e.g. visual/math-default-font). All others are skipped.',
-      )
-      .action(scanAction);
+    // v0.18.x (R-H1): scan (default) action moved to ./commands/scan.ts
+    // scanAction is the closure defined above; passed in to keep
+    // the ~160-line scan body inline (shared with watch and ci).
+    registerScan(program, scanAction);
 
     await program.parseAsync(process.argv);
   } catch (err) {
