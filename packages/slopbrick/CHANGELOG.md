@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.17.2] - 2026-06-30 — UX fixes (brief labels + website scroll-jump)
+
+v0.17.2 is a small UX patch on top of v0.17.1. No breaking changes. No new rules. No schema bumps. The on-disk artifacts are unchanged. The display format is unchanged from v0.17.1.
+
+### CLI brief output — human labels
+
+- `--brief` (and `formatBriefReport`) used the raw camelCase JSON field names as the row label: `aiQuality 75`, `engineeringHygiene 93`, `security 0`, `repositoryHealth 81`. The labels are internal field names; users copy-paste the brief into PR comments, so the readable name should lead.
+- Now shows: `AI Quality 75`, `Engineering Hygiene 93`, `Security 0`, `Repository Health 81` with the field name in dim italic as a secondary annotation (`(aiQuality)`). The `CI gate: AI Quality >= 70 -> pass/fail` line is also relabeled.
+- The JSON `--json` output is unchanged — consumers parsing `health.json` see the same field names as before.
+
+### Website — stop scroll-jump to mock terminal on load
+
+- `usebrick.dev` auto-scrolled to the mock terminal on first load and again on any click outside it (e.g. clicking the install button in the hero would scroll the page down past the hero).
+- Two causes in `packages/website/src/scripts/live-terminal.ts`:
+  - **Init auto-focus.** The terminal called `body.focus()` on the terminal element when no button/link was focused — the browser scrolled to the focused element, pulling the page past the hero.
+  - **Bubbling click listener.** A `body.addEventListener('click', () => body.focus())` on the terminal body would focus (and scroll to) the terminal on any bubbled click anywhere on the page, including clicks that originated on the hero.
+- Fix: (a) removed the init auto-focus entirely (the user opts in to typing by clicking inside the terminal); (b) replaced the bubbling listener with a guarded handler that only focuses when the click *originated* inside the terminal root (`if (!root.contains(e.target)) return;`).
+
+### Verified
+
+- `pnpm tsc --noEmit` clean
+- `vitest run tests/cli.test.ts tests/report/` — 164/164 pass (9 test files, ~4.5s)
+- Built and deployed the website to Cloudflare Pages (preview: `4d530b05.platform-ay9.pages.dev`)
+
 ## Unreleased
 
 ### Corpus hygiene (post-v0.17.1)
