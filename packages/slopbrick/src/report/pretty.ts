@@ -727,20 +727,24 @@ export function formatBriefReport(report: ProjectReport): string {
   // 4 named scores, each on its own line with band label.
   // The aiQuality line also gets the trajectory delta (↑N cleaner /
   // ↓N worse) since aiQuality is the CI gate.
-  const scoreLines: Array<{ name: string; value: number }> = [
-    { name: 'aiQuality',           value: report.aiQuality },
-    { name: 'engineeringHygiene',  value: report.engineeringHygiene },
-    { name: 'security',            value: report.security },
-    { name: 'repositoryHealth',    value: report.repositoryHealth },
+  // v0.17.1: human label first, raw field name in dim — the brief is
+  // what users copy-paste into PR comments, so the readable label
+  // leads. JSON consumers reading --json get the raw field name
+  // unchanged.
+  const scoreLines: Array<{ label: string; field: string; value: number }> = [
+    { label: 'AI Quality',          field: 'aiQuality',          value: report.aiQuality },
+    { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene },
+    { label: 'Security',            field: 'security',           value: report.security },
+    { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth },
   ];
   const deltaSuffix = formatDeltaSuffix(report);
-  scoreLines.forEach(({ name, value }, idx) => {
+  scoreLines.forEach(({ label, field, value }, idx) => {
     const band = scoreBand(value);
-    const paddedName = name.padEnd(20, ' ');
+    const paddedLabel = label.padEnd(20, ' ');
     const valueStr = value.toFixed(0).padStart(3, ' ');
     const delta = idx === 0 ? deltaSuffix : '';
     lines.push(
-      `  ${paddedName} ${band.color(valueStr)}   ${chalk.dim(band.label)}${delta}`,
+      `  ${paddedLabel} ${band.color(valueStr)}   ${chalk.dim(band.label)}  ${chalk.dim.italic(`(${field})`)}${delta}`,
     );
   });
 
@@ -749,7 +753,7 @@ export function formatBriefReport(report: ProjectReport): string {
   lines.push('');
   lines.push(
     chalk.dim(
-      `  CI gate: aiQuality >= 70 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
+      `  CI gate: AI Quality >= 70 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
     ),
   );
 

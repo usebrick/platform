@@ -114,6 +114,15 @@ export function initLiveTerminal(): () => void {
   const body = root.querySelector<HTMLElement>('[data-live-terminal-body]');
   if (!body) return () => {};
 
+  // Only focus on clicks that *originated* on the terminal — `event.target`
+  // is set on the bubble path too, so we also check the click was directly
+  // on `body` (or a descendant of the terminal root). This prevents a click
+  // on the hero install button from scrolling the page down to the terminal.
+  const onTerminalClick = (e: MouseEvent): void => {
+    if (!root.contains(e.target as Node)) return;
+    body.focus();
+  };
+
   const reduced =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -325,18 +334,22 @@ export function initLiveTerminal(): () => void {
   };
 
   body.addEventListener('keydown', onKeyDown);
-  body.addEventListener('click', () => body.focus());
+  // Click-to-focus, but only for clicks that *originated* on the terminal
+  // — not bubbled clicks from the hero / nav above. A bubbling click
+  // listener on `body` would steal focus + auto-scroll the page to the
+  // terminal on every click anywhere on the page, including the first
+  // click on the install button in the hero.
+  body.addEventListener('click', onTerminalClick);
 
   seedBanner();
 
-  // Don't steal focus from a real button/link the user clicked first.
-  const active = document.activeElement;
-  const tag = active?.tagName ?? '';
-  if (tag === 'BODY' || tag === 'HTML' || !active) {
-    body.focus();
-  }
+  // Intentionally do NOT auto-focus on init. The terminal is in the
+  // middle of the page; focusing it on load would scroll the page down
+  // past the hero. The user opts in to focus by clicking inside the
+  // terminal (handled by onTerminalClick above).
 
   return () => {
     body.removeEventListener('keydown', onKeyDown);
+    body.removeEventListener('click', onTerminalClick);
   };
 }
