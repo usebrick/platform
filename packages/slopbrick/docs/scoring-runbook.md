@@ -453,7 +453,8 @@ The clean projects hit 100 across the board. The sloppy projects drag on every a
 
 ## See also
 
-- [ai-slop-rule-catalog.md](./ai-slop-rule-catalog.md) — design philosophy + what slopbrick is / isn't
+<!-- v0.18.6: ai-slop-rule-catalog.md renamed to docs/rule-catalog.md -->
+- [rule-catalog.md](./rule-catalog.md) — design philosophy + what slopbrick is / isn't
 - [rule-catalog.md](./rule-catalog.md) — every rule with severity + AI-specific flag
 - [framework-parity-matrix.md](./framework-parity-matrix.md) — per-rule framework coverage
 - [ROADMAP.md](../ROADMAP.md) — strategic positioning + 12-phase plan

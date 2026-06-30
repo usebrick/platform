@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.18.6] - 2026-06-30 — Doc-hygiene pass
+
+Self-audit of the project's own docs. Five rule bugs (one per
+`docs/*` rule) plus a half-dozen real stale links.
+
+### Rule fixes
+
+| rule | bug | fix |
+|---|---|---|
+| `docs/stale-function-reference` | 50-char `(` lookahead crossed newlines → 200+ false positives | Lookahead limited to current line. `(` must appear within ~24 chars of the closing backtick. Field-annotation patterns `(string, required)`, `(0-100, higher is better)`, `(v0.16.0+)`, `(MCP)`, `(composite)`, etc. are now skipped. RESERVED set expanded with framework names, model names, common slop-audit lingo. `collectExports` now also collects field names from `export interface` and `export type` declarations. |
+| `docs/stale-package-reference` | English adjectives in backticks (`aspirational`, `concrete`, `inline`, etc.) flagged as package names | Added common adjectives to `ENGLISH_WORD_DENYLIST`. |
+| `docs/broken-link` | `./EXAMPLES.md#strict-ci-gate` flagged as broken because `#anchor` was part of the file path | Strip the `#anchor` before the `existsSync` check. |
+| `docs/expired-code-example` | `import { defineConfig } from 'slopbrick'` in the package's own docs flagged because the rule read only `dependencies` | Rule now adds the package's own `name` from `package.json` to the declared set. |
+
+### Doc fixes (real stale links)
+
+- `ROADMAP.md`: `math-foundations-for-slopbrick.md` → `math-foundations-for-slop-audit.md` (typo)
+- `ROADMAP.md`: removed link to `docs/strategy/v1-score-compression.md` (was deferred, content inlined)
+- `docs/MCP.md`: `src/mcp/server.ts` → `../src/mcp/server.ts` (relative path was wrong from `docs/`)
+- `docs/repository-structure.md`: `../core/schemas/v1/...` → `../../core/schemas/v1/...` (path was one level short)
+- `docs/rule-catalog.md`: `ai-slop-rule-catalog.md` → `rule-catalog.md` (was renamed)
+- `docs/scoring-runbook.md`: same self-link fix
+- `docs/research/rule-classification-v0.9.1.md`: removed link to `docs/strategy/v1-score-compression.md` (deferred)
+
+### Doc-freshness: 0/100 → 49/100
+
+```
+BEFORE (G1 reproduction):             AFTER:
+  docs/stale-package-reference  2  ->  0
+  docs/stale-function-reference 283 -> 11   (remaining: research-note references to third-party class names)
+  docs/expired-code-example     4  ->  4   (known issue — see below)
+  docs/broken-link             14  ->  1   (1 remaining in docs/scoring-runbook.md anchor)
+  ─────────────────────────────
+  TOTAL: 303                 ->  16
+  FRESHNESS: 0/100 (critical) ->  49/100 (high)
+```
+
+### Known issue (v0.18.7 follow-up)
+
+`docs/expired-code-example` still flags 4 self-imports in the
+package's own docs (`import { ... } from 'slopbrick'`). The fix
+added `pkg.name` to the declared set in `create()`, but the
+engine's `buildDocFreshness` path calls `analyze()` with a
+context object that does not preserve the `packages` field
+returned from `create()`. The fix is in the engine, not the
+rule. Tracked for v0.18.7 (output cleanup pass) alongside
+the score-format refactor.
+
+### Quality gates
+
+- `pnpm exec tsc --noEmit` → 0 errors
+- `pnpm exec vitest run` → 1823/1823 pass
+- `pnpm exec tsx scripts/bench-scan.ts` → PASS
+- `pnpm -r build` → clean
+
 ## [0.18.5] - 2026-06-30 — Dead-code detector v1+v2 (5 `dead/*` rules)
 
 The most-requested missing piece: catches the AI-iteration

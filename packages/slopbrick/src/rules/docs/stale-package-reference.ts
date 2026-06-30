@@ -31,6 +31,12 @@ const ENGLISH_WORD_DENYLIST = new Set([
   'feat', 'refactor', 'chore', 'http', 'https', 'url', 'json', 'xml',
   'yaml', 'sql', 'orm', 'css', 'html', 'svg', 'png', 'jpg', 'pdf',
   'csv', 'md', 'mdx', 'ts', 'tsx', 'js', 'jsx', 'ok', 'no', 'yes',
+  // v0.18.6: common English adjectives / adverbs that frequently
+  // appear in backticked prose but are not package names.
+  'aspirational', 'concrete', 'abstract', 'inline', 'exposed',
+  'deprecated', 'experimental', 'stable', 'beta', 'alpha', 'wip',
+  'draft', 'final', 'shim', 'polyfill', 'stub', 'mock', 'fake',
+  'real', 'false', 'true', 'optional', 'required', 'default',
 ]);
 
 interface StalePackageContext extends RuleContext {

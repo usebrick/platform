@@ -427,7 +427,7 @@ A rule with high precision but 100% FPR is useless. A rule with high recall but 
 
 **Ships:**
 - **Per-rule P/R/FPR table** as the public calibration artifact (already drafted in `docs/research/v4-per-rule-pr-fpr.md`; v0.10 freezes it as the canonical reference).
-- **Peer-reviewed thresholds**: Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951 — see [`docs/research/math-foundations-for-slopbrick.md`](./docs/research/math-foundations-for-slopbrick.md).
+- **Peer-reviewed thresholds**: Halstead 1977, McCabe 1976, Hindle 2012, Rissanen 1978, Kullback-Leibler 1951 — see [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md).
 - **MDL composite score** — principled replacement for the heuristic weighted-average `Repository Coherence Score`. The score becomes the log-likelihood ratio of "all this evidence under M_ai" vs "under M_human"; engineers argue the model, not the weights.
 - **Expanded USEFUL-rule test coverage** — every USEFUL rule in the v4 table has a test file (9 done, ~9 to go: math-gini-class-usage, math-rounded-entropy, reactive-hook-soup, sql-construction, focus-appearance, weak-assertion, etc.).
 - **No new scores** — v0.10 deepens what 0.9.x proved, doesn't widen the surface.
@@ -451,7 +451,7 @@ A rule with high precision but 100% FPR is useless. A rule with high recall but 
 
 **The three numbers that tell you whether a detection rule actually works** are **Precision, Recall, False Positive Rate** — and v0.10 ships every rule with all three documented. The earlier ratio metric was misleading: you can have a 322× ratio on a tiny corpus and still have terrible precision on a real codebase. P/R/FPR on the balanced 172k-file corpus is what you actually need to know whether a rule is deployable in production. That's the credibility differentiator and it's why it took months of calibration work to get here.
 
-See [`docs/research/calibration-report-2026.md`](./docs/research/calibration-report-2026.md) for the full trajectory and [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md) for the per-rule P/R/FPR table. See [`docs/research/math-foundations-for-slopbrick.md`](./docs/research/math-foundations-for-slopbrick.md) for the roadmap that gets every threshold from "we measured it" to "see [McCabe 1976] / [Halstead 1977] / [Hindle 2012] / [Rissanen 1978]."
+See [`docs/research/calibration-report-2026.md`](./docs/research/calibration-report-2026.md) for the full trajectory and [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md) for the per-rule P/R/FPR table. See [`docs/research/math-foundations-for-slop-audit.md`](./docs/research/math-foundations-for-slop-audit.md) for the roadmap that gets every threshold from "we measured it" to "see [McCabe 1976] / [Halstead 1977] / [Hindle 2012] / [Rissanen 1978]."
 
 ---
 
@@ -473,7 +473,8 @@ External product review identified 13 subscores as too many for the user-facing 
 
 The 13-subscore diagnostic surface remains in `--format json` and `--format detailed` for the calibration / power-user audience regardless.
 
-See [`docs/strategy/v1-score-compression.md`](./docs/strategy/v1-score-compression.md) for the full proposal, including:
+<!-- v0.18.6: docs/strategy/v1-score-compression.md was never written; this content is described below inline. -->
+The full proposal:
 - Why 5 buckets, not 13, for the product surface
 - Why Pattern Fragmentation should be a top-level signal
 - Why `slop_suggest` (MCP) is the lead, not the score

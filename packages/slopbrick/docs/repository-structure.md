@@ -34,7 +34,7 @@ delete without losing project structure. The other four files are the
 
 ## `inventory.json`
 
-**Schema:** [`inventory.schema.json`](../core/schemas/v1/inventory.schema.json) (v0.15.0)
+**Schema:** [`inventory.schema.json`](../../core/schemas/v1/inventory.schema.json) (v0.15.0)
 
 ```ts
 interface InventoryFile {
@@ -60,7 +60,7 @@ files listed.
 
 ## `constitution.json`
 
-**Schema:** [`constitution.schema.json`](../core/schemas/v1/constitution.schema.json)
+**Schema:** [`constitution.schema.json`](../../core/schemas/v1/constitution.schema.json)
 
 ```ts
 interface ConstitutionFile {
@@ -79,7 +79,7 @@ tools can read it without parsing TS/JS.
 
 ## `health.json`
 
-**Schema:** [`health.schema.json`](../core/schemas/v1/health.schema.json) (new in v0.14.5d)
+**Schema:** [`health.schema.json`](../../core/schemas/v1/health.schema.json) (new in v0.14.5d)
 
 ```ts
 // v0.15.0+ (schema version '3')

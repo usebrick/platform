@@ -381,4 +381,4 @@ the default. Look at `rules: { ... }` in the config.
 
 - [MCP specification](https://modelcontextprotocol.io/specification/2024-11-05)
 - [Anthropic's MCP guide for Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/mcp)
-- [slopbrick source](src/mcp/server.ts)
+- [slopbrick source](../src/mcp/server.ts)

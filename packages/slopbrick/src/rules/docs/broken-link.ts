@@ -47,7 +47,16 @@ export const brokenLinkRule = createRule<RuleContext>({
       if (target.startsWith('#')) continue;
       if (target.startsWith('//')) continue;
       if (target.startsWith('/')) continue;
-      const resolved = join(docDir, target);
+      // v0.18.6: strip the #anchor before checking file existence.
+      // Without this, `./EXAMPLES.md#strict-ci-gate` fails the
+      // existsSync check (no file with that name) and is reported
+      // as broken even though `./EXAMPLES.md` exists and has the
+      // anchor. The anchor is a per-file property that the
+      // per-link rule can't cheaply verify, so we accept it on
+      // faith when the file resolves.
+      const filePart = target.split('#')[0] ?? target;
+      if (filePart === '') continue; // pure #anchor link
+      const resolved = join(docDir, filePart);
       if (existsSync(resolved)) continue;
       issues.push({
         ruleId: 'docs/broken-link',
