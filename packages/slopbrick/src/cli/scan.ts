@@ -65,6 +65,7 @@ import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
 import {
+  VERSION,
   type FileScanResult,
   type Issue,
   type ProjectReport,
@@ -404,7 +405,7 @@ export async function runScan(
   }
   if (defaultOffApplied > 0 && !options.quiet && !machineReadableStdout) {
     console.error(
-      `[v0.14.5i] auto-suppressed ${defaultOffApplied} INVERTED/NOISY issue(s) ` +
+      `[v${VERSION}] auto-suppressed ${defaultOffApplied} INVERTED/NOISY issue(s) ` +
         `from ${defaultOff.size} default-off rule(s). ` +
         `See the main output for the trust-signal summary. ` +
         `Re-enable per-rule via \`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,

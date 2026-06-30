@@ -676,19 +676,24 @@ export function formatPretty(report: ProjectReport): string {
 }
 
 /**
- * v0.14.5j — Plain-English explanation of the two scores, as a
+ * v0.17.1 — Plain-English explanation of the 4-score model, as a
  * footnote at the bottom of the report. The user asked
  * "what actually is repository coherence?" so the answer is
- * in the output itself.
+ * in the output itself. (Was v0.14.5j with the legacy 2-score
+ * Slop Index model; v0.15+ introduced the 4-score model in
+ * `engine/repository-health.ts` and v0.17.1 updated this
+ * explainer to match.)
  */
 function formatScoringExplainer(_report: ProjectReport): string {
   return chalk.dim(
-    'Why two scores? The Slop Index measures AI-slop signatures ' +
-    '(lower = better, this is the CI gate). The Repository Coherence ' +
-    'measures internal consistency (higher = better, informational). ' +
-    'A codebase can be hand-written AND inconsistent (low Slop, low Coherence) ' +
-    'or AI-generated AND consistent (high Slop, high Coherence). ' +
-    'See docs/scoring-explained.md for the full math.',
+    'Why 4 scores? aiQuality measures AI-slop signatures from 16 ai/* rules ' +
+    '(higher = better, this is the CI gate \u2014 \u2265 70 passes). ' +
+    'engineeringHygiene averages 6 category scores: arch, logic, layout, ' +
+    'visual, component, test. security is the AI Security Risk band ' +
+    '(low=100, medium=67, high=33, critical=0). ' +
+    'repositoryHealth is the composite: 0.4\u00d7aiQ + 0.3\u00d7eng + ' +
+    '0.2\u00d7sec + 0.1\u00d7test. ' +
+    'See packages/slopbrick/docs/scoring-explained.md for the full math.',
   );
 }
 
