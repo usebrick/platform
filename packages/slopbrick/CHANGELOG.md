@@ -5,6 +5,7 @@
 ### Corpus hygiene (post-v0.17.1)
 
 - Moved the remaining 5 corpus dirs from `/Users/cheng/platform/{comfyui, fastchat, elevenlabs-js, elevenlabs-python, chatglm}` (137M of third-party code, gitignored) to `/Users/cheng/corpus-expansion/`. The v0.17.1 follow-up is now complete. Verified: a local `slopbrick scan` went from **5511 issues / 8145 files / repositoryHealth 51** to **3118 issues / 5183 files / repositoryHealth 71** — the 5 dirs were responsible for ~2400 false findings (43% of all reported issues) and dragged repositoryHealth down 20 points.
+- **Second pass** — moved the remaining 10 gitignored-but-on-disk corpus dirs (`fooocus`, `gpt-academic`, `gradio`, `helix`, `llama-index2`, `lmnr`, `mastra`, `oobabooga`, `supabase`, `vercel-ai` — 3.1GB of third-party code) to `/Users/cheng/corpus-expansion/`. After this, `slopbrick scan` against the platform root (with no source files at the root) sees **8 issues / 8 files** — almost all noise. With `--include 'packages/*/src/**/*.{ts,tsx,vue,svelte}'`, the real platform source code scans as **1226 issues / 269 files / aiQuality 40 / repositoryHealth 33** — the previous 75/51 numbers were measuring the corpus, not the code.
 
 ## [0.17.1] - 2026-06-30 — UX pass + coherence sweep
 
