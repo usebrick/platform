@@ -8,6 +8,7 @@ import {
   cleanupTempDir,
   createTmpDir,
   execFileAsync,
+  repoRoot,
   run,
   workerScript,
 } from './helpers/cli';
@@ -816,6 +817,26 @@ describe('--no-increase', () => {
     const second = await run(['--workspace', dir, '--no-increase', '--json']);
     expect(second.exitCode).toBe(2);
     expect(second.stderr).toMatch(/AI Quality went DOWN from [\d.]+ to [\d.]+/);
+  });
+
+  it('v0.18.1: noIncrease error message clarifies the comparison scale and direction', () => {
+    // v0.18.1: the previous v0.15.0 bridge compared today's aiQuality
+    // (0-100, higher=better) against previous.slopIndex (the legacy
+    // field the engine writes as `slopIndex: report.aiQuality` at
+    // engine/src/structure.ts:258). The semantic is correct, but the
+    // error message didn't explain it. The new message names the
+    // data-flow contract so the next reader doesn't "fix" it by
+    // reverting to the bridge. This is a string-content check on the
+    // source (not a behavioral test) because the message is the
+    // contract documentation.
+    const src = readFileSync(
+      join(repoRoot, 'src/cli/report/finalizeReport.ts'),
+      'utf8',
+    );
+    expect(src).toMatch(/previous\.slopIndex.*report\.aiQuality/s);
+    expect(src).toContain('0-100, higher = better');
+    // The misleading "for backward compat" framing is gone
+    expect(src).not.toMatch(/backward compat with historical telemetry/);
   });
 });
 

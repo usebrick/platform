@@ -182,20 +182,34 @@ export async function finalizeReport(
   });
 
   // --no-increase check: fail the run if the AI Quality went DOWN.
+  // v0.18.1: the previous v0.15.0 bridge compared today's `aiQuality`
+  // (0-100, higher=better) against `previous.slopIndex` (the v0.15.0
+  // legacy field, which the engine *currently* populates with the same
+  // value as `aiQuality` at write time — see `engine/src/structure.ts:258`,
+  // `slopIndex: report.aiQuality`). For v0.15.0+ users the comparison
+  // is correct in effect, but the *name* is misleading and the contract
+  // is brittle: a future engine change that decouples `slopIndex` from
+  // `aiQuality` would silently break the gate. The fix is to (a) keep
+  // the existing comparison (the data is self-consistent today), (b)
+  // name the data-flow contract in a comment so the next reader doesn't
+  // "fix" it by reverting to the bridge, and (c) emit a one-time warning
+  // when the comparison fires so users see the gate direction.
   let noIncreaseFailure = false;
   if (options.noIncrease) {
     const previous = (await readRuns(cwd, fsMemoryIO)).at(-1);
     if (previous) {
-      if ((report.aiQuality ?? 0) < previous.slopIndex) {
+      // Data-flow contract: `previous.slopIndex` is written by the
+      // engine as `report.aiQuality` (structure.ts:258). So a regression
+      // looks like `report.aiQuality < previous.slopIndex` because the
+      // two values are in the same scale (0-100, higher=better) and
+      // direction. A v0.18.x+ change to that contract must update
+      // this comparison in lockstep.
+      const previousBaseline = previous.slopIndex;
+      if ((report.aiQuality ?? 0) < previousBaseline) {
         noIncreaseFailure = true;
         if (!options.quiet) {
-          // v0.15.0 U.4+: aiQuality is the new headline score. The
-          // comparison is still against `previous.slopIndex` for
-          // backward compat with historical telemetry, but the
-          // current-run value is aiQuality (higher is better; a
-          // lower number means the code got sloppier).
           logger.error(
-            `AI Quality went DOWN from ${previous.slopIndex.toFixed(1)} to ${(report.aiQuality ?? 0).toFixed(1)} — your code got sloppier. See which files changed and fix the new issues.`,
+            `AI Quality went DOWN from ${previousBaseline.toFixed(1)} to ${(report.aiQuality ?? 0).toFixed(1)} — your code got sloppier. (Both values are 0-100, higher = better; the comparison is against the previous run's aiQuality, stored historically in the legacy slopIndex field.) See which files changed and fix the new issues.`,
           );
         }
       }

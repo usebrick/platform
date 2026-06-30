@@ -46,12 +46,42 @@ the `repositoryHealth` weights from `metrics.ts:302-306`
 0.1·Test Quality`). The brief report's copy was already
 correct; the full-report explainer now mirrors it.
 
-**Files:** `packages/slopbrick/src/report/pretty.ts`
-(`formatScoringExplainer`); test updated at
-`tests/report/v0.14.5i-ux.test.ts` (P5 trust-signal tests
-refined to test the suppression-line pattern, not the substring
-`INVERTED/NOISY`, which is now legitimately mentioned in the
-explainer).
+### Fixed: `--no-increase` error message documents the v0.15.0→v0.18.x data-flow contract
+
+**Reproduction (verified before scope, G1):** `finalizeReport.ts:189`
+```ts
+if ((report.aiQuality ?? 0) < previous.slopIndex) {
+```
+The comparison is correct in effect — for v0.15.0+ users,
+`previous.slopIndex` is populated by the engine as
+`slopIndex: report.aiQuality` (`engine/src/structure.ts:258`),
+so the two values are in the same scale and direction. But the
+*name* is misleading and the contract is brittle: a future engine
+change that decouples `slopIndex` from `aiQuality` would silently
+break the gate. The previous v0.15.0 inline comment said "for
+backward compat with historical telemetry" — true but unhelpful,
+since it invited the next reader to "fix" it by reverting to the
+bridge.
+
+**Fix:** rename the local from `previous.slopIndex` to
+`previousBaseline` (clarifies intent: "this is the value to
+compare against, whatever the source field is called"), expand
+the comment to name the data-flow contract explicitly, and
+include the scale/direction in the error message so the user
+sees why the gate fired.
+
+**Note on the v0.18.x plan.** The rev 3 plan said "compare to
+`previous.aiQuality`", but `MemoryAuditRun` does not have an
+`aiQuality` field — the engine writes `slopIndex: report.aiQuality`
+(`structure.ts:258`). Adding an `aiQuality` field to the run
+record is a schema change (touches `core` + the engine +
+`@usebrick/mcp` + historical telemetry backfill), which is
+v0.18.7–v0.18.9 scope. v0.18.1 ships the documentation fix that
+makes the existing data flow robust to the next reader.
+
+**Files:** `packages/slopbrick/src/cli/report/finalizeReport.ts`,
+`packages/slopbrick/tests/cli.test.ts` (new contract test).
+
 
 ### (G9 self-audit floor — non-blocking) `security: 33` on platform source
 
