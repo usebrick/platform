@@ -36,6 +36,16 @@ function emptyFacts(): InternalFacts {
     astroComponents: [],
     fetchCalls: [],
     optimisticUpdates: [],
+    //  dead-code detector. The dispatch tests construct
+    //  facts directly via this helper; populate the new
+    //  fields with empty defaults so the v0.18.5 handleImportDeclaration
+    //  code can run.
+    deadCode: {
+      bindings: [],
+      constantConditions: [],
+      unreachableStatements: [],
+    },
+    referencedNames: new Set<string>(),
   };
 }
 

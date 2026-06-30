@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
+    // Set SLOPBRICK_VERSION from package.json before any test runs so
+    // src/types/_header.ts's VERSION constant matches the real version.
+    // tsup's `define` only applies at build time; in vitest we set the
+    // env var explicitly so the test in tests/types.test.ts passes.
+    setupFiles: ['./tests/_setup.ts'],
     exclude: [
       'node_modules',
       'dist',

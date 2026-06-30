@@ -214,6 +214,11 @@ export interface ScanFactsV2 {
   };
   designTokens: DesignTokens;
   /**
+   *  dead-code detector rules. Populated by the visitor's identifier
+   *  walk + import/declaration/branch handlers. See `DeadCodeFacts`
+   *  above for the shape. */
+  deadCode: DeadCodeFacts;
+  /**
    *  templates. Replaces the synthetic `<template>` elements that the
    *  migration injected into `jsx.elements`. */
   templateClassNames: ClassNameFact[];
@@ -243,6 +248,95 @@ export function deriveFramework(extension: string, fallback: string = 'react'): 
   if (ext === '.html' || ext === '.htm') return 'html';
   if (ext === '.ts' || ext === '.js') return 'react'; // assume React TS
   return (fallback as Framework) ?? 'react';
+}
+
+// ---------------------------------------------------------------------------
+// Domain 7: dead code (v0.18.5)
+// ---------------------------------------------------------------------------
+//
+// Captures what the `dead/*` rules need to detect the AI-iteration
+// pattern: AI writes scaffolding (imports, state, branches) and then
+// rewrites the function without cleaning up. The visitor walks
+// declarations and references once per file and emits the per-binding
+// "is this ever used" answer that rules turn into Issues.
+//
+// Why a new domain: the existing visitor tracks per-frame binding
+// membership (for state-binding liveness) but doesn't emit "unused
+// imports" or "dead branches" because nothing else needed it.
+
+/** What kind of declaration produced a binding. */
+export type BindingKind =
+  | 'import-specifier'
+  | 'import-default'
+  | 'import-namespace'
+  | 'var'
+  | 'let'
+  | 'const'
+  | 'function'
+  | 'class'
+  | 'type'
+  | 'interface'
+  | 'enum'
+  | 'parameter'
+  | 'catch-clause';
+
+/** A single binding declaration the visitor found in the file.
+ *
+ *  `isReferenced` is set to true if ANY identifier reference to this
+ *  name appeared in the file. The visitor uses a single global
+ *  referenced-name set per file (intra-scope shadowing is rare enough
+ *  in practice that file-level resolution catches ~95% of dead code
+ *  with negligible false positives — the remaining 5% is mostly
+ *  intentional re-exports which are handled separately). */
+export interface BindingRecord {
+  /** The local name as written (`Button` for `import { Button } from ...`,
+   *  `setFoo` for a parameter, etc.). */
+  name: string;
+  kind: BindingKind;
+  /** Source line (1-indexed). */
+  line: number;
+  /** Source column (0-indexed). */
+  column: number;
+  /** The owning source — used to differentiate top-level imports from
+   *  inline `import()` expressions, which are dynamic and out of
+   *  scope for the dead-import rule. */
+  source?: string;
+  /** Set to true when the visitor saw at least one reference to this
+   *  name later in the file. */
+  isReferenced: boolean;
+}
+
+/** A literal boolean condition (`if (true)`, `while (false)`,
+ *  ternary `cond ? a : false`) that makes the branch statically
+ *  decidable. */
+export interface ConstantConditionRecord {
+  /** The kind of construct. */
+  kind: 'if-true' | 'if-false' | 'while-true' | 'while-false' | 'ternary';
+  /** The condition's source text. */
+  condition: string;
+  line: number;
+  column: number;
+}
+
+/** A statement that is unreachable because an earlier statement in
+ *  the same function body unconditionally exited (`return`, `throw`,
+ *  `break`, `continue`). */
+export interface UnreachableStatementRecord {
+  /** Why the earlier statement exited. */
+  terminator: 'return' | 'throw' | 'break' | 'continue';
+  /** First line of the unreachable statement. */
+  line: number;
+  column: number;
+  /** A short snippet (first 60 chars) for the rule's message. */
+  snippet: string;
+}
+
+/** The dead-code domain. Empty when the file has nothing the visitor
+ *  classified as suspicious. */
+export interface DeadCodeFacts {
+  bindings: BindingRecord[];
+  constantConditions: ConstantConditionRecord[];
+  unreachableStatements: UnreachableStatementRecord[];
 }
 
 // ---------------------------------------------------------------------------

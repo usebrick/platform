@@ -884,6 +884,17 @@
     "_calibrationNote": "v0.17.0 ship — not in v7 per-rule table. Default-off until calibration data lands. Backed by: OWASP Foundation (2021), *OWASP Top 10 — A03:2021 Injection*, https://owasp.org/Top10/A03_2021-Injection/; OWASP Foundation (2017), *SQL Injection Prevention Cheat Sheet*. (Template-literal SQL with ${...} interpolation is the #1 SQL injection vector in AI-generated TypeScript code.)",
     "aiSpecific": true
   },
+  "dead/unused-import": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.5 ship — not in v7 per-rule table. Default-off until v8 calibration data lands. The first of 5 planned `dead/*` rules (this one + dead/unused-local + dead/unused-parameter + dead/dead-branch + dead/unreachable). The pattern is the canonical AI-iteration rot: the model adds an import when introducing a feature, then rewrites the function later without cleaning up. Most real-world tsconfig.json files have `noUnusedLocals: false`, so tsc never fires.",
+    "aiSpecific": true
+  },
   "docs/stale-package-reference": {
     "recall": 0,
     "fpRate": 0,

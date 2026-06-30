@@ -27,6 +27,7 @@ import { missingFkIndexRule } from './db/missing-fk-index';
 import { missingNotNullRule } from './db/missing-not-null';
 import { namingInconsistencyRule } from './db/naming-inconsistency';
 import { sqlConcatRule } from './db/sql-concat';
+import { unusedImportRule } from './dead/unused-import';
 import { brokenLinkRule } from './docs/broken-link';
 import { expiredCodeExampleRule } from './docs/expired-code-example';
 import { staleFunctionReferenceRule } from './docs/stale-function-reference';
@@ -124,6 +125,7 @@ export const builtinRules: Rule[] = [
   missingNotNullRule,
   namingInconsistencyRule,
   sqlConcatRule,
+  unusedImportRule,
   brokenLinkRule,
   expiredCodeExampleRule,
   staleFunctionReferenceRule,

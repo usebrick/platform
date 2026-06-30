@@ -30,6 +30,18 @@ export interface InternalFacts {
   astroComponents: any[];
   fetchCalls: any[];
   optimisticUpdates: any[];
+  /**
+   *  dead-code detector. Populated by the visitor's identifier walk +
+   *  import/branch/return handlers. See `engine/types.ts` →
+   *  `BindingRecord` for the per-binding shape and `DeadCodeFacts` for
+   *  the full domain. Rules consume `facts.v2.deadCode`, not this
+   *  internal accumulator. */
+  deadCode: import('../types').DeadCodeFacts;
+  /**
+   *  referenced-name set, populated alongside the binding list. A
+   *  binding whose name is missing from this set is unused. Reset
+   *  per file inside `extractFacts`. */
+  referencedNames: Set<string>;
 }
 
 /**
@@ -47,6 +59,11 @@ export interface InternalFacts {
 export interface FunctionFrame extends ComponentFacts {
   isComponent: boolean;
   bindings: Set<string>;
+  /**  dead-code detector. Names referenced inside this
+   *  frame (set by the identifier walk). Combined with the parent
+   *  frames' sets at pop time so a binding is considered used if any
+   *  reachable scope references it. */
+  references: Set<string>;
   propBindingSet: Set<string>;
   propUsageSet: Set<string>;
   endLine: number;

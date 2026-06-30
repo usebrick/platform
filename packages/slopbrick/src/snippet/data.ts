@@ -135,6 +135,8 @@ const RULE_HINTS: Record<string, string> = {
     'Coordinate state via a single derived value (useMemo) or a state machine. Avoid chained useEffects that sync local state.',
   'logic/zombie-state':
     'Remove unused useState or wire it into the component. Don\'t leave declared-but-never-read state bindings.',
+  'dead/unused-import':
+    'Remove the import or use the symbol somewhere. Unused imports are the most common AI-iteration signature — the model added it for a feature, then rewrote the function without cleaning up.',
   'perf/cls-image':
     'Add width/height attributes or an aspect-ratio utility to prevent layout shift.',
   'perf/css-bloat':

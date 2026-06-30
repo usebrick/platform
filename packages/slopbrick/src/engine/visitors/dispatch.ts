@@ -220,7 +220,22 @@ export function handleImportDeclaration(
             local.type === 'Identifier' &&
             typeof local.value === 'string'
           ) {
-            importedNames.push(local.value as string);
+            const name = local.value as string;
+            importedNames.push(name);
+            //  dead-code detector. Record the binding so
+            //  the v2 builder can mark it unused if the name
+            //  never appears as an identifier reference.
+            vctx.facts.deadCode.bindings.push({
+              name,
+              kind:
+                specifier.type === 'ImportDefaultSpecifier'
+                  ? 'import-default'
+                  : 'import-namespace',
+              line,
+              column,
+              source,
+              isReferenced: false,
+            });
           }
         } else if (specifier.type === 'ImportSpecifier') {
           const imported = specifier.imported as AnyNode;
@@ -230,13 +245,31 @@ export function handleImportDeclaration(
             typeof imported.value === 'string' &&
             imported.value.length > 0
           ) {
-            importedNames.push(imported.value as string);
+            const name = imported.value as string;
+            importedNames.push(name);
+            vctx.facts.deadCode.bindings.push({
+              name,
+              kind: 'import-specifier',
+              line,
+              column,
+              source,
+              isReferenced: false,
+            });
           } else if (
             isObject(local) &&
             local.type === 'Identifier' &&
             typeof local.value === 'string'
           ) {
-            importedNames.push(local.value as string);
+            const name = local.value as string;
+            importedNames.push(name);
+            vctx.facts.deadCode.bindings.push({
+              name,
+              kind: 'import-specifier',
+              line,
+              column,
+              source,
+              isReferenced: false,
+            });
           }
         }
       }
@@ -376,6 +409,24 @@ export function isBindingSite(node: AnyNode, parent: AnyNode): boolean {
       if (params.some((param: AnyNode) => containsNode(param, node))) return true;
     }
   }
+  //  dead-code detector. The `imported` and `local` fields
+  //  of an ImportSpecifier / ImportDefaultSpecifier /
+  //  ImportNamespaceSpecifier are binding declarations, not
+  //  references. Without this case, the identifier walk would
+  //  add the imported name to the referenced-name set just
+  //  because it appears inside the import statement, making
+  //  every import look used.
+  if (
+    parent.type === 'ImportSpecifier' ||
+    parent.type === 'ImportDefaultSpecifier' ||
+    parent.type === 'ImportNamespaceSpecifier'
+  ) {
+    if (parent.type === 'ImportSpecifier') {
+      if (parent.imported === node || parent.local === node) return true;
+    } else {
+      if (parent.local === node) return true;
+    }
+  }
   return false;
 }
 
@@ -489,6 +540,18 @@ export function handleIdentifier(
   ) {
     markStateReference(node.value as string, vctx);
     trackPropUsage(node, parent, path, vctx);
+    //  dead-code detector. Add this identifier to the
+    //  file-level referenced-name set so the v2 builder can answer
+    //  "was this binding ever used?" without re-walking the AST.
+    //  Skipped when the identifier is the LHS of a binding pattern
+    //  (already excluded by isBindingSite) or a non-computed
+    //  member property (also already excluded).
+    vctx.facts.referencedNames.add(node.value as string);
+    // Per-frame reference tracking: also add to the nearest
+    // frame's `references` set so a future rule can scope references
+    // per function. Currently unused but cheap to populate.
+    const top = vctx.ctx.stack[vctx.ctx.stack.length - 1];
+    if (top) top.references.add(node.value as string);
   }
   return false;
 }
@@ -704,6 +767,28 @@ export function handleVariableDeclarator(
   if (frame) {
     for (const bindingName of bindingNames) {
       frame.bindings.add(bindingName);
+    }
+  }
+
+  //  dead-code detector. Record each `let`/`const`/`var`
+  //  declarator's bindings so the v2 builder can mark them
+  //  unused if their name never appears as an identifier
+  //  reference. We resolve the kind from the parent
+  //  VariableDeclaration node's `kind` field.
+  if (bindingNames.length > 0) {
+    const parent = (node as { parent?: unknown }).parent;
+    const kind = isObject(parent) && parent.type === 'VariableDeclaration'
+      ? String((parent as Record<string, unknown>).kind ?? 'var')
+      : 'var';
+    const { line, column } = positionFrom(id as AnyNode, vctx.lineOffsets);
+    for (const bindingName of bindingNames) {
+      vctx.facts.deadCode.bindings.push({
+        name: bindingName,
+        kind: kind as 'var' | 'let' | 'const',
+        line,
+        column,
+        isReferenced: false,
+      });
     }
   }
 

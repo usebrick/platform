@@ -70,6 +70,17 @@ export interface InternalFacts {
   astroComponents: AstroComponentFact[];
   fetchCalls: FetchCallFact[];
   optimisticUpdates: OptimisticUpdateFact[];
+  /**
+   *  dead-code detector. The visitor's import/branch/return
+   *  handlers push binding + reference data here; the v2 builder
+   *  copies it into `ScanFactsV2.deadCode`. See
+   *  `engine/types.ts` → `DeadCodeFacts` for the shape. */
+  deadCode: import('../types').DeadCodeFacts;
+  /**
+   *  file-level referenced-name set. The identifier walk in
+   *  dispatch.ts adds every non-binding-site identifier it sees.
+   *  A binding whose name is missing from this set is unused. */
+  referencedNames: Set<string>;
   //  v2 source passthrough (not exposed on the returned ScanFacts).
   _source?: string;
 }
@@ -281,6 +292,17 @@ export function buildV2Facts(
     },
     logic: buildLogicBlock(facts),
     designTokens: scanDesignTokens(facts.staticClassNames),
+    //  dead-code detector. Copy the internal accumulator
+    //  into the v2 shape, marking each binding as referenced
+    //  iff the file-level referenced-name set contains its name.
+    deadCode: {
+      bindings: facts.deadCode.bindings.map((b) => ({
+        ...b,
+        isReferenced: facts.referencedNames.has(b.name),
+      })),
+      constantConditions: facts.deadCode.constantConditions,
+      unreachableStatements: facts.deadCode.unreachableStatements,
+    },
     componentSizes: facts.componentSizes.map((cs: ComponentSizeFact) => ({
       name: cs.name,
       lineCount: cs.lineCount,

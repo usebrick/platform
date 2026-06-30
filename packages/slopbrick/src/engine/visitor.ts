@@ -269,6 +269,16 @@ export function extractFacts(
     astroComponents: [],
     fetchCalls: [],
     optimisticUpdates: [],
+    //  dead-code detector. The visitor's identifier walk + import/
+    //  branch/return handlers populate these. The v2 builder at the
+    //  bottom of extractFacts() reads them and produces
+    //  `facts.v2.deadCode`.
+    deadCode: {
+      bindings: [],
+      constantConditions: [],
+      unreachableStatements: [],
+    },
+    referencedNames: new Set<string>(),
   };
 
   const ctx: WalkContext = {
@@ -389,6 +399,12 @@ export function extractFacts(
       propUsages: [],
       isComponent,
       bindings,
+      //  dead-code detector: per-frame referenced-name set.
+      //  Identifiers encountered inside the frame are added to this
+      //  set; the deadCode builder unions it with parent frames at
+      //  pop time so a binding is considered used if any reachable
+      //  scope references it.
+      references: new Set<string>(),
       propBindingSet,
       propUsageSet: new Set<string>(),
       node,
