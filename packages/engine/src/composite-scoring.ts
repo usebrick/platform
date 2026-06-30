@@ -133,7 +133,16 @@ function loadSignals(signalData: Readonly<Record<string, SignalStrengthEntry>>):
       ratio: entry.ratio ?? 0,
       verdict: (extended.verdict ?? 'DORMANT') as RuleSignal['verdict'],
       defaultOff: entry.defaultOff === true,
-      aiSpecific: extended.aiSpecific === true,
+      // v0.17.1: derive aiSpecific from verdict when not explicitly
+      // set. USEFUL/OK are the AI-tendency verdicts; everything
+      // else (HYGIENE, NOISY, INVERTED, DORMANT) is general
+      // hygiene or non-AI-specific. This makes composite scoring
+      // actually contribute signal instead of always returning
+      // the prior (which is what happened when aiSpecific was
+      // never populated — every rule's LLR was 0).
+      aiSpecific: extended.aiSpecific ?? (
+        extended.verdict === 'USEFUL' || extended.verdict === 'OK'
+      ),
     });
   }
   return map;
