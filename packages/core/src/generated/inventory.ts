@@ -20,11 +20,11 @@ export type Category =
 /**
  * Detected pattern inventory + component fingerprints for a scanned workspace. Written by slopbrick to .slopbrick/inventory.json. Read by slopbrick, stackpick, gir, MCP server, and any future usebrick.dev tool.
  */
-export interface RepositoryMemoryInventory {
+export interface RepositoryStructureInventory {
   /**
-   * Schema version. Currently '2'. Bump when adding/removing fields or changing the on-disk directory name.
+   * Schema version. Currently '3' (bumped in v0.15.0 rebrand from memory.md → structure.md and the multi-score model). Bump when adding/removing fields or changing the on-disk directory name.
    */
-  version: "2";
+  version: "3";
   /**
    * ISO 8601 timestamp of when this inventory was generated.
    */

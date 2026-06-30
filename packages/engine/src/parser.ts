@@ -102,11 +102,6 @@ function syntaxCandidates(filePath: string, source: string): SwcConfig[] {
         { syntax: 'typescript', jsx: true },
         { syntax: 'typescript', jsx: false, tsx: false },
       ];
-    case 'mjs':
-      return [
-        { syntax: 'ecmascript', jsx: true },
-        { syntax: 'ecmascript', jsx: false },
-      ];
     default:
       // Extension-less or unknown. Try TSX → TS → JSX → JS.
       return [

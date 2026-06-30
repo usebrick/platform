@@ -3,7 +3,7 @@
 /**
  * Repository health snapshot from a single slopbrick scan. v3 (v0.15.0) replaces the legacy slopIndex/categoryScores pair with four orthogonal scores: aiQuality, engineeringHygiene, security, repositoryHealth. Legacy fields kept optional for backward compat; will be removed in v0.16.0.
  */
-export interface RepositoryMemoryHealth {
+export interface RepositoryStructureHealth {
   /**
    * Health schema version. Currently '3'.
    */

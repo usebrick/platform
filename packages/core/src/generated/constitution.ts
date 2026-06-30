@@ -3,11 +3,11 @@
 /**
  * Declared project constitution. Mirrors the user-facing `constitution` block in slopbrick.config.mjs. Written by slopbrick to .slopbrick/constitution.json. Read by slopbrick, the constitution-enforcement gate, stackpick (for pattern-suggestion enforcement), and any future tool that needs to know what the project has declared off-limits.
  */
-export interface RepositoryMemoryConstitution {
+export interface RepositoryStructureConstitution {
   /**
-   * Schema version. Currently '2'. Bump when adding/removing fields.
+   * Schema version. Currently '3' (bumped in v0.15.0 rebrand from memory.md → structure.md and the multi-score model). Bump when adding/removing fields.
    */
-  version: "2";
+  version: "3";
   /**
    * ISO 8601 timestamp of when this constitution was generated.
    */
