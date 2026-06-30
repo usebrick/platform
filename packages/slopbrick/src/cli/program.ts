@@ -84,6 +84,11 @@ import { registerSuggest } from './commands/suggest.js';
 import { registerExplain } from './commands/explain.js';
 import { registerInstall } from './commands/install.js';
 import { registerUninstall } from './commands/uninstall.js';
+import { registerMcp } from './commands/mcp.js';
+import { registerDoctor } from './commands/doctor.js';
+import { registerWatch } from './commands/watch.js';
+import { registerLock } from './commands/lock.js';
+import { registerCi } from './commands/ci.js';
 
 import {
   loadConfig,
@@ -1170,131 +1175,25 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         },
       );
 
-    program
-      .command('mcp')
-      .description('MCP server for AI agents (JSON-RPC 2.0 over stdio)')
-      .action(() => {
-        runMcpServer(process.stdin, process.stdout, process.cwd()).catch((err) => {
-          logger.error(err instanceof Error ? err.message : String(err));
-          process.exit(2);
-        });
-      });
+    // v0.18.x (R-H1): mcp action moved to ./commands/mcp.ts
+    registerMcp(program);
+
+    // v0.18.x (R-H1): doctor action moved to ./commands/doctor.ts
+    registerDoctor(program);
 
     program
-      .command('doctor')
-      .description('check your setup, config, and environment for common problems')
-      .action(async () => {
-        const exitCode = await runDoctor(process.cwd());
-        if (exitCode !== 0) process.exit(exitCode);
-      });
+    // v0.18.x (R-H1): watch action moved to ./commands/watch.ts
+    // scanAction is the closure defined above; passed in to avoid
+    // moving the ~160-line scan body into the watch module.
+    registerWatch(program, scanAction);
 
-    program
-    program
-      .command('watch')
-      .description('re-run scan on every file change. Flags new violations as you write. The LockBrick prevention loop entry.')
-      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
-        const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
-        const options: CliGlobalOptions = {
-          ...rawGlobals,
-          noIncrease: rawGlobals.increase === false,
-        };
-        const cwd = resolve(options.workspace ?? process.cwd());
-        const { watchProject } = await import('./scan.js') as typeof import('./scan.js');
-        // Run an initial scan to populate the report + write the .slopbrick/
-        // artifacts, then `watchProject` keeps the report in sync as files
-        // change. The first scan is mandatory — without it the watcher
-        // would diff against an empty baseline and report every file as new.
-        await scanAction([], options, command);
-        await watchProject(options, cwd, []);
-      });
+    // v0.18.x (R-H1): lock action moved to ./commands/lock.ts
+    registerLock(program);
 
-    program
-      .command('lock')
-      .description('install a Git pre-commit hook that runs `slopbrick scan --staged` on every commit. The LockBrick prevention loop: block AI-introduced slop from ever reaching the repo.')
-      .option('--uninstall', 'remove the pre-commit hook instead of installing it')
-      .option('--husky', 'force-install under .husky/pre-commit (Husky v9). Default auto-detects via .husky/ dir.')
-      .option('--workspace <path>', 'workspace directory', process.cwd())
-      .action(
-        (cmdOptions: { uninstall?: boolean; husky?: boolean; workspace?: string }) => {
-          const cwd = resolve(cmdOptions.workspace ?? process.cwd());
-          const { installHook, uninstallHook } =
-            require('./installer.js') as typeof import('./installer.js');
-          if (cmdOptions.uninstall) {
-            const result = uninstallHook(cwd);
-            logger.info(result.message);
-            if (!result.ok) process.exit(1);
-            return;
-          }
-          const result = installHook(cwd);
-          if (result.ok) {
-            logger.info(result.message);
-            logger.info('Every commit will now run `slopbrick scan --staged` before the commit is created.');
-            logger.info('Bypass with `git commit --no-verify` (not recommended).');
-          } else {
-            logger.warn(result.message);
-            process.exit(1);
-          }
-        },
-      );
-
-    program
-      .command('ci')
-      .description('CI gate: run a scan and exit 1 on constitution violations, threshold breach, or new issues since the last run. Use this in GitHub Actions / GitLab CI.')
-      .option('--max-slop <n>', 'exit 1 if slopIndex exceeds this number', parseCount)
-      .option('--max-new-issues <n>', 'exit 1 if new issues (vs .slop-audit-cache.json) exceed this number', parseCount)
-      .option('--strict-constitution', 'exit 1 on any constitution violation')
-      .option('--format <pretty|json>', 'output format', 'json')
-      .action(
-        async (
-          cmdOptions: {
-            maxSlop?: number;
-            maxNewIssues?: number;
-            strictConstitution?: boolean;
-            format?: string;
-          },
-          command: Command,
-        ) => {
-          const globals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
-          const options: CliGlobalOptions = {
-            ...globals,
-            noIncrease: true,                  // force fail on increase
-            changed: true,                     // scan only changed files
-            format: (cmdOptions.format ?? 'json') as 'pretty' | 'json' | 'sarif' | 'html',
-          };
-          const cwd = resolve(options.workspace ?? process.cwd());
-          await scanAction([], options, command);
-          // After the scan, read .slopbrick/health.json to gate.
-          const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
-          const health = loadHealth(cwd);
-          if (!health) {
-            logger.warn('No .slopbrick/health.json — `slopbrick ci` requires a prior `slopbrick scan`.');
-            process.exit(1);
-          }
-          let exitCode = 0;
-          // v0.15.0 U.4: --max-slop now gates on the composite
-          // repositoryHealth (the v3 replacement for slopIndex).
-          // Because repositoryHealth is "higher = better" while
-          // --max-slop is "fail if higher than N" (legacy semantics
-          // were "fail if slopIndex > N" where lower is better), we
-          // invert the comparison so users see the same behavior.
-          // TODO(U.5): replace --max-slop with --min-repository-health.
-          if (cmdOptions.maxSlop !== undefined) {
-            const maxInverse = 100 - cmdOptions.maxSlop;
-            if (health.repositoryHealth < maxInverse) {
-              logger.warn(`repositoryHealth ${health.repositoryHealth} < ${cmdOptions.maxSlop} (max-slop)`);
-              exitCode = 1;
-            }
-          }
-          if (cmdOptions.strictConstitution && (health.constitutionDrift ?? 0) > 0) {
-            logger.warn(`${health.constitutionDrift} constitution violation(s) detected`);
-            exitCode = 1;
-          }
-          if (exitCode === 0) {
-            logger.info(`CI gate passed: repositoryHealth=${health.repositoryHealth}, constitutionDrift=${health.constitutionDrift ?? 0}`);
-          }
-          process.exit(exitCode);
-        },
-      );
+    // v0.18.x (R-H1): ci action moved to ./commands/ci.ts
+    // scanAction is the closure defined above; passed in to avoid
+    // moving the ~160-line scan body into the ci module.
+    registerCi(program, scanAction);
 
     program
       .command('memory')
