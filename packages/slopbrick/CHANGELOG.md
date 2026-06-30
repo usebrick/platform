@@ -2,23 +2,18 @@
 
 ## [0.17.1] - 2026-06-30 — UX pass + coherence sweep
 
-v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rules. No schema bumps. The on-disk artifacts (`.slopbrick/{inventory,constitution,health}.json`, `.slopbrick/structure.md`) are unchanged.
+v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rules. No schema bumps. The on-disk artifacts (`.slopbrick/{inventory,constitution,health}.json`, `.slopbrick/structure.md`) are unchanged. The display format and CLI surface are unchanged from v0.17.0 — this is a true patch release.
 
-### UX pass (the headline)
-
-- **Visual score bars**: every score in the brief report now renders as a colored Unicode bar like `█████████░░░ 75/100` (was just `75/100`). Color-coded by band (green ≥ 76, yellow ≥ 51, orange ≥ 26, red < 26). The bar updates with the score in real time.
-- **"What this means" section**: added after the score blocks. Explains what AI Code Quality, Code Consistency, and the secondary signals actually mean in plain English with a ✓/✗ icon and a one-line verdict. The user no longer has to guess what "aiQuality" measures.
-- **"What to do next" section**: replaced the old `→` list with a prioritized numbered list. The top action is always "fix the worst file first" (with the exact path + issue count). New `--full` flag added to show the complete report.
-- **`[v0.14.5i]` banner** → `[v${VERSION}]`. The auto-suppress notice now reads the real version (v0.17.1) instead of a hardcoded changelog label.
-- **"Why two scores?" footer** → "Why 4 scores?". The post-report explainer was stuck on the pre-v0.15.0 model. Now describes the aiQuality / engineeringHygiene / security / repositoryHealth composite.
-- **Renamed headline metrics** in the display labels: "AI Quality" → "AI Code Quality", "Repository Coherence" → "Code Consistency", "boundary/context/visual" sub-scores → "Structure / API Design / Visual & A11y". The internal field names (`aiQuality`, `coherence`, `boundaryScore`) are unchanged for JSON backward compat — only the display labels changed.
-
-### Other UX
+### CLI surface additions
 
 - **`--no-color` flag** + `NO_COLOR=1` env support per https://no-color.org. Color decisions centralized in `colorEnabled()`.
-- **`--security-only` flag** for CI gates that only care about security posture. (The actual rules filter is a follow-up.)
-- **`redactSecrets()`** masks anything that looks like a secret (AWS keys, GitHub PATs, Slack tokens, Stripe keys, JWT, PEM private keys) in issue messages and advice. Same regex set the security/secret-leak rules use on user code, now applied to our own output.
-- **Progress bar** in `renderProgress` (writes to stderr in TTY, one line per 2% in pipes).
+- **`--security-only` flag** for CI gates that only care about security posture. (The actual rules filter is a follow-up — see v0.17.2.)
+- **Progress bar** in `renderProgress` (writes to stderr in TTY, one line per 2% in pipes). Replaces the previous spinner-only behavior.
+- **`[v0.14.5i]` banner** → `[v${VERSION}]`. The auto-suppress notice now reads the real version (v0.17.1) instead of a hardcoded changelog label.
+
+### Output safety
+
+- **`redactSecrets()`** masks anything that looks like a secret (AWS keys, GitHub PATs, Slack tokens, Stripe keys, JWT, PEM private keys) in issue messages and advice. Same regex set the security/secret-leak rules use on user code, now applied to our own output. Defensive — no behavior change for normal output, but a leaked secret in an issue message will no longer print to the terminal.
 
 ### Corpus hygiene
 
@@ -40,11 +35,11 @@ The v0.17.0 release shipped with 20 review items flagged. v0.17.1 addresses the 
 - **M4**: README claimed `repositoryHealth = 0.4·aiQ + 0.3·eng + 0.2·sec + 0.1·test`. Code says `0.5·aiQ + 0.3·eng + 0.2·sec` (no test axis). Now matches.
 - **M5**: 3 Node-floor stories (≥20 in package.json, Node 18+ in docs, Node 24 in CI). Aligned to Node 20+ in AGENTS.md.
 - **M6**: `docs/old-repo-redirect.md` pointed at `@usebrick/platform` (monorepo name, not an npm package). The published package is the unscoped `slopbrick`. Fixed.
-- **H8**: `packages/slopbrick/tsconfig.json` silently dropped 4 base settings (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `isolatedModules`). Restored. (The stricter settings exposed 25+ type errors in `scripts/` and `src/cli/init.ts`; those are real bugs that need a separate fix — see Follow-up below.)
+- **H8**: `packages/slopbrick/tsconfig.json` silently dropped 4 base settings (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `isolatedModules`). **Reverted in v0.17.1** — the stricter settings exposed 25+ type errors in `scripts/` and `src/cli/init.ts` that are real bugs. v0.17.2 will land the tsconfig + the bug fixes together. (See Follow-up below.)
 
 **Deferred to v0.17.2 (separate focused PR):**
-- **B3 + B4**: Schema version mismatch + structure.schema.json `$id` — the codegen pipeline cascading effects require a dedicated effort. v0.17.1 has the right *intent* documented in the schemas but didn't ship the breaking codegen changes. v0.17.2 will land the schema version bump, regenerate the types, and update every consumer in one PR.
-- **B5**: `compositeScore` was effectively dead (every rule's `aiSpecific` was undefined → every LLR was 0 → every composite score was the constant prior 0.428). v0.17.1 reverts B5 because the fix depends on B3+B4 (needs the new schema + type names). v0.17.2 will land both together.
+- **B3 + B4**: Schema version mismatch + structure.schema.json `$id` — the codegen pipeline cascading effects require a dedicated effort. v0.17.2 will land the schema version bump, regenerate the types, and update every consumer in one PR.
+- **B5**: `compositeScore` was effectively dead (every rule's `aiSpecific` was undefined → every LLR was 0 → every composite score was the constant prior 0.428). Reverted in v0.17.1 because the fix depends on B3+B4 (needs the new schema + type names). v0.17.2 will land both together.
 - **H6**: `packages/engine/README.md` public-API list is fiction (lists `scanProject`, `loadStructure`, etc. that don't exist with the listed signatures).
 - **H7**: "Pure — no I/O" contract violations in engine (`parser.ts:1-3` reads `process.env.SLOP_AUDIT_CACHE` + `process.cwd()`, `find-similar.ts:243` dynamically imports `globby` + `readFile`).
 - **M1**: Hand-written validators in `packages/core/src/structure-types.ts` are systematically looser than the JSON Schemas they're meant to enforce (e.g., `isComponentFingerprint` accepts any string; the schema wants `^[0-9a-f]{16}$`). No runtime schema validation exists in core.

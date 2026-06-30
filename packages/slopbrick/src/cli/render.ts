@@ -174,21 +174,3 @@ export function clearProgress(): void {
     process.stdout.write(`\r${' '.repeat(80)}\r`);
   }
 }
-
-// v0.17.1: visual score bar for the brief report. Used in
-// pretty.ts for AI Code Quality, Code Consistency, and the
-// 3 sub-scores. Returns a colored Unicode bar like
-// "████████████░░░░░" (12 chars by default) with width and
-// fill ratio derived from the score.
-export function formatScoreBar(score: number, width: number = 12): string {
-  const safe = Math.max(0, Math.min(100, score));
-  const filled = Math.round((safe / 100) * width);
-  const empty = Math.max(0, width - filled);
-  // Color based on the same bands as SLOP_BADGE_*. Higher = better.
-  const color =
-    safe >= 76 ? chalk.green
-    : safe >= 51 ? chalk.yellow
-    : safe >= 26 ? chalk.hex('#FFA500') // orange
-    : chalk.red;
-  return color('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
-}
