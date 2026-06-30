@@ -1,14 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/constitution.schema.json",
-  "title": "Repository Structure — Constitution",
+  "title": "Repository Memory — Constitution",
   "description": "Declared project constitution. Mirrors the user-facing `constitution` block in slopbrick.config.mjs. Written by slopbrick to .slopbrick/constitution.json. Read by slopbrick, the constitution-enforcement gate, stackpick (for pattern-suggestion enforcement), and any future tool that needs to know what the project has declared off-limits.",
   "type": "object",
   "required": ["version", "generatedAt", "workspace", "declared", "forbidden", "forbiddenPrefixes"],
   "properties": {
     "version": {
-      "description": "Schema version. Currently '3' (bumped in v0.15.0 rebrand from memory.md → structure.md and the multi-score model). Bump when adding/removing fields.",
-      "const": "3"
+      "description": "Schema version. Currently '2'. Bump when adding/removing fields.",
+      "const": "2"
     },
     "generatedAt": {
       "description": "ISO 8601 timestamp of when this constitution was generated.",

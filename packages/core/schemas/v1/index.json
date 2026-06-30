@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Repository Structure — Schema Index",
-  "description": "Pointer to the four canonical schemas that define the usebrick.dev Repository Structure Platform (RSP). Every tool in the platform — slopbrick, stackpick, gir, the MCP server, future CI integrations — reads and writes data matching these schemas.",
+  "title": "Repository Memory — Schema Index",
+  "description": "Pointer to the four canonical schemas that define the usebrick.dev Repository Memory Platform. Every tool in the platform — slopbrick, stackpick, gir, the MCP server, future CI integrations — reads and writes data matching these schemas.",
   "schemas": {
     "inventory": {
       "$id": "https://usebrick.dev/schemas/v1/inventory.schema.json",
@@ -17,12 +17,12 @@
       "producedBy": ["slopbrick scan (auto-detect from slopbrick.config.mjs)"],
       "consumedBy": ["slopbrick drift", "stackpick", "gir", "mcp"]
     },
-    "structure": {
+    "memory": {
       "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
       "file": "structure.schema.json",
       "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
-      "producedBy": ["slopbrick scan (auto-renders to .slopbrick/structure.md)"],
-      "consumedBy": ["slop_suggest_with_structure MCP tool", "future agent-fast-path tools"]
+      "producedBy": ["slopbrick scan (auto-renders to .slopbrick/memory.md)"],
+      "consumedBy": ["slop_suggest_with_memory MCP tool", "future agent-fast-path tools"]
     },
     "health": {
       "$id": "https://usebrick.dev/schemas/v1/health.schema.json",

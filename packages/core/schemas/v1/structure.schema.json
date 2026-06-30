@@ -1,20 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
+  "$id": "https://usebrick.dev/schemas/v1/memory.schema.json",
   "title": "Repository Structure — Structure Markdown",
-  "description": "Agent-readable markdown summary rendered from inventory + constitution. Written by slopbrick to .slopbrick/structure.md. Read by the slop_suggest_with_structure MCP tool for a 100-1000× fast path that avoids re-parsing AST. Future tools (stackpick, gir) will read the same artifact for similar speedups.",
+  "description": "Agent-readable markdown summary rendered from inventory + constitution. Written by slopbrick to .slopbrick/structure.md. Read by the slop_suggest_with_memory MCP tool for a 100-1000× fast path that avoids re-parsing AST. Future tools (stackpick, gir) will read the same artifact for similar speedups.",
   "type": "object",
   "description": "structure.md is not structured JSON — it's a markdown file. This schema describes the section structure that renderers MUST emit and readers MUST tolerate. The actual content of each section is free-form markdown.",
   "required": ["frontmatter", "sections"],
   "properties": {
     "frontmatter": {
       "type": "object",
-      "description": "YAML frontmatter at the top of structure.md. Machine-parseable metadata about the rendered summary.",
+      "description": "YAML frontmatter at the top of memory.md. Machine-parseable metadata about the rendered summary.",
       "required": ["schemaVersion", "generatedAt", "workspace"],
       "properties": {
         "schemaVersion": {
-          "description": "structure.md format version. Currently '3' (bumped in v0.15.0 rebrand from memory.md → structure.md).",
-          "const": "3"
+          "description": "memory.md format version. Currently '2'.",
+          "const": "2"
         },
         "generatedAt": {
           "type": "string",
@@ -25,33 +25,44 @@
           "minLength": 1
         },
         "inventoryVersion": {
-          "description": "Schema version of the inventory this structure.md was rendered from.",
+          "description": "Schema version of the inventory this memory.md was rendered from.",
           "type": "string"
         },
         "constitutionVersion": {
-          "description": "Schema version of the constitution this structure.md was rendered from.",
+          "description": "Schema version of the constitution this memory.md was rendered from.",
           "type": "string"
         }
       }
     },
     "sections": {
       "type": "array",
-      "description": "Ordered sections in structure.md. Renderers MUST emit sections in this order. Readers MUST tolerate missing optional sections.",
+      "description": "Ordered sections in memory.md. Renderers MUST emit sections in this order. Readers MUST tolerate missing optional sections.",
       "items": {
         "type": "object",
         "required": ["id", "title"],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "patterns",
+              "components",
+              "constitution-declared",
+              "constitution-forbidden",
+              "do-not-create",
+              "migrate-notice"
+            ]
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "body": {
+            "description": "Free-form markdown body. Renderers should use bullet lists for pattern/component listings.",
             "type": "string"
           }
         }
-      }
+      },
+      "minItems": 1
     }
   }
 }
