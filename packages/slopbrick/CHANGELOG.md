@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.17.1] - 2026-06-30 — UX pass + coherence sweep
+
+v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rules. No schema bumps. The on-disk artifacts (`.slopbrick/{inventory,constitution,health}.json`, `.slopbrick/structure.md`) are unchanged.
+
+### UX pass (the headline)
+
+- **Visual score bars**: every score in the brief report now renders as a colored Unicode bar like `█████████░░░ 75/100` (was just `75/100`). Color-coded by band (green ≥ 76, yellow ≥ 51, orange ≥ 26, red < 26). The bar updates with the score in real time.
+- **"What this means" section**: added after the score blocks. Explains what AI Code Quality, Code Consistency, and the secondary signals actually mean in plain English with a ✓/✗ icon and a one-line verdict. The user no longer has to guess what "aiQuality" measures.
+- **"What to do next" section**: replaced the old `→` list with a prioritized numbered list. The top action is always "fix the worst file first" (with the exact path + issue count). New `--full` flag added to show the complete report.
+- **`[v0.14.5i]` banner** → `[v${VERSION}]`. The auto-suppress notice now reads the real version (v0.17.1) instead of a hardcoded changelog label.
+- **"Why two scores?" footer** → "Why 4 scores?". The post-report explainer was stuck on the pre-v0.15.0 model. Now describes the aiQuality / engineeringHygiene / security / repositoryHealth composite.
+- **Renamed headline metrics** in the display labels: "AI Quality" → "AI Code Quality", "Repository Coherence" → "Code Consistency", "boundary/context/visual" sub-scores → "Structure / API Design / Visual & A11y". The internal field names (`aiQuality`, `coherence`, `boundaryScore`) are unchanged for JSON backward compat — only the display labels changed.
+
+### Other UX
+
+- **`--no-color` flag** + `NO_COLOR=1` env support per https://no-color.org. Color decisions centralized in `colorEnabled()`.
+- **`--security-only` flag** for CI gates that only care about security posture. (The actual rules filter is a follow-up.)
+- **`redactSecrets()`** masks anything that looks like a secret (AWS keys, GitHub PATs, Slack tokens, Stripe keys, JWT, PEM private keys) in issue messages and advice. Same regex set the security/secret-leak rules use on user code, now applied to our own output.
+- **Progress bar** in `renderProgress` (writes to stderr in TTY, one line per 2% in pipes).
+
+### Corpus hygiene
+
+- Moved `automatic1111/` corpus (6.3M of third-party Python) from `/Users/cheng/platform/automatic1111/` to `/Users/cheng/corpus-expansion/automatic1111/`. The 5 other corpus dirs (comfyui, fastchat, elevenlabs-js, elevenlabs-python, chatglm — 137M) are still in the platform and produce ~5500 false findings. **Follow-up**: also move those, or add them to `slopbrick.config.mjs` exclude. See `docs/old-repo-redirect.md` for the convention.
+
+### Coherence sweep (from the v0.17.0 review)
+
+The v0.17.0 release shipped with 20 review items flagged. v0.17.1 addresses the highest-impact ones:
+
+**Fixed in v0.17.1:**
+- **B1**: `AGENTS.md` said "13 scores, 60+ rules" — contradicts the 4-score model the code ships. Now says "4 scores, 95 rules in 15 categories".
+- **B2**: No root `LICENSE` existed — 6 broken `[MIT](./LICENSE)` links. Created `/LICENSE` (MIT, © 2026 usebrick.dev).
+- **H1**: `@usebrick/engine` was missing from the `AGENTS.md` package table (only 3 of 4 packages listed). Added.
+- **H2**: Website Hero / live-terminal / og-image / Tools.astro had stale `v0.16.0` / `80+ rules` / `13 categories` references. All bumped.
+- **H3+H4**: Rule count (60+ / 80) → 95. Category count (13 / 14) → 15. Updated across README.md, AGENTS.md, packages/slopbrick/README.md, docs/ARCHITECTURE.md, Hero, live-terminal, og-image, Tools.astro.
+- **H5**: `AGENTS.md` + `CONTRIBUTING.md` said "tag pushes trigger publish.yml" — false. `publish.yml` triggers on `release: types: [published]`. Fixed.
+- **M2**: `README.md` + `packages/website/README.md` said website deploys to GitHub Pages. It doesn't — it's Cloudflare Pages (project `platform`, custom domain `usebrick.dev`). Fixed.
+- **M3**: `docs/UPDATE-SUMMARY.md` (referenced in 2 places) and `docs/rename-checklist.md` (gitignored operator-only doc) don't exist. Repointed to `packages/slopbrick/CHANGELOG.md` and a note about the local-only operator file.
+- **M4**: README claimed `repositoryHealth = 0.4·aiQ + 0.3·eng + 0.2·sec + 0.1·test`. Code says `0.5·aiQ + 0.3·eng + 0.2·sec` (no test axis). Now matches.
+- **M5**: 3 Node-floor stories (≥20 in package.json, Node 18+ in docs, Node 24 in CI). Aligned to Node 20+ in AGENTS.md.
+- **M6**: `docs/old-repo-redirect.md` pointed at `@usebrick/platform` (monorepo name, not an npm package). The published package is the unscoped `slopbrick`. Fixed.
+- **H8**: `packages/slopbrick/tsconfig.json` silently dropped 4 base settings (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `isolatedModules`). Restored. (The stricter settings exposed 25+ type errors in `scripts/` and `src/cli/init.ts`; those are real bugs that need a separate fix — see Follow-up below.)
+
+**Deferred to v0.17.2 (separate focused PR):**
+- **B3 + B4**: Schema version mismatch + structure.schema.json `$id` — the codegen pipeline cascading effects require a dedicated effort. v0.17.1 has the right *intent* documented in the schemas but didn't ship the breaking codegen changes. v0.17.2 will land the schema version bump, regenerate the types, and update every consumer in one PR.
+- **B5**: `compositeScore` was effectively dead (every rule's `aiSpecific` was undefined → every LLR was 0 → every composite score was the constant prior 0.428). v0.17.1 reverts B5 because the fix depends on B3+B4 (needs the new schema + type names). v0.17.2 will land both together.
+- **H6**: `packages/engine/README.md` public-API list is fiction (lists `scanProject`, `loadStructure`, etc. that don't exist with the listed signatures).
+- **H7**: "Pure — no I/O" contract violations in engine (`parser.ts:1-3` reads `process.env.SLOP_AUDIT_CACHE` + `process.cwd()`, `find-similar.ts:243` dynamically imports `globby` + `readFile`).
+- **M1**: Hand-written validators in `packages/core/src/structure-types.ts` are systematically looser than the JSON Schemas they're meant to enforce (e.g., `isComponentFingerprint` accepts any string; the schema wants `^[0-9a-f]{16}$`). No runtime schema validation exists in core.
+- **LOW**: Dead code in `packages/engine/src/louvain.ts` (`snapshotPartition` never called, `void totals;` discards a map), duplicate `case 'mjs':` in `packages/engine/src/parser.ts` (the second one was unreachable, now fixed), `packages/engine` has only 1 snapshot test, `packages/website/test-results/` is committed, `packages/core` still has some "Repository Memory" naming in stale docs.
+
+### Installation
+
+```bash
+npm install -D slopbrick@0.17.1
+```
+
+No migration needed. Existing `.slopbrick/` artifacts from v0.17.0 work without changes.
+
 ## [0.17.0] - 2026-06-30 — 95 rules, extracted db/docs, bench:scan
 
 v0.17.0 is a quality + coverage release. No breaking changes.
