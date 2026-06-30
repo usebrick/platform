@@ -32,13 +32,13 @@ function isMinimumSizingToken(className: string): boolean {
   const sizeMatch = SIZE_PREFIX_RE.exec(className);
   if (sizeMatch) {
     const value = sizeMatch[2];
-    const units = tailwindUnits(value);
-    if (units === undefined) return NON_NUMERIC_SIZES.has(value);
+    const units = tailwindUnits(value!);
+    if (units === undefined) return NON_NUMERIC_SIZES.has(value!);
     return units >= 6;
   }
   const padMatch = PAD_PREFIX_RE.exec(className);
   if (padMatch) {
-    const units = tailwindUnits(padMatch[2]);
+    const units = tailwindUnits(padMatch[2]!);
     return units !== undefined && units >= 2;
   }
   return false;
@@ -74,7 +74,7 @@ function parseSimpleSelector(selector: string): ParsedSelector | undefined {
   while (rest.length > 0) {
     const match = idClassAttrRe.exec(rest);
     if (!match) break;
-    const token = match[1];
+    const token = match[1]!;
     rest = rest.slice(token.length);
 
     if (token.startsWith('#')) {
@@ -86,7 +86,7 @@ function parseSimpleSelector(selector: string): ParsedSelector | undefined {
       const attrMatch = /^([a-zA-Z0-9_-]+)(?:(\W?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]]*)))?$/.exec(content);
       if (attrMatch) {
         result.attributes.push({
-          name: attrMatch[1],
+          name: attrMatch[1]!,
           operator: attrMatch[2] ?? '',
           value: attrMatch[3] ?? attrMatch[4] ?? attrMatch[5] ?? undefined,
         });

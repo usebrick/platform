@@ -59,7 +59,7 @@ export const mathFontEntropyRule = createRule<RuleContext>({
     if (total < 6) return issues;
     if (h > 1.4) return issues;
 
-    const anchor = flatClassNames(facts.v2)[0];
+    const anchor = flatClassNames(facts.v2)[0] ?? { line: 1, column: 1 };
     issues.push({
       ruleId: 'visual/math-font-entropy',
       category: 'visual',

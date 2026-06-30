@@ -45,11 +45,11 @@ export const mathConsoleLogStormRule = createRule<RuleContext>({
       let maxEndLine = 0;
       let i = 0;
       for (let j = 0; j < lines.length; j++) {
-        while (lines[j] - lines[i] > WINDOW_SIZE) i++;
+        while (lines[j]! - lines[i]! > WINDOW_SIZE) i++;
         const count = j - i + 1;
         if (count > maxCount) {
           maxCount = count;
-          maxEndLine = lines[j];
+          maxEndLine = lines[j]!;
         }
       }
 
@@ -64,8 +64,8 @@ export const mathConsoleLogStormRule = createRule<RuleContext>({
         message:
           `${maxCount} console.log calls clustered in a ${WINDOW_SIZE}-line window ending at line ${maxEndLine}. ` +
           `AI debug-sprays logs in a single function; humans use one strategic log.`,
-        line: firstIdx >= 0 ? lines[firstIdx] : 1,
-        column: firstIdx >= 0 ? columns[firstIdx] : 1,
+        line: firstIdx >= 0 ? lines[firstIdx]! : 1,
+        column: firstIdx >= 0 ? columns[firstIdx]! : 1,
         advice:
           'Replace debug logs with a proper debugger or logger.debug() — remove all console.log before shipping.',
       });

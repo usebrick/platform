@@ -33,7 +33,7 @@ export function isObject(node: unknown): node is Record<string, unknown> {
 }
 
 export function isHookName(name: string): boolean {
-  return name.startsWith('use') && name.length > 3 && name[3] === name[3].toUpperCase();
+  return name.startsWith('use') && name.length > 3 && name[3] === name[3]!.toUpperCase();
 }
 
 export function getNodeType(node: AnyNode): string | undefined {
@@ -73,7 +73,7 @@ export function buildLineOffsets(source: string): number[] {
       }
       offsets.push(byteOffset);
     } else {
-      byteOffset += Buffer.byteLength(char, 'utf-8');
+      byteOffset += Buffer.byteLength(char!, 'utf-8');
     }
   }
   return offsets;
@@ -90,14 +90,14 @@ export function positionFromOffset(
   let high = lineOffsets.length;
   while (low < high) {
     const mid = Math.floor((low + high) / 2);
-    if (lineOffsets[mid] <= byteOffset) {
+    if (lineOffsets[mid]! <= byteOffset) {
       low = mid + 1;
     } else {
       high = mid;
     }
   }
   const line = low;
-  const column = byteOffset - lineOffsets[line - 1] + 1;
+  const column = byteOffset - lineOffsets[line - 1]! + 1;
   return { line, column };
 }
 

@@ -205,7 +205,7 @@ function logGamma(x: number): number {
   let ser = 1.000000000190015;
   for (let j = 0; j < 6; j++) {
     y += 1;
-    ser += c[j] / y;
+    ser += c[j]! / y;
   }
   return -tmp + Math.log((2.5066282746310005 * ser) / x);
 }

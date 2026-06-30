@@ -72,13 +72,13 @@ function scanForSecrets(source: string): SecretHit[] {
   ASSIGN_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = ASSIGN_RE.exec(source)) !== null) {
-    const identifier = m[1];
-    const value = m[3];
+    const identifier = m[1]!;
+    const value = m[3]!;
     if (!SENSITIVE_NAME_RE.test(identifier)) continue;
     if (value.length < 20) continue;
     // Skip obvious placeholders — these are common in examples and
     // shouldn't fire (would dilute signal on real findings).
-    if (/^(your[-_ ]?|example|changeme|todo|placeholder|xxx+|test|foo|bar)/i.test(value)) continue;
+    if (/^(your[-_ ]?|example|changeme|todo|placeholder|xxx+|test|foo|bar)/i.test(value!)) continue;
     hits.push({
       identifier,
       literal: value,

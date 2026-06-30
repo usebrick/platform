@@ -45,7 +45,7 @@ function parseSpacingValue(raw: string): { value: number; unit?: 'px' | 'rem' } 
 function checkClassToken(token: string, scale: readonly number[]): number | undefined {
   const match = SPACING_PREFIX_RE.exec(token);
   if (!match) return undefined;
-  let raw = match[2];
+  let raw = match[2]!;
   if (raw.startsWith('[') && raw.endsWith(']')) raw = raw.slice(1, -1);
   if (raw === 'px') return undefined;
   if (SKIP_VALUES.has(raw)) return undefined;

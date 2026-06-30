@@ -107,7 +107,7 @@ export function extractAssertions(source: string): AssertionHit[] {
     if (idx < 0) break;
     // Word boundary — don't match `myexpect(`.
     const prev = idx > 0 ? source[idx - 1] : '';
-    if (/[A-Za-z0-9_$]/.test(prev)) {
+    if (/[A-Za-z0-9_$]/.test(prev!)) {
       i = idx + 6;
       continue;
     }
@@ -138,7 +138,7 @@ export function extractAssertions(source: string): AssertionHit[] {
         q++;
         continue;
       }
-      if (/[A-Za-z_$]/.test(ch)) {
+      if (/[A-Za-z_$]/.test(ch!)) {
         // Walk identifier.
         let end = q;
         while (end < source.length && /[A-Za-z0-9_$]/.test(source[end] ?? '')) end++;

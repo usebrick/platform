@@ -30,14 +30,15 @@ export const mathElementUniformityRule = createRule<RuleContext>({
     if (facts.v2) {
       for (const el of facts.v2.jsx.elements) {
         const tag = el.tag.toLowerCase();
-        if (tag === 'button') counts.button++;
-        else if (tag === 'input') counts.input++;
-        else if (tag === 'select') counts.select++;
+        if (tag === 'button') counts.button!++;
+        else if (tag === 'input') counts.input!++;
+        else if (tag === 'select') counts.select!++;
         if (!anchor) anchor = { line: el.line, column: el.column };
       }
     }
 
-    const values = [counts.button, counts.input, counts.select].filter((v) => v > 0);
+    const values = [counts.button, counts.input, counts.select]
+      .filter((v): v is number => typeof v === 'number' && v > 0);
     if (values.length < 2) return issues;
     const max = Math.max(...values);
     const min = Math.min(...values);

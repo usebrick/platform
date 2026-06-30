@@ -72,8 +72,8 @@ import {
  *  enclosing component frame. */
 export function nearestComponent(vctx: VisitorCtx): FunctionFrame | null {
   for (let i = vctx.ctx.stack.length - 1; i >= 0; i--) {
-    if (vctx.ctx.stack[i].isComponent) {
-      return vctx.ctx.stack[i];
+    if (vctx.ctx.stack[i]!.isComponent) {
+      return vctx.ctx.stack[i]!;
     }
   }
   return null;
@@ -120,7 +120,7 @@ export function attachHook(hook: HookFact, vctx: VisitorCtx): void {
 export function markStateReference(name: string, vctx: VisitorCtx): void {
   const stack = vctx.ctx.stack;
   for (let i = stack.length - 1; i >= 0; i--) {
-    const frame = stack[i];
+    const frame = stack[i]!;
     if (frame.bindings.has(name)) {
       if (frame.isComponent) {
         for (const binding of frame.stateBindings) {
@@ -402,7 +402,7 @@ export function isPassThroughIdentifier(node: AnyNode, parent: AnyNode, path: An
   const jsxOpening = path[path.length - 4];
   if (!jsxOpening || getNodeType(jsxOpening) !== 'JSXOpeningElement') return false;
   const tag = jsxElementName(jsxOpening);
-  if (!tag || tag[0] !== tag[0].toUpperCase()) return undefined as unknown as boolean;
+  if (!tag || tag[0] !== tag[0]!.toUpperCase()) return undefined as unknown as boolean;
   return true;
 }
 
@@ -422,7 +422,7 @@ export function isPropsPassThrough(node: AnyNode, parent: AnyNode, path: AnyNode
   const jsxOpening = path[path.length - 4];
   if (!jsxOpening || getNodeType(jsxOpening) !== 'JSXOpeningElement') return undefined;
   const tag = jsxElementName(jsxOpening);
-  if (!tag || tag[0] !== tag[0].toUpperCase()) return undefined as unknown as string;
+  if (!tag || tag[0] !== tag[0]!.toUpperCase()) return undefined as unknown as string;
   return prop.value;
 }
 
@@ -515,7 +515,7 @@ export function handleMemberExpression(
  *  `nearestFrame` in visitor.ts. */
 export function nearestFrame(vctx: VisitorCtx): FunctionFrame | null {
   const stack = vctx.ctx.stack;
-  return stack.length > 0 ? stack[stack.length - 1] : null;
+  return stack.length > 0 ? stack[stack.length - 1]! : null;
 }
 
 /**

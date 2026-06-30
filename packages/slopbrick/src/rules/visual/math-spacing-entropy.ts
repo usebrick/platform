@@ -48,7 +48,7 @@ export const mathSpacingEntropyRule = createRule<RuleContext>({
     if (total < 10) return issues;
     if (h > 1.5) return issues;
 
-    const anchor = flatClassNames(facts.v2)[0];
+    const anchor = flatClassNames(facts.v2)[0] ?? { line: 1, column: 1 };
     issues.push({
       ruleId: 'visual/math-spacing-entropy',
       category: 'visual',

@@ -79,7 +79,7 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
     let m: RegExpExecArray | null;
     while ((m = DANGEROUS_RE.exec(source)) !== null) {
       const value = m[1];
-      if (isStaticLiteral(value)) continue;
+      if (isStaticLiteral(value!)) continue;
       issues.push({
         ruleId: 'security/unsafe-html-render',
         category: 'security',

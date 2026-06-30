@@ -68,20 +68,24 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 ]);
 
 function levenshtein(a: string, b: string): number {
+  // v0.17.4 (R-H5): the `!` non-null assertions below are safe under
+  // the invariant that `matrix[i]` is populated for all `0 <= i <= a.length`
+  // (we initialize `matrix[i][0]` and `matrix[0][j]` in the loops above)
+  // and that `matrix[i-1][...]` exists whenever `i >= 1`.
   const matrix: number[][] = Array.from({ length: a.length + 1 }, () => []);
-  for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 0; i <= a.length; i++) matrix[i]![0] = i;
+  for (let j = 0; j <= b.length; j++) matrix[0]![j] = j;
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost,
+      matrix[i]![j] = Math.min(
+        matrix[i - 1]![j]! + 1,
+        matrix[i]![j - 1]! + 1,
+        matrix[i - 1]![j - 1]! + cost,
       );
     }
   }
-  return matrix[a.length][b.length];
+  return matrix[a.length]![b.length]!;
 }
 
 function suggestRuleId(input: string, validRuleIds: string[]): string | undefined {
@@ -248,14 +252,14 @@ export function formatConfigValidationErrors(
 
   const errorGroups = groupMessagesBySection(errors);
   for (const section of Object.keys(errorGroups)) {
-    lines.push(...formatSection(section, errorGroups[section]));
+    lines.push(...formatSection(section, errorGroups[section]!));
   }
 
   if (warnings.length > 0) {
     lines.push('');
     const warningGroups = groupMessagesBySection(warnings);
     for (const section of Object.keys(warningGroups)) {
-      lines.push(...formatSection(section, warningGroups[section]));
+      lines.push(...formatSection(section, warningGroups[section]!));
     }
   }
 
@@ -263,7 +267,7 @@ export function formatConfigValidationErrors(
 }
 
 export class ConfigValidationError extends Error {
-  public readonly name = 'ConfigValidationError';
+  public override readonly name = 'ConfigValidationError';
 
   constructor(
     public readonly configPath: string,

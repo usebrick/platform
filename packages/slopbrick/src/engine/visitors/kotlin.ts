@@ -119,7 +119,7 @@ export function extractKotlinPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(KOTLIN_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -127,13 +127,13 @@ export function extractKotlinPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(KOTLIN_SPRING_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(KOTLIN_KTOR_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -141,19 +141,19 @@ export function extractKotlinPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(KOTLIN_ORM_ANNOTATION_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(KOTLIN_ORM_INHERIT_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(KOTLIN_EXPOSED_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

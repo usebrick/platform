@@ -125,7 +125,7 @@ function promptSingleSelect<T extends string>(
       rl.question(lines.join('\n') + '\n', (answer) => {
         const trimmed = answer.trim();
         if (trimmed === '') {
-          resolve(safeDefaultValue);
+          resolve(safeDefaultValue!);
           return;
         }
         const num = parseInt(trimmed, 10);
@@ -134,7 +134,7 @@ function promptSingleSelect<T extends string>(
           ask();
           return;
         }
-        resolve(options[num - 1]);
+        resolve(options[num - 1]!);
       });
     }
     ask();
@@ -179,7 +179,7 @@ function promptMultiSelect<T extends string>(
           resolve([]);
           return;
         }
-        const selected = [...new Set(numbers.map((n) => options[n - 2]))];
+        const selected = [...new Set(numbers.map((n) => options[n - 2]!).filter((v): v is T => v !== undefined))];
         resolve(selected);
       });
     }

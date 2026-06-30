@@ -106,7 +106,7 @@ export function extractGoPatterns(
   // would then push the same filePath onto the inventory twice.
   const seenService = new Set<string>();
   for (const m of source.matchAll(GO_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -114,7 +114,7 @@ export function extractGoPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(GO_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -122,7 +122,7 @@ export function extractGoPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(GO_ORM_MODEL_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

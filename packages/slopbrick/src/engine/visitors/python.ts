@@ -131,9 +131,9 @@ export function extractPythonPatterns(
   // with multiple files), but within a file the variants stay
   // distinct.
   for (const m of source.matchAll(PY_SERVICE_RE)) {
-    if (m[1].length === 0) continue;
+    if (m[1]!.length === 0) continue;
     service.push({
-      name: m[1],
+      name: m[1]!,
       files: [filePath],
       imports: [],
     });
@@ -145,7 +145,7 @@ export function extractPythonPatterns(
   // them to the same resource stem.
   for (const m of source.matchAll(PY_ROUTE_RE)) {
     route.push({
-      name: m[1],
+      name: m[1]!,
       files: [filePath],
       imports: [],
     });
@@ -154,7 +154,7 @@ export function extractPythonPatterns(
   // ORM models: every class inheriting from a known base.
   for (const m of source.matchAll(PY_ORM_RE)) {
     ormModel.push({
-      name: m[1],
+      name: m[1]!,
       files: [filePath],
       imports: [],
     });

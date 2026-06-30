@@ -55,11 +55,11 @@ function scanForWildcardCors(source: string): Array<{ message: string; line: num
   CORS_BLOCK_RE.lastIndex = 0;
   while ((m = CORS_BLOCK_RE.exec(source)) !== null) {
     const inner = m[1];
-    const blockStart = m.index + m[0].indexOf(inner);
+    const blockStart = m.index + m[0].indexOf(inner!);
     ORIGIN_FIELD_RE.lastIndex = 0;
     let m2: RegExpExecArray | null;
-    while ((m2 = ORIGIN_FIELD_RE.exec(inner)) !== null) {
-      const value = m2[2].trim();
+    while ((m2 = ORIGIN_FIELD_RE.exec(inner!)) !== null) {
+      const value = m2[2]!.trim();
       if (BAD_ORIGIN_VALUES.has(value)) {
         hits.push({
           message:
@@ -73,10 +73,10 @@ function scanForWildcardCors(source: string): Array<{ message: string; line: num
     // Variable form (no quotes).
     ORIGIN_VAR_RE.lastIndex = 0;
     let m3: RegExpExecArray | null;
-    while ((m3 = ORIGIN_VAR_RE.exec(inner)) !== null) {
+    while ((m3 = ORIGIN_VAR_RE.exec(inner!)) !== null) {
       const ident = m3[1];
       // Whitelist of names that are conventionally *not* wildcards.
-      if (/^(allowed|whitelist|origins|domain|url|allowedOrigins|originList)$/i.test(ident)) continue;
+      if (/^(allowed|whitelist|origins|domain|url|allowedOrigins|originList)$/i.test(ident!)) continue;
       // JS reserved literals that look like variable names but are
       // actually values (origin: true is the reflective wildcard).
       if (ident === 'true' || ident === 'false' || ident === 'null') {

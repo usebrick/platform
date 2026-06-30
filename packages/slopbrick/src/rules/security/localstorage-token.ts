@@ -62,7 +62,7 @@ export const localstorageTokenRule = createRule<RuleContext>({
     LS_SETITEM_RE.lastIndex = 0;
     while ((m = LS_SETITEM_RE.exec(source)) !== null) {
       const key = m[2];
-      if (!isTokenY(key)) continue;
+      if (!isTokenY(key!)) continue;
       pushIssue(issues, source, m.index,
         `Auth key '${key}' written to localStorage / sessionStorage. ` +
           'Any page script can read it (XSS, malicious dep, browser extension).',
@@ -72,7 +72,7 @@ export const localstorageTokenRule = createRule<RuleContext>({
     LS_SETITEM_VAR_RE.lastIndex = 0;
     while ((m = LS_SETITEM_VAR_RE.exec(source)) !== null) {
       const ident = m[1];
-      if (!TOKEN_KEY_RE.test(ident)) continue;
+      if (!TOKEN_KEY_RE.test(ident!)) continue;
       pushIssue(issues, source, m.index,
         `localStorage.setItem('${ident}', ...) — identifier '${ident}' looks token-y. ` +
           'Verify the value is not a credential.',

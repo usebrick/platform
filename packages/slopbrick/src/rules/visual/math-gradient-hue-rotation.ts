@@ -60,14 +60,14 @@ export const mathGradientHueRotationRule = createRule<RuleContext>({
     for (const cls of tokens) {
       const pairs: Array<{ color: string; shade: number }> = [];
       for (const m of matchAll(GRADIENT_RE, cls.value)) {
-        const color = m[1];
+        const color = m[1]!;
         const shade = Number(m[2]);
         if (!(color in HUE_BY_COLOR)) continue;
         pairs.push({ color, shade });
       }
       for (let i = 1; i < pairs.length; i++) {
-        const a = HUE_BY_COLOR[pairs[i - 1].color];
-        const b = HUE_BY_COLOR[pairs[i].color];
+        const a = HUE_BY_COLOR[pairs[i - 1]!.color]!;
+        const b = HUE_BY_COLOR[pairs[i]!.color]!;
         rotations.push(circularDelta(a, b));
       }
     }

@@ -61,7 +61,7 @@ export const mathGiniClassUsageRule = createRule<RuleContext>({
     const topStr = sorted.map(([k, v]) => `${k}×${v}`).join(', ');
 
     const anchor = facts.v2
-      ? flatClassNames(facts.v2)[0]
+      ? (flatClassNames(facts.v2)[0] ?? { line: 1, column: 1 })
       : { line: 1, column: 1 };
     issues.push({
       ruleId: 'logic/math-gini-class-usage',

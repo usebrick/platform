@@ -270,7 +270,7 @@ export function parseStyleObject(source: string): StylePropEntry[] {
       const segment = current.trim();
       const match = /^([a-zA-Z0-9-]+)\s*:/.exec(segment);
       if (match) {
-        const property = toKebabCase(match[1]);
+        const property = toKebabCase(match[1]!);
         const value = segment.slice(match[0].length).trim();
         entries.push({ property, value });
       }
@@ -284,7 +284,7 @@ export function parseStyleObject(source: string): StylePropEntry[] {
   const segment = current.trim();
   const match = /^([a-zA-Z0-9-]+)\s*:/.exec(segment);
   if (match) {
-    const property = toKebabCase(match[1]);
+    const property = toKebabCase(match[1]!);
     const value = segment.slice(match[0].length).trim();
     entries.push({ property, value });
   }

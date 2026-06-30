@@ -118,7 +118,7 @@ export function extractRubyPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(RUBY_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -126,13 +126,13 @@ export function extractRubyPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(RUBY_RAILS_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUBY_SINATRA_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -140,25 +140,25 @@ export function extractRubyPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(RUBY_AR_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUBY_MONGOID_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUBY_SEQUEL_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUBY_DATAMAPPER_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

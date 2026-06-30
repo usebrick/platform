@@ -114,7 +114,7 @@ export function extractJavaPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(JAVA_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -122,7 +122,7 @@ export function extractJavaPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(JAVA_SPRING_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -131,7 +131,7 @@ export function extractJavaPatterns(
   // skipped; the cluster treats the class path as the canonical
   // resource.
   for (const m of source.matchAll(JAVA_JAXRS_CLASS_PATH_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (name === '' || name === '/') continue; // root resource
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
@@ -140,13 +140,13 @@ export function extractJavaPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(JAVA_ORM_ANNOTATION_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(JAVA_ORM_INHERIT_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

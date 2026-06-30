@@ -74,7 +74,7 @@ export const mathColorClusterRule = createRule<RuleContext>({
 
     for (const cls of tokens) {
       for (const m of matchAll(HEX_COLOR_RE, cls.value)) {
-        const rgb = hexToRgb(m[1]);
+        const rgb = hexToRgb(m[1]!);
         if (!rgb) continue;
         const h = rgbToHue(rgb);
         const [r, g, b] = rgb;
@@ -91,7 +91,7 @@ export const mathColorClusterRule = createRule<RuleContext>({
     let maxSpread = 0;
     for (let i = 0; i < hues.length; i++) {
       for (let j = i + 1; j < hues.length; j++) {
-        const d = circularDelta(hues[i], hues[j]);
+        const d = circularDelta(hues[i]!, hues[j]!);
         if (d > maxSpread) maxSpread = d;
       }
     }

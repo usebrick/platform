@@ -78,7 +78,7 @@ export const aiTailwindColorOveruseRule = createRule<RuleContext>({
 
     const matches = new Set<string>();
     for (const m of source.matchAll(CLASS_PATTERN)) {
-      matches.add(m[1]);
+      matches.add(m[1]!);
     }
 
     if (matches.size < MIN_HITS) return [];

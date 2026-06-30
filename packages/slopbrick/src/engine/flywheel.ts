@@ -23,7 +23,7 @@ export const FLYWHEEL_VERSION = '2';
 export function severityBump(severity: Severity): Severity {
   const order: Severity[] = ['low', 'medium', 'high'];
   const idx = order.indexOf(severity);
-  return order[Math.min(idx + 1, order.length - 1)];
+  return order[Math.min(idx + 1, order.length - 1)]!;
 }
 
 export function resolveEffectiveSeverity(
@@ -42,7 +42,7 @@ function countConsecutiveTopOffenses(
 ): number {
   let count = 0;
   for (let i = runs.length - 1; i >= 0; i--) {
-    if (runs[i].topOffenseIds.includes(ruleId)) {
+    if (runs[i]!.topOffenseIds.includes(ruleId)) {
       count++;
     } else {
       break;
@@ -57,7 +57,7 @@ function countConsecutiveTopFileAppearances(
 ): number {
   let consecutive = 1; // current run
   for (let i = recentTopHashes.length - 1; i >= 0; i--) {
-    if (recentTopHashes[i].includes(currentHash)) {
+    if (recentTopHashes[i]!.includes(currentHash)) {
       consecutive++;
     } else {
       break;
@@ -85,7 +85,7 @@ export function computeFlywheelOutput(
       if (countConsecutiveTopOffenses(runs, ruleId) >= CONSECUTIVE_THRESHOLD) {
         const rule = ruleById.get(ruleId);
         const currentSeverity = resolveEffectiveSeverity(
-          config.rules[ruleId],
+          config.rules[ruleId]!,
           rule?.severity ?? 'medium',
         );
         autoTuned.push({

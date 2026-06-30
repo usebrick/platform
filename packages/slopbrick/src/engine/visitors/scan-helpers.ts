@@ -41,17 +41,17 @@ export function extractDisabledRules(source: string): DisabledLintRuleFact[] {
   let match: RegExpExecArray | null;
   while ((match = lineRegex.exec(source)) !== null) {
     const { line, column } = positionFromCharOffset(source, match.index);
-    pushRules(match[1], line, column, 'line');
+    pushRules(match[1]!, line, column, 'line');
   }
   const nextLineRegex = /\/\/\s*slopbrick-disable-next-line\s+([^\r\n*]+)/g;
   while ((match = nextLineRegex.exec(source)) !== null) {
     const { line, column } = positionFromCharOffset(source, match.index);
-    pushRules(match[1], line + 1, column, 'next-line');
+    pushRules(match[1]!, line + 1, column, 'next-line');
   }
   const blockRegex = /\/\*\s*slopbrick-disable\s+([\s\S]*?)\*\//g;
   while ((match = blockRegex.exec(source)) !== null) {
     const { line, column } = positionFromCharOffset(source, match.index);
-    pushRules(match[1], line, column, 'block');
+    pushRules(match[1]!, line, column, 'block');
   }
   return results;
 }
@@ -187,7 +187,7 @@ export function extractOptimisticUpdates(source: string): OptimisticUpdateFact[]
     // Pick the first setter that appears before an await.
     const awaitIndex = tryBody.search(awaitRegex);
     const firstSetter = setterMatches.find(
-      (m: RegExpExecArray) => m.index !== undefined && m.index < awaitIndex && !NON_SETTERS.has(m[1]),
+      (m: RegExpExecArray) => m.index !== undefined && m.index < awaitIndex && !NON_SETTERS.has(m[1]!),
     );
     if (!firstSetter || firstSetter.index === undefined) continue;
 
@@ -210,7 +210,7 @@ export function extractOptimisticUpdates(source: string): OptimisticUpdateFact[]
     if (!hasCatchRollback) {
       const absPos = tryStart + firstSetter.index;
       const { line, column } = positionFromCharOffset(source, absPos);
-      results.push({ setterName: firstSetter[1], line, column, hasCatchRollback: false });
+      results.push({ setterName: firstSetter[1]!, line, column, hasCatchRollback: false });
     }
   }
   return results;

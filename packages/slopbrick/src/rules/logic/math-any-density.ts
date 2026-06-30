@@ -80,7 +80,7 @@ export const mathAnyDensityRule = createRule<RuleContext>({
         severity: 'high',
         aiSpecific: true,
         message: RULE_MESSAGE(lines.length, maxLine, density),
-        line: lines[0],
+        line: lines[0]!,
         column: columns[0] ?? 1,
         advice: RULE_ADVICE,
       });

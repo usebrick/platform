@@ -65,7 +65,7 @@ export function gini(values: number[]): number {
   const cumSum = sorted.reduce((s, v) => s + v, 0);
   if (cumSum === 0) return 0;
   let weighted = 0;
-  for (let i = 0; i < n; i++) weighted += sorted[i] * (i + 1);
+  for (let i = 0; i < n; i++) weighted += sorted[i]! * (i + 1);
   return (2 * weighted) / (n * cumSum) - (n + 1) / n;
 }
 

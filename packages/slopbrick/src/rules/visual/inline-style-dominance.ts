@@ -52,7 +52,7 @@ export const inlineStyleDominanceRule = createRule<RuleContext>({
       let firstSeen = false;
       for (const blockMatch of matchAll(STYLE_BLOCK_RE, source)) {
         const blockSource = blockMatch[1];
-        for (const { property, value } of parseStylePairs(blockSource)) {
+        for (const { property, value } of parseStylePairs(blockSource!)) {
           distinctPairs.add(`${property}:${value}`);
         }
         if (!firstSeen) {

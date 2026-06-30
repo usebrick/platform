@@ -69,7 +69,7 @@ export const mathRoundedEntropyRule = createRule<RuleContext>({
     if (total < 6) return issues;
     if (h > 1.8) return issues;
 
-    const anchor = flatClassNames(facts.v2)[0];
+    const anchor = flatClassNames(facts.v2)[0] ?? { line: 1, column: 1 };
     issues.push({
       ruleId: 'visual/math-rounded-entropy',
       category: 'visual',

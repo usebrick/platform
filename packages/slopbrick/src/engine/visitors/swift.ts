@@ -115,7 +115,7 @@ export function extractSwiftPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(SWIFT_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -123,7 +123,7 @@ export function extractSwiftPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(SWIFT_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -131,13 +131,13 @@ export function extractSwiftPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(SWIFT_ORM_FLIENT_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(SWIFT_ORM_SWIFTDATA_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

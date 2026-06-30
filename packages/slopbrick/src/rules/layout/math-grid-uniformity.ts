@@ -49,7 +49,7 @@ export const mathGridUniformityRule = createRule<RuleContext>({
     if (h > 1.0) return issues;
 
     const anchor = facts.v2
-      ? flatClassNames(facts.v2)[0]
+      ? (flatClassNames(facts.v2)[0] ?? { line: 1, column: 1 })
       : { line: 1, column: 1 };
     issues.push({
       ruleId: 'layout/math-grid-uniformity',

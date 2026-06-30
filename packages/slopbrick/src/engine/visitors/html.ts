@@ -34,25 +34,25 @@ export function parseHtmlAttributes(
   const eventHandlers: string[] = [];
 
   let i = 1; // skip '<'
-  while (i < fullTag.length && /[a-zA-Z0-9-]/.test(fullTag[i])) i++;
+  while (i < fullTag.length && /[a-zA-Z0-9-]/.test(fullTag[i]!)) i++;
 
   while (i < fullTag.length) {
-    while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
     if (i >= fullTag.length || fullTag[i] === '>' || fullTag[i] === '/') break;
 
     const nameStart = i;
-    while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i]!)) i++;
     if (i === nameStart) {
       i++;
       continue;
     }
     const attrName = fullTag.slice(nameStart, i);
 
-    while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
 
     if (i < fullTag.length && fullTag[i] === '=') {
       i++; // skip '='
-      while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+      while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
 
       if (i >= fullTag.length) {
         attributes[attrName] = undefined;
@@ -82,7 +82,7 @@ export function parseHtmlAttributes(
         // Unquoted attribute value (rare in HTML, but valid).
         const valueStart = i;
         let value = '';
-        while (i < fullTag.length && !/\s/.test(fullTag[i]) && fullTag[i] !== '>') {
+        while (i < fullTag.length && !/\s/.test(fullTag[i]!) && fullTag[i] !== '>') {
           value += fullTag[i];
           i++;
         }
@@ -148,13 +148,13 @@ export function extractHtmlElementFacts(source: string): ElementFact[] {
     }
 
     let tagName = '';
-    while (j < source.length && /[a-zA-Z0-9-]/.test(source[j])) {
+    while (j < source.length && /[a-zA-Z0-9-]/.test(source[j]!)) {
       tagName += source[j];
       j++;
     }
 
     // Astro components are handled by extractAstroComponents; skip here.
-    if (tagName[0] === tagName[0].toUpperCase()) {
+    if (tagName[0] === tagName[0]!.toUpperCase()) {
       i = skipPastTag(source, j);
       continue;
     }

@@ -82,7 +82,7 @@ export function trendToText(report: TrendReport): string {
   const spark = sparkline(slopValues);
   lines.push('Slop Index trend (last ' + report.points.length + ' scans, ' + report.totalScans + ' total):');
   lines.push('');
-  lines.push('  ' + spark + '  ' + slopValues[0].toFixed(1) + ' -> ' + slopValues[slopValues.length - 1].toFixed(1));
+  lines.push('  ' + spark + '  ' + slopValues[0]!.toFixed(1) + ' -> ' + slopValues[slopValues.length - 1]!.toFixed(1));
   lines.push('');
   if (report.first && report.latest) {
     const direction = report.delta < 0 ? 'improved' : report.delta > 0 ? 'regressed' : 'unchanged';

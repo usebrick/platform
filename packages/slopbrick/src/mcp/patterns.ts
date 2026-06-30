@@ -101,7 +101,7 @@ export function extractImports(source: string): string[] {
     re.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
-      push(m[2]);
+      push(m[2]!);
     }
   }
   return out;
@@ -123,7 +123,7 @@ interface CategorizedImport {
 export function categorizeImport(spec: string): CategorizedImport | null {
   // Try the bare spec first, then strip subpath (e.g.
   // "@tanstack/react-query/devtools" -> "@tanstack/react-query").
-  const candidates = [spec, spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]];
+  const candidates: string[] = [spec, spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]!];
   for (const c of candidates) {
     const hit = CONSTITUTION_SIGNALS[c];
     if (hit) return { ...hit, matchedPackage: c };

@@ -28,7 +28,7 @@ const REL_ATTR_RE = /\brel\s*=\s*["']([^"']*)["']/i;
 function hasSafeRel(attrs: string): boolean {
   const m = attrs.match(REL_ATTR_RE);
   if (!m) return false;
-  const tokens = m[1].trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tokens = m[1]!.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return tokens.includes('noopener') || tokens.includes('noreferrer');
 }
 
@@ -66,8 +66,8 @@ export const targetBlankNoNoopenerRule = createRule<RuleContext>({
     ANCHOR_TAG_RE.lastIndex = 0;
     while ((m = ANCHOR_TAG_RE.exec(source)) !== null) {
       const attrs = m[1];
-      if (!TARGET_BLANK_RE.test(attrs)) continue;
-      if (hasSafeRel(attrs)) continue;
+      if (!TARGET_BLANK_RE.test(attrs!)) continue;
+      if (hasSafeRel(attrs!)) continue;
       pushIssue(issues, source, m.index);
     }
     return issues;

@@ -40,7 +40,7 @@ function defaultWorkerScript(): string {
 function parseNodeVersion(): [number, number, number] {
   const match = process.version.match(/v(\d+)\.(\d+)\.(\d+)/);
   if (!match) return [0, 0, 0];
-  return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+  return [parseInt(match[1]!, 10), parseInt(match[2]!, 10), parseInt(match[3]!, 10)];
 }
 
 function nodeVersionAtLeast(major: number, minor: number, patch: number): boolean {

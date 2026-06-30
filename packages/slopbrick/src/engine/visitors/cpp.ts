@@ -102,7 +102,7 @@ export function extractCppPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(CPP_SERVICE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -110,7 +110,7 @@ export function extractCppPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(CPP_CROW_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -118,14 +118,14 @@ export function extractCppPatterns(
   for (const m of source.matchAll(CPP_DROGON_ROUTE_RE)) {
     // Drogon regex has 2 capture groups (handler + method). Pick the
     // non-empty one.
-    const name = m[1] || m[2];
+    const name = m[1]! || m[2]!;
     if (!name) continue;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(CPP_PISTACHE_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });

@@ -119,7 +119,7 @@ export function extractRustPatterns(
 
   const seenService = new Set<string>();
   for (const m of source.matchAll(RUST_SERVICE_STRUCT_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -128,7 +128,7 @@ export function extractRustPatterns(
   // captured name may be a free function (`impl Service`), an
   // inherent impl, or a trait impl. We dedupe by name within file.
   for (const m of source.matchAll(RUST_SERVICE_IMPL_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenService.has(name)) continue;
     seenService.add(name);
     service.push({ name, files: [filePath], imports: [] });
@@ -136,13 +136,13 @@ export function extractRustPatterns(
 
   const seenRoute = new Set<string>();
   for (const m of source.matchAll(RUST_ACTIX_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUST_AXUM_ROUTE_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenRoute.has(name)) continue;
     seenRoute.add(name);
     route.push({ name, files: [filePath], imports: [] });
@@ -150,19 +150,19 @@ export function extractRustPatterns(
 
   const seenOrm = new Set<string>();
   for (const m of source.matchAll(RUST_DIESEL_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUST_SEAORM_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });
   }
   for (const m of source.matchAll(RUST_SQLX_RE)) {
-    const name = m[1];
+    const name = m[1]!;
     if (seenOrm.has(name)) continue;
     seenOrm.add(name);
     ormModel.push({ name, files: [filePath], imports: [] });

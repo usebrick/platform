@@ -54,25 +54,25 @@ export function parseAstroAttributes(
   const eventHandlers: string[] = [];
 
   let i = 1; // skip '<'
-  while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i])) i++;
+  while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i]!)) i++;
 
   while (i < fullTag.length) {
-    while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
     if (i >= fullTag.length || fullTag[i] === '>' || fullTag[i] === '/') break;
 
     const nameStart = i;
-    while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /[a-zA-Z0-9-:]/.test(fullTag[i]!)) i++;
     if (i === nameStart) {
       i++;
       continue;
     }
     const attrName = fullTag.slice(nameStart, i);
 
-    while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+    while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
 
     if (i < fullTag.length && fullTag[i] === '=') {
       i++; // skip '='
-      while (i < fullTag.length && /\s/.test(fullTag[i])) i++;
+      while (i < fullTag.length && /\s/.test(fullTag[i]!)) i++;
 
       if (i >= fullTag.length) {
         attributes[attrName] = undefined;
@@ -120,7 +120,7 @@ export function parseAstroAttributes(
         let value = '';
         while (i < fullTag.length) {
           const ch = fullTag[i];
-          if (/\s/.test(ch) || ch === '>') break;
+          if (/\s/.test(ch!) || ch === '>') break;
           if (ch === '/' && i + 1 < fullTag.length && fullTag[i + 1] === '>') break;
           value += ch;
           i++;
@@ -213,7 +213,7 @@ export function extractStaticTemplateClassNames(
     const fullTag = source.slice(tagStart, tagEnd + 1);
     const classAttrMatch = /\sclass\s*=\s*(["'])([^]*?)\1/.exec(fullTag);
     if (classAttrMatch) {
-      const value = classAttrMatch[2];
+      const value = classAttrMatch[2]!;
       if (value.trim()) {
         const valueStartInTag = classAttrMatch.index + classAttrMatch[0].indexOf(value);
         const offset = tagStart + valueStartInTag;
@@ -235,7 +235,7 @@ export function extractAstroComponents(source: string): AstroComponentFact[] {
   let match: RegExpExecArray | null;
 
   while ((match = tagRegex.exec(source)) !== null) {
-    const tag = match[1];
+    const tag = match[1]!;
     const startIndex = match.index;
     if (skipRanges.some((range) => startIndex >= range.start && startIndex < range.end)) {
       continue;
@@ -326,12 +326,12 @@ export function extractAstroElementFacts(source: string): ElementFact[] {
     }
 
     let tagName = '';
-    while (j < source.length && /[a-zA-Z0-9-]/.test(source[j])) {
+    while (j < source.length && /[a-zA-Z0-9-]/.test(source[j]!)) {
       tagName += source[j];
       j++;
     }
 
-    if (tagName[0] === tagName[0].toUpperCase()) {
+    if (tagName[0] === tagName[0]!.toUpperCase()) {
       i = lt + 1;
       continue;
     }

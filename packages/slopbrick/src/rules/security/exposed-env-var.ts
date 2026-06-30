@@ -61,7 +61,7 @@ function findClientExposedSecrets(source: string): Array<{ name: string; line: n
   PROCESS_ENV_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = PROCESS_ENV_RE.exec(source)) !== null) {
-    const name = m[1];
+    const name = m[1]!;
     if (!seen.has(name) && CLIENT_PREFIX_RE.test(name) && SECRET_NAME_HINTS.test(name)) {
       seen.add(name);
       hits.push({ name, line: lineOfSource(source, m.index) });

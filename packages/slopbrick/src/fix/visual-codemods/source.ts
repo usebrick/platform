@@ -51,7 +51,7 @@ export const applySortImportsCodemod: CodemodFn = (content) => {
   // Match a contiguous block of import statements at the top of the file.
   const blockMatch = content.match(/^([ \t]*(?:import\s+(?:[^;]+?from\s+)?['"][^'"]+['"]\s*;?\s*\n)+)/m);
   if (!blockMatch) return { content, changes: [] };
-  const block = blockMatch[1];
+  const block = blockMatch[1]!;
   const lines = block.split('\n').filter((l) => l.trim().length > 0);
   if (lines.length < 2) return { content, changes: [] };
   // Extract the specifier from each line; sort by it.
@@ -63,7 +63,7 @@ export const applySortImportsCodemod: CodemodFn = (content) => {
   });
   if (sorted.every((l, i) => l === lines[i])) return { content, changes: [] };
   const newBlock = sorted.join('\n') + '\n';
-  const next = content.replace(block, newBlock);
+  const next = content.replace(block!, newBlock);
   return {
     content: next,
     changes: [{ description: 'sort imports alphabetically', before: block, after: newBlock }],

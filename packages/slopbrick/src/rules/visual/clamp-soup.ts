@@ -38,10 +38,10 @@ export const clampSoupRule = createRule<RuleContext>({
       for (const blockMatch of matchAll(STYLE_BLOCK_RE, source)) {
         const blockSource = blockMatch[1];
         const blockLine = lineOfSource(source, blockMatch.index);
-        const m = CLAMP_RE.exec(blockSource);
+        const m = CLAMP_RE.exec(blockSource!);
         if (!m) continue;
-        const minPx = toPx(parseFloat(m[1]), m[2]);
-        const maxPx = toPx(parseFloat(m[3]), m[4]);
+        const minPx = toPx(parseFloat(m[1]!), m[2]!);
+        const maxPx = toPx(parseFloat(m[3]!), m[4]!);
         if (maxPx / minPx > 4) {
           issues.push({
             ruleId: 'visual/clamp-soup',

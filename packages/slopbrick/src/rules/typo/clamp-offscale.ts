@@ -35,8 +35,8 @@ export const clampOffscaleRule = createRule<RuleContext>({
       for (const blockMatch of matchAll(STYLE_BLOCK_RE, source)) {
         const m = CLAMP_RE.exec('{' + blockMatch[1] + '}');
         if (!m) continue;
-        const minVal = parseFloat(m[1]);
-        const maxVal = parseFloat(m[3]);
+        const minVal = parseFloat(m[1]!);
+        const maxVal = parseFloat(m[3]!);
         const minUnit = m[2];
         const maxUnit = m[4];
         const minPx = minUnit === 'rem' ? minVal * 16 : minVal;

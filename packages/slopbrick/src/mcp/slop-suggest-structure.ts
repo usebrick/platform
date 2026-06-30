@@ -56,7 +56,7 @@ export async function runSuggestWithStructure(
   // Annotate with the upgrade hint. If the slow-path response is not
   // JSON (shouldn't happen, but be defensive), pass it through unchanged.
   try {
-    const parsed: unknown = JSON.parse(result.content[0].text);
+    const parsed: unknown = JSON.parse(result.content[0]!.text);
     if (parsed !== null && typeof parsed === 'object') {
       (parsed as Record<string, unknown>).structureHint = STRUCTURE_NOT_FOUND_HINT;
       return {
