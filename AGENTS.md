@@ -13,15 +13,16 @@ The home of every `usebrick.dev` tool:
 | Package | Status | Notes |
 |---------|--------|-------|
 | `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure Platform spec (types + loaders + JSON Schemas). The moat. |
-| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 13 scores, 60+ rules, MCP server. |
-| `packages/website/` | **private** — workspace-only, deployed to GitHub Pages | The usebrick.dev marketing site. Astro + Lenis + GSAP, WebGL brick shader hero. |
+| `packages/engine/` | **private** — workspace-only | The pure scanning engine. 4-score model, Bayesian LR combiner, parser, scoring. No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
+| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 4 scores, 95 rules in 15 categories, MCP server. The flagship. |
+| `packages/website/` | **private** — workspace-only, deployed to Cloudflare Pages | The usebrick.dev marketing site. Astro + Lenis + GSAP, WebGL brick shader hero. |
 
-Future packages (`stackpick`, `gir`, `mcp`, `cli`) join here as they're built.
+Future packages (`stackpick`, `gir`, `cli`) join here as they're built. (The MCP server already ships inside `slopbrick`; a standalone `@usebrick/mcp` package is a future extraction.)
 
 ## What this monorepo is NOT
 
 - **Not a place for one-off experiments.** Tools land here when they're real, named, versioned, and tested.
-- **Not a polyglot monorepo.** All packages are TypeScript + Node 18+. If a tool needs Rust or Python, it lives in its own repo and consumes `@usebrick/core` from npm.
+- **Not a polyglot monorepo.** All packages are TypeScript + Node 20+. If a tool needs Rust or Python, it lives in its own repo and consumes `@usebrick/core` from npm.
 - **Not synchronized with per-package npm releases.** Each package has its own version, but they evolve in lock-step (slopbrick's `package.json` bumps `@usebrick/core` workspace dep version on every schema change).
 
 ## The contract — `@usebrick/core` schemas
@@ -65,7 +66,7 @@ pnpm -r test         # every package
 pnpm -r build        # builds core first (workspace dep), then slopbrick
 ```
 
-CI runs the same commands on every PR + push to main. Tag pushes additionally trigger `publish.yml` for the `slopbrick` package.
+CI runs the same commands on every PR + push to main. Publishing the `slopbrick` package to npm is triggered by `release: types: [published]` (when you cut a GitHub release), not by tag pushes. The `publish.yml` workflow has two human gates: the `publish` environment approval + the release itself.
 
 ## Conventions for changes touching `core/`
 
