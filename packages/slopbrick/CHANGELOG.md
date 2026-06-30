@@ -1,5 +1,141 @@
 # Changelog
 
+## [0.17.4] - 2026-06-30 — Phase A refactor (contract migration + tsconfig strictness)
+
+v0.17.4 is a patch release that closes the v0.17.3 review's
+"concentrated debt" tier. **No behavior change** — the
+published slopbrick contract is unchanged from v0.17.3. This
+release is purely an internal cleanup that makes the codebase
+match the architecture the v0.17.3 review described as the goal.
+
+### Fixed (R-H4 closeout) — `core` contract migration
+
+The v0.17.3 review identified that `core` had two parallel
+type representations: a hand-written set in `structure-types.ts`
+and the auto-generated set in `src/generated/`. The hand-written
+types were "systematically looser" than the JSON Schemas they
+should enforce, and the two could drift apart unnoticed.
+
+v0.17.4 closes the migration:
+
+- **`structure-types.ts`**: deleted 5 hand-written types
+  (`InventoryFile`, `ConstitutionFile`, `HealthFile`,
+  `StructureCategory`, `StructurePattern`,
+  `ComponentFingerprint`). Now contains only
+  `STRUCTURE_SCHEMA_VERSION` + `FileMtimeEntry` (no JSON-Schema
+  counterpart) + validator re-exports. Net deletion: 250 lines.
+- **`src/validators.ts`**: new module. The 6 runtime validators
+  (`isStructurePattern`, `isComponentFingerprint`,
+  `isInventoryFile`, `isConstitutionFile`, `isFileMtimeEntry`,
+  `isHealthFile`) moved here. They are now type predicates
+  against the generated `RepositoryStructure*` types, not the
+  hand-written ones.
+- **`src/index.ts`**: deprecated re-exports removed. New public
+  API: `RepositoryStructureInventory/Constitution/Health/StructureMarkdown`
+  + `Pattern`/`Component`/`Category` (from generated). Validators
+  re-exported from `structure-types.ts` for backward compat.
+- **`engine/buildHealthFromReport`**: return type changed to
+  `RepositoryStructureHealth`. The contract tightening exposed
+  two latent issues — both now addressed at the source.
+- **Slopbrick consumers updated**: `structure.ts`,
+  `structure-md.ts`, `bench-scan.ts`, `louvain.ts`, 4 test
+  files all switched to the generated type names via alias.
+
+The migration surfaced 2 real contract tightenings that the
+hand-written types had been hiding:
+
+1. **`topOffenseIds` is now a 0-3 tuple** (was `string[]`).
+   The runtime was already slicing to 3 in
+   `engine/src/structure.ts:472`; the cast makes the contract
+   explicit at the type level.
+2. **`Component.files` is now `[string, ...string[]]`** (at
+   least 1, was `string[]`). All visitors (rust, php, go, etc.)
+   produce `files: [filePath]` by construction, so the cast in
+   `structure-md.ts:148` is safe under the visitor invariant.
+
+### Fixed (R-H2) — `engine` dedupes `Verdict` from `@usebrick/core`
+
+The v0.17.3 review identified two representations of the
+same `Verdict` union that had to be kept in sync. v0.17.4
+removes the duplicate:
+
+- `engine/src/composite-scoring.ts:65` previously declared
+  `type Verdict = 'USEFUL' | 'OK' | ...` — a local copy of
+  `core/verdicts.ts:23`. Now imports `Verdict, isDefaultOff`
+  from `@usebrick/core`.
+- `ELIGIBLE_VERDICTS` (line 61) previously hardcoded
+  `new Set(['USEFUL', 'OK'])` from the local copy. Now derived
+  programmatically: `!isDefaultOff(verdict) && verdict !== 'HYGIENE'`.
+  This makes the eligibility logic self-maintaining: adding a
+  new `Verdict` to `core/verdicts.ts` automatically updates
+  `ELIGIBLE_VERDICTS` without a second code change.
+
+R-H2 also flagged a "Rule duplicate" between `engine/mdl.ts:51`
+and `slopbrick/types.ts:1006`. Investigation: these are NOT
+duplicates. `mdl.ts:51` is a 2-field minimal interface for MDL
+math; `slopbrick/types.ts:1006` is the full `Rule<Context>`.
+Different layers. R-H2 was only right about `Verdict`.
+
+### Fixed (R-H5) — `slopbrick/tsconfig.json` now extends the base
+
+The v0.17.0 review flagged that `slopbrick/tsconfig.json`
+silently dropped 5 of the 5 strictness flags from the base
+tsconfig. v0.17.4 fixes all of them:
+
+- `noImplicitOverride` — adopted. Surfaced 1 real bug in
+  `ConfigValidationError.name` (now `override readonly name`).
+- `allowSyntheticDefaultImports` — adopted.
+- `isolatedModules` — adopted (future-proofs tsup builds).
+- `noUncheckedIndexedAccess` — adopted. The original v0.17.1
+  CHANGELOG estimated "25+" errors; the real cost was 299
+  across 50 files. All fixed in this release.
+- `noFallthroughCasesInSwitch` — adopted. Slopbrick has 0
+  case statements with fallthrough; the flag caught 0 errors
+  but is now in place for future code.
+
+The 299 fixes are mechanical: `!` assertions on regex capture
+groups in visitor files (the dominant pattern, ~240 of the
+299), `!` assertions on loop-bounded array access in math
+code (`matrix[i]![j]!`), `??` fallbacks for `T | undefined`
+ternary results, type guards for `.filter()` chains, and one
+`override` modifier. The slopbrick visitor code was written
+without `noUncheckedIndexedAccess` in mind, which is why the
+error count was so high.
+
+Also switched `slopbrick/tsconfig.json`'s `include` pattern
+to match engine: `src/**/*` only (was including `tests/` and
+`scripts/` which the build doesn't use).
+
+### Verified
+
+- `pnpm -r typecheck`: 0 errors across `core`, `engine`,
+  `slopbrick`, `website`.
+- `pnpm -r test`: all pass (164 slopbrick cli+report + 35 core
+  + 1 engine + slopbrick engine-integration tests).
+- `slopbrick scan` runs end-to-end against the platform
+  source. `version: "3"` in `health.json` (correct).
+
+### Installation
+
+```bash
+npm install -D slopbrick@0.17.4
+```
+
+No migration needed. Drop-in replacement for v0.17.3.
+
+### Deferred (in `docs/research/rule-recalibration-v0.18.0.md`)
+
+- v0.18.0 plan: dead-code detection (3-5 new rules covering
+  dead exports, dead functions, dead types, dead config) +
+  95-rule recalibration (delete or reclassify 27 DORMANT
+  rules + 35 zero-recall rules; target 60-75 rules). 8-PR
+  sequence over 2 weeks.
+- 4-score display model (the reverted Phase 3c UX). For v0.18.0
+  after the data layer is stable.
+- Phase B-D of the v0.17.3 refactor plan: R-H1 (split
+  program.ts 1648 lines), R-M2 (split types.ts 1090 lines),
+  R-H3 (engine I/O boundary), R-M1, R-M3, R-M4, R-L1-R-L4.
+
 ## [0.17.3] - 2026-06-30 — Schema fix cascade (B3 + B4 + B5) + LOW items
 
 v0.17.3 is a focused PR that closes the B3, B4, and B5 BLOCKERs from the v0.17.0 review, plus the LOW `case 'mjs':` duplicate in `packages/engine/src/parser.ts`. **BREAKING for cross-language consumers of the JSON Schemas** (the schema `version` constant bumps from `2` to `3`, and the public type names rename from `RepositoryMemory*` to `RepositoryStructure*`). TypeScript consumers re-resolve through `@usebrick/core`; the old aliases are gone.
