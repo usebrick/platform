@@ -82,6 +82,8 @@ import { runInitWizard, runDoctor, isInteractive } from './init';
 import { registerBadge } from './commands/badge.js';
 import { registerSuggest } from './commands/suggest.js';
 import { registerExplain } from './commands/explain.js';
+import { registerInstall } from './commands/install.js';
+import { registerUninstall } from './commands/uninstall.js';
 
 import {
   loadConfig,
@@ -380,41 +382,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         process.exit(0);
       });
 
-    program
-      .command('install')
-      .description('install the git pre-commit hook')
-      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
-        const options = command.optsWithGlobals() as CliGlobalOptions;
-        const cwd = resolve(options.workspace ?? process.cwd());
-        const root = getGitRoot(cwd);
-        if (!root) {
-          logger.error('Not a Git repository. Run `git init` first, or remove --staged from your command.');
-          process.exit(2);
-        }
-        const result = installHook(root);
-        if (!options.quiet) {
-          logger.info(result.message);
-        }
-        process.exit(result.exitCode);
-      });
+    // v0.18.x (R-H1): install action moved to ./commands/install.ts
+    registerInstall(program);
 
-    program
-      .command('uninstall')
-      .description('uninstall the git pre-commit hook')
-      .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
-        const options = command.optsWithGlobals() as CliGlobalOptions;
-        const cwd = resolve(options.workspace ?? process.cwd());
-        const root = getGitRoot(cwd);
-        if (!root) {
-          logger.error('Not a Git repository. Run `git init` first, or remove --staged from your command.');
-          process.exit(2);
-        }
-        const result = uninstallHook(root);
-        if (!options.quiet) {
-          logger.info(result.message);
-        }
-        process.exit(result.exitCode);
-      });
+    // v0.18.x (R-H1): uninstall action moved to ./commands/uninstall.ts
+    registerUninstall(program);
 
     // v0.17.5 (R-H1): badge/suggest/explain actions moved to ./commands/*.ts
     registerBadge(program);
