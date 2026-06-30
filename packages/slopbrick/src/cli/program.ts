@@ -98,6 +98,12 @@ import { registerReport } from './commands/report.js';
 import { registerCalibrate } from './commands/calibrate.js';
 import { registerTrend } from './commands/trend.js';
 import { registerDrift } from './commands/drift.js';
+import { registerPr } from './commands/pr.js';
+import { registerSecurity } from './commands/security.js';
+import { registerTest } from './commands/test.js';
+import { registerArchitecture } from './commands/architecture.js';
+import { registerBusinessLogic } from './commands/business-logic.js';
+import { registerMaintenanceCost } from './commands/maintenance-cost.js';
 
 import {
   loadConfig,
@@ -716,259 +722,16 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     registerTrend(program);
     registerDrift(program);
 
-    program
-      .command('pr')
-      .description(
-        'Score the slop cost of the current PR. Compares --base (default: main) to --head (default: HEAD), ' +
-          'scans only changed source files, returns a single weighted score. ' +
-          'Exits 1 when score > --threshold (default 20).',
-      )
-      .option('--base <ref>', 'base git ref to diff from', 'main')
-      .option('--head <ref>', 'head git ref to diff to', 'HEAD')
-      .option('--format <text|json|markdown>', 'output format', 'text')
-      .option('--threshold <n>', 'score threshold (overrides config.prScoreThreshold)', parseThreshold)
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
-      .action(
-        async (
-          cmdOptions: {
-            base?: string;
-            head?: string;
-            format?: string;
-            threshold?: number;
-            maxFiles?: number;
-          },
-          command: Command,
-        ) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const cwd = resolve(options.workspace ?? process.cwd());
+    // v0.18.x (R-H1): pr action moved to ./commands/pr.ts
+    registerPr(program);
 
-            // The global scan --format <pretty|json|sarif|html> shadowed
-            // the subcommand's local --format option in Commander: the
-            // value ends up in `options.format` (global) and
-            // `cmdOptions.format` (local) keeps its default. Mirror the
-            // drift subcommand's pattern — read global first, then fall
-            // back to the local value.
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: PrFormat =
-              rawFormat === 'json' || rawFormat === 'markdown' || rawFormat === 'text'
-                ? (rawFormat as PrFormat)
-                : 'text';
-
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runPrScan(cwd, config, {
-              base: cmdOptions.base,
-              head: cmdOptions.head,
-              format,
-              threshold: cmdOptions.threshold,
-              maxFiles: cmdOptions.maxFiles,
-            });
-            logger.info(formatPrReport(result, { format }));
-            process.exit(prExitCode(result));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('security')
-      .description(
-        'AI Security Risk — categorical severity for security findings disproportionately introduced by AI-generated code',
-      )
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      .option('--strict', 'exit 1 on any high or critical finding (CI gate)', false)
-      .action(
-        async (cmdOptions: { format?: 'pretty' | 'json'; strict?: boolean }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'pretty';
-            const format: 'pretty' | 'json' =
-              rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { report } = await runScan({ ...options, workspace: cwd });
-            const securityIssues = report.issues.filter((i) => i.category === 'security');
-            const { risk, findings } = computeAiSecurityRisk(securityIssues);
-
-            if (format === 'json') {
-              logger.info(
-                JSON.stringify(
-                  {
-                    aiSecurityRisk: risk,
-                    findings,
-                    totalFindings: securityIssues.length,
-                    issues: securityIssues,
-                  },
-                  null,
-                  2,
-                ),
-              );
-            } else {
-              logger.info(formatAiSecurityRiskLine(risk, findings));
-              if (securityIssues.length > 0) {
-                logger.info('');
-                logger.info('  Findings:');
-                for (const issue of securityIssues.slice(0, 20)) {
-                  logger.info(
-                    `    [${issue.severity.padEnd(7)}] ${issue.filePath ?? ''}:${issue.line}  ${issue.ruleId}`,
-                  );
-                  logger.info(`        ${issue.message}`);
-                }
-                if (securityIssues.length > 20) {
-                  logger.info(`    …and ${securityIssues.length - 20} more`);
-                }
-              }
-            }
-
-            if (cmdOptions.strict && (risk === 'high' || risk === 'critical')) {
-              process.exit(1);
-            }
-            process.exit(0);
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('test')
-      .description(
-        'Test Quality score (0-100, lower = more issues). Runs the four `test/*` rules across test files. Use --strict to exit 1 on any test issue (CI gate).',
-      )
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      .option('--strict', 'exit 1 on any test issue (CI gate)', false)
-      .action(
-        async (cmdOptions: { format?: 'pretty' | 'json'; strict?: boolean }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'pretty';
-            const format: 'pretty' | 'json' =
-              rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const { result } = await runTestScan(cwd, config, { strict: options.strict });
-            logger.info(formatTestReport(result, { json: format === 'json' }));
-            process.exit(testExitCode(result));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('architecture')
-      .description(
-        'compute the Architecture Consistency Score (0-100) — one number for cross-file pattern duplication',
-      )
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
-      .action(
-        async (cmdOptions: { format?: 'pretty' | 'json'; maxFiles?: number }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'pretty';
-            const format: 'pretty' | 'json' =
-              rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const score = await buildArchitectureScore(cwd, config, cmdOptions.maxFiles);
-            const out =
-              format === 'json' ? JSON.stringify(score, null, 2) : formatArchitectureScore(score);
-            logger.info(out);
-            process.exit(0);
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('business-logic')
-      .description(
-        'Business Logic Coherence (0-100) — flag pricing/validation/formatting anti-patterns AI generates disproportionately',
-      )
-      .option('--format <text|json|markdown>', 'output format', 'text')
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
-      .action(
-        async (cmdOptions: { format?: string; maxFiles?: number }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            // Subcommand-local --format collides with the global scan
-            // --format in Commander. Mirror `drift` / `pr` precedence:
-            // global wins if the user typed the global flag explicitly.
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: BusinessLogicFormat =
-              rawFormat === 'json' || rawFormat === 'markdown' || rawFormat === 'text'
-                ? (rawFormat as BusinessLogicFormat)
-                : 'text';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runBusinessLogicScan(cwd, config, {
-              maxFiles: cmdOptions.maxFiles,
-            });
-            logger.info(formatBusinessLogicScan(result, { format }));
-            process.exit(businessLogicExitCode(result));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('maintenance-cost')
-      .description(
-        'AI Maintenance Cost — categorical (low | medium | high | critical) meta-score derived from existing slopbrick signals. Anchored to Sonar $306K/yr/MLoC + CodeClimate grade→minutes + AI multiplier (1.5–2.5×).',
-      )
-      .option('--format <text|json>', 'output format', 'text')
-      .option('--strict', 'exit 1 on high/critical bucket (CI gate)', false)
-      .option('--max-files <n>', 'cap on files scanned (drift re-run)', parseCount, 500)
-      .action(
-        async (
-          cmdOptions: { format?: string; strict?: boolean; maxFiles?: number },
-          command: Command,
-        ) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: 'text' | 'json' =
-              rawFormat === 'json' || rawFormat === 'text' ? rawFormat : 'text';
-            const strict = options.strict ?? cmdOptions.strict ?? false;
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runMaintenanceCostScan(cwd, config, {
-              maxFiles: cmdOptions.maxFiles,
-              strict,
-            });
-            logger.info(formatMaintenanceCostReport(result, { json: format === 'json' }));
-            process.exit(maintenanceCostExitCode(result, { strict }));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
+    // v0.18.x (R-H1): security/test/architecture/business-logic/maintenance-cost
+    // actions moved to ./commands/{security,test,architecture,business-logic,maintenance-cost}.ts
+    registerSecurity(program);
+    registerTest(program);
+    registerArchitecture(program);
+    registerBusinessLogic(program);
+    registerMaintenanceCost(program);
 
     program
       .command('docs')
