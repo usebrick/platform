@@ -7,6 +7,53 @@ const pkg = require('../package.json') as { version: string };
 export const VERSION = pkg.version;
 
 // ---------------------------------------------------------------------------
+// v0.18.4 (Phase B R-M2) — Table of contents
+// ---------------------------------------------------------------------------
+//
+// This file is 1090 lines and growing. The original rev 3 plan
+// was to split it into focused modules under `src/types/`:
+//   primitives.ts   — Severity, Category, Framework (no deps)
+//   scan.ts         — Issue, FixSuggestion, *Fact, FileScanResult
+//   config.ts       — Rule, RuleContext, ResolvedConfig
+//   report.ts       — HealthFile, RepositoryHealth, AiMaintenanceCost
+//   project-report.ts — ProjectReport (the 250-line scan output)
+//   baseline.ts     — BaselineCache, FlywheelState, ResearchMetrics
+//
+// I attempted the split but had to revert because the engine
+// code (repository-health.ts in particular) uses several
+// fields that weren't yet in the type definitions and the
+// types didn't fully express them. The split needs a careful
+// audit of every consumer — too risky for an in-session
+// refactor. Tracking as a deferred task.
+//
+// This commit adds the TOC + section markers below so
+// navigation is easier without an actual split.
+//
+// Section index (line numbers as of this commit):
+//   30   HealthFile (memory artifact)
+//   67   AI Maintenance Cost (Phase 7)
+//  143   Doc Finding types (Phase 6)
+//  177   DB Finding types (Phase 8)
+//  213   Repository Health composite (v0.15.0 U.4)
+//  300   Constitution re-export
+//  302   Severity / RuleSeverity / Category / Framework
+//  330   Issue + FixSuggestion
+//  369   CachedFile / ScanCache (incremental cache)
+//  380   Per-file *Fact types (~30 types)
+//  635   ScanFacts / ImportFact / FileScanResult
+//  674   ComponentScore
+//  682   BaselineMeta
+//  689   ProjectReport (the 250-line scan output)
+//  939   TopOffender
+//  947   BaselineCache / SlopAuditRun / AutoTunedRule
+//       / RuleSuggestion
+//  984   ResearchMetrics / FlywheelState / FlywheelOutput
+// 1007   Rule config (MagicNumberSpacingConfig, RuleContext, Rule)
+// 1034   ResolvedConfig
+//
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // v0.15.0 U.4 — Repository Memory Platform Health snapshot
 // ---------------------------------------------------------------------------
 
