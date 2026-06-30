@@ -49,4 +49,4 @@
 > a distinct value (in v0.15.0 all 4 read from the same source). The
 > slopbrick CLI is now an unscoped npm package (`npm install slopbrick`).
 >
-> For maintainer actions (npm deprecate, GitHub transfer, env setup), see `docs/rename-checklist.md` in the new monorepo.
+> For maintainer actions (npm deprecate, GitHub transfer, env setup), see the operator notes in the new monorepo (this file is not checked in — it lives in the maintainer's local clone).

@@ -393,7 +393,7 @@ The brainstorming, design, and planning artifacts for the v0.15.0 work:
 - `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` (470 lines) — the rebrand + engine/UI split + multi-score design
 - `docs/superpowers/plans/2026-06-26-architectural-refactor.md` (2,439 lines) — the 28-task implementation plan (to be merged with the rebrand + multi-score work)
 
-The full session log is in `docs/UPDATE-SUMMARY.md`.
+The full session log is in `packages/slopbrick/CHANGELOG.md` (per-version release notes for the v0.14.5 → v0.15.0 → v0.16.0 → v0.17.0 chain).
 
 ---
 

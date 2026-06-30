@@ -271,7 +271,7 @@ platform/
 │   └── (per-package deploy workflows under each package)
 ├── docs/
 │   ├── ARCHITECTURE.md             full architectural reference
-│   ├── UPDATE-SUMMARY.md           v0.14.5 → v0.17.0 changelog (v0.15 + v0.16 + v0.17)
+│   ├── CHANGELOG.md                full release notes (per package, under packages/*/CHANGELOG.md)
 │   ├── future-extractions.md       packages/structure + packages/contracts criteria
 │   └── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
 ├── examples/
