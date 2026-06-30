@@ -46,7 +46,7 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.16.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
+**Status:** v0.17.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
 the full release notes.
 
 ---
@@ -76,9 +76,9 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 ---
 
-## The headlines (4-score model, v0.16.0+)
+## The headlines (4-score model, v0.17.0+)
 
-> **v0.15.0 introduced the 4-score model; v0.16.0 R3 completed it.**
+> **v0.15.0 introduced the 4-score model; v0.16.0 + v0.17.0 completed it.**
 > The single `Slop Index` is replaced by **4 independent scores**
 > (all 0-100, **higher = better**). The legacy `slopIndex` field
 > is kept as optional on `ProjectReport` for backward compat with
@@ -153,7 +153,7 @@ Next step:
 | Understand the Slop Index vs Coherence | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
 | See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
-| See the 80 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
+| See the 95 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |
 | See what's changed in each release | [`CHANGELOG.md`](./CHANGELOG.md) |

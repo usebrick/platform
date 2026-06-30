@@ -57,13 +57,22 @@ src/
 
 ## Deploy
 
-`.github/workflows/deploy.yml` runs on push to `main` (when files in
-`packages/website/**` change). It builds the site, uploads the `dist/`
-folder, and deploys to GitHub Pages.
+The site is deployed to **Cloudflare Pages** (project `platform`,
+custom domain `usebrick.dev`). There is no automated workflow deploy —
+`packages/website/dist/` is uploaded to Cloudflare Pages via
+`wrangler pages deploy` from the terminal (one-time setup, see
+[`docs/operations/cloudflare-pages-setup.md`](../../docs/operations/cloudflare-pages-setup.md)).
 
-If you need to deploy elsewhere (Cloudflare Pages, Vercel, Netlify),
-swap the `actions/deploy-pages` step for the relevant provider's
-action. The build step is identical.
+GitHub Actions (`.github/workflows/ci.yml` + `publish.yml`) handle the
+**other** packages:
+- `ci.yml` — typecheck + test on every PR / push to main
+- `publish.yml` — `release: types: [published]` → build → npm publish
+  slopbrick (two human gates: the environment approval, and the
+  release itself).
+
+The website re-deploys when someone runs `wrangler pages deploy` after
+bumping `version.json` (which is auto-generated from
+`../slopbrick/package.json` at build time).
 
 ## License
 

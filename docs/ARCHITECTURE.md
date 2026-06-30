@@ -1,7 +1,7 @@
 # usebrick — Architecture & Functional Reference
 
 **Date**: 2026-06-26
-**Status**: v0.15.0 shipped (rebrand + engine extraction + multi-score)
+**Status**: v0.17.0 shipped (v0.15 rebrand + v0.16 4-score completion + v0.17 quality/coverage)
 **Author**: dystx (with Kimi Code CLI)
 **Source of truth for future changes**: `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` + `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md`
 
@@ -22,7 +22,7 @@ usebrick is **not** an LLM-memory product. It does not embed code, does not chat
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.14.5` on npm |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.17.0` on npm |
 | **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
 
@@ -59,17 +59,17 @@ platform/
 │   ├── core/                  @usebrick/core (private, workspace-only)
 │   ├── slopbrick/             slopbrick (published as `slopbrick`)
 │   ├── engine/                @usebrick/engine (private, workspace-only, NEW in v0.15.0)
-│   └── website/               @usebrick/website (private, deployed to GitHub Pages)
+│   └── website/               @usebrick/website (private, deployed to Cloudflare Pages)
 ├── docs/
 │   ├── architecture.md         this file
-│   ├── update-summary.md       v0.14.5 → v0.15.0 changelog
+│   ├── update-summary.md       v0.14.5 → v0.17.0 changelog (v0.15 + v0.16 + v0.17)
 │   ├── future-extractions.md   packages/memory + packages/contracts (future)
 │   ├── old-repo-redirect.md    (content for usebrick/slopbrick README redirect)
 │   └── superpowers/
 │       ├── specs/              design specs for v0.15.0
 │       └── plans/              implementation plans
 ├── AGENTS.md                   AI agent instructions
-├── CONTRIBUTING.md             (will be added in v0.15.0)
+├── CONTRIBUTING.md             contribution guide (added v0.15.0)
 ├── README.md                   project readme
 └── package.json                root (private workspace hub)
 ```
@@ -288,7 +288,7 @@ The user sees 3 buckets:
 
 ## 8. The scoring model
 
-### v0.14.5 (current): one number
+### v0.14.5 (legacy): one number
 
 ```
 Slop Score: 78/100

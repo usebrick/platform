@@ -16,7 +16,7 @@ usebrick is a four-product platform for the **Repository Structure Platform** (R
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the Constitution) | planned |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | **shipped** as `slopbrick@0.15.0` on npm |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | **shipped** as `slopbrick@0.17.0` on npm |
 | **MendBrick** | Repairs the structure (the migrator) | planned |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned |
 
@@ -87,7 +87,7 @@ Every `slopbrick scan` writes four atomic artifacts (and one cache file at the p
 
 ---
 
-## The 4-score model (v0.16.0+)
+## The 4-score model (v0.17.0+)
 
 The single `slopIndex` (lower = better) is replaced by **4 independent scores** (all 0-100, **higher = better**):
 
@@ -271,7 +271,7 @@ platform/
 │   └── (per-package deploy workflows under each package)
 ├── docs/
 │   ├── ARCHITECTURE.md             full architectural reference
-│   ├── UPDATE-SUMMARY.md           v0.14.5 → v0.15.0 changelog
+│   ├── UPDATE-SUMMARY.md           v0.14.5 → v0.17.0 changelog (v0.15 + v0.16 + v0.17)
 │   ├── future-extractions.md       packages/structure + packages/contracts criteria
 │   └── old-repo-redirect.md        (content for usebrick/slopbrick README redirect)
 ├── examples/
