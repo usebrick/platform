@@ -8,7 +8,7 @@
 >
 > ```bash
 > # Old (frozen — no further releases from this repo):
-> npm install slop-audit   # → deprecated, points to @usebrick/platform
+> npm install slop-audit   # → deprecated, points to slopbrick (the unscoped npm package)
 >
 > # New (use this going forward):
 > npm install slopbrick    # → unscoped CLI, same package

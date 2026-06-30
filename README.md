@@ -96,7 +96,7 @@ The single `slopIndex` (lower = better) is replaced by **4 independent scores** 
 | **`aiQuality`** | AI-slop signatures (16 `ai/*` rules). INVERTED from legacy Slop Index. | **Yes** (≥ 70 passes) |
 | **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | No (informational) |
 | **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | No (informational) |
-| **`repositoryHealth`** (composite) | Weighted: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | No (informational) |
+| **`repositoryHealth`** (composite) | Weighted: 0.5×aiQ + 0.3×eng + 0.2×sec (matches `packages/slopbrick/src/types.ts:25`) | No (informational) |
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem.
 
