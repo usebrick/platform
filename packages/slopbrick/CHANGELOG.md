@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.18.1] - unreleased — Two verified critical bugfixes (rev 3 G1-verified)
+
+v0.18.1 closes two user-visible bugs in the shipped report. Both
+were verified against current code with G1 (reproduction) before
+any fix was scoped. v0.18.0 (the multi-week rule recalibration) is
+deferred to v0.18.7 to land after the verified bugfixes; the
+detector work (dead-code, duplication) splits into v0.18.8 and
+v0.18.9 respectively.
+
+### Fixed: `formatScoringExplainer` was describing a 2-score model that no longer exists
+
+**Reproduction (verified before scope, G1):**
+```bash
+$ grep -n "two scores" packages/slopbrick/src/report/pretty.ts
+692:    'Why two scores? The Slop Index measures AI-slop signatures ' +
+```
+
+The full footnote at `pretty.ts:690-699` read:
+
+> *"Why two scores? The Slop Index measures AI-slop signatures
+> (lower = better, this is the CI gate). The Repository Coherence
+> measures internal consistency (higher = better, informational).
+> A codebase can be hand-written AND inconsistent (low Slop,
+> low Coherence) or AI-generated AND consistent (high Slop,
+> high Coherence). See docs/scoring-explained.md for the full
+> math."*
+
+Three things wrong with that text:
+1. The product has **4** scores since v0.15.0 (`aiQuality`,
+   `engineeringHygiene`, `security`, `repositoryHealth`).
+2. The CI gate is `aiQuality >= 70` (**higher** = better), not
+   `slopIndex` (lower = better) — the explainer had the gate
+   direction backwards.
+3. It referenced `docs/scoring-explained.md` — the file exists
+   (verified, 5236 bytes) but itself uses the 2-score framing
+   and is also stale. Fixing the file is v0.18.5 (doc-hygiene)
+   scope; the in-code explainer is what users see, so it ships
+   first.
+
+**Fix:** the new footnote describes all 4 scores, names the
+correct gate (`AI Quality >= 70`, higher = better), and quotes
+the `repositoryHealth` weights from `metrics.ts:302-306`
+(`0.4·AI Quality + 0.3·Engineering Hygiene + 0.2·Security +
+0.1·Test Quality`). The brief report's copy was already
+correct; the full-report explainer now mirrors it.
+
+**Files:** `packages/slopbrick/src/report/pretty.ts`
+(`formatScoringExplainer`); test updated at
+`tests/report/v0.14.5i-ux.test.ts` (P5 trust-signal tests
+refined to test the suppression-line pattern, not the substring
+`INVERTED/NOISY`, which is now legitimately mentioned in the
+explainer).
+
+### (G9 self-audit floor — non-blocking) `security: 33` on platform source
+
+The platform's own `slopbrick scan --workspace .` returns
+`security: 33` (per `.slopbrick/health.json`), below the v0.18.10
+CI gate floor of `security >= 80`. This is a pre-existing
+scoring state, not caused by v0.18.1 PR-1. v0.18.10 will enforce
+the floor in CI; v0.18.1 ships with it documented but not
+enforced. To be addressed by the v0.18.7 recalibration.
+
+---
+
 ## [0.17.4] - 2026-06-30 — Phase A refactor (contract migration + tsconfig strictness)
 
 v0.17.4 is a patch release that closes the v0.17.3 review's

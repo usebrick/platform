@@ -682,19 +682,24 @@ export function formatPretty(report: ProjectReport): string {
 }
 
 /**
- * v0.14.5j — Plain-English explanation of the two scores, as a
- * footnote at the bottom of the report. The user asked
- * "what actually is repository coherence?" so the answer is
- * in the output itself.
+ * v0.18.1 — Plain-English explanation of the 4-score model, as a
+ * footnote at the bottom of the report. v0.14.5j had a 2-score
+ * "Why two scores?" / "docs/scoring-explained.md" footer that
+ * contradicted the v0.15.0 split (which produced 4 scores, not 2)
+ * and pointed at a file that never existed. The CI gate was also
+ * mis-stated (lower = better instead of higher = better). This
+ * footnote now matches the v0.17.x 4-score model and the
+ * `metrics.ts:302-306` repositoryHealth formula.
  */
 function formatScoringExplainer(_report: ProjectReport): string {
   return chalk.dim(
-    'Why two scores? The Slop Index measures AI-slop signatures ' +
-    '(lower = better, this is the CI gate). The Repository Coherence ' +
-    'measures internal consistency (higher = better, informational). ' +
-    'A codebase can be hand-written AND inconsistent (low Slop, low Coherence) ' +
-    'or AI-generated AND consistent (high Slop, high Coherence). ' +
-    'See docs/scoring-explained.md for the full math.',
+    'Four orthogonal scores (all 0-100, higher = better): ' +
+    'AI Quality (AI-slop signatures; the CI gate, AI Quality >= 70), ' +
+    'Engineering Hygiene (issues per category across arch/logic/layout/component/test), ' +
+    'Security (AI-flagged security risks, inverted from risk level), ' +
+    'Repository Health (composite: 0.4*AI Quality + 0.3*Engineering Hygiene + 0.2*Security + 0.1*Test Quality). ' +
+    'Only AI Quality gates CI; the others are informational. ' +
+    'Default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.',
   );
 }
 

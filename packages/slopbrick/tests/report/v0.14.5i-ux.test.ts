@@ -117,12 +117,17 @@ describe('v0.14.5i UX improvements', () => {
       const out = formatPretty(
         makeReport({ defaultOffSuppressedCount: 0, defaultOffRuleCount: 0 }),
       );
-      expect(out).not.toContain('INVERTED/NOISY');
+      // v0.18.1: the explainer legitimately mentions "INVERTED/NOISY" as a
+      // category label, so we test the actual suppression-line pattern
+      // (the check-mark + count) rather than the substring.
+      expect(out).not.toMatch(/0 INVERTED\/NOISY issue\(s\) suppressed/);
+      expect(out).not.toMatch(/✓ 0/);
     });
 
     it('handles missing defaultOffSuppressedCount gracefully (legacy reports)', () => {
       const out = formatPretty(makeReport());
-      expect(out).not.toContain('INVERTED/NOISY');
+      // v0.18.1: same as above — test the line, not the substring.
+      expect(out).not.toMatch(/INVERTED\/NOISY issue\(s\) suppressed/);
       // Should not crash
     });
   });
@@ -407,11 +412,28 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).not.toContain('Issues (');
     });
 
-    // Why two scores? footer
-    it('explains why there are two scores in a footnote at the bottom', () => {
+    // v0.18.1: explainer rewritten for the 4-score model. The legacy
+    // "Why two scores?" / docs/scoring-explained.md footer is gone (the
+    // docs file never existed and the v0.15.0 split produced 4 scores, not 2).
+    it('explains the 4-score model in a footnote at the bottom (v0.18.1)', () => {
       const out = formatPretty(makeReport({ coherence: 60 }));
-      expect(out).toContain('Why two scores?');
-      expect(out).toContain('docs/scoring-explained.md');
+      // Old text must be gone
+      expect(out).not.toContain('Why two scores?');
+      expect(out).not.toContain('docs/scoring-explained.md');
+      expect(out).not.toContain('Slop Index measures');
+      // 4 named scores referenced
+      expect(out).toContain('AI Quality');
+      expect(out).toContain('Engineering Hygiene');
+      expect(out).toContain('Security');
+      expect(out).toContain('Repository Health');
+      // CI gate is aiQuality >= 70, higher = better (legacy footer said lower = better)
+      expect(out).toMatch(/AI Quality\s*>=\s*70/);
+      expect(out).toMatch(/higher\s*=\s*better/i);
+      // repositoryHealth weights per metrics.ts:302-306
+      expect(out).toMatch(/0\.4.*AI Quality/);
+      expect(out).toMatch(/0\.3.*Hygiene/i);
+      expect(out).toMatch(/0\.2.*Security/i);
+      expect(out).toMatch(/0\.1.*Test/i);
     });
   });
 });
