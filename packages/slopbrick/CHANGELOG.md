@@ -258,6 +258,58 @@ after any `aiSpecific` change.
 - `pnpm bench:scan` PASS (v0.18.1 regression intact)
 - `pnpm -r typecheck` clean across all 4 packages
 
+### PR-3: document the relationship between `compositeScore` and `repositoryHealth`
+
+These are **two different composites** serving **two
+different questions** — a common reader mistake is to
+conflate them. PR-3 makes the relationship explicit in
+the code, the CHANGELOG, and a dedicated research doc
+(`docs/research/v0.18.2-pr3-relationship.md`).
+
+| Composite | Question | Range | Rules | CI gate |
+|-----------|----------|-------|-------|---------|
+| `compositeScore` (v0.18.2) | "is this AI?" | probability [0,1] + Jaeschke tier | AI-specific only (`aiSpecific: true`) | NO |
+| `repositoryHealth` (v0.15.0) | "is this healthy?" | integer [0, 100], higher is better | ALL rules | NO (`aiQuality >= 70` is the gate) |
+
+**The four quadrants** (orthogonal, not correlated):
+
+```
+                      | compositeScore   | repositoryHealth
+----------------------+------------------+----------------
+AI + clean            | HIGH             | HIGH
+Human + messy         | LOW              | LOW
+AI + messy            | HIGH             | LOW
+Human + clean         | LOW              | HIGH
+```
+
+**Why two?** They answer different questions for different
+audiences. `compositeScore` is the user question "is this
+codebase AI?"; `repositoryHealth` is the engineering question
+"is this codebase healthy?". v0.18.2 rev 3 decision
+("expose, don't replace") explicitly rejected merging them
+because:
+
+1. The deterministic model is fast and explainable; the
+   Bayesian model is O(n) over rules × corpus priors.
+2. The deterministic weights (0.4/0.3/0.2/0.1) are
+   user-tunable; the Bayesian priors are corpus-derived.
+3. A user who turns off AI-specific rules should still get
+   `repositoryHealth`. The two must remain independent.
+
+**Files added/changed:**
+- `packages/slopbrick/src/engine/metrics.ts` — extended the
+  docstring at the `compositeAggregate` block (around line
+  325) with the relationship table, the four quadrants, and
+  the rationale.
+- `packages/slopbrick/docs/research/v0.18.2-pr3-relationship.md`
+  — 130-line dedicated doc covering the definitions, the
+  quadrants, the migration guidance, and "what each does NOT
+  do" (anti-patterns to avoid).
+
+**Migration guidance:** if you were reading
+`repositoryHealth` to infer "is this AI?", stop — that's
+`compositeScore`'s job. The two are not correlated.
+
 ## [0.18.1] - 2026-06-30 — Two verified critical bugfixes (rev 3 G1-verified)
 
 v0.18.1 closes two user-visible bugs in the shipped report. Both

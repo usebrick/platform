@@ -322,6 +322,43 @@ export function aggregateReport(
   // mean + max + tier aggregate. The tier is taken from the
   // mean's confidenceTier (per Jaeschke 1994 JAMA thresholds).
   // Informational: not used to compute the 4 headline scores.
+  //
+  // PR-3: relationship to repositoryHealth (the deterministic
+  // composite). These are TWO different composites serving
+  // different questions:
+  //
+  //   compositeScore (this block)   = "is this codebase AI?"
+  //     Bayesian per-file probability averaged with Jaeschke
+  //     tiers. Probability in [0, 1], tier in {LIKELY_HUMAN,
+  //     INCONCLUSIVE, LIKELY_AI, VERY_LIKELY_AI}. Uses ONLY
+  //     AI-specific rules (`aiSpecific: true` in the rule's
+  //     meta + matching `aiSpecific: true` in signal-strength.json).
+  //
+  //   repositoryHealth (v0.15.0)   = "is this codebase healthy?"
+  //     Deterministic weighted blend of the 4 headline scores:
+  //       0.4 * aiQuality
+  //     + 0.3 * engineeringHygiene
+  //     + 0.2 * security
+  //     + 0.1 * testQuality
+  //     Integer in [0, 100], higher is better. Uses ALL rules
+  //     (ai + cross-cutting), weighted by severity.
+  //
+  // The two composites are ORTHOGONAL signals, not correlated.
+  // A codebase can be:
+  //
+  //                       | compositeScore   | repositoryHealth
+  //   --------------------+------------------+----------------
+  //   AI + clean          | HIGH             | HIGH
+  //   Human + messy       | LOW              | LOW
+  //   AI + messy          | HIGH             | LOW
+  //   Human + clean       | LOW              | HIGH
+  //
+  // Conflating them is a common reader mistake. The 4 headline
+  // scores + repositoryHealth are the deterministic, weighted
+  // model. compositeScore is the Bayesian "is this AI?" signal.
+  // v0.18.2 rev 3 decision: "expose, don't replace" — the
+  // compositeScore is informational and does NOT change the
+  // 4 headline scores.
   let compositeAggregate: ProjectReport['compositeScore'];
   if (compositeScores && compositeScores.length > 0) {
     const defined = compositeScores.filter(
