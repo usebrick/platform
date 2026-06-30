@@ -537,7 +537,22 @@ export async function buildDocFreshness(
     }
     const relPath = relative(cwd, abs);
     // v0.17.0: call first-class Rule objects instead of internal detect* fns.
-    const context = { config, filePath: relPath, cwd };
+    // v0.18.7: include the package's own `name` from package.json in
+    // the context so doc rules that check self-imports (e.g.
+    // expired-code-example) can resolve it without each rule
+    // re-reading package.json. The engine has the authoritative
+    // `packages` set; the rule's create() may add it but the
+    // engine's context.plumbing is the canonical path.
+    let packageName: string | undefined;
+    try {
+      const pkg = JSON.parse(
+        readFileSync(join(cwd, 'package.json'), 'utf-8'),
+      ) as { name?: string };
+      packageName = pkg.name;
+    } catch {
+      // Ignore — package.json is malformed or missing.
+    }
+    const context = { config, filePath: relPath, cwd, packageName };
     const facts = { filePath: relPath, v2: { _source: source } as any };
     const ruleConfigs: Array<{ rule: Rule; ruleId: DocFinding['ruleId'] }> = [
       { rule: stalePackageReferenceRule, ruleId: 'docs/stale-package-reference' },

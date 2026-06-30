@@ -48,30 +48,16 @@ export const expiredCodeExampleRule = createRule<ExpiredCodeContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
-    // v0.18.6: lazy-resolve the package set on first use. The
-    // `context.packages` from create() works in scan-pipeline mode
-    // but is empty in the engine's `buildDocFreshness` path (which
-    // calls create then analyze with separate context objects).
-    // Resolve the package set from disk on demand and cache it on
-    // `context` for the duration of this analyze call.
-    let packages = context.packages as Set<string> | undefined;
-    if (!packages || !packages.size) {
-      packages = declaredPackages(context.cwd);
-      try {
-        const pkg = JSON.parse(
-          require('node:fs').readFileSync(
-            require('node:path').join(context.cwd, 'package.json'),
-            'utf-8',
-          ),
-        ) as { name?: string };
-        if (pkg.name) packages.add(pkg.name);
-      } catch {
-        // Ignore — package.json is malformed or missing.
-      }
-      // Stash back on context so a second analyze() call (if any)
-      // reuses the resolved set.
-      (context as { packages?: Set<string> }).packages = packages;
-    }
+    // v0.18.7: build the declared-packages set on demand. The
+    // create()-returned `context.packages` is sometimes lost when
+    // the engine's buildDocFreshness path invokes analyze (the
+    // engine's context.plumbing can drop augmented fields across
+    // the create/analyze boundary). The engine now also passes
+    // `packageName` in the context, which we use as a guaranteed
+    // fallback for self-imports.
+    const packages = declaredPackages(context.cwd);
+    const packageName = (context as { packageName?: string }).packageName;
+    if (packageName) packages.add(packageName);
     const blocks = extractFencedCodeBlocks(source);
     for (const block of blocks) {
       if (!CODE_LANGS.has(block.lang)) continue;

@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.18.7] - 2026-06-30 — Output cleanup (engine-side `create()` → `analyze()` plumbing)
+
+The remaining 4 `expired-code-example` false positives from
+v0.18.6 were a real engine bug, not a rule issue. The
+`buildDocFreshness` path constructs `context = { config,
+filePath, cwd }` per file and then calls `rule.create(context)`.
+The rule's `create()` augments the context with `packages`,
+but the engine's context.plumbing sometimes drops the augmented
+field before `analyze()` runs. v0.18.6's `create()`-side fix
+worked in the test suite but not in the docs command.
+
+### Engine fix (the real bug)
+
+`src/engine/doc-freshness.ts` now passes the package's own
+`name` from `package.json` directly in the context as
+`context.packageName`. Rules read this field in `analyze()`
+without relying on `create()`'s return. The canonical data
+flow is: engine → context → analyze.
+
+### Doc-freshness: 51/100 → 67/100
+
+```
+BEFORE (v0.18.6):                  AFTER (v0.18.7):
+  stale-package-reference  0  ->    0
+  stale-function-reference 11  ->  11  (real — research notes
+                                        referencing 3rd-party class
+                                        names like sqlalchemy's
+                                        InstrumentationManager)
+  expired-code-example     4  ->    0  (engine-side fix)
+  broken-link              0  ->    0
+  ─────────────────────────────
+  TOTAL: 15                ->   11
+  FRESHNESS: 51/100 (high) ->  67/100 (medium)
+```
+
+The remaining 11 stale-function-reference findings are
+deliberately left in place: they reference `formatVerdict`,
+`formatCompositeScore`, `formatScoringExplainer` (planned but
+not implemented), and third-party class names
+(`InstrumentationManager`, `QdrantDataStore`, `Tool`,
+`ToolInput`) in research notes documenting drift examples from
+sqlalchemy/langchaingo. These are real doc-rot issues that
+should be fixed in v0.19+ (either implement the planned
+formatting helpers, or rewrite the research notes to use
+generic class names).
+
+### Doc fix
+
+- `docs/rule-catalog.md`: removed broken self-link to
+  `ai-slop-rule-catalog.md` (was renamed to this file in an
+  earlier release).
+
+### Quality gates (all green)
+
+- `pnpm exec tsc --noEmit` → 0 errors
+- `pnpm exec vitest run` → 1823/1823 pass
+- `pnpm exec tsx scripts/bench-scan.ts` → PASS
+- `pnpm -r build` → clean
+
 ## [0.18.6] - 2026-06-30 — Doc-hygiene pass
 
 Self-audit of the project's own docs. Five rule bugs (one per

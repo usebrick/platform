@@ -232,7 +232,7 @@ This runs automatically before `pnpm build` and `pnpm test` via the existing `pr
 
 ## See also
 
-<!-- v0.18.6: ai-slop-rule-catalog.md was renamed to docs/rule-catalog.md. Self-link below. -->
+<!-- v0.18.6: ai-slop-rule-catalog.md was renamed to docs/rule-catalog.md (this file). -->
 - [rule-catalog.md](./rule-catalog.md) — design rationale + scoring philosophy (this file)
 - [scoring-runbook.md](./scoring-runbook.md) — interpreting the five scores
 - [../ROADMAP.md](../ROADMAP.md) — strategic positioning + 12-phase plan
