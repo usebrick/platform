@@ -1,6 +1,99 @@
 # Changelog
 
-## [0.18.4] - Unreleased — --help clusters (CLI UX pass)
+## [0.18.5] - 2026-06-30 — Dead-code detector v1+v2 (5 `dead/*` rules)
+
+The most-requested missing piece: catches the AI-iteration
+rot the project itself was suffering from — when the model
+refactors a function, the import, the const binding, the
+parameter, the dead branch, and the unreachable statement
+all stay in the file. tsc's `noUnusedLocals: false` and
+`allowUnreachableCode: true` ship defaults mean none of
+these are caught by the type checker.
+
+### 5 new rules (all `DORMANT` until v8 calibration)
+
+| rule | what it catches | severity |
+|---|---|---|
+| `dead/unused-import` | ES imports never referenced | low |
+| `dead/unused-local` | `let`/`const`/`var`/`function`/`class`/`type`/`interface`/`enum` never read | low |
+| `dead/unused-parameter` | function parameters never read (skip `_` prefix, `props`) | low |
+| `dead/dead-branch` | `if (true)` / `if (false)` / `while (true)` / `while (false)` | medium (low for `while-true`) |
+| `dead/unreachable` | statements after a `return`/`throw`/`break`/`continue` | high |
+
+**Opt-in:** all 5 ship as `defaultOff: true` until v8 corpus
+calibration lands in v0.18.8. Use `--rule dead/<name>` to
+run a single one, or set in `slopbrick.config.mjs`:
+
+```js
+rules: {
+  'dead/unused-import':    'low',
+  'dead/unused-local':     'low',
+  'dead/unused-parameter': 'low',
+  'dead/dead-branch':      'medium',
+  'dead/unreachable':      'high',
+}
+```
+
+### Engine additions (Phase B R-M2 follow-up)
+
+- `ScanFactsV2.deadCode` domain with `bindings[]`,
+  `constantConditions[]`, `unreachableStatements[]`.
+- `handleIfStatement` + `handleWhileStatement` added to the
+  dispatch table (11 handlers total, up from 9).
+- `pushFrame` pushes parameter names to `deadCode.bindings`
+  with `kind: 'parameter'`.
+- `findUnreachableStatements` post-pass walks the AST once
+  and reports statements after unconditional terminators.
+- `isBindingSite` now recognizes `ImportSpecifier` parents
+  (without this, every imported name was being marked as a
+  reference just because it appears inside the import
+  statement itself).
+- `tsup esbuildOptions.define` inlines `SLOPBRICK_VERSION`
+  at build time. The old `require('../package.json')` trick
+  broke after the R-M2 split + bundling because the
+  relative path resolved against `dist/index.js`, not the
+  source file.
+
+### Live demo
+
+A synthetic AI-iteration fixture (10 imports + 1 function
+with intentional dead scaffolding) yielded 13 issues across
+all 5 rules:
+
+```
+dead/unused-import    5  (useState, useEffect, Button, unused1, ...)
+dead/unused-local     2  (intermediate, dead)
+dead/unused-parameter 2  (opts, config)
+dead/dead-branch      2  (if (true), if (false))
+dead/unreachable      2  (console.log + return null after return)
+```
+
+### Verification
+
+- `pnpm exec tsc --noEmit` → 0 errors
+- `pnpm exec vitest run` → 1823/1823 pass (was 1804 before
+  v0.18.5; +19 new tests across the 5 rules)
+- `pnpm exec tsx scripts/bench-scan.ts` → PASS (100/100/100/100)
+- `pnpm exec slopbrick --help` → unchanged from v0.18.4
+- `pnpm -r build` clean
+
+### Also included (from commits b0d77ba, da6eb22)
+
+- Phase B R-M2: `types.ts` (1154 lines) split into 7
+  focused modules under `src/types/` + barrel. Zero
+  consumer breakage (the barrel re-exports everything
+  the original `from '../types.js'` imported).
+
+### Scope note
+
+v0.18.5 ships the rule surface; the v8 calibration is
+deferred to v0.18.8. Until then, the 5 `dead/*` rules
+sit at the corpus's prior rates (which are 0/0 in
+`signal-strength.json` since they were never in the v7
+per-rule table). Expect lift numbers in the v0.18.8
+release notes.
+
+## [0.18.4] - 2026-06-30 — --help clusters (CLI UX pass)
 
 The slopbrick CLI had ~38 flat options on the root program
 (a R-H1 refactor leftover — see memory.md). Commander.js
