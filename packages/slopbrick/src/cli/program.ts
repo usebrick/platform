@@ -109,6 +109,7 @@ import { registerDb } from './commands/db.js';
 import { registerPatterns } from './commands/patterns.js';
 import { registerResearch } from './commands/research.js';
 import { registerInit } from './commands/init.js';
+import { registerFlywheel } from './commands/flywheel.js';
 
 import {
   loadConfig,
@@ -276,31 +277,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // command 'explain'"). Removed the inline pre-creation; registerExplain
     // now owns the full command shape.
 
-    program
-      .command('flywheel')
-      .description('summarize aggregated scan telemetry')
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      // across machines or piping into external analysis tools.
-      .option('--export <path>', 'write summary as JSON to <path>')
-      .action(async (cmdOptions: { format?: 'pretty' | 'json'; export?: string }, command: Command) => {
-        const options = command.optsWithGlobals() as CliGlobalOptions;
-        const cwd = resolve(options.workspace ?? process.cwd());
-        const payloads = readTelemetry(cwd);
-        if (payloads.length === 0) {
-          logger.info('No flywheel telemetry found. Run a scan first.');
-          process.exit(0);
-        }
-        const summary = summarizeTelemetry(payloads);
-        if (cmdOptions.export) {
-          const exportPath = resolve(cmdOptions.export);
-          mkdirSync(dirname(exportPath), { recursive: true });
-          writeFileSync(exportPath, JSON.stringify(summary, null, 2), 'utf-8');
-          logger.info(`Wrote flywheel summary to ${exportPath}`);
-          process.exit(0);
-        }
-        logger.info(formatFlywheel(summary, { json: cmdOptions.format === 'json' }));
-        process.exit(0);
-      });
+    // v0.18.x (R-H1): flywheel action moved to ./commands/flywheel.ts
+    registerFlywheel(program);
 
     const scanAction = async (
       paths: string[],
