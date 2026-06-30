@@ -104,6 +104,9 @@ import { registerTest } from './commands/test.js';
 import { registerArchitecture } from './commands/architecture.js';
 import { registerBusinessLogic } from './commands/business-logic.js';
 import { registerMaintenanceCost } from './commands/maintenance-cost.js';
+import { registerDocs } from './commands/docs.js';
+import { registerDb } from './commands/db.js';
+import { registerPatterns } from './commands/patterns.js';
 
 import {
   loadConfig,
@@ -733,129 +736,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     registerBusinessLogic(program);
     registerMaintenanceCost(program);
 
-    program
-      .command('docs')
-      .description(
-        'Documentation Freshness (0-100) — detect stale package / function / code-example references and broken links in markdown. Anchored to arXiv 2606.04769 F1=96.73% (June 2026) as the calibration floor.',
-      )
-      .option('--format <text|json|markdown>', 'output format', 'text')
-      .option('--strict', 'exit 1 on high/critical drift (CI gate)', false)
-      .option('--max-files <n>', 'cap on doc files scanned', parseCount, 500)
-      .action(
-        async (
-          cmdOptions: { format?: string; strict?: boolean; maxFiles?: number },
-          command: Command,
-        ) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: 'text' | 'json' | 'markdown' =
-              rawFormat === 'json' || rawFormat === 'markdown' || rawFormat === 'text'
-                ? (rawFormat as 'text' | 'json' | 'markdown')
-                : 'text';
-            const strict = options.strict ?? cmdOptions.strict ?? false;
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runDocsScan(cwd, config, {
-              maxDocFiles: cmdOptions.maxFiles,
-              strict,
-            });
-            logger.info(
-              formatDocsReport(result, {
-                json: format === 'json',
-                markdown: format === 'markdown',
-              }),
-            );
-            process.exit(docsExitCode(result, { strict }));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('db')
-      .description(
-        'Database Health (0-100) — static-only Postgres analysis via pgsql-parser (libpg_query port). 6 rules: missing-fk-index, duplicate-index, missing-not-null, enum-sprawl, naming-inconsistency, sql-concat.',
-      )
-      .option('--format <text|json|markdown>', 'output format', 'text')
-      .option('--strict', 'exit 1 on high/critical drift (CI gate)', false)
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
-      .action(
-        async (
-          cmdOptions: { format?: string; strict?: boolean; maxFiles?: number },
-          command: Command,
-        ) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: 'text' | 'json' | 'markdown' =
-              rawFormat === 'json' || rawFormat === 'markdown' || rawFormat === 'text'
-                ? (rawFormat as 'text' | 'json' | 'markdown')
-                : 'text';
-            const strict = options.strict ?? cmdOptions.strict ?? false;
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runDbScan(cwd, config, {
-              maxFiles: cmdOptions.maxFiles,
-              strict,
-            });
-            logger.info(
-              formatDbReport(result, {
-                json: format === 'json',
-                markdown: format === 'markdown',
-              }),
-            );
-            process.exit(dbExitCode(result, { strict }));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
-
-    program
-      .command('patterns')
-      .description(
-        'Pattern Fragmentation (0-100) — count distinct UI/architectural patterns per category. Feeds slop_suggest\'s doNotCreate list.',
-      )
-      .option('--format <text|json|markdown>', 'output format', 'text')
-      .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
-      .action(
-        async (cmdOptions: { format?: string; maxFiles?: number }, command: Command) => {
-          try {
-            const options = command.optsWithGlobals() as CliGlobalOptions & {
-              format?: string;
-            };
-            const rawFormat = options.format ?? cmdOptions.format ?? 'text';
-            const format: 'text' | 'json' | 'markdown' =
-              rawFormat === 'json' || rawFormat === 'markdown' || rawFormat === 'text'
-                ? (rawFormat as 'text' | 'json' | 'markdown')
-                : 'text';
-
-            const cwd = resolve(options.workspace ?? process.cwd());
-            const { config } = await runScan({ ...options, workspace: cwd });
-            const result = await runPatternsScan(cwd, config, {
-              maxFiles: cmdOptions.maxFiles,
-              format: format as 'text' | 'json' | 'markdown',
-            });
-            // PatternScanResult bundles its own format selection;
-            // the CLI --format flag is forwarded via runPatternsScan options.
-            logger.info(formatPatternsReport(result));
-            process.exit(patternsExitCode(result));
-          } catch (err) {
-            logger.error(err instanceof Error ? err.message : String(err));
-            process.exit(2);
-          }
-        },
-      );
+    // v0.18.x (R-H1): docs/db/patterns actions moved to ./commands/{docs,db,patterns}.ts
+    registerDocs(program);
+    registerDb(program);
+    registerPatterns(program);
 
     // v0.18.x (R-H1): mcp action moved to ./commands/mcp.ts
     registerMcp(program);
