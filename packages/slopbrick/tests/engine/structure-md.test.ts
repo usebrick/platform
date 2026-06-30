@@ -10,10 +10,10 @@ import {
 } from '../../src/engine/structure-md';
 import {
   STRUCTURE_SCHEMA_VERSION,
-  type ComponentFingerprint,
-  type ConstitutionFile,
-  type InventoryFile,
-  type StructurePattern,
+  type Component as ComponentFingerprint,
+  type RepositoryStructureConstitution as ConstitutionFile,
+  type RepositoryStructureInventory as InventoryFile,
+  type Pattern as StructurePattern,
 } from '@usebrick/core';
 
 function freshDir(): string {

@@ -14,21 +14,13 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
+import type { RepositoryStructureHealth as HealthFile } from '@usebrick/core';
 
 // import.meta.dirname is `packages/slopbrick/scripts/`, so `..` lands at the slopbrick package root.
 const REPO_ROOT = resolve(import.meta.dirname, '..');
 const PLATFORM_ROOT = resolve(REPO_ROOT, '..', '..');
 const DEFAULT_FIXTURE = join(REPO_ROOT, 'tests', 'fixtures', 'frameworks');
 const FALLBACK_FIXTURE = PLATFORM_ROOT;
-
-interface HealthFile {
-  aiQuality: number;
-  engineeringHygiene: number;
-  security: number;
-  repositoryHealth: number;
-  issueCounts: { high: number; medium: number; low: number };
-  categoryScores: Record<string, number>;
-}
 
 interface BenchResult {
   pass: boolean;

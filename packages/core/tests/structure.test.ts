@@ -16,7 +16,7 @@ import {
   invalidateFile,
   writeJsonAtomic,
 } from '../src/structure';
-import type { InventoryFile, ConstitutionFile } from '../src/structure-types';
+import type { RepositoryStructureInventory as InventoryFile, RepositoryStructureConstitution as ConstitutionFile } from '../src';
 
 describe('memory — loaders/savers', () => {
   let workspace: string;

@@ -17,15 +17,15 @@ import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSyn
 import { dirname, join } from 'node:path';
 
 import {
-  type InventoryFile,
-  type ConstitutionFile,
+  type RepositoryStructureInventory as InventoryFile,
+  type RepositoryStructureConstitution as ConstitutionFile,
+  type RepositoryStructureHealth as HealthFile,
   type FileMtimeEntry,
-  type HealthFile,
   isInventoryFile,
   isConstitutionFile,
   isFileMtimeEntry,
   isHealthFile,
-} from './structure-types';
+} from './index';
 
 export const INVENTORY_FILENAME = 'inventory.json';
 export const CONSTITUTION_FILENAME = 'constitution.json';

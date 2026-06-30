@@ -30,10 +30,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type {
-  ComponentFingerprint,
-  ConstitutionFile,
-  InventoryFile,
-  StructureCategory,
+  Component as ComponentFingerprint,
+  Category as StructureCategory,
+  RepositoryStructureConstitution as ConstitutionFile,
+  RepositoryStructureInventory as InventoryFile,
 } from '@usebrick/core';
 
 const STRUCTURE_MD_FILE = join('.slopbrick', 'structure.md');
@@ -145,7 +145,14 @@ function mergeComponentsByName(
     }
     byName.set(c.name, {
       ...c,
-      files: c.files.slice(),
+      // All visitors (rust.ts, php.ts, go.ts, …) push Components with
+      // `files: [filePath]` — non-empty by construction. The JSON
+      // Schema (inventory.schema.json) requires `files` to be
+      // `[string, ...string[]]` (at least 1); the cast is safe under
+      // the visitor invariant. If a future visitor ever produces an
+      // empty files array, the runtime validator
+      // (`isInventoryFile`) will reject the artifact at write time.
+      files: c.files.slice() as [string, ...string[]],
       hooks: c.hooks.slice(),
       props: c.props.slice(),
     });

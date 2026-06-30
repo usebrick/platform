@@ -38,7 +38,7 @@
  * the same graph return the same partition.
  */
 
-import type { InventoryFile } from '@usebrick/core';
+import type { RepositoryStructureInventory as InventoryFile } from '@usebrick/core';
 
 /** Local minimal types — mirror the shapes in slopbrick's
  *  `engine/graph-types.ts`. The engine doesn't import from there to
@@ -108,7 +108,7 @@ export function buildImportGraph(
   inventory: InventoryFile,
 ): { nodes: string[]; edges: Array<[string, string, number]> } {
   const patterns = inventory.patterns;
-  const nodes = patterns.map((p) => p.name);
+  const nodes = patterns.map((p: { name: string }) => p.name);
   const edges: Array<[string, string, number]> = [];
 
   for (let i = 0; i < patterns.length; i++) {

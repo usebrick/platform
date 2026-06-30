@@ -25,11 +25,11 @@ import {
   invalidateFile,
   STRUCTURE_SCHEMA_VERSION,
   healthPath,
-  type InventoryFile,
-  type ConstitutionFile,
-  type HealthFile,
-  type StructurePattern,
-  type ComponentFingerprint,
+  type RepositoryStructureInventory as InventoryFile,
+  type RepositoryStructureConstitution as ConstitutionFile,
+  type RepositoryStructureHealth as HealthFile,
+  type Pattern as StructurePattern,
+  type Component as ComponentFingerprint,
 } from '@usebrick/core';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../src/types';
@@ -585,7 +585,7 @@ describe('buildHealthFromReport', () => {
     });
     const out = buildHealthFromReport(report, '/w');
     expect(out.aiQuality).toBe(43);
-    expect(out.categoryScores.visual).toBe(12);
+    expect(out.categoryScores!.visual).toBe(12);
   });
 
   it('omits optional fields when not provided', () => {

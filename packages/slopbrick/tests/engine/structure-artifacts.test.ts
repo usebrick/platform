@@ -55,9 +55,9 @@ import {
   isConstitutionFile,
   isHealthFile,
   STRUCTURE_SCHEMA_VERSION,
-  type InventoryFile,
-  type ConstitutionFile,
-  type HealthFile,
+  type RepositoryStructureInventory as InventoryFile,
+  type RepositoryStructureConstitution as ConstitutionFile,
+  type RepositoryStructureHealth as HealthFile,
 } from '@usebrick/core';
 import { renderStructureMarkdown, readStructureMarkdown, writeStructureMarkdown } from '../../src/engine/structure-md';
 import { DEFAULT_CONFIG } from '../../src/config';

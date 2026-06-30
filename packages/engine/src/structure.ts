@@ -21,11 +21,12 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
 import {
-  type InventoryFile,
-  type ConstitutionFile,
-  type StructurePattern,
-  type ComponentFingerprint,
-  type StructureCategory,
+  type RepositoryStructureInventory as InventoryFile,
+  type RepositoryStructureConstitution as ConstitutionFile,
+  type Pattern as StructurePattern,
+  type Component as ComponentFingerprint,
+  type Category as StructureCategory,
+  type RepositoryStructureHealth,
   STRUCTURE_SCHEMA_VERSION,
   saveInventory as coreSaveInventory,
   writeCacheFromInventory,
@@ -442,20 +443,7 @@ export function buildHealthFromReport(
   report: MemoryReport,
   workspace: string,
   options: { constitutionDrift?: number; scanDurationMs?: number } = {},
-): {
-  version: typeof STRUCTURE_SCHEMA_VERSION;
-  generatedAt: string;
-  workspace: string;
-  aiQuality: number;
-  engineeringHygiene: number;
-  security: number;
-  repositoryHealth: number;
-  categoryScores: Record<string, number>;
-  issueCounts: { high: number; medium: number; low: number };
-  constitutionDrift?: number;
-  topOffenseIds: string[];
-  scanDurationMs?: number;
-} {
+): RepositoryStructureHealth {
   // Aggregate issue counts by severity. v0.14.5g: skip issues whose
   // severity has been set to 'off' by the defaultOff auto-disable
   // pass (see `filterIssues` in `src/cli/scan.ts`).
@@ -467,10 +455,13 @@ export function buildHealthFromReport(
     if (sev in issueCounts) issueCounts[sev] += 1;
     offenseCounts.set(issue.ruleId, (offenseCounts.get(issue.ruleId) ?? 0) + 1);
   }
+  // The schema (health.schema.json) constrains topOffenseIds to a tuple
+  // of 0-3 elements. Runtime is already bounded by `.slice(0, 3)`;
+  // the cast makes the contract explicit at the type level.
   const topOffenseIds = [...offenseCounts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 3)
-    .map(([id]) => id);
+    .map(([id]) => id) as RepositoryStructureHealth['topOffenseIds'];
 
   return {
     version: STRUCTURE_SCHEMA_VERSION,
