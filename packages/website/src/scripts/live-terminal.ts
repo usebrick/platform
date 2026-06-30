@@ -219,7 +219,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.17.2 · 4 scores · 95 rules · 15 categories · no telemetry');
+    appendLine('muted', 'slopbrick 0.17.3 · 4 scores · 95 rules · 15 categories · no telemetry');
     appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
     renderInputLine();
   };
