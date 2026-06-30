@@ -2,9 +2,57 @@
 //
 // These helpers are deliberately small and side-effect free where
 // possible (the exceptions are renderProgress / clearProgress, which
-// write to stdout directly to drive the in-place scan spinner).
+// write to stdout directly to drive the in-place scan progress bar).
 
 import type { ProjectReport } from '../types';
+
+// v0.17.1: colorEnabled() respects --no-color flag and the NO_COLOR
+// env var per https://no-color.org. Defaults to true when stdout
+// is a TTY, false when piped. The flag/env always win.
+let _noColorOverride: boolean | null = null;
+export function setNoColor(value: boolean): void {
+  _noColorOverride = value;
+}
+export function colorEnabled(): boolean {
+  if (_noColorOverride !== null) return !_noColorOverride;
+  if (process.env.NO_COLOR !== undefined && process.env.NO_COLOR !== '') {
+    return false; // NO_COLOR set (any value, including "0", disables)
+  }
+  if (process.env.FORCE_COLOR !== undefined) return true;
+  return Boolean(process.stdout.isTTY);
+}
+
+// v0.17.1: redactSecrets() masks anything that looks like a secret
+// in user-facing output. Covers the common cases the security/secret-leak
+// rule family already detects. Used by pretty.ts when rendering
+// issue messages / advice that may contain inline credentials.
+const SECRET_PATTERNS: RegExp[] = [
+  // AWS
+  /\b(AKIA[0-9A-Z]{16})\b/g,
+  // GitHub PAT
+  /\b(ghp_[A-Za-z0-9]{36,})\b/g,
+  /\b(github_pat_[A-Za-z0-9_]{82})\b/g,
+  // Slack
+  /\b(xox[abpr]-[A-Za-z0-9-]{10,})\b/g,
+  // Stripe
+  /\b(sk_live_[A-Za-z0-9]{24,})\b/g,
+  /\b(pk_live_[A-Za-z0-9]{24,})\b/g,
+  // Google API key
+  /\b(AIza[0-9A-Za-z_-]{35})\b/g,
+  // Generic JWT
+  /\b(eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})\b/g,
+  // PEM private key
+  /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/g,
+];
+const REDACTED = '[REDACTED]';
+export function redactSecrets(text: string): string {
+  if (!text) return text;
+  let out = text;
+  for (const pat of SECRET_PATTERNS) {
+    out = out.replace(pat, REDACTED);
+  }
+  return out;
+}
 
 // v0.15.0 U.4: colorForQuality is the inverted replacement for the
 // v0.14 colorForSlop helper. The legacy v0.14 logic mapped "higher
@@ -82,13 +130,46 @@ export function renderTrend(runs: { slopIndex: number }[], count: number): strin
 /** Watch debounce — collapse bursts of file-system events into a single scan. */
 export const WATCH_DEBOUNCE_MS = 100;
 
-const SPINNER_FRAMES = ['|', '/', '-', '\\'];
-
-export function renderProgress(completed: number, total: number): void {
-  const spinner = SPINNER_FRAMES[completed % SPINNER_FRAMES.length];
-  process.stdout.write(`\r${spinner} Scanning... ${completed}/${total} files`);
+// v0.17.1: renderProgress now draws a real progress bar (not just
+// a spinner). Format:
+//   [████████████░░░░░░░░░░] 1234/8358 files (14.7%) | 8.3s | ETA 48s
+// Skips the bar (prints plain text) when stdout is not a TTY
+// (e.g. CI / pipes) or when --no-color is set and we want to avoid
+// carriage returns.
+export function renderProgress(
+  completed: number,
+  total: number,
+  startMs: number = Date.now(),
+): void {
+  const safeTotal = total > 0 ? total : 1;
+  const ratio = Math.min(1, completed / safeTotal);
+  const pct = (ratio * 100).toFixed(1);
+  const barWidth = 20;
+  const filled = Math.round(barWidth * ratio);
+  const bar = '█'.repeat(filled) + '░'.repeat(barWidth - filled);
+  const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1);
+  let eta = '';
+  if (completed > 0 && ratio < 1) {
+    const totalMs = Date.now() - startMs;
+    const etaMs = (totalMs / completed) * (total - completed);
+    eta = ` | ETA ${(etaMs / 1000).toFixed(0)}s`;
+  }
+  const line = `\r[${bar}] ${completed}/${total} files (${pct}%) | ${elapsedSec}s${eta}   `;
+  if (process.stdout.isTTY) {
+    process.stdout.write(line);
+  } else {
+    // Non-TTY: print one line per update (no carriage return). Skip
+    // updates that come faster than every 2% to avoid spam.
+    const lastPct = (renderProgress as { _lastPct?: number })._lastPct ?? -1;
+    if (Math.abs(parseFloat(pct) - lastPct) >= 2) {
+      process.stdout.write(`[${bar}] ${completed}/${total} files (${pct}%) | ${elapsedSec}s${eta}\n`);
+      (renderProgress as { _lastPct?: number })._lastPct = parseFloat(pct);
+    }
+  }
 }
 
 export function clearProgress(): void {
-  process.stdout.write(`\r${' '.repeat(80)}\r`);
+  if (process.stdout.isTTY) {
+    process.stdout.write(`\r${' '.repeat(80)}\r`);
+  }
 }

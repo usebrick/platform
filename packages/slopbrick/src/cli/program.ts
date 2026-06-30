@@ -208,7 +208,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       .option('--incremental', 'skip unchanged files using the persisted hash cache')
       .option('--cache-path <path>', 'path to the incremental-scan cache (default: .slopbrick-cache.json)')
       .option('--tokens <path>', 'merge tokens.json layout values into the arbitrary-value allowlist')
-      .option('--cache', 'cache parsed AST results locally');
+      .option('--cache', 'cache parsed AST results locally')
+      // v0.17.1: --no-color per https://no-color.org. Also respects
+      // the NO_COLOR env var automatically (via colorEnabled() in
+      // render.ts). FORCE_COLOR=1 overrides both.
+      .option('--no-color', 'suppress ANSI color codes in output')
 
     program
       .command('init')
