@@ -180,6 +180,8 @@ import {
   VERSION,
   type FileScanResult,
 } from '../types';
+// v0.18.4: --help clusters. See help.ts for category mapping.
+import { formatGroupedHelp } from './help';
 
 //   0 = pass (slopIndex below threshold)
 //   1 = threshold breach (blocks git hooks)
@@ -257,7 +259,15 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // categories, all components) instead of the curated brief
       // view. The brief is the default; --full is for when the user
       // wants to see everything.
-      .option('--full', 'show the complete report (all issues, all categories)')
+      .option('--full', 'show the complete report (all issues, all categories)');
+
+    // v0.18.4 (--help clusters): override the default help
+    // formatter. Default `--help` renders the grouped view
+    // (File selection, Filter, Output, Performance, etc.). The
+    // `--help-flat` opt-out is handled below in the runCli
+    // dispatch (it's a manual argv check, not an Option, so it
+    // doesn't get treated as a regular scan flag).
+    program.helpInformation = () => formatGroupedHelp(program);
 
     // v0.18.x (R-H1): init action moved to ./commands/init.ts
     // (the largest single command in the CLI, ~150 lines inline)
@@ -527,6 +537,23 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // scanAction is the closure defined above; passed in to keep
     // the ~160-line scan body inline (shared with watch and ci).
     registerScan(program, scanAction);
+
+    // v0.18.4 (--help clusters): if the user passed --help-flat,
+    // restore Commander's default helpInformation (the standard
+    // flat alphabetical list). Done BEFORE parseAsync so the
+    // dispatch sees the correct help text. We can't register
+    // --help-flat as a regular option because Commander would
+    // treat it as a scan flag and try to run a scan.
+    if (process.argv.includes('--help-flat')) {
+      // Save our grouped formatter, then restore the default.
+      // Commander's helpInformation is on the prototype; deleting
+      // the instance property falls back to the prototype method.
+      delete (program as unknown as { helpInformation?: () => string })
+        .helpInformation;
+      // Print the standard flat help and exit.
+      program.outputHelp();
+      process.exit(0);
+    }
 
     await program.parseAsync(process.argv);
   } catch (err) {

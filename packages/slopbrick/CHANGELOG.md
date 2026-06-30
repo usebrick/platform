@@ -1,6 +1,68 @@
 # Changelog
 
-## [0.18.3] - Unreleased — R-MED env-var fix (parser cache as passed option)
+## [0.18.4] - Unreleased — --help clusters (CLI UX pass)
+
+The slopbrick CLI had ~38 flat options on the root program
+(a R-H1 refactor leftover — see memory.md). Commander.js
+dumped them as one long alphabetical list, which was hard
+to scan. v0.18.4 groups the options by purpose:
+
+  File selection     - --include, --exclude, --since, --diff,
+                       --staged, --changed, --workspace
+  Filter            - --ai-only, --human-only, --security-only,
+                       --ignore-wcag22, --framework
+  Output & display  - --format, --brief, --full, --json, --html,
+                       --no-color, --quiet, --verbose, --heatmap,
+                       --trend, --why-failing
+  Performance       - --threads, --incremental, --cache, --cache-path
+  Auto-fix          - --fix, --dry-run, --show-fixes-diff
+  CI / threshold    - --strict, --no-increase, --baseline
+  Watch & diagnose  - --watch, --doctor, --suggest, --tighten
+  Tokens            - --tokens
+  Other             - (auto-added --version, etc.)
+
+**Opt-out:** `--help-flat` restores Commander's standard
+flat alphabetical list. Useful for piping to grep/awk or
+when the user wants the canonical output.
+
+**G1 verification (before scope):**
+
+```bash
+$ grep -c ".option(" packages/slopbrick/src/cli/program.ts
+38
+# 38 flags dumped flat in `slopbrick --help` output
+```
+
+**Files added/changed:**
+- `packages/slopbrick/src/cli/help.ts` (new): `formatGroupedHelp`
+  custom help formatter, `OPTION_CATEGORY` map (38 entries),
+  `CATEGORY_LABELS` map, `CATEGORY_ORDER` array, `groupOptions`
+  helper
+- `packages/slopbrick/src/cli/program.ts`: override
+  `program.helpInformation` with `formatGroupedHelp(program)`;
+  argv pre-check for `--help-flat` (handled before parseAsync
+  to avoid Commander treating it as a scan flag)
+- `packages/slopbrick/tests/cli/help-clusters.test.ts` (new):
+  9 test cases exercising the CLI subprocess — verifies
+  categories appear, options land in the right group,
+  `--help-flat` falls back to the standard list, no options
+  are hidden by the clustering
+
+**Verification:**
+- `pnpm -r typecheck` clean (4 packages)
+- `pnpm exec vitest run` → 1506/1506 pass (9 new for
+  help-clusters)
+- `pnpm bench:scan` → PASS (v0.18.1 regression intact)
+- `pnpm -r build` clean
+- `slopbrick --help` renders 9 category headers + grouped options
+- `slopbrick --help-flat` renders Commander's standard output
+
+**Scope note:** the website work (LiveTerminal `.usebrick/`
+→ `.slopbrick/`, slopbrick vs usebrick naming clarity) is
+NOT in v0.18.4 — that's a website-only deploy and ships
+separately (no slopbrick version bump).
+
+## [0.18.3] - 2026-06-30 — R-MED env-var fix (parser cache as passed option)
 
 The parser's AST cache is no longer an env-var read
 inside the engine. `parseFile` now accepts an optional
