@@ -217,6 +217,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // Useful for CI gates that only care about security posture,
       // not AI drift / engineering hygiene.
       .option('--security-only', 'run only the security/* rules')
+      // v0.17.1: --full shows the complete report (all issues, all
+      // categories, all components) instead of the curated brief
+      // view. The brief is the default; --full is for when the user
+      // wants to see everything.
+      .option('--full', 'show the complete report (all issues, all categories)')
 
     program
       .command('init')

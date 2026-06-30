@@ -9,7 +9,7 @@ import type {
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
-import { redactSecrets } from '../cli/render';
+import { redactSecrets, formatScoreBar } from '../cli/render';
 
 function severityColor(severity: Severity): (text: string) => string {
   switch (severity) {
@@ -245,44 +245,133 @@ function formatCategoryBreakdown(report: ProjectReport, topN = 5): string {
 }
 
 /**
- * v0.14.5i — Highest-impact next step. Compute which single action
- * would most improve the score, based on the report's actual data.
- * Returns a concrete command line the user can run.
+ * v0.17.1 — Explain what the scores actually mean in plain English.
+ * The technical labels (aiQuality, coherence, boundaryScore) are
+ * internal field names. The user shouldn't have to guess what
+ * they represent or what action to take.
  */
-function formatNextStep(report: ProjectReport): string {
+function formatWhatThisMeans(report: ProjectReport): string {
   const lines: string[] = [];
-  lines.push(chalk.bold('Next step:'));
+  lines.push(chalk.bold('What this means:'));
 
-  // Compute the dominant impact driver by looking at the top offending
-  // file. The user can target that specifically with --rule.
+  // AI Code Quality — the CI gate
+  const aiq = report.aiQuality;
+  const aiqIcon = aiq >= 70 ? '✓' : aiq >= 50 ? '!' : '✗';
+  const aiqVerdict =
+    aiq >= 90 ? 'Excellent — your code is human-quality.'
+    : aiq >= 70 ? 'Good — passes the CI gate (≥ 70).'
+    : aiq >= 50 ? 'Needs work — AI-slop signatures are above the threshold.'
+    : 'Concerning — significant AI-generation patterns detected.';
+  lines.push(
+    `  ${aiqIcon} ${chalk.bold('AI Code Quality')} ${aiq.toFixed(0)}/100 — ${aiqVerdict}`,
+  );
+  lines.push(
+    chalk.dim(
+      `    Measures 16 AI-tendency rules (any-as-architecture, console.log storms,`,
+    ),
+  );
+  lines.push(
+    chalk.dim(
+      `    markdown leakage, type-erasure, etc). Higher = more human-like code.`,
+    ),
+  );
+
+  // Code Consistency — secondary view
+  if (typeof report.coherence === 'number') {
+    const coh = report.coherence;
+    const cohIcon = coh >= 50 ? '✓' : coh >= 25 ? '!' : '✗';
+    const cohVerdict =
+      coh >= 70 ? 'Excellent — patterns are consistent across files.'
+      : coh >= 50 ? 'OK — minor drift between files.'
+      : coh >= 25 ? 'Inconsistent — different files use different patterns.'
+      : 'Fragmented — the codebase has multiple competing patterns.';
+    lines.push(
+      `  ${cohIcon} ${chalk.bold('Code Consistency')} ${coh.toFixed(0)}/100 — ${cohVerdict}`,
+    );
+    lines.push(
+      chalk.dim(
+        `    How uniform the codebase is. Low scores don't mean broken —`,
+      ),
+    );
+    lines.push(
+      chalk.dim(
+        `    they mean new files are harder to write because patterns keep changing.`,
+      ),
+    );
+  }
+
+  // Accessibility / Security — the quick wins
+  const a11y = report.accessibility;
+  if (typeof a11y === 'number' && a11y < 100) {
+    lines.push(
+      `  ! ${chalk.bold('Accessibility')} ${a11y}/100 — ${a11y < 50 ? 'WCAG violations need fixing.' : 'Some a11y issues to address.'}`,
+    );
+  }
+  const sec = report.aiSecurityRisk;
+  if (sec && sec !== 'low') {
+    lines.push(
+      `  ! ${chalk.bold('Security')} ${sec.toUpperCase()} — AI-injected security patterns detected. Run \`slopbrick scan --security-only\` for details.`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * v0.17.1 — Prioritized "what to do next" list. Ranks the top 3
+ * concrete actions by impact, with the exact command to run.
+ */
+function formatActionPlan(report: ProjectReport): string {
+  const lines: string[] = [];
+  lines.push(chalk.bold('What to do next:'));
+
+  // Priority 1: fix the worst file
   const top = report.topOffenders?.[0];
   if (top) {
     const issueWord = top.issueCount === 1 ? 'issue' : 'issues';
     lines.push(
-      chalk.cyan(`  → \`slopbrick scan --rule ${top.filePath}\` to drill into the worst file (${top.issueCount} ${issueWord})`),
+      chalk.cyan(
+        `  1. Fix the worst file first:  slopbrick scan --rule ${top.filePath}`,
+      ),
+    );
+    lines.push(
+      chalk.dim(
+        `     (${top.issueCount} ${issueWord} in this one file — biggest single win)`,
+      ),
     );
   }
 
-  // Always offer the universal "see fixes" / "save baseline" escape hatches.
+  // Priority 2: auto-fix suggestions
   lines.push(
-    chalk.cyan(`  → \`slopbrick scan --suggest\` for auto-fix advice`),
-  );
-  lines.push(
-    chalk.dim(
-      `  → \`slopbrick scan --baseline\` to accept today's scores as the new floor`,
+    chalk.cyan(
+      `  2. See auto-fix suggestions:    slopbrick scan --suggest`,
     ),
   );
 
-  // Add the why-failing hint when failing. v0.15.0 U.4+: use
-  // aiQuality (the SINGLE headline number, not coherence).
-  if (report.aiQuality < 70) {
+  // Priority 3: see the full breakdown
+  lines.push(
+    chalk.cyan(
+      `  3. See the full report:        slopbrick scan --full`,
+    ),
+  );
+
+  // Priority 4: save baseline if passing
+  if (report.aiQuality >= 70) {
     lines.push(
       chalk.dim(
-        `  → \`slopbrick scan --why-failing\` for the top 5 issues dragging the score down`,
+        `  4. Save this as the new floor:  slopbrick scan --baseline`,
       ),
     );
   }
   return lines.join('\n');
+}
+
+/**
+ * v0.14.5i — Highest-impact next step. Kept as a thin wrapper
+ * around formatActionPlan for backward compat with any callers
+ * (and the --brief / --why-failing code paths).
+ */
+function formatNextStep(report: ProjectReport): string {
+  return formatActionPlan(report);
 }
 
 /**
@@ -359,64 +448,69 @@ function severityBadge(severity: Severity): string {
  */
 
 function formatCompositeScore(report: ProjectReport): string {
-  // v0.15.0 U.4+: aiQuality is the SINGLE headline number, matching
-  // what the user sees in .slopbrick/health.json. The Repository
-  // Coherence composite is shown as a secondary line so the two
-  // views are consistent.
-  //
-  // v0.14.5j (P8): replaced [PASS]/[FAIL] with plain-language band
-  // labels (excellent / passing / needs work / concerning).
-  //
-  // v0.15.0 U.4+: aiQuality is higher-is-better (the opposite of
-  // the legacy slopIndex direction). The band label / color already
-  // encode this.
-  //
-  // v0.14.5j (P9): trajectory delta "±N from last run" appended to
-  // the headline so the user can see the trend without grep'ing
-  // the run log.
+  // v0.17.1 — UX pass: rename the headline metrics to plain English,
+  // add a visual score bar, and use box-drawing characters for
+  // hierarchy. The field names (aiQuality, coherence) stay the same
+  // in the JSON output for backward compat — only the display
+  // labels change.
   const slop = report.aiQuality;
-  const slopValue = slop.toFixed(0).padStart(3, ' ');
+  const slopValue = slop.toFixed(0);
   const band = scoreBand(slop);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
 
   const lines: string[] = [];
   const deltaSuffix = formatDeltaSuffix(report);
+  // Box-drawing header: ┌─ AI Code Quality ─────────────────┐
+  const headerWidth = 50;
+  const label = ' AI Code Quality ';
+  const dashes = '─'.repeat(headerWidth - label.length - 2);
+  lines.push(chalk.bold(`┌─${label}${dashes}┐`));
   lines.push(
-    chalk.bold(`AI Quality: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
+    chalk.bold(
+      `│ ${formatScoreBar(slop)} ${slopValue.padStart(3, ' ')} / 100  ${band.color(status)}${deltaSuffix.padEnd(4)}│`,
+    ),
   );
   lines.push(
     chalk.dim(
-      'higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.',
+      `│ Higher = better. AI-slop signatures (16 ai/* rules). CI gate \u2265 70.       │`,
     ),
   );
+  const footerDash = '─'.repeat(headerWidth);
+  lines.push(chalk.bold(`└${footerDash}┘`));
 
-  // Show the subscore breakdown with plain-language labels
+  // Subscore breakdown with visual bars
+  lines.push('');
+  lines.push(chalk.dim('  Breakdown:'));
   lines.push(
-    `  ├─ boundary: ${report.boundaryScore.toFixed(0).padStart(3, ' ')}  (40%)  ${chalk.dim('— structural integrity')}`,
+    `    ${formatScoreBar(report.boundaryScore, 8)} ${chalk.bold('Structure'.padEnd(14))} ${chalk.dim('40% \u2014 boundaries, exports, types')}`,
   );
   lines.push(
-    `  ├─ context:  ${report.contextScore.toFixed(0).padStart(3, ' ')}  (35%)  ${chalk.dim('— props / state / imports')}`,
+    `    ${formatScoreBar(report.contextScore, 8)} ${chalk.bold('API Design'.padEnd(14))} ${chalk.dim('35% \u2014 props, state, imports')}`,
   );
   lines.push(
-    `  └─ visual:   ${report.visualScore.toFixed(0).padStart(3, ' ')}  (25%)  ${chalk.dim('— CSS / a11y / layout')}`,
+    `    ${formatScoreBar(report.visualScore, 8)} ${chalk.bold('Visual / A11y'.padEnd(14))} ${chalk.dim('25% \u2014 CSS, layout, a11y')}`,
   );
 
-  // Secondary view: Repository Coherence (different formula, opposite direction)
-  // v0.14.5j: kept terse. The full formula was confusing — the user
-  // asked "what actually is repository coherence?" so the answer
-  // should be in the output, not the formula.
+  // Secondary view: Code Coherence (the v0.17.1 rename for what
+  // was 'Repository Coherence' — more intuitive)
   const coherence = report.coherence;
   if (typeof coherence === 'number') {
-    const coherenceValue = coherence.toFixed(0).padStart(3, ' ');
     const cohBand = scoreBand(coherence);
     lines.push('');
+    const cohLabel = ' Code Consistency ';
+    const cohDashes = '─'.repeat(headerWidth - cohLabel.length - 2);
+    lines.push(chalk.bold(`┌─${cohLabel}${cohDashes}┐`));
     lines.push(
       chalk.dim(
-        `Repository Coherence: ${coherenceValue} / 100 [${cohBand.label.toUpperCase()}] — ` +
-        `higher = better · measures internal consistency. ` +
-        `This is a secondary view; the Slop Index above is the gate.`,
+        `│ ${formatScoreBar(coherence)} ${coherence.toFixed(0).padStart(3, ' ')} / 100  [${cohBand.label.toUpperCase()}]`.padEnd(headerWidth + 2) + '│',
       ),
     );
+    lines.push(
+      chalk.dim(
+        `│ Higher = better. Internal consistency of patterns across files.   │`.padEnd(headerWidth + 2) + '│',
+      ),
+    );
+    lines.push(chalk.bold(`└${footerDash}┘`));
   }
   return lines.join('\n');
 }
@@ -616,6 +710,11 @@ export function formatPretty(report: ProjectReport): string {
   if (coherence.length > 0) {
     sections.push(chalk.dim('Other signals (not the gate):') + '\n' + coherence.join('\n'));
   }
+
+  // v0.17.1: explain what the scores mean in plain English so the
+  // user doesn't have to guess. Goes RIGHT AFTER the scores so the
+  // explanation is adjacent to what it's explaining.
+  sections.push(formatWhatThisMeans(report));
 
   // v0.14.5i (P5): trust-signal — surface the defaultOff suppression
   // count in the main output (not stderr) so the user can see the
