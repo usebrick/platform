@@ -6,6 +6,10 @@ import type {
   Severity,
   TopOffender,
 } from '../types.js';
+// v0.17.1: redact any secret-looking strings in issue messages / advice
+// before they reach the terminal. Same regex set the security/secret-leak
+// rules use on user code, applied to our own output.
+import { redactSecrets } from '../cli/render';
 
 function severityColor(severity: Severity): (text: string) => string {
   switch (severity) {
@@ -578,11 +582,11 @@ function formatIssue(issue: Issue): string {
     ? `${issue.filePath}:${issue.line}:${issue.column}`
     : `${issue.line}:${issue.column}`;
   const header = `[${badge}] ${issue.ruleId} · ${location}`;
-  const body = `  ${chalk.dim(issue.message)}`;
+  const body = `  ${chalk.dim(redactSecrets(issue.message))}`;
   const lines = [header, body];
 
   if (issue.advice) {
-    lines.push(`  ${chalk.cyan('→')} ${issue.advice}`);
+    lines.push(`  ${chalk.cyan('→')} ${redactSecrets(issue.advice)}`);
   }
 
   return lines.join('\n');

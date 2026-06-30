@@ -213,6 +213,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // the NO_COLOR env var automatically (via colorEnabled() in
       // render.ts). FORCE_COLOR=1 overrides both.
       .option('--no-color', 'suppress ANSI color codes in output')
+      // v0.17.1: --security-only runs only the security/* rules.
+      // Useful for CI gates that only care about security posture,
+      // not AI drift / engineering hygiene.
+      .option('--security-only', 'run only the security/* rules')
 
     program
       .command('init')
