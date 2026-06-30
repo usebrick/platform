@@ -89,6 +89,12 @@ import { registerDoctor } from './commands/doctor.js';
 import { registerWatch } from './commands/watch.js';
 import { registerLock } from './commands/lock.js';
 import { registerCi } from './commands/ci.js';
+import { registerMemory } from './commands/memory.js';
+import { registerMigrate } from './commands/migrate.js';
+import { registerRules } from './commands/rules.js';
+import { registerValidateConfig } from './commands/validate-config.js';
+import { registerTokens } from './commands/tokens.js';
+import { registerReport } from './commands/report.js';
 
 import {
   loadConfig,
@@ -1195,180 +1201,14 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // moving the ~160-line scan body into the ci module.
     registerCi(program, scanAction);
 
-    program
-      .command('memory')
-      .description('show or regenerate .slopbrick/structure.md (the agent-readable repository summary) without re-scanning')
-      .option('--show', 'print the current .slopbrick/structure.md to stdout (default if no flag is passed)')
-      .option('--regenerate', 're-render structure.md from the existing inventory.json + constitution.json (no scan)')
-      .option('--workspace <path>', 'workspace directory', process.cwd())
-      .action(
-        async (cmdOptions: { show?: boolean; regenerate?: boolean; workspace?: string }) => {
-          const cwd = resolve(cmdOptions.workspace ?? process.cwd());
-          // Dynamic import — survives esbuild's CJS bundling. The migrate
-          // command uses `require('./migrate.js')` because that's a relative
-          // path esbuild bundles. We need the same here.
-          const { renderStructureMarkdown, readStructureMarkdown, writeStructureMarkdown } =
-            await import('../engine/structure-md.js') as typeof import('../engine/structure-md.js');
-          const { loadInventory, loadConstitution, inventoryPath: invPath, constitutionPath: conPath } =
-            await import('@usebrick/core') as typeof import('@usebrick/core');
+    // v0.18.x (R-H1): memory action moved to ./commands/memory.ts
+    registerMemory(program);
 
-          if (cmdOptions.regenerate) {
-            // Re-render from existing artifacts — no AST re-parse.
-            const inv = loadInventory(cwd);
-            const con = loadConstitution(cwd);
-            if (!inv) {
-              logger.warn(`No .slopbrick/inventory.json at ${invPath(cwd)}. Run \`slopbrick scan\` first.`);
-              process.exit(1);
-            }
-            if (!con) {
-              logger.warn(`No .slopbrick/constitution.json at ${conPath(cwd)}. Run \`slopbrick scan\` first.`);
-              process.exit(1);
-            }
-            const md = renderStructureMarkdown(inv, con);
-            await writeStructureMarkdown(cwd, md);
-            logger.info(`Regenerated .slopbrick/structure.md (${md.length} bytes from inventory + constitution).`);
-            return;
-          }
+    // v0.18.x (R-H1): migrate action moved to ./commands/migrate.ts
+    registerMigrate(program);
 
-          // Default: --show
-          const md = await readStructureMarkdown(cwd);
-          if (md === null) {
-            logger.warn(`No .slopbrick/structure.md at ${cwd}/.slopbrick/structure.md. Run \`slopbrick scan\` to generate it, or pass --regenerate after a prior scan.`);
-            process.exit(1);
-          }
-          process.stdout.write(md + '\n');
-        },
-      );
-
-    program
-      .command('migrate')
-      .description(
-        'Migrate from slop-audit v0.10.x (.slop-audit/) to slopbrick v0.11.0+ (.slopbrick/). Renames artifact dir + cache + config file + bumps schema to v2 + updates .gitignore. Idempotent. Pass --dry-run to preview.',
-      )
-      .option('--dry-run', 'print the planned changes without touching the filesystem')
-      .option('--force', 'overwrite .slopbrick/ if both old and new artifacts exist')
-      .option('--workspace <path>', 'workspace directory', process.cwd())
-      .option('--format <pretty|json>', 'output format', 'pretty')
-      .action(
-        (
-          cmdOptions: { dryRun?: boolean; force?: boolean; workspace?: string; format?: string },
-          command: Command,
-        ) => {
-          const globals = command.optsWithGlobals() as { format?: string };
-          const format: 'pretty' | 'json' =
-            (cmdOptions.format ?? globals.format) === 'json' ? 'json' : 'pretty';
-          const cwd = resolve(cmdOptions.workspace ?? process.cwd());
-          const { runMigrate, formatMigrate } = require('./migrate.js') as typeof import('./migrate.js');
-          const result = runMigrate({
-            workspace: cwd,
-            dryRun: cmdOptions.dryRun,
-            force: cmdOptions.force,
-          });
-          if (format === 'json') {
-            logger.info(JSON.stringify(result, null, 2));
-          } else {
-            logger.info(formatMigrate(result));
-          }
-          process.exit(result.ok ? 0 : 1);
-        },
-      );
-
-    program
-      .command('rules')
-      .description('list all built-in rules with their categories, severities, and descriptions')
-      .option('--category <name>', 'filter to a single category (visual, typo, layout, etc.)')
-      .option('--ai-only', 'only show AI-specific rules')
-      .option('--json', 'emit JSON instead of a pretty table')
-      // category-grouped listing. Sorted by ratio descending (worst signal
-      // first) so noisy rules surface to the top.
-      .option('--show-signal-strength', 'print per-rule precision/recall table')
-      .action((
-        cmdOptions: { category?: string; aiOnly?: boolean; json?: boolean; showSignalStrength?: boolean },
-        command: Command,
-      ) => {
-        // The global `--json [path]` flag shadows the local `--json` here
-        // (commander limitation when both exist). Use optsWithGlobals() so
-        // we honor either source.
-        const globals = command.optsWithGlobals() as { json?: string | boolean };
-        const wantJson = Boolean(cmdOptions.json || globals.json);
-        let rules = [...builtinRules];
-        if (cmdOptions.category) {
-          rules = rules.filter((r) => r.category === cmdOptions.category);
-        }
-        if (cmdOptions.aiOnly) {
-          rules = rules.filter((r) => r.aiSpecific);
-        }
-        if (cmdOptions.showSignalStrength) {
-          const strengths = loadSignalStrength();
-          const rows = rules
-            .map((r) => ({
-              id: r.id,
-              category: r.category,
-              severity: r.severity,
-              aiSpecific: r.aiSpecific,
-              strength: strengths[r.id],
-            }))
-            .sort((a, b) => {
-              // Sort by ratio descending (nulls last). Worst signals first.
-              const ra = a.strength?.ratio ?? -1;
-              const rb = b.strength?.ratio ?? -1;
-              return rb - ra;
-            });
-          if (wantJson) {
-            logger.info(JSON.stringify(rows, null, 2));
-            return;
-          }
-          const lines: string[] = [];
-          lines.push(`slopbrick signal-strength — ${rows.length} rules (worst signal first)\n`);
-          lines.push('  rule id                                  precision  recall  fpRate  ratio   notes');
-          lines.push('  ---------------------------------------  ---------  ------  ------  ------  -----');
-          for (const row of rows) {
-            const s = row.strength;
-            const precision = s ? (s.precision * 100).toFixed(0).padStart(7) + '%' : '    n/a ';
-            const recall = s ? s.recall.toFixed(2).padStart(6) : '   n/a';
-            const fpRate = s ? s.fpRate.toFixed(2).padStart(6) : '   n/a';
-            const ratio = s ? (s.ratio >= 99 ? '   ∞×  ' : s.ratio.toFixed(2).padStart(5) + '×') : '  n/a ';
-            const tag = !s ? 'no calibration data' : !isReliableSignal(s) ? '⚠ low signal' : 'ok';
-            lines.push(`  ${row.id.padEnd(39)} ${precision}  ${recall}  ${fpRate}  ${ratio}  ${tag}`);
-          }
-          logger.info(lines.join('\n'));
-          return;
-        }
-        if (wantJson) {
-          logger.info(
-            JSON.stringify(
-              rules.map((r) => ({
-                id: r.id,
-                category: r.category,
-                severity: r.severity,
-                aiSpecific: r.aiSpecific,
-                description: r.description ?? '(no description)',
-              })),
-              null,
-              2,
-            ),
-          );
-          return;
-        }
-        // Pretty table grouped by category.
-        const byCategory = new Map<string, typeof rules>();
-        for (const r of rules) {
-          if (!byCategory.has(r.category)) byCategory.set(r.category, []);
-          byCategory.get(r.category)!.push(r);
-        }
-        const lines: string[] = [];
-        lines.push(`slopbrick rules — ${rules.length} of ${builtinRules.length} shown\n`);
-        for (const [cat, list] of [...byCategory.entries()].sort()) {
-          lines.push(`\n## ${cat} (${list.length})`);
-          for (const r of list.sort((a, b) => a.id.localeCompare(b.id))) {
-            const sev = r.severity.padEnd(8);
-            const tag = r.aiSpecific ? '[AI]' : '     ';
-            lines.push(`  ${sev} ${tag} ${r.id}`);
-            if (r.description) lines.push(`           ${r.description}`);
-          }
-        }
-        logger.info(lines.join('\n'));
-      });
+    // v0.18.x (R-H1): rules action moved to ./commands/rules.ts
+    registerRules(program);
 
     // v0.17.5 (R-H1): explain action moved to ./commands/explain.ts (declared above near badge/suggest)
 
@@ -1382,81 +1222,14 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     //   0 = config is valid (warnings OK)
     //   1 = config has errors
     //   2 = config file not found / failed to load
-    program
-      .command('validate-config [path]')
-      .description('Statically validate a slopbrick.config.mjs without scanning')
-      .action(async (configPath: string | undefined) => {
-        const path = configPath
-          ? resolve(configPath)
-          : resolve(process.cwd(), 'slopbrick.config.mjs');
-        if (!existsSync(path)) {
-          logger.error(`Error: config file not found: ${path}`);
-          process.exit(2);
-        }
-        try {
-          // The same loader used by `scan` — preserves all .mjs/.cjs/.js
-          // semantics from src/config.ts.
-          const mod = extname(path) === '.cjs'
-            ? require(path)
-            : (await import(path));
-          const userConfig = (mod as { default?: unknown }).default ?? mod;
-          const result = validateConfigSchema(userConfig);
-          if (result.errors.length === 0) {
-            logger.info(`✓ ${path}`);
-            if (result.warnings.length === 0) {
-              logger.info('  No issues found.');
-            } else {
-              logger.info(`  ${result.warnings.length} warning(s):`);
-              for (const w of result.warnings) {
-                logger.info(`  ! ${w}`);
-              }
-            }
-            process.exit(0);
-          }
-          logger.info(formatConfigValidationErrors(path, result.errors, result.warnings));
-          process.exit(1);
-        } catch (err) {
-          if (err instanceof ConfigValidationError) {
-            logger.info(err.message);
-            process.exit(1);
-          }
-          logger.error(`Error: failed to load ${path}: ${(err as Error).message}`);
-          process.exit(2);
-        }
-      });
+    // v0.18.x (R-H1): validate-config action moved to ./commands/validate-config.ts
+    registerValidateConfig(program);
 
-    program
-      .command('tokens <path>')
-      .description('Ingest a W3C DTCG tokens.json file and summarize it by category')
-      .action((tokenPath: string) => {
-        const result = readDtcgTokensFile(tokenPath);
-        if (!result.ok) {
-          logger.error(`Error: ${result.error}`);
-          process.exit(2);
-        }
-        const summary = summarizeTokens(result.tree);
-        logger.info(formatSummary(summary));
-      });
+    // v0.18.x (R-H1): tokens action moved to ./commands/tokens.ts
+    registerTokens(program);
 
-    program
-      .command('report <path>')
-      .description('Re-render a saved JSON report (from --json path.json)')
-      .option('--output-format <kind>', 'output format: pretty | json | markdown', 'pretty')
-      .action((reportPath: string, cmdOptions: { outputFormat?: string }) => {
-        const result = readReportFile(reportPath);
-        if (!result.ok) {
-          logger.error(`Error: ${result.error}`);
-          process.exit(2);
-        }
-        const fmt = cmdOptions.outputFormat ?? 'pretty';
-        if (fmt === 'json') {
-          logger.info(formatJson(result.report));
-        } else if (fmt === 'markdown') {
-          logger.info(`Re-rendered from ${reportPath}\n\n${formatMarkdown(result.report)}`);
-        } else {
-          logger.info(formatReportFromFile(result.report, reportPath));
-        }
-      });
+    // v0.18.x (R-H1): report action moved to ./commands/report.ts
+    registerReport(program);
 
     program
       .command('scan [paths...]', { isDefault: true })
