@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Corpus hygiene (post-v0.17.1)
+
+- Moved the remaining 5 corpus dirs from `/Users/cheng/platform/{comfyui, fastchat, elevenlabs-js, elevenlabs-python, chatglm}` (137M of third-party code, gitignored) to `/Users/cheng/corpus-expansion/`. The v0.17.1 follow-up is now complete. Verified: a local `slopbrick scan` went from **5511 issues / 8145 files / repositoryHealth 51** to **3118 issues / 5183 files / repositoryHealth 71** — the 5 dirs were responsible for ~2400 false findings (43% of all reported issues) and dragged repositoryHealth down 20 points.
+
 ## [0.17.1] - 2026-06-30 — UX pass + coherence sweep
 
 v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rules. No schema bumps. The on-disk artifacts (`.slopbrick/{inventory,constitution,health}.json`, `.slopbrick/structure.md`) are unchanged. The display format and CLI surface are unchanged from v0.17.0 — this is a true patch release.
@@ -17,7 +23,7 @@ v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rule
 
 ### Corpus hygiene
 
-- Moved `automatic1111/` corpus (6.3M of third-party Python) from `/Users/cheng/platform/automatic1111/` to `/Users/cheng/corpus-expansion/automatic1111/`. The 5 other corpus dirs (comfyui, fastchat, elevenlabs-js, elevenlabs-python, chatglm — 137M) are still in the platform and produce ~5500 false findings. **Follow-up**: also move those, or add them to `slopbrick.config.mjs` exclude. See `docs/old-repo-redirect.md` for the convention.
+- Moved `automatic1111/` corpus (6.3M of third-party Python) from `/Users/cheng/platform/automatic1111/` to `/Users/cheng/corpus-expansion/automatic1111/`. The 5 other corpus dirs (comfyui, fastchat, elevenlabs-js, elevenlabs-python, chatglm — 137M) are still in the platform and produce ~5500 false findings. **Follow-up**: also move those, or add them to `slopbrick.config.mjs` exclude. See `.gitignore` (`# External corpus repos`) for the convention.
 
 ### Coherence sweep (from the v0.17.0 review)
 
