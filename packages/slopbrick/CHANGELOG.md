@@ -1,6 +1,79 @@
 # Changelog
 
-## [0.18.2] - Unreleased — surface the per-file Bayesian compositeScore (rev 3 G1-verified)
+## [0.18.3] - Unreleased — R-MED env-var fix (parser cache as passed option)
+
+The parser's AST cache is no longer an env-var read
+inside the engine. `parseFile` now accepts an optional
+second arg `ParseFileOptions` with a `cache?: ParserCacheConfig`
+field (`{ enabled, root }`). The engine is now pure —
+no `process.env`, no `process.cwd` in the parser hot path.
+
+**G1 verification (before scope, per rev 3 review gate):**
+
+```bash
+$ grep -n "process.env\|process.cwd" packages/engine/src/parser.ts
+274:  return process.env.SLOP_AUDIT_CACHE === '1' || ... ;
+281:  const override = process.env.SLOP_AUDIT_CACHE_ROOT;
+283:  return join(process.cwd(), '.slopbrick', 'cache', 'ast');
+```
+
+The engine was reading `process.env` and `process.cwd()`
+in the parser hot path. Two H7 violations: the engine's
+"no I/O" contract was broken. v0.18.3 fixes one of them
+(env-var reads). The `process.cwd()` fallback is kept
+for the legacy env-var path, which is now dead code in
+production (slopbrick always passes opts explicitly).
+
+**The data flow now:**
+
+```
+parent process (slopbrick scan)
+  └─ sets process.env.SLOP_AUDIT_CACHE = '1' (CLI boundary)
+        └─ worker child thread (inherits env var)
+              └─ reads process.env.SLOP_AUDIT_CACHE
+                    └─ builds ParserCacheConfig
+                          └─ passes to parseFile(filePath, { cache })
+                                └─ engine: pure, no env reads
+```
+
+The slopbrick CLI is the boundary. The engine is pure.
+
+**Files touched:**
+- `packages/engine/src/parser.ts`:
+  - New `ParserCacheConfig` and `ParseFileOptions` interfaces
+  - `parseFile(filePath, opts?)` accepts optional 2nd arg
+  - `cacheEnabled()` / `cacheRoot()` renamed to
+    `legacyCacheEnabled()` / `legacyCacheRoot()` (kept for
+    backward compat with `tests/engine/cache-bench.test.ts`)
+  - `readCache` / `writeCache` renamed to
+    `readCacheWithRoot` / `writeCacheWithRoot` (root is now
+    a parameter, not a function-local env-var read)
+- `packages/engine/src/index.ts`: re-exports
+  `ParseFileOptions` and `ParserCacheConfig`
+- `packages/slopbrick/src/engine/worker.ts`: new
+  `buildParserCacheConfig(cwd)` helper that reads the env
+  vars and builds the config; passed to `parseFile` as opts
+- `packages/slopbrick/src/cli/scan.ts`: comment on the
+  env-var set explaining the data flow (the line itself
+  stays — it's the CLI trigger)
+- `packages/slopbrick/tests/engine/parser.test.ts`: 3 new
+  test cases for the explicit-opts path
+  (1494 → 1497 tests pass)
+
+**Backward compat:** the env-var fallback is preserved.
+`tests/engine/cache-bench.test.ts` still sets the env vars
+to exercise the legacy code path. New callers (slopbrick
+CLI, future MCP server, future web IDEs) should pass
+`opts.cache` explicitly.
+
+**Verification:**
+- `pnpm -r typecheck` clean (4 packages)
+- `pnpm exec vitest run tests/engine/ tests/cli/ tests/report/ tests/rules/ tests/ai-specific-drift.test.ts` → 1497/1497 pass
+- `pnpm bench:scan` → PASS (v0.18.1 regression intact)
+- `pnpm -r build` clean
+- `pnpm run test:contract` (core) → codegen is fresh
+
+## [0.18.2] - 2026-06-30 — surface compositeScore + aiSpecific single source of truth (rev 3 G1-verified)
 
 v0.18.2 PR-1 is a **data-flow only** change: a `compositeScore`
 field that's already been computed at `worker.ts:98` (per-file

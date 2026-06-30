@@ -271,13 +271,43 @@ function parseSvelte(source: string): ParseResult {
   return { ast, source };
 }
 
-function cacheEnabled(): boolean {
+/**
+ * v0.18.3 (R-MED env-var fix): the parser's AST cache is now a
+ * passed option, not an env-var read from inside the engine. The
+ * engine remains a pure scanner (no I/O, no process.env, no
+ * process.cwd); the slopbrick CLI is the boundary that reads
+ * env vars and threads the cache config into parseFile.
+ *
+ * Backward compat: if no `cache` option is passed, the engine
+ * falls back to reading the legacy env vars. This is for the
+ * test suite and the cache-bench test (which still sets the
+ * env vars to exercise the env-var code path). New callers
+ * (the slopbrick CLI, the MCP server, future web IDEs)
+ * should always pass `opts.cache` explicitly.
+ */
+export interface ParserCacheConfig {
+  /** Read/write the AST cache. */
+  enabled: boolean;
+  /** Root directory for the cache. */
+  root: string;
+}
+
+export interface ParseFileOptions {
+  cache?: ParserCacheConfig;
+}
+
+function legacyCacheEnabled(): boolean {
+  // v0.18.3 (R-MED): kept for backward compat with the
+  // cache-bench test suite, which exercises the env-var path.
+  // The slopbrick CLI passes opts.cache explicitly, so this
+  // fallback is dead code in production.
   return process.env.SLOP_AUDIT_CACHE === '1' || process.env.SLOP_AUDIT_CACHE === 'true';
 }
 
-function cacheRoot(): string {
-  // Round 25: allow overriding the cache directory via env var so tests
-  // don't pollute the user's actual cache. Falls back to <cwd>/.slopbrick/cache/ast.
+function legacyCacheRoot(): string {
+  // v0.18.3 (R-MED): see legacyCacheEnabled. Uses process.cwd()
+  // as the fallback — kept for backward compat only. New
+  // callers should pass `opts.cache.root` explicitly.
   const override = process.env.SLOP_AUDIT_CACHE_ROOT;
   if (override) return override;
   return join(process.cwd(), '.slopbrick', 'cache', 'ast');
@@ -291,12 +321,16 @@ function hashContent(content: string): string {
   return createHash('md5').update(content, 'utf-8').digest('hex');
 }
 
-function cachePath(content: string): string {
-  return join(cacheRoot(), `${hashContent(content)}.json`);
+function cachePathWithRoot(content: string, root: string): string {
+  return join(root, `${hashContent(content)}.json`);
 }
 
-async function readCache(filePath: string, content: string): Promise<ParseResult | undefined> {
-  const path = cachePath(content);
+async function readCacheWithRoot(
+  filePath: string,
+  content: string,
+  root: string,
+): Promise<ParseResult | undefined> {
+  const path = cachePathWithRoot(content, root);
   try {
     await access(path);
     const raw = await readFile(path, 'utf8');
@@ -315,8 +349,12 @@ async function readCache(filePath: string, content: string): Promise<ParseResult
   return undefined;
 }
 
-async function writeCache(content: string, result: ParseResult): Promise<void> {
-  const path = cachePath(content);
+async function writeCacheWithRoot(
+  content: string,
+  result: ParseResult,
+  root: string,
+): Promise<void> {
+  const path = cachePathWithRoot(content, root);
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(result), 'utf8');
 }
@@ -360,18 +398,28 @@ function parseSource(source: string, filePath: string): ParseResult {
   }
 }
 
-export async function parseFile(filePath: string): Promise<ParseResult> {
+export async function parseFile(
+  filePath: string,
+  opts?: ParseFileOptions,
+): Promise<ParseResult> {
   const source = await readFile(filePath, 'utf-8');
 
-  if (cacheEnabled()) {
-    const cached = await readCache(filePath, source);
+  // v0.18.3 (R-MED): prefer the passed option, fall back to
+  // the env-var path for backward compat with the test suite.
+  // The slopbrick CLI always passes opts.cache, so the engine's
+  // hot path no longer reads process.env.
+  const useCache = opts?.cache?.enabled ?? legacyCacheEnabled();
+  const cacheDir = opts?.cache?.root ?? legacyCacheRoot();
+
+  if (useCache) {
+    const cached = await readCacheWithRoot(filePath, source, cacheDir);
     if (cached) return cached;
   }
 
   const result = parseSource(source, filePath);
 
-  if (cacheEnabled()) {
-    await writeCache(source, result);
+  if (useCache) {
+    await writeCacheWithRoot(source, result, cacheDir);
   }
 
   return result;

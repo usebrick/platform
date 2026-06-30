@@ -1,6 +1,7 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { extname } from 'node:path';
-import { parseFile } from '@usebrick/engine';
+import { join } from 'node:path';
+import { parseFile, type ParserCacheConfig } from '@usebrick/engine';
 import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';
@@ -8,6 +9,21 @@ import { setLoggerQuiet } from './logger';
 import { compositeScore } from '@usebrick/engine';
 import { loadSignalStrength } from '../rules/signal-strength.js';
 import type { FileScanResult, Issue, ResolvedConfig, ScanFacts } from '../types';
+
+// v0.18.3 (R-MED env-var fix): the parser cache is now a
+// passed option, not an env-var read inside the engine. The
+// slopbrick CLI is the boundary that reads the env vars
+// (SLOP_AUDIT_CACHE, SLOP_AUDIT_CACHE_ROOT) and threads the
+// ParserCacheConfig into parseFile via the worker. The
+// engine is now pure — no process.env, no process.cwd in
+// the parser hot path.
+function buildParserCacheConfig(cwd: string): ParserCacheConfig {
+  const envVal = process.env.SLOP_AUDIT_CACHE;
+  const enabled = envVal === '1' || envVal === 'true';
+  const root = process.env.SLOP_AUDIT_CACHE_ROOT
+    ?? join(cwd, '.slopbrick', 'cache', 'ast');
+  return { enabled, root };
+}
 
 function applyRuleOverrides(issues: Issue[], rules: ResolvedConfig['rules']): Issue[] {
   const result: Issue[] = [];
@@ -29,6 +45,11 @@ export async function scanFile(
   registry?: RuleRegistry,
   cwd = process.cwd(),
 ): Promise<FileScanResult> {
+  // v0.18.3 (R-MED env-var fix): build the parser cache config
+  // from env vars (read here in the slopbrick CLI layer, not
+  // in the engine). Passed to parseFile below.
+  const cache = buildParserCacheConfig(cwd);
+
   // v0.14.5l: split the backend early-return. Languages we have
   // visitors for (.py, .go) get the rule engine pass — rules that
   // need SWC silently produce 0 issues for those files, but
@@ -59,7 +80,7 @@ export async function scanFile(
   }
 
   try {
-    const { ast, source } = await parseFile(filePath);
+    const { ast, source } = await parseFile(filePath, { cache });
     const facts = extractFacts(filePath, ast, source, config.supportsRsc ?? true, config.framework ?? 'react', config);
 
     const activeRegistry = registry ?? new RuleRegistry();

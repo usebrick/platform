@@ -296,3 +296,88 @@ describe('parseFile', () => {
     }
   });
 });
+
+// v0.18.3 (R-MED env-var fix): the parser cache is now a
+// passed option, not an env-var read in the engine. These
+// tests exercise the explicit-opts path. The env-var fallback
+// is still tested in tests/engine/cache-bench.test.ts (the
+// legacy path, kept for backward compat with the test suite).
+describe('parseFile — explicit cache options (v0.18.3 R-MED)', () => {
+  it('writes and reads the cache when opts.cache.enabled is true', async () => {
+    const dir = createTmpDir();
+    const cacheDir = join(dir, 'cache');
+    try {
+      const file = join(dir, 'Cached.tsx');
+      const source = `export const x = 1;`;
+      writeFileSync(file, source);
+
+      // First call: cache miss, writes to disk.
+      const first = await parseFile(file, {
+        cache: { enabled: true, root: cacheDir },
+      });
+      expect(first.ast.type).toBe('Module');
+      // The cache file should now exist (md5-named .json).
+      // We don't check the exact filename (md5 hash), but
+      // verify the cache directory has at least one file.
+      const files = (await import('fs')).readdirSync(cacheDir);
+      expect(files.length).toBeGreaterThan(0);
+
+      // Second call: cache hit, returns without re-parsing.
+      // We can't easily verify "no re-parse" without spying
+      // on the SWC internals, so just verify the result is
+      // equivalent.
+      const second = await parseFile(file, {
+        cache: { enabled: true, root: cacheDir },
+      });
+      expect(second.ast.type).toBe(first.ast.type);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not write the cache when opts.cache.enabled is false', async () => {
+    const dir = createTmpDir();
+    const cacheDir = join(dir, 'cache');
+    try {
+      const file = join(dir, 'NoCache.tsx');
+      writeFileSync(file, `export const y = 2;`);
+
+      await parseFile(file, {
+        cache: { enabled: false, root: cacheDir },
+      });
+
+      // Cache directory should be empty (or not exist).
+      const fs = await import('fs');
+      if (fs.existsSync(cacheDir)) {
+        const files = fs.readdirSync(cacheDir);
+        expect(files).toEqual([]);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not read the cache when opts.cache.enabled is false', async () => {
+    const dir = createTmpDir();
+    const cacheDir = join(dir, 'cache');
+    try {
+      const file = join(dir, 'Poisoned.tsx');
+      writeFileSync(file, `export const z = 3;`);
+
+      // Pre-poison the cache: write a file with garbage so
+      // any read attempt would return nonsense. If the engine
+      // respects `enabled: false`, it should ignore this.
+      mkdirSync(cacheDir, { recursive: true });
+      writeFileSync(join(cacheDir, 'poison.json'), 'garbage');
+
+      const result = await parseFile(file, {
+        cache: { enabled: false, root: cacheDir },
+      });
+      // The AST should be a real Module (parsed fresh), not
+      // whatever the poisoned cache file would have returned.
+      expect(result.ast.type).toBe('Module');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

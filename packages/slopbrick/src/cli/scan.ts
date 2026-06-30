@@ -140,6 +140,14 @@ export async function runScan(
   config.telemetry = telemetryEnabled;
 
   if (options.cache) {
+    // v0.18.3 (R-MED env-var fix): the parser cache is now
+    // a passed option, not an env-var read inside the engine.
+    // The slopbrick CLI is the boundary that reads env vars.
+    // We set this here so the worker child thread inherits it
+    // via the Node.js process env-var contract; the worker
+    // (slopbrick/src/engine/worker.ts:20) reads the var,
+    // builds a ParserCacheConfig, and passes it as opts to
+    // parseFile. The engine itself no longer reads process.env.
     process.env.SLOP_AUDIT_CACHE = '1';
   }
 

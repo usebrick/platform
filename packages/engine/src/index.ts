@@ -23,9 +23,14 @@ export {
 } from './lr-combiner';
 
 // v0.15.0 B.3: SWC-backed source file parser.
+// v0.18.3 (R-MED): added ParseFileOptions and ParserCacheConfig
+// so the cache can be configured via passed option instead of
+// env-var reads in the engine.
 export {
   parseFile,
   type ParseResult,
+  type ParseFileOptions,
+  type ParserCacheConfig,
 } from './parser';
 
 // v0.15.0 B.4: Memory Platform bridge (ConstitutionFile /
