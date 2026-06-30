@@ -89,6 +89,7 @@ export const stalePackageReferenceRule = createRule<StalePackageContext>({
         line: span.line,
         column: span.column,
         advice: `Add \`${pkgName}\` to package.json or update the doc to reference an installed package.`,
+        extras: { package: pkgName },
       });
     }
     return issues;

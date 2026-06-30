@@ -109,6 +109,7 @@ export const missingFkIndexRule = createRule<RuleContext>({
             `Add \`CREATE INDEX ON ${table} (${fk});\`. Without an index, ` +
             `deletes on the parent table perform a sequential scan. Use ` +
             `\`CREATE INDEX CONCURRENTLY\` in production.`,
+          extras: { table, columnName: fk },
         });
       }
     }

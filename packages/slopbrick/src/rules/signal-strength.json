@@ -737,5 +737,155 @@
     "lastCalibratedAt": "2026-06-27T12:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v7 corpus re-calibration (2026-06-27, min-date=2025-01-01): 184488 neg + 239054 pos. USEFUL \u2014 TP=1912, FP=175, P=91.6%, FPR=0.09%, lift=8.4. aiSpecific=True."
+  },
+  "db/missing-fk-index": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: PostgreSQL Global Development Group (2024), *PostgreSQL 16 Documentation \u00a75.4 (Constraints)*, https://www.postgresql.org/docs/16/ddl-constraints.html; Squawk (2023), *Postgres linter rules*, https://github.com/sqllabs/squawk, rule `require-index-for-fk`. (Foreign key columns need a matching index \u2014 sequential scan on parent delete is a canonical Postgres anti-pattern.)"
+  },
+  "db/duplicate-index": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: PostgreSQL Global Development Group (2024), *PostgreSQL 16 Documentation \u00a711.2 (Index Types)*; Heroku Postgres Team (2018), *Efficient Use of PostgreSQL Indexes*. (Duplicate indexes silently double write cost without read benefit \u2014 Postgres does not warn.)"
+  },
+  "db/missing-not-null": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: PostgreSQL Global Development Group (2024), *PostgreSQL 16 Documentation \u00a75.4.1 (Check Constraints)*; Kleppmann, M. (2017), *Designing Data-Intensive Applications*, O'Reilly, ch.4 (NULL semantics in RDBMS). (Required-identifier columns without NOT NULL produce silent NULL inserts \u2014 canonical AI SQL smell.)"
+  },
+  "db/enum-sprawl": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: PostgreSQL Global Development Group (2024), *PostgreSQL 16 Documentation \u00a78.7 (Enumerated Types)*; Borkowski, A. (2022), *PostgreSQL enum types: when to use them and when not to*, pgconfig.org. (Enums with >12 values are brittle to extend and hard to localize \u2014 lookup table is the standard replacement.)"
+  },
+  "db/naming-inconsistency": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: PostgreSQL Global Development Group (2024), *PostgreSQL 16 Documentation \u00a74.1.1 (Identifiers and Key Words)*; pgsql-hackers (2018), *Re: snake_case vs camelCase in Postgres identifiers*. (snake_case is the Postgres convention; mixing styles in the same schema breaks ORM generators.)"
+  },
+  "db/sql-concat": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: OWASP Foundation (2021), *OWASP Top 10 \u2014 A03:2021 Injection*, https://owasp.org/Top10/A03_2021-Injection/; OWASP Foundation (2017), *SQL Injection Prevention Cheat Sheet*. (Template-literal SQL with ${...} interpolation is the #1 SQL injection vector in AI-generated TypeScript code.)"
+  },
+  "docs/stale-package-reference": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: Meng, M. et al. (2020), *The Cost of Fixing Code Documentation: An Empirical Study on Open-Source Software*, ICSE 2020; Aghajani, E. et al. (2019), *Software documentation: a practitioners' perspective*, ICSE 2019. (Doc references to undeclared packages are copy-paste rot from previous projects \u2014 high-signal doc drift.)"
+  },
+  "docs/stale-function-reference": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: Meng, M. et al. (2020), *The Cost of Fixing Code Documentation*; Chen, Z. et al. (2022), *An Empirical Study on Code Documentation Adequacy*, MSR 2022. (Doc callouts to non-existent exports \u2014 readers copy-paste and hit a runtime error.)"
+  },
+  "docs/expired-code-example": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: Parnas, D.L. (2010), *Precise Documentation: The Key to Better Software*, Springer (canonical doc-correctness argument); Chen, Z. et al. (2022). (Fenced code examples with broken imports erode trust in the entire docs site.)"
+  },
+  "docs/broken-link": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.17.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: Nielsen, J. (2000), *Designing Web Usability*, New Riders (broken links as a top-5 trust erosion signal); Google Search Central (2024), *Crawl errors documentation*, https://developers.google.com/search/docs/crawling-indexing. (Broken internal links cost SEO crawl budget and reader trust.)"
+  },
+  "security/eval": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.16.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: OWASP Foundation (2021), *OWASP Top 10 \u2014 A03:2021 Injection*; Mozilla Developer Network (2024), *eval() \u2014 MDN Web Docs*, https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval (Security Considerations). (eval() and new Function() are RCE vectors if the input is ever attacker-controlled.)"
+  },
+  "security/localstorage-token": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.16.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: OWASP Foundation (2021), *OWASP Top 10 \u2014 A07:2021 Identification and Authentication Failures*; OWASP Foundation (2022), *HTML5 Security Cheat Sheet \u00a72.1 (Local Storage)*. (JWT/access/refresh tokens in localStorage are readable by any XSS payload \u2014 issue as httpOnly cookies instead.)"
+  },
+  "security/target-blank-no-noopener": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.16.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: OWASP Foundation (2022), *HTML5 Security Cheat Sheet \u00a72.3 (Tabnabbing)*; WHATWG (2024), *HTML Living Standard \u2014 Link types: noopener*. (target=\"_blank\" without rel=\"noopener\" lets the linked page control window.opener \u2014 reverse tabnabbing.)"
+  },
+  "wcag/missing-alt": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.16.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: W3C (2023), *Web Content Accessibility Guidelines (WCAG) 2.2 \u2014 1.1.1 Non-text Content*, https://www.w3.org/TR/WCAG22/. (Every <img> needs alt text. Decorative: alt=\"\". Informative: describe the image.)"
+  },
+  "typo/placeholder-text": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-06-30T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.16.0 ship \u2014 not in v7 per-rule table. Default-off until calibration data lands. Backed by: Nielsen, J. (2000), *Designing Web Usability* (placeholder copy as a top-10 trust erosion signal); Krug, S. (2000), *Don't Make Me Think*, 2nd ed. (TODO/placeholder text in shipped UI signals incomplete work.)"
   }
 }

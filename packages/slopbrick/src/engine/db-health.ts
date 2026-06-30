@@ -438,6 +438,8 @@ export async function buildDbHealth(
           column: issue.column,
           message: issue.message,
           advice: issue.advice ?? '',
+          table: issue.extras?.table as string | undefined,
+          columnName: issue.extras?.columnName as string | undefined,
         });
       }
     }

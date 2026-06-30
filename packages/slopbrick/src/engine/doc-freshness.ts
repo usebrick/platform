@@ -557,6 +557,9 @@ export async function buildDocFreshness(
           column: issue.column,
           message: issue.message,
           advice: issue.advice ?? '',
+          package: issue.extras?.package as string | undefined,
+          identifier: issue.extras?.identifier as string | undefined,
+          link: issue.extras?.link as string | undefined,
         });
       }
     }

@@ -226,6 +226,28 @@ const RULE_HINTS: Record<string, string> = {
     "Calling fetch() inline in components instead of going through the project's data-fetching layer (react-query, swr, or your own client) bypasses the cache, error boundary, and abort handling.",
   'ai/console-debug-storm':
     "5+ console.log calls in a single file is debug-by-print-statement, the LLM training-data default. Remove before commit; use the project's logger or a real debugger.",
+  // v0.17.0 — db/* rules (Postgres static analysis via pgsql-parser)
+  'db/missing-fk-index':
+    'Add `CREATE INDEX ON <table> (<fk_column>);` for every foreign key column. Without it, parent deletes do a sequential scan on the child. Use `CREATE INDEX CONCURRENTLY` in production (Squawk `require-concurrent-index-creation`).',
+  'db/duplicate-index':
+    'Drop one of two indexes that cover the same column list — extra indexes slow writes without read benefit. Postgres does not warn about this; the duplicate will silently sit in production.',
+  'db/missing-not-null':
+    'Add `NOT NULL` (or `PRIMARY KEY`) on required-identifier columns (id, email, created_at, status, uuid, …). Optional identifiers are a common AI-generated SQL smell that produces silent NULL inserts in production.',
+  'db/enum-sprawl':
+    'Enums with more than 12 values are brittle to extend and hard to localize. Move to a lookup table joined by foreign key.',
+  'db/naming-inconsistency':
+    'Standardize on snake_case (Postgres convention) or camelCase, but never mix both in the same schema. Mixed styles break ORM generators and confuse code-reviewers.',
+  'db/sql-concat':
+    'Never build SQL with template-literal interpolation — `db.query(\`SELECT … WHERE id = ${id}\`)` is a SQL injection vector. Use parameterized queries (`db.query("… WHERE id = $1", [id])`) or your ORM query builder.',
+  // v0.17.0 — docs/* rules (markdown drift detection)
+  'docs/stale-package-reference':
+    'Update the doc to reference an installed package, or add the package to package.json. Copy-pasted install commands from a previous project are the #1 doc-drift failure mode.',
+  'docs/stale-function-reference':
+    'Rename the doc reference to match a current export, or add a wrapper export. Stale function callouts in tutorials cost readers 10+ minutes of debugging.',
+  'docs/expired-code-example':
+    'Update the example to use a declared dependency, or add the package to package.json. A copy-pasteable example that does not install erodes trust in the whole docs site.',
+  'docs/broken-link':
+    'Create the file or fix the link target. On a public docs site, broken links erode trust more than stale copy.',
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

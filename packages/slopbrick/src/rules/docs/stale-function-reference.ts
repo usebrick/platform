@@ -109,6 +109,7 @@ export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
         message: `Documents \`${text}()\` but no such export exists.`,
         line: span.line, column: span.column,
         advice: `Rename the doc reference, or add a \`${text}\` wrapper export.`,
+        extras: { identifier: text },
       });
     }
     return issues;

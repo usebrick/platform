@@ -77,6 +77,7 @@ export const missingNotNullRule = createRule<RuleContext>({
           advice:
             `Add \`NOT NULL\` (or \`PRIMARY KEY\`). Optional identifiers are a ` +
             `common AI-generated SQL smell that leads to silent NULL inserts in production.`,
+          extras: { table: tableName, columnName: cd.colname },
         });
       }
     }

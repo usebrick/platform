@@ -14,7 +14,7 @@
 // aiSpecific: false.
 
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { extractMarkdownLinks } from '../../engine/doc-freshness';
@@ -34,7 +34,12 @@ export const brokenLinkRule = createRule<RuleContext>({
     const source = facts.v2?._source;
     if (!source) return issues;
     const links = extractMarkdownLinks(source);
-    const docDir = dirname(context.filePath);
+    // The orchestrator passes a project-relative `filePath`; unit tests
+    // may pass an absolute one. `path.resolve` (not `path.join`) is
+    // the right primitive here: when the second arg is absolute it
+    // replaces the cwd, when it's relative it's appended. `path.join`
+    // would concatenate two absolute paths and produce a doubled path.
+    const docDir = dirname(resolve(context.cwd, context.filePath));
     for (const link of links) {
       const target = link.target;
       if (target.startsWith('http://') || target.startsWith('https://')) continue;
@@ -53,6 +58,7 @@ export const brokenLinkRule = createRule<RuleContext>({
         line: link.line,
         column: link.column,
         advice: `Create the file or fix the link target.`,
+        extras: { link: target },
       });
     }
     return issues;

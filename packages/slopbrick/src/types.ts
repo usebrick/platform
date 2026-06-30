@@ -352,6 +352,15 @@ export interface Issue {
   // Set by reporters that consume `getSignalStrength(ruleId)`. Omitted
   // when no metadata is available so JSON stays lean for known rules.
   signalStrength?: import('./rules/signal-strength').SignalStrengthEntry;
+  /**
+   * v0.17.0 — Optional rule-specific structured data that the
+   * orchestration layer promotes to typed finding fields (e.g.
+   * `DbFinding.table`, `DocFinding.package`). Conventions:
+   *   - db/* rules: `{ table?: string, columnName?: string }`
+   *   - docs/* rules: `{ package?: string, identifier?: string, link?: string }`
+   * Reporters and rules that don't need this can ignore it.
+   */
+  extras?: Record<string, unknown>;
 }
 
 // subsequent runs can skip unchanged files. Cache invalidates on
