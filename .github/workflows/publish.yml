@@ -4,23 +4,21 @@ name: publish
 #
 # On push to main:
 #   1. If there are pending .changeset/*.md files, changesets/action
-#      creates (or updates) a "Version Packages" PR that bumps
-#      versions in package.json + writes a CHANGELOG entry per
-#      published package. A maintainer reviews and merges that PR.
-#   2. When the "Version Packages" PR is merged, changesets/action
-#      runs `pnpm version-packages` (which calls `changeset version`
-#      + the website-version sync script) and then `pnpm changeset
-#      publish` for each changed package. npm publish is gated by
-#      the `publish` environment, so a human approves before
-#      `npm publish` actually runs.
+#      creates (or updates) a "chore: version packages" PR that
+#      bumps versions in package.json + writes a CHANGELOG entry
+#      per published package. A maintainer reviews and merges that
+#      PR — that merge IS the human gate for the release.
+#   2. When the "chore: version packages" PR is merged,
+#      changesets/action runs `pnpm version-packages` (which calls
+#      `changeset version` + the website-version sync script) and
+#      then `pnpm changeset publish` for each changed package.
 #
 # Auth: OIDC trusted publishing with provenance attestation (npm 2024+
 # best practice). Configure at npmjs.com → package settings →
 # Trusted publishing → GitHub Actions publisher for repo
-# `usebrick/platform`, workflow `.github/workflows/publish.yml`,
-# environment `publish`. The npm-side config was set up when the
-# first OIDC publish shipped; do not reconfigure unless moving to a
-# new repo or environment.
+# `usebrick/platform`, workflow `.github/workflows/publish.yml`.
+# The npm-side config was set up when the first OIDC publish
+# shipped; do not reconfigure unless moving to a new repo.
 #
 # Monorepo note: only `packages/slopbrick` is published today.
 # `packages/core` and `packages/engine` are private workspace deps
@@ -34,6 +32,18 @@ name: publish
 # + GitHub Release gates. The changesets flow makes the version
 # bump a regular git commit, so `npm publish` is now structurally
 # impossible without a corresponding commit on main.
+#
+# Why no job-level `environment: publish`: the version-PR merge
+# is the human gate. Wrapping the whole job in a GitHub
+# Environment would also gate the version-PR creation, which
+# means a maintainer has to click "approve" in the GH UI on
+# every push to main just to create the PR. The PR itself
+# contains the version bump + CHANGELOG, so a reviewer sees
+# exactly what is about to publish before clicking merge. If
+# the platform ever needs a second gate (e.g. high-severity
+# security releases), split this into two workflows:
+# `release.yml` (creates the version PR, no env) and `publish.yml`
+# (runs after the version PR merges, env-gated).
 
 on:
   push:
@@ -51,9 +61,6 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment:
-      name: publish
-      url: https://www.npmjs.com/package/slopbrick
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,9 +83,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build all packages
-        # Required so `npm publish` (triggered by changesets/action)
-        # has dist/ artifacts to upload. The slopbrick package.json
-        # points `main` and `module` at dist/index.js.
+        # Required so `npm publish` (triggered by changesets/action
+        # on the version-PR merge) has dist/ artifacts to upload.
+        # The slopbrick package.json points `main` and `module` at
+        # dist/index.js.
         run: pnpm -r build
 
       - name: Create or update version PR + publish on merge
