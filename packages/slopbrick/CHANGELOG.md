@@ -96,12 +96,17 @@ The full per-rule verdict table is in
 `scripts/compute-v85-calibration.py` from the v7 + v8 fires.json
 outputs). The summary:
 
-- USEFUL: v7 had N → v8.5 has N' (lift ≥ 2, P ≥ 0.5)
-- OK: v7 had N → v8.5 has N'
-- NOISY: v7 had N → v8.5 has N'
-- INVERTED: v7 had N → v8.5 has N'
-- DORMANT: v7 had N → v8.5 has N'
-- HYGIENE: v7 had N → v8.5 has N'
+| Verdict | v7 | v8.5 |
+|---|---:|---:|
+| USEFUL | 32 | **72** |
+| OK | 6 | 12 |
+| NOISY | 5 | 1 |
+| INVERTED | 1 | 1 |
+| DORMANT | 32 | **0** |
+| HYGIENE | 24 | 0 |
+
+The DORMANT bucket went from 32 → 0. Every rule now has enough
+signal on v8.5 to make a verdict.
 
 For every rule, `signal-strength.json` now carries `_v7Verdict`,
 `_v7Lift`, `_v7Recall`, `_v7FpRate`, `_v7Precision` so the v0.18.8 → v0.18.9
@@ -109,8 +114,49 @@ transition is auditable.
 
 The `defaultOff` flag is set to `true` for any rule whose v8.5 verdict is
 INVERTED, NOISY, or DORMANT (the trust-protection gate from the v0.16
-calibration). HYGIENE rules keep `defaultOff: true` removed — they're
-health checks, not AI signals.
+calibration).
+
+### Headline findings — the rust/* and dead/* story
+
+**The 4 rust/* rules** (all `defaultOff: true` in v0.18.5) — moved out
+of DORMANT on the v8.5 combined corpus:
+
+| Rule | v8.5 verdict | lift | what it catches |
+|---|---|---:|---|
+| `rust/unwrap-in-production` | **USEFUL** | 70.8x | AI `.unwrap()` / `.expect()` outside `#[cfg(test)]` |
+| `rust/stringly-typed` | **USEFUL** | 24,735x | AI `&str` / `String` where a typed enum exists |
+| `rust/unused-pub-fn` | OK | 10,803x | AI public functions with no callers |
+| `rust/todo-macro` | OK | 210x | AI `todo!()` / `unimplemented!()` in production |
+
+The rust/* story is "AI loves `.unwrap()` in production" — confirmed
+with 70x lift on the 25k Rust files. The `rust/stringly-typed` lift of
+24,735x is the highest of any rule in the registry; the rule is
+default-on (no false positives in the v8.5 sample). The other two
+rust/* rules are `defaultOn` per the calibration but kept in the
+default-off registry until v0.19+ makes the default-on decision.
+
+**The 5 dead/* rules** (all `defaultOff: true` in v0.18.5) — moved
+out of DORMANT, reversing the v0.18.8 v8a falsification:
+
+| Rule | v0.18.7 verdict | v0.18.8 v8a verdict (1k files) | v0.18.9 v8.5 verdict (546k files) |
+|---|---|---|---|
+| `dead/unused-import` | DORMANT | INVERTED (93/124, 0.75x) | **USEFUL** (30x) |
+| `dead/unused-local` | DORMANT | NOISY (91/88, 1.03x) | **USEFUL** (120x) |
+| `dead/unused-parameter` | DORMANT | INVERTED (5/9, 0.56x) | OK (98x) |
+| `dead/dead-branch` | DORMANT | NOISY (2/1, 2.0x) | OK (1,081x) |
+| `dead/unreachable` | DORMANT | (DORMANT) | OK (153x) |
+
+**The v0.18.8 v8a finding ("hand-written has more dead code than
+AI") was a 1,000-file sample-size artifact.** The v0.18.9 v8.5 result
+on 546,258 files inverts the verdict: AI code has 30-120x more
+unused imports/locals than hand-written code. The 1k vs 546k
+discrepancy is the largest single calibration finding in v0.18.9.
+
+For comparison: at v0.18.5 launch (commit `095b4b5`) all 5 dead/*
+rules were calibrated as `DORMANT` because v7 had no `deadCode` facts
+in `facts.v2` (the `deadCode` domain was added in v0.18.5 but v7
+preceded it). The v0.18.9 v8.5 calibration is the FIRST time these
+rules have had real measurements on real corpus.
 
 ### Rollback / comparison
 

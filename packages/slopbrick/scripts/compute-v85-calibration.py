@@ -107,12 +107,14 @@ n_neg_v85 = n_neg_v7 + n_neg_v8
 n_pos_v85 = n_pos_v7 + n_pos_v8
 print(f"\nv8.5 corpus: {n_neg_v85} neg + {n_pos_v85} pos = {n_neg_v85 + n_pos_v85} files")
 
-# Combined per-rule
-all_rules = sorted(
-    set(v7_neg_per) | set(v7_pos_per) | set(v8_neg_per) | set(v8_pos_per)
-)
-
-# === Load rule-level aiSpecific from the rule source files ===
+# Combined per-rule.
+# v0.18.9 fix: union ALL rules defined in the source, not just the ones
+# that fired in the corpus. A rule that exists in source but never fired
+# gets v85_tp=0, v85_fp=0 → DORMANT verdict → preserved in the output.
+# Without this fix, the calibration script drops rules that didn't fire,
+# breaking the signal-strength-guardrails test (every builtin rule must
+# have a signal-strength entry).
+# First, load rule_ai_specific (moved up from below)
 rule_ai_specific: dict[str, bool] = {}
 for ts in RULE_DIR.rglob("*.ts"):
     if "/tests/" in str(ts) or "/.snapshots/" in str(ts):
@@ -125,6 +127,17 @@ for ts in RULE_DIR.rglob("*.ts"):
     )
     if m:
         rule_ai_specific[m[1]] = (m[2] == "true")
+
+all_rules = sorted(
+    set(v7_neg_per) | set(v7_pos_per)
+    | set(v8_neg_per) | set(v8_pos_per)
+    | set(rule_ai_specific)  # union with all defined rules
+)
+
+# === Load rule-level aiSpecific from the rule source files ===
+# v0.18.9 fix: rule_ai_specific is now loaded ABOVE the all_rules
+# union so that rules that didn't fire on the corpus are preserved
+# with DORMANT verdict. See the comment at all_rules above.
 
 
 def metric(tp: int, fp: int, n_neg: int, n_pos: int) -> dict:

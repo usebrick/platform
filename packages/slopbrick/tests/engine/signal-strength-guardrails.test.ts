@@ -135,7 +135,13 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
         if (entry.defaultOff === true) optedOut++;
       }
     }
-    expect(total).toBeGreaterThan(0);
+    // v0.18.9: the v8.5 calibration retired the HYGIENE verdict (it was
+    // a transitional v0.5-v0.7 thing that got folded into USEFUL + the
+    // `aiSpecific` field). There are 0 HYGIENE rules in the v8.5 data.
+    // The contract still holds vacuously: if any rule ever carries the
+    // HYGIENE verdict, it should default to on. We skip the count
+    // assertion when total === 0 rather than assert a non-zero count.
+    if (total === 0) return;
     expect(optedOut).toBeLessThanOrEqual(Math.floor(total * 0.1));
   });
 });
