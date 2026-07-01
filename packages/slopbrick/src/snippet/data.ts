@@ -267,6 +267,27 @@ const RULE_HINTS: Record<string, string> = {
     "Implement the function body or remove the stub. `todo!()` / `unimplemented!()` both expand to `panic!()`, so a hit at runtime crashes the program. Move them into a `#[cfg(test)] mod tests` block to suppress.",
   'rust/stringly-typed':
     "Replace the `String` / `&str` parameter with the typed enum that already exists in the file. Stringly-typed APIs lose type information at the boundary — typos (`\"Click\"` vs `\"click\"`) only fail at runtime.",
+  // v0.19.0 — TypeScript-specific rules
+  'ts/optional-chain-overuse':
+    "Break long `?.` chains with an intermediate variable or guard clause (`if (!value) return;`). Long chains hide the type-narrowing that should be explicit. AI agents chain `?.` to avoid null checks.",
+  'ts/enum-vs-as-const':
+    "Replace `enum Foo { A, B }` with `const Foo = { A: 'A', B: 'B' } as const` (or `const Foo = ['A', 'B'] as const`). Modern TS style guides (Google, TS-eslint) prefer `as const` because enums have surprising runtime semantics.",
+  'ts/import-type-misuse':
+    "Use `import type { X } from '...'` instead of `import { type X } from '...'`. The split form is more common in real codebases and makes the type-only intent unambiguous.",
+  'ts/never-vs-unknown':
+    "The `never` return type means 'this function never returns'. Reserve it for functions that always throw, always loop, or always exit. For 'impossible' branches, use a concrete type (`void`, `Error`, `unknown`) and an exhaustive check.",
+  'ts/excessive-type-assertion':
+    "More than 3 `as` assertions in one function is a strong signal that the type is wrong, not the code. Fix the type definition (or use a type guard) instead of bypassing the type system.",
+  // v0.19.0 — Go-specific rules
+  'go/error-wrap-without-context':
+    "Use `fmt.Errorf(\"opening config: %w\", err)` not `fmt.Errorf(\"error: %w\", err)`. Real Go errors include the failing operation. See golang.org/wiki/CodeReviewComments#error-strings.",
+  'go/struct-tag-inconsistency':
+    "Pick one tag style per struct. If most fields are `json:\"foo\"`, this field should be too. Real Go code maintains consistency within a struct (or within a package).",
+  'go/nil-slice-vs-empty':
+    "Either declare as `var x = []int{}` or assign with `make([]int, 0)`. The nil/empty inconsistency is an AI signal — real code picks one form and sticks with it.",
+  // v0.19.0 — Duplication detector
+  'dup/identical-block':
+    "Refactor to a shared helper. This is a Type-1 clone (byte-for-byte identical after normalization). Common in AI-generated code that copy-pastes from training data.",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };
