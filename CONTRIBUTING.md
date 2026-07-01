@@ -77,11 +77,80 @@ Use conventional commits:
 - `docs(scope): ...` — docs only
 - `test(scope): ...` — tests only
 
+The `(scope)` should match the package directory name
+(`slopbrick`, `core`, `engine`, `website`) so it's greppable
+per-package and changelogs can be generated per-package instead
+of one undifferentiated list.
+
 Examples from this repo:
 
 - `feat(core): add Zod schema for signal-strength.json (v0.15.0 A.2)`
 - `feat(slopbrick): consume Verdict types from @usebrick/core (v0.15.0 A.3)`
 - `refactor(core): rename memory.ts to structure.ts (v0.15.0 rebrand)`
+
+## Release Process
+
+We use [Changesets](https://github.com/changesets/changesets) for
+version management. Every change that affects a published package
+must add a changeset file alongside the code change.
+
+```bash
+# After making your change, with the change staged or un-staged:
+pnpm changeset            # prompts: which package, semver bump, one-line summary
+
+# This writes a markdown file under .changeset/ like:
+#   .changeset/random-words-123.md
+# Edit that file if you want a longer description, then:
+git add .changeset/*.md
+git commit -m "feat(slopbrick): ..."
+```
+
+### What happens after you push
+
+1. CI runs the normal quality gates on your PR.
+2. When your PR merges to `main`, a GitHub Action
+   (`.github/workflows/publish.yml`) sees the pending changeset
+   and opens (or updates) a **"chore: version packages"** PR.
+3. A maintainer reviews that PR — it bumps
+   `packages/slopbrick/package.json` (and any other published
+   package), writes a CHANGELOG entry from your changeset text,
+   and syncs `packages/website/src/data/version.json` to the new
+   version.
+4. Merging the version PR triggers `pnpm changeset publish`,
+   which calls `npm publish` for each bumped package. The actual
+   publish is gated by the `publish` GitHub Environment, so a
+   human approves in the UI before `npm publish` runs.
+
+### Semver rules per package
+
+- **`slopbrick` (published CLI)** — every change needs a
+  changeset. A rule addition is `minor`, a bug fix is `patch`,
+  a breaking schema or CLI contract change is `major`.
+- **`@usebrick/core`, `@usebrick/engine` (private workspace)** —
+  `private: true` in their package.json blocks accidental
+  publish. Changesets ignores them, but a CHANGELOG entry in
+  the consuming package (`slopbrick`) still tracks the
+  dependency bump.
+- **`website`** — no semver. `ignore`'d in
+  `.changeset/config.json`. Commits deploy on merge to `main`
+  via the website's own CI. A CHANGELOG for a static site is
+  noise.
+- **Future packages (`stackpick`, `gir`, `mcp`, `cli`)** — the
+  day a new package gets its own `package.json`, add it to
+  `.changeset/config.json` (`ignore` if private, otherwise
+  just start writing changesets). Costs nothing to set up
+  upfront; retrofitting later is the expensive option.
+
+### Why this matters
+
+Before changesets, every release ran via
+`.github/workflows/publish.yml`'s `workflow_dispatch` trigger,
+which could fire `npm publish` with no git tag and no GitHub
+Release. The changesets flow makes the version bump a regular
+git commit, so `npm publish` is now structurally impossible
+without a corresponding commit on `main` — the version PR
+*is* the commit that bumps `package.json`. There is no path
+to `npm publish` that skips git.
 
 ## Pull Requests
 

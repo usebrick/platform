@@ -1,49 +1,52 @@
 name: publish
 
-# Publishes `slopbrick` to npm when a GitHub Release is published.
+# Publishes `slopbrick` to npm via changesets.
 #
-# Monorepo note: only `packages/slopbrick` is published. `packages/core`
-# is private until the schema stabilizes (see packages/core/README.md).
-# `packages/{stackpick,gir,mcp}` (future) will get their own publish
-# workflows as they ship.
+# On push to main:
+#   1. If there are pending .changeset/*.md files, changesets/action
+#      creates (or updates) a "Version Packages" PR that bumps
+#      versions in package.json + writes a CHANGELOG entry per
+#      published package. A maintainer reviews and merges that PR.
+#   2. When the "Version Packages" PR is merged, changesets/action
+#      runs `pnpm version-packages` (which calls `changeset version`
+#      + the website-version sync script) and then `pnpm changeset
+#      publish` for each changed package. npm publish is gated by
+#      the `publish` environment, so a human approves before
+#      `npm publish` actually runs.
 #
 # Auth: OIDC trusted publishing with provenance attestation (npm 2024+
-# best practice). To configure: npmjs.com → package settings →
-# Trusted publishing → add GitHub Actions publisher for repo
+# best practice). Configure at npmjs.com → package settings →
+# Trusted publishing → GitHub Actions publisher for repo
 # `usebrick/platform`, workflow `.github/workflows/publish.yml`,
-# environment `publish`.
+# environment `publish`. The npm-side config was set up when the
+# first OIDC publish shipped; do not reconfigure unless moving to a
+# new repo or environment.
 #
-# Safety gate: this workflow is triggered ONLY by a published GitHub
-# Release (not by tag push). That means: a maintainer has already
-# reviewed the changelog, chosen the version, and explicitly created
-# the Release in the GitHub UI. The `publish` environment then adds
-# a second approval gate before `npm publish` actually runs. Two
-# human gates per release, while the platform is still evolving.
+# Monorepo note: only `packages/slopbrick` is published today.
+# `packages/core` and `packages/engine` are private workspace deps
+# (`private: true` in their package.json), so changesets ignores
+# them. `packages/website` is ignored explicitly via
+# `.changeset/config.json` because it's a deploy-on-merge site with
+# no semver.
 #
-# Trigger this workflow by:
-#   1. Bump version in packages/slopbrick/package.json + src/types.ts
-#   2. Update CHANGELOG.md
-#   3. Commit + push to main
-#   4. Wait for CI to pass
-#   5. Create a GitHub Release in the UI (or via `gh release create v0.11.1`)
-#   6. Approve the deployment in the `publish` environment
+# Why no `workflow_dispatch` trigger: every prior `npm publish` for
+# this repo ran via `workflow_dispatch`, which bypassed the git tag
+# + GitHub Release gates. The changesets flow makes the version
+# bump a regular git commit, so `npm publish` is now structurally
+# impossible without a corresponding commit on main.
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (e.g. v0.11.1) — leave empty to use the published release tag'
-        required: false
+  push:
+    branches: [main]
 
 concurrency:
-  group: publish-${{ github.event.release.tag_name || github.ref }}
+  group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write   # for softprops/action-gh-release
-  id-token: write   # for npm OIDC trusted publishing (provenance)
+  contents: write        # changesets/action pushes the version PR
+  pull-requests: write   # changesets/action opens the version PR
+  id-token: write        # npm OIDC trusted publishing (provenance)
 
 jobs:
   publish:
@@ -60,8 +63,7 @@ jobs:
       - name: Install pnpm
         # pnpm version comes from the root package.json's
         # `packageManager` field (pnpm@9.15.0). Don't pin a version
-        # here — pnpm/action-setup@v4 errors on the duplicate, and v3
-        # silently picks one of the two values.
+        # here — pnpm/action-setup errors on the duplicate.
         uses: pnpm/action-setup@v3
 
       - name: Use Node.js 24
@@ -73,66 +75,19 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify release tag matches packages/slopbrick version
-        # Resolve the release tag from whichever event triggered
-        # the run. `release: published` provides
-        # `github.event.release.tag_name`; `workflow_dispatch`
-        # provides `github.event.inputs.tag` (and `GITHUB_REF`
-        # when the dispatch was started from a tag context).
-        # Falling back in that order keeps both trigger paths
-        # working without duplicating the version-mismatch check.
-        run: |
-          if [ -n "${{ github.event.release.tag_name }}" ]; then
-            RELEASE_TAG="${{ github.event.release.tag_name }}"
-          elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            RELEASE_TAG="${{ github.event.inputs.tag }}"
-          elif [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
-            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
-          else
-            echo "::error::Could not derive version from release tag (no release event, no inputs.tag, no refs/tags/v*)"
-            echo "::error::Trigger via 'gh release create' (preferred) or pass --input tag=vX.Y.Z to workflow_dispatch."
-            exit 1
-          fi
-          PKG_VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "::error::Could not derive version from release tag"
-            exit 1
-          fi
-          if [ "$RELEASE_TAG" != "v$PKG_VERSION" ]; then
-            echo "::error::Release tag $RELEASE_TAG does not match packages/slopbrick version $PKG_VERSION"
-            echo "::error::Bump packages/slopbrick/package.json to $RELEASE_TAG and re-create the release."
-            exit 1
-          fi
-          echo "Releasing slopbrick v$PKG_VERSION"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+      - name: Build all packages
+        # Required so `npm publish` (triggered by changesets/action)
+        # has dist/ artifacts to upload. The slopbrick package.json
+        # points `main` and `module` at dist/index.js.
+        run: pnpm -r build
 
-      - name: Verify version is not already published
-        run: |
-          VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if npm view "slopbrick@$VERSION" version >/dev/null 2>&1; then
-            echo "::error::Version $VERSION is already on the npm registry. Re-publishing is not allowed."
-            exit 1
-          fi
-
-      - name: Build core (workspace dep must be built before engine)
-        run: pnpm --filter '@usebrick/core' build
-
-      - name: Build engine (workspace dep must be built before slopbrick)
-        run: pnpm --filter '@usebrick/engine' build
-
-      - name: Build slopbrick
-        run: pnpm --filter slopbrick build
-
-      - name: Run slopbrick quality gates
-        working-directory: packages/slopbrick
-        run: |
-          pnpm typecheck
-          pnpm test
-
-      - name: Pack (dry-run) — sanity check the published artifact
-        working-directory: packages/slopbrick
-        run: npm pack --dry-run
-
-      - name: Publish slopbrick to npm
-        working-directory: packages/slopbrick
-        run: npm publish --provenance --access public
+      - name: Create or update version PR + publish on merge
+        uses: changesets/action@v1
+        with:
+          publish: pnpm changeset publish
+          version: pnpm version-packages
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          setupGitUser: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
