@@ -98,24 +98,82 @@ calibration work.
 
 - `pnpm -r typecheck` → 0 errors
 - `pnpm --filter slopbrick test` → 0 failures (79/79 on the
-  affected test files; new `dup/identical-block` test suite is 7/7)
+  affected test files; new `dup/identical-block` test suite is 7/7;
+  new TS+Go rule suites 15/15)
 - `pnpm --filter slopbrick build` → exit 0
-- `pnpm generate:rules` → 104 rules (was 103; added `dup/identical-block`,
+- `pnpm generate:rules` → 112 rules (was 104; added 5 TS + 3 Go + 1 dup,
   removed `logic/ks-distribution-shift`)
+
+### 8 new rules (5 TS + 3 Go, all DORMANT until v9 calibration)
+
+The v0.19 release also includes 8 language-specific detection rules
+for TypeScript and Go. All ship `defaultOff: true` (DORMANT) until
+calibrated on the v9 corpus (planned for v0.20).
+
+| Rule | Category | Severity | AI-specific | What it catches |
+|---|---|---|---|---|
+| `ts/optional-chain-overuse` | logic | low | yes | `?.` chain depth >= 5 — AI chains rather than narrows |
+| `ts/enum-vs-as-const` | typo | low | yes | `enum` keyword — modern TS prefers `as const` |
+| `ts/import-type-misuse` | typo | low | yes | `import { type X }` — prefer separate `import type` |
+| `ts/never-vs-unknown` | typo | low | yes | `: never` return but no throw/loop/exit — AI misuse |
+| `ts/excessive-type-assertion` | typo | low | yes | Function with >3 `as` — AI fighting the type system |
+| `go/error-wrap-without-context` | typo | low | yes | `fmt.Errorf("error: %w", err)` — needs operation context |
+| `go/struct-tag-inconsistency` | typo | low | yes | Struct fields mix `json:"foo"` and `json:"foo,omitempty"` |
+| `go/nil-slice-vs-empty` | typo | low | yes | `var x []int` then `x = []int{}` — pick one form |
+
+### v9 plan: multi-language expansion + full clone taxonomy
+
+`docs/research/v9-plan.md` (21KB, ~3,500 words) lays out the
+next 6-month roadmap. Based on a comprehensive v1 → v8.5
+calibration review that identified **4 systemic patterns** and
+**8 product gaps**, the plan covers:
+
+- **3 releases** (v0.20 Java + dedup v2, v0.21 Kotlin + Swift + dedup
+  v3, v0.22 C++) shipping 4 new languages and the first full
+  Type-1/2/3 clone taxonomy in any SAST tool
+- **v9 corpus build** with 60,000 neg + 51,000 pos = 111,000 new
+  source files across 4 new language arms
+- **Cross-cutting ecosystem fixes** folded into the releases:
+  R6 (extract `db/*` and `docs/*` rules from `engine/`),
+  R7 (per-rule MDX pages on usebrick.dev), R9 (chronic-offender
+  test files), R3 (4-score model), R10 (methodology paper
+  publish), R12 (engine naturalness), R13 (dogfooding gate),
+  R-INVERTED (reclassify `docs/expired-code-example`)
+
+The 4 systemic patterns: small samples produce wrong verdicts
+(1k vs 546k), DORMANT bucket shrinks monotonically with more
+data, NOISY rules are stable, AI-specific rules dominate USEFUL.
+
+The 8 product gaps: 4 missing languages, no full clone taxonomy,
+18 DORMANT-but-defined rules, no per-rule website pages, 8
+chronic-offender test files, 2 placeholder scores, marketing
+ahead of implementation, methodology paper unpublished.
 
 ### Files changed
 
 - `packages/slopbrick/CHANGELOG.md` — this entry
 - `packages/slopbrick/docs/research/methodology-minimum-sample-size.md`
   — the 1k vs 546k paper
+- `packages/slopbrick/docs/research/v9-plan.md` — the 6-month roadmap
 - `packages/slopbrick/src/rules/dup/identical-block.ts` — new rule
 - `packages/slopbrick/src/rules/dup/index.ts` — barrel
+- `packages/slopbrick/src/rules/ts/optional-chain-overuse.ts` — new
+- `packages/slopbrick/src/rules/ts/enum-vs-as-const.ts` — new
+- `packages/slopbrick/src/rules/ts/import-type-misuse.ts` — new
+- `packages/slopbrick/src/rules/ts/never-vs-unknown.ts` — new
+- `packages/slopbrick/src/rules/ts/excessive-type-assertion.ts` — new
+- `packages/slopbrick/src/rules/go/error-wrap-without-context.ts` — new
+- `packages/slopbrick/src/rules/go/struct-tag-inconsistency.ts` — new
+- `packages/slopbrick/src/rules/go/nil-slice-vs-empty.ts` — new
 - `packages/slopbrick/src/rules/logic/ks-distribution-shift.ts` — DELETED
 - `packages/slopbrick/src/rules/signal-strength.json` — 6 default-on flags
-  set, `ks-distribution-shift` entry removed, `dup/identical-block` added
-- `packages/slopbrick/src/rules/builtins.ts` — regenerated (104 rules)
+  set, `ks-distribution-shift` entry removed, `dup/identical-block` + 8
+  new TS/Go rules added
+- `packages/slopbrick/src/rules/builtins.ts` — regenerated (112 rules)
 - `packages/slopbrick/docs/rule-catalog.md` — regenerated
 - `packages/slopbrick/tests/rules/dup/identical-block.test.ts` — new test
+- `packages/slopbrick/tests/rules/ts/enum-vs-as-const.test.ts` — new tests
+- `packages/slopbrick/tests/rules/go/go-rules.test.ts` — new tests
 - `packages/slopbrick/tests/engine/structure.test.ts` — replaced
   `ks-distribution-shift` references with `docs/expired-code-example`
 - `packages/slopbrick/package.json` — 0.18.9 → 0.19.0

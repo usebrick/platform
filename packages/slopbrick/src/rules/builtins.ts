@@ -37,6 +37,9 @@ import { expiredCodeExampleRule } from './docs/expired-code-example';
 import { staleFunctionReferenceRule } from './docs/stale-function-reference';
 import { stalePackageReferenceRule } from './docs/stale-package-reference';
 import { dupIdenticalBlockRule } from './dup/identical-block';
+import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
+import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
+import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -79,6 +82,11 @@ import { duplicateSetupRule } from './test/duplicate-setup';
 import { fakePlaceholderRule } from './test/fake-placeholder';
 import { missingEdgeCaseRule } from './test/missing-edge-case';
 import { weakAssertionRule } from './test/weak-assertion';
+import { tsEnumVsAsConstRule } from './ts/enum-vs-as-const';
+import { tsExcessiveTypeAssertionRule } from './ts/excessive-type-assertion';
+import { tsImportTypeMisuseRule } from './ts/import-type-misuse';
+import { tsNeverVsUnknownRule } from './ts/never-vs-unknown';
+import { tsOptionalChainOveruseRule } from './ts/optional-chain-overuse';
 import { calcFontsizeRule } from './typo/calc-fontsize';
 import { calcRawPxRule } from './typo/calc-raw-px';
 import { clampOffscaleRule } from './typo/clamp-offscale';
@@ -143,6 +151,9 @@ export const builtinRules: Rule[] = [
   staleFunctionReferenceRule,
   stalePackageReferenceRule,
   dupIdenticalBlockRule,
+  goErrorWrapWithoutContextRule,
+  goNilSliceVsEmptyRule,
+  goStructTagInconsistencyRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
@@ -185,6 +196,11 @@ export const builtinRules: Rule[] = [
   fakePlaceholderRule,
   missingEdgeCaseRule,
   weakAssertionRule,
+  tsEnumVsAsConstRule,
+  tsExcessiveTypeAssertionRule,
+  tsImportTypeMisuseRule,
+  tsNeverVsUnknownRule,
+  tsOptionalChainOveruseRule,
   calcFontsizeRule,
   calcRawPxRule,
   clampOffscaleRule,
