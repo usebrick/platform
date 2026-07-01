@@ -48,9 +48,14 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment:
-      name: publish
-      url: https://www.npmjs.com/package/slopbrick
+    # No `environment: publish` gate here. The Release is the
+    # human-gate surface (a maintainer reviews the version bump +
+    # CHANGELOG entry before clicking "Publish release" in the GH
+    # UI). Once the Release is published, the npm publish runs
+    # unsupervised — that's the explicit agreement for this repo
+    # ("deploy to npm doesn't need review, everything is on github").
+    # OIDC trusted publishing (`id-token: write` above) gives
+    # npm provenance without an env-gated human step.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
