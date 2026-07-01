@@ -33,7 +33,6 @@ import { unusedImportRule } from './dead/unused-import';
 import { unusedLocalRule } from './dead/unused-local';
 import { unusedParameterRule } from './dead/unused-parameter';
 import { brokenLinkRule } from './docs/broken-link';
-import { expiredCodeExampleRule } from './docs/expired-code-example';
 import { staleFunctionReferenceRule } from './docs/stale-function-reference';
 import { stalePackageReferenceRule } from './docs/stale-package-reference';
 import { dupIdenticalBlockRule } from './dup/identical-block';
@@ -147,7 +146,6 @@ export const builtinRules: Rule[] = [
   unusedLocalRule,
   unusedParameterRule,
   brokenLinkRule,
-  expiredCodeExampleRule,
   staleFunctionReferenceRule,
   stalePackageReferenceRule,
   dupIdenticalBlockRule,

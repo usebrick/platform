@@ -570,24 +570,6 @@
     "_v8Verdict": "OK",
     "_v8Lift": 48.52
   },
-  "docs/expired-code-example": {
-    "recall": 0.0,
-    "fpRate": 0.0,
-    "ratio": 0.0,
-    "precision": 0.0,
-    "lastCalibratedAt": "2026-07-01T00:00:00Z",
-    "verdict": "INVERTED",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=0, FP=3, P=0.0%, FPR=0.00%, lift=0.00. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was INVERTED (TP=0, FP=3).",
-    "aiSpecific": false,
-    "_v7Verdict": "DORMANT",
-    "_v7Lift": 1,
-    "_v7Recall": 0.0,
-    "_v7FpRate": 0.0,
-    "_v7Precision": 0,
-    "_v8Verdict": "INVERTED",
-    "_v8Lift": 0.0,
-    "defaultOff": true
-  },
   "docs/stale-function-reference": {
     "recall": 0.0026,
     "fpRate": 0.0005,

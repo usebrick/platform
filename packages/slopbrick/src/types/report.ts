@@ -205,7 +205,6 @@ export interface DocFinding {
   ruleId:
     | 'docs/stale-package-reference'
     | 'docs/stale-function-reference'
-    | 'docs/expired-code-example'
     | 'docs/broken-link';
   severity: 'low' | 'medium' | 'high';
   docFile: string;

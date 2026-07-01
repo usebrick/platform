@@ -254,8 +254,6 @@ const RULE_HINTS: Record<string, string> = {
     'Update the doc to reference an installed package, or add the package to package.json. Copy-pasted install commands from a previous project are the #1 doc-drift failure mode.',
   'docs/stale-function-reference':
     'Rename the doc reference to match a current export, or add a wrapper export. Stale function callouts in tutorials cost readers 10+ minutes of debugging.',
-  'docs/expired-code-example':
-    'Update the example to use a declared dependency, or add the package to package.json. A copy-pasteable example that does not install erodes trust in the whole docs site.',
   'docs/broken-link':
     'Create the file or fix the link target. On a public docs site, broken links erode trust more than stale copy.',
   // v0.18.9 — Rust-specific rules (tree-sitter-backed)

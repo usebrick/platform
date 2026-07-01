@@ -37,7 +37,7 @@ function stubResult(): DocsScanResult {
       byRule: {
         'docs/stale-package-reference': 0,
         'docs/stale-function-reference': 0,
-        'docs/expired-code-example': 0,
+        'dup/identical-block': 0,
         'docs/broken-link': 0,
       },
     },
@@ -77,7 +77,7 @@ describe('formatDocsReport', () => {
     expect(out).toMatch(/docDrift:\s*low/);
     expect(out).toMatch(/docs\/stale-package-reference/);
     expect(out).toMatch(/docs\/stale-function-reference/);
-    expect(out).toMatch(/docs\/expired-code-example/);
+    expect(out).toMatch(/dup\/identical-block/);
     expect(out).toMatch(/docs\/broken-link/);
   });
 

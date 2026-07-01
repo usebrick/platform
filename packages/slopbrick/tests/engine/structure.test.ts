@@ -608,20 +608,20 @@ describe('buildHealthFromReport', () => {
         { ruleId: 'logic/healthy-rule', severity: 'high' } as any,
         // defaultOff: true in signal-strength.json — this is the
         // noisy rule that should NOT show up in topOffenseIds.
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-        { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
+        { ruleId: 'dup/identical-block', severity: 'off' } as any,
       ],
     });
     const out = buildHealthFromReport(report, '/w');
     // Only the 3 high-severity healthy-rule issues should count.
     expect(out.issueCounts).toEqual({ high: 3, medium: 0, low: 0 });
-    // expired-code-example fired 9 times but is 'off' — must NOT
+    // dup/identical-block fired 9 times but is 'off' — must NOT
     // appear in top offenses, even though it has more hits than
     // healthy-rule.
     expect(out.topOffenseIds).toEqual(['logic/healthy-rule']);
@@ -639,8 +639,8 @@ describe('buildHealthFromReport', () => {
       const report = makeReport(50, {
         issues: [
           { ruleId: 'logic/healthy-rule', severity: 'medium' } as any,
-          { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
-          { ruleId: 'docs/expired-code-example', severity: 'off' } as any,
+          { ruleId: 'dup/identical-block', severity: 'off' } as any,
+          { ruleId: 'dup/identical-block', severity: 'off' } as any,
         ],
       });
       const run = await appendRun(tmpDir, report, VERSION, fsMemoryIO);

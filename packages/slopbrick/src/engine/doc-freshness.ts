@@ -8,7 +8,6 @@
 // v1 ships 4 rules (research-backed scope per docs/research/phase-6-doc-drift-internet-2026.md):
 //   - docs/stale-package-reference      (weight 5)
 //   - docs/stale-function-reference     (weight 3)
-//   - docs/expired-code-example         (weight 4)
 //   - docs/broken-link                  (weight 2)
 //
 // Two rules deferred to 0.8.x (high FP risk per IEEE 2025 survey):
@@ -28,7 +27,6 @@ import { globby } from 'globby';
 import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../types';
 import { extractImports } from '../mcp/patterns';
 import { brokenLinkRule } from '../rules/docs/broken-link';
-import { expiredCodeExampleRule } from '../rules/docs/expired-code-example';
 import { staleFunctionReferenceRule } from '../rules/docs/stale-function-reference';
 import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference';
 
@@ -41,7 +39,6 @@ import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference
 export const DOC_RULE_WEIGHTS: Record<DocFinding['ruleId'], number> = {
   'docs/stale-package-reference': 5,
   'docs/stale-function-reference': 3,
-  'docs/expired-code-example': 4,
   'docs/broken-link': 2,
 };
 
@@ -374,73 +371,6 @@ function detectStaleFunctions(
 }
 
 /**
- * `docs/expired-code-example` — fenced code block that imports a
- * package that isn't in `package.json`, or imports a relative path
- * that doesn't exist on disk. Heuristic: parse the imports with the
- * existing `extractImports` and check each.
- */
-function detectExpiredCodeExamples(
-  source: string,
-  relPath: string,
-  cwd: string,
-  packages: Set<string>,
-): DocFinding[] {
-  const findings: DocFinding[] = [];
-  const blocks = extractFencedCodeBlocks(source);
-  for (const block of blocks) {
-    if (!['ts', 'tsx', 'js', 'jsx', 'javascript', 'typescript'].includes(block.lang)) continue;
-    if (block.body.split('\n').length < 2) continue;
-    const imports = extractImports(block.body);
-    for (const imp of imports) {
-      // Relative import — check the file exists
-      if (imp.startsWith('.') || imp.startsWith('/')) {
-        // Approximate the doc file's directory
-        const docDir = dirname(join(cwd, relPath));
-        // Walk up from the doc dir, looking for the relative file.
-        // v1 only checks the same dir as the doc (most common).
-        const candidate = join(docDir, imp);
-        // Try with each common source extension.
-        const exts = ['', '.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.tsx', '/index.js', '/index.jsx'];
-        const found = exts.some((e) => existsSync(candidate + e));
-        if (!found) {
-          findings.push({
-            ruleId: 'docs/expired-code-example',
-            severity: 'medium',
-            docFile: relPath,
-            line: block.line,
-            column: block.column,
-            message: `Code example imports \`${imp}\` but the file does not exist (relative to the doc).`,
-            advice: `Update the example to use an existing module, or create the missing file.`,
-          });
-        }
-        continue;
-      }
-      // Bare specifier — check the package is in package.json
-      // Strip subpath: `@scope/name/sub` → `@scope/name`
-      let pkgName = imp;
-      if (imp.startsWith('@')) {
-        const parts = imp.split('/');
-        pkgName = parts.slice(0, 2).join('/');
-      } else {
-        pkgName = imp.split('/')[0] ?? imp;
-      }
-      if (!packages.has(pkgName)) {
-        findings.push({
-          ruleId: 'docs/expired-code-example',
-          severity: 'medium',
-          docFile: relPath,
-          line: block.line,
-          column: block.column,
-          message: `Code example imports \`${imp}\` but \`${pkgName}\` is not in package.json.`,
-          advice: `Add \`${pkgName}\` to package.json or update the example.`,
-        });
-      }
-    }
-  }
-  return findings;
-}
-
-/**
  * `docs/broken-link` — relative link target doesn't exist. v1 skips
  * remote URLs (off by default) and `#anchor` links.
  */
@@ -539,7 +469,7 @@ export async function buildDocFreshness(
     // v0.17.0: call first-class Rule objects instead of internal detect* fns.
     // v0.18.7: include the package's own `name` from package.json in
     // the context so doc rules that check self-imports (e.g.
-    // expired-code-example) can resolve it without each rule
+    // stale-function-reference) can resolve it without each rule
     // re-reading package.json. The engine has the authoritative
     // `packages` set; the rule's create() may add it but the
     // engine's context.plumbing is the canonical path.
@@ -557,7 +487,6 @@ export async function buildDocFreshness(
     const ruleConfigs: Array<{ rule: Rule; ruleId: DocFinding['ruleId'] }> = [
       { rule: stalePackageReferenceRule, ruleId: 'docs/stale-package-reference' },
       { rule: staleFunctionReferenceRule, ruleId: 'docs/stale-function-reference' },
-      { rule: expiredCodeExampleRule, ruleId: 'docs/expired-code-example' },
       { rule: brokenLinkRule, ruleId: 'docs/broken-link' },
     ];
     for (const { rule, ruleId } of ruleConfigs) {
@@ -585,7 +514,6 @@ export async function buildDocFreshness(
   const byRule: Record<DocFinding['ruleId'], number> = {
     'docs/stale-package-reference': 0,
     'docs/stale-function-reference': 0,
-    'docs/expired-code-example': 0,
     'docs/broken-link': 0,
   };
   let weight = 0;

@@ -57,7 +57,7 @@ describe('docs/stale-package-reference', () => {
   it('flags inline import from an undeclared package', async () => {
     // The rule matches the install/import keyword + path on the SAME line
     // as an inline code span — fenced blocks are handled by the sibling
-    // expired-code-example rule.
+    // dup/identical-block rule.
     const md = "Use `import { x } from 'ghost-pkg'` in your code.";
     const issues = await runRule(md, basePkg);
     expect(issues.length).toBeGreaterThanOrEqual(1);
