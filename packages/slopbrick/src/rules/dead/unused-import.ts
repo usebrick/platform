@@ -97,8 +97,81 @@ export const unusedImportRule = createRule<UnusedImportContext>({
       });
     }
 
+    // v0.18.9 — Rust path. The JS visitor's `deadCode.bindings` is
+    // unpopulated for `.rs` files (swc can't parse Rust), so a
+    // separately-derived "isReferenced" map is constructed from
+    // `facts.v2.rustFile.functions` + `_source` (a simple identifier
+    // scan over the source) and used to filter. Cross-file
+    // references aren't tracked; only in-file usage is.
+    if (facts.v2.rustFile) {
+      // Strip `use ...;` lines from the source before scanning so an
+      // imported identifier doesn't count as its own reference.
+      const strippedSource = stripUseDeclarations(facts.v2._source ?? '');
+      const referenced = collectRustReferencedNames(strippedSource);
+      for (const imp of facts.v2.rustFile.imports) {
+        for (const nameEntry of imp.names) {
+          if (referenced.has(nameEntry.name)) continue;
+          const source = ` from '${imp.path}'`;
+          issues.push({
+            ruleId: 'dead/unused-import',
+            category: 'logic',
+            severity: 'low',
+            aiSpecific: true,
+            message: `Unused import: '${nameEntry.name}'${source}`,
+            line: imp.line,
+            column: imp.column,
+            advice: `Remove the '${imp.path}' import or use '${nameEntry.name}' somewhere in the file. ` +
+              `Rust's compiler only flags unused imports per module — the tree-sitter-backed ` +
+              `walker here surfaces them for slopbrick's dead-code rules regardless of ` +
+              `#[allow(unused_imports)].`,
+          });
+        }
+        // Glob imports have no `names` to flag — they pull everything
+        // in, so a missing reference can't be detected per-name.
+      }
+    }
+
     return issues;
   },
 });
+
+/**
+ * v0.18.9 — collect every identifier-like token in the Rust source
+ * MINUS the `use ...;` declarations. A binding's name appearing only
+ * inside its own `use` line doesn't count as a real reference. The
+ * approach is a regex strip + identifier scan; the same conservative
+ * trade-off the JS deadCode detector uses (declared names shadow
+ * used names, so the rule fires only on names that NEVER appear in
+ * non-import code).
+ */
+function collectRustReferencedNames(source: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of source.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g)) {
+    out.add(m[1]!);
+  }
+  return out;
+}
+
+/**
+ * Strip `use ...;` declarations AND comments from a Rust source
+ * before scanning for identifier references. The carriage is
+ * intentionally rough — anything more precise would require
+ * re-parsing, which the v2 builder already did. The point here is
+ * to exclude the imported names' own text + their textual mentions
+ * in `// ...` doc comments from the reference scan. Doc comments
+ * often paraphrase the import ("use std::collections::HashMap for
+ * fast lookups"); they don't represent a real reference.
+ */
+function stripUseDeclarations(source: string): string {
+  let out = source;
+  // Remove `use foo::bar::{A, B};` declarations (non-greedy match
+  // up to first `;`).
+  out = out.replace(/^\s*use\s+[\s\S]*?;\s*$/gm, '');
+  // Remove line comments (// ...).
+  out = out.replace(/\/\/[^\n]*/g, '');
+  // Remove block comments (/* ... */, may span lines).
+  out = out.replace(/\/\*[\s\S]*?\*\//g, '');
+  return out;
+}
 
 export default unusedImportRule satisfies Rule<UnusedImportContext>;

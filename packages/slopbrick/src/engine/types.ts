@@ -230,9 +230,102 @@ export interface ScanFactsV2 {
    *  comments (and block equivalents). Issues matching these are filtered
    *  out before scoring. */
   disabledRules: import('../types').DisabledLintRuleFact[];
+  /**
+   * v0.18.9 — Rust AST structure for `.rs` files. Populated by the
+   * tree-sitter-backed visitor in `visitors/rust.ts`. Absent for
+   * non-Rust files. Powers the four `rust/*` rules (unused-pub-fn,
+   * unwrap-in-production, todo-macro, stringly-typed). */
+  rustFile?: RustFileRecord;
   /** Optional source text (cached for `unified-diff`, `formatAdvice`,
    *  and `--suggest` output). Not all rules need this. */
   _source?: string;
+}
+
+// ---------------------------------------------------------------------------
+// v0.18.9 — Rust file structure (tree-sitter output)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-language (Rust) variant of an import. Mirrors `ImportRecord`
+ * for the AST-walker path; absent for non-Rust files.
+ */
+export interface RustImportRecord {
+  /** Source path as written (`'std::collections::HashMap'`). */
+  path: string;
+  /** Local bindings introduced by the import. Empty for `use foo::*;`. */
+  names: Array<{ name: string; alias?: string }>;
+  /** True for `use foo::*;` — the import has no local name. */
+  isGlob: boolean;
+  /** Source location. */
+  line: number;
+  column: number;
+}
+
+/**
+ * Per-function declaration captured from the Rust AST. Covers free
+ * functions and impl-block methods uniformly.
+ */
+export interface RustFunctionRecord {
+  /** Function name as written (`add`, `from_str`). */
+  name: string;
+  /** Source location. */
+  line: number;
+  column: number;
+  /** True for `pub fn` / `pub(crate) fn` / `pub(super) fn`. */
+  isPublic: boolean;
+  /** True for methods inside `impl` blocks. */
+  isMethod: boolean;
+  /** Receiver text when `isMethod` (`'self'`, `'&self'`, `'&mut self'`). */
+  receiver?: string;
+  /** Body length in source lines. */
+  bodyLines: number;
+  /** True if the function is decorated with `#[cfg(test)]` or `#[test]`,
+   *  or is enclosed in a `#[cfg(test)] mod tests { ... }`. */
+  inTestConfig: boolean;
+}
+
+/** Per-struct declaration. Mirrors `RustFunctionRecord` for the
+ *  struct-item node. */
+export interface RustStructRecord {
+  name: string;
+  line: number;
+  column: number;
+  isPublic: boolean;
+  /** True if any `#[derive(...)]` attribute preceded the struct. */
+  isDerive: boolean;
+  /** Names of the derive macros. */
+  derives: string[];
+}
+
+/** Per-trait declaration. */
+export interface RustTraitRecord {
+  name: string;
+  line: number;
+  column: number;
+  isPublic: boolean;
+}
+
+/** Per-impl block. */
+export interface RustImplRecord {
+  /** Trait name when `impl Trait for Type` (otherwise absent). */
+  trait?: string;
+  /** The type the impl targets (`Type` in `impl Type` or `impl Trait for Type`). */
+  type: string;
+  /** Names of methods defined inside this impl. */
+  methods: string[];
+  line: number;
+  column: number;
+}
+
+/** Captured AST-level structure of a `.rs` file, populated by
+ *  `parseRustFile` in `engine/visitors/rust.ts`. Absent for files
+ *  whose extension isn't `.rs`, or when tree-sitter failed to load. */
+export interface RustFileRecord {
+  imports: RustImportRecord[];
+  functions: RustFunctionRecord[];
+  structs: RustStructRecord[];
+  traits: RustTraitRecord[];
+  impls: RustImplRecord[];
 }
 
 // ---------------------------------------------------------------------------

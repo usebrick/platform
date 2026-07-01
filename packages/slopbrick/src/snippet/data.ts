@@ -258,6 +258,15 @@ const RULE_HINTS: Record<string, string> = {
     'Update the example to use a declared dependency, or add the package to package.json. A copy-pasteable example that does not install erodes trust in the whole docs site.',
   'docs/broken-link':
     'Create the file or fix the link target. On a public docs site, broken links erode trust more than stale copy.',
+  // v0.18.9 — Rust-specific rules (tree-sitter-backed)
+  'rust/unused-pub-fn':
+    "Remove the function or call it. Rust's compiler doesn't warn on `pub fn` references unless `#![warn(dead_code)]` is set at the crate root. AI agents leave these behind during iterative refactors.",
+  'rust/unwrap-in-production':
+    "Replace `.unwrap()` / `.expect()` with `?` (early-return on Err), `.map_err(...)` for error conversion, or an explicit `match`. They panic in production; reserve them for `#[cfg(test)]` or `#[test]` scopes.",
+  'rust/todo-macro':
+    "Implement the function body or remove the stub. `todo!()` / `unimplemented!()` both expand to `panic!()`, so a hit at runtime crashes the program. Move them into a `#[cfg(test)] mod tests` block to suppress.",
+  'rust/stringly-typed':
+    "Replace the `String` / `&str` parameter with the typed enum that already exists in the file. Stringly-typed APIs lose type information at the boundary — typos (`\"Click\"` vs `\"click\"`) only fail at runtime.",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

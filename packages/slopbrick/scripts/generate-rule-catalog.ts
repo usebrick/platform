@@ -133,6 +133,9 @@ async function discoverRules(): Promise<RuleMeta[]> {
     const files = (await readdir(dir))
       .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
       .filter((f) => f !== 'utils.ts' && !f.endsWith('.utils.ts'))
+      // Barrel re-exports (`index.ts`) don't declare rules; skip them
+      // so the catalog build doesn't fail on `dead/index.ts` etc.
+      .filter((f) => f !== 'index.ts')
       .sort();
 
     for (const file of files) {

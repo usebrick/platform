@@ -42,7 +42,9 @@ async function discoverRuleModules(): Promise<RuleModule[]> {
     for (const file of files) {
       // Skip files that don't define a rule — utility files like `utils.ts`
       // are part of the category's toolbox but aren't rules themselves.
-      if (file === 'utils.ts' || file.endsWith('.utils.ts')) continue;
+      // `index.ts` files are barrel re-exports (e.g. `dead/index.ts`); skip
+      // them too so the generator doesn't trip on the category index.
+      if (file === 'utils.ts' || file.endsWith('.utils.ts') || file === 'index.ts') continue;
       const filePath = path.join(categoryDir, file);
       const content = await readFile(filePath, 'utf8');
       const match = content.match(/export\s+const\s+(\w+Rule)\b/);

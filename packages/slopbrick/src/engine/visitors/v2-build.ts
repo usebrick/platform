@@ -42,6 +42,7 @@ import type {
   ScanFactsV2,
   FileMeta,
   JsxElementRecord,
+  RustFileRecord,
 } from '../types';
 import {
   extractDisabledRules,
@@ -49,6 +50,12 @@ import {
   maxJsxNestingDepth,
   deriveFramework,
 } from './scan-helpers.js';
+// v0.18.9 — tree-sitter-backed Rust file extractor. Wired here so the
+// v2 builder calls it for `.rs` files and surfaces the result on
+// `facts.v2.rustFile`. The regex-based `extractRustPatterns` is still
+// available as a fallback for environments where the tree-sitter
+// native binding can't load.
+import { parseRustFile, type RustFileStructure } from './rust.js';
 
 /**
  * Internal accumulator produced by extractFacts(). Mirrors the
@@ -319,7 +326,69 @@ export function buildV2Facts(
     })),
     disabledRules: extractDisabledRules(source),
     templateClassNames,
+    // v0.18.9 — populate the Rust AST record when the file is `.rs`.
+    // Calling `parseRustFile` here keeps the dead-code detector's
+    // import-binding pass a pure function over the same source the
+    // walker saw. The native-binding guard lives inside
+    // `parseRustFile` (returns an empty record when tree-sitter is
+    // unavailable).
+    rustFile: buildRustFileRecord(facts.filePath, source),
     _source: source,
+  };
+}
+
+/**
+ * v0.18.9 — convert the visitor's internal `RustFileStructure` shape
+ * into the v2-published `RustFileRecord` shape. The two only differ
+ * in `RustImportRecord.alias` being optional in both — kept separate
+ * so future fields (e.g. `use_tree_path`, `glob_imports`) can be
+ * added without disturbing the rule surface.
+ */
+function buildRustFileRecord(
+  filePath: string,
+  source: string,
+): RustFileRecord | undefined {
+  if (!filePath.toLowerCase().endsWith('.rs')) return undefined;
+  const structure: RustFileStructure = parseRustFile(filePath, source);
+  return {
+    imports: structure.imports.map((i) => ({
+      path: i.path,
+      names: i.names.map((n) => ({ name: n.name, ...(n.alias ? { alias: n.alias } : {}) })),
+      isGlob: i.isGlob,
+      line: i.line,
+      column: i.column,
+    })),
+    functions: structure.functions.map((f) => ({
+      name: f.name,
+      line: f.line,
+      column: f.column,
+      isPublic: f.isPublic,
+      isMethod: f.isMethod,
+      ...(f.receiver ? { receiver: f.receiver } : {}),
+      bodyLines: f.bodyLines,
+      inTestConfig: f.inTestConfig,
+    })),
+    structs: structure.structs.map((s) => ({
+      name: s.name,
+      line: s.line,
+      column: s.column,
+      isPublic: s.isPublic,
+      isDerive: s.isDerive,
+      derives: [...s.derives],
+    })),
+    traits: structure.traits.map((t) => ({
+      name: t.name,
+      line: t.line,
+      column: t.column,
+      isPublic: t.isPublic,
+    })),
+    impls: structure.impls.map((ip) => ({
+      ...(ip.trait ? { trait: ip.trait } : {}),
+      type: ip.type,
+      methods: [...ip.methods],
+      line: ip.line,
+      column: ip.column,
+    })),
   };
 }
 

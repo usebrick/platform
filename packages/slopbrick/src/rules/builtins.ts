@@ -60,6 +60,10 @@ import { cssBloatRule } from './perf/css-bloat';
 import { halsteadAnomalyRule } from './perf/halstead-anomaly';
 import { terminologyDriftRule } from './product/terminology-drift';
 import { uxPatternFragmentationRule } from './product/ux-pattern-fragmentation';
+import { rustStringlyTypedRule } from './rust/stringly-typed';
+import { rustTodoMacroRule } from './rust/todo-macro';
+import { rustUnusedPubFnRule } from './rust/unused-pub-fn';
+import { rustUnwrapInProductionRule } from './rust/unwrap-in-production';
 import { dangerousCorsRule } from './security/dangerous-cors';
 import { evalRule } from './security/eval';
 import { exposedEnvVarRule } from './security/exposed-env-var';
@@ -162,6 +166,10 @@ export const builtinRules: Rule[] = [
   halsteadAnomalyRule,
   terminologyDriftRule,
   uxPatternFragmentationRule,
+  rustStringlyTypedRule,
+  rustTodoMacroRule,
+  rustUnusedPubFnRule,
+  rustUnwrapInProductionRule,
   dangerousCorsRule,
   evalRule,
   exposedEnvVarRule,
