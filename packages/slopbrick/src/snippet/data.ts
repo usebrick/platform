@@ -286,6 +286,15 @@ const RULE_HINTS: Record<string, string> = {
   // v0.19.0 — Duplication detector
   'dup/identical-block':
     "Refactor to a shared helper. This is a Type-1 clone (byte-for-byte identical after normalization). Common in AI-generated code that copy-pastes from training data.",
+  // v0.20.0 — Java-specific rules
+  'java/system-out-println':
+    "Replace with `private static final Logger log = LoggerFactory.getLogger(...);` then `log.info(...)`. AI agents default to println because of textbook examples; real Java code uses a logger.",
+  'java/empty-catch-block':
+    "Log the exception (`log.error(\"...\", e)`), re-throw it, or both. Empty catch blocks hide bugs. Common in AI-generated code that wants to look defensive.",
+  'java/arraylist-vs-linkedlist':
+    "Replace `new LinkedList<>()` with `new ArrayList<>()`. LinkedList is rarely the right choice (worse cache locality, 5x more memory per element, O(n) indexed access). Joshua Bloch recommends ArrayList unless you need a Deque.",
+  'java/legacy-date-api':
+    "Replace `java.util.Date` / `Calendar` with `java.time` (`LocalDate`, `LocalDateTime`, `Instant`, `ZonedDateTime`). java.time is immutable and thread-safe. AI agents default to the legacy API.",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

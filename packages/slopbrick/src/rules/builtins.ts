@@ -39,6 +39,10 @@ import { dupIdenticalBlockRule } from './dup/identical-block';
 import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
 import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
+import { javaArraylistVsLinkedlistRule } from './java/arraylist-vs-linkedlist';
+import { javaEmptyCatchBlockRule } from './java/empty-catch-block';
+import { javaLegacyDateApiRule } from './java/legacy-date-api';
+import { javaSystemOutPrintlnRule } from './java/system-out-println';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -152,6 +156,10 @@ export const builtinRules: Rule[] = [
   goErrorWrapWithoutContextRule,
   goNilSliceVsEmptyRule,
   goStructTagInconsistencyRule,
+  javaArraylistVsLinkedlistRule,
+  javaEmptyCatchBlockRule,
+  javaLegacyDateApiRule,
+  javaSystemOutPrintlnRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
