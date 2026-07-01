@@ -51,6 +51,24 @@ export class RuleRegistry {
     return list.filter((r) => (filter.kind === 'ai' ? r.aiSpecific : !r.aiSpecific));
   }
 
+  /** v0.18.8: remove every rule where `predicate(rule)` returns true.
+   *  Used by focused calibration scripts to scan a single category
+   *  without instantiating all 99 rules. */
+  removeWhere(predicate: (rule: Rule) => boolean): number {
+    let removed = 0;
+    for (const [id, rule] of this.rules) {
+      if (predicate(rule)) {
+        this.rules.delete(id);
+        removed++;
+      }
+    }
+    return removed;
+  }
+
+  all(): Rule[] {
+    return Array.from(this.rules.values());
+  }
+
   createContexts(
     config: ResolvedConfig,
     filePath: string,

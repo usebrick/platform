@@ -1037,5 +1037,60 @@
     "defaultOff": true,
     "_calibrationNote": "v0.16.0 ship — not in v7 per-rule table. Default-off until calibration data lands. Backed by: Nielsen, J. (2000), *Designing Web Usability* (placeholder copy as a top-10 trust erosion signal); Krug, S. (2000), *Don't Make Me Think*, 2nd ed. (TODO/placeholder text in shipped UI signals incomplete work.)",
     "aiSpecific": false
+  },
+  "dead/dead-branch": {
+    "recall": 0.004,
+    "fpRate": 0.002,
+    "ratio": 2.0,
+    "precision": 0.667,
+    "lastCalibratedAt": "2026-07-01T00:30:44Z",
+    "verdict": "NOISY",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.8 v8a first measurement (1000 files: 500 pos + 500 neg). 2/500 pos vs 1/500 neg — ratio 2.0x by formula, but absolute counts (2 vs 1) are within noise margin. NOISY verdict (counts too small for USEFUL gate). Hypothesis (`if (true) / if (false)` is AI-iteration artifact) is unconfirmed on this sample. Re-measure on v8 full corpus or higher-iteration AI samples.",
+    "aiSpecific": true
+  },
+  "dead/unreachable": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 1.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-01T00:30:44Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.8 v8a first measurement (1000 files). 0 fires in both arms. Either (a) the pattern is genuinely rare on TS/TSX in v7 corpus, or (b) the visitor's `findUnreachableStatements` doesn't fire on real-world code shapes. Re-measure on v8 full corpus + add synthetic fixture in tests/fixtures/dead-code/ to verify the visitor works at all.",
+    "aiSpecific": true
+  },
+  "dead/unused-import": {
+    "recall": 0.186,
+    "fpRate": 0.248,
+    "ratio": 0.75,
+    "precision": 0.429,
+    "lastCalibratedAt": "2026-07-01T00:30:44Z",
+    "verdict": "INVERTED",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.8 v8a first measurement (1000 files). 93/500 pos vs 124/500 neg — ratio 0.75x. INVERTED: hand-written code has 33% MORE unused imports than AI code. The v0.18.5 hypothesis (AI iteration leaves dead imports behind) is falsified on this sample. Plausible explanation: hand-written code more often has `import { X } from 'y'` where X is a re-exported type, or the sample skews toward older, less-strictly-typed codebases. Default-off until v0.18.9+ can re-validate against higher-churn AI samples.",
+    "aiSpecific": true
+  },
+  "dead/unused-local": {
+    "recall": 0.182,
+    "fpRate": 0.176,
+    "ratio": 1.03,
+    "precision": 0.508,
+    "lastCalibratedAt": "2026-07-01T00:30:44Z",
+    "verdict": "NOISY",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.8 v8a first measurement (1000 files). 91/500 pos vs 88/500 neg — ratio 1.03x. NOISY: no signal in either direction. Unused local variables appear at the same rate in hand-written and AI code. Hypothesis falsified on this sample. Default-off.",
+    "aiSpecific": true
+  },
+  "dead/unused-parameter": {
+    "recall": 0.01,
+    "fpRate": 0.018,
+    "ratio": 0.56,
+    "precision": 0.357,
+    "lastCalibratedAt": "2026-07-01T00:30:44Z",
+    "verdict": "INVERTED",
+    "defaultOff": true,
+    "_calibrationNote": "v0.18.8 v8a first measurement (1000 files). 5/500 pos vs 9/500 neg — ratio 0.56x. INVERTED: hand-written code has 80% MORE unused parameters than AI code. Plausible explanation: callback-heavy hand-written code (`(x, y, z) => ...` where only x is used) is rare in newer AI-generated code. Hypothesis falsified on this sample. Default-off.",
+    "aiSpecific": true
   }
 }

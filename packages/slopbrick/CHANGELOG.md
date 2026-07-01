@@ -1,5 +1,101 @@
 # Changelog
 
+## [0.18.8] - 2026-07-01 — v8a first measurement: dead/* rules falsified
+
+The 5 dead/* rules shipped in v0.18.5 (commit `095b4b5`) had
+**no calibration data**. v0.18.8 builds the first measurement:
+1000-file v8a sample (500 pos + 500 neg TS/TSX from the v7 corpus),
+focused scan via the new `scripts/scan-dead-v8a.ts`, arm-fire
+metrics. **3 of 5 rules are INVERTED or NOISY** — the v0.18.5
+hypothesis ("AI code has more dead imports/locals than hand-written
+code") is falsified on this sample.
+
+### Result
+
+| Rule | v0.18.8 verdict | Decision |
+|---|---|---|
+| `dead/dead-branch` | NOISY (2/500 vs 1/500, 2.0x) | `defaultOff: true` (counts too small) |
+| `dead/unreachable` | DORMANT (0/0) | `defaultOff: true` + add synthetic fixture in v0.18.9 |
+| `dead/unused-import` | **INVERTED** (93 vs 124, 0.75x) | `defaultOff: true` |
+| `dead/unused-local` | NOISY (91 vs 88, 1.03x) | `defaultOff: true` |
+| `dead/unused-parameter` | **INVERTED** (5 vs 9, 0.56x) | `defaultOff: true` |
+
+The **3 INVERTED / NOISY rules** directly contradict the v0.18.5
+hypothesis. Plausible explanations documented in
+`docs/research/v0.18.8-dead-rules-measurement.md`:
+
+- **unused-import:** hand-written code more often has re-exported
+  types that look "unused" at the import site; newer AI code is
+  more likely to run `tsc --noUnusedLocals` in CI.
+- **unused-parameter:** callback-heavy hand-written code
+  (`(req, res, next) => ...`) is rare in newer AI code, which uses
+  destructuring and explicit single-arg functions.
+
+### What shipped
+
+- **`signal-strength.json`** now has calibration entries for all 5
+  dead/* rules (was empty for them).
+- **`docs/research/v0.18.8-plan.md`** — the v0.18.8 work plan.
+- **`docs/research/v0.18.8-dead-rules-measurement.md`** — the
+  measurement report with per-rule analysis, hypothesis status, and
+  v0.18.9+ follow-up plan.
+- **`src/rules/dead/index.ts`** — new index module exporting
+  `deadRuleIds`, `isDeadRuleId`, `deadRules` (the 5 rules). Used by
+  the v8a scan script and any future dead-code work.
+- **`src/rules/registry.ts`** — adds `removeWhere(predicate)` and
+  `all()` methods for focused scans (only load the rules you need).
+- **`scripts/scan-dead-v8a.ts`** — the focused dead/* scan. ~3 min
+  for 1000 files vs. 4-6 hours for a full v7 re-scan.
+- **`/Users/cheng/corpus-expansion/v8/`** — the v8 corpus directory
+  (v8a filelists + scan output). v8 is being built incrementally;
+  the full corpus (CSS-in-JS, React 19, Next.js App Router
+  additions) ships in a follow-up.
+
+### What did NOT ship
+
+- **No `defaultOff` flips.** All 5 dead/* rules remain
+  `defaultOff: true`. The measurement says they're not ready.
+- **No DORMANT rule review for the other 32.** The full v8 corpus
+  needs the CSS-in-JS / React 19 / Next.js App Router additions
+  before the 32 DORMANT non-dead rules can be properly re-evaluated.
+  Deferred to v0.18.9+.
+- **No deletion of any rule.** Even the INVERTED rules stay in the
+  registry (with `defaultOff: true`) so the measurement history is
+  preserved for future re-evaluation.
+
+### Quality gates (all green)
+
+- `pnpm exec tsc --noEmit` → 0 errors
+- `pnpm exec vitest run` → all 99-rule + dead/* tests pass
+- `pnpm -r build` → clean
+- `slopbrick scan --workspace .` → repo scores unchanged (this
+  release is about the rule registry, not the scoring math)
+
+### Review gates (per `v0.18-roadmap.md`)
+
+- **G1 (Reproduction):** the INVERTED / NOISY claims cite the exact
+  TP/FP numbers from `/Users/cheng/corpus-expansion/v8/scan/v8a-summary.json`,
+  not estimates. Reproducible via the script.
+- **G2 (Target verification):** the cited rule files
+  (`src/rules/dead/*.ts`), the registry (`src/rules/registry.ts`),
+  and the calibration script (`scripts/scan-dead-v8a.ts`) are the
+  real ones, not memory.
+- **G3 (Fix-locus):** the fix (no `defaultOff` flip) is in
+  `signal-strength.json`, not in the engine. The `removeWhere` and
+  `all()` additions are in the registry, not in the engine's
+  extraction logic.
+- **G4 (Test):** the existing 5 dead/* rule tests still pass; the
+  v8a scan output is the new evidence.
+- **G5 (No regression):** full vitest suite green. Headline 4-score
+  model unchanged.
+- **G6 (Schema coherence):** the 5 new `signal-strength.json`
+  entries match the v7 format (verified by the calibration script).
+- **G7 (Doc/code agreement):** the CHANGELOG, the
+  `v0.18.8-dead-rules-measurement.md` report, and each rule's
+  `_calibrationNote` field all agree on the verdict.
+- **G8 (Reproduction in entry):** the CHANGELOG entry above includes
+  the per-rule before/after numbers and links to the report.
+
 ## [0.18.7] - 2026-06-30 — Output cleanup (engine-side `create()` → `analyze()` plumbing)
 
 The remaining 4 `expired-code-example` false positives from
