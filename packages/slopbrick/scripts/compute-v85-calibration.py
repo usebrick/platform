@@ -70,6 +70,12 @@ def to_set(v) -> set[str]:
     return set()
 
 
+def _fmt_lift(lift: float) -> str:
+    if lift == float("inf"):
+        return "inf"
+    return f"{lift:.2f}"
+
+
 # === Load v7 + v8 ===
 print("Loading v7 fires...")
 v7_neg = load_fires(SCAN_ROOT / "v7-full-neg-fires.json")
@@ -185,7 +191,7 @@ for r in rows:
     entry = {
         "recall": round(v85["r"], 4),
         "fpRate": round(v85["fpr"], 4),
-        "ratio": round(v85["lift"], 2) if v85["lift"] != float("inf") else "Infinity",
+        "ratio": round(v85["lift"], 2) if v85["lift"] != float("inf") else 99999,
         "precision": round(v85["p"], 4),
         "lastCalibratedAt": "2026-07-01T00:00:00Z",
         "verdict": v85["verdict"],
@@ -193,19 +199,19 @@ for r in rows:
             f"v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus "
             f"({n_neg_v85} neg + {n_pos_v85} pos). v8.5 TP={v85['tp']}, FP={v85['fp']}, "
             f"P={v85['p']*100:.1f}%, FPR={v85['fpr']*100:.2f}%, lift="
-            f"{'inf' if v85['lift'] == float('inf') else f'{v85[\"lift\"]:.2f}'}. "
+            f"{_fmt_lift(v85['lift'])}. "
             f"v7 was {v7m['verdict']} (TP={v7m['tp']}, FP={v7m['fp']}, lift="
-            f"{'inf' if v7m['lift'] == float('inf') else f'{v7m[\"lift\"]:.2f}'}). "
+            f"{_fmt_lift(v7m['lift'])}). "
             f"v8 was {r['v8']['verdict']} (TP={r['v8']['tp']}, FP={r['v8']['fp']})."
         ),
         "aiSpecific": r["aiSpecific"],
         "_v7Verdict": v7m["verdict"],
-        "_v7Lift": round(v7m["lift"], 2) if v7m["lift"] != float("inf") else "Infinity",
+        "_v7Lift": round(v7m["lift"], 2) if v7m["lift"] != float("inf") else 99999,
         "_v7Recall": round(v7m["r"], 4),
         "_v7FpRate": round(v7m["fpr"], 4),
         "_v7Precision": round(v7m["p"], 4),
         "_v8Verdict": r["v8"]["verdict"],
-        "_v8Lift": round(r["v8"]["lift"], 2) if r["v8"]["lift"] != float("inf") else "Infinity",
+        "_v8Lift": round(r["v8"]["lift"], 2) if r["v8"]["lift"] != float("inf") else 99999,
     }
     if v85["verdict"] in ("INVERTED", "NOISY", "DORMANT"):
         entry["defaultOff"] = True

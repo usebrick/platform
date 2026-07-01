@@ -226,13 +226,20 @@ function parseHtml(source: string): ParseResult {
  * entirely by the BACKEND_EXTENSIONS early-return.
  */
 function parseBlankModule(source: string): ParseResult {
+  // v0.18.9: return the ORIGINAL source (not the blank-padded version)
+  // so downstream rules can analyze it. The blank-padded version was
+  // intended to keep SWC's AST sane, but it also broke the visitor layer:
+  // regex-based rules and tree-sitter-backed visitors (e.g. `.rs`) need
+  // the real source to do their work. We feed the blank-padded version
+  // to SWC's parser (so the AST is a structural placeholder) and the
+  // original source to the worker (so rules see real content).
   const replaced = source.replace(/[^\r\n]/g, ' ');
   const ast = parseSync(replaced, {
     syntax: 'typescript',
     tsx: false,
     target: 'es2022',
   });
-  return { ast, source: replaced };
+  return { ast, source };
 }
 
 function parseScriptContent(content: string, isTypeScript: boolean): Module {
@@ -386,8 +393,16 @@ function parseSource(source: string, filePath: string): ParseResult {
     // but no SWC support. Return a blank-padded empty module so
     // regex-only rules can still fire (markdown-leakage, comment-
     // ratio, etc.) without burning the parseError path.
+    // v0.18.9: `.rs` is in the same bucket. The visitor layer
+    // (`engine/visitors/rust.ts`) carries the tree-sitter-backed
+    // parse + extractFacts attaches the result to `facts.v2.rustFile`.
+    // The rule layer (`rules/rust/*.ts`) reads that field. parseBlankModule
+    // lets the worker continue past the parser — without this, parseWithSwc
+    // would throw on every .rs file, the worker would count it as a
+    // parseError, and the v2-build's buildRustFileRecord would never run.
     case 'py':
     case 'go':
+    case 'rs':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback

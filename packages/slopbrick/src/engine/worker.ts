@@ -51,19 +51,24 @@ export async function scanFile(
   const cache = buildParserCacheConfig(cwd);
 
   // v0.14.5l: split the backend early-return. Languages we have
-  // visitors for (.py, .go) get the rule engine pass — rules that
-  // need SWC silently produce 0 issues for those files, but
+  // visitors for (.py, .go, .rs) get the rule engine pass — rules
+  // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
   // fire. Languages we have NO visitor for (.swift, .kt, .dart,
-  // .rs, .cpp, .java, .rb, .php) still get the early-return
-  // because every rule attempt would burn the parseError path.
+  // .cpp, .java, .rb, .php) still get the early-return because
+  // every rule attempt would burn the parseError path.
   //
-  // Tradeoff: the corpus scans now process ~70% more files, but
-  // the v7 calibration sees more ground truth. v0.15 will add
-  // real Python + Go AST support.
+  // v0.18.9: removed `.rs` from this set. The tree-sitter Rust
+  // integration (see `visitors/rust.ts` and `parser-rust.ts`) is
+  // wired through `v2-build.ts::buildRustFileRecord`, which fires
+  // for `.rs` files. The 4 new `rust/*` rules (unused-pub-fn,
+  // unwrap-in-production, todo-macro, stringly-typed) need this
+  // for their v0.18.9 v8.5 calibration to produce non-DORMANT
+  // verdicts. Tradeoff: corpus scans now process Rust files,
+  // adding ~10-20s per 1,000 Rust files.
   const ext = extname(filePath).toLowerCase();
   const UNSUPPORTED_LANGS = new Set([
-    '.swift', '.kt', '.kts', '.dart', '.rs',
+    '.swift', '.kt', '.kts', '.dart',
     '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
     '.java', '.rb', '.php',
   ]);
