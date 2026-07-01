@@ -85,17 +85,19 @@ function makeReport(aiQuality = 10, overrides: Partial<ProjectReport> = {}): Pro
   };
 }
 
+// v0.20c R9 (chronic-offender): hoisted from 7 duplicate per-describe
+// beforeEach/afterEach pairs. Describes that don't need `dir`
+// still pay the cost of a create+rm, but it's microseconds and
+// the simpler structure is worth it.
+let dir: string;
+beforeEach(() => {
+  dir = createTmpDir();
+});
+afterEach(() => {
+  rmSync(dir, { recursive: true, force: true });
+});
+
 describe('readRuns', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('returns an empty array when no memory file exists', async () => {
     expect(await readRuns(dir, fsMemoryIO)).toEqual([]);
   });
@@ -136,16 +138,6 @@ describe('readRuns', () => {
 });
 
 describe('appendRun', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('stores timestamp, version, category scores, and top offense ids', async () => {
     const report = makeReport(42, {
       issues: [
@@ -237,16 +229,6 @@ function writeFile(dir: string, rel: string, content: string): string {
 }
 
 describe('loadInventory + saveInventory', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('returns null when the inventory file is missing', async () => {
     expect(await loadInventory(dir)).toBeNull();
   });
@@ -306,16 +288,6 @@ describe('loadInventory + saveInventory', () => {
 });
 
 describe('loadConstitution + saveConstitution', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('returns null when the constitution file is missing', async () => {
     expect(await loadConstitution(dir)).toBeNull();
   });
@@ -359,16 +331,6 @@ describe('loadConstitution + saveConstitution', () => {
 });
 
 describe('buildInventoryFromScan', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   function makeComponentResult(filePath: string, componentName: string): FileScanResult {
     return {
       filePath,
@@ -760,16 +722,6 @@ describe('saveHealth / loadHealth', () => {
 });
 
 describe('isInventoryFresh', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('returns true when no files have changed since the inventory was saved', async () => {
     const fileA = writeFile(dir, 'src/Button.tsx', 'export const Button = () => null;\n');
     const fixture = makeInventoryFixture(dir);
@@ -828,16 +780,6 @@ describe('isInventoryFresh', () => {
 });
 
 describe('invalidateFile', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
-  });
-
   it('removes the matching entry from cache.json', async () => {
     const fileA = writeFile(dir, 'src/A.tsx', 'export const A = () => null;\n');
     const fileB = writeFile(dir, 'src/B.tsx', 'export const B = () => null;\n');

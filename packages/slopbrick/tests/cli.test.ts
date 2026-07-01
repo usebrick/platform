@@ -89,6 +89,18 @@ const makeReport = (
   ...overrides,
 });
 
+// v0.20c R9 (chronic-offender): hoisted from 6 duplicate per-describe
+// beforeEach/afterEach pairs. Variations (e.g. --no-increase adds
+// writeSloppyProject) keep their describe-level beforeEach, which
+// runs after this one to add the project-specific setup.
+let dir: string;
+beforeEach(() => {
+  dir = createTmpDir();
+});
+afterEach(() => {
+  cleanupTempDir(dir);
+});
+
 describe('colorForSlop', () => {
   it('returns green for slop index 0-25', () => {
     expect(colorForSlop(0)).toBe('green');
@@ -380,16 +392,6 @@ describe('serializeConfig', () => {
 });
 
 describe('scanProject', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   it('returns a report for an empty project', async () => {
     const report = await scanProject({ cwd: dir, workerScript });
     // Live-sync: report.version must match packages/slopbrick/package.json
@@ -422,16 +424,6 @@ describe('scanProject', () => {
 });
 
 describe('scanProject with --tokens (round 21)', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   it('merges tokens.json layout values into arbitrary-value allowlist', async () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     // File with a padding that uses a token-defined dimension
@@ -471,16 +463,6 @@ describe('scanProject with --tokens (round 21)', () => {
 });
 
 describe('--no-telemetry', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   it('does not create the flywheel directory when telemetry is disabled', async () => {
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir, { recursive: true });
@@ -781,16 +763,6 @@ describe('scanning an explicit directory', () => {
 });
 
 describe('--no-increase', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   it('warns and does not fail when there is no previous run', async () => {
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir, { recursive: true });
@@ -841,16 +813,6 @@ describe('--no-increase', () => {
 });
 
 describe('--trend', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   it('prints a sparkline of the last n runs', async () => {
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir, { recursive: true });
@@ -881,16 +843,6 @@ describe('stagedGating', () => {
     ...DEFAULT_CONFIG,
     thresholds: { meanSlop: 25, p90Slop: 50, individualSlopThreshold: 50 },
   };
-  let dir: string;
-
-  beforeEach(() => {
-    dir = createTmpDir();
-  });
-
-  afterEach(() => {
-    cleanupTempDir(dir);
-  });
-
   function score(overrides: Partial<ComponentScore> = {}): ComponentScore {
     return {
       filePath: join(dir, 'Button.tsx'),
