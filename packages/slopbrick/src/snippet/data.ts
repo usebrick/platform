@@ -295,6 +295,10 @@ const RULE_HINTS: Record<string, string> = {
     "Replace `new LinkedList<>()` with `new ArrayList<>()`. LinkedList is rarely the right choice (worse cache locality, 5x more memory per element, O(n) indexed access). Joshua Bloch recommends ArrayList unless you need a Deque.",
   'java/legacy-date-api':
     "Replace `java.util.Date` / `Calendar` with `java.time` (`LocalDate`, `LocalDateTime`, `Instant`, `ZonedDateTime`). java.time is immutable and thread-safe. AI agents default to the legacy API.",
+  'java/raw-type-overuse':
+    "Replace raw `List` / `Map` / `Set` with the parameterized form. Raw types disable generic type checking (Effective Java, Item 23). AI agents default to raw types when unsure of the correct generic parameters.",
+  'java/string-concat-loop':
+    "Declare a `StringBuilder` outside the loop: `StringBuilder sb = new StringBuilder(); sb.append(...);` then `return sb.toString();` after. String concat in a loop is O(n²).",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

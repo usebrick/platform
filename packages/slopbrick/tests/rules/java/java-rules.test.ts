@@ -3,6 +3,8 @@ import { javaSystemOutPrintlnRule } from '../../../src/rules/java/system-out-pri
 import { javaEmptyCatchBlockRule } from '../../../src/rules/java/empty-catch-block';
 import { javaArraylistVsLinkedlistRule } from '../../../src/rules/java/arraylist-vs-linkedlist';
 import { javaLegacyDateApiRule } from '../../../src/rules/java/legacy-date-api';
+import { javaRawTypeOveruseRule } from '../../../src/rules/java/raw-type-overuse';
+import { javaStringConcatLoopRule } from '../../../src/rules/java/string-concat-loop';
 import type { ScanFacts, RuleContext } from '../../../src/types';
 
 const CTX: RuleContext = {} as RuleContext;
@@ -94,6 +96,41 @@ public class Foo { Calendar c = Calendar.getInstance(); }
     const issues = javaLegacyDateApiRule.analyze(CTX, makeFacts(`
 import java.time.LocalDate;
 public class Foo { LocalDate d = LocalDate.now(); }
+`.trim()));
+    expect(issues).toEqual([]);
+  });
+});
+
+describe('java/raw-type-overuse', () => {
+  it('flags a raw List declaration', () => {
+    const issues = javaRawTypeOveruseRule.analyze(CTX, makeFacts(`
+List x = new ArrayList();
+`.trim()));
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it('does not flag a parameterized List', () => {
+    const issues = javaRawTypeOveruseRule.analyze(CTX, makeFacts(`
+List<String> x = new ArrayList<>();
+`.trim()));
+    expect(issues).toEqual([]);
+  });
+});
+
+describe('java/string-concat-loop', () => {
+  it('flags s = s + x inside a for loop', () => {
+    const issues = javaStringConcatLoopRule.analyze(CTX, makeFacts(`
+String s = "";
+for (int i = 0; i < 10; i++) {
+  s = s + i;
+}
+`.trim()));
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it('does not fire when there is no loop in the file', () => {
+    const issues = javaStringConcatLoopRule.analyze(CTX, makeFacts(`
+String s = "a" + "b";
 `.trim()));
     expect(issues).toEqual([]);
   });

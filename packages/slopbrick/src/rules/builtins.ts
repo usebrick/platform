@@ -42,6 +42,8 @@ import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
 import { javaArraylistVsLinkedlistRule } from './java/arraylist-vs-linkedlist';
 import { javaEmptyCatchBlockRule } from './java/empty-catch-block';
 import { javaLegacyDateApiRule } from './java/legacy-date-api';
+import { javaRawTypeOveruseRule } from './java/raw-type-overuse';
+import { javaStringConcatLoopRule } from './java/string-concat-loop';
 import { javaSystemOutPrintlnRule } from './java/system-out-println';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
@@ -159,6 +161,8 @@ export const builtinRules: Rule[] = [
   javaArraylistVsLinkedlistRule,
   javaEmptyCatchBlockRule,
   javaLegacyDateApiRule,
+  javaRawTypeOveruseRule,
+  javaStringConcatLoopRule,
   javaSystemOutPrintlnRule,
   gapMonopolyRule,
   mathElementUniformityRule,
