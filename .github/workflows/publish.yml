@@ -92,10 +92,23 @@ jobs:
       - name: Create or update version PR + publish on merge
         uses: changesets/action@v1
         with:
+          # changesets/action needs a token that can open pull
+          # requests + push to a branch in this repo. The default
+          # `GITHUB_TOKEN` cannot do either in this organization —
+          # the org setting "Workflow permissions" is at "Read
+          # repository contents and packages permissions" (not
+          # "Allow GitHub Actions to create and approve pull
+          # requests"), so the API rejects `POST /repos/:o/:r/pulls`
+          # with 409 Conflict. Workaround: use a Personal Access
+          # Token stored as the `RELEASE_TOKEN` repo secret. The
+          # PAT needs `repo` + `workflow` scopes. The PAT is only
+          # used by this workflow (no other surface), so the blast
+          # radius is small. Rotate the PAT yearly.
+          github-token: ${{ secrets.RELEASE_TOKEN }}
           publish: pnpm changeset publish
           version: pnpm version-packages
           commit: "chore: version packages"
           title: "chore: version packages"
           setupGitUser: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
