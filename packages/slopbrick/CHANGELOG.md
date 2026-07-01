@@ -59,6 +59,43 @@ generic class names).
 - `pnpm exec tsx scripts/bench-scan.ts` → PASS
 - `pnpm -r build` → clean
 
+### Addendum — `stale-function-reference` rule fix (51/100 → 97/100)
+
+The v0.18.7 changelog above was first written with the engine fix
+alone (51/100 → 67/100). A second pass fixed the rule itself:
+
+1. **Direct call** — `^\s*\(` after the backtick span on the
+   same line. v0.18.6's behavior. Catches `\`foo\`()`, `\`foo\` (1)`,
+   `\`foo\` (1, 2, 3)`.
+2. **Identifier repeats** — the same identifier (case-SENSITIVE)
+   appears later on the line as a function call. Catches
+   `Use the \`multiply\` helper: multiply(2, 3) ...` where the
+   function call is in prose rather than adjacent to the
+   backtick. Case-sensitive to avoid `REFERENCES` (SQL keyword)
+   matching `references()` (Drizzle helper).
+3. **Prose-label filter** — for direct calls, skip if the
+   parens content looks like prose: file paths (starts with
+   backtick or `/`), numeric+unit (`4 scores`, `30 min`,
+   `1 hour`), 3+ comma-separated non-numeric items
+   (id, category, severity, ...), long descriptive labels
+   (>40 chars without commas), or em-dash / en-dash separators.
+
+Result: 40 stale-function-reference findings → 1. The single
+remaining finding (`RULE_HINTS_BACKLOG` in
+`docs/research/v0.16.0-rule-audit.md:217`) is a true positive
+— the doc itself describes it as "commented out / not exported".
+
+```
+BEFORE (v0.18.6):                  AFTER (v0.18.7, with rule fix):
+  stale-package-reference  0  ->    0
+  stale-function-reference 11  ->  1   (true positive)
+  expired-code-example     0  ->    0  (engine fix)
+  broken-link              0  ->    0
+  ─────────────────────────────
+  TOTAL: 11                ->   1
+  FRESHNESS: 51/100 (high) ->  97/100 (low)
+```
+
 ## [0.18.6] - 2026-06-30 — Doc-hygiene pass
 
 Self-audit of the project's own docs. Five rule bugs (one per

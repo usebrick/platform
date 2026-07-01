@@ -158,6 +158,46 @@ function collectExports(cwd: string): Set<string> {
 
 interface StaleFunctionContext extends RuleContext { exports: Set<string>; }
 
+// Detect prose/file-path labels inside the parens that follow a
+// backtick span. The backtick context is `\`foo\` (label)` where
+// `label` is a description, NOT a function call. We want to keep
+// firing on real calls — `()`, `(1)`, `(2, 3)`, `(2, 3, 4)`,
+// `(a, b)` — and skip labels that just happen to contain a `(`.
+function looksLikeProseLabel(inside: string): boolean {
+  const trimmed = inside.trim();
+  if (trimmed.length === 0) return false; // `()` is a real call
+  // File path / inline-code ref: starts with backtick or contains
+  // one. Catches `(\`sqlalchemy/ext/instrumentation.py\`)`,
+  // `(6 datastore providers in \`chatgpt-retrieval-plugin\`)`, etc.
+  if (trimmed.startsWith('`') || trimmed.startsWith('/')) return true;
+  if (trimmed.includes('`')) return true;
+  // Numeric + unit: "4 scores", "30 min", "1 hour",
+  // "R-MED, 30 min", "5 datastore providers". A function call
+  // never has this shape.
+  if (/\d+\s+[a-z]/i.test(trimmed)) return true;
+  // 3+ comma-separated items where at least one is non-numeric
+  // is a prose list (id, category, severity, rationale, fix path),
+  // not a function call. Real multi-arg calls are usually all
+  // numeric or all single-word identifiers — not multi-word prose.
+  const parts = trimmed.split(',').map((s) => s.trim());
+  if (parts.length >= 3) {
+    const allNumeric = parts.every((p) => /^\d+\.?\d*$/.test(p));
+    if (!allNumeric) return true;
+  }
+  // Long descriptive label without any commas (a sentence, a
+  // requirement, a "requires X — separate task" note). Real
+  // function calls rarely exceed 40 chars and almost always
+  // contain a comma or `=>` once they're that long. Catches
+  // "requires report format changes — separate task" etc.
+  if (trimmed.length > 40 && !trimmed.includes(',')) return true;
+  // Em-dash / en-dash is a strong prose signal; real function
+  // call arguments don't contain `—` or `–`.
+  if (trimmed.includes('—') || trimmed.includes('–')) return true;
+  return false;
+}
+
+interface StaleFunctionContext extends RuleContext { exports: Set<string>; }
+
 export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
   id: 'docs/stale-function-reference',
   category: 'docs',
@@ -176,25 +216,40 @@ export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
       if (text.length < 3) continue;
       if (RESERVED.has(text.toLowerCase())) continue;
       if (context.exports.has(text)) continue;
-      // v0.18.6: require `(` to appear IMMEDIATELY after the
-      // backtick span on the SAME line. The previous 50-char
-      // window crossed newlines and captured `(` from subsequent
-      // lines, producing false positives on every multi-line list
-      // item like `- \`thresholds\` ...\n- next ...` and every
-      // table row with prose on a separate line. We also reject
-      // property-access (preceded by `.`) and table-cell
-      // (preceded by `|`) positions because the backtick in those
-      // cases is a noun, not a function call.
+      // v0.18.7: require a CALL CONTEXT for the backtick span.
+      // Two patterns qualify (must be same line as the backtick):
+      //   (a) direct call — `(` appears immediately after the
+      //       closing backtick (whitespace OK). The v0.18.6 rule.
+      //   (b) identifier repeats as a call — the same identifier
+      //       appears later on the line followed by `(`. Catches
+      //       `Use the \`multiply\` helper: multiply(2, 3) ...`
+      //       where the function call is documented in prose
+      //       rather than adjacent to the backtick. The v0.18.5
+      //       50-char window crossed newlines and caught prose
+      //       parens far away; the identifier-repeat check
+      //       guarantees we only fire when the doc is actually
+      //       showing the identifier AS a call.
       const lineEnd = source.indexOf('\n', span.index);
       const restOfLine = source.slice(
         span.index,
         lineEnd === -1 ? source.length : lineEnd,
       );
-      // Find the closing backtick position in restOfLine.
       const closeTick = restOfLine.indexOf('`', 1);
       if (closeTick === -1) continue;
       const afterTick = restOfLine.slice(closeTick + 1);
-      if (!/^\s*\(/.test(afterTick)) continue;
+      const directCall = /^\s*\(/.test(afterTick);
+      let identifierRepeats = false;
+      if (!directCall) {
+        // Case-SENSITIVE: docs and exports usually agree on
+        // capitalization. Case-insensitive matching produces
+        // false positives like `REFERENCES` matching the
+        // unrelated `references()` Drizzle helper on the
+        // same line.
+        const afterSpan = restOfLine.slice(closeTick + 1);
+        const needle = text + '(';
+        identifierRepeats = afterSpan.indexOf(needle) !== -1;
+      }
+      if (!directCall && !identifierRepeats) continue;
       // Reject property access: look at the char immediately
       // before the opening backtick.
       const beforeTickIdx = span.index - 1;
@@ -223,6 +278,18 @@ export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
         //   `field` (composite)       — short label
         //   `field` (PR-3)             — short label
         const trimmed = inside.trim();
+        // v0.18.7: also filter PROSE labels — the most common
+        // false positive when a backtick is followed by ` (some
+        // description)`. Patterns that are NOT function calls:
+        //   - file path / inline-code ref: starts with backtick
+        //     or contains a backtick (`/...py`, `(.../path)`)
+        //   - numeric + unit: "4 scores", "30 min", "1 hour"
+        //   - 3+ comma-separated items where at least one is
+        //     non-numeric (a property/field list like
+        //     "id, category, severity, rationale, fix path")
+        // Real function calls stay: `foo()`, `foo(1)`,
+        // `foo(2, 3)`, `foo(a, b)`, `foo(2, 3, 4)`.
+        if (looksLikeProseLabel(inside)) continue;
         const looksLikeTypeAnnotation =
           !inside.includes(':') &&
           (
@@ -232,7 +299,7 @@ export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
             // Short single-word label (≤ 24 chars, no `,`,
             // doesn't look like a function arg). Real function
             // calls are usually longer or contain commas.
-            (trimmed.length > 0 && trimmed.length <= 24 && !trimmed.includes(','))
+            (trimmed.length > 0 && trimmed.length <= 24 && !trimmed.includes(',') && /[a-zA-Z]/.test(trimmed))
           );
         if (looksLikeTypeAnnotation) continue;
       }
