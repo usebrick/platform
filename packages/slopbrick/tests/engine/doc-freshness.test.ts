@@ -248,8 +248,8 @@ describe('buildDocFreshness (end-to-end)', () => {
     }
   });
 
-  it('DOC_RULE_WEIGHTS sums to 14 (matches the score formula)', () => {
+  it('DOC_RULE_WEIGHTS sums to 10 (matches the score formula; v0.20a removed docs/expired-code-example which had weight 4)', () => {
     const sum = Object.values(DOC_RULE_WEIGHTS).reduce((a, b) => a + b, 0);
-    expect(sum).toBe(14);
+    expect(sum).toBe(10);
   });
 });
