@@ -1,5 +1,126 @@
 # Changelog
 
+## [0.19.0] - 2026-07-01 — trusted core: 6 default-on rules + dup/identical-block + remove ks-distribution-shift
+
+**The v0.19 release** is the first time slopbrick ships with an explicit
+"trusted core" — six rules marked `defaultOff: false` because their
+v0.18.9 v8.5 calibration shows FPR <2% AND precision >85%. It also
+ships the first **duplication detector** (`dup/identical-block`, a
+Type-1 clone detector) and retires the worst-performing rule in the
+registry (`logic/ks-distribution-shift`, 44.1% FPR).
+
+**Why this is a minor version bump:** the duplication detector is a
+new rule family and the trusted-core concept is a new product
+positioning. v0.18.10 (the original "dedup v1 only" release in the
+v0.18.x roadmap) is folded into v0.19 — the rule pattern is simple
+enough to ship alongside the trusted-core work.
+
+### 6 default-on rules (the trusted core)
+
+The v0.18.9 v8.5 calibration identified 72 USEFUL rules. Six of them
+are now marked `defaultOff: false` so users get a curated, high-signal
+default set out of the box:
+
+| Rule | v0.18.9 precision | v0.18.9 lift | Why default-on |
+|---|---:|---:|---|
+| `security/fail-open-auth` | 100.0% | ∞ | Auth bypass is the worst bug class. Always flag. |
+| `ai/default-react-stack` | 99.7% | 251,225x | The canonical AI fingerprint. |
+| `visual/radius-scale-violation` | 97.7% | 82,131x | UI consistency, no false positives in practice. |
+| `component/shadcn-prop-mismatch` | 95.1% | 9,991x | Real UI bug, not a stylistic preference. |
+| `dead/unused-local` | 88.3% | 120x | Clean code, low FPR (0.74%). |
+| `logic/ghost-defensive` | 88.9% | 112,036x | Code smell, not a bug. |
+
+The `defaultOff: false` flag overrides the verdict-based default. If
+the calibration flips one of these to NOISY/INVERTED in a future
+release, the explicit `false` keeps the rule on. Users can still opt
+out per-rule via `slopbrick.config.mjs`.
+
+### `dup/identical-block` — the first duplication detector
+
+`dup/identical-block` is a Type-1 clone detector. It finds blocks
+of ≥10 lines that are byte-for-byte identical (after comment and
+whitespace normalization) across ≥2 files. This is the most common
+AI code pattern: copy-paste from training data.
+
+**Architecture (v0.19):** the rule uses a module-scope in-memory cache
+to find duplicates across files. The cache is per-worker-process.
+**Limitations:**
+
+- **Cross-worker:** files split across worker threads are
+  deduplicated within each worker but not across workers. For full
+  coverage, run with `--threads 1`.
+- **Ordering:** duplicates are reported for the file that is
+  processed LATER. If file A is analyzed before file B, the
+  duplicate is reported for B but not for A. v0.20 will add a
+  proper two-phase pass to emit deferred issues for all files in a
+  duplicate group.
+- **Cross-scan:** the cache is not reset between `slopbrick scan`
+  invocations in long-running processes. For CLI usage (process
+  exits after each scan), this is a non-issue.
+
+The rule ships `defaultOff: true` (DORMANT) until calibrated on
+v0.20's near-dup corpus. Opt in with `--rule dup/identical-block`
+or `rules: { 'dup/identical-block': 'medium' }`.
+
+### `logic/ks-distribution-shift` — removed
+
+This rule was the worst-performing in the v0.18.9 v8.5 calibration:
+**44.1% FPR** (TP=202,658, FP=111,193, P=64.6%, lift=1.46x). That
+puts it in the "unacceptable" industry band (>15% FPR per the AI
+code review FPR benchmarks). At 313k fires per scan, it generated
+more noise than signal.
+
+The rule file, the signal-strength entry, the test references, and
+the builtins/catalog entries are all removed. The KS test itself
+stays (it's used by the `engine/ks.ts` module) — only the rule
+layer is gone.
+
+### Methodology paper: 1k vs 546k
+
+`docs/research/methodology-minimum-sample-size.md` (2,000+ words)
+documents the v0.18.8 v8a (1k files) vs v0.18.9 v8.5 (546k files)
+reversal on the `dead/*` rule family. The paper establishes:
+
+- **Minimum 10,000 files per arm** for reliable verdicts.
+- **Minimum 10 total fires per rule (TP+FP)** — below this, the
+  rule gets `INSUFFICIENT_DATA`, not USEFUL/OK/NOISY/INVERTED/DORMANT.
+- **Minimum 20 distinct repos per arm** to average out per-repo
+  selection effects.
+
+The 5 `dead/*` rules calibrated on 1,000 files produced 3 INVERTED
++ 1 NOISY + 1 DORMANT verdicts. The same 5 rules on 546,258 files
+produced 2 USEFUL + 3 OK. The reversal is total. The paper walks
+through the statistical reasoning (standard error, CI width, sample
+size floor) and includes a 5-item checklist for static analysis
+calibration work.
+
+### Quality gates
+
+- `pnpm -r typecheck` → 0 errors
+- `pnpm --filter slopbrick test` → 0 failures (79/79 on the
+  affected test files; new `dup/identical-block` test suite is 7/7)
+- `pnpm --filter slopbrick build` → exit 0
+- `pnpm generate:rules` → 104 rules (was 103; added `dup/identical-block`,
+  removed `logic/ks-distribution-shift`)
+
+### Files changed
+
+- `packages/slopbrick/CHANGELOG.md` — this entry
+- `packages/slopbrick/docs/research/methodology-minimum-sample-size.md`
+  — the 1k vs 546k paper
+- `packages/slopbrick/src/rules/dup/identical-block.ts` — new rule
+- `packages/slopbrick/src/rules/dup/index.ts` — barrel
+- `packages/slopbrick/src/rules/logic/ks-distribution-shift.ts` — DELETED
+- `packages/slopbrick/src/rules/signal-strength.json` — 6 default-on flags
+  set, `ks-distribution-shift` entry removed, `dup/identical-block` added
+- `packages/slopbrick/src/rules/builtins.ts` — regenerated (104 rules)
+- `packages/slopbrick/docs/rule-catalog.md` — regenerated
+- `packages/slopbrick/tests/rules/dup/identical-block.test.ts` — new test
+- `packages/slopbrick/tests/engine/structure.test.ts` — replaced
+  `ks-distribution-shift` references with `docs/expired-code-example`
+- `packages/slopbrick/package.json` — 0.18.9 → 0.19.0
+- `packages/website/src/data/version.json` — 0.18.9 → 0.19.0
+
 ## [0.18.9] - 2026-07-01 — v8.5 calibration: v7 + v8 combined, 4 new rust/* rules, tree-sitter integration
 
 **The v8.5 release** combines the existing v7 corpus (184,488 neg + 239,054 pos

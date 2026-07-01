@@ -74,7 +74,7 @@
     "precision": 0.9966,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=294, FP=1, P=99.7%, FPR=0.00%, lift=251225.49. v7 was USEFUL (TP=231, FP=1, lift=182622.43). v8 was USEFUL (TP=63, FP=0).",
+    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=294, FP=1, P=99.7%, FPR=0.00%, lift=251225.49. v7 was USEFUL (TP=231, FP=1, lift=182622.43). v8 was USEFUL (TP=63, FP=0). v0.19 default-on (explicit defaultOff: false): P 99.7% / 251k lift \u2014 core AI fingerprint.",
     "aiSpecific": true,
     "_v7Verdict": "USEFUL",
     "_v7Lift": 182622.43,
@@ -82,7 +82,8 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0.9957,
     "_v8Verdict": "USEFUL",
-    "_v8Lift": 99999
+    "_v8Lift": 99999,
+    "defaultOff": false
   },
   "ai/errors-near-eof": {
     "recall": 0.0948,
@@ -331,7 +332,7 @@
     "precision": 0.9512,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=468, FP=24, P=95.1%, FPR=0.01%, lift=9990.98. v7 was USEFUL (TP=314, FP=24, lift=7099.57). v8 was USEFUL (TP=154, FP=0).",
+    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=468, FP=24, P=95.1%, FPR=0.01%, lift=9990.98. v7 was USEFUL (TP=314, FP=24, lift=7099.57). v8 was USEFUL (TP=154, FP=0). v0.19 default-on (explicit defaultOff: false): P 95.1% / 9990x lift \u2014 UI bug.",
     "aiSpecific": true,
     "_v7Verdict": "USEFUL",
     "_v7Lift": 7099.57,
@@ -339,7 +340,8 @@
     "_v7FpRate": 0.0001,
     "_v7Precision": 0.929,
     "_v8Verdict": "USEFUL",
-    "_v8Lift": 99999
+    "_v8Lift": 99999,
+    "defaultOff": false
   },
   "context/import-path-mismatch": {
     "recall": 0.0681,
@@ -523,7 +525,7 @@
     "precision": 0.8834,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=USEFUL, v7 was DORMANT, v8 was USEFUL. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md.",
+    "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=USEFUL, v7 was DORMANT, v8 was USEFUL. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md. v0.19 default-on (explicit defaultOff: false): P 88.3% / FPR 0.74% / 120x lift \u2014 code hygiene.",
     "aiSpecific": true,
     "_v7Verdict": "DORMANT",
     "_v7Lift": 1,
@@ -531,7 +533,8 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0,
     "_v8Verdict": "USEFUL",
-    "_v8Lift": 32.74
+    "_v8Lift": 32.74,
+    "defaultOff": false
   },
   "dead/unused-parameter": {
     "recall": 0.0008,
@@ -618,6 +621,24 @@
     "_v7Precision": 0,
     "_v8Verdict": "OK",
     "_v8Lift": 255.9
+  },
+  "dup/identical-block": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 1.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-01T00:00:00Z",
+    "verdict": "DORMANT",
+    "_calibrationNote": "v0.19: new rule, not yet calibrated. v8.5 calibration does not run dup/* rules. Scheduled for v0.20 calibration on near-dup corpus.",
+    "aiSpecific": false,
+    "_v7Verdict": "DORMANT",
+    "_v7Lift": 1.0,
+    "_v7Recall": 0.0,
+    "_v7FpRate": 0.0,
+    "_v7Precision": 0.0,
+    "_v8Verdict": "DORMANT",
+    "_v8Lift": 1.0,
+    "defaultOff": true
   },
   "layout/forced-layout": {
     "recall": 0,
@@ -747,7 +768,7 @@
     "precision": 0.8889,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=16, FP=2, P=88.9%, FPR=0.00%, lift=112035.56. v7 was USEFUL (TP=15, FP=2, lift=80917.50). v8 was USEFUL (TP=1, FP=0).",
+    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=16, FP=2, P=88.9%, FPR=0.00%, lift=112035.56. v7 was USEFUL (TP=15, FP=2, lift=80917.50). v8 was USEFUL (TP=1, FP=0). v0.19 default-on (explicit defaultOff: false): P 88.9% / 112k lift \u2014 code smell.",
     "aiSpecific": true,
     "_v7Verdict": "USEFUL",
     "_v7Lift": 80917.5,
@@ -755,7 +776,8 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0.8824,
     "_v8Verdict": "USEFUL",
-    "_v8Lift": 99999
+    "_v8Lift": 99999,
+    "defaultOff": false
   },
   "logic/heaps-deviation": {
     "recall": 0.0126,
@@ -790,24 +812,6 @@
     "_v7Precision": 0.6246,
     "_v8Verdict": "USEFUL",
     "_v8Lift": 1760.69
-  },
-  "logic/ks-distribution-shift": {
-    "recall": 0.6889,
-    "fpRate": 0.4411,
-    "ratio": 1.46,
-    "precision": 0.6457,
-    "lastCalibratedAt": "2026-07-01T00:00:00Z",
-    "verdict": "NOISY",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=202658, FP=111193, P=64.6%, FPR=44.11%, lift=1.46. v7 was USEFUL (TP=152391, FP=62358, lift=2.09). v8 was INVERTED (TP=50267, FP=48835).",
-    "aiSpecific": false,
-    "_v7Verdict": "USEFUL",
-    "_v7Lift": 2.09,
-    "_v7Recall": 0.6431,
-    "_v7FpRate": 0.34,
-    "_v7Precision": 0.7096,
-    "_v8Verdict": "INVERTED",
-    "_v8Lift": 0.71,
-    "defaultOff": true
   },
   "logic/math-any-density": {
     "recall": 0.0017,
@@ -1174,7 +1178,7 @@
     "precision": 1.0,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1, FP=0, P=100.0%, FPR=0.00%, lift=inf. v7 was USEFUL (TP=1, FP=0, lift=inf). v8 was DORMANT (TP=0, FP=0).",
+    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1, FP=0, P=100.0%, FPR=0.00%, lift=inf. v7 was USEFUL (TP=1, FP=0, lift=inf). v8 was DORMANT (TP=0, FP=0). v0.19 default-on (explicit defaultOff: false): P 100% / inf lift \u2014 security must always be on.",
     "aiSpecific": true,
     "_v7Verdict": "USEFUL",
     "_v7Lift": 99999,
@@ -1182,7 +1186,8 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 1.0,
     "_v8Verdict": "DORMANT",
-    "_v8Lift": 1
+    "_v8Lift": 1,
+    "defaultOff": false
   },
   "security/hardcoded-secret": {
     "recall": 0.0014,
@@ -1674,7 +1679,7 @@
     "precision": 0.9774,
     "lastCalibratedAt": "2026-07-01T00:00:00Z",
     "verdict": "USEFUL",
-    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=130, FP=3, P=97.7%, FPR=0.00%, lift=82131.33. v7 was USEFUL (TP=96, FP=3, lift=59285.01). v8 was USEFUL (TP=34, FP=0).",
+    "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=130, FP=3, P=97.7%, FPR=0.00%, lift=82131.33. v7 was USEFUL (TP=96, FP=3, lift=59285.01). v8 was USEFUL (TP=34, FP=0). v0.19 default-on (explicit defaultOff: false): P 97.7% / 82k lift \u2014 UI consistency.",
     "aiSpecific": false,
     "_v7Verdict": "USEFUL",
     "_v7Lift": 59285.01,
@@ -1682,7 +1687,8 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0.9697,
     "_v8Verdict": "USEFUL",
-    "_v8Lift": 99999
+    "_v8Lift": 99999,
+    "defaultOff": false
   },
   "visual/spacing-scale-violation": {
     "recall": 0.0086,

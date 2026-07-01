@@ -36,6 +36,7 @@ import { brokenLinkRule } from './docs/broken-link';
 import { expiredCodeExampleRule } from './docs/expired-code-example';
 import { staleFunctionReferenceRule } from './docs/stale-function-reference';
 import { stalePackageReferenceRule } from './docs/stale-package-reference';
+import { dupIdenticalBlockRule } from './dup/identical-block';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -45,7 +46,6 @@ import { boundaryViolationRule } from './logic/boundary-violation';
 import { ghostDefensiveRule } from './logic/ghost-defensive';
 import { heapsDeviationRule } from './logic/heaps-deviation';
 import { keyPropMissingRule } from './logic/key-prop-missing';
-import { ksDistributionShiftRule } from './logic/ks-distribution-shift';
 import { mathAnyDensityRule } from './logic/math-any-density';
 import { mathConsoleLogStormRule } from './logic/math-console-log-storm';
 import { mathGiniClassUsageRule } from './logic/math-gini-class-usage';
@@ -142,6 +142,7 @@ export const builtinRules: Rule[] = [
   expiredCodeExampleRule,
   staleFunctionReferenceRule,
   stalePackageReferenceRule,
+  dupIdenticalBlockRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
@@ -151,7 +152,6 @@ export const builtinRules: Rule[] = [
   ghostDefensiveRule,
   heapsDeviationRule,
   keyPropMissingRule,
-  ksDistributionShiftRule,
   mathAnyDensityRule,
   mathConsoleLogStormRule,
   mathGiniClassUsageRule,
