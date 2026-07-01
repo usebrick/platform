@@ -121,6 +121,42 @@ git commit -m "feat(slopbrick): ..."
    publish is gated by the `publish` GitHub Environment, so a
    human approves in the UI before `npm publish` runs.
 
+### Pre-publish checklist (READ BEFORE MERGING THE VERSION PR)
+
+The version-bump PR is the last place to catch version-drift
+before `npm publish` runs. Before approving it, verify the
+following files are in sync with the bumped version:
+
+- [ ] `README.md` — the product table on line ~19 says
+  `slopbrick@X.Y.Z on npm` (X.Y.Z = the new version).
+- [ ] `README.md` — the `## The 4-score model (vX.Y.Z+)` section
+  header (line ~90) uses the new version suffix.
+- [ ] `packages/slopbrick/README.md` — the `**Status:**` line
+  (line ~49) says `vX.Y.Z (current)`.
+- [ ] `packages/slopbrick/README.md` — the section header on
+  line ~79 uses the new version suffix.
+- [ ] `docs/ARCHITECTURE.md` — the `**Status**:` line (line ~4)
+  says `vX.Y.Z shipped` and lists the right "since v0.15"
+  milestones.
+- [ ] `docs/ARCHITECTURE.md` — the product table on line ~25
+  says `slopbrick@X.Y.Z on npm`.
+- [ ] `packages/website/src/data/version.json` — `slopbrick`
+  field is the new version and `built` field is today's date
+  (this is auto-set by `pnpm version-packages`, so usually no
+  manual edit is needed — but verify).
+- [ ] `packages/slopbrick/package.json` — `version` field is
+  the new version (auto-set by `pnpm version-packages`).
+- [ ] `packages/slopbrick/CHANGELOG.md` — new entry at the top
+  with the right content (auto-generated from the changeset,
+  but verify the format is sane).
+
+This checklist existed because v0.20.0 shipped with the
+README product table still saying `slopbrick@0.17.0` — the
+drift accumulated across ~8 releases where the manual
+release flow skipped the README update. The fix for v0.20.0
+was a one-off commit; this checklist makes the fix
+permanent.
+
 ### Semver rules per package
 
 - **`slopbrick` (published CLI)** — every change needs a

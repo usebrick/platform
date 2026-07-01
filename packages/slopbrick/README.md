@@ -46,7 +46,7 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.17.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
+**Status:** v0.20.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
 the full release notes.
 
 ---
@@ -76,7 +76,7 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 ---
 
-## The headlines (4-score model, v0.17.0+)
+## The headlines (4-score model, v0.20.0+)
 
 > **v0.15.0 introduced the 4-score model; v0.16.0 + v0.17.0 completed it.**
 > The single `Slop Index` is replaced by **4 independent scores**

@@ -1,7 +1,7 @@
 # usebrick — Architecture & Functional Reference
 
 **Date**: 2026-06-26
-**Status**: v0.17.0 shipped (v0.15 rebrand + v0.16 4-score completion + v0.17 quality/coverage)
+**Status**: v0.20.0 shipped (v0.15 rebrand + v0.16 4-score completion + v0.17 quality/coverage + v0.18–v0.20 rule expansion + R-INVERTED)
 **Author**: dystx (with Kimi Code CLI)
 **Source of truth for future changes**: `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` + `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md`
 
@@ -22,7 +22,7 @@ usebrick is **not** an LLM-memory product. It does not embed code, does not chat
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.17.0` on npm |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.20.0` on npm |
 | **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
 
