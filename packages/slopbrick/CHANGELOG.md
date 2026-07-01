@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.20.0
+
+### Minor Changes
+
+- d4ab668: v0.20.0: 6 new Java rules (DORMANT) + R-INVERTED removal (docs/expired-code-example) + R9 chronic-offender test refactor
+
+  - **6 new Java rules** (all DORMANT until v9 Java corpus calibration):
+    `java/system-out-println`, `java/empty-catch-block`,
+    `java/arraylist-vs-linkedlist`, `java/legacy-date-api`,
+    `java/raw-type-overuse`, `java/string-concat-loop`
+  - **R-INVERTED**: removed `docs/expired-code-example` (TP=0 vacuous
+    in the v0.18.9 v8.5 calibration). `DOC_RULE_WEIGHTS` sum drops
+    14 → 10 across the remaining 3 doc rules
+  - **R9 refactor**: hoisted the temp-dir pattern to file scope in
+    `tests/cli.test.ts` (−53 net lines) and
+    `tests/engine/structure.test.ts` (−64 net lines)
+
+  Registry: **112 → 117 rules** (added 6 Java, removed 1 docs/*)
+
 ## [0.19.0] - 2026-07-01 — trusted core: 6 default-on rules + dup/identical-block + remove ks-distribution-shift
 
 **The v0.19 release** is the first time slopbrick ships with an explicit
@@ -21,14 +40,14 @@ The v0.18.9 v8.5 calibration identified 72 USEFUL rules. Six of them
 are now marked `defaultOff: false` so users get a curated, high-signal
 default set out of the box:
 
-| Rule | v0.18.9 precision | v0.18.9 lift | Why default-on |
-|---|---:|---:|---|
-| `security/fail-open-auth` | 100.0% | ∞ | Auth bypass is the worst bug class. Always flag. |
-| `ai/default-react-stack` | 99.7% | 251,225x | The canonical AI fingerprint. |
-| `visual/radius-scale-violation` | 97.7% | 82,131x | UI consistency, no false positives in practice. |
-| `component/shadcn-prop-mismatch` | 95.1% | 9,991x | Real UI bug, not a stylistic preference. |
-| `dead/unused-local` | 88.3% | 120x | Clean code, low FPR (0.74%). |
-| `logic/ghost-defensive` | 88.9% | 112,036x | Code smell, not a bug. |
+| Rule                             | v0.18.9 precision | v0.18.9 lift | Why default-on                                   |
+| -------------------------------- | ----------------: | -----------: | ------------------------------------------------ |
+| `security/fail-open-auth`        |            100.0% |            ∞ | Auth bypass is the worst bug class. Always flag. |
+| `ai/default-react-stack`         |             99.7% |     251,225x | The canonical AI fingerprint.                    |
+| `visual/radius-scale-violation`  |             97.7% |      82,131x | UI consistency, no false positives in practice.  |
+| `component/shadcn-prop-mismatch` |             95.1% |       9,991x | Real UI bug, not a stylistic preference.         |
+| `dead/unused-local`              |             88.3% |         120x | Clean code, low FPR (0.74%).                     |
+| `logic/ghost-defensive`          |             88.9% |     112,036x | Code smell, not a bug.                           |
 
 The `defaultOff: false` flag overrides the verdict-based default. If
 the calibration flips one of these to NOISY/INVERTED in a future
@@ -88,11 +107,12 @@ reversal on the `dead/*` rule family. The paper establishes:
   selection effects.
 
 The 5 `dead/*` rules calibrated on 1,000 files produced 3 INVERTED
-+ 1 NOISY + 1 DORMANT verdicts. The same 5 rules on 546,258 files
-produced 2 USEFUL + 3 OK. The reversal is total. The paper walks
-through the statistical reasoning (standard error, CI width, sample
-size floor) and includes a 5-item checklist for static analysis
-calibration work.
+
+- 1 NOISY + 1 DORMANT verdicts. The same 5 rules on 546,258 files
+  produced 2 USEFUL + 3 OK. The reversal is total. The paper walks
+  through the statistical reasoning (standard error, CI width, sample
+  size floor) and includes a 5-item checklist for static analysis
+  calibration work.
 
 ### Quality gates
 
@@ -110,16 +130,16 @@ The v0.19 release also includes 8 language-specific detection rules
 for TypeScript and Go. All ship `defaultOff: true` (DORMANT) until
 calibrated on the v9 corpus (planned for v0.20).
 
-| Rule | Category | Severity | AI-specific | What it catches |
-|---|---|---|---|---|
-| `ts/optional-chain-overuse` | logic | low | yes | `?.` chain depth >= 5 — AI chains rather than narrows |
-| `ts/enum-vs-as-const` | typo | low | yes | `enum` keyword — modern TS prefers `as const` |
-| `ts/import-type-misuse` | typo | low | yes | `import { type X }` — prefer separate `import type` |
-| `ts/never-vs-unknown` | typo | low | yes | `: never` return but no throw/loop/exit — AI misuse |
-| `ts/excessive-type-assertion` | typo | low | yes | Function with >3 `as` — AI fighting the type system |
-| `go/error-wrap-without-context` | typo | low | yes | `fmt.Errorf("error: %w", err)` — needs operation context |
-| `go/struct-tag-inconsistency` | typo | low | yes | Struct fields mix `json:"foo"` and `json:"foo,omitempty"` |
-| `go/nil-slice-vs-empty` | typo | low | yes | `var x []int` then `x = []int{}` — pick one form |
+| Rule                            | Category | Severity | AI-specific | What it catches                                           |
+| ------------------------------- | -------- | -------- | ----------- | --------------------------------------------------------- |
+| `ts/optional-chain-overuse`     | logic    | low      | yes         | `?.` chain depth >= 5 — AI chains rather than narrows     |
+| `ts/enum-vs-as-const`           | typo     | low      | yes         | `enum` keyword — modern TS prefers `as const`             |
+| `ts/import-type-misuse`         | typo     | low      | yes         | `import { type X }` — prefer separate `import type`       |
+| `ts/never-vs-unknown`           | typo     | low      | yes         | `: never` return but no throw/loop/exit — AI misuse       |
+| `ts/excessive-type-assertion`   | typo     | low      | yes         | Function with >3 `as` — AI fighting the type system       |
+| `go/error-wrap-without-context` | typo     | low      | yes         | `fmt.Errorf("error: %w", err)` — needs operation context  |
+| `go/struct-tag-inconsistency`   | typo     | low      | yes         | Struct fields mix `json:"foo"` and `json:"foo,omitempty"` |
+| `go/nil-slice-vs-empty`         | typo     | low      | yes         | `var x []int` then `x = []int{}` — pick one form          |
 
 ### v9 plan: multi-language expansion + full clone taxonomy
 
@@ -244,7 +264,7 @@ binaries in ~4s with no native compile.
 - `packages/slopbrick/src/engine/visitors/v2-build.ts` (extended) —
   attaches `facts.v2.rustFile` for `.rs` inputs
 - `packages/slopbrick/src/types/scan.ts` — adds `rustFile?: { imports,
-  functions, structs, traits, impls }` to `ScanFactsV2`
+functions, structs, traits, impls }` to `ScanFactsV2`
 - `packages/slopbrick/src/rules/dead/unused-import.ts` (extended) — now
   fires on Rust via the imports reference scan (uses strip-use-decls +
   strip-comments)
@@ -252,8 +272,8 @@ binaries in ~4s with no native compile.
   fixture; the test scans it and asserts the dead/unused-import rule
   fires on `VecDeque` / `BTreeMap` / `Arc` while sparing `HashMap`
 
-**4 new rust/* rules (all `DORMANT`, `defaultOff: true` until v8.5
-calibration measures them):**
+_*4 new rust/* rules (all `DORMANT`, `defaultOff: true` until v8.5
+calibration measures them):_*
 
 - `rust/unused-pub-fn` — public function with no callers in the corpus
 - `rust/unwrap-in-production` — `.unwrap()` outside of `test` cfg
@@ -275,14 +295,14 @@ The full per-rule verdict table is in
 `scripts/compute-v85-calibration.py` from the v7 + v8 fires.json
 outputs). The summary:
 
-| Verdict | v7 | v8.5 |
-|---|---:|---:|
-| USEFUL | 32 | **72** |
-| OK | 6 | 12 |
-| NOISY | 5 | 1 |
-| INVERTED | 1 | 1 |
-| DORMANT | 32 | **0** |
-| HYGIENE | 24 | 0 |
+| Verdict  |  v7 |   v8.5 |
+| -------- | --: | -----: |
+| USEFUL   |  32 | **72** |
+| OK       |   6 |     12 |
+| NOISY    |   5 |      1 |
+| INVERTED |   1 |      1 |
+| DORMANT  |  32 |  **0** |
+| HYGIENE  |  24 |      0 |
 
 The DORMANT bucket went from 32 → 0. Every rule now has enough
 signal on v8.5 to make a verdict.
@@ -297,15 +317,15 @@ calibration).
 
 ### Headline findings — the rust/* and dead/* story
 
-**The 4 rust/* rules** (all `defaultOff: true` in v0.18.5) — moved out
+_*The 4 rust/* rules_* (all `defaultOff: true` in v0.18.5) — moved out
 of DORMANT on the v8.5 combined corpus:
 
-| Rule | v8.5 verdict | lift | what it catches |
-|---|---|---:|---|
-| `rust/unwrap-in-production` | **USEFUL** | 70.8x | AI `.unwrap()` / `.expect()` outside `#[cfg(test)]` |
-| `rust/stringly-typed` | **USEFUL** | 24,735x | AI `&str` / `String` where a typed enum exists |
-| `rust/unused-pub-fn` | OK | 10,803x | AI public functions with no callers |
-| `rust/todo-macro` | OK | 210x | AI `todo!()` / `unimplemented!()` in production |
+| Rule                        | v8.5 verdict |    lift | what it catches                                     |
+| --------------------------- | ------------ | ------: | --------------------------------------------------- |
+| `rust/unwrap-in-production` | **USEFUL**   |   70.8x | AI `.unwrap()` / `.expect()` outside `#[cfg(test)]` |
+| `rust/stringly-typed`       | **USEFUL**   | 24,735x | AI `&str` / `String` where a typed enum exists      |
+| `rust/unused-pub-fn`        | OK           | 10,803x | AI public functions with no callers                 |
+| `rust/todo-macro`           | OK           |    210x | AI `todo!()` / `unimplemented!()` in production     |
 
 The rust/* story is "AI loves `.unwrap()` in production" — confirmed
 with 70x lift on the 25k Rust files. The `rust/stringly-typed` lift of
@@ -314,16 +334,16 @@ default-on (no false positives in the v8.5 sample). The other two
 rust/* rules are `defaultOn` per the calibration but kept in the
 default-off registry until v0.19+ makes the default-on decision.
 
-**The 5 dead/* rules** (all `defaultOff: true` in v0.18.5) — moved
+_*The 5 dead/* rules_* (all `defaultOff: true` in v0.18.5) — moved
 out of DORMANT, reversing the v0.18.8 v8a falsification:
 
-| Rule | v0.18.7 verdict | v0.18.8 v8a verdict (1k files) | v0.18.9 v8.5 verdict (546k files) |
-|---|---|---|---|
-| `dead/unused-import` | DORMANT | INVERTED (93/124, 0.75x) | **USEFUL** (30x) |
-| `dead/unused-local` | DORMANT | NOISY (91/88, 1.03x) | **USEFUL** (120x) |
-| `dead/unused-parameter` | DORMANT | INVERTED (5/9, 0.56x) | OK (98x) |
-| `dead/dead-branch` | DORMANT | NOISY (2/1, 2.0x) | OK (1,081x) |
-| `dead/unreachable` | DORMANT | (DORMANT) | OK (153x) |
+| Rule                    | v0.18.7 verdict | v0.18.8 v8a verdict (1k files) | v0.18.9 v8.5 verdict (546k files) |
+| ----------------------- | --------------- | ------------------------------ | --------------------------------- |
+| `dead/unused-import`    | DORMANT         | INVERTED (93/124, 0.75x)       | **USEFUL** (30x)                  |
+| `dead/unused-local`     | DORMANT         | NOISY (91/88, 1.03x)           | **USEFUL** (120x)                 |
+| `dead/unused-parameter` | DORMANT         | INVERTED (5/9, 0.56x)          | OK (98x)                          |
+| `dead/dead-branch`      | DORMANT         | NOISY (2/1, 2.0x)              | OK (1,081x)                       |
+| `dead/unreachable`      | DORMANT         | (DORMANT)                      | OK (153x)                         |
 
 **The v0.18.8 v8a finding ("hand-written has more dead code than
 AI") was a 1,000-file sample-size artifact.** The v0.18.9 v8.5 result
@@ -344,7 +364,7 @@ The v0.18.8 baseline is preserved in three places:
 1. **`src/rules/signal-strength-v7-snapshot.json`** — the v0.18.8 file
    snapshotted before the v8.5 overwrite. One-command rollback:
    `cp src/rules/signal-strength-v7-snapshot.json
-   src/rules/signal-strength.json`
+src/rules/signal-strength.json`
 2. **`/Users/cheng/corpus-expansion/v8/scan/v8a-summary.v0.18.8-snapshot.json`** —
    the v0.18.8 1000-file v8a first measurement (5 dead/* entries)
 3. **`_v7Verdict` / `_v7Lift` / `_v7Recall` / `_v7FpRate` / `_v7Precision`**
@@ -414,13 +434,13 @@ code") is falsified on this sample.
 
 ### Result
 
-| Rule | v0.18.8 verdict | Decision |
-|---|---|---|
-| `dead/dead-branch` | NOISY (2/500 vs 1/500, 2.0x) | `defaultOff: true` (counts too small) |
-| `dead/unreachable` | DORMANT (0/0) | `defaultOff: true` + add synthetic fixture in v0.18.9 |
-| `dead/unused-import` | **INVERTED** (93 vs 124, 0.75x) | `defaultOff: true` |
-| `dead/unused-local` | NOISY (91 vs 88, 1.03x) | `defaultOff: true` |
-| `dead/unused-parameter` | **INVERTED** (5 vs 9, 0.56x) | `defaultOff: true` |
+| Rule                    | v0.18.8 verdict                 | Decision                                              |
+| ----------------------- | ------------------------------- | ----------------------------------------------------- |
+| `dead/dead-branch`      | NOISY (2/500 vs 1/500, 2.0x)    | `defaultOff: true` (counts too small)                 |
+| `dead/unreachable`      | DORMANT (0/0)                   | `defaultOff: true` + add synthetic fixture in v0.18.9 |
+| `dead/unused-import`    | **INVERTED** (93 vs 124, 0.75x) | `defaultOff: true`                                    |
+| `dead/unused-local`     | NOISY (91 vs 88, 1.03x)         | `defaultOff: true`                                    |
+| `dead/unused-parameter` | **INVERTED** (5 vs 9, 0.56x)    | `defaultOff: true`                                    |
 
 The **3 INVERTED / NOISY rules** directly contradict the v0.18.5
 hypothesis. Plausible explanations documented in
@@ -564,13 +584,13 @@ alone (51/100 → 67/100). A second pass fixed the rule itself:
 
 1. **Direct call** — `^\s*\(` after the backtick span on the
    same line. v0.18.6's behavior. Catches `\`foo\`()`, `\`foo\` (1)`,
-   `\`foo\` (1, 2, 3)`.
+`\`foo\` (1, 2, 3)`.
 2. **Identifier repeats** — the same identifier (case-SENSITIVE)
    appears later on the line as a function call. Catches
-   `Use the \`multiply\` helper: multiply(2, 3) ...` where the
-   function call is in prose rather than adjacent to the
-   backtick. Case-sensitive to avoid `REFERENCES` (SQL keyword)
-   matching `references()` (Drizzle helper).
+   `Use the \`multiply\` helper: multiply(2, 3) ...`where the
+function call is in prose rather than adjacent to the
+backtick. Case-sensitive to avoid`REFERENCES`(SQL keyword)
+matching`references()` (Drizzle helper).
 3. **Prose-label filter** — for direct calls, skip if the
    parens content looks like prose: file paths (starts with
    backtick or `/`), numeric+unit (`4 scores`, `30 min`,
@@ -601,12 +621,12 @@ Self-audit of the project's own docs. Five rule bugs (one per
 
 ### Rule fixes
 
-| rule | bug | fix |
-|---|---|---|
-| `docs/stale-function-reference` | 50-char `(` lookahead crossed newlines → 200+ false positives | Lookahead limited to current line. `(` must appear within ~24 chars of the closing backtick. Field-annotation patterns `(string, required)`, `(0-100, higher is better)`, `(v0.16.0+)`, `(MCP)`, `(composite)`, etc. are now skipped. RESERVED set expanded with framework names, model names, common slop-audit lingo. `collectExports` now also collects field names from `export interface` and `export type` declarations. |
-| `docs/stale-package-reference` | English adjectives in backticks (`aspirational`, `concrete`, `inline`, etc.) flagged as package names | Added common adjectives to `ENGLISH_WORD_DENYLIST`. |
-| `docs/broken-link` | `./EXAMPLES.md#strict-ci-gate` flagged as broken because `#anchor` was part of the file path | Strip the `#anchor` before the `existsSync` check. |
-| `docs/expired-code-example` | `import { defineConfig } from 'slopbrick'` in the package's own docs flagged because the rule read only `dependencies` | Rule now adds the package's own `name` from `package.json` to the declared set. |
+| rule                            | bug                                                                                                                    | fix                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `docs/stale-function-reference` | 50-char `(` lookahead crossed newlines → 200+ false positives                                                          | Lookahead limited to current line. `(` must appear within ~24 chars of the closing backtick. Field-annotation patterns `(string, required)`, `(0-100, higher is better)`, `(v0.16.0+)`, `(MCP)`, `(composite)`, etc. are now skipped. RESERVED set expanded with framework names, model names, common slop-audit lingo. `collectExports` now also collects field names from `export interface` and `export type` declarations. |
+| `docs/stale-package-reference`  | English adjectives in backticks (`aspirational`, `concrete`, `inline`, etc.) flagged as package names                  | Added common adjectives to `ENGLISH_WORD_DENYLIST`.                                                                                                                                                                                                                                                                                                                                                                            |
+| `docs/broken-link`              | `./EXAMPLES.md#strict-ci-gate` flagged as broken because `#anchor` was part of the file path                           | Strip the `#anchor` before the `existsSync` check.                                                                                                                                                                                                                                                                                                                                                                             |
+| `docs/expired-code-example`     | `import { defineConfig } from 'slopbrick'` in the package's own docs flagged because the rule read only `dependencies` | Rule now adds the package's own `name` from `package.json` to the declared set.                                                                                                                                                                                                                                                                                                                                                |
 
 ### Doc fixes (real stale links)
 
@@ -661,13 +681,13 @@ these are caught by the type checker.
 
 ### 5 new rules (all `DORMANT` until v8 calibration)
 
-| rule | what it catches | severity |
-|---|---|---|
-| `dead/unused-import` | ES imports never referenced | low |
-| `dead/unused-local` | `let`/`const`/`var`/`function`/`class`/`type`/`interface`/`enum` never read | low |
-| `dead/unused-parameter` | function parameters never read (skip `_` prefix, `props`) | low |
-| `dead/dead-branch` | `if (true)` / `if (false)` / `while (true)` / `while (false)` | medium (low for `while-true`) |
-| `dead/unreachable` | statements after a `return`/`throw`/`break`/`continue` | high |
+| rule                    | what it catches                                                             | severity                      |
+| ----------------------- | --------------------------------------------------------------------------- | ----------------------------- |
+| `dead/unused-import`    | ES imports never referenced                                                 | low                           |
+| `dead/unused-local`     | `let`/`const`/`var`/`function`/`class`/`type`/`interface`/`enum` never read | low                           |
+| `dead/unused-parameter` | function parameters never read (skip `_` prefix, `props`)                   | low                           |
+| `dead/dead-branch`      | `if (true)` / `if (false)` / `while (true)` / `while (false)`               | medium (low for `while-true`) |
+| `dead/unreachable`      | statements after a `return`/`throw`/`break`/`continue`                      | high                          |
 
 **Opt-in:** all 5 ship as `defaultOff: true` until v8 corpus
 calibration lands in v0.18.8. Use `--rule dead/<name>` to
@@ -749,19 +769,19 @@ The slopbrick CLI had ~38 flat options on the root program
 dumped them as one long alphabetical list, which was hard
 to scan. v0.18.4 groups the options by purpose:
 
-  File selection     - --include, --exclude, --since, --diff,
-                       --staged, --changed, --workspace
-  Filter            - --ai-only, --human-only, --security-only,
-                       --ignore-wcag22, --framework
-  Output & display  - --format, --brief, --full, --json, --html,
-                       --no-color, --quiet, --verbose, --heatmap,
-                       --trend, --why-failing
-  Performance       - --threads, --incremental, --cache, --cache-path
-  Auto-fix          - --fix, --dry-run, --show-fixes-diff
-  CI / threshold    - --strict, --no-increase, --baseline
-  Watch & diagnose  - --watch, --doctor, --suggest, --tighten
-  Tokens            - --tokens
-  Other             - (auto-added --version, etc.)
+File selection - --include, --exclude, --since, --diff,
+--staged, --changed, --workspace
+Filter - --ai-only, --human-only, --security-only,
+--ignore-wcag22, --framework
+Output & display - --format, --brief, --full, --json, --html,
+--no-color, --quiet, --verbose, --heatmap,
+--trend, --why-failing
+Performance - --threads, --incremental, --cache, --cache-path
+Auto-fix - --fix, --dry-run, --show-fixes-diff
+CI / threshold - --strict, --no-increase, --baseline
+Watch & diagnose - --watch, --doctor, --suggest, --tighten
+Tokens - --tokens
+Other - (auto-added --version, etc.)
 
 **Opt-out:** `--help-flat` restores Commander's standard
 flat alphabetical list. Useful for piping to grep/awk or
@@ -776,6 +796,7 @@ $ grep -c ".option(" packages/slopbrick/src/cli/program.ts
 ```
 
 **Files added/changed:**
+
 - `packages/slopbrick/src/cli/help.ts` (new): `formatGroupedHelp`
   custom help formatter, `OPTION_CATEGORY` map (38 entries),
   `CATEGORY_LABELS` map, `CATEGORY_ORDER` array, `groupOptions`
@@ -791,6 +812,7 @@ $ grep -c ".option(" packages/slopbrick/src/cli/program.ts
   are hidden by the clustering
 
 **Verification:**
+
 - `pnpm -r typecheck` clean (4 packages)
 - `pnpm exec vitest run` → 1506/1506 pass (9 new for
   help-clusters)
@@ -843,6 +865,7 @@ parent process (slopbrick scan)
 The slopbrick CLI is the boundary. The engine is pure.
 
 **Files touched:**
+
 - `packages/engine/src/parser.ts`:
   - New `ParserCacheConfig` and `ParseFileOptions` interfaces
   - `parseFile(filePath, opts?)` accepts optional 2nd arg
@@ -871,6 +894,7 @@ CLI, future MCP server, future web IDEs) should pass
 `opts.cache` explicitly.
 
 **Verification:**
+
 - `pnpm -r typecheck` clean (4 packages)
 - `pnpm exec vitest run tests/engine/ tests/cli/ tests/report/ tests/rules/ tests/ai-specific-drift.test.ts` → 1497/1497 pass
 - `pnpm bench:scan` → PASS (v0.18.1 regression intact)
@@ -1022,6 +1046,7 @@ the `SLOPBRICK_CORPUS_DIR` env var (for forks, CI runners,
 or read-only mirrors).
 
 **Refactored callers:**
+
 - `src/cli/commands/calibrate.ts` (CLI defaults)
 - `src/research/calibrator.ts` (empirical calibration)
 - `tests/integration/calibration*.test.ts` (4 files)
@@ -1042,6 +1067,7 @@ change in `src/corpus-paths.ts` (and the Python
 siblings), not a multi-file search-and-replace.
 
 **Verification:**
+
 - `SLOPBRICK_CORPUS_DIR=/tmp/test pnpm exec tsx -e "import { ... } from '.../corpus-paths.ts'"` returns the override path
 - `pnpm -r typecheck` clean
 - `pnpm exec vitest run tests/engine/ tests/cli/ tests/report/ tests/rules/` → 1492/1492 pass
@@ -1088,6 +1114,7 @@ separately (which is why the B5 test passed — the test
 fixture had the field, but no production JSON had it).
 
 **Fix (v0.18.2 PR-2):**
+
 1. The calibration script now writes
    `entry["aiSpecific"] = r["aiSpecific"]` (the row
    dict's `aiSpecific` is populated from the rule-source
@@ -1110,6 +1137,7 @@ fixture had the field, but no production JSON had it).
    rule registry.
 
 **Design decision (the "single source of truth" answer):**
+
 - **Source of truth (design time):** TS rule source files
   (`src/rules/**/*.ts`). The rule author declares
   `aiSpecific: true|false` in the meta object. This is the
@@ -1129,6 +1157,7 @@ maintenance: re-run `scripts/compute-v7-calibration.py`
 after any `aiSpecific` change.
 
 **Verification:**
+
 - Drift detector: 95/95 rules match between source and JSON
 - Engine's `composite-scoring.ts:141` reads the field correctly
 - All 1494 tests pass (added 2 new test cases in the drift detector)
@@ -1143,10 +1172,10 @@ conflate them. PR-3 makes the relationship explicit in
 the code, the CHANGELOG, and a dedicated research doc
 (`docs/research/v0.18.2-pr3-relationship.md`).
 
-| Composite | Question | Range | Rules | CI gate |
-|-----------|----------|-------|-------|---------|
-| `compositeScore` (v0.18.2) | "is this AI?" | probability [0,1] + Jaeschke tier | AI-specific only (`aiSpecific: true`) | NO |
-| `repositoryHealth` (v0.15.0) | "is this healthy?" | integer [0, 100], higher is better | ALL rules | NO (`aiQuality >= 70` is the gate) |
+| Composite                    | Question           | Range                              | Rules                                 | CI gate                            |
+| ---------------------------- | ------------------ | ---------------------------------- | ------------------------------------- | ---------------------------------- |
+| `compositeScore` (v0.18.2)   | "is this AI?"      | probability [0,1] + Jaeschke tier  | AI-specific only (`aiSpecific: true`) | NO                                 |
+| `repositoryHealth` (v0.15.0) | "is this healthy?" | integer [0, 100], higher is better | ALL rules                             | NO (`aiQuality >= 70` is the gate) |
 
 **The four quadrants** (orthogonal, not correlated):
 
@@ -1174,9 +1203,9 @@ because:
    `repositoryHealth`. The two must remain independent.
 
 **Files added/changed:**
+
 - `packages/slopbrick/src/engine/metrics.ts` — extended the
-  docstring at the `compositeAggregate` block (around line
-  325) with the relationship table, the four quadrants, and
+  docstring at the `compositeAggregate` block (around line 325) with the relationship table, the four quadrants, and
   the rationale.
 - `packages/slopbrick/docs/research/v0.18.2-pr3-relationship.md`
   — 130-line dedicated doc covering the definitions, the
@@ -1199,6 +1228,7 @@ v0.18.9 respectively.
 ### Fixed: `formatScoringExplainer` was describing a 2-score model that no longer exists
 
 **Reproduction (verified before scope, G1):**
+
 ```bash
 $ grep -n "two scores" packages/slopbrick/src/report/pretty.ts
 692:    'Why two scores? The Slop Index measures AI-slop signatures ' +
@@ -1206,15 +1236,16 @@ $ grep -n "two scores" packages/slopbrick/src/report/pretty.ts
 
 The full footnote at `pretty.ts:690-699` read:
 
-> *"Why two scores? The Slop Index measures AI-slop signatures
+> _"Why two scores? The Slop Index measures AI-slop signatures
 > (lower = better, this is the CI gate). The Repository Coherence
 > measures internal consistency (higher = better, informational).
 > A codebase can be hand-written AND inconsistent (low Slop,
 > low Coherence) or AI-generated AND consistent (high Slop,
 > high Coherence). See docs/scoring-explained.md for the full
-> math."*
+> math."_
 
 Three things wrong with that text:
+
 1. The product has **4** scores since v0.15.0 (`aiQuality`,
    `engineeringHygiene`, `security`, `repositoryHealth`).
 2. The CI gate is `aiQuality >= 70` (**higher** = better), not
@@ -1236,14 +1267,16 @@ correct; the full-report explainer now mirrors it.
 ### Fixed: `--no-increase` error message documents the v0.15.0→v0.18.x data-flow contract
 
 **Reproduction (verified before scope, G1):** `finalizeReport.ts:189`
+
 ```ts
 if ((report.aiQuality ?? 0) < previous.slopIndex) {
 ```
+
 The comparison is correct in effect — for v0.15.0+ users,
 `previous.slopIndex` is populated by the engine as
 `slopIndex: report.aiQuality` (`engine/src/structure.ts:258`),
 so the two values are in the same scale and direction. But the
-*name* is misleading and the contract is brittle: a future engine
+_name_ is misleading and the contract is brittle: a future engine
 change that decouples `slopIndex` from `aiQuality` would silently
 break the gate. The previous v0.15.0 inline comment said "for
 backward compat with historical telemetry" — true but unhelpful,
@@ -1268,7 +1301,6 @@ makes the existing data flow robust to the next reader.
 
 **Files:** `packages/slopbrick/src/cli/report/finalizeReport.ts`,
 `packages/slopbrick/tests/cli.test.ts` (new contract test).
-
 
 ### (G9 self-audit floor — non-blocking) `security: 33` on platform source
 
@@ -1313,8 +1345,8 @@ v0.17.4 closes the migration:
   hand-written ones.
 - **`src/index.ts`**: deprecated re-exports removed. New public
   API: `RepositoryStructureInventory/Constitution/Health/StructureMarkdown`
-  + `Pattern`/`Component`/`Category` (from generated). Validators
-  re-exported from `structure-types.ts` for backward compat.
+  - `Pattern`/`Component`/`Category` (from generated). Validators
+    re-exported from `structure-types.ts` for backward compat.
 - **`engine/buildHealthFromReport`**: return type changed to
   `RepositoryStructureHealth`. The contract tightening exposed
   two latent issues — both now addressed at the source.
@@ -1392,7 +1424,7 @@ to match engine: `src/**/*` only (was including `tests/` and
 - `pnpm -r typecheck`: 0 errors across `core`, `engine`,
   `slopbrick`, `website`.
 - `pnpm -r test`: all pass (164 slopbrick cli+report + 35 core
-  + 1 engine + slopbrick engine-integration tests).
+  - 1 engine + slopbrick engine-integration tests).
 - `slopbrick scan` runs end-to-end against the platform
   source. `version: "3"` in `health.json` (correct).
 
@@ -1460,6 +1492,7 @@ npm install -D slopbrick@0.17.3
 ```
 
 **Breaking for cross-language consumers.** Python/Go/Rust consumers reading the schemas must update:
+
 - `version` field expectations from `2` → `3` (inventory, constitution, health)
 - `frontmatter.schemaVersion` from `"2"` → `"3"` (structure)
 - `$id` resolution: `.../memory.schema.json` → `.../structure.schema.json`
@@ -1483,7 +1516,7 @@ v0.17.2 is a small UX patch on top of v0.17.1. No breaking changes. No new rules
 - Two causes in `packages/website/src/scripts/live-terminal.ts`:
   - **Init auto-focus.** The terminal called `body.focus()` on the terminal element when no button/link was focused — the browser scrolled to the focused element, pulling the page past the hero.
   - **Bubbling click listener.** A `body.addEventListener('click', () => body.focus())` on the terminal body would focus (and scroll to) the terminal on any bubbled click anywhere on the page, including clicks that originated on the hero.
-- Fix: (a) removed the init auto-focus entirely (the user opts in to typing by clicking inside the terminal); (b) replaced the bubbling listener with a guarded handler that only focuses when the click *originated* inside the terminal root (`if (!root.contains(e.target)) return;`).
+- Fix: (a) removed the init auto-focus entirely (the user opts in to typing by clicking inside the terminal); (b) replaced the bubbling listener with a guarded handler that only focuses when the click _originated_ inside the terminal root (`if (!root.contains(e.target)) return;`).
 
 ### Verified
 
@@ -1522,6 +1555,7 @@ v0.17.1 is a quality + UX follow-up to v0.17.0. No breaking changes. No new rule
 The v0.17.0 release shipped with 20 review items flagged. v0.17.1 addresses the highest-impact ones:
 
 **Fixed in v0.17.1:**
+
 - **B1**: `AGENTS.md` said "13 scores, 60+ rules" — contradicts the 4-score model the code ships. Now says "4 scores, 95 rules in 15 categories".
 - **B2**: No root `LICENSE` existed — 6 broken `[MIT](./LICENSE)` links. Created `/LICENSE` (MIT, © 2026 usebrick.dev).
 - **H1**: `@usebrick/engine` was missing from the `AGENTS.md` package table (only 3 of 4 packages listed). Added.
@@ -1536,6 +1570,7 @@ The v0.17.0 release shipped with 20 review items flagged. v0.17.1 addresses the 
 - **H8**: `packages/slopbrick/tsconfig.json` silently dropped 4 base settings (`noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `isolatedModules`). **Reverted in v0.17.1** — the stricter settings exposed 25+ type errors in `scripts/` and `src/cli/init.ts` that are real bugs. v0.17.2 will land the tsconfig + the bug fixes together. (See Follow-up below.)
 
 **Deferred to v0.17.2 (separate focused PR):**
+
 - **B3 + B4**: Schema version mismatch + structure.schema.json `$id` — the codegen pipeline cascading effects require a dedicated effort. v0.17.2 will land the schema version bump, regenerate the types, and update every consumer in one PR.
 - **B5**: `compositeScore` was effectively dead (every rule's `aiSpecific` was undefined → every LLR was 0 → every composite score was the constant prior 0.428). Reverted in v0.17.1 because the fix depends on B3+B4 (needs the new schema + type names). v0.17.2 will land both together.
 - **H6**: `packages/engine/README.md` public-API list is fiction (lists `scanProject`, `loadStructure`, etc. that don't exist with the listed signatures).
@@ -1556,6 +1591,7 @@ No migration needed. Existing `.slopbrick/` artifacts from v0.17.0 work without 
 v0.17.0 is a quality + coverage release. No breaking changes.
 
 ### Added
+
 - **R1**: 16 test files for the `ai/*` rules (52 new tests). The `ai/*` rules now have first-class regression coverage. text-like-ratio has a known TODO for the "should flag" positive test (SWC parse limitation with prose-only source inside `/* */` block comments).
 - **R2**: 5 new rules that were previously RULE_HINTS-only (now first-class Rule objects with tests):
   - `security/eval` — `eval()` / `new Function()` / `window.eval()` (RCE)
@@ -1574,20 +1610,24 @@ v0.17.0 is a quality + coverage release. No breaking changes.
 - **R9**: Open Graph image (1200×630) for social shares — `public/og-image.svg` (SVG, works on Twitter/LinkedIn/Slack/Discord).
 
 ### Fixed
+
 - Website stale text: "slopbrick 0.15.0 · 13 scores" → "slopbrick 0.16.0 · 4 scores · 80+ rules" (LiveTerminal demo). 7 docs updated to use the 4-score model.
 - `docs/old-repo-redirect.md` bumped from v0.15.0 → v0.17.0.
 - 3 bugs in `v0.17.0-plan.md` caught during execution: R3 count (was 8 db + 4 docs = 12, actual is 6 + 4 = 10), R12 contradiction (slopbrick explain already shipped in v0.16.0), R15 internal contradiction (was in both Defer and Day 4).
 
 ### Changed
+
 - `package.json` description: "60+ rules and 13 scores" → "80+ rules across 13 categories, computes 4 scores (aiQuality, engineeringHygiene, security, repositoryHealth)"
 - `rules-catalog.md` auto-regenerated to show 95 rules (was 85).
 
 ### Test count
+
 - 1244 → 1797 tests (+553)
 - Rules: 80 → 95 (+15)
 - Test files: 68 → 89 (+21)
 
 ### Migration notes
+
 - The orchestration in `db-health.ts` and `doc-freshness.ts` now calls the new Rule objects. The `DbFinding` / `DocFinding` extra fields (`table`, `columnName`, `package`, `identifier`, `link`) are not populated by the new rules in v0.17.0; the report still works without them. A v0.18.0 task can populate them by encoding the extra data in `Issue.advice` or extending the `Issue` type.
 - Cross-file FK index check lost: the new `db/missing-fk-index` rule does single-file only. The global `fkColumnsByTable` / `indexColumnsByTable` map in the old orchestration is no longer used. Documented in the rule's comment as a known v1 limitation.
 
@@ -1639,6 +1679,7 @@ This is a hard-break release. The platform is renamed from "Repository Memory Pl
 There is no automatic migration. Update any code that reads `.slopbrick/memory.md` to read `.slopbrick/structure.md`. Update any consumers of the `slop_suggest_with_memory` MCP tool to call `slop_suggest_with_structure` instead.
 
 ### Added
+
 - `Verdict` enum, `isDefaultOff()`, and `VERDICTS` are now exported from `packages/core/src/verdicts.ts` as a single source of truth.
 - Zod schema `signalStrengthSchema` validates the calibration data at load time.
 - Schema codegen: `packages/core/scripts/codegen-types.ts` reads `schemas/v1/*.json` and writes TypeScript types to `packages/core/src/generated/`. CI fails if schemas and types are out of sync.
@@ -1697,9 +1738,9 @@ constraints before code lands.
     to stdout
   - `slopbrick memory --regenerate` — re-render structure.md from the
     existing inventory.json + constitution.json (no scan, sub-second)
-  The regenerate path is the workflow for "I just changed my
-  `slopbrick.config.mjs` and want a fresh structure.md without paying
-  for another full AST scan."
+    The regenerate path is the workflow for "I just changed my
+    `slopbrick.config.mjs` and want a fresh structure.md without paying
+    for another full AST scan."
 
 - **`slopbrick watch`** — wires the existing `watchProject` engine
   function as a top-level command. Runs an initial scan to populate
@@ -1712,8 +1753,8 @@ constraints before code lands.
   `.slopbrick/health.json` and exits 1 on:
   - `slopIndex > --max-slop <n>` (default unlimited)
   - `constitutionDrift > 0` when `--strict-constitution` is set
-  Designed for `slopbrick ci --max-slop 50 --strict-constitution`
-  in `.github/workflows/ci.yml`.
+    Designed for `slopbrick ci --max-slop 50 --strict-constitution`
+    in `.github/workflows/ci.yml`.
 
 - **`slopbrick lock`** — installs the Git pre-commit hook that runs
   `slopbrick scan --staged` on every commit. Auto-detects
@@ -1742,13 +1783,13 @@ constraints before code lands.
   `buildHealthFromReport` + `saveHealth`/`loadHealth` round-trip
 - 3 new tests in `tests/engine/memory-artifacts.test.ts` for the
   end-to-end artifact pipeline (all 4 artifacts write + round-trip
-  + buildHealthFromReport severity aggregation)
+  - buildHealthFromReport severity aggregation)
 - 2 new tests in `tests/integration/dist-bundle-paths.test.ts` —
   regression coverage for a real bug found during v0.14.5d testing:
   the bundled CJS distribution failed to find
   `src/rules/signal-strength.json` because composite-scoring.ts used
   `readFileSync(resolve(dirname(fileURLToPath(import.meta.url)),
-  '..', 'rules', 'signal-strength.json'))` — and the bundled file
+'..', 'rules', 'signal-strength.json'))` — and the bundled file
   lives at `dist/index.cjs`, so the path resolved to a directory
   that didn't exist in the published tarball. Fix: composite-scoring
   now uses `loadSignalStrength()` from `src/rules/signal-strength.ts`
@@ -1800,7 +1841,7 @@ the v8 corpus re-scan can't regress.
   crash the worker.
 
 - **Stderr-soak guard.** Workers run with `stdio: ['ignore',
-  'ignore', 'pipe']` so their stderr was previously piped to
+'ignore', 'pipe']` so their stderr was previously piped to
   /dev/null. If a rule threw inside the per-rule try/catch (and
   was therefore silently recovered), the calibration data had no
   record. v0.14.5f captures the first 2 lines of stderr on every
@@ -1831,7 +1872,7 @@ module. All changes are backward-compatible at the CLI surface.
 - **Multi-language support (v0.14.0)** — 8 new backend language visitors
   in `src/engine/visitors/`: Swift, Kotlin, Dart, Rust, C++ (.cpp/.cc/.cxx),
   Java, Ruby, PHP. Each follows the same `extractXxxPatterns(filePath,
-  source) → { service, route, ormModel }` contract as `python.ts` and
+source) → { service, route, ormModel }` contract as `python.ts` and
   `go.ts`. Coverage:
   - **Service**: 26 shared service suffixes (Service, Manager, Handler,
     Repository, Controller, Helper, Factory, Provider, Store, etc.)
@@ -1913,8 +1954,8 @@ module. All changes are backward-compatible at the CLI surface.
 - **`ai/tailwind-color-overuse`** (DORMANT) — Detects over-representation
   of default Tailwind palette (blue-500, slate-50, rounded-lg,
   shadow-md, p-4/6/8). Per Sascha 2025 'Six Models, One React Stack'
-  + Douglas 2025 'AI 正在 Tailwind 化' — 4/4 random "vibe coded"
-  products used identical Tailwind templates.
+  - Douglas 2025 'AI 正在 Tailwind 化' — 4/4 random "vibe coded"
+    products used identical Tailwind templates.
 - **`ai/default-react-stack`** (DORMANT) — Detects ≥3 of [Next.js,
   Tailwind, shadcn/ui, TanStack Query, Zustand] in a single file.
   Per Sascha 2025 (9/9 LLMs default to this stack) + Nam et al.
@@ -1971,13 +2012,13 @@ All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
 - **`logic/heaps-deviation`**, **`logic/zipf-slope-anomaly`**, **`logic/math-variable-name-entropy`** — issue-level `aiSpecific: true` → `aiSpecific: false`. The rule-level was already `false`; this brings the issue tag in line so these issues don't get counted as AI-positive in future calibrations.
 - **Verdict distribution (v0.12.1 → v0.12.2):**
 
-  | Verdict  | v0.12.1 | v0.12.2 | Change | Interpretation |
-  |----------|---------|---------|--------|----------------|
-  | USEFUL   | 22      | **13**  | -9     | 9 were code-hygiene; now in HYGIENE |
-  | OK       | 11      | 6       | -5     | 5 were code-hygiene; now in HYGIENE |
-  | NOISY    | 14      | 9       | -5     | 5 were code-hygiene; now in HYGIENE |
-  | INVERTED | 5       | **0**   | -5     | All reclassified to HYGIENE |
-  | DORMANT  | 12      | 12      | 0      | |
+  | Verdict  | v0.12.1 | v0.12.2 | Change | Interpretation                           |
+  | -------- | ------- | ------- | ------ | ---------------------------------------- |
+  | USEFUL   | 22      | **13**  | -9     | 9 were code-hygiene; now in HYGIENE      |
+  | OK       | 11      | 6       | -5     | 5 were code-hygiene; now in HYGIENE      |
+  | NOISY    | 14      | 9       | -5     | 5 were code-hygiene; now in HYGIENE      |
+  | INVERTED | 5       | **0**   | -5     | All reclassified to HYGIENE              |
+  | DORMANT  | 12      | 12      | 0      |                                          |
   | HYGIENE  | —       | **24**  | +24    | New bucket for `aiSpecific: false` rules |
 
   Net effect: 0 INVERTED, 24 HYGIENE, the rest stay in their AI-detector buckets. Users see clean verdict distribution; the calibration math hasn't changed (lift is still computed), only the reporting.
@@ -2012,13 +2053,13 @@ All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
 
 ### Verdict distribution (v6 calibration)
 
-| Verdict | v5 (162k files) | v6 (524k files) | Change |
-|---------|-----------------|-----------------|--------|
-| USEFUL  | 16 | **22** | +6 (calibration unlocked 6 new ones) |
-| OK      |  7 | **11** | +4 |
-| NOISY   | 13 | **14** | +1 |
-| DORMANT | 21 | **12** | -9 (now calibrated) |
-| INVERTED| 18 | **5**  | -13 (reclassified) |
+| Verdict  | v5 (162k files) | v6 (524k files) | Change                               |
+| -------- | --------------- | --------------- | ------------------------------------ |
+| USEFUL   | 16              | **22**          | +6 (calibration unlocked 6 new ones) |
+| OK       | 7               | **11**          | +4                                   |
+| NOISY    | 13              | **14**          | +1                                   |
+| DORMANT  | 21              | **12**          | -9 (now calibrated)                  |
+| INVERTED | 18              | **5**           | -13 (reclassified)                   |
 
 ### Added
 
@@ -2049,11 +2090,11 @@ All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
 
 ### Added
 
-- **`src/engine/lr-combiner.ts`** — Bayesian likelihood-ratio combiner per Bento et al. 2024 *Neurocomputing*. Computes the calibrated posterior P(AI | fired_rules) via naive-Bayes log-odds combination of per-rule LRs (Haldane-smoothed). Replaces the heuristic weighted average with a calibrated probability.
-- **`src/engine/multitest.ts`** — Benjamini–Hochberg FDR correction per Benjamini & Hochberg 1995 *JRSS B* 57(1):289–300. Surfaces the 60-rule multi-testing problem (`P(≥1 false positive) ≈ 95%`) and brings it under control at α = 0.05. **Highest credibility-per-line-of-code ratio in v0.12.0.**
+- **`src/engine/lr-combiner.ts`** — Bayesian likelihood-ratio combiner per Bento et al. 2024 _Neurocomputing_. Computes the calibrated posterior P(AI | fired_rules) via naive-Bayes log-odds combination of per-rule LRs (Haldane-smoothed). Replaces the heuristic weighted average with a calibrated probability.
+- **`src/engine/multitest.ts`** — Benjamini–Hochberg FDR correction per Benjamini & Hochberg 1995 _JRSS B_ 57(1):289–300. Surfaces the 60-rule multi-testing problem (`P(≥1 false positive) ≈ 95%`) and brings it under control at α = 0.05. **Highest credibility-per-line-of-code ratio in v0.12.0.**
 - **`src/engine/ks.ts`** — Kolmogorov–Smirnov two-sample test + multi-feature Bonferroni-corrected shift detector per Kolmogorov 1933 / Smirnov 1939 + arXiv:2510.15996 (Oct 2025).
-- **`src/engine/zipf-heaps.ts`** — Zipf's law + Heaps' law fits per Zipf 1949, Heaps 1978, and Christ, Bavarian, Koyejo, Lapata 2025 *EMNLP Findings 2025* — the only peer-reviewed paper directly proposing Heaps λ and Zipf s as LLM discriminators.
-- **`src/engine/confidence-intervals.ts`** — Wilson score + Clopper-Pearson binomial confidence intervals per Wilson 1927 *JASA* 22:209–212 and Clopper & Pearson 1934 *Biometrika* 26:404–413.
+- **`src/engine/zipf-heaps.ts`** — Zipf's law + Heaps' law fits per Zipf 1949, Heaps 1978, and Christ, Bavarian, Koyejo, Lapata 2025 _EMNLP Findings 2025_ — the only peer-reviewed paper directly proposing Heaps λ and Zipf s as LLM discriminators.
+- **`src/engine/confidence-intervals.ts`** — Wilson score + Clopper-Pearson binomial confidence intervals per Wilson 1927 _JASA_ 22:209–212 and Clopper & Pearson 1934 _Biometrika_ 26:404–413.
 - **4 new rules** using the new engines:
   - `logic/bayesian-conditional` (high) — fires when P(AI|fires) ≥ 0.7.
   - `logic/heaps-deviation` (medium) — fires when file's Heaps λ deviates > 2σ from corpus baseline.
@@ -2064,13 +2105,13 @@ All 6 DORMANT (defaultOff: true) until v7 corpus calibration lands.
 
 ### Peer-reviewed math added in v0.12.0
 
-| Method | Citation | Tier | Solves |
-|--------|----------|------|--------|
-| Bayesian LR combination | Bento et al. 2024 *Neurocomputing* | S | All 4 calibration failure modes |
-| Kolmogorov–Smirnov | Kolmogorov 1933 + arXiv:2510.15996 (Oct 2025) | S | High-FPR USEFUL, INVERTED reclassification |
-| Zipf's & Heaps' laws | Christ et al. 2025 EMNLP Findings | S | New AI discriminators |
-| Benjamini–Hochberg FDR | Benjamini & Hochberg 1995 *JRSS B* | S | Silent FPR inflation (free rigor) |
-| Wilson/Clopper-Pearson CIs | Wilson 1927 *JASA* + Clopper & Pearson 1934 *Biometrika* | S | Calibration doc rigor |
+| Method                     | Citation                                                 | Tier | Solves                                     |
+| -------------------------- | -------------------------------------------------------- | ---- | ------------------------------------------ |
+| Bayesian LR combination    | Bento et al. 2024 _Neurocomputing_                       | S    | All 4 calibration failure modes            |
+| Kolmogorov–Smirnov         | Kolmogorov 1933 + arXiv:2510.15996 (Oct 2025)            | S    | High-FPR USEFUL, INVERTED reclassification |
+| Zipf's & Heaps' laws       | Christ et al. 2025 EMNLP Findings                        | S    | New AI discriminators                      |
+| Benjamini–Hochberg FDR     | Benjamini & Hochberg 1995 _JRSS B_                       | S    | Silent FPR inflation (free rigor)          |
+| Wilson/Clopper-Pearson CIs | Wilson 1927 _JASA_ + Clopper & Pearson 1934 _Biometrika_ | S    | Calibration doc rigor                      |
 
 ### Tests
 
@@ -2339,6 +2380,7 @@ explicitly, with a comment explaining why this is safe (it's
 bundled, not a runtime dep).
 
 The v0.14.5p commit chain (relative to v0.14.5d):
+
 - 5h: categoryScores 0-component bug fix
 - 5i: 5 UX improvements (P0/P1/P3/P4/P5)
 - 5j: 5 more UX (P6/P7/P8/P9/P10) + 2 bug fixes + scoring-explained.md
@@ -2382,6 +2424,7 @@ the README.
 The 14 linked files are all present (verified). No content lost
 (verified by cross-referencing every removed line to a destination
 doc). The "Comprehensive manual" sections removed:
+
 - 19 subcommands — `slopbrick --help` (live, auto-generated)
 - Composite Slop Index math — `docs/scoring-explained.md`
 - CLI reference — `docs/MCP.md` (per-tool reference) +
@@ -2444,8 +2487,8 @@ had no idea what to do with them. Fixes:
 
 - **P5** — DefaultOff suppression count moved from stderr to the
   main output as a green ✓ trust signal: `✓ 99 INVERTED/NOISY
-  issues correctly suppressed from 24 default-off rules. The top
-  offenses below are the ones that matter.`
+issues correctly suppressed from 24 default-off rules. The top
+offenses below are the ones that matter.`
 - **P0** — Next-step footer with the highest-impact action. Replaces
   the one-line "run --suggest" with a prioritized list that
   adapts to the report's data: top offending file, --suggest,
@@ -2474,12 +2517,12 @@ self-explanatory:
 
 - **P6** — Plain-language verdict at the top. First line is a
   one-sentence answer to "is my code OK?": `Repo is concerning
-  (25/100). The biggest problem is AI patterns — worst file is
-  src/cli/scan.ts.`
+(25/100). The biggest problem is AI patterns — worst file is
+src/cli/scan.ts.`
 - **P7** — Inline glossary for category labels. Each of the 16
   categories now has a plain-language label + one-line description
   in the bar chart: `AI patterns — signatures of LLM-generated
-  code`, `visual style — colors, spacing, font sizes, layout`.
+code`, `visual style — colors, spacing, font sizes, layout`.
 - **P8** — Better status labels. `[PASS] / [FAIL]` replaced with
   `[EXCELLENT] / [PASSING] / [NEEDS WORK] / [CONCERNING]`. The
   `[pass] / [fail]` text is kept in the `Threshold (CI gate)`
@@ -2612,11 +2655,11 @@ on certain JSX files (SWC native panic). v0.14.5f:
 
 Three narrow-axis MCP tools are now marked deprecated in favor of `slop_suggest`, which already returns the same data as a sibling field in its response. The tools continue to work through v0.12.x (backward compatibility) but the server attaches a `_meta.deprecation` notice to the JSON-RPC response so MCP clients can soft-warn the agent. Removal planned for **v0.13.0**.
 
-| Deprecated tool | Replaced by | Why redundant |
-|-----------------|-------------|---------------|
-| `slop_governance` | `slop_suggest` | `slop_suggest` already returns `repositoryHealth` + per-axis breakdown |
-| `slop_architecture_score` | `slop_suggest` | `slop_suggest` already returns `architectureConsistency` |
-| `slop_business_logic_score` | `slop_suggest` | `slop_suggest` already returns `businessLogicCoherence` |
+| Deprecated tool             | Replaced by    | Why redundant                                                          |
+| --------------------------- | -------------- | ---------------------------------------------------------------------- |
+| `slop_governance`           | `slop_suggest` | `slop_suggest` already returns `repositoryHealth` + per-axis breakdown |
+| `slop_architecture_score`   | `slop_suggest` | `slop_suggest` already returns `architectureConsistency`               |
+| `slop_business_logic_score` | `slop_suggest` | `slop_suggest` already returns `businessLogicCoherence`                |
 
 The canonical four-tool surface (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_explain_rule`) plus `slop_list_rules` (discovery) and `slop_find_similar` (GIR primitive) is unchanged — `slop_suggest_with_structure` remains the preferred fast-path variant.
 
@@ -2645,9 +2688,9 @@ Latency win for the agent integration: every `slopbrick scan` will persist the p
 
 Three engine modules wire peer-reviewed graph methods into the Architecture Consistency Score, completing the v0.10 plan's post-credibility phase. All three backstop the cross-file drift signal that already ships.
 
-- **`engine/louvain.ts`** — Louvain community detection on the import graph (Blondel, Guillaume, Lambiotte & Lefebvre 2008, *J. Stat. Mech.* P10008). Modularity-maximizing partition; outliers in their community = drift signal.
+- **`engine/louvain.ts`** — Louvain community detection on the import graph (Blondel, Guillaume, Lambiotte & Lefebvre 2008, _J. Stat. Mech._ P10008). Modularity-maximizing partition; outliers in their community = drift signal.
 - **`engine/spectral.ts`** — Fiedler value (second-smallest eigenvalue of the import-graph Laplacian). Low value = fragmented modules = drift. Computed inline from the Louvain adjacency matrix.
-- **`engine/changepoint.ts`** — Bayesian Online Changepoint Detection (Adams & MacKay 2007, *Proc. ICMLA*). Detects regime changes in rule-firing rate over the lines of a file. Surfaces "this PR was authored under a different regime than the rest of the file" — likely AI-assistance mid-edit.
+- **`engine/changepoint.ts`** — Bayesian Online Changepoint Detection (Adams & MacKay 2007, _Proc. ICMLA_). Detects regime changes in rule-firing rate over the lines of a file. Surfaces "this PR was authored under a different regime than the rest of the file" — likely AI-assistance mid-edit.
 
 ### Added (Phase 8 — `--diff <ref>` flag)
 
@@ -2670,17 +2713,18 @@ The headline change: the `Repository Coherence` score is now backed by the **MDL
 
 ### Added (peer-reviewed thresholds, see [`docs/research/math-foundations-for-slopbrick.md`](./docs/research/math-foundations-for-slopbrick.md))
 
-- **`engine/halstead.ts`** — Halstead complexity measures (Halstead 1977, *Elements of Software Science*, §3). Computes vocabulary, length, calculated length, volume, difficulty, effort, and estimated bugs per-component. 25 unit tests pinning tokenizer + metric output.
-- **`engine/cyclomatic` (in halstead.ts)** — Cyclomatic complexity (McCabe 1976, *IEEE TSE*). `M = E - N + 2P` approximated from decision-point keyword occurrences.
+- **`engine/halstead.ts`** — Halstead complexity measures (Halstead 1977, _Elements of Software Science_, §3). Computes vocabulary, length, calculated length, volume, difficulty, effort, and estimated bugs per-component. 25 unit tests pinning tokenizer + metric output.
+- **`engine/cyclomatic` (in halstead.ts)** — Cyclomatic complexity (McCabe 1976, _IEEE TSE_). `M = E - N + 2P` approximated from decision-point keyword occurrences.
 - **`rules/perf/halstead-anomaly.ts`** — fires when component's `volume / LOC` is below a corpus-baseline threshold. **Lower than baseline = AI tendency** (LLMs reuse naming patterns from training data, lowering vocabulary per unit length). Cite: Halstead 1977 §3.
 - **`engine/naturalness.ts`** — Code Naturalness via AST-tok entropy (Hindle et al., ICSE 2012, "On the Naturalness of Software"). Per-component cross-entropy + distinctTokenRatio.
 - **`rules/visual/naturalness-anomaly.ts`** — fires when distinctTokenRatio < 0.3 AND length > 50 (skip trivial files). Lower ratio = more repetitive naming = AI signature. Cite: Hindle 2012.
 - **`engine/kl-novelty.ts`** — KL divergence pattern novelty (Kullback & Leibler 1951, "On Information and Sufficiency"). `KL(P_project ‖ P_corpus) = Σ P_project(x) · log(P_project(x) / P_corpus(x))`. Reserved field on `ArchitectureScore` for v0.10.5 follow-up.
-- **`engine/mdl.ts`** — MDL composite score (Rissanen 1978, *Automatica*; textbook: Grunwald 2007). `Coherence_MDL(file) = log P(rules_fired | m_ai) - log P(rules_fired | m_human)` with Laplace smoothing. Wired into `repository-health.ts` as the new `mdlLogRatio` axis (alongside the existing weighted-average composite for now).
+- **`engine/mdl.ts`** — MDL composite score (Rissanen 1978, _Automatica_; textbook: Grunwald 2007). `Coherence_MDL(file) = log P(rules_fired | m_ai) - log P(rules_fired | m_human)` with Laplace smoothing. Wired into `repository-health.ts` as the new `mdlLogRatio` axis (alongside the existing weighted-average composite for now).
 
 ### Added (test coverage expansion — Phase 4 of v0.10 plan)
 
 USEFUL rules per v4 calibration now tested:
+
 - `logic/math-gini-class-usage` — CSS class usage Gini coefficient anomaly
 - `visual/math-rounded-entropy` — rounded-number value clustering
 - `logic/reactive-hook-soup` — ≥3 un-guarded hooks in a component
@@ -2759,12 +2803,14 @@ USEFUL rules per v4 calibration now tested:
 Per direct user direction: "we are still at 0.9.1, do 1 to 4 [from the v1.0 plan], not entire version jump." The 5-bucket compression is now **deferred to v1.1**, not v1.0.
 
 **v1.0 (incremental, at 0.9.x line):**
+
 - Current 13-subscore diagnostic surface (works, calibrated, tested — 1176/1176 tests pass)
 - Per-rule P/R/FPR table (the credibility piece — see `docs/research/v4-per-rule-pr-fpr.md`)
 - Constitution + Pattern Inventory narrative (the strategic bet, in product docs)
 - MCP `slop_suggest` endpoint (the lead user experience)
 
 **v1.1 (next minor):**
+
 - 5-bucket compression (after labeled dataset)
 - GitHub Action + npm publish (separate version bump to 0.10.0)
 - Hand-score 50-100 repos for bucket weights
@@ -2854,12 +2900,12 @@ The first cut of v0.9.1 shipped with 3 new rules (`arch/multiple-state-systems`,
 
 Composite (sum of weights = 1.0):
 
-| Input | Weight | Source |
-|-------|--------|--------|
-| Architecture Consistency | 0.50 | existing `architectureConsistency` score |
-| Pattern Fragmentation (inverted) | 0.30 | derived from architecture deductions |
-| Constitution Violations (mapped) | 0.10 | count of declared-constitution breaches |
-| AI Debt band (mapped) | 0.10 | A→95 / B→85 / C→70 / D→50 / F→25 |
+| Input                            | Weight | Source                                   |
+| -------------------------------- | ------ | ---------------------------------------- |
+| Architecture Consistency         | 0.50   | existing `architectureConsistency` score |
+| Pattern Fragmentation (inverted) | 0.30   | derived from architecture deductions     |
+| Constitution Violations (mapped) | 0.10   | count of declared-constitution breaches  |
+| AI Debt band (mapped)            | 0.10   | A→95 / B→85 / C→70 / D→50 / F→25         |
 
 The Slop Index remains as an informational aggregate of the supporting rules. It is no longer the headline.
 
@@ -2894,6 +2940,7 @@ This is the first end-to-end manifestation of the Repository Coherence Scanner l
 ### What's new
 
 **Phase 1-2: Backend visitors** (Python + Go, regex-based, no parser deps):
+
 - `src/engine/visitors/python.ts` — extracts `class \w+(Service|Manager|...)` → service, `@app.route('/foo')` → route, `class User(Base)` → ormModel
 - `src/engine/visitors/go.ts` — extracts `type \w+ struct` → service, `http.HandleFunc(...)` → route, `type User struct { gorm.Model }` → ormModel
 - Both feed into the existing `PatternInventory` as new categories: `service`, `route`, `ormModel`
@@ -2901,6 +2948,7 @@ This is the first end-to-end manifestation of the Repository Coherence Scanner l
 - Backend files skip the frontend rule engine (they have no AST visitor there) but still flow into the inventory
 
 **Phase 3-4: Clustering + drift detection**:
+
 - `src/engine/cluster.ts` — pure functions:
   - `stripSuffix()` — strips 30+ common suffixes (Service/Manager/Handler + UI suffixes like Modal/Dialog/Button + ORM suffixes like Model/Schema/Entity)
   - `normalizeRoute()` — strips `:param` and `{param}` segments so `/users` and `/users/:id` cluster as the same resource
@@ -2944,8 +2992,6 @@ Repository Coherence (0-100, higher = better). The architecture-consistency scor
 - [`docs/research/rule-classification-v0.9.1.md`](./research/rule-classification-v0.9.1.md) — lens classification
 - [`docs/research/v4-per-rule-pr-fpr.md`](./research/v4-per-rule-pr-fpr.md) — v4.1 P/R/FPR (separate axis)
 
-
-
 > **The Repository Coherence Scanner reframe.** v0.9.0's "Slop Index" headline averaged every rule regardless of whether it measured pattern drift. This release narrows the lens: Repository Coherence is the new headline, built only from signals that answer "did this code introduce a new pattern when an existing pattern already existed?" Other dimensions (Security Risk, Code Hygiene, Accessibility, Performance) roll up the supporting rules into separate scores. See `docs/research/rule-classification-v0.9.1.md` for the full rule-by-rule classification.
 
 ### ⚠️ Strategic correction (post-release)
@@ -2960,12 +3006,12 @@ Those 3 rules were removed from the codebase on 2026-06-25 (commit `c9e19cd`). T
 
 Composite (sum of weights = 1.0):
 
-| Input | Weight | Source |
-|-------|--------|--------|
-| Architecture Consistency | 0.50 | existing `architectureConsistency` score |
-| Pattern Fragmentation (inverted) | 0.30 | derived from architecture deductions (modal/button/api/state/fetch) |
-| Constitution Violations (mapped) | 0.10 | count of declared-constitution breaches, mapped 0–100 |
-| AI Debt band (mapped) | 0.10 | A→95 / B→85 / C→70 / D→50 / F→25 |
+| Input                            | Weight | Source                                                              |
+| -------------------------------- | ------ | ------------------------------------------------------------------- |
+| Architecture Consistency         | 0.50   | existing `architectureConsistency` score                            |
+| Pattern Fragmentation (inverted) | 0.30   | derived from architecture deductions (modal/button/api/state/fetch) |
+| Constitution Violations (mapped) | 0.10   | count of declared-constitution breaches, mapped 0–100               |
+| AI Debt band (mapped)            | 0.10   | A→95 / B→85 / C→70 / D→50 / F→25                                    |
 
 The Slop Index remains in the report as an informational aggregate of the supporting rules. It is no longer the headline.
 
@@ -2996,8 +3042,6 @@ Each is a 0–100 score (higher = better) that rolls up the supporting rules by 
 - [`docs/research/v4-per-rule-pr-fpr.md`](./research/v4-per-rule-pr-fpr.md) — v4.1 P/R/FPR (separate axis from Coherence lens).
 - [`docs/research/v0.9.2-inventory-visitors-plan.md`](./research/v0.9.2-inventory-visitors-plan.md) — inventory-first visitors + cross-file drift detection (the proper backend coverage).
 
-
-
 > **The endgame.** One composite number (Repository Health) + one letter grade (AI Debt) that aggregates every prior score. The 12-phase plan is complete.
 
 ### Repository Health composite score
@@ -3006,16 +3050,16 @@ New headline metric. One 0–100 score (higher = better) + categorical `aiDebt: 
 
 **Composite formula (default weights, sum to 1.0):**
 
-| Axis | Weight |
-|------|--------|
-| `slopIndex` (inverted) | 0.20 |
-| `architectureConsistency` | 0.20 |
-| `aiSecurityRisk` (categorical → numeric via lookup) | 0.20 |
-| `designTokenViolations` | 0.10 |
-| `testQuality` | 0.10 |
-| `businessLogicCoherence` | 0.10 |
-| `docFreshness` | 0.05 |
-| `dbHealth` | 0.05 |
+| Axis                                                | Weight |
+| --------------------------------------------------- | ------ |
+| `slopIndex` (inverted)                              | 0.20   |
+| `architectureConsistency`                           | 0.20   |
+| `aiSecurityRisk` (categorical → numeric via lookup) | 0.20   |
+| `designTokenViolations`                             | 0.10   |
+| `testQuality`                                       | 0.10   |
+| `businessLogicCoherence`                            | 0.10   |
+| `docFreshness`                                      | 0.05   |
+| `dbHealth`                                          | 0.05   |
 
 Missing axes (e.g. before a subcommand ships) drop out and the remaining weights renormalize to 1.0. **Categorical security mapping** is monotonic (low=100, medium=75, high=40, critical=10). **Penalties**: -10 when `aiSecurityRisk === 'critical'` (a single hardcoded API key outranks everything), -1 per high-severity issue up to -15.
 
@@ -3024,6 +3068,7 @@ Categorical bands: 80+ low, 60–79 medium, 40–59 high, 0–39 critical.
 ### Expanded `slop_suggest` MCP tool
 
 The primary entry point for AI agents now returns:
+
 - `hint` — usage guidance
 - `doNotCreate` — the constitution's `forbidden` deny-list (cap 10)
 - `declaredStack` — flattened list of declared state mgmt + data fetching + UI libs + forms + styling + routing
@@ -3034,6 +3079,7 @@ Agents now receive the do-not-create list alongside the existing-pattern invento
 ### New `slop_governance` MCP tool
 
 Returns just the headline number for agents that want the composite + breakdown without the full pattern inventory:
+
 ```json
 {
   "repositoryHealth": 88.9,
@@ -3077,25 +3123,31 @@ slopbrick maintenance-cost [--format text|json] [--strict]
 ```ts
 // Per-issue cost: CodeClimate grade→minutes × $50/hr fully-loaded dev rate
 const issueCost =
-    highSeverityCount   * 400 +   // F-grade: 8h+
-    mediumSeverityCount * 150 +   // C-grade: 3h
-    lowSeverityCount    *  50;    // B-grade: 1h
+  highSeverityCount * 400 + // F-grade: 8h+
+  mediumSeverityCount * 150 + // C-grade: 3h
+  lowSeverityCount * 50; // B-grade: 1h
 
 // Sonar baseline: $25.50 per 1000 LoC per month
-const locBaseline = (linesOfCode / 1000) * 25.50;
+const locBaseline = (linesOfCode / 1000) * 25.5;
 
 // Bucket multiplier (categorical → numeric)
-const bucketMultiplier = { low: 0.5, medium: 1.0, high: 2.0, critical: 4.0 }[bucket];
+const bucketMultiplier = { low: 0.5, medium: 1.0, high: 2.0, critical: 4.0 }[
+  bucket
+];
 
 // AI multiplier (only when AI-typical signals present)
 const aiMultiplier = hasAiSignals ? 1.8 : 1.0;
 
 const monthlyUSD = Math.round(
-    Math.max(0, locBaseline * bucketMultiplier * aiMultiplier + issueCost * aiMultiplier)
+  Math.max(
+    0,
+    locBaseline * bucketMultiplier * aiMultiplier + issueCost * aiMultiplier,
+  ),
 );
 ```
 
 Calibration anchors:
+
 - Sonar 2025: **$306,000/yr per 1 MLoC** of code-level technical debt
 - CodeClimate: per-grade remediation time (A<1h, B 1-2h, C 2-4h, D 4-8h, F>8h) at $50/hr fully-loaded
 - AI multiplier 1.5–2.5× justified by CodeRabbit 1.7×, Faros 3×, GitClear 4×, SO trust collapse 40→29%
@@ -3114,6 +3166,7 @@ slopbrick docs [--format text|json|markdown] [--strict]
 ```
 
 Rules (per-rule weights sum to 14, the score formula subtracts):
+
 - `docs/stale-package-reference` (weight 5) — markdown mentions `npm install <pkg>` / `import ... from '<pkg>'` / `require('<pkg>')` but `<pkg>` isn't in `package.json`
 - `docs/stale-function-reference` (weight 3) — markdown inline code references a camelCase identifier that isn't in the project's exports AND appears in a calling context
 - `docs/expired-code-example` (weight 4) — fenced `ts`/`tsx`/`js`/`jsx` code block imports a package not in `package.json` or a relative path that doesn't exist
@@ -3122,6 +3175,7 @@ Rules (per-rule weights sum to 14, the score formula subtracts):
 Categorical bands: 80+ low, 60-79 medium, 40-59 high, 0-39 critical.
 
 **Two rules deferred to 0.8.x** for FP control (per IEEE 2025 survey + Docsie case studies):
+
 - `docs/stale-env-var-reference`
 - `docs/stale-url-reference` (route paths)
 
@@ -3140,6 +3194,7 @@ slopbrick db [--format text|json|markdown] [--strict]
 ```
 
 6 rules in v1 (two rules — `db/dead-column`, `db/dead-table` — deferred to Phase 8.1 which needs live DB):
+
 - `db/missing-fk-index` (weight 5) — `REFERENCES` declared without matching index
 - `db/duplicate-index` (weight 4) — same column-list declared twice
 - `db/missing-not-null` (weight 4) — required columns (id, email, created_at, …) without NOT NULL or PRIMARY KEY
@@ -3200,7 +3255,7 @@ Per file:
 
 - `slop = sum(SEVERITY_WEIGHTS[issue.severity])` for every issue
   raised by the engine on that file. Weights: `low=1, medium=3,
-  high=5` (reused from `src/engine/metrics.ts`).
+high=5` (reused from `src/engine/metrics.ts`).
 - `violations = checkFileConstitution(source, config.constitution).length`
   — each import that violates the declared constitution or hits the
   `forbidden` deny-list costs 1 point.
@@ -3253,10 +3308,10 @@ New optional field on the `constitution` block:
 ```js
 export default {
   constitution: {
-    stateManagement: ['zustand'],
-    dataFetching: ['react-query'],
+    stateManagement: ["zustand"],
+    dataFetching: ["react-query"],
     // ...
-    forbidden: ['moment', '@types/', 'lodash'],
+    forbidden: ["moment", "@types/", "lodash"],
   },
 };
 ```
@@ -3531,12 +3586,12 @@ New top-level `constitution` field in `slopbrick.config.mjs`:
 ```js
 export default {
   constitution: {
-    stateManagement: ['zustand'],
-    dataFetching:    ['react-query'],
-    uiLibrary:       ['shadcn', 'radix'],
-    forms:           ['react-hook-form', 'zod'],
-    styling:         ['tailwind'],
-    routing:         ['next'],
+    stateManagement: ["zustand"],
+    dataFetching: ["react-query"],
+    uiLibrary: ["shadcn", "radix"],
+    forms: ["react-hook-form", "zod"],
+    styling: ["tailwind"],
+    routing: ["next"],
   },
 };
 ```
@@ -3563,7 +3618,7 @@ CI-friendly exit codes:
 
 - **`slop_suggest`** — project-wide pattern inventory (modals,
   buttons, API clients, state libs, data-fetching libs). AI agents
-  call this *before* writing new code to reuse existing patterns.
+  call this _before_ writing new code to reuse existing patterns.
 - **`slop_check_constitution`** — per-file constitution diff. Reads the
   file, extracts imports, returns violations with category + declared
   values + human-readable reason. Wire into pre-PR checks.
@@ -3576,18 +3631,18 @@ CI-friendly exit codes:
   `--format` flag on the trend subcommand was being silently shadowed
   by the global scan `--format` (Commander collision). Renamed the
   local flag to `--render`. Verified end-to-end with a fresh dist
-  build. *(commit `9cc2caa`)*
+  build. _(commit `9cc2caa`)_
 - **Calibration test now surfaces real crash causes.** The chunk-runner
   in `tests/integration/calibration.test.ts` was swallowing stderr/
   stdout in a bare `catch {}`, so chunk failures showed only
   "Scanner did not produce chunk-NNNN.json" with no signal about why.
   Now captures stderr/stdout and re-throws on unexpected exits
   (signals, status≥3) with the actual error preview. Three consecutive
-  calibration runs after the fix pass in ~48s each. *(commit `25be543`)*
+  calibration runs after the fix pass in ~48s each. _(commit `25be543`)_
 - **v1.x working-tree labels stripped.** Old internal version labels
   (1.0.0 through 1.4.4) were leaking into source comments, fixture
   data, and test descriptions. Stripped from `src/`, `tests/`,
-  `examples/`, and `CHANGELOG.md`. *(commit `01e321e`)*
+  `examples/`, and `CHANGELOG.md`. _(commit `01e321e`)_
 
 ### No new features
 
@@ -3606,18 +3661,18 @@ means editing the 1300-line monolith.
 
 #### Engine split (`src/engine/visitor.ts` 1313 → 650 lines, -50%)
 
-| Module | Lines | Purpose |
-|---|---:|---|
-| `src/engine/visitor.ts` | 650 | The walker. Imports + InternalFacts type + extractFacts() + the visit() loop. |
-| `src/engine/visitors/dispatch.ts` | 762 | Per-node-type handlers + helper functions, all taking a VisitorCtx parameter. Was already extracted in v2.0.x but the closure-bound duplicates in visitor.ts survived. Now fully canonical. |
-| `src/engine/visitors/scan-helpers.ts` | 396 (new) | Pure (no closure state) helpers: directive parser, fetch() helpers, node-type predicates, JSX shape, v2-build helpers. |
-| `src/engine/visitors/v2-build.ts` | 324 (new) | ScanFactsV2 assembler — pure function of InternalFacts + source + ext + framework + config. |
-| `src/engine/visitors/ast-guards.ts` | 259 | AST pattern helpers (binary && chain, inline-function detection, etc.). |
-| `src/engine/visitors/react.ts` | 264 | React-AST extraction helpers. |
-| `src/engine/visitors/html.ts` | 324 | HTML element extraction. |
-| `src/engine/visitors/templates.ts` | 38 (facade) | Re-exports from templates/{positions,astro}. |
-| `src/engine/visitors/templates/{positions,astro}.ts` | 115 + 350 | Pure template / Astro extractors. |
-| `src/engine/visitors/internal.ts` | 76 | FunctionFrame type + WalkContext type. |
+| Module                                               |       Lines | Purpose                                                                                                                                                                                     |
+| ---------------------------------------------------- | ----------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/engine/visitor.ts`                              |         650 | The walker. Imports + InternalFacts type + extractFacts() + the visit() loop.                                                                                                               |
+| `src/engine/visitors/dispatch.ts`                    |         762 | Per-node-type handlers + helper functions, all taking a VisitorCtx parameter. Was already extracted in v2.0.x but the closure-bound duplicates in visitor.ts survived. Now fully canonical. |
+| `src/engine/visitors/scan-helpers.ts`                |   396 (new) | Pure (no closure state) helpers: directive parser, fetch() helpers, node-type predicates, JSX shape, v2-build helpers.                                                                      |
+| `src/engine/visitors/v2-build.ts`                    |   324 (new) | ScanFactsV2 assembler — pure function of InternalFacts + source + ext + framework + config.                                                                                                 |
+| `src/engine/visitors/ast-guards.ts`                  |         259 | AST pattern helpers (binary && chain, inline-function detection, etc.).                                                                                                                     |
+| `src/engine/visitors/react.ts`                       |         264 | React-AST extraction helpers.                                                                                                                                                               |
+| `src/engine/visitors/html.ts`                        |         324 | HTML element extraction.                                                                                                                                                                    |
+| `src/engine/visitors/templates.ts`                   | 38 (facade) | Re-exports from templates/{positions,astro}.                                                                                                                                                |
+| `src/engine/visitors/templates/{positions,astro}.ts` |   115 + 350 | Pure template / Astro extractors.                                                                                                                                                           |
+| `src/engine/visitors/internal.ts`                    |          76 | FunctionFrame type + WalkContext type.                                                                                                                                                      |
 
 #### Dead-code deletion (205 lines)
 
@@ -3756,7 +3811,7 @@ collapsed into this single 0.5.0 release.
   (`loadCache` ignores it), but lingering files were noise.
 - **rule**: `typo/math-cta-vocabulary` vocab tightened — 23 universal
   form terms (save, edit, close, cancel, submit, etc.) removed. The
-  rule now flags *only* CTA phrasing that is statistically slop-heavy.
+  rule now flags _only_ CTA phrasing that is statistically slop-heavy.
 
 ### Refactored (no behavior change)
 
@@ -3781,12 +3836,12 @@ collapsed into this single 0.5.0 release.
 
 Benchmarked `slopbrick scan` on the project's own source (~200 files):
 
-| `--threads` | avg time | notes |
-|------------:|---------:|-------|
-| 1 | 169ms | fastest for small workloads |
-| 2 | 197ms | overhead dominates |
-| 4 | 227ms | slower still |
-| 8 | 321ms | much slower |
+| `--threads` | avg time | notes                       |
+| ----------: | -------: | --------------------------- |
+|           1 |    169ms | fastest for small workloads |
+|           2 |    197ms | overhead dominates          |
+|           4 |    227ms | slower still                |
+|           8 |    321ms | much slower                 |
 
 Worker startup + IPC overhead dominates for sub-1000-file scans. The
 default `cpus.length / 2` (set in an earlier iteration) is too
@@ -3807,7 +3862,6 @@ add complexity without measurable benefit.
 
 ---
 
-
 ## Pre-release iterations (consolidated into 0.5.0)
 
 Versions each iteration in the pre-release cycle were internal iteration labels during
@@ -3819,7 +3873,6 @@ examples/, and the original release workflow) is preserved in git
 history — see `git log -- CHANGELOG.md` for the individual entries,
 or `git show 0.5.0:CHANGELOG.md` for the pre-trim file.
 
-
 ## Pre-0.5.0 history
 
 Versions each iteration in the pre-release cycle were internal iteration labels during
@@ -3830,4 +3883,3 @@ split, signal-strength metadata, incremental scan, validate-config,
 examples/, and the original release workflow) is preserved in git
 history — see `git log -- CHANGELOG.md` for the individual entries,
 or `git show 0.5.0:CHANGELOG.md` for the pre-trim file.
-

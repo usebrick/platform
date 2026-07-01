@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 95 rules in 15 categories, computes 4 scores (aiQuality, engineeringHygiene, security, repositoryHealth), and persists the structure for AI agents and CI.",
   "type": "module",
   "bin": {
@@ -56,7 +56,7 @@
     "tree-sitter": "^0.22.4",
     "tree-sitter-rust": "^0.24.0"
   },
-  "//_usebrick_note": "@usebrick/core and @usebrick/engine are private workspace packages. They are listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts \u2192 noExternal bundles them into dist/; the prepack-guard.mjs allowlist includes both. Neither ends up in the published tarball's runtime deps. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
+  "//_usebrick_note": "@usebrick/core and @usebrick/engine are private workspace packages. They are listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts → noExternal bundles them into dist/; the prepack-guard.mjs allowlist includes both. Neither ends up in the published tarball's runtime deps. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@usebrick/core": "workspace:*",
