@@ -31,28 +31,55 @@ v0.24 (Sep 2026) and v0.25 (Mar 2027).
 
 ---
 
-## Revised milestone sequence (slower cadence)
+## Revised milestone sequence (slower cadence + proper semver)
 
-The user wants fewer version bumps. Original v9 plan called for 5
-releases (v0.23, v0.24, v0.25, v0.26, v0.27) over 6 months. Revised
-to **3 releases over 6 months**. Each release is bigger; the
-cadence is ~3 months.
+The user wants:
+1. **Fewer version bumps** (slower cadence — 3 minor releases over 6 months)
+2. **Lower version increments within each minor** — use patch bumps
+   (v0.23.1, v0.23.2) for fixes/calibration, not a new minor for
+   every change. Standard semver.
 
-| Release | Target date | Scope | Source |
-|---------|-------------|-------|--------|
-| **v0.23.0** | **SHIPPED** | **dedup v2 (near-duplicate)** — Type-2 clone detector (MinHash + Jaccard on k-gram tokens) | this session |
-| **v0.24.0** | **Sep 2026** | **v9 Java arm + Java rule calibration + telemetry opt-in** — fetch Spring/Apache/JDK/Hibernate/Guava/Elasticsearch/Kafka, run calibration on the 6 DORMANT Java rules, ship `slopbrick scan --telemetry=opt-in` for adoption signal | v9 plan Part 2 |
-| **v0.25.0** | **Mar 2027** | **Kotlin + Swift + C++ calibration + dup v3 + methodology paper** — write Kotlin/Swift/C++ rules, fetch the mobile + C++ arms, ship dup/structural-clone (Type-3), publish methodology paper to arXiv | v9 plan Part 4+5+6 |
+Original v9 plan called for 5 releases (v0.23, v0.24, v0.25, v0.26,
+v0.27) over 6 months. Revised to **3 minor releases** with **patch
+releases** between them. The cadence is:
 
-**Rationale:** batch related work. v0.24 is "all Java" (corpus
-build + calibration + telemetry). v0.25 is "everything else"
-(Kotlin/Swift/C++ + dedup v3 + methodology paper). The slow
-cadence gives 3 months per release for review, calibration, and
-publication — matching the user's preference for fewer bumps.
+- **Minor bump** (v0.23.0 → v0.24.0 → v0.25.0) = new feature
+  (breaking-ish behavior change, new rule, or new category)
+- **Patch bump** (v0.23.0 → v0.23.1 → v0.23.2) = fix, calibration
+  refinement, FP suppression, documentation
 
-**Trade-off:** bigger releases = more risk per release, but the
-work is more reviewable as a unit. The 3-month gap leaves time
-for self-audit + re-calibration between releases.
+| Release | Bump type | Target date | Scope | Source |
+|---------|-----------|-------------|-------|--------|
+| **v0.23.0** | minor | **SHIPPED** | **dedup v2 (near-duplicate)** — Type-2 clone detector (MinHash + Jaccard on k-gram tokens) | this session |
+| **v0.23.1** | patch | (any time) | First calibration patch for `dup/near-duplicate` once v9 corpus arm is available | ongoing |
+| **v0.23.x** | patch | (incremental) | Continued calibration: FPs removed, threshold tuned, near-dup opt-in flag promoted to default-on if calibration confirms | ongoing |
+| **v0.24.0** | minor | **Sep 2026** | **v9 Java arm + Java rule calibration + telemetry opt-in** — fetch Spring/Apache/JDK/Hibernate/Guava/Elasticsearch/Kafka, run calibration on the 6 DORMANT Java rules, ship `slopbrick scan --telemetry=opt-in` for adoption signal | v9 plan Part 2 |
+| **v0.24.1** | patch | (any time) | Java calibration refinements: rule-specific threshold tunes, FP suppressions, ai/*-style rule lifts | ongoing |
+| **v0.25.0** | minor | **Mar 2027** | **Kotlin + Swift + C++ calibration + dup v3 + methodology paper** — write Kotlin/Swift/C++ rules, fetch the mobile + C++ arms, ship dup/structural-clone (Type-3), publish methodology paper to arXiv | v9 plan Part 4+5+6 |
+
+**Rationale:** batch new features into minor releases. Within a
+minor, use patch bumps for fixes and calibration refinements.
+This matches npm semver conventions and gives users a clear
+"breaking change or new feature" signal at minor bumps.
+
+**Example of the new cadence:**
+
+```
+v0.23.0   dedup v2 ships (new rule)
+v0.23.1   threshold tuned to 0.65 after first 100-file self-scan
+v0.23.2   near-dup promoted from defaultOff to default-on after v9 calibration
+v0.23.3   FP suppression for the rule's most common false positive
+v0.24.0   v9 Java arm + Java calibration + telemetry (new feature)
+v0.24.1   Java rule-specific threshold tune
+v0.24.2   more Java calibration refinement
+v0.25.0   Kotlin/Swift/C++ + dup v3 + methodology paper
+v0.25.1   Kotlin/Swift/C++ calibration refinements
+```
+
+**Trade-off:** more releases total (8-10 in 6 months instead of
+3-5), but each is small, focused, and easily reversible if
+something regresses. Patches don't carry breaking-change risk;
+the user can safely upgrade `^0.23.0` → `^0.23.x`.
 
 ---
 
