@@ -42,6 +42,7 @@ import { staleFunctionReferenceRule } from './docs/stale-function-reference';
 import { stalePackageReferenceRule } from './docs/stale-package-reference';
 import { dupIdenticalBlockRule } from './dup/identical-block';
 import { nearDuplicateRule } from './dup/near-duplicate';
+import { structuralCloneRule } from './dup/structural-clone';
 import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
 import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
@@ -177,6 +178,7 @@ export const builtinRules: Rule[] = [
   stalePackageReferenceRule,
   dupIdenticalBlockRule,
   nearDuplicateRule,
+  structuralCloneRule,
   goErrorWrapWithoutContextRule,
   goNilSliceVsEmptyRule,
   goStructTagInconsistencyRule,
