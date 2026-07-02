@@ -1,0 +1,137 @@
+{
+  "_comment": "v9 corpus manifest — Java arm. The .template.json is committed; the operator copies this to corpus-manifest.local.json and fills in the local_clone_path for each repo (per the .gitignore rule, .local.json is never committed). See v9-plan-2026-07-02-update.md for the corpus build process.",
+  "version": "v9.0-java-draft",
+  "build_date": "2026-07-02",
+  "methodology_reference": "packages/slopbrick/docs/research/methodology-minimum-sample-size.md",
+  "minimum_sample_size": 10000,
+  "minimum_total_fires": 10,
+
+  "arm": "java",
+  "files_target": {"neg": 30000, "pos": 25000},
+  "pos_cutoff": "2024-12-17",
+  "neg_cutoff_before": "2018-01-01",
+
+  "neg_repos": [
+    {
+      "name": "spring-framework",
+      "url": "https://github.com/spring-projects/spring-framework",
+      "checkout": "5.3.x",
+      "rationale": "Canonical Java enterprise; pre-AI; vast codebase",
+      "files_estimate": 8000
+    },
+    {
+      "name": "commons-lang",
+      "url": "https://github.com/apache/commons-lang",
+      "checkout": "rel/commons-lang-3.12.0",
+      "rationale": "Apache Commons; pre-AI utility library",
+      "files_estimate": 1500
+    },
+    {
+      "name": "jdk-samples-pre-2018",
+      "url": "https://github.com/openjdk/jdk",
+      "checkout": "jdk-11+0",
+      "rationale": "JDK stdlib + samples, pre-AI baseline",
+      "files_estimate": 5000,
+      "note": "JDK 11 is from Sep 2018 — borderline neg. Use jdk-10 or earlier for stricter cutoff."
+    },
+    {
+      "name": "hibernate-orm",
+      "url": "https://github.com/hibernate/hibernate-orm",
+      "checkout": "5.4.0.Final",
+      "rationale": "ORM canonical; Java ecosystem",
+      "files_estimate": 3000
+    },
+    {
+      "name": "guava",
+      "url": "https://github.com/google/guava",
+      "checkout": "v31.1-jre",
+      "rationale": "Google utility library; mature codebase",
+      "files_estimate": 1500
+    },
+    {
+      "name": "elasticsearch",
+      "url": "https://github.com/elastic/elasticsearch",
+      "checkout": "v7.17.0",
+      "rationale": "Elasticsearch 7.17 (Feb 2022, pre-LLM-coding-boom)",
+      "files_estimate": 5000
+    },
+    {
+      "name": "google-guice",
+      "url": "https://github.com/google/guice",
+      "checkout": "7.0.0",
+      "rationale": "DI framework; pre-AI",
+      "files_estimate": 1000
+    },
+    {
+      "name": "kafka",
+      "url": "https://github.com/apache/kafka",
+      "checkout": "2.8.0",
+      "rationale": "Apache Kafka 2.8 (pre-2021-AI-boom)",
+      "files_estimate": 2500
+    }
+  ],
+
+  "pos_repos": [
+    {
+      "name": "spring-ai",
+      "url": "https://github.com/spring-projects/spring-ai",
+      "checkout": "main",
+      "rationale": "Spring AI; first major Java AI integration (2024-12+)",
+      "files_estimate": 1500
+    },
+    {
+      "name": "langchain4j",
+      "url": "https://github.com/langchain4j/langchain4j",
+      "checkout": "main",
+      "rationale": "LangChain4j; LLM orchestration in Java",
+      "files_estimate": 2000
+    },
+    {
+      "name": "spring-initializr-generators",
+      "url": "https://github.com/spring-io/initializr",
+      "checkout": "main",
+      "rationale": "Spring Initializr generators; AI scaffolding generator",
+      "files_estimate": 800
+    },
+    {
+      "name": "quarkus-ai-extensions",
+      "url": "https://github.com/quarkusio/quarkus-ai",
+      "checkout": "main",
+      "rationale": "Quarkus AI extensions",
+      "files_estimate": 500
+    },
+    {
+      "name": "openai-java-sdk",
+      "url": "https://github.com/openai/openai-java",
+      "checkout": "main",
+      "rationale": "OpenAI Java SDK; Anthropic SDK siblings",
+      "files_estimate": 300
+    },
+    {
+      "name": "jhipster-2024",
+      "url": "https://github.com/jhipster/jhipster",
+      "checkout": "v8.5.0",
+      "rationale": "jhipster 2024+; AI-assisted Java generator",
+      "files_estimate": 4000
+    }
+  ],
+
+  "v8_corpus_avoidance": "These repos were NOT in the v7 or v8 corpus (per the methodology paper's cross-corpus contamination guard). Verify with grep before including.",
+
+  "build_process": [
+    "1. Copy this file to corpus-manifest.local.json (gitignored)",
+    "2. For each repo, run: git fetch --unshallow && git checkout <ref>",
+    "3. Compute the filelist: find <repo> -name '*.java' -size -10M | sort > <arm>.txt",
+    "4. Run: slopbrick scan --workspace <repo> --format json > <repo>.json",
+    "5. Concatenate per-arm: jq -s '.' <repo>.json > v9-java-<neg|pos>.json",
+    "6. Compute v9 calibration: see scripts/compute-v9-calibration.py (TBD)",
+    "7. Update signal-strength.json with v9 verdict, _v9Verdict, _v9Lift, _v9Recall, _v9FpRate, _v9Precision"
+  ],
+
+  "success_criteria": {
+    "files_neg": "≥ 30000",
+    "files_pos": "≥ 25000",
+    "rules_measurable": "≥ 6 (the 6 DORMANT Java rules)",
+    "rules_promoted": "≥ 1 (at least one Java rule becomes USEFUL on v9)"
+  }
+}
