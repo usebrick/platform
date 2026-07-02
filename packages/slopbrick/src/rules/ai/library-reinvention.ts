@@ -124,6 +124,10 @@ export const aiLibraryReinventionRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'medium',
   aiSpecific: true,
+  // v0.20.0 calibration: v8.5 verdict = USEFUL but recall 0.000
+  // (fires never on the corpus). The "≥2 reinvented patterns"
+  // threshold is too strict. Disable until rewritten.
+  defaultOff: true,
   description: 'File reinvents ≥2 common patterns (date picker, form validation, chart, modal, etc.) without importing the canonical library — GitClear 2025 + Cui et al. 2025',
   create(context) {
     return context;

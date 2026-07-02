@@ -72,6 +72,12 @@ export const aiMarkdownLeakageRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'high',
   aiSpecific: true,
+  // v0.20.0 calibration: v8.5 verdict = INVERTED (lift 65,504× but
+  // recall 0.000 — fires never on the corpus, and when it does fire
+  // it's wrong). The rule was on by default, contributing false
+  // positives to the self-scan. Disable until the rule is rewritten
+  // or the v9 corpus shows it works.
+  defaultOff: true,
   description: 'Stray Markdown fence or bare language name at top of file — AI tools leak the fenced-block format into code',
   create(context) {
     return context;

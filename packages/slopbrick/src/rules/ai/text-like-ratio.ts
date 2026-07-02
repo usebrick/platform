@@ -40,6 +40,11 @@ export const aiTextLikeRatioRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'low',
   aiSpecific: true,
+  // v0.20.0 calibration: v8.5 verdict = USEFUL but recall 0.000
+  // (fires never on the corpus). The rule is too specific to ever
+  // fire on real code — the prose-detection heuristic is too
+  // conservative. Disable until rewritten.
+  defaultOff: true,
   description: 'High ratio of prose-like lines embedded in code — AI tools often leave natural-language explanations in source files (Yotkova 2026)',
   create(context) {
     return context;

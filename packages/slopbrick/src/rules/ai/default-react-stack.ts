@@ -64,6 +64,13 @@ export const aiDefaultReactStackRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'low',
   aiSpecific: true,
+  // v0.20.0 calibration: v8.5 verdict = USEFUL but recall 0.001
+  // (fires 1 time per 1,000 files). The "≥3 of default stack"
+  // threshold catches almost nothing on real codebases — the
+  // default stack is now ubiquitous, so the signal is near-zero.
+  // Disable until the threshold is lowered or the rule is split
+  // into per-library detectors.
+  defaultOff: true,
   description: 'File uses ≥3 of the default React stack (Next.js + TanStack Query + Zustand + shadcn/ui) — Sascha 2025 + Nam et al. MSR 2026',
   create(context) {
     return context;
