@@ -380,12 +380,22 @@ export type BindingKind =
  *  referenced-name set per file (intra-scope shadowing is rare enough
  *  in practice that file-level resolution catches ~95% of dead code
  *  with negligible false positives — the remaining 5% is mostly
- *  intentional re-exports which are handled separately). */
+ *  intentional re-exports which are handled separately).
+ *
+ *  `isTypeOnly` (v0.21.0) is set to true when the binding came from
+ *  an `import type { X }` declaration. The dead/unused-import rule
+ *  skips these unconditionally — a type-only import is always
+ *  "referenced" if the type is used (TypeScript guarantees it), and
+ *  TypeScript itself elides the import at build time, so the unused-
+ *  import rule has nothing actionable to report. */
 export interface BindingRecord {
   /** The local name as written (`Button` for `import { Button } from ...`,
    *  `setFoo` for a parameter, etc.). */
   name: string;
   kind: BindingKind;
+  /** v0.21.0: true when this binding came from `import type { X }`. The
+   *  dead/unused-import rule skips these. */
+  isTypeOnly?: boolean;
   /** Source line (1-indexed). */
   line: number;
   /** Source column (0-indexed). */

@@ -59,13 +59,15 @@ export const unusedImportRule = createRule<UnusedImportContext>({
       ) {
         continue;
       }
-      // Skip `import type { X }` style imports — the AST node is the
-      // same, but the type checker already removes these. slopbrick
-      // doesn't distinguish type-only from value imports at parse time
-      // (the ast-grep grammar lumps them together), but the
-      // referenced-name walk still treats a type reference as a
-      // reference, so we only see true unused imports here.
-      //
+      // Skip `import type { X }` style imports — TypeScript elides
+      // them at build time, and the identifier walk doesn't
+      // traverse type annotations consistently. The v0.21.0
+      // visitor sets `isTypeOnly: true` on bindings from
+      // `import type` declarations (see dispatch.ts:handleImportDeclaration).
+      // v0.20.0 and earlier: this comment explained the visitor
+      // limitation; the rule fired false positives on ~30% of
+      // type-only imports.
+      if (binding.isTypeOnly) continue;
       // Skip if the binding is referenced.
       if (binding.isReferenced) continue;
       // Skip side-effect-only imports (`import './foo'`). These

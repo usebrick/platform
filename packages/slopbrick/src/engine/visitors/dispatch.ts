@@ -206,6 +206,11 @@ export function handleImportDeclaration(
   if (source) {
     const { line, column } = positionFrom(node, vctx.lineOffsets);
     const importedNames: string[] = [];
+    // v0.21.0: `import type { X } from '...'` declarations should not
+    // be flagged by dead/unused-import (TypeScript elides them at
+    // build time). swc exposes this via the `typeOnly` field on
+    // ImportDeclaration.
+    const isTypeOnly = node.typeOnly === true;
     const specifiers = node.specifiers as AnyNode[];
     if (Array.isArray(specifiers)) {
       for (const specifier of specifiers) {
@@ -235,6 +240,7 @@ export function handleImportDeclaration(
               column,
               source,
               isReferenced: false,
+              isTypeOnly,
             });
           }
         } else if (specifier.type === 'ImportSpecifier') {
@@ -254,6 +260,7 @@ export function handleImportDeclaration(
               column,
               source,
               isReferenced: false,
+              isTypeOnly,
             });
           } else if (
             isObject(local) &&
@@ -269,6 +276,7 @@ export function handleImportDeclaration(
               column,
               source,
               isReferenced: false,
+              isTypeOnly,
             });
           }
         }
