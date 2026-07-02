@@ -34,9 +34,19 @@ import { computeCompressionProfile, lineCompressionStats } from '../../engine/nc
  * - Li, M. et al. (2004), "The Similarity Metric," IEEE Trans. IT.
  */
 const MIN_BYTES = 2000;       // 2KB minimum for stable compression
-const GZIP_RATIO_AI_THRESHOLD = 0.50;
-const MEAN_LINE_NCD_HUMAN_MAX = 0.30;
-const NCD_CV_AI_MAX = 0.50;
+// v0.20.0 calibration tune: original thresholds (0.50 / 0.30 / 0.50)
+// gave 5,871 self-scan fires with 15% FP rate. The lift was 4.89×
+// (USEFUL verdict) but the absolute fire count was unmanageable —
+// well-compressible structured code (JSON, YAML, schema, generated
+// files) hits 2 of 3 conditions without being AI. Tightened each
+// threshold to reduce FP while keeping the rule alive (the
+// over-aggressive 'require all 3' fix from earlier this session
+// gave 0 fires = dead rule). These new values are conservative
+// per-threshold shifts; re-calibrate against the v9 corpus before
+// shipping.
+const GZIP_RATIO_AI_THRESHOLD = 0.60;
+const MEAN_LINE_NCD_HUMAN_MAX = 0.25;
+const NCD_CV_AI_MAX = 0.40;
 
 export const aiCompressionProfileRule = createRule<RuleContext>({
   id: 'ai/compression-profile',
