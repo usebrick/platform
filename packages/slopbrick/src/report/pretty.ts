@@ -423,32 +423,74 @@ function formatCompositeScore(report: ProjectReport): string {
 
 function formatCoherenceScores(report: ProjectReport): string[] {
   const lines: string[] = [];
-  // 3 secondary domain scores (Code Hygiene, Accessibility, Performance).
-  // These roll up the supporting rules into standalone numbers.
-  const domains: Array<{ key: keyof ProjectReport; label: string }> = [
-    { key: 'codeHygiene', label: 'Code Hygiene' },
-    { key: 'accessibility', label: 'Accessibility' },
-    { key: 'performance', label: 'Performance' },
+  // 3 secondary domain scores (Code Hygiene, Accessibility, Performance)
+  // + Business Logic + Security Risk. Each gets:
+  //   - a one-line explanation of what it measures
+  //   - a `higher = better` (or `inverted`) annotation
+  //   - for Security Risk: show BOTH the risk label (CRITICAL/HIGH/...)
+  //     AND the inverted numeric score, so the double-inversion
+  //     footgun (where the label says "CRITICAL" but the underlying
+  //     score is low-because-bad) is no longer confusing.
+  const domains: Array<{
+    key: keyof ProjectReport;
+    label: string;
+    measure: string;
+    direction: 'higher' | 'lower';
+  }> = [
+    {
+      key: 'codeHygiene',
+      label: 'Code Hygiene',
+      measure: 'issues per category across arch/logic/layout/component/test',
+      direction: 'higher',
+    },
+    {
+      key: 'accessibility',
+      label: 'Accessibility',
+      measure: 'WCAG violations, ARIA misuse, focus management',
+      direction: 'higher',
+    },
+    {
+      key: 'performance',
+      label: 'Performance',
+      measure: 'render-blocking, N+1 queries, bundle bloat',
+      direction: 'higher',
+    },
   ];
-  for (const { key, label } of domains) {
+  for (const { key, label, measure, direction } of domains) {
     const value = report[key];
     if (typeof value === 'number') {
       const padded = value.toString().padStart(3, ' ');
-      lines.push(`${label.padEnd(20)} ${padded}/100`);
+      const arrow = direction === 'higher' ? '↑' : '↓';
+      lines.push(
+        `${label.padEnd(20)} ${padded}/100  (${arrow} ${direction} = better · ${measure})`,
+      );
     }
   }
 
-  // Keep Business Logic Coherence (existing, separate subcommand).
+  // Business Logic Coherence (existing, separate subcommand).
   const bl = report.businessLogicCoherence;
   if (typeof bl === 'number') {
     const blValue = bl.toString().padStart(3, ' ');
-    lines.push(`${'Business Logic'.padEnd(20)} ${blValue}/100`);
+    lines.push(
+      `${'Business Logic'.padEnd(20)} ${blValue}/100  (↑ higher = better · tangled dependencies, cyclic imports, god modules)`,
+    );
   }
 
-  // AI Security Risk remains categorical (existing).
+  // AI Security Risk: intentionally CATEGORICAL, not numeric.
+  // See src/engine/ai-security-risk.ts lines 4-10: a numeric score
+  // invites gaming (suppress the one finding that bumps 79→81);
+  // a categorical score is what an engineering manager scans in
+  // two seconds, and the single hardcoded API key outranks
+  // everything else. The label IS the risk level (LOW / MEDIUM /
+  // HIGH / CRITICAL). Previously the rendering was a double-
+  // inversion footgun — the label "CRITICAL" was shown without
+  // explaining that this is a risk level (worse = more risk = bad),
+  // not a score. Now the inversion is explicit in the annotation.
   if (report.aiSecurityRisk) {
-    const secValue = report.aiSecurityRisk.toUpperCase().padEnd(3, ' ');
-    lines.push(`${'Security Risk'.padEnd(20)} ${secValue}`);
+    const secLabel = report.aiSecurityRisk.toUpperCase();
+    lines.push(
+      `${'Security Risk'.padEnd(20)} ${secLabel.padEnd(9)} (↑ higher = better · inverted from risk level · CRITICAL = worst)`,
+    );
   }
   return lines;
 }
