@@ -403,6 +403,7 @@ function parseSource(source: string, filePath: string): ParseResult {
     case 'py':
     case 'go':
     case 'rs':
+    case 'java':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback

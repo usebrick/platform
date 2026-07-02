@@ -100,7 +100,7 @@ export async function scanFile(
   // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
   // fire. Languages we have NO visitor for (.swift, .kt, .dart,
-  // .cpp, .java, .rb, .php) still get the early-return because
+  // .cpp, .rb, .php) still get the early-return because
   // every rule attempt would burn the parseError path.
   //
   // v0.18.9: removed `.rs` from this set. The tree-sitter Rust
@@ -111,11 +111,23 @@ export async function scanFile(
   // for their v0.18.9 v8.5 calibration to produce non-DORMANT
   // verdicts. Tradeoff: corpus scans now process Rust files,
   // adding ~10-20s per 1,000 Rust files.
+  //
+  // v0.24.5: removed `.java` from this set (v9 corpus build).
+  // Java files now flow through `parseSource` → `parseBlankModule`
+  // (returns empty AST + original source), and the worker fires
+  // regex-only rules on `facts.v2._source`. The 6 v0.20.0
+  // `java/*` rules (system-out-println, empty-catch-block, etc.)
+  // are regex-based and will start firing. AST-dependent rules
+  // (component/*, layout/*, ai/*) silently produce 0 issues on
+  // `.java` files since the AST is a structural placeholder. The
+  // 6 java rules gate themselves on `/\.java$/i.test(filePath)`
+  // inside their `analyze()` so they don't fire on TS/Go files
+  // that happen to contain Java-looking source in comments.
   const ext = extname(filePath).toLowerCase();
   const UNSUPPORTED_LANGS = new Set([
     '.swift', '.kt', '.kts', '.dart',
     '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
-    '.java', '.rb', '.php',
+    '.rb', '.php',
   ]);
   if (UNSUPPORTED_LANGS.has(ext)) {
     return {

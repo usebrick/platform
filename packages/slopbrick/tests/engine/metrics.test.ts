@@ -429,7 +429,7 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     // should land in different ranges:
     //   - aiSlopScore: high (lots of low issues → low slopIndex → high)
     //   - engineeringHygiene: medium (mixed categories)
-    //   - security: low (high-severity security issues → risk)
+    //   - security: graded decay (v0.25.0, hyperbolic 100/(1+N/5))
     //   - repositoryHealth: weighted composite of the 3
     const issues: Issue[] = [
       // 20 low ai/* issues — bumps ai/* category score up, no
@@ -443,7 +443,7 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
         line: 1,
         column: 1,
       })),
-      // 2 high security issues — produces 'high' AI security risk
+      // 2 high security issues — graded decay: 100/(1+2/5) = 71.43
       ...Array.from({ length: 2 }, () => ({
         ruleId: 'security/missing-auth-check',
         category: 'security' as const,
@@ -472,10 +472,10 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     // issues, security must differ from aiSlopScore.
     expect(report.security).not.toBe(report.aiSlopScore);
 
-    // security is derived from AI security risk. With 2
-    // high-severity security issues, the risk is 'high' →
-    // security score is 33. aiSlopScore is unrelated.
-    expect(report.security).toBe(33);
+    // v0.25.0: security is graded decay from issue count, not a
+    // categorical inversion. 2 high-severity security issues →
+    // 100 / (1 + 2/5) = 71.43. aiSlopScore is unrelated.
+    expect(report.security).toBeCloseTo(71.43, 1);
   });
 
   it('returns security=100 for a clean codebase (no security risk)', () => {
@@ -497,11 +497,13 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     expect(report.security).toBe(100);
   });
 
-  it('returns security=0 for a critical-risk codebase', () => {
+  it('returns graded security=50 for a 5-issue critical-risk codebase (was security=0 in v0.24)', () => {
+    // v0.25.0: the categorical 'critical → 0' cap was replaced with a
+    // hyperbolic decay. 5 high-severity security issues now score
+    // 100 / (1 + 5/5) = 50, not 0. aiSecurityRisk (the categorical
+    // field) is still 'critical'; the numeric `security` field is
+    // graded.
     const issues: Issue[] = [
-      // 5 high-severity security issues → risk escalates to 'critical'
-      // (per computeAiSecurityRisk: 5+ high-severity security issues
-      // is treated as critical risk, not high)
       ...Array.from({ length: 5 }, () => ({
         ruleId: 'security/missing-auth-check',
         category: 'security' as const,
@@ -515,9 +517,30 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
     const issueGroups = [{ filePath: 'Button.tsx', issues }];
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
-    // Risk is 'critical' (5+ high-severity security issues) →
-    // security score is 0
-    expect(report.security).toBe(0);
+    // Numeric security is graded: 5 issues → 100/(1+5/5) = 50
+    expect(report.security).toBeCloseTo(50, 1);
+  });
+
+  it('returns security=0 only for a truly catastrophic (100+ issues) codebase', () => {
+    // Floor at 0 — a repo with 100+ security issues still gets
+    // approximately 0, but the curve is continuous, not a cliff.
+    const issues: Issue[] = [
+      ...Array.from({ length: 100 }, () => ({
+        ruleId: 'security/missing-auth-check',
+        category: 'security' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 's',
+        line: 1,
+        column: 1,
+      })),
+    ];
+    const scores = [scoreFile(fileResult({ issues }), 1.0, DEFAULT_CONFIG)];
+    const issueGroups = [{ filePath: 'Button.tsx', issues }];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
+    // 100 / (1 + 100/5) = 4.76 — close to 0 but not exactly 0
+    expect(report.security).toBeCloseTo(4.76, 1);
+    expect(report.security).toBeGreaterThan(0);
   });
 
   it('repositoryHealth is the weighted composite of the 3 other scores', () => {

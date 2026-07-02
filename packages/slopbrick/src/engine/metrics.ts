@@ -322,16 +322,30 @@ export function aggregateReport(
     }
   }
 
-  // security = invert the AI Security Risk categorical.
-  // Map low → 100, med → 67, high → 33, critical → 0.
-  const { risk } = computeAiSecurityRisk(flatIssues);
-  const securityFromRisk: Record<typeof risk, number> = {
-    low: 100,
-    medium: 67,
-    high: 33,
-    critical: 0,
-  };
-  const security = securityFromRisk[risk];
+  // security = graded decay from actual security-issue count.
+  // v0.25.0 replaces the v0.24 categorical "critical → 0" cliff with
+  // a hyperbolic decay: 100 / (1 + N/5) where N is the count of
+  // security-category issues. Same formula as coherence.ts:228.
+  // aiSlopScore (the CI gate) is unchanged; security is
+  // informational only.
+  //
+  // Mapping (for reference):
+  //   0 issues   → 100
+  //   1 issue    →  83
+  //   5 issues   →  50
+  //   20 issues  →  20
+  //   50 issues  →   9
+  //   100 issues →   5
+  // Floor at 0.
+  //
+  // computeAiSecurityRisk is still called below for the categorical
+  // `aiSecurityRisk` field (low/medium/high/critical) and the
+  // `aiSecurityFindings` summary — those stay categorical. Only the
+  // numeric `security` field is graded.
+  const securityIssueCount = flatIssues.filter(
+    (i) => i.category === 'security' || (i.ruleId ?? '').startsWith('security/'),
+  ).length;
+  const security = Math.max(0, 100 / (1 + securityIssueCount / 5));
 
   // engineeringHygiene = average of arch + logic + layout + visual
   // category scores (the four "engineering" categories that catch
