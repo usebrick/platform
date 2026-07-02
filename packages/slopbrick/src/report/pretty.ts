@@ -483,11 +483,18 @@ const SCORE_MESSAGES: Record<string, ReadonlyArray<readonly [number, string]>> =
 };
 
 function scoreToMessage(score: number, type: keyof typeof SCORE_MESSAGES): string {
-  const tiers = SCORE_MESSAGES[type];
+  // SCORE_MESSAGES covers every value of `type` (the type signature
+  // is `keyof typeof SCORE_MESSAGES`), so the lookup is total. Use
+  // `!` to tell TypeScript this without a runtime fallback (the
+  // `?? []` is defensive only — in practice the branch is dead).
+  const tiers = SCORE_MESSAGES[type] ?? [];
   for (const [threshold, message] of tiers) {
     if (score >= threshold) return message;
   }
-  return tiers[tiers.length - 1][1]; // fallback to the lowest threshold's message
+  // Below all thresholds (or empty tiers) → return the lowest tier's
+  // message, or a generic fallback if tiers is empty.
+  const last = tiers[tiers.length - 1];
+  return last ? last[1] : 'Score unavailable';
 }
 
 /**

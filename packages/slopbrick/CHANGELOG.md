@@ -1,5 +1,104 @@
 # Changelog
 
+## [0.21.0] - 2026-07-10 — FLIP `aiSlopScore` semantics: 0=clean, 100=saturated (BREAKING) + 15 rule `defaultOff` calibration pass
+
+**The v0.21 release** is a **breaking change** to the headline
+`aiSlopScore` field. In v0.15.0–v0.20.1, `aiSlopScore` was stored
+as the **inverted** "cleanliness" reading (100 = no AI slop
+detected, 0 = max AI slop). This triggered the natural-reading
+confusion: "AI Slop Score: 100" reads as "100% slop". v0.21.0
+flips the semantics to the **raw amount of slop** (0 = no AI
+slop, 100 = max AI slop, lower = cleaner), matching the natural
+reading of the name and the v0.14 `slopIndex` convention.
+
+**Why a major version bump:** this is a breaking change to:
+- The headline score (the only number users see in `.slopbrick/health.json`).
+- The CI gate direction (was `aiSlopScore >= 70`; now `aiSlopScore <= 30`).
+- The JSON contract (`@usebrick/core` schema v4 → v5).
+- Every test fixture that asserted the v0.20.1 inversion.
+
+**What stays the same:** the three other headline scores
+(`engineeringHygiene`, `security`, `repositoryHealth`) keep
+their "higher = better" convention. The composite
+`repositoryHealth` inverts `aiSlopScore` at the call site
+(`0.4 × (100 - aiSlopScore) + ...`) so it stays "higher = better".
+
+**Sub-score breakdown:** the displayed sub-scores (boundary,
+context, visual) keep their cleanliness framing ("structural
+integrity" / "props / state / imports" / "CSS / a11y / layout").
+The headline `aiSlopScore` is the raw amount, the sub-scores are
+cleanliness — the formula inverts at the headline boundary
+(`aiSlopScore = 100 - (0.4 × boundary + 0.35 × context + 0.25 × visual)`).
+
+### Migration checklist (v0.20.1 → v0.21.0)
+
+1. **Config files**: no rename needed for the `meanSlop` field
+   on the config. The comparison direction flips:
+   - Was: `aiSlopScore < meanSlop` fails (v0.20.1, inverted)
+   - Now: `aiSlopScore > meanSlop` fails (v0.21.0, raw)
+   The default `meanSlop: 30` is sensible for the raw-amount
+   reading (0–30 = clean band). Adjust your threshold if needed.
+2. **Dashboards / consumers**: any code that reads
+   `report.aiSlopScore` and assumes "higher = cleaner" must invert
+   the value: `cleanliness = 100 - report.aiSlopScore`. The
+   `repositoryHealth` composite is unchanged (already inverts
+   internally), so dashboards reading `repositoryHealth` need no
+   changes.
+3. **Baseline comparisons (--no-increase)**: the `--no-increase`
+   flag now fails when `aiSlopScore` INCREASES (more slop). Was
+   "decreases" in v0.20.1. The error message text changed from
+   "AI Slop Score went DOWN from X to Y" to "AI Slop Score went
+   UP from X to Y".
+4. **Health file readers (`.slopbrick/health.json`)**:
+   - Schema version bumps 4 → 5. Update validators.
+   - The optional `aiQuality` alias is REMOVED in v5
+     (semantics now differ: v0.20.1 `aiQuality: 70` = 70 cleaner;
+     v0.21.0 `aiSlopScore: 70` = 70% slop). Readers handling
+     v0.20.1 health.json must invert the value
+     (100 - x) when reading.
+
+### Other changes in v0.21.0
+
+- **15 rules marked `defaultOff: true`**: 12 visual / layout /
+  wcag rules with low recall (markdown-leakage, text-like-ratio,
+  library-reinvention, default-react-stack, math-color-cluster,
+  math-default-font, radius-scale-violation, gap-monopoly,
+  math-grid-uniformity, spacing-grid, dragging-movements, missing-alt,
+  math-rounded-entropy, math-spacing-entropy, math-font-entropy).
+  These rules fire on too many false positives to gate on by
+  default; users can opt in via `slopbrick.config.mjs` ruleConfig.
+- **Calibration fixes**: `logic/boundary-violation` (iterate
+  `component.hookCalls` not `facts.v2.logic.hooks` — removed
+  500+ cross-file false positives), `test/weak-assertion` (added
+  4 patterns to WEAK_MATCHERS — 5258→1248 fires), `ai/compression-profile`
+  (per-threshold tune — 5871→297 fires), `ai/comment-ratio`
+  (per-threshold tune — 181 fires).
+- **Naturalness-anomaly threshold fix**: `DISTINCT_RATIO_FLOOR`
+  0.3→0.2 (the v0.20.0 commit's 0.3 was a wrong-direction
+  change; 0.2 reduces fires). Per-rule 184→68.
+- **Schema bump**: `STRUCTURE_SCHEMA_VERSION` 3→4→5 across
+  all 4 schemas (health, inventory, constitution, structure).
+  v5 is the first v0.21-breaking change.
+- **UX**: `AI Slop Score: 30/100` is now shown with a
+  "lower = cleaner" hint (was "higher = better" in v0.20.1).
+  Below the score: plain-language message ("Repo has a low
+  amount of AI slop" / "Repo is saturated with AI slop") for
+  each band. The "Other signals" section shows the same
+  descriptive messages for engineeringHygiene, security,
+  business-logic, and the (inverted) Security Risk.
+- **Other signals sub-score messages**: boundary, context, visual
+  sub-scores get plain-language messages ("Boundary is clean" /
+  "Boundary is broken") matching the cleanliness framing of
+  the sub-score labels.
+
+### What's still inverted (by design, for now)
+
+- **Security Risk**: the categorical "low / medium / high /
+  critical" is mapped to a 0–100 *cleanliness* score for the
+  "Other signals" line. The headline security number is still
+  0–100 where higher = safer (the v0.15.0 convention).
+- **AI Maintenance Cost**: `$/month`, lower is better (unchanged).
+
 ## [0.20.0] - 2026-07-01 — Java rules (6, DORMANT) + R-INVERTED (remove docs/expired-code-example) + R9 chronic-offender refactor
 
 **The v0.20 release** ships the first batch of Java detection rules

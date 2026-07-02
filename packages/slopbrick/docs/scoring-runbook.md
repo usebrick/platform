@@ -1,17 +1,19 @@
 # slopbrick Scoring Runbook
 
+> **v0.21.0:** `aiSlopScore` is now the **raw amount of AI slop** (0=clean, 100=saturated, **lower = cleaner**). The v0.15.0–v0.20.1 inversion (higher = better) was confusing — users read "AI Slop Score: 100" as "100% slop". The other 3 scores (`engineeringHygiene`, `security`, `repositoryHealth`) keep the "higher = better" convention. The composite `repositoryHealth` inverts `aiSlopScore` at the call site (`100 - aiSlopScore`).
+
 > **v0.15.0+:** `slopbrick` reports a **headline 4-score model** for the user-facing surface and a **13-subscore diagnostic surface** behind `--format json` / `--format detailed`. This runbook covers both.
 
 ## The 4-score headline (user-facing surface)
 
 | Score | Direction | One-line question |
 |-------|-----------|-------------------|
-| **AI Quality** | Higher is better | "Does this look like AI wrote it? And is it any good?" |
+| **AI Slop Score** | Lower is cleaner (0=no slop, 100=saturated) | "How much AI-style fingerprint is in this codebase?" |
 | **Engineering Hygiene** | Higher is better | "Is this codebase internally consistent — one stack, one pattern, no drift?" |
 | **Security** | Higher is better | "Are there security holes?" |
 | **Repository Health** (composite) | Higher is better | "Will the codebase hold up at scale?" |
 
-`Repository Health` (composite) is a weighted sum of the 3 sub-scores plus secondary signals (architecture consistency, test quality, business logic coherence, doc freshness, DB health).
+`Repository Health` (composite) is a weighted sum of the 3 sub-scores plus secondary signals (architecture consistency, test quality, business logic coherence, doc freshness, DB health). For the AI Slop component, the composite uses `100 - aiSlopScore` (inverted at the call site) so the composite stays "higher = better".
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem. See [`docs/scoring-explained.md`](./scoring-explained.md) for the full math.
 
@@ -21,7 +23,7 @@
 
 | Score | Shape | Direction | Drives |
 |-------|-------|-----------|--------|
-| **AI Quality** | 0–100 | **Higher is better** | Threshold gates in CI (`meanSlop`, `p90Slop`, `individualSlopThreshold`) |
+| **AI Slop Score** | 0–100 | **Lower is cleaner** (raw amount) | Threshold gates in CI (`meanSlop`, `p90Slop`, `individualSlopThreshold`) |
 | **Architecture Consistency** | 0–100 | **Higher is better** | `slopbrick architecture` subcommand + dashboard trend |
 | **Pattern Fragmentation** | 0–100 | **Higher is better** | `slopbrick patterns` + input to `slop_suggest`'s doNotCreate list |
 | **AI Security Risk** | categorical | Ordered: `low < medium < high < critical` | `slopbrick security [--strict]` CI gate |
@@ -36,7 +38,7 @@
 | **AI Maintenance Cost** | `$/month` | **Lower is better** | `slopbrick maintenance-cost` |
 | **AI Debt band** | A / B / C / D / F | **Higher is better** | Letter grade from composite |
 
-The 4 headline scores + 9 secondary scores are computed independently. A project can score `AI Quality 90` (great code quality) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
+The 4 headline scores + 9 secondary scores are computed independently. A project can score `AI Slop Score 10` (clean) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
 
 ---
 
@@ -57,25 +59,31 @@ operator's local calibration log (not in the public repo).
 
 ---
 
-## 1. AI Quality (v0.15.0+ replacement for `slopIndex`)
+## 1. AI Slop Score (v0.15.0+ replacement for `slopIndex`; v0.21.0 semantic flip)
 
-`aiQuality` aggregates per-file, per-rule, per-category issue
-densities into one number in [0, 100]. **Higher is better.**
-`aiQuality = 100 − slopIndex` (the v0.15.0 model inverts the
-v0.14 single-axis, where lower was better).
+`aiSlopScore` aggregates per-file, per-rule, per-category issue
+densities into one number in [0, 100]. **v0.21.0: lower is cleaner
+(raw amount of slop).** The v0.15.0–v0.20.1 inversion (higher = better)
+was confusing — users read "AI Slop Score: 100" as "100% slop".
+v0.21.0 stores the raw amount (matching the v0.14 `slopIndex`
+convention and the natural reading of the name).
 
 ### Formula
 
-`aiQuality` is computed as the inverted version of the v0.14
-`slopIndex` formula: `100 − S`, where
+`aiSlopScore` is the raw weighted sum of sub-bucket slop amounts:
 
 ```
-S = (0.40 × S_boundary) + (0.35 × S_context) + (0.25 × S_visual)
+aiSlopScore = (0.40 × S_boundary) + (0.35 × S_context) + (0.25 × S_visual)
 ```
 
-Each subscore = `min(100, severityPoints / componentCount)`,
-where `severityPoints = sum(SEVERITY_WEIGHTS[issue.severity])`
-for issues in that bucket.
+where each `S_bucket` is the log-scaled slop amount (0=no slop, 100=saturated)
+for that bucket. The sub-scores **shown in the breakdown** are the
+cleanliness framing: `subscore = 100 - S_bucket`, with labels
+"structural integrity" / "props / state / imports" / "CSS / a11y / layout"
+(intentionally cleanliness-framed so the breakdown is consistent
+with `engineeringHygiene` and `security`). The composite
+`repositoryHealth` uses `100 - aiSlopScore` (inverted at the call
+site) so it stays "higher = better".
 
 **Bucket mappings:**
 - **Boundary (40%)** — structural integrity: file-size limits, multiple components per file, direct API calls in UI.
@@ -84,13 +92,14 @@ for issues in that bucket.
 
 ### Interpretation bands
 
-The bands below use the `aiQuality` value reported by
-`slopbrick scan` (higher is better — opposite of v0.14).
+The bands below use the `aiSlopScore` value reported by
+`slopbrick scan` (v0.21.0: **lower is cleaner**).
 
-- **90–100:** Very clean; likely hand-maintained or heavily reviewed.
-- **75–89:** Typical AI-assisted codebase; address high/critical issues first.
-- **50–74:** Visible drift; treat as technical debt with active cleanup.
-- **0–49:** High slop; prioritize refactoring and rule tuning before adding features.
+- **0–9:** No detectable AI slop; likely hand-maintained or heavily reviewed.
+- **10–29:** Low AI slop; typical AI-assisted codebase.
+- **30–49:** Medium AI slop; address high/critical issues first.
+- **50–69:** High AI slop; treat as technical debt with active cleanup.
+- **70–100:** Saturated with AI slop; prioritize refactoring and rule tuning before adding features.
 
 ### CI gates
 
@@ -98,25 +107,28 @@ The bands below use the `aiQuality` value reported by
 
 ```js
 thresholds: {
-  // v0.15.0+: breach when aiQuality DROPS below the threshold
-  // (legacy `meanSlop` field is kept for backward compat; the
-  // comparison direction flipped)
-  meanSlop: 25,             // fail if aiQuality < this
+  // v0.21.0: aiSlopScore is raw slop (lower = cleaner). The
+  // `meanSlop` field keeps its name (no breaking rename) but
+  // the comparison flips: aiSlopScore > meanSlop fails. The
+  // default meanSlop is 30, matching the natural "0-30 = clean"
+  // band. The p90Slop and individualSlopThreshold comparisons
+  // keep the `x > threshold` direction (they were never inverted).
+  meanSlop: 30,             // fail if aiSlopScore > this
   p90Slop: 45,              // fail if the 90th-percentile composite > this
   individualSlopThreshold: 70,  // fail if any single file > this (per-file)
 }
 ```
 
 A threshold breach exits **1**. The `--no-increase` flag exits
-**2** if `aiQuality` dropped since the last run.
+**2** if `aiSlopScore` INCREASED (more slop) since the last run.
 
 ### Empirical calibration (carried over from v0.14)
 
 Tested against 6,142 AI-generated samples vs. 54,980
 human-written samples (shadcn/ui, calcom, dub, mantine,
-excalidraw, lobehub). **Mean `aiQuality` is 5× lower on AI
+excalidraw, lobehub). **Mean `aiSlopScore` is 5× higher on AI
 code than human code** — clean separation without manual
-tuning. The v0.15.0 split (AI Quality / Engineering Hygiene
+tuning. The v0.15.0 split (AI Slop Score / Engineering Hygiene
 / Security / Repository Health) lets users see the actual
 problem (AI drift vs. internal-consistency drift) when
 separation breaks down.

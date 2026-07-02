@@ -36,6 +36,14 @@ export interface Rule<Context = unknown> {
   aiSpecific: boolean;
   /** Round 25: short description shown by `slopbrick rules` and used in docs. */
   description?: string;
+  /**
+   * v0.20.0: when true, the rule is shipped disabled (off) by default.
+   * Users can opt in via `slopbrick.config.mjs` ruleConfig. The
+   * defaultOff flag means "this rule is too noisy / uncalibrated to
+   * run unconditionally — a user has to explicitly turn it on".
+   * See `src/snippet/data.ts` for the canonical list.
+   */
+  defaultOff?: boolean;
   create(context: RuleContext): Context;
   analyze(context: Context, facts: ScanFacts): Issue[];
 }

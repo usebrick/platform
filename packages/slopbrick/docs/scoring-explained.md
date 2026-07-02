@@ -3,21 +3,27 @@
 A short, plain-language reference for the four scores that `slopbrick scan`
 reports. Read this if the numbers in the CLI output don't make sense.
 
-> **v0.15.0+:** The single `Slop Index` was replaced by **4 independent scores**:
-> `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth` (composite).
-> The legacy `slopIndex` field is kept as optional on `ProjectReport` for
-> backward compat with existing test fixtures and historical telemetry; will be
-> removed in v0.16.0.
+> **v0.21.0:** The `aiSlopScore` field is now the **raw amount of AI slop**
+> detected (0 = no AI slop, 100 = max AI slop, **lower = cleaner**).
+> The v0.15.0–v0.20.1 inversion (higher = better) was confusing —
+> users read "AI Slop Score: 100" as "100% slop". The new semantics
+> match the natural reading of the name. The other three scores
+> (`engineeringHygiene`, `security`, `repositoryHealth`) keep the
+> "higher = better" convention; the composite `repositoryHealth`
+> inverts `aiSlopScore` at the call site (`100 - aiSlopScore`).
+> The legacy `slopIndex` field stores the same raw amount as
+> `aiSlopScore` (matching the v0.14 convention).
 
 ## The four scores
 
-### `AI Quality` — the CI gate (0-100, **higher = better**)
+### `AI Slop Score` — the CI gate (0-100, **lower = cleaner**)
 
-**What it measures:** how good the AI-generated code in the codebase is.
+**What it measures:** how much AI-style fingerprint the codebase has.
 
-`aiQuality` is the **headline number** and the one used by
+`aiSlopScore` is the **headline number** and the one used by
 `--strict` and the `slopbrick ci` subcommand. It is also the number
-in `.slopbrick/health.json`. **70 passes.** 0 is the worst case, 100 is clean.
+in `.slopbrick/health.json`. **Default `meanSlop: 30` passes**
+(score must be ≤ 30). 0 is the cleanest, 100 is saturated with AI slop.
 
 **How it's computed:** weighted average of three sub-scores, each
 capped at 0-100:

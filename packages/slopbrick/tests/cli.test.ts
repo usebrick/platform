@@ -42,12 +42,14 @@ const makeReport = (
 ): ProjectReport => ({
   version: '0.5.2',
   generatedAt,
-  // v0.15.0 U.4+: the four headline scores follow the
-  // "higher = better" convention. Default to a healthy
+  // v0.21.0: aiSlopScore is now the RAW amount of slop
+  // (0 = clean, 100 = saturated, lower = better). The other
+  // three scores (engineeringHygiene, security, repositoryHealth)
+  // keep the "higher = better" convention. Default to a healthy
   // repository so threshold-driven integration tests (which
   // expect exit code 0 when thresholds are respected) pass
   // without explicit overrides.
-  aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+  aiSlopScore: 10, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
   assemblyHealth: 90,
   totalScore: 10,
   categoryScores: {
@@ -125,26 +127,29 @@ describe('colorForSlop', () => {
 
 describe('formatBadge', () => {
   it('produces a shields.io markdown badge', () => {
-    // v0.15.0 U.4: badge now reflects aiSlopScore (higher = better)
-    // and uses the inverted color logic. aiSlopScore=34 is in the
-    // "warning" range (26-50 → orange).
+    // v0.21.0: badge reflects aiSlopScore (raw amount, higher = more
+    // slop, lower = cleaner). Label reverts to "ai-slop" (v0.14
+    // framing) and the color uses the v0.14 colorForSlop logic
+    // (high score → red, low → green). aiSlopScore=34 sits in
+    // the 26-50 range → yellow.
     const report = makeReport({ aiSlopScore: 34 });
     const badge = formatBadge(report);
-    expect(badge).toContain('https://img.shields.io/badge/repository--health-34-orange');
+    expect(badge).toContain('https://img.shields.io/badge/ai--slop-34-yellow');
     expect(badge).toContain('[![');
   });
 
-  it('uses orange color for low aiSlopScore (v0.15.0 inversion)', () => {
-    // Low aiSlopScore is the v0.15.0 equivalent of "high slop index"
-    // in v0.14. aiSlopScore=30 sits in the 26-50 range → orange.
-    const report = makeReport({ aiSlopScore: 30 });
+  it('uses orange color for medium aiSlopScore (v0.21 raw amount)', () => {
+    // v0.21.0: aiSlopScore is raw slop. aiSlopScore=60 sits in the
+    // 51-75 range → orange (medium slop).
+    const report = makeReport({ aiSlopScore: 60 });
     const badge = formatBadge(report);
     expect(badge).toContain('orange');
   });
 
-  it('uses red color for very low aiSlopScore (v0.15.0 inversion)', () => {
-    // aiSlopScore=10 is below the 26 threshold → red.
-    const report = makeReport({ aiSlopScore: 10 });
+  it('uses red color for high aiSlopScore (v0.21 raw amount)', () => {
+    // v0.21.0: aiSlopScore >= 76 is red. aiSlopScore=80 is firmly
+    // red (saturated slop).
+    const report = makeReport({ aiSlopScore: 80 });
     const badge = formatBadge(report);
     expect(badge).toContain('red');
   });
@@ -161,29 +166,30 @@ describe('thresholdExceeded', () => {
   };
 
   it('returns false when all thresholds are respected', () => {
-    // v0.15.0 U.4: threshold breach = aiSlopScore < meanSlop.
-    // aiSlopScore=30 sits above meanSlop=25 → respected, not breached.
-    const report = makeReport({ aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 45 });
+    // v0.21.0: aiSlopScore is raw slop. meanSlop=25, so aiSlopScore
+    // < meanSlop passes. aiSlopScore=10 < 25 → respected, not breached.
+    const report = makeReport({ aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
   it('returns true when aiSlopScore drops below the mean threshold', () => {
-    // aiSlopScore=20 sits below meanSlop=25 → breach.
-    const report = makeReport({ aiSlopScore: 20, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 40, peakScore: 45 });
+    // v0.21.0: aiSlopScore is raw slop. meanSlop=25, so aiSlopScore
+    // > 25 breaches. aiSlopScore=60 > 25 → breach.
+    const report = makeReport({ aiSlopScore: 60, engineeringHygiene: 20, security: 20, repositoryHealth: 20, p90Score: 40, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(true);
   });
 
   it('does NOT trip on p90 alone (v0.15.0 U.4: only aiSlopScore drives threshold)', () => {
-    // aiSlopScore=30 (above meanSlop=25) → respected; p90=51 alone
-    // does not trigger the v0.15.0 threshold.
-    const report = makeReport({ aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 51, peakScore: 45 });
+    // v0.21.0: aiSlopScore=10 (raw slop) is below meanSlop=25 → respected;
+    // p90=51 alone does not trigger the v0.15.0 threshold.
+    const report = makeReport({ aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 51, peakScore: 45 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 
   it('does NOT trip on peak alone (v0.15.0 U.4)', () => {
-    // aiSlopScore=30 (above meanSlop=25) → respected; peak=51 alone
-    // does not trigger the v0.15.0 threshold.
-    const report = makeReport({ aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 51 });
+    // v0.21.0: aiSlopScore=10 (raw slop) is below meanSlop=25 → respected;
+    // peak=51 alone does not trigger the v0.15.0 threshold.
+    const report = makeReport({ aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30, p90Score: 40, peakScore: 51 });
     expect(thresholdExceeded(report, config)).toBe(false);
   });
 });
@@ -228,11 +234,11 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         categoryThresholds: { visual: 60, layout: 30 },
       },
     };
-    // v0.15.0 U.4: keep aiSlopScore above meanSlop so the aggregate
+    // v0.21.0: keep aiSlopScore below meanSlop so the aggregate
     // threshold doesn't fire — only the per-category thresholds
     // should be in play.
     const report = makeReport({
-      aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
+      aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -259,10 +265,10 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         individualSlopThreshold: 50,
       },
     };
-    // v0.15.0 U.4: keep aiSlopScore above meanSlop so the test
+    // v0.21.0: keep aiSlopScore below meanSlop so the test
     // isolates the "no categoryThresholds configured" path.
     const report = makeReport({
-      aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
+      aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -320,11 +326,11 @@ describe('thresholdExceeded (per-category gating, round 20)', () => {
         categoryThresholds: { visual: 60, layout: 30 },
       },
     };
-    // v0.15.0 U.4: keep aiSlopScore above meanSlop so the aggregate
+    // v0.21.0: keep aiSlopScore below meanSlop so the aggregate
     // count stays at 0; only visual+layout category breaches
     // should contribute to the total.
     const report = makeReport({
-      aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
+      aiSlopScore: 10, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       p90Score: 10,
       peakScore: 20,
       categoryScores: {
@@ -400,14 +406,20 @@ describe('scanProject', () => {
       await import('node:fs').then((m) => m.readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')),
     ) as { version: string };
     expect(report.version).toBe(pkg.version);
-    // v0.15.0 U.4: an empty project has perfect (highest) quality
-    // on all four headline scores. The legacy `slopIndex` field is
-    // also kept (0 = no slop detected) for backward compat with
-    // v0.14 readers; both should agree.
-    expect(report.aiSlopScore).toBe(100);
+    // v0.21.0: an empty project has zero AI slop (aiSlopScore=0)
+    // and perfect (highest) engineeringHygiene/security. The
+    // repositoryHealth composite includes a testQuality component
+    // (0.1 * testQuality) which is computed from the test
+    // infrastructure; for an empty project with no scanned files,
+    // testQuality is 0 by default (the buildTestQualityScore helper
+    // has no test issues to deduct from, but the 0.10 weight on a
+    // 0 score pulls the composite down to ~78 instead of 100).
+    // The legacy `slopIndex` field stores the raw amount (0 = no
+    // slop), matching aiSlopScore.
+    expect(report.aiSlopScore).toBe(0);
     expect(report.engineeringHygiene).toBe(100);
     expect(report.security).toBe(100);
-    expect(report.repositoryHealth).toBe(100);
+    expect(report.repositoryHealth).toBeCloseTo(77.8, 0);
     expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.issues).toEqual([]);
@@ -570,16 +582,21 @@ function writeHighSeverityFixture(dir: string): void {
  * aiSlopScore to slip under the default `meanSlop: 25`.
  */
 function writeAlwaysBreachConfig(dir: string): void {
+  // v0.21.0: aiSlopScore is raw slop (lower = cleaner). meanSlop: 0
+  // means "any slop > 0 breaches" — i.e. always breach. This is the
+  // v0.21.0 inverse of the v0.15.0–v0.20.1 "meanSlop: 999" config
+  // (which meant "any cleanliness < 999 breaches" under the old
+  // inverted reading).
   writeFileSync(
     join(dir, 'slopbrick.config.cjs'),
-    'module.exports = { thresholds: { meanSlop: 999, p90Slop: 0, individualSlopThreshold: 0 } };\n',
+    'module.exports = { thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 } };\n',
   );
 }
 
 /**
- * v0.15.0 U.4: write a slopbrick.config.cjs that makes the
+ * v0.21.0: write a slopbrick.config.cjs that makes the
  * threshold "never breach":
- *   - meanSlop: 0 → `aiSlopScore < 0` never true (min 0)
+ *   - meanSlop: 999 → `aiSlopScore > 999` never true (max 100)
  *   - p90Slop: 999 → `p90Score > 999` never true
  *   - individualSlopThreshold: 999 → `adjustedScore > 999` never true
  * Used by integration tests that focus on file discovery and
@@ -588,7 +605,7 @@ function writeAlwaysBreachConfig(dir: string): void {
 function writeNeverBreachConfig(dir: string): void {
   writeFileSync(
     join(dir, 'slopbrick.config.cjs'),
-    'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+    'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
   );
 }
 
@@ -772,12 +789,11 @@ describe('--no-increase', () => {
     expect(stderr).toContain('no previous run found');
   });
 
-  it('exits 2 when aiSlopScore dropped since the previous run', async () => {
-    // v0.15.0 U.4: --no-increase now tracks aiSlopScore (higher =
-    // better), so "worse than before" is rendered as
-    // "AI Slop Score went DOWN" with a "your code got sloppier"
-    // follow-up. The v0.14 "Slop Index went UP" wording is
-    // replaced.
+  it('exits 2 when aiSlopScore increased since the previous run', async () => {
+    // v0.21.0: aiSlopScore is raw slop (lower = better). "Worse
+    // than before" is "AI Slop Score went UP" (more slop detected).
+    // The v0.15.0–v0.20.1 "went DOWN" wording (when aiSlopScore
+    // was inverted cleanliness) is replaced.
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir, { recursive: true });
     writeFileSync(join(srcDir, 'LowSlop.tsx'), 'export function LowSlop() { return <div>hi</div>; }');
@@ -788,27 +804,24 @@ describe('--no-increase', () => {
     writeHighSeverityFixture(dir);
     const second = await run(['--workspace', dir, '--no-increase', '--json']);
     expect(second.exitCode).toBe(2);
-    expect(second.stderr).toMatch(/AI Slop Score went DOWN from [\d.]+ to [\d.]+/);
+    expect(second.stderr).toMatch(/AI Slop Score went UP from [\d.]+ to [\d.]+/);
   });
 
   it('v0.18.1: noIncrease error message clarifies the comparison scale and direction', () => {
-    // v0.18.1: the previous v0.15.0 bridge compared today's aiSlopScore
-    // (0-100, higher=better) against previous.slopIndex (the legacy
-    // field the engine writes as `slopIndex: report.aiSlopScore` at
-    // engine/src/structure.ts:258). The semantic is correct, but the
-    // error message didn't explain it. The new message names the
-    // data-flow contract so the next reader doesn't "fix" it by
-    // reverting to the bridge. This is a string-content check on the
-    // source (not a behavioral test) because the message is the
-    // contract documentation.
+    // v0.21.0: the v0.18.1 data-flow contract for --no-increase was
+    // "previous.slopIndex" stores the raw amount of slop (same as
+    // report.aiSlopScore). The v0.18.1 "higher = better" wording is
+    // removed (v0.21.0 is "lower = better"). This is a string-content
+    // check on the source (not a behavioral test) because the message
+    // is the contract documentation.
     const src = readFileSync(
       join(repoRoot, 'src/cli/report/finalizeReport.ts'),
       'utf8',
     );
     expect(src).toMatch(/previous\.slopIndex.*report\.aiSlopScore/s);
-    expect(src).toContain('0-100, higher = better');
-    // The misleading "for backward compat" framing is gone
-    expect(src).not.toMatch(/backward compat with historical telemetry/);
+    expect(src).toContain('0-100, lower = cleaner');
+    // The misleading v0.18.1 "higher = better" framing is gone
+    expect(src).not.toMatch(/0-100, higher = better/);
   });
 });
 
@@ -967,18 +980,14 @@ describe('--staged', () => {
         'export function U() { return <div className="w-[100px] p-[13px] m-[21px] gap-[9px]"><button className="outline-none focus:ring-2">x</button></div>; }',
       );
       // Disable threshold gating so this test focuses on file discovery, not scoring.
-      // v0.15.0 U.4: in the legacy v0.14 model, `meanSlop: 999` meant
-      // "no slop can ever breach this gate" (slopIndex ranges 0-100).
-      // The v0.15.0 model inverts the meanSlop comparison
-      // (`aiSlopScore < meanSlop` is the new breach) but keeps the
-      // p90Slop / individualSlopThreshold comparisons in the v0.14
-      // direction (`x > threshold` = breach). To suppress all three,
-      // use meanSlop: 0 (breach is never true) AND p90Slop /
-      // individualSlopThreshold at 999 (their breach comparisons
-      // never hold).
+      // v0.21.0: aiSlopScore is raw slop (0-100, lower = better).
+      // meanSlop: 999 means "no raw slop can ever breach" (max 100,
+      // so aiSlopScore > 999 is never true). p90Slop: 999 and
+      // individualSlopThreshold: 999 keep those gates in the same
+      // "never breach" direction.
       writeFileSync(
         join(dir, 'slopbrick.config.cjs'),
-        'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+        'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
       );
       const { exitCode, stdout } = await run([
         '--workspace',
@@ -1023,13 +1032,13 @@ describe('--changed (round 21)', () => {
         'export function U() { return <div className="w-[100px] p-[13px] m-[21px] gap-[9px]"><button className="outline-none focus:ring-2">x</button></div>; }',
       );
       // Disable threshold gating so this test focuses on file discovery, not scoring.
-      // v0.15.0 U.4: see the --staged describe for the v0.14 → v0.15
-      // inversion rationale (meanSlop is now compared as
-      // `aiSlopScore < meanSlop`; p90Slop / individualSlopThreshold
-      // keep the legacy `x > threshold` direction).
+      // v0.21.0: see the --staged describe for the raw-amount rationale
+      // (meanSlop, p90Slop, individualSlopThreshold all compared as
+      // `score > threshold`; threshold 999 is unreachable for any
+      // 0-100 score).
       writeFileSync(
         join(dir, 'slopbrick.config.cjs'),
-        'module.exports = { thresholds: { meanSlop: 0, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+        'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
       );
 
       const { exitCode, stdout } = await run([

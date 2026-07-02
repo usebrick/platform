@@ -87,7 +87,7 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 | Score | What it measures | CI gate? |
 |-------|------------------|----------|
-| **`aiQuality`** | AI-slop signatures (16 `ai/*` rules). INVERTED from legacy Slop Index. | **Yes** (≥ 70 passes) |
+| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). Raw amount of slop (0=clean, 100=saturated). | **Yes** (≤ `meanSlop: 30` passes) |
 | **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | No (informational) |
 | **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | No (informational) |
 | **`repositoryHealth`** (composite) | Weighted: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | No (informational) |
@@ -108,13 +108,13 @@ For per-rule precision/recall/FPR (auditable), see
 $ npx slopbrick scan
 Repo is concerning (25/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts. Run `slopbrick scan --why-failing` for the top 5 rules, or `slopbrick scan --suggest` for fixes.
 
-AI Quality:  25 / 100 [CONCERNING]  ↑5 (worse)
+AI Slop Score:  25 / 100 [HIGH]  ↑5 (worse)
 higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.
   ├─ boundary:  10  (40%)  — structural integrity
   ├─ context:   50  (35%)  — props / state / imports
   └─ visual:     5  (25%)  — CSS / a11y / layout
 
-Engineering Hygiene:  60 / 100 [NEEDS WORK] — higher = better · measures internal consistency. This is a secondary view; the AI Quality above is the gate.
+Engineering Hygiene:  60 / 100 [NEEDS WORK] — higher = better · measures internal consistency. This is a secondary view; the AI Slop Score above is the gate.
 
 Other signals (not the gate):
   Code Hygiene          75/100
