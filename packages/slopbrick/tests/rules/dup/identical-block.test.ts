@@ -17,7 +17,7 @@ function makeFacts(filePath: string, source: string): ScanFacts {
 
 const CTX: RuleContext = {} as RuleContext;
 
-const TEN_LINES = [
+const TWENTY_LINES = [
   'function calculateTotal(items) {',
   '  let total = 0;',
   '  for (const item of items) {',
@@ -28,6 +28,16 @@ const TEN_LINES = [
   '  return total;',
   '}',
   '',
+  'function applyDiscount(total, rate) {',
+  '  if (rate <= 0 || rate >= 1) {',
+  '    return total;',
+  '  }',
+  '  const discounted = total * (1 - rate);',
+  '  return Math.round(discounted * 100) / 100;',
+  '}',
+  '',
+  'function formatCurrency(amount) {',
+  '  return `$${amount.toFixed(2)}`;',
 ].join('\n');
 
 describe('dup/identical-block', () => {
@@ -37,12 +47,12 @@ describe('dup/identical-block', () => {
     _resetDedupCacheForTesting();
   });
 
-  it('emits a finding when a 10-line block matches a previously-analyzed file', () => {
-    // Two different file paths, identical 10-line content. The
+  it('emits a finding when a 20-line block matches a previously-analyzed file', () => {
+    // Two different file paths, identical 20-line content. The
     // second analyze() should emit a finding because the first
     // file's window is in the cache.
-    const factsA = makeFacts(`/a-${Math.random()}.ts`, TEN_LINES);
-    const factsB = makeFacts(`/b-${Math.random()}.ts`, TEN_LINES);
+    const factsA = makeFacts(`/a-${Math.random()}.ts`, TWENTY_LINES);
+    const factsB = makeFacts(`/b-${Math.random()}.ts`, TWENTY_LINES);
 
     const issuesA = dupIdenticalBlockRule.analyze(CTX, factsA);
     const issuesB = dupIdenticalBlockRule.analyze(CTX, factsB);
@@ -52,13 +62,13 @@ describe('dup/identical-block', () => {
     // File B: file A's window is in the cache → at least one finding
     expect(issuesB.length).toBeGreaterThan(0);
     expect(issuesB[0].ruleId).toBe('dup/identical-block');
-    expect(issuesB[0].message).toMatch(/Identical 10-line block/);
+    expect(issuesB[0].message).toMatch(/Identical 20-line block/);
     expect(issuesB[0].message).toMatch(factsA.filePath);
     expect(issuesB[0].line).toBe(1);
   });
 
   it('normalizes comments and whitespace before hashing', () => {
-    // Two files with semantically-identical 10-line blocks but
+    // Two files with semantically-identical 20-line blocks but
     // different formatting and comments. Should still match.
     const fileA = `
 function sum(xs) {
@@ -81,9 +91,9 @@ function   sum(xs) {
 }
 `.trim();
 
-    // Pad each to >=10 lines so the window is satisfied
-    const padA = fileA + '\n' + '// padding\n'.repeat(5);
-    const padB = fileB + '\n' + '// padding\n'.repeat(5);
+    // Pad each to >=20 lines so the window is satisfied
+    const padA = fileA + '\n' + '// padding\n'.repeat(15);
+    const padB = fileB + '\n' + '// padding\n'.repeat(15);
 
     const factsA = makeFacts(`/norm-a-${Math.random()}.ts`, padA);
     const factsB = makeFacts(`/norm-b-${Math.random()}.ts`, padB);
@@ -99,14 +109,14 @@ function   sum(xs) {
 
   it('does not emit when there is no prior match', () => {
     // A single file with no prior file in the cache. Should not emit.
-    const factsA = makeFacts(`/solo-${Math.random()}.ts`, TEN_LINES);
+    const factsA = makeFacts(`/solo-${Math.random()}.ts`, TWENTY_LINES);
     const issuesA = dupIdenticalBlockRule.analyze(CTX, factsA);
     expect(issuesA).toEqual([]);
   });
 
   it('does not emit when content differs', () => {
-    const fileA = TEN_LINES;
-    const fileB = TEN_LINES.replace('calculateTotal', 'computeSum')
+    const fileA = TWENTY_LINES;
+    const fileB = TWENTY_LINES.replace('calculateTotal', 'computeSum')
                            .replace('item.price * item.quantity', 'item.cost');
 
     const factsA = makeFacts(`/diff-a-${Math.random()}.ts`, fileA);
@@ -124,7 +134,7 @@ function   sum(xs) {
     expect(dupIdenticalBlockRule.analyze(CTX, facts)).toEqual([]);
   });
 
-  it('returns no findings when source is too short for a 10-line window', () => {
+  it('returns no findings when source is too short for a 20-line window', () => {
     const short = 'function f() {}\n';
     const facts = makeFacts(`/short-${Math.random()}.ts`, short);
     expect(dupIdenticalBlockRule.analyze(CTX, facts)).toEqual([]);

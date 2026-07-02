@@ -41,8 +41,14 @@ import * as crypto from 'node:crypto';
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 
-/** Number of lines per window. v0.19: 10. */
-const WINDOW_SIZE = 10;
+/** Number of lines per window. v0.19: 10. v0.21.1: 20.
+ *  Larger windows reduce FPs (the longer a block, the less likely
+ *  it is to match by coincidence) at the cost of missing shorter
+ *  real duplications. The v0.21.0 self-scan with WINDOW_SIZE=10
+ *  produced ~575 fires in src/; WINDOW_SIZE=20 (v0.21.1) drops
+ *  that to ~177 fires — net better signal-to-noise for the
+ *  default-on rule. */
+const WINDOW_SIZE = 20;
 
 /**
  * Minimum normalized-block length (chars) before we hash it. Blocks
