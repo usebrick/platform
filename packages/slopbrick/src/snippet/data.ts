@@ -286,6 +286,9 @@ const RULE_HINTS: Record<string, string> = {
   // v0.19.0 — Duplication detector
   'dup/identical-block':
     "Refactor to a shared helper. This is a Type-1 clone (byte-for-byte identical after normalization). Common in AI-generated code that copy-pastes from training data.",
+  // v0.23.0 — Type-2 near-duplicate detector (MinHash + LSH)
+  'dup/near-duplicate':
+    "Refactor to a shared helper. Type-2 near-duplicate: same identifiers + structure, different whitespace/comments. AI-iterated code regenerates the same function with cosmetic edits. (v0.23.0 — MinHash + LSH, k=5, thr 0.7.)",
   // v0.20.0 — Java-specific rules
   'java/system-out-println':
     "Replace with `private static final Logger log = LoggerFactory.getLogger(...);` then `log.info(...)`. AI agents default to println because of textbook examples; real Java code uses a logger.",

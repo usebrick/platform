@@ -623,8 +623,7 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0.0,
     "_v8Verdict": "DORMANT",
-    "_v8Lift": 1.0,
-    "defaultOff": true
+    "_v8Lift": 1.0
   },
   "dup/near-duplicate": {
     "recall": 0.0,
