@@ -1,11 +1,192 @@
 # Changelog
 
-## [0.24.0] - 2026-07-15 — Opt-in network beacon (`--report-usage`)
+## [0.24.0] - 2026-07-15 — 9 languages (Java/Kotlin/Swift/C++) + `dup/structural-clone` (Type-3) + opt-in telemetry beacon
 
-**The v0.24.0 release** adds an opt-in network beacon for the v9
-corpus CI and self-hosted use case. The local flywheel
-(`--no-telemetry`) is unchanged and still gates
-`.slopbrick/flywheel/scans.jsonl` writes.
+**The v0.24.0 release** ships four things in lock-step:
+
+1. **Per-language rules for 4 new languages** (Kotlin, Swift, C++, on top of the v0.20 Java rules) — 15 new DORMANT rules, all gated by file extension, awaiting v9 corpus calibration before promotion to default-on.
+2. **`dup/structural-clone` (Type-3 clone detector)** — closes the gap `dup/near-duplicate` (Type-2) left open: structural duplicates with renames and added/removed statements. Two-stage MinHash (canonical + identifier verification).
+3. **Opt-in network beacon** (`--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT`) — for the v9 corpus CI and self-hosted use case. See below.
+4. **v9 corpus build scaffolding** — `build-v9-corpus.ts` refactored for 4 arms (Java/Kotlin/Swift/C++), 3 new manifest templates, sample-size guardrails.
+
+### Languages supported: 9
+
+| Group | Languages | Status |
+|---|---|---|
+| Existing (v0.18.x–v0.20.0) | TypeScript, JavaScript, Python, Go, Rust | shipped |
+| v0.24.0 NEW | **Java, Kotlin, Swift, C++** | new |
+
+### Per-language rules (15 new, all DORMANT)
+
+#### Kotlin (5 rules, ~611 LOC)
+- `kotlin/data-class-defaults-overuse` — data class with 3+ default constructor params (AI scaffolding)
+- `kotlin/coroutine-global-scope` — `GlobalScope.launch/async/runBlocking` (bypasses structured concurrency)
+- `kotlin/println-debug` — 2+ `println(...)` calls in production (training-data default)
+- `kotlin/object-singleton-misuse` — top-level `object` with `var` state (stateful singleton)
+- `kotlin/string-concat-loop` — `s = s + x` inside a loop (O(n²) string concat)
+
+#### Swift (5 rules, ~538 LOC)
+- `swift/force-unwrap` — `as!`, `try!`, trailing `!` outside test files
+- `swift/print-debug` — 2+ `print(...)` in production code
+- `swift/fatal-error-thrown` — `fatalError()` / `preconditionFailure()` outside tests
+- `swift/implicitly-unwrapped-optional` — `var name: String!` (defeats type system)
+- `swift/strong-self-capture` — `self.` in escape closure without `[weak self]`
+
+#### C++ (5 rules, ~515 LOC)
+- `cpp/using-namespace-std` — `using namespace std;` in **header** files (header pollution)
+- `cpp/raw-new-delete` — manual `new`/`delete` pairs (should be `make_unique`/`make_shared`)
+- `cpp/c-style-cast` — `(Type)x` instead of `static_cast`/`const_cast`/`reinterpret_cast`/`dynamic_cast`
+- `cpp/printf-debug` — `printf` / `std::cout <<` debug output in production
+- `cpp/magic-numbers` — 1024 / 65536 / 86400 / 1000 / 60 / 24 / 7 / 365 etc. without `constexpr`
+
+All 15 rules are `defaultOff: true` until v9 corpus calibration (`v0.24.x` patches promote them one arm at a time).
+
+### `dup/structural-clone` (Type-3 detector, ~348 LOC engine + 205 LOC rule)
+
+Closes the gap `dup/near-duplicate` (Type-2) left open: identifier renames (Type-2b) and statement add/remove (Type-3). Algorithm:
+
+- **Stage 1** — `canonicalTokens` (replaces identifiers with `ID`, literals with `NUM`, booleans with `BOOL`) → `structuralShingles` (k=8) → MinHash. **Rename-invariant**, language-agnostic.
+- **Stage 2** — identifier shingles (k=5) via existing `shingleSet` → MinHash. **Verification stage** rejects "same identifiers, different control flow" canonical inversions.
+- **Filter** — harmonic mean of Stage 1 + Stage 2 Jaccard similarities must exceed `verifyThreshold=0.45` AND Stage 1 alone must exceed `structuralThreshold=0.55`. `minHits=1` in v0.24.0, raised to 3 in v0.24.1 per the v9 plan.
+
+`defaultOff: true` until v9 Java corpus calibration confirms the thresholds. Performance: 1 MB source processes in <2 s (relaxed from the original 500 ms spec; SHA-1 dominates the second stage and 750 ms–1 s is the realistic floor).
+
+### v9 corpus build scaffolding
+
+`build-v9-corpus.ts` (175 → 434 LOC) refactored to:
+
+- Accept `language_extensions` per arm in the manifest
+- Emit the `/tmp/<prefix>-fires.json` shape the v8.5 calibration script expects (`{ fires, perFileFires, files, issueCount, uniqueRules }`)
+- Enforce sample-size guardrails: ≥10 000 files per arm, ≥10 total fires per DORMANT rule, <5 % parse-failure rate
+- Use `RuleRegistry` + `scanFile` from `engine/worker.js` directly (the old `slopbrick scan --workspace` shell-out was Java-only)
+
+Three new manifest templates:
+- `v9-corpus-manifest-kotlin.template.json` — 10 neg + 5 pos repos
+- `v9-corpus-manifest-swift.template.json` — 10 neg + 5 pos repos
+- `v9-corpus-manifest-cpp.template.json` — 10 neg + 6 pos repos
+
+Operators copy a template to `corpus-manifest-<arm>.local.json` (gitignored) and fill in `local_clone_path` per repo. Kotlin/Swift/C++ corpus runs require the `tree-sitter-kotlin/swift/cpp` deps added in v0.24.0 prereqs.
+
+### Phase 0: tree-sitter for Kotlin/Swift/C++ (unblocks corpus runs)
+
+- `tree-sitter-kotlin` ^0.3.8
+- `tree-sitter-swift` ^0.7.1
+- `tree-sitter-cpp` ^0.23.4
+
+Plus `src/engine/parser-{kotlin,swift,cpp}.ts` (3 new parsers, ~553 LOC, mirror the `parser-rust.ts` pattern 1:1) with 5 smoke tests each (15 total). All parsers lazy-load via `get<Lang>Parser()` and return `null` on missing native binding (no crash; callers fall back to regex visitor).
+
+### v0.23.0 follow-ups (folded into v0.24.0)
+
+- `dup/near-duplicate` RULE_HINTS entry (was missing; triggered the `rule-hints` coverage test)
+- Removed duplicate `defaultOff` key in `dup/identical-block` (was flipping the catalog `on` ↔ `off` based on JSON parser behavior; intent: keep on per the rule's calibration note)
+
+### Known issue: self-scan scores
+
+The v9 plan's Phase 3 success criterion was `security ≥ 80, repositoryHealth ≥ 70`. The current self-scan reports `security: 0`, `repositoryHealth: 15.8`. The cap is **not** from v0.24.0 — `coherence.ts:209` has been `security.score = security.issueCount > 0 ? 0 : 100;` since before v0.21.0. The 90 security issues are dominated by:
+
+- ~60 in `tests/rules/*.test.ts` — intentional test fixtures (rules must fire on these to be useful)
+- ~10 in `rules/security/*.ts` — rule self-fires (the rule's own definition contains the example patterns the rule's regex matches)
+- ~7 false positives in `rules/ai|dead|rust|test|visual|visual/*.ts` — `+` operator in regex/template-literal context
+- 1 in `snippet/data.ts:251` — example SQL in RULE_HINTS
+
+**0 actual hardcoded API keys in production source.** The 6 `hardcoded-secret` fires are all in `tests/rules/security.test.ts` — test fixtures with canonical example keys (`sk-proj-…6789`, `AKIAIOSFODNN7EXAMPLE`, `ghp_abcd…6789`).
+
+**v0.24.0 reduces high-severity issues 1703 → 461** (a 73 % drop) just by shipping the new default-on calibration from the v0.23.x follow-ups. The remaining 461 are mostly test fixtures + 1-line regex FPs.
+
+**The methodology fix is scheduled for v0.25.0**, not v0.24.0. The right fix is two changes:
+
+1. Add a `selfScan?: { excludePaths: string[] }` config option (default: `['src/rules/**', 'tests/fixtures/**', 'tests/rules/**']`) — rule definitions are meta-code, test fixtures are intentional bad code, both are FPs in the self-scan context.
+2. Replace the `0 if any` cap in `coherence.ts:209` with a graded formula like `100 / (1 + issueCount / 5)` floored at 0. A repo with 1 SQL concat should not score the same as a repo with 100 security issues.
+
+Both are 1–2 days of work and tracked for v0.25.0.
+
+### Stats
+
+| Metric | v0.21.2 | v0.24.0 | Δ |
+|---|---:|---:|---:|
+| Visible rules | 118 | **119** | +1 (structural-clone) |
+| DORMANT rules | 5 | **20** | +15 (per-language) |
+| Source LOC | ~12 000 | ~17 000 | +5 000 |
+| New tests | — | +75 | (parser×15, kotlin×18, swift×21, cpp×19, structural-clone×19, beacon×10) |
+| Languages supported | 5 | **9** | +4 |
+| Clone detection | Type-1 + Type-2 | **Type-1 + Type-2 + Type-3** | +Type-3 |
+
+### New: `--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT`
+
+A single one-shot POST fires at the end of `slopbrick scan`
+when **both** are true:
+
+- The user passed `--report-usage` (default OFF)
+- `SLOPBRICK_TELEMETRY_ENDPOINT` is set in the environment
+
+If either is missing, the beacon is a complete no-op — no
+request, no warning, no exit-code change.
+
+### Payload (locked, exactly 8 fields)
+
+```json
+{
+  "schema_version": "1",
+  "slopbrick_version": "0.24.0",
+  "scan_id": "<uuid v4>",
+  "file_count": 42,
+  "rule_count": 95,
+  "duration_ms": 1834,
+  "platform": "darwin",
+  "node_version": "v20.11.0"
+}
+```
+
+The shape is **frozen**. Adding a field is a breaking change for
+v9-corpus receivers.
+
+### Privacy
+
+The payload is deliberately tiny. We will never send file
+paths, rule ids, rule violations, file contents, user
+identifiers, IP addresses, environment variables, or project
+metadata. See `docs/research/beacon-design.md` for the full
+threat model and rejection criteria.
+
+### Failure mode
+
+Fire-and-forget. 5-second socket timeout. Network errors,
+DNS failures, 4xx/5xx responses, and timeouts are all silent.
+The scan's exit code is never affected. No retries.
+
+### Scope
+
+The beacon fires from `slopbrick scan` only. `slopbrick watch`,
+`slopbrick ci`, and programmatic `scanProject()` calls are
+unaffected regardless of the flag or env var.
+
+### Added in v0.24.0
+
+- `src/beacon/types.ts` — `BeaconStats`, `BeaconPayload`, `BeaconTransport`
+- `src/beacon/endpoint.ts` — default HTTP transport (5s timeout, silent failure)
+- `src/beacon/index.ts` — `BeaconEmitter` (the public API)
+- `tests/beacon/endpoint.test.ts` — 5 tests (wire format, silent 500, timeout, malformed URL, key set)
+- `tests/beacon/emitter.test.ts` — 4 tests (default off, 4-way gate matrix, no PII, silent when missing)
+- `docs/research/beacon-design.md` — design doc, threat model, OPSEC
+- `src/rules/{kotlin,swift,cpp}/*.ts` — 15 new DORMANT per-language rules
+- `src/rules/dup/structural-clone.ts` — Type-3 detector
+- `src/engine/dedup/structural-clone.ts` — `canonicalTokens`, `structuralShingles`, `structuralSignature`, `structuralSimilarity`
+- `src/engine/parser-{kotlin,swift,cpp}.ts` — 3 new tree-sitter parsers
+- `tests/rules/{kotlin,swift,cpp,dup}/*-rules.test.ts` — 75 new tests
+- `docs/research/v9-corpus-manifest-{kotlin,swift,cpp}.template.json` — 3 new corpus manifests
+
+### Modified
+
+- `src/cli/program.ts` — registered `--report-usage` globally; fires beacon only when `command.name() === 'scan'`
+- `src/cli/scan.ts` — generates `scan_id`, computes `file_count` / `rule_count` / `duration_ms`, returns `scanStats`
+- `src/cli/types.ts` — added `reportUsage?: boolean` to `ScanRunOptions`; added `ScanStats` + `scanStats` to `ScanRunResult`
+- `src/cli/help.ts` — `--report-usage` lives in the `Telemetry` group alongside `--no-telemetry`
+- `scripts/build-v9-corpus.ts` — refactored for 4 arms (Java/Kotlin/Swift/C++); emits `/tmp/<prefix>-fires.json`; enforces sample-size guardrails
+- `src/rules/signal-strength.json` — +16 DORMANT entries (15 per-language + 1 structural-clone); removed duplicate `defaultOff` key on `dup/identical-block`
+- `src/snippet/data.ts` — +16 RULE_HINTS entries; +1 fix for `dup/near-duplicate`
+- `src/rules/{builtins.ts,kotlin,swift,cpp,dup,engine/dedup}/index.ts` — barrel re-exports
+- `package.json` — `tree-sitter-kotlin ^0.3.8`, `tree-sitter-swift ^0.7.1`, `tree-sitter-cpp ^0.23.4`
+- `README.md` — new "Telemetry (opt-in)" section
 
 ### New: `--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT`
 
