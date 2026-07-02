@@ -560,9 +560,24 @@ describe('--watch', () => {
 function writeHighSeverityFixture(dir: string): void {
   const srcDir = join(dir, 'src');
   mkdirSync(srcDir, { recursive: true });
+  // v0.21.0: include many clearly-unused value imports so the
+  // dead/unused-import rule fires after the type-only visitor
+  // bug fix. Before the fix, the test relied on FPs (type-only
+  // imports flagged as unused) inflating the score. With the
+  // fix, the rule is correct — only value imports that ARE
+  // unused will fire it. We add 20+ clearly-unused value
+  // imports + a server-component-with-hook violation to push
+  // the aiSlopScore above the baseline.
   writeFileSync(
     join(srcDir, 'ServerHook.tsx'),
-    `export function ServerHook() {
+    `import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
+import { resolve, join, dirname, extname } from 'node:path';
+import { performance } from 'node:perf_hooks';
+import { createHash } from 'node:crypto';
+import { zlib } from 'node:zlib';
+import { EventEmitter } from 'node:events';
+
+export function ServerHook() {
   const [count, setCount] = useState(0);
   return <div>{count}</div>;
 }
