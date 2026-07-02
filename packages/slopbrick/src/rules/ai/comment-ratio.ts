@@ -32,8 +32,15 @@ import { getCorpusBaselines } from '../../engine/corpus-baselines';
 const MIN_FILE_LINES = 20;
 
 // Fallback thresholds (used when corpus-baselines.json is absent).
-const FALLBACK_LOW = 0.05;
-const FALLBACK_HIGH = 0.45;
+// v0.20.0 calibration tune: original (0.05 / 0.45) gave 15-16% FP
+// rate. The low end (0.05) flagged any file with <5% comments —
+// catches most "terse" code regardless of authorship. The high end
+// (0.45) flagged any file with >45% comments — catches most
+// tutorial/example code regardless of authorship. Tightened to
+// (0.02 / 0.55) to reduce FP while keeping the rule alive.
+// The corpus-baseline path (mean ± 2*std) is unaffected.
+const FALLBACK_LOW = 0.02;
+const FALLBACK_HIGH = 0.55;
 
 const LINE_COMMENT_RE = /^\s*(?:\/\/|#|--|;|%)/;
 const BLOCK_COMMENT_OPEN_RE = /\/\*/;
