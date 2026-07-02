@@ -115,6 +115,11 @@ function parseArgs(): {
   out: string;
   extOverride?: string[];
   skipDirs?: string[];
+  dryRun?: boolean;
+  /** Rule-ID prefixes to keep in the registry (e.g. ['java/']). Default: ['arm/']. */
+  rulePrefixes?: string[];
+  /** Pass-through false to keep ALL rules (default keeps only arm-scoped rules). */
+  keepAllRules?: boolean;
 } {
   const args = process.argv.slice(2);
   let manifest = 'corpus-manifest.local.json';
@@ -122,6 +127,8 @@ function parseArgs(): {
   let out = './v9-fires';
   let extOverride: string[] | undefined;
   let skipDirs: string[] | undefined;
+  let dryRun = false;
+  let keepAllRules = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--manifest') manifest = args[++i];
@@ -129,6 +136,8 @@ function parseArgs(): {
     else if (a === '--out') out = args[++i];
     else if (a === '--ext') extOverride = args[++i].split(',').map((s) => s.trim()).filter(Boolean);
     else if (a === '--skip-dirs') skipDirs = args[++i].split(',').map((s) => s.trim()).filter(Boolean);
+    else if (a === '--dry-run') dryRun = true;
+    else if (a === '--keep-all-rules') keepAllRules = true;
     else if (a === '-h' || a === '--help') {
       console.log(
         [
@@ -140,6 +149,8 @@ function parseArgs(): {
           '  --out <dir>           Output directory (default: ./v9-fires)',
           '  --ext <a,b,c>         Override manifest language_extensions',
           '  --skip-dirs <d,e,f>   Override default skip-dirs list',
+          '  --dry-run             Build filelists only, skip the actual scan (verification aid)',
+          '  --keep-all-rules      Disable the per-arm rule filter (run all 134 rules; ~10x slower)',
           '',
           'Outputs:',
           '  <out>/<arm>/<kind>-<repo>.json       per-repo debug (fires.json shape)',
@@ -148,15 +159,21 @@ function parseArgs(): {
           '',
           'Guardrails: ≥10k files per arm, ≥10 fires per DORMANT rule, <5% parse-failure rate.',
           '',
+          'Default registry filter: keep only rules whose ID starts with `<arm>/`',
+          '(e.g. `java/*` for --arm java). The other 128 rules are TS/Go/Py/Rust/etc. and',
+          'produce noise on `.java` files. Pass --keep-all-rules to disable the filter.',
+          '',
           'Examples:',
           '  tsx build-v9-corpus.ts --manifest corpus-manifest-java.local.json --arm java',
           '  tsx build-v9-corpus.ts --manifest corpus-manifest-cpp.local.json --arm cpp',
+          '  tsx build-v9-corpus.ts --manifest corpus-manifest-java.local.json --arm java --dry-run',
+          '  tsx build-v9-corpus.ts --manifest corpus-manifest-java.local.json --arm java --keep-all-rules',
         ].join('\n'),
       );
       process.exit(0);
     }
   }
-  return { manifest, arm, out, extOverride, skipDirs };
+  return { manifest, arm, out, extOverride, skipDirs, dryRun, keepAllRules };
 }
 
 function loadManifest(path: string): CorpusManifest {
@@ -204,7 +221,12 @@ function buildFilelist(
   const cmd = `find . \\( ${nameClauses} \\) -type f -size -${sizeCapMb}M ${dirClauses} | sort`;
   let out: string;
   try {
-    out = execSync(cmd, { cwd: clonePath, encoding: 'utf-8' });
+    // v0.24.5: bump stdio buffer to 64 MB. The JDK-11 corpus (41k+ paths)
+    // produced ~2.5 MB of stdout which exceeded Node's default 1 MB
+    // execSync buffer and triggered ENOBUFS. The previous failure mode
+    // was a hard `die()` mid-build; this keeps the build going on
+    // large repos like openjdk/jdk.
+    out = execSync(cmd, { cwd: clonePath, encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
   } catch (e) {
     die(`find failed for ${clonePath}: ${(e as Error).message}`);
   }
@@ -320,7 +342,7 @@ function mergeAccums(into: ScanAccum, from: ScanAccum): void {
 }
 
 async function main(): Promise<void> {
-  const { manifest: manifestPath, arm, out: outDir, extOverride, skipDirs } = parseArgs();
+  const { manifest: manifestPath, arm, out: outDir, extOverride, skipDirs, dryRun, keepAllRules } = parseArgs();
   const manifest = loadManifest(manifestPath);
   if (manifest.arm !== arm) die(`Manifest arm is "${manifest.arm}", expected "${arm}"`);
 
@@ -334,6 +356,7 @@ async function main(): Promise<void> {
 
   console.log(`[build-v9-corpus] arm=${arm}, extensions=[${extensions.join(',')}], cap=${sizeCapMb}MB`);
   console.log(`[build-v9-corpus] DORMANT rules for arm=${arm}: ${dormantRules.length > 0 ? dormantRules.join(', ') : '(none — guardrail vacuous)'}`);
+  if (dryRun) console.log('[build-v9-corpus] DRY-RUN: building filelists only, skipping the scan');
 
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
   const armOutDir = join(outDir, arm);
@@ -342,7 +365,19 @@ async function main(): Promise<void> {
   const config = await loadConfig(REPO);
   const registry = new RuleRegistry();
   registry.loadBuiltins();
-  console.log(`[build-v9-corpus] registry: ${registry.all().length} rules loaded`);
+  // v0.24.5: per-arm rule filter. Running all 134 rules on every Java file
+  // produces noise (TS/Go/Py/Rust rules produce spurious fires on Java source
+  // — e.g. ai/whitespace-regularity triggering on Java import blocks) and
+  // slows the corpus build ~10x (5 files/sec vs 50). Default: keep only
+  // rules whose ID starts with `<arm>/`. The user can override with
+  // --keep-all-rules if they want full cross-rule visibility into Java.
+  if (!keepAllRules) {
+    const before = registry.all().length;
+    registry.removeWhere((rule) => !rule.id.startsWith(`${arm}/`));
+    console.log(`[build-v9-corpus] registry: ${registry.all().length} rules loaded (filtered from ${before} to ${arm}/* only; pass --keep-all-rules to disable)`);
+  } else {
+    console.log(`[build-v9-corpus] registry: ${registry.all().length} rules loaded (no filter — --keep-all-rules)`);
+  }
 
   const armAccums: Record<'neg' | 'pos', ScanAccum> = {
     neg: makeAccum('neg', manifestPath),
@@ -358,6 +393,7 @@ async function main(): Promise<void> {
       const clonePath = ensureClone(repo);
       const files = buildFilelist(clonePath, extensions, sizeCapMb, skipDirsFinal);
       console.log(`   ${repo.name}: ${files.length} files in filelist`);
+      if (dryRun) continue;
       const repoAccum = makeAccum(kind, repo.name);
       await scanRepo(clonePath, files, config, registry, repoAccum);
 
@@ -368,6 +404,11 @@ async function main(): Promise<void> {
       mergeAccums(armAccums[kind], repoAccum);
     }
     console.log(`   ${kind} merged: ${armAccums[kind].files} files, ${armAccums[kind].issueCount} issues, ${armAccums[kind].parseFailed} parse-failures, ${Object.keys(armAccums[kind].fires).length} unique rules`);
+  }
+
+  if (dryRun) {
+    console.log('\n[build-v9-corpus] DRY-RUN complete — no scan was performed, no fires.json written.');
+    return;
   }
 
   // Write per-arm merged output: user-facing filename + calibration mirror.
