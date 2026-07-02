@@ -641,6 +641,22 @@
     "_v7FpRate": 0.0,
     "_v7Precision": 0.0
   },
+  "dup/structural-clone": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 1.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-02T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.24.0: new rule, not yet calibrated. Type-3 clone detector using a two-stage MinHash pipeline — stage 1 canonicalizes identifiers/literals (rename-invariant k=8 shingles), stage 2 verifies with identifier-aware k=5 shingles (existing shingleSet). Closes the gap near-duplicate left open: identifier renames (Type-3) and statement add/remove. Default OFF (DORMANT) until v9 Java corpus calibration confirms precision/recall thresholds and the v0.24.1 patch raises minHits from 1 to 3.",
+    "aiSpecific": true,
+    "_v7Verdict": "DORMANT",
+    "_v7Lift": 1.0,
+    "_v7Recall": 0.0,
+    "_v7FpRate": 0.0,
+    "_v7Precision": 0.0
+  },
   "go/error-wrap-without-context": {
     "recall": 0.0,
     "fpRate": 0.0,
