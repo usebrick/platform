@@ -1,7 +1,8 @@
 import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
-import { runScan, type CliGlobalOptions } from '../scan.js';
+import { runScan } from '../scan.js';
+import type { CliGlobalOptions } from '../scan.js';
 import {
   runMaintenanceCostScan,
   formatMaintenanceCostReport,

@@ -15,7 +15,8 @@ import { Command } from 'commander';
 
 import { formatBadge } from '../render';
 import { logger } from '../../engine/logger';
-import { runScan, type CliGlobalOptions } from '../scan';
+import { runScan } from '../scan';
+import type { CliGlobalOptions } from '../scan';
 
 export function registerBadge(program: Command): void {
   program

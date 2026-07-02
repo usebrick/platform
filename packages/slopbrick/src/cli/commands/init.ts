@@ -4,7 +4,8 @@ import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { builtinRules } from '../../rules/builtins';
 import { refreshRegistrySnapshot, copyBundledSnapshotToCache } from '../../rules/registry-loader';
-import { runScan, buildBaselineCache, type CliGlobalOptions } from '../scan.js';
+import { runScan, buildBaselineCache } from '../scan.js';
+import type { CliGlobalOptions } from '../scan.js';
 import { runInitWizard, isInteractive } from '../init.js';
 import {
   loadConfig,

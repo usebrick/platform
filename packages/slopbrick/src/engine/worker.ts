@@ -1,7 +1,8 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { extname } from 'node:path';
 import { join } from 'node:path';
-import { parseFile, type ParserCacheConfig } from '@usebrick/engine';
+import { parseFile } from '@usebrick/engine';
+import type { ParserCacheConfig } from '@usebrick/engine';
 import { extractFacts } from './visitor';
 import { BACKEND_EXTENSIONS } from './discover.js';
 import { RuleRegistry } from '../rules/registry';

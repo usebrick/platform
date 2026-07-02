@@ -55,7 +55,8 @@ import {
 // `facts.v2.rustFile`. The regex-based `extractRustPatterns` is still
 // available as a fallback for environments where the tree-sitter
 // native binding can't load.
-import { parseRustFile, type RustFileStructure } from './rust.js';
+import { parseRustFile } from './rust.js';
+import type { RustFileStructure } from './rust.js';
 
 /**
  * Internal accumulator produced by extractFacts(). Mirrors the

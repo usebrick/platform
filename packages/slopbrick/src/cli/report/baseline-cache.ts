@@ -9,7 +9,8 @@
 
 import { relative } from 'node:path';
 
-import { VERSION, type ProjectReport, type BaselineCache } from '../../types';
+import { VERSION } from '../../types';
+import type { ProjectReport, BaselineCache } from '../../types';
 
 export function buildBaselineCache(
   report: ProjectReport,

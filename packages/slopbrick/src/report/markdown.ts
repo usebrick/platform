@@ -1,5 +1,6 @@
 import type { ProjectReport } from '../types';
-import { bucketForVerdict, bucketDistribution, type Bucket } from './buckets';
+import { bucketForVerdict, bucketDistribution } from './buckets';
+import type { Bucket } from './buckets';
 import { getSignalStrength } from '../rules/signal-strength.js';
 import type { Verdict } from '@usebrick/core';
 

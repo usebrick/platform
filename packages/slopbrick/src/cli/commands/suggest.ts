@@ -12,7 +12,8 @@ import { Command } from 'commander';
 import { formatAdvice } from '../../report/advice';
 import { formatUnifiedDiff } from '../../report/unified-diff';
 import { logger } from '../../engine/logger';
-import { runScan, type CliGlobalOptions } from '../scan';
+import { runScan } from '../scan';
+import type { CliGlobalOptions } from '../scan';
 
 export function registerSuggest(program: Command): void {
   program

@@ -24,7 +24,8 @@ import {
   baselineStatusMessage,
   stagedGating,
 } from './threshold';
-import { runScan, type CliGlobalOptions } from './scan';
+import { runScan } from './scan';
+import type { CliGlobalOptions } from './scan';
 import {
   buildBaselineCache,
   printFixSummary,

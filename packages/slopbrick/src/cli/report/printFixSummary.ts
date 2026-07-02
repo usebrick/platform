@@ -6,7 +6,7 @@
 // can use to set the exit code.
 
 import { logger } from '../../engine/logger';
-import { type FixResult } from '../../fix';
+import type { FixResult } from '../../fix';
 
 export interface FixSummary {
   totalApplied: number;

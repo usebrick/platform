@@ -14,7 +14,8 @@
 //
 // aiSpecific: false.
 
-import { readFileSync, readdirSync, existsSync, type Dirent } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import type { Dirent } from 'node:fs';
 import { join, extname } from 'node:path';
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';

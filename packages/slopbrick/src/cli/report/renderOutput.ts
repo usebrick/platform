@@ -19,8 +19,8 @@ import { formatSarif } from '../../report/sarif';
 import { formatHtml } from '../../report/html';
 import { formatAdvice } from '../../report/advice';
 import { formatUnifiedDiff } from '../../report/unified-diff';
-import { type CliGlobalOptions } from '../scan';
-import { type ProjectReport } from '../../types';
+import type { CliGlobalOptions } from '../scan';
+import type { ProjectReport } from '../../types';
 
 const VALID_FORMATS = new Set(['pretty', 'json', 'sarif', 'html']);
 

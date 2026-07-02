@@ -40,7 +40,8 @@
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import { extractSetupBlocks, isTestFile, type SetupBlockHit } from './utils';
+import { extractSetupBlocks, isTestFile } from './utils';
+import type { SetupBlockHit } from './utils';
 
 export interface DuplicateSetupContext {
   /** Per-run registry: source-hash → list of (file, line) occurrences. */

@@ -14,7 +14,8 @@
 //   2  — fatal error (config not loadable, IO failure)
 
 import { resolve } from 'node:path';
-import { runScan, type CliGlobalOptions, type ScanRunResult } from './scan';
+import { runScan } from './scan';
+import type { CliGlobalOptions, ScanRunResult } from './scan';
 import {
   buildTestQualityScore,
   formatTestQualityScore,

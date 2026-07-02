@@ -51,7 +51,8 @@ import { thresholdExceeded } from '../threshold';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
-import { VERSION, type FileScanResult, type ProjectReport, type ResolvedConfig } from '../../types';
+import { VERSION } from '../../types';
+import type { FileScanResult, ProjectReport, ResolvedConfig } from '../../types';
 import type { RuleRegistry } from '../../rules/registry';
 import type { ScanRunOptions } from '../scan';
 

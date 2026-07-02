@@ -102,7 +102,8 @@ import {
 } from './visitors/scan-helpers.js';
 // v0.6.0: ScanFactsV2 assembler (was inline in extractFacts()).
 // Pure function of InternalFacts + source + ext + framework + config.
-import { buildV2Facts, splitFilePath, envelopeScanFacts, type InternalFacts } from './visitors/v2-build.js';
+import { buildV2Facts, splitFilePath, envelopeScanFacts } from './visitors/v2-build.js';
+import type { InternalFacts } from './visitors/v2-build.js';
 const isObject = visitorsIsObject;
 const spanStart = visitorsSpanStart;
 const spanEnd = visitorsSpanEnd;

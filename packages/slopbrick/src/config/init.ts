@@ -6,7 +6,8 @@
 // defining them.
 
 import type { Category, ResolvedConfig, RuleSeverity } from '../types';
-import { DEFAULT_CONFIG, type WizardAnswers } from './defaults';
+import { DEFAULT_CONFIG } from './defaults';
+import type { WizardAnswers } from './defaults';
 import { applyFrameworkPreset } from './presets';
 
 const STRICTNESS_PRESETS: Record<

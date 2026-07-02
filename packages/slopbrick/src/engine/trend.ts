@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readTelemetry, type TelemetryPayload } from './telemetry';
+import { readTelemetry } from './telemetry';
+import type { TelemetryPayload } from './telemetry';
 
 // Round-16: Slop Index trend over time, read from telemetry JSONL.
 //

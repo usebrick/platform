@@ -12,7 +12,8 @@
 
 import { existsSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { createInterface, type Interface as ReadlineInterface } from 'node:readline';
+import { createInterface } from 'node:readline';
+import type { Interface as ReadlineInterface } from 'node:readline';
 
 import {
   loadConfig,

@@ -1,8 +1,10 @@
 import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
-import { runScan, type CliGlobalOptions } from '../scan.js';
-import { runPrScan, formatPrReport, prExitCode, type PrFormat } from '../pr';
+import { runScan } from '../scan.js';
+import type { CliGlobalOptions } from '../scan.js';
+import { runPrScan, formatPrReport, prExitCode } from '../pr';
+import type { PrFormat } from '../pr';
 import { parseCount, parseThreshold } from '../options.js';
 
 /**
