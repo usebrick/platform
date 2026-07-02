@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.24.0] - 2026-07-15 — Opt-in network beacon (`--report-usage`)
+
+**The v0.24.0 release** adds an opt-in network beacon for the v9
+corpus CI and self-hosted use case. The local flywheel
+(`--no-telemetry`) is unchanged and still gates
+`.slopbrick/flywheel/scans.jsonl` writes.
+
+### New: `--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT`
+
+A single one-shot POST fires at the end of `slopbrick scan`
+when **both** are true:
+
+- The user passed `--report-usage` (default OFF)
+- `SLOPBRICK_TELEMETRY_ENDPOINT` is set in the environment
+
+If either is missing, the beacon is a complete no-op — no
+request, no warning, no exit-code change.
+
+### Payload (locked, exactly 8 fields)
+
+```json
+{
+  "schema_version": "1",
+  "slopbrick_version": "0.24.0",
+  "scan_id": "<uuid v4>",
+  "file_count": 42,
+  "rule_count": 95,
+  "duration_ms": 1834,
+  "platform": "darwin",
+  "node_version": "v20.11.0"
+}
+```
+
+The shape is **frozen**. Adding a field is a breaking change for
+v9-corpus receivers.
+
+### Privacy
+
+The payload is deliberately tiny. We will never send file
+paths, rule ids, rule violations, file contents, user
+identifiers, IP addresses, environment variables, or project
+metadata. See `docs/research/beacon-design.md` for the full
+threat model and rejection criteria.
+
+### Failure mode
+
+Fire-and-forget. 5-second socket timeout. Network errors,
+DNS failures, 4xx/5xx responses, and timeouts are all silent.
+The scan's exit code is never affected. No retries.
+
+### Scope
+
+The beacon fires from `slopbrick scan` only. `slopbrick watch`,
+`slopbrick ci`, and programmatic `scanProject()` calls are
+unaffected regardless of the flag or env var.
+
+### Added in v0.24.0
+
+- `src/beacon/types.ts` — `BeaconStats`, `BeaconPayload`, `BeaconTransport`
+- `src/beacon/endpoint.ts` — default HTTP transport (5s timeout, silent failure)
+- `src/beacon/index.ts` — `BeaconEmitter` (the public API)
+- `tests/beacon/endpoint.test.ts` — 5 tests (wire format, silent 500, timeout, malformed URL, key set)
+- `tests/beacon/emitter.test.ts` — 4 tests (default off, 4-way gate matrix, no PII, silent when missing)
+- `docs/research/beacon-design.md` — design doc, threat model, OPSEC
+
+### Modified
+
+- `src/cli/program.ts` — registered `--report-usage` globally; fires beacon only when `command.name() === 'scan'`
+- `src/cli/scan.ts` — generates `scan_id`, computes `file_count` / `rule_count` / `duration_ms`, returns `scanStats`
+- `src/cli/types.ts` — added `reportUsage?: boolean` to `ScanRunOptions`; added `ScanStats` + `scanStats` to `ScanRunResult`
+- `src/cli/help.ts` — `--report-usage` lives in the `Telemetry` group alongside `--no-telemetry`
+- `README.md` — new "Telemetry (opt-in)" section
+
 ## [0.21.1] - 2026-07-12 — Visitor bug fix + 5 calibration pass + 873 fewer self-scan FPs
 
 **The v0.21.1 release** is a **patch** that addresses the most

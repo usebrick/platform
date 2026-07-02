@@ -123,6 +123,10 @@ import { VERSION } from '../types';
 import type { FileScanResult } from '../types';
 // v0.18.4: --help clusters. See help.ts for category mapping.
 import { formatGroupedHelp } from './help';
+// v0.24.0 (Workstream C): opt-in network beacon. Fire-and-forget
+// from the scan action; `runScan` itself stays network-free so
+// `scanProject` (library API) and `ci`/`watch` are unaffected.
+import { BeaconEmitter } from '../beacon';
 
 //   0 = pass (slopIndex below threshold)
 //   1 = threshold breach (blocks git hooks)
@@ -200,7 +204,14 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // categories, all components) instead of the curated brief
       // view. The brief is the default; --full is for when the user
       // wants to see everything.
-      .option('--full', 'show the complete report (all issues, all categories)');
+      .option('--full', 'show the complete report (all issues, all categories)')
+      // v0.24.0 (Workstream C): opt-in network beacon. Distinct
+      // from `--no-telemetry` (which gates the local flywheel at
+      // `.slopbrick/flywheel/scans.jsonl`). Both must be true for a
+      // POST to fire: this flag AND `SLOPBRICK_TELEMETRY_ENDPOINT`.
+      // Default OFF. Fires from `slopbrick scan` only; `watch`/`ci`
+      // /programmatic `scanProject` are unaffected.
+      .option('--report-usage', 'opt in to a one-shot usage ping to SLOPBRICK_TELEMETRY_ENDPOINT (no PII)');
 
     // v0.18.4 (--help clusters): override the default help
     // formatter. Default `--help` renders the grouped view
@@ -288,9 +299,34 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         noIncreaseFailure,
         baseline,
         machineReadableStdout,
+        scanStats,
       } = await runScan(options, paths);
       const scanElapsed = Math.round(performance.now() - scanStart);
       const totalElapsed = Math.round(performance.now() - start);
+
+      // v0.24.0 (Workstream C): opt-in network beacon. Fires ONLY
+      // when all three are true: the user passed --report-usage,
+      // SLOPBRICK_TELEMETRY_ENDPOINT is set in the environment, AND
+      // this invocation is the `scan` subcommand (not `watch`/`ci` —
+      // those share the scanAction closure via parameter and would
+      // otherwise leak the global flag through `optsWithGlobals`).
+      // `void` deliberately — we don't await, so the beacon cannot
+      // delay `process.exit` below. The emitter is silent on every
+      // failure mode (errors caught, errors swallowed).
+      const beaconEnv = process.env.SLOPBRICK_TELEMETRY_ENDPOINT;
+      if (options.reportUsage && beaconEnv && command.name() === 'scan') {
+        const beacon = new BeaconEmitter({
+          flag: true,
+          envEndpoint: beaconEnv,
+          version: VERSION,
+        });
+        void beacon.emit({
+          scanId: scanStats.scanId,
+          fileCount: scanStats.fileCount,
+          ruleCount: scanStats.ruleCount,
+          durationMs: scanStats.durationMs,
+        });
+      }
 
       if (options.baseline) {
         const cwd = resolve(options.workspace ?? process.cwd());
