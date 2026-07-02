@@ -18,12 +18,8 @@
 // fails to load (no prebuilt binary for the host architecture).
 
 import type { PatternMatch } from '../../mcp/patterns.js';
-import {
-  parseRust,
-  type Tree,
-  type TSNode,
-  isRustParserAvailable,
-} from '../parser-rust.js';
+import { parseRust, isRustParserAvailable } from '../parser-rust.js';
+import type { Tree, TSNode } from '../parser-rust.js';
 
 /** Shape of a single extractor's output. */
 export interface RustPatternResult {

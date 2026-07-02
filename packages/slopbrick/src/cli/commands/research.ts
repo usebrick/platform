@@ -3,14 +3,8 @@ import { dirname, resolve } from 'node:path';
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { loadConfig, DEFAULT_CONFIG } from '../../config';
-import {
-  createProvider,
-  generateSamples,
-  analyzeSamples,
-  extractAndCluster,
-  clustersToCandidates,
-  type GeneratedSample,
-} from '../../research';
+import { createProvider, generateSamples, analyzeSamples, extractAndCluster, clustersToCandidates } from '../../research';
+import type { GeneratedSample } from '../../research';
 import { parseCount } from '../options.js';
 
 /**

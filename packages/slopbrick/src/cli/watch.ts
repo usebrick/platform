@@ -4,11 +4,8 @@
 // know about the watcher loop. Keeps the SIGINT handler, debounce
 // timer, and incremental per-file scan logic in one place.
 
-import {
-  watch,
-  statSync,
-  type FSWatcher,
-} from 'node:fs';
+import { watch, statSync } from 'node:fs';
+import type { FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
@@ -30,15 +27,8 @@ import { formatErrorMessage } from './format/error';
 import { runScan } from './scan';
 import { outputScanResults } from './report/renderOutput';
 import type { CliGlobalOptions } from './scan';
-import {
-  VERSION,
-  type BaselineCache,
-  type ComponentScore,
-  type FileScanResult,
-  type Issue,
-  type ProjectReport,
-  type ResolvedConfig,
-} from '../types';
+import { VERSION } from '../types';
+import type { BaselineCache, ComponentScore, FileScanResult, Issue, ProjectReport, ResolvedConfig } from '../types';
 
 export async function watchProject(
   options: CliGlobalOptions,

@@ -19,13 +19,8 @@ import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { logger } from '../../engine/logger';
-import {
-  loadCache,
-  saveCache,
-  computeFileHash,
-  emptyCache,
-  type ScanCache,
-} from '../../engine/cache-incremental.js';
+import { loadCache, saveCache, computeFileHash, emptyCache } from '../../engine/cache-incremental.js';
+import type { ScanCache } from '../../engine/cache-incremental.js';
 import {
   computeFlywheelOutput,
   hashFile,

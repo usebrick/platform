@@ -24,12 +24,8 @@
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { discoverFiles } from '../engine/discover.js';
-import {
-  analyzeBusinessLogic,
-  buildBusinessLogicReport,
-  type BusinessLogicIssue,
-  type BusinessLogicReport,
-} from '../engine/business-logic.js';
+import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
+import type { BusinessLogicIssue, BusinessLogicReport } from '../engine/business-logic.js';
 import type { ResolvedConfig } from '../types';
 
 export interface BusinessLogicScanOptions {

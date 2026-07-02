@@ -15,19 +15,8 @@ import { join, dirname } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface as ReadlineInterface } from 'node:readline';
 
-import {
-  loadConfig,
-  detectStylingSolution,
-  resolveConfigPath as findConfigPath,
-  type Framework,
-  type StylingSolution,
-  type UiLibrary,
-  type Strictness,
-  type WizardAnswers,
-  type ResolvedConfig,
-  detectConstitution,
-  formatConstitution,
-} from '../config';
+import { loadConfig, detectStylingSolution, resolveConfigPath as findConfigPath, detectConstitution, formatConstitution } from '../config';
+import type { Framework, StylingSolution, UiLibrary, Strictness, WizardAnswers, ResolvedConfig } from '../config';
 import { discoverFiles } from '../engine/discover.js';
 import { getGitHead } from './git.js';
 import {

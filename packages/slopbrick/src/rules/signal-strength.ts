@@ -1,10 +1,6 @@
 import signalStrengthData from './signal-strength.json' with { type: 'json' };
-import {
-  signalStrengthSchema,
-  isDefaultOff,
-  type Verdict,
-  type SignalStrengthEntry,
-} from '@usebrick/core';
+import { signalStrengthSchema, isDefaultOff } from '@usebrick/core';
+import type { Verdict, SignalStrengthEntry } from '@usebrick/core';
 
 /**
  * v0.14.5+: Validate the calibration data at load time. A parse failure

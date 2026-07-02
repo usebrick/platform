@@ -16,11 +16,8 @@
 import { resolve } from 'node:path';
 import { runScan } from './scan';
 import type { CliGlobalOptions, ScanRunResult } from './scan';
-import {
-  buildDbHealth,
-  DB_RULE_WEIGHTS,
-  type BuildDbHealthResult,
-} from '../engine/db-health';
+import { buildDbHealth, DB_RULE_WEIGHTS } from '../engine/db-health';
+import type { BuildDbHealthResult } from '../engine/db-health';
 import { logger, setLoggerQuiet } from '../engine/logger';
 import type { DbDriftLevel, ResolvedConfig } from '../types';
 

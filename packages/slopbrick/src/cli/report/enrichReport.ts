@@ -17,11 +17,8 @@ import { formatErrorMessage } from '../format/error';
 import {
   buildArchitectureScore,
 } from '../../engine/architecture-score';
-import {
-  analyzeBusinessLogic,
-  buildBusinessLogicReport,
-  type BusinessLogicIssue,
-} from '../../engine/business-logic';
+import { analyzeBusinessLogic, buildBusinessLogicReport } from '../../engine/business-logic';
+import type { BusinessLogicIssue } from '../../engine/business-logic';
 import { computeAiSecurityRisk } from '../../engine/ai-security-risk';
 import { SEVERITY_WEIGHTS } from '../../engine/metrics';
 import {

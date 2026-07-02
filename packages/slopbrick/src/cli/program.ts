@@ -72,17 +72,8 @@ import { registerInit } from './commands/init.js';
 import { registerFlywheel } from './commands/flywheel.js';
 import { registerScan } from './commands/scan.js';
 
-import {
-  loadConfig,
-  DEFAULT_CONFIG,
-  detectStack,
-  detectMonorepoRoot,
-  detectStylingSolution,
-  buildInitConfig,
-  resolveConfigPath as findConfigPath,
-  ConfigValidationError,
-  type ResolvedConfig,
-} from '../config';
+import { loadConfig, DEFAULT_CONFIG, detectStack, detectMonorepoRoot, detectStylingSolution, buildInitConfig, resolveConfigPath as findConfigPath, ConfigValidationError } from '../config';
+import type { ResolvedConfig } from '../config';
 import { getGitHead, getGitRoot } from './git.js';
 import { installHook, uninstallHook } from './installer.js';
 import { logger } from '../engine/logger';
@@ -91,16 +82,8 @@ import {
   refreshRegistrySnapshot,
   copyBundledSnapshotToCache,
 } from '../rules/registry-loader';
-import {
-  createProvider,
-  generateSamples,
-  analyzeSamples,
-  extractAndCluster,
-  clustersToCandidates,
-  calibrate,
-  reportToMarkdown,
-  type GeneratedSample,
-} from '../research';
+import { createProvider, generateSamples, analyzeSamples, extractAndCluster, clustersToCandidates, calibrate, reportToMarkdown } from '../research';
+import type { GeneratedSample } from '../research';
 import { buildTrend, trendToText, trendToMarkdown } from '../engine/trend';
 import { runMcpServer } from '../mcp/server.js';
 import {
@@ -136,10 +119,8 @@ import { readRuns } from '@usebrick/engine';
 import { fsMemoryIO } from './memory-io.js';
 import { applyFixes } from '../fix';
 import { saveBaseline, baselinePath, hashConfig } from '../engine/cache';
-import {
-  VERSION,
-  type FileScanResult,
-} from '../types';
+import { VERSION } from '../types';
+import type { FileScanResult } from '../types';
 // v0.18.4: --help clusters. See help.ts for category mapping.
 import { formatGroupedHelp } from './help';
 

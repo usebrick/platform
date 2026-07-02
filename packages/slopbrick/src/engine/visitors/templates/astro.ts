@@ -25,12 +25,8 @@
 // positionFromCharOffset / lineNumberOf from ./positions.ts.
 
 import type { AstroComponentFact, ClassNameFact, ElementFact } from '../../../types';
-import {
-  type SourceRange,
-  findAstroSkipRanges,
-  lineNumberOf,
-  positionFromCharOffset,
-} from './positions.js';
+import { findAstroSkipRanges, lineNumberOf, positionFromCharOffset } from './positions.js';
+import type { SourceRange } from './positions.js';
 
 // Astro attribute parser: handles quoted (`"x"`), expression (`{x}`),
 // unquoted (`x`), and boolean (`disabled`) attributes. Mirrors the

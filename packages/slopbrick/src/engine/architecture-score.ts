@@ -37,12 +37,8 @@
 
 import { buildPatternInventory } from '../mcp/patterns.js';
 import type { PatternInventory } from '../mcp/patterns.js';
-import {
-  detectCrossFileDrift,
-  detectCrossCategoryDrift,
-  type CrossFileDriftSignal,
-  type CrossCategoryDrift as CrossCategoryDriftSignal,
-} from '@usebrick/engine';
+import { detectCrossFileDrift, detectCrossCategoryDrift } from '@usebrick/engine';
+import type { CrossFileDriftSignal, CrossCategoryDrift as CrossCategoryDriftSignal } from '@usebrick/engine';
 import { parseFile } from '@usebrick/engine';
 import { extractFacts } from './visitor.js';
 import { spacingScaleViolationRule } from '../rules/visual/spacing-scale-violation.js';

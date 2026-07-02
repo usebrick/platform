@@ -23,11 +23,8 @@
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import {
-  parseRust,
-  type Tree,
-  type TSNode,
-} from '../../engine/parser-rust';
+import { parseRust } from '../../engine/parser-rust';
+import type { Tree, TSNode } from '../../engine/parser-rust';
 
 export interface RustTodoMacroContext {
   // No configuration needed.

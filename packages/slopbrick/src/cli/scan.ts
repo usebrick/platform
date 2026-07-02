@@ -64,16 +64,8 @@ import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
-import {
-  VERSION,
-  type FileScanResult,
-  type Issue,
-  type ProjectReport,
-  type ResolvedConfig,
-  type BaselineMeta,
-  type BaselineCache,
-  type ComponentScore,
-} from '../types';
+import { VERSION } from '../types';
+import type { FileScanResult, Issue, ProjectReport, ResolvedConfig, BaselineMeta, BaselineCache, ComponentScore } from '../types';
 import type {
   ScanProjectOptions,
   ScanRunOptions,

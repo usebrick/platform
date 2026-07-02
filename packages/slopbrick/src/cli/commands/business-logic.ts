@@ -3,12 +3,8 @@ import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
-import {
-  runBusinessLogicScan,
-  formatBusinessLogicScan,
-  businessLogicExitCode,
-  type BusinessLogicFormat,
-} from '../business-logic';
+import { runBusinessLogicScan, formatBusinessLogicScan, businessLogicExitCode } from '../business-logic';
+import type { BusinessLogicFormat } from '../business-logic';
 import { parseCount } from '../options.js';
 
 /**

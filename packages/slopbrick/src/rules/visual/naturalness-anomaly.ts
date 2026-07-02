@@ -30,13 +30,8 @@
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import {
-  computeNaturalness,
-  computeNaturalnessForRange,
-  defaultModel,
-  type NaturalnessMetrics,
-  type NaturalnessModel,
-} from '@usebrick/engine';
+import { computeNaturalness, computeNaturalnessForRange, defaultModel } from '@usebrick/engine';
+import type { NaturalnessMetrics, NaturalnessModel } from '@usebrick/engine';
 import { buildLineOffsets } from '../../engine/visitor';
 
 export interface NaturalnessAnomalyContext {
