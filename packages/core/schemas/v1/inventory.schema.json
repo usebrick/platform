@@ -15,8 +15,8 @@
   ],
   "properties": {
     "version": {
-      "description": "Schema version. Bump when adding/removing fields. Currently \"3\".",
-      "const": "3"
+      "description": "Schema version. Bump when adding/removing fields. Currently \"5\".",
+      "const": "5"
     },
     "generatedAt": {
       "description": "ISO 8601 timestamp of when this inventory was generated.",

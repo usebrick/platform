@@ -20,7 +20,7 @@
       "properties": {
         "schemaVersion": {
           "description": "structure.md format version. Currently \"3\".",
-          "const": "3"
+          "const": "5"
         },
         "generatedAt": {
           "type": "string",

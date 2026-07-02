@@ -22,9 +22,9 @@ export type Category =
  */
 export interface RepositoryStructureInventory {
   /**
-   * Schema version. Bump when adding/removing fields. Currently "3".
+   * Schema version. Bump when adding/removing fields. Currently "5".
    */
-  version: "3";
+  version: "5";
   /**
    * ISO 8601 timestamp of when this inventory was generated.
    */

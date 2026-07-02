@@ -11,7 +11,7 @@ export interface RepositoryStructureStructureMarkdown {
     /**
      * structure.md format version. Currently "3".
      */
-    schemaVersion: "3";
+    schemaVersion: "5";
     generatedAt: string;
     workspace: string;
     /**
