@@ -188,7 +188,18 @@ export function aggregateReport(
 
   // Phase 2 §10: three subscores per composite formula
   //   S = 0.40 × S_boundary + 0.35 × S_context + 0.25 × S_visual
-  // Each subscore = min(100, severityPoints / componentCount)
+  // v0.20.0 fix: the original formula `min(100, severityPoints /
+  // componentCount * 100)` saturated at 100 the moment severityPoints
+  // reached componentCount. The slopbrick self-scan has
+  // severityPoints >> componentCount (thousands of severity points
+  // across 38 components), so all three sub-scores pinned at 100,
+  // slopIndex was always 100, and aiQuality was always 0. The
+  // sub-score rendering showed 100/100/100 (technically correct)
+  // but the cap prevented distinguishing "1 issue/component" from
+  // "100 issues/component". Replaced with a log scale that maps
+  // severityPoints/componentCount = 1 → ~30, = 10 → 100 (saturates
+  // at 10x the per-component threshold). Log base 11: log(1+x) /
+  // log(11) maps x=0→0, x=1→0.29, x=10→1.0, x=100→1.83 (capped at 1.0).
   const categoryWeights = config.categoryWeights ?? {} as Record<Category, number>;
   const bucketPoints: Record<SubscoreBucket, number> = { boundary: 0, context: 0, visual: 0 };
   for (const group of issueGroups) {
@@ -200,9 +211,9 @@ export function aggregateReport(
   }
   const denominator = componentCount || 1;
   const subscore: Record<SubscoreBucket, number> = {
-    boundary: Math.min(100, (bucketPoints.boundary / denominator) * 100),
-    context: Math.min(100, (bucketPoints.context / denominator) * 100),
-    visual: Math.min(100, (bucketPoints.visual / denominator) * 100),
+    boundary: Math.min(100, Math.log10(1 + bucketPoints.boundary / denominator) / Math.log10(11) * 100),
+    context:  Math.min(100, Math.log10(1 + bucketPoints.context  / denominator) / Math.log10(11) * 100),
+    visual:   Math.min(100, Math.log10(1 + bucketPoints.visual   / denominator) / Math.log10(11) * 100),
   };
 
   const compositeWeights = config.compositeWeights ?? COMPOSITE_WEIGHTS;
