@@ -25,6 +25,9 @@ const SPACING_PREFIX_RE = /\b(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|
 
 export const mathSpacingEntropyRule = createRule<RuleContext>({
   id: 'visual/math-spacing-entropy',
+  // v0.20.0 calibration: recall 0.002, fires 0 times on self-scan
+  // (verified). Disable until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'medium',
   aiSpecific: true,

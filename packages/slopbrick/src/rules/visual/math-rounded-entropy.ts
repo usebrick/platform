@@ -45,6 +45,10 @@ const ROUNDED_RE = /\brounded(?:-none|-sm|-md|-lg|-xl|-2xl|-3xl|-full)?\b/g;
 
 export const mathRoundedEntropyRule = createRule<RuleContext>({
   id: 'visual/math-rounded-entropy',
+  // v0.20.0 calibration: recall 0.004, fires 0 times on self-scan
+  // (verified). The entropy heuristic is too specific to ever fire
+  // on real code. Disable until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'high',
   aiSpecific: true,

@@ -35,6 +35,9 @@ const TEXT_SIZE_RE = /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl)\b/g;
 
 export const mathFontEntropyRule = createRule<RuleContext>({
   id: 'visual/math-font-entropy',
+  // v0.20.0 calibration: recall 0.004, fires 0 times on self-scan
+  // (verified). Disable until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'high',
   aiSpecific: true,
