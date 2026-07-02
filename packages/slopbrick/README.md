@@ -46,7 +46,7 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.20.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
+**Status:** v0.21.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
 the full release notes.
 
 ---
@@ -76,21 +76,25 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 ---
 
-## The headlines (4-score model, v0.20.0+)
+## The headlines (4-score model, v0.21.0+)
 
-> **v0.15.0 introduced the 4-score model; v0.16.0 + v0.17.0 completed it.**
-> The single `Slop Index` is replaced by **4 independent scores**
-> (all 0-100, **higher = better**). The legacy `slopIndex` field
-> is kept as optional on `ProjectReport` for backward compat with
+> **v0.15.0 introduced the 4-score model; v0.21.0 FLIPPED `aiSlopScore`
+> to the natural-reading "raw amount" direction (0=clean, 100=saturated).**
+> The other three scores stay "higher = better". The legacy `slopIndex`
+> field is kept as optional on `ProjectReport` for backward compat with
 > existing test fixtures and historical telemetry; the v0.14-compat
 > removal is tracked separately.
 
-| Score | What it measures | CI gate? |
-|-------|------------------|----------|
-| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). Raw amount of slop (0=clean, 100=saturated). | **Yes** (≤ `meanSlop: 30` passes) |
-| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | No (informational) |
-| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | No (informational) |
-| **`repositoryHealth`** (composite) | Weighted: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | No (informational) |
+| Score | What it measures | Direction | CI gate? |
+|-------|------------------|-----------|----------|
+| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). | **lower = cleaner** (raw amount) | **Yes** (`≤ meanSlop: 30` passes) |
+| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
+| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | higher = better | No (informational) |
+| **`repositoryHealth`** (composite) | Weighted: `0.4 × (100 − aiSlopScore) + 0.3 × eng + 0.2 × sec + 0.1 × test` | higher = better (inverts `aiSlopScore` internally) | No (informational) |
+
+**Score-band messages** (v0.21.0+): every score ships with a one-line
+verdict in the pretty output — e.g. `AI Slop Score: 25 → "low amount
+of slop"`, `Security Risk: 33 → "high risk"`. See `src/report/pretty.ts`.
 
 The same numbers are in `.slopbrick/health.json`.
 

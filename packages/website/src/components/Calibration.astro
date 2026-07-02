@@ -2,9 +2,14 @@
 // Calibration — the calibration ritual.
 // The 4 score bricks count up from 0 to their target. The score
 // values are not just numbers; each one is a "calibrated" verdict
-// that the user can read into (87 = good, 92 = strong, 95 = solid,
-// 91 = ready to ship). Below the stats, the live `structure.json`
-// demo shows what the tool actually produces.
+// that the user can read into (13 = low amount of slop, 92 = strong,
+// 95 = solid, 91 = ready to ship). Below the stats, the live
+// `structure.json` demo shows what the tool actually produces.
+//
+// v0.21.0: aiSlopScore is the raw amount of slop (lower = cleaner),
+// not the inverted cleanliness reading. The 4 numbers are chosen so
+// the headline reads as "this repo has low slop" rather than the
+// confusing v0.20.1 "100 = clean" inversion.
 import StructureDemo from './StructureDemo.astro';
 ---
 
@@ -18,9 +23,9 @@ import StructureDemo from './StructureDemo.astro';
 
   <div class="calibration__stats">
     <div class="calibration__stat">
-      <div class="calibration__value" data-target="87" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">aiQuality</div>
-      <div class="calibration__verdict">good</div>
+      <div class="calibration__value" data-target="13" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">aiSlopScore</div>
+      <div class="calibration__verdict">low amount of slop</div>
     </div>
     <div class="calibration__stat">
       <div class="calibration__value" data-target="92" data-prefix="" data-suffix="">0</div>
@@ -44,7 +49,9 @@ import StructureDemo from './StructureDemo.astro';
   <blockquote class="calibration__quote">
     Every rule ships with a recall/FP ratio. A rule that fires more
     noise than signal goes back to <em>defaultOff</em> until it earns
-    its way on.
+    its way on. <strong>aiSlopScore</strong> uses the natural-reading
+    direction (0 = clean, 100 = saturated) — the other three scores
+    are "higher = better". v0.21.0.
     <cite class="calibration__cite">the usebrick calibration contract</cite>
   </blockquote>
 </section>

@@ -1,5 +1,117 @@
 # Changelog
 
+## [0.21.1] - 2026-07-12 — Visitor bug fix + 5 calibration pass + 873 fewer self-scan FPs
+
+**The v0.21.1 release** is a **patch** that addresses the most
+egregious false-positive sources found during the v0.21.0
+self-scan verification. No headline-score changes; no schema
+changes; no public-API breaks. Just better accuracy.
+
+### Visitor bug fix: `dead/unused-import` respects `import type { X }`
+
+`import type { X } from '...'` declarations are elided by TypeScript
+at build time — they cannot be referenced at runtime and don't
+appear in the emitted JavaScript. The v0.21.0 visitor was
+pushing every type-only import into `facts.deadCode.bindings`
+with `isReferenced: false`, and the rule was flagging them as
+unused.
+
+- `src/engine/types.ts`: `BindingRecord` gains an optional
+  `isTypeOnly?: boolean` field.
+- `src/engine/visitors/dispatch.ts`: `handleImportDeclaration`
+  reads `node.typeOnly` (the swc AST field) and propagates it
+  to all 3 binding pushes.
+- `src/rules/dead/unused-import.ts`: skip bindings with
+  `isTypeOnly: true` before the unused check.
+
+**Self-scan impact: 267 → 0 false-positive fires** in src/.
+
+### `dead/unused-local` scope tracking (52 → 9, –83%)
+
+The rule's own header comment said:
+
+> Module-top-level `const`s are often intentionally unused
+> (placeholder exports, type re-exports, side-effect-ful
+> constructions). For those, see `dead/unused-import`.
+
+The rule never enforced this. Three bugs found and fixed:
+
+1. **`BindingRecord` had no scope field.** Added
+   `scope?: 'module' | 'function'`, set in
+   `handleVariableDeclarator` from the visitor's frame stack.
+2. **Visitor was reading `node.parent` (undefined).** The swc
+   AST nodes don't carry a back-pointer. Switched to the
+   walker-supplied `parent` parameter.
+3. **`export const X = ...` parent is `ExportNamedDeclaration`,
+   not `VariableDeclaration`.** The handler now unwraps the
+   declaration to find the underlying `VariableDeclaration`,
+   so the `kind` field is read correctly.
+
+**Self-scan impact: 52 → 9 fires** in src/. The remaining 9 are
+genuine function-scope dead code (e.g. `const isTypeScript` and
+`const NON_JSX_FRAMEWORKS` declared in `extractFacts` but never
+read).
+
+### `ts/import-type-misuse` — split inline `type` imports (56 → 0)
+
+The 56 inline-type imports in src/ (e.g.
+`import { runScan, type CliGlobalOptions } from '../scan.js';`)
+were split into a value import and a separate
+`import type { ... }` statement. TypeScript's `isolatedModules`
+flag and modern bundlers prefer this form. **Self-scan: 56 → 0**.
+
+### `ai/errors-near-eof` marked `defaultOff` (109 FPs suppressed)
+
+The rule's heuristic counts `{`, `}`, `(`, `)`, `[`, `]`, `<`, `>`
+as raw characters without skipping string contents, template
+literals, regex literals, or comments. Normal closing-brace
+tails (the last 4-5 lines of a function definition) consistently
+fire because the tail has 0 opens and 3-4 closes — the rule sees
+"4 more closes than opens near EOF" and reports a possible
+truncation signature. All 109 affected files typecheck cleanly.
+
+Marked `defaultOff: true` in `signal-strength.json` (auto-
+suppress mechanism). The rule stays available for opt-in. The
+real fix (token-aware counter or parse-error-based signal) is
+tracked for v0.22.0.
+
+### `dup/identical-block` WINDOW_SIZE 10 → 20 (575 → 177, –69%)
+
+Larger windows reduce FPs (the longer a block, the less likely
+it is to match by coincidence) at the cost of missing shorter
+real duplications. The remaining 177 fires are concentrated in
+the language visitor files (swift, java, ruby, kotlin, cpp,
+dart) where the header comments are still duplicated. That
+refactor needs a code-gen step (tracked for v0.22.0).
+
+### Shared `LanguagePatternResult` interface
+
+The 7 language-specific pattern extractors
+(`swift.ts`, `java.ts`, `ruby.ts`, `php.ts`, `kotlin.ts`,
+`cpp.ts`, `dart.ts`) each declared an identical 4-line
+interface. The interface is now extracted to
+`src/engine/visitors/_pattern-extractor-header.ts` and each
+visitor re-exports its own name as a type alias. Backward
+compat: all 7 `XxxPatternResult` names are preserved.
+
+### Total self-scan FPs removed: 873
+
+| Rule | Before | After | Δ |
+|------|-------:|------:|---:|
+| `dead/unused-import` | 267 | 0 | **–267** |
+| `ts/import-type-misuse` | 56 | 0 | **–56** |
+| `ai/errors-near-eof` | 109 | suppressed | **–109** |
+| `dead/unused-local` | 52 | 9 | **–43** |
+| `dup/identical-block` | 575 | 177 | **–398** |
+
+### Tests
+
+- 1425 tests across 142 files, all passing
+- Typecheck ✅ across all 3 packages
+- Self-scan: 873 fewer FPs
+
+---
+
 ## [0.21.0] - 2026-07-10 — FLIP `aiSlopScore` semantics: 0=clean, 100=saturated (BREAKING) + 15 rule `defaultOff` calibration pass
 
 **The v0.21 release** is a **breaking change** to the headline

@@ -19,10 +19,10 @@ interface CommandSpec {
 
 const STRUCTURE_JSON = [
   '{',
-  '  "version": "3",',
-  '  "generatedAt": "2026-06-29T04:42:14.730Z",',
+  '  "version": "5",',
+  '  "generatedAt": "2026-07-12T04:42:14.730Z",',
   '  "workspace": "/your-repo",',
-  '  "aiQuality": 87,',
+  '  "aiSlopScore": 13,',
   '  "engineeringHygiene": 92,',
   '  "security": 95,',
   '  "repositoryHealth": 91,',
@@ -62,8 +62,8 @@ const COMMANDS: CommandSpec[] = [
     match: 'slopbrick scan',
     run: () => [
       { kind: 'output', text: '       ▸ resolving workspace @ /your-repo' },
-      { kind: 'output', text: '       ▸ loading 4 scores, 95 rules' },
-      { kind: 'muted',  text: '       ▸ aiQuality .......... 87   good' },
+      { kind: 'output', text: '       ▸ loading 4 scores, 95+ rules' },
+      { kind: 'muted',  text: '       ▸ aiSlopScore ........ 13   low amount of slop' },
       { kind: 'muted',  text: '       ▸ engineeringHygiene . 92   strong' },
       { kind: 'muted',  text: '       ▸ security ........... 95   solid' },
       { kind: 'muted',  text: '       ▸ repositoryHealth ... 91   ready to ship' },
@@ -219,7 +219,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.17.4 · 4 scores · 95 rules · 15 categories · no telemetry');
+    appendLine('muted', 'slopbrick 0.21.0 · 4 scores · 95+ rules · 15 categories · no telemetry');
     appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
     renderInputLine();
   };

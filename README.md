@@ -16,7 +16,7 @@ usebrick is a four-product platform for the **Repository Structure Platform** (R
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the Constitution) | planned |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | **shipped** as `slopbrick@0.20.0` on npm |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | **shipped** as `slopbrick@0.21.0` on npm |
 | **MendBrick** | Repairs the structure (the migrator) | planned |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned |
 
@@ -87,16 +87,25 @@ Every `slopbrick scan` writes four atomic artifacts (and one cache file at the p
 
 ---
 
-## The 4-score model (v0.20.0+)
+## The 4-score model (v0.21.0+)
 
-The single `slopIndex` (lower = better) is replaced by **4 independent scores** (all 0-100, **higher = better**):
+The single `slopIndex` is replaced by **4 independent scores** (all 0-100):
 
-| Score | What it measures | CI gate? |
-|-------|------------------|----------|
-| **`aiQuality`** | AI-slop signatures (16 `ai/*` rules). INVERTED from legacy Slop Index. | **Yes** (≥ 70 passes) |
-| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | No (informational) |
-| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | No (informational) |
-| **`repositoryHealth`** (composite) | Weighted: 0.5×aiQ + 0.3×eng + 0.2×sec (matches `packages/slopbrick/src/types.ts:25`) | No (informational) |
+| Score | What it measures | Direction | CI gate? |
+|-------|------------------|-----------|----------|
+| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). Raw amount of slop detected. | **lower = cleaner** (0=clean, 100=saturated) | **Yes** (`≤ meanSlop: 30` passes) |
+| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
+| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | higher = better | No (informational) |
+| **`repositoryHealth`** (composite) | Weighted: `0.4 × (100 − aiSlopScore) + 0.3 × eng + 0.2 × sec + 0.1 × test` (inverts `aiSlopScore` internally) | higher = better | No (informational) |
+
+**v0.21.0 score-direction flip:** in v0.15.0–v0.20.1, `aiSlopScore` was
+the inverted "cleanliness" reading (100 = no slop). That triggered the
+natural-reading confusion: "AI Slop Score: 100" reads as "100% slop".
+v0.21.0 flips the field to the **raw amount** (lower = cleaner), matching
+the natural reading of the name. The composite `repositoryHealth`
+inverts internally so the dashboard headline stays "higher = better".
+See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md)
+for the full migration checklist.
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem.
 

@@ -34,7 +34,7 @@ test('LiveTerminal: slopbrick scan prints the calibration ritual', async ({ page
   await page.keyboard.press('Enter');
   // The output types character by character (~20ms each). 8 lines of
   // ~50 chars each = ~8s worst case. Generous timeout.
-  await expect(term.locator('text=aiQuality')).toBeVisible({ timeout: 15_000 });
+  await expect(term.locator('text=aiSlopScore')).toBeVisible({ timeout: 15_000 });
   await expect(term.locator('text=.usebrick/structure.json')).toBeVisible();
 });
 
@@ -74,6 +74,6 @@ test('LiveTerminal: reduced-motion skips the typing animation', async ({ browser
   await page.keyboard.press('Enter');
   // With reduced motion, all output lines appear at once. We don't
   // need a long timeout — the line should be there immediately.
-  await expect(term.locator('text=aiQuality')).toBeVisible({ timeout: 2_000 });
+  await expect(term.locator('text=aiSlopScore')).toBeVisible({ timeout: 2_000 });
   await context.close();
 });
