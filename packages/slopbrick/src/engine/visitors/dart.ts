@@ -13,13 +13,10 @@
 // visitor's import graph.
 
 import type { PatternMatch } from '../../mcp/patterns.js';
+import type { LanguagePatternResult } from './_pattern-extractor-header.js';
 
-/** Shape of a single extractor's output. */
-export interface DartPatternResult {
-  service: PatternMatch[];
-  route: PatternMatch[];
-  ormModel: PatternMatch[];
-}
+/** Shape of a single extractor's output. Aliased for backward compat. */
+export type DartPatternResult = LanguagePatternResult;
 
 /**
  * Canonical service-layer suffixes we strip from the captured class
