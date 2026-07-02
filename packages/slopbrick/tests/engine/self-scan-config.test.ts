@@ -25,18 +25,18 @@ import type { ResolvedConfig, Issue } from '../../src/types';
 // test runs (depends on how the runner is invoked).
 const SLOPBRICK_DIR = resolve(__dirname, '..', '..');
 
-describe('selfScan.excludePaths (v0.25.0)', () => {
+describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
   describe('defaults', () => {
-    it('DEFAULT_CONFIG.selfScan excludes src/rules/**, tests/fixtures/**, tests/rules/**', () => {
+    it('DEFAULT_CONFIG.selfScan excludes **/src/rules/**, **/snippet/**, **/tests/**', () => {
       expect(DEFAULT_CONFIG.selfScan).toBeDefined();
       expect(DEFAULT_CONFIG.selfScan?.excludePaths).toEqual([
-        'src/rules/**',
-        'tests/fixtures/**',
-        'tests/rules/**',
+        '**/src/rules/**',
+        '**/snippet/**',
+        '**/tests/**',
       ]);
     });
 
-    it('isExcludedBySelfScan returns true for files under src/rules/**', async () => {
+    it('isExcludedBySelfScan returns true for files under **/src/rules/**', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
         'src',
@@ -57,12 +57,12 @@ describe('selfScan.excludePaths (v0.25.0)', () => {
       expect(result.componentCount).toBe(0);
     });
 
-    it('isExcludedBySelfScan returns true for files under tests/fixtures/**', async () => {
+    it('isExcludedBySelfScan returns true for files under **/snippet/** (RULE_HINTS example SQL)', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
-        'tests',
-        'fixtures',
-        'sloppy.tsx',
+        'src',
+        'snippet',
+        'data.ts',
       );
       const result = await scanFile(
         filePath,
@@ -74,12 +74,12 @@ describe('selfScan.excludePaths (v0.25.0)', () => {
       expect(result.parseError).toBeUndefined();
     });
 
-    it('isExcludedBySelfScan returns true for files under tests/rules/**', async () => {
+    it('isExcludedBySelfScan returns true for any file under **/tests/** (unit, integration, engine, cli)', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
         'tests',
-        'rules',
-        'sql-construction.test.ts',
+        'engine',
+        'db-health.test.ts',
       );
       const result = await scanFile(
         filePath,

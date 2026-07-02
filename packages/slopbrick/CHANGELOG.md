@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.25.1] - 2026-07-22 — broadened `selfScan.excludePaths` defaults (7 self-scan FPs → 0)
+
+The v0.25.0 `selfScan.excludePaths` defaults were too narrow. They excluded `src/rules/**`, `tests/fixtures/**`, and `tests/rules/**` but missed `snippet/**` and the broader `tests/**` (engine, cli, integration test files). The result was 7 residual self-scan FPs (6 `security/sql-construction` + 1 `security/fail-open-auth`) that drove the v0.25.0 self-scan to `security = 41.67` (graded) instead of the achievable `100`.
+
+### What changed
+
+The default `selfScan.excludePaths` is broadened from 3 narrow globs to 3 broad globs (and the globs now use `**/` so they match the path at any depth — the previous globs assumed the workspace root was `packages/slopbrick/`, which broke if the user scanned from the monorepo root):
+
+```js
+// v0.25.0 (narrow, broke for monorepo-root scans)
+selfScan: {
+  excludePaths: [
+    'src/rules/**',        // 70 FPs removed
+    'tests/fixtures/**',
+    'tests/rules/**',
+  ],
+}
+
+// v0.25.1 (broad, robust to any workspace root)
+selfScan: {
+  excludePaths: [
+    '**/src/rules/**',     // 70 FPs
+    '**/snippet/**',       // 1 FP (RULE_HINTS example SQL)
+    '**/tests/**',         // 6 FPs (test files contain intentional bad code)
+  ],
+}
+```
+
+`isExcludedBySelfScan` already used `minimatch` and `**` semantics correctly — the fix was in the *defaults*, not the matcher.
+
+### Self-scan before/after
+
+| Metric | v0.24.0 | v0.25.0 | v0.25.1 |
+|---|---:|---:|---:|
+| `security` | 0 | 41.67 | **100** |
+| `repositoryHealth` | 15.8 | 9.1 | **62.8** |
+| `aiSlopScore` | 62.3 | 60.0 | 53.4 |
+| Security issues | 90 | 7 | **0** |
+
+The v9 plan's "security ≥ 80" criterion is now **met for slopbrick's own self-scan** (security = 100). `aiSlopScore` dropped because more rules moved from DORMANT to active after the `dup/near-duplicate` and `dup/identical-block` defaults were corrected in v0.23.x.
+
+### Public config contract
+
+The public config option (`selfScan.excludePaths`) is unchanged in shape — the same `string[]` of glob patterns. The **defaults** are what changed. Users who set `selfScan: { excludePaths: [] }` (opt out) keep v0.24.0 behavior. Users who set their own `excludePaths` are unaffected. Users who rely on the defaults now get the broadened set.
+
+### Files changed
+
+- `src/config/defaults.ts` — broadened default exclude paths (`**/` prefix, `**/tests/**` instead of `tests/{fixtures,rules}/**`, added `**/snippet/**`)
+- `tests/engine/self-scan-config.test.ts` — 3 tests updated to assert the broadened defaults
+  - "DEFAULT_CONFIG.selfScan excludes `**/src/rules/**`, `**/snippet/**`, `**/tests/**`"
+  - "isExcludedBySelfScan returns true for files under `**/snippet/**` (RULE_HINTS example SQL)" — new test
+  - "isExcludedBySelfScan returns true for any file under `**/tests/**` (unit, integration, engine, cli)" — replaces the old "tests/fixtures/**" + "tests/rules/**" pair
+
+### Honest finding: v0.25.0 CHANGELOG was wrong
+
+I wrote in v0.25.0's CHANGELOG that "6 `business-logic/hardcoded-currency-symbol` (a rule that fires on `className="bg-violet-500"`-style patterns)" were the remaining 7 FPs. That was a guess based on a misread of the self-scan output. The actual 7 FPs were 6 `security/sql-construction` + 1 `security/fail-open-auth`, all in test fixtures and the RULE_HINTS example. The v0.25.0 grading brought them to `security = 41.67` (not 0 as the CHANGELOG implied). The v0.25.1 broadened defaults bring security to the **true** 100.
+
+### v0.25.1 stats
+
+- 3 tests updated + 1 new test
+- 902/902 engine + cli tests pass
+- 0 new features, 0 contract changes
+- Patch release (v0.25.0 → v0.25.1)
+
+### Coming in v0.25.2+
+
+- Reinvestigate the 6 Java rules (all DORMANT, ratios 0.07–0.59). The v9 Java calibration showed they fire ~30× more on human code than AI-generated code, which means the "AI agents default to println" hypothesis from v0.20.0 was wrong (or the rules are too broad). Either drop the rules or redesign them as positive signals (e.g., "AI-specific patterns like `data class User(val name: String, val age: Int = 0, val email: String = "")`" rather than "any println").
+- Promote some of the DORMANT Kotlin/Swift/C++ rules to USEFUL once their corpora are built (Kotlin/Swift/C++ corpus builds are infrastructure-ready in v0.25.0; only Java has been calibrated).
+
 ## [0.25.0] - 2026-07-22 — graded security cap + `selfScan.excludePaths` (public score contract change)
 
 **The v0.25.0 release** ships two coupled changes that fix the systemic false-positive noise in slopbrick's self-scan security score. Together they restore the v9 plan's "security ≥ 80" pass criterion (unachievable in v0.24.0 due to 90 self-scan FPs collapsing the score to 0).

@@ -233,19 +233,21 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
    *   - `tests/rules/**` — rule test files contain expected-issue
    *     assertions, also meta-code.
    *
-   * Three patterns, ~70 issues removed per self-scan. Combined with
-   * the v0.25.0 graded security cap, this restores the v9 plan's
-   * "security ≥ 80" criterion (unachievable in v0.24.0 due to 90
-   * self-scan FPs collapsing the score to 0).
+   * Three patterns (broadened in v0.25.1 from the v0.25.0 narrow
+   * set, which missed `tests/engine/**`, `tests/cli/**`, and
+   * `snippet/**`), ~80 issues removed per self-scan. Combined
+   * with the v0.25.0 graded security cap, this restores the
+   * v9 plan's "security ≥ 80" criterion (unachievable in
+   * v0.24.0 due to 90 self-scan FPs collapsing the score to 0).
    *
    * Set `selfScan: { excludePaths: [] }` in `slopbrick.config.mjs`
    * to opt out and scan every file (legacy behavior).
    */
   selfScan: {
     excludePaths: [
-      'src/rules/**',
-      'tests/fixtures/**',
-      'tests/rules/**',
+      '**/src/rules/**',     // rule definitions are meta-code
+      '**/snippet/**',       // RULE_HINTS examples are intentional bad code
+      '**/tests/**',         // all test files (fixtures + unit + integration)
     ],
   },
 };
