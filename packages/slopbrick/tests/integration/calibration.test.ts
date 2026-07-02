@@ -99,6 +99,25 @@ function corpusAvailable(): boolean {
   return existsSync(POSITIVE_DIR) && existsSync(NEGATIVE_DIR);
 }
 
+// Real-corpus gate: a "synthetic" corpus (auto-bootstrapped with one
+// sample file) is not enough to run the calibration assertions — the
+// test builds per-rule ratios from a multi-thousand-file positive set
+// and a multi-thousand-file negative set, and fails (not skips) when
+// either set is empty. On a fresh checkout the auto-bootstrap will
+// populate /tmp/real-corpus/ai/ with one synthetic sample, but the
+// main POSITIVE_DIR / NEGATIVE_DIR may not exist (they're the operator's
+// local corpus paths). We require at least one real security sample
+// (which lives in the operator's checkout) to gate the test on real
+// data; otherwise we skip.
+function realCorpusAvailable(): boolean {
+  if (!corpusAvailable()) return false;
+  // The bootstrap always writes krebs-02-vibe-purple.tsx, so a directory
+  // that contains only that one file is the synthetic fallback. Real
+  // calibration requires the 20 security-* samples copied from
+  // POSITIVE_DIR; check for one of them.
+  return existsSync('/tmp/real-corpus/ai/security-01.tsx');
+}
+
 interface ScanResult {
   fileCount: number;
   firesPerFile: Map<string, number>;
@@ -191,9 +210,9 @@ function buildFileList(dir: string, extensions: string[]): string {
   return listPath;
 }
 
-const itIfCorpus = corpusAvailable() ? it : it.skip;
+const itIfCorpus = realCorpusAvailable() ? it : it.skip;
 
-describe('corpus calibration', () => {
+describe.skipIf(!realCorpusAvailable())('corpus calibration', () => {
   assertDistBuilt();
   const corpusResult = bootstrapLocalCorpus();
 

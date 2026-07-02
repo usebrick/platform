@@ -68,6 +68,35 @@ pnpm -r build        # builds core first (workspace dep), then slopbrick
 
 CI runs the same commands on every PR + push to main. Publishing the `slopbrick` package to npm is triggered by `release: types: [published]` (when you cut a GitHub release), not by tag pushes. The `publish.yml` workflow has two human gates: the `publish` environment approval + the release itself.
 
+### Pre-push hook (the "local tests pass, CI fails" trap)
+
+The `slopbrick` test suite is 2116+ tests. Running a scoped subset (e.g. `pnpm vitest run tests/rules/kotlin/`) is fast and useful during development, but it can miss full-suite failures like `tests/engine/signal-strength-guardrails.test.ts` (v0.24.0 lesson: a pre-existing DORMANT-vs-`defaultOff` invariant violation was caught by CI but missed by my scoped local run). The v0.24.0 publish run failed at this exact test.
+
+`packages/slopbrick/scripts/pre-push` is a git hook that runs the **same gates as `publish.yml`** (typecheck + full `pnpm test` + build) before allowing a push to `main`. Install it once:
+
+```bash
+ln -s ../../packages/slopbrick/scripts/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+After install, `git push origin main` will block on any failure that would fail `publish.yml`. To bypass in an emergency (e.g. a docs-only commit that doesn't need a full test run): `SKIP_PRE_PUSH_TESTS=1 git push --no-verify`.
+
+The hook only enforces on publish branches (`main`); feature branches skip the full gate so iteration stays fast.
+
+### Pre-release checklist (cutting a version)
+
+1. Bump `packages/slopbrick/package.json#version` and the v0.X.Y tag in your release commit
+2. Update `packages/slopbrick/CHANGELOG.md` (the `## [version]` header at the top)
+3. Run the full gate locally: `pnpm -r typecheck && pnpm -r test && pnpm -r build`
+4. Self-scan: `pnpm --filter slopbrick exec -- slopbrick scan --workspace packages/slopbrick/src` — record the scores in the release commit body
+5. Commit + push to `main` (the pre-push hook enforces #3 automatically)
+6. `git tag v0.X.Y && git push origin v0.X.Y` — pushes the tag, but **does not** publish
+7. `gh release create v0.X.Y --notes-file <CHANGELOG excerpt>` — this is what triggers `publish.yml`
+8. Approve the deployment in the `publish` environment (or wait for the OIDC trusted-publisher to skip the env gate)
+9. Watch the `publish` workflow run; on green, `npm view slopbrick@<version>` should show the new version within ~3 minutes
+
+**Do not** use `pnpm publish` or `npm publish` locally. The OIDC trusted publishing in `publish.yml` is the only supported path; local publish will fail with 401 and the local `~/.npmrc` token is no longer used.
+
 ## Conventions for changes touching `core/`
 
 `packages/core/` is the shared spec. Touch it sparingly:

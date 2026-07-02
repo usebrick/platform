@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# slopbrick pre-push hook — installed via:
+#   ln -s ../../packages/slopbrick/scripts/pre-push .git/hooks/pre-push
+#
+# Runs the SAME quality gates as .github/workflows/publish.yml
+# (Run slopbrick quality gates step) so a green push guarantees a
+# green publish. This prevents the "local tests pass, CI fails" gap
+# where scoped test runs miss full-suite failures.
+#
+# To bypass in an emergency:
+#   git push --no-verify
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Skip if this is the .kimi-code sandbox or another non-publish path
+# (e.g. pushing a docs-only commit). The script runs only when the
+# push target is the canonical publish branch.
+PUBLISH_BRANCHES=("main")
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+IS_PUBLISH_BRANCH=false
+for b in "${PUBLISH_BRANCHES[@]}"; do
+  if [[ "$CURRENT_BRANCH" == "$b" ]]; then
+    IS_PUBLISH_BRANCH=true
+    break
+  fi
+done
+
+if [[ "$IS_PUBLISH_BRANCH" != "true" ]]; then
+  echo "[pre-push] branch '$CURRENT_BRANCH' is not a publish branch; skipping full gate."
+  echo "[pre-push] (this hook runs the full gate on: ${PUBLISH_BRANCHES[*]})"
+  exit 0
+fi
+
+echo "[pre-push] running slopbrick quality gates on branch '$CURRENT_BRANCH'..."
+echo "[pre-push] (matches .github/workflows/publish.yml 'Run slopbrick quality gates' step)"
+echo
+
+# Step 1: typecheck (fast — fails on TS errors before spending minutes
+# on tsup build)
+echo "[pre-push] 1/3: pnpm typecheck"
+pnpm --filter slopbrick typecheck
+
+# Step 2: full test suite (matches what publish.yml runs).
+# This is the step that catches what scoped local runs miss.
+# Bypassed only if SKIP_PRE_PUSH_TESTS=1 (e.g. for an emergency docs
+# commit that is not in any publish path).
+if [[ "${SKIP_PRE_PUSH_TESTS:-}" != "1" ]]; then
+  echo
+  echo "[pre-push] 2/3: pnpm test (full suite — 2116+ tests)"
+  pnpm --filter slopbrick test
+else
+  echo "[pre-push] 2/3: SKIPPED (SKIP_PRE_PUSH_TESTS=1)"
+fi
+
+# Step 3: build (publish.yml also builds core + engine + slopbrick
+# separately; this is the same ESM+CJS+DTS bundle the publish uses).
+echo
+echo "[pre-push] 3/3: pnpm build"
+pnpm --filter slopbrick build
+
+echo
+echo "[pre-push] ✅ all gates green. Pushing to $CURRENT_BRANCH."
