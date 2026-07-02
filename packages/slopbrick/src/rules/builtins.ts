@@ -21,6 +21,11 @@ import { giantComponentRule } from './component/giant-component';
 import { multipleComponentsPerFileRule } from './component/multiple-components-per-file';
 import { shadcnPropMismatchRule } from './component/shadcn-prop-mismatch';
 import { importPathMismatchRule } from './context/import-path-mismatch';
+import { cppCStyleCastRule } from './cpp/c-style-cast';
+import { cppMagicNumbersRule } from './cpp/magic-numbers';
+import { cppPrintfDebugRule } from './cpp/printf-debug';
+import { cppRawNewDeleteRule } from './cpp/raw-new-delete';
+import { cppUsingNamespaceStdRule } from './cpp/using-namespace-std';
 import { duplicateIndexRule } from './db/duplicate-index';
 import { enumSprawlRule } from './db/enum-sprawl';
 import { missingFkIndexRule } from './db/missing-fk-index';
@@ -46,6 +51,11 @@ import { javaLegacyDateApiRule } from './java/legacy-date-api';
 import { javaRawTypeOveruseRule } from './java/raw-type-overuse';
 import { javaStringConcatLoopRule } from './java/string-concat-loop';
 import { javaSystemOutPrintlnRule } from './java/system-out-println';
+import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
+import { kotlinDataClassDefaultsOveruseRule } from './kotlin/data-class-defaults-overuse';
+import { kotlinObjectSingletonMisuseRule } from './kotlin/object-singleton-misuse';
+import { kotlinPrintlnDebugRule } from './kotlin/println-debug';
+import { kotlinStringConcatLoopRule } from './kotlin/string-concat-loop';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -84,6 +94,11 @@ import { publicAdminRouteRule } from './security/public-admin-route';
 import { sqlConstructionRule } from './security/sql-construction';
 import { targetBlankNoNoopenerRule } from './security/target-blank-no-noopener';
 import { unsafeHtmlRenderRule } from './security/unsafe-html-render';
+import { swiftFatalErrorThrownRule } from './swift/fatal-error-thrown';
+import { swiftForceUnwrapRule } from './swift/force-unwrap';
+import { swiftImplicitlyUnwrappedOptionalRule } from './swift/implicitly-unwrapped-optional';
+import { swiftPrintDebugRule } from './swift/print-debug';
+import { swiftStrongSelfCaptureRule } from './swift/strong-self-capture';
 import { duplicateSetupRule } from './test/duplicate-setup';
 import { fakePlaceholderRule } from './test/fake-placeholder';
 import { missingEdgeCaseRule } from './test/missing-edge-case';
@@ -141,6 +156,11 @@ export const builtinRules: Rule[] = [
   multipleComponentsPerFileRule,
   shadcnPropMismatchRule,
   importPathMismatchRule,
+  cppCStyleCastRule,
+  cppMagicNumbersRule,
+  cppPrintfDebugRule,
+  cppRawNewDeleteRule,
+  cppUsingNamespaceStdRule,
   duplicateIndexRule,
   enumSprawlRule,
   missingFkIndexRule,
@@ -166,6 +186,11 @@ export const builtinRules: Rule[] = [
   javaRawTypeOveruseRule,
   javaStringConcatLoopRule,
   javaSystemOutPrintlnRule,
+  kotlinCoroutineGlobalScopeRule,
+  kotlinDataClassDefaultsOveruseRule,
+  kotlinObjectSingletonMisuseRule,
+  kotlinPrintlnDebugRule,
+  kotlinStringConcatLoopRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
@@ -204,6 +229,11 @@ export const builtinRules: Rule[] = [
   sqlConstructionRule,
   targetBlankNoNoopenerRule,
   unsafeHtmlRenderRule,
+  swiftFatalErrorThrownRule,
+  swiftForceUnwrapRule,
+  swiftImplicitlyUnwrappedOptionalRule,
+  swiftPrintDebugRule,
+  swiftStrongSelfCaptureRule,
   duplicateSetupRule,
   fakePlaceholderRule,
   missingEdgeCaseRule,

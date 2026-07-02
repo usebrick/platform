@@ -1,0 +1,107 @@
+/**
+ * Rule: swift/force-unwrap
+ *
+ * Swift force-unwrap forms in production (non-test) source:
+ *   - `foo as! Type`            — forced type cast
+ *   - `something!.bar`          — forced optional unwrap on access
+ *   - `try! someThrowingCall()` — forced `try`
+ *
+ * Force-unwraps crash at runtime when the value is nil. Swift
+ * explicitly distinguishes the unconditional form (`!`) from the
+ * safe form (`?`) precisely because silent fall-through is rarely
+ * what callers want.
+ *
+ * **Why this matters:**
+ * - A force-unwrap converts "the value might be nil" into "the
+ *   program crashes if the value is nil". In production that's a
+ *   crash log shipped to a customer. Apple SwiftLint
+ *   (`discarded_notification_center_post_style`, `force_cast`,
+ *   `force_try`, `force_unwrapping`) flags every shape above.
+ * - AI agents reach for `!` because their training data has many
+ *   "make it compile, deal with the edge case later" snippets; the
+ *   Swift optional system is one of the most distinctive things
+ *   the language adds over TypeScript / Java, and AI agents under-
+ *   use the safe forms.
+ * - We deliberately skip files that `import XCTest` (test files
+ *   routinely force-unwrap because tests assert specific values
+ *   and `XCTUnwrap(...)` is verbose).
+ * - Severity: medium. Each force-unwrap is a potential prod crash.
+ * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ *
+ * **Scope:** file-local. Regex on the source text. We treat
+ * the `!` as a force-unwrap only when NOT preceded by a word /
+ * closing paren character (so `Optional.foo!.bar` is also caught
+ * via the access form).
+ */
+
+import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
+import { createRule } from '../rule';
+
+export interface SwiftForceUnwrapContext {
+  // No configuration.
+}
+
+// `as! ` cast — identifier or `?` is allowed before (we don't want
+// `as?` to match).
+const AS_FORCE_REGEX = /\bas!\s+/g;
+// Access-style force unwrap: identifier followed by `!` then dot or
+// `(` or `;`. The `!` may be preceded by an identifier or `]`.
+const ACCESS_FORCE_REGEX = /(?:\w|\])\!\s*(?:\.|\(|;|,|\s*$)/gm;
+// Forced try: `try!`.
+const TRY_FORCE_REGEX = /\btry!\s+/g;
+
+export const swiftForceUnwrapRule = createRule<SwiftForceUnwrapContext>({
+  id: 'swift/force-unwrap',
+  category: 'logic',
+  severity: 'medium',
+  aiSpecific: true,
+  description:
+    'Swift force-unwrap (as!, var!.prop, try!) — silently crashes if the value is nil. Use as? / guard let / try?.',
+  create(_context: RuleContext): SwiftForceUnwrapContext {
+    return {};
+  },
+  analyze(_context: SwiftForceUnwrapContext, facts: ScanFacts): Issue[] {
+    const issues: Issue[] = [];
+    const source = facts.v2?._source;
+    if (!source) return issues;
+    // v0.24.0: Swift-only rule.
+    if (!/\.swift$/i.test(facts.filePath)) return issues;
+
+    // Skip test files: force-unwraps are idiomatic in test code.
+    if (/\bimport\s+XCTest\b/.test(source)) return issues;
+
+    const emit = (idx: number, label: string): void => {
+      const line = source.slice(0, idx).split('\n').length;
+      issues.push({
+        ruleId: 'swift/force-unwrap',
+        category: 'logic',
+        severity: 'medium',
+        aiSpecific: true,
+        message: `force-unwrap (${label}) at line ${line} — crashes if the value is nil`,
+        line,
+        column: 1,
+        advice:
+          'Replace with the safe form: `as?` + guard/if let, `try?` + nil-check, ' +
+          'or `guard let x = optional else { return }` instead of `x!`. ' +
+          'A force-unwrap converts "the value might be nil" into "the program ' +
+          'crashes if the value is nil" — in production that is a customer-facing ' +
+          'crash log. AI agents reach for `!` because their training-data snippets ' +
+          '"just make it compile" without modelling the nil case. Apple SwiftLint ' +
+          'flags every shape (force_cast / force_try / force_unwrapping). ' +
+          'Reference: swift/force-unwrap v0.24.',
+      });
+    };
+
+    let m: RegExpExecArray | null;
+    AS_FORCE_REGEX.lastIndex = 0;
+    while ((m = AS_FORCE_REGEX.exec(source)) !== null) emit(m.index, 'as!');
+    TRY_FORCE_REGEX.lastIndex = 0;
+    while ((m = TRY_FORCE_REGEX.exec(source)) !== null) emit(m.index, 'try!');
+    ACCESS_FORCE_REGEX.lastIndex = 0;
+    while ((m = ACCESS_FORCE_REGEX.exec(source)) !== null) emit(m.index, '!.');
+
+    return issues;
+  },
+});
+
+export default swiftForceUnwrapRule satisfies Rule<SwiftForceUnwrapContext>;

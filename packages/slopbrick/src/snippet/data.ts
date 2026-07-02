@@ -302,6 +302,39 @@ const RULE_HINTS: Record<string, string> = {
     "Replace raw `List` / `Map` / `Set` with the parameterized form. Raw types disable generic type checking (Effective Java, Item 23). AI agents default to raw types when unsure of the correct generic parameters.",
   'java/string-concat-loop':
     "Declare a `StringBuilder` outside the loop: `StringBuilder sb = new StringBuilder(); sb.append(...);` then `return sb.toString();` after. String concat in a loop is O(n²).",
+  // v0.24.0 — Kotlin rules (DORMANT until v9 Kotlin corpus calibration)
+  'kotlin/data-class-defaults-overuse':
+    "Audit which fields are genuinely optional. Real Kotlin uses defaults sparingly (1-2 callbacks, the rest required). v0.24.0 — DORMANT until v9 calibration.",
+  'kotlin/coroutine-global-scope':
+    "Replace with `viewModelScope.launch { ... }`, `lifecycleScope.launch { ... }`, or `coroutineScope { ... }`. GlobalScope bypasses cancellation. (v0.24.0 — DORMANT.)",
+  'kotlin/println-debug':
+    "Replace with `Timber.d(...)` or `android.util.Log`. `println` writes to stdout with no level, no redaction, can't be silenced in release builds. (v0.24.0 — DORMANT.)",
+  'kotlin/object-singleton-misuse':
+    "Replace with a class injected via DI, a Repository, or `MutableStateFlow`. The `object` keyword gives a thread-safe singleton handle, NOT thread-safe `var` fields. (v0.24.0 — DORMANT.)",
+  'kotlin/string-concat-loop':
+    "Wrap the loop in `buildString { append(...) }` or hoist a `StringBuilder`. Kotlin can't optimize `s = s + x` in a loop — O(n²). (v0.24.0 — DORMANT.)",
+  // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)
+  'swift/force-unwrap':
+    "Replace with the safe form: `as?` + guard/if let, `try?`, or `guard let x = optional else { return }`. `!` crashes unconditionally in release. (v0.24.0 — DORMANT.)",
+  'swift/print-debug':
+    "Replace with `Logger(subsystem:..., category:...).info(...)` (os.log). `print` writes to stdout with no level and no redaction. (v0.24.0 — DORMANT.)",
+  'swift/fatal-error-thrown':
+    "Replace with `return` of a typed default (e.g. `nil`, `[]()`) or throw a typed `enum MyError: Error`. `fatalError` survives release builds. (v0.24.0 — DORMANT.)",
+  'swift/implicitly-unwrapped-optional':
+    "Declare as `var name: Type?` and unwrap with `guard let`. IUOs exist for Obj-C bridging / IBOutlets but using them everywhere is an AI signal. (v0.24.0 — DORMANT.)",
+  'swift/strong-self-capture':
+    "Capture with `[weak self]` (or `[unowned self]` if guaranteed non-nil): `[weak self] in self?.foo = bar`. Strong self capture creates a retain cycle. (v0.24.0 — DORMANT.)",
+  // v0.24.0 — C++ rules (DORMANT until v9 C++ corpus calibration)
+  'cpp/using-namespace-std':
+    "Remove the directive and qualify names with `std::`, or use targeted `using std::cout;`. C++ Core Guidelines (SF.6/SF.7) forbid `using namespace` in headers. (v0.24.0 — DORMANT.)",
+  'cpp/raw-new-delete':
+    "Replace with `auto p = std::make_unique<T>(...)`. Smart pointers delete on scope exit, never leak on early return / exception, never double-free. (v0.24.0 — DORMANT.)",
+  'cpp/c-style-cast':
+    "Use the named cast: `static_cast<int>(x)`, `reinterpret_cast<...>(p)`, `const_cast<...>(ref)`. C-style casts silently pick static / reinterpret / const — impossible to grep. (v0.24.0 — DORMANT.)",
+  'cpp/printf-debug':
+    "Replace with `spdlog::info(...)`, `LOG(INFO) << ...` (glog), or `ABSL_LOG(INFO) << ...`. `printf` / `std::cout` have no levels, no redaction, no sink routing. (v0.24.0 — DORMANT.)",
+  'cpp/magic-numbers':
+    "Replace with `constexpr int MAX = 1024;` (or `static constexpr`). Named constants live next to their value, can be searched, force the reader to mean what they say. (v0.24.0 — DORMANT.)",
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };
