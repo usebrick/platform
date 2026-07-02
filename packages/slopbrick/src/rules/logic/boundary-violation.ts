@@ -39,28 +39,29 @@ export const boundaryViolationRule = createRule<BoundaryViolationContext>({
 
     const issues: Issue[] = [];
 
-    // Build a map of hook-name → line/column from the v2 logic.hooks array.
-    const hookLines = new Map<string, Array<{ line: number; column: number }>>();
-    for (const h of facts.v2.logic.hooks) {
-      const arr = hookLines.get(h.name) ?? [];
-      arr.push({ line: h.line, column: h.column });
-      hookLines.set(h.name, arr);
-    }
-
     for (const component of facts.v2.components) {
       if (!component.isServerComponent) continue;
-      for (const hook of facts.v2.logic.hooks) {
+      // v0.20.0 R-INVERTED fix: was iterating over `facts.v2.logic.hooks`
+      // (GLOBAL — every hook in the codebase) and creating one issue per
+      // (component, hook) pair, regardless of whether the hook was
+      // actually in the component. With 5 server components and 100
+      // client hooks across the codebase, that produced 500 false
+      // positives per scan, all pointing to the component's line (not
+      // the hook's line). The comment admitted it: "reports the
+      // component's location; per-hook scoping comes later." It never
+      // came. Fix: iterate over `component.hookCalls` (the v2 facts
+      // already scope hooks to the component) and report the hook's
+      // actual line.
+      for (const hook of component.hookCalls) {
         if (!context.clientHooks.has(hook.name)) continue;
-        // Find the hook's location within this component's scope.
-        // reports the component's location; per-hook scoping comes later.
         issues.push({
           ruleId: 'logic/boundary-violation',
           category: 'logic',
           severity: 'high',
           aiSpecific: true,
           message: `'${hook.name}' only works in interactive client components. This component runs on the server.`,
-          line: component.line,
-          column: component.column,
+          line: hook.line,
+          column: hook.column,
           advice: "Add the 'use client' directive at the top of this file, or move the stateful part to a separate client component.",
           fix: {
             kind: 'insert',
