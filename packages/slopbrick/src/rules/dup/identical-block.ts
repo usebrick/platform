@@ -110,6 +110,18 @@ export const dupIdenticalBlockRule = createRule<DupIdenticalBlockContext>({
   category: 'logic',
   severity: 'medium',
   aiSpecific: false,
+  // v0.21.0: defaultOff matches the rule's own header comment
+  // ("default off until calibrated on v0.20's near-dup calibration
+  // corpus"). The current self-scan fires 459 times across 33 files
+  // (concentrated in language visitors with legitimately similar
+  // parser code: ruby.ts 78, kotlin.ts 40, php.ts 38, sql-construction.ts
+  // 34, naming-inconsistency.ts 56). The cross-file dedup is a useful
+  // signal but the 10-line window + byte-for-byte match is too
+  // sensitive for v0.21 — it fires on parser boilerplate that's
+  // structurally similar but semantically different. Opt in via
+  // `rules: { 'dup/identical-block': 'medium' }` in slopbrick.config.mjs
+  // once the calibration corpus is built.
+  defaultOff: true,
   description: 'Block of >=10 lines is identical across >=2 files (Type-1 clone detector)',
   create(_context: RuleContext): DupIdenticalBlockContext {
     return {};
