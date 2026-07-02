@@ -51,8 +51,18 @@ const MIN_LENGTH = 50;
 /**
  * Lower bound on the distinct-token ratio. Below this the file is
  * flagged. Cite Hindle 2012 §4.3 in any PR that touches this number.
+ *
+ * v0.20.0 calibration tune: original 0.3 fired 184 times on
+ * self-scan and was the dominant contributor to the visual
+ * sub-score saturating at 100. First attempt raised to 0.4
+ * (matching the rule's own comment) but the fire condition is
+ * `ratio < FLOOR` — raising FLOOR fires on MORE files (319
+ * with 0.4, up from 184), not fewer. The comment is misleading.
+ * Correct fix: lower the floor to 0.2 (subset of < 0.3, so
+ * fewer fires, higher precision). Re-evaluate with the v9
+ * corpus calibration.
  */
-const DISTINCT_RATIO_FLOOR = 0.3;
+const DISTINCT_RATIO_FLOOR = 0.2;
 
 export const naturalnessAnomalyRule = createRule<NaturalnessAnomalyContext>({
   id: 'visual/naturalness-anomaly',
