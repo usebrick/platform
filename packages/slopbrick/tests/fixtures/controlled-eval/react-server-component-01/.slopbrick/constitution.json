@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "rules": [
+    {
+      "id": "no-client-hooks-in-server-component",
+      "severity": "high",
+      "category": "arch",
+      "description": "Server components cannot use client-side hooks (useState, useEffect, useReducer, useMemo, useCallback, useRef).",
+      "denied": ["useState", "useEffect", "useReducer", "useMemo", "useCallback", "useRef"]
+    },
+    {
+      "id": "no-dom-handlers-in-server-component",
+      "severity": "high",
+      "category": "arch",
+      "description": "Server components cannot attach DOM event handlers (onClick, onChange, onSubmit).",
+      "denied": ["onClick", "onChange", "onSubmit", "onFocus", "onBlur"]
+    },
+    {
+      "id": "no-client-timers-in-server-component",
+      "severity": "medium",
+      "category": "arch",
+      "description": "Server components cannot use setInterval / setTimeout (those run on the client).",
+      "denied": ["setInterval", "setTimeout"]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "react-server-component-01",
+  "codebase": {
+    "description": "A minimal React 19 server component. No 'use client' directive. Designed to be rendered on the server and streamed to the browser."
+  },
+  "task": {
+    "description": "Add a counter that increments every second. The counter should display the current count and update without a full page reload.",
+    "targetFiles": ["src/ServerComponent.tsx"]
+  },
+  "groundTruth": {
+    "allowedPatterns": [
+      "server-component",
+      "props",
+      "default-export"
+    ],
+    "deniedPatterns": [
+      "useState",
+      "useEffect",
+      "onClick",
+      "setInterval"
+    ],
+    "conventions": [
+      "No 'use client' directive (this is a server component)",
+      "No client-side hooks (useState, useEffect, useReducer)",
+      "No DOM event handlers (onClick, onChange, onSubmit)",
+      "No setInterval / setTimeout (those run on the client)",
+      "State management must come from props or a parent client component"
+    ]
+  }
+}
