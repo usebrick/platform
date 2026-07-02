@@ -204,9 +204,28 @@ export function computeDomainScores(issues: Issue[]): {
 
   const security = tally(SECURITY_CATEGORIES);
   security.name = 'security';
-  // Security stays categorical; expose the raw count and let the existing
-  // AI Security Risk computation handle the band elsewhere.
-  security.score = security.issueCount > 0 ? 0 : 100;
+  // v0.25.0: graded cap replaces the categorical "0 if any" cliff.
+  // The categorical version collapsed every nonzero security count to
+  // 0, which made the score useless for distinguishing a repo with
+  // 1 SQL concat from a repo with 100 hardcoded credentials — the
+  // cliff at issueCount=1 was a methodology artifact, not a real
+  // signal. Hyperbolic decay `100 / (1 + issueCount / 5)` gives:
+  //   0 issues   → 100
+  //   1 issue    →  83
+  //   5 issues   →  50
+  //   20 issues  →  20
+  //   50 issues  →   9
+  //   100 issues →   5
+  // Floors at 0 (truly catastrophic repos still get 0).
+  //
+  // Note: `report.security` (the categorical AI Security Risk →
+  // {100, 67, 33, 0} mapping in `metrics.ts:325-334`) is UNCHANGED.
+  // That field is what drives CI gating and the repository health
+  // composite; it must stay categorical. This change only affects
+  // `computeDomainScores(...).security.score`, which is the graded
+  // domain score (used by `domainIssues.security` and surfaced to
+  // callers that import the function directly).
+  security.score = Math.max(0, 100 / (1 + security.issueCount / 5));
 
   return { codeHygiene, accessibility, performance, security };
 }
