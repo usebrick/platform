@@ -1,0 +1,143 @@
+{
+  "_comment": "v9 corpus manifest — Kotlin arm. The .template.json is committed; the operator copies this to corpus-manifest-kotlin.local.json (gitignored, see the **/corpus-manifest.local.json rule) and fills in the local_clone_path for each repo. See v9-plan-2026-07-02-update.md for the corpus build process and methodology-minimum-sample-size.md for the guardrails (10k files per arm, 10 fires per DORMANT rule, 5% parse-failure ceiling).",
+
+  "version": "v9.0-kotlin-draft",
+  "build_date": "2026-07-02",
+  "methodology_reference": "packages/slopbrick/docs/research/methodology-minimum-sample-size.md",
+  "minimum_sample_size": 10000,
+  "minimum_total_fires": 10,
+
+  "arm": "kotlin",
+  "language_extensions": ["kt", "kts"],
+  "file_size_cap_mb": 1.0,
+  "files_target": {"neg": 12000, "pos": 8000},
+  "pos_cutoff": "2024-12-17",
+  "neg_cutoff_before": "2018-06-01",
+
+  "neg_repos": [
+    {
+      "name": "ktor",
+      "url": "https://github.com/ktorio/ktor",
+      "checkout": "0.9.x",
+      "rationale": "Ktor pre-1.0; canonical Kotlin server framework; pre-LLM-coding-boom",
+      "files_estimate": 1200
+    },
+    {
+      "name": "okhttp",
+      "url": "https://github.com/square/okhttp",
+      "checkout": "parent-4.9.0",
+      "rationale": "Square OkHttp; mature Kotlin-friendly HTTP client",
+      "files_estimate": 800
+    },
+    {
+      "name": "retrofit",
+      "url": "https://github.com/square/retrofit",
+      "checkout": "parent-2.9.0",
+      "rationale": "Square Retrofit; mature type-safe HTTP client",
+      "files_estimate": 400
+    },
+    {
+      "name": "anvil",
+      "url": "https://github.com/square/anvil",
+      "checkout": "2.0.x",
+      "rationale": "Square Anvil; Dagger/Hilt compiler; pre-AI",
+      "files_estimate": 300
+    },
+    {
+      "name": "arrow",
+      "url": "https://github.com/arrow-kt/arrow",
+      "checkout": "0.7.x",
+      "rationale": "Arrow pre-1.0; functional programming for Kotlin; pre-AI",
+      "files_estimate": 900
+    },
+    {
+      "name": "exposed",
+      "url": "https://github.com/JetBrains/Exposed",
+      "checkout": "0.10.x",
+      "rationale": "JetBrains Exposed; SQL framework on Kotlin; pre-AI",
+      "files_estimate": 700
+    },
+    {
+      "name": "kotlinx-coroutines",
+      "url": "https://github.com/Kotlin/kotlinx.coroutines",
+      "checkout": "0.22.x",
+      "rationale": "JetBrains kotlinx.coroutines; canonical async; pre-AI",
+      "files_estimate": 600
+    },
+    {
+      "name": "mockk",
+      "url": "https://github.com/mockk/mockk",
+      "checkout": "1.8.x",
+      "rationale": "MockK; Kotlin mocking library; pre-AI",
+      "files_estimate": 300
+    },
+    {
+      "name": "coil",
+      "url": "https://github.com/coil-kt/coil",
+      "checkout": "0.10.x",
+      "rationale": "Coil pre-1.0; image loader for Android; pre-AI",
+      "files_estimate": 400
+    },
+    {
+      "name": "intellij-community-samples-pre-2018",
+      "url": "https://github.com/JetBrains/intellij-community",
+      "checkout": "idea/183.4284.37",
+      "rationale": "IntelliJ Community 2018.1 (early-2018, pre-AI); Kotlin plugin samples",
+      "files_estimate": 4000,
+      "note": "idea/183.4284.37 is the 2018.1 build (Mar 2018) — strictly before the 2018-06-01 neg cutoff."
+    }
+  ],
+
+  "pos_repos": [
+    {
+      "name": "spring-ai-kotlin-samples",
+      "url": "https://github.com/spring-projects/spring-ai-kotlin-samples",
+      "checkout": "main",
+      "rationale": "Spring AI Kotlin samples; LLM integration in Kotlin (2024-12+)",
+      "files_estimate": 300
+    },
+    {
+      "name": "langchain4j-kotlin",
+      "url": "https://github.com/langchain4j/langchain4j-kotlin",
+      "checkout": "main",
+      "rationale": "LangChain4j Kotlin bindings; LLM orchestration",
+      "files_estimate": 200
+    },
+    {
+      "name": "kotlin-ai-examples",
+      "url": "https://github.com/Kotlin/kotlin-ai-examples",
+      "rationale": "JetBrains Kotlin AI examples; post-2024-12",
+      "files_estimate": 250
+    },
+    {
+      "name": "ktor-ai-samples",
+      "url": "https://github.com/ktorio/ktor-ai-samples",
+      "rationale": "Ktor AI samples; LLM server endpoints in Kotlin",
+      "files_estimate": 150
+    },
+    {
+      "name": "cursor-kotlin-tutorials",
+      "url": "https://github.com/cursor-ai/cursor-kotlin-tutorials",
+      "rationale": "Cursor-published Kotlin AI coding tutorials; post-2024-12",
+      "files_estimate": 200
+    }
+  ],
+
+  "v8_corpus_avoidance": "Verify these repos were NOT in the v7 or v8 corpus (per methodology-minimum-sample-size.md's cross-corpus contamination guard). grep -l any of these names under ~/.slopbrick-cache/v7-repos/ or v8-repos/ before running.",
+
+  "build_process": [
+    "1. Copy this file to corpus-manifest-kotlin.local.json (gitignored)",
+    "2. For each repo, run: git fetch --unshallow && git checkout <ref>",
+    "3. Compute the filelist (handled by build-v9-corpus.ts --ext kt,kts --arm kotlin)",
+    "4. Run: tsx scripts/build-v9-corpus.ts --manifest corpus-manifest-kotlin.local.json --arm kotlin --out ./v9-fires",
+    "5. Compute v9 calibration: see scripts/compute-v9-calibration.py (TBD)",
+    "6. Update signal-strength.json with v9 verdict, _v9Verdict, _v9Lift, _v9Recall, _v9FpRate, _v9Precision"
+  ],
+
+  "success_criteria": {
+    "files_neg": "≥ 12000",
+    "files_pos": "≥ 8000",
+    "rules_measurable": "≥ 5 (the 5 new Kotlin rules, scheduled for v0.25)",
+    "rules_promoted": "≥ 1 (at least one Kotlin rule becomes USEFUL on v9)"
+  }
+}
