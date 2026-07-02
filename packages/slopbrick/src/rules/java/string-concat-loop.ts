@@ -54,6 +54,11 @@ export const javaStringConcatLoopRule = createRule<JavaStringConcatLoopContext>(
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: Java-only rule. The `s = s + x` regex pattern
+    // appears in many languages; this rule is calibrated on the
+    // v9 Java corpus arm. Gate by extension to keep the
+    // signal-to-noise ratio correct.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     // Quick heuristic: only fire if the file contains a loop keyword.
     // Without this, we'd flag single `s = s + x` statements (which

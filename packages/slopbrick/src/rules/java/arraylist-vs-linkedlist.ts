@@ -45,6 +45,11 @@ export const javaArraylistVsLinkedlistRule = createRule<JavaArraylistVsLinkedlis
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: Java-only rule. The `new LinkedList<>` regex would
+    // also match TypeScript / JavaScript / generic identifier names
+    // that contain "LinkedList" as a substring. Gating by extension
+    // keeps the rule a clean Java signal.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     NEW_LINKED_LIST_REGEX.lastIndex = 0;

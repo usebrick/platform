@@ -45,6 +45,11 @@ export const javaEmptyCatchBlockRule = createRule<JavaEmptyCatchBlockContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: Java-only rule. The `catch (X) { }` regex is
+    // syntactically similar to try/catch in TS/JS but the
+    // patterns that matter here (singleton catch with no body)
+    // are an idiomatic Java anti-pattern. Keep it scoped to Java.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     SINGLE_LINE_EMPTY_CATCH_REGEX.lastIndex = 0;

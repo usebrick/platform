@@ -60,6 +60,13 @@ export const javaRawTypeOveruseRule = createRule<JavaRawTypeOveruseContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: only fire on Java files. The rule's `RAW_TYPE_REGEX`
+    // matches `\b(List|Map|Set|Collection|Iterable)\s+\w+` which also
+    // matches TypeScript identifiers like `const List = ...` or
+    // `let Map = ...` (rare but happens in naming-after-data-structure
+    // code). Without this gate, the rule fired 28 times in src/ on
+    // TS files. Keep the rule a Java-only signal.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     RAW_TYPE_REGEX.lastIndex = 0;

@@ -48,6 +48,11 @@ export const javaSystemOutPrintlnRule = createRule<JavaSystemOutPrintlnContext>(
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: Java-only rule. `System.out.println` is the
+    // canonical Java print statement; gating by extension
+    // prevents false positives on TS files that happen to
+    // have `System.out.println` in a comment or a string.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     // Count `System.out.println` calls.
     const matches: number[] = [];

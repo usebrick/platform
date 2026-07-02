@@ -50,6 +50,13 @@ export const javaLegacyDateApiRule = createRule<JavaLegacyDateApiContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // v0.21.2: only fire on Java files. The rule's
+    // `LEGACY_USAGE_REGEX` is `\bnew\s+(?:Date|GregorianCalendar)\s*\(`
+    // which also matches JavaScript's `new Date()` constructor
+    // (Node/Browser Date). Without this gate, the rule fired 29 times
+    // in src/ on TS files — every legitimate `new Date()` in a
+    // TypeScript file is a false positive for a Java-only rule.
+    if (!/\.java$/i.test(facts.filePath)) return issues;
 
     // Track which line numbers have already been flagged (a line with
     // both an import and a usage should emit one issue, not two).
