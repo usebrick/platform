@@ -100,8 +100,8 @@ export async function scanFile(
   // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
   // fire. Languages we have NO visitor for (.swift, .kt, .dart,
-  // .cpp, .rb, .php) still get the early-return because
-  // every rule attempt would burn the parseError path.
+  // .cpp, .rb, .php) still get the early-return because every
+  // rule attempt would burn the parseError path.
   //
   // v0.18.9: removed `.rs` from this set. The tree-sitter Rust
   // integration (see `visitors/rust.ts` and `parser-rust.ts`) is
