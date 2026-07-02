@@ -119,7 +119,7 @@ v0.15.0 is a **hard-break release** that ships the full v0.15.0 plan:
 
 - **Rebrand**: "Repository Memory Platform" → **"Repository Structure Platform"**. The on-disk artifact `.slopbrick/memory.md` is now `.slopbrick/structure.md`. Types renamed: `MemoryFile` → `StructureFile`, `loadMemory` → `loadStructure`, etc.
 - **Engine extraction**: `packages/engine/` is a new workspace package containing the pure scanning logic (parser, scoring, LR combiner, structure persistence). No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs.
-- **Multi-score model**: The single `slopIndex` is replaced by 4 independent scores: `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth` (composite).
+- **Multi-score model**: The single `slopIndex` is replaced by 4 independent scores: `aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth` (composite). (Originally `aiQuality` in v0.15.0; renamed in v0.21.0 when the field was flipped to the natural-reading "raw amount of slop" direction.)
 - **Engine/UI taxonomy seam**: The engine's 6 verdict taxonomy (USEFUL/OK/NOISY/INVERTED/HYGIENE/DORMANT) is decoupled from the user-facing 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) via `bucketForVerdict()`.
 - **Schema codegen**: JSON Schemas are now the single source of truth; TypeScript types are codegen'd from them. CI fails if schemas and types drift.
 - **Website hardening**: Skip-to-content link, keyboard-accessible tool cards, axe-core a11y in CI, `LowPowerDetector` to skip WebGL on low-power devices, LCP-swap for WebGL initialization.
