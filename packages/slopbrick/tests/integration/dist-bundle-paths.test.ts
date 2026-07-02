@@ -88,12 +88,13 @@ describe('bundled dist artifact paths (v0.14.5d regression)', () => {
     expect(stderr).not.toContain('signal-strength.json');
     // The scan should succeed (exit 0) on a clean fixture.
     expect(exitCode).toBe(0);
-    // The output must be valid JSON with `aiSlopScore: 100` (clean
-    // code) under the v0.15.0 4-score model. The legacy
-    // `slopIndex` field is also kept for backward compat and
-    // should be 0 (no slop detected).
+    // The output must be valid JSON with `aiSlopScore: 0` (no
+    // AI slop detected, the v0.21.0 raw-amount reading). The
+    // legacy `slopIndex` field is also kept for backward compat
+    // and should be 0 (no slop detected, same as the new
+    // aiSlopScore reading).
     const data = JSON.parse(stdout);
-    expect(data.aiSlopScore).toBe(100);
+    expect(data.aiSlopScore).toBe(0);
     expect(data.slopIndex ?? 0).toBe(0);
     expect(data.issues).toEqual([]);
   });
