@@ -19,6 +19,7 @@ dist/
 
 # Generated artifacts
 corpus/calibration-report.md
+corpus-manifest-*.local.json
 tests/fixtures/frameworks/**/.slopbrick/
 
 # Internal drafts and state-tracking (not for public release)

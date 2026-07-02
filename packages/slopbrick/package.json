@@ -54,7 +54,10 @@
     "minimatch": "^9.0.5",
     "pgsql-parser": "^17.9.15",
     "tree-sitter": "^0.22.4",
-    "tree-sitter-rust": "^0.24.0"
+    "tree-sitter-cpp": "^0.23.4",
+    "tree-sitter-kotlin": "^0.3.8",
+    "tree-sitter-rust": "^0.24.0",
+    "tree-sitter-swift": "^0.7.1"
   },
   "//_usebrick_note": "@usebrick/core and @usebrick/engine are private workspace packages. They are listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts \u2192 noExternal bundles them into dist/; the prepack-guard.mjs allowlist includes both. Neither ends up in the published tarball's runtime deps. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
   "devDependencies": {
