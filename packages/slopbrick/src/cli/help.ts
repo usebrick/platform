@@ -115,6 +115,10 @@ export const OPTION_CATEGORY: Record<string, OptionCategoryKey> = {
 
   // Telemetry
   '--no-telemetry': 'telemetry',
+  // v0.24.0 (Workstream C): opt-in network beacon. Distinct from
+  // --no-telemetry (which gates the local flywheel); this gates a
+  // single POST at scan end.
+  '--report-usage': 'telemetry',
 };
 
 /** Category order (used when rendering — keeps the most-used

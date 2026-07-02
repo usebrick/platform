@@ -54,6 +54,11 @@ export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
   html?: true | string;
   telemetry?: boolean;
   rule?: string;
+  /** v0.24.0 (Workstream C): opt-in network beacon. Distinct from
+   *  `telemetry` (which gates the local flywheel). When true AND
+   *  `SLOPBRICK_TELEMETRY_ENDPOINT` is set, a single 8-field POST
+   *  fires at scan end (fire-and-forget, 5s timeout). Default OFF. */
+  reportUsage?: boolean;
 }
 
 export interface CliGlobalOptions extends ScanRunOptions {
@@ -69,6 +74,25 @@ export interface CliGlobalOptions extends ScanRunOptions {
   brief?: boolean;
 }
 
+/**
+ * v0.24.0 (Workstream C): stats emitted to the opt-in network
+ * beacon. Computed in `runScan` from the in-flight scan context
+ * (no extra I/O, no extra work) and surfaced on the return value
+ * so the CLI layer can hand them to `BeaconEmitter` after the
+ * report is rendered.
+ */
+export interface ScanStats {
+  /** UUID v4 generated at the top of `runScan`. */
+  scanId: string;
+  /** `results.length` — files that ran through the worker pool
+   *  (excludes files skipped by the incremental cache). */
+  fileCount: number;
+  /** `builtinRules.length` (or 1 when `--rule <id>` is in effect). */
+  ruleCount: number;
+  /** Wall-clock scan duration in milliseconds (entry → return). */
+  durationMs: number;
+}
+
 export interface ScanRunResult {
   report: import('../types').ProjectReport;
   scores: import('../types').ComponentScore[];
@@ -77,4 +101,7 @@ export interface ScanRunResult {
   noIncreaseFailure: boolean;
   baseline?: import('../types').BaselineCache;
   machineReadableStdout: boolean;
+  /** v0.24.0: always present; consumed by `BeaconEmitter` when
+   *  `--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT` are set. */
+  scanStats: ScanStats;
 }

@@ -18,6 +18,7 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { resolve, relative, extname, sep } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 import { renderProgress, clearProgress } from './render';
 import {
@@ -96,6 +97,11 @@ export async function runScan(
   // persisted at the end of runScan reflects the wall-clock scan time
   // (same metric surfaced in `ProjectReport.scanDurationMs`).
   const startTime = Date.now();
+  // v0.24.0 (Workstream C): opt-in network beacon scan-id. Generated
+  // here so the CLI layer can hand it to `BeaconEmitter` after the
+  // report renders. UUID v4 is sufficient — the scan-id is for
+  // receiver-side dedup, not for crypto.
+  const scanId = randomUUID();
   const cwd = resolve(options.workspace ?? process.cwd());
   // Workspace existence check (Refactor 1). Silent fallback to "0 files
   // scanned" was misleading users into thinking their scan succeeded on a
@@ -448,6 +454,17 @@ export async function runScan(
     noIncreaseFailure,
     baseline,
     machineReadableStdout,
+    // v0.24.0 (Workstream C): stats for the opt-in network beacon.
+    // `fileCount` = files that ran through the worker pool (excludes
+    // incremental-cache skips). `ruleCount` = builtin rules, or 1
+    // when `--rule <id>` narrows the run. `durationMs` = wall-clock
+    // since `runScan` entry (matches `report.scanDurationMs`).
+    scanStats: {
+      scanId,
+      fileCount: results.length,
+      ruleCount: options.rule ? 1 : builtinRules.length,
+      durationMs: Date.now() - startTime,
+    },
   };
 }
 

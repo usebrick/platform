@@ -106,6 +106,78 @@ For per-rule precision/recall/FPR (auditable), see
 
 ---
 
+## Telemetry (opt-in)
+
+Starting in **v0.24.0**, slopbrick can send a single one-shot usage
+ping after `slopbrick scan` completes. This is **opt-in** — the
+default is OFF — and is intended for the v9 corpus build script
+and self-hosted CI.
+
+### How to opt in
+
+```bash
+# 1. Set the endpoint env var
+export SLOPBRICK_TELEMETRY_ENDPOINT="https://your-host.example/ingest"
+
+# 2. Pass the flag on the CLI
+slopbrick scan --report-usage
+```
+
+Both conditions are required. If either is missing, no request
+is sent, no warning is printed, and exit code is unaffected.
+
+### What is sent
+
+A single POST with `Content-Type: application/json` and exactly
+**8 fields**:
+
+| Field | Type | Example | Source |
+|-------|------|---------|--------|
+| `schema_version` | string | `"1"` | constant |
+| `slopbrick_version` | string | `"0.24.0"` | `package.json` |
+| `scan_id` | string (UUID v4) | `"f47ac10b-…"` | generated per run |
+| `file_count` | int | `42` | `results.length` |
+| `rule_count` | int | `95` | `builtinRules.length` |
+| `duration_ms` | int | `1834` | wall-clock scan time |
+| `platform` | string | `"darwin"` | `process.platform` |
+| `node_version` | string | `"v20.11.0"` | `process.version` |
+
+### Privacy promise
+
+The payload is **frozen** at exactly 8 fields. We will never send:
+
+- file paths, file hashes, or file contents
+- rule ids, rule violations, or rule categories
+- user identifiers, IP addresses, or environment variables
+- timestamps other than what `process.version` provides indirectly
+
+### Failure mode
+
+The beacon is **fire-and-forget** with a 5-second socket timeout.
+Network errors, DNS failures, 4xx/5xx responses, and timeouts are
+all silent — `slopbrick scan` exit code is never affected. The
+request is also unidirectional: no retries, no follow-up calls.
+
+### Scope
+
+Only `slopbrick scan` fires the beacon. `slopbrick watch`,
+`slopbrick ci`, and programmatic `scanProject` calls are
+unaffected regardless of the flag or env var.
+
+### Local flywheel
+
+This is separate from the local flywheel. The local flywheel
+writes detailed scan results to `.slopbrick/flywheel/scans.jsonl`
+and is gated by `--no-telemetry` (default ON, opt-out per-run
+or via `config.telemetry = false`). The new beacon is gated by
+`--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT` (default OFF).
+
+See [`docs/research/beacon-design.md`](./docs/research/beacon-design.md)
+for the full design doc, threat model, and OPSEC requirements
+for the receiver.
+
+---
+
 ## Example output
 
 ```text
