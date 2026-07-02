@@ -41,6 +41,18 @@ export const unusedImportRule = createRule<UnusedImportContext>({
   category: 'logic',
   severity: 'low',
   aiSpecific: true,
+  // v0.21.0: defaultOff until the visitor's `isReferenced` is
+  // verified. The v0.21.0 self-scan fires 314 times across 120 files
+  // with 102 concentrated in cli/program.ts — most of which are
+  // legitimate `import { foo, bar, baz } from '...'` statements that
+  // ARE referenced later in the file. The walk-and-collect in
+  // dispatch.ts:549 adds identifiers to `referencedNames`, but the
+  // 102-fire concentration is a strong signal that the binding
+  // name vs. reference-name matching is wrong somewhere. Investigate
+  // before re-enabling. Opt in via
+  // `rules: { 'dead/unused-import': 'low' }` in slopbrick.config.mjs
+  // once the visitor bug is fixed.
+  defaultOff: true,
   description: 'ES module import is never referenced in the file',
   create(_context: RuleContext): UnusedImportContext {
     return {};
