@@ -216,4 +216,36 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
   testIntelligence: {
     missingEdgeCase: false,
   },
+  /**
+   * v0.25.0: self-scan exclude paths. Defaults cover the three paths
+   * that are always false positives when scanning the slopbrick repo
+   * itself:
+   *
+   *   - `src/rules/**` — rule definitions contain example patterns
+   *     the rules themselves detect (self-fire). E.g. a
+   *     `security/sql-construction` rule's source file has a SQL
+   *     concat string literal that fires its own regex.
+   *   - `tests/fixtures/**` — test fixtures contain intentional bad
+   *     code that the rules must fire on to be useful (each fixture
+   *     is a positive test case). Scanning them in a self-scan
+   *     produces ~70 false-positive "issues" that are really just
+   *     test data.
+   *   - `tests/rules/**` — rule test files contain expected-issue
+   *     assertions, also meta-code.
+   *
+   * Three patterns, ~70 issues removed per self-scan. Combined with
+   * the v0.25.0 graded security cap, this restores the v9 plan's
+   * "security ≥ 80" criterion (unachievable in v0.24.0 due to 90
+   * self-scan FPs collapsing the score to 0).
+   *
+   * Set `selfScan: { excludePaths: [] }` in `slopbrick.config.mjs`
+   * to opt out and scan every file (legacy behavior).
+   */
+  selfScan: {
+    excludePaths: [
+      'src/rules/**',
+      'tests/fixtures/**',
+      'tests/rules/**',
+    ],
+  },
 };

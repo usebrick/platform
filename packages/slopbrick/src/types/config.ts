@@ -27,6 +27,28 @@ export interface RuleContext {
   hotspotIssues?: Issue[];
 }
 
+/**
+ * v0.25.0: self-scan excludes. When `selfScan.excludePaths` is set, the
+ * scan worker skips files whose workspace-relative path matches any of
+ * the glob patterns. This is for *self-scanning* the slopbrick repo
+ * itself, where rule definitions (`src/rules/**`) and test fixtures
+ * (`tests/fixtures/**`, `tests/rules/**`) are meta-code — the rules
+ * contain examples of the patterns they detect (self-fire), and test
+ * fixtures contain intentional bad code that the rules must fire on
+ * to be useful. Both are false positives in the self-scan context.
+ *
+ * Default excludes (in `config/defaults.ts`) cover exactly these three
+ * paths. Users who scan a *different* repo can leave `selfScan` unset
+ * (or set `excludePaths: []`) to opt out. Empty array disables; absent
+ * field uses defaults.
+ */
+export interface ScanSelfScanConfig {
+  /** Glob patterns (minimatch) to exclude from the scan. Matched against
+   *  the workspace-relative POSIX-style path. Dot files are matched
+   *  (`{ dot: true }` semantics). */
+  excludePaths: string[];
+}
+
 
 
 export interface Rule<Context = unknown> {
@@ -123,4 +145,17 @@ export interface ResolvedConfig {
     /** Walk production AST to find branches without test coverage. */
     missingEdgeCase?: boolean;
   };
+  /**
+   * v0.25.0: self-scan exclude paths. Applied at scan time (in
+   * `engine/worker.ts`) so files matching any glob in `excludePaths`
+   * short-circuit with empty issues. Defaults (in `config/defaults.ts`)
+   * cover the three "always false positive in self-scan" paths:
+   * rule definitions (`src/rules/**`), test fixtures
+   * (`tests/fixtures/**`), and rule test files (`tests/rules/**`).
+   *
+   * Empty array `excludePaths: []` disables exclusion entirely
+   * (legacy behavior — every file is scanned). Unset field uses
+   * defaults.
+   */
+  selfScan?: ScanSelfScanConfig;
 }

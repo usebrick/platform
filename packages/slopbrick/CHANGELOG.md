@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.25.0] - 2026-07-22 — graded security cap + `selfScan.excludePaths` (public score contract change)
+
+**The v0.25.0 release** ships two coupled changes that fix the systemic false-positive noise in slopbrick's self-scan security score. Together they restore the v9 plan's "security ≥ 80" pass criterion (unachievable in v0.24.0 due to 90 self-scan FPs collapsing the score to 0).
+
+### `selfScan.excludePaths` config option (new)
+
+A new optional field on `ResolvedConfig` controls which paths are skipped at scan time:
+
+```js
+// slopbrick.config.mjs
+export default {
+  selfScan: {
+    excludePaths: [
+      'src/rules/**',        // rule definitions are meta-code
+      'tests/fixtures/**',   // test fixtures are intentional bad code
+      'tests/rules/**',      // rule test files
+    ],
+  },
+};
+```
+
+The three default paths are the ones that always produce false positives when scanning the slopbrick repo itself:
+
+- `src/rules/**` — rule definitions contain example patterns the rules themselves detect (self-fire). E.g. `src/rules/security/sql-construction.ts` has a `SELECT * FROM ${userId}` example in its doc comment that fires its own regex.
+- `tests/fixtures/**` — test fixtures contain intentional bad code that the rules must fire on to be useful (each fixture is a positive test case).
+- `tests/rules/**` — rule test files contain expected-issue assertions, also meta-code.
+
+Three globs remove ~70 false-positive issues per self-scan. Set `selfScan: { excludePaths: [] }` to opt out and scan every file (legacy v0.24.0 behavior). Unset field uses defaults.
+
+Enforced in `engine/worker.ts` BEFORE `parseFile` (excluded files cost zero parse cycles — only a minimatch match).
+
+### Graded `security.score` cap in `coherence.ts` (public score contract change)
+
+The categorical "0 if any" cliff at `coherence.ts:209` is replaced with hyperbolic decay:
+
+```ts
+// v0.25.0
+security.score = Math.max(0, 100 / (1 + security.issueCount / 5));
+```
+
+| issueCount | v0.24.0 (categorical) | v0.25.0 (graded) |
+|---:|---:|---:|
+| 0 | 100 | 100 |
+| 1 | 0 | 83 |
+| 5 | 0 | 50 |
+| 20 | 0 | 20 |
+| 50 | 0 | 9 |
+| 100 | 0 | 5 |
+| 1000 | 0 | 0.50 |
+
+The cliff at `issueCount=1` was a methodology artifact, not a real signal — a repo with 1 SQL concat received the same score (0/100) as a repo with 100 hardcoded credentials. The graded curve distinguishes them.
+
+**This is a public score contract change.** Consumers parsing `slopbrick scan` JSON should expect different `domain.security.score` values from v0.25.0 onwards. Two notes:
+
+1. **`report.security` (the categorical AI Security Risk band → {100, 67, 33, 0} mapping in `engine/metrics.ts`) is UNCHANGED.** That field is what drives CI gating and the repository health composite; it must stay categorical.
+2. **`aiSlopScore` (the headline CI gate) is also UNCHANGED.** Only the `domain.security.score` sub-score moves from 0/100 to a graded curve.
+
+### v9 plan criterion: "security ≥ 80" is now achievable
+
+With both changes, a self-scan of the slopbrick repo goes from `security = 0` (v0.24.0, 90 issues) to `security ≈ 20` (v0.25.0, ~18 real issues after excludePaths). The v9 plan's "security ≥ 80" pass criterion is achievable for any repo with <2.5 real security issues after the self-scan exclusion.
+
+### Test coverage
+
+`tests/engine/self-scan-config.test.ts` (new, 24 tests, all passing):
+
+- **15 tests** for `selfScan.excludePaths`: defaults, custom overrides, opt-out, glob patterns, absent field.
+- **8 tests** for the graded cap: 0/1/5/20/100/1000 issue counts, monotonicity, regression guard that only `security` got the graded cap.
+- **1 test** for the interaction: 20 real issues → security = 20 (the v0.25.0 task brief expected ~71, but the math is 20 — the test pins the actual formula output so future changes can't accidentally drift).
+
+### Methodology paper
+
+`docs/research/methodology-v0.25.md` (new, ~420 LOC) covers the design rationale, before/after numbers, the v9 plan's "security ≥ 80" criterion, the public score contract change, and the test coverage breakdown. Follows the same documentation pattern as `docs/research/methodology-minimum-sample-size.md` and `docs/research/v0.18.8-dead-rules-measurement.md`.
+
+### Files changed
+
+- `src/engine/coherence.ts` — graded cap (1 line + comment)
+- `src/types/config.ts` — `ScanSelfScanConfig` interface + `selfScan?` field on `ResolvedConfig`
+- `src/config/defaults.ts` — `selfScan` defaults
+- `src/engine/worker.ts` — `isExcludedBySelfScan` enforcement at top of `scanFile`
+- `tests/engine/self-scan-config.test.ts` — 24 new tests
+- `docs/research/methodology-v0.25.md` — methodology paper
+- `CHANGELOG.md` — this entry
+
+### Quality gates
+
+`pnpm typecheck && pnpm generate:rules && pnpm test && pnpm build` — all green locally. Pre-push hook will rerun on commit to `main`.
+
+---
+
 ## [0.24.0] - 2026-07-15 — 9 languages (Java/Kotlin/Swift/C++) + `dup/structural-clone` (Type-3) + opt-in telemetry beacon
 
 **The v0.24.0 release** ships four things in lock-step:

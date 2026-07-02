@@ -1,6 +1,7 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { extname } from 'node:path';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
+import { minimatch } from 'minimatch';
 import { parseFile } from '@usebrick/engine';
 import type { ParserCacheConfig } from '@usebrick/engine';
 import { extractFacts } from './visitor';
@@ -40,12 +41,55 @@ function applyRuleOverrides(issues: Issue[], rules: ResolvedConfig['rules']): Is
   return result;
 }
 
+/**
+ * v0.25.0: self-scan exclusion. Returns true if `filePath` (absolute)
+ * matches any glob in `excludePaths` relative to `cwd`. Used at the
+ * top of `scanFile` to short-circuit files that would be false
+ * positives in a self-scan (rule definitions, test fixtures, rule
+ * test files).
+ *
+ * Behavior:
+ *   - `excludePaths` undefined or `[]` → returns false (no exclusion).
+ *   - Otherwise: returns true if any glob matches.
+ *
+ * Match uses minimatch with `{ dot: true }` semantics (the same
+ * convention `cli/scan.ts:177` uses for `config.exclude`).
+ */
+function isExcludedBySelfScan(
+  filePath: string,
+  cwd: string,
+  excludePaths: string[] | undefined,
+): boolean {
+  if (!excludePaths || excludePaths.length === 0) return false;
+  const rel = relative(cwd, filePath).split(sep).join('/');
+  return excludePaths.some((pattern) => minimatch(rel, pattern, { dot: true }));
+}
+
 export async function scanFile(
   filePath: string,
   config: ResolvedConfig,
   registry?: RuleRegistry,
   cwd = process.cwd(),
 ): Promise<FileScanResult> {
+  // v0.25.0: self-scan excludePaths enforcement. Runs BEFORE
+  // parseFile so excluded files cost zero parse cycles (only a
+  // minimatch match). Default excludes (in `config/defaults.ts`)
+  // cover `src/rules/**`, `tests/fixtures/**`, and `tests/rules/**`
+  // — the three paths that are always false positives in a
+  // self-scan of the slopbrick repo. Users can opt out by setting
+  // `selfScan: { excludePaths: [] }` in slopbrick.config.mjs.
+  if (isExcludedBySelfScan(filePath, cwd, config.selfScan?.excludePaths)) {
+    return {
+      filePath,
+      componentCount: 0,
+      issues: [],
+      gapValues: [],
+      styleSources: [],
+      elementTags: [],
+      unmatchedStringLiterals: [],
+    };
+  }
+
   // v0.18.3 (R-MED env-var fix): build the parser cache config
   // from env vars (read here in the slopbrick CLI layer, not
   // in the engine). Passed to parseFile below.
