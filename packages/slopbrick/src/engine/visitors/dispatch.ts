@@ -759,7 +759,7 @@ export function handleJSXOpeningElement(
  */
 export function handleVariableDeclarator(
   node: AnyNode,
-  _parent: AnyNode,
+  parent: AnyNode,
   path: AnyNode[],
   vctx: VisitorCtx,
 ): boolean {
@@ -781,14 +781,24 @@ export function handleVariableDeclarator(
   //  dead-code detector. Record each `let`/`const`/`var`
   //  declarator's bindings so the v2 builder can mark them
   //  unused if their name never appears as an identifier
-  //  reference. We resolve the kind from the parent
-  //  VariableDeclaration node's `kind` field.
+  //  reference. We resolve the kind from the VariableDeclaration
+  //  node's `kind` field. v0.21.0: the walker-supplied `parent`
+  //  may be an ExportNamedDeclaration (for `export const X = ...`)
+  //  — unwrap to find the underlying VariableDeclaration. The swc
+  //  AST nodes don't carry a `.parent` back-pointer.
   if (bindingNames.length > 0) {
-    const parent = (node as { parent?: unknown }).parent;
-    const kind = isObject(parent) && parent.type === 'VariableDeclaration'
-      ? String((parent as Record<string, unknown>).kind ?? 'var')
+    const declParent =
+      isObject(parent) && parent.type === 'ExportNamedDeclaration'
+        ? ((parent as { declaration?: AnyNode }).declaration ?? parent)
+        : parent;
+    const kind = isObject(declParent) && declParent.type === 'VariableDeclaration'
+      ? String((declParent as Record<string, unknown>).kind ?? 'var')
       : 'var';
     const { line, column } = positionFrom(id as AnyNode, vctx.lineOffsets);
+    // v0.21.0: scope tracking for the dead/unused-local rule.
+    // Module-top-level consts/functions/classes are often intentional
+    // (placeholder exports, type re-exports) and should not be flagged.
+    const scope: 'module' | 'function' = vctx.ctx.stack.length === 0 ? 'module' : 'function';
     for (const bindingName of bindingNames) {
       vctx.facts.deadCode.bindings.push({
         name: bindingName,
@@ -796,6 +806,7 @@ export function handleVariableDeclarator(
         line,
         column,
         isReferenced: false,
+        scope,
       });
     }
   }

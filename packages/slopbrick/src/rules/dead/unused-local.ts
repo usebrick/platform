@@ -73,6 +73,21 @@ export const unusedLocalRule = createRule<UnusedLocalContext>({
       if (SKIP_NAMES.has(binding.name)) continue;
       // Skip names starting with `_` (intentionally unused convention).
       if (binding.name.startsWith('_')) continue;
+      // v0.21.0: skip module-top-level const/function/class/type/interface/enum.
+      // These are often intentional (placeholder exports, type re-exports,
+      // side-effect-ful constructions) — see the rule's header comment.
+      // Only var/let inside a function body are reliably dead.
+      if (
+        binding.scope === 'module' &&
+        (binding.kind === 'const' ||
+          binding.kind === 'function' ||
+          binding.kind === 'class' ||
+          binding.kind === 'type' ||
+          binding.kind === 'interface' ||
+          binding.kind === 'enum')
+      ) {
+        continue;
+      }
       issues.push({
         ruleId: 'dead/unused-local',
         category: 'logic',

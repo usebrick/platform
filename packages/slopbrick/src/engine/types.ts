@@ -396,6 +396,13 @@ export interface BindingRecord {
   /** v0.21.0: true when this binding came from `import type { X }`. The
    *  dead/unused-import rule skips these. */
   isTypeOnly?: boolean;
+  /** v0.21.0: lexical scope of the binding. `'module'` for top-level
+   *  declarations outside any function; `'function'` for bindings
+   *  inside a function body. The dead/unused-local rule skips
+   *  `'module'` consts/functions/classes (they are often intentional
+   *  placeholder exports, type re-exports, or side-effect-ful
+   *  constructions — not real dead code). */
+  scope?: 'module' | 'function';
   /** Source line (1-indexed). */
   line: number;
   /** Source column (0-indexed). */
