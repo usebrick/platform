@@ -626,6 +626,22 @@
     "_v8Lift": 1.0,
     "defaultOff": true
   },
+  "dup/near-duplicate": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 1.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-02T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v0.23.0: new rule, not yet calibrated. Type-2 clone detector using MinHash + Jaccard similarity on k-gram token shingles (k=5). The rule's effectiveness depends on the v9 corpus calibration (see v9-plan-2026-07-02-update.md). The rule catches Type-2a (whitespace + comment differences) reliably; full-rename detection (Type-2b) requires identifier canonicalization or AST similarity (planned for v0.27.0 dup/structural-clone). Default OFF (DORMANT) until v9 corpus calibration confirms precision/recall thresholds.",
+    "aiSpecific": true,
+    "_v7Verdict": "DORMANT",
+    "_v7Lift": 1.0,
+    "_v7Recall": 0.0,
+    "_v7FpRate": 0.0,
+    "_v7Precision": 0.0
+  },
   "go/error-wrap-without-context": {
     "recall": 0.0,
     "fpRate": 0.0,
