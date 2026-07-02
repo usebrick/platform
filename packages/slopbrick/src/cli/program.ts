@@ -12,60 +12,19 @@
 // runInitWizard from this module — those re-exports live at the bottom
 // of the file.
 
-import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
-import { resolve, join, dirname, extname } from 'node:path';
-import { performance } from 'node:perf_hooks';
+import { resolve } from 'node:path';
 
 import { Command } from 'commander';
 
-import { parseThreads, collectGlob, parseTrend, parseCount, parseThreshold } from './options';
-import {
-  colorForSlop,
-  formatBadge,
-  formatSparkline,
-  renderTrend,
-} from './render';
+import { parseThreads, collectGlob, parseTrend } from './options';
+import { renderTrend } from './render';
 import {
   thresholdExceeded,
   failedThresholdCount,
   baselineStatusMessage,
   stagedGating,
-  serializeConfig,
-  appendGitignore,
-  readReportFile,
-  formatReportFromFile,
 } from './threshold';
 import { runScan, type CliGlobalOptions } from './scan';
-import { runDrift, formatDrift, driftExitCode } from './drift';
-import { runTestScan, formatTestReport, testExitCode } from './test';
-import { runPrScan, formatPrReport, prExitCode, type PrFormat } from './pr';
-import {
-  runMaintenanceCostScan,
-  formatMaintenanceCostReport,
-  maintenanceCostExitCode,
-} from './maintenance-cost';
-import { runDocsScan, formatDocsReport, docsExitCode } from './docs';
-import { runDbScan, formatDbReport, dbExitCode } from './db';
-import {
-  runBusinessLogicScan,
-  formatBusinessLogicScan,
-  businessLogicExitCode,
-  type BusinessLogicFormat,
-} from './business-logic';
-import {
-  runPatternsScan,
-  formatPatternsReport,
-  patternsExitCode,
-} from './patterns';
-import {
-  buildArchitectureScore,
-  formatArchitectureScore,
-} from '../engine/architecture-score';
-import {
-  computeAiSecurityRisk,
-  formatAiSecurityRiskLine,
-  type AiSecurityRisk as AiSecurityRiskLevel,
-} from '../engine/ai-security-risk';
 import {
   buildBaselineCache,
   printFixSummary,
