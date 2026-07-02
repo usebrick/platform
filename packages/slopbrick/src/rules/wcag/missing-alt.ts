@@ -43,6 +43,11 @@ function scanForMissingAlt(source: string): Array<{ message: string; line: numbe
 
 export const missingAltRule = createRule<RuleContext>({
   id: 'wcag/missing-alt',
+  // v0.20.0 calibration: lift 1.0, recall 0.000. Lift of 1.0
+  // means the rule has zero discriminative power — it fires
+  // equally on positive and negative examples. Dead rule.
+  // Disable until rewritten.
+  defaultOff: true,
   category: 'wcag',
   severity: 'medium',
   aiSpecific: false,

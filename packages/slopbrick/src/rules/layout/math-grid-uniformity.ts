@@ -21,6 +21,9 @@ const GRID_COLS_RE = /\bgrid-cols-(\d+)\b/g;
 
 export const mathGridUniformityRule = createRule<RuleContext>({
   id: 'layout/math-grid-uniformity',
+  // v0.20.0 calibration: recall 0.000, fires never. Disable
+  // until rewritten.
+  defaultOff: true,
   category: 'layout',
   severity: 'high',
   aiSpecific: true,

@@ -58,6 +58,10 @@ function rgbToHue([r, g, b]: [number, number, number]): number {
 
 export const mathColorClusterRule = createRule<RuleContext>({
   id: 'visual/math-color-cluster',
+  // v0.20.0 calibration: recall 0.000, fires never. The
+  // "math-color cluster" heuristic is too specific to ever fire
+  // on real code. Disable until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'high',
   aiSpecific: true,

@@ -16,6 +16,9 @@ const GAP_RE = /\bgap(?:-x|-y)?-(\d+)\b/g;
 
 export const gapMonopolyRule = createRule<RuleContext>({
   id: 'layout/gap-monopoly',
+  // v0.20.0 calibration: recall 0.000, fires never. Disable
+  // until rewritten.
+  defaultOff: true,
   category: 'layout',
   severity: 'medium',
   aiSpecific: false,

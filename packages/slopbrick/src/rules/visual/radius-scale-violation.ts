@@ -34,6 +34,9 @@ const SCALE_TOLERANCE = 0.001; // rem
 
 export const radiusScaleViolationRule = createRule<RadiusScaleViolationContext>({
   id: 'visual/radius-scale-violation',
+  // v0.20.0 calibration: recall 0.000, fires never. Disable
+  // until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'medium',
   aiSpecific: false,

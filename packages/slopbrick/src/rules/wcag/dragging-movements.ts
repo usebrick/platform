@@ -16,6 +16,10 @@ const ALT_ROLE_RE = /^(?:button|application|tab|menuitem)$/;
 
 export const draggingMovementsRule = createRule<RuleContext>({
   id: 'wcag/dragging-movements',
+  // v0.20.0 calibration: v8.5 = DORMANT but defaultOff: false
+  // was a bug — DORMANT rules should be off by default. The
+  // rule was contributing 0 useful fires. Disable.
+  defaultOff: true,
   category: 'wcag',
   severity: 'medium',
   aiSpecific: false,

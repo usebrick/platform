@@ -23,6 +23,9 @@ const NEXT_FONT_IMPORT_RE = /import\s+.*from\s+['"]next\/font\/(?:google|local)[
 
 export const mathDefaultFontRule = createRule<RuleContext>({
   id: 'visual/math-default-font',
+  // v0.20.0 calibration: recall 0.001, fires 1 per 1,000 files.
+  // Too specific to be useful. Disable until rewritten.
+  defaultOff: true,
   category: 'visual',
   severity: 'high',
   aiSpecific: true,

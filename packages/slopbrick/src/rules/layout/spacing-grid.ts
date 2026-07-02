@@ -76,6 +76,9 @@ export interface SpacingGridContext {
 
 export const spacingGridRule = createRule<SpacingGridContext>({
   id: 'layout/spacing-grid',
+  // v0.20.0 calibration: recall 0.000, fires never. Disable
+  // until rewritten.
+  defaultOff: true,
   category: 'layout',
   severity: 'medium',
   aiSpecific: false,
