@@ -40,12 +40,12 @@ describe('aiDebtFromScore', () => {
 
 describe('buildRepositoryHealth', () => {
   it('returns the "low" bucket for a clean repo with all axes', () => {
-    // v0.15.0 U.4: "clean" means high aiQuality (the new headline
+    // v0.15.0 U.4: "clean" means high aiSlopScore (the new headline
     // is higher = better). The test data is updated to use 95
     // (the legacy test value of 5 inverted through the v0.14
     // logic) so a healthy composite remains healthy.
     const result = buildRepositoryHealth({
-      aiQuality: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
+      aiSlopScore: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
       architectureConsistency: 95,
       aiSecurityRisk: 'low',
       designTokenViolations: { spacing: 0, radius: 0 },
@@ -62,7 +62,7 @@ describe('buildRepositoryHealth', () => {
 
   it('returns "critical" when aiSecurityRisk is critical (penalty applied)', () => {
     const result = buildRepositoryHealth({
-      aiQuality: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
+      aiSlopScore: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
       architectureConsistency: 95,
       aiSecurityRisk: 'critical',
     });
@@ -76,7 +76,7 @@ describe('buildRepositoryHealth', () => {
   it('renormalizes weights when optional axes are missing', () => {
     // Only slopIndex + architecture present.
     const a = buildRepositoryHealth({
-      aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
+      aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30,
       architectureConsistency: 70,
     });
     expect(Object.keys(a.breakdown)).toHaveLength(2);
@@ -86,13 +86,13 @@ describe('buildRepositoryHealth', () => {
 
   it('applies a high-severity penalty', () => {
     const a = buildRepositoryHealth({
-      aiQuality: 80, engineeringHygiene: 80, security: 80, repositoryHealth: 80,
+      aiSlopScore: 80, engineeringHygiene: 80, security: 80, repositoryHealth: 80,
       architectureConsistency: 80,
       aiSecurityRisk: 'low',
       highSeverityIssueCount: 0,
     });
     const b = buildRepositoryHealth({
-      aiQuality: 80, engineeringHygiene: 80, security: 80, repositoryHealth: 80,
+      aiSlopScore: 80, engineeringHygiene: 80, security: 80, repositoryHealth: 80,
       architectureConsistency: 80,
       aiSecurityRisk: 'low',
       highSeverityIssueCount: 10,
@@ -102,7 +102,7 @@ describe('buildRepositoryHealth', () => {
 
   it('clamps to [0, 100]', () => {
     const a = buildRepositoryHealth({
-      aiQuality: 100, engineeringHygiene: 100, security: 100, repositoryHealth: 100,
+      aiSlopScore: 100, engineeringHygiene: 100, security: 100, repositoryHealth: 100,
       aiSecurityRisk: 'critical',
       highSeverityIssueCount: 100,
     });
@@ -123,7 +123,7 @@ describe('buildRepositoryHealth', () => {
 describe('buildRepositoryHealthFromReport', () => {
   it('extracts testQuality + businessLogicCoherence + docFreshness + dbHealth from the report', () => {
     const result = buildRepositoryHealthFromReport({
-      aiQuality: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+      aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       testQuality: 85,
@@ -142,10 +142,10 @@ describe('buildRepositoryHealthFromReport', () => {
   });
 
   it('handles a report with no issues', () => {
-    // v0.15.0 U.4: high aiQuality + clean axes → high score
+    // v0.15.0 U.4: high aiSlopScore + clean axes → high score
     // (no penalty because no high-severity issues).
     const result = buildRepositoryHealthFromReport({
-      aiQuality: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+      aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       issues: [],
@@ -157,7 +157,7 @@ describe('buildRepositoryHealthFromReport', () => {
 describe('formatRepositoryHealth', () => {
   it('renders headline, per-axis breakdown, and warnings', () => {
     const result = buildRepositoryHealth({
-      aiQuality: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+      aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
       architectureConsistency: 90,
       aiSecurityRisk: 'critical',
     });

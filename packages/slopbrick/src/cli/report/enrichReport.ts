@@ -44,11 +44,11 @@ export interface EnrichmentInput {
   results: FileScanResult[];
   aggregated: {
     /** v0.15.0 U.4+: replaces the legacy slopIndex. */
-    aiQuality: number;
+    aiSlopScore: number;
     engineeringHygiene: number;
     security: number;
     repositoryHealth: number;
-    /** @deprecated use aiQuality */
+    /** @deprecated use aiSlopScore */
     slopIndex?: number;
     components: ComponentScore[];
     categoryScores: ProjectReport['categoryScores'];
@@ -258,7 +258,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     const aiSignalCount = sortedIssues.filter((i) => i.aiSpecific === true).length;
     aiMaintenanceCost = computeAiMaintenanceCostFromReport(
       {
-        aiQuality: aggregated.aiQuality ?? 0,
+        aiSlopScore: aggregated.aiSlopScore ?? 0,
         architectureConsistency,
         aiSecurityRisk,
         highSeverityIssueCount: sortedIssues.filter((i) => i.severity === 'high').length,
@@ -330,7 +330,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     )?.count ?? 0;
     const composite = buildRepositoryHealthFromReport(
       {
-        aiQuality: aggregated.aiQuality ?? 0,
+        aiSlopScore: aggregated.aiSlopScore ?? 0,
         engineeringHygiene: aggregated.engineeringHygiene ?? 0,
         security: aggregated.security ?? 0,
         repositoryHealth: aggregated.repositoryHealth ?? 0,

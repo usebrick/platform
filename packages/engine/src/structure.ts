@@ -75,7 +75,7 @@ export type Category = string;
 export interface MemoryReport {
   generatedAt: string;
   /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
-  aiQuality: number;
+  aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
   repositoryHealth: number;
@@ -255,10 +255,10 @@ export async function appendRun(
   const run: MemoryAuditRun = {
     timestamp: report.generatedAt,
     version,
-    slopIndex: report.aiQuality, // MemoryAuditRun keeps slopIndex as a historical legacy field
+    slopIndex: report.aiSlopScore, // MemoryAuditRun keeps slopIndex as a historical legacy field
     categoryScores: { ...report.categoryScores },
     topOffenseIds: topOffenseIds(report),
-    thresholdExceeded: thresholdExceeded ?? report.aiQuality > 0,
+    thresholdExceeded: thresholdExceeded ?? report.aiSlopScore > 0,
   };
   runs.push(run);
   if (runs.length > MAX_RUNS) {
@@ -479,7 +479,7 @@ export function buildHealthFromReport(
     version: STRUCTURE_SCHEMA_VERSION,
     generatedAt: report.generatedAt,
     workspace,
-    aiQuality: Math.round(report.aiQuality),
+    aiSlopScore: Math.round(report.aiSlopScore),
     engineeringHygiene: Math.round(report.engineeringHygiene),
     security: Math.round(report.security),
     repositoryHealth: Math.round(report.repositoryHealth),

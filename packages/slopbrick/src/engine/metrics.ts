@@ -160,7 +160,7 @@ export function aggregateReport(
   compositeScores?: ReadonlyArray<CompositeScore | undefined>,
 ): Pick<
   ProjectReport,
-  | 'aiQuality'
+  | 'aiSlopScore'
   | 'engineeringHygiene'
   | 'security'
   | 'repositoryHealth'
@@ -193,13 +193,21 @@ export function aggregateReport(
   // reached componentCount. The slopbrick self-scan has
   // severityPoints >> componentCount (thousands of severity points
   // across 38 components), so all three sub-scores pinned at 100,
-  // slopIndex was always 100, and aiQuality was always 0. The
+  // slopIndex was always 100, and aiSlopScore was always 0. The
   // sub-score rendering showed 100/100/100 (technically correct)
   // but the cap prevented distinguishing "1 issue/component" from
   // "100 issues/component". Replaced with a log scale that maps
   // severityPoints/componentCount = 1 → ~30, = 10 → 100 (saturates
   // at 10x the per-component threshold). Log base 11: log(1+x) /
   // log(11) maps x=0→0, x=1→0.29, x=10→1.0, x=100→1.83 (capped at 1.0).
+  //
+  // v0.21.0: the log scale produces the RAW amount of slop (0=clean,
+  // 100=saturated). For the headline `aiSlopScore` (now raw amount
+  // matching the natural reading of the name) we use these raw
+  // values directly. For the sub-score breakdown (which has
+  // "cleanliness"-framed labels like "structural integrity"), we
+  // invert to cleanliness: 100 - raw. Sub-scores stay "higher = better"
+  // consistent with engineeringHygiene, security, repositoryHealth.
   const categoryWeights = config.categoryWeights ?? {} as Record<Category, number>;
   const bucketPoints: Record<SubscoreBucket, number> = { boundary: 0, context: 0, visual: 0 };
   for (const group of issueGroups) {
@@ -210,18 +218,40 @@ export function aggregateReport(
     }
   }
   const denominator = componentCount || 1;
-  const subscore: Record<SubscoreBucket, number> = {
+  // Raw slop amount per bucket (0=clean, 100=saturated). Feeds the
+  // AI Slop Score headline directly. Higher = more slop detected.
+  const slopAmount: Record<SubscoreBucket, number> = {
     boundary: Math.min(100, Math.log10(1 + bucketPoints.boundary / denominator) / Math.log10(11) * 100),
     context:  Math.min(100, Math.log10(1 + bucketPoints.context  / denominator) / Math.log10(11) * 100),
     visual:   Math.min(100, Math.log10(1 + bucketPoints.visual   / denominator) / Math.log10(11) * 100),
   };
+  // Sub-score breakdown values (cleanliness, higher = better).
+  // Sub-score labels in pretty.ts ("structural integrity",
+  // "props / state / imports", "CSS / a11y / layout") are
+  // cleanliness-framed; the data must match.
+  const subscore: Record<SubscoreBucket, number> = {
+    boundary: 100 - slopAmount.boundary,
+    context:  100 - slopAmount.context,
+    visual:   100 - slopAmount.visual,
+  };
 
   const compositeWeights = config.compositeWeights ?? COMPOSITE_WEIGHTS;
-  const slopIndex =
-    compositeWeights.boundary * subscore.boundary +
-    compositeWeights.context * subscore.context +
-    compositeWeights.visual * subscore.visual;
-  const assemblyHealth = Math.max(0, 100 - slopIndex);
+  // v0.21.0: aiSlopScore is the RAW amount of slop (0=clean, 100=saturated).
+  // This matches the natural reading of "AI Slop Score: 30/100" =
+  // "30% slop detected". The composite (repositoryHealth) inverts at
+  // the call site (see below) so it stays "higher = better".
+  const aiSlopScoreRaw =
+    compositeWeights.boundary * slopAmount.boundary +
+    compositeWeights.context * slopAmount.context +
+    compositeWeights.visual * slopAmount.visual;
+  const aiSlopScore = Math.max(0, Math.min(100, aiSlopScoreRaw));
+  // Legacy `slopIndex` field — kept for backward compat with persisted
+  // runs and the v0.14 contract. In v0.14 and v0.21+ this was the raw
+  // amount (matching aiSlopScore). In v0.15–v0.20.1 it was the
+  // INVERTED aiSlopScore (legacy v0.15.0 U.4 bridge). v0.21 reverts
+  // to the v0.14 raw semantics.
+  const slopIndex = aiSlopScore;
+  const assemblyHealth = Math.max(0, 100 - aiSlopScore);
 
   // Per-category score. v0.14.5h: when the codebase has 0 components
   // (CLI tools, pure backend, no UI), the per-component-average
@@ -254,10 +284,23 @@ export function aggregateReport(
   // meaningless without components to average over)".
 
   // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
-  // aiQuality is the inverted slopIndex (higher = better). The other
-  // 3 scores (engineeringHygiene, security, repositoryHealth) are
-  // computed here from the issue stream, not aliased to aiQuality.
-  const aiQuality = Math.max(0, Math.min(100, 100 - slopIndex));
+  // v0.21.0: aiSlopScore is now the RAW amount of AI slop
+  // (0 = no AI slop, 100 = max AI slop, higher = worse). This
+  // matches the natural reading of the name (users read "AI Slop
+  // Score: 100" as "100% slop"). The other 3 scores
+  // (engineeringHygiene, security, repositoryHealth) are computed
+  // here from the issue stream.
+  //
+  // v0.20.0: renamed from `aiQuality` to `aiSlopScore` because
+  // the old name implied a property of the code ("quality") when
+  // it actually measures a property of the tool's detection
+  // ("how many rules fire"). The new name matches the existing
+  // description ("measures AI-slop signatures") and the slopbrick
+  // brand.
+  //
+  // Note: `aiSlopScore` is declared earlier in this function (see
+  // the slopAmount block). The declaration here is removed; the
+  // value is computed above to keep the formula self-contained.
 
   // Flatten issueGroups into a single Issue[] for the score helpers.
   // The Issue type requires message/line/column; aggregateReport
@@ -315,11 +358,15 @@ export function aggregateReport(
   const testQuality = Math.max(0, Math.min(100, testQualityResult.score));
 
   // repositoryHealth = weighted composite of the 4 scores.
-  // 0.40 × aiQuality + 0.30 × engineeringHygiene
+  // 0.40 × (100 - aiSlopScore) + 0.30 × engineeringHygiene
   //   + 0.20 × security + 0.10 × testQuality.
-  // Already 0-100.
+  // v0.21.0: aiSlopScore is now raw amount (higher = more slop).
+  // The composite inverts at the call site (`100 - aiSlopScore`)
+  // so the composite stays "higher = better" — comparable to
+  // engineeringHygiene, security, testQuality. The other 3
+  // inputs are already "higher = better".
   const repositoryHealthRaw =
-    0.4 * aiQuality +
+    0.4 * (100 - aiSlopScore) +
     0.3 * engineeringHygiene +
     0.2 * security +
     0.1 * testQuality;
@@ -347,7 +394,7 @@ export function aggregateReport(
   //
   //   repositoryHealth (v0.15.0)   = "is this codebase healthy?"
   //     Deterministic weighted blend of the 4 headline scores:
-  //       0.4 * aiQuality
+  //       0.4 * aiSlopScore
   //     + 0.3 * engineeringHygiene
   //     + 0.2 * security
   //     + 0.1 * testQuality
@@ -401,7 +448,7 @@ export function aggregateReport(
   }
 
   return {
-    aiQuality,
+    aiSlopScore,
     engineeringHygiene,
     security,
     repositoryHealth,

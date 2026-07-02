@@ -7,7 +7,7 @@ function makeReport(overrides: Partial<ProjectReport> & { issues?: Issue[] } = {
     version: '0.6.0',
     generatedAt: '2026-06-15T00:00:00.000Z',
     configPath: 'slopbrick.config.js',
-    aiQuality: 34.2, engineeringHygiene: 34.2, security: 34.2, repositoryHealth: 34.2,
+    aiSlopScore: 34.2, engineeringHygiene: 34.2, security: 34.2, repositoryHealth: 34.2,
     assemblyHealth: 65.8,
     totalScore: 34.2,
     categoryScores: {
@@ -87,7 +87,7 @@ describe('formatHtml', () => {
       repositoryHealth: 81,
     } as Partial<ProjectReport>));
     expect(output).toContain('Repository Health (composite)');
-    expect(output).toContain('AI Quality');
+    expect(output).toContain('AI Slop Score');
     expect(output).toContain('Engineering Hygiene');
     expect(output).toContain('Security');
     expect(output).toContain('81'); // repositoryHealth rounded

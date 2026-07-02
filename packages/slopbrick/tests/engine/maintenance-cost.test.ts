@@ -99,7 +99,7 @@ describe('computeMonthlyUSD', () => {
 describe('computeAiMaintenanceCost', () => {
   it('returns the "low" bucket for a clean repo', () => {
     const result = computeAiMaintenanceCost({
-      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
+      aiSlopScore: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       architectureConsistency: 95,
       aiSecurityRisk: 'low',
       constitutionViolations: 0,
@@ -116,7 +116,7 @@ describe('computeAiMaintenanceCost', () => {
 
   it('returns "critical" for the worst-case input', () => {
     const result = computeAiMaintenanceCost({
-      aiQuality: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+      aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
       architectureConsistency: 10,
       aiSecurityRisk: 'critical',
       constitutionViolations: 50,
@@ -143,7 +143,7 @@ describe('computeAiMaintenanceCost', () => {
 
   it('sorts axes by health ascending (worst first)', () => {
     const result = computeAiMaintenanceCost({
-      aiQuality: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
+      aiSlopScore: 5, engineeringHygiene: 5, security: 5, repositoryHealth: 5,
       architectureConsistency: 95,
       aiSecurityRisk: 'critical',
       constitutionViolations: 0,
@@ -175,7 +175,7 @@ describe('computeAiMaintenanceCostFromReport', () => {
   it('derives per-severity counts from the issues list', () => {
     const result = computeAiMaintenanceCostFromReport(
       {
-        aiQuality: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
+        aiSlopScore: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
         architectureConsistency: 50,
         aiSecurityRisk: 'medium',
         highSeverityIssueCount: undefined, // let the wrapper derive
@@ -201,11 +201,11 @@ describe('computeAiMaintenanceCostFromReport', () => {
 
   it('respects explicit linesOfCode override', () => {
     const a = computeAiMaintenanceCostFromReport(
-      { aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, fileCount: 10 },
+      { aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, fileCount: 10 },
       { linesOfCode: 1000 },
     );
     const b = computeAiMaintenanceCostFromReport(
-      { aiQuality: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, fileCount: 10 },
+      { aiSlopScore: 30, engineeringHygiene: 30, security: 30, repositoryHealth: 30, fileCount: 10 },
       { linesOfCode: 100_000 },
     );
     expect(b.monthlyUSD).toBeGreaterThan(a.monthlyUSD);

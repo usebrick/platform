@@ -9,7 +9,7 @@ import type { Verdict } from '@usebrick/core';
  * renders cleanly. The cast is a no-op once U.5 adds the fields.
  */
 interface ProjectReportV015 {
-  aiQuality?: number;
+  aiSlopScore?: number;
   engineeringHygiene?: number;
   security?: number;
 }
@@ -83,7 +83,7 @@ export function formatMarkdown(report: ProjectReport): string {
   // ----- Repository Health (4 named scores, replacing single slopIndex) -----
   lines.push(`## Repository Health`);
   lines.push('');
-  lines.push(`- **AI Quality** ${Math.round(ext.aiQuality ?? 0)}/100`);
+  lines.push(`- **AI Slop Score** ${Math.round(ext.aiSlopScore ?? 0)}/100`);
   lines.push(`- **Engineering Hygiene** ${Math.round(ext.engineeringHygiene ?? 0)}/100`);
   lines.push(`- **Security** ${Math.round(ext.security ?? 0)}/100`);
   lines.push(`- **Repository Health** ${Math.round(report.repositoryHealth ?? 0)}/100`);

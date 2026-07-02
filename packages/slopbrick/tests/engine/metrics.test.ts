@@ -147,16 +147,20 @@ describe('aggregateReport', () => {
     // 'logic/boundary-violation' rule mapping would put logic in boundary,
     // but here we use the test/rule ID which falls through to 'visual'
     // (default bucket). So both issues → visual bucket.
-    const expectedSlopIndex =
+    // v0.21.0: sub-scores are cleanliness (100 - raw), slopIndex is raw
+    // amount. So slopIndex = 100 - subscoreSum.
+    const subscoreSum =
       0.40 * report.boundaryScore +
       0.35 * report.contextScore +
       0.25 * report.visualScore;
+    const expectedSlopIndex = 100 - subscoreSum;
 
     expect(report.componentCount).toBe(2);
     // v0.15.0 U.4+: slopIndex is optional on ProjectReport (kept for
     // backward compat with historical telemetry). aggregateReport
     // always computes it, but the Pick type widens it to optional.
     expect(report.slopIndex ?? 0).toBeCloseTo(expectedSlopIndex, 5);
+    // v0.21.0: assemblyHealth = 100 - slopIndex (slopIndex is raw).
     expect(report.assemblyHealth).toBeCloseTo(Math.max(0, 100 - (report.slopIndex ?? 0)), 5);
     expect(report.peakScore).toBe(Math.max(scores[0].adjustedScore, scores[1].adjustedScore));
     expect(report.p90Score).toBeGreaterThanOrEqual(
@@ -181,10 +185,13 @@ describe('aggregateReport', () => {
       [{ filePath: 'Button.tsx', issues: [boundaryIssue] }],
       DEFAULT_CONFIG,
     );
-    // boundary issue contributes only to boundary, not context or visual
-    expect(report.boundaryScore).toBeGreaterThan(0);
-    expect(report.contextScore).toBe(0);
-    expect(report.visualScore).toBe(0);
+    // v0.21.0: sub-scores are cleanliness (100 - raw). boundary issue
+    // contributes to boundary (raw slopAmount > 0), so boundaryScore
+    // (cleanliness) < 100; context/visual get 0 slop, so their
+    // cleanliness is 100.
+    expect(report.boundaryScore).toBeLessThan(100);
+    expect(report.contextScore).toBe(100);
+    expect(report.visualScore).toBe(100);
   });
 
   it('caps subscores at 100', () => {
@@ -208,12 +215,15 @@ describe('aggregateReport', () => {
   });
 
   it('returns zero subscores on empty input', () => {
+    // v0.21.0: aiSlopScore is the raw amount of slop (0 = no slop).
+    // Sub-scores are cleanliness (100 = no slop). On empty input,
+    // no slop detected → aiSlopScore = 0, sub-scores = 100.
     const report = aggregateReport([], [], DEFAULT_CONFIG);
     expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
-    expect(report.boundaryScore).toBe(0);
-    expect(report.contextScore).toBe(0);
-    expect(report.visualScore).toBe(0);
+    expect(report.boundaryScore).toBe(100);
+    expect(report.contextScore).toBe(100);
+    expect(report.visualScore).toBe(100);
     expect(report.peakScore).toBe(0);
     expect(report.p90Score).toBe(0);
     expect(report.componentCount).toBe(0);
@@ -410,14 +420,14 @@ describe('aggregateReport', () => {
 
 describe('aggregateReport — 4-score model (v0.16.0)', () => {
   // Regression test for the bug where engineeringHygiene, security,
-  // and repositoryHealth all aliased aiQuality. The 4-score model
+  // and repositoryHealth all aliased aiSlopScore. The 4-score model
   // promised in v0.15.0 (CHANGELOG) was advertised but never
   // actually computed. v0.16.0 fixes this.
   it('returns 4 distinct scores in a mixed-issue scenario', () => {
     // Mixed scenario: lots of low-severity ai/* issues (no security
     // risk) and a few high-severity security/* issues. The 4 scores
     // should land in different ranges:
-    //   - aiQuality: high (lots of low issues → low slopIndex → high)
+    //   - aiSlopScore: high (lots of low issues → low slopIndex → high)
     //   - engineeringHygiene: medium (mixed categories)
     //   - security: low (high-severity security issues → risk)
     //   - repositoryHealth: weighted composite of the 3
@@ -449,22 +459,22 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
 
     // All 4 scores must be defined
-    expect(report.aiQuality).toBeGreaterThanOrEqual(0);
+    expect(report.aiSlopScore).toBeGreaterThanOrEqual(0);
     expect(report.engineeringHygiene).toBeGreaterThanOrEqual(0);
     expect(report.security).toBeGreaterThanOrEqual(0);
     expect(report.repositoryHealth).toBeGreaterThanOrEqual(0);
-    expect(report.aiQuality).toBeLessThanOrEqual(100);
+    expect(report.aiSlopScore).toBeLessThanOrEqual(100);
     expect(report.engineeringHygiene).toBeLessThanOrEqual(100);
     expect(report.security).toBeLessThanOrEqual(100);
     expect(report.repositoryHealth).toBeLessThanOrEqual(100);
 
     // The bug: previously all 4 were identical. With mixed
-    // issues, security must differ from aiQuality.
-    expect(report.security).not.toBe(report.aiQuality);
+    // issues, security must differ from aiSlopScore.
+    expect(report.security).not.toBe(report.aiSlopScore);
 
     // security is derived from AI security risk. With 2
     // high-severity security issues, the risk is 'high' →
-    // security score is 33. aiQuality is unrelated.
+    // security score is 33. aiSlopScore is unrelated.
     expect(report.security).toBe(33);
   });
 
@@ -511,16 +521,18 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
   });
 
   it('repositoryHealth is the weighted composite of the 3 other scores', () => {
-    // No issues → aiQuality=100, security=100, engineeringHygiene=100.
-    // repositoryHealth should also be 100. Confirm the formula.
+    // v0.21.0: aiSlopScore is the raw amount (0 = no slop, 100 = saturated).
+    // No issues → aiSlopScore=0, security=100, engineeringHygiene=100.
+    // The composite inverts at the call site: 0.4*(100 - aiSlopScore) + ...
+    // = 0.4*100 + 0.3*100 + 0.2*100 + 0.1*100 = 100.
     const scores: ReturnType<typeof scoreFile>[] = [];
     const issueGroups: Array<{ filePath: string; issues: Issue[] }> = [];
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
-    // Empty input → all 4 scores at the top of the range
-    expect(report.aiQuality).toBe(100);
+    // Empty input → 0 slop, 100 hygiene, 100 security.
+    expect(report.aiSlopScore).toBe(0);
     expect(report.engineeringHygiene).toBe(100);
     expect(report.security).toBe(100);
-    // repositoryHealth = 0.4*100 + 0.3*100 + 0.2*100 + 0.1*100 = 100
+    // repositoryHealth = 0.4*(100-0) + 0.3*100 + 0.2*100 + 0.1*100 = 100
     expect(report.repositoryHealth).toBe(100);
   });
 });
@@ -553,7 +565,7 @@ describe('resolveFrameworkMultiplier', () => {
 // per-file scores at all. v0.18.2 PR-1 threads them through and
 // emits a single { mean, max, tier, fileCount } on the
 // ProjectReport. The aggregate is informational; the 4 headline
-// scores (aiQuality, engineeringHygiene, security,
+// scores (aiSlopScore, engineeringHygiene, security,
 // repositoryHealth) remain deterministic.
 
 import type { CompositeScore } from '@usebrick/engine';
@@ -699,7 +711,7 @@ describe('aggregateReport — compositeScore aggregate (v0.18.2 PR-1)', () => {
 
   it('does not affect the 4 headline scores (informational only)', () => {
     // The composite aggregate is informational. Passing
-    // perFileCompositeScores must not change aiQuality,
+    // perFileCompositeScores must not change aiSlopScore,
     // engineeringHygiene, security, or repositoryHealth relative
     // to the v0.18.1 baseline.
     const issues: Issue[] = [issue('high', 'logic'), issue('low', 'visual')];
@@ -712,7 +724,7 @@ describe('aggregateReport — compositeScore aggregate (v0.18.2 PR-1)', () => {
       DEFAULT_CONFIG,
       [composite(0.99, 'VERY_LIKELY_AI')],
     );
-    expect(withComposite.aiQuality).toBe(baseline.aiQuality);
+    expect(withComposite.aiSlopScore).toBe(baseline.aiSlopScore);
     expect(withComposite.engineeringHygiene).toBe(baseline.engineeringHygiene);
     expect(withComposite.security).toBe(baseline.security);
     expect(withComposite.repositoryHealth).toBe(baseline.repositoryHealth);

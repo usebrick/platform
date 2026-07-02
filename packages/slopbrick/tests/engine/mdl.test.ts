@@ -194,7 +194,7 @@ describe('computeMDLikelihood', () => {
     ];
     const withExplicit = buildRepositoryHealthFromReport(
       {
-        aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
+        aiSlopScore: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
         architectureConsistency: 90,
         aiSecurityRisk: 'low',
         issues,
@@ -210,7 +210,7 @@ describe('computeMDLikelihood', () => {
 
     // Auto-compute path: omit mdlLogRatio, derive from issues.
     const auto = buildRepositoryHealthFromReport({
-      aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
+      aiSlopScore: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       issues,

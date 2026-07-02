@@ -90,11 +90,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // compat with historical telemetry (engine's MemoryAuditRun field).
   const memoryReport = {
     generatedAt: report.generatedAt,
-    aiQuality: report.aiQuality ?? 0,
+    aiSlopScore: report.aiSlopScore ?? 0,
     engineeringHygiene: report.engineeringHygiene ?? 0,
     security: report.security ?? 0,
     repositoryHealth: report.repositoryHealth ?? 0,
-    slopIndex: report.slopIndex ?? report.aiQuality ?? 0,
+    slopIndex: report.slopIndex ?? report.aiSlopScore ?? 0,
     categoryScores: report.categoryScores,
     issues: report.issues ?? [],
   };
@@ -223,7 +223,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
           ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
           : '';
         logger.info(
-          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiQuality} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
+          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiSlopScore} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
         );
       }
     } catch (err) {

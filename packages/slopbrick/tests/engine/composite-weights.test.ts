@@ -40,32 +40,44 @@ describe('compositeWeights override', () => {
   ];
 
   it('default weights produce boundary=0.40 / context=0.35 / visual=0.25', () => {
+    // v0.21.0: slopIndex is the RAW amount of slop (0=clean, 100=saturated).
+    // The sub-scores (boundary/context/visual) are cleanliness (100 - raw).
+    // So the relationship is:
+    //   slopIndex = 100 - (0.4*boundary + 0.35*context + 0.25*visual)
+    // (sub-scores summed give total cleanliness; inverted = total slop).
     const report = aggregateReport(scores, issueGroups, makeConfig());
     expect(report.boundaryScore).toBeGreaterThan(0);
     expect(report.contextScore).toBeGreaterThan(0);
     expect(report.visualScore).toBeGreaterThan(0);
-    const expected = 0.4 * report.boundaryScore + 0.35 * report.contextScore + 0.25 * report.visualScore;
+    const subscoreSum = 0.4 * report.boundaryScore + 0.35 * report.contextScore + 0.25 * report.visualScore;
+    const expected = 100 - subscoreSum;
     expect(report.slopIndex).toBeCloseTo(expected, 5);
   });
 
   it('compositeWeights override changes slopIndex', () => {
+    // v0.21.0: slopIndex = raw slop amount. With visual high and
+    // visual weight increased, slopIndex should INCREASE (more slop).
+    // (Was: visual high + visual weight increased → slopIndex lower
+    // in the v0.20.1 inverted reading.)
     const defaultReport = aggregateReport(scores, issueGroups, makeConfig());
     const flippedReport = aggregateReport(
       scores,
       issueGroups,
       makeConfig({ compositeWeights: { boundary: 0.10, context: 0.10, visual: 0.80 } }),
     );
-    // Visual dominates now → flippedReport.slopIndex should differ.
     expect(flippedReport.slopIndex).not.toBe(defaultReport.slopIndex);
   });
 
   it('compositeWeights with boundary=1 forces boundary-only scoring', () => {
+    // v0.21.0: slopIndex = raw slop amount = 100 - boundaryScore (when
+    // boundary-only weighting). The test asserts the inverse relationship
+    // between slopIndex (raw) and boundaryScore (cleanliness).
     const result = aggregateReport(
       scores,
       issueGroups,
       makeConfig({ compositeWeights: { boundary: 1.0, context: 0, visual: 0 } }),
     );
-    expect(result.slopIndex).toBeCloseTo(result.boundaryScore, 5);
+    expect(result.slopIndex).toBeCloseTo(100 - result.boundaryScore, 5);
     expect(result.contextScore).toBeGreaterThan(0); // computed but not weighted
   });
 });

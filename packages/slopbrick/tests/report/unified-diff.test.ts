@@ -31,7 +31,7 @@ function makeReport(issues: Issue[]): ProjectReport {
   return {
     version: '0.6.0',
     generatedAt: new Date().toISOString(),
-    aiQuality: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
+    aiSlopScore: 10, engineeringHygiene: 10, security: 10, repositoryHealth: 10,
     assemblyHealth: 90,
     totalScore: 10,
     categoryScores: {

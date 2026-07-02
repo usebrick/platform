@@ -377,7 +377,7 @@ export async function runScan(
   // v0.18.2: thread per-file composite scores (worker.ts:98) into
   // aggregateReport. The deterministic `scores` + `issueGroups`
   // still drive the 4 headline scores; the composite aggregate is
-  // an informational addition (does not affect aiQuality/etc).
+  // an informational addition (does not affect aiSlopScore/etc).
   const perFileCompositeScores = scorableResults.map((r) => r.compositeScore);
   const aggregated = aggregateReport(scores, issueGroups, config, perFileCompositeScores);
 

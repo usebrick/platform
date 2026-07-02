@@ -372,11 +372,11 @@ export function computeAiMaintenanceCost(
 export function computeAiMaintenanceCostFromReport(
   report: {
     /** v0.15.0 U.4+: replaces the legacy slopIndex. */
-    aiQuality: number;
+    aiSlopScore: number;
     engineeringHygiene?: number;
     security?: number;
     repositoryHealth?: number;
-    /** @deprecated use aiQuality */
+    /** @deprecated use aiSlopScore */
     slopIndex?: number;
     architectureConsistency?: number;
     aiSecurityRisk?: 'low' | 'medium' | 'high' | 'critical';
@@ -408,7 +408,7 @@ export function computeAiMaintenanceCostFromReport(
   const approxLoc = options.linesOfCode ?? (report.fileCount ?? 0) * 50;
   // Recompute monthlyUSD with the actual medium/low issue counts.
   const axes: MaintenanceAxes = {
-    slopIndex: report.aiQuality, // The axis is named slopIndex for historical naming; the value is now aiQuality (0-100, higher is better, but axisSlopIndex inverts it)
+    slopIndex: report.aiSlopScore, // The axis is named slopIndex for historical naming; the value is now aiSlopScore (0-100, higher is better, but axisSlopIndex inverts it)
     architectureConsistency: report.architectureConsistency,
     aiSecurityRisk: report.aiSecurityRisk,
     constitutionViolations: options.constitutionViolations,

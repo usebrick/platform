@@ -150,7 +150,12 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
   // v0.15.0 U.4: the four headline scores are now the required
   // ones. The legacy `slopIndex` and `categoryScores` are optional
   // for backward compat.
-  if (!isNumber(value.aiQuality)) return false;
+  // v0.21.0: aiSlopScore is now the raw amount (0=clean, 100=saturated).
+  // The v0.20.1 aiQuality alias was removed because the flip changed
+  // its meaning (old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 =
+  // 70% slop). Readers handling v4 health.json files must migrate
+  // explicitly: invert the value (100 - x) when reading.
+  if (!isNumber(value.aiSlopScore)) return false;
   if (!isNumber(value.engineeringHygiene)) return false;
   if (!isNumber(value.security)) return false;
   if (!isNumber(value.repositoryHealth)) return false;

@@ -65,7 +65,7 @@
  *
  * v3 dropped the single `slopIndex` headline in favor of four named
  * scores:
- *   - `aiQuality`           — AI-specific findings (USEFUL + OK verdicts)
+ *   - `aiSlopScore`           — AI-specific findings (USEFUL + OK verdicts)
  *   - `engineeringHygiene`  — HYGIENE + INVERTED rules
  *   - `security`            — security/* rules
  *   - `repositoryHealth`    — composite (0.5*aiQ + 0.3*eng + 0.2*sec)
@@ -77,7 +77,7 @@ export interface HealthFile {
   version: typeof import('@usebrick/core').STRUCTURE_SCHEMA_VERSION;
   generatedAt: string;
   workspace: string;
-  aiQuality: number;
+  aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
   repositoryHealth: number;
@@ -135,14 +135,14 @@ export interface MaintenanceAxes {
   /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
    *  that replaces slopIndex. Tests and callers should pass this
    *  going forward. */
-  aiQuality?: number;
+  aiSlopScore?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   engineeringHygiene?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   security?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   repositoryHealth?: number;
-  /** 0-100, lower = better. @deprecated v0.15.0: use aiQuality. Kept
+  /** 0-100, lower = better. @deprecated v0.15.0: use aiSlopScore. Kept
    *  for backward compat with existing test fixtures and historical
    *  telemetry. The axis inverts it internally. */
   slopIndex?: number;
@@ -292,7 +292,7 @@ export interface RepositoryHealthInputs {
   /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
    *  that replaces slopIndex. Tests and callers should pass this
    *  going forward. */
-  aiQuality?: number;
+  aiSlopScore?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   engineeringHygiene?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
@@ -300,7 +300,7 @@ export interface RepositoryHealthInputs {
   /** v0.15.0 U.4+: 0-100, higher = better. */
   repositoryHealth?: number;
   /** 0-100, lower = better. Inverted to 100 - x for the composite.
-   *  @deprecated v0.15.0: use aiQuality. Kept for backward compat. */
+   *  @deprecated v0.15.0: use aiSlopScore. Kept for backward compat. */
   slopIndex?: number;
   /** 0-100, higher = better. */
   architectureConsistency?: number;

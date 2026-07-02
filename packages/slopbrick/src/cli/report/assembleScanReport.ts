@@ -28,7 +28,7 @@ export interface AssembleScanReportInput {
   results: FileScanResult[];
   aggregated: Pick<
     ProjectReport,
-    | 'aiQuality'
+    | 'aiSlopScore'
     | 'engineeringHygiene'
     | 'security'
     | 'repositoryHealth'
@@ -94,7 +94,7 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     version: VERSION,
     generatedAt,
     configPath,
-    aiQuality: aggregated.aiQuality,
+    aiSlopScore: aggregated.aiSlopScore,
     engineeringHygiene: aggregated.engineeringHygiene,
     security: aggregated.security,
     // repositoryHealth is set later from `enrichment.repositoryHealth`
@@ -133,7 +133,7 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     // v0.15.0 U.4+: the previous-run value is stored as
     // `previousSlopIndex` on ProjectReport for backward compat with
     // historical telemetry. The value itself is the previous run's
-    // aiQuality (higher = better).
+    // aiSlopScore (higher = better).
     previousSlopIndex: previousRun?.slopIndex,
     previousRunTimestamp: previousRun?.timestamp,
     p90Score: aggregated.p90Score,

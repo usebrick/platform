@@ -25,7 +25,7 @@ const FALLBACK_FIXTURE = PLATFORM_ROOT;
 interface BenchResult {
   pass: boolean;
   fixture: string;
-  scores: { aiQuality: number; engineeringHygiene: number; security: number; repositoryHealth: number };
+  scores: { aiSlopScore: number; engineeringHygiene: number; security: number; repositoryHealth: number };
   issueCounts: { high: number; medium: number; low: number };
   errors: string[];
 }
@@ -58,7 +58,7 @@ function bench(fixture: string): BenchResult {
   const h1 = readHealth(fixture);
 
   // 3. Assert structure
-  for (const key of ['aiQuality', 'engineeringHygiene', 'security', 'repositoryHealth'] as const) {
+  for (const key of ['aiSlopScore', 'engineeringHygiene', 'security', 'repositoryHealth'] as const) {
     if (typeof h1[key] !== 'number') {
       errors.push(`score ${key} is not a number (got ${typeof h1[key]})`);
     } else if (h1[key] < 0 || h1[key] > 100) {
@@ -75,7 +75,7 @@ function bench(fixture: string): BenchResult {
   // correctly produces four 100s).
   const totalIssues = h1.issueCounts.high + h1.issueCounts.medium + h1.issueCounts.low;
   if (totalIssues > 0) {
-    const scores = [h1.aiQuality, h1.engineeringHygiene, h1.security, h1.repositoryHealth] as const;
+    const scores = [h1.aiSlopScore, h1.engineeringHygiene, h1.security, h1.repositoryHealth] as const;
     const unique = new Set(scores);
     if (unique.size === 1) {
       errors.push(`all 4 scores are identical (${scores[0]}) with ${totalIssues} issues — likely the v0.16.0 R3 placeholder bug`);
@@ -85,7 +85,7 @@ function bench(fixture: string): BenchResult {
   // 5. Assert stability — run again and compare within ±2 points
   runScan(fixture);
   const h2 = readHealth(fixture);
-  for (const key of ['aiQuality', 'engineeringHygiene', 'security', 'repositoryHealth'] as const) {
+  for (const key of ['aiSlopScore', 'engineeringHygiene', 'security', 'repositoryHealth'] as const) {
     const delta = Math.abs(h1[key] - h2[key]);
     if (delta > 2) {
       errors.push(`score ${key} is unstable across runs: ${h1[key]} → ${h2[key]} (delta ${delta})`);
@@ -103,7 +103,7 @@ function bench(fixture: string): BenchResult {
     pass: errors.length === 0,
     fixture,
     scores: {
-      aiQuality: h1.aiQuality,
+      aiSlopScore: h1.aiSlopScore,
       engineeringHygiene: h1.engineeringHygiene,
       security: h1.security,
       repositoryHealth: h1.repositoryHealth,
@@ -124,7 +124,7 @@ function main(): void {
   console.log(`bench:scan fixture = ${fixture}`);
   const result = bench(fixture);
 
-  console.log(`\n  aiQuality           ${result.scores.aiQuality}`);
+  console.log(`\n  aiSlopScore           ${result.scores.aiSlopScore}`);
   console.log(`  engineeringHygiene  ${result.scores.engineeringHygiene}`);
   console.log(`  security            ${result.scores.security}`);
   console.log(`  repositoryHealth    ${result.scores.repositoryHealth}`);

@@ -30,7 +30,7 @@ function renderHeader(report: ProjectReport): string {
 
   // v0.15.0+: 4 named scores replace the single `slopIndex`.
   // `repositoryHealth` is the only one already on `ProjectReport` — the
-  // other three (aiQuality, engineeringHygiene, security) live on the new
+  // other three (aiSlopScore, engineeringHygiene, security) live on the new
   // composite object that U.5 introduces. Until U.5 lands, we cast
   // through `unknown` so the typecheck stays clean while the HTML
   // surfaces the new labels.
@@ -52,8 +52,8 @@ function renderHeader(report: ProjectReport): string {
         <span class="score-label">Repository Health (composite)</span>
       </div>
       <div class="score-card ai-quality">
-        <span class="score-value">${namedScores.aiQuality}</span>
-        <span class="score-label">AI Quality</span>
+        <span class="score-value">${namedScores.aiSlopScore}</span>
+        <span class="score-label">AI Slop Score</span>
       </div>
       <div class="score-card engineering-hygiene">
         <span class="score-value">${namedScores.engineeringHygiene}</span>
@@ -83,7 +83,7 @@ function renderHeader(report: ProjectReport): string {
 }
 
 interface NamedScores {
-  aiQuality: string;
+  aiSlopScore: string;
   engineeringHygiene: string;
   security: string;
   repositoryHealth: string;
@@ -102,14 +102,14 @@ function extractNamedScores(report: ProjectReport): NamedScores {
   // real fields land in U.5; until then we surface the new labels and
   // fall back to the legacy `repositoryHealth` for the composite.
   const r = report as unknown as {
-    aiQuality?: number;
+    aiSlopScore?: number;
     engineeringHygiene?: number;
     security?: number;
     repositoryHealth?: number;
   };
 
   return {
-    aiQuality: score(r.aiQuality),
+    aiSlopScore: score(r.aiSlopScore),
     engineeringHygiene: score(r.engineeringHygiene),
     security: score(r.security),
     repositoryHealth: score(r.repositoryHealth ?? report.repositoryHealth),

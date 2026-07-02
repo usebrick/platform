@@ -55,35 +55,38 @@ export function redactSecrets(text: string): string {
   return out;
 }
 
-// v0.15.0 U.4: colorForQuality is the inverted replacement for the
-// v0.14 colorForSlop helper. The legacy v0.14 logic mapped "higher
-// slop index" → "worse color" (lower = better). The v0.15 aiQuality
-// axis follows the opposite convention: higher = better. The four
-// thresholds are kept at the same numeric boundaries (76/51/26) but
-// the color associations are flipped: aiQuality < 26 is now red
-// (low quality = bad), 26-50 is orange, 51-75 is yellow, 76+ is
-// green. The constant names are preserved so the public API
-// (SLOP_BADGE_*) stays the same, only the meaning of the input
-// axis changed. The v0.14 colorForSlop is kept as a deprecated
-// alias for backward compat with any v0.14 callers that haven't
-// migrated yet.
+// v0.21.0: aiSlopScore is the RAW amount of slop (0=clean, 100=saturated).
+// The badge color uses the legacy v0.14 colorForSlop logic
+// (higher = worse → red) which now applies naturally — no
+// inversion needed. The badge label switches from
+// "repository-health" (v0.15–v0.20.1) back to the v0.14 framing:
+// the slop score is the headline, and the repositoryHealth
+// composite is the secondary view.
+//
+// The SLOP_BADGE_* threshold constants retain their v0.14 numeric
+// boundaries (76/51/26) for backward compat with any pinned
+// thresholds. The semantic meaning of `colorForSlop` is unchanged
+// from v0.14: high score → red, low score → green.
 export const SLOP_BADGE_RED_THRESHOLD = 76;
 export const SLOP_BADGE_ORANGE_THRESHOLD = 51;
 export const SLOP_BADGE_YELLOW_THRESHOLD = 26;
 
+// v0.21.0: colorForSlop is now the active function (was deprecated
+// in v0.15–v0.20.1). aiSlopScore is the raw amount of slop, so
+// the v0.14 color mapping applies directly.
 export function colorForSlop(slopIndex: number): string {
-  // Deprecated v0.14 semantics: higher slop index = worse.
-  // Kept as a backward-compat shim — new code should call
-  // `colorForQuality(aiQuality)` instead.
   if (slopIndex >= SLOP_BADGE_RED_THRESHOLD) return 'red';
   if (slopIndex >= SLOP_BADGE_ORANGE_THRESHOLD) return 'orange';
   if (slopIndex >= SLOP_BADGE_YELLOW_THRESHOLD) return 'yellow';
   return 'green';
 }
 
-/** v0.15.0 U.4: color for a 0-100 aiQuality (or any of the four
- *  v3 scores — all share the "higher = better" convention).
- *  The thresholds are inverted vs the legacy v0.14 colorForSlop. */
+/**
+ * v0.21.0: colorForQuality is kept for the three "higher = better"
+ * scores (engineeringHygiene, security, repositoryHealth). For
+ * the AI Slop Score (now raw amount, higher = worse) use
+ * `colorForSlop(aiSlopScore)` instead.
+ */
 export function colorForQuality(score: number): string {
   if (score >= SLOP_BADGE_RED_THRESHOLD) return 'green';
   if (score >= SLOP_BADGE_ORANGE_THRESHOLD) return 'yellow';
@@ -92,15 +95,13 @@ export function colorForQuality(score: number): string {
 }
 
 export function formatBadge(report: ProjectReport): string {
-  const score = report.aiQuality ?? 0;
+  const score = report.aiSlopScore ?? 0;
   const rounded = Math.round(score);
-  // v0.15.0 U.4: badge reflects aiQuality (higher = better), so
-  // the color uses the inverted colorForQuality logic. The badge
-  // label is "repository-health" since the v0.15.0 composite
-  // repositoryHealth is the v3 replacement for the v0.14
-  // headline slopIndex.
-  const color = colorForQuality(score);
-  return `[![Repository Health](https://img.shields.io/badge/repository--health-${rounded}-${color})](https://github.com/usebrick/platform)`;
+  // v0.21.0: aiSlopScore is raw amount of slop. Use colorForSlop
+  // (v0.14 logic) — high score → red, low score → green. The
+  // badge label reverts to "ai-slop" matching the v0.14 framing.
+  const color = colorForSlop(score);
+  return `[![AI Slop](https://img.shields.io/badge/ai--slop-${rounded}-${color})](https://github.com/usebrick/platform)`;
 }
 
 /** Render an array of values as a Unicode sparkline (▁▂▃▄▅▆▇█). */

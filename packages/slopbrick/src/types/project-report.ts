@@ -25,16 +25,26 @@ export interface ProjectReport {
   version: string;
   generatedAt: string;
   configPath?: string;
-  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
-  aiQuality: number;
+  /**
+   * v0.20.0: renamed from `aiSlopScore` to `aiSlopScore` because the
+   * old name implied a property of the *code* (quality) when it
+   * actually measures a property of the *tool's detection* (how
+   * many AI-detection rules fire on this codebase). 0-100, higher
+   * is better — but 'better' means 'fewer rule fires', not
+   * 'higher quality code'. The name "AI Slop Score" matches the
+   * existing description ("measures AI-slop signatures") and the
+   * slopbrick brand. See the pre-publish checklist in
+   * CONTRIBUTING.md for the full rationale.
+   */
+  aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
   repositoryHealth: number;
   assemblyHealth: number;
   totalScore: number;
-  /** @deprecated v0.15.0: use aiQuality. Kept as optional for backward
-   *  compat with existing test fixtures and historical telemetry. Will be
-   *  removed in v0.16.0. */
+  /** @deprecated v0.20.0: use `aiSlopScore`. Kept as optional for
+   *  backward compat with existing test fixtures and historical
+   *  telemetry. Will be removed in v0.21. */
   slopIndex?: number;
   categoryScores: Record<Category, number>;
   /** Phase 2 §10: composite subscores. Each is in 0-100 (capped).

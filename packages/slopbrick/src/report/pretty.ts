@@ -69,6 +69,11 @@ function formatDefaultOffSuppression(report: ProjectReport): string | null {
  * v0.14.5j (P8) — Better status labels. PASS/FAIL is technical jargon;
  * "passing" / "needs work" / "concerning" reads in plain English.
  * Maps a 0-100 score to one of four bands with color + label.
+ *
+ * v0.21.0: this band is for "higher = better" scores (composite
+ * `repositoryHealth`, sub-scores cleanliness). For the AI Slop Score
+ * headline (now "lower = better" — raw amount of slop), use
+ * `slopScoreBand()` instead.
  */
 function scoreBand(score: number): { label: string; color: (s: string) => string } {
   if (score >= 90) return { label: 'excellent', color: chalk.green };
@@ -78,27 +83,52 @@ function scoreBand(score: number): { label: string; color: (s: string) => string
 }
 
 /**
+ * v0.21.0: Band for the AI Slop Score headline (raw amount of slop,
+ * 0=clean, 100=saturated, lower = better). Mirrors the `slop` message
+ * tiers so the headline status and the message below it stay in sync:
+ *   < 10  → "no slop" (green)
+ *   < 30  → "low"      (green)
+ *   < 50  → "medium"   (yellow)
+ *   < 70  → "high"     (red)
+ *   ≥ 70  → "saturated" (red)
+ */
+function slopScoreBand(score: number): { label: string; color: (s: string) => string } {
+  if (score >= 70) return { label: 'saturated', color: chalk.red };
+  if (score >= 50) return { label: 'high', color: chalk.red };
+  if (score >= 30) return { label: 'medium', color: chalk.yellow };
+  if (score >= 10) return { label: 'low', color: chalk.green };
+  return { label: 'no slop', color: chalk.green };
+}
+
+/**
  * v0.14.5j (P9) — Trajectory delta. Returns a short string like
  * "  ↓3 (cleaner)" or "  ↑5 (worse)" to append to the headline.
  * Returns empty string when no previous run exists.
  *
- * Color: green for improvement (lower = better, so negative delta
- * is good), red for regression. Yellow for no change. A tiny
+ * v0.21.0: aiSlopScore is now raw amount of slop (0=clean, 100=saturated).
+ * The delta semantics FLIP: lower score = cleaner, higher score = more
+ * slop. So delta < 0 (score went down) means cleaner, delta > 0 means worse.
+ * This is the same convention the v0.14 headline slopIndex used.
+ *
+ * Color: green for improvement (score went DOWN = cleaner), red for
+ * regression (score went UP = more slop). Yellow for no change. A tiny
  * change (±0.5) is treated as noise and not shown.
  */
 function formatDeltaSuffix(report: ProjectReport): string {
   if (typeof report.previousSlopIndex !== 'number') return '';
-  // v0.15.0 U.4+: slopIndex → aiQuality (higher is better; sign
-  // conventions for the arrow flip accordingly).
-  const delta = report.aiQuality - report.previousSlopIndex;
+  // v0.21.0: aiSlopScore is raw amount (higher = more slop, lower = cleaner).
+  // For readers with a v0.20.1 baseline (where slopIndex was the inverted
+  // aiSlopScore = cleanliness), the value is the INVERSE of the new
+  // aiSlopScore. v0.21 readers should pass a normalized baseline (raw
+  // amount). The engine that writes the previousBaseline handles the
+  // version-aware migration in finalizeReport.ts.
+  const delta = report.aiSlopScore - report.previousSlopIndex;
   if (Math.abs(delta) < 0.5) return ''; // noise floor
   const arrow = delta < 0 ? '↓' : '↑';
   const absDelta = Math.abs(delta).toFixed(0);
-  // aiQuality higher = better; delta > 0 means improved → show as
-  // "cleaner" with a down-arrow (consistent with the v0.14.5j
-  // convention of down = good).
-  const word = delta > 0 ? 'cleaner' : 'worse';
-  const color = delta > 0 ? chalk.green : chalk.red;
+  // aiSlopScore lower = cleaner; delta < 0 means score went down → cleaner.
+  const word = delta < 0 ? 'cleaner' : 'worse';
+  const color = delta < 0 ? chalk.green : chalk.red;
   return color(`  ${arrow}${absDelta} (${word})`);
 }
 
@@ -115,8 +145,8 @@ function formatDeltaSuffix(report: ProjectReport): string {
  * - If no issues: explicit "all clean" verdict
  */
 function formatVerdict(report: ProjectReport): string {
-  // v0.15.0 U.4+: slopIndex → aiQuality (0-100, higher is better).
-  const score = report.aiQuality;
+  // v0.15.0 U.4+: slopIndex → aiSlopScore (0-100, higher is better).
+  const score = report.aiSlopScore;
   const band = scoreBand(score);
 
   // Build context: dominant category + rule + file
@@ -273,9 +303,11 @@ function formatNextStep(report: ProjectReport): string {
     ),
   );
 
-  // Add the why-failing hint when failing. v0.15.0 U.4+: use
-  // aiQuality (the SINGLE headline number, not coherence).
-  if (report.aiQuality < 70) {
+  // Add the why-failing hint when failing. v0.21.0: aiSlopScore is
+  // raw amount of slop (0=clean, 100=saturated). Threshold is
+  // "exceeds 30" (default meanSlop: 30) — show the hint when over.
+  // The < 70 check (v0.15–v0.20.1 cleanliness) flips to > 30 (raw).
+  if (report.aiSlopScore > 30) {
     lines.push(
       chalk.dim(
         `  → \`slopbrick scan --why-failing\` for the top 5 issues dragging the score down`,
@@ -312,12 +344,14 @@ function formatWhyFailing(report: ProjectReport): string {
     return chalk.green('Nothing is failing the threshold. Score is clean.');
   }
 
-  // v0.15.0 U.4+: use aiQuality (the SINGLE headline number).
-  const headline = report.aiQuality;
-  const status = headline >= 70 ? 'PASS' : 'FAIL';
-  const colorize = headline >= 70 ? chalk.green : chalk.red;
+  // v0.21.0: aiSlopScore is raw amount of slop (0=clean, 100=saturated).
+  // PASS when <= 30 (default meanSlop: 30). Was >= 70 in v0.15–v0.20.1
+  // (cleanliness inversion).
+  const headline = report.aiSlopScore;
+  const status = headline <= 30 ? 'PASS' : 'FAIL';
+  const colorize = headline <= 30 ? chalk.green : chalk.red;
   const lines: string[] = [];
-  lines.push(colorize.bold(`Headline score: ${headline.toFixed(0)}/100 (${status} — below 70)`));
+  lines.push(colorize.bold(`Headline score: ${headline.toFixed(0)}/100 (${status} — above 30)`));
   lines.push('');
   lines.push(chalk.bold('Top 5 rules dragging the score down:'));
   for (let i = 0; i < ranked.length; i++) {
@@ -344,6 +378,119 @@ function severityBadge(severity: Severity): string {
 }
 
 /**
+ * v0.20.0 — Plain-language message for each score range. The user
+ * asked for adjectives/messages beyond the bare number (the band
+ * label [PASSING/CONCERNING] wasn't enough). Each message is
+ * repo-focused ("Repo has...", not "Score is...") so the output
+ * reads as a status report, not a dashboard.
+ *
+ * Thresholds match the band labels in `scoreBand`:
+ *   ≥90 = excellent / no / clean / healthy
+ *   ≥70 = passing / low / minor
+ *   ≥50 = needs work / medium / moderate
+ *   ≥30 = concerning / high / significant
+ *   <30 = critical / saturated / serious
+ */
+const SCORE_MESSAGES: Record<string, ReadonlyArray<readonly [number, string]>> = {
+  // AI Slop Score (v0.21.0: lower = cleaner; field stores the RAW
+  // amount of slop. 0 = no AI slop, 100 = max AI slop. The tier
+  // thresholds are flipped vs the v0.20.1 inverted reading.)
+  slop: [
+    [90, 'Repo is saturated with AI slop'],
+    [70, 'Repo has a high amount of AI slop'],
+    [50, 'Repo has a medium amount of AI slop'],
+    [30, 'Repo has a low amount of AI slop'],
+    [0,  'Repo has no detectable AI slop'],
+  ],
+  // Engineering Hygiene (higher = better = fewer arch/logic/layout issues)
+  hygiene: [
+    [90, 'Repo is clean'],
+    [70, 'Repo has minor code quality issues'],
+    [50, 'Repo has moderate code quality issues'],
+    [30, 'Repo has significant code quality issues'],
+    [0,  'Repo has serious code quality issues'],
+  ],
+  // Security (higher = better = inverted from risk level)
+  security: [
+    [90, 'Repo has no security risks'],
+    [70, 'Repo has low security risk'],
+    [50, 'Repo has medium security risk'],
+    [30, 'Repo has high security risk'],
+    [0,  'Repo has critical security risk'],
+  ],
+  // Repository Health (higher = better = composite of 4 scores)
+  health: [
+    [90, 'Repo is healthy'],
+    [70, 'Repo has minor concerns'],
+    [50, 'Repo has moderate concerns'],
+    [30, 'Repo has significant concerns'],
+    [0,  'Repo has serious concerns'],
+  ],
+  // Test Quality (higher = better = more test coverage, better assertions)
+  test: [
+    [90, 'Tests are comprehensive'],
+    [70, 'Good test coverage'],
+    [50, 'Moderate test coverage'],
+    [30, 'Weak test coverage'],
+    [0,  'Tests are inadequate'],
+  ],
+  // Business Logic Coherence (higher = better = fewer cyclic imports, etc.)
+  logic: [
+    [90, 'Logic is clean'],
+    [70, 'Minor logic tangles'],
+    [50, 'Moderate logic tangles'],
+    [30, 'Significant logic tangles'],
+    [0,  'Serious logic tangles'],
+  ],
+  // Accessibility (higher = better = fewer WCAG violations)
+  accessibility: [
+    [90, 'No accessibility issues'],
+    [70, 'Minor accessibility issues'],
+    [50, 'Moderate accessibility issues'],
+    [30, 'Significant accessibility issues'],
+    [0,  'Critical accessibility issues'],
+  ],
+  // Performance (higher = better = fewer render-blocking, N+1, bloat)
+  performance: [
+    [90, 'No performance issues'],
+    [70, 'Minor performance issues'],
+    [50, 'Moderate performance issues'],
+    [30, 'Significant performance issues'],
+    [0,  'Critical performance issues'],
+  ],
+  // Sub-score buckets (boundary/context/visual within AI Slop Score)
+  boundary: [
+    [90, 'Boundary is clean'],
+    [70, 'Minor boundary issues'],
+    [50, 'Moderate boundary issues'],
+    [30, 'Significant boundary issues'],
+    [0,  'Boundary is broken'],
+  ],
+  context: [
+    [90, 'Context is clean'],
+    [70, 'Minor context issues'],
+    [50, 'Moderate context issues'],
+    [30, 'Significant context issues'],
+    [0,  'Context is broken'],
+  ],
+  visual: [
+    [90, 'Visual is clean'],
+    [70, 'Minor visual issues'],
+    [50, 'Moderate visual issues'],
+    [30, 'Significant visual issues'],
+    [0,  'Visual is broken'],
+  ],
+};
+
+function scoreToMessage(score: number, type: keyof typeof SCORE_MESSAGES): string {
+  const tiers = SCORE_MESSAGES[type];
+  for (const [threshold, message] of tiers) {
+    if (score >= threshold) return message;
+  }
+  return tiers[tiers.length - 1][1]; // fallback to the lowest threshold's message
+}
+
+/**
  * v0.9.1 — Repository Coherence is the new headline metric.
  * v0.9.1 — Repository Coherence was the new headline metric.
  * Composite: 0.50 × Architecture Consistency + 0.30 × (100 − Pattern
@@ -359,7 +506,7 @@ function severityBadge(severity: Severity): string {
  */
 
 function formatCompositeScore(report: ProjectReport): string {
-  // v0.15.0 U.4+: aiQuality is the SINGLE headline number, matching
+  // v0.15.0 U.4+: aiSlopScore is the SINGLE headline number, matching
   // what the user sees in .slopbrick/health.json. The Repository
   // Coherence composite is shown as a secondary line so the two
   // views are consistent.
@@ -367,39 +514,52 @@ function formatCompositeScore(report: ProjectReport): string {
   // v0.14.5j (P8): replaced [PASS]/[FAIL] with plain-language band
   // labels (excellent / passing / needs work / concerning).
   //
-  // v0.15.0 U.4+: aiQuality is higher-is-better (the opposite of
-  // the legacy slopIndex direction). The band label / color already
-  // encode this.
+  // v0.21.0: aiSlopScore is now the RAW amount of slop
+  // (0=clean, 100=saturated, lower = better). The band labels flip:
+  // "no slop / low / medium / high / saturated" — driven by
+  // `slopScoreBand()` (the old `scoreBand()` still serves the
+  // repositoryHealth composite, which is "higher = better").
   //
   // v0.14.5j (P9): trajectory delta "±N from last run" appended to
   // the headline so the user can see the trend without grep'ing
   // the run log.
-  const slop = report.aiQuality;
+  const slop = report.aiSlopScore;
   const slopValue = slop.toFixed(0).padStart(3, ' ');
-  const band = scoreBand(slop);
+  const band = slopScoreBand(slop);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
 
   const lines: string[] = [];
   const deltaSuffix = formatDeltaSuffix(report);
   lines.push(
-    chalk.bold(`AI Quality: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
+    chalk.bold(`AI Slop Score: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
   );
+  // v0.20.0: plain-language message (band label alone wasn't enough).
+  // v0.21.0: aiSlopScore is the raw amount of slop. The 'slop' tier
+  // messages are authored in the natural reading direction (≥90
+  // saturated, <10 no slop) so the lookup is direct.
+  lines.push(`  ${chalk.dim(scoreToMessage(slop, 'slop'))}`);
   lines.push(
     chalk.dim(
-      'higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.',
+      'lower = cleaner · measures AI-slop signatures (0 = no AI slop detected, 100 = max AI slop). ' +
+        'The rules are calibrated to detect AI patterns, so this measures how much AI-style fingerprint the codebase has. ' +
+        'Same number in .slopbrick/health.json.',
     ),
   );
 
-  // Show the subscore breakdown with plain-language labels
+  // Show the subscore breakdown with plain-language labels.
+  // v0.20.0: each sub-score also gets a plain-language message.
   lines.push(
     `  ├─ boundary: ${report.boundaryScore.toFixed(0).padStart(3, ' ')}  (40%)  ${chalk.dim('— structural integrity')}`,
   );
+  lines.push(`  │           ${chalk.dim(scoreToMessage(report.boundaryScore, 'boundary'))}`);
   lines.push(
     `  ├─ context:  ${report.contextScore.toFixed(0).padStart(3, ' ')}  (35%)  ${chalk.dim('— props / state / imports')}`,
   );
+  lines.push(`  │           ${chalk.dim(scoreToMessage(report.contextScore, 'context'))}`);
   lines.push(
     `  └─ visual:   ${report.visualScore.toFixed(0).padStart(3, ' ')}  (25%)  ${chalk.dim('— CSS / a11y / layout')}`,
   );
+  lines.push(`              ${chalk.dim(scoreToMessage(report.visualScore, 'visual'))}`);
 
   // Secondary view: Repository Coherence (different formula, opposite direction)
   // v0.14.5j: kept terse. The full formula was confusing — the user
@@ -464,6 +624,13 @@ function formatCoherenceScores(report: ProjectReport): string[] {
       lines.push(
         `${label.padEnd(20)} ${padded}/100  (${arrow} ${direction} = better · ${measure})`,
       );
+      // v0.20.0: plain-language message under each score.
+      const messageType =
+        key === 'codeHygiene' ? 'hygiene' :
+        key === 'accessibility' ? 'accessibility' :
+        key === 'performance' ? 'performance' :
+        'hygiene'; // fallback
+      lines.push(`${''.padEnd(20)} ${chalk.dim(scoreToMessage(value, messageType as keyof typeof SCORE_MESSAGES))}`);
     }
   }
 
@@ -491,6 +658,12 @@ function formatCoherenceScores(report: ProjectReport): string[] {
     lines.push(
       `${'Security Risk'.padEnd(20)} ${secLabel.padEnd(9)} (↑ higher = better · inverted from risk level · CRITICAL = worst)`,
     );
+    // Security score: 100/67/33/0 for low/medium/high/critical.
+    // Map categorical risk back to the inverted numeric score for
+    // the message lookup.
+    const secToScore: Record<string, number> = { low: 100, medium: 67, high: 33, critical: 0 };
+    const secNum = secToScore[report.aiSecurityRisk] ?? 0;
+    lines.push(`${''.padEnd(20)} ${chalk.dim(scoreToMessage(secNum, 'security'))}`);
   }
   return lines;
 }
@@ -577,16 +750,16 @@ function formatDriftSection(report: ProjectReport): string | null {
 
 function formatThresholds(report: ProjectReport): string[] {
   // v0.15.0 U.4+: the Thresholds section is the CI gate — it shows
-  // ONLY the AI Quality score, since that's the gate. The previous
+  // ONLY the AI Slop Score score, since that's the gate. The previous
   // version showed Coherence here too, which made the gate look
   // ambiguous.
   const limit = report.thresholds.meanSlop; // legacy field; not used anymore
-  const headline = report.aiQuality;
+  const headline = report.aiSlopScore;
   const passed = headline >= 70;
   const valueText = `${headline.toFixed(1)} ≥ 70`.padStart(12, ' ');
   const status = passed ? chalk.green('pass') : chalk.red('fail');
 
-  const result: string[] = ['Threshold (CI gate)', `  AI Quality  ${valueText}  ${status}`];
+  const result: string[] = ['Threshold (CI gate)', `  AI Slop Score  ${valueText}  ${status}`];
   // legacy limit reference (silence unused-variable lint without removing the field)
   void limit;
   return result;
@@ -736,11 +909,11 @@ export function formatPretty(report: ProjectReport): string {
 function formatScoringExplainer(_report: ProjectReport): string {
   return chalk.dim(
     'Four orthogonal scores (all 0-100, higher = better): ' +
-    'AI Quality (AI-slop signatures; the CI gate, AI Quality >= 70), ' +
+    'AI Slop Score (AI-slop signatures; the CI gate, AI Slop Score >= 70), ' +
     'Engineering Hygiene (issues per category across arch/logic/layout/component/test), ' +
     'Security (AI-flagged security risks, inverted from risk level), ' +
-    'Repository Health (composite: 0.4*AI Quality + 0.3*Engineering Hygiene + 0.2*Security + 0.1*Test Quality). ' +
-    'Only AI Quality gates CI; the others are informational. ' +
+    'Repository Health (composite: 0.4*AI Slop Score + 0.3*Engineering Hygiene + 0.2*Security + 0.1*Test Quality). ' +
+    'Only AI Slop Score gates CI; the others are informational. ' +
     'Default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.',
   );
 }
@@ -762,8 +935,8 @@ export function formatWhyFailingReport(report: ProjectReport): string {
  * in 4-5 lines on a terminal.
  */
 export function formatBriefReport(report: ProjectReport): string {
-  // v0.17.0: 4-score model (aiQuality, engineeringHygiene, security, repositoryHealth).
-  // The previous v0.15.0 "AI Quality + Coherence" dual-scoring was confusing;
+  // v0.17.0: 4-score model (aiSlopScore, engineeringHygiene, security, repositoryHealth).
+  // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;
   // the 4-score model shows all 4 orthogonal axes up front.
   const lines: string[] = [];
 
@@ -772,14 +945,14 @@ export function formatBriefReport(report: ProjectReport): string {
   lines.push('');
 
   // 4 named scores, each on its own line with band label.
-  // The aiQuality line also gets the trajectory delta (↑N cleaner /
-  // ↓N worse) since aiQuality is the CI gate.
+  // The aiSlopScore line also gets the trajectory delta (↑N cleaner /
+  // ↓N worse) since aiSlopScore is the CI gate.
   // v0.17.1: human label first, raw field name in dim — the brief is
   // what users copy-paste into PR comments, so the readable label
   // leads. JSON consumers reading --json get the raw field name
   // unchanged.
   const scoreLines: Array<{ label: string; field: string; value: number }> = [
-    { label: 'AI Quality',          field: 'aiQuality',          value: report.aiQuality },
+    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore },
     { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene },
     { label: 'Security',            field: 'security',           value: report.security },
     { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth },
@@ -795,12 +968,16 @@ export function formatBriefReport(report: ProjectReport): string {
     );
   });
 
-  // Gate info: aiQuality >= 70 is the CI gate (inherited from v0.15.0).
-  const passed = report.aiQuality >= 70;
+  // Gate info: v0.21.0 — aiSlopScore is raw amount of slop. The CI
+  // gate uses the `meanSlop` config (default 30). The gate condition
+  // is `aiSlopScore <= meanSlop` (the legacy v0.14 / v0.21+ direction
+  // was always "<= meanSlop passes", only v0.15–v0.20.1 had the
+  // inverted `>= 70` reading).
+  const passed = report.aiSlopScore <= 30;
   lines.push('');
   lines.push(
     chalk.dim(
-      `  CI gate: AI Quality >= 70 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
+      `  CI gate: AI Slop Score <= 30 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
     ),
   );
 

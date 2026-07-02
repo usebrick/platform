@@ -6,7 +6,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
   return {
     version: '0.14.5i',
     generatedAt: '2026-06-28T00:00:00.000Z',
-    aiQuality: 25, engineeringHygiene: 25, security: 25, repositoryHealth: 25,
+    aiSlopScore: 25, engineeringHygiene: 25, security: 25, repositoryHealth: 25,
     assemblyHealth: 75,
     totalScore: 0,
     categoryScores: {
@@ -48,43 +48,52 @@ function makeIssue(overrides: Partial<Issue> = {}): Issue {
 }
 
 describe('v0.14.5i UX improvements', () => {
-  // P4: aiQuality (v3 replacement for slopIndex) is the SINGLE
+  // P4: aiSlopScore (v3 replacement for slopIndex) is the SINGLE
   // headline, matches health.json
   describe('P4: unified headline number', () => {
-    it('renders AI Quality as the primary headline', () => {
-      const out = formatPretty(makeReport({ aiQuality: 25 }));
-      // v0.15.0 U.4: the v3 headline is "AI Quality" (the v0.14
+    it('renders AI Slop Score as the primary headline', () => {
+      const out = formatPretty(makeReport({ aiSlopScore: 25 }));
+      // v0.15.0 U.4: the v3 headline is "AI Slop Score" (the v0.14
       // "Slop Index" wording is replaced).
-      expect(out).toContain('AI Quality:');
+      expect(out).toContain('AI Slop Score:');
       expect(out).toContain('25');
-      expect(out).toMatch(/AI Quality: \s*25 \/ 100/);
+      expect(out).toMatch(/AI Slop Score: \s*25 \/ 100/);
     });
 
     it('shows Coherence as secondary view when present', () => {
       const out = formatPretty(
-        makeReport({ aiQuality: 25, coherence: 60, coherenceBreakdown: { architectureConsistency: 0, patternFragmentation: 0, constitutionMapped: 100, aiDebtMapped: 50 } }),
+        makeReport({ aiSlopScore: 25, coherence: 60, coherenceBreakdown: { architectureConsistency: 0, patternFragmentation: 0, constitutionMapped: 100, aiDebtMapped: 50 } }),
       );
-      expect(out).toContain('AI Quality:');
+      expect(out).toContain('AI Slop Score:');
       expect(out).toContain('Repository Coherence:');
       expect(out).toContain('60');
     });
 
     it('uses plain-language band labels (v0.14.5j) instead of [PASS] / [FAIL]', () => {
-      const excellent = formatPretty(makeReport({ aiQuality: 95 }));
-      const passing = formatPretty(makeReport({ aiQuality: 75 }));
-      const needsWork = formatPretty(makeReport({ aiQuality: 50 }));
-      const concerning = formatPretty(makeReport({ aiQuality: 25 }));
-      expect(excellent).toContain('[EXCELLENT]');
-      expect(passing).toContain('[PASSING]');
-      expect(needsWork).toContain('[NEEDS WORK]');
-      expect(concerning).toContain('[CONCERNING]');
+      // v0.21.0: aiSlopScore is now raw amount of slop. The band
+      // labels flip: aiSlopScore >= 70 → "saturated" (high = bad),
+      // < 10 → "no slop" (low = good). Each fixture here picks a
+      // value that lands in the matching band.
+      //   slopScoreBand thresholds: >= 70 saturated, >= 50 high,
+      //   >= 30 medium, >= 10 low, < 10 no slop
+      const saturated = formatPretty(makeReport({ aiSlopScore: 90 }));
+      const high = formatPretty(makeReport({ aiSlopScore: 60 }));
+      const medium = formatPretty(makeReport({ aiSlopScore: 40 }));
+      const low = formatPretty(makeReport({ aiSlopScore: 15 }));
+      expect(saturated).toContain('[SATURATED]');
+      expect(high).toContain('[HIGH]');
+      expect(medium).toContain('[MEDIUM]');
+      expect(low).toContain('[LOW]');
     });
 
     it('uses [PASS] / [FAIL] in the Threshold section (CI gate)', () => {
       // v0.14.5j kept the [PASS]/[FAIL] in the Threshold (CI gate)
       // section because that's the bit CI scripts grep for.
-      const pass = formatPretty(makeReport({ aiQuality: 75 }));
-      const fail = formatPretty(makeReport({ aiQuality: 25 }));
+      // v0.21.0: aiSlopScore is raw amount; CI gate is <= 30 passes.
+      // The CI gate line lives in the brief report (formatBriefReport),
+      // not the full pretty output.
+      const pass = formatBriefReport(makeReport({ aiSlopScore: 15 }));
+      const fail = formatBriefReport(makeReport({ aiSlopScore: 60 }));
       expect(pass).toContain('pass');
       expect(fail).toContain('fail');
     });
@@ -183,13 +192,16 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('--suggest');
     });
 
-    it('mentions --why-failing when score is below 70', () => {
-      const out = formatPretty(makeReport({ aiQuality: 25 }));
+    it('mentions --why-failing when score is above 30', () => {
+      // v0.21.0: aiSlopScore is raw amount of slop. The why-failing
+      // hint fires when score > 30 (default meanSlop). Was < 70 in
+      // the v0.20.1 inverted reading.
+      const out = formatPretty(makeReport({ aiSlopScore: 60 }));
       expect(out).toContain('--why-failing');
     });
 
-    it('does NOT mention --why-failing when score is at/above 70', () => {
-      const out = formatPretty(makeReport({ aiQuality: 75 }));
+    it('does NOT mention --why-failing when score is at/below 30', () => {
+      const out = formatPretty(makeReport({ aiSlopScore: 15 }));
       expect(out).not.toContain('--why-failing');
     });
   });
@@ -207,7 +219,7 @@ describe('v0.14.5i UX improvements', () => {
         // rule C: 5 low = 5 points
         ...Array.from({ length: 5 }, () => makeIssue({ ruleId: 'rule/c', severity: 'low' })),
       ];
-      const out = formatWhyFailingReport(makeReport({ issues, aiQuality: 15 }));
+      const out = formatWhyFailingReport(makeReport({ issues, aiSlopScore: 15 }));
       const aPos = out.indexOf('rule/a');
       const bPos = out.indexOf('rule/b');
       const cPos = out.indexOf('rule/c');
@@ -229,13 +241,13 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('returns clean message when no active issues', () => {
-      const out = formatWhyFailingReport(makeReport({ issues: [], aiQuality: 100 }));
+      const out = formatWhyFailingReport(makeReport({ issues: [], aiSlopScore: 100 }));
       expect(out).toContain('Nothing is failing');
     });
 
     it('shows the headline score in the output', () => {
       const out = formatWhyFailingReport(
-        makeReport({ aiQuality: 15, issues: [makeIssue({ ruleId: 'rule/test', severity: 'high' })] }),
+        makeReport({ aiSlopScore: 15, issues: [makeIssue({ ruleId: 'rule/test', severity: 'high' })] }),
       );
       expect(out).toContain('15/100');
     });
@@ -251,12 +263,12 @@ describe('v0.14.5i UX improvements', () => {
           issues: [makeIssue({ ruleId: 'rule/test', severity: 'high' })],
         }),
       );
-      // v0.15.0 U.4: the headline is "AI Quality" (the v0.14
+      // v0.15.0 U.4: the headline is "AI Slop Score" (the v0.14
       // "Slop Index" label is replaced).
       // P4 first (headline)
-      expect(out.indexOf('AI Quality:')).toBeGreaterThan(0);
+      expect(out.indexOf('AI Slop Score:')).toBeGreaterThan(0);
       // P5 second (trust signal)
-      expect(out.indexOf('99 INVERTED')).toBeGreaterThan(out.indexOf('AI Quality:'));
+      expect(out.indexOf('99 INVERTED')).toBeGreaterThan(out.indexOf('AI Slop Score:'));
       // P1 third (category breakdown)
       expect(out.indexOf('Category breakdown')).toBeGreaterThan(out.indexOf('99 INVERTED'));
       // Thresholds (v0.14.5j renamed to "Threshold (CI gate)")
@@ -271,7 +283,7 @@ describe('v0.14.5i UX improvements', () => {
   describe('v0.14.5j: at-a-glance + with-help', () => {
     // P6: plain-language verdict at the top
     it('P6: opens with a one-sentence verdict answering "is my code OK?"', () => {
-      const out = formatPretty(makeReport({ issues: [makeIssue()], aiQuality: 25 }));
+      const out = formatPretty(makeReport({ issues: [makeIssue()], aiSlopScore: 25 }));
       // First non-empty line should answer the user's actual question
       const firstLine = out.split('\n').find((l) => l.trim().length > 0) ?? '';
       expect(firstLine).toMatch(/Repo is/i);
@@ -279,7 +291,7 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('P6: clean report gets a "all clean" verdict', () => {
-      const out = formatPretty(makeReport({ issues: [], aiQuality: 0 }));
+      const out = formatPretty(makeReport({ issues: [], aiSlopScore: 0 }));
       expect(out).toContain('Clean');
     });
 
@@ -287,7 +299,7 @@ describe('v0.14.5i UX improvements', () => {
       const out = formatPretty(
         makeReport({
           issues: [makeIssue({ ruleId: 'ai/x', category: 'ai', severity: 'high', filePath: 'src/bad.ts' })],
-          aiQuality: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
+          aiSlopScore: 50, engineeringHygiene: 50, security: 50, repositoryHealth: 50,
           topOffenders: [{ filePath: 'src/bad.ts', adjustedScore: 100, issueCount: 1 }],
         }),
       );
@@ -318,11 +330,11 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     // P8: explicit lower=better / higher=better labels.
-    // v0.15.0 U.4: AI Quality uses "higher = better" (inverted
+    // v0.15.0 U.4: AI Slop Score uses "higher = better" (inverted
     // from the v0.14 Slop Index convention). The test is
     // updated to assert the new "higher = better" label, which
     // now applies to the primary headline.
-    it('P8: AI Quality shows "higher = better"', () => {
+    it('P8: AI Slop Score shows "higher = better"', () => {
       const out = formatPretty(makeReport());
       expect(out).toContain('higher = better');
     });
@@ -340,43 +352,42 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     // P9: trajectory delta.
-    // v0.15.0 U.4: aiQuality is higher = better, so the arrow
-    // direction is INVERTED vs the v0.14 Slop Index convention:
-    //   - aiQuality went UP (improved) → ↑5 (cleaner)
-    //   - aiQuality went DOWN (regressed) → ↓5 (worse)
-    // The v0.14 "↓N cleaner when score improved" wording is
-    // replaced with "↑N cleaner when aiQuality improved".
-    it('P9: shows ↑N (cleaner) when aiQuality improved from last run', () => {
+    // v0.21.0: aiSlopScore is raw amount of slop (lower = cleaner).
+    // The arrow direction matches the v0.14 Slop Index convention:
+    //   - aiSlopScore went DOWN (cleaner) → ↓5 (cleaner)
+    //   - aiSlopScore went UP   (worse)   → ↑5 (worse)
+    // The v0.15–v0.20.1 inversion (↑ = cleaner) is reverted.
+    it('P9: shows ↓N (cleaner) when aiSlopScore improved from last run', () => {
       const out = formatPretty(
-        makeReport({ aiQuality: 30, previousSlopIndex: 25 }),
+        makeReport({ aiSlopScore: 20, previousSlopIndex: 25 }),
       );
-      expect(out).toMatch(/↑5/);
+      expect(out).toMatch(/↓5/);
       expect(out).toMatch(/cleaner/);
     });
 
-    it('P9: shows ↓N (worse) when aiQuality regressed from last run', () => {
+    it('P9: shows ↑N (worse) when aiSlopScore regressed from last run', () => {
       const out = formatPretty(
-        makeReport({ aiQuality: 20, previousSlopIndex: 25 }),
+        makeReport({ aiSlopScore: 30, previousSlopIndex: 25 }),
       );
-      expect(out).toMatch(/↓5/);
+      expect(out).toMatch(/↑5/);
       expect(out).toMatch(/worse/);
     });
 
     it('P9: no delta line when no previous run', () => {
-      const out = formatPretty(makeReport({ aiQuality: 25, previousSlopIndex: undefined }));
+      const out = formatPretty(makeReport({ aiSlopScore: 25, previousSlopIndex: undefined }));
       expect(out).not.toMatch(/↓|↑/);
     });
 
     it('P9: no delta line for tiny change (noise floor ±0.5)', () => {
       const out = formatPretty(
-        makeReport({ aiQuality: 25.3, previousSlopIndex: 25.0 }),
+        makeReport({ aiSlopScore: 25.3, previousSlopIndex: 25.0 }),
       );
       expect(out).not.toMatch(/↓|↑/);
     });
 
     // P10: --brief flag
     it('P10: formatBriefReport is a 4-5 line terse summary', () => {
-      const out = formatBriefReport(makeReport({ aiQuality: 25, coherence: 60 }));
+      const out = formatBriefReport(makeReport({ aiSlopScore: 25, coherence: 60 }));
       const lines = out.split('\n').filter((l) => l.trim().length > 0);
       // v0.17.0: 4-score model is naturally longer (verdict + 4 scores + gate + footer = 6-9 lines).
       // Still terse vs the full formatPretty output (50+ lines).
@@ -385,12 +396,12 @@ describe('v0.14.5i UX improvements', () => {
     });
 
     it('P10: formatBriefReport includes the verdict, 4 scores, threshold, and delta', () => {
-      // v0.17.0: 4-score model (aiQuality, engineeringHygiene, security, repositoryHealth).
-      // The previous v0.15.0 "AI Quality + Coherence" dual-scoring was confusing;
+      // v0.17.0: 4-score model (aiSlopScore, engineeringHygiene, security, repositoryHealth).
+      // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;
       // the 4-score model shows all 4 orthogonal axes up front.
       const out = formatBriefReport(
         makeReport({
-          aiQuality: 30,
+          aiSlopScore: 30,
           engineeringHygiene: 70,
           security: 95,
           repositoryHealth: 40,
@@ -398,7 +409,7 @@ describe('v0.14.5i UX improvements', () => {
         }),
       );
       expect(out).toMatch(/Repo is/i);
-      expect(out).toContain('aiQuality');
+      expect(out).toContain('aiSlopScore');
       expect(out).toContain('engineeringHygiene');
       expect(out).toContain('security');
       expect(out).toContain('repositoryHealth');
@@ -422,15 +433,15 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).not.toContain('docs/scoring-explained.md');
       expect(out).not.toContain('Slop Index measures');
       // 4 named scores referenced
-      expect(out).toContain('AI Quality');
+      expect(out).toContain('AI Slop Score');
       expect(out).toContain('Engineering Hygiene');
       expect(out).toContain('Security');
       expect(out).toContain('Repository Health');
-      // CI gate is aiQuality >= 70, higher = better (legacy footer said lower = better)
-      expect(out).toMatch(/AI Quality\s*>=\s*70/);
+      // CI gate is aiSlopScore >= 70, higher = better (legacy footer said lower = better)
+      expect(out).toMatch(/AI Slop Score\s*>=\s*70/);
       expect(out).toMatch(/higher\s*=\s*better/i);
       // repositoryHealth weights per metrics.ts:302-306
-      expect(out).toMatch(/0\.4.*AI Quality/);
+      expect(out).toMatch(/0\.4.*AI Slop Score/);
       expect(out).toMatch(/0\.3.*Hygiene/i);
       expect(out).toMatch(/0\.2.*Security/i);
       expect(out).toMatch(/0\.1.*Test/i);

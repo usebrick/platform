@@ -178,9 +178,9 @@ export function recordTelemetry(
       componentCount: report.componentCount,
       // v0.15.0 U.4+: slopIndex is deprecated; the telemetry field is
       // still named slopIndex for backward compat with historical
-      // payloads, but the value is now aiQuality (0-100, higher is
+      // payloads, but the value is now aiSlopScore (0-100, higher is
       // better).
-      slopIndex: report.aiQuality,
+      slopIndex: report.aiSlopScore,
       assemblyHealth: report.assemblyHealth,
       categoryScores: { ...report.categoryScores },
       p90Score: report.p90Score,

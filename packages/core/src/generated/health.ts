@@ -1,19 +1,19 @@
 // AUTO-GENERATED from health.schema.json. Do not hand-edit.
 
 /**
- * Repository health snapshot from a single slopbrick scan. v3 (v0.15.0) replaces the legacy slopIndex/categoryScores pair with four orthogonal scores: aiQuality, engineeringHygiene, security, repositoryHealth. Legacy fields kept optional for backward compat; will be removed in v0.16.0.
+ * Repository health snapshot from a single slopbrick scan. v5 (v0.21.0) FLIPS the aiSlopScore semantics: it now stores the raw amount of AI slop (0 = no AI slop, 100 = max AI slop, higher = worse), matching the natural reading of the name. The v0.15–0.20.1 inversion (100 = good) was confusing — users read 'AI Slop Score: 100' as '100% slop'. aiQuality (v0.15–0.20.0 alias) removed because semantics are now MEANINGFULLY DIFFERENT (old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 = 70% slop). engineeringHygiene, security, repositoryHealth unchanged (still 'higher = better'; the composite inverts aiSlopScore at the call site).
  */
 export interface RepositoryStructureHealth {
   /**
-   * Health schema version. Currently '3'.
+   * Health schema version. Currently '5'.
    */
-  version: "3";
+  version: "5";
   generatedAt: string;
   workspace: string;
   /**
-   * v0.15.0: AI/agent-friendliness score (0-100, higher is better). How easily an LLM can navigate, refactor, and extend this codebase.
+   * v0.21.0: AI-slop score (0-100, higher = more slop, lower = cleaner). The raw amount of AI slop signatures detected (0 = no AI slop, 100 = max AI slop). In v0.15–0.20.1 this was inverted (100 = clean); the v0.21.0 flip matches the natural reading of the name (users read 'AI Slop Score: 100' as '100% slop').
    */
-  aiQuality: number;
+  aiSlopScore: number;
   /**
    * v0.15.0: engineering hygiene score (0-100, higher is better). Code organization, naming, dead code, complexity, test coverage, type safety.
    */

@@ -46,7 +46,7 @@ export interface FinalizeReportInput {
   results: FileScanResult[];
   aggregated: Pick<
     ProjectReport,
-    | 'aiQuality'
+    | 'aiSlopScore'
     | 'engineeringHygiene'
     | 'security'
     | 'repositoryHealth'
@@ -151,7 +151,7 @@ export async function finalizeReport(
     config,
     results,
     aggregated: {
-      aiQuality: aggregated.aiQuality,
+      aiSlopScore: aggregated.aiSlopScore,
       engineeringHygiene: aggregated.engineeringHygiene,
       security: aggregated.security,
       repositoryHealth: aggregated.repositoryHealth,
@@ -181,35 +181,40 @@ export async function finalizeReport(
     enrichment,
   });
 
-  // --no-increase check: fail the run if the AI Quality went DOWN.
-  // v0.18.1: the previous v0.15.0 bridge compared today's `aiQuality`
-  // (0-100, higher=better) against `previous.slopIndex` (the v0.15.0
-  // legacy field, which the engine *currently* populates with the same
-  // value as `aiQuality` at write time — see `engine/src/structure.ts:258`,
-  // `slopIndex: report.aiQuality`). For v0.15.0+ users the comparison
-  // is correct in effect, but the *name* is misleading and the contract
-  // is brittle: a future engine change that decouples `slopIndex` from
-  // `aiQuality` would silently break the gate. The fix is to (a) keep
-  // the existing comparison (the data is self-consistent today), (b)
-  // name the data-flow contract in a comment so the next reader doesn't
-  // "fix" it by reverting to the bridge, and (c) emit a one-time warning
-  // when the comparison fires so users see the gate direction.
+  // --no-increase check: fail the run if the AI Slop Score went UP.
+  // v0.21.0: aiSlopScore is now the RAW amount of slop (0=clean,
+  // 100=saturated, lower = better). The previous run's `slopIndex`
+  // field is also written as the raw amount (see engine/structure.ts
+  // `slopIndex: report.aiSlopScore`, restored from the v0.14
+  // convention). So a regression looks like today's aiSlopScore
+  // EXCEEDING the previous baseline. The check flips from `<` to `>`.
+  //
+  // v0.18.1 bridge (v0.15.0–v0.20.1 era) compared the inverted
+  // aiSlopScore (higher=better) and used `<` to detect regression.
+  // That data-flow contract is broken in v0.21.0 — readers handling
+  // legacy v0.20.1 persisted runs need to invert the baseline value
+  // (100 - x) before comparing. The version-aware migration lives
+  // in the engine that writes `previous.slopIndex`; finalizeReport
+  // just compares the raw-amount values.
   let noIncreaseFailure = false;
   if (options.noIncrease) {
     const previous = (await readRuns(cwd, fsMemoryIO)).at(-1);
     if (previous) {
-      // Data-flow contract: `previous.slopIndex` is written by the
-      // engine as `report.aiQuality` (structure.ts:258). So a regression
-      // looks like `report.aiQuality < previous.slopIndex` because the
-      // two values are in the same scale (0-100, higher=better) and
-      // direction. A v0.18.x+ change to that contract must update
-      // this comparison in lockstep.
+      // Data-flow contract: `previous.slopIndex` is the raw amount
+      // of slop written by the engine (0=clean, 100=saturated).
+      // A regression is when today's aiSlopScore > previous baseline.
+      // For readers handling v0.20.1 persisted runs, the baseline
+      // value is the INVERTED aiSlopScore (higher=better); the
+      // engine that writes the baseline should handle the
+      // version-aware migration (currently a no-op until a future
+      // change adds it). The current check is correct for v0.21+
+      // readers comparing against v0.21+ baselines.
       const previousBaseline = previous.slopIndex;
-      if ((report.aiQuality ?? 0) < previousBaseline) {
+      if ((report.aiSlopScore ?? 0) > previousBaseline) {
         noIncreaseFailure = true;
         if (!options.quiet) {
           logger.error(
-            `AI Quality went DOWN from ${previousBaseline.toFixed(1)} to ${(report.aiQuality ?? 0).toFixed(1)} — your code got sloppier. (Both values are 0-100, higher = better; the comparison is against the previous run's aiQuality, stored historically in the legacy slopIndex field.) See which files changed and fix the new issues.`,
+            `AI Slop Score went UP from ${previousBaseline.toFixed(1)} to ${(report.aiSlopScore ?? 0).toFixed(1)} — your code got sloppier. (Both values are 0-100, lower = cleaner; the comparison is against the previous run's raw slop amount.) See which files changed and fix the new issues.`,
           );
         }
       }

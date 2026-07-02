@@ -17,10 +17,12 @@ import type {
 // ─── Threshold logic ──────────────────────────────────────────────────────
 
 export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig): boolean {
-  // Composite Slop Index is the single threshold metric. p90Slop and
-  // individualSlopThreshold are kept in config for backward compat but
-  // no longer gate the exit code.
-  if ((report.aiQuality ?? 0) < config.thresholds.meanSlop) {
+  // v0.21.0: aiSlopScore is now the RAW amount of slop (0=clean, 100=saturated).
+  // The CI gate keeps the `meanSlop` config name (no breaking rename of the
+  // user's config file) but flips the comparison: aiSlopScore > meanSlop fails.
+  // In v0.15–v0.20.1 the check was `aiSlopScore < meanSlop` (the v0.15.0
+  // inversion, where aiSlopScore was cleanliness).
+  if ((report.aiSlopScore ?? 0) > config.thresholds.meanSlop) {
     return true;
   }
   return categoryThresholdBreached(report, config.thresholds.categoryThresholds);
@@ -28,11 +30,13 @@ export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig)
 
 export function failedThresholdCount(report: ProjectReport, config: ResolvedConfig): number {
   let count = 0;
-  // v0.15.0 U.4+: aiQuality (0-100, higher is better) replaces
-  // slopIndex as the headline threshold metric. The legacy
-  // `meanSlop` field on the config is kept for backward compat;
-  // the comparison direction flips: aiQuality < meanSlop now fails.
-  if (report.aiQuality < config.thresholds.meanSlop) count += 1;
+  // v0.21.0: aiSlopScore is now the raw amount of slop (0=clean, 100=saturated).
+  // The `meanSlop` config field keeps its name (no breaking rename) but
+  // the comparison flips: aiSlopScore > meanSlop fails (was `<` in v0.20.1
+  // when aiSlopScore was the inverted cleanliness). The legacy v0.14
+  // contract was `slopIndex > meanSlop` (raw amount) so v0.21.0 restores
+  // that direction.
+  if (report.aiSlopScore > config.thresholds.meanSlop) count += 1;
   if (report.p90Score > config.thresholds.p90Slop) count += 1;
   if (report.peakScore > config.thresholds.individualSlopThreshold) count += 1;
   const cat = config.thresholds.categoryThresholds;
@@ -161,6 +165,9 @@ export function stagedGating(
   const hypotheticalMean =
     (sumAllCachedAdjustedScores - sumCachedStagedScores + sumNewStagedScores) / virtualN;
 
+  // v0.21.0: hypotheticalMean is the raw amount of slop (0=clean, 100=saturated).
+  // Comparison: > meanSlop fails (same direction as v0.14, restored from
+  // v0.15–v0.20.1 inversion).
   if (hypotheticalMean > config.thresholds.meanSlop) {
     return {
       failed: true,

@@ -70,7 +70,7 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
     version: VERSION,
     generatedAt: new Date().toISOString(),
     // v0.15.0 U.4+: 4-score model replaces single slopIndex.
-    aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
+    aiSlopScore: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
     assemblyHealth: 88,
     categoryScores: {
       visual: 5, typo: 0, wcag: 0, layout: 0, component: 0,
@@ -133,7 +133,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
       generatedAt: inventory.generatedAt,
       workspace: dir,
       // v0.15.0 U.4+: 4-score model replaces single slopIndex.
-      aiQuality: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
+      aiSlopScore: 12, engineeringHygiene: 12, security: 12, repositoryHealth: 12,
       categoryScores: { ai: 7, visual: 5 },
       issueCounts: { high: 1, medium: 1, low: 1 },
       topOffenseIds: ['ai/comment-ratio', 'visual/duplicate-class'],
@@ -165,7 +165,7 @@ describe('.slopbrick/ artifact pipeline (v0.14.5d)', () => {
     const loadedHealth = loadHealth(dir);
     expect(loadedHealth).not.toBeNull();
     expect(isHealthFile(loadedHealth)).toBe(true);
-    expect(loadedHealth!.aiQuality).toBe(12);
+    expect(loadedHealth!.aiSlopScore).toBe(12);
     expect(loadedHealth!.issueCounts).toEqual({ high: 1, medium: 1, low: 1 });
     expect(loadedHealth!.topOffenseIds).toEqual(['ai/comment-ratio', 'visual/duplicate-class']);
 

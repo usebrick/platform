@@ -142,7 +142,7 @@ function collectExports(cwd: string): Set<string> {
       /\bexport\s+default\s+(?:function\s+|class\s+)?([A-Za-z_$][\w$]*)/g,
       // v0.18.6: also collect field names from `export interface` and
       // `export type` declarations. Without this, fields like
-      // `crossFileDrift`, `aiQuality`, `engineeringHygiene` are
+      // `crossFileDrift`, `aiSlopScore`, `engineeringHygiene` are
       // flagged as stale even though they're valid type fields.
       /^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\s*[?:]/gm,
     ]) {

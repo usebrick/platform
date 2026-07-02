@@ -32,7 +32,7 @@
  * types from `@usebrick/core` (re-exported from `./generated/*`).
  */
 
-export const STRUCTURE_SCHEMA_VERSION = '3' as const;
+export const STRUCTURE_SCHEMA_VERSION = '5' as const;
 
 /**
  * Per-file mtime + fingerprint for the incremental refresh path.

@@ -34,7 +34,7 @@
     "health": {
       "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
       "file": "health.schema.json",
-      "description": "Repository health snapshot from a single scan. v3 (v0.15.0): four orthogonal scores \u2014 aiQuality, engineeringHygiene, security, repositoryHealth (each 0-100, higher is better) \u2014 plus issue counts. Legacy slopIndex/categoryScores kept optional for v0.14 compat.",
+      "description": "Repository health snapshot from a single scan. v5 (v0.21.0): four orthogonal scores \u2014 aiSlopScore (now RAW amount: 0=clean, 100=saturated, higher=worse; flipped from v0.20.1 inversion), engineeringHygiene, security, repositoryHealth (each 0-100, higher is better, with composite inverting aiSlopScore at the call site) \u2014 plus issue counts. Legacy slopIndex/categoryScores kept optional for backward compat with v0.14\u20130.20.1 readers. The v0.20.1 aiQuality alias is REMOVED in v5 (semantics now differ: old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 = 70% slop).",
       "producedBy": [
         "slopbrick scan"
       ],
