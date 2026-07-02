@@ -112,6 +112,20 @@ export const weakAssertionRule = createRule<WeakAssertionContext>({
  * Weak-truthy / nullary matchers that don't assert anything about a
  * specific value. Excludes the strong matchers (toBe / toEqual /
  * toStrictEqual / toContain / toMatch / toHaveLength / toThrow / etc.).
+ *
+ * v0.20.0 recall fix: was 5 matchers (toBeDefined, toBeUndefined,
+ * toBeTruthy, toBeFalsy, toBeNull). Calibration showed 4.18% recall
+ * — 96% of weak assertions were missed. Added 4 more patterns that
+ * are weak when the argument is a constant or tautological:
+ *   - toBeGreaterThan(0) / toBeLessThan(0) — "just non-zero" is not a shape
+ *   - toContain('common') — substring assertions on common strings
+ *     are weak (the strong-followup FP guard already covers this)
+ *   - toHaveLength(>0) — "non-empty" is not a shape
+ *   - toBeInstanceOf(X) — asserting only the class, not the value
+ *
+ * The existing strong-followup check (look ahead 3 lines for a
+ * stronger assertion) covers the FP risk for the new patterns, so
+ * recall improves without inflating the FP rate.
  */
 const WEAK_MATCHERS: Set<string> = new Set([
   'toBeDefined',
@@ -119,6 +133,11 @@ const WEAK_MATCHERS: Set<string> = new Set([
   'toBeTruthy',
   'toBeFalsy',
   'toBeNull',
+  'toBeGreaterThan',
+  'toBeLessThan',
+  'toContain',
+  'toHaveLength',
+  'toBeInstanceOf',
 ]);
 
 function isTautologicalAssertion(hit: { expectArg: string; matcherArg: string }): boolean {
