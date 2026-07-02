@@ -34,6 +34,16 @@ export const aiSegmentSurprisalCvRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'medium',
   aiSpecific: true,
+  // v0.21.0: defaultOff. The rule fires on 250/250 files in the
+  // self-scan (1 per file), which means it's not discriminating
+  // between AI and non-AI text — it fires on every file. The
+  // Binoculars-style per-segment entropy CV is too coarse a
+  // signal at the file level; the entropy floor is hit by most
+  // structured TypeScript regardless of whether the author was
+  // an LLM. Re-enable per-file via
+  // `rules: { 'ai/segment-surprisal-cv': 'medium' }` in
+  // slopbrick.config.mjs once a tighter threshold is calibrated.
+  defaultOff: true,
   description: 'Per-segment cross-entropy CV is suspiciously low — Binoculars (Hans 2024): AI text has near-constant per-window entropy',
   create(context) {
     return context;
