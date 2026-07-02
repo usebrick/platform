@@ -53,9 +53,10 @@ releases** between them. The cadence is:
 | **v0.23.0** | minor | **SHIPPED** | **dedup v2 (near-duplicate)** — Type-2 clone detector (MinHash + Jaccard on k-gram tokens) | this session |
 | **v0.23.1** | patch | (any time) | First calibration patch for `dup/near-duplicate` once v9 corpus arm is available | ongoing |
 | **v0.23.x** | patch | (incremental) | Continued calibration: FPs removed, threshold tuned, near-dup opt-in flag promoted to default-on if calibration confirms | ongoing |
-| **v0.24.0** | minor | **Sep 2026** | **v9 Java arm + Java rule calibration + telemetry opt-in** — fetch Spring/Apache/JDK/Hibernate/Guava/Elasticsearch/Kafka, run calibration on the 6 DORMANT Java rules, ship `slopbrick scan --telemetry=opt-in` for adoption signal | v9 plan Part 2 |
-| **v0.24.1** | patch | (any time) | Java calibration refinements: rule-specific threshold tunes, FP suppressions, ai/*-style rule lifts | ongoing |
-| **v0.25.0** | minor | **Mar 2027** | **Kotlin + Swift + C++ calibration + dup v3 + methodology paper** — write Kotlin/Swift/C++ rules, fetch the mobile + C++ arms, ship dup/structural-clone (Type-3), publish methodology paper to arXiv | v9 plan Part 4+5+6 |
+| **v0.24.0** | minor | **Sep 2026** | **ALL 4 LANGUAGES + dup v3 + telemetry** — Java + Kotlin + Swift + C++ corpus arms, per-language rule calibration (6 Java rules + 5 Kotlin + 5 Swift + 5-7 C++), ship `dup/structural-clone` (Type-3, AST isomorphism), ship `slopbrick scan --telemetry=opt-in` for adoption signal. **This is the big release that covers all main languages.** | v9 plan Part 2+4+5 |
+| **v0.24.1** | patch | (any time) | First calibration patch: Java rules promoted from DORMANT to USEFUL on v9 corpus, FP suppressions | ongoing |
+| **v0.24.x** | patch | (incremental) | Per-language calibration refinements: rule-specific threshold tunes, FP suppressions, dup v3 default-on promotion if calibration confirms | ongoing |
+| **v0.25.0** | minor | **Mar 2027** | **METHODOLOGY PAPER + FINAL v9.5 RE-CALIBRATION** — submit the 1k vs 546k methodology paper to arXiv, re-measure all rules on the combined v7+v8+v9 corpus, ship the final v9.5 calibration report. Self-audit scores must hit `security >= 80`, `repositoryHealth >= 70`. | v9 plan Part 6 |
 
 **Rationale:** batch new features into minor releases. Within a
 minor, use patch bumps for fixes and calibration refinements.
@@ -69,11 +70,14 @@ v0.23.0   dedup v2 ships (new rule)
 v0.23.1   threshold tuned to 0.65 after first 100-file self-scan
 v0.23.2   near-dup promoted from defaultOff to default-on after v9 calibration
 v0.23.3   FP suppression for the rule's most common false positive
-v0.24.0   v9 Java arm + Java calibration + telemetry (new feature)
-v0.24.1   Java rule-specific threshold tune
-v0.24.2   more Java calibration refinement
-v0.25.0   Kotlin/Swift/C++ + dup v3 + methodology paper
-v0.25.1   Kotlin/Swift/C++ calibration refinements
+v0.24.0   ALL 4 LANGUAGES + dup v3 + telemetry (new features, ~21 new rules)
+v0.24.1   Java rules promoted from DORMANT to USEFUL on v9 corpus
+v0.24.2   Kotlin rules promoted
+v0.24.3   Swift rules promoted
+v0.24.4   C++ rules promoted
+v0.24.5   dup/structural-clone promoted to default-on after v9 calibration
+v0.25.0   methodology paper to arXiv + final v9.5 re-calibration
+v0.25.1   final self-audit score refinements
 ```
 
 **Trade-off:** more releases total (8-10 in 6 months instead of
