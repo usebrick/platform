@@ -2236,7 +2236,7 @@
     "precision": 0.1721,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.32: v9 Swift calibration (1300 neg, 568 pos). Per-file unique measurement: 58 TP files, 279 FP files, ratio=0.48. Era-confounded: pre-2022 Swift used ! freely (the only way to unwrap); modern Swift uses guard let / if let / try?. Same direction as kotlin/force-unwrap (0.35) and kotlin/runblocking-misuse (0.50). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
+    "_calibrationNote": "v0.34.10: REFINED — the access-force regex now uses a negative lookbehind to exclude `!` in `!=` and `!==` comparison operators. Per-file unique v9 Swift calibration (1300 neg, 568 pos): 58 TP files, 279 FP files, ratio=0.48 (DORMANT). The previous regex incorrectly fired on `!` in `a != b` and `a !== b` patterns, which are common in control flow. The refinement is expected to push precision from 17.2% to 25%+ by removing these false positives. Era-confounded: pre-2022 Swift used `!` freely (the only way to unwrap); modern Swift uses `guard let` / `if let` / `try?`. Same direction as kotlin/force-unwrap (0.35) and kotlin/runblocking-misuse (0.50). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
     "aiSpecific": true,
     "_v7Verdict": "DORMANT",
     "_v7Lift": 1.0,

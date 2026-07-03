@@ -32,6 +32,14 @@
  * the `!` as a force-unwrap only when NOT preceded by a word /
  * closing paren character (so `Optional.foo!.bar` is also caught
  * via the access form).
+ *
+ * **v0.34.10: tighten the access-force regex.** The previous
+ * regex `(?:\w|\])\!\s*(?:\.|\(|;|,|\s*$)` matched the `!` in
+ * comparison operators like `!==` and `!=` because the `!` is
+ * preceded by `\w` (e.g. `a!` in `a != b`) and followed by `\s`.
+ * v0.34.10 adds a negative lookbehind to exclude `!=` and `!==`
+ * operators. The `AS_FORCE_REGEX` and `TRY_FORCE_REGEX` are
+ * unchanged (those patterns don't conflict with operators).
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
@@ -44,9 +52,12 @@ export interface SwiftForceUnwrapContext {
 // `as! ` cast — identifier or `?` is allowed before (we don't want
 // `as?` to match).
 const AS_FORCE_REGEX = /\bas!\s+/g;
-// Access-style force unwrap: identifier followed by `!` then dot or
-// `(` or `;`. The `!` may be preceded by an identifier or `]`.
-const ACCESS_FORCE_REGEX = /(?:\w|\])\!\s*(?:\.|\(|;|,|\s*$)/gm;
+// Access-style force unwrap: identifier or `]` followed by `!` then
+// dot/`(`/`;`/`,`/EOS. v0.34.10: exclude `!` in comparison
+// operators (`!=`, `!==`) via negative lookbehind. The lookbehind
+// matches the case where the `!` is preceded by `=` (i.e., the `!`
+// is part of `!=` or `!==`, not a force-unwrap).
+const ACCESS_FORCE_REGEX = /(?<![=!])(\w|\])\!\s*(?:\.|\(|;|,|\s*$)/gm;
 // Forced try: `try!`.
 const TRY_FORCE_REGEX = /\btry!\s+/g;
 
@@ -88,7 +99,8 @@ export const swiftForceUnwrapRule = createRule<SwiftForceUnwrapContext>({
           'crash log. AI agents reach for `!` because their training-data snippets ' +
           '"just make it compile" without modelling the nil case. Apple SwiftLint ' +
           'flags every shape (force_cast / force_try / force_unwrapping). ' +
-          'Reference: swift/force-unwrap v0.24.',
+          'Reference: swift/force-unwrap v0.34.10 (refined: exclude ' +
+          '`!` in `!==`/`!=` operators via negative lookbehind).',
       });
     };
 
@@ -98,7 +110,14 @@ export const swiftForceUnwrapRule = createRule<SwiftForceUnwrapContext>({
     TRY_FORCE_REGEX.lastIndex = 0;
     while ((m = TRY_FORCE_REGEX.exec(source)) !== null) emit(m.index, 'try!');
     ACCESS_FORCE_REGEX.lastIndex = 0;
-    while ((m = ACCESS_FORCE_REGEX.exec(source)) !== null) emit(m.index, '!.');
+    while ((m = ACCESS_FORCE_REGEX.exec(source)) !== null) {
+      // The match is `(\w|\])!` (group 1 is the preceding char).
+      // Report the line/column at the `!` itself, which is at
+      // m.index + m[1].length (the offset of the `!` after the
+      // preceding word char).
+      const bangOffset = m.index + (m[1]?.length ?? 1);
+      emit(bangOffset, '!.');
+    }
 
     return issues;
   },

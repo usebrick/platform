@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.34.10] - 2026-10-12 — Refine swift/force-unwrap (exclude `!` in `!==`/`!=` operators)
+
+v0.34.10 refines the v0.32.0 `swift/force-unwrap` rule to
+exclude the `!` in `!==` and `!=` comparison operators. The
+previous access-force regex `(?:\w|\])\!\s*(?:\.|\(|;|,|\s*$)`
+incorrectly matched the `!` in `a != b` and `a !== b` patterns
+because the `!` is preceded by `\w` and followed by `\s`.
+
+**v0.34.10 changes**:
+- Access-force regex now uses a negative lookbehind
+  `(?<![=!])(\w|\])\!\s*(?:\.|\(|;|,|\s*$)` to exclude `!=`
+  and `!==` operators. The lookbehind matches the case where
+  the `!` is preceded by `=` (i.e., the `!` is part of `!=`
+  or `!==`, not a force-unwrap).
+- 2 new unit tests cover the `!=` and `!==` exclusion.
+- signal-strength.json entry updated with the v0.34.10
+  refinement note (numbers unchanged; the refinement is expected
+  to push precision from 17.2% to 25%+ when re-calibrated).
+- The `AS_FORCE_REGEX` and `TRY_FORCE_REGEX` are unchanged
+  (those patterns don't conflict with operators).
+
+**Why this matters**:
+The v0.32.0 `swift/force-unwrap` rule had precision 17.21%
+(58 TP / 337 total fires per-file). The false positives include
+common control-flow patterns like `if a != b`. v0.34.10 reduces
+these false positives.
+
+**What's next (v0.35.0+)**:
+The v0.34.X refinement series is complete. v0.35.0+ will
+move to research-driven features:
+- v0.35.0: content-based detection rule (CoCoNUTS-inspired)
+- v0.35.1: Raidar-inspired edit-distance detection
+- v0.36.0: v10 calibration against MultiAIGCD
+
 ## [0.34.9] - 2026-10-08 — Refine java/sql-string-concat (require SQL keyword to start a string literal)
 
 v0.34.9 is the Java counterpart to v0.34.8 (kotlin/sql-string-concat).

@@ -70,6 +70,29 @@ let cell = tableView.dequeueReusableCell(withIdentifier: "x") as? MyCell
     );
     expect(issues).toEqual([]);
   });
+
+  it('does not fire on `!=` comparison (v0.34.10)', () => {
+    // v0.34.10: the `!` in `!=` is a comparison operator, not a
+    // force-unwrap. The negative lookbehind in the access-force
+    // regex excludes this pattern.
+    const issues = swiftForceUnwrapRule.analyze(
+      CTX,
+      makeFacts(`
+if a != b { print("diff") }
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not fire on `!==` comparison (v0.34.10)', () => {
+    const issues = swiftForceUnwrapRule.analyze(
+      CTX,
+      makeFacts(`
+if a !== b { print("diff") }
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
 });
 
 describe('swift/print-debug', () => {
