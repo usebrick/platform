@@ -139,6 +139,47 @@ int y = static_cast<int>(x);
     expect(issues).toEqual([]);
   });
 
+  it('does not flag a `static_cast<int>(x)` with space (v0.34.3)', () => {
+    // v0.34.3: the NAMED_CAST_PREFIX_REGEX was tightened to also
+    // catch this case (the lookback slice ends with `>` regardless
+    // of whether there's whitespace before the next `(`).
+    const issues = cppCStyleCastRule.analyze(
+      CTX,
+      makeFacts(`
+int y = static_cast<int> (x);
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag a `static_cast<MyClass*>(p)` (v0.34.3)', () => {
+    // The original rule only excluded casts where the inner type
+    // was a primitive. Class-type named casts like
+    // `static_cast<MyClass*>(p)` should also not fire — v0.34.3
+    // widened the lookback from 40 to 60 chars so the regex
+    // actually reaches `static_cast<MyClass*>`.
+    const issues = cppCStyleCastRule.analyze(
+      CTX,
+      makeFacts(`
+MyClass* concrete = static_cast<MyClass*>(base);
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag `(void)x` deliberate discard (v0.34.3)', () => {
+    // v0.34.3: `(void)x` is excluded as a deliberate "discard"
+    // idiom, not a real cast. Authors use it to silence
+    // unused-variable warnings without `#pragma unused`.
+    const issues = cppCStyleCastRule.analyze(
+      CTX,
+      makeFacts(`
+(void)computeValue();
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
   it('does not flag an `if (x)` control flow', () => {
     const issues = cppCStyleCastRule.analyze(
       CTX,

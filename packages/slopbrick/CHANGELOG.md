@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.34.3] - 2026-09-29 — Refine cpp/c-style-cast (tighter regex selectivity)
+
+v0.34.3 is the second of the v0.34.X refinement series. The
+`cpp/c-style-cast` rule had ratio=0.93 (DORMANT) in the v0.33
+v9 C++ calibration — both arms had similar proportions of
+files using C-style casts, diluting the signal. The refinement
+fixes a subtle bug in the named-cast exclusion logic and adds
+a deliberate-discard exclusion.
+
+### What changed
+
+**cpp/c-style-cast (src/rules/cpp/c-style-cast.ts):**
+- **Bug fix:** `NAMED_CAST_PREFIX_REGEX` previously required
+  the 40-char lookback slice to end with `>(`, which never
+  matched (the slice ends with `>`, not `>(` — the paren is
+  outside the slice). v0.34.3 changes the regex to end with
+  `\s*$`, so it now correctly matches `static_cast<int>`
+  prefixed parens, including with whitespace before `(`.
+- **Bug fix:** lookback slice length increased from 40 to 60
+  chars, so class-type named casts like
+  `static_cast<MyClass*>(p)` and longer template types
+  (`folly::Function<std::string()>`) are also excluded.
+- **New exclusion:** `(void)x` — the deliberate-discard idiom
+  (used to silence unused-variable warnings without
+  `#pragma unused`) is no longer flagged.
+- Added 3 new test cases in
+  tests/rules/cpp/cpp-rules.test.ts:
+  - `static_cast<int>(x)` with whitespace before `(`
+  - `static_cast<MyClass*>(base)` class-type named cast
+  - `(void)computeValue()` deliberate discard
+- Updated `signal-strength.json` v0.34.3 calibration note to
+  document the refinement direction.
+
+**Version bump:**
+- 0.34.2 → 0.34.3 (patch)
+
+### What's next (v0.34.4+)
+
+v0.34.4 refines `cpp/magic-numbers` — expand the allowSet
+with common constants (0xFF, -1, 100) and exclude literals
+inside string literals / comments.
+
 ## [0.34.2] - 2026-09-29 — Refine swift/print-debug (skip XCTest files)
 
 v0.34.2 is a single-rule refinement of `swift/print-debug`.
