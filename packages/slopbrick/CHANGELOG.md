@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.26.1] - 2026-07-29 — v0.26.0 calibration (HYPOTHESIS FAILED: 5/5 rules 0/0 on 14769-file sample)
+
+The v0.26.0 release shipped 5 new positive AI-signal rules with placeholder calibration. v0.26.1 runs the actual calibration on a 14769-file biased sample from the v9-java corpus (the union of files that fired at least one of the 6 existing java/* rules; a full 92k-file calibration requires re-running build-v9-corpus.ts to regenerate filelists, deferred to v0.27+).
+
+### Honest finding: v0.26.0 hypothesis also FAILED
+
+All 5 new rules scored **TP=0, FP=0, ratio=N/A** on the biased sample. This is a strong negative signal — the v0.26.0 intuition that "AI uses verbose Javadoc / Optional chains / immutable factories / @Builder / Stream API more than humans" is **NOT supported** by the v9 corpus.
+
+| rule | v0.26.0 hypothesis | v0.26.1 result |
+|---|---|---|
+| `java/verbose-javadoc` | AI over-documents trivial methods | 0/0 — AI Javadoc density ≈ human |
+| `java/optional-overuse` | AI chains Optional.ofNullable().orElseThrow() | 0/0 — AI doesn't use Optional chains more |
+| `java/immutable-collection-preference` | AI defaults to List/Map/Set.of | 0/0 — AI uses mutable collections too |
+| `java/builder-overuse` | AI defaults to @Builder on small classes | 0/0 — AI doesn't over-Builder |
+| `java/stream-overuse` | AI chains Stream API for everything | 0/0 — AI uses for-loops too |
+
+The v9 corpus (Spring AI, LangChain4j, etc.) was the v0.26.0 hypothesis testbed. The patterns I designed as "AI fingerprints" don't actually distinguish AI from human code in this corpus.
+
+This is the **second** failed AI-fingerprint hypothesis:
+- **v0.20.0**: "AI defaults to bad patterns" → FAILED (anti-patterns are more common in human code; ratios 0.07-0.59)
+- **v0.26.0**: "AI uses modern patterns more" → FAILED (modern patterns are equally common in both)
+
+### What this means
+
+1. **The 5 v0.26.0 rules are kept in the catalog as DORMANT** (not deleted). They have value as anti-pattern/code-quality detectors but not as AI fingerprints.
+2. **The 6 v0.20.0 rules are also kept DORMANT** for the same reason.
+3. **v0.27+ needs a different approach**. Options:
+   - Train a classifier on the v9 corpus features (per-file metrics: LOC, comment ratio, identifier entropy, etc.) rather than regex heuristics
+   - Use AST-based detection (the v9 corpus is per-file, but AST walks could find structural patterns)
+   - Accept that the v9 corpus is not an AI-fingerprinting signal and pivot to a different domain (e.g., security, performance, maintainability)
+4. **The 14769-file biased sample may have missed the right signal**. A full 92k-file calibration (with the per-arm rule filter disabled) might show different ratios. This is tracked for v0.27+.
+
+### Stats
+
+- 0 new features
+- 0 contract changes
+- 5 signal-strength.json entries updated (verdict: DORMANT, recall: 0, fpRate: 0, honest _calibrationNote documenting the failure)
+- 1 new calibration script: `scripts/calibrate-v26.ts` (re-runnable, uses per-arm perFileFires as the sample)
+- Calibration output: `/tmp/v9-java-fires/v26-calibration.json` (14769 files, 8.8s wall-clock, 0 fires)
+- 747/747 rules tests pass (no test changes)
+- typecheck ✅, build ✅
+- Patch release (v0.26.0 → v0.26.1)
+
+### Files changed
+
+- `src/rules/signal-strength.json` — 5 entries updated with honest calibration notes
+- `package.json` — 0.26.0 → 0.26.1
+- `scripts/calibrate-v26.ts` — new, re-runnable calibration script
+- `CHANGELOG.md` — this entry
+
 ## [0.26.0] - 2026-07-29 — 5 new positive AI-signal Java rules (v0.20.0 redesign)
 
 The v0.20.0 hypothesis "AI agents default to bad patterns" was **inverted** by the v9 Java calibration (commit 623c1ea, 92,196 files, 81891 neg + 10305 pos). All 6 v0.20.0 `java/*` rules scored DORMANT with ratios 0.07–0.59 — they fire **5-100× more on human code than AI code** because AI agents are BETTER at modern Java (generics, `java.time`, `Optional` chains) than the neg baseline of older enterprise Java.
