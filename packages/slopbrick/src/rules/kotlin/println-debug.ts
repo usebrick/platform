@@ -53,7 +53,7 @@ export const kotlinPrintlnDebugRule = createRule<KotlinPrintlnDebugContext>({
     // v0.24.0: Kotlin-only rule. `println` exists in many languages,
     // but the AI-fingerprint pattern (multiple ln calls in one file)
     // is calibrated on the v9 Kotlin corpus arm.
-    if (!/\.kt$/i.test(facts.filePath)) return issues;
+    if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
     const matches: number[] = [];
     let m: RegExpExecArray | null;

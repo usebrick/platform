@@ -99,7 +99,7 @@ export async function scanFile(
   // visitors for (.py, .go, .rs) get the rule engine pass — rules
   // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
-  // fire. Languages we have NO visitor for (.swift, .kt, .dart,
+  // fire. Languages we have NO visitor for (.swift, .dart,
   // .cpp, .rb, .php) still get the early-return because every
   // rule attempt would burn the parseError path.
   //
@@ -123,9 +123,19 @@ export async function scanFile(
   // 6 java rules gate themselves on `/\.java$/i.test(filePath)`
   // inside their `analyze()` so they don't fire on TS/Go files
   // that happen to contain Java-looking source in comments.
+  //
+  // v0.28.0: removed `.kt` and `.kts` from this set (v9 Kotlin
+  // corpus build). All 5 `kotlin/*` rules are regex-based (the
+  // tree-sitter Kotlin integration is a much larger lift; the
+  // v0.27.0 methodology paper confirmed era-confounding is the
+  // dominant signal anyway, so a regex-only Kotlin pass is
+  // sufficient for the calibration goal). Same trade-off as
+  // Java: AST-dependent rules silently produce 0 issues on
+  // `.kt`/`.kts` files. The 5 kotlin rules gate themselves on
+  // `/\.kts?$/i.test(filePath)` inside their `analyze()`.
   const ext = extname(filePath).toLowerCase();
   const UNSUPPORTED_LANGS = new Set([
-    '.swift', '.kt', '.kts', '.dart',
+    '.swift', '.dart',
     '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
     '.rb', '.php',
   ]);

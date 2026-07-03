@@ -55,7 +55,7 @@ export const kotlinStringConcatLoopRule = createRule<KotlinStringConcatLoopConte
     const source = facts.v2?._source;
     if (!source) return issues;
     // v0.24.0: Kotlin-only rule.
-    if (!/\.kt$/i.test(facts.filePath)) return issues;
+    if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
     // Heuristic: only fire if the file contains a loop keyword.
     // Without this, a straight-line `s = s + x` would trigger,

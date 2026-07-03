@@ -59,7 +59,7 @@ export const kotlinDataClassDefaultsOveruseRule = createRule<KotlinDataClassDefa
     // v0.24.0: Kotlin-only rule. The `data class` keyword is
     // syntactically unique to Kotlin, but we still gate by extension
     // to keep the rule a clean Kotlin signal.
-    if (!/\.kt$/i.test(facts.filePath)) return issues;
+    if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     DATA_CLASS_HEAD_REGEX.lastIndex = 0;

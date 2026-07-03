@@ -56,7 +56,7 @@ export const kotlinObjectSingletonMisuseRule = createRule<KotlinObjectSingletonM
     const source = facts.v2?._source;
     if (!source) return issues;
     // v0.24.0: Kotlin-only rule.
-    if (!/\.kt$/i.test(facts.filePath)) return issues;
+    if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     OBJECT_DECL_REGEX.lastIndex = 0;

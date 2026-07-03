@@ -342,7 +342,6 @@ function mergeAccums(into: ScanAccum, from: ScanAccum): void {
 }
 
 async function main(): Promise<void> {
-  const { manifest: manifestPath, arm, out: outDir, extOverride, skipDirs, dryRun } = parseArgs();
   const { manifest: manifestPath, arm, out: outDir, extOverride, skipDirs, dryRun, keepAllRules } = parseArgs();
   const manifest = loadManifest(manifestPath);
   if (manifest.arm !== arm) die(`Manifest arm is "${manifest.arm}", expected "${arm}"`);

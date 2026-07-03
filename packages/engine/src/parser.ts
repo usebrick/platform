@@ -404,6 +404,15 @@ function parseSource(source: string, filePath: string): ParseResult {
     case 'go':
     case 'rs':
     case 'java':
+    // v0.28.0: Kotlin files get the same parseBlankModule path as
+    // Java (v0.24.5). All 5 `kotlin/*` rules are regex-based and
+    // gate themselves on `/\.kts?$/i.test(filePath)` inside their
+    // `analyze()`. The tree-sitter Kotlin integration is a larger
+    // lift; the v0.27.0 methodology paper confirmed era-confounding
+    // is the dominant signal anyway, so a regex-only Kotlin pass is
+    // sufficient for the v9 calibration goal.
+    case 'kt':
+    case 'kts':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback

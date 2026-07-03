@@ -53,7 +53,7 @@ export const kotlinCoroutineGlobalScopeRule = createRule<KotlinCoroutineGlobalSc
     if (!source) return issues;
     // v0.24.0: Kotlin-only rule. The `GlobalScope` identifier would
     // also match in any Kotlin-like language; gate by extension.
-    if (!/\.kt$/i.test(facts.filePath)) return issues;
+    if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
     let m: RegExpExecArray | null;
     GLOBAL_SCOPE_REGEX.lastIndex = 0;

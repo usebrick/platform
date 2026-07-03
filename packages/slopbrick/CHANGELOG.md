@@ -1,5 +1,104 @@
 # Changelog
 
+## [0.28.0] - 2026-08-12 — v9 Kotlin corpus + Kotlin parser wiring (5 DORMANT rules, era-confounded)
+
+v0.28.0 builds the v9 Kotlin arm of the corpus (the second non-Java arm
+in the v9 plan) and wires `.kt`/`.kts` into the parsing pipeline.
+**All 5 Kotlin rules remain DORMANT** after the v9 calibration —
+confirming the v0.27.0 methodology paper's finding that "era-confounding
+dominates AI signal" generalizes across languages.
+
+### What changed
+
+**v0.28.0: Kotlin arm corpus (2911 .kt files, 0 parse-failures)**
+
+| | Files | Issues | Notes |
+|---|---:|---:|---|
+| neg (pre-2022) | 2698 | 472 | ktor 1.6.4 (1527), anvil v2.4.0 (166), kotlinx-coroutines 2022-05 (1005) |
+| pos (post-2024) | 213 | 20 | kotlin-ai-examples, kpavlov/langchain4j-kotlin, etc. |
+| **total** | **2911** | **492** | 0 parse-failures (100% pass) |
+
+Pre-2018 Kotlin is too rare (Kotlin 1.0 was Feb 2016), so the neg cutoff
+is 2022-06 (pre-LLM-coding-boom) per the v0.27.0 finding. Pre-2018-06
+Java has 20+ years of history; pre-2022-06 Kotlin has only ~6 years.
+
+**v0.28.0: Parser wiring for `.kt`/`.kts`**
+
+- `packages/engine/src/parser.ts`: added `'kt'` and `'kts'` to the
+  `parseBlankModule` switch — same path as `'java'` (v0.24.5).
+  `facts.v2._source` is now populated for Kotlin files, so the 5
+  regex-based `kotlin/*` rules can fire.
+- `packages/slopbrick/src/engine/worker.ts`: removed `.kt`/`.kts` from
+  the `UNSUPPORTED_LANGS` early-return set. Same trade-off as Java:
+  AST-dependent rules silently produce 0 issues; the 5 Kotlin rules
+  gate themselves on `/\.kts?$/i.test(filePath)` inside `analyze()`.
+- All 5 Kotlin rule files: gate on `\.kts?$` (was `\.kt$` — `.kts`
+  files were not firing).
+
+**v0.28.0: signal-strength.json v9 entries for 5 kotlin rules**
+
+| Rule | TP | FP | recall | fpRate | ratio | precision | v9 verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `kotlin/println-debug` | 15 | 307 | 7.04% | 11.38% | 0.62 | 4.66% | DORMANT (era-confounded) |
+| `kotlin/coroutine-global-scope` | 1 | 135 | 0.47% | 5.00% | 0.09 | 0.74% | DORMANT (era-confounded) |
+| `kotlin/string-concat-loop` | 2 | 14 | 0.94% | 0.52% | 1.81 | 12.50% | DORMANT (low precision) |
+| `kotlin/data-class-defaults-overuse` | 1 | 6 | 0.47% | 0.22% | 2.11 | 14.29% | DORMANT (low precision) |
+| `kotlin/object-singleton-misuse` | 1 | 10 | 0.47% | 0.37% | 1.27 | 9.09% | DORMANT (low precision) |
+
+All 5 v9 verdicts are DORMANT, but the **direction is striking**:
+- `coroutine-global-scope` fires 135x more on neg than pos (ratio 0.09).
+  Pre-2022 Kotlin coroutines used `GlobalScope` as the default; modern
+  Kotlin uses `viewModelScope` / `lifecycleScope` / `coroutineScope { }`.
+- `println-debug` fires 20x more on neg than pos (ratio 0.62).
+  Pre-2022 Kotlin code uses `println()` for debug; modern Kotlin uses
+  Timber / android.util.Log / kermit.
+
+These rules detect **era, not AI authorship**. The v0.27.0 methodology
+paper's "era-confounding dominates AI signal" finding generalizes from
+Java to Kotlin.
+
+### Why none of the 5 became USEFUL
+
+The 5 Kotlin rules hit two obstacles:
+
+1. **Ratio is good (≥1.5) for 2/5** but precision is too low. The
+   v9 verdict threshold is ratio ≥ 1.5 AND precision ≥ 50%. With pos
+   arm only 213 files, the absolute count of TP is 1-2 — any ratio
+   that looks good is essentially noise. The corpus is too small.
+
+2. **The era-confound reverses the AI signal for 2/5.** The 2 rules
+   that fire more on neg (coroutine-global-scope, println-debug) are
+   detecting "legacy Kotlin patterns" — the opposite of what an
+   AI-fingerprint rule should detect. Re-purposing them as
+   "anti-modernization" rules would require re-labeling the rule
+   semantics entirely.
+
+### What the Kotlin arm proves for the v9 plan
+
+The v0.27.0 methodology paper made a general claim: "the v9 corpus
+measures modern-vs-legacy more than AI-vs-human." The Kotlin arm
+provides the second data point. With only 6 years of pre-LLM Kotlin
+(vs Java's 20+), the era-confound is *stronger* in Kotlin than Java —
+not weaker. The recommendation in `v9-corpus-findings.md` (Option C:
+pivot to security/performance/maintainability) is reinforced.
+
+### Build / test impact
+
+- `pnpm -r typecheck`: passes (engine + slopbrick + core + website).
+- `pnpm -r test`: 1496/1496 (no new tests added — the v9 calibration
+  is reproducible via `scripts/build-v9-corpus.ts` + the per-arm fires
+  JSON in `/tmp/v9-kotlin-{neg,pos}-fires.json`).
+- The 5 Kotlin rules' tests gate on `.kts?` (was `.kt$`), so `.kts`
+  rule firing is now covered. No test count change.
+
+### What's next
+
+Per the v0.27.0 methodology paper's Option C (recommended): v0.29.0
+will add **non-AI-fingerprint rules** for Kotlin and Swift using the
+corpus infrastructure built in v0.24.0/v0.28.0. Categories: security
+(input validation, secrets in code), performance (N+1 queries, blocking
+calls on main thread), maintainability (complexity, dead code).
+
 ## [0.27.0] - 2026-08-05 — drop 11 DORMANT AI-fingerprint rules (v9 corpus pivot)
 
 v0.27.0 closes the loop on the v9 Java corpus calibration. Two
