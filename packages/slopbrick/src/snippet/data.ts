@@ -305,6 +305,16 @@ const RULE_HINTS: Record<string, string> = {
     "Replace raw `List` / `Map` / `Set` with the parameterized form. Raw types disable generic type checking (Effective Java, Item 23). AI agents default to raw types when unsure of the correct generic parameters.",
   'java/string-concat-loop':
     "Declare a `StringBuilder` outside the loop: `StringBuilder sb = new StringBuilder(); sb.append(...);` then `return sb.toString();` after. String concat in a loop is O(n²).",
+  'java/verbose-javadoc':
+    "Skip Javadoc on trivial methods (getters, setters, builders). AI over-documents; real Java limits Javadoc to public API surface. (v0.26.0 — DORMANT.)",
+  'java/optional-overuse':
+    "Use Objects.requireNonNull(x) for null checks; reserve Optional for return values. AI chains .ofNullable().orElseThrow() where null checks suffice. (v0.26.0 — DORMANT.)",
+  'java/immutable-collection-preference':
+    "Prefer mutable (new ArrayList<>()) when the collection will be modified. AI defaults to List.of/Map.of/Set.of; real Java uses mutable. (v0.26.0 — DORMANT.)",
+  'java/builder-overuse':
+    "Use a plain constructor for classes with ≤ 3 fields. AI defaults to @Builder; Builder adds Lombok dep and a Builder inner class per class. (v0.26.0 — DORMANT.)",
+  'java/stream-overuse':
+    "Prefer a for-loop for simple transformations. AI chains Stream API for everything; for small collections a for-loop is faster. (v0.26.0 — DORMANT.)",
   // v0.24.0 — Kotlin rules (DORMANT until v9 Kotlin corpus calibration)
   'kotlin/data-class-defaults-overuse':
     "Audit which fields are genuinely optional. Real Kotlin uses defaults sparingly (1-2 callbacks, the rest required). v0.24.0 — DORMANT until v9 calibration.",

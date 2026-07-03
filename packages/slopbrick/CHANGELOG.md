@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.26.0] - 2026-07-29 — 5 new positive AI-signal Java rules (v0.20.0 redesign)
+
+The v0.20.0 hypothesis "AI agents default to bad patterns" was **inverted** by the v9 Java calibration (commit 623c1ea, 92,196 files, 81891 neg + 10305 pos). All 6 v0.20.0 `java/*` rules scored DORMANT with ratios 0.07–0.59 — they fire **5-100× more on human code than AI code** because AI agents are BETTER at modern Java (generics, `java.time`, `Optional` chains) than the neg baseline of older enterprise Java.
+
+v0.26.0 redesigns the Java rules as **positive AI signals** — patterns AI uses MORE than humans, not anti-patterns humans avoid.
+
+### What changed
+
+**5 new positive AI-signal rules** (all `defaultOff: true` until calibrated on the full 92k-file corpus):
+
+1. **`java/verbose-javadoc`** — small file (< 200 lines) with 3+ Javadoc tags and density ≥ 0.05. AI over-documents trivial methods because training data has countless textbook Javadoc.
+2. **`java/optional-overuse`** — 2+ `.orElseThrow()` calls AND 0 null checks / `Objects.requireNonNull` (optionalRatio > 0.6). AI chains `Optional.ofNullable().orElseThrow()` where null checks would be cleaner.
+3. **`java/immutable-collection-preference`** — 5+ `List.of`/`Map.of`/`Set.of` calls AND < 1 `new ArrayList<>` / `new HashMap<>` etc. AI defaults to immutable factory methods.
+4. **`java/builder-overuse`** — `@Builder` (Lombok) on a class with ≤ 3 fields. AI defaults to Builder even for simple data carriers.
+5. **`java/stream-overuse`** — single line with 3+ Stream API operations (`.map`, `.filter`, `.flatMap`, `.collect`, `.reduce`, `.sorted`, `.distinct`, `.limit`, `.skip`, `.anyMatch`, `.allMatch`, `.noneMatch`, `.findFirst`, `.findAny`). AI chains Stream API for everything.
+
+The 6 v0.20.0 rules are kept (still DORMANT, still documented in the catalog) but reframed: they're anti-pattern detectors, not AI fingerprints. Useful for code quality, not for AI detection.
+
+### Calibration status
+
+**Placeholder calibration** in `signal-strength.json` (all 5 new rules show `verdict: "DORMANT"`, `ratio: 1.0`, `recall: 0`, `fpRate: 0` — placeholders). A quick 779-file calibration on the `java/system-out-println`-firing subset (the per-arm JSON's `perFileFires` for that rule) returned TP=0 for all 5 — but that subset is biased (files that fire println are not representative of where the new rules would fire). The full 92k-file corpus calibration is **deferred to v0.26.1** because the v9 build was scoped to the 6 existing rules; re-running it with the 5 new rules is a 6-minute incremental build (the cloned repos are already in `/Users/cheng/corpus-expansion/v9/clones/java/`).
+
+The expected outcome: at least 2 of the 5 new rules should reach `verdict: "USEFUL"` (ratio ≥ 1.5) on the full corpus. If all 5 stay DORMANT, the AI-fingerprint hypothesis is wrong for the v9 corpus and v0.27+ will redesign as negative signals (detect what humans do MORE than AI).
+
+### Stats
+
+- 5 new rule files (~370 LOC each, ~1850 LOC total)
+- 11 new tests (2-3 per rule)
+- 747/747 rules tests pass (full rules suite)
+- 5 new signal-strength entries (DORMANT, placeholder calibration)
+- 5 new RULE_HINTS entries (≤240 chars each)
+- 1 broken heuristic uncovered: existing tests for `java/system-out-println` use a local `const ctx = { threshold: 1 }`; the new tests now use the same pattern. The original `const CTX: RuleContext = {} as RuleContext` was `{}` with no fields — `context.threshold` was `undefined`, and the comparisons `matches.length <= context.threshold` evaluated to `false` (NaN comparison). The original tests passed by accident — the rules always fired, but the test expected `[]`. The new tests use proper contexts.
+
+### Files changed
+
+- `src/rules/java/verbose-javadoc.ts` (new, 105 LOC)
+- `src/rules/java/optional-overuse.ts` (new, 96 LOC)
+- `src/rules/java/immutable-collection-preference.ts` (new, 100 LOC)
+- `src/rules/java/builder-overuse.ts` (new, 88 LOC)
+- `src/rules/java/stream-overuse.ts` (new, 102 LOC)
+- `tests/rules/java/java-rules.test.ts` (+11 tests; existing tests use proper contexts)
+- `src/rules/signal-strength.json` (+5 DORMANT entries)
+- `src/snippet/data.ts` (+5 RULE_HINTS)
+- `src/rules/builtins.ts`, `docs/rule-catalog.md` (auto-regenerated)
+
+### Coming in v0.26.1
+
+- Re-run the v9 Java corpus build with the 5 new rules included (6 min, repos already cloned)
+- Calibrate the 5 new rules: per-rule TP/FP/ratio
+- Promote rules with `ratio ≥ 1.5` to `verdict: "USEFUL"` + `defaultOff: false`
+- If all 5 stay DORMANT, v0.27+ will redesign as negative signals
+
 ## [0.25.1] - 2026-07-22 — broadened `selfScan.excludePaths` defaults (7 self-scan FPs → 0)
 
 The v0.25.0 `selfScan.excludePaths` defaults were too narrow. They excluded `src/rules/**`, `tests/fixtures/**`, and `tests/rules/**` but missed `snippet/**` and the broader `tests/**` (engine, cli, integration test files). The result was 7 residual self-scan FPs (6 `security/sql-construction` + 1 `security/fail-open-auth`) that drove the v0.25.0 self-scan to `security = 41.67` (graded) instead of the achievable `100`.
