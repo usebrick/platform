@@ -303,6 +303,17 @@ const RULE_HINTS: Record<string, string> = {
     "Replace with a class injected via DI, a Repository, or `MutableStateFlow`. The `object` keyword gives a thread-safe singleton handle, NOT thread-safe `var` fields. (v0.24.0 — DORMANT.)",
   'kotlin/string-concat-loop':
     "Wrap the loop in `buildString { append(...) }` or hoist a `StringBuilder`. Kotlin can't optimize `s = s + x` in a loop — O(n²). (v0.24.0 — DORMANT.)",
+  // v0.29.0 — non-AI Kotlin rules (DORMANT until larger pos arm)
+  'kotlin/sql-string-concat':
+    "Use a PreparedStatement (JDBC), setParameter() (Exposed), or an ORM (Room, jOOQ). String concat or template interpolation into a SQL query is the canonical SQL-injection pattern. OWASP A03:2021. (v0.29.0 — DORMANT.)",
+  'kotlin/hardcoded-credential':
+    "Move the credential to an env var, a .env file (gitignored), or a secrets manager (Vault, AWS Secrets Manager). Hardcoded creds are the #1 secret-leak vector. OWASP A07:2021. (v0.29.0 — DORMANT.)",
+  'kotlin/runblocking-misuse':
+    "Use coroutineScope { } for structured concurrency, or call the suspend function directly. runBlocking blocks the calling thread and is rarely correct outside main(). (v0.29.0 — DORMANT.)",
+  'kotlin/println-as-log':
+    "Use slf4j (JVM), android.util.Log (Android), Timber, kermit, or kotlin-logging. println has no log level, no timestamp, no correlation ID. (v0.29.0 — OK; first positive-signal rule in v9 history, ratio 1.84.)",
+  'kotlin/force-unwrap':
+    "Use ?. (safe call) with ?: (Elvis) for a default, or a proper when/if check. !! throws NullPointerException at runtime and bypasses Kotlin's type system. (v0.29.0 — DORMANT, era-confounded.)",
   // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)
   'swift/force-unwrap':
     "Replace with the safe form: `as?` + guard/if let, `try?`, or `guard let x = optional else { return }`. `!` crashes unconditionally in release. (v0.24.0 — DORMANT.)",
