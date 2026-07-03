@@ -2076,14 +2076,14 @@
     "precision": 0.0556,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.75 (DORMANT). 18 fires total — modern Kotlin mostly uses ORMs (Room/Exposed) so SQL string concat is rare in both arms. INSUFFICIENT_DATA: pos arm only 213 files.",
+    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.75 (DORMANT). 18 fires total — modern Kotlin mostly uses ORMs (Room/Exposed) so SQL string concat is rare in both arms. INSUFFICIENT_DATA: pos arm only 213 files. defaultOff: rule is loadable but invisible by default until v0.30 re-calibration with a larger pos arm.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.75,
     "_v9Recall": 0.00469,
     "_v9FpRate": 0.00630,
     "_v9Precision": 0.0556,
-    "defaultOff": false
+    "defaultOff": true
   },
   "kotlin/hardcoded-credential": {
     "recall": 0.0,
@@ -2092,14 +2092,14 @@
     "precision": 0.0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). 0 fires. The 16-char value threshold + letters+digit heuristic is too strict for the corpus; real-world secrets are in env vars / config files, not source. INSUFFICIENT_DATA: needs different corpus (CI configs, .env samples).",
+    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). 0 fires. The 16-char value threshold + letters+digit heuristic is too strict for the corpus; real-world secrets are in env vars / config files, not source. INSUFFICIENT_DATA: needs different corpus (CI configs, .env samples). defaultOff: loadable but invisible by default.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.0,
     "_v9Recall": 0.0,
     "_v9FpRate": 0.0,
     "_v9Precision": 0.0,
-    "defaultOff": false
+    "defaultOff": true
   },
   "kotlin/runblocking-misuse": {
     "recall": 0.10798,
@@ -2108,14 +2108,14 @@
     "precision": 0.0381,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.50 — fires 2x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin coroutines used runBlocking more; modern Kotlin uses coroutineScope. Same direction as kotlin/coroutine-global-scope (0.09).",
+    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.50 — fires 2x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin coroutines used runBlocking more; modern Kotlin uses coroutineScope. Same direction as kotlin/coroutine-global-scope (0.09). defaultOff: loadable but invisible by default until v0.30 re-calibration.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.50,
     "_v9Recall": 0.10798,
     "_v9FpRate": 0.21534,
     "_v9Precision": 0.0381,
-    "defaultOff": false
+    "defaultOff": true
   },
   "kotlin/println-as-log": {
     "recall": 0.08451,
@@ -2124,14 +2124,14 @@
     "precision": 0.1268,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=1.84 (≥1.5) — first rule in this entire session with a positive direction! Fires 1.84x more on post-2024 AI/demos than pre-2022 production. Precision=12.7% (below 50% USEFUL threshold); verdict=OK. The signal is real: post-2024 Kotlin code (especially AI-generated examples) uses println for output; pre-2022 production code uses slf4j/kermit. INSUFFICIENT_DATA: pos arm only 213 files.",
+    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=1.84 (≥1.5) — first rule in this entire session with a positive direction! Fires 1.84x more on post-2024 AI/demos than pre-2022 production. Precision=12.7% (below 50% USEFUL threshold); verdict=OK. The signal is real: post-2024 Kotlin code (especially AI-generated examples) uses println for output; pre-2022 production code uses slf4j/kermit. INSUFFICIENT_DATA: pos arm only 213 files. defaultOff: still set to true (verdict is OK but precision is below 50% — the guardrail expects OK/USEFUL rules to be defaultOff:false only when calibrated with a meaningful pos arm).",
     "aiSpecific": false,
     "_v9Verdict": "OK",
     "_v9Lift": 1.84,
     "_v9Recall": 0.08451,
     "_v9FpRate": 0.04596,
     "_v9Precision": 0.1268,
-    "defaultOff": false
+    "defaultOff": true
   },
   "kotlin/force-unwrap": {
     "recall": 0.11737,
@@ -2140,14 +2140,14 @@
     "precision": 0.0271,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.35 — fires 3x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin code uses !! freely; modern Kotlin relies on ?./?: and Result<T> wrappers. Stronger era signal than runblocking-misuse.",
+    "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.35 — fires 3x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin code uses !! freely; modern Kotlin relies on ?./?: and Result<T> wrappers. Stronger era signal than runblocking-misuse. defaultOff: loadable but invisible by default.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.35,
     "_v9Recall": 0.11737,
     "_v9FpRate": 0.33284,
     "_v9Precision": 0.0271,
-    "defaultOff": false
+    "defaultOff": true
   },
   "swift/force-unwrap": {
     "recall": 0.0,
