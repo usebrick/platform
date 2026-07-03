@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code, classifies it against 95+ rules in 15 categories, computes 4 scores (aiSlopScore: lower=cleaner, engineeringHygiene, security, repositoryHealth composite), and persists the structure for AI agents and CI.",
   "type": "module",
   "bin": {

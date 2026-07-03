@@ -48,8 +48,13 @@ import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
 import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
 import { kotlinDataClassDefaultsOveruseRule } from './kotlin/data-class-defaults-overuse';
+import { kotlinForceUnwrapRule } from './kotlin/force-unwrap';
+import { kotlinHardcodedCredentialRule } from './kotlin/hardcoded-credential';
 import { kotlinObjectSingletonMisuseRule } from './kotlin/object-singleton-misuse';
+import { kotlinPrintlnAsLogRule } from './kotlin/println-as-log';
 import { kotlinPrintlnDebugRule } from './kotlin/println-debug';
+import { kotlinRunBlockingMisuseRule } from './kotlin/runblocking-misuse';
+import { kotlinSqlStringConcatRule } from './kotlin/sql-string-concat';
 import { kotlinStringConcatLoopRule } from './kotlin/string-concat-loop';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
@@ -178,8 +183,13 @@ export const builtinRules: Rule[] = [
   goStructTagInconsistencyRule,
   kotlinCoroutineGlobalScopeRule,
   kotlinDataClassDefaultsOveruseRule,
+  kotlinForceUnwrapRule,
+  kotlinHardcodedCredentialRule,
   kotlinObjectSingletonMisuseRule,
+  kotlinPrintlnAsLogRule,
   kotlinPrintlnDebugRule,
+  kotlinRunBlockingMisuseRule,
+  kotlinSqlStringConcatRule,
   kotlinStringConcatLoopRule,
   gapMonopolyRule,
   mathElementUniformityRule,
