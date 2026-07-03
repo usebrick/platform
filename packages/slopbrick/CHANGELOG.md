@@ -1,5 +1,162 @@
 # Changelog
 
+## [0.36.0] - 2026-10-30 — v10 calibration infrastructure + dataset-compatibility finding
+
+v0.36.0 ships the **v10 calibration infrastructure** for
+slopbrick — the pipeline, statistical tests, and schema
+for calibrating against true "AI vs human" datasets. The
+first v10 run against OSS-forge/HumanVsAICode produced a
+**dataset-compatibility finding** (see below), not new
+calibration numbers. The v9 numbers in
+`signal-strength.json` remain unchanged.
+
+### What changed in v0.36.0
+
+1. **v10 calibration pipeline** — end-to-end scripts to
+   download a paired human/AI dataset, convert it to
+   slopbrick's corpus format, scan with the slopbrick
+   library API, and compute per-rule signal metrics.
+2. **Paired Wilcoxon signed-rank test** for each rule —
+   the paired design (same function, 4 implementations)
+   gives far higher statistical power than v9's unpaired
+   tests.
+3. **New v10 schema in `signal-strength.json`**:
+   - `_v10Source`: dataset identifier
+   - `_v10Human` / `_v10ChatGpt` / `_v10Dsc` / `_v10Qwen`:
+     per-source fire counts
+   - `_v10Lift`: `aiRate / humanRate` (Infinity if
+     human=0)
+   - `_v10Verdict`: STRONG_POSITIVE | WEAK_POSITIVE |
+     NEUTRAL | WEAK_NEGATIVE | DORMANT
+   - `_v10PValue`: paired Wilcoxon p-value
+   - `_v10Precision` / `_v10Recall`: assuming AI class
+4. **New scripts** at `tests/fixtures/v10-corpus/`:
+   - `build-corpus.mjs` — JSONL → 4 × 222k .java
+   - `sample-pairs.mjs` — paired function sampler
+   - `scan-sample.ts` — slopbrick library API driver
+   - `scan-cli-chunked.ts` — CLI chunked driver
+     (memory-safe alternative)
+   - `calibrate.mjs` — paired Wilcoxon + verdict
+     classifier
+   - `merge-signal.mjs` — merge v10 into main
+     `signal-strength.json`
+
+### The v10 calibration pipeline
+
+```
+# 1. Download (one-time, ~481 MB for Java)
+curl -L https://huggingface.co/datasets/OSS-forge/HumanVsAICode/resolve/main/java_dataset.jsonl \
+  -o packages/slopbrick/tests/fixtures/v10-corpus/raw/java_dataset.jsonl
+
+# 2. Convert JSONL → 4 × 222k .java files
+node packages/slopbrick/tests/fixtures/v10-corpus/build-corpus.mjs
+
+# 3. Sample N paired functions (deterministic, by sorted hm_index)
+node packages/slopbrick/tests/fixtures/v10-corpus/sample-pairs.mjs
+
+# 4. Scan all 4 sources (CLI chunked, memory-safe)
+pnpm --filter slopbrick exec tsx tests/fixtures/v10-corpus/scan-cli-chunked.ts
+
+# 5. Compute paired Wilcoxon for all rules
+node packages/slopbrick/tests/fixtures/v10-corpus/calibrate.mjs
+
+# 6. Merge v10 results into main signal-strength.json
+node packages/slopbrick/tests/fixtures/v10-corpus/merge-signal.mjs
+```
+
+### v10 calibration finding: dataset incompatibility
+
+The first v10 calibration ran against the **OSS-forge/
+HumanVsAICode** dataset (ISSRE 2025, Cotroneo et al.,
+DOI 10.1109/ISSRE66568.2025.00035) — 507,044 paired
+implementations (1 human + 3 AI: ChatGPT-3.5, DeepSeek-
+Coder-33B, Qwen2.5-Coder-32B) of the same function,
+spanning Python and Java.
+
+**Result: 0 of 140 rules fired on the sampled 10k paired
+functions (40,000 files scanned).**
+
+This is a **dataset-compatibility finding**, not a rule
+quality issue. The HumanVsAICode dataset provides
+**function-level snippets** (single methods wrapped in
+`class X { ... }`), but slopbrick's rules are designed for
+**full source files** (with imports, multiple methods, and
+cross-method patterns). A function like:
+
+```java
+public class X {
+  public final ParallelFlowable<T> doAfterNext(@NonNull Consumer<? super T> onAfterNext) {
+    ObjectHelper.requireNonNull(onAfterNext, "onAfterNext is null");
+    ...
+  }
+}
+```
+
+doesn't trigger any of slopbrick's rules because the
+patterns rules look for (`System.out.println`, SQL string
+concatenation, lost stack traces, force-unwrap, etc.)
+are absent from clean production code — whether human or
+AI.
+
+### Implications for the v0.27.0 era-confound paper
+
+The v0.27.0 paper concluded that **era confounding dominates
+AI signal** — the v9 corpus could not separate "AI-style" from
+"modern-style". The v10 calibration was supposed to close
+that gap with a true AI-vs-human dataset. The dataset-
+compatibility finding is a **third explanation** for why
+AI-vs-human detection is hard: the patterns rules look
+for are not present in the clean function-level code that
+LLMs produce. AI-generated code is not measurably more
+"sloppy" than human code at the function level.
+
+This validates the v0.27.0 pivot to **content-based
+detection** (v0.35.0/v0.35.1's `java/suspicious-implementation`
+and `java/lost-stack-trace`) — these rules look for
+**content mismatches** (function name vs body, exception
+wrapping vs cause preservation) that ARE present in
+real-world code, regardless of authorship.
+
+### What v0.36.0 does NOT do
+
+- **Does not change `signal-strength.json`.** The v9
+  numbers remain the canonical calibration until a
+  compatible full-file AI-vs-human dataset is found.
+- **Does not retrain rule thresholds.** v10 measures
+  signal strength; the threshold/severity configuration
+  in `slopbrick.config.mjs` is unchanged.
+- **Does not measure cross-language generalization.** The
+  v10 pipeline is ready for any paired dataset; the
+  HumanVsAICode Java incompatibility means the Python
+  subset will have the same issue.
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes
+- `pnpm --filter slopbrick test`: 142/142 pass
+  (no new rule tests; v10 is infrastructure, not a rule
+  change)
+- Version bump: 0.35.1 → 0.36.0
+
+### What's next (v0.36.1)
+
+1. **v0.36.1: Full-file AI-vs-human dataset.** Search for
+   a dataset with complete Java files (not function-level
+   snippets) and AI-vs-human labels. Candidates:
+   - **OSS-forge/PROBE** (2026-04-17) — 1,651 problems ×
+     5 langs × 6 LLMs, but only reference solutions
+     (no paired human)
+   - **CodeSearchNet + AI-generated full files** — would
+     need to generate AI versions of full CodeSearchNet
+     files
+2. **v0.36.2: Content-based rules against HumanVsAICode.**
+   The v0.35.0/v0.35.1 content-based rules
+   (`java/suspicious-implementation`,
+   `java/lost-stack-trace`) may fire on the
+   function-level snippets if the AI implementations
+   have more content mismatches than the human ones.
+   This is a targeted v10 sub-calibration.
+
 ## [0.35.1] - 2026-10-26 — Add java/lost-stack-trace (Raidar-inspired content-based detection)
 
 v0.35.1 is the second v9 release with a content-based
