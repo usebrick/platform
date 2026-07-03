@@ -156,6 +156,111 @@ class Worker {
     );
     expect(issues.length).toBe(0);
   });
+
+  it('does not flag Thread.sleep in main() when a different method has a for loop (v0.34.6)', () => {
+    // v0.34.6: the previous heuristic fired on every Thread.sleep
+    // if the file ALSO had a for/while/do keyword. This means
+    // a top-level Thread.sleep in main() would fire if any other
+    // method had a `for` loop — false positive. v0.34.6 uses
+    // brace-counting to verify Thread.sleep is INSIDE the loop
+    // block.
+    const issues = javaThreadSleepInLoopRule.analyze(
+      CTX,
+      makeFacts(`
+class App {
+  public static void main(String[] args) throws Exception {
+    Thread.sleep(1000);  // top-level, not in a loop
+    System.out.println("done");
+  }
+
+  void unrelatedMethod() {
+    for (int i = 0; i < 10; i++) {
+      System.out.println(i);  // unrelated for loop
+    }
+  }
+}
+      `.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag Thread.sleep before/after a loop, outside its block (v0.34.6)', () => {
+    // v0.34.6: brace-counting ensures the sleep must be inside
+    // the loop's `{...}` block, not before or after.
+    const issues = javaThreadSleepInLoopRule.analyze(
+      CTX,
+      makeFacts(`
+class App {
+  void poll() throws Exception {
+    Thread.sleep(500);  // before the loop, not in it
+    for (int i = 0; i < 10; i++) {
+      System.out.println(i);
+    }
+    Thread.sleep(500);  // after the loop, not in it
+  }
+}
+      `.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('still fires Thread.sleep in a for loop (v0.34.6 sanity check)', () => {
+    // Sanity check: a Thread.sleep inside a for block still
+    // fires. The brace-counting logic correctly recognizes
+    // the for-body `{...}` as a loop block.
+    const issues = javaThreadSleepInLoopRule.analyze(
+      CTX,
+      makeFacts(`
+class Poller {
+  void poll() throws Exception {
+    for (int i = 0; i < 10; i++) {
+      Thread.sleep(1000);
+    }
+  }
+}
+      `.trim()),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it('still fires Thread.sleep in a do-while loop (v0.34.6)', () => {
+    // do-while: body `{` follows immediately. v0.34.6 detects
+    // this when `pendingLoopKeyword.kind === 'do'` and the
+    // next non-paren char is `{`.
+    const issues = javaThreadSleepInLoopRule.analyze(
+      CTX,
+      makeFacts(`
+class Poller {
+  void poll() throws Exception {
+    do {
+      Thread.sleep(1000);
+    } while (!done);
+  }
+}
+      `.trim()),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it('does not flag Thread.sleep in a string literal (v0.34.6)', () => {
+    // v0.34.6: the string-literal state machine skips Thread.sleep
+    // occurrences inside `"..."`. Avoids matching docs/comments
+    // like `String s = "call Thread.sleep(1000) here";`.
+    const issues = javaThreadSleepInLoopRule.analyze(
+      CTX,
+      makeFacts(`
+class Doc {
+  void describe() {
+    for (int i = 0; i < 10; i++) {
+      String doc = "use Thread.sleep(1000) to wait";
+      System.out.println(doc);
+    }
+  }
+}
+      `.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
 });
 
 describe('java/system-out-println', () => {

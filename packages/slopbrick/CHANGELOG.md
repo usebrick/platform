@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.34.6] - 2026-09-29 — Refine java/thread-sleep-in-loop (brace-counting)
+
+v0.34.6 is the fifth of the v0.34.X refinement series. The
+`java/thread-sleep-in-loop` rule had ratio=0.97 (DORMANT) in
+the v0.30 v9 Java calibration. The heuristic was too coarse:
+it fired on every `Thread.sleep` in a file if the file ALSO
+contained a `for`/`while`/`do` keyword anywhere — even if
+the sleep was in a completely unrelated method (e.g., a
+top-level `Thread.sleep` in `main()` while a different method
+had a `for` loop).
+
+### What changed
+
+**java/thread-sleep-in-loop (src/rules/java/thread-sleep-in-loop.ts):**
+- **Linear walk with brace-counting.** New algorithm tracks
+  `loopSet` (positions of `{` that open loop bodies) and
+  `loopDepth` (loopSet.size). A `Thread.sleep` only fires if
+  `loopDepth > 0` at its position.
+- **Loop keyword detection** (`for`/`while`/`do`) uses a
+  word-boundary check followed by walk-past-parens for
+  `for`/`while` (the body `{` comes after `(...)`) and an
+  immediate `{` for `do`.
+- **String/comment state machine** ensures `Thread.sleep`
+  occurrences inside `"..."`, `// ...`, and `/* ... */` are
+  not matched — no more matching docs/comments.
+- Added 5 new test cases in
+  tests/rules/java/non-ai-rules.test.ts:
+  - `Thread.sleep` in `main()` with unrelated loop in another
+    method (was FP, now skipped)
+  - `Thread.sleep` before/after a loop block (was FP, now
+    skipped)
+  - Sanity: `Thread.sleep` inside `for` body still fires
+  - `Thread.sleep` inside `do { ... } while (...)` block fires
+  - `Thread.sleep` in string literal skipped
+- Updated `signal-strength.json` v0.34.6 calibration note.
+
+**Version bump:**
+- 0.34.5 → 0.34.6 (patch)
+
+### What's next (v0.34.7+)
+
+v0.34.7 mirrors v0.34.2/v0.34.5's test-file exclusion to
+`cpp/printf-debug`.
+
 ## [0.34.5] - 2026-09-29 — Refine kotlin/println-as-log (skip test files)
 
 v0.34.5 is the fourth of the v0.34.X refinement series. The

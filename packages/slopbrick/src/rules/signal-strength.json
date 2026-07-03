@@ -2188,7 +2188,7 @@
     "precision": 0.1091,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.30: v9 Java calibration (81891 neg, 10305 pos). ratio=0.97 (just below 1.0) — fires equally on both arms. Borderline era-confound: pre-2022 Java had more Thread.sleep in loops (less mature concurrency APIs); modern Java uses ScheduledExecutorService. Same direction as kotlin/runblocking-misuse (0.50). 2154 total fires — high absolute count, meaningful measurement. defaultOff.",
+    "_calibrationNote": "v0.34.6: REFINED — rule now requires Thread.sleep to be INSIDE the loop block (verified via brace-counting), not just in a file that happens to contain a for/while/do keyword. v0.30 baseline: 2154 total fires, ratio 0.97 (DORMANT). The refinement targets: (1) Thread.sleep in `main()` no longer fires if a different method has a `for` loop (the v0.30 heuristic fired on every Thread.sleep in the file); (2) Thread.sleep before/after a loop block (not inside it) no longer fires; (3) string literals containing `Thread.sleep(...)` are skipped via the string-state-machine. Expected post-refinement ratio: 1.5+ (positive-signal OK verdict) by removing the cross-method over-fires. Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.30: v9 Java calibration (81891 neg, 10305 pos). ratio=0.97 (just below 1.0) — fires equally on both arms. Borderline era-confound: pre-2022 Java had more Thread.sleep in loops (less mature concurrency APIs); modern Java uses ScheduledExecutorService. Same direction as kotlin/runblocking-misuse (0.50). 2154 total fires — high absolute count, meaningful measurement. defaultOff.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.97,
