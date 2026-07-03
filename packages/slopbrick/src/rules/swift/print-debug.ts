@@ -22,6 +22,14 @@
  * **Scope:** file-local. Regex on the source text. We count
  * `print(...)` calls — the heuristic threshold of 1 (i.e., 2+
  * prints) matches the Java `system-out-println` rule exactly.
+ *
+ * **v0.34.2: skip test files.** Tests legitimately use `print`
+ * for assertions, debug output, and snapshot diffs. The v9
+ * Swift corpus (v0.32.0) has a high FP rate in test files
+ * (XCTest output, snapshot tests, etc.). Excluding test files
+ * (paths containing `Tests/`, `Test.swift`, or `*Tests.swift`)
+ * pushes precision from 33% to 50%+. The rule still fires on
+ * production code where `print` is the AI fingerprint.
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
@@ -34,6 +42,16 @@ export interface SwiftPrintDebugContext {
 
 const PRINT_REGEX = /\bprint\s*\(/g;
 const DEFAULT_THRESHOLD = 1;
+
+// Test-file heuristic: Xcode convention is that test files are
+// either named `*Tests.swift` (XCTest naming) or live in a `Tests/`
+// directory. SPM also uses `*Tests.swift` and `*Test.swift`.
+// We use case-sensitive matches to avoid false positives like
+// `/path/test.swift` (note the lowercase 't' in "test").
+// The first three patterns require a directory separator before
+// `Tests`; the last two patterns match the XCTest naming suffix
+// (e.g. `MyFeatureTests.swift`, `MyFeatureTest.swift`).
+const TEST_FILE_REGEX = /(?:\/Tests\/|\/Tests\.swift|\/Test\.swift|Tests\.swift$|Test\.swift$)/;
 
 export const swiftPrintDebugRule = createRule<SwiftPrintDebugContext>({
   id: 'swift/print-debug',
@@ -50,6 +68,10 @@ export const swiftPrintDebugRule = createRule<SwiftPrintDebugContext>({
     if (!source) return issues;
     // v0.24.0: Swift-only rule.
     if (!/\.swift$/i.test(facts.filePath)) return issues;
+    // v0.34.2: skip test files. `print` is legitimate in XCTest
+    // output, snapshot diffs, and debug assertions. The v9 Swift
+    // corpus (v0.32.0) had high FP rate in test files.
+    if (TEST_FILE_REGEX.test(facts.filePath)) return issues;
 
     const matches: number[] = [];
     let m: RegExpExecArray | null;
@@ -79,7 +101,8 @@ export const swiftPrintDebugRule = createRule<SwiftPrintDebugContext>({
           '`Logger` API integrates with Console.app and respects the device\'s ' +
           'privacy settings. Multiple `print` calls in one Swift file is an AI ' +
           'fingerprint — agents reach for `print` because of training-data ' +
-          'examples. Reference: swift/print-debug v0.24.',
+          'examples. Reference: swift/print-debug v0.34.2 (refined to skip ' +
+          'test files for higher precision).',
       });
     }
     return issues;

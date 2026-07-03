@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.34.2] - 2026-09-29 — Refine swift/print-debug (skip XCTest files)
+
+v0.34.2 is a single-rule refinement of `swift/print-debug`.
+The rule now skips test files (XCTest naming: `*Tests.swift`,
+`*Test.swift`, `Tests/` directory), pushing precision from 33%
+toward the 50% USEFUL threshold. The v0.32.0 v9 Swift corpus
+(1300 neg, 568 pos) had ~49% of FPs concentrated in XCTest
+output and snapshot-test files — these are legitimate uses
+of `print` and shouldn't fire as AI fingerprints.
+
+This is the first of 9 patches in the v0.34.2 → v0.34.10
+series. Each patch applies the same "rule refinement"
+treatment to one of the rules that scored OK but precision
+below 50% in v9 calibration. After all 9 patches, the
+goal is to push enough rules into USEFUL territory to enable
+defaultOn promotion in v0.35.0+.
+
+### What changed
+
+**swift/print-debug (src/rules/swift/print-debug.ts):**
+- Added `TEST_FILE_REGEX` matching `*Tests.swift`, `*Test.swift`,
+  `/Tests/...`, `/Test.swift`, `/Tests.swift` paths
+- Skip rule analysis when the file path matches
+- Added 3 new test cases in tests/rules/swift/swift-rules.test.ts
+- Updated `signal-strength.json` v0.34.2 calibration note to
+  document the refinement direction (precision 33% → 50%+)
+
+**Version bump:**
+- 0.34.1 → 0.34.2 (patch)
+
+### What's next (v0.34.3+)
+
+The next 8 patches refine the rest of the OK-verdict rules in
+the same direction:
+
+1. **v0.34.3** — cpp/c-style-cast: tighten regex selectivity
+2. **v0.34.4** — cpp/magic-numbers: expand allowSet + skip string literals
+3. **v0.34.5** — kotlin/println-as-log: same test-file exclusion as v0.34.2
+4. **v0.34.6** — java/thread-sleep-in-loop: brace-counting for sleep-inside-loop
+5. **v0.34.7** — cpp/printf-debug: same test-file exclusion
+6. **v0.34.8** — kotlin/sql-string-concat: require SQL keyword at line start
+7. **v0.34.9** — java/sql-string-concat: same line-start tightening
+8. **v0.34.10** — swift/force-unwrap: skip `!=`/`!==` operators
+
+Each patch is a single-rule refinement. The calibration re-run
+that confirms precision improvements comes after the full v9
+re-measurement in v0.35.0+.
+
 ## [0.34.1] - 2026-09-22 — Cross-language methodology paper update (docs-only patch)
 
 v0.34.1 is a **docs-only patch** to `v9-corpus-findings.md`

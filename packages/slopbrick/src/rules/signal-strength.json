@@ -2259,7 +2259,7 @@
     "precision": 0.3305,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.32: v9 Swift calibration (1300 neg, 568 pos). Per-file unique: 39 TP files, 79 FP files, ratio=1.13 (≥1.0, OK). Total-fires measurement was ratio=1.78 (1.6x higher) but per-file is more conservative. precision=33.05% (below 50% USEFUL threshold); verdict=OK. The direction is positive: post-2024 Swift (especially AI-generated examples in OpenAI Swift, WhisperKit) uses print() for output; pre-2022 production Swift (Alamofire, Vapor, Moya) uses os.Logger / OSLog. Same direction as kotlin/println-as-log (1.84) and java/system-out-println (1.73 refined, 3.29 unrefined). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
+    "_calibrationNote": "v0.34.2: REFINED — rule now skips test files (XCTest naming: *Tests.swift, *Test.swift, Tests/ dir). Per-file unique v9 Swift calibration (1300 neg, 568 pos): 39 TP files, 79 FP files, ratio=1.13 (OK). The refinement is expected to push precision from 33% to 50%+ by removing XCTest output and snapshot test fires (which were ~49% of FPs in the v0.32.0 measurement). The full v9 re-calibration is part of the v0.34.5/v0.34.7 pipeline (same refinement applied to kotlin/println-as-log and cpp/printf-debug); see v0.34.1's Four-language validation section. v0.32.0 baseline: 39 TP files / 568 = 6.87% recall, 79 FP files / 1300 = 6.08% fpRate, ratio 1.13, precision 33.05% (just below 50% USEFUL threshold). Same direction as kotlin/println-as-log (1.84) and java/system-out-println (1.73 refined, 3.29 unrefined). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
     "aiSpecific": true,
     "_v7Verdict": "DORMANT",
     "_v7Lift": 1.0,

@@ -127,6 +127,33 @@ os_log("three")
     );
     expect(issues).toEqual([]);
   });
+
+  it('does not fire in test files (v0.34.2 refinement)', () => {
+    const ctx = { threshold: 1 };
+    const issues = swiftPrintDebugRule.analyze(
+      CTX,
+      makeFacts('print("a")\nprint("b")\nprint("c")\n', '/Tests/MyTests.swift'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not fire in *Tests.swift files (v0.34.2)', () => {
+    const ctx = { threshold: 1 };
+    const issues = swiftPrintDebugRule.analyze(
+      CTX,
+      makeFacts('print("a")\nprint("b")\nprint("c")\n', '/path/MyFeatureTests.swift'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('still fires in production .swift files (v0.34.2)', () => {
+    const ctx = { threshold: 1 };
+    const issues = swiftPrintDebugRule.analyze(
+      CTX,
+      makeFacts('class Service { func doWork() { print("a"); print("b"); print("c") } }\n', '/Sources/MyService.swift'),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
 });
 
 describe('swift/fatal-error-thrown', () => {
