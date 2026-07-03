@@ -2443,7 +2443,7 @@
     "precision": 0.2187,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 220 TP, 786 FP, ratio=0.86. Both arms have similar proportions of files with magic numbers — this is a general C++ anti-pattern that hasn't been eradicated. INSUFFICIENT_DATA: pos arm 1655 files.",
+    "_calibrationNote": "v0.34.4: REFINED — expanded allowSet with common constants (-1 sentinel, 100 percent literal, 0.5/1.0/2.0 ratios, 4096/2048/512/128/64/32/16/8 power-of-2 sizes, 50 percentile). Added string-literal and `//` comment stripping so substrings like `\"got 42 errors\"` and `// ticket #4242` no longer fire. v0.33 baseline: 220 TP / 786 FP per-file (ratio 0.86, DORMANT). The refinement targets: (1) sentinel `-1` literals are skipped because `1` is allowlisted and the `-` doesn't match MAGIC_NUMBER_REGEX anyway; (2) hex literals (`0xFF`) are skipped because the digit-only regex requires a word-boundary after digits, and `0x...` has none; (3) literals inside string/comment contexts no longer fire. Expected post-refinement ratio: 1.0-1.2 (still DORMANT but better-targeted). Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 220 TP, 786 FP, ratio=0.86. Both arms have similar proportions of files with magic numbers — this is a general C++ anti-pattern that hasn't been eradicated. INSUFFICIENT_DATA: pos arm 1655 files.",
     "aiSpecific": true,
     "_v7Verdict": "DORMANT",
     "_v7Lift": 1.0,

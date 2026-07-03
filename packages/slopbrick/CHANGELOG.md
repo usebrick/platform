@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.34.4] - 2026-09-29 — Refine cpp/magic-numbers (expanded allowSet + string/comment exclusion)
+
+v0.34.4 is the third of the v0.34.X refinement series. The
+`cpp/magic-numbers` rule had ratio=0.86 (DORMANT) in the v0.33
+v9 C++ calibration — 220 TP files / 786 FP files per-file,
+with most FPs concentrated in: (1) common constants like
+`-1`, `100`, `0xFF`, `(1 << 8)`; (2) literals inside string
+literals (`"got 42 errors"`); and (3) literals inside
+`// ...` comments (`// ticket #4242`). v0.34.4 addresses
+all three with an expanded allowSet and string/comment
+stripping.
+
+### What changed
+
+**cpp/magic-numbers (src/rules/cpp/magic-numbers.ts):**
+- **Expanded allowSet** (19 → 30+ entries). Added: `-1`
+  (sentinel), `100` (percent literal), `0.0`/`0.5`/`1.0`/`2.0`
+  (common probability / ratio), `4096` (page size / hash
+  bucket), `2048`/`512` (power-of-2 sizes), `32`/`64`/`128`
+  (bit widths / byte sizes), `16`/`8` (small constants), `50`
+  (percentile literal).
+- **String-literal exclusion:** literals inside `"..."` and
+  `'...'` are stripped before scanning, so `"got 42 errors"`
+  no longer fires.
+- **Comment exclusion:** literals after `//` on the same line
+  are stripped, so `// threshold from spec, see #4242` no
+  longer fires.
+- **Hex literals** (`0xFF`, `0x80`) are naturally skipped by
+  virtue of `\b(\d+)\b` not matching `0x...` (no word boundary
+  between `0` and `x`).
+- Added 5 new test cases in tests/rules/cpp/cpp-rules.test.ts.
+- Updated `signal-strength.json` v0.34.4 calibration note.
+
+**Version bump:**
+- 0.34.3 → 0.34.4 (patch)
+
+### What's next (v0.34.5+)
+
+v0.34.5 mirrors v0.34.2's test-file exclusion to
+`kotlin/println-as-log` — the same XCTest-style fingerprint
+pattern in Kotlin (JVM tests / androidTest files).
+
 ## [0.34.3] - 2026-09-29 — Refine cpp/c-style-cast (tighter regex selectivity)
 
 v0.34.3 is the second of the v0.34.X refinement series. The

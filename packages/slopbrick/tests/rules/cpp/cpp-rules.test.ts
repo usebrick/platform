@@ -310,4 +310,93 @@ int classify(int size) {
     );
     expect(issues).toEqual([]);
   });
+
+  it('does not flag -1 sentinel in `if (idx != -1)` (v0.34.4)', () => {
+    // v0.34.4: the allowSet now skips `1` (which is what
+    // MAGIC_NUMBER_REGEX matches when scanning `-1`). The
+    // leading `-` is not matched by `\b(\d+)\b` so the entire
+    // literal `-1` is naturally skipped because `1` is
+    // allowlisted.
+    const issues = cppMagicNumbersRule.analyze(
+      CTX,
+      makeFacts(`
+int find(int* xs, int n) {
+  for (int i = 0; i < n; i++) {
+    if (xs[i] != -1) return xs[i];
+  }
+  return -1;
+}
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag 100 in `if (pct > 100)` (v0.34.4)', () => {
+    // v0.34.4: 100 is in the expanded allowSet (percent literal).
+    const issues = cppMagicNumbersRule.analyze(
+      CTX,
+      makeFacts(`
+bool isValid(int pct) {
+  if (pct > 100) return false;
+  return true;
+}
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag a hex literal `0xFF` in a comparison (v0.34.4)', () => {
+    // v0.34.4: hex literals (`0x...`) are not matched by
+    // MAGIC_NUMBER_REGEX (which requires `\d+` digits, not
+    // `0x...`). The only digit matched is `0` (between `&` and
+    // `x`) but `\b` requires a word-boundary AFTER the digit —
+    // `0x` has no boundary, so the `0` is not matched.
+    const issues = cppMagicNumbersRule.analyze(
+      CTX,
+      makeFacts(`
+int mask(int flags) {
+  if (flags == 0xFF) return 1;
+  return 0;
+}
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag a numeric inside a string literal (v0.34.4)', () => {
+    // v0.34.4: literals inside `"..."` are stripped before
+    // scanning, so `"error 42"` doesn't fire. The line still
+    // has a comparison shape (`if (level > 7)`) but the only
+    // numeric in the comparison is `7`, which is allowlisted.
+    const issues = cppMagicNumbersRule.analyze(
+      CTX,
+      makeFacts(`
+int main() {
+  if (level > 7) printf("error 42: bad config\\n");
+  return 0;
+}
+`.trim()),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag a numeric inside a `//` comment (v0.34.4)', () => {
+    // v0.34.4: literals inside `// ...` are stripped from the
+    // line before scanning, so the `4242` and `99999` in the
+    // trailing comment don't fire. We still fire on `8192` in
+    // the comparison — the rule's whole point.
+    const issues = cppMagicNumbersRule.analyze(
+      CTX,
+      makeFacts(`
+int classify(int size) {
+  // TODO: refactor when 99999 is realistic; see ticket #4242
+  if (size > 8192) return 2;
+  return 1;
+}
+`.trim()),
+    );
+    // We expect ONE issue: `8192` in `if (size > 8192)`. The
+    // 99999 and 4242 are stripped (they're inside `//`).
+    expect(issues.length).toBe(1);
+  });
 });
