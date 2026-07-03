@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.34.5] - 2026-09-29 — Refine kotlin/println-as-log (skip test files)
+
+v0.34.5 is the fourth of the v0.34.X refinement series. The
+`kotlin/println-as-log` rule had ratio=1.84 (OK) in the v0.29
+v9 Kotlin calibration — the first positive-signal rule in v9
+history — but precision was only 12.7% (below 50% USEFUL).
+Many FPs come from test files: JUnit4/5 and Android
+convention is `FooTest.kt` / `FooTests.kt`, and tests
+legitimately use `println` for assertions / debug output.
+
+### What changed
+
+**kotlin/println-as-log (src/rules/kotlin/println-as-log.ts):**
+- Added `TEST_FILE_REGEX` matching `*Tests.kt`, `*Test.kt`,
+  `src/test/`, `test/`, `/Tests/`, `/Test.kt`, `/Tests.kt` paths
+  (mirrors v0.34.2's swift/print-debug fix).
+- Replaced the v0.29 narrow exclusion (`\/test\/` +
+  `.test.kts?$`) with the broader regex. The previous version
+  missed `FooTests.kt` (JUnit5 + Android convention) which is
+  the most common JUnit test-naming pattern in modern Android.
+- Added 4 new test cases in
+  tests/rules/kotlin/non-ai-rules.test.ts:
+  - `*Tests.kt` files (JUnit5 + Android)
+  - `*Test.kt` files (JUnit4)
+  - `src/test/` directory
+  - production `.kt` files still fire (sanity check)
+- Updated `signal-strength.json` v0.34.5 calibration note.
+
+**Version bump:**
+- 0.34.4 → 0.34.5 (patch)
+
+### What's next (v0.34.6+)
+
+v0.34.6 refines `java/thread-sleep-in-loop` — currently uses
+a coarse "both `Thread.sleep` and a loop keyword in the same
+file" heuristic. v0.34.6 uses brace-counting to require
+`Thread.sleep` to be INSIDE a loop block.
+
 ## [0.34.4] - 2026-09-29 — Refine cpp/magic-numbers (expanded allowSet + string/comment exclusion)
 
 v0.34.4 is the third of the v0.34.X refinement series. The

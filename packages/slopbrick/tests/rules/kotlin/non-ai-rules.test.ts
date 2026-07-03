@@ -175,6 +175,51 @@ class Service {
     expect(issues.length).toBe(0);
   });
 
+  it('does not flag println in *Tests.kt files (v0.34.5)', () => {
+    // v0.34.5: mirror of v0.34.2's swift/print-debug. JUnit5
+    // and Android convention is `FooTests.kt`. The previous
+    // v0.29 exclusion only matched `\/test\/` and
+    // `.test.kts?$`, missing this common naming.
+    const issues = kotlinPrintlnAsLogRule.analyze(
+      CTX,
+      makeFacts('println("hello")', '/src/test/ServiceTests.kt'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag println in *Test.kt files (v0.34.5)', () => {
+    // JUnit4 convention is `FooTest.kt`.
+    const issues = kotlinPrintlnAsLogRule.analyze(
+      CTX,
+      makeFacts('println("hello")', '/src/test/ServiceTest.kt'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not flag println in src/test/ directory (v0.34.5)', () => {
+    // Standard Maven/Gradle test source set.
+    const issues = kotlinPrintlnAsLogRule.analyze(
+      CTX,
+      makeFacts('println("hello")', '/path/to/proj/src/test/Service.kt'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('still fires in production .kt files (v0.34.5)', () => {
+    // Sanity check: production files are NOT excluded.
+    const issues = kotlinPrintlnAsLogRule.analyze(
+      CTX,
+      makeFacts(`
+class Service {
+  fun doWork() {
+    println("hello")
+  }
+}
+      `.trim(), '/src/main/kotlin/Service.kt'),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
   it('does not flag println if file imports slf4j', () => {
     const issues = kotlinPrintlnAsLogRule.analyze(
       CTX,

@@ -27,6 +27,13 @@
  * `kotlin/println-debug` rule (v0.24.0, AI-fingerprint) that
  * fires on 3+ println per file. This rule fires on every
  * `println` — different signal, different purpose.
+ *
+ * **v0.34.5: refined test-file exclusion.** Mirrors v0.34.2's
+ * swift/print-debug refinement: skip `*Tests.kt`, `*Test.kt`,
+ * and `src/test/` / `test/` directories using a single
+ * `TEST_FILE_REGEX`. The previous version only checked
+ * `\/test\/` and `.test.kts?$`, missing the common JUnit5
+ * naming convention (`FooTest.kt`, `FooTests.kt`).
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
@@ -46,6 +53,17 @@ const PRINTLN_REGEX = /\bprintln\s*\(/g;
 // `println`s are likely intentional (debug output in tests, etc.).
 const REAL_LOGGING_IMPORT_REGEX = /\bimport\s+(?:android\.util\.Log|org\.slf4j\.|io\.github\.oshai\.kotlinlogging|kotlin\.logging|co\.touchlab\.kermit|com\.github\.ajalt\.timber|org\.apache\.logging\.log4j)/;
 
+// Test-file heuristic (v0.34.5): mirrors swift/print-debug.
+// Matches:
+//   - `*Tests.kt` (JUnit5 + Android convention)
+//   - `*Test.kt` (JUnit4 convention)
+//   - `src/test/` and `test/` directory paths
+//   - `/Test.kt` and `/Tests.kt` (less common but possible)
+// We require a directory separator before `Test`/`Tests` in
+// the path-boundary cases to avoid false positives like
+// `latest.kt`.
+const TEST_FILE_REGEX = /(?:\/src\/test\/|\/test\/|\/Tests\/|\/Test\.kt|\/Tests\.kt|Tests\.kt$|Test\.kt$)/;
+
 export const kotlinPrintlnAsLogRule = createRule<KotlinPrintlnAsLogContext>({
   id: 'kotlin/println-as-log',
   category: 'logic',
@@ -62,8 +80,11 @@ export const kotlinPrintlnAsLogRule = createRule<KotlinPrintlnAsLogContext>({
     // v0.29.0: Kotlin-only rule.
     if (!/\.kts?$/i.test(facts.filePath)) return issues;
 
-    // Skip test files — `println` is a fine debug tool there.
-    if (/\/test\//i.test(facts.filePath) || /\.test\.kts?$/i.test(facts.filePath)) return issues;
+    // v0.34.5: skip test files — `println` is a fine debug
+    // tool there. Mirrors the v0.34.2 swift/print-debug
+    // refinement: matches `*Tests.kt`, `*Test.kt`, `src/test/`,
+    // `test/`, etc.
+    if (TEST_FILE_REGEX.test(facts.filePath)) return issues;
     // Skip files that import a real logger.
     if (REAL_LOGGING_IMPORT_REGEX.test(source)) return issues;
 
@@ -84,7 +105,8 @@ export const kotlinPrintlnAsLogRule = createRule<KotlinPrintlnAsLogContext>({
           '(Android), Timber (Android), kermit (multiplatform), or ' +
           'kotlin-logging. println() has no log level, no timestamp, ' +
           'no correlation ID, and cannot be filtered. Reference: ' +
-          'kotlin/println-as-log v0.29.',
+          'kotlin/println-as-log v0.34.5 (refined to skip test files ' +
+          'for higher precision).',
       });
     }
     return issues;
