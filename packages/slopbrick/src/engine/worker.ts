@@ -99,7 +99,7 @@ export async function scanFile(
   // visitors for (.py, .go, .rs) get the rule engine pass — rules
   // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
-  // fire. Languages we have NO visitor for (.dart, .cpp, .rb, .php)
+  // fire. Languages we have NO visitor for (.dart, .rb, .php)
   // still get the early-return because every rule attempt would
   // burn the parseError path.
   //
@@ -141,10 +141,17 @@ export async function scanFile(
   // Java/Kotlin: AST-dependent rules silently produce 0 issues.
   // The 5 swift rules gate themselves on `/\.swift$/i.test(filePath)`
   // inside their `analyze()`.
+  //
+  // v0.33.0: removed `.cpp`, `.cc`, `.cxx`, `.c`, `.h`, `.hpp`,
+  // `.hxx` from this set (v9 C++ corpus build — the 4th and final
+  // non-Java arm per the v0.24.0 plan). All 5 `cpp/*` rules
+  // (using-namespace-std, raw-new-delete, c-style-cast, printf-debug,
+  // magic-numbers) are regex-based. Same trade-off as Java/Kotlin/
+  // Swift. The 5 cpp rules gate themselves on a regex that matches
+  // all C/C++ file extensions inside their `analyze()`.
   const ext = extname(filePath).toLowerCase();
   const UNSUPPORTED_LANGS = new Set([
     '.dart',
-    '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
     '.rb', '.php',
   ]);
   if (UNSUPPORTED_LANGS.has(ext)) {

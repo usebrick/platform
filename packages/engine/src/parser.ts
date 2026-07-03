@@ -419,6 +419,18 @@ function parseSource(source: string, filePath: string): ParseResult {
     // are regex-based and gate themselves on `/\.swift$/i.test(filePath)`
     // inside their `analyze()`. Same trade-off as Java/Kotlin.
     case 'swift':
+    // v0.33.0: C++ files get the same parseBlankModule path.
+    // All 5 `cpp/*` rules (using-namespace-std, raw-new-delete,
+    // c-style-cast, printf-debug, magic-numbers) are regex-based
+    // and gate themselves on `/\.c(c|pp|xx)?$|^\.h(pp|xx)?$/i.test(filePath)`
+    // inside their `analyze()`. Same trade-off as Java/Kotlin/Swift.
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+    case 'c':
+    case 'h':
+    case 'hpp':
+    case 'hxx':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback
