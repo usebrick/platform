@@ -36,7 +36,7 @@ for (const r of cal.rules) {
   }
   const m = main[ruleId];
   m.recall = r.recall;
-  m.fpRate = r.positiveFires > 0 ? r.negativeFires / (r.positiveFiles + r.negativeFiles) : 0;
+  m.fpRate = cal.negativeFileCount > 0 ? r.negativeFiles / cal.negativeFileCount : 0;
   m.ratio = m.fpRate > 0 ? r.precision / m.fpRate : 0;
   m.precision = r.precision;
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
