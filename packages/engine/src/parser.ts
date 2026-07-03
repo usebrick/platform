@@ -413,6 +413,12 @@ function parseSource(source: string, filePath: string): ParseResult {
     // sufficient for the v9 calibration goal.
     case 'kt':
     case 'kts':
+    // v0.32.0: Swift files get the same parseBlankModule path.
+    // All 5 `swift/*` rules (force-unwrap, print-debug, fatal-error-
+    // thrown, implicitly-unwrapped-optional, strong-self-capture)
+    // are regex-based and gate themselves on `/\.swift$/i.test(filePath)`
+    // inside their `analyze()`. Same trade-off as Java/Kotlin.
+    case 'swift':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback

@@ -99,9 +99,9 @@ export async function scanFile(
   // visitors for (.py, .go, .rs) get the rule engine pass — rules
   // that need SWC silently produce 0 issues for those files, but
   // regex-based rules (markdown-leakage, comment-ratio, etc.) can
-  // fire. Languages we have NO visitor for (.swift, .dart,
-  // .cpp, .rb, .php) still get the early-return because every
-  // rule attempt would burn the parseError path.
+  // fire. Languages we have NO visitor for (.dart, .cpp, .rb, .php)
+  // still get the early-return because every rule attempt would
+  // burn the parseError path.
   //
   // v0.18.9: removed `.rs` from this set. The tree-sitter Rust
   // integration (see `visitors/rust.ts` and `parser-rust.ts`) is
@@ -133,9 +133,17 @@ export async function scanFile(
   // Java: AST-dependent rules silently produce 0 issues on
   // `.kt`/`.kts` files. The 5 kotlin rules gate themselves on
   // `/\.kts?$/i.test(filePath)` inside their `analyze()`.
+  //
+  // v0.32.0: removed `.swift` from this set (v9 Swift corpus
+  // build). All 5 `swift/*` rules (force-unwrap, print-debug,
+  // fatal-error-thrown, implicitly-unwrapped-optional,
+  // strong-self-capture) are regex-based. Same trade-off as
+  // Java/Kotlin: AST-dependent rules silently produce 0 issues.
+  // The 5 swift rules gate themselves on `/\.swift$/i.test(filePath)`
+  // inside their `analyze()`.
   const ext = extname(filePath).toLowerCase();
   const UNSUPPORTED_LANGS = new Set([
-    '.swift', '.dart',
+    '.dart',
     '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.hxx',
     '.rb', '.php',
   ]);

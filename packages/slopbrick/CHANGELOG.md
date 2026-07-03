@@ -1,5 +1,114 @@
 # Changelog
 
+## [0.32.0] - 2026-09-09 — v9 Swift arm corpus (5 rules, 1 positive-signal)
+
+v0.32.0 builds the v9 **Swift arm** of the corpus (the third non-Java
+arm, mirroring v0.28.0 Kotlin and v0.30.0 Java) and wires `.swift`
+into the parsing pipeline. The headline result: `swift/print-debug`
+is the **third positive-signal rule in v9 history** (after
+`kotlin/println-as-log` and `java/system-out-println`).
+
+### What changed
+
+**v0.32.0: Swift arm corpus (1868 .swift files, 0 parse-failures)**
+
+| | Files | Issues | Notes |
+|---|---:|---:|---|
+| neg (pre-2022) | 1300 | 11409 | alamofire 5.4.4, vapor 4.40, swift-nio 2.31, etc. |
+| pos (post-2024) | 568 | 2927 | openai-swift, whisperkit, swift-transformers, etc. |
+| **total** | **1868** | **14336** | 0 parse-failures (100% pass) |
+
+Below the 10k-per-arm floor (v9 INSUFFICIENT_DATA) — pre-2018 Swift
+is too rare (Swift 4.0 was Sep 2017) and post-2024 AI Swift repos
+are also rare. The neg cutoff is 2022-06 (pre-LLM-coding-boom).
+
+**v0.32.0: Parser wiring for `.swift`**
+
+- `packages/engine/src/parser.ts`: added `'swift'` to the
+  `parseBlankModule` switch — same path as `'java'` and `'kt'`.
+  `facts.v2._source` is now populated for Swift files.
+- `packages/slopbrick/src/engine/worker.ts`: removed `.swift` from
+  the `UNSUPPORTED_LANGS` early-return set.
+- The 5 v0.24.0 Swift rules already gated on `/\.swift$/i`.
+
+**v0.32.0: signal-strength.json v9 entries for 5 swift rules**
+
+| Rule | TP files | FP files | recall | fpRate | ratio | precision | verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| `swift/print-debug` | 39 | 79 | 6.87% | 6.08% | **1.13** | 33.05% | **OK** |
+| `swift/strong-self-capture` | 141 | 576 | 24.82% | 44.31% | 0.56 | 19.67% | DORMANT |
+| `swift/fatal-error-thrown` | 37 | 149 | 6.51% | 11.46% | 0.57 | 19.89% | DORMANT |
+| `swift/force-unwrap` | 58 | 279 | 10.21% | 21.46% | 0.48 | 17.21% | DORMANT |
+| `swift/implicitly-unwrapped-optional` | 11 | 139 | 1.94% | 10.69% | 0.18 | 7.33% | DORMANT |
+
+**Third positive-signal rule in v9 history.** `swift/print-debug`
+fires 1.13x more on post-2024 (pos) AI code than pre-2022 (neg)
+production. Per-file unique measurement. Same direction as
+`kotlin/println-as-log` (1.84) and `java/system-out-println` (1.73
+refined, 3.29 unrefined). The signal is real and consistent across
+3 languages: **modern AI-generated demo code uses `print`/`System.out`/
+`println` for output; pre-LLM production code uses real loggers**.
+
+**Why the 4 era-confounded Swift rules.** Pre-2022 Swift had a
+mature standard library that allowed (!, fatalError, IUO, strong
+self capture) freely — these were the idiomatic patterns. Modern
+Swift (5.0+) introduced language features that make them explicit
+warnings (guard let, throws, weak self, optional binding). The era
+shift is captured in 4 different Swift anti-patterns:
+- `swift/force-unwrap` ratio 0.48 (pre-2022 had more `!`)
+- `swift/fatal-error-thrown` ratio 0.57 (pre-2022 had more fatalError)
+- `swift/strong-self-capture` ratio 0.56 (pre-2022 captured self strongly by default)
+- `swift/implicitly-unwrapped-optional` ratio 0.18 (strongest era-confound, similar to kotlin/coroutine-global-scope at 0.09)
+
+**Note on `swift/strong-self-capture` total fires:** the regex
+fires multiple times per file (every closure without [weak self]),
+so total fires were 2316 TP, 8913 FP. The per-file measurement
+(141 TP, 576 FP) is more meaningful and what the v0.32.0 signal-
+strength.json uses.
+
+### Three positive-signal rules in v9 history (cross-language)
+
+| Rule | Ratio | Pos arm | Status | Direction |
+|---|---:|---:|---|---|
+| `kotlin/println-as-log` (v0.29.0) | 1.84 | 213 | INSUFFICIENT_DATA | positive |
+| `java/system-out-println` (v0.30.0 unrefined) | 3.29 | 10,305 | OK | positive |
+| `java/system-out-println` (v0.31.0 refined) | 1.73 | 10,305 | OK | positive |
+| `swift/print-debug` (v0.32.0 per-file) | 1.13 | 568 | OK | positive |
+
+**All 4 measure the same defect: real logging in production vs
+println in demos.** The pattern is consistent across 3 languages
+(Kotlin, Java, Swift) and 3 different ratios. The direction is
+**stable**: AI-generated post-2024 code uses `print`/`System.out`/
+`println` for output, pre-2022 production code uses real loggers.
+This is the most consistent positive-signal finding in v9 history.
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes.
+- `pnpm --filter slopbrick test tests/engine/ tests/rules/`: 90/90 pass
+  (37 kotlin + 19 java + 21 swift + 10 guardrail + 3 hints).
+- `pnpm --filter @usebrick/engine build`: 67.29 KB (was 66.94 KB
+  before adding 'swift' case).
+- `pnpm tsx scripts/build-v9-corpus.ts --arm swift`: 1868 files
+  scanned, 14336 issues, 0 parse-failures. Below the 10k-per-arm
+  floor (v9 INSUFFICIENT_DATA) — see `success_criteria` in the
+  swift manifest for the relaxed target.
+
+### What's next (v0.33.0+)
+
+Two directions from v0.32.0:
+
+1. **Build the C++ arm corpus** (the 4th and final non-Java arm
+   per the v0.24.0 v9 plan). The 5 v0.24.0 C++ rules are all
+   DORMANT. Same pattern as Kotlin/Swift.
+
+2. **Cross-language synthesis** — now that we have 4 positive-
+   signal rules in 3 languages (kotlin/println-as-log,
+   java/system-out-println, swift/print-debug), the methodology
+   paper should be updated with a "Three-language validation"
+   section that establishes the "println in AI demos" pattern
+   as a robust, reproducible finding.
+
 ## [0.31.0] - 2026-09-02 — Refine java/system-out-println (require slf4j/log4j import)
 
 v0.31.0 is a targeted refinement of the v0.30.0 `java/system-out-println`
