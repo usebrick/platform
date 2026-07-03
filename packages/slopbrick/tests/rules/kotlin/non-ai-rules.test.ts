@@ -75,6 +75,37 @@ describe('kotlin/sql-string-concat', () => {
     );
     expect(issues.length).toBe(0);
   });
+
+  it('does not fire when SELECT appears in a string value (v0.34.8)', () => {
+    // v0.34.8: require SQL keyword to start a string literal.
+    // Lines like `val msg = "Selected 1 row: $count"` have
+    // SELECT as a substring of a value, not a query.
+    const issues = kotlinSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('val msg = "Selected 1 row: $count" + count'),
+    );
+    expect(issues.length).toBe(0);
+  });
+
+  it('does not fire on `selected` (camelCase substring) (v0.34.8)', () => {
+    // v0.34.8: the \b word-boundary in SQL_KEYWORD_REGEX
+    // already prevents matching `selectedItem` etc. The new
+    // string-literal-start check is the second layer of defense.
+    const issues = kotlinSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('val item = selectedItem + offset'),
+    );
+    expect(issues.length).toBe(0);
+  });
+
+  it('flags `val q = "SELECT ... " + id` (v0.34.8 — assignment to string)', () => {
+    // v0.34.8: SELECT after `=` (assignment) is also valid.
+    const issues = kotlinSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('val q = "SELECT * FROM users WHERE id = " + id'),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
 });
 
 describe('kotlin/hardcoded-credential', () => {

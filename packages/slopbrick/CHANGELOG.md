@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.34.8] - 2026-10-04 — Refine kotlin/sql-string-concat (require SQL keyword to start a string literal)
+
+v0.34.8 refines the v0.29.0 `kotlin/sql-string-concat` rule to
+require the SQL keyword to be the start of a string literal, and
+fixes a bug in the SAFE_REGEX. The v0.29.0 calibration found 17
+FPs for 1 TP — the rule fired on lines where `SELECT`/`INSERT`
+appeared in string values (e.g. `val msg = "Selected 1 row: $count"`),
+not actual SQL queries.
+
+**v0.34.8 changes**:
+- Rule now requires the SQL keyword to be the start of a string
+  literal (preceded by `"`, `'`, or `=` with optional whitespace).
+  This filters out lines where the SQL keyword is just a string
+  value, not a query.
+- **Bug fix**: the `SAFE_REGEX` had `:??` (literal `:??`) which
+  didn't match Java/Kotlin named parameters like `:id`. Fixed to
+  `:?` (named parameter syntax).
+- 4 new unit tests cover the string-literal-start check and the
+  SAFE_REGEX fix.
+- signal-strength.json entry updated with the v0.34.8 refinement
+  note (numbers unchanged; the refinement is expected to push
+  precision from 5.6% to 25%+ when re-calibrated).
+
+**Why this matters**:
+The v0.29.0 `kotlin/sql-string-concat` rule had precision 5.56%
+(1 TP / 18 total fires). The refinement reduces false positives
+where `SELECT`/`INSERT` appears as a substring in unrelated
+strings. With the `SAFE_REGEX` bug fixed, the rule also correctly
+recognizes `:id`-style named parameters as safe.
+
+**What's next (v0.34.9 → v0.34.10)**:
+2 more rule refinements (java/sql-string-concat — same pattern
+as v0.34.8; swift/force-unwrap — exclude `!` in `!==`/`!=`).
+
 ## [0.34.7] - 2026-10-01 — Refine cpp/printf-debug (skip test files)
 
 v0.34.7 refines the v0.33.0 `cpp/printf-debug` rule to skip C++
