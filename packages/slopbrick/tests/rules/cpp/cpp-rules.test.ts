@@ -249,6 +249,36 @@ void f() {
     );
     expect(issues).toEqual([]);
   });
+
+  it('does not fire in *_test.cpp files (v0.34.7 refinement)', () => {
+    // v0.34.7: skip test files. gtest, catch2, doctest conventions.
+    // *_test.cpp, *_test.cc, /tests/ dir, *Test.cc, *Test.cpp.
+    // Test files legitimately use printf for assertion messages.
+    const ctx = { threshold: 1 };
+    const issues = cppPrintfDebugRule.analyze(
+      ctx,
+      makeFacts('void f() { printf("a"); printf("b"); }', '/tests/my_test.cpp'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('does not fire in /tests/ directory (v0.34.7)', () => {
+    const ctx = { threshold: 1 };
+    const issues = cppPrintfDebugRule.analyze(
+      ctx,
+      makeFacts('void f() { printf("a"); printf("b"); }', '/tests/MyFeatureTest.cpp'),
+    );
+    expect(issues).toEqual([]);
+  });
+
+  it('still fires in production .cpp files (v0.34.7)', () => {
+    const ctx = { threshold: 1 };
+    const issues = cppPrintfDebugRule.analyze(
+      ctx,
+      makeFacts('class Service { void doWork() { printf("a"); printf("b"); } };', '/src/MyService.cpp'),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
 });
 
 describe('cpp/magic-numbers', () => {

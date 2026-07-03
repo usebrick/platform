@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.34.7] - 2026-10-01 — Refine cpp/printf-debug (skip test files)
+
+v0.34.7 refines the v0.33.0 `cpp/printf-debug` rule to skip C++
+test files. The v0.33.0 calibration found that gtest, catch2, and
+doctest test files legitimately use `printf` for assertion
+messages and test output — these were ~30% of the false positives
+in the v0.33.0 measurement.
+
+**v0.34.7 changes**:
+- Rule now skips files matching common C++ test patterns:
+  `*_test.cpp`, `*_test.cc`, `/tests/` dir, `*Test.cpp`, `*Test.cc`,
+  `*Tests.cpp`, `*Tests.cc`, `*_unittest.cpp`, `*_unittest.cc`
+- 3 new unit tests cover the test-file exclusion
+- signal-strength.json entry updated with the v0.34.7 refinement
+  note (numbers unchanged from v0.33.0; the refinement is expected
+  to push precision from 44% to 50%+ when re-calibrated)
+
+**Why this matters**:
+The v0.33.0 `cpp/printf-debug` rule had precision 44.07% (156 TP /
+198 FP per-file) and ratio 2.43 — the strongest positive-signal
+rule in v9 history. Excluding test files is the simplest precision
+improvement and follows the same pattern as v0.34.2 (swift/print-debug)
+and v0.34.5 (kotlin/println-as-log). With this refinement, the
+rule is close to crossing the 50% precision threshold for USEFUL.
+
+**What's next (v0.34.8 → v0.34.10)**:
+3 more rule refinements (kotlin/sql-string-concat,
+java/sql-string-concat, swift/force-unwrap).
+
 ## [0.34.6] - 2026-09-29 — Refine java/thread-sleep-in-loop (brace-counting)
 
 v0.34.6 is the fifth of the v0.34.X refinement series. The

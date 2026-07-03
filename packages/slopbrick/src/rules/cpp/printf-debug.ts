@@ -24,6 +24,12 @@
  * - Default off (DORMANT) until calibrated on v9 C++ corpus.
  *
  * **Scope:** file-local. Regex on the source text.
+ *
+ * **v0.34.7: skip test files.** The v0.33.0 calibration found
+ * that test files (gtest, catch2, doctest) legitimately use
+ * `printf` / `std::cout` for assertion error messages and
+ * test output. Excluding test files follows the same pattern as
+ * v0.34.2 (swift/print-debug), v0.34.5 (kotlin/println-as-log).
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
@@ -38,6 +44,13 @@ const PRINTF_FAMILY_REGEX = /\b(?:printf|fprintf|sprintf|snprintf)\s*\(/g;
 const COUT_LITERAL_REGEX = /std\s*::\s*(?:cout|cerr|clog)\s*<<\s*"[^"]*"/g;
 const STD_COUT_BARE_REGEX = /std\s*::\s*(?:cout|cerr|clog)\s*<<\s*'[^']*'/g;
 const THRESHOLD_DEFAULT = 1;
+
+// Test-file heuristic: gtest, catch2, doctest naming conventions.
+// gtest: TEST/SRC/*_test.cc, *_test.cpp, /tests/ dir, *Test.cc
+// catch2: TEST_CASE in *_test.cpp
+// We use a case-sensitive regex to avoid false positives like
+// `/path/test.cpp` (lowercase 't' in "test").
+const TEST_FILE_REGEX = /(?:\/tests?\/|_test\.cc|_test\.cpp|Test\.cc|Test\.cpp|Tests\.cc|Tests\.cpp|_unittest\.cc|_unittest\.cpp)/;
 
 export const cppPrintfDebugRule = createRule<CppPrintfDebugContext>({
   id: 'cpp/printf-debug',
@@ -55,6 +68,8 @@ export const cppPrintfDebugRule = createRule<CppPrintfDebugContext>({
     if (!source) return issues;
     // v0.24.0: full C++ gate.
     if (!/\.(cpp|cc|cxx|h|hpp|hh|hxx|H)$/i.test(facts.filePath)) return issues;
+    // v0.34.7: skip test files. gtest, catch2, doctest conventions.
+    if (TEST_FILE_REGEX.test(facts.filePath)) return issues;
 
     // Path A: 2+ printf-family calls.
     const printfCount = (source.match(PRINTF_FAMILY_REGEX) ?? []).length;
@@ -87,7 +102,8 @@ export const cppPrintfDebugRule = createRule<CppPrintfDebugContext>({
         'by default. `printf` / `std::cout` have no levels, no redaction, ' +
         'no sink routing, and can\'t be silenced in release builds. AI ' +
         'agents reach for these because their training data has countless ' +
-        'C++ textbook examples with them. Reference: cpp/printf-debug v0.24.',
+        'C++ textbook examples with them. Reference: cpp/printf-debug ' +
+        'v0.34.7 (refined to skip test files for higher precision).',
     });
 
     return issues;

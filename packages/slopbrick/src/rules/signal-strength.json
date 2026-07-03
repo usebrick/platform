@@ -2420,7 +2420,7 @@
     "precision": 0.4407,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 156 TP files, 198 FP files, ratio=2.43 (≥1.5) — fourth positive-signal rule in v9 history (and the strongest ratio so far). precision=44.07% (just below 50% USEFUL threshold); verdict=OK. Total fires: 182 TP, 198 FP. The signal is real: post-2024 C++ (mostly AI-generated demos in llama.cpp, whisper.cpp, openai-cpp) uses printf/cout for output; pre-2022 production C++ (folly, protobuf, abseil) uses spdlog / glog / AbslLog. Same direction as kotlin/println-as-log (1.84), java/system-out-println (1.73 refined), swift/print-debug (1.13). INSUFFICIENT_DATA: pos arm 1655 files (below 10k floor).",
+    "_calibrationNote": "v0.34.7: REFINED — rule now skips test files (gtest, catch2, doctest conventions: *_test.cpp, *_test.cc, /tests/ dir, *Test.cpp, *Test.cc, *_unittest.cpp). Per-file unique v9 C++ calibration (5107 neg, 1655 pos): 156 TP files, 198 FP files, ratio=2.43 (OK, fourth positive-signal in v9 history). precision=44.07% (below 50% USEFUL threshold); verdict=OK. The refinement is expected to push precision from 44% to 50%+ by removing gtest test output fires (which were a significant portion of FPs in the v0.33.0 measurement). The full v9 re-calibration is part of the broader v0.34.5/v0.34.7 pipeline; see v0.34.1's Four-language validation section. Same direction as kotlin/println-as-log (1.84), java/system-out-println (1.73 refined, 3.29 unrefined), swift/print-debug (1.13). INSUFFICIENT_DATA: pos arm 1655 files (below 10k floor).",
     "aiSpecific": true,
     "_v7Verdict": "DORMANT",
     "_v7Lift": 1.0,
