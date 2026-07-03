@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.34.1] - 2026-09-22 — Cross-language methodology paper update (docs-only patch)
+
+v0.34.1 is a **docs-only patch** to `v9-corpus-findings.md`
+(operator-local). It adds a new section "The v0.29.0 → v0.33.0
+Cross-Language Validation" that synthesizes the 4 positive-signal
+rules found across the 4 non-Java v9 arms (Kotlin, Java, Swift,
+C++) into a single cross-language finding:
+
+> **The "println in AI demos" pattern is consistent across 4
+> languages** — post-2024 AI-generated code uses `print`/
+> `System.out`/`println`/`printf` for output; pre-LLM production
+> code uses real loggers. The v0.27.0 era-confound finding is
+> **REVERSED for this specific defect class**.
+
+This is a patch release because:
+- No new code, no new rules, no schema changes
+- No corpus changes, no calibration re-runs
+- Only the operator-local methodology paper is updated
+- The bump is 0.33.0 → 0.34.1 (not 0.34.0) because this is a
+  documentation fix, not a new feature
+
+### What changed
+
+**Documentation only:**
+- `packages/slopbrick/docs/research/v9-corpus-findings.md`:
+  added a new section "The v0.29.0 → v0.33.0 Cross-Language
+  Validation" between "Implications for v0.28.0+" and
+  "Data Preservation". The new section:
+  - Lists all 4 positive-signal rules in a single table
+  - Documents the era-confound reversal for the `println` class
+  - Explains why the AI-fingerprint hypothesis (rules that
+    detect AI sloppiness) is *opposite* to the real-defect
+    hypothesis (rules that detect modern demo patterns)
+  - Outlines the v0.24.0 plan completion (4 non-Java arms built)
+  - Lists 3 directions for v0.35.0+ (more rules, tree-sitter AST)
+
+**Version bump:**
+- 0.33.0 → 0.34.1 (patch, not minor)
+
+### What's next (v0.35.0+)
+
+The cross-language methodology paper is now complete. The next
+directions are real engineering work, not docs:
+
+1. **More non-AI-fingerprint rules** — add 5-10 rules per language
+   for security, performance, maintainability. The corpus
+   infrastructure supports it.
+
+2. **Tree-sitter C++/Swift/Java AST parsing** — current rules
+   are regex-based. A real tree-sitter integration would enable
+   AST-level refinements like the v0.31.0 `java/system-out-println`
+   improvement (require `Logger log = ...` declaration).
+
+3. **Cross-language rule promotion** — the 4 OK-verdict rules
+   (kotlin/println-as-log, java/system-out-println,
+   swift/print-debug, cpp/printf-debug) are currently
+   `defaultOff: true` (precision below 50%). v0.35.0+ could
+   refine them to push precision above 50% and promote to USEFUL
+   (defaultOn).
+
 ## [0.33.0] - 2026-09-16 — v9 C++ arm corpus (5 rules, 1 positive-signal — strongest yet!)
 
 v0.33.0 builds the v9 **C++ arm** of the corpus (the 4th and final
