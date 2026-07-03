@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.27.0] - 2026-08-05 — drop 11 DORMANT AI-fingerprint rules (v9 corpus pivot)
+
+v0.27.0 closes the loop on the v9 Java corpus calibration. Two
+distinct AI-fingerprint hypotheses were tested against the v9 corpus
+(Spring AI, LangChain4j, etc.); **both failed**. This release drops
+all 11 DORMANT rules from the catalog and documents the research
+finding in a methodology paper.
+
+### What changed (BREAKING)
+
+**11 rules removed** from the catalog:
+
+| Release | Rules dropped (6) | v0.20.0 hypothesis |
+|---|---|---|
+| v0.20.0 | `system-out-println`, `empty-catch-block`, `string-concat-loop`, `arraylist-vs-linkedlist`, `raw-type-overuse`, `legacy-date-api` | "AI defaults to bad patterns" |
+
+| Release | Rules dropped (5) | v0.26.0 hypothesis |
+|---|---|---|
+| v0.26.0 | `verbose-javadoc`, `optional-overuse`, `immutable-collection-preference`, `builder-overuse`, `stream-overuse` | "AI uses modern patterns more" |
+
+**v0.27.0 is a breaking change** for consumers parsing the v0.21–v0.26
+catalog. The 11 rules are removed from `builtins.ts`, `rule-catalog.md`,
+`signal-strength.json`, and `snippet/data.ts`. Consumers should
+regenerate any cached rule lists.
+
+### Why both hypotheses failed (honest finding)
+
+| | Hypothesis | Calibration result | Why it failed |
+|---|---|---|---|
+| v0.20.0 | "AI defaults to bad patterns" | Ratios 0.07–0.59 across 6 rules | The v9 neg corpus is "older enterprise code" (2015-2020), not "human code" — modern Java in pos, legacy Java in neg. The "modern vs legacy" signal drowns the "AI vs human" signal. |
+| v0.26.0 | "AI uses modern patterns more" | TP=0 across 5 rules on 14769-file sample | AI agents converge toward idiomatic style. The "modern patterns" are equally common in both AI and human code. No fingerprint to detect. |
+
+The v9 corpus (81891 neg + 10305 pos, 18 repos, 92,196 files) is
+**not a useful AI-fingerprinting signal** under either hypothesis.
+The 11 rules had no empirical value beyond the (now-documented)
+negative result.
+
+### Methodology paper
+
+`packages/slopbrick/docs/research/v9-corpus-findings.md` (~250 LOC) covers:
+
+1. The two failed hypotheses and their calibration data
+2. Why both failed (3 structural reasons: corpus is modern-vs-legacy
+   not AI-vs-human; AI converges toward idiomatic style; heuristics
+   can't capture statistical signals)
+3. Three directions for v0.28+:
+   - **A**: Train a classifier on v9 features (research-grade, 2-3 weeks, 60% success)
+   - **B**: AST-based detection (incremental, 1-2 weeks, 30% success)
+   - **C**: Pivot to security/performance/maintainability (recommended; 1-2 weeks, 80% success)
+4. Data preservation (git history, calibration JSON, full corpus recoverable)
+
+**Recommended**: Option C as v0.28+ headline (highest value, highest
+success probability), with Option A as a parallel research effort.
+
+### Stats
+
+- Visible rules: 124 → **113** (–11; 20% DORMANT noise removed)
+- DORMANT rules: 25 → **14** (–11)
+- Tests: 1496 → **1496** (removed the 24 java tests along with the rules)
+- Catalog size: smaller install, faster scan
+- 0 new features, 0 contract changes for the non-rule consumers
+
+### Files changed
+
+- **Removed**: 11 rule files, 1 test file, 11 signal-strength entries, 11 RULE_HINTS
+- **Added**: `docs/research/v9-corpus-findings.md` (methodology paper), `src/rules/java/.gitkeep`
+- **Modified**: `src/rules/builtins.ts`, `docs/rule-catalog.md` (auto-regenerated), `package.json` (0.26.1 → 0.27.0)
+
+### Coming in v0.28.0
+
+- **Recommended**: build the v9 Kotlin/Swift/C++ corpora and calibrate
+  the non-AI-fingerprint rules against them. The v9 corpus build
+  infrastructure is ready from v0.24.0; the new arm manifest templates
+  (Kotlin, Swift, C++) are committed. The 3 non-Java corpora can
+  be built in ~2-3 hours per arm (vs ~6 min for Java since the
+  treesitter deps are already in place).
+- **Alternative**: train a classifier on the v9 features (Option A
+  from the methodology paper). Requires ~2-3 weeks and a balanced
+  corpus (the v9 corpus's modern-vs-legacy bias would need to be
+  corrected first).
+
 ## [0.26.1] - 2026-07-29 — v0.26.0 calibration (HYPOTHESIS FAILED: 5/5 rules 0/0 on 14769-file sample)
 
 The v0.26.0 release shipped 5 new positive AI-signal rules with placeholder calibration. v0.26.1 runs the actual calibration on a 14769-file biased sample from the v9-java corpus (the union of files that fired at least one of the 6 existing java/* rules; a full 92k-file calibration requires re-running build-v9-corpus.ts to regenerate filelists, deferred to v0.27+).

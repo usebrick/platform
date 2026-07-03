@@ -46,17 +46,6 @@ import { structuralCloneRule } from './dup/structural-clone';
 import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
 import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
-import { javaArraylistVsLinkedlistRule } from './java/arraylist-vs-linkedlist';
-import { javaBuilderOveruseRule } from './java/builder-overuse';
-import { javaEmptyCatchBlockRule } from './java/empty-catch-block';
-import { javaImmutableCollectionPreferenceRule } from './java/immutable-collection-preference';
-import { javaLegacyDateApiRule } from './java/legacy-date-api';
-import { javaOptionalOveruseRule } from './java/optional-overuse';
-import { javaRawTypeOveruseRule } from './java/raw-type-overuse';
-import { javaStreamOveruseRule } from './java/stream-overuse';
-import { javaStringConcatLoopRule } from './java/string-concat-loop';
-import { javaSystemOutPrintlnRule } from './java/system-out-println';
-import { javaVerboseJavadocRule } from './java/verbose-javadoc';
 import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
 import { kotlinDataClassDefaultsOveruseRule } from './kotlin/data-class-defaults-overuse';
 import { kotlinObjectSingletonMisuseRule } from './kotlin/object-singleton-misuse';
@@ -187,17 +176,6 @@ export const builtinRules: Rule[] = [
   goErrorWrapWithoutContextRule,
   goNilSliceVsEmptyRule,
   goStructTagInconsistencyRule,
-  javaArraylistVsLinkedlistRule,
-  javaBuilderOveruseRule,
-  javaEmptyCatchBlockRule,
-  javaImmutableCollectionPreferenceRule,
-  javaLegacyDateApiRule,
-  javaOptionalOveruseRule,
-  javaRawTypeOveruseRule,
-  javaStreamOveruseRule,
-  javaStringConcatLoopRule,
-  javaSystemOutPrintlnRule,
-  javaVerboseJavadocRule,
   kotlinCoroutineGlobalScopeRule,
   kotlinDataClassDefaultsOveruseRule,
   kotlinObjectSingletonMisuseRule,

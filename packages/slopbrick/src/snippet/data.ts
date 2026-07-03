@@ -292,29 +292,6 @@ const RULE_HINTS: Record<string, string> = {
   // v0.24.0 — Type-3 structural clone detector (two-stage MinHash)
   'dup/structural-clone':
     "Refactor to a shared helper. Type-3 clone: same shape as another file after identifier canonicalization, with renames and/or added/removed statements. AI agents and copy-paste both produce this. Extract the shared part. (v0.24.0.)",
-  // v0.20.0 — Java-specific rules
-  'java/system-out-println':
-    "Replace with `private static final Logger log = LoggerFactory.getLogger(...);` then `log.info(...)`. AI agents default to println because of textbook examples; real Java code uses a logger.",
-  'java/empty-catch-block':
-    "Log the exception (`log.error(\"...\", e)`), re-throw it, or both. Empty catch blocks hide bugs. Common in AI-generated code that wants to look defensive.",
-  'java/arraylist-vs-linkedlist':
-    "Replace `new LinkedList<>()` with `new ArrayList<>()`. LinkedList is rarely the right choice (worse cache locality, 5x more memory per element, O(n) indexed access). Joshua Bloch recommends ArrayList unless you need a Deque.",
-  'java/legacy-date-api':
-    "Replace `java.util.Date` / `Calendar` with `java.time` (`LocalDate`, `LocalDateTime`, `Instant`, `ZonedDateTime`). java.time is immutable and thread-safe. AI agents default to the legacy API.",
-  'java/raw-type-overuse':
-    "Replace raw `List` / `Map` / `Set` with the parameterized form. Raw types disable generic type checking (Effective Java, Item 23). AI agents default to raw types when unsure of the correct generic parameters.",
-  'java/string-concat-loop':
-    "Declare a `StringBuilder` outside the loop: `StringBuilder sb = new StringBuilder(); sb.append(...);` then `return sb.toString();` after. String concat in a loop is O(n²).",
-  'java/verbose-javadoc':
-    "Skip Javadoc on trivial methods (getters, setters, builders). AI over-documents; real Java limits Javadoc to public API surface. (v0.26.0 — DORMANT.)",
-  'java/optional-overuse':
-    "Use Objects.requireNonNull(x) for null checks; reserve Optional for return values. AI chains .ofNullable().orElseThrow() where null checks suffice. (v0.26.0 — DORMANT.)",
-  'java/immutable-collection-preference':
-    "Prefer mutable (new ArrayList<>()) when the collection will be modified. AI defaults to List.of/Map.of/Set.of; real Java uses mutable. (v0.26.0 — DORMANT.)",
-  'java/builder-overuse':
-    "Use a plain constructor for classes with ≤ 3 fields. AI defaults to @Builder; Builder adds Lombok dep and a Builder inner class per class. (v0.26.0 — DORMANT.)",
-  'java/stream-overuse':
-    "Prefer a for-loop for simple transformations. AI chains Stream API for everything; for small collections a for-loop is faster. (v0.26.0 — DORMANT.)",
   // v0.24.0 — Kotlin rules (DORMANT until v9 Kotlin corpus calibration)
   'kotlin/data-class-defaults-overuse':
     "Audit which fields are genuinely optional. Real Kotlin uses defaults sparingly (1-2 callbacks, the rest required). v0.24.0 — DORMANT until v9 calibration.",

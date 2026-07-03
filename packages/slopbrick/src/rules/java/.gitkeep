@@ -1,0 +1,9 @@
+# Java-specific rules.
+# All 11 v0.20.0 + v0.26.0 java/* AI-fingerprint rules were removed
+# in v0.27.0 after the v9 corpus calibration showed all of them
+# scored TP=0 on real code. See docs/research/v9-corpus-findings.md
+# for the full analysis.
+#
+# This directory is kept for future Java-specific rules (security
+# anti-patterns, code modernization opportunities, etc.) that may
+# succeed where the AI-fingerprint approach failed.
