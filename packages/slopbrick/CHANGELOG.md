@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.34.9] - 2026-10-08 — Refine java/sql-string-concat (require SQL keyword to start a string literal)
+
+v0.34.9 is the Java counterpart to v0.34.8 (kotlin/sql-string-concat).
+Same refinement: require the SQL keyword to be the start of a
+string literal (preceded by `"`, `'`, or `=` with optional
+whitespace). Also tightened the SAFE_REGEX.
+
+**v0.34.9 changes**:
+- Rule now requires the SQL keyword to be the start of a string
+  literal (preceded by `"`, `'`, or `=` with optional whitespace).
+  This filters out lines where the SQL keyword is just a string
+  value, not a query.
+- **Bug fix**: the `SAFE_REGEX` had `:??` (literal `:??`) which
+  didn't match Java named parameters like `:id`. Fixed to `:?`.
+- 3 new unit tests cover the string-literal-start check.
+- signal-strength.json entry updated with the v0.34.9 refinement
+  note (numbers unchanged; the refinement is expected to push
+  precision from 6.9% to 25%+ when re-calibrated).
+
+**Why this matters**:
+The v0.30.0 `java/sql-string-concat` rule had precision 6.91%
+(115 TP / 1664 total fires). Most of the FPs were lines where
+`SELECT`/`INSERT` appeared in string values (e.g. `String msg =
+"Selected 1 row: " + count`). v0.34.9 reduces these false positives.
+
+**What's next (v0.34.10)**:
+1 more rule refinement (swift/force-unwrap — exclude `!` in
+`!==`/`!=`).
+
 ## [0.34.8] - 2026-10-04 — Refine kotlin/sql-string-concat (require SQL keyword to start a string literal)
 
 v0.34.8 refines the v0.29.0 `kotlin/sql-string-concat` rule to

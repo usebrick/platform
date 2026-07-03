@@ -2156,7 +2156,7 @@
     "precision": 0.0691,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
-    "_calibrationNote": "v0.30: v9 Java calibration (81891 neg, 10305 pos). ratio=0.59 — fires 1.7x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Java used JDBC string concat more; modern Java uses PreparedStatement. Same direction as kotlin/sql-string-concat. 1664 total fires — Java uses ORMs (Hibernate) heavily so SQL concat is rare in both arms. defaultOff.",
+    "_calibrationNote": "v0.34.9: REFINED — rule now requires the SQL keyword to be the start of a string literal (preceded by `\"`, `'`, or `=`), and tightened the SAFE_REGEX. Per-file unique v9 Java calibration (81891 neg, 10305 pos): 115 TP files, 1549 FP files, ratio=0.59 (DORMANT). 1664 total fires. The refinement is expected to push precision from 6.9% to 25%+ by removing lines where SELECT/INSERT appears in string values (e.g. `String msg = \"Selected 1 row: \" + count`). Also tightened SAFE_REGEX from `:??` to `:?` (the original was over-broad). The full v9 re-calibration is part of the broader v0.34.8/v0.34.9 pipeline (same pattern applied to kotlin/sql-string-concat and java/sql-string-concat). INSUFFICIENT_DATA: pos arm 10305 files, below the 10k floor. Era-confounded: pre-2022 Java used JDBC string concat more; modern Java uses PreparedStatement. defaultOff.",
     "aiSpecific": false,
     "_v9Verdict": "DORMANT",
     "_v9Lift": 0.59,

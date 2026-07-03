@@ -50,6 +50,34 @@ describe('java/sql-string-concat', () => {
     );
     expect(issues.length).toBe(0);
   });
+
+  it('does not fire when SELECT appears in a string value (v0.34.9)', () => {
+    // v0.34.9: require SQL keyword to start a string literal.
+    // Lines like `String msg = "Selected 1 row: " + count` have
+    // SELECT as a substring of a value, not a query.
+    const issues = javaSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('String msg = "Selected 1 row: " + count;'),
+    );
+    expect(issues.length).toBe(0);
+  });
+
+  it('does not fire on `selected` (camelCase substring) (v0.34.9)', () => {
+    const issues = javaSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('Object item = selectedItem + offset;'),
+    );
+    expect(issues.length).toBe(0);
+  });
+
+  it('flags `String q = "SELECT ... " + id` (v0.34.9 — assignment to string)', () => {
+    // v0.34.9: SELECT after `=` (assignment) is also valid.
+    const issues = javaSqlStringConcatRule.analyze(
+      CTX,
+      makeFacts('String q = "SELECT * FROM users WHERE id = " + id;'),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
 });
 
 describe('java/hardcoded-credential', () => {
