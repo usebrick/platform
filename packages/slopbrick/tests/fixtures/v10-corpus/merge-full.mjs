@@ -71,7 +71,13 @@ for (const r of cal.rules) {
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
   m.verdict = verdict;
   m.aiSpecific = aiSpecific;
-  m.defaultOff = defaultOff;
+  // Preserve defaultOff from previous entry (matches rule source code).
+  // DORMANT and INVERTED rules MUST be defaultOff: true (guardrail requirement).
+  if (verdict === 'DORMANT' || verdict === 'INVERTED') {
+    m.defaultOff = true;
+  } else if (m.defaultOff === undefined) {
+    m.defaultOff = defaultOff;
+  }
   // Add v10 fields
   m._v10Source = 'corpus-expansion/positive+negative (576,750 files)';
   m._v10PositiveFires = r.positiveFires;
