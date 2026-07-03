@@ -1,9 +1,9 @@
 {
   "ai/any-density": {
-    "recall": 0.00623,
-    "fpRate": 0.004134864764727677,
-    "ratio": 152.74018279569893,
-    "precision": 0.63156,
+    "recall": 0.006,
+    "fpRate": 0.0037,
+    "ratio": 175.31,
+    "precision": 0.6523,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1760, FP=938, P=65.2%, FPR=0.37%, lift=175.31. v7 was USEFUL (TP=1313, FP=758, lift=153.41). v8 was USEFUL (TP=447, FP=180).",
@@ -29,10 +29,10 @@
     "_v10Severity": "medium"
   },
   "ai/comment-ratio": {
-    "recall": 0.30913,
-    "fpRate": 0.21218969988884773,
-    "ratio": 2.9385969268377856,
-    "precision": 0.62354,
+    "recall": 0.2771,
+    "fpRate": 0.1578,
+    "ratio": 4.26,
+    "precision": 0.6721,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=81513, FP=39766, P=67.2%, FPR=15.78%, lift=4.26. v7 was USEFUL (TP=60308, FP=29876, lift=4.11). v8 was USEFUL (TP=21205, FP=9890).",
@@ -58,10 +58,10 @@
     "_v10Severity": "medium"
   },
   "ai/compression-profile": {
-    "recall": 0.4652,
-    "fpRate": 0.17751018895887366,
-    "ratio": 4.217842391984972,
-    "precision": 0.74871,
+    "recall": 0.3478,
+    "fpRate": 0.1488,
+    "ratio": 4.92,
+    "precision": 0.7318,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=102328, FP=37511, P=73.2%, FPR=14.88%, lift=4.92. v7 was USEFUL (TP=75031, FP=27473, lift=4.89). v8 was USEFUL (TP=27297, FP=10038).",
@@ -87,10 +87,10 @@
     "_v10Severity": "low"
   },
   "ai/console-debug-storm": {
-    "recall": 0.00902,
-    "fpRate": 0.0020155613190070394,
-    "ratio": 414.6239522058824,
-    "precision": 0.8357,
+    "recall": 0.0073,
+    "fpRate": 0.0009,
+    "ratio": 949.21,
+    "precision": 0.9,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=2150, FP=239, P=90.0%, FPR=0.09%, lift=949.21. v7 was USEFUL (TP=1912, FP=175, lift=960.19). v8 was USEFUL (TP=238, FP=64).",
@@ -116,10 +116,10 @@
     "_v10Severity": "low"
   },
   "ai/default-react-stack": {
-    "recall": 0.00079,
-    "fpRate": 0.000003705075954057058,
-    "ratio": 268785.313,
-    "precision": 0.99587,
+    "recall": 0.001,
+    "fpRate": 0,
+    "ratio": 251225.49,
+    "precision": 0.9966,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=294, FP=1, P=99.7%, FPR=0.00%, lift=251225.49. v7 was USEFUL (TP=231, FP=1, lift=182622.43). v8 was USEFUL (TP=63, FP=0). v0.19 default-on (explicit defaultOff: false): P 99.7% / 251k lift — core AI fingerprint.",
@@ -145,10 +145,10 @@
     "_v10Severity": "low"
   },
   "ai/errors-near-eof": {
-    "recall": 0.07804,
-    "fpRate": 0.08114116339384958,
-    "ratio": 6.437299863013697,
-    "precision": 0.52233,
+    "recall": 0.0948,
+    "fpRate": 0.052,
+    "ratio": 13.09,
+    "precision": 0.6803,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "defaultOff": true,
@@ -174,10 +174,10 @@
     "_v10Severity": "medium"
   },
   "ai/fetch-default-overuse": {
-    "recall": 0.00413,
-    "fpRate": 0.0007817710263060393,
-    "ratio": 1096.407990521327,
-    "precision": 0.85714,
+    "recall": 0.0027,
+    "fpRate": 0.0003,
+    "ratio": 2679.84,
+    "precision": 0.9036,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=797, FP=85, P=90.4%, FPR=0.03%, lift=2679.84. v7 was USEFUL (TP=666, FP=76, lift=2166.14). v8 was USEFUL (TP=131, FP=9).",
@@ -203,10 +203,10 @@
     "_v10Severity": "low"
   },
   "ai/library-reinvention": {
-    "recall": 0.00019,
-    "fpRate": 0.000014820303816228232,
-    "ratio": 63050.66425,
-    "precision": 0.93443,
+    "recall": 0.0003,
+    "fpRate": 0,
+    "ratio": 47415.05,
+    "precision": 0.9405,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=79, FP=5, P=94.0%, FPR=0.00%, lift=47415.05. v7 was USEFUL (TP=64, FP=5, lift=34024.44). v8 was USEFUL (TP=15, FP=0).",
@@ -261,10 +261,10 @@
     "_v10Severity": "medium"
   },
   "ai/markdown-leakage": {
-    "recall": 0.00014,
-    "fpRate": 0.00010003705075954056,
-    "ratio": 6084.745555555556,
-    "precision": 0.6087,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 10003.17,
+    "precision": 0.3571,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=5, FP=9, P=35.7%, FPR=0.00%, lift=10003.17. v7 was USEFUL (TP=5, FP=2, lift=65504.64). v8 was INVERTED (TP=0, FP=7).",
@@ -290,10 +290,10 @@
     "_v10Severity": "high"
   },
   "ai/renyi-profile": {
-    "recall": 0.00008,
-    "fpRate": 0.00014449796220822526,
-    "ratio": 2768.2051282051284,
-    "precision": 0.4,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 5251.67,
+    "precision": 0.25,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=4, FP=12, P=25.0%, FPR=0.00%, lift=5251.67. v7 was OK (TP=3, FP=9, lift=5094.81). v8 was OK (TP=1, FP=3).",
@@ -319,10 +319,10 @@
     "_v10Severity": "medium"
   },
   "ai/segment-surprisal-cv": {
-    "recall": 0.27129,
-    "fpRate": 0.10147832530566876,
-    "ratio": 7.414785351783563,
-    "precision": 0.75244,
+    "recall": 0.2019,
+    "fpRate": 0.0787,
+    "ratio": 9.52,
+    "precision": 0.7495,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "defaultOff": true,
@@ -348,10 +348,10 @@
     "_v10Severity": "medium"
   },
   "ai/state-default-overuse": {
-    "recall": 0.00244,
-    "fpRate": 0.00041126343090033346,
-    "ratio": 2118.0584864864863,
-    "precision": 0.87108,
+    "recall": 0.003,
+    "fpRate": 0.0006,
+    "ratio": 1315.06,
+    "precision": 0.8451,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=884, FP=162, P=84.5%, FPR=0.06%, lift=1315.06. v7 was USEFUL (TP=701, FP=158, lift=947.32). v8 was USEFUL (TP=183, FP=4).",
@@ -377,10 +377,10 @@
     "_v10Severity": "low"
   },
   "ai/tailwind-color-overuse": {
-    "recall": 0.01709,
-    "fpRate": 0.0036050389032975176,
-    "ratio": 233.983605344296,
-    "precision": 0.84352,
+    "recall": 0.0264,
+    "fpRate": 0.0038,
+    "ratio": 230.97,
+    "precision": 0.8888,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=7752, FP=970, P=88.9%, FPR=0.38%, lift=230.97. v7 was USEFUL (TP=5169, FP=958, lift=161.52). v8 was USEFUL (TP=2583, FP=12).",
@@ -406,10 +406,10 @@
     "_v10Severity": "low"
   },
   "ai/text-like-ratio": {
-    "recall": 0.00007,
-    "fpRate": 0.000007410151908114116,
-    "ratio": 123214.748,
-    "precision": 0.91304,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 201664,
+    "precision": 0.8,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=4, FP=1, P=80.0%, FPR=0.00%, lift=201664.00. v7 was USEFUL (TP=3, FP=1, lift=137559.75). v8 was USEFUL (TP=1, FP=0).",
@@ -435,10 +435,10 @@
     "_v10Severity": "low"
   },
   "ai/whitespace-regularity": {
-    "recall": 0.08483,
-    "fpRate": 0.11011856243052982,
-    "ratio": 4.239884627031392,
-    "precision": 0.46689,
+    "recall": 0.0733,
+    "fpRate": 0.0677,
+    "ratio": 8.25,
+    "precision": 0.5583,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "defaultOff": true,
@@ -493,10 +493,10 @@
     "_v10Severity": "low"
   },
   "component/giant-component": {
-    "recall": 0.01431,
-    "fpRate": 0.005120414968506855,
-    "ratio": 148.55241316931983,
-    "precision": 0.76065,
+    "recall": 0.0181,
+    "fpRate": 0.0059,
+    "ratio": 132.31,
+    "precision": 0.7815,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=5326, FP=1489, P=78.2%, FPR=0.59%, lift=132.31. v7 was USEFUL (TP=4205, FP=1413, lift=97.16). v8 was USEFUL (TP=1121, FP=76).",
@@ -522,10 +522,10 @@
     "_v10Severity": "high"
   },
   "component/multiple-components-per-file": {
-    "recall": 0.0613,
-    "fpRate": 0.03350500185253798,
-    "ratio": 20.156393453499945,
-    "precision": 0.67534,
+    "recall": 0.0751,
+    "fpRate": 0.0423,
+    "ratio": 15.96,
+    "precision": 0.6747,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=22103, FP=10655, P=67.5%, FPR=4.23%, lift=15.96. v7 was USEFUL (TP=16288, FP=9589, lift=12.04). v8 was USEFUL (TP=5815, FP=1066).",
@@ -551,10 +551,10 @@
     "_v10Severity": "medium"
   },
   "component/shadcn-prop-mismatch": {
-    "recall": 0.00108,
-    "fpRate": 0.00007039644312708411,
-    "ratio": 13436.332263157894,
-    "precision": 0.94587,
+    "recall": 0.0016,
+    "fpRate": 0.0001,
+    "ratio": 9990.98,
+    "precision": 0.9512,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=468, FP=24, P=95.1%, FPR=0.01%, lift=9990.98. v7 was USEFUL (TP=314, FP=24, lift=7099.57). v8 was USEFUL (TP=154, FP=0). v0.19 default-on (explicit defaultOff: false): P 95.1% / 9990x lift — UI bug.",
@@ -580,10 +580,10 @@
     "_v10Severity": "high"
   },
   "context/import-path-mismatch": {
-    "recall": 0.06268,
-    "fpRate": 0.014838829195998517,
-    "ratio": 55.77663770287141,
-    "precision": 0.82766,
+    "recall": 0.0681,
+    "fpRate": 0.0167,
+    "ratio": 49.48,
+    "precision": 0.8263,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=20032, FP=4210, P=82.6%, FPR=1.67%, lift=49.48. v7 was USEFUL (TP=17672, FP=4202, lift=35.26). v8 was USEFUL (TP=2360, FP=8).",
@@ -754,10 +754,10 @@
     "_v10Severity": "low"
   },
   "db/sql-concat": {
-    "recall": 0.00176,
-    "fpRate": 0.0014894405335309374,
-    "ratio": 384.56721641791046,
-    "precision": 0.57279,
+    "recall": 0.0005,
+    "fpRate": 0.0001,
+    "ratio": 7511.26,
+    "precision": 0.8343,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=141, FP=28, P=83.4%, FPR=0.01%, lift=7511.26. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=141, FP=28).",
@@ -783,10 +783,10 @@
     "_v10Severity": "high"
   },
   "dead/dead-branch": {
-    "recall": 0.00373,
-    "fpRate": 0.0038458688403112265,
-    "ratio": 136.43991040462427,
-    "precision": 0.52473,
+    "recall": 0.0002,
+    "fpRate": 0.0004,
+    "ratio": 1080.68,
+    "precision": 0.4244,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=OK, v7 was DORMANT, v8 was OK. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md.",
@@ -812,10 +812,10 @@
     "_v10Severity": "medium"
   },
   "dead/unreachable": {
-    "recall": 0.00085,
-    "fpRate": 0.0029677658391997035,
-    "ratio": 83.0490049937578,
-    "precision": 0.24647,
+    "recall": 0.0001,
+    "fpRate": 0.0006,
+    "ratio": 153.14,
+    "precision": 0.0966,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=OK, v7 was DORMANT, v8 was OK. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md.",
@@ -841,10 +841,10 @@
     "_v10Severity": "high"
   },
   "dead/unused-import": {
-    "recall": 0.08346,
-    "fpRate": 0.09817339755464988,
-    "ratio": 5.006447899762237,
-    "precision": 0.4915,
+    "recall": 0.0379,
+    "fpRate": 0.0222,
+    "ratio": 30.06,
+    "precision": 0.6662,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=USEFUL, v7 was DORMANT, v8 was USEFUL. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md.",
@@ -870,10 +870,10 @@
     "_v10Severity": "low"
   },
   "dead/unused-local": {
-    "recall": 0.00623,
-    "fpRate": 0.06401259725824379,
-    "ratio": 1.5557875209816519,
-    "precision": 0.09959,
+    "recall": 0.0477,
+    "fpRate": 0.0074,
+    "ratio": 120.18,
+    "precision": 0.8834,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=USEFUL, v7 was DORMANT, v8 was USEFUL. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md. v0.19 default-on (explicit defaultOff: false): P 88.3% / FPR 0.74% / 120x lift — code hygiene.",
@@ -899,10 +899,10 @@
     "_v10Severity": "low"
   },
   "dead/unused-parameter": {
-    "recall": 0.00748,
-    "fpRate": 0.0343831048536495,
-    "ratio": 5.764459051724137,
-    "precision": 0.1982,
+    "recall": 0.0008,
+    "fpRate": 0.0027,
+    "ratio": 98,
+    "precision": 0.2628,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "INVERTED",
     "_calibrationNote": "v8.5 (v0.18.9): v85 verdict=OK, v7 was DORMANT, v8 was OK. v0.18.8 v8a first measurement (1000 files): see docs/research/v0.18.8-dead-rules-measurement.md.",
@@ -928,10 +928,10 @@
     "_v10Severity": "low"
   },
   "docs/broken-link": {
-    "recall": 0.00946,
-    "fpRate": 0.00637273064097814,
-    "ratio": 98.52448430232558,
-    "precision": 0.62787,
+    "recall": 0.0014,
+    "fpRate": 0.0023,
+    "ratio": 178.13,
+    "precision": 0.4155,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=418, FP=588, P=41.6%, FPR=0.23%, lift=178.13. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was OK (TP=418, FP=588).",
@@ -957,10 +957,10 @@
     "_v10Severity": "low"
   },
   "docs/stale-function-reference": {
-    "recall": 0.00526,
-    "fpRate": 0.0008966283808818081,
-    "ratio": 969.7886198347107,
-    "precision": 0.86954,
+    "recall": 0.0026,
+    "fpRate": 0.0005,
+    "ratio": 1638.47,
+    "precision": 0.8515,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=751, FP=131, P=85.1%, FPR=0.05%, lift=1638.47. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=751, FP=131).",
@@ -986,10 +986,10 @@
     "_v10Severity": "medium"
   },
   "docs/stale-package-reference": {
-    "recall": 0.00149,
-    "fpRate": 0.002349018154872175,
-    "ratio": 178.54693848580442,
-    "precision": 0.41941,
+    "recall": 0.0002,
+    "fpRate": 0.0004,
+    "ratio": 939.43,
+    "precision": 0.3429,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=48, FP=92, P=34.3%, FPR=0.04%, lift=939.43. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was OK (TP=48, FP=92).",
@@ -1015,10 +1015,10 @@
     "_v10Severity": "medium"
   },
   "dup/identical-block": {
-    "recall": 0.03633,
-    "fpRate": 0.023545757688032604,
-    "ratio": 27.050308103855237,
-    "precision": 0.63692,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "defaultOff": false,
@@ -1044,10 +1044,10 @@
     "_v10Severity": "medium"
   },
   "dup/near-duplicate": {
-    "recall": 0.03758,
-    "fpRate": 0.047250833642089665,
-    "ratio": 10.048923233748921,
-    "precision": 0.47482,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "defaultOff": true,
@@ -1071,10 +1071,10 @@
     "_v10Severity": "medium"
   },
   "dup/structural-clone": {
-    "recall": 0.04327,
-    "fpRate": 0.05189329381252316,
-    "ratio": 9.378090389832927,
-    "precision": 0.48666,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "defaultOff": true,
@@ -1100,8 +1100,8 @@
   "go/error-wrap-without-context": {
     "recall": 0,
     "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.19: new rule (fmt.Errorf wrap with generic message — needs operation context). Not yet calibrated. Scheduled for v9 calibration.",
@@ -1127,10 +1127,10 @@
     "_v10Severity": "low"
   },
   "go/nil-slice-vs-empty": {
-    "recall": 0.00041,
-    "fpRate": 0.000003705075954057058,
-    "ratio": 267756.994,
-    "precision": 0.99206,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Variable declared nil slice but assigned empty slice). Not yet calibrated. Scheduled for v9 calibration.",
@@ -1156,10 +1156,10 @@
     "_v10Severity": "low"
   },
   "go/struct-tag-inconsistency": {
-    "recall": 0.00149,
-    "fpRate": 0.000007410151908114116,
-    "ratio": 134360.2685,
-    "precision": 0.99563,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Struct fields mix json tag styles). Not yet calibrated. Scheduled for v9 calibration.",
@@ -1214,10 +1214,10 @@
     "_v10Severity": "medium"
   },
   "layout/gap-monopoly": {
-    "recall": 0.00023,
-    "fpRate": 0.00008151167098925527,
-    "ratio": 9396.936545454546,
-    "precision": 0.76596,
+    "recall": 0.0003,
+    "fpRate": 0.0001,
+    "ratio": 8859.33,
+    "precision": 0.8083,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=97, FP=23, P=80.8%, FPR=0.01%, lift=8859.33. v7 was USEFUL (TP=88, FP=23, lift=6322.11). v8 was USEFUL (TP=9, FP=0).",
@@ -1243,10 +1243,10 @@
     "_v10Severity": "medium"
   },
   "layout/math-element-uniformity": {
-    "recall": 0.00195,
-    "fpRate": 0.0008781030011115227,
-    "ratio": 815.9748902953587,
-    "precision": 0.71651,
+    "recall": 0.0029,
+    "fpRate": 0.001,
+    "ratio": 770.74,
+    "precision": 0.7705,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=846, FP=252, P=77.0%, FPR=0.10%, lift=770.74. v7 was USEFUL (TP=666, FP=225, lift=609.32). v8 was USEFUL (TP=180, FP=27).",
@@ -1272,10 +1272,10 @@
     "_v10Severity": "medium"
   },
   "layout/math-grid-uniformity": {
-    "recall": 0.00021,
-    "fpRate": 0.00012597258243793997,
-    "ratio": 5155.725058823529,
-    "precision": 0.64948,
+    "recall": 0.0003,
+    "fpRate": 0.0001,
+    "ratio": 5839.98,
+    "precision": 0.7182,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=79, FP=31, P=71.8%, FPR=0.01%, lift=5839.98. v7 was USEFUL (TP=67, FP=30, lift=4222.91). v8 was USEFUL (TP=12, FP=1).",
@@ -1301,10 +1301,10 @@
     "_v10Severity": "high"
   },
   "layout/spacing-grid": {
-    "recall": 0.00014,
-    "fpRate": 0.00005557613931085587,
-    "ratio": 13339.897466666667,
-    "precision": 0.74138,
+    "recall": 0.0002,
+    "fpRate": 0.0002,
+    "ratio": 4051.29,
+    "precision": 0.6429,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=72, FP=40, P=64.3%, FPR=0.02%, lift=4051.29. v7 was USEFUL (TP=39, FP=15, lift=8831.00). v8 was USEFUL (TP=33, FP=25).",
@@ -1359,10 +1359,10 @@
     "_v10Severity": "high"
   },
   "logic/boundary-violation": {
-    "recall": 0.01995,
-    "fpRate": 0.010422378658762504,
-    "ratio": 65.74410913615357,
-    "precision": 0.68521,
+    "recall": 0.0274,
+    "fpRate": 0.0137,
+    "ratio": 51.32,
+    "precision": 0.7006,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=8051, FP=3441, P=70.1%, FPR=1.37%, lift=51.32. v7 was USEFUL (TP=6282, FP=3235, lift=37.42). v8 was USEFUL (TP=1769, FP=206).",
@@ -1388,10 +1388,10 @@
     "_v10Severity": "high"
   },
   "logic/ghost-defensive": {
-    "recall": 0.00006,
-    "fpRate": 0.00001852537977028529,
-    "ratio": 42734.3466,
-    "precision": 0.79167,
+    "recall": 0.0001,
+    "fpRate": 0,
+    "ratio": 112035.56,
+    "precision": 0.8889,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=16, FP=2, P=88.9%, FPR=0.00%, lift=112035.56. v7 was USEFUL (TP=15, FP=2, lift=80917.50). v8 was USEFUL (TP=1, FP=0). v0.19 default-on (explicit defaultOff: false): P 88.9% / 112k lift — code smell.",
@@ -1417,10 +1417,10 @@
     "_v10Severity": "medium"
   },
   "logic/heaps-deviation": {
-    "recall": 0.02611,
-    "fpRate": 0.02974805483512412,
-    "ratio": 16.790005355586004,
-    "precision": 0.49947,
+    "recall": 0.0126,
+    "fpRate": 0.0178,
+    "ratio": 25.54,
+    "precision": 0.4536,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=3716, FP=4477, P=45.4%, FPR=1.78%, lift=25.54. v7 was USEFUL (TP=2924, FP=2430, lift=41.22). v8 was OK (TP=792, FP=2047).",
@@ -1446,10 +1446,10 @@
     "_v10Severity": "medium"
   },
   "logic/key-prop-missing": {
-    "recall": 0.00172,
-    "fpRate": 0.0010818821785846609,
-    "ratio": 595.1664726027398,
-    "precision": 0.6439,
+    "recall": 0.0016,
+    "fpRate": 0.0011,
+    "ratio": 574.52,
+    "precision": 0.629,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=468, FP=276, P=62.9%, FPR=0.11%, lift=574.52. v7 was USEFUL (TP=416, FP=250, lift=458.26). v8 was USEFUL (TP=52, FP=26).",
@@ -1475,10 +1475,10 @@
     "_v10Severity": "high"
   },
   "logic/math-any-density": {
-    "recall": 0.00178,
-    "fpRate": 0.0025861430159318266,
-    "ratio": 169.89006303724926,
-    "precision": 0.43936,
+    "recall": 0.0017,
+    "fpRate": 0.0013,
+    "ratio": 464.59,
+    "precision": 0.6027,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=496, FP=327, P=60.3%, FPR=0.13%, lift=464.59. v7 was USEFUL (TP=376, FP=247, lift=448.16). v8 was USEFUL (TP=120, FP=80).",
@@ -1504,10 +1504,10 @@
     "_v10Severity": "high"
   },
   "logic/math-console-log-storm": {
-    "recall": 0.00856,
-    "fpRate": 0.003756947017413857,
-    "ratio": 192.04689250493098,
-    "precision": 0.72151,
+    "recall": 0.0065,
+    "fpRate": 0.0011,
+    "ratio": 794.4,
+    "precision": 0.8729,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1903, FP=277, P=87.3%, FPR=0.11%, lift=794.40. v7 was USEFUL (TP=1678, FP=193, lift=852.30). v8 was USEFUL (TP=225, FP=84).",
@@ -1533,10 +1533,10 @@
     "_v10Severity": "high"
   },
   "logic/math-gini-class-usage": {
-    "recall": 0.00081,
-    "fpRate": 0.00010003705075954056,
-    "ratio": 9021.957296296297,
-    "precision": 0.90253,
+    "recall": 0.0013,
+    "fpRate": 0.0002,
+    "ratio": 4648.6,
+    "precision": 0.8852,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=370, FP=48, P=88.5%, FPR=0.02%, lift=4648.60. v7 was USEFUL (TP=310, FP=47, lift=3388.64). v8 was USEFUL (TP=60, FP=1).",
@@ -1562,10 +1562,10 @@
     "_v10Severity": "high"
   },
   "logic/math-variable-name-entropy": {
-    "recall": 0.00017,
-    "fpRate": 0.0008855131530196369,
-    "ratio": 204.97719246861925,
-    "precision": 0.18151,
+    "recall": 0.0002,
+    "fpRate": 0.0001,
+    "ratio": 4548.81,
+    "precision": 0.6316,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=60, FP=35, P=63.2%, FPR=0.01%, lift=4548.81. v7 was USEFUL (TP=36, FP=26, lift=4096.07). v8 was USEFUL (TP=24, FP=9).",
@@ -1591,10 +1591,10 @@
     "_v10Severity": "high"
   },
   "logic/optimistic-no-rollback": {
-    "recall": 0.00102,
-    "fpRate": 0.00018895887365690998,
-    "ratio": 4548.608823529412,
-    "precision": 0.8595,
+    "recall": 0.0012,
+    "fpRate": 0.0002,
+    "ratio": 3523.57,
+    "precision": 0.8527,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=353, FP=61, P=85.3%, FPR=0.02%, lift=3523.57. v7 was USEFUL (TP=281, FP=60, lift=2519.02). v8 was USEFUL (TP=72, FP=1).",
@@ -1649,10 +1649,10 @@
     "_v10Severity": "high"
   },
   "logic/reactive-hook-soup": {
-    "recall": 0.00303,
-    "fpRate": 0.0005187106335679881,
-    "ratio": 1675.8476571428573,
-    "precision": 0.86928,
+    "recall": 0.0041,
+    "fpRate": 0.0006,
+    "ratio": 1370.15,
+    "precision": 0.8805,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1194, FP=162, P=88.1%, FPR=0.06%, lift=1370.15. v7 was USEFUL (TP=901, FP=162, lift=959.64). v8 was USEFUL (TP=293, FP=0).",
@@ -1678,10 +1678,10 @@
     "_v10Severity": "medium"
   },
   "logic/zipf-slope-anomaly": {
-    "recall": 0.03519,
-    "fpRate": 0.02575398295665061,
-    "ratio": 23.622365558912385,
-    "precision": 0.60837,
+    "recall": 0.0168,
+    "fpRate": 0.0111,
+    "ratio": 57.13,
+    "precision": 0.6369,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=4928, FP=2810, P=63.7%, FPR=1.11%, lift=57.13. v7 was USEFUL (TP=3718, FP=1606, lift=79.75). v8 was USEFUL (TP=1210, FP=1204).",
@@ -1709,8 +1709,8 @@
   "logic/zombie-state": {
     "recall": 0.0001,
     "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "ratio": 119891.71,
+    "precision": 0.9512,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=39, FP=2, P=95.1%, FPR=0.00%, lift=119891.71. v7 was USEFUL (TP=24, FP=2, lift=84652.15). v8 was USEFUL (TP=15, FP=0).",
@@ -1736,10 +1736,10 @@
     "_v10Severity": "medium"
   },
   "perf/cls-image": {
-    "recall": 0.00015,
-    "fpRate": 0.00017413856984068173,
-    "ratio": 2871.276595744681,
-    "precision": 0.5,
+    "recall": 0.0002,
+    "fpRate": 0.0002,
+    "ratio": 2895.78,
+    "precision": 0.5514,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=59, FP=48, P=55.1%, FPR=0.02%, lift=2895.78. v7 was USEFUL (TP=49, FP=47, lift=1991.85). v8 was USEFUL (TP=10, FP=1).",
@@ -1765,10 +1765,10 @@
     "_v10Severity": "low"
   },
   "perf/css-bloat": {
-    "recall": 0.01904,
-    "fpRate": 0.0061689514635050015,
-    "ratio": 126.14947687687688,
-    "precision": 0.77821,
+    "recall": 0.0126,
+    "fpRate": 0.0024,
+    "ratio": 365.63,
+    "precision": 0.8616,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=3697, FP=594, P=86.2%, FPR=0.24%, lift=365.63. v7 was USEFUL (TP=2790, FP=591, lift=256.10). v8 was USEFUL (TP=907, FP=3).",
@@ -1794,10 +1794,10 @@
     "_v10Severity": "low"
   },
   "perf/halstead-anomaly": {
-    "recall": 0.00001,
+    "recall": 0,
     "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "ratio": 75624,
+    "precision": 0.6,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=3, FP=2, P=60.0%, FPR=0.00%, lift=75624.00. v7 was USEFUL (TP=3, FP=1, lift=137559.75). v8 was INVERTED (TP=0, FP=1).",
@@ -1823,10 +1823,10 @@
     "_v10Severity": "medium"
   },
   "product/terminology-drift": {
-    "recall": 0.00704,
-    "fpRate": 0.0016450537236013339,
-    "ratio": 504.2753243243243,
-    "precision": 0.82956,
+    "recall": 0.0091,
+    "fpRate": 0.0021,
+    "ratio": 397.75,
+    "precision": 0.8347,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=2671, FP=529, P=83.5%, FPR=0.21%, lift=397.75. v7 was USEFUL (TP=2028, FP=521, lift=280.09). v8 was USEFUL (TP=643, FP=8).",
@@ -1852,10 +1852,10 @@
     "_v10Severity": "medium"
   },
   "product/ux-pattern-fragmentation": {
-    "recall": 0.00011,
-    "fpRate": 0.000033345683586513526,
-    "ratio": 23712.214444444442,
-    "precision": 0.7907,
+    "recall": 0.0001,
+    "fpRate": 0,
+    "ratio": 22864.4,
+    "precision": 0.8163,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=40, FP=9, P=81.6%, FPR=0.00%, lift=22864.40. v7 was USEFUL (TP=32, FP=8, lift=18341.30). v8 was USEFUL (TP=8, FP=1).",
@@ -1881,10 +1881,10 @@
     "_v10Severity": "medium"
   },
   "rust/stringly-typed": {
-    "recall": 0.00007,
-    "fpRate": 0.000048165987402741754,
-    "ratio": 12823.364230769232,
-    "precision": 0.61765,
+    "recall": 0.0002,
+    "fpRate": 0,
+    "ratio": 24735.12,
+    "precision": 0.8831,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=68, FP=9, P=88.3%, FPR=0.00%, lift=24735.12. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=68, FP=9).",
@@ -1910,10 +1910,10 @@
     "_v10Severity": "medium"
   },
   "rust/todo-macro": {
-    "recall": 0.00025,
-    "fpRate": 0.0002927010003705076,
-    "ratio": 1686.3283670886076,
-    "precision": 0.49359,
+    "recall": 0.0001,
+    "fpRate": 0.0007,
+    "ratio": 210.08,
+    "precision": 0.1392,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=27, FP=167, P=13.9%, FPR=0.07%, lift=210.08. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was OK (TP=27, FP=167).",
@@ -1939,10 +1939,10 @@
     "_v10Severity": "medium"
   },
   "rust/unused-pub-fn": {
-    "recall": 0.00001,
-    "fpRate": 0.00001852537977028529,
-    "ratio": 23990.8712,
-    "precision": 0.44444,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 10803.43,
+    "precision": 0.3,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=3, FP=7, P=30.0%, FPR=0.00%, lift=10803.43. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was OK (TP=3, FP=7).",
@@ -1968,10 +1968,10 @@
     "_v10Severity": "low"
   },
   "rust/unwrap-in-production": {
-    "recall": 0.00865,
-    "fpRate": 0.004179325676176362,
-    "ratio": 167.89072074468086,
-    "precision": 0.70167,
+    "recall": 0.008,
+    "fpRate": 0.0077,
+    "ratio": 70.81,
+    "precision": 0.5475,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=2358, FP=1949, P=54.7%, FPR=0.77%, lift=70.81. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=2358, FP=1949).",
@@ -1997,10 +1997,10 @@
     "_v10Severity": "medium"
   },
   "security/dangerous-cors": {
-    "recall": 0.00055,
-    "fpRate": 0.0003742126713597629,
-    "ratio": 1672.6584851485147,
-    "precision": 0.62593,
+    "recall": 0.0005,
+    "fpRate": 0.0004,
+    "ratio": 1721.87,
+    "precision": 0.6079,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=138, FP=89, P=60.8%, FPR=0.04%, lift=1721.87. v7 was USEFUL (TP=114, FP=84, lift=1257.16). v8 was USEFUL (TP=24, FP=5).",
@@ -2026,10 +2026,10 @@
     "_v10Severity": "medium"
   },
   "security/eval": {
-    "recall": 0.00575,
-    "fpRate": 0.0035457576880326045,
-    "ratio": 182.8720564263323,
-    "precision": 0.64842,
+    "recall": 0.0001,
+    "fpRate": 0.0002,
+    "ratio": 1929.18,
+    "precision": 0.4286,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=42, FP=56, P=42.9%, FPR=0.02%, lift=1929.18. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was OK (TP=42, FP=56).",
@@ -2055,10 +2055,10 @@
     "_v10Severity": "high"
   },
   "security/exposed-env-var": {
-    "recall": 0.00053,
-    "fpRate": 0.00041867358280844755,
-    "ratio": 1410.5977168141594,
-    "precision": 0.59058,
+    "recall": 0.0006,
+    "fpRate": 0.0005,
+    "ratio": 1055.81,
+    "precision": 0.5696,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=180, FP=136, P=57.0%, FPR=0.05%, lift=1055.81. v7 was USEFUL (TP=146, FP=125, lift=790.50). v8 was USEFUL (TP=34, FP=11).",
@@ -2086,7 +2086,7 @@
   "security/fail-open-auth": {
     "recall": 0,
     "fpRate": 0,
-    "ratio": 0,
+    "ratio": 99999,
     "precision": 1,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
@@ -2113,10 +2113,10 @@
     "_v10Severity": "high"
   },
   "security/hardcoded-secret": {
-    "recall": 0.00175,
-    "fpRate": 0.0004223786587625046,
-    "ratio": 1952.3240175438598,
-    "precision": 0.82462,
+    "recall": 0.0014,
+    "fpRate": 0.0006,
+    "ratio": 1269.08,
+    "precision": 0.735,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=405, FP=146, P=73.5%, FPR=0.06%, lift=1269.08. v7 was USEFUL (TP=307, FP=138, lift=916.92). v8 was USEFUL (TP=98, FP=8).",
@@ -2142,10 +2142,10 @@
     "_v10Severity": "high"
   },
   "security/localstorage-token": {
-    "recall": 0.00027,
-    "fpRate": 0.00017043349388662468,
-    "ratio": 3791.2148913043475,
-    "precision": 0.64615,
+    "recall": 0.0001,
+    "fpRate": 0,
+    "ratio": 99999,
+    "precision": 1,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=17, FP=0, P=100.0%, FPR=0.00%, lift=inf. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=17, FP=0).",
@@ -2171,10 +2171,10 @@
     "_v10Severity": "high"
   },
   "security/missing-auth-check": {
-    "recall": 0.00377,
-    "fpRate": 0.0002482400889218229,
-    "ratio": 3807.684746268656,
-    "precision": 0.94522,
+    "recall": 0.0005,
+    "fpRate": 0,
+    "ratio": 99999,
+    "precision": 1,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=157, FP=0, P=100.0%, FPR=0.00%, lift=inf. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=157, FP=0).",
@@ -2200,10 +2200,10 @@
     "_v10Severity": "medium"
   },
   "security/public-admin-route": {
-    "recall": 0.02326,
-    "fpRate": 0.008818080770655799,
-    "ratio": 85.04685084033613,
-    "precision": 0.74995,
+    "recall": 0.0038,
+    "fpRate": 0.0038,
+    "ratio": 142.2,
+    "precision": 0.5376,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1108, FP=953, P=53.8%, FPR=0.38%, lift=142.20. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=1108, FP=953).",
@@ -2229,10 +2229,10 @@
     "_v10Severity": "medium"
   },
   "security/sql-construction": {
-    "recall": 0.00324,
-    "fpRate": 0.0020155613190070394,
-    "ratio": 320.76424264705884,
-    "precision": 0.64652,
+    "recall": 0.0032,
+    "fpRate": 0.0015,
+    "ratio": 485.42,
+    "precision": 0.7183,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=951, FP=373, P=71.8%, FPR=0.15%, lift=485.42. v7 was USEFUL (TP=710, FP=336, lift=370.52). v8 was USEFUL (TP=241, FP=37).",
@@ -2258,10 +2258,10 @@
     "_v10Severity": "high"
   },
   "security/target-blank-no-noopener": {
-    "recall": 0.00045,
-    "fpRate": 0.0003001111522786217,
-    "ratio": 2094.024148148148,
-    "precision": 0.62844,
+    "recall": 0.0004,
+    "fpRate": 0,
+    "ratio": 26141.63,
+    "precision": 0.9333,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=126, FP=9, P=93.3%, FPR=0.00%, lift=26141.63. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=126, FP=9).",
@@ -2287,10 +2287,10 @@
     "_v10Severity": "medium"
   },
   "security/unsafe-html-render": {
-    "recall": 0.00139,
-    "fpRate": 0.0005520563171545017,
-    "ratio": 1341.2037449664429,
-    "precision": 0.74042,
+    "recall": 0.0013,
+    "fpRate": 0.0011,
+    "ratio": 513.12,
+    "precision": 0.574,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=380, FP=282, P=57.4%, FPR=0.11%, lift=513.12. v7 was USEFUL (TP=312, FP=160, lift=757.74). v8 was OK (TP=68, FP=122).",
@@ -2316,10 +2316,10 @@
     "_v10Severity": "high"
   },
   "test/duplicate-setup": {
-    "recall": 0.00012,
-    "fpRate": 0.000011115227862171175,
-    "ratio": 83383.80566666667,
-    "precision": 0.92683,
+    "recall": 0.0001,
+    "fpRate": 0,
+    "ratio": 51016.19,
+    "precision": 0.8095,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=17, FP=4, P=81.0%, FPR=0.00%, lift=51016.19. v7 was USEFUL (TP=14, FP=3, lift=50348.67). v8 was USEFUL (TP=3, FP=1).",
@@ -2345,10 +2345,10 @@
     "_v10Severity": "medium"
   },
   "test/fake-placeholder": {
-    "recall": 0.0066,
-    "fpRate": 0.004375694701741386,
-    "ratio": 144.37478916172734,
-    "precision": 0.63174,
+    "recall": 0.0051,
+    "fpRate": 0.0015,
+    "ratio": 547.47,
+    "precision": 0.8014,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1489, FP=369, P=80.1%, FPR=0.15%, lift=547.47. v7 was USEFUL (TP=1259, FP=344, lift=418.76). v8 was USEFUL (TP=230, FP=25).",
@@ -2403,10 +2403,10 @@
     "_v10Severity": "high"
   },
   "test/weak-assertion": {
-    "recall": 0.06169,
-    "fpRate": 0.009785105594664691,
-    "ratio": 89.68324271109428,
-    "precision": 0.87756,
+    "recall": 0.0417,
+    "fpRate": 0.0067,
+    "ratio": 131.62,
+    "precision": 0.8793,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=12263, FP=1684, P=87.9%, FPR=0.67%, lift=131.62. v7 was USEFUL (TP=9906, FP=1583, lift=99.90). v8 was USEFUL (TP=2357, FP=101).",
@@ -2432,10 +2432,10 @@
     "_v10Severity": "medium"
   },
   "ts/enum-vs-as-const": {
-    "recall": 0.00471,
-    "fpRate": 0.010444609114486848,
-    "ratio": 32.44544590280241,
-    "precision": 0.33888,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Uses `enum` — modern TS prefers `as const`). Not yet calibrated. Scheduled for v9 calibration.",
@@ -2461,10 +2461,10 @@
     "_v10Severity": "low"
   },
   "ts/excessive-type-assertion": {
-    "recall": 0.00118,
-    "fpRate": 0.0004779547980733605,
-    "ratio": 1542.5517286821705,
-    "precision": 0.73727,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Function with >3 `as` assertions — AI fighting the type system). Not yet calibrated. Scheduled for v9 calibration.",
@@ -2490,10 +2490,10 @@
     "_v10Severity": "low"
   },
   "ts/import-type-misuse": {
-    "recall": 0.05584,
-    "fpRate": 0.012715820674323823,
-    "ratio": 65.51995512820513,
-    "precision": 0.83314,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Inline `import { type X }` — prefer separate `import type`). Not yet calibrated. Scheduled for v9 calibration.",
@@ -2519,10 +2519,10 @@
     "_v10Severity": "low"
   },
   "ts/never-vs-unknown": {
-    "recall": 0.00021,
-    "fpRate": 0.00014449796220822526,
-    "ratio": 4300.129846153846,
-    "precision": 0.62136,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.19: new rule (Return type `never` but body has no throw/loop/exit). Not yet calibrated. Scheduled for v9 calibration.",
@@ -2550,7 +2550,7 @@
   "ts/optional-chain-overuse": {
     "recall": 0,
     "fpRate": 0,
-    "ratio": 0,
+    "ratio": 1,
     "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
@@ -2606,10 +2606,10 @@
     "_v10Severity": "medium"
   },
   "typo/calc-raw-px": {
-    "recall": 0.00001,
-    "fpRate": 0.000007410151908114116,
-    "ratio": 80970,
-    "precision": 0.6,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 210066.67,
+    "precision": 0.8333,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=5, FP=1, P=83.3%, FPR=0.00%, lift=210066.67. v7 was USEFUL (TP=3, FP=1, lift=137559.75). v8 was USEFUL (TP=2, FP=0).",
@@ -2664,10 +2664,10 @@
     "_v10Severity": "medium"
   },
   "typo/math-button-label-uniformity": {
-    "recall": 0.00011,
-    "fpRate": 0.0000889218228973694,
-    "ratio": 6592.419958333333,
-    "precision": 0.58621,
+    "recall": 0.0001,
+    "fpRate": 0.0001,
+    "ratio": 6894.19,
+    "precision": 0.629,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=39, FP=23, P=62.9%, FPR=0.01%, lift=6894.19. v7 was USEFUL (TP=37, FP=21, lift=5571.66). v8 was USEFUL (TP=2, FP=2).",
@@ -2722,10 +2722,10 @@
     "_v10Severity": "medium"
   },
   "typo/placeholder-text": {
-    "recall": 0.00033,
-    "fpRate": 0.0001519081141163394,
-    "ratio": 4695.53587804878,
-    "precision": 0.71329,
+    "recall": 0.0001,
+    "fpRate": 0,
+    "ratio": 17330.5,
+    "precision": 0.6875,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=22, FP=10, P=68.8%, FPR=0.00%, lift=17330.50. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=22, FP=10).",
@@ -2751,10 +2751,10 @@
     "_v10Severity": "low"
   },
   "visual/arbitrary-escape": {
-    "recall": 0.0022,
-    "fpRate": 0.0006298629121896999,
-    "ratio": 1268.6093823529413,
-    "precision": 0.79905,
+    "recall": 0.0026,
+    "fpRate": 0.0007,
+    "ratio": 1219.67,
+    "precision": 0.8177,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=758, FP=169, P=81.8%, FPR=0.07%, lift=1219.67. v7 was USEFUL (TP=600, FP=169, lift=846.78). v8 was USEFUL (TP=158, FP=0).",
@@ -2838,10 +2838,10 @@
     "_v10Severity": "low"
   },
   "visual/inline-style-dominance": {
-    "recall": 0.00871,
-    "fpRate": 0.0039866617265653945,
-    "ratio": 178.84386710037177,
-    "precision": 0.71299,
+    "recall": 0.0103,
+    "fpRate": 0.0052,
+    "ratio": 134.59,
+    "precision": 0.6983,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=3028, FP=1308, P=69.8%, FPR=0.52%, lift=134.59. v7 was USEFUL (TP=2303, FP=1221, lift=98.17). v8 was USEFUL (TP=725, FP=87).",
@@ -2867,10 +2867,10 @@
     "_v10Severity": "medium"
   },
   "visual/math-color-cluster": {
-    "recall": 0.00016,
-    "fpRate": 0.000007410151908114116,
-    "ratio": 129552,
-    "precision": 0.96,
+    "recall": 0.0002,
+    "fpRate": 0,
+    "ratio": 46814.86,
+    "precision": 0.9286,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=65, FP=5, P=92.9%, FPR=0.00%, lift=46814.86. v7 was USEFUL (TP=58, FP=5, lift=33771.28). v8 was USEFUL (TP=7, FP=0).",
@@ -2896,10 +2896,10 @@
     "_v10Severity": "high"
   },
   "visual/math-default-font": {
-    "recall": 0.00099,
-    "fpRate": 0.00024453501296776585,
-    "ratio": 3359.9278484848483,
-    "precision": 0.82162,
+    "recall": 0.0016,
+    "fpRate": 0.0003,
+    "ratio": 3035.16,
+    "precision": 0.8669,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=469, FP=72, P=86.7%, FPR=0.03%, lift=3035.16. v7 was USEFUL (TP=313, FP=71, lift=2105.64). v8 was USEFUL (TP=156, FP=1).",
@@ -2925,10 +2925,10 @@
     "_v10Severity": "high"
   },
   "visual/math-font-entropy": {
-    "recall": 0.00372,
-    "fpRate": 0.000889218228973694,
-    "ratio": 929.4231416666667,
-    "precision": 0.82646,
+    "recall": 0.0052,
+    "fpRate": 0.001,
+    "ratio": 869.95,
+    "precision": 0.8593,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1521, FP=249, P=85.9%, FPR=0.10%, lift=869.95. v7 was USEFUL (TP=1067, FP=248, lift=600.09). v8 was USEFUL (TP=454, FP=1).",
@@ -2983,10 +2983,10 @@
     "_v10Severity": "high"
   },
   "visual/math-rounded-entropy": {
-    "recall": 0.0029,
-    "fpRate": 0.000255650240829937,
-    "ratio": 3629.842072463768,
-    "precision": 0.92797,
+    "recall": 0.0038,
+    "fpRate": 0.0002,
+    "ratio": 3785.45,
+    "precision": 0.9461,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=1105, FP=63, P=94.6%, FPR=0.02%, lift=3785.45. v7 was USEFUL (TP=876, FP=62, lift=2762.74). v8 was USEFUL (TP=229, FP=1).",
@@ -3012,10 +3012,10 @@
     "_v10Severity": "high"
   },
   "visual/math-spacing-entropy": {
-    "recall": 0.00154,
-    "fpRate": 0.0004705446461652464,
-    "ratio": 1675.356433070866,
-    "precision": 0.78833,
+    "recall": 0.0018,
+    "fpRate": 0.0004,
+    "ratio": 1898.99,
+    "precision": 0.8287,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=532, FP=110, P=82.9%, FPR=0.04%, lift=1898.99. v7 was USEFUL (TP=425, FP=109, lift=1339.22). v8 was USEFUL (TP=107, FP=1).",
@@ -3041,10 +3041,10 @@
     "_v10Severity": "medium"
   },
   "visual/naturalness-anomaly": {
-    "recall": 0.105,
-    "fpRate": 0.0649870322341608,
-    "ratio": 9.963680102622577,
-    "precision": 0.64751,
+    "recall": 0.1729,
+    "fpRate": 0.0687,
+    "ratio": 10.86,
+    "precision": 0.746,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=50852, FP=17316, P=74.6%, FPR=6.87%, lift=10.86. v7 was USEFUL (TP=39319, FP=11382, lift=12.50). v8 was USEFUL (TP=11533, FP=5934).",
@@ -3070,10 +3070,10 @@
     "_v10Severity": "medium"
   },
   "visual/radius-scale-violation": {
-    "recall": 0.00036,
-    "fpRate": 0.000011115227862171175,
-    "ratio": 87619.43633333333,
-    "precision": 0.97391,
+    "recall": 0.0004,
+    "fpRate": 0,
+    "ratio": 82131.33,
+    "precision": 0.9774,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=130, FP=3, P=97.7%, FPR=0.00%, lift=82131.33. v7 was USEFUL (TP=96, FP=3, lift=59285.01). v8 was USEFUL (TP=34, FP=0). v0.19 default-on (explicit defaultOff: false): P 97.7% / 82k lift — UI consistency.",
@@ -3099,10 +3099,10 @@
     "_v10Severity": "medium"
   },
   "visual/spacing-scale-violation": {
-    "recall": 0.00641,
-    "fpRate": 0.0026528343831048536,
-    "ratio": 276.3949399441341,
-    "precision": 0.73323,
+    "recall": 0.0086,
+    "fpRate": 0.0028,
+    "ratio": 273.97,
+    "precision": 0.7792,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=2531, FP=717, P=77.9%, FPR=0.28%, lift=273.97. v7 was USEFUL (TP=1981, FP=717, lift=187.83). v8 was USEFUL (TP=550, FP=0).",
@@ -3128,10 +3128,10 @@
     "_v10Severity": "medium"
   },
   "wcag/dragging-movements": {
-    "recall": 0.00001,
-    "fpRate": 0.000014820303816228232,
-    "ratio": 22491.44175,
-    "precision": 0.33333,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 33610.67,
+    "precision": 0.4,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=2, FP=3, P=40.0%, FPR=0.00%, lift=33610.67. v7 was OK (TP=2, FP=3, lift=24455.07). v8 was DORMANT (TP=0, FP=0).",
@@ -3157,10 +3157,10 @@
     "_v10Severity": "medium"
   },
   "wcag/focus-appearance": {
-    "recall": 0.00186,
-    "fpRate": 0.00008151167098925527,
-    "ratio": 11813.032272727274,
-    "precision": 0.9629,
+    "recall": 0.0028,
+    "fpRate": 0.0001,
+    "ratio": 8397.24,
+    "precision": 0.966,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=825, FP=29, P=96.6%, FPR=0.01%, lift=8397.24. v7 was USEFUL (TP=612, FP=24, lift=7353.82). v8 was USEFUL (TP=213, FP=5).",
@@ -3186,10 +3186,10 @@
     "_v10Severity": "high"
   },
   "wcag/focus-obscured": {
-    "recall": 0.00273,
-    "fpRate": 0.0006483882919599852,
-    "ratio": 1275.855857142857,
-    "precision": 0.82725,
+    "recall": 0.0033,
+    "fpRate": 0.0007,
+    "ratio": 1214.21,
+    "precision": 0.8478,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=980, FP=176, P=84.8%, FPR=0.07%, lift=1214.21. v7 was USEFUL (TP=797, FP=175, lift=859.38). v8 was USEFUL (TP=183, FP=1).",
@@ -3215,10 +3215,10 @@
     "_v10Severity": "low"
   },
   "wcag/missing-alt": {
-    "recall": 0.00299,
-    "fpRate": 0.0019599851796961837,
-    "ratio": 323.4259149338374,
-    "precision": 0.63391,
+    "recall": 0.0011,
+    "fpRate": 0.0007,
+    "ratio": 935.33,
+    "precision": 0.6456,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "USEFUL",
     "_calibrationNote": "v8.5 calibration (v0.18.9, 2026-07-01): v7+v8 combined corpus (252080 neg + 294178 pos). v8.5 TP=317, FP=174, P=64.6%, FPR=0.07%, lift=935.33. v7 was DORMANT (TP=0, FP=0, lift=1.00). v8 was USEFUL (TP=317, FP=174).",
@@ -3273,10 +3273,10 @@
     "_v10Severity": "high"
   },
   "kotlin/data-class-defaults-overuse": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.00469,
+    "fpRate": 0.00222,
+    "ratio": 2.11,
+    "precision": 0.1429,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.28: v9 Kotlin calibration (2698 neg, 213 pos). ratio=2.11 (≥1.5) but precision=14.3% (<50%) — verdict DORMANT. Era-confounding: pre-2022 Kotlin is sparse; the rule fires on the rare .kt file with multiple default values regardless of authorship.",
@@ -3307,10 +3307,10 @@
     "_v10Severity": "low"
   },
   "kotlin/coroutine-global-scope": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.00469,
+    "fpRate": 0.05004,
+    "ratio": 0.09,
+    "precision": 0.00735,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.28: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.09 (FAR <1.0) — fires 135x more on neg than pos. Classic era-confound: pre-2022 Kotlin coroutines had GlobalScope as the default; modern Kotlin uses viewModelScope / lifecycleScope. The rule detects era, not AI authorship.",
@@ -3341,10 +3341,10 @@
     "_v10Severity": "medium"
   },
   "kotlin/println-debug": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.07042,
+    "fpRate": 0.11379,
+    "ratio": 0.62,
+    "precision": 0.04659,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.28: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.62 (≪1.0) — fires 20x more on neg than pos. Classic era-confound: pre-2022 Kotlin code uses println() for debug; modern Kotlin uses Timber / android.util.Log / kermit.",
@@ -3375,10 +3375,10 @@
     "_v10Severity": "low"
   },
   "kotlin/object-singleton-misuse": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.00469,
+    "fpRate": 0.00371,
+    "ratio": 1.27,
+    "precision": 0.09091,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.28: v9 Kotlin calibration (2698 neg, 213 pos). ratio=1.27 (≥1.0) but <1.5; precision=9.1% — verdict DORMANT. INSUFFICIENT_DATA: pos arm only 213 files (under 10k minimum).",
@@ -3409,10 +3409,10 @@
     "_v10Severity": "medium"
   },
   "kotlin/string-concat-loop": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.00939,
+    "fpRate": 0.00519,
+    "ratio": 1.81,
+    "precision": 0.125,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.28: v9 Kotlin calibration (2698 neg, 213 pos). ratio=1.81 (≥1.5) but precision=12.5% (<50%) — verdict DORMANT. INSUFFICIENT_DATA: pos arm only 213 files.",
@@ -3443,10 +3443,10 @@
     "_v10Severity": "low"
   },
   "kotlin/sql-string-concat": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.00469,
+    "fpRate": 0.0063,
+    "ratio": 0.75,
+    "precision": 0.0556,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.34.8: REFINED — rule now requires the SQL keyword to be the start of a string literal (preceded by `\"`, `'`, or `=`), and fixed a bug in the SAFE_REGEX (the `:??` was malformed, should be `:?`). Per-file unique v9 Kotlin calibration (2698 neg, 213 pos): 1 TP file, 17 FP files, ratio=0.75 (DORMANT). 18 total fires. The refinement is expected to push precision from 5.6% to 25%+ by removing lines where SELECT/INSERT appears in string values (e.g. `val msg = \"Selected 1 row: \\$count\"`). Also fixed the bug where `:??` in SAFE_REGEX didn't match Java/Kotlin named parameters (`:id`). The full v9 re-calibration is part of the broader v0.34.8/v0.34.9 pipeline. INSUFFICIENT_DATA: pos arm 213 files (below 10k floor).",
@@ -3497,10 +3497,10 @@
     "_v10Severity": "high"
   },
   "kotlin/runblocking-misuse": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.10798,
+    "fpRate": 0.21534,
+    "ratio": 0.5,
+    "precision": 0.0381,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.50 — fires 2x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin coroutines used runBlocking more; modern Kotlin uses coroutineScope. Same direction as kotlin/coroutine-global-scope (0.09). defaultOff: loadable but invisible by default until v0.30 re-calibration.",
@@ -3524,10 +3524,10 @@
     "_v10Severity": "medium"
   },
   "kotlin/println-as-log": {
-    "recall": 0.00001,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.08451,
+    "fpRate": 0.04596,
+    "ratio": 1.84,
+    "precision": 0.1268,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.34.5: REFINED — rule now skips test files (JUnit4/5 + Android: *Tests.kt, *Test.kt, src/test/, test/ dirs). Per-file unique v9 Kotlin calibration (2698 neg, 213 pos): ratio=1.84 (≥1.5, OK). The refinement mirrors v0.34.2's swift/print-debug fix: the previous exclusion only matched `\\/test\\/` and `.test.kts?$`, missing JUnit5's `FooTests.kt` naming. Expected post-refinement precision: 12.7% → 25%+ by removing the JUnit assertion / debug-output fires that were ~50% of the FPs. Same direction as java/system-out-println (1.73 refined) and the v0.34.2 swift/print-debug pipeline. Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=1.84 (≥1.5) — first rule in this entire session with a positive direction! Fires 1.84x more on post-2024 AI/demos than pre-2022 production. Precision=12.7% (below 50% USEFUL threshold); verdict=OK. The signal is real: post-2024 Kotlin code (especially AI-generated examples) uses println for output; pre-2022 production code uses slf4j/kermit. INSUFFICIENT_DATA: pos arm only 213 files. defaultOff: still set to true (verdict is OK but precision is below 50% — the guardrail expects OK/USEFUL rules to be defaultOff:false only when calibrated with a meaningful pos arm).",
@@ -3551,10 +3551,10 @@
     "_v10Severity": "low"
   },
   "kotlin/force-unwrap": {
-    "recall": 0,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 0,
+    "recall": 0.11737,
+    "fpRate": 0.33284,
+    "ratio": 0.35,
+    "precision": 0.0271,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.29: v9 Kotlin calibration (2698 neg, 213 pos). ratio=0.35 — fires 3x more on pre-2022 (neg) than post-2024 (pos). Era-confounded: pre-2022 Kotlin code uses !! freely; modern Kotlin relies on ?./?: and Result<T> wrappers. Stronger era signal than runblocking-misuse. defaultOff: loadable but invisible by default.",
@@ -3578,10 +3578,10 @@
     "_v10Severity": "medium"
   },
   "java/sql-string-concat": {
-    "recall": 0.00003,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.01116,
+    "fpRate": 0.01892,
+    "ratio": 0.59,
+    "precision": 0.0691,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.34.9: REFINED — rule now requires the SQL keyword to be the start of a string literal (preceded by `\"`, `'`, or `=`), and tightened the SAFE_REGEX. Per-file unique v9 Java calibration (81891 neg, 10305 pos): 115 TP files, 1549 FP files, ratio=0.59 (DORMANT). 1664 total fires. The refinement is expected to push precision from 6.9% to 25%+ by removing lines where SELECT/INSERT appears in string values (e.g. `String msg = \"Selected 1 row: \" + count`). Also tightened SAFE_REGEX from `:??` to `:?` (the original was over-broad). The full v9 re-calibration is part of the broader v0.34.8/v0.34.9 pipeline (same pattern applied to kotlin/sql-string-concat and java/sql-string-concat). INSUFFICIENT_DATA: pos arm 10305 files, below the 10k floor. Era-confounded: pre-2022 Java used JDBC string concat more; modern Java uses PreparedStatement. defaultOff.",
@@ -3606,7 +3606,7 @@
   },
   "java/hardcoded-credential": {
     "recall": 0,
-    "fpRate": 0,
+    "fpRate": 0.00004,
     "ratio": 0,
     "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
@@ -3632,10 +3632,10 @@
     "_v10Severity": "high"
   },
   "java/thread-sleep-in-loop": {
-    "recall": 0.00006,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.0228,
+    "fpRate": 0.02343,
+    "ratio": 0.97,
+    "precision": 0.1091,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.34.6: REFINED — rule now requires Thread.sleep to be INSIDE the loop block (verified via brace-counting), not just in a file that happens to contain a for/while/do keyword. v0.30 baseline: 2154 total fires, ratio 0.97 (DORMANT). The refinement targets: (1) Thread.sleep in `main()` no longer fires if a different method has a `for` loop (the v0.30 heuristic fired on every Thread.sleep in the file); (2) Thread.sleep before/after a loop block (not inside it) no longer fires; (3) string literals containing `Thread.sleep(...)` are skipped via the string-state-machine. Expected post-refinement ratio: 1.5+ (positive-signal OK verdict) by removing the cross-method over-fires. Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.30: v9 Java calibration (81891 neg, 10305 pos). ratio=0.97 (just below 1.0) — fires equally on both arms. Borderline era-confound: pre-2022 Java had more Thread.sleep in loops (less mature concurrency APIs); modern Java uses ScheduledExecutorService. Same direction as kotlin/runblocking-misuse (0.50). 2154 total fires — high absolute count, meaningful measurement. defaultOff.",
@@ -3659,10 +3659,10 @@
     "_v10Severity": "medium"
   },
   "java/system-out-println": {
-    "recall": 0.00001,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.00116,
+    "fpRate": 0.00067,
+    "ratio": 1.73,
+    "precision": 0.1791,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.31: v9 Java calibration REFINED — rule now requires the file to import a real logger (SLF4J, Log4j2, java.util.logging) AND have System.out.println calls. This is the 'set up but didn't use' anti-pattern. ratio=1.73 (≥1.5) — second positive-signal rule in v9 history. v0.30.0 unrefined version had ratio=3.29 but precision=29.3% (over 5800 fires diluted by legitimate System.out in non-slf4j files). v0.31.0 refined version: 12 TP, 55 FP — much more selective, but absolute count is too small for production-grade measurement. precision=17.91% (still below 50% USEFUL threshold). The refinement succeeded: the fires dropped 99% (5866→67) and precision went 29.3%→17.9% (a tradeoff — fewer fires but more targeted). The direction is preserved: post-2024 Java has slightly more 'slf4j import + System.out call' than pre-2022. defaultOff: still set true (precision below 50%).",
@@ -3686,10 +3686,10 @@
     "_v10Severity": "low"
   },
   "java/command-injection": {
-    "recall": 0.00001,
-    "fpRate": 0,
+    "recall": 0,
+    "fpRate": 0.0001,
     "ratio": 0,
-    "precision": 1,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.30: v9 Java calibration (81891 neg, 10305 pos). 8 fires total, all in neg. Command injection is rare in modern Java — most apps use ProcessBuilder with List<String> args, not Runtime.exec with concat. INSUFFICIENT_DATA: needs different corpus (security benchmarks, CVE samples). defaultOff.",
@@ -3713,10 +3713,10 @@
     "_v10Severity": "high"
   },
   "java/suspicious-implementation": {
-    "recall": 0.0007,
-    "fpRate": 0.00009262689885142645,
-    "ratio": 9676.13092,
-    "precision": 0.89627,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.35.0: NEW RULE — content-based detection (CoCoNUTS-inspired). Detects function names that claim a strong operation (validate, encrypt, hash, sanitize, check, verify, authenticate, etc.) but whose body is trivially empty, returns a constant, or returns the input unchanged. The rule is a real engineering defect detector (not AI fingerprint), so it is defaultOff=false (i.e. ON by default) and verdict=OK. The CoCoNUTS paper (2025) showed that style-based AI-detectors fail under paraphrasing; this rule looks at semantic content (function body behavior) rather than surface features. v9 calibration is pending — the rule was added at the end of the v0.34.X refinement series and has not been measured against the v9 corpus yet. The expected impact: low recall (most production code doesn't have these stubs) but high precision (when it fires, it's a real bug). The full v9 calibration is the next step for v0.35.0.x patches.",
@@ -3740,10 +3740,10 @@
     "_v10Severity": "high"
   },
   "java/lost-stack-trace": {
-    "recall": 0.00038,
-    "fpRate": 0.000051871063356798817,
-    "ratio": 17218.2705,
-    "precision": 0.89313,
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.35.1: NEW RULE — Raidar-inspired content-based detection. The Raidar paper (ICLR 2024) showed that LLMs tend to 'polish' error handling by wrapping exceptions but losing the original cause; the inverse observation is that AI-generated code often has this pattern. This rule detects catch blocks that throw a new exception WITHOUT including the original exception as a cause — the original stack trace is lost. The rule is a real engineering defect detector (not AI fingerprint), so it is defaultOff=false (ON by default) and verdict=OK. v9 calibration is pending. The expected impact: low recall (most production code preserves the original exception) but very high precision (when it fires, it's a real bug — debugging without the stack trace is impossible).",
@@ -3767,10 +3767,10 @@
     "_v10Severity": "medium"
   },
   "swift/force-unwrap": {
-    "recall": 0.00007,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.10211,
+    "fpRate": 0.21462,
+    "ratio": 0.48,
+    "precision": 0.1721,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.34.10: REFINED — the access-force regex now uses a negative lookbehind to exclude `!` in `!=` and `!==` comparison operators. Per-file unique v9 Swift calibration (1300 neg, 568 pos): 58 TP files, 279 FP files, ratio=0.48 (DORMANT). The previous regex incorrectly fired on `!` in `a != b` and `a !== b` patterns, which are common in control flow. The refinement is expected to push precision from 17.2% to 25%+ by removing these false positives. Era-confounded: pre-2022 Swift used `!` freely (the only way to unwrap); modern Swift uses `guard let` / `if let` / `try?`. Same direction as kotlin/force-unwrap (0.35) and kotlin/runblocking-misuse (0.50). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
@@ -3801,10 +3801,10 @@
     "_v10Severity": "medium"
   },
   "swift/print-debug": {
-    "recall": 0.00008,
-    "fpRate": 0.000003705075954057058,
-    "ratio": 259104,
-    "precision": 0.96,
+    "recall": 0.06866,
+    "fpRate": 0.06077,
+    "ratio": 1.13,
+    "precision": 0.3305,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.34.2: REFINED — rule now skips test files (XCTest naming: *Tests.swift, *Test.swift, Tests/ dir). Per-file unique v9 Swift calibration (1300 neg, 568 pos): 39 TP files, 79 FP files, ratio=1.13 (OK). The refinement is expected to push precision from 33% to 50%+ by removing XCTest output and snapshot test fires (which were ~49% of FPs in the v0.32.0 measurement). The full v9 re-calibration is part of the v0.34.5/v0.34.7 pipeline (same refinement applied to kotlin/println-as-log and cpp/printf-debug); see v0.34.1's Four-language validation section. v0.32.0 baseline: 39 TP files / 568 = 6.87% recall, 79 FP files / 1300 = 6.08% fpRate, ratio 1.13, precision 33.05% (just below 50% USEFUL threshold). Same direction as kotlin/println-as-log (1.84) and java/system-out-println (1.73 refined, 3.29 unrefined). INSUFFICIENT_DATA: pos arm 568 files (below 10k floor).",
@@ -3835,10 +3835,10 @@
     "_v10Severity": "low"
   },
   "swift/fatal-error-thrown": {
-    "recall": 0.00005,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.06514,
+    "fpRate": 0.11462,
+    "ratio": 0.57,
+    "precision": 0.1989,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.32: v9 Swift calibration (1300 neg, 568 pos). Per-file unique: 37 TP files, 149 FP files, ratio=0.57. Era-confounded: pre-2022 Swift used fatalError liberally for unrecoverable states; modern Swift uses typed errors (throws) and Result types. INSUFFICIENT_DATA: pos arm 568 files.",
@@ -3869,10 +3869,10 @@
     "_v10Severity": "high"
   },
   "swift/implicitly-unwrapped-optional": {
-    "recall": 0.00002,
-    "fpRate": 0,
-    "ratio": 0,
-    "precision": 1,
+    "recall": 0.01937,
+    "fpRate": 0.10692,
+    "ratio": 0.18,
+    "precision": 0.0733,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.32: v9 Swift calibration (1300 neg, 568 pos). Per-file unique: 11 TP files, 139 FP files, ratio=0.18 — strong era-confound. Pre-2022 Swift used `var foo: Bar!` for IBOutlets and delegates; modern Swift uses `weak var` or declares as `Bar?` and unwraps with guard let. Same magnitude as kotlin/coroutine-global-scope (0.09) — strongest era-confound in v9 history. INSUFFICIENT_DATA: pos arm 568 files.",
@@ -3903,10 +3903,10 @@
     "_v10Severity": "low"
   },
   "swift/strong-self-capture": {
-    "recall": 0.00208,
-    "fpRate": 0.000003705075954057058,
-    "ratio": 269478.956,
-    "precision": 0.99844,
+    "recall": 0.24824,
+    "fpRate": 0.44308,
+    "ratio": 0.56,
+    "precision": 0.1967,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.32: v9 Swift calibration (1300 neg, 568 pos). Per-file unique: 141 TP files, 576 FP files, ratio=0.56. Era-confounded: pre-2022 Swift closures defaulted to strong self capture; modern Swift (Swift 5.7+) emits a warning for implicit self capture in escaping closures. The rule fires multiple times per file (multiple closures) — total fires were 2316 TP, 8913 FP, but per-file is 141 TP, 576 FP. INSUFFICIENT_DATA: pos arm 568 files.",
@@ -3938,7 +3938,7 @@
   },
   "cpp/using-namespace-std": {
     "recall": 0,
-    "fpRate": 0.000011115227862171175,
+    "fpRate": 0.0002,
     "ratio": 0,
     "precision": 0,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
@@ -3971,10 +3971,10 @@
     "_v10Severity": "medium"
   },
   "cpp/raw-new-delete": {
-    "recall": 0.00007,
-    "fpRate": 0.0006928492034086698,
-    "ratio": 145.71713368983959,
-    "precision": 0.10096,
+    "recall": 0.00967,
+    "fpRate": 0.01077,
+    "ratio": 0.9,
+    "precision": 0.2254,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 16 TP, 55 FP, ratio=0.90. Era-confounded: pre-2022 C++ used raw new/delete extensively; modern C++ uses std::make_unique. INSUFFICIENT_DATA: pos arm 1655 files.",
@@ -4005,10 +4005,10 @@
     "_v10Severity": "low"
   },
   "cpp/c-style-cast": {
-    "recall": 0.00636,
-    "fpRate": 0.025876250463134496,
-    "ratio": 8.445195733104239,
-    "precision": 0.21853,
+    "recall": 0.5281,
+    "fpRate": 0.56491,
+    "ratio": 0.93,
+    "precision": 0.2325,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "INVERTED",
     "_calibrationNote": "v0.34.3: REFINED — NAMED_CAST_PREFIX_REGEX tightened (the old version required the lookback slice to end with `>(`, which never matched because the slice ends with `>`). Lookback increased 40→60 chars. Added `(void)x` discard-idom exclusion. v0.33 baseline: 874 TP / 2885 FP per-file (ratio 0.93, DORMANT). The refinement targets: (1) static_cast/const_cast/reinterpret_cast/dynamic_cast no longer fire when followed by whitespace before `(`; (2) class-type named casts like `static_cast<MyClass*>(p)` now correctly excluded (60-char lookback reaches the long typename); (3) `(void)x` deliberate discards are no longer flagged. Expected post-refinement ratio: 1.0-1.2 (still DORMANT but better-targeted). Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 874 TP, 2885 FP, ratio=0.93. Total fires were 32265 TP, 39954 FP — the regex is too broad and fires on every C-style cast including static_cast in template code. The per-file measurement (874/1655 = 53%) is more meaningful — both arms have similar proportions of files using C-style casts. INSUFFICIENT_DATA: pos arm 1655 files.",
@@ -4039,10 +4039,10 @@
     "_v10Severity": "low"
   },
   "cpp/printf-debug": {
-    "recall": 0.00037,
-    "fpRate": 0.0009818451278251204,
-    "ratio": 306.3517773584906,
-    "precision": 0.30079,
+    "recall": 0.09426,
+    "fpRate": 0.03877,
+    "ratio": 2.43,
+    "precision": 0.4407,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
     "_calibrationNote": "v0.34.7: REFINED — rule now skips test files (gtest, catch2, doctest conventions: *_test.cpp, *_test.cc, /tests/ dir, *Test.cpp, *Test.cc, *_unittest.cpp). Per-file unique v9 C++ calibration (5107 neg, 1655 pos): 156 TP files, 198 FP files, ratio=2.43 (OK, fourth positive-signal in v9 history). precision=44.07% (below 50% USEFUL threshold); verdict=OK. The refinement is expected to push precision from 44% to 50%+ by removing gtest test output fires (which were a significant portion of FPs in the v0.33.0 measurement). The full v9 re-calibration is part of the broader v0.34.5/v0.34.7 pipeline; see v0.34.1's Four-language validation section. Same direction as kotlin/println-as-log (1.84), java/system-out-println (1.73 refined, 3.29 unrefined), swift/print-debug (1.13). INSUFFICIENT_DATA: pos arm 1655 files (below 10k floor).",
@@ -4073,10 +4073,10 @@
     "_v10Severity": "low"
   },
   "cpp/magic-numbers": {
-    "recall": 0.0008,
-    "fpRate": 0.0031641348647647276,
-    "ratio": 70.6796674473068,
-    "precision": 0.22364,
+    "recall": 0.13293,
+    "fpRate": 0.15391,
+    "ratio": 0.86,
+    "precision": 0.2187,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "DORMANT",
     "_calibrationNote": "v0.34.4: REFINED — expanded allowSet with common constants (-1 sentinel, 100 percent literal, 0.5/1.0/2.0 ratios, 4096/2048/512/128/64/32/16/8 power-of-2 sizes, 50 percentile). Added string-literal and `//` comment stripping so substrings like `\"got 42 errors\"` and `// ticket #4242` no longer fire. v0.33 baseline: 220 TP / 786 FP per-file (ratio 0.86, DORMANT). The refinement targets: (1) sentinel `-1` literals are skipped because `1` is allowlisted and the `-` doesn't match MAGIC_NUMBER_REGEX anyway; (2) hex literals (`0xFF`) are skipped because the digit-only regex requires a word-boundary after digits, and `0x...` has none; (3) literals inside string/comment contexts no longer fire. Expected post-refinement ratio: 1.0-1.2 (still DORMANT but better-targeted). Full v9 re-calibration is part of the v0.35.0 re-measurement. v0.33: v9 C++ calibration (5107 neg, 1655 pos). Per-file unique: 220 TP, 786 FP, ratio=0.86. Both arms have similar proportions of files with magic numbers — this is a general C++ anti-pattern that hasn't been eradicated. INSUFFICIENT_DATA: pos arm 1655 files.",

@@ -64,10 +64,8 @@ for (const r of cal.rules) {
     main[ruleId] = { recall: 0, fpRate: 0, ratio: 0, precision: 0, lastCalibratedAt: new Date().toISOString().slice(0, 10) + 'T00:00:00Z' };
   }
   const m = main[ruleId];
-  m.recall = r.recall;
-  m.fpRate = cal.negativeFileCount > 0 ? r.negativeFiles / cal.negativeFileCount : 0;
-  m.ratio = m.fpRate > 0 ? r.precision / m.fpRate : 0;
-  m.precision = r.precision;
+  // v10 metrics: stored in _v10* fields, do NOT overwrite v7/v8 production numbers
+  // (Bayesian combiner and other systems depend on stable v7/v8 ratios).
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
   m.verdict = verdict;
   // Preserve aiSpecific from previous entry (matches rule source code)
