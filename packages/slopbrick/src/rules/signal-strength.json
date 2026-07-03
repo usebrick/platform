@@ -2229,6 +2229,22 @@
     "_v9Precision": 0.0,
     "defaultOff": true
   },
+  "java/suspicious-implementation": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-03T00:00:00Z",
+    "verdict": "OK",
+    "_calibrationNote": "v0.35.0: NEW RULE — content-based detection (CoCoNUTS-inspired). Detects function names that claim a strong operation (validate, encrypt, hash, sanitize, check, verify, authenticate, etc.) but whose body is trivially empty, returns a constant, or returns the input unchanged. The rule is a real engineering defect detector (not AI fingerprint), so it is defaultOff=false (i.e. ON by default) and verdict=OK. The CoCoNUTS paper (2025) showed that style-based AI-detectors fail under paraphrasing; this rule looks at semantic content (function body behavior) rather than surface features. v9 calibration is pending — the rule was added at the end of the v0.34.X refinement series and has not been measured against the v9 corpus yet. The expected impact: low recall (most production code doesn't have these stubs) but high precision (when it fires, it's a real bug). The full v9 calibration is the next step for v0.35.0.x patches.",
+    "aiSpecific": false,
+    "_v9Verdict": "OK",
+    "_v9Lift": 0.0,
+    "_v9Recall": 0.0,
+    "_v9FpRate": 0.0,
+    "_v9Precision": 0.0,
+    "defaultOff": false
+  },
   "swift/force-unwrap": {
     "recall": 0.10211,
     "fpRate": 0.21462,

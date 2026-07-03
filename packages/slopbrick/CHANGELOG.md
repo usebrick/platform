@@ -1,5 +1,92 @@
 # Changelog
 
+## [0.35.0] - 2026-10-19 — Add content-based detection (CoCoNUTS-inspired)
+
+v0.35.0 is the first v9 release with a **content-based**
+detection rule, inspired by the 2025 CoCoNUTS paper. The
+CoCoNUTS paper showed that style-based AI-detectors fail under
+paraphrasing because they look at surface features
+(formatting, naming, etc.). Content-based detection looks at
+**semantic intent vs execution** — for code, the equivalent is
+detecting when a function's **claimed behavior** (its name)
+doesn't match its **actual behavior** (its body).
+
+### The new rule: `java/suspicious-implementation`
+
+The rule flags a method whose name contains a "strong verb"
+(validate, encrypt, hash, sanitize, check, verify,
+authenticate, filter, normalize, escape, audit, inspect, parse,
+format, compress, sign, etc.) but whose body is one of:
+
+- **Empty body**: `{}` — the function is a stub
+- **Returns a constant**: `return null;`, `return true;`,
+  `return false;`, `return 0;` — the function lies about its
+  behavior
+- **Returns the input unchanged**: `return data;` — pass-through
+  stub
+- **Throws UnsupportedOperationException**: `throw new
+  UnsupportedOperationException("not implemented");` — the
+  function explicitly doesn't do what its name says
+
+These are real engineering bugs that survive type checking but
+fail at runtime or in security audits. A function named
+`validateInput(x) { return true; }` passes all checks but
+silently approves malicious input. A function named
+`encrypt(data) { return data; }` is a security bug.
+
+### Why this matters
+
+The 2024-2026 AI-detection literature (B-Free, CoCoNUTS, Raidar,
+ConDA) all show that style-based detection is fragile. v0.35.0
+implements the content-based paradigm shift for code: instead of
+looking at how the code is written, it looks at what the code
+**claims to do** vs what it **actually does**.
+
+This is also the **first v9 release where the rule is ON by
+default** (`defaultOff: false`) — because it measures a real
+engineering defect, not an AI fingerprint. The v0.24.0/v0.29.0/
+v0.30.0 rules that detect AI slop are DORMANT and `defaultOff:
+true`. The v0.35.0 content-based rules are useful by default.
+
+### v9 calibration
+
+The v9 Java corpus calibration is **pending** — the rule was
+added at the end of the v0.34.X refinement series and has not
+been measured against the v9 corpus yet. The expected impact:
+
+- **Low recall**: most production code doesn't have these stubs.
+  Modern code either implements the operation correctly or
+  doesn't claim to (no strong verb in the name).
+- **High precision**: when the rule fires, it's almost always a
+  real bug.
+
+The full v9 calibration is the next step for v0.35.0.x patches
+(see v0.34.1's Four-language validation section).
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes
+- `pnpm --filter slopbrick test tests/rules/java/`: 35/35 pass
+  (8 new unit tests for `java/suspicious-implementation`)
+- `pnpm --filter slopbrick generate:rules`: regenerated
+  `builtins.ts` (139 rules) and `docs/rule-catalog.md` (139 rules)
+- 1 new RULE_HINT entry in `src/snippet/data.ts`
+
+### What's next (v0.35.1 → v0.36.0)
+
+Two directions from v0.35.0:
+
+1. **v0.35.1: Raidar-inspired edit-distance detection**. Compare
+   LLM-edited code vs LLM-generated code. The Raidar paper
+   (ICLR 2024) shows that LLMs are more likely to modify
+   human-written text than AI-generated text — the editing
+   distance reveals AI fingerprints.
+
+2. **v0.36.0: v10 calibration against MultiAIGCD**. Use the
+   MultiAIGCD dataset (32k human + 121k AI across Python/Java/Go)
+   for a true "AI vs human" calibration, complementing the v9
+   corpus's "modern vs legacy" calibration.
+
 ## [0.34.10] - 2026-10-12 — Refine swift/force-unwrap (exclude `!` in `!==`/`!=` operators)
 
 v0.34.10 refines the v0.32.0 `swift/force-unwrap` rule to

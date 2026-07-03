@@ -325,6 +325,9 @@ const RULE_HINTS: Record<string, string> = {
     "The file imports a real logger (SLF4J/Log4j2/java.util.logging) but uses System.out.println. Use the declared log object instead. (v0.31.0 — OK; ratio 1.73, refined from v0.30.)",
   'java/command-injection':
     "Use ProcessBuilder with a List<String> of args (no shell parsing) and validate each arg. Runtime.exec() with concat is the canonical command-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT.)",
+  // v0.35.0 — content-based detection (CoCoNUTS-inspired)
+  'java/suspicious-implementation':
+    "Function name claims validate/encrypt/hash/sanitize but body is empty, returns null/true, or returns the input. This is a content mismatch — the function's claimed behavior doesn't match its actual behavior. OWASP A04:2021.",
   // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)
   'swift/force-unwrap':
     "Replace with the safe form: `as?` + guard/if let, `try?`, or `guard let x = optional else { return }`. `!` crashes unconditionally in release. (v0.24.0 — DORMANT.)",

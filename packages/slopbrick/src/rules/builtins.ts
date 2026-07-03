@@ -49,6 +49,7 @@ import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
 import { javaCommandInjectionRule } from './java/command-injection';
 import { javaHardcodedCredentialRule } from './java/hardcoded-credential';
 import { javaSqlStringConcatRule } from './java/sql-string-concat';
+import { javaSuspiciousImplementationRule } from './java/suspicious-implementation';
 import { javaSystemOutPrintlnRule } from './java/system-out-println';
 import { javaThreadSleepInLoopRule } from './java/thread-sleep-in-loop';
 import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
@@ -189,6 +190,7 @@ export const builtinRules: Rule[] = [
   javaCommandInjectionRule,
   javaHardcodedCredentialRule,
   javaSqlStringConcatRule,
+  javaSuspiciousImplementationRule,
   javaSystemOutPrintlnRule,
   javaThreadSleepInLoopRule,
   kotlinCoroutineGlobalScopeRule,
