@@ -2245,6 +2245,22 @@
     "_v9Precision": 0.0,
     "defaultOff": false
   },
+  "java/lost-stack-trace": {
+    "recall": 0.0,
+    "fpRate": 0.0,
+    "ratio": 0.0,
+    "precision": 0.0,
+    "lastCalibratedAt": "2026-07-03T00:00:00Z",
+    "verdict": "OK",
+    "_calibrationNote": "v0.35.1: NEW RULE — Raidar-inspired content-based detection. The Raidar paper (ICLR 2024) showed that LLMs tend to 'polish' error handling by wrapping exceptions but losing the original cause; the inverse observation is that AI-generated code often has this pattern. This rule detects catch blocks that throw a new exception WITHOUT including the original exception as a cause — the original stack trace is lost. The rule is a real engineering defect detector (not AI fingerprint), so it is defaultOff=false (ON by default) and verdict=OK. v9 calibration is pending. The expected impact: low recall (most production code preserves the original exception) but very high precision (when it fires, it's a real bug — debugging without the stack trace is impossible).",
+    "aiSpecific": false,
+    "_v9Verdict": "OK",
+    "_v9Lift": 0.0,
+    "_v9Recall": 0.0,
+    "_v9FpRate": 0.0,
+    "_v9Precision": 0.0,
+    "defaultOff": false
+  },
   "swift/force-unwrap": {
     "recall": 0.10211,
     "fpRate": 0.21462,

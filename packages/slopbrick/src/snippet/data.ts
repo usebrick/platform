@@ -328,6 +328,9 @@ const RULE_HINTS: Record<string, string> = {
   // v0.35.0 — content-based detection (CoCoNUTS-inspired)
   'java/suspicious-implementation':
     "Function name claims validate/encrypt/hash/sanitize but body is empty, returns null/true, or returns the input. This is a content mismatch — the function's claimed behavior doesn't match its actual behavior. OWASP A04:2021.",
+  // v0.35.1 — Raidar-inspired content-based detection
+  'java/lost-stack-trace':
+    "catch block throws a new exception without the original cause — stack trace is lost. Pass the original exception as the second arg to the new exception's constructor: `throw new XxxException(\"msg\", e)`.",
   // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)
   'swift/force-unwrap':
     "Replace with the safe form: `as?` + guard/if let, `try?`, or `guard let x = optional else { return }`. `!` crashes unconditionally in release. (v0.24.0 — DORMANT.)",

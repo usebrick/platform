@@ -48,6 +48,7 @@ import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
 import { javaCommandInjectionRule } from './java/command-injection';
 import { javaHardcodedCredentialRule } from './java/hardcoded-credential';
+import { javaLostStackTraceRule } from './java/lost-stack-trace';
 import { javaSqlStringConcatRule } from './java/sql-string-concat';
 import { javaSuspiciousImplementationRule } from './java/suspicious-implementation';
 import { javaSystemOutPrintlnRule } from './java/system-out-println';
@@ -189,6 +190,7 @@ export const builtinRules: Rule[] = [
   goStructTagInconsistencyRule,
   javaCommandInjectionRule,
   javaHardcodedCredentialRule,
+  javaLostStackTraceRule,
   javaSqlStringConcatRule,
   javaSuspiciousImplementationRule,
   javaSystemOutPrintlnRule,

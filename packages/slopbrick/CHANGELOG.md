@@ -1,5 +1,83 @@
 # Changelog
 
+## [0.35.1] - 2026-10-26 — Add java/lost-stack-trace (Raidar-inspired content-based detection)
+
+v0.35.1 is the second v9 release with a content-based
+detection rule, this time inspired by the 2024 Raidar paper
+(ICLR). The new rule `java/lost-stack-trace` detects catch
+blocks that throw a new exception WITHOUT including the
+original exception as a cause — the original stack trace is
+lost in the new exception, making production debugging
+impossible.
+
+### The new rule: `java/lost-stack-trace`
+
+The rule flags a `throw new XxxException(args)` inside a
+catch block where the args don't include the catch's exception
+variable. Examples:
+
+```java
+// BAD: original exception discarded
+try {
+  Files.readAllBytes(path);
+} catch (IOException e) {
+  throw new RuntimeException("read failed");
+}
+
+// GOOD: original exception preserved as cause
+try {
+  Files.readAllBytes(path);
+} catch (IOException e) {
+  throw new RuntimeException("read failed", e);
+}
+```
+
+The fix is to pass the original exception as the second
+argument to the new exception's constructor. Java's
+`Throwable(String, Throwable)` constructor accepts a `cause`
+parameter that the JVM's stack-trace framework preserves in
+the chain.
+
+### Why this matters
+
+The Raidar paper (ICLR 2024) showed that LLMs are more likely
+to modify human-written text than AI-generated text; the
+inverse observation is that AI-generated code often has
+characteristic "polish" patterns — like wrapping exceptions
+but losing the original cause. This is exactly the pattern
+this rule detects.
+
+A lost stack trace makes production debugging nearly
+impossible — when an exception is logged, only the "msg" is
+visible, not the original cause or line numbers. This is a
+real engineering defect (not just an AI fingerprint), so the
+rule is `defaultOff: false` (ON by default).
+
+### v9 calibration
+
+The v9 Java corpus calibration is **pending** — the rule was
+just added. The expected impact: **low recall** (most
+production code preserves the original exception) but **very
+high precision** (when it fires, it's a real bug). The full
+v9 calibration is the next step for v0.35.x patches.
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes
+- `pnpm --filter slopbrick test tests/rules/java/`: 35/35 pass
+  (7 new unit tests for `java/lost-stack-trace`)
+- `pnpm --filter slopbrick generate:rules`: regenerated
+  `builtins.ts` (140 rules) and `docs/rule-catalog.md` (140 rules)
+- 1 new RULE_HINT entry in `src/snippet/data.ts`
+
+### What's next (v0.36.0)
+
+1. **v0.36.0: v10 calibration against MultiAIGCD**. Use the
+   MultiAIGCD dataset (32k human + 121k AI across Python/Java/Go)
+   for a true "AI vs human" calibration. The v9 corpus is
+   "modern vs legacy" — MultiAIGCD is "AI vs human". A v10
+   calibration would close the AI-fingerprint gap.
+
 ## [0.35.0] - 2026-10-19 — Add content-based detection (CoCoNUTS-inspired)
 
 v0.35.0 is the first v9 release with a **content-based**
