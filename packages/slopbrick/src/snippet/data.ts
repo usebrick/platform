@@ -322,7 +322,7 @@ const RULE_HINTS: Record<string, string> = {
   'java/thread-sleep-in-loop':
     "Use ScheduledExecutorService for periodic work, or BlockingQueue.take() for event-driven work. Thread.sleep in a loop is the polling anti-pattern — ties up Tomcat/Jetty/Netty threads. (v0.30.0 — DORMANT, era-confounded ratio 0.97.)",
   'java/system-out-println':
-    "Use SLF4J (the standard facade), Log4j2, or java.util.logging. System.out has no log level, no timestamp, no correlation ID. (v0.30.0 — OK; second positive-signal rule in v9 history, ratio 3.29.)",
+    "The file imports a real logger (SLF4J/Log4j2/java.util.logging) but uses System.out.println. Use the declared log object instead. (v0.31.0 — OK; ratio 1.73, refined from v0.30.)",
   'java/command-injection':
     "Use ProcessBuilder with a List<String> of args (no shell parsing) and validate each arg. Runtime.exec() with concat is the canonical command-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT.)",
   // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)

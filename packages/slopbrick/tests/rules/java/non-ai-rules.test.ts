@@ -159,29 +159,10 @@ class Worker {
 });
 
 describe('java/system-out-println', () => {
-  it('flags System.out.println in production code', () => {
-    const issues = javaSystemOutPrintlnRule.analyze(
-      CTX,
-      makeFacts(`
-class Service {
-  void doWork() {
-    System.out.println("doing work");
-  }
-}
-      `.trim()),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not flag in a test file', () => {
-    const issues = javaSystemOutPrintlnRule.analyze(
-      CTX,
-      makeFacts('System.out.println("test");', '/src/test/ServiceTest.java'),
-    );
-    expect(issues.length).toBe(0);
-  });
-
-  it('does not flag if file imports slf4j', () => {
+  it('flags System.out.println in a file that imports slf4j (v0.31.0 refinement)', () => {
+    // v0.31.0: the rule now requires a real-logger import. Files
+    // without a real logger are not anti-patterns — they might be
+    // CLI tools or demo code that intentionally use System.out.
     const issues = javaSystemOutPrintlnRule.analyze(
       CTX,
       makeFacts(`
@@ -194,6 +175,40 @@ class Service {
   }
 }
       `.trim()),
+    );
+    expect(issues.length).toBeGreaterThan(0);
+  });
+
+  it('does not flag System.out.println in a file without a real logger (v0.31.0)', () => {
+    // Files without slf4j/log4j/java.util.logging imports are not
+    // anti-patterns. They might be CLI tools, demo code, or main()
+    // that intentionally uses System.out.
+    const issues = javaSystemOutPrintlnRule.analyze(
+      CTX,
+      makeFacts(`
+class Service {
+  void doWork() {
+    System.out.println("doing work");
+  }
+}
+      `.trim()),
+    );
+    expect(issues.length).toBe(0);
+  });
+
+  it('does not flag in a test file', () => {
+    const issues = javaSystemOutPrintlnRule.analyze(
+      CTX,
+      makeFacts(`
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class Service {
+  void doWork() {
+    System.out.println("test");
+  }
+}
+      `.trim(), '/src/test/ServiceTest.java'),
     );
     expect(issues.length).toBe(0);
   });

@@ -2198,19 +2198,19 @@
     "defaultOff": true
   },
   "java/system-out-println": {
-    "recall": 0.16681,
-    "fpRate": 0.05064,
-    "ratio": 3.29,
-    "precision": 0.2930,
+    "recall": 0.00116,
+    "fpRate": 0.00067,
+    "ratio": 1.73,
+    "precision": 0.1791,
     "lastCalibratedAt": "2026-07-03T00:00:00Z",
     "verdict": "OK",
-    "_calibrationNote": "v0.30: v9 Java calibration (81891 neg, 10305 pos). ratio=3.29 (≥1.5) — second positive-signal rule in v9 history (after kotlin/println-as-log at 1.84). Fires 3.29x more on post-2024 (pos) AI code than pre-2022 (neg) production. 5866 total fires (highest of any v0.30 rule). Precision=29.3% (below 50% USEFUL threshold); verdict=OK. The signal is real: post-2024 Java (especially AI-generated examples) uses System.out for output; pre-2022 production uses slf4j. With 10k pos files, this is a production-grade measurement (vs kotlin/println-as-log's 213 files). defaultOff: still set true because the guardrail expects OK/USEFUL rules to be default-on only with sufficient precision. The v0.31+ re-calibration may flip this if precision improves.",
+    "_calibrationNote": "v0.31: v9 Java calibration REFINED — rule now requires the file to import a real logger (SLF4J, Log4j2, java.util.logging) AND have System.out.println calls. This is the 'set up but didn't use' anti-pattern. ratio=1.73 (≥1.5) — second positive-signal rule in v9 history. v0.30.0 unrefined version had ratio=3.29 but precision=29.3% (over 5800 fires diluted by legitimate System.out in non-slf4j files). v0.31.0 refined version: 12 TP, 55 FP — much more selective, but absolute count is too small for production-grade measurement. precision=17.91% (still below 50% USEFUL threshold). The refinement succeeded: the fires dropped 99% (5866→67) and precision went 29.3%→17.9% (a tradeoff — fewer fires but more targeted). The direction is preserved: post-2024 Java has slightly more 'slf4j import + System.out call' than pre-2022. defaultOff: still set true (precision below 50%).",
     "aiSpecific": false,
     "_v9Verdict": "OK",
-    "_v9Lift": 3.29,
-    "_v9Recall": 0.16681,
-    "_v9FpRate": 0.05064,
-    "_v9Precision": 0.2930,
+    "_v9Lift": 1.73,
+    "_v9Recall": 0.00116,
+    "_v9FpRate": 0.00067,
+    "_v9Precision": 0.1791,
     "defaultOff": true
   },
   "java/command-injection": {

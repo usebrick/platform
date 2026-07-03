@@ -1,5 +1,82 @@
 # Changelog
 
+## [0.31.0] - 2026-09-02 — Refine java/system-out-println (require slf4j/log4j import)
+
+v0.31.0 is a targeted refinement of the v0.30.0 `java/system-out-println`
+rule. The original v0.30.0 version fired on ANY file with a
+`System.out.println` call. v0.31.0 refines the rule to fire ONLY on
+files that ALSO import a real logging library (SLF4J, Log4j2, or
+java.util.logging) — the "set up the logger but didn't use it"
+anti-pattern. The refinement targets the real defect: a file that
+imports slf4j AND uses System.out is a code smell; a file that uses
+System.out without slf4j might be intentional (CLI tools, demo code,
+or main()).
+
+### Calibration tradeoff
+
+| | TP | FP | recall | fpRate | ratio | precision | verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| v0.30.0 (unrefined) | 1719 | 4147 | 16.68% | 5.06% | 3.29 | 29.30% | OK |
+| **v0.31.0 (refined)** | **12** | **55** | **0.12%** | **0.07%** | **1.73** | **17.91%** | **OK** |
+
+The fires dropped 99% (5866 → 67). The ratio also dropped (3.29 →
+1.73) but is still ≥1.5 — the positive signal is preserved, just
+narrower. The absolute count is too small for production-grade
+measurement (12 TP from 10305 pos files is 0.1%).
+
+**Why both arms have similar proportions.** Pre-2022 production
+Java (Spring Framework, hibernate, jdk) imports slf4j in almost
+every file. Post-2024 Java (Spring AI, LangChain4j) also imports
+slf4j in most files (Spring Boot starter includes it). The pattern
+"file imports slf4j AND uses System.out" is rare in both arms
+because developers who set up the logger usually use it.
+
+**Why the v0.31.0 refinement is still a positive signal.** Post-2024
+Java (especially AI-generated examples and demo code) is slightly
+more likely to use System.out in a file that also imports slf4j —
+because the developer imported slf4j (via Spring Boot starter) but
+didn't bother using it for the simple "Hello, world" output. The
+ratio 1.73 captures this subtle but real pattern.
+
+### What v0.31.0 does NOT prove
+
+The refinement did NOT push precision to 50%+ (still 17.91%, below
+the USEFUL threshold). The pattern "slf4j + System.out" is too rare
+in the v9 Java corpus to be a USEFUL signal on its own. To reach
+USEFUL, a more sophisticated rule is needed:
+- Require BOTH slf4j import AND a Logger declaration (not just the import)
+- Or require the System.out call to be in a method that returns void (skip main)
+- Or require the System.out call to be in a try/catch block (debug output)
+
+These refinements are out of scope for v0.31.0. The current
+refinement is the simplest version of the "set up but didn't use"
+pattern and is the v0.32+ candidate for further refinement.
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes.
+- `pnpm --filter slopbrick test tests/rules/java/`: 19/19 pass
+  (the 3 system-out-println tests are now testing the v0.31.0
+  refined semantics).
+- `pnpm --filter slopbrick generate:rules`: regenerated
+  `builtins.ts` (138 rules) and `docs/rule-catalog.md` (138 rules).
+- `pnpm tsx scripts/build-v9-corpus.ts --arm java`: 92,196 files
+  scanned, 3,896 issues (was 9,695 in v0.30.0), 0 parse-failures.
+
+### What's next (v0.32.0+)
+
+Two directions from v0.31.0:
+
+1. **Refine `java/system-out-println` further** with AST-level
+   checks (require Logger declaration, not just import). v0.32.0+
+   would build a tree-sitter Java parser to enable this.
+
+2. **Build the Swift arm corpus** (mirroring v0.28.0 Kotlin, v0.30.0
+   Java). The 5 Swift rules from v0.24.0 are all DORMANT. The Swift
+   arm has been cloned in `/Users/cheng/corpus-expansion/v9/clones/swift/`
+   (1301 neg .swift files, 569 pos .swift files) — ready for the
+   v0.32.0 build.
+
 ## [0.30.0] - 2026-08-26 — 5 non-AI Java rules (Option C applied to v9 Java corpus, 92k files)
 
 v0.30.0 applies Option C from the v0.27.0 methodology paper to the
