@@ -46,6 +46,11 @@ import { structuralCloneRule } from './dup/structural-clone';
 import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
 import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
+import { javaCommandInjectionRule } from './java/command-injection';
+import { javaHardcodedCredentialRule } from './java/hardcoded-credential';
+import { javaSqlStringConcatRule } from './java/sql-string-concat';
+import { javaSystemOutPrintlnRule } from './java/system-out-println';
+import { javaThreadSleepInLoopRule } from './java/thread-sleep-in-loop';
 import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
 import { kotlinDataClassDefaultsOveruseRule } from './kotlin/data-class-defaults-overuse';
 import { kotlinForceUnwrapRule } from './kotlin/force-unwrap';
@@ -181,6 +186,11 @@ export const builtinRules: Rule[] = [
   goErrorWrapWithoutContextRule,
   goNilSliceVsEmptyRule,
   goStructTagInconsistencyRule,
+  javaCommandInjectionRule,
+  javaHardcodedCredentialRule,
+  javaSqlStringConcatRule,
+  javaSystemOutPrintlnRule,
+  javaThreadSleepInLoopRule,
   kotlinCoroutineGlobalScopeRule,
   kotlinDataClassDefaultsOveruseRule,
   kotlinForceUnwrapRule,

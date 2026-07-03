@@ -314,6 +314,17 @@ const RULE_HINTS: Record<string, string> = {
     "Use slf4j (JVM), android.util.Log (Android), Timber, kermit, or kotlin-logging. println has no log level, no timestamp, no correlation ID. (v0.29.0 — OK; first positive-signal rule in v9 history, ratio 1.84.)",
   'kotlin/force-unwrap':
     "Use ?. (safe call) with ?: (Elvis) for a default, or a proper when/if check. !! throws NullPointerException at runtime and bypasses Kotlin's type system. (v0.29.0 — DORMANT, era-confounded.)",
+  // v0.30.0 — non-AI Java rules (Option C applied to v9 Java corpus, 92k files)
+  'java/sql-string-concat':
+    "Use a PreparedStatement (JDBC), setParameter (jOOQ), or an ORM (Hibernate, MyBatis with #{}). String concat into SQL is the canonical SQL-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT, ratio 0.59.)",
+  'java/hardcoded-credential':
+    "Move the credential to an env var, a .env file (gitignored), or a secrets manager (Vault, AWS Secrets Manager). Hardcoded creds are the #1 secret-leak vector. OWASP A07:2021. (v0.30.0 — DORMANT, 0 fires on v9 Java corpus.)",
+  'java/thread-sleep-in-loop':
+    "Use ScheduledExecutorService for periodic work, or BlockingQueue.take() for event-driven work. Thread.sleep in a loop is the polling anti-pattern — ties up Tomcat/Jetty/Netty threads. (v0.30.0 — DORMANT, era-confounded ratio 0.97.)",
+  'java/system-out-println':
+    "Use SLF4J (the standard facade), Log4j2, or java.util.logging. System.out has no log level, no timestamp, no correlation ID. (v0.30.0 — OK; second positive-signal rule in v9 history, ratio 3.29.)",
+  'java/command-injection':
+    "Use ProcessBuilder with a List<String> of args (no shell parsing) and validate each arg. Runtime.exec() with concat is the canonical command-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT.)",
   // v0.24.0 — Swift rules (DORMANT until v9 Swift corpus calibration)
   'swift/force-unwrap':
     "Replace with the safe form: `as?` + guard/if let, `try?`, or `guard let x = optional else { return }`. `!` crashes unconditionally in release. (v0.24.0 — DORMANT.)",

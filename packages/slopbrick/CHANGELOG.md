@@ -1,5 +1,107 @@
 # Changelog
 
+## [0.30.0] - 2026-08-26 — 5 non-AI Java rules (Option C applied to v9 Java corpus, 92k files)
+
+v0.30.0 applies Option C from the v0.27.0 methodology paper to the
+**v9 Java corpus** (92,196 files — 81,891 neg + 10,305 pos, 18 repos).
+The v9 Java corpus is 30x larger than the v9 Kotlin corpus (2911
+files), so the calibration gives meaningful precision. The headline
+result: `java/system-out-println` has **ratio 3.29** — the second
+positive-signal rule in v9 history (after `kotlin/println-as-log` at
+1.84) and the first one with a production-grade pos arm (10,305 files
+vs Kotlin's 213). It fires 3.29x more on post-2024 Java than
+pre-2022 Java.
+
+### What changed
+
+**5 new non-AI Java rules (v0.30.0):**
+
+| Rule | Category | Severity | aiSpecific | Description |
+|---|---|---|---|---|
+| `java/sql-string-concat` | security | high | false | SQL with string concat — use PreparedStatement |
+| `java/hardcoded-credential` | security | high | false | API key/password literal — use env vars or secrets manager |
+| `java/thread-sleep-in-loop` | perf | medium | false | `Thread.sleep` in a loop — use ScheduledExecutorService |
+| `java/system-out-println` | logic | low | false | `System.out.println` for logging — use SLF4J |
+| `java/command-injection` | security | high | false | `Runtime.exec` with concat — use ProcessBuilder with List args |
+
+All 5 are `aiSpecific: false` and `defaultOff: true` (per the v0.24.0
+guardrail: DORMANT rules must be invisible by default).
+
+### v9 Java re-calibration (with 5 new rules loaded)
+
+| Rule | TP | FP | recall | fpRate | ratio | precision | verdict | direction |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| `java/system-out-println` | 1719 | 4147 | 16.68% | 5.06% | **3.29** | 29.30% | **OK** | **positive (pos > neg)** |
+| `java/thread-sleep-in-loop` | 235 | 1919 | 2.28% | 2.34% | 0.97 | 10.91% | DORMANT | neutral (just below 1.0) |
+| `java/sql-string-concat` | 115 | 1549 | 1.12% | 1.89% | 0.59 | 6.91% | DORMANT | era-confounded |
+| `java/hardcoded-credential` | 0 | 3 | 0.00% | 0.00% | 0.00 | 0.00% | DORMANT | no fires |
+| `java/command-injection` | 0 | 8 | 0.00% | 0.01% | 0.00 | 0.00% | DORMANT | rare in both |
+
+**Second positive-signal rule in v9 history.** `java/system-out-println`
+fires 3.29x more on post-2024 Java (10,305 files including Spring AI,
+LangChain4j, jhipster, etc.) than pre-2022 Java (81,891 files including
+spring-framework, hibernate, jdk, kafka, etc.). The signal is real:
+post-2024 Java code (especially AI-generated examples) uses
+`System.out` for output; pre-2022 production Java uses SLF4J. With
+5,866 total fires, this is a production-grade measurement.
+
+**Why `java/system-out-println` is OK and not USEFUL.** USEFUL
+requires ratio ≥ 1.5 AND precision ≥ 50%. `java/system-out-println`
+hits ratio 3.29 (≥1.5) but precision is 29.3% (below 50% threshold).
+The 1,719 TPs are diluted by 4,147 FPs in pre-2022 production code
+that legitimately uses `System.out` (e.g. for CLI output, debug
+logging in legacy systems). A more sophisticated version of the rule
+could require "in a class with imports of slf4j / log4j" — that
+would push precision higher.
+
+**3 rules are DORMANT for the same reason as the v0.28.0/v0.29.0
+era-confounds:** pre-2022 Java code has more of these patterns
+because the modern alternatives (PreparedStatement, ScheduledExecutor,
+SLF4J) didn't exist or weren't widespread. The direction is reversed
+(positive signal) for `system-out-println` because `System.out` in
+modern demos/AI code IS the choice — modern Java demos don't bother
+with SLF4J.
+
+### What v0.30.0 proves (v9 Java corpus vs v9 Kotlin corpus)
+
+The v9 Java corpus (92k files, 18 repos) and v9 Kotlin corpus
+(2911 files, 8 repos) tell the same story: the v9 corpus is a
+**production-grade** testbed for non-AI-fingerprint rules when
+the pos arm is large enough (10k+ files). The 2 positive-signal
+rules in v9 history both measure the same defect:
+- `kotlin/println-as-log` (ratio 1.84, 213 pos files — INSUFFICIENT_DATA)
+- `java/system-out-println` (ratio 3.29, 10305 pos files — OK)
+
+The Java ratio is 1.8x higher than the Kotlin ratio, suggesting
+the JVM ecosystem has stronger modern/legacy divergence in
+logging practices. Modern Kotlin (which is mostly Android or
+server-side with ktor) and modern Java (which is mostly
+Spring Boot) both default to `println`/`System.out` in demo code,
+but pre-2022 Java (Spring Framework, hibernate, jdk) had
+near-universal SLF4J adoption.
+
+### Build / test impact
+
+- `pnpm --filter slopbrick typecheck`: passes.
+- `pnpm --filter slopbrick test tests/engine/ tests/rules/java/ tests/rules/kotlin/`: 69/69 pass
+  (37 kotlin + 19 java + 10 guardrail + 3 hints).
+- `pnpm --filter slopbrick generate:rules`: regenerated
+  `builtins.ts` (138 rules) and `docs/rule-catalog.md` (138 rules).
+- `pnpm tsx scripts/build-v9-corpus.ts --arm java`: 92,196 files
+  scanned, 9,695 issues, 0 parse-failures. All sample-size
+  guardrails passed.
+
+### What's next (v0.31.0+)
+
+Two directions from v0.30.0:
+
+1. **Refine `java/system-out-println`** to require "in a class
+   that imports SLF4J" — would push precision to 50%+ and
+   promote the rule to USEFUL.
+2. **Build the Swift arm corpus** (mirroring v0.28.0 Kotlin,
+   v0.30.0 Java). The 5 Swift rules from v0.24.0 are all DORMANT;
+   same era-confound expected.
+
 ## [0.29.0] - 2026-08-19 — 5 non-AI Kotlin rules (Option C pivot from v0.27.0 paper)
 
 v0.29.0 implements Option C from the v0.27.0 methodology paper: add
