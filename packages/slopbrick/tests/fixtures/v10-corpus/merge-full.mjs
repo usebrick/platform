@@ -70,7 +70,8 @@ for (const r of cal.rules) {
   m.precision = r.precision;
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
   m.verdict = verdict;
-  m.aiSpecific = aiSpecific;
+  // Preserve aiSpecific from previous entry (matches rule source code)
+  if (m.aiSpecific === undefined) m.aiSpecific = aiSpecific;
   // Preserve defaultOff from previous entry (matches rule source code).
   // DORMANT and INVERTED rules MUST be defaultOff: true (guardrail requirement).
   if (verdict === 'DORMANT' || verdict === 'INVERTED') {
