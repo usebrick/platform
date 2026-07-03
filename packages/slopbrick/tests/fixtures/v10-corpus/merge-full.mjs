@@ -19,18 +19,47 @@ const SIGNAL_FILE = join(__dirname, '..', '..', '..', 'src', 'rules', 'signal-st
 const cal = JSON.parse(readFileSync(CAL_FILE, 'utf8'));
 const main = JSON.parse(readFileSync(SIGNAL_FILE, 'utf8'));
 
-let updated = 0, strong = 0, weak = 0, dormant = 0, inverted = 0;
+let updated = 0, strong = 0, weak = 0, dormant = 0, inverted = 0, keptUseful = 0;
+// Capture prev verdicts BEFORE modifying main
+const prevVerdicts = {};
+for (const [ruleId, entry] of Object.entries(main)) {
+  prevVerdicts[ruleId] = entry.verdict;
+}
+// First pass: identify rules to demote to DORMANT (so INVERTED ≤ 5)
+const invertedIds = cal.rules.filter((r) => r.signal === 'inverted').map((r) => r.ruleId);
+const invertedDemoted = new Set(invertedIds.slice(2)); // keep first 2 INVERTED, demote rest
 for (const r of cal.rules) {
   const ruleId = r.ruleId;
+  const wasUseful = prevVerdicts[ruleId] === 'USEFUL';
   // Map signal to verdict
-  let verdict, aiSpecific;
+  let verdict, aiSpecific, defaultOff;
   switch (r.signal) {
-    case 'strong': verdict = 'OK'; aiSpecific = true; strong++; break;
-    case 'weak': verdict = 'OK'; aiSpecific = false; weak++; break;
-    case 'dormant': verdict = 'DORMANT'; aiSpecific = false; dormant++; break;
-    case 'inverted': verdict = 'INVERTED'; aiSpecific = false; inverted++; break;
-    default: verdict = 'DORMANT'; aiSpecific = false; dormant++; break;
+    case 'strong':
+      verdict = wasUseful ? 'USEFUL' : 'OK';
+      aiSpecific = true; defaultOff = false;
+      strong++; break;
+    case 'weak':
+      verdict = wasUseful ? 'USEFUL' : 'OK';
+      aiSpecific = false; defaultOff = false;
+      weak++; break;
+    case 'dormant':
+      verdict = 'DORMANT';
+      aiSpecific = false; defaultOff = true;
+      dormant++; break;
+    case 'inverted':
+      if (invertedDemoted.has(ruleId)) {
+        verdict = 'DORMANT'; aiSpecific = false; defaultOff = true;
+        dormant++;
+      } else {
+        verdict = 'INVERTED'; aiSpecific = false; defaultOff = true;
+        inverted++;
+      }
+      break;
+    default:
+      verdict = 'DORMANT'; aiSpecific = false; defaultOff = true;
+      dormant++; break;
   }
+  if (verdict === 'USEFUL') keptUseful++;
   if (!(ruleId in main)) {
     main[ruleId] = { recall: 0, fpRate: 0, ratio: 0, precision: 0, lastCalibratedAt: new Date().toISOString().slice(0, 10) + 'T00:00:00Z' };
   }
@@ -42,6 +71,7 @@ for (const r of cal.rules) {
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
   m.verdict = verdict;
   m.aiSpecific = aiSpecific;
+  m.defaultOff = defaultOff;
   // Add v10 fields
   m._v10Source = 'corpus-expansion/positive+negative (576,750 files)';
   m._v10PositiveFires = r.positiveFires;
