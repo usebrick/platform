@@ -161,6 +161,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
 
     const state = loadFlywheelState(cwd);
     state.autoTuned = flywheelOutput.autoTuned;
+    // v0.40.0 (Sprint 2.1): persist the relaxation half. Mirrors
+    // the autoTuned assignment above; both lists are written
+    // together so the on-disk state always reflects the
+    // producer's latest observations. The next scan reads both.
+    state.autoRelaxed = flywheelOutput.autoRelaxed;
     state.research = loadResearchMetricsFromDisk(cwd);
     state.updatedAt = new Date().toISOString();
     saveFlywheelState(cwd, state);

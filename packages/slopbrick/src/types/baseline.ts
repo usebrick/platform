@@ -49,6 +49,51 @@ export interface AutoTunedRule {
 
 
 
+/**
+ * v0.40.0 (Sprint 2.1): reverse direction of the flywheel ratchet.
+ *
+ * The flywheel has historically been one-way — `severityBump()` raises
+ * a rule's severity after 3 consecutive top-3 appearances. The
+ * relaxed half tells users when the data suggests a rule is *less*
+ * relevant to *this* repository than the corpus default — i.e.
+ * a high-FP rule that the user keeps ignoring.
+ *
+ * Distinct from `AutoTunedRule` on purpose:
+ *   - `severity` widens to `Severity | 'off'` because the relaxation
+ *     ratchets past `'low'` into `'off'` (the floor). Once off, the
+ *     read-side skips the rule entirely (same as a user `'off'`
+ *     override).
+ *   - `reason` references the ignore-streak and the corpus prior
+ *     that motivated the relaxation, so users can audit the
+ *     decision later (read `.slopbrick/flywheel/auto-tuned.json`).
+ *   - `previousSeverity` makes it explicit what we ratcheted *from*
+ *     (vs `AutoTunedRule` whose `severity` is just the new value;
+ *     the bump is always `prev + 1` so the prior is implied).
+ *   - Schema carries `defaultPrior` so re-calibration can replay
+ *     the relaxation against fresh corpus data (the relaxation
+ *     was based on a specific prior — if the prior changes, the
+ *     relaxation decision may no longer hold).
+ */
+export interface AutoRelaxedRule {
+  ruleId: string;
+  /**
+   * New effective severity. Floors at `'off'` (the ratchet
+   * ultimate floor). Note the deliberate asymmetry with
+   * `AutoTunedRule` which can never write `'off'` — the bump
+   * direction saturates at `'high'`, but relaxation walks
+   * out the other end.
+   */
+  severity: Severity | 'off';
+  previousSeverity: Severity;
+  reason: string;
+  /** AI-corpus prevalence assumed when the relaxation was decided. */
+  defaultPrior: number;
+  /** When the relaxation was decided (ISO 8601). */
+  relaxedAt: string;
+}
+
+
+
 export interface RuleSuggestion {
   pattern: string;
   example: string;
@@ -78,6 +123,19 @@ export interface FlywheelState {
   version: string;
   updatedAt: string;
   autoTuned: AutoTunedRule[];
+  /**
+   * v0.40.0+: rules the flywheel has *relaxed* based on observed
+   * ignore behavior across consecutive scans. Mirrors `autoTuned`
+   * in lifecycle and persistence shape, but represents a downward
+   * (not upward) severity adjustment. The next scan reads both
+   * lists and applies them on top of the corpus-default severity.
+   *
+   * Persisted to `.slopbrick/flywheel/auto-tuned.json` alongside
+   * `autoTuned` for backward compat with v0.39.x consumers of
+   * the file (they just ignore the unknown field). Migration to
+   * v3 happens in `migrateFlywheelState`.
+   */
+  autoRelaxed: AutoRelaxedRule[];
   research?: ResearchMetrics;
 }
 
@@ -85,6 +143,13 @@ export interface FlywheelState {
 
 export interface FlywheelOutput {
   autoTuned: AutoTunedRule[];
+  /**
+   * v0.40.0+: relaxation candidates produced by the current scan.
+   * Read by `persistRun.ts` which writes them into the next
+   * persisted `FlywheelState`. Empty when no rule has hit the
+   * `IGNORE_THRESHOLD` yet.
+   */
+  autoRelaxed: AutoRelaxedRule[];
   hotspotIssues: Issue[];
   suggestions: RuleSuggestion[];
   research?: ResearchMetrics;

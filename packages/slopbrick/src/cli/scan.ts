@@ -295,11 +295,36 @@ export async function runScan(
     // but if a rule is INVERTED or NOISY (calibration-failed), it
     // must stay off regardless of how many scans observed it. Without
     // this guard, the flywheel undoes the auto-disable pass below.
+    // v0.40.0 (Sprint 2.1): the same guard now also applies to the
+    // relaxation half — we never re-enable a rule the calibration
+    // marked defaultOff, even if the relaxer decided to flip it
+    // off-then-on (the read-side applies the relaxed severity, but
+    // the skipped-defaultOff check wins).
     const defaultOffRules = getDefaultOffRules();
     for (const tuned of flywheelState.autoTuned) {
       if (config.rules[tuned.ruleId] === 'off') continue;
       if (defaultOffRules.has(tuned.ruleId)) continue;
       config.rules[tuned.ruleId] = tuned.severity;
+    }
+    // Apply the relaxation half. Two independent writes to the
+    // same `config.rules` map; later entries win on duplicate keys.
+    // Order matters here: `autoTuned` is processed first, so a
+    // rule that BOTH bumped AND relaxed in the persisted state
+    // gets the relaxation applied second (the relaxer wins for
+    // the next scan). The persisted state preserves both so the
+    // user can audit the ratchet history.
+    for (const relaxed of flywheelState.autoRelaxed) {
+      if (config.rules[relaxed.ruleId] === 'off') {
+        // If the user has explicitly turned the rule off, leave
+        // it off — their explicit choice beats the relaxer's
+        // observation.
+        continue;
+      }
+      if (defaultOffRules.has(relaxed.ruleId)) continue;
+      // `relaxed.severity` is `Severity | 'off'`. `config.rules[id]`
+      // accepts `RuleSeverity = Severity | 'auto' | 'off'`, so the
+      // assignment is type-safe.
+      config.rules[relaxed.ruleId] = relaxed.severity;
     }
   }
 
