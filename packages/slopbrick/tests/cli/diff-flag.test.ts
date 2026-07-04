@@ -32,9 +32,23 @@ function git(cwd: string, ...args: string[]): void {
 }
 
 function initRepo(dir: string): void {
-  git(dir, 'init', '-q', '-b', 'main');
+  // `git init -b <branch>` requires git 2.28+. Fall back to a
+  // post-init `symbolic-ref` for older git versions (some CI runners).
+  try {
+    git(dir, 'init', '-q', '-b', 'main');
+  } catch {
+    git(dir, 'init', '-q');
+    git(dir, 'symbolic-ref', 'HEAD', 'refs/heads/main');
+  }
   git(dir, 'config', 'user.email', 'test@example.com');
   git(dir, 'config', 'user.name', 'Test User');
+  // NOTE: we can't `rev-parse --abbrev-ref HEAD` here because the
+  // repo has no commits yet — that command errors on an unborn HEAD.
+  // The default branch is already 'main' from the init above (either
+  // via -b or via symbolic-ref). If a CI runner's git ignores both
+  // and creates a different default branch, the first commit below
+  // will land on that branch and the test's `checkout -b main` in
+  // setupDiffFixture will create a separate 'main' branch from it.
 }
 
 function configWith(): ResolvedConfig {
