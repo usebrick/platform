@@ -101,11 +101,19 @@ describe('aiSpecific drift detector (v0.18.2 PR-2)', () => {
       readFileSync(JSON_PATH, 'utf-8'),
     ) as Record<string, SignalStrengthEntry>;
 
+    // v0.38.x: skip calibration-run metadata entries like
+    // `_v10_1Meta` (they're not rule entries — they carry
+    // corpus paths + method info, with `_v10_1MetaVerdict:
+    // 'META'` as the discriminator). Same filter as
+    // `tests/engine/signal-strength-guardrails.test.ts`.
+    const jsonRuleIds = Object.keys(json).filter((k) => !k.startsWith('_'));
+
     // For every rule in the JSON, the source and JSON values
     // must agree. We iterate the JSON (the smaller set) and
     // skip source-only rules (new rules not yet calibrated).
     const mismatches: Array<{ ruleId: string; source: boolean | 'missing'; json: boolean | 'missing' }> = [];
-    for (const [ruleId, entry] of Object.entries(json)) {
+    for (const ruleId of jsonRuleIds) {
+      const entry = json[ruleId] as SignalStrengthEntry;
       const source = sourceMap.get(ruleId);
       if (source === undefined) {
         mismatches.push({ ruleId, source: 'missing', json: entry.aiSpecific ?? 'missing' });
@@ -138,7 +146,10 @@ describe('aiSpecific drift detector (v0.18.2 PR-2)', () => {
     const sourceMap = readAiSpecificFromSource();
     // Same number of rules as in the JSON — sanity.
     const json = JSON.parse(readFileSync(JSON_PATH, 'utf-8')) as Record<string, unknown>;
-    const jsonRuleIds = new Set(Object.keys(json));
+    // v0.38.x: skip calibration-run metadata entries (same filter as
+    // the test above). The "jsonOnlyRules" assertion below needs to
+    // exclude `_v10_1Meta` for the same reason the first test does.
+    const jsonRuleIds = new Set(Object.keys(json).filter((k) => !k.startsWith('_')));
     const sourceRuleIds = new Set(sourceMap.keys());
 
     // Source rules not in the JSON: these are new rules that
