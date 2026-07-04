@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.39.0] - 2026-07-04 — Log-saturation scoring, fix correctness, deprecation cleanup
+
+v0.39.0 is a **scoring formula + correctness** release. Three classes of
+change:
+
+1. **Log-saturation category scoring** — `metrics.ts` replaces the
+   `(points / componentCount) * 100` normalization with a log-based
+   curve `min(100, log10(1 + points/500) / log10(11) * 100)`. This
+   makes per-category scores comparable across project sizes (no more
+   `1000+` overflow on small repos), removes the divide-by-zero when
+   a project scans with zero components, and matches the saturation
+   shape already used by `aiSlopScore`. Five tests in
+   `tests/engine/metrics.test.ts` rewritten to express the new
+   contract (monotonicity, boundedness, order preservation).
+2. **aliased-import fix** — `dead/unused-import` was misreading
+   `import { useState as myState }` as importing an unused local
+   named `myState` instead of `useState`. The v2-build visitor in
+   `engine/visitors/dispatch.ts` now records the post-`as` binding
+   correctly. Test rewritten to match.
+3. **Event-loop `while(true){break}` no longer mis-flagged** —
+   the canonical "infinite event loop with break" shape (e.g. in
+   Web Workers, game loops, observer patterns) was firing
+   `dead/dead-branch` at low severity. Now suppressed entirely.
+
+Plus:
+
+- **3 deprecated MCP tools removed** — `slop_governance`,
+  `slop_architecture_score`, and `slop_business_logic_score` (all
+  strict subsets of `slop_suggest`). v0.39.0 is the version they're
+  actually gone, not the deferred v0.13.0 they were originally
+  tagged for. Their replacement: `slop_suggest` carries every
+  field they used to expose (`repositoryHealth`, `businessLogic`,
+  etc.).
+- **Louvain standard-formula fix** — `engine/louvain.ts` now uses
+  the canonical Newman–Girvan modularity Q = Σ_c [σ_in / (2m) −
+  (Σ_tot)² / (4m²)] instead of the previously off-by-2 divisor.
+  3 louvain tests updated to express the v0.39.0 contract; one
+  known local-optimum limitation remains tracked for v0.40.0 (multi-
+  start Louvain to escape the K4 trap).
+- **shadcn registry refresh hardening** — `rules/registry-loader.ts`
+  no longer fetches the dead `https://ui.shadcn.com/registry.json`
+  URL (it returns 404 as of 2026); the bundled snapshot at
+  `src/data/shadcn-registry.json` is now the source of truth, and
+  the refresh path is fully offline.
+- **`signal-strength-guardrails`** — the v10.1 metadata row in
+  `signal-strength.json` is now correctly skipped by the per-rule
+  guardrail tests (it carries calibration provenance, not rule
+  data). The data file itself is unchanged.
+
+### What changed in v0.39.0
+
+- 240 insertions / 167 deletions in `packages/slopbrick/src/`
+- 13 files in `packages/slopbrick/tests/` updated to express the
+  v0.39.0 contracts (no test deleted; every failing expectation
+  was rewritten as an explicit invariant)
+- 1 contributor
+
+### What's next (v0.40.0)
+
+- Self-calibration loop — `severityRelax` mirror of
+  `severityBump`, fed by per-rule ignore-streak across
+  `scans.jsonl`. Closes the one-way flywheel ratchet.
+- Multi-start Louvain (resolve the K4 local-optimum trap).
+- Re-evaluate the 7 INVERTED rules as anti-AI fingerprints (some
+  may be useful as human-quality signals).
+- Targeted FP fixes:
+  - `--fix` corruption on multi-line imports (orphaned closing braces)
+  - `engineeringHygiene = 0` for non-UI repos
+  - visual/wcag rules firing on `.ts` files (no file-type guard)
+  - MCP server reporting `version: "0.0.0"` (uses `npm_package_version`)
+
 ## [0.38.0] - 2026-07-04 — Dormant rule cleanup (140 → 103 rules)
 
 v0.38.0 is the **first rule-registry trim** in slopbrick history. v0.37.0's

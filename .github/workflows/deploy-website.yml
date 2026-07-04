@@ -1,0 +1,157 @@
+name: deploy-website
+
+# Deploys packages/website to Cloudflare Pages.
+#
+# Two paths exist for getting the site live:
+#   Path A — Cloudflare dashboard "Connect to Git" (CF builds directly
+#            from the repo, this workflow is bypassed). See Path A in
+#            docs/operations/cloudflare-pages-setup.md.
+#   Path B — THIS file. GitHub Actions builds the site and pushes the
+#            dist via wrangler-action. Use this path when you want a
+#            CI gate, a staging environment, or different deploy cadence
+#            than Path A's "every push to main".
+#
+# Required GitHub repo secrets (configured by the operator per Path B
+# step 3 in docs/operations/cloudflare-pages-setup.md):
+#   - CLOUDFLARE_API_TOKEN      — scoped API token with "Edit Cloudflare Pages"
+#   - CLOUDFLARE_ACCOUNT_ID     — the 32-char hex account ID
+#   - CLOUDFLARE_PAGES_PROJECT_NAME — e.g. "usebrick-dev"
+#
+# Why this is separate from ci.yml:
+#   - CI runs on every PR (cost-bound). Deploy only runs on push to
+#     main after CI is green (cheaper, no PR deploys).
+#   - The path filter is strictly narrower (only website- and
+#     core-touching commits trigger a redeploy).
+#
+# Why we still build @usebrick/core in this workflow instead of relying
+# on the prebuilt dist committed to the repo:
+#   The `prebuild` script in packages/website/scripts/prebuild.ts reads
+#   packages/core/package.json#version fresh on each build to write
+#   src/data/version.json (used by the Footer). If we shipped a stale
+#   dist/, the Footer would show the old core version. Always rebuild.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Only deploy when the site or its core-data source changes.
+      # Docs, marketing copy, and the slopbrick CLI code do not change
+      # the rendered site.
+      - 'packages/website/**'
+      - 'packages/core/**'
+      - 'pnpm-lock.yaml'
+      # The workflow file itself can change the deploy behavior.
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+    # Manual re-deploy / first-time setup trigger. Required inputs are
+    # the same repo secrets the schedule path uses.
+
+concurrency:
+  # One in-flight deploy per ref. cancel-in-progress=true: a second
+  # push that lands before the first deploy finishes supersedes the
+  # first — we never want two stale deploys racing.
+  group: deploy-website-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The `cloudflare-pages` GitHub environment is OPTIONAL. If
+    # defined in repo Settings → Environments with required reviewers,
+    # the deploy will pause for human approval before running. See
+    # Path B step 4 last paragraph in docs/operations/cloudflare-pages-setup.md.
+    # To enable, uncomment the `environment:` block below.
+    #
+    # environment: cloudflare-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        # pnpm version comes from the root package.json's
+        # `packageManager` field (pnpm@9.15.0). Don't pin here — see
+        # the matching note in ci.yml.
+        uses: pnpm/action-setup@v3
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install workspace dependencies
+        # frozen-lockfile is the deploy-time guarantee: if the lockfile
+        # doesn't match package.json, fail loudly instead of silently
+        # rewriting deps.
+        run: pnpm install --frozen-lockfile
+
+      - name: Build website
+        # Astro's `prebuild` hook writes src/data/version.json from
+        # the sibling packages' versions, then `astro build` reads it.
+        # We only build the website package — not the whole workspace —
+        # because the deploy doesn't depend on slopbrick/engine output.
+        # The Footer reads the version string via version.json; if any
+        # future direct import of @usebrick/core dist arises, add
+        # `pnpm --filter @usebrick/core build` before this step.
+        working-directory: packages/website
+        run: pnpm build
+
+      - name: Verify dist contents
+        # Cheap sanity check: if astro build silently produced an
+        # empty output (e.g. misconfigured output directory), we'd
+        # otherwise deploy a 404 page. The expected entry point is
+        # dist/index.html.
+        working-directory: packages/website
+        run: |
+          if [ ! -f dist/index.html ]; then
+            echo "::error::dist/index.html missing — astro build produced no output"
+            ls -la dist/ || true
+            exit 1
+          fi
+          echo "dist/index.html size: $(wc -c < dist/index.html) bytes"
+          echo "dist/ entries: $(find dist -type f | wc -l)"
+
+      # v0.14.5+ accessibility tests (`axe-core/playwright`).
+      # Disabled by default: the test boots astro dev, the production
+      # build is what we ship, and dev mode asset inlining may diverge
+      # from production output. To run after deployment, move this
+      # step below the wrangler-action and target the preview URL.
+      #
+      # - name: Run axe-core a11y tests
+      #   working-directory: packages/website
+      #   run: pnpm test:a11y
+
+      - name: Deploy to Cloudflare Pages
+        # wrangler-action@v3 is the supported CF Pages upload action.
+        # Uses the `pages deploy` subcommand directly. Flags:
+        #   --project-name  required, matches the CF Pages project
+        #   --branch        main, so usebrick.dev serves the new
+        #                   build on its next request
+        #   --commit-dirty  allow dirty working tree (CI checkout has
+        #                   uncommitted version.json — harmless)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy packages/website/dist --project-name=${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main --commit-dirty=true
+        env:
+          # wrangler-action picks up these env vars automatically;
+          # the explicit block is a belt-and-braces fallback.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Cloudflare Pages deploy summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project: \`${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: \`main\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Result: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- usebrick.dev: https://usebrick.dev" >> "$GITHUB_STEP_SUMMARY"
