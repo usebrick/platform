@@ -42,6 +42,7 @@ import { runInitWizard, runDoctor, isInteractive } from './init';
 import { registerBadge } from './commands/badge.js';
 import { registerSuggest } from './commands/suggest.js';
 import { registerExplain } from './commands/explain.js';
+import { registerCalibration } from './commands/calibration.js';
 import { registerInstall } from './commands/install.js';
 import { registerUninstall } from './commands/uninstall.js';
 import { registerMcp } from './commands/mcp.js';
@@ -235,6 +236,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     registerBadge(program);
     registerSuggest(program);
     registerExplain(program);
+    registerCalibration(program);
     // explain registration above is the one in effect (line ~1500 was the old
     // duplicate that triggered "cannot add command 'explain' as already have
     // command 'explain'"). Removed the inline pre-creation; registerExplain
