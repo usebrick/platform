@@ -13,20 +13,30 @@ name: publish
 # `usebrick/platform`, workflow `.github/workflows/publish.yml`,
 # environment `publish`.
 #
-# Safety gate: this workflow is triggered ONLY by a published GitHub
-# Release (not by tag push). That means: a maintainer has already
-# reviewed the changelog, chosen the version, and explicitly created
-# the Release in the GitHub UI. The `publish` environment then adds
-# a second approval gate before `npm publish` actually runs. Two
-# human gates per release, while the platform is still evolving.
+# Safety gate: this workflow has TWO human gates per release:
+#   (1) publishing the GitHub Release in the UI (the `release:
+#       types: [published]` trigger below — no-op without an
+#       explicit "Publish release" click), AND
+#   (2) approving the deployment in the `publish` environment
+#       (the `environment: publish` declaration on the `publish`
+#       job — requires `Dystx`'s review; configured in
+#       https://github.com/usebrick/platform/settings/environments).
 #
-# Trigger this workflow by:
-#   1. Bump version in packages/slopbrick/package.json + src/types.ts
-#   2. Update CHANGELOG.md
-#   3. Commit + push to main
-#   4. Wait for CI to pass
-#   5. Create a GitHub Release in the UI (or via `gh release create v0.11.1`)
-#   6. Approve the deployment in the `publish` environment
+# Together: a maintainer publishes a release after reviewing the
+# version bump + CHANGELOG, then approves the actual npm publish
+# from the GitHub Actions run summary. Two distinct humans can
+# each cancel the release (release-undo OR env-approval-deny)
+# without the OIDC token having to leak.
+#
+# Note: the OIDC trusted publisher on npmjs.com (configured to
+# accept this workflow for the `publish` environment) is what
+# proves the artifacts came from this exact GHA run. There is
+# no `NPM_TOKEN` secret stored in the repo, so a compromised
+# tag or crafted workflow file alone cannot leak it.
+#
+# If you want to add a stricter gate (e.g. require 2 reviewers,
+# or wait-timer), edit the `publish` environment in repo
+# Settings → Environments; the workflow picks it up automatically.
 
 on:
   release:
@@ -48,14 +58,20 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # No `environment: publish` gate here. The Release is the
-    # human-gate surface (a maintainer reviews the version bump +
-    # CHANGELOG entry before clicking "Publish release" in the GH
-    # UI). Once the Release is published, the npm publish runs
-    # unsupervised — that's the explicit agreement for this repo
-    # ("deploy to npm doesn't need review, everything is on github").
-    # OIDC trusted publishing (`id-token: write` above) gives
-    # npm provenance without an env-gated human step.
+    # The `publish` environment is the second human gate. Configured
+    # in https://github.com/usebrick/platform/settings/environments with
+    # `required_reviewers: [Dystx]` and `prevent_self_review: false`.
+    # Once a release is published in the GH UI, this workflow starts
+    # and pauses here waiting for an environment approval; the
+    # `Publish slopbrick to npm` step below only runs after Dystx
+    # clicks "Approve and deploy" on the run summary. Until that
+    # approval lands, the build/test/pack steps still run (so a
+    # reviewer can see the dry-run artifact), but no artifact moves.
+    # The OIDC `id-token: write` permission above is what the
+    # `npm publish --provenance` step uses to authenticate against
+    # npmjs.com — trusted-publishing is configured on the npm side
+    # to accept this exact workflow + environment.
+    environment: publish
     steps:
       - name: Checkout
         uses: actions/checkout@v4
