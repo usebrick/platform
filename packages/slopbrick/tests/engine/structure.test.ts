@@ -127,6 +127,8 @@ describe('readRuns', () => {
   });
 
   it('caps the log at 1000 runs, dropping oldest entries', async () => {
+    // 1002 sequential I/O calls can exceed 30s under CI resource
+    // contention. Pass a 120s timeout to avoid flaking the full suite.
     for (let i = 0; i < 1002; i++) {
       await appendRun(dir, makeReport(i), VERSION, fsMemoryIO, false);
     }
@@ -134,7 +136,7 @@ describe('readRuns', () => {
     expect(runs).toHaveLength(1000);
     expect(runs[0].slopIndex).toBe(2);
     expect(runs[runs.length - 1].slopIndex).toBe(1001);
-  });
+  }, 120_000);
 });
 
 describe('appendRun', () => {

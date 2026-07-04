@@ -16,7 +16,10 @@ export default defineConfig({
       'tests/fixtures/**/*',
       '.worktrees/**',
     ],
+    // 30s for most tests, 120s for heavy engine tests (structure.test.ts
+    // can take >30s when the full suite runs under CI resource contention).
     testTimeout: 30000,
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],
