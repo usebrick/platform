@@ -414,17 +414,19 @@ function projectAndEvaluate(
   const ordered = [...rawCommunities.entries()].sort((a, b) => a[0] - b[0]);
   const renumbered = new Map<number, string[]>();
   const internalEdges = new Map<number, number>();
-  const totals = new Map<number, number>();
+
+  // Assign each community a stable new id (0..K-1) and initialize the
+  // per-community internal-edge accumulator. (The previous block also
+  // built a `totals` map here; that was dead — `totalsForMod` below is
+  // the live recomputation. The renumbered/internalEdges initialization
+  // is NOT dead and must stay.)
+  ordered.forEach(([, members], newId) => {
+    renumbered.set(newId, members);
+    internalEdges.set(newId, 0);
+  });
 
   // Σ_tot_c = sum of weighted degrees in c.
   const degrees = computeDegrees(originalNodes, originalEdges);
-  ordered.forEach(([oldId, members], newId) => {
-    renumbered.set(newId, members);
-    internalEdges.set(newId, 0);
-    let total = 0;
-    for (const node of members) total += degrees.get(node) ?? 0;
-    totals.set(newId, total);
-  });
 
   // σ_in_c = sum of internal edge weights (each edge once).
   for (const [key, w] of weights) {
@@ -438,14 +440,12 @@ function projectAndEvaluate(
       if (newId >= 0) internalEdges.set(newId, (internalEdges.get(newId) ?? 0) + w);
     }
   }
-  void totals;
 
   // Modularity via the helper (uses σ_in/m - (Σ_tot)²/(4m²) per community).
-  // We rebuild a selfLoops map for the helper.
   const selfLoopsForMod = new Map<number, number>();
   for (const [id, sigmaIn] of internalEdges) selfLoopsForMod.set(id, sigmaIn);
   const totalsForMod = new Map<number, number>();
-  for (const [id, members] of renumbered) {
+  for (const [id, members] of ordered) {
     let total = 0;
     for (const node of members) total += degrees.get(node) ?? 0;
     totalsForMod.set(id, total);
@@ -459,56 +459,7 @@ function projectAndEvaluate(
   };
 }
 
-// ---- Partition snapshot + modularity ---------------------------------------
-
-/**
- * Build a partition snapshot from the live state. Uses the `totals` and
- * `selfLoops` maps (kept in sync during Phase 1) to compute modularity
- * and per-community σ_in_c.
- *
- * Community ids are renumbered 0..K-1 in order of first appearance so
- * the output is stable across runs on the same input.
- */
-function snapshotPartition(
-  originalNodes: string[],
-  nodeToCommunity: Map<string, number>,
-  totals: Map<number, number>,
-  selfLoops: Map<number, number>,
-  m: number,
-): InternalResult {
-  // Group original nodes by community id.
-  const rawCommunities = new Map<number, string[]>();
-  for (const node of originalNodes) {
-    const c = nodeToCommunity.get(node)!;
-    if (!rawCommunities.has(c)) rawCommunities.set(c, []);
-    rawCommunities.get(c)!.push(node);
-  }
-
-  // Map old id → σ_in_c (read directly from the live selfLoops map,
-  // which already stores σ_in_c — each internal edge counted once).
-  const sigmaInByOldId = new Map<number, number>();
-  for (const [oldId, sigmaIn] of selfLoops) {
-    sigmaInByOldId.set(oldId, sigmaIn ?? 0);
-  }
-
-  // Renumber in order of first appearance.
-  const ordered = [...rawCommunities.entries()].sort((a, b) => a[0] - b[0]);
-  const renumbered = new Map<number, string[]>();
-  const internalEdges = new Map<number, number>();
-  ordered.forEach(([oldId, members], newId) => {
-    renumbered.set(newId, members);
-    internalEdges.set(newId, sigmaInByOldId.get(oldId) ?? 0);
-  });
-
-  // Compute modularity using the live totals + selfLoops maps (still
-  // keyed by old id).
-  const modularity = modularityFromAggregates(totals, selfLoops, m);
-  return {
-    modularity,
-    communityMap: renumbered,
-    internalEdges,
-  };
-}
+// ---- Modularity ------------------------------------------------------------
 
 /**
  * Compute Q = Σ_c [σ_in_c / m − (Σ_tot_c)² / (4m²)] using the live

@@ -91,12 +91,12 @@ export const AI_FAVORED_RULE_IDS: readonly string[] = [
   'logic/zombie-state',
   'test/duplicate-setup',
   'logic/ghost-defensive',
-  'typo/calc-raw-px',
   'security/fail-open-auth',
 ] as const;
 
-/** INVERTED rules per the v4 calibration table. These fire more
- *  on human code than AI code (lift < 1). 11 rules. */
+/** INVERTED rules per the v4 + v10.1 calibration tables. These fire
+ *  more on human code than AI code (lift < 1). 10 rules after
+ *  v0.38.0 dropped `wcag/dragging-movements` (v10-DORMANT). */
 export const HUMAN_FAVORED_RULE_IDS: readonly string[] = [
   'component/multiple-components-per-file',
   'context/import-path-mismatch',
@@ -108,7 +108,6 @@ export const HUMAN_FAVORED_RULE_IDS: readonly string[] = [
   'layout/spacing-grid',
   'typo/math-button-label-uniformity',
   'logic/math-variable-name-entropy',
-  'wcag/dragging-movements',
 ] as const;
 
 /** Mass assigned to favored rules vs the background. Favored rules

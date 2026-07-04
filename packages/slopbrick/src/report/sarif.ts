@@ -104,8 +104,10 @@ interface SarifLog {
   runs: SarifRun[];
 }
 
-const REPO_INFORMATION_URI = 'https://github.com/brickdotdev/slopbrick';
-const RULES_BASE_URL = 'https://github.com/Dystx/slopbrick/blob/main/src/rules';
+// The org is `usebrick`; the monorepo is `usebrick/platform`; slopbrick is
+// the published CLI package inside it. Keep these in sync with explain.ts.
+const REPO_INFORMATION_URI = 'https://github.com/usebrick/platform';
+const RULES_BASE_URL = 'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules';
 
 function buildArtifactUri(filePath: string | undefined, cwd: string | undefined): string {
   if (!filePath) {

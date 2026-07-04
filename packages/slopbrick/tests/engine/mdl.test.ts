@@ -15,8 +15,9 @@ import { builtinRules } from '../../src/rules/builtins';
 const DEFAULT_MDL_PRIORS = buildDefaultMdlPriors(builtinRules);
 
 describe('AI_FAVORED_RULE_IDS / HUMAN_FAVORED_RULE_IDS', () => {
-  it('contains the 18 v4-USEFUL rules from the calibration table', () => {
-    expect(AI_FAVORED_RULE_IDS).toHaveLength(18);
+  it('contains the 17 v4-USEFUL rules from the calibration table', () => {
+    // v0.38.0 dropped `typo/calc-raw-px` (v10-DORMANT) from this list.
+    expect(AI_FAVORED_RULE_IDS).toHaveLength(17);
     // Spot-check a few high-lift entries from the v4 P/R/FPR table.
     expect(AI_FAVORED_RULE_IDS).toContain('logic/ghost-defensive'); // P=94.7%, lift=22.5
     expect(AI_FAVORED_RULE_IDS).toContain('security/fail-open-auth'); // P=100%
@@ -25,8 +26,9 @@ describe('AI_FAVORED_RULE_IDS / HUMAN_FAVORED_RULE_IDS', () => {
   });
 
   it('contains the v4-INVERTED rules from the calibration table', () => {
-    // All 11 INVERTED rules per docs/research/v4-per-rule-pr-fpr.md.
-    expect(HUMAN_FAVORED_RULE_IDS).toHaveLength(11);
+    // v0.38.0 dropped `wcag/dragging-movements` (v10-DORMANT) from this list.
+    // 10 rules remaining.
+    expect(HUMAN_FAVORED_RULE_IDS).toHaveLength(10);
     expect(HUMAN_FAVORED_RULE_IDS).toContain('component/multiple-components-per-file');
     expect(HUMAN_FAVORED_RULE_IDS).toContain('context/import-path-mismatch');
     expect(HUMAN_FAVORED_RULE_IDS).toContain('visual/inline-style-dominance');

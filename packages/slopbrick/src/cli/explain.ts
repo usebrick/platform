@@ -20,7 +20,9 @@ export interface ExplainResult {
 }
 
 // helpUri emitted by `src/report/sarif.ts`.
-const RULES_BASE_URL = 'https://github.com/Dystx/slopbrick/blob/main/src/rules';
+// The org is `usebrick` (the platform); `slopbrick` is the published CLI
+// package inside the usebrick/platform monorepo.
+const RULES_BASE_URL = 'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules';
 
 function ruleIdToFilename(ruleId: string): string {
   // e.g. 'logic/boundary-violation' -> 'boundary-violation'

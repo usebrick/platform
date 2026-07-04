@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseFile } from '@usebrick/engine';
@@ -7,8 +7,15 @@ import { parseFile } from '@usebrick/engine';
 // Round 25: smoke test that the AST cache works end-to-end. We don't
 // assert exact timing (CI flake risk) — just that the second parse is
 // much faster than the first when cache is enabled.
+//
+// v0.18.3+: the cache is configured via the `ParseFileOptions.cache`
+// option, NOT via process.env. The engine's `parseFile` no longer reads
+// `SLOP_AUDIT_CACHE` / `SLOP_AUDIT_CACHE_ROOT` — those env vars are read
+// by the slopbrick CLI boundary (worker.ts), which threads a
+// `ParserCacheConfig` into `parseFile`. This test exercises the same
+// option-based path the CLI uses.
 describe('AST cache (round 25)', () => {
-  it('second parse with --cache is faster than the first', async () => {
+  it('second parse with cache enabled is faster than the first', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'slopbrick-cache-'));
     try {
       const cacheRoot = join(dir, '.cache');
@@ -27,18 +34,17 @@ describe('AST cache (round 25)', () => {
       ].join('\n');
       writeFileSync(filePath, source);
 
+      const cache = { enabled: true, root: cacheRoot };
+
       // First parse: cold (no cache).
-      process.env.SLOP_AUDIT_CACHE = '1';
-      // Override the cache root so we don't pollute the user's actual cache.
-      process.env.SLOP_AUDIT_CACHE_ROOT = cacheRoot;
       const firstStart = Date.now();
-      const first = await parseFile(filePath);
+      const first = await parseFile(filePath, { cache });
       const firstElapsed = Date.now() - firstStart;
       expect(first.ast.type).toBe('Module');
 
       // Second parse: should hit the cache.
       const secondStart = Date.now();
-      const second = await parseFile(filePath);
+      const second = await parseFile(filePath, { cache });
       const secondElapsed = Date.now() - secondStart;
       expect(second.ast.type).toBe('Module');
 
@@ -46,13 +52,11 @@ describe('AST cache (round 25)', () => {
       // We allow equality to avoid CI flakiness.
       expect(secondElapsed).toBeLessThanOrEqual(firstElapsed * 5);
     } finally {
-      delete process.env.SLOP_AUDIT_CACHE;
-      delete process.env.SLOP_AUDIT_CACHE_ROOT;
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('cache root can be overridden via SLOP_AUDIT_CACHE_ROOT', async () => {
+  it('cache root can be overridden via the cache.root option', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'slopbrick-cache-'));
     try {
       const cacheRoot = join(dir, 'custom-cache');
@@ -60,16 +64,12 @@ describe('AST cache (round 25)', () => {
       const filePath = join(dir, 'A.tsx');
       writeFileSync(filePath, 'export const A = () => <div>x</div>;\n');
 
-      process.env.SLOP_AUDIT_CACHE = '1';
-      process.env.SLOP_AUDIT_CACHE_ROOT = cacheRoot;
-      await parseFile(filePath);
+      await parseFile(filePath, { cache: { enabled: true, root: cacheRoot } });
 
       // The cache file should be inside the custom root.
-      const files = require('node:fs').readdirSync(cacheRoot);
+      const files = readdirSync(cacheRoot);
       expect(files.length).toBeGreaterThan(0);
     } finally {
-      delete process.env.SLOP_AUDIT_CACHE;
-      delete process.env.SLOP_AUDIT_CACHE_ROOT;
       rmSync(dir, { recursive: true, force: true });
     }
   });

@@ -25,7 +25,13 @@
     "_v10F1": 0.01235,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.63156,
+    "_v10_1Recall": 0.00623,
+    "_v10_1F1": 0.01235,
+    "_v10_1PositiveFires": 1913,
+    "_v10_1NegativeFires": 1116
   },
   "ai/comment-ratio": {
     "recall": 0.2771,
@@ -53,7 +59,13 @@
     "_v10F1": 0.41334,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.62354,
+    "_v10_1Recall": 0.30913,
+    "_v10_1F1": 0.41334,
+    "_v10_1PositiveFires": 94857,
+    "_v10_1NegativeFires": 57270
   },
   "ai/compression-profile": {
     "recall": 0.3478,
@@ -81,7 +93,13 @@
     "_v10F1": 0.57385,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.74871,
+    "_v10_1Recall": 0.4652,
+    "_v10_1F1": 0.57385,
+    "_v10_1PositiveFires": 142747,
+    "_v10_1NegativeFires": 47910
   },
   "ai/console-debug-storm": {
     "recall": 0.0073,
@@ -109,7 +127,13 @@
     "_v10F1": 0.01784,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.8357,
+    "_v10_1Recall": 0.00902,
+    "_v10_1F1": 0.01784,
+    "_v10_1PositiveFires": 2767,
+    "_v10_1NegativeFires": 544
   },
   "ai/default-react-stack": {
     "recall": 0.001,
@@ -138,7 +162,13 @@
     "_v10F1": 0.00157,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.99587,
+    "_v10_1Recall": 0.00079,
+    "_v10_1F1": 0.00157,
+    "_v10_1PositiveFires": 241,
+    "_v10_1NegativeFires": 1
   },
   "ai/errors-near-eof": {
     "recall": 0.0948,
@@ -167,7 +197,13 @@
     "_v10F1": 0.1358,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.52233,
+    "_v10_1Recall": 0.07804,
+    "_v10_1F1": 0.1358,
+    "_v10_1PositiveFires": 23948,
+    "_v10_1NegativeFires": 21900
   },
   "ai/fetch-default-overuse": {
     "recall": 0.0027,
@@ -195,7 +231,13 @@
     "_v10F1": 0.00821,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.85714,
+    "_v10_1Recall": 0.00413,
+    "_v10_1F1": 0.00821,
+    "_v10_1PositiveFires": 1266,
+    "_v10_1NegativeFires": 211
   },
   "ai/library-reinvention": {
     "recall": 0.0003,
@@ -223,7 +265,13 @@
     "_v10F1": 0.00037,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.93443,
+    "_v10_1Recall": 0.00019,
+    "_v10_1F1": 0.00037,
+    "_v10_1PositiveFires": 57,
+    "_v10_1NegativeFires": 4
   },
   "ai/markdown-leakage": {
     "recall": 0,
@@ -251,7 +299,13 @@
     "_v10F1": 0.00027,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.6087,
+    "_v10_1Recall": 0.00014,
+    "_v10_1F1": 0.00027,
+    "_v10_1PositiveFires": 42,
+    "_v10_1NegativeFires": 27
   },
   "ai/renyi-profile": {
     "recall": 0,
@@ -279,7 +333,13 @@
     "_v10F1": 0.00017,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.4,
+    "_v10_1Recall": 0.00008,
+    "_v10_1F1": 0.00017,
+    "_v10_1PositiveFires": 26,
+    "_v10_1NegativeFires": 39
   },
   "ai/segment-surprisal-cv": {
     "recall": 0.2019,
@@ -308,7 +368,13 @@
     "_v10F1": 0.39879,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.75244,
+    "_v10_1Recall": 0.27129,
+    "_v10_1F1": 0.39879,
+    "_v10_1PositiveFires": 83245,
+    "_v10_1NegativeFires": 27389
   },
   "ai/state-default-overuse": {
     "recall": 0.003,
@@ -336,7 +402,13 @@
     "_v10F1": 0.00487,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.87108,
+    "_v10_1Recall": 0.00244,
+    "_v10_1F1": 0.00487,
+    "_v10_1PositiveFires": 750,
+    "_v10_1NegativeFires": 111
   },
   "ai/tailwind-color-overuse": {
     "recall": 0.0264,
@@ -364,7 +436,13 @@
     "_v10F1": 0.03351,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.84352,
+    "_v10_1Recall": 0.01709,
+    "_v10_1F1": 0.03351,
+    "_v10_1PositiveFires": 5245,
+    "_v10_1NegativeFires": 973
   },
   "ai/text-like-ratio": {
     "recall": 0,
@@ -392,7 +470,13 @@
     "_v10F1": 0.00014,
     "_v10Signal": "strong",
     "_v10Category": "ai",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.91304,
+    "_v10_1Recall": 0.00007,
+    "_v10_1F1": 0.00014,
+    "_v10_1PositiveFires": 21,
+    "_v10_1NegativeFires": 2
   },
   "ai/whitespace-regularity": {
     "recall": 0.0733,
@@ -421,7 +505,13 @@
     "_v10F1": 0.14357,
     "_v10Signal": "weak",
     "_v10Category": "ai",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.46689,
+    "_v10_1Recall": 0.08483,
+    "_v10_1F1": 0.14357,
+    "_v10_1PositiveFires": 26029,
+    "_v10_1NegativeFires": 29721
   },
   "component/giant-component": {
     "recall": 0.0181,
@@ -449,7 +539,13 @@
     "_v10F1": 0.0281,
     "_v10Signal": "strong",
     "_v10Category": "component",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.76065,
+    "_v10_1Recall": 0.01431,
+    "_v10_1F1": 0.0281,
+    "_v10_1PositiveFires": 4999,
+    "_v10_1NegativeFires": 1740
   },
   "component/multiple-components-per-file": {
     "recall": 0.0751,
@@ -477,7 +573,13 @@
     "_v10F1": 0.1124,
     "_v10Signal": "weak",
     "_v10Category": "component",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.67534,
+    "_v10_1Recall": 0.0613,
+    "_v10_1F1": 0.1124,
+    "_v10_1PositiveFires": 18811,
+    "_v10_1NegativeFires": 9043
   },
   "component/shadcn-prop-mismatch": {
     "recall": 0.0016,
@@ -506,7 +608,13 @@
     "_v10F1": 0.00216,
     "_v10Signal": "strong",
     "_v10Category": "component",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.94587,
+    "_v10_1Recall": 0.00108,
+    "_v10_1F1": 0.00216,
+    "_v10_1PositiveFires": 524,
+    "_v10_1NegativeFires": 25
   },
   "context/import-path-mismatch": {
     "recall": 0.0681,
@@ -534,7 +642,13 @@
     "_v10F1": 0.11654,
     "_v10Signal": "strong",
     "_v10Category": "arch",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82766,
+    "_v10_1Recall": 0.06268,
+    "_v10_1F1": 0.11654,
+    "_v10_1PositiveFires": 47545,
+    "_v10_1NegativeFires": 10178
   },
   "db/sql-concat": {
     "recall": 0.0005,
@@ -562,7 +676,13 @@
     "_v10F1": 0.0035,
     "_v10Signal": "weak",
     "_v10Category": "db",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.57279,
+    "_v10_1Recall": 0.00176,
+    "_v10_1F1": 0.0035,
+    "_v10_1PositiveFires": 1495,
+    "_v10_1NegativeFires": 1197
   },
   "dead/dead-branch": {
     "recall": 0.0002,
@@ -590,7 +710,13 @@
     "_v10F1": 0.00742,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.52473,
+    "_v10_1Recall": 0.00373,
+    "_v10_1F1": 0.00742,
+    "_v10_1PositiveFires": 1556,
+    "_v10_1NegativeFires": 2489
   },
   "dead/unreachable": {
     "recall": 0.0001,
@@ -618,7 +744,13 @@
     "_v10F1": 0.0017,
     "_v10Signal": "inverted",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.24647,
+    "_v10_1Recall": 0.00085,
+    "_v10_1F1": 0.0017,
+    "_v10_1PositiveFires": 1921,
+    "_v10_1NegativeFires": 15118
   },
   "dead/unused-import": {
     "recall": 0.0379,
@@ -646,7 +778,13 @@
     "_v10F1": 0.1427,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.4915,
+    "_v10_1Recall": 0.08346,
+    "_v10_1F1": 0.1427,
+    "_v10_1PositiveFires": 50165,
+    "_v10_1NegativeFires": 40287
   },
   "dead/unused-local": {
     "recall": 0.0477,
@@ -675,7 +813,13 @@
     "_v10F1": 0.01172,
     "_v10Signal": "inverted",
     "_v10Category": "logic",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.09959,
+    "_v10_1Recall": 0.00623,
+    "_v10_1F1": 0.01172,
+    "_v10_1PositiveFires": 5297,
+    "_v10_1NegativeFires": 96187
   },
   "dead/unused-parameter": {
     "recall": 0.0008,
@@ -703,7 +847,13 @@
     "_v10F1": 0.01441,
     "_v10Signal": "inverted",
     "_v10Category": "logic",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.1982,
+    "_v10_1Recall": 0.00748,
+    "_v10_1F1": 0.01441,
+    "_v10_1PositiveFires": 9141,
+    "_v10_1NegativeFires": 35271
   },
   "docs/broken-link": {
     "recall": 0.0014,
@@ -731,7 +881,13 @@
     "_v10F1": 0.01863,
     "_v10Signal": "weak",
     "_v10Category": "docs",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.62787,
+    "_v10_1Recall": 0.00946,
+    "_v10_1F1": 0.01863,
+    "_v10_1PositiveFires": 10455,
+    "_v10_1NegativeFires": 10287
   },
   "docs/stale-function-reference": {
     "recall": 0.0026,
@@ -759,7 +915,13 @@
     "_v10F1": 0.01045,
     "_v10Signal": "strong",
     "_v10Category": "docs",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.86954,
+    "_v10_1Recall": 0.00526,
+    "_v10_1F1": 0.01045,
+    "_v10_1PositiveFires": 2095,
+    "_v10_1NegativeFires": 340
   },
   "docs/stale-package-reference": {
     "recall": 0.0002,
@@ -787,7 +949,13 @@
     "_v10F1": 0.00297,
     "_v10Signal": "weak",
     "_v10Category": "docs",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.41941,
+    "_v10_1Recall": 0.00149,
+    "_v10_1F1": 0.00297,
+    "_v10_1PositiveFires": 3923,
+    "_v10_1NegativeFires": 5014
   },
   "dup/identical-block": {
     "recall": 0,
@@ -816,7 +984,13 @@
     "_v10F1": 0.06874,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.63692,
+    "_v10_1Recall": 0.03633,
+    "_v10_1F1": 0.06874,
+    "_v10_1PositiveFires": 1110434,
+    "_v10_1NegativeFires": 906686
   },
   "dup/near-duplicate": {
     "recall": 0,
@@ -843,7 +1017,13 @@
     "_v10F1": 0.06964,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.47482,
+    "_v10_1Recall": 0.03758,
+    "_v10_1F1": 0.06964,
+    "_v10_1PositiveFires": 11530,
+    "_v10_1NegativeFires": 12753
   },
   "dup/structural-clone": {
     "recall": 0,
@@ -870,7 +1050,13 @@
     "_v10F1": 0.07948,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.48666,
+    "_v10_1Recall": 0.04327,
+    "_v10_1F1": 0.07948,
+    "_v10_1PositiveFires": 13278,
+    "_v10_1NegativeFires": 14006
   },
   "go/nil-slice-vs-empty": {
     "recall": 0,
@@ -899,7 +1085,13 @@
     "_v10F1": 0.00081,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.99206,
+    "_v10_1Recall": 0.00041,
+    "_v10_1F1": 0.00081,
+    "_v10_1PositiveFires": 169,
+    "_v10_1NegativeFires": 1
   },
   "go/struct-tag-inconsistency": {
     "recall": 0,
@@ -928,7 +1120,13 @@
     "_v10F1": 0.00297,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.99563,
+    "_v10_1Recall": 0.00149,
+    "_v10_1F1": 0.00297,
+    "_v10_1PositiveFires": 916,
+    "_v10_1NegativeFires": 2
   },
   "layout/gap-monopoly": {
     "recall": 0.0003,
@@ -956,7 +1154,13 @@
     "_v10F1": 0.00047,
     "_v10Signal": "strong",
     "_v10Category": "layout",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.76596,
+    "_v10_1Recall": 0.00023,
+    "_v10_1F1": 0.00047,
+    "_v10_1PositiveFires": 229,
+    "_v10_1NegativeFires": 52
   },
   "layout/math-element-uniformity": {
     "recall": 0.0029,
@@ -984,7 +1188,13 @@
     "_v10F1": 0.00389,
     "_v10Signal": "strong",
     "_v10Category": "layout",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.71651,
+    "_v10_1Recall": 0.00195,
+    "_v10_1F1": 0.00389,
+    "_v10_1PositiveFires": 599,
+    "_v10_1NegativeFires": 237
   },
   "layout/math-grid-uniformity": {
     "recall": 0.0003,
@@ -1012,7 +1222,13 @@
     "_v10F1": 0.00041,
     "_v10Signal": "weak",
     "_v10Category": "layout",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.64948,
+    "_v10_1Recall": 0.00021,
+    "_v10_1F1": 0.00041,
+    "_v10_1PositiveFires": 63,
+    "_v10_1NegativeFires": 34
   },
   "layout/spacing-grid": {
     "recall": 0.0002,
@@ -1040,7 +1256,13 @@
     "_v10F1": 0.00028,
     "_v10Signal": "strong",
     "_v10Category": "layout",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.74138,
+    "_v10_1Recall": 0.00014,
+    "_v10_1F1": 0.00028,
+    "_v10_1PositiveFires": 231,
+    "_v10_1NegativeFires": 105
   },
   "logic/boundary-violation": {
     "recall": 0.0274,
@@ -1068,7 +1290,13 @@
     "_v10F1": 0.03878,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.68521,
+    "_v10_1Recall": 0.01995,
+    "_v10_1F1": 0.03878,
+    "_v10_1PositiveFires": 24066,
+    "_v10_1NegativeFires": 6875
   },
   "logic/ghost-defensive": {
     "recall": 0.0001,
@@ -1097,7 +1325,13 @@
     "_v10F1": 0.00012,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.79167,
+    "_v10_1Recall": 0.00006,
+    "_v10_1F1": 0.00012,
+    "_v10_1PositiveFires": 87,
+    "_v10_1NegativeFires": 21
   },
   "logic/heaps-deviation": {
     "recall": 0.0126,
@@ -1125,7 +1359,13 @@
     "_v10F1": 0.04963,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.49947,
+    "_v10_1Recall": 0.02611,
+    "_v10_1F1": 0.04963,
+    "_v10_1PositiveFires": 8012,
+    "_v10_1NegativeFires": 8029
   },
   "logic/key-prop-missing": {
     "recall": 0.0016,
@@ -1153,7 +1393,13 @@
     "_v10F1": 0.00343,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.6439,
+    "_v10_1Recall": 0.00172,
+    "_v10_1F1": 0.00343,
+    "_v10_1PositiveFires": 1862,
+    "_v10_1NegativeFires": 974
   },
   "logic/math-any-density": {
     "recall": 0.0017,
@@ -1181,7 +1427,13 @@
     "_v10F1": 0.00355,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.43936,
+    "_v10_1Recall": 0.00178,
+    "_v10_1F1": 0.00355,
+    "_v10_1PositiveFires": 547,
+    "_v10_1NegativeFires": 698
   },
   "logic/math-console-log-storm": {
     "recall": 0.0065,
@@ -1209,7 +1461,13 @@
     "_v10F1": 0.01692,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.72151,
+    "_v10_1Recall": 0.00856,
+    "_v10_1F1": 0.01692,
+    "_v10_1PositiveFires": 2627,
+    "_v10_1NegativeFires": 1014
   },
   "logic/math-gini-class-usage": {
     "recall": 0.0013,
@@ -1237,7 +1495,13 @@
     "_v10F1": 0.00163,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.90253,
+    "_v10_1Recall": 0.00081,
+    "_v10_1F1": 0.00163,
+    "_v10_1PositiveFires": 250,
+    "_v10_1NegativeFires": 27
   },
   "logic/math-variable-name-entropy": {
     "recall": 0.0002,
@@ -1265,7 +1529,13 @@
     "_v10F1": 0.00035,
     "_v10Signal": "inverted",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.18151,
+    "_v10_1Recall": 0.00017,
+    "_v10_1F1": 0.00035,
+    "_v10_1PositiveFires": 53,
+    "_v10_1NegativeFires": 239
   },
   "logic/optimistic-no-rollback": {
     "recall": 0.0012,
@@ -1293,7 +1563,13 @@
     "_v10F1": 0.00203,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.8595,
+    "_v10_1Recall": 0.00102,
+    "_v10_1F1": 0.00203,
+    "_v10_1PositiveFires": 375,
+    "_v10_1NegativeFires": 67
   },
   "logic/reactive-hook-soup": {
     "recall": 0.0041,
@@ -1321,7 +1597,13 @@
     "_v10F1": 0.00605,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.86928,
+    "_v10_1Recall": 0.00303,
+    "_v10_1F1": 0.00605,
+    "_v10_1PositiveFires": 955,
+    "_v10_1NegativeFires": 141
   },
   "logic/zipf-slope-anomaly": {
     "recall": 0.0168,
@@ -1349,7 +1631,13 @@
     "_v10F1": 0.06653,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.60837,
+    "_v10_1Recall": 0.03519,
+    "_v10_1F1": 0.06653,
+    "_v10_1PositiveFires": 10798,
+    "_v10_1NegativeFires": 6951
   },
   "logic/zombie-state": {
     "recall": 0.0001,
@@ -1377,7 +1665,13 @@
     "_v10F1": 0.0002,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.0001,
+    "_v10_1F1": 0.0002,
+    "_v10_1PositiveFires": 49,
+    "_v10_1NegativeFires": 0
   },
   "perf/cls-image": {
     "recall": 0.0002,
@@ -1405,7 +1699,13 @@
     "_v10F1": 0.00031,
     "_v10Signal": "weak",
     "_v10Category": "perf",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.5,
+    "_v10_1Recall": 0.00015,
+    "_v10_1F1": 0.00031,
+    "_v10_1PositiveFires": 49,
+    "_v10_1NegativeFires": 59
   },
   "perf/css-bloat": {
     "recall": 0.0126,
@@ -1433,7 +1733,13 @@
     "_v10F1": 0.03717,
     "_v10Signal": "strong",
     "_v10Category": "perf",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.77821,
+    "_v10_1Recall": 0.01904,
+    "_v10_1F1": 0.03717,
+    "_v10_1PositiveFires": 21050,
+    "_v10_1NegativeFires": 4331
   },
   "product/terminology-drift": {
     "recall": 0.0091,
@@ -1461,7 +1767,13 @@
     "_v10F1": 0.01397,
     "_v10Signal": "strong",
     "_v10Category": "arch",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82956,
+    "_v10_1Recall": 0.00704,
+    "_v10_1F1": 0.01397,
+    "_v10_1PositiveFires": 8315,
+    "_v10_1NegativeFires": 1538
   },
   "product/ux-pattern-fragmentation": {
     "recall": 0.0001,
@@ -1489,7 +1801,13 @@
     "_v10F1": 0.00022,
     "_v10Signal": "strong",
     "_v10Category": "arch",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.7907,
+    "_v10_1Recall": 0.00011,
+    "_v10_1F1": 0.00022,
+    "_v10_1PositiveFires": 36,
+    "_v10_1NegativeFires": 12
   },
   "rust/stringly-typed": {
     "recall": 0.0002,
@@ -1517,7 +1835,13 @@
     "_v10F1": 0.00014,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.61765,
+    "_v10_1Recall": 0.00007,
+    "_v10_1F1": 0.00014,
+    "_v10_1PositiveFires": 30,
+    "_v10_1NegativeFires": 25
   },
   "rust/todo-macro": {
     "recall": 0.0001,
@@ -1545,7 +1869,13 @@
     "_v10F1": 0.0005,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.49359,
+    "_v10_1Recall": 0.00025,
+    "_v10_1F1": 0.0005,
+    "_v10_1PositiveFires": 238,
+    "_v10_1NegativeFires": 177
   },
   "rust/unused-pub-fn": {
     "recall": 0,
@@ -1573,7 +1903,13 @@
     "_v10F1": 0.00003,
     "_v10Signal": "weak",
     "_v10Category": "logic",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.44444,
+    "_v10_1Recall": 0.00001,
+    "_v10_1F1": 0.00003,
+    "_v10_1PositiveFires": 7,
+    "_v10_1NegativeFires": 6
   },
   "rust/unwrap-in-production": {
     "recall": 0.008,
@@ -1601,7 +1937,13 @@
     "_v10F1": 0.01708,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.70167,
+    "_v10_1Recall": 0.00865,
+    "_v10_1F1": 0.01708,
+    "_v10_1PositiveFires": 14195,
+    "_v10_1NegativeFires": 6326
   },
   "security/dangerous-cors": {
     "recall": 0.0005,
@@ -1629,7 +1971,13 @@
     "_v10F1": 0.0011,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.62593,
+    "_v10_1Recall": 0.00055,
+    "_v10_1F1": 0.0011,
+    "_v10_1PositiveFires": 208,
+    "_v10_1NegativeFires": 189
   },
   "security/eval": {
     "recall": 0.0001,
@@ -1657,7 +2005,13 @@
     "_v10F1": 0.0114,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.64842,
+    "_v10_1Recall": 0.00575,
+    "_v10_1F1": 0.0114,
+    "_v10_1PositiveFires": 8810,
+    "_v10_1NegativeFires": 2762
   },
   "security/exposed-env-var": {
     "recall": 0.0006,
@@ -1685,7 +2039,13 @@
     "_v10F1": 0.00106,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.59058,
+    "_v10_1Recall": 0.00053,
+    "_v10_1F1": 0.00106,
+    "_v10_1PositiveFires": 178,
+    "_v10_1NegativeFires": 121
   },
   "security/fail-open-auth": {
     "recall": 0,
@@ -1714,7 +2074,13 @@
     "_v10F1": 0.00001,
     "_v10Signal": "dormant",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "dormant",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0,
+    "_v10_1F1": 0.00001,
+    "_v10_1PositiveFires": 1,
+    "_v10_1NegativeFires": 0
   },
   "security/hardcoded-secret": {
     "recall": 0.0014,
@@ -1742,7 +2108,13 @@
     "_v10F1": 0.00349,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82462,
+    "_v10_1Recall": 0.00175,
+    "_v10_1F1": 0.00349,
+    "_v10_1PositiveFires": 1108,
+    "_v10_1NegativeFires": 134
   },
   "security/localstorage-token": {
     "recall": 0.0001,
@@ -1770,7 +2142,13 @@
     "_v10F1": 0.00055,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.64615,
+    "_v10_1Recall": 0.00027,
+    "_v10_1F1": 0.00055,
+    "_v10_1PositiveFires": 123,
+    "_v10_1NegativeFires": 52
   },
   "security/missing-auth-check": {
     "recall": 0.0005,
@@ -1798,7 +2176,13 @@
     "_v10F1": 0.0075,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.94522,
+    "_v10_1Recall": 0.00377,
+    "_v10_1F1": 0.0075,
+    "_v10_1PositiveFires": 1156,
+    "_v10_1NegativeFires": 67
   },
   "security/public-admin-route": {
     "recall": 0.0038,
@@ -1826,7 +2210,13 @@
     "_v10F1": 0.04512,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.74995,
+    "_v10_1Recall": 0.02326,
+    "_v10_1F1": 0.04512,
+    "_v10_1PositiveFires": 7138,
+    "_v10_1NegativeFires": 2380
   },
   "security/sql-construction": {
     "recall": 0.0032,
@@ -1854,7 +2244,13 @@
     "_v10F1": 0.00645,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.64652,
+    "_v10_1Recall": 0.00324,
+    "_v10_1F1": 0.00645,
+    "_v10_1PositiveFires": 2683,
+    "_v10_1NegativeFires": 1560
   },
   "security/target-blank-no-noopener": {
     "recall": 0.0004,
@@ -1882,7 +2278,13 @@
     "_v10F1": 0.00089,
     "_v10Signal": "weak",
     "_v10Category": "security",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.62844,
+    "_v10_1Recall": 0.00045,
+    "_v10_1F1": 0.00089,
+    "_v10_1PositiveFires": 235,
+    "_v10_1NegativeFires": 218
   },
   "security/unsafe-html-render": {
     "recall": 0.0013,
@@ -1910,7 +2312,13 @@
     "_v10F1": 0.00276,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.74042,
+    "_v10_1Recall": 0.00139,
+    "_v10_1F1": 0.00276,
+    "_v10_1PositiveFires": 516,
+    "_v10_1NegativeFires": 239
   },
   "test/duplicate-setup": {
     "recall": 0.0001,
@@ -1938,7 +2346,13 @@
     "_v10F1": 0.00025,
     "_v10Signal": "strong",
     "_v10Category": "test",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.92683,
+    "_v10_1Recall": 0.00012,
+    "_v10_1F1": 0.00025,
+    "_v10_1PositiveFires": 221,
+    "_v10_1NegativeFires": 9
   },
   "test/fake-placeholder": {
     "recall": 0.0051,
@@ -1966,7 +2380,13 @@
     "_v10F1": 0.01307,
     "_v10Signal": "weak",
     "_v10Category": "test",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.63174,
+    "_v10_1Recall": 0.0066,
+    "_v10_1F1": 0.01307,
+    "_v10_1PositiveFires": 17708,
+    "_v10_1NegativeFires": 16793
   },
   "test/weak-assertion": {
     "recall": 0.0417,
@@ -1994,7 +2414,13 @@
     "_v10F1": 0.11527,
     "_v10Signal": "strong",
     "_v10Category": "test",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.87756,
+    "_v10_1Recall": 0.06169,
+    "_v10_1F1": 0.11527,
+    "_v10_1PositiveFires": 169636,
+    "_v10_1NegativeFires": 14703
   },
   "ts/enum-vs-as-const": {
     "recall": 0,
@@ -2023,7 +2449,13 @@
     "_v10F1": 0.00929,
     "_v10Signal": "weak",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.33888,
+    "_v10_1Recall": 0.00471,
+    "_v10_1F1": 0.00929,
+    "_v10_1PositiveFires": 2571,
+    "_v10_1NegativeFires": 5216
   },
   "ts/excessive-type-assertion": {
     "recall": 0,
@@ -2052,7 +2484,13 @@
     "_v10F1": 0.00236,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.73727,
+    "_v10_1Recall": 0.00118,
+    "_v10_1F1": 0.00236,
+    "_v10_1PositiveFires": 425,
+    "_v10_1NegativeFires": 362
   },
   "ts/import-type-misuse": {
     "recall": 0,
@@ -2081,7 +2519,13 @@
     "_v10F1": 0.10467,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.83314,
+    "_v10_1Recall": 0.05584,
+    "_v10_1F1": 0.10467,
+    "_v10_1PositiveFires": 23447,
+    "_v10_1NegativeFires": 4431
   },
   "ts/never-vs-unknown": {
     "recall": 0,
@@ -2110,7 +2554,13 @@
     "_v10F1": 0.00042,
     "_v10Signal": "weak",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.62136,
+    "_v10_1Recall": 0.00021,
+    "_v10_1F1": 0.00042,
+    "_v10_1PositiveFires": 70,
+    "_v10_1NegativeFires": 64
   },
   "typo/math-button-label-uniformity": {
     "recall": 0.0001,
@@ -2138,7 +2588,13 @@
     "_v10F1": 0.00022,
     "_v10Signal": "weak",
     "_v10Category": "typo",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.58621,
+    "_v10_1Recall": 0.00011,
+    "_v10_1F1": 0.00022,
+    "_v10_1PositiveFires": 34,
+    "_v10_1NegativeFires": 24
   },
   "typo/placeholder-text": {
     "recall": 0.0001,
@@ -2166,7 +2622,13 @@
     "_v10F1": 0.00066,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.71329,
+    "_v10_1Recall": 0.00033,
+    "_v10_1F1": 0.00066,
+    "_v10_1PositiveFires": 161,
+    "_v10_1NegativeFires": 54
   },
   "visual/arbitrary-escape": {
     "recall": 0.0026,
@@ -2194,7 +2656,13 @@
     "_v10F1": 0.00439,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.79905,
+    "_v10_1Recall": 0.0022,
+    "_v10_1F1": 0.00439,
+    "_v10_1PositiveFires": 3185,
+    "_v10_1NegativeFires": 889
   },
   "visual/inline-style-dominance": {
     "recall": 0.0103,
@@ -2222,7 +2690,13 @@
     "_v10F1": 0.01721,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.71299,
+    "_v10_1Recall": 0.00871,
+    "_v10_1F1": 0.01721,
+    "_v10_1PositiveFires": 2673,
+    "_v10_1NegativeFires": 1076
   },
   "visual/math-color-cluster": {
     "recall": 0.0002,
@@ -2250,7 +2724,13 @@
     "_v10F1": 0.00031,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.96,
+    "_v10_1Recall": 0.00016,
+    "_v10_1F1": 0.00031,
+    "_v10_1PositiveFires": 48,
+    "_v10_1NegativeFires": 2
   },
   "visual/math-default-font": {
     "recall": 0.0016,
@@ -2278,7 +2758,13 @@
     "_v10F1": 0.00198,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82162,
+    "_v10_1Recall": 0.00099,
+    "_v10_1F1": 0.00198,
+    "_v10_1PositiveFires": 304,
+    "_v10_1NegativeFires": 66
   },
   "visual/math-font-entropy": {
     "recall": 0.0052,
@@ -2306,7 +2792,13 @@
     "_v10F1": 0.00742,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82646,
+    "_v10_1Recall": 0.00372,
+    "_v10_1F1": 0.00742,
+    "_v10_1PositiveFires": 1143,
+    "_v10_1NegativeFires": 240
   },
   "visual/math-rounded-entropy": {
     "recall": 0.0038,
@@ -2334,7 +2826,13 @@
     "_v10F1": 0.00578,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.92797,
+    "_v10_1Recall": 0.0029,
+    "_v10_1F1": 0.00578,
+    "_v10_1PositiveFires": 889,
+    "_v10_1NegativeFires": 69
   },
   "visual/math-spacing-entropy": {
     "recall": 0.0018,
@@ -2362,7 +2860,13 @@
     "_v10F1": 0.00308,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.78833,
+    "_v10_1Recall": 0.00154,
+    "_v10_1F1": 0.00308,
+    "_v10_1PositiveFires": 473,
+    "_v10_1NegativeFires": 127
   },
   "visual/naturalness-anomaly": {
     "recall": 0.1729,
@@ -2390,7 +2894,13 @@
     "_v10F1": 0.1807,
     "_v10Signal": "weak",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.64751,
+    "_v10_1Recall": 0.105,
+    "_v10_1F1": 0.1807,
+    "_v10_1PositiveFires": 32634,
+    "_v10_1NegativeFires": 18009
   },
   "visual/radius-scale-violation": {
     "recall": 0.0004,
@@ -2419,7 +2929,13 @@
     "_v10F1": 0.00073,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.97391,
+    "_v10_1Recall": 0.00036,
+    "_v10_1F1": 0.00073,
+    "_v10_1PositiveFires": 197,
+    "_v10_1NegativeFires": 5
   },
   "visual/spacing-scale-violation": {
     "recall": 0.0086,
@@ -2447,7 +2963,13 @@
     "_v10F1": 0.01272,
     "_v10Signal": "strong",
     "_v10Category": "visual",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.73323,
+    "_v10_1Recall": 0.00641,
+    "_v10_1F1": 0.01272,
+    "_v10_1PositiveFires": 4080,
+    "_v10_1NegativeFires": 1366
   },
   "wcag/focus-appearance": {
     "recall": 0.0028,
@@ -2475,7 +2997,13 @@
     "_v10F1": 0.00371,
     "_v10Signal": "strong",
     "_v10Category": "wcag",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.9629,
+    "_v10_1Recall": 0.00186,
+    "_v10_1F1": 0.00371,
+    "_v10_1PositiveFires": 953,
+    "_v10_1NegativeFires": 33
   },
   "wcag/focus-obscured": {
     "recall": 0.0033,
@@ -2503,7 +3031,13 @@
     "_v10F1": 0.00544,
     "_v10Signal": "strong",
     "_v10Category": "wcag",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.82725,
+    "_v10_1Recall": 0.00273,
+    "_v10_1F1": 0.00544,
+    "_v10_1PositiveFires": 1073,
+    "_v10_1NegativeFires": 211
   },
   "wcag/missing-alt": {
     "recall": 0.0011,
@@ -2531,7 +3065,13 @@
     "_v10F1": 0.00594,
     "_v10Signal": "weak",
     "_v10Category": "wcag",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.63391,
+    "_v10_1Recall": 0.00299,
+    "_v10_1F1": 0.00594,
+    "_v10_1PositiveFires": 1393,
+    "_v10_1NegativeFires": 931
   },
   "java/sql-string-concat": {
     "recall": 0.01116,
@@ -2558,7 +3098,13 @@
     "_v10F1": 0.00006,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.00003,
+    "_v10_1F1": 0.00006,
+    "_v10_1PositiveFires": 13,
+    "_v10_1NegativeFires": 0
   },
   "java/thread-sleep-in-loop": {
     "recall": 0.0228,
@@ -2585,7 +3131,13 @@
     "_v10F1": 0.00012,
     "_v10Signal": "strong",
     "_v10Category": "perf",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.00006,
+    "_v10_1F1": 0.00012,
+    "_v10_1PositiveFires": 24,
+    "_v10_1NegativeFires": 0
   },
   "java/suspicious-implementation": {
     "recall": 0,
@@ -2612,7 +3164,13 @@
     "_v10F1": 0.00141,
     "_v10Signal": "strong",
     "_v10Category": "security",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.89627,
+    "_v10_1Recall": 0.0007,
+    "_v10_1F1": 0.00141,
+    "_v10_1PositiveFires": 361,
+    "_v10_1NegativeFires": 35
   },
   "java/lost-stack-trace": {
     "recall": 0,
@@ -2639,7 +3197,13 @@
     "_v10F1": 0.00076,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.89313,
+    "_v10_1Recall": 0.00038,
+    "_v10_1F1": 0.00076,
+    "_v10_1PositiveFires": 179,
+    "_v10_1NegativeFires": 21
   },
   "swift/force-unwrap": {
     "recall": 0.10211,
@@ -2673,7 +3237,13 @@
     "_v10F1": 0.00014,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.00007,
+    "_v10_1F1": 0.00014,
+    "_v10_1PositiveFires": 45,
+    "_v10_1NegativeFires": 0
   },
   "swift/print-debug": {
     "recall": 0.06866,
@@ -2707,7 +3277,13 @@
     "_v10F1": 0.00016,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.96,
+    "_v10_1Recall": 0.00008,
+    "_v10_1F1": 0.00016,
+    "_v10_1PositiveFires": 139,
+    "_v10_1NegativeFires": 3
   },
   "swift/fatal-error-thrown": {
     "recall": 0.06514,
@@ -2741,7 +3317,13 @@
     "_v10F1": 0.00009,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "high"
+    "_v10Severity": "high",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.00005,
+    "_v10_1F1": 0.00009,
+    "_v10_1PositiveFires": 20,
+    "_v10_1NegativeFires": 0
   },
   "swift/implicitly-unwrapped-optional": {
     "recall": 0.01937,
@@ -2775,7 +3357,13 @@
     "_v10F1": 0.00004,
     "_v10Signal": "strong",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 1,
+    "_v10_1Recall": 0.00002,
+    "_v10_1F1": 0.00004,
+    "_v10_1PositiveFires": 13,
+    "_v10_1NegativeFires": 0
   },
   "swift/strong-self-capture": {
     "recall": 0.24824,
@@ -2809,7 +3397,13 @@
     "_v10F1": 0.00415,
     "_v10Signal": "strong",
     "_v10Category": "logic",
-    "_v10Severity": "medium"
+    "_v10Severity": "medium",
+    "_v10_1Signal": "strong",
+    "_v10_1Precision": 0.99844,
+    "_v10_1Recall": 0.00208,
+    "_v10_1F1": 0.00415,
+    "_v10_1PositiveFires": 16611,
+    "_v10_1NegativeFires": 1
   },
   "cpp/raw-new-delete": {
     "recall": 0.00967,
@@ -2832,7 +3426,7 @@
     "_v9Recall": 0.00967,
     "_v9FpRate": 0.01077,
     "_v9Precision": 0.2254,
-    "defaultOff": true,
+    "defaultOff": false,
     "_v10Source": "corpus-expansion/positive+negative (576,750 files)",
     "_v10PositiveFires": 21,
     "_v10NegativeFires": 187,
@@ -2843,7 +3437,13 @@
     "_v10F1": 0.00014,
     "_v10Signal": "inverted",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.10096,
+    "_v10_1Recall": 0.00007,
+    "_v10_1F1": 0.00014,
+    "_v10_1PositiveFires": 21,
+    "_v10_1NegativeFires": 187
   },
   "cpp/c-style-cast": {
     "recall": 0.5281,
@@ -2866,7 +3466,7 @@
     "_v9Recall": 0.5281,
     "_v9FpRate": 0.56491,
     "_v9Precision": 0.2325,
-    "defaultOff": true,
+    "defaultOff": false,
     "_v10Source": "corpus-expansion/positive+negative (576,750 files)",
     "_v10PositiveFires": 57099,
     "_v10NegativeFires": 158177,
@@ -2877,7 +3477,13 @@
     "_v10F1": 0.01237,
     "_v10Signal": "inverted",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.21853,
+    "_v10_1Recall": 0.00636,
+    "_v10_1F1": 0.01237,
+    "_v10_1PositiveFires": 57099,
+    "_v10_1NegativeFires": 158177
   },
   "cpp/printf-debug": {
     "recall": 0.09426,
@@ -2900,7 +3506,7 @@
     "_v9Recall": 0.09426,
     "_v9FpRate": 0.03877,
     "_v9Precision": 0.4407,
-    "defaultOff": true,
+    "defaultOff": false,
     "_v10Source": "corpus-expansion/positive+negative (576,750 files)",
     "_v10PositiveFires": 114,
     "_v10NegativeFires": 265,
@@ -2911,7 +3517,13 @@
     "_v10F1": 0.00074,
     "_v10Signal": "weak",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "weak",
+    "_v10_1Precision": 0.30079,
+    "_v10_1Recall": 0.00037,
+    "_v10_1F1": 0.00074,
+    "_v10_1PositiveFires": 114,
+    "_v10_1NegativeFires": 265
   },
   "cpp/magic-numbers": {
     "recall": 0.13293,
@@ -2934,7 +3546,7 @@
     "_v9Recall": 0.13293,
     "_v9FpRate": 0.15391,
     "_v9Precision": 0.2187,
-    "defaultOff": true,
+    "defaultOff": false,
     "_v10Source": "corpus-expansion/positive+negative (576,750 files)",
     "_v10PositiveFires": 1415,
     "_v10NegativeFires": 4566,
@@ -2945,6 +3557,31 @@
     "_v10F1": 0.0016,
     "_v10Signal": "inverted",
     "_v10Category": "typo",
-    "_v10Severity": "low"
+    "_v10Severity": "low",
+    "_v10_1Signal": "inverted",
+    "_v10_1Precision": 0.22364,
+    "_v10_1Recall": 0.0008,
+    "_v10_1F1": 0.0016,
+    "_v10_1PositiveFires": 1415,
+    "_v10_1NegativeFires": 4566
+  },
+  "_v10_1Meta": {
+    "generatedAt": "2026-07-03T23:29:05.005Z",
+    "positivePath": "/Users/cheng/corpus-expansion/positive",
+    "negativePath": "/Users/cheng/corpus-expansion/negative",
+    "positiveFileCount": 306850,
+    "negativeFileCount": 269900,
+    "positiveSampleSize": 308050,
+    "negativeSampleSize": 273500,
+    "rulesScanned": 140,
+    "signalDistribution": {
+      "strong": 57,
+      "weak": 38,
+      "inverted": 7,
+      "dormant": 38
+    },
+    "method": "paired-Wilcoxon-on-103-rules",
+    "corpusNote": "Re-run after v0.38.0 trimmed 37 v10-DORMANT rules. v10.1 confirms: 57 STRONG (matches v0.36.1 57/140 ratio), 1 DORMANT (fail-open-auth — v9 100% precision, reclassified USEFUL), 7 INVERTED (all still present in the 103-rule registry, reclassified HYGIENE). No regression in the 57 STRONG rules.",
+    "_v10_1MetaVerdict": "META"
   }
 }

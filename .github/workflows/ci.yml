@@ -6,11 +6,11 @@ name: ci
 # typecheck + test on every package, then uploads SARIF for code-scanning
 # integration.
 #
-# Workspace structure:
-#   packages/core/         @usebrick/core (private, schema spec)
-#   packages/slopbrick/    slopbrick (the published CLI)
-#   packages/stackpick/    (future)
-#   packages/gir/          (future)
+# Workspace structure (4 packages):
+#   packages/core/         @usebrick/core    (private — schema spec, the contract)
+#   packages/engine/       @usebrick/engine  (private — pure scanning math)
+#   packages/slopbrick/    slopbrick         (published — the CLI, the flagship)
+#   packages/website/      @usebrick/website (private — usebrick.dev, Cloudflare Pages)
 
 on:
   pull_request:
@@ -50,8 +50,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build all packages
-        # Build core first so slopbrick can resolve its types.
-        run: pnpm -r --filter '@usebrick/core' build && pnpm -r --filter 'slopbrick' build
+        # `pnpm -r build` respects workspace dep order: core first (no
+        # workspace deps), then engine (depends on core), then slopbrick
+        # (depends on core + engine via prebuild), then website (no
+        # workspace deps). This matches the quality gates in AGENTS.md
+        # and catches build failures in engine + website that the old
+        # filtered form (`core && slopbrick` only) silently skipped.
+        run: pnpm -r build
 
       - name: Check rule registry is in sync
         # Catches the "added a rule, forgot to regenerate builtins.ts" path

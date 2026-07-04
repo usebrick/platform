@@ -279,18 +279,16 @@ function parseSvelte(source: string): ParseResult {
 }
 
 /**
- * v0.18.3 (R-MED env-var fix): the parser's AST cache is now a
- * passed option, not an env-var read from inside the engine. The
- * engine remains a pure scanner (no I/O, no process.env, no
- * process.cwd); the slopbrick CLI is the boundary that reads
- * env vars and threads the cache config into parseFile.
+ * The parser's AST cache is configured via a passed option, not via
+ * env vars read inside the engine. The slopbrick CLI (worker.ts) is
+ * the boundary that reads `SLOP_AUDIT_CACHE` / `SLOP_AUDIT_CACHE_ROOT`
+ * and threads a `ParserCacheConfig` into `parseFile`.
  *
- * Backward compat: if no `cache` option is passed, the engine
- * falls back to reading the legacy env vars. This is for the
- * test suite and the cache-bench test (which still sets the
- * env vars to exercise the env-var code path). New callers
- * (the slopbrick CLI, the MCP server, future web IDEs)
- * should always pass `opts.cache` explicitly.
+ * Note: `parseFile` still reads the source file from disk (it has to —
+ * the AST is derived from source text). The cache *wrapper* is what's
+ * env-var-free; if no `cache` option is passed, caching is simply off.
+ * A future refactor could accept source text as an argument to make
+ * the parser fully I/O-free, but that's a larger API change.
  */
 export interface ParserCacheConfig {
   /** Read/write the AST cache. */
@@ -301,23 +299,6 @@ export interface ParserCacheConfig {
 
 export interface ParseFileOptions {
   cache?: ParserCacheConfig;
-}
-
-function legacyCacheEnabled(): boolean {
-  // v0.18.3 (R-MED): kept for backward compat with the
-  // cache-bench test suite, which exercises the env-var path.
-  // The slopbrick CLI passes opts.cache explicitly, so this
-  // fallback is dead code in production.
-  return process.env.SLOP_AUDIT_CACHE === '1' || process.env.SLOP_AUDIT_CACHE === 'true';
-}
-
-function legacyCacheRoot(): string {
-  // v0.18.3 (R-MED): see legacyCacheEnabled. Uses process.cwd()
-  // as the fallback — kept for backward compat only. New
-  // callers should pass `opts.cache.root` explicitly.
-  const override = process.env.SLOP_AUDIT_CACHE_ROOT;
-  if (override) return override;
-  return join(process.cwd(), '.slopbrick', 'cache', 'ast');
 }
 
 // Both files now share the same digest for the same content, which makes
@@ -447,22 +428,22 @@ export async function parseFile(
 ): Promise<ParseResult> {
   const source = await readFile(filePath, 'utf-8');
 
-  // v0.18.3 (R-MED): prefer the passed option, fall back to
-  // the env-var path for backward compat with the test suite.
-  // The slopbrick CLI always passes opts.cache, so the engine's
-  // hot path no longer reads process.env.
-  const useCache = opts?.cache?.enabled ?? legacyCacheEnabled();
-  const cacheDir = opts?.cache?.root ?? legacyCacheRoot();
+  // Cache is purely opt-in via `opts.cache`. No env-var fallback —
+  // the slopbrick CLI boundary reads env vars and threads a
+  // ParserCacheConfig; tests do the same. If no cache option is
+  // passed, caching is off (source is parsed and returned).
+  const cache = opts?.cache;
+  const useCache = cache?.enabled === true && typeof cache.root === 'string';
 
   if (useCache) {
-    const cached = await readCacheWithRoot(filePath, source, cacheDir);
+    const cached = await readCacheWithRoot(filePath, source, cache.root);
     if (cached) return cached;
   }
 
   const result = parseSource(source, filePath);
 
   if (useCache) {
-    await writeCacheWithRoot(source, result, cacheDir);
+    await writeCacheWithRoot(source, result, cache.root);
   }
 
   return result;

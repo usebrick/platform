@@ -152,6 +152,38 @@ Deleted rules by category: 10 kotlin, 5 db, 4 typo, 3 visual, 3 java, 2 wcag, 2 
 
 See [`docs/rules.md`](./rules.md) for the full post-deletion catalog and [`packages/slopbrick/CHANGELOG.md`](../packages/slopbrick/CHANGELOG.md) for the v0.38.0 changelog entry.
 
+### 3.8 v10.1 recalibration (2026-07-04, post-deletion verification)
+
+After the v0.38.0 trim, the v10 calibration was re-run on the same 581k-file corpus (308k positive + 273k negative) against the 103-rule registry. The goal: confirm the trim didn't accidentally drop any STRONG rule, and verify the verdict reclassifications (7 INVERTED → HYGIENE) hold up.
+
+**v10.1 results (103 rules, paired Wilcoxon, p < 0.01):**
+
+| Signal | Count | % of 103 | Change from v0.36.1 (140 rules) |
+|---|---|---|---|
+| **STRONG** | 57 | 55.3% | Same count (was 57/140 = 40.7%; now 57/103 = 55.3% — improved ratio from the trim) |
+| **WEAK** | 38 | 36.9% | +0 (all preserved) |
+| **DORMANT** | 1 | 1.0% | −37 (fail-open-auth, reclassified USEFUL — v9 100% precision, v10 corpus lacked auth-handling code) |
+| **INVERTED** | 7 | 6.8% | All 7 preserved, reclassified verdict: HYGIENE |
+
+**Key findings:**
+- The 57 STRONG rules survived the trim unchanged — no regression
+- The 38 WEAK rules are still WEAK — no false promotion
+- `security/fail-open-auth` is the only remaining DORMANT (1 of 103 = 1.0%); all other 37 v10-DORMANT rules were correctly deleted in v0.38.0
+- 7 INVERTED rules (dead/unreachable, dead/unused-local, dead/unused-parameter, logic/math-variable-name-entropy, cpp/raw-new-delete, cpp/c-style-cast, cpp/magic-numbers) are all engineering-hygiene rules that fire MORE on human code than AI code; reclassified as verdict: HYGIENE
+- The paired Wilcoxon test confirms no rule's signal distribution changed significantly between v10 and v10.1
+
+**v10.1 metadata** is preserved at the top of `packages/slopbrick/src/rules/signal-strength.json` as `_v10_1Meta` (generatedAt, positive/negative paths, file counts, signal distribution, method). The `_v*Meta` keys are stripped at load time by `signal-strength.ts` so the Zod schema doesn't reject the file.
+
+**Top 5 by F1 (v10.1):**
+
+| Rule | Precision | Recall | F1 |
+|---|---|---|---|
+| `ai/compression-profile` | 74.9% | 46.5% | **57.4** |
+| `ai/comment-ratio` | 62.4% | 30.9% | **41.3** |
+| `ai/segment-surprisal-cv` | 75.3% | 27.1% | **39.9** |
+| `visual/naturalness-anomaly` | 64.8% | 10.5% | **18.1** |
+| `ai/whitespace-regularity` | 46.7% | 8.5% | **14.4** |
+
 **Top 5 by F1:**
 
 | Rule | Signal | Precision | Recall | F1 |
