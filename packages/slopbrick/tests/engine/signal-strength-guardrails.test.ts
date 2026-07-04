@@ -14,10 +14,19 @@ interface SignalStrength {
 
 const DATA = signalStrengthData as Record<string, SignalStrength>;
 
+// Calibration-run metadata entries (keys starting with `_`) live in the
+// same JSON file as rule entries but are NOT rules — they describe the
+// calibration run itself (e.g. `_v10_1Meta` carries the corpus paths,
+// sample sizes, signal distribution, and method). v0.38.x's calibration
+// pipeline writes one of these per run; subsequent runs add new keys
+// (e.g. `_v10_2Meta`). The guardrails apply to rule entries only, so
+// every test that iterates DATA uses RULE_ENTRIES (the meta-free view).
+const RULE_ENTRIES = Object.entries(DATA).filter(([k]) => !k.startsWith('_'));
+
 describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
   it('every INVERTED rule must be defaultOff (ships disabled by default)', () => {
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (entry.verdict === 'INVERTED' && !entry.defaultOff) {
         offenders.push(ruleId);
       }
@@ -27,7 +36,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
 
   it('every NOISY rule must be defaultOff', () => {
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (entry.verdict === 'NOISY' && !entry.defaultOff) {
         offenders.push(ruleId);
       }
@@ -37,7 +46,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
 
   it('every DORMANT rule must be defaultOff', () => {
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (entry.verdict === 'DORMANT' && !entry.defaultOff) {
         offenders.push(ruleId);
       }
@@ -58,9 +67,13 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     ).toEqual([]);
   });
 
-  it('every entry must have a verdict (no MISSING verdicts)', () => {
+  it('every rule entry must have a verdict (no MISSING verdicts)', () => {
+    // v0.38.x: meta entries like `_v10_1Meta` are calibration-run
+    // metadata, not rules — they're filtered out by the leading-`_`
+    // convention (see RULE_ENTRIES). Rule entries must still carry a
+    // verdict per the v0.9.3 contract.
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (!entry.verdict) {
         offenders.push(ruleId);
       }
@@ -70,7 +83,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
 
   it('precision must be in [0, 1]', () => {
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (entry.precision < 0 || entry.precision > 1) {
         offenders.push(`${ruleId}: precision=${entry.precision}`);
       }
@@ -80,7 +93,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
 
   it('recall and fpRate must be in [0, 1]', () => {
     const offenders: string[] = [];
-    for (const [ruleId, entry] of Object.entries(DATA)) {
+    for (const [ruleId, entry] of RULE_ENTRIES) {
       if (entry.recall < 0 || entry.recall > 1) {
         offenders.push(`${ruleId}: recall=${entry.recall}`);
       }
@@ -102,7 +115,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     const counts = {
       USEFUL: 0, OK: 0, NOISY: 0, INVERTED: 0, HYGIENE: 0, DORMANT: 0,
     };
-    for (const e of Object.values(DATA)) {
+    for (const e of RULE_ENTRIES.map(([, e]) => e)) {
       if (e.verdict) counts[e.verdict] = (counts[e.verdict] || 0) + 1;
     }
     const active = counts.USEFUL + counts.OK;
@@ -114,10 +127,10 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
   it('INVERTED count is small (property, not count)', () => {
     // v0.14.5+: at most a handful of INVERTED rules. The exact count
     // depends on the corpus, but the property is "INVERTED is rare".
-    const inverted = Object.values(DATA).filter((e) => e.verdict === 'INVERTED').length;
+    const inverted = RULE_ENTRIES.filter(([, e]) => e.verdict === 'INVERTED').length;
     expect(inverted).toBeLessThanOrEqual(5);
     // And: every INVERTED is defaultOff (the v7 invariant).
-    for (const entry of Object.values(DATA)) {
+    for (const [, entry] of RULE_ENTRIES) {
       if (entry.verdict === 'INVERTED') {
         expect(entry.defaultOff).toBe(true);
       }
@@ -129,7 +142,7 @@ describe('signal-strength.json guardrails (v0.9.3 contract)', () => {
     // via defaultOff: true. The invariant is: opt-out count is small.
     let optedOut = 0;
     let total = 0;
-    for (const entry of Object.values(DATA)) {
+    for (const [, entry] of RULE_ENTRIES) {
       if (entry.verdict === 'HYGIENE') {
         total++;
         if (entry.defaultOff === true) optedOut++;

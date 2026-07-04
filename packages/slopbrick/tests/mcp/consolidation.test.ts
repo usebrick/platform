@@ -26,43 +26,46 @@ describe('MCP tool consolidation (v0.11.2)', () => {
     expect(canonicalToolNames()).toContain('slop_suggest_with_structure');
   });
 
-  it('deprecates slop_governance in favor of slop_suggest', () => {
-    const dep = getDeprecation('slop_governance');
-    expect(dep).toBeDefined();
-    expect(dep?.replacedBy).toBe('slop_suggest');
-    expect(dep?.removedIn).toBe('0.13.0');
+  it('removed slop_governance in v0.39.0 (was deprecated since v0.11.2)', () => {
+    // v0.39.0: the 3 deprecated tools (slop_governance,
+    // slop_architecture_score, slop_business_logic_score) were
+    // finally removed. They had been marked for removal in v0.13.0
+    // but lingered in TOOL_DEFINITIONS through v0.12.x for backward
+    // compat. v0.39.0 retires them — users should call slop_suggest
+    // and read repositoryHealth / architectureConsistency /
+    // businessLogicCoherence from the response.
+    //
+    // getDeprecation returns undefined for unknown tools (the tool
+    // no longer exists in the registry), which is the right answer:
+    // there is nothing to deprecate, the tool is just gone.
+    expect(getDeprecation('slop_governance')).toBeUndefined();
+    // And it does NOT appear in TOOL_DEFINITIONS anymore.
+    expect(TOOL_DEFINITIONS.find((t) => t.name === 'slop_governance')).toBeUndefined();
   });
 
-  it('deprecates slop_architecture_score in favor of slop_suggest', () => {
-    const dep = getDeprecation('slop_architecture_score');
-    expect(dep).toBeDefined();
-    expect(dep?.replacedBy).toBe('slop_suggest');
-    expect(dep?.removedIn).toBe('0.13.0');
+  it('removed slop_architecture_score in v0.39.0 (was deprecated since v0.11.2)', () => {
+    expect(getDeprecation('slop_architecture_score')).toBeUndefined();
+    expect(
+      TOOL_DEFINITIONS.find((t) => t.name === 'slop_architecture_score'),
+    ).toBeUndefined();
   });
 
-  it('deprecates slop_business_logic_score in favor of slop_suggest', () => {
-    const dep = getDeprecation('slop_business_logic_score');
-    expect(dep).toBeDefined();
-    expect(dep?.replacedBy).toBe('slop_suggest');
-    expect(dep?.removedIn).toBe('0.13.0');
+  it('removed slop_business_logic_score in v0.39.0 (was deprecated since v0.11.2)', () => {
+    expect(getDeprecation('slop_business_logic_score')).toBeUndefined();
+    expect(
+      TOOL_DEFINITIONS.find((t) => t.name === 'slop_business_logic_score'),
+    ).toBeUndefined();
   });
 
-  it('does NOT remove deprecated tools from TOOL_DEFINITIONS yet (backward compat through v0.12.x)', () => {
+  it('no deprecated tools remain in TOOL_DEFINITIONS (v0.39.0)', () => {
+    // The pre-v0.39.0 contract was "deprecated tools stay in
+    // TOOL_DEFINITIONS for backward compat through v0.12.x". v0.39.0
+    // ends that — every deprecated tool was retired in this release.
     const deprecated = TOOL_DEFINITIONS.filter((t) => t.deprecated).map((t) => t.name);
-    expect(deprecated).toEqual(
-      expect.arrayContaining([
-        'slop_governance',
-        'slop_architecture_score',
-        'slop_business_logic_score',
-      ]),
-    );
-    // They still appear in the schema so old MCP clients keep working
-    expect(TOOL_DEFINITIONS.map((t) => t.name)).toEqual(
-      expect.arrayContaining(deprecated),
-    );
+    expect(deprecated).toEqual([]);
   });
 
-  it('canonicalToolNames() excludes deprecated tools', () => {
+  it('canonicalToolNames() excludes the removed tools', () => {
     const canonical = canonicalToolNames();
     expect(canonical).not.toContain('slop_governance');
     expect(canonical).not.toContain('slop_architecture_score');

@@ -91,7 +91,7 @@ describe('formatSarif — result shape', () => {
       runs: Array<{ results: Array<{ helpUri: string }> }>;
     };
     const result = log.runs[0].results[0];
-    expect(result.helpUri).toMatch(/^https:\/\/github\.com\/Dystx\/slopbrick\/blob\/main\/src\/rules\/logic\/boundary-violation\.ts$/);
+    expect(result.helpUri).toMatch(/^https:\/\/github\.com\/usebrick\/platform\/blob\/main\/packages\/slopbrick\/src\/rules\/logic\/boundary-violation\.ts$/);
   });
 
   it('emits the same helpUri on the rule and its result', () => {

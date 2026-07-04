@@ -45,27 +45,19 @@ export const applyMergeStringsCodemod: CodemodFn = (content) => {
 };
 
 // Codemod #9: sort-imports — sort import statements alphabetically by
-// the imported module specifier. Conservative: doesn't reorder
-// default/named/destructured splits.
+// the imported module specifier.
+//
+// v0.39.0: DISABLED. The previous regex (`[^;]+?` across newlines)
+// captured multi-line imports as single "lines" spanning multiple
+// physical lines. Sorting those by specifier rearranged physical
+// lines, leaving orphaned `} from '...';` closing fragments with
+// no matching `import {` opening. This corrupted files on every
+// `slopbrick scan --fix` run and would ship broken commits via
+// the `slopbrick lock` pre-commit hook.
+//
+// A proper fix requires a real parser (regex can't handle balanced
+// braces in destructuring patterns). Tracked for v0.40.0.
 export const applySortImportsCodemod: CodemodFn = (content) => {
-  // Match a contiguous block of import statements at the top of the file.
-  const blockMatch = content.match(/^([ \t]*(?:import\s+(?:[^;]+?from\s+)?['"][^'"]+['"]\s*;?\s*\n)+)/m);
-  if (!blockMatch) return { content, changes: [] };
-  const block = blockMatch[1]!;
-  const lines = block.split('\n').filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return { content, changes: [] };
-  // Extract the specifier from each line; sort by it.
-  const specRe = /['"]([^'"]+)['"]/;
-  const sorted = [...lines].sort((a, b) => {
-    const sa = a.match(specRe)?.[1] ?? '';
-    const sb = b.match(specRe)?.[1] ?? '';
-    return sa.localeCompare(sb);
-  });
-  if (sorted.every((l, i) => l === lines[i])) return { content, changes: [] };
-  const newBlock = sorted.join('\n') + '\n';
-  const next = content.replace(block!, newBlock);
-  return {
-    content: next,
-    changes: [{ description: 'sort imports alphabetically', before: block, after: newBlock }],
-  };
+  // No-op until v0.40.0.
+  return { content, changes: [] };
 };

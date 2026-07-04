@@ -291,3 +291,45 @@ export function parseStyleObject(source: string): StylePropEntry[] {
 
   return entries;
 }
+
+// v0.39.0: file-type guard for visual/* and wcag/* rules. These
+// categories detect UI patterns (Tailwind classes, CSS values,
+// missing alt text, etc.) and should not fire on .ts library
+// files that happen to mention UI-shaped strings as data (e.g.,
+// codemod fixtures, visitor internals, type definitions that
+// reference JSX). A self-scan of the platform (2026-07-04) found
+// 28 such misfires: visual/naturalness-anomaly (20),
+// ai/tailwind-color-overuse (3), wcag/missing-alt (5).
+//
+// The guard returns true for files that are actually UI source:
+//   - .tsx / .jsx  (React)
+//   - .vue / .svelte
+//   - .astro
+//   - .html / .css / .scss / .less
+//   - .md / .mdx   (docs that may contain UI examples)
+//
+// Returns false for pure TypeScript / JavaScript library code,
+// .rs / .go / .java / etc. (other languages), and config files.
+export function isUIFile(filePath: string): boolean {
+  const dot = filePath.lastIndexOf('.');
+  if (dot < 0) return false;
+  const ext = filePath.slice(dot).toLowerCase();
+  switch (ext) {
+    case '.tsx':
+    case '.jsx':
+    case '.vue':
+    case '.svelte':
+    case '.astro':
+    case '.html':
+    case '.htm':
+    case '.css':
+    case '.scss':
+    case '.less':
+    case '.sass':
+    case '.md':
+    case '.mdx':
+      return true;
+    default:
+      return false;
+  }
+}

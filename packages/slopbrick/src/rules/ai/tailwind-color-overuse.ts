@@ -1,5 +1,6 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
+import { isUIFile } from '../utils';
 
 /**
  * AI Tailwind color over-representation.
@@ -70,9 +71,12 @@ export const aiTailwindColorOveruseRule = createRule<RuleContext>({
   },
   analyze(_context, facts): Issue[] {
     if (!facts.v2) return [];
-    const filePath = facts.filePath ?? '';
-    // Only fire on frontend files
-    if (!/\.(?:ts|tsx|js|jsx|vue|svelte|astro|html)$/i.test(filePath)) return [];
+    // v0.39.0: file-type guard. Use the shared isUIFile() so
+    // .ts/.js library files that mention Tailwind classes as
+    // data don't fire (the previous guard was too permissive
+    // and matched .ts files — 3 misfires on the platform's own
+    // codemod fixtures).
+    if (!isUIFile(facts.filePath)) return [];
     const source = facts.v2._source ?? '';
     if (!source) return [];
 

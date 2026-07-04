@@ -28,7 +28,7 @@ describe('explainRule (v0.5.2: helpUri)', () => {
     expect('error' in result).toBe(false);
     if ('error' in result) return;
     expect(result.helpUri).toBe(
-      'https://github.com/Dystx/slopbrick/blob/main/src/rules/visual/test-rule.ts',
+      'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules/visual/test-rule.ts',
     );
     expect(result.sourcePath).toBe('src/rules/visual/test-rule.ts');
   });
@@ -41,7 +41,7 @@ describe('explainRule (v0.5.2: helpUri)', () => {
     // Rule id without slash is treated as the filename itself
     expect(result.sourcePath).toBe('src/rules/visual/bare-id.ts');
     expect(result.helpUri).toBe(
-      'https://github.com/Dystx/slopbrick/blob/main/src/rules/visual/bare-id.ts',
+      'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules/visual/bare-id.ts',
     );
   });
 
@@ -58,7 +58,7 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     const result = explainRule('visual/test-rule', fakeRules, fakeHints);
     if ('error' in result) throw new Error('expected success');
     const out = formatExplain(result);
-    expect(out).toContain('Help:        https://github.com/Dystx/slopbrick/blob/main/src/rules/visual/test-rule.ts');
+    expect(out).toContain('Help:        https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules/visual/test-rule.ts');
     expect(out).toContain('Source:      src/rules/visual/test-rule.ts');
     expect(out).toContain('Pattern:');
     expect(out).toContain('Remediation:');

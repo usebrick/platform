@@ -30,7 +30,10 @@ export interface TsEnumVsAsConstContext {
   // No configuration.
 }
 
-const ENUM_DECL_REGEX = /^[ \t]*(?:export\s+)?(?:const\s+)?enum\s+[A-Z_][A-Za-z0-9_]*\s*\{/gm;
+// v0.39.0: also match `namespace Foo { ... }` — the modern-TS
+// anti-pattern twin of `enum` (both are TS2-era runtime
+// constructs that modern style guides discourage).
+const ENUM_DECL_REGEX = /^[ \t]*(?:export\s+)?(?:const\s+)?(?:enum|namespace)\s+[A-Z_][A-Za-z0-9_]*\s*[\{]/gm;
 
 export const tsEnumVsAsConstRule = createRule<TsEnumVsAsConstContext>({
   id: 'ts/enum-vs-as-const',

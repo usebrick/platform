@@ -129,7 +129,22 @@ describe('applyVisualCodemods — round 25 additions', () => {
     void result;
   });
 
-  it('sort-imports sorts import statements alphabetically', () => {
+  it.skip('sort-imports sorts import statements alphabetically (v0.40.0: tracked)', () => {
+    // v0.39.0: sort-imports is DISABLED. The pre-v0.39.0 regex
+    // (`[^;]+?` across newlines) captured multi-line imports as single
+    // "lines" spanning multiple physical lines. Sorting those by
+    // specifier rearranged physical lines, leaving orphaned
+    // `} from '...';` closing fragments with no matching `import {`
+    // opening. This corrupted files on every `slopbrick scan --fix`
+    // run and would ship broken commits via the `slopbrick lock`
+    // pre-commit hook.
+    //
+    // A proper fix requires a real parser (regex can't handle
+    // balanced braces in destructuring patterns). Tracked for v0.40.0.
+    //
+    // The codemod is currently a no-op (returns { content, changes: [] }
+    // without modifying the file), so this test would always fail.
+    // Skipped until v0.40.0 ships the parser-based replacement.
     const file = join(dir, 'B.tsx');
     writeFileSync(
       file,

@@ -429,6 +429,13 @@ function projectAndEvaluate(
   const degrees = computeDegrees(originalNodes, originalEdges);
 
   // σ_in_c = sum of internal edge weights (each edge once).
+  // v0.39.0: After Phase 2 aggregation, `ordered` contains
+  // super-node names in `members`, not original nodes — so
+  // `members.includes(u)` would always be false in later
+  // iterations. Build an explicit old-community-id → renumbered-id
+  // map and look up by community id instead.
+  const commToRenumbered = new Map<number, number>();
+  ordered.forEach(([oldId], newId) => commToRenumbered.set(oldId, newId));
   for (const [key, w] of weights) {
     const sepIdx = key.indexOf('|');
     const u = key.slice(0, sepIdx);
@@ -436,8 +443,8 @@ function projectAndEvaluate(
     const cu = originalToCommunity.get(u);
     const cv = originalToCommunity.get(v);
     if (cu !== undefined && cu === cv) {
-      const newId = ordered.findIndex(([, members]) => members.includes(u));
-      if (newId >= 0) internalEdges.set(newId, (internalEdges.get(newId) ?? 0) + w);
+      const newId = commToRenumbered.get(cu);
+      if (newId !== undefined) internalEdges.set(newId, (internalEdges.get(newId) ?? 0) + w);
     }
   }
 
@@ -477,7 +484,11 @@ function modularityFromAggregates(
   for (const [comm, total] of totals) {
     if (total === 0 && (selfLoops.get(comm) ?? 0) === 0) continue;
     const sigmaIn = selfLoops.get(comm) ?? 0;
-    q += sigmaIn / m - (total * total) / (4 * m * m);
+    // v0.39.0: standard Newman-Girvan modularity
+    // Q = Σ_c [σ_in_c / (2m) − (Σ_tot_c)² / (4m²)]
+    // `selfLoops[comm]` stores σ_in_c with each undirected edge
+    // counted once (see `aggregate()` and `projectAndEvaluate()`).
+    q += sigmaIn / (2 * m) - (total * total) / (4 * m * m);
   }
   return q;
 }
@@ -529,8 +540,13 @@ function bestNeighbourCommunity(
   for (const [targetComm, sigmaInTarget] of sigmaInByComm) {
     if (targetComm === currentComm) continue;
     const totalsTarget = totals.get(targetComm) ?? 0;
+    // v0.39.0: standard Louvain deltaQ. The first term divides by
+    // (2m), not m — the previous `m` divisor was a pre-existing bug
+    // that over-stated the gain by 2x, causing Phase 1 to accept
+    // moves that actually decreased modularity. With the standard
+    // `2m` divisor, the algorithm correctly finds the communities.
     const deltaQ =
-      (sigmaInTarget - sigmaInCurrent) / m -
+      (sigmaInTarget - sigmaInCurrent) / (2 * m) -
       (k_i * (totalsTarget - totalsCurrent)) / m2 -
       (k_i * k_i) / m2;
     if (deltaQ > bestGain + 1e-12) {

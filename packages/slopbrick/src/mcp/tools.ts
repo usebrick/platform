@@ -108,26 +108,12 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     },
   },
   {
-    name: 'slop_governance',
-    description:
-      '[DEPRECATED — use `slop_suggest` and read `repositoryHealth` from the response. Removal planned for v0.13.0.] Returns the composite Repository Health score (0-100) + AI Debt band + per-axis breakdown + warnings. This is now a strict subset of what `slop_suggest` returns; call `slop_suggest` once and read the `repositoryHealth` field instead of making a second round-trip.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        maxFiles: {
-          type: 'number',
-          description: 'Cap on files scanned. Defaults to 500.',
-        },
-      },
-    },
-    deprecated: {
-      replacedBy: 'slop_suggest',
-      removedIn: '0.13.0',
-      reason:
-        '`slop_suggest` already returns `repositoryHealth` in its response. Calling both is redundant.',
-    },
-  },
-  {
+    // v0.39.0: removed 3 deprecated tools (slop_governance,
+    // slop_architecture_score, slop_business_logic_score) that
+    // were marked for removal in v0.13.0 but never removed.
+    // They were strict subsets of slop_suggest; users should
+    // call slop_suggest and read repositoryHealth /
+    // architectureConsistency / businessLogicCoherence.
     name: 'slop_check_constitution',
     description:
       "Check a single file against the project's declared constitution (stateManagement, dataFetching, uiLibrary, forms, styling, routing, plus a forbidden deny-list in slopbrick.config.mjs). Returns a list of imports that violate declared values or hit the deny-list. Use this on a newly-written or modified file before suggesting a PR.",
@@ -137,46 +123,6 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         path: { type: 'string', description: 'Absolute or cwd-relative path to the source file.' },
       },
       required: ['path'],
-    },
-  },
-  {
-    name: 'slop_architecture_score',
-    description:
-      '[DEPRECATED — use `slop_suggest` and read `architectureConsistency` from the response. Removal planned for v0.13.0.] Compute the Architecture Consistency Score (0-100) — one number that reflects how consistent the repository\'s patterns are (modal systems, button variants, api clients, state libraries, data-fetching libraries, design-token violations). 100 = one of each, no drift. Returns the score plus per-category deductions. This is now a strict subset of what `slop_suggest` returns.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        maxFiles: {
-          type: 'number',
-          description: 'Cap on files scanned. Defaults to 500.',
-        },
-      },
-    },
-    deprecated: {
-      replacedBy: 'slop_suggest',
-      removedIn: '0.13.0',
-      reason:
-        '`slop_suggest` already returns `architectureConsistency` in its response. Calling both is redundant.',
-    },
-  },
-  {
-    name: 'slop_business_logic_score',
-    description:
-      '[DEPRECATED — use `slop_suggest` and read `businessLogicCoherence` from the response. Removal planned for v0.13.0.] Compute the Business Logic Coherence (0-100) — surfaces naming and structural anti-patterns in pricing, validation, and formatting code that AI-generated code emits disproportionately (Math.round(price*100)/100, z.string() without constraints, hardcoded ISO dates, etc.). 100 = no anti-patterns detected. Returns the score, scanned file count, per-category counts, and the full issue list. This is now a strict subset of what `slop_suggest` returns.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        maxFiles: {
-          type: 'number',
-          description: 'Cap on files scanned. Defaults to 500.',
-        },
-      },
-    },
-    deprecated: {
-      replacedBy: 'slop_suggest',
-      removedIn: '0.13.0',
-      reason:
-        '`slop_suggest` already returns `businessLogicCoherence` in its response. Calling both is redundant.',
     },
   },
   {
@@ -604,14 +550,16 @@ export async function handleToolCall(
       return runSuggest(args, ctx);
     case 'slop_suggest_with_structure':
       return runSuggestWithStructure(args, ctx);
-    case 'slop_governance':
-      return runGovernance(args, ctx);
+    // v0.39.0: removed 3 deprecated tools (slop_governance,
+    // slop_architecture_score, slop_business_logic_score) that
+    // were marked for removal in v0.13.0 but never removed.
+    // Their runner functions (runGovernance, runArchitectureScore,
+    // runBusinessLogicScore) are kept in the file for now
+    // (marked @deprecated) to keep the diff small; they can be
+    // deleted in a follow-up. New clients will never see these
+    // tools listed in the MCP tools/list response.
     case 'slop_check_constitution':
       return runCheckConstitution(args, ctx);
-    case 'slop_architecture_score':
-      return runArchitectureScore(args, ctx);
-    case 'slop_business_logic_score':
-      return runBusinessLogicScore(args, ctx);
     case 'slop_find_similar':
       return runFindSimilar(args, ctx);
     default:

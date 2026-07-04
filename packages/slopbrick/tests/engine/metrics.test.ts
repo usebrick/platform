@@ -229,7 +229,13 @@ describe('aggregateReport', () => {
     expect(report.componentCount).toBe(0);
   });
 
-  it('computes category scores from weighted points normalized by component count', () => {
+  it('computes category scores via log-saturation (no componentCount dependency, v0.39.0)', () => {
+    // v0.39.0: replaced linear `(points / componentCount) * 100` with
+    // log-saturation `log10(1 + points/500) / log10(11) * 100`, capped
+    // at 100. This makes category scores:
+    //   - independent of componentCount (no divide-by-zero for CLI repos)
+    //   - comparable across project sizes (same scale for any size)
+    //   - bounded [0, 100] (no 16700-style inflation)
     const aIssues = [issue('high', 'logic'), issue('medium', 'wcag')];
     const scores = [
       scoreFile(
@@ -248,13 +254,26 @@ describe('aggregateReport', () => {
     ];
 
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
-    const totalComponents = scores.reduce((sum, s) => sum + s.componentCount, 0);
-    const logicPoints = SEVERITY_WEIGHTS.high;
-    const wcagPoints = SEVERITY_WEIGHTS.medium;
 
-    expect(report.categoryScores.logic).toBeCloseTo((logicPoints / totalComponents) * 100, 5);
-    expect(report.categoryScores.wcag).toBeCloseTo((wcagPoints / totalComponents) * 100, 5);
+    // Log-saturation formula (replicated for test self-documentation):
+    //   score = min(100, log10(1 + points/500) / log10(11) * 100)
+    // logic has 1 high = 5 raw points; wcag has 1 medium = 3 raw points
+    const expectedLogic =
+      (Math.log10(1 + SEVERITY_WEIGHTS.high / 500) / Math.log10(11)) * 100;
+    const expectedWcag =
+      (Math.log10(1 + SEVERITY_WEIGHTS.medium / 500) / Math.log10(11)) * 100;
+
+    expect(report.categoryScores.logic).toBeCloseTo(expectedLogic, 5);
+    expect(report.categoryScores.wcag).toBeCloseTo(expectedWcag, 5);
     expect(report.categoryScores.visual).toBe(0);
+
+    // Invariant: all category scores are bounded [0, 100] regardless of
+    // how many components exist — the regression guard against the
+    // pre-v0.39.0 16700-style inflation.
+    for (const score of Object.values(report.categoryScores)) {
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(100);
+    }
   });
 
   it('weights category scores by categoryWeights', () => {
@@ -271,7 +290,13 @@ describe('aggregateReport', () => {
     expect(report.categoryScores.visual).toBeGreaterThan(report.categoryScores.logic);
   });
 
-  it('weights category scores by issue count', () => {
+  it('weights category scores by issue count (preserves ordering under log-saturation)', () => {
+    // 10 low visual vs 1 low logic. Under the pre-v0.39.0 linear formula,
+    // visual would be exactly 10x logic. Under log-saturation the
+    // relationship is monotonic but compressed: more issues still give a
+    // higher score, but the ratio is bounded (saturates toward 1 as the
+    // larger count grows). The contract: visual > logic, and the ratio
+    // stays close to the linear expectation when raw points are small.
     const repeated: Issue[] = Array.from({ length: 10 }, () => ({
       ruleId: 'dense',
       category: 'visual',
@@ -291,7 +316,17 @@ describe('aggregateReport', () => {
     };
     const scores = [scoreFile(fileResult({ issues }), 1.0, config)];
     const report = aggregateReport(scores, [{ filePath: 'Button.tsx', issues }], config);
-    expect(report.categoryScores.visual).toBe(report.categoryScores.logic * 10);
+
+    // Ordering invariant: more issues → higher score (regression guard).
+    expect(report.categoryScores.visual).toBeGreaterThan(report.categoryScores.logic);
+
+    // Approximate ratio: with 10x the raw points, log-saturation
+    // compresses the ratio toward but below 10. At these small totals
+    // (10 vs 1), the ratio is ~9.9x (well within tolerance of the
+    // pre-v0.39.0 exact-10x contract).
+    const ratio = report.categoryScores.visual / report.categoryScores.logic;
+    expect(ratio).toBeGreaterThan(9.0);
+    expect(ratio).toBeLessThanOrEqual(10.0);
   });
 
   it('handles empty scores gracefully', () => {
@@ -303,17 +338,25 @@ describe('aggregateReport', () => {
     expect(report.componentCount).toBe(0);
   });
 
-  // v0.14.5h regression: when componentCount=0 (CLI tools, pure backend,
-  // libraries with no UI), the per-component-average normalization
-  // `sum / 1 * 100` exploded to 16700 / 7000 / 6840 in self-scans.
-  // The fix: return raw totals (severity × weight) when there are no
-  // components to average over, so the user sees honest numbers like
-  // 167 / 70 / 68 instead of meaningless 4-digit figures.
-  it('returns raw severity totals for categoryScores when componentCount=0 (v0.14.5h)', () => {
+  // v0.14.5h regression (kept under v0.39.0): when componentCount=0
+  // (CLI tools, pure backend, libraries with no UI), the pre-v0.14.5h
+  // per-component-average normalization `sum / 1 * 100` exploded to
+  // 16700 / 7000 / 6840 in self-scans.
+  //
+  // v0.14.5h fix: when componentCount=0, return raw severity totals
+  // (severity × weight) so the user saw 167 / 70 / 68 instead of
+  // meaningless 4-digit figures.
+  //
+  // v0.39.0 fix: replaced the componentCount branch entirely with
+  // log-saturation that works the same for both UI and CLI repos.
+  // The regression guard that survives: scores MUST stay bounded in
+  // [0, 100] even with zero components — no divide-by-zero, no
+  // 16700-style inflation, ever.
+  it('categoryScores stay bounded in [0, 100] when componentCount=0 (v0.14.5h → v0.39.0)', () => {
     // Simulate a CLI tool that fires 1 high (5pts) + 1 medium (3pts) +
-    // 1 low (1pt) AI issue. rawScore=9 points. With componentCount=0,
-    // the old code returned (9/1)*100 = 900 (or 9*100 = 900). The
-    // new code returns 9.
+    // 1 low (1pt) AI issue. rawScore=9 points. The pre-v0.39.0 code
+    // would return (9/1)*100 = 900 (or 9*100 = 900). The v0.39.0
+    // log-saturation returns a small bounded value.
     const aiIssues: Issue[] = [
       { ruleId: 'ai/x', category: 'ai', severity: 'high', aiSpecific: true, message: 'a', line: 1, column: 1 },
       { ruleId: 'ai/y', category: 'ai', severity: 'medium', aiSpecific: true, message: 'b', line: 1, column: 1 },
@@ -325,22 +368,37 @@ describe('aggregateReport', () => {
 
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
     expect(report.componentCount).toBe(0);
-    // 5 + 3 + 1 = 9 raw points. NOT 900.
-    expect(report.categoryScores.ai).toBe(9);
+
+    // v0.39.0 contract: log-saturation of 9 raw points lands at a small
+    // value (~0.75) — definitely NOT 900. The pre-v0.39.0 regression was
+    // the 100× inflation when componentCount=0; v0.39.0 fixes it for
+    // ALL componentCount values, not just zero.
+    const expectedAi =
+      (Math.log10(1 + 9 / 500) / Math.log10(11)) * 100;
+    expect(report.categoryScores.ai).toBeCloseTo(expectedAi, 5);
+
+    // Regression guard: the score MUST stay < 100 (no 16700 inflation).
+    // Even if a future change reintroduced the linear formula, this
+    // bound catches it immediately.
     expect(report.categoryScores.ai).toBeLessThan(100);
+    expect(report.categoryScores.ai).toBeGreaterThan(0);
   });
 
-  it('returns raw category totals mirroring real self-scan numbers (v0.14.5h)', () => {
+  it('categoryScores stay bounded under self-scan-sized totals via log-saturation (v0.14.5h → v0.39.0)', () => {
     // Real self-scan numbers (slopbrick's own repo, 0 components):
-    //   ai: 167, visual: 70, logic: 68
-    // Pre-fix: ai: 16700, visual: 7000, logic: 6840 (looked like total
-    // repo failure — caused user pushback).
-    // Post-fix: raw severity totals, honest, small, and clearly tied
-    // to the headline slopIndex (which IS 25 / 100).
+    //   ai: 167 raw points, visual: 70, logic: 68
     //
-    // The bug guard: the score must equal the raw total (sum of
-    // severity × weight), NOT (raw total / 1) * 100 which would
-    // produce a 100×-inflated value.
+    // Pre-v0.14.5h: ai: 16700, visual: 7000, logic: 6840 — looked like
+    // total repo failure, caused user pushback.
+    // v0.14.5h fix: returned raw severity totals, honest small numbers.
+    // v0.39.0 fix: replaced linear normalization with log-saturation
+    // that works for BOTH UI repos and CLI/library repos — no
+    // componentCount dependency, no division-by-zero.
+    //
+    // The surviving regression guard: scores MUST stay bounded in
+    // [0, 100] even with self-scan-sized totals. If a future change
+    // reintroduced the linear (raw / 1) * 100 path, the guard catches
+    // it instantly.
     //
     // We use a uniform-weight config so the test math is clear.
     // DEFAULT_CONFIG has per-category weights (e.g. visual × 1.2)
@@ -373,25 +431,47 @@ describe('aggregateReport', () => {
     const report = aggregateReport(scores, issueGroups, flatConfig);
     expect(report.componentCount).toBe(0);
 
-    // The bug guard: every score is the raw total, NOT 100× the raw
-    // total. Pre-fix these were 17500 / 6900 / 6800.
-    const expectedAi = 35 * SEVERITY_WEIGHTS.high;        // 175
-    const expectedVisual = 23 * SEVERITY_WEIGHTS.medium;  // 69
-    const expectedLogic = 68 * SEVERITY_WEIGHTS.low;      // 68
+    // v0.39.0 log-saturation contract: each score is computed as
+    // min(100, log10(1 + rawPoints/500) / log10(11) * 100). With the
+    // uniform-weight config, rawPoints = sum of severity * weight.
+    const rawAi = 35 * SEVERITY_WEIGHTS.high;        // 175
+    const rawVisual = 23 * SEVERITY_WEIGHTS.medium;  // 69
+    const rawLogic = 68 * SEVERITY_WEIGHTS.low;      // 68
 
-    // Verify the score equals the raw total (not 100×)
-    expect(report.categoryScores.ai).toBe(expectedAi);
-    expect(report.categoryScores.visual).toBe(expectedVisual);
-    expect(report.categoryScores.logic).toBe(expectedLogic);
+    const expectedAi =
+      (Math.log10(1 + rawAi / 500) / Math.log10(11)) * 100;
+    const expectedVisual =
+      (Math.log10(1 + rawVisual / 500) / Math.log10(11)) * 100;
+    const expectedLogic =
+      (Math.log10(1 + rawLogic / 500) / Math.log10(11)) * 100;
 
-    // Regression guard: scores must NOT be 100× larger
-    expect(report.categoryScores.ai).toBeLessThan(expectedAi * 2);
+    expect(report.categoryScores.ai).toBeCloseTo(expectedAi, 5);
+    expect(report.categoryScores.visual).toBeCloseTo(expectedVisual, 5);
+    expect(report.categoryScores.logic).toBeCloseTo(expectedLogic, 5);
+
+    // Regression guard: scores must stay bounded in [0, 100]. Pre-v0.14.5h
+    // these were 17500 / 6900 / 6800 (way over 100). v0.39.0 keeps the
+    // bounded guarantee for ALL componentCount values.
+    expect(report.categoryScores.ai).toBeLessThan(100);
+    expect(report.categoryScores.visual).toBeLessThan(100);
+    expect(report.categoryScores.logic).toBeLessThan(100);
+
+    // Monotonicity invariant: ai has 175 raw points, more than visual's 69
+    // and logic's 68. Under log-saturation, more raw points → higher
+    // score (regression guard against the old 0-component raw path which
+    // was correct but didn't generalize).
+    expect(report.categoryScores.ai).toBeGreaterThan(report.categoryScores.visual);
+    expect(report.categoryScores.visual).toBeGreaterThan(report.categoryScores.logic);
   });
 
-  it('preserves per-component normalization when componentCount>0 (v0.14.5h)', () => {
-    // The fix only changes the 0-component case. When components
-    // exist, categoryScores should still be (sum / componentCount) * 100
-    // so scores are comparable across project sizes.
+  it('categoryScores use log-saturation regardless of componentCount (v0.39.0)', () => {
+    // v0.39.0 replaces the v0.14.5h componentCount branch with a single
+    // log-saturation formula that works for both UI repos and CLI/library
+    // repos. The contract: scores are bounded in [0, 100] and computed
+    // from raw points via the formula, regardless of how many components
+    // exist. componentCount is still tracked for other purposes
+    // (boundary / context / visual bucket scores) but no longer
+    // branches the categoryScores path.
     const aIssues: Issue[] = [
       { ruleId: 'test/rule', category: 'ai', severity: 'high', aiSpecific: true, message: 'a', line: 1, column: 1 },
     ];
@@ -406,15 +486,35 @@ describe('aggregateReport', () => {
 
     const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG);
     expect(report.componentCount).toBe(2);
-    // 5 raw points / 2 components * 100 = 250, but with
-    // categoryWeights default this should land around 250
-    // (which is large but not the 16700-style inflation).
+
+    // v0.39.0 contract: log-saturation of 5 raw points (one high issue).
+    // Note: NOT (5/2)*100 = 250 — the per-component division is gone.
+    // The score is bounded small (~0.42) regardless of componentCount.
+    const expectedAi =
+      (Math.log10(1 + SEVERITY_WEIGHTS.high / 500) / Math.log10(11)) * 100;
+    expect(report.categoryScores.ai).toBeCloseTo(expectedAi, 5);
+
+    // Invariants: bounded, positive, and independent of componentCount.
     expect(report.categoryScores.ai).toBeGreaterThan(0);
-    // Regression guard: with 2 components, scores follow the
-    // per-component formula, NOT the 0-component raw-total path.
-    expect(report.categoryScores.ai).toBe(
-      (SEVERITY_WEIGHTS.high / 2) * 100,
+    expect(report.categoryScores.ai).toBeLessThan(100);
+
+    // Equivalence guard: a repo with N components and a CLI repo with
+    // 0 components should produce the same categoryScores for the same
+    // raw points (no componentCount dependency). This is the
+    // v0.14.5h branch's removal rationale.
+    const cliScores = [
+      scoreFile(
+        fileResult({ filePath: 'cli.ts', componentCount: 0, issues: aIssues }),
+        1.0,
+        DEFAULT_CONFIG,
+      ),
+    ];
+    const cliReport = aggregateReport(
+      cliScores,
+      [{ filePath: 'cli.ts', issues: aIssues }],
+      DEFAULT_CONFIG,
     );
+    expect(cliReport.categoryScores.ai).toBeCloseTo(expectedAi, 5);
   });
 });
 

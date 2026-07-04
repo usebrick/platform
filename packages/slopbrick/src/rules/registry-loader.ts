@@ -12,6 +12,9 @@ export interface RegistrySnapshot {
   components: Record<string, RegistryComponent>;
 }
 
+// v0.39.0: the upstream URL 404s (shadcn moved their registry API).
+// Kept exported for backward compatibility but no longer fetched
+// at runtime — refreshRegistrySnapshot now uses the bundled snapshot.
 export const REGISTRY_URL = 'https://ui.shadcn.com/registry.json';
 export const BUNDLED_REGISTRY_VERSION = bundledSnapshot.version;
 
@@ -65,50 +68,37 @@ export interface RefreshResult {
   ok: boolean;
   fresh: boolean;
   message: string;
+  // v0.39.0: the snapshot is now always returned (the previous
+  // version only returned it on success). The bundled snapshot is
+  // returned when the upstream URL is dead (404) or the response
+  // is invalid.
+  snapshot?: RegistrySnapshot;
 }
 
 export async function refreshRegistrySnapshot(
   cwd: string,
-  url = REGISTRY_URL,
-  timeoutMs = 5000,
+  _url = REGISTRY_URL,
+  _timeoutMs = 5000,
 ): Promise<RefreshResult> {
-  let fetched: unknown;
+  // v0.39.0: the upstream URL (`https://ui.shadcn.com/registry.json`)
+  // returns 404 (shadcn moved their registry API). Every `init` was
+  // hitting the network for nothing and then falling back to the
+  // bundled snapshot. Skip the fetch entirely and return the
+  // bundled snapshot — the cache file is still written so external
+  // readers see a consistent shape.
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    fetched = (await response.json()) as unknown;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      fresh: false,
-      message: `Registry refresh failed (${message}); using bundled snapshot.`,
-    };
+    const cacheFile = cachePath(cwd);
+    ensureCacheDir(cwd);
+    writeFileSync(cacheFile, JSON.stringify(bundledSnapshot, null, 2), 'utf-8');
+  } catch {
+    // Ignore — cache write failure is non-fatal; the snapshot
+    // is still in memory and returned to the caller.
   }
-
-  if (!isValidSnapshot(fetched)) {
-    return {
-      ok: false,
-      fresh: false,
-      message: 'Registry response did not match expected schema; using bundled snapshot.',
-    };
-  }
-
-  ensureCacheDir(cwd);
-  writeFileSync(cachePath(cwd), JSON.stringify(fetched, null, 2));
-
-  const fresh = fetched.version === BUNDLED_REGISTRY_VERSION;
   return {
+    snapshot: bundledSnapshot as RegistrySnapshot,
     ok: true,
-    fresh,
-    message: fresh
-      ? 'Registry snapshot refreshed and is up-to-date.'
-      : `Registry snapshot refreshed but version (${fetched.version}) differs from bundled (${BUNDLED_REGISTRY_VERSION}).`,
+    fresh: false,
+    message: 'Using bundled snapshot (upstream URL returns 404).',
   };
 }
 

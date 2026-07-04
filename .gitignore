@@ -11,6 +11,12 @@ dist/
 # Agent session / cache
 .worktrees/
 .kimi-code/
+# Kimi session exports accidentally committed in v0.39.0; sweep the
+# pattern so future exports stay out of the tree. Matches the
+# `kimi-export-session_<ts>.md` shape produced by the Kimi CLI's
+# session-export command. Untracked on disk; never `git add` these.
+kimi-export-session_*.md
+*.kimi-session.md
 .slopbrick/
 .slopbrick-cache.json
 

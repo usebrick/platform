@@ -244,33 +244,30 @@ export function handleImportDeclaration(
             });
           }
         } else if (specifier.type === 'ImportSpecifier') {
+          // v0.39.0: prefer the post-`as` local binding name. For
+          // `import { X } from '...'` (no alias), `imported` and
+          // `local` are both the same Identifier "X". For
+          // `import { X as Y } from '...'`, `imported` is "X"
+          // (the original/exported name) and `local` is "Y" (the
+          // local binding the code actually uses). The dead-code
+          // reference tracker scans the source for the binding's
+          // name, so we must store the local name — otherwise
+          // aliased imports are reported as unused even when the
+          // code uses them 3-6 times under the alias.
           const imported = specifier.imported as AnyNode;
           const local = specifier.local as AnyNode;
-          if (
-            isObject(imported) &&
-            typeof imported.value === 'string' &&
-            imported.value.length > 0
-          ) {
-            const name = imported.value as string;
-            importedNames.push(name);
+          // Resolve the local binding name: prefer `local` (post-`as`),
+          // fall back to `imported` (original/exported name).
+          const localName =
+            isObject(local) && local.type === 'Identifier' && typeof local.value === 'string' && local.value.length > 0
+              ? local.value
+              : isObject(imported) && typeof imported.value === 'string' && imported.value.length > 0
+                ? imported.value
+                : null;
+          if (localName) {
+            importedNames.push(localName);
             vctx.facts.deadCode.bindings.push({
-              name,
-              kind: 'import-specifier',
-              line,
-              column,
-              source,
-              isReferenced: false,
-              isTypeOnly,
-            });
-          } else if (
-            isObject(local) &&
-            local.type === 'Identifier' &&
-            typeof local.value === 'string'
-          ) {
-            const name = local.value as string;
-            importedNames.push(name);
-            vctx.facts.deadCode.bindings.push({
-              name,
+              name: localName,
               kind: 'import-specifier',
               line,
               column,
@@ -888,6 +885,17 @@ export function handleWhileStatement(
   const test = node.test as AnyNode;
   if (!isObject(test)) return false;
   if (test.type === 'BooleanLiteral' && typeof test.value === 'boolean') {
+    // v0.39.0: skip `while (true)` loops that contain a reachable
+    // `break` statement — the idiomatic config-walk / event-loop
+    // pattern. The previous behavior downgraded severity but still
+    // fired, which was a false positive on ~4 legitimate patterns
+    // per self-scan.
+    if (test.value === true) {
+      const body = node.body as AnyNode;
+      if (isObject(body) && containsBreakStatement(body)) {
+        return false;
+      }
+    }
     const { line, column } = positionFrom(test, vctx.lineOffsets);
     vctx.facts.deadCode.constantConditions.push({
       kind: test.value ? 'while-true' : 'while-false',
@@ -895,6 +903,33 @@ export function handleWhileStatement(
       line,
       column,
     });
+  }
+  return false;
+}
+
+/**
+ * v0.39.0: Walk an AST subtree looking for a `break` statement.
+ * Used to suppress false positives on `while (true) { ... break; ... }`
+ * patterns. We don't track control-flow reachability (that's a
+ * proper dataflow analysis); we just check for the presence of any
+ * `break` in the body. This is conservative — it may miss cases
+ * where a `break` is inside a nested function or behind a flag —
+ * but those are rare enough that the false-negative cost is lower
+ * than the false-positive cost.
+ */
+function containsBreakStatement(node: AnyNode): boolean {
+  if (!isObject(node)) return false;
+  if (node.type === 'BreakStatement') return true;
+  for (const key of Object.keys(node)) {
+    if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') continue;
+    const child = (node as Record<string, unknown>)[key];
+    if (Array.isArray(child)) {
+      for (const c of child) {
+        if (containsBreakStatement(c)) return true;
+      }
+    } else if (isObject(child)) {
+      if (containsBreakStatement(child)) return true;
+    }
   }
   return false;
 }

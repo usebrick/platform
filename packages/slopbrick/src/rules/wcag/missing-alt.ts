@@ -14,7 +14,7 @@
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
-import { lineOfSource } from '../utils';
+import { isUIFile, lineOfSource } from '../utils';
 
 const IMG_OPEN_RE = /<img\b[^>]*>/gi;
 const HAS_ALT_RE = /\balt\s*=\s*("[^"]*"|'[^']*')/i;
@@ -58,6 +58,10 @@ export const missingAltRule = createRule<RuleContext>({
   },
   analyze(_context, facts): Issue[] {
     const issues: Issue[] = [];
+    // v0.39.0: file-type guard. WCAG rules should not fire on
+    // .ts library files (codemod fixtures, type definitions) that
+    // mention <img> as a string — only on actual UI source.
+    if (!isUIFile(facts.filePath)) return issues;
     const source = facts.v2?._source;
     if (!source) return issues;
     for (const hit of scanForMissingAlt(source)) {

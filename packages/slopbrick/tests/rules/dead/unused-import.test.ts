@@ -85,10 +85,15 @@ describe('dead/unused-import', () => {
   it('flags aliased imports when the alias is unused', async () => {
     const source = `import { useState as myState } from 'react';\nconst x = 1;\nexport const Component = () => <div>{x}</div>;\n`;
     const issues = await runRule(source);
-    const issue = issues.find((i) => i.message.includes('useState'));
-    // The visitor records the imported name (useState) as the binding.
-    // The alias (myState) would be the local reference, so if the
-    // import is not referenced as either, it gets flagged.
+    // v0.39.0: the visitor now records the post-`as` local binding
+    // name (`myState` here, not the original `useState`). The dead-code
+    // reference tracker scans for the binding's local name, so
+    // aliased-but-unused imports are correctly reported under the
+    // local name. Pre-v0.39.0 the visitor stored `useState` and the
+    // reference tracker never found `useState` in the source, which
+    // caused false negatives on aliased imports — but the old test
+    // asserted the buggy "flagged as useState" behavior.
+    const issue = issues.find((i) => i.message.includes('myState'));
     expect(issue).toBeDefined();
   });
 

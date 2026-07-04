@@ -258,10 +258,13 @@ export function aggregateReport(
   // normalization (sum / componentCount) * 100 produces wildly
   // wrong numbers — e.g. 167 severity points × 100 = 16700, which
   // looks like the worst possible score when in reality the
-  // headline `slopIndex` is fine. In that case, fall back to
-  // raw totals (no normalization) so the user sees honest numbers.
-  // For codebases WITH components, keep the per-component average
-  // × 100 so the score is comparable across project sizes.
+  // headline `slopIndex` is fine. v0.39.0: replaced the linear
+  // normalization with log-saturation (same approach as
+  // bucketScores at line 224 and aiSlopScore). This works for
+  // both UI repos and CLI/library repos — no componentCount
+  // dependency, no division-by-zero, scores are comparable across
+  // project sizes. The saturation point (500 points = 100%)
+  // matches the empirical max we've seen in v0.36+ calibrations.
   const categoryPoints: Record<Category, number> = {
     visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0, ai: 0, context: 0, product: 0, i18n: 0,
   };
@@ -272,16 +275,17 @@ export function aggregateReport(
     }
   }
   const categoryScores: Record<Category, number> = { ...categoryPoints };
-  if (componentCount > 0) {
-    // Codebase has UI components — normalize to per-component
-    // average × 100 so scores are comparable across project sizes.
-    for (const category of Object.keys(categoryScores) as Category[]) {
-      categoryScores[category] = (categoryScores[category] / componentCount) * 100;
-    }
+  // Log-saturation: score = log10(1 + points/500) / log10(11) * 100,
+  // capped at 100. This is the same formula used by aiSlopScore
+  // and the boundary/context/visual bucketScores. 500 points = 100%
+  // saturation (matches the empirical max from v0.36+ calibrations).
+  // No componentCount dependency, no division-by-zero.
+  for (const category of Object.keys(categoryScores) as Category[]) {
+    categoryScores[category] = Math.min(
+      100,
+      (Math.log10(1 + categoryScores[category] / 500) / Math.log10(11)) * 100,
+    );
   }
-  // else: keep raw totals (sum of severity × weight) — the user
-  // gets honest "167 AI points" instead of "16700 (which is
-  // meaningless without components to average over)".
 
   // v0.15.0 U.4+: the 4-score model replaces the single slopIndex.
   // v0.21.0: aiSlopScore is now the RAW amount of AI slop

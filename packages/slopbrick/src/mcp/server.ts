@@ -13,6 +13,7 @@
 import { builtinRules } from '../rules/builtins.js';
 import { scanFile } from '../engine/worker.js';
 import { DEFAULT_CONFIG } from '../config';
+import { VERSION } from '../types/_header.js';
 import type { Rule, ResolvedConfig } from '../types';
 import { handleToolCall, TOOL_DEFINITIONS, getDeprecation } from './tools.js';
 
@@ -38,7 +39,11 @@ interface JsonRpcResponse {
 
 const SERVER_INFO = {
   name: 'slopbrick',
-  version: process.env.npm_package_version ?? '0.0.0',
+  // v0.39.0: use the VERSION constant (same source as the CLI)
+  // instead of npm_package_version, which is only set when
+  // launched via `npm run` and would be "0.0.0" for direct
+  // MCP client launches (`npx slopbrick mcp`).
+  version: VERSION,
 };
 
 /**

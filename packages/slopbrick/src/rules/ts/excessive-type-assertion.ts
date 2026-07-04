@@ -56,6 +56,29 @@ export const tsExcessiveTypeAssertionRule = createRule<TsExcessiveTypeAssertionC
     const source = facts.v2?._source;
     if (!source) return issues;
 
+    // v0.39.0: also flag `as unknown as X` — the double-cast
+    // pattern is almost always an AI hack to force a type through
+    // the compiler. One occurrence is enough to flag the file.
+    const DOUBLE_CAST_REGEX = /\bas\s+unknown\s+as\s+/g;
+    let dcMatch: RegExpExecArray | null;
+    DOUBLE_CAST_REGEX.lastIndex = 0;
+    while ((dcMatch = DOUBLE_CAST_REGEX.exec(source)) !== null) {
+      const line = source.slice(0, dcMatch.index).split('\n').length;
+      issues.push({
+        ruleId: 'ts/excessive-type-assertion',
+        category: 'typo',
+        severity: 'medium',
+        aiSpecific: true,
+        message: `'as unknown as' is an AI code smell — fix the type, don't bypass it`,
+        line,
+        column: dcMatch.index + 1,
+        advice:
+          'The `as unknown as` double-cast bypasses both the source and target type systems. ' +
+          'Either narrow the source type properly (with a type guard) or fix the target type. ' +
+          'Reference: ts/excessive-type-assertion v0.39.0.',
+      });
+    }
+
     let match: RegExpExecArray | null;
     FN_DECL_REGEX.lastIndex = 0;
     while ((match = FN_DECL_REGEX.exec(source)) !== null) {

@@ -14,6 +14,8 @@
 //
 // aiSpecific: false (humans do this too — copy-paste from old READMEs).
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import {
@@ -51,7 +53,23 @@ export const stalePackageReferenceRule = createRule<StalePackageContext>({
   description:
     'Markdown references a package (npm install / from / require) that is not in package.json.',
   create(context) {
-    return { ...context, packages: declaredPackages(context.cwd) };
+    // v0.39.0: also add the current package's own name to the set
+    // so self-references don't fire (e.g., a comment in
+    // `core/src/index.ts` that says
+    // `// import { X } from '@usebrick/core'` — the rule used to
+    // report "Documents @usebrick/core but it is not in package.json"
+    // even though core IS @usebrick/core, the package being scanned).
+    const packages = declaredPackages(context.cwd);
+    try {
+      const pkgRaw = readFileSync(join(context.cwd, 'package.json'), 'utf-8');
+      const pkg = JSON.parse(pkgRaw) as { name?: unknown };
+      if (typeof pkg.name === 'string') {
+        packages.add(pkg.name);
+      }
+    } catch {
+      // Ignore — package.json is missing or malformed.
+    }
+    return { ...context, packages };
   },
   analyze(context, facts): Issue[] {
     const issues: Issue[] = [];

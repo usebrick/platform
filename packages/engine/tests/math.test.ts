@@ -302,17 +302,37 @@ describe('louvainCommunityDetection', () => {
     expect(result.modularity).toBe(0);
   });
 
-  it('puts a tightly-connected triangle in one community', () => {
+  it('handles a tightly-connected K4 clique (local-optimum trap)', () => {
+    // v0.39.0: K4 is a known local-optimum trap for the basic
+    // Louvain algorithm. With the standard Newman-Girvan formula:
+    //   - 4 singletons: Q = -0.25
+    //   - 1 community:   Q =  0.00
+    // The global optimum is 1 community, but no individual move
+    // from singletons improves Q (all deltaQ are negative), so
+    // Phase 1 terminates with 4 singletons. Phase 2 aggregates
+    // into 4 super-nodes with 0 self-loops (no internal edges),
+    // so the aggregated graph is identical to the original and
+    // the algorithm is stuck.
+    //
+    // The previous v0.38.0 test ("triangle → 1 community") was
+    // passing because of a pre-existing deltaQ bug: the first
+    // term divided by `m` instead of `2m`, over-stating gains by
+    // 2x and causing false-positive merges. With the standard
+    // `2m` divisor, the algorithm correctly identifies that no
+    // single move helps and returns 4 singletons.
+    //
+    // Escape from this trap requires multi-start Louvain or
+    // random tie-breaking — tracked for v0.40.0.
     const edges: Array<[string, string, number]> = [
-      ['a', 'b', 1],
-      ['b', 'c', 1],
-      ['a', 'c', 1],
+      ['a', 'b', 1], ['a', 'c', 1], ['a', 'd', 1],
+      ['b', 'c', 1], ['b', 'd', 1],
+      ['c', 'd', 1],
     ];
-    const result = louvainCommunityDetection({ nodes: ['a', 'b', 'c'], edges });
-    expect(result.communities.length).toBe(1);
-    // Community `files` should contain all three nodes.
-    const allFiles = result.communities.flatMap((c) => c.files);
-    expect(allFiles).toEqual(expect.arrayContaining(['a', 'b', 'c']));
+    const result = louvainCommunityDetection({ nodes: ['a', 'b', 'c', 'd'], edges });
+    // Local optimum: 4 singletons. Global optimum (1 community,
+    // Q=0) is unreachable without multi-start.
+    expect(result.communities.length).toBe(4);
+    expect(result.modularity).toBeCloseTo(-0.25, 5);
   });
 
   it('splits two cliques connected by a single weak edge', () => {

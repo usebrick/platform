@@ -30,6 +30,7 @@
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
+import { isUIFile } from '../utils';
 import { computeNaturalness, computeNaturalnessForRange, defaultModel } from '@usebrick/engine';
 import type { NaturalnessMetrics, NaturalnessModel } from '@usebrick/engine';
 import { buildLineOffsets } from '../../engine/visitor';
@@ -71,6 +72,10 @@ export const naturalnessAnomalyRule = createRule<NaturalnessAnomalyContext>({
   },
   analyze(context: NaturalnessAnomalyContext, facts: ScanFacts): Issue[] {
     const issues: Issue[] = [];
+    // v0.39.0: file-type guard. This rule detects UI patterns and
+    // should not fire on .ts library files that mention UI-shaped
+    // strings as data (codemod fixtures, visitor internals).
+    if (!isUIFile(facts.filePath)) return issues;
     const source = facts.v2?._source;
     if (!source) return issues;
 

@@ -46,7 +46,7 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.21.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
+**Status:** v0.38.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
 the full release notes.
 
 ---
