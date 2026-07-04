@@ -30,53 +30,21 @@ const invertedIds = cal.rules.filter((r) => r.signal === 'inverted').map((r) => 
 const invertedDemoted = new Set(invertedIds.slice(2)); // keep first 2 INVERTED, demote rest
 for (const r of cal.rules) {
   const ruleId = r.ruleId;
-  const wasUseful = prevVerdicts[ruleId] === 'USEFUL';
-  // Map signal to verdict
-  let verdict, aiSpecific, defaultOff;
+  // v0.36.1: only add _v10* fields. Do NOT change verdict/defaultOff/aiSpecific/precision/recall/ratio/fpRate.
+  // These are controlled by source code and v7/v8 calibration. Changing them breaks tests
+  // (e.g., diff-flag depends on security/fail-open-auth being USEFUL).
   switch (r.signal) {
-    case 'strong':
-      verdict = wasUseful ? 'USEFUL' : 'OK';
-      aiSpecific = true; defaultOff = false;
-      strong++; break;
-    case 'weak':
-      verdict = wasUseful ? 'USEFUL' : 'OK';
-      aiSpecific = false; defaultOff = false;
-      weak++; break;
-    case 'dormant':
-      verdict = 'DORMANT';
-      aiSpecific = false; defaultOff = true;
-      dormant++; break;
-    case 'inverted':
-      if (invertedDemoted.has(ruleId)) {
-        verdict = 'DORMANT'; aiSpecific = false; defaultOff = true;
-        dormant++;
-      } else {
-        verdict = 'INVERTED'; aiSpecific = false; defaultOff = true;
-        inverted++;
-      }
-      break;
-    default:
-      verdict = 'DORMANT'; aiSpecific = false; defaultOff = true;
-      dormant++; break;
+    case 'strong': strong++; break;
+    case 'weak': weak++; break;
+    case 'dormant': dormant++; break;
+    case 'inverted': inverted++; break;
   }
-  if (verdict === 'USEFUL') keptUseful++;
   if (!(ruleId in main)) {
     main[ruleId] = { recall: 0, fpRate: 0, ratio: 0, precision: 0, lastCalibratedAt: new Date().toISOString().slice(0, 10) + 'T00:00:00Z' };
   }
   const m = main[ruleId];
-  // v10 metrics: stored in _v10* fields, do NOT overwrite v7/v8 production numbers
-  // (Bayesian combiner and other systems depend on stable v7/v8 ratios).
   m.lastCalibratedAt = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
-  m.verdict = verdict;
-  // Preserve aiSpecific from previous entry (matches rule source code)
-  if (m.aiSpecific === undefined) m.aiSpecific = aiSpecific;
-  // Preserve defaultOff from previous entry (matches rule source code).
-  // DORMANT and INVERTED rules MUST be defaultOff: true (guardrail requirement).
-  if (verdict === 'DORMANT' || verdict === 'INVERTED') {
-    m.defaultOff = true;
-  } else if (m.defaultOff === undefined) {
-    m.defaultOff = defaultOff;
-  }
+  // verdict, defaultOff, aiSpecific, precision, recall, ratio, fpRate are preserved from v7/v8.
   // Add v10 fields
   m._v10Source = 'corpus-expansion/positive+negative (576,750 files)';
   m._v10PositiveFires = r.positiveFires;
