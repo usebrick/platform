@@ -23,7 +23,7 @@ and reclassifies the 38th (`security/fail-open-auth`).
    v9 calibration showed 100% precision; v10's corpus simply lacked enough
    auth-handling code to fire it. Kept (off by default).
 
-3. **Rule count: 140 → 103** in 24 categories
+3. **Rule count: 140 → 103** in 22 categories
 
 4. **Doc updates** — `AGENTS.md` (95 → 103 rules + rule lifecycle section),
    `README.md` (80 → 103 rules), `docs/ARCHITECTURE.md` (80 → 103 rules),

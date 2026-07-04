@@ -85,15 +85,15 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '24 categories · 103 rules (v10-calibrated)' },
-      { kind: 'output', text: '  security     18   sql-injection, xss, ssrf, secret-leak, ...' },
-      { kind: 'output', text: '  logic        14   null-check, await-promise, type-coerce, ...' },
-      { kind: 'output', text: '  layout       12   dead-code, magic-number, naming-conv, ...' },
-      { kind: 'output', text: '  typo          9   identifier-shadow, comment-grammar, ...' },
-      { kind: 'output', text: '  ai            6   ai-slop, prompt-leak, comment-artifact, ...' },
-      { kind: 'output', text: '  arch          5   layer-violation, circular-import, ...' },
-      { kind: 'output', text: '  ... and 7 more (component, product, visual, perf, test, context, wcag)' },
-      { kind: 'muted',  text: 'each rule ships with recall/FP ratio · noise > signal goes back to defaultOff.' },
+      { kind: 'accent', text: '22 categories · 103 rules (v0.38.0, v10-calibrated)' },
+      { kind: 'output', text: '  ai           15   compression-profile, comment-ratio, segment-surprisal-cv, ...' },
+      { kind: 'output', text: '  logic        12   boundary-violation, ghost-defensive, zipf-slope-anomaly, ...' },
+      { kind: 'output', text: '  security     11   sql-construction, unsafe-html-render, public-admin-route, ...' },
+      { kind: 'output', text: '  visual       10   spacing-scale-violation, math-color-cluster, naturalness-anomaly, ...' },
+      { kind: 'output', text: '  dead          5   dead-branch, unused-import, unused-local, ...' },
+      { kind: 'output', text: '  swift         5   print-debug, fatal-error-thrown, ...' },
+      { kind: 'output', text: '  ... and 16 more (layout, rust, ts, java, cpp, component, docs, dup, test, wcag, go, perf, product, typo, context, db)' },
+      { kind: 'muted',  text: '57 STRONG · 38 WEAK · 0 DORMANT (37 deleted in v0.38.0) · 7 HYGIENE (anti-AI fingerprints)' },
     ],
   },
   {
@@ -219,7 +219,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.38.0 · 4 scores · 103 rules · 24 categories · v10-calibrated · no telemetry');
+    appendLine('muted', 'slopbrick 0.38.0 · 4 scores · 103 rules · 22 categories · v10-calibrated · no telemetry');
     appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
     renderInputLine();
   };

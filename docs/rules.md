@@ -17,7 +17,7 @@
 
 ---
 
-## Summary by Category (24 categories, 103 rules)
+## Summary by Category (22 categories, 103 rules)
 
 | Category | Count | Notes |
 |---|---|---|
