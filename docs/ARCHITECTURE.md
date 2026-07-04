@@ -22,7 +22,7 @@ usebrick is **not** an LLM-memory product. It does not embed code, does not chat
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.20.0` on npm |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.37.0` on npm (140 rules, v10-calibrated against 576,750 files) |
 | **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
 
