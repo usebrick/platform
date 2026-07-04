@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.40.0] - 2026-07-04 — Self-calibration loop (relaxation half)
+
+v0.40.0 closes the one-way flywheel ratchet that's been the
+flywheel's signature behavior since v0.10. Two changes,
+both visible end-to-end:
+
+1. **Self-calibration loop** — `src/engine/flywheel.ts` now
+   emits `autoRelaxed` entries alongside `autoTuned`. A
+   rule that has stayed in `topOffenseIds` across 5+
+   consecutive scans (regardless of bumps) gets
+   auto-relaxed: severity walks `high → medium → low →
+   off`. The next scan picks up the relaxed value via the
+   same `config.rules[id]` override mechanism the bump
+   loop already uses. Bumping and relaxing are two
+   independent signals on top of the same data — bumping
+   is the system saying "rule matters", relaxing is the
+   user saying "rule ignored" — and both can fire on the
+   same scan. The persisted `FlywheelState` carries both
+   lists so the user can audit.
+2. **`severityRelax()` helper** — public API addition. The
+   `high → medium → low → off` ratchet is now exposed as
+   a sibling to the existing `severityBump()`. The two
+   are inverses on the bounded `['low', 'medium', 'high']`
+   interval but have different floors: bump saturates at
+   `'high'`, relax walks past `'low'` into `'off'`. The
+   floor meets the existing user `'off'` override so the
+   read-side needs no new guard.
+
+### What changed in v0.40.0
+
+- `AutoRelaxedRule` interface (new) carries `severity: Severity | 'off'`,
+  `previousSeverity`, `reason`, `defaultPrior`, `relaxedAt`.
+- `FlywheelState` and `FlywheelOutput` gain `autoRelaxed: AutoRelaxedRule[]`.
+- `FLYWHEEL_VERSION `'2' → '3'`. `migrateFlywheelState` carries v0.39.x
+  state forward (the new field defaults to `[]`). v3 state persists
+  both lists.
+- Read-side wiring in `src/cli/scan.ts` applies the relaxed severity
+  to `config.rules[id]` on every subsequent scan, with the same
+  `defaultOff` guard the bump loop already has.
+- Producer-side persistence in `src/cli/report/persistRun.ts`
+  writes both lists together so the on-disk state always reflects
+  the latest observations.
+- 489 insertions / 3 deletions across 5 files; typecheck clean;
+  15 new tests in `tests/flywheel.test.ts` covering `severityRelax`,
+  the relaxation emission under various streak shapes, and the
+  v2 → v3 schema migration. 213/213 tests in flywheel + cli green.
+
+### What's next (v0.40.1 patch or v0.41.0 minor)
+
+- **Temporal constitution drift** — `slopbrick drift --since <date>`
+  diffs `constitution.json` (intent) against `inventory.json`
+  (observed) over `scans.jsonl` (history). The data model
+  supports it; the diff function doesn't exist yet.
+- **Wire `compositeScore` to reporters** — the Bayesian aggregate is
+  computed per-scan and embedded in `health.json`, but the pretty
+  reporter and the MCP `slop_suggest` reply don't surface it. ~1
+  day of plumbing.
+- **Re-evaluate the 7 INVERTED rules** — the v0.38.x calibration
+  flagged 7 rules (e.g. `dead/unused-parameter`, `cpp/c-style-cast`)
+  that fire MORE on human code than AI code. Some may be useful as
+  human-quality signals (anti-AI fingerprints).
+- **Multi-start Louvain** — known K4 local-optimum limitation of the
+  modularity-maximization pass; tracked for v0.40.0+, deferred in
+  favor of the self-calibration work in this release.
+
 ## [0.39.0] - 2026-07-04 — Log-saturation scoring, fix correctness, deprecation cleanup
 
 v0.39.0 is a **scoring formula + correctness** release. Three classes of
