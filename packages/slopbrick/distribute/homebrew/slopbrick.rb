@@ -12,7 +12,7 @@
 #     --sha256=<populate from npm view slopbrick@0.10.1 dist.shasum>
 
 class Slopbrick < Formula
-  desc "Repository Coherence Engine for AI-generated code — 13 scores, 60+ rules, MCP for agents. Part of the usebrick.dev platform."
+  desc "Repository Coherence Engine for AI-generated code — 4 scores, 103 rules, MCP for agents. Part of the usebrick.dev platform. v10-calibrated against 576,750 real files."
   homepage "https://github.com/usebrick/slopbrick"
   url "https://registry.npmjs.org/slopbrick/-/slopbrick-0.10.1.tgz"
   sha256 "<populate from npm view slopbrick@0.10.1 dist.shasum>"

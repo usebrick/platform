@@ -240,11 +240,6 @@ export type DbDriftLevel = 'low' | 'medium' | 'high' | 'critical';
 /** A single db-health finding — one rule firing on one table/file. */
 export interface DbFinding {
   ruleId:
-    | 'db/missing-fk-index'
-    | 'db/duplicate-index'
-    | 'db/missing-not-null'
-    | 'db/enum-sprawl'
-    | 'db/naming-inconsistency'
     | 'db/sql-concat';
   severity: 'low' | 'medium' | 'high';
   dbFile: string;

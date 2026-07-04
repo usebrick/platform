@@ -30,15 +30,10 @@ function stubResult(): DbScanResult {
     result: {
       dbHealth: 95,
       dbDrift: 'low',
-      scannedSqlFiles: 1,
+      scannedSqlFiles: 0,
       scannedTsFiles: 0,
       findings: [],
       byRule: {
-        'db/missing-fk-index': 0,
-        'db/duplicate-index': 0,
-        'db/missing-not-null': 0,
-        'db/enum-sprawl': 0,
-        'db/naming-inconsistency': 0,
         'db/sql-concat': 0,
       },
     },
@@ -76,11 +71,6 @@ describe('formatDbReport', () => {
     const out = formatDbReport(r);
     expect(out).toMatch(/Database Health:\s*95\/100/);
     expect(out).toMatch(/dbDrift:\s*low/);
-    expect(out).toMatch(/db\/missing-fk-index/);
-    expect(out).toMatch(/db\/duplicate-index/);
-    expect(out).toMatch(/db\/missing-not-null/);
-    expect(out).toMatch(/db\/enum-sprawl/);
-    expect(out).toMatch(/db\/naming-inconsistency/);
     expect(out).toMatch(/db\/sql-concat/);
   });
 
@@ -91,7 +81,7 @@ describe('formatDbReport', () => {
     expect(json.dbDrift).toBe('low');
     expect(typeof json.scannedSqlFiles).toBe('number');
     expect(typeof json.scannedTsFiles).toBe('number');
-    expect((json.byRule as Record<string, number>)['db/missing-fk-index']).toBe(0);
+    expect((json.byRule as Record<string, number>)['db/sql-concat']).toBe(0);
   });
 
   it('markdown output has table + findings section', () => {
@@ -106,12 +96,11 @@ describe('slopbrick db (CLI)', () => {
   it('end-to-end via binary on a tiny fixture', async () => {
     const dir = freshDir();
     try {
-      mkdirSync(join(dir, 'migrations'), { recursive: true });
+      mkdirSync(join(dir, 'src'), { recursive: true });
       writeFile(
         dir,
-        'migrations/001_init.sql',
-        `CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL);
-`,
+        'src/queries.ts',
+        `export const x = 1;`,
       );
       const { stdout, exitCode } = await execFileAsync('node', [BIN, 'db'], { cwd: dir })
         .then((r) => ({ exitCode: 0, stdout: r.stdout, stderr: r.stderr }))
@@ -131,11 +120,11 @@ describe('slopbrick db (CLI)', () => {
   it('emits valid JSON with --format json', async () => {
     const dir = freshDir();
     try {
-      mkdirSync(join(dir, 'migrations'), { recursive: true });
+      mkdirSync(join(dir, 'src'), { recursive: true });
       writeFile(
         dir,
-        'migrations/001_init.sql',
-        `CREATE TABLE users (id SERIAL PRIMARY KEY);`,
+        'src/queries.ts',
+        `export const x = 1;`,
       );
       const { stdout } = await execFileAsync('node', [BIN, 'db', '--format', 'json'], { cwd: dir })
         .then((r) => ({ exitCode: 0, stdout: r.stdout, stderr: r.stderr }))
@@ -155,27 +144,28 @@ describe('slopbrick db (CLI)', () => {
       expect(parsed.dbHealth).toBeGreaterThanOrEqual(0);
       expect(parsed.dbHealth).toBeLessThanOrEqual(100);
       expect(['low', 'medium', 'high', 'critical']).toContain(parsed.dbDrift);
-      expect(typeof parsed.scannedSqlFiles).toBe('number');
+      expect(typeof parsed.scannedTsFiles).toBe('number');
       expect(Array.isArray(parsed.findings)).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   }, 60000);
 
-  it('flags multiple missing FK indexes; --strict exits 1 when drift reaches high', async () => {
+  it('flags multiple sql-concat findings; --strict exits 1 when drift reaches high', async () => {
     const dir = freshDir();
     try {
-      mkdirSync(join(dir, 'migrations'), { recursive: true });
-      // Two tables with FK references but no indexes → enough weight to
-      // land in 'high' drift (>= 40 < 60) and trigger --strict exit 1.
-      writeFile(
-        dir,
-        'migrations/001_init.sql',
-        `CREATE TABLE users (id SERIAL PRIMARY KEY);
-CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id));
-CREATE TABLE comments (id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL REFERENCES posts(id), author_id INTEGER NOT NULL REFERENCES users(id));
-`,
-      );
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      // Generate enough sql-concat findings across many files to land
+      // in 'high' drift (>= 40 < 60) and trigger --strict exit 1.
+      for (let i = 0; i < 30; i++) {
+        writeFile(
+          dir,
+          `src/queries${i}.ts`,
+          `export const x${i} = db.query(\`SELECT * FROM users WHERE id = \${id${i}}\`);\n` +
+          `export const y${i} = db.query(\`INSERT INTO logs VALUES (\${msg${i}})\`);\n` +
+          `export const z${i} = db.query(\`UPDATE posts SET body = \${body${i}}\`);\n`,
+        );
+      }
       const { exitCode } = await execFileAsync('node', [BIN, 'db', '--strict'], { cwd: dir })
         .then((r) => ({ exitCode: 0, stdout: r.stdout, stderr: r.stderr }))
         .catch((err: { code?: number; stdout?: string; stderr?: string }) => ({

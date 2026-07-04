@@ -135,15 +135,15 @@ export interface ResolvedConfig {
    */
   prScoreThreshold?: number;
   /**
-   * Phase 5 — Test Intelligence opt-in toggles. The four `test/*`
-   * rules are safe-by-default (each rule short-circuits on non-test
-   * files via `isTestFile()`), but `test/missing-edge-case` walks
-   * production code to find untested branches. Off by default —
-   * opt-in per project.
+   * Phase 5 — Test Intelligence opt-in toggles. The three remaining
+   * `test/*` rules (`test/weak-assertion`, `test/duplicate-setup`,
+   * `test/fake-placeholder`) are safe-by-default (each rule
+   * short-circuits on non-test files via `isTestFile()`). v0.38.0
+   * removed `test/missing-edge-case` as v10-DORMANT.
    */
   testIntelligence?: {
-    /** Walk production AST to find branches without test coverage. */
-    missingEdgeCase?: boolean;
+    /** Reserved for future test opt-ins. */
+    [key: string]: boolean | undefined;
   };
   /**
    * v0.25.0: self-scan exclude paths. Applied at scan time (in

@@ -4,7 +4,7 @@
 pkgname=slopbrick
 pkgver=0.10.1
 pkgrel=1
-pkgdesc="Repository Coherence Engine for AI-generated code — 13 scores, 60+ rules, MCP for agents. Part of the usebrick.dev platform."
+pkgdesc="Repository Coherence Engine for AI-generated code — 4 scores, 103 rules, MCP for agents. Part of the usebrick.dev platform. v10-calibrated against 576,750 real files."
 arch=('any')
 url="https://github.com/usebrick/slopbrick"
 license=('MIT')

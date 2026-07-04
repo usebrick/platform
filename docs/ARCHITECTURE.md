@@ -22,7 +22,7 @@ usebrick is **not** an LLM-memory product. It does not embed code, does not chat
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.37.0` on npm (140 rules, v10-calibrated against 576,750 files) |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.38.0` on npm (103 rules, v10-calibrated against 576,750 files) |
 | **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
 
@@ -130,9 +130,9 @@ The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick
 **Source layout** (v0.15.0):
 - `src/cli/` — 19 command modules, plus `program.ts` (Commander wiring) and `scan.ts` (451 lines after the v0.15.0 extraction)
 - `packages/engine/src/` — the 30+ pure-function modules (parser, structure.ts, lr-combiner, scoring, visitors). Extracted from `slopbrick/src/engine/` in v0.15.0; now a workspace-only package, no I/O, no `console.log`, reusable from CLI / MCP / future web IDEs.
-- `src/rules/` — 80 rules in 14 categories (ai/, arch/, component/, context/, db/, layout/, logic/, perf/, product/, security/, sql/, test/, typo/, visual/, wcag/)
+- `src/rules/` — 103 rules in 24 categories (v0.38.0+; v0.37.0 had 140, v0.38.0 deleted 37 v10-DORMANT rules)
 - `src/rules/builtins.ts` — auto-generated registry of all rules (rebuilt by `pnpm generate:rules`)
-- `src/rules/signal-strength.json` — the v7 calibration data (the only consumer of the corpus)
+- `src/rules/signal-strength.json` — the v8.5 + v10 calibration data (v0.36.0+; v10 added 576,750-file paired Wilcoxon verdicts)
 - `src/mcp/` — MCP server exposing `slop_suggest`, `slop_suggest_with_structure` (was `slop_suggest_with_memory` pre-v0.15.0), `slop_check_constitution`, `slop_find_similar`
 - `src/types.ts` — public types
 - `src/config/` — config validation, defaults

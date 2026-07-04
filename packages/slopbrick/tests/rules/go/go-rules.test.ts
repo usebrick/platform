@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { goErrorWrapWithoutContextRule } from '../../../src/rules/go/error-wrap-without-context';
 import { goStructTagInconsistencyRule } from '../../../src/rules/go/struct-tag-inconsistency';
 import { goNilSliceVsEmptyRule } from '../../../src/rules/go/nil-slice-vs-empty';
 import type { ScanFacts, RuleContext } from '../../../src/types';
@@ -12,22 +11,6 @@ function makeFacts(source: string): ScanFacts {
     v2: { _source: source } as any,
   } as unknown as ScanFacts;
 }
-
-describe('go/error-wrap-without-context', () => {
-  it('flags a generic fmt.Errorf wrap', () => {
-    const issues = goErrorWrapWithoutContextRule.analyze(CTX, makeFacts(
-      `return fmt.Errorf("error: %w", err)`
-    ));
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not flag a wrap with operation context', () => {
-    const issues = goErrorWrapWithoutContextRule.analyze(CTX, makeFacts(
-      `return fmt.Errorf("opening config file: %w", err)`
-    ));
-    expect(issues).toEqual([]);
-  });
-});
 
 describe('go/struct-tag-inconsistency', () => {
   it('flags a struct with mixed json tag styles', () => {

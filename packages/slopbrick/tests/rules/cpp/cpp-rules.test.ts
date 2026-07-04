@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { cppUsingNamespaceStdRule } from '../../../src/rules/cpp/using-namespace-std';
 import { cppRawNewDeleteRule } from '../../../src/rules/cpp/raw-new-delete';
 import { cppCStyleCastRule } from '../../../src/rules/cpp/c-style-cast';
 import { cppPrintfDebugRule } from '../../../src/rules/cpp/printf-debug';
@@ -14,53 +13,6 @@ function makeFacts(source: string, filePath = '/test.cpp'): ScanFacts {
     v2: { _source: source } as any,
   } as unknown as ScanFacts;
 }
-
-describe('cpp/using-namespace-std', () => {
-  it('flags `using namespace std;` in a .hpp header', () => {
-    const issues = cppUsingNamespaceStdRule.analyze(
-      CTX,
-      makeFacts(`
-using namespace std;
-class Foo {};
-`.trim(), '/include/foo.hpp'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('flags `using namespace std;` in a .h header', () => {
-    const issues = cppUsingNamespaceStdRule.analyze(
-      CTX,
-      makeFacts(`
-using namespace std;
-void bar();
-`.trim(), '/include/foo.h'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not fire on `using namespace std;` in a .cpp file', () => {
-    const issues = cppUsingNamespaceStdRule.analyze(
-      CTX,
-      makeFacts(`
-using namespace std;
-int main() { return 0; }
-`.trim(), '/src/main.cpp'),
-    );
-    expect(issues).toEqual([]);
-  });
-
-  it('does not flag the targeted form `using std::cout;`', () => {
-    const issues = cppUsingNamespaceStdRule.analyze(
-      CTX,
-      makeFacts(`
-using std::cout;
-using std::string;
-class Foo {};
-`.trim(), '/include/foo.hpp'),
-    );
-    expect(issues).toEqual([]);
-  });
-});
 
 describe('cpp/raw-new-delete', () => {
   it('flags two paired new/delete calls', () => {

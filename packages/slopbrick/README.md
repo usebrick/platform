@@ -229,7 +229,7 @@ Next step:
 | Understand the Slop Index vs Coherence | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
 | See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
-| See the 95 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
+| See the 103 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |
 | See what's changed in each release | [`CHANGELOG.md`](./CHANGELOG.md) |

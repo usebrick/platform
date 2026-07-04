@@ -1,20 +1,15 @@
 /**
- * v0.30.0: Tests for the 5 new non-AI-fingerprint Java rules.
+ * v0.30.0: Tests for the non-AI-fingerprint Java rules.
+ * v0.38.0: Removed java/hardcoded-credential, java/command-injection,
+ * java/system-out-println (all v10-DORMANT). 2 rules remain.
  *
- * Mirrors the v0.29.0 kotlin/non-ai-rules.test.ts pattern: build
- * minimal ScanFacts with a .java filePath, call rule.analyze(),
- * assert on the issues array.
- *
- * All 5 rules are aiSpecific: false. They measure real engineering
+ * All remaining rules are aiSpecific: false. They measure real engineering
  * defects, not AI authorship.
  */
 
 import { describe, it, expect } from 'vitest';
 import { javaSqlStringConcatRule } from '../../../src/rules/java/sql-string-concat';
-import { javaHardcodedCredentialRule } from '../../../src/rules/java/hardcoded-credential';
 import { javaThreadSleepInLoopRule } from '../../../src/rules/java/thread-sleep-in-loop';
-import { javaSystemOutPrintlnRule } from '../../../src/rules/java/system-out-println';
-import { javaCommandInjectionRule } from '../../../src/rules/java/command-injection';
 import type { ScanFacts, RuleContext } from '../../../src/types';
 
 const CTX: RuleContext = {} as RuleContext;
@@ -77,48 +72,6 @@ describe('java/sql-string-concat', () => {
       makeFacts('String q = "SELECT * FROM users WHERE id = " + id;'),
     );
     expect(issues.length).toBeGreaterThan(0);
-  });
-});
-
-describe('java/hardcoded-credential', () => {
-  it('flags an API key literal', () => {
-    const issues = javaHardcodedCredentialRule.analyze(
-      CTX,
-      makeFacts('private static final String API_KEY = "abc123def456ghi789jkl012mno345pqr";'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('flags a password literal', () => {
-    const issues = javaHardcodedCredentialRule.analyze(
-      CTX,
-      makeFacts('String password = "MyP@ssw0rd123abc";'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not flag a short placeholder', () => {
-    const issues = javaHardcodedCredentialRule.analyze(
-      CTX,
-      makeFacts('String password = "changeme";'),
-    );
-    expect(issues.length).toBe(0);
-  });
-
-  it('does not flag a System.getenv() reference', () => {
-    const issues = javaHardcodedCredentialRule.analyze(
-      CTX,
-      makeFacts('String apiKey = System.getenv("API_KEY");'),
-    );
-    expect(issues.length).toBe(0);
-  });
-
-  it('does not flag a test file', () => {
-    const issues = javaHardcodedCredentialRule.analyze(
-      CTX,
-      makeFacts('String apiKey = "abc123def456ghi789jkl012mno345pqr";', '/src/test/UserApiKeyTest.java'),
-    );
-    expect(issues.length).toBe(0);
   });
 });
 
@@ -288,97 +241,5 @@ class Doc {
       `.trim()),
     );
     expect(issues).toEqual([]);
-  });
-});
-
-describe('java/system-out-println', () => {
-  it('flags System.out.println in a file that imports slf4j (v0.31.0 refinement)', () => {
-    // v0.31.0: the rule now requires a real-logger import. Files
-    // without a real logger are not anti-patterns — they might be
-    // CLI tools or demo code that intentionally use System.out.
-    const issues = javaSystemOutPrintlnRule.analyze(
-      CTX,
-      makeFacts(`
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-class Service {
-  void doWork() {
-    System.out.println("doing work");
-  }
-}
-      `.trim()),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not flag System.out.println in a file without a real logger (v0.31.0)', () => {
-    // Files without slf4j/log4j/java.util.logging imports are not
-    // anti-patterns. They might be CLI tools, demo code, or main()
-    // that intentionally uses System.out.
-    const issues = javaSystemOutPrintlnRule.analyze(
-      CTX,
-      makeFacts(`
-class Service {
-  void doWork() {
-    System.out.println("doing work");
-  }
-}
-      `.trim()),
-    );
-    expect(issues.length).toBe(0);
-  });
-
-  it('does not flag in a test file', () => {
-    const issues = javaSystemOutPrintlnRule.analyze(
-      CTX,
-      makeFacts(`
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-class Service {
-  void doWork() {
-    System.out.println("test");
-  }
-}
-      `.trim(), '/src/test/ServiceTest.java'),
-    );
-    expect(issues.length).toBe(0);
-  });
-});
-
-describe('java/command-injection', () => {
-  it('flags Runtime.exec with string concat', () => {
-    const issues = javaCommandInjectionRule.analyze(
-      CTX,
-      makeFacts('Runtime.getRuntime().exec("ls " + userInput);'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('flags ProcessBuilder with string concat', () => {
-    const issues = javaCommandInjectionRule.analyze(
-      CTX,
-      makeFacts('ProcessBuilder pb = new ProcessBuilder("ls " + dir);'),
-    );
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not flag Runtime.exec with a fixed string', () => {
-    const issues = javaCommandInjectionRule.analyze(
-      CTX,
-      makeFacts('Runtime.getRuntime().exec("ls -la");'),
-    );
-    expect(issues.length).toBe(0);
-  });
-
-  it('does not flag ProcessBuilder with a List arg', () => {
-    const issues = javaCommandInjectionRule.analyze(
-      CTX,
-      makeFacts('ProcessBuilder pb = new ProcessBuilder(Arrays.asList("ls", "-la"));'),
-    );
-    // The regex requires string-with-quotes + `+` concat. `Arrays.asList("ls", "-la")`
-    // doesn't have a `+` operator, so this doesn't fire.
-    expect(issues.length).toBe(0);
   });
 });

@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.38.0] - 2026-07-04 — Dormant rule cleanup (140 → 103 rules)
+
+v0.38.0 is the **first rule-registry trim** in slopbrick history. v0.37.0's
+v10 calibration (576,750 files, paired Wilcoxon signed-rank test) classified
+38 rules as DORMANT (0 fires in the corpus). This release deletes 37 of them
+and reclassifies the 38th (`security/fail-open-auth`).
+
+### What changed in v0.38.0
+
+1. **37 v10-DORMANT rules deleted** across 15 categories
+   - 10 kotlin (`data-class-defaults-overuse`, `coroutine-global-scope`, `force-unwrap`, `hardcoded-credential`, `object-singleton-misuse`, `println-as-log`, `println-debug`, `runblocking-misuse`, `sql-string-concat`, `string-concat-loop`)
+   - 5 db (`duplicate-index`, `enum-sprawl`, `missing-fk-index`, `missing-not-null`, `naming-inconsistency`) — engine/db-health.ts slimmed to 1 remaining rule (`db/sql-concat`)
+   - 4 typo (`calc-fontsize`, `calc-raw-px`, `clamp-offscale`, `math-cta-vocabulary`)
+   - 3 visual (`clamp-soup`, `generic-centering`, `math-gradient-hue-rotation`)
+   - 3 java (`command-injection`, `hardcoded-credential`, `system-out-println`)
+   - 2 wcag (`dragging-movements`, `target-size`)
+   - 2 logic (`bayesian-conditional`, `qwik-hook-leak`)
+   - 1 each in `ai`, `arch`, `cpp`, `go`, `layout`, `perf`, `test`, `ts`
+
+2. **`security/fail-open-auth` reclassified** — verdict: DORMANT → USEFUL.
+   v9 calibration showed 100% precision; v10's corpus simply lacked enough
+   auth-handling code to fire it. Kept (off by default).
+
+3. **Rule count: 140 → 103** in 24 categories
+
+4. **Doc updates** — `AGENTS.md` (95 → 103 rules + rule lifecycle section),
+   `README.md` (80 → 103 rules), `docs/ARCHITECTURE.md` (80 → 103 rules),
+   `packages/slopbrick/README.md` (95 → 103 rules), `docs/rules.md`
+   (regenerated), website source (Hero, Tools, live-terminal, og-image),
+   Homebrew formula, AUR PKGBUILD.
+
+5. **Code hygiene** — removed orphan RULE_HINTS in `src/snippet/data.ts`,
+   removed severity-map entries in `src/config/defaults.ts` and
+   `src/config/presets.ts`, removed comment in `src/types/config.ts`,
+   removed dead Kotlin/import branches in `db-health.ts`.
+
+### What's next (v0.39.0)
+
+- 7 INVERTED rules: evaluate as anti-AI fingerprints (they fire MORE on
+  human code than AI code). Some may be useful as human-quality signals.
+- Re-run v10 calibration with 103 rules to refine precision/recall.
+- Add `slopbrick calibration --export <file.md>` for CI reports.
+
 ## [0.37.0] - 2026-11-12 — `slopbrick calibration` CLI command + v10 calibration report
 
 v0.37.0 ships the `slopbrick calibration` CLI command that

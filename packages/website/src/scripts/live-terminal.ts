@@ -62,7 +62,7 @@ const COMMANDS: CommandSpec[] = [
     match: 'slopbrick scan',
     run: () => [
       { kind: 'output', text: '       ▸ resolving workspace @ /your-repo' },
-      { kind: 'output', text: '       ▸ loading 4 scores, 95+ rules' },
+      { kind: 'output', text: '       ▸ loading 4 scores, 103 rules (v10-calibrated)' },
       { kind: 'muted',  text: '       ▸ aiSlopScore ........ 13   low amount of slop' },
       { kind: 'muted',  text: '       ▸ engineeringHygiene . 92   strong' },
       { kind: 'muted',  text: '       ▸ security ........... 95   solid' },
@@ -85,7 +85,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '13 categories · 80+ rules' },
+      { kind: 'accent', text: '24 categories · 103 rules (v10-calibrated)' },
       { kind: 'output', text: '  security     18   sql-injection, xss, ssrf, secret-leak, ...' },
       { kind: 'output', text: '  logic        14   null-check, await-promise, type-coerce, ...' },
       { kind: 'output', text: '  layout       12   dead-code, magic-number, naming-conv, ...' },
@@ -219,7 +219,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.24.0 · 4 scores · 119+ rules · 15 categories · no telemetry');
+    appendLine('muted', 'slopbrick 0.38.0 · 4 scores · 103 rules · 24 categories · v10-calibrated · no telemetry');
     appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
     renderInputLine();
   };

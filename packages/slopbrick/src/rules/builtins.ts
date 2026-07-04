@@ -8,7 +8,6 @@ import { aiDefaultReactStackRule } from './ai/default-react-stack';
 import { aiErrorsNearEofRule } from './ai/errors-near-eof';
 import { aiFetchDefaultOveruseRule } from './ai/fetch-default-overuse';
 import { aiLibraryReinventionRule } from './ai/library-reinvention';
-import { aiLogRankHistogramRule } from './ai/log-rank-histogram';
 import { aiMarkdownLeakageRule } from './ai/markdown-leakage';
 import { aiRenyiProfileRule } from './ai/renyi-profile';
 import { aiSegmentSurprisalCvRule } from './ai/segment-surprisal-cv';
@@ -16,7 +15,6 @@ import { aiStateDefaultOveruseRule } from './ai/state-default-overuse';
 import { aiTailwindColorOveruseRule } from './ai/tailwind-color-overuse';
 import { aiTextLikeRatioRule } from './ai/text-like-ratio';
 import { aiWhitespaceRegularityRule } from './ai/whitespace-regularity';
-import { astroIslandLeakRule } from './arch/astro-island-leak';
 import { giantComponentRule } from './component/giant-component';
 import { multipleComponentsPerFileRule } from './component/multiple-components-per-file';
 import { shadcnPropMismatchRule } from './component/shadcn-prop-mismatch';
@@ -25,12 +23,6 @@ import { cppCStyleCastRule } from './cpp/c-style-cast';
 import { cppMagicNumbersRule } from './cpp/magic-numbers';
 import { cppPrintfDebugRule } from './cpp/printf-debug';
 import { cppRawNewDeleteRule } from './cpp/raw-new-delete';
-import { cppUsingNamespaceStdRule } from './cpp/using-namespace-std';
-import { duplicateIndexRule } from './db/duplicate-index';
-import { enumSprawlRule } from './db/enum-sprawl';
-import { missingFkIndexRule } from './db/missing-fk-index';
-import { missingNotNullRule } from './db/missing-not-null';
-import { namingInconsistencyRule } from './db/naming-inconsistency';
 import { sqlConcatRule } from './db/sql-concat';
 import { deadBranchRule } from './dead/dead-branch';
 import { unreachableRule } from './dead/unreachable';
@@ -43,31 +35,16 @@ import { stalePackageReferenceRule } from './docs/stale-package-reference';
 import { dupIdenticalBlockRule } from './dup/identical-block';
 import { nearDuplicateRule } from './dup/near-duplicate';
 import { structuralCloneRule } from './dup/structural-clone';
-import { goErrorWrapWithoutContextRule } from './go/error-wrap-without-context';
 import { goNilSliceVsEmptyRule } from './go/nil-slice-vs-empty';
 import { goStructTagInconsistencyRule } from './go/struct-tag-inconsistency';
-import { javaCommandInjectionRule } from './java/command-injection';
-import { javaHardcodedCredentialRule } from './java/hardcoded-credential';
 import { javaLostStackTraceRule } from './java/lost-stack-trace';
 import { javaSqlStringConcatRule } from './java/sql-string-concat';
 import { javaSuspiciousImplementationRule } from './java/suspicious-implementation';
-import { javaSystemOutPrintlnRule } from './java/system-out-println';
 import { javaThreadSleepInLoopRule } from './java/thread-sleep-in-loop';
-import { kotlinCoroutineGlobalScopeRule } from './kotlin/coroutine-global-scope';
-import { kotlinDataClassDefaultsOveruseRule } from './kotlin/data-class-defaults-overuse';
-import { kotlinForceUnwrapRule } from './kotlin/force-unwrap';
-import { kotlinHardcodedCredentialRule } from './kotlin/hardcoded-credential';
-import { kotlinObjectSingletonMisuseRule } from './kotlin/object-singleton-misuse';
-import { kotlinPrintlnAsLogRule } from './kotlin/println-as-log';
-import { kotlinPrintlnDebugRule } from './kotlin/println-debug';
-import { kotlinRunBlockingMisuseRule } from './kotlin/runblocking-misuse';
-import { kotlinSqlStringConcatRule } from './kotlin/sql-string-concat';
-import { kotlinStringConcatLoopRule } from './kotlin/string-concat-loop';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
 import { spacingGridRule } from './layout/spacing-grid';
-import { bayesianConditionalRule } from './logic/bayesian-conditional';
 import { boundaryViolationRule } from './logic/boundary-violation';
 import { ghostDefensiveRule } from './logic/ghost-defensive';
 import { heapsDeviationRule } from './logic/heaps-deviation';
@@ -77,13 +54,11 @@ import { mathConsoleLogStormRule } from './logic/math-console-log-storm';
 import { mathGiniClassUsageRule } from './logic/math-gini-class-usage';
 import { mathVariableNameEntropyRule } from './logic/math-variable-name-entropy';
 import { optimisticNoRollbackRule } from './logic/optimistic-no-rollback';
-import { qwikHookLeakRule } from './logic/qwik-hook-leak';
 import { reactiveHookSoupRule } from './logic/reactive-hook-soup';
 import { zipfSlopeAnomalyRule } from './logic/zipf-slope-anomaly';
 import { zombieStateRule } from './logic/zombie-state';
 import { clsImageRule } from './perf/cls-image';
 import { cssBloatRule } from './perf/css-bloat';
-import { halsteadAnomalyRule } from './perf/halstead-anomaly';
 import { terminologyDriftRule } from './product/terminology-drift';
 import { uxPatternFragmentationRule } from './product/ux-pattern-fragmentation';
 import { rustStringlyTypedRule } from './rust/stringly-typed';
@@ -108,38 +83,26 @@ import { swiftPrintDebugRule } from './swift/print-debug';
 import { swiftStrongSelfCaptureRule } from './swift/strong-self-capture';
 import { duplicateSetupRule } from './test/duplicate-setup';
 import { fakePlaceholderRule } from './test/fake-placeholder';
-import { missingEdgeCaseRule } from './test/missing-edge-case';
 import { weakAssertionRule } from './test/weak-assertion';
 import { tsEnumVsAsConstRule } from './ts/enum-vs-as-const';
 import { tsExcessiveTypeAssertionRule } from './ts/excessive-type-assertion';
 import { tsImportTypeMisuseRule } from './ts/import-type-misuse';
 import { tsNeverVsUnknownRule } from './ts/never-vs-unknown';
-import { tsOptionalChainOveruseRule } from './ts/optional-chain-overuse';
-import { calcFontsizeRule } from './typo/calc-fontsize';
-import { calcRawPxRule } from './typo/calc-raw-px';
-import { clampOffscaleRule } from './typo/clamp-offscale';
 import { mathButtonLabelUniformityRule } from './typo/math-button-label-uniformity';
-import { mathCtaVocabularyRule } from './typo/math-cta-vocabulary';
 import { placeholderTextRule } from './typo/placeholder-text';
 import { arbitraryEscapeRule } from './visual/arbitrary-escape';
-import { clampSoupRule } from './visual/clamp-soup';
-import { forcedLayoutRule } from './visual/forced-layout';
-import { genericCenteringRule } from './visual/generic-centering';
 import { inlineStyleDominanceRule } from './visual/inline-style-dominance';
 import { mathColorClusterRule } from './visual/math-color-cluster';
 import { mathDefaultFontRule } from './visual/math-default-font';
 import { mathFontEntropyRule } from './visual/math-font-entropy';
-import { mathGradientHueRotationRule } from './visual/math-gradient-hue-rotation';
 import { mathRoundedEntropyRule } from './visual/math-rounded-entropy';
 import { mathSpacingEntropyRule } from './visual/math-spacing-entropy';
 import { naturalnessAnomalyRule } from './visual/naturalness-anomaly';
 import { radiusScaleViolationRule } from './visual/radius-scale-violation';
 import { spacingScaleViolationRule } from './visual/spacing-scale-violation';
-import { draggingMovementsRule } from './wcag/dragging-movements';
 import { focusAppearanceRule } from './wcag/focus-appearance';
 import { focusObscuredRule } from './wcag/focus-obscured';
 import { missingAltRule } from './wcag/missing-alt';
-import { targetSizeRule } from './wcag/target-size';
 
 export const builtinRules: Rule[] = [
   aiAnyDensityRule,
@@ -150,7 +113,6 @@ export const builtinRules: Rule[] = [
   aiErrorsNearEofRule,
   aiFetchDefaultOveruseRule,
   aiLibraryReinventionRule,
-  aiLogRankHistogramRule,
   aiMarkdownLeakageRule,
   aiRenyiProfileRule,
   aiSegmentSurprisalCvRule,
@@ -158,7 +120,6 @@ export const builtinRules: Rule[] = [
   aiTailwindColorOveruseRule,
   aiTextLikeRatioRule,
   aiWhitespaceRegularityRule,
-  astroIslandLeakRule,
   giantComponentRule,
   multipleComponentsPerFileRule,
   shadcnPropMismatchRule,
@@ -167,12 +128,6 @@ export const builtinRules: Rule[] = [
   cppMagicNumbersRule,
   cppPrintfDebugRule,
   cppRawNewDeleteRule,
-  cppUsingNamespaceStdRule,
-  duplicateIndexRule,
-  enumSprawlRule,
-  missingFkIndexRule,
-  missingNotNullRule,
-  namingInconsistencyRule,
   sqlConcatRule,
   deadBranchRule,
   unreachableRule,
@@ -185,31 +140,16 @@ export const builtinRules: Rule[] = [
   dupIdenticalBlockRule,
   nearDuplicateRule,
   structuralCloneRule,
-  goErrorWrapWithoutContextRule,
   goNilSliceVsEmptyRule,
   goStructTagInconsistencyRule,
-  javaCommandInjectionRule,
-  javaHardcodedCredentialRule,
   javaLostStackTraceRule,
   javaSqlStringConcatRule,
   javaSuspiciousImplementationRule,
-  javaSystemOutPrintlnRule,
   javaThreadSleepInLoopRule,
-  kotlinCoroutineGlobalScopeRule,
-  kotlinDataClassDefaultsOveruseRule,
-  kotlinForceUnwrapRule,
-  kotlinHardcodedCredentialRule,
-  kotlinObjectSingletonMisuseRule,
-  kotlinPrintlnAsLogRule,
-  kotlinPrintlnDebugRule,
-  kotlinRunBlockingMisuseRule,
-  kotlinSqlStringConcatRule,
-  kotlinStringConcatLoopRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
   spacingGridRule,
-  bayesianConditionalRule,
   boundaryViolationRule,
   ghostDefensiveRule,
   heapsDeviationRule,
@@ -219,13 +159,11 @@ export const builtinRules: Rule[] = [
   mathGiniClassUsageRule,
   mathVariableNameEntropyRule,
   optimisticNoRollbackRule,
-  qwikHookLeakRule,
   reactiveHookSoupRule,
   zipfSlopeAnomalyRule,
   zombieStateRule,
   clsImageRule,
   cssBloatRule,
-  halsteadAnomalyRule,
   terminologyDriftRule,
   uxPatternFragmentationRule,
   rustStringlyTypedRule,
@@ -250,36 +188,24 @@ export const builtinRules: Rule[] = [
   swiftStrongSelfCaptureRule,
   duplicateSetupRule,
   fakePlaceholderRule,
-  missingEdgeCaseRule,
   weakAssertionRule,
   tsEnumVsAsConstRule,
   tsExcessiveTypeAssertionRule,
   tsImportTypeMisuseRule,
   tsNeverVsUnknownRule,
-  tsOptionalChainOveruseRule,
-  calcFontsizeRule,
-  calcRawPxRule,
-  clampOffscaleRule,
   mathButtonLabelUniformityRule,
-  mathCtaVocabularyRule,
   placeholderTextRule,
   arbitraryEscapeRule,
-  clampSoupRule,
-  forcedLayoutRule,
-  genericCenteringRule,
   inlineStyleDominanceRule,
   mathColorClusterRule,
   mathDefaultFontRule,
   mathFontEntropyRule,
-  mathGradientHueRotationRule,
   mathRoundedEntropyRule,
   mathSpacingEntropyRule,
   naturalnessAnomalyRule,
   radiusScaleViolationRule,
   spacingScaleViolationRule,
-  draggingMovementsRule,
   focusAppearanceRule,
   focusObscuredRule,
   missingAltRule,
-  targetSizeRule,
 ];

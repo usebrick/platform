@@ -1,15 +1,23 @@
-# SlopBrick Rule Catalog (140 Rules)
+# SlopBrick Rule Catalog (103 Rules)
 
-> **Authoritative reference for all 140 built-in rules.**
+> **Authoritative reference for all 103 built-in rules.**
 >
-> **Authors:** slopbrick project (dystx) with Kimi Code CLI · **v0.37.0**
-> **Source:** `packages/slopbrick/src/rules/builtins.ts` (140 imports)
+> **Authors:** slopbrick project (dystx) with Kimi Code CLI · **v0.38.0**
+> **Source:** `packages/slopbrick/src/rules/builtins.ts` (103 imports)
 > **Calibration:** v10 — 576,750 real files, paired Wilcoxon signed-rank
 > **Source of truth:** `packages/slopbrick/src/rules/signal-strength.json`
+>
+> **v0.38.0 cleanup:** 37 v10-DORMANT rules were deleted. The 38th
+> (`security/fail-open-auth`) was reclassified as `verdict: USEFUL`
+> because v9 calibration showed 100% precision; v10's corpus simply
+> lacked enough auth-handling code to fire it. See
+> [`docs/methodology.md`](./methodology.md#v0380-dormant-rule-cleanup)
+> and [`packages/slopbrick/CHANGELOG.md`](../packages/slopbrick/CHANGELOG.md)
+> for details.
 
 ---
 
-## Summary by Category (24 categories, 140 rules)
+## Summary by Category (24 categories, 103 rules)
 
 | Category | Count | Notes |
 |---|---|---|
@@ -40,7 +48,7 @@
 
 ---
 
-## v10 Calibration Status (576,750 files, all 140 rules)
+## v10 Calibration Status (576,750 files, all 103 rules post-v0.38.0)
 
 | Verdict | Count | % |
 |---|---|---|
@@ -55,7 +63,7 @@
 
 ---
 
-## All 140 Rules by Category
+## All 103 Rules by Category
 
 ### `ai/*` (16 rules) — AI-detection heuristics
 
@@ -326,7 +334,7 @@
 | **Prototype** | varies | Add rule source + unit test, `verdict: DORMANT` |
 | **First calibration** | v0.18.0+ | Run against v9 corpus, set `verdict: OK` if precision ≥ 0.5 |
 | **Refinement** | v0.34.2–v0.34.10 | 9 patch releases tightening regexes, excluding test files |
-| **v10 re-calibration** | v0.36.1 | All 140 rules calibrated against 576k files |
+| **v10 re-calibration** | v0.36.1 | All 140 rules calibrated against 576k files (37 deleted in v0.38.0) |
 | **Promotion** | v0.37.1+ | STRONG rules get `defaultOff: false` |
 | **Deprecation** | v0.38.0+ | DORMANT rules marked deprecated |
 
@@ -355,4 +363,4 @@
 - `docs/methodology.md` — full calibration methodology (v1–v8.5 era-confounded, v9 era-controlled, v10 paired Wilcoxon)
 - `docs/maths.md` — all mathematical foundations (Bayesian, Zipf, Heaps, Shannon, Wilcoxon, etc.)
 - `packages/slopbrick/CHANGELOG.md` — rule additions by version
-- `src/rules/signal-strength.json` — v10 calibration data for all 140 rules
+- `src/rules/signal-strength.json` — v10 calibration data for all 103 rules (v0.38.0)

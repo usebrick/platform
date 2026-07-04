@@ -109,10 +109,8 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     i18n: 1.0,
   },
   rules: {
-    'arch/astro-island-leak': 'low',
     'component/giant-component': 'high',
     'component/shadcn-prop-mismatch': 'high',
-    'layout/forced-layout': 'medium',
     'layout/gap-monopoly': 'medium',
     'layout/math-element-uniformity': 'medium',
     'layout/math-grid-uniformity': 'high',
@@ -125,33 +123,22 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     'logic/math-gini-class-usage': 'high',
     'logic/math-variable-name-entropy': 'high',
     'logic/optimistic-no-rollback': 'high',
-    'logic/qwik-hook-leak': 'high',
     'logic/reactive-hook-soup': 'medium',
     'logic/zombie-state': 'medium',
     'perf/cls-image': 'low',
     'perf/css-bloat': 'low',
-    'typo/calc-fontsize': 'medium',
-    'typo/calc-raw-px': 'high',
-    'typo/clamp-offscale': 'medium',
     'typo/math-button-label-uniformity': 'medium',
-    'typo/math-cta-vocabulary': 'medium',
     'visual/arbitrary-escape': 'medium',
-    'visual/clamp-soup': 'high',
-    'visual/generic-centering': 'low',
     'visual/math-color-cluster': 'high',
     'visual/math-default-font': 'high',
     'visual/math-font-entropy': 'high',
-    'visual/math-gradient-hue-rotation': 'high',
     'visual/math-rounded-entropy': 'high',
     'visual/math-spacing-entropy': 'high',
-    'wcag/dragging-movements': 'medium',
     'wcag/focus-appearance': 'high',
     'wcag/focus-obscured': 'low',
     'wcag/missing-alt': 'medium',
-    'wcag/target-size': 'high',
     'test/weak-assertion': 'medium',
     'test/duplicate-setup': 'medium',
-    'test/missing-edge-case': 'high',
     'test/fake-placeholder': 'high',
   },
   frameworkMultipliers: {
@@ -198,23 +185,14 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
    */
   prScoreThreshold: 20,
   /**
-   * Phase 5 — Test Intelligence opt-in toggles. The four `test/*`
-   * rules are safe-by-default (each rule short-circuits on non-test
-   * files via `isTestFile()`), but `test/missing-edge-case` walks
-   * production code to find untested branches. Off by default —
-   * opt-in per project.
-   *
-   * ```js
-   * // slopbrick.config.mjs
-   * export default {
-   *   testIntelligence: {
-   *     missingEdgeCase: true, // also turn on branch-coverage check
-   *   },
-   * };
-   * ```
+   * Phase 5 — Test Intelligence opt-in toggles. The three remaining
+   * `test/*` rules (`test/weak-assertion`, `test/duplicate-setup`,
+   * `test/fake-placeholder`) are safe-by-default (each rule
+   * short-circuits on non-test files via `isTestFile()`). v0.38.0
+   * removed `test/missing-edge-case` as v10-DORMANT.
    */
   testIntelligence: {
-    missingEdgeCase: false,
+    // (empty after v0.38.0 — reserved for future test opt-ins)
   },
   /**
    * v0.25.0: self-scan exclude paths. Defaults cover the three paths

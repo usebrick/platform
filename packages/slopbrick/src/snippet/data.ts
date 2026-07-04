@@ -44,14 +44,11 @@ const CATEGORY_DIRECTIVES: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 const RULE_HINTS: Record<string, string> = {
-  // v0.16.0 hygiene: 35 out-of-scope orphan hints (keys with no matching
-  // rule in src/rules/builtins.ts) were moved out of this map. The
-  // verbatim source text is preserved in
+  // v0.38.0 hygiene: 37 v10-DORMANT rule hints were removed. Every
+  // remaining key matches a rule in src/rules/builtins.ts. No orphans.
+  // (v0.16.0 previously moved 35 out-of-scope orphan hints to
   //   docs/research/backlog-rule-hints.md
-  // so future implementers can paste a hint back when the corresponding
-  // rule ships. The 5 in-scope orphans (`security/eval`,
-  // `security/localstorage-token`, `security/target-blank-no-noopener`,
-  // `wcag/missing-alt`, `typo/placeholder-text`) are kept here for v0.16.0.
+  // for future implementers to paste back when the corresponding rules ship.)
   'security/hardcoded-secret':
     'Never inline API keys, JWT secrets, or database passwords in source. Load them from env vars and never commit a .env file. Assume any published secret is compromised and rotate it.',
   'security/exposed-env-var':
@@ -89,8 +86,6 @@ const RULE_HINTS: Record<string, string> = {
     'Never use eval() or new Function(). These are RCE vectors if the input is ever attacker-controlled.',
   'security/target-blank-no-noopener':
     'Always add rel="noopener" (or rel="noreferrer") to target="_blank" links.',
-  'arch/astro-island-leak':
-    'For Astro: server-render everything by default. Only opt-in to client islands when interactivity is needed.',
   'component/giant-component':
     'Don\'t build components > 200 lines. Extract shared subcomponents.',
   'component/multiple-components-per-file':
@@ -99,8 +94,6 @@ const RULE_HINTS: Record<string, string> = {
     'Select shadcn variants via the `variant` prop, not long `className` overrides. See the component registry for available variants.',
   'context/import-path-mismatch':
     'Use only the canonical import paths declared in brick.config.json (e.g. @/components/ui/, @/lib/).',
-  'layout/forced-layout':
-    'Vary structural patterns: some containers as grids, some as horizontal flex, some as blocks. Don\'t repeat `flex flex-col gap-4` everywhere.',
   'layout/gap-monopoly':
     'Mix gap-2 / gap-4 / gap-6 / gap-12 deliberately. Don\'t repeat the same gap value across the whole project.',
   'layout/math-element-uniformity':
@@ -111,8 +104,6 @@ const RULE_HINTS: Record<string, string> = {
     'Use the configured spacing scale (4px or 8px grid). Avoid arbitrary values like p-[13px] that aren\'t on the scale.',
   'logic/ghost-defensive':
     'Use optional chaining (?.) or early returns instead of deep && guards. If a defensive chain runs 3+ levels deep, refactor.',
-  'logic/bayesian-conditional':
-    'The Bayesian combiner aggregates multiple weak signals into a calibrated posterior P(AI|fires). Treat any fire above 0.7 as evidence of AI authorship; above 0.9 as strong evidence. (v0.12.0 — Bento et al. 2024 *Neurocomputing*.)',
   'logic/heaps-deviation':
     "Inspect for LLM-style vocabulary patterns: this file's vocabulary grows faster (high Heaps λ) or slower (low λ) than typical source code. Verify authorship if unexpected. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
   'logic/ks-distribution-shift':
@@ -129,8 +120,6 @@ const RULE_HINTS: Record<string, string> = {
     'Use domain-specific identifier names (reservations, invoices, customers) instead of generic data/items/value.',
   'logic/optimistic-no-rollback':
     'In optimistic updates, revert state in the catch block: `setX(prev => prev)`. Never leave stale UI on error.',
-  'logic/qwik-hook-leak':
-    'Use Qwik primitives ($state, $effect, useSignal) instead of React hooks (useState, useEffect).',
   'logic/reactive-hook-soup':
     'Coordinate state via a single derived value (useMemo) or a state machine. Avoid chained useEffects that sync local state.',
   'logic/zombie-state':
@@ -149,30 +138,14 @@ const RULE_HINTS: Record<string, string> = {
     'Add width/height attributes or an aspect-ratio utility to prevent layout shift.',
   'perf/css-bloat':
     'Extract to a CSS variable (`--surface-card`) or a component prop when a class string repeats 5+ times.',
-  'perf/halstead-anomaly':
-    'Introduce domain-specific identifiers and varied operations. Low vocabulary per line is a strong AI signature (Halstead 1977 §3).',
-  'typo/calc-fontsize':
-    'Use a design token (`var(--font-size-lg)`) or `clamp(min, fluid, max)` for responsive typography.',
-  'typo/calc-raw-px':
-    'Replace px values in calc() with rem or em units for scalable layout.',
-  'typo/clamp-offscale':
-    'Anchor clamp() values to standard sizes (12, 14, 16, 18, 20, 24, 30, 36, 48) so they remain on the design grid.',
   'typo/math-button-label-uniformity':
     'Mix button lengths deliberately — pair a short "Save" with a longer "Mark as complete" — instead of repeating the same template.',
-  'typo/math-cta-vocabulary':
-    'Use domain-specific action verbs ("Reserve", "Confirm ride", "Activate card") instead of falling back on the AI-default CTA vocabulary.',
-  'visual/clamp-soup':
-    'Use design-system aliases (`--text-fluid-sm`, `--text-fluid-lg`) with bounded ranges (typically 2× max).',
-  'visual/generic-centering':
-    'Vary hero layouts: some as grids (`grid place-items-center`), some as blocks, some with different alignment.',
   'visual/inline-style-dominance':
     'Replace inline `style={{...}}` with className utilities (e.g. Tailwind `p-4 m-2 gap-3`) or a CSS module class.',
   'visual/math-default-font':
     'Import a distinctive font (next/font/google, @font-face, or a CSS variable) instead of relying on the framework default.',
   'visual/math-font-entropy':
     'Use a wider range of text sizes (text-xs, text-sm, text-lg, text-xl, text-2xl, text-3xl) for a more deliberate type scale.',
-  'visual/math-gradient-hue-rotation':
-    'Use wider hue spans across gradients (e.g. blue→amber, emerald→indigo) to break the violet-fuchsia monotony.',
   'visual/math-rounded-entropy':
     'Use a wider range of border-radius values (sm, md, 2xl, 3xl) instead of repeating the same lg/xl/full pattern.',
   'visual/math-spacing-entropy':
@@ -181,20 +154,14 @@ const RULE_HINTS: Record<string, string> = {
     'Use domain-specific identifier names so the identifier stream reflects the actual problem domain. Hindle 2012 §4.3: LLM-generated code reuses a narrow band of training-data identifiers, dropping distinct-token ratio below 30%.',
   'visual/math-color-cluster':
     'Use at least 3 distinct hue families (e.g. blue + amber + green) instead of clustering every color in the violet/fuchsia band.',
-  'wcag/dragging-movements':
-    'Provide an onClick, onKeyDown, or button role as an alternative to dragging (WCAG 2.1.1).',
   'wcag/focus-appearance':
     'Add a focus-visible:ring-* class, or remove outline-none. Keyboard users need a visible focus indicator.',
   'wcag/focus-obscured':
     'Ensure focused elements are not hidden behind fixed or sticky wrappers.',
-  'wcag/target-size':
-    'Add h-*, w-*, p-*, min-w-*, min-h-*, size-*, or an explicit width/height attribute to bring the target to ≥ 24×24 px.',
   'test/weak-assertion':
     'Assert on a specific value or shape: `expect(x).toEqual(expectedValue)`. Avoid `.toBeDefined()` / `.toBeTruthy()` placeholders and tautological `expect(x).toBe(x)`.',
   'test/duplicate-setup':
     'Extract shared `beforeEach` / `setupServer` blocks into a single helper (e.g. `renderWithProviders`) so each describe block calls it instead of repeating setup.',
-  'test/missing-edge-case':
-    'When generating tests, cover the alternate path: `else` branches, `catch` blocks, ternary alternates, and `??` fallbacks. Production branches without tests are a CI smell.',
   'test/fake-placeholder':
     'Use domain-specific fixture values (`alice@acme-corp.com`, `Order#48231`) or a factory like @faker-js/faker. Avoid textbook placeholders (`John Doe`, `test@test.com`, `id: 1`).',
   'product/terminology-drift':
@@ -216,8 +183,6 @@ const RULE_HINTS: Record<string, string> = {
     'Replace `any` with `unknown`, `Record<string, unknown>`, or a domain type. The `: any` annotation propagates type-errors and defeats TS safety (Lee, Hassan, Hindle MSR 2026).',
   'ai/renyi-profile':
     'The token distribution is mass-concentrated on a few high-frequency tokens. Verify authorship if unexpected (Rényi 1961, Moslonka 2025).',
-  'ai/log-rank-histogram':
-    'The token vocabulary is concentrated in the top-1000 most common tokens. Real codebases use more diverse identifiers (Gehrmann 2019 GLTR).',
   'ai/segment-surprisal-cv':
     'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (Binoculars, Hans 2024).',
   'ai/compression-profile':
@@ -237,16 +202,6 @@ const RULE_HINTS: Record<string, string> = {
   'ai/console-debug-storm':
     "5+ console.log calls in a single file is debug-by-print-statement, the LLM training-data default. Remove before commit; use the project's logger or a real debugger.",
   // v0.17.0 — db/* rules (Postgres static analysis via pgsql-parser)
-  'db/missing-fk-index':
-    'Add `CREATE INDEX ON <table> (<fk_column>);` for every foreign key column. Without it, parent deletes do a sequential scan on the child. Use `CREATE INDEX CONCURRENTLY` in production (Squawk `require-concurrent-index-creation`).',
-  'db/duplicate-index':
-    'Drop one of two indexes that cover the same column list — extra indexes slow writes without read benefit. Postgres does not warn about this; the duplicate will silently sit in production.',
-  'db/missing-not-null':
-    'Add `NOT NULL` (or `PRIMARY KEY`) on required-identifier columns (id, email, created_at, status, uuid, …). Optional identifiers are a common AI-generated SQL smell that produces silent NULL inserts in production.',
-  'db/enum-sprawl':
-    'Enums with more than 12 values are brittle to extend and hard to localize. Move to a lookup table joined by foreign key.',
-  'db/naming-inconsistency':
-    'Standardize on snake_case (Postgres convention) or camelCase, but never mix both in the same schema. Mixed styles break ORM generators and confuse code-reviewers.',
   'db/sql-concat':
     'Never build SQL with template-literal interpolation — `db.query(\`SELECT … WHERE id = ${id}\`)` is a SQL injection vector. Use parameterized queries (`db.query("… WHERE id = $1", [id])`) or your ORM query builder.',
   // v0.17.0 — docs/* rules (markdown drift detection)
@@ -266,8 +221,6 @@ const RULE_HINTS: Record<string, string> = {
   'rust/stringly-typed':
     "Replace the `String` / `&str` parameter with the typed enum that already exists in the file. Stringly-typed APIs lose type information at the boundary — typos (`\"Click\"` vs `\"click\"`) only fail at runtime.",
   // v0.19.0 — TypeScript-specific rules
-  'ts/optional-chain-overuse':
-    "Break long `?.` chains with an intermediate variable or guard clause (`if (!value) return;`). Long chains hide the type-narrowing that should be explicit. AI agents chain `?.` to avoid null checks.",
   'ts/enum-vs-as-const':
     "Replace `enum Foo { A, B }` with `const Foo = { A: 'A', B: 'B' } as const` (or `const Foo = ['A', 'B'] as const`). Modern TS style guides (Google, TS-eslint) prefer `as const` because enums have surprising runtime semantics.",
   'ts/import-type-misuse':
@@ -277,8 +230,6 @@ const RULE_HINTS: Record<string, string> = {
   'ts/excessive-type-assertion':
     "More than 3 `as` assertions in one function is a strong signal that the type is wrong, not the code. Fix the type definition (or use a type guard) instead of bypassing the type system.",
   // v0.19.0 — Go-specific rules
-  'go/error-wrap-without-context':
-    "Use `fmt.Errorf(\"opening config: %w\", err)` not `fmt.Errorf(\"error: %w\", err)`. Real Go errors include the failing operation. See golang.org/wiki/CodeReviewComments#error-strings.",
   'go/struct-tag-inconsistency':
     "Pick one tag style per struct. If most fields are `json:\"foo\"`, this field should be too. Real Go code maintains consistency within a struct (or within a package).",
   'go/nil-slice-vs-empty':
@@ -293,38 +244,12 @@ const RULE_HINTS: Record<string, string> = {
   'dup/structural-clone':
     "Refactor to a shared helper. Type-3 clone: same shape as another file after identifier canonicalization, with renames and/or added/removed statements. AI agents and copy-paste both produce this. Extract the shared part. (v0.24.0.)",
   // v0.24.0 — Kotlin rules (DORMANT until v9 Kotlin corpus calibration)
-  'kotlin/data-class-defaults-overuse':
-    "Audit which fields are genuinely optional. Real Kotlin uses defaults sparingly (1-2 callbacks, the rest required). v0.24.0 — DORMANT until v9 calibration.",
-  'kotlin/coroutine-global-scope':
-    "Replace with `viewModelScope.launch { ... }`, `lifecycleScope.launch { ... }`, or `coroutineScope { ... }`. GlobalScope bypasses cancellation. (v0.24.0 — DORMANT.)",
-  'kotlin/println-debug':
-    "Replace with `Timber.d(...)` or `android.util.Log`. `println` writes to stdout with no level, no redaction, can't be silenced in release builds. (v0.24.0 — DORMANT.)",
-  'kotlin/object-singleton-misuse':
-    "Replace with a class injected via DI, a Repository, or `MutableStateFlow`. The `object` keyword gives a thread-safe singleton handle, NOT thread-safe `var` fields. (v0.24.0 — DORMANT.)",
-  'kotlin/string-concat-loop':
-    "Wrap the loop in `buildString { append(...) }` or hoist a `StringBuilder`. Kotlin can't optimize `s = s + x` in a loop — O(n²). (v0.24.0 — DORMANT.)",
   // v0.29.0 — non-AI Kotlin rules (DORMANT until larger pos arm)
-  'kotlin/sql-string-concat':
-    "Use a PreparedStatement (JDBC), setParameter() (Exposed), or an ORM (Room, jOOQ). String concat or template interpolation into a SQL query is the canonical SQL-injection pattern. OWASP A03:2021. (v0.29.0 — DORMANT.)",
-  'kotlin/hardcoded-credential':
-    "Move the credential to an env var, a .env file (gitignored), or a secrets manager (Vault, AWS Secrets Manager). Hardcoded creds are the #1 secret-leak vector. OWASP A07:2021. (v0.29.0 — DORMANT.)",
-  'kotlin/runblocking-misuse':
-    "Use coroutineScope { } for structured concurrency, or call the suspend function directly. runBlocking blocks the calling thread and is rarely correct outside main(). (v0.29.0 — DORMANT.)",
-  'kotlin/println-as-log':
-    "Use slf4j (JVM), android.util.Log (Android), Timber, kermit, or kotlin-logging. println has no log level, no timestamp, no correlation ID. (v0.29.0 — OK; first positive-signal rule in v9 history, ratio 1.84.)",
-  'kotlin/force-unwrap':
-    "Use ?. (safe call) with ?: (Elvis) for a default, or a proper when/if check. !! throws NullPointerException at runtime and bypasses Kotlin's type system. (v0.29.0 — DORMANT, era-confounded.)",
   // v0.30.0 — non-AI Java rules (Option C applied to v9 Java corpus, 92k files)
   'java/sql-string-concat':
     "Use a PreparedStatement (JDBC), setParameter (jOOQ), or an ORM (Hibernate, MyBatis with #{}). String concat into SQL is the canonical SQL-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT, ratio 0.59.)",
-  'java/hardcoded-credential':
-    "Move the credential to an env var, a .env file (gitignored), or a secrets manager (Vault, AWS Secrets Manager). Hardcoded creds are the #1 secret-leak vector. OWASP A07:2021. (v0.30.0 — DORMANT, 0 fires on v9 Java corpus.)",
   'java/thread-sleep-in-loop':
     "Use ScheduledExecutorService for periodic work, or BlockingQueue.take() for event-driven work. Thread.sleep in a loop is the polling anti-pattern — ties up Tomcat/Jetty/Netty threads. (v0.30.0 — DORMANT, era-confounded ratio 0.97.)",
-  'java/system-out-println':
-    "The file imports a real logger (SLF4J/Log4j2/java.util.logging) but uses System.out.println. Use the declared log object instead. (v0.31.0 — OK; ratio 1.73, refined from v0.30.)",
-  'java/command-injection':
-    "Use ProcessBuilder with a List<String> of args (no shell parsing) and validate each arg. Runtime.exec() with concat is the canonical command-injection pattern. OWASP A03:2021. (v0.30.0 — DORMANT.)",
   // v0.35.0 — content-based detection (CoCoNUTS-inspired)
   'java/suspicious-implementation':
     "Function name claims validate/encrypt/hash/sanitize but body is empty, returns null/true, or returns the input. This is a content mismatch — the function's claimed behavior doesn't match its actual behavior. OWASP A04:2021.",
@@ -343,8 +268,6 @@ const RULE_HINTS: Record<string, string> = {
   'swift/strong-self-capture':
     "Capture with `[weak self]` (or `[unowned self]` if guaranteed non-nil): `[weak self] in self?.foo = bar`. Strong self capture creates a retain cycle. (v0.24.0 — DORMANT.)",
   // v0.24.0 — C++ rules (DORMANT until v9 C++ corpus calibration)
-  'cpp/using-namespace-std':
-    "Remove the directive and qualify names with `std::`, or use targeted `using std::cout;`. C++ Core Guidelines (SF.6/SF.7) forbid `using namespace` in headers. (v0.24.0 — DORMANT.)",
   'cpp/raw-new-delete':
     "Replace with `auto p = std::make_unique<T>(...)`. Smart pointers delete on scope exit, never leak on early return / exception, never double-free. (v0.24.0 — DORMANT.)",
   'cpp/c-style-cast':

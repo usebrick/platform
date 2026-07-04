@@ -1,6 +1,6 @@
 # SlopBrick Calibration Methodology
 
-> **Authoritative reference for how slopbrick calibrates its 140 rules.**
+> **Authoritative reference for how slopbrick calibrates its 103 rules (v0.38.0+; was 140 in v0.37.0).**
 >
 > **Authors:** slopbrick project (with Kimi Code CLI) — dystx
 > **Last updated:** 2026-07-04 (v0.37.0)
@@ -78,14 +78,14 @@ The v9 corpus was era-confounded (modern vs legacy). The v0.27.0 paper recommend
 
 | Dataset | Source | Size | Status |
 |---|---|---|---|
-| **OSS-forge/HumanVsAICode** (ISSRE 2025) | `huggingface.co/datasets/OSS-forge/HumanVsAICode` | 222k Java functions × 4 sources | ❌ **incompatible** — function-level snippets, 0/140 rules fired |
+| **OSS-forge/HumanVsAICode** (ISSRE 2025) | `huggingface.co/datasets/OSS-forge/HumanVsAICode` | 222k Java functions × 4 sources | ❌ **incompatible** — function-level snippets, 0/140 rules fired (v0.36.0 era) |
 | **OSS-forge/PROBE** (2026-04-17) | `huggingface.co/datasets/OSS-forge/PROBE` | 1,651 problems × 5 langs × 6 LLMs | ⏳ extracted, not yet calibrated |
 | **`/Users/cheng/corpus-expansion/`** (our own) | 308k positive + 273k negative files across 11 languages | 576,750 files | ✅ **used for v10** |
 
 The v10 calibration used the existing `/Users/cheng/corpus-expansion/` corpus because:
 - It has both arms (positive/negative) for all 11 languages
 - Files are real production code, not snippets
-- The HumanVsAICode dataset's function-level snippets were too small for slopbrick's full-file rules (0/140 rules fired — a dataset-compatibility finding, not a rule quality issue)
+- The HumanVsAICode dataset's function-level snippets were too small for slopbrick's full-file rules (0/140 rules fired in v0.36.0 era — a dataset-compatibility finding, not a rule quality issue)
 
 ### 3.3 v10 build protocol (v0.36.1)
 
@@ -131,12 +131,26 @@ We compute the paired Wilcoxon signed-rank statistic on the d values across all 
 
 ### 3.6 v10 results (v0.36.1, 576,750 files)
 
-| Signal | Count | % of 140 rules |
+| Signal | Count | % of 140 rules (pre-deletion) |
 |---|---|---|
 | **STRONG** | 57 | 40.7% |
 | **WEAK** | 38 | 27.1% |
 | **DORMANT** | 38 | 27.1% |
 | **INVERTED** | 7 | 5.0% |
+
+### 3.7 v0.38.0 dormant rule cleanup
+
+v0.38.0 (2026-07-04) is the **first rule-registry trim**. 37 of 38 v10-DORMANT rules were deleted; the 38th (`security/fail-open-auth`) was reclassified as `verdict: USEFUL` because v9 calibration showed 100% precision and v10's corpus simply lacked enough auth-handling code to fire it.
+
+| Action | Count | Result |
+|---|---|---|
+| Deleted | 37 | 140 → 103 rules across 15 categories |
+| Reclassified | 1 | `security/fail-open-auth` verdict DORMANT → USEFUL |
+| Kept DORMANT | 0 | All 37 deletes landed |
+
+Deleted rules by category: 10 kotlin, 5 db, 4 typo, 3 visual, 3 java, 2 wcag, 2 logic, 1 each in ai/arch/cpp/go/layout/perf/test/ts.
+
+See [`docs/rules.md`](./rules.md) for the full post-deletion catalog and [`packages/slopbrick/CHANGELOG.md`](../packages/slopbrick/CHANGELOG.md) for the v0.38.0 changelog entry.
 
 **Top 5 by F1:**
 

@@ -14,7 +14,7 @@ The home of every `usebrick.dev` tool:
 |---------|--------|-------|
 | `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure Platform spec (types + loaders + JSON Schemas). The moat. |
 | `packages/engine/` | **private** — workspace-only | The pure scanning engine. 4-score model, Bayesian LR combiner, parser, scoring. No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
-| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 4 scores, 95 rules in 15 categories, MCP server. The flagship. |
+| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 4 scores, 103 rules in 24 categories, MCP server. The flagship. v10-calibrated against 576,750 real files; v0.38.0 trimmed from 140 to 103 by deleting 37 v10-DORMANT rules. |
 | `packages/website/` | **private** — workspace-only, deployed to Cloudflare Pages | The usebrick.dev marketing site. Astro + Lenis + GSAP, WebGL brick shader hero. |
 
 Future packages (`stackpick`, `gir`, `cli`) join here as they're built. (The MCP server already ships inside `slopbrick`; a standalone `@usebrick/mcp` package is a future extraction.)

@@ -23,7 +23,7 @@
 > ├── packages/
 > │   ├── core/          (@usebrick/core, private — Repository Structure Platform spec)
 > │   ├── engine/        (@usebrick/engine, private — pure scanning logic, new in v0.15.0)
-> │   ├── slopbrick/     (slopbrick CLI — published to npm, 95 rules as of v0.17.0)
+> │   ├── slopbrick/     (slopbrick CLI — published to npm, 103 rules as of v0.38.0)
 > │   └── website/       (@usebrick/website, private — usebrick.dev marketing site)
 > ├── .github/workflows/
 > │   ├── ci.yml

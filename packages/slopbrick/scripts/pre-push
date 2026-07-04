@@ -48,7 +48,7 @@ pnpm --filter slopbrick typecheck
 # commit that is not in any publish path).
 if [[ "${SKIP_PRE_PUSH_TESTS:-}" != "1" ]]; then
   echo
-  echo "[pre-push] 2/3: pnpm test (full suite — 2116+ tests)"
+  echo "[pre-push] 2/3: pnpm test (full suite — ~1700+ tests, post-v0.38.0 cleanup)"
   pnpm --filter slopbrick test
 else
   echo "[pre-push] 2/3: SKIPPED (SKIP_PRE_PUSH_TESTS=1)"
