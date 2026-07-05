@@ -6,6 +6,7 @@ import { scanFile } from '../engine/worker.js';
 import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore, formatArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
+import { readStructureMarkdown } from '../engine/structure-md';
 import { runSuggestWithStructure } from './slop-suggest-structure.js';
 import type { Rule, ResolvedConfig } from '../types';
 
@@ -240,10 +241,58 @@ function listRules(args: Record<string, unknown>, ctx: ToolContext): ToolResult 
   };
 }
 
-async function runSuggest(
+// v0.41.0 (Sprint 2, task 2b.0): consolidated `runSuggest` + the
+// former `runSuggestWithStructure` (in `slop-suggest-structure.ts`)
+// into a single function with an `includeStructure` opt-in. The
+// backward-compat shim in `slop-suggest-structure.ts` now wraps
+// `runSuggest(args, ctx, { includeStructure: true })` so the public
+// import surface is unchanged for existing callers.
+export interface RunSuggestOptions {
+  /**
+   * When true, prefer `.slopbrick/structure.md` over re-scanning.
+   * Fast-path: returns the markdown as a single text block — the
+   * agent's context window sees the patterns directly without
+   * parsing JSON. Slow-path: falls back to the JSON re-scan and
+   * annotates the response with `structureHint` so the caller
+   * knows to run `slopbrick scan` first.
+   *
+   * Defaults to false (legacy `slop_suggest` behavior).
+   */
+  includeStructure?: boolean;
+}
+
+// Same hint text the previous `runSuggestWithStructure` emitted
+// when no `structure.md` existed. Kept as a module-level constant
+// so the test can pin the wire format.
+export const STRUCTURE_NOT_FOUND_HINT =
+  'No .slopbrick/structure.md found. Run `slopbrick scan` to persist the pattern inventory, then call this tool again for the O(read file) fast path.';
+
+export async function runSuggest(
   args: Record<string, unknown>,
   ctx: ToolContext,
+  options: RunSuggestOptions = {},
 ): Promise<ToolResult> {
+  const { includeStructure = false } = options;
+
+  // Fast path: `includeStructure` was requested AND a persisted
+  // `.slopbrick/structure.md` exists. Return it as a single text
+  // block — the markdown is already an agent-readable summary,
+  // rendered by `renderStructureMarkdown`. MCP clients render it
+  // inline so the agent sees the patterns directly without parsing
+  // JSON. This is the 100-1000× latency win on agent integrations
+  // that call this tool frequently.
+  if (includeStructure) {
+    const cached = await readStructureMarkdown(ctx.cwd);
+    if (cached !== null) {
+      return {
+        content: [{ type: 'text', text: cached }],
+      };
+    }
+    // Slow path: no cache yet. Run the JSON re-scan below and
+    // annotate the response with `structureHint` so the caller can
+    // surface the upgrade path. Fall through to the inventory build.
+  }
+
   const maxFilesRaw = args.maxFiles;
   const maxFiles =
     typeof maxFilesRaw === 'number' && Number.isFinite(maxFilesRaw) && maxFilesRaw > 0
@@ -271,20 +320,24 @@ async function runSuggest(
     }
     // Cap the doNotCreate list to keep the agent's context window small.
     const doNotCreateCapped = doNotCreate.slice(0, 10);
+
+    const payload: Record<string, unknown> = {
+      hint: 'Use these patterns instead of creating new ones. Pick the closest existing entry and import it. The `doNotCreate` list is the deny-list — never import any of these.',
+      doNotCreate: doNotCreateCapped,
+      declaredStack: Array.from(declared),
+      existingPatterns: inventory,
+    };
+    // Slow-path annotation for `includeStructure` callers — tells
+    // the agent to run `slopbrick scan` next time so the cache hit.
+    if (includeStructure) {
+      payload.structureHint = STRUCTURE_NOT_FOUND_HINT;
+    }
+
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(
-            {
-              hint: 'Use these patterns instead of creating new ones. Pick the closest existing entry and import it. The `doNotCreate` list is the deny-list — never import any of these.',
-              doNotCreate: doNotCreateCapped,
-              declaredStack: Array.from(declared),
-              existingPatterns: inventory,
-            },
-            null,
-            2,
-          ),
+          text: JSON.stringify(payload, null, 2),
         },
       ],
     };
@@ -549,7 +602,13 @@ export async function handleToolCall(
     case 'slop_suggest':
       return runSuggest(args, ctx);
     case 'slop_suggest_with_structure':
-      return runSuggestWithStructure(args, ctx);
+      // v0.41.0 (Sprint 2, task 2b.0): route through the
+      // consolidated `runSuggest` with the structure fast-path flag.
+      // The legacy import (`runSuggestWithStructure` from
+      // `slop-suggest-structure.ts`) is kept as a backward-compat
+      // re-export for any external consumer that imports the named
+      // function directly.
+      return runSuggest(args, ctx, { includeStructure: true });
     // v0.39.0: removed 3 deprecated tools (slop_governance,
     // slop_architecture_score, slop_business_logic_score) that
     // were marked for removal in v0.13.0 but never removed.
