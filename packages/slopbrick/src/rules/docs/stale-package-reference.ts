@@ -77,6 +77,13 @@ export const stalePackageReferenceRule = createRule<StalePackageContext>({
     if (!source) return issues;
     const spans = extractInlineCodeSpans(source);
     for (const span of spans) {
+      // v0.42.0: skip JSDoc-comment / line-comment references.
+      // Same rationale as docs/stale-function-reference (commit
+      // bf83962): the rule's `install/import/require` regex matches
+      // docs-as-comments (`` `slopbrick` `` inside `// from 'slopbrick'`)
+      // which are not real install claims. Both findings during the
+      // v0.42.0 self-scan were inside `//` comments.
+      if (span.inComment) continue;
       const lineStart = source.lastIndexOf('\n', span.index) + 1;
       const lineEnd = source.indexOf('\n', span.index);
       const line = source.slice(lineStart, lineEnd === -1 ? source.length : lineEnd);
