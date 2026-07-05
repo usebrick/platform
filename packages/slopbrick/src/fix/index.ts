@@ -30,7 +30,8 @@ function collectAllFixes(issue: Issue): FixSuggestion[] {
 
 export async function applyFixes(
   report: ProjectReport,
-  config: ResolvedConfig,
+  // v0.42.0: unused parameter preserved for API compat; rename to _ to silence dead/unused-parameter
+  _config: ResolvedConfig,
   scannedFiles?: string[],
 ): Promise<FixResult[]> {
   const byFile = new Map<string, GroupedFixes>();

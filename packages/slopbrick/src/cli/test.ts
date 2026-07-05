@@ -58,7 +58,8 @@ const TEST_INCLUDE_GLOBS = [
  */
 export async function runTestScan(
   cwd: string,
-  config: ResolvedConfig,
+  // v0.42.0: unused parameter preserved for API compat; rename to _ to silence dead/unused-parameter
+  _config: ResolvedConfig,
   options: TestScanOptions = {},
 ): Promise<{ result: TestScanResult; scan: ScanRunResult }> {
   const include = TEST_INCLUDE_GLOBS;
