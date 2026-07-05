@@ -347,11 +347,17 @@ function formatWhyFailing(report: ProjectReport): string {
   // v0.21.0: aiSlopScore is raw amount of slop (0=clean, 100=saturated).
   // PASS when <= 30 (default meanSlop: 30). Was >= 70 in v0.15–v0.20.1
   // (cleanliness inversion).
+  //
+  // v0.42.0 (post-cleanup follow-up): the prior `above 30` qualifier
+  // was wrong for a cleanliness metric — lower is better. When the
+  // score is 25 we want to say "below the 30 threshold," not
+  // "above." The fix: condition the qualifier on the direction.
   const headline = report.aiSlopScore;
   const status = headline <= 30 ? 'PASS' : 'FAIL';
   const colorize = headline <= 30 ? chalk.green : chalk.red;
+  const qualifier = headline <= 30 ? 'below 30' : 'above 30';
   const lines: string[] = [];
-  lines.push(colorize.bold(`Headline score: ${headline.toFixed(0)}/100 (${status} — above 30)`));
+  lines.push(colorize.bold(`Headline score: ${headline.toFixed(0)}/100 (${status} — ${qualifier})`));
   lines.push('');
   lines.push(chalk.bold('Top 5 rules dragging the score down:'));
   for (let i = 0; i < ranked.length; i++) {
