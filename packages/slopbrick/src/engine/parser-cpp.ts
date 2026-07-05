@@ -28,7 +28,8 @@ import Cpp from 'tree-sitter-cpp';
 // v0.42.0: shared tree-sitter parse helper + the structural
 // Tree/TSNode types. Each per-language parser (cpp/rust/kotlin/swift)
 // re-exports Tree/TSNode from here for source compatibility.
-import { parseTreeSitterSource, type Tree, type TSNode } from './parser-shared.js';
+import { parseTreeSitterSource } from './parser-shared.js';
+import type { Tree, TSNode } from './parser-shared.js';
 
 // ---------------------------------------------------------------------------
 // Lazily-initialised module-level parser. We construct it once at module

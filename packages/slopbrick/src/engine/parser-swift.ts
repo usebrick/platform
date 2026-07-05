@@ -24,7 +24,8 @@ import Parser from 'tree-sitter';
 // pnpm picks the matching prebuild under `prebuilds/<platform>/`.
 import Swift from 'tree-sitter-swift';
 // v0.42.0: shared tree-sitter parse helper + structural Tree/TSNode types. Each per-language parser still re-exports Tree/TSNode from parser-shared for source compat.
-import { parseTreeSitterSource, type Tree, type TSNode } from './parser-shared.js';
+import { parseTreeSitterSource } from './parser-shared.js';
+import type { Tree, TSNode } from './parser-shared.js';
 
 // ---------------------------------------------------------------------------
 // Lazily-initialised module-level parser. We construct it once at module
@@ -132,7 +133,7 @@ export function parseSwift(source: string): Tree | null {
 // v0.42.0: Tree + TSNode are declared in engine/parser-shared.ts.
 // Re-exported here for source-compatibility (callers and
 // visitors import these names from this module's path).
-export type { Tree, TSNode } from "./parser-shared.js";
+export type { Tree, TSNode } from './parser-shared.js';
 
 
 

@@ -33,7 +33,8 @@ import { readFileSync } from 'node:fs';
 import { basename, relative } from 'node:path';
 import { discoverFiles } from '../engine/discover.js';
 import { checkFileConstitution } from '../mcp/patterns.js';
-import { readTelemetry, type TelemetryPayload } from '../engine/telemetry';
+import { readTelemetry } from '../engine/telemetry';
+import type { TelemetryPayload } from '../engine/telemetry';
 import type { Constitution, ResolvedConfig } from '../types';
 
 export interface DriftOptions {
