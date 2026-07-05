@@ -1,70 +1,42 @@
 /**
  * v0.10.7: Repository Memory Platform — MCP fast-path wrapper.
  *
- * `slop_suggest_with_memory` is a thin wrapper around `slop_suggest`
- * that prefers a persisted `.slopbrick/memory.md` over re-scanning.
- * On the fast path the agent gets the markdown in O(read file); on
- * the slow path (no persisted memory yet) it falls back to the
- * existing re-scan behavior, with a `structureHint` annotation so the
- * caller knows what to do next time.
+ * v0.41.0 (Sprint 2, task 2b.0): the implementation has been
+ * consolidated into `runSuggest(args, ctx, { includeStructure: true })`
+ * in `src/mcp/tools.ts`. This module is now a backward-compat
+ * re-export so any external consumer that imports
+ * `runSuggestWithStructure` by name still works.
  *
- * Latency win: O(re-parse AST) → O(read file). 100–1000× faster on
- * agent integrations that call the tool frequently.
+ * Behavior summary (unchanged from v0.10.7):
+ *   - Fast path: if `.slopbrick/structure.md` exists on disk, return
+ *     it as a single text block. O(read file) — 100–1000× faster
+ *     than re-scanning on agent integrations that call this tool
+ *     frequently.
+ *   - Slow path: fall through to the JSON re-scan and annotate the
+ *     response with `structureHint` so the caller knows to run
+ *     `slopbrick scan` first.
+ *
+ * The `handleToolCall` switch in `tools.ts` now routes both
+ * `slop_suggest` and `slop_suggest_with_structure` through the
+ * consolidated `runSuggest`, so the `handleToolCall` indirection
+ * that used to live here is no longer needed.
  */
 
-import { readStructureMarkdown } from '../engine/structure-md';
-import type { ToolContext } from './tools';
+import type { ToolContext, ToolResult } from './tools';
 
-// Inferred return shape from `handleToolCall` in `./tools`. The actual
-// `ToolResult` interface is not re-exported from tools.ts, but we only
-// need its public shape (content array of text blocks, optional isError).
-type ToolResult = {
-  content: Array<{ type: 'text'; text: string }>;
-  isError?: boolean;
-};
-
-const STRUCTURE_NOT_FOUND_HINT =
-  'No .slopbrick/structure.md found. Run `slopbrick scan` to persist the pattern inventory, then call this tool again for the O(read file) fast path.';
+export { STRUCTURE_NOT_FOUND_HINT } from './tools';
 
 /**
- * Run the fast-path `slop_suggest` if `.slopbrick/memory.md` exists,
- * otherwise delegate to the existing `slop_suggest` (re-scan). The
- * slow-path response is annotated with `structureHint` so the caller can
- * surface the upgrade path to the user.
+ * Backward-compat re-export. Delegates to the consolidated
+ * `runSuggest` in `./tools.ts` with the structure fast-path flag.
  */
 export async function runSuggestWithStructure(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
-  const cached = await readStructureMarkdown(ctx.cwd);
-  if (cached !== null) {
-    // Fast path: the markdown is already a complete agent-readable
-    // summary (rendered by `renderStructureMarkdown`). Return it as a
-    // single text block — MCP clients render it inline so the agent
-    // sees the patterns directly without parsing JSON.
-    return {
-      content: [{ type: 'text', text: cached }],
-    };
-  }
-
-  // Slow path: lazy-import the existing handler so we don't create
-  // a load-time cycle between this module and `tools.ts`.
-  const { handleToolCall } = await import('./tools.js');
-  const result = await handleToolCall('slop_suggest', args, ctx);
-  if (result.isError) return result;
-
-  // Annotate with the upgrade hint. If the slow-path response is not
-  // JSON (shouldn't happen, but be defensive), pass it through unchanged.
-  try {
-    const parsed: unknown = JSON.parse(result.content[0]!.text);
-    if (parsed !== null && typeof parsed === 'object') {
-      (parsed as Record<string, unknown>).structureHint = STRUCTURE_NOT_FOUND_HINT;
-      return {
-        content: [{ type: 'text', text: JSON.stringify(parsed, null, 2) }],
-      };
-    }
-  } catch {
-    // Not JSON — leave the slow-path response as-is.
-  }
-  return result;
+  // Lazy import to avoid a load-time cycle between this module and
+  // `tools.ts` (tools.ts imports from this file for the
+  // `STRUCTURE_NOT_FOUND_HINT` constant).
+  const { runSuggest } = await import('./tools.js');
+  return runSuggest(args, ctx, { includeStructure: true });
 }

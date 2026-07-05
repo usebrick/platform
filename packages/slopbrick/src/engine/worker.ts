@@ -13,12 +13,18 @@ import { loadSignalStrength } from '../rules/signal-strength.js';
 import type { FileScanResult, Issue, ResolvedConfig, ScanFacts } from '../types';
 
 // v0.18.3 (R-MED env-var fix): the parser cache is now a
-// passed option, not an env-var read inside the engine. The
-// slopbrick CLI is the boundary that reads the env vars
-// (SLOP_AUDIT_CACHE, SLOP_AUDIT_CACHE_ROOT) and threads the
-// ParserCacheConfig into parseFile via the worker. The
-// engine is now pure — no process.env, no process.cwd in
-// the parser hot path.
+// passed option, not an env-var read inside the engine.
+//
+// IMPORTANT (architecture review F1, fixed v0.41.0): **slopbrick**
+// is the I/O boundary, not the engine. The engine package
+// (`packages/engine/`) is pure by construction — it does not read
+// `process.env`, `process.cwd`, or do any I/O at scan time.
+// This file is the *slopbrick-side worker*: it intentionally reads
+// `process.env.SLOP_AUDIT_CACHE` and `process.env.SLOP_AUDIT_CACHE_ROOT`,
+// then threads a `ParserCacheConfig` value into `parseFile` (which
+// lives in the engine). The engine itself never sees those env vars.
+// Don't move the env reads into the engine — that would re-introduce
+// the v0.18.2 leak.
 function buildParserCacheConfig(cwd: string): ParserCacheConfig {
   const envVal = process.env.SLOP_AUDIT_CACHE;
   const enabled = envVal === '1' || envVal === 'true';

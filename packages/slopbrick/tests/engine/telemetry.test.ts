@@ -183,4 +183,101 @@ describe('telemetry', () => {
     const current = readFileSync(logPath, 'utf-8').trim();
     expect(current).toContain('"version":"0.6.0"');
   });
+
+  // v0.41.0 (Sprint 2, task 2a.1): the inventory summary field is
+  // additive. Payloads written without an inventory argument must
+  // continue to omit `inventory` so legacy readers don't see a
+  // surprise field.
+  it('omits the inventory summary when no inventory is supplied', () => {
+    const report = makeReport();
+    const results = [makeResult('/project/src/A.tsx', report.issues)];
+
+    const payload = recordTelemetry(cwd, report, results, baseConfig);
+    expect(payload).toBeDefined();
+    expect(payload!.inventory).toBeUndefined();
+  });
+
+  // v0.41.0 (Sprint 2, task 2a.1): when persistRun.ts hands the
+  // freshly-built pattern inventory to recordTelemetry, each
+  // scans.jsonl entry carries a compact per-category pattern
+  // summary. The shape is `{ scannedFiles, patternCounts,
+  // patternNames }`; categories with zero patterns are dropped
+  // from both records to keep the JSON line small.
+  it('includes an inventory summary when a pattern inventory is supplied', () => {
+    const report = makeReport();
+    const results = [makeResult('/project/src/A.tsx', report.issues)];
+    const inventory = {
+      scannedFiles: 12,
+      patterns: {
+        modal: [{ name: 'Dialog', imports: ['react'], files: ['/project/src/A.tsx'] }],
+        button: [
+          { name: 'PrimaryButton', imports: ['react'], files: ['/project/src/A.tsx'] },
+          { name: 'SecondaryButton', imports: ['react'], files: ['/project/src/A.tsx'] },
+        ],
+        api: [],
+        state: [],
+        dataFetching: [],
+        service: [],
+        route: [],
+        ormModel: [],
+      },
+    };
+
+    const payload = recordTelemetry(cwd, report, results, baseConfig, inventory);
+    expect(payload).toBeDefined();
+    expect(payload!.inventory).toBeDefined();
+    expect(payload!.inventory!.scannedFiles).toBe(12);
+    expect(payload!.inventory!.patternCounts).toEqual({ modal: 1, button: 2 });
+    expect(payload!.inventory!.patternNames).toEqual({
+      modal: ['Dialog'],
+      button: ['PrimaryButton', 'SecondaryButton'],
+    });
+  });
+
+  // v0.41.0 (Sprint 2, task 2a.1): telemetry round-trip is
+  // backward-compatible. Older payloads without `inventory` (read
+  // by `readTelemetry`) must continue to deserialize cleanly with
+  // `inventory === undefined`. This is the contract that protects
+  // the in-tree flywheel state when a v0.40.x workspace upgrades
+  // mid-flight and starts appending v0.41.x lines.
+  it('reads legacy payloads without an inventory summary', () => {
+    const report = makeReport();
+    const results = [makeResult('/project/src/A.tsx', report.issues)];
+
+    // Legacy call: no inventory argument.
+    recordTelemetry(cwd, report, results, baseConfig);
+
+    const payloads = readTelemetry(cwd);
+    expect(payloads).toHaveLength(1);
+    expect(payloads[0].inventory).toBeUndefined();
+  });
+
+  // v0.41.0 (Sprint 2, task 2a.1): category names that contain
+  // zero patterns must NOT appear in patternCounts / patternNames.
+  // This keeps the line size bounded: a project with 0 modals and
+  // 1 button doesn't pay for the empty modal entry on every scan.
+  it('drops empty categories from the inventory summary', () => {
+    const report = makeReport();
+    const results = [makeResult('/project/src/A.tsx', report.issues)];
+    const inventory = {
+      scannedFiles: 1,
+      patterns: {
+        modal: [],
+        button: [
+          { name: 'Btn', imports: ['react'], files: ['/project/src/A.tsx'] },
+        ],
+        api: [],
+        state: [],
+        dataFetching: [],
+        service: [],
+        route: [],
+        ormModel: [],
+      },
+    };
+
+    const payload = recordTelemetry(cwd, report, results, baseConfig, inventory);
+    expect(payload!.inventory!.patternCounts).toEqual({ button: 1 });
+    expect(payload!.inventory!.patternNames).toEqual({ button: ['Btn'] });
+    expect(Object.keys(payload!.inventory!.patternCounts)).not.toContain('modal');
+  });
 });

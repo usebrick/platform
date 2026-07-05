@@ -73,6 +73,17 @@ import { registerInit } from './commands/init.js';
 import { registerFlywheel } from './commands/flywheel.js';
 import { registerScan } from './commands/scan.js';
 
+// v0.41.0 (Sprint 2, task 2.0): wire the exitOverride dispatcher
+// from `./commands/_shared`. `setExitOverride(program)` installs
+// Commander's `exitOverride()` so `program.error()` and Commander's
+// own argument-parser errors come back as `CommanderError` throws
+// instead of `process.exit()` calls. `dispatch(program, runFn)` is
+// the single place that catches those throws and turns them into a
+// logged message + `process.exit(exitCode)`. This is the template
+// for the other 32 commands that still embed `process.exit`
+// (architecture review F3).
+import { setExitOverride, dispatch } from './commands/_shared.js';
+
 import { loadConfig, DEFAULT_CONFIG, detectStack, detectMonorepoRoot, detectStylingSolution, buildInitConfig, resolveConfigPath as findConfigPath, ConfigValidationError } from '../config';
 import type { ResolvedConfig } from '../config';
 import { getGitHead, getGitRoot } from './git.js';
@@ -221,6 +232,16 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // dispatch (it's a manual argv check, not an Option, so it
     // doesn't get treated as a regular scan flag).
     program.helpInformation = () => formatGroupedHelp(program);
+
+    // v0.41.0 (Sprint 2, task 2.0): install Commander's
+    // `exitOverride()` BEFORE any subcommand registration so that
+    // errors thrown by `program.error()` (e.g. inside future
+    // `withExitCode` callers) and by Commander's own argument-parsing
+    // surface as `CommanderError` exceptions instead of hard
+    // `process.exit()` calls. The outer `dispatch(program, ...)` call
+    // at the bottom of runCli is the single place that catches those
+    // errors and routes them through `process.exit(exitCode)`.
+    setExitOverride(program);
 
     // v0.18.x (R-H1): init action moved to ./commands/init.ts
     // (the largest single command in the CLI, ~150 lines inline)
@@ -534,7 +555,16 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       process.exit(0);
     }
 
-    await program.parseAsync(process.argv);
+    // v0.41.0 (Sprint 2, task 2.0): wrap parseAsync in
+    // `dispatch(program, ...)` so that any `CommanderError` thrown
+    // by `withExitCode` (see `./commands/_shared.ts`) or by
+    // Commander's own argument-parsing gets logged and routed
+    // through `process.exit(exitCode)` from one place. The outer
+    // try/catch below only handles non-Commander errors
+    // (`ConfigValidationError` → exit 2, anything else → exit 3).
+    await dispatch(program, async () => {
+      await program.parseAsync(process.argv);
+    });
   } catch (err) {
     if (err instanceof ConfigValidationError) {
       logger.error(err.message);

@@ -185,15 +185,21 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     report.issues.push(...flywheelOutput.hotspotIssues);
   }
 
-  recordTelemetry(cwd, report, results, config);
-
   // Repository Memory Platform — persist pattern inventory, declared
   // constitution, agent-readable markdown summary, and health snapshot.
   // Failure is non-fatal — the scan report is already complete.
+  // v0.41.0 (Sprint 2, task 2a.1): build the pattern inventory
+  // BEFORE recordTelemetry so each `scans.jsonl` entry carries the
+  // per-category pattern summary (additive on TelemetryPayload —
+  // see telemetry.ts:TelemetryInventorySummary). This makes
+  // `slopbrick drift --since <date>` self-sufficient: the JSONL
+  // stream answers "which patterns were introduced or removed
+  // since the baseline" without re-running a scan.
+  let patternInventory: Awaited<ReturnType<typeof buildPatternInventory>> | undefined;
   if (config.projectMemory !== false) {
     try {
       const durationMs = Date.now() - startTime;
-      const patternInventory = await buildPatternInventory(cwd, config);
+      patternInventory = await buildPatternInventory(cwd, config);
       const inventory = buildInventoryFromScan(
         { cwd, results },
         patternInventory,
@@ -233,4 +239,15 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       }
     }
   }
+
+  // v0.41.0 (Sprint 2, task 2a.1): record telemetry AFTER the
+  // inventory is built so we can include the per-category pattern
+  // summary in `scans.jsonl`. When `config.projectMemory === false`
+  // the inventory build above is skipped, `patternInventory` stays
+  // undefined, and `recordTelemetry` falls back to the legacy
+  // payload shape (`inventory` omitted). Either way the JSONL line
+  // is well-formed and downstream `--since` queries degrade
+  // gracefully: legacy payloads return `undefined` for `inventory`
+  // and the diff math treats that as "no data".
+  recordTelemetry(cwd, report, results, config, patternInventory);
 }

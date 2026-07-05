@@ -389,4 +389,111 @@ describe('MCP tool handlers', () => {
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Unknown tool');
   });
+
+  // v0.41.0 (Sprint 2, task 2b.0): the previously-split
+  // runSuggest / runSuggestWithStructure pair is now a single
+  // handler behind `runSuggest(args, ctx, { includeStructure })`.
+  // The dispatch contract is:
+  //
+  //   - `slop_suggest` → runSuggest(args, ctx) — slow path,
+  //     always JSON.
+  //   - `slop_suggest_with_structure` → runSuggest(args, ctx,
+  //     { includeStructure: true }) — fast path when
+  //     `.slopbrick/structure.md` exists, slow-path-with-hint
+  //     otherwise.
+
+  it('routes slop_suggest_with_structure through the consolidated runSuggest (slow path → annotated)', async () => {
+    // No .slopbrick/structure.md on disk: the fast path is
+    // unreachable, so the handler falls back to the slow path
+    // and attaches a `structureHint` so the agent learns to
+    // run `slopbrick scan` next time.
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/components/Dialog.tsx',
+        `import React from 'react'; export function Dialog() { return <div role="dialog" />; }`,
+      );
+      const result = await handleToolCall(
+        'slop_suggest_with_structure',
+        {},
+        { cwd: dir, rules: [], config: TEST_CONFIG },
+      );
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+      // Slow-path shape preserved: hint, doNotCreate, declaredStack,
+      // existingPatterns all present.
+      expect(parsed.hint).toContain('instead of creating new ones');
+      expect(parsed.doNotCreate).toBeDefined();
+      expect(parsed.declaredStack).toBeDefined();
+      expect(parsed.existingPatterns).toBeDefined();
+      // Plus the upgrade hint.
+      expect(parsed.structureHint).toContain('structure.md');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('routes slop_suggest_with_structure through the fast path when structure.md exists', async () => {
+    // Seed `.slopbrick/structure.md` so the fast path wins. The
+    // handler should return the markdown verbatim (single text
+    // block, no JSON parsing).
+    const dir = freshDir();
+    try {
+      const memoryDir = join(dir, '.slopbrick');
+      mkdirSync(memoryDir, { recursive: true });
+      // Write a sentinel string the handler will return verbatim.
+      // The fast-path code reads `readStructureMarkdown(ctx.cwd)`
+      // and passes the result through unchanged, so any non-empty
+      // markdown trips the fast-path branch.
+      const marker = '# Fast-path marker\n\n(ignore the contents — the handler returns this verbatim)\n';
+      writeFileSync(join(memoryDir, 'structure.md'), marker, 'utf-8');
+      const result = await handleToolCall(
+        'slop_suggest_with_structure',
+        {},
+        { cwd: dir, rules: [], config: TEST_CONFIG },
+      );
+      expect(result.isError).toBeFalsy();
+      // The marker round-trips intact — that's the contract.
+      expect(result.content[0].text).toContain('Fast-path marker');
+      // The fast-path response is raw markdown, NOT a JSON object
+      // with `hint` / `doNotCreate` / `existingPatterns`. Trying to
+      // JSON.parse it must throw — that proves we didn't accidentally
+      // take the slow path.
+      expect(() => JSON.parse(result.content[0].text)).toThrow();
+      // Also: the response must NOT contain any of the slow-path
+      // keys (defensive — guards against a future refactor that
+      // accidentally wraps the markdown in an envelope).
+      expect(result.content[0].text).not.toContain('"hint"');
+      expect(result.content[0].text).not.toContain('"doNotCreate"');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('routes slop_suggest through the consolidated runSuggest (slow path, no hint)', async () => {
+    // The slow-path variant (`slop_suggest`) must NOT attach the
+    // structureHint — that's a contract preservation: agents that
+    // explicitly asked for the JSON form don't want the upgrade
+    // hint polluting the response.
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/components/Card.tsx',
+        `export function Card() { return <div />; }`,
+      );
+      const result = await handleToolCall(
+        'slop_suggest',
+        {},
+        { cwd: dir, rules: [], config: TEST_CONFIG },
+      );
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+      expect(parsed.hint).toContain('instead of creating new ones');
+      expect(parsed.structureHint).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
