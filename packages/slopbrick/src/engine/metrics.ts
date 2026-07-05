@@ -1,5 +1,5 @@
 import { isAbsolute, relative } from 'node:path';
-import { computeAiSecurityRisk } from './ai-security-risk';
+
 import { buildTestQualityScore } from './test-quality';
 import type {
   BaselineCache,

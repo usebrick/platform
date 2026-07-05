@@ -18,7 +18,7 @@ import { runScan } from './scan';
 import type { CliGlobalOptions, ScanRunResult } from './scan';
 import { buildTestQualityScore, formatTestQualityScore } from '../engine/test-quality';
 import type { TestQualityScore } from '../engine/test-quality';
-import { logger, setLoggerQuiet } from '../engine/logger';
+import { setLoggerQuiet } from '../engine/logger';
 import type { Issue, ResolvedConfig } from '../types';
 
 export interface TestScanOptions {

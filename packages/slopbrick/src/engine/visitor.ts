@@ -55,27 +55,8 @@ import {
   sourceText,
 } from './visitors/react.js';
 import type { AnyNode } from './visitors/react.js';
-import { parseHtmlAttributes, extractHtmlElementFacts, skipPastTag } from './visitors/html.js';
-import {
-  binaryAndChainLength,
-  collectChainText,
-  isIdentifierNode,
-  isMemberExpressionNode,
-  isNullOrUndefinedLiteral,
-  extractNullishChecked,
-  collectAndOperands,
-  isOptionalChainPattern,
-  isTamaguiStyleProp,
-  DOM_QUERY_METHODS,
-  USER_FACING_ATTRIBUTES,
-  isInlineFunction,
-  isInlineObjectLiteral,
-  isInlineArrayLiteral,
-  isMapCall,
-  isMemoOrForwardRefCall,
-  isWrappedInMemoOrForwardRef,
-  extractKeyPropFact,
-} from './visitors/ast-guards.js';
+import { extractHtmlElementFacts } from './visitors/html.js';
+import { isIdentifierNode, isMapCall, isMemoOrForwardRefCall, isWrappedInMemoOrForwardRef } from './visitors/ast-guards.js';
 // v2.0.1: walker-body dispatch refactor — top-level dispatch helper
 // covers the 3 closure-free handlers (ExpressionStatement,
 // ImportDeclaration, BinaryExpression). Other types stay inline.
@@ -179,19 +160,7 @@ interface SourceRange {
 
 // implementations live in src/engine/visitors/templates.ts and can be
 // tested in isolation. Re-export them so callers see no API change.
-import {
-  findAstroFrontmatterRange,
-  findHtmlBlockRanges,
-  findScriptAndStyleRanges,
-  findHtmlCommentRanges,
-  findAstroSkipRanges,
-  lineNumberOf as templatesLineNumberOf,
-  positionFromCharOffset,
-  parseAstroAttributes,
-  extractStaticTemplateClassNames,
-  extractAstroComponents,
-  extractAstroElementFacts,
-} from './visitors/templates.js';
+import { findAstroFrontmatterRange, findHtmlBlockRanges, findScriptAndStyleRanges, findHtmlCommentRanges, findAstroSkipRanges, lineNumberOf as templatesLineNumberOf, extractStaticTemplateClassNames, extractAstroComponents, extractAstroElementFacts } from './visitors/templates.js';
 export {
   findAstroFrontmatterRange,
   findHtmlBlockRanges,

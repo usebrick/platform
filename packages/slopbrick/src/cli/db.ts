@@ -13,12 +13,12 @@
 //   1  — --strict set AND dbDrift is 'high' or 'critical'
 //   2  — fatal error (config not loadable, IO failure)
 
-import { resolve } from 'node:path';
+
 import { runScan } from './scan';
 import type { CliGlobalOptions, ScanRunResult } from './scan';
 import { buildDbHealth, DB_RULE_WEIGHTS } from '../engine/db-health';
 import type { BuildDbHealthResult } from '../engine/db-health';
-import { logger, setLoggerQuiet } from '../engine/logger';
+import { setLoggerQuiet } from '../engine/logger';
 import type { DbDriftLevel, ResolvedConfig } from '../types';
 
 export interface DbOptions {

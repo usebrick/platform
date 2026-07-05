@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import type { ResearchProvider } from './provider';
 import { findTemplate, renderPrompt } from './prompts';
 

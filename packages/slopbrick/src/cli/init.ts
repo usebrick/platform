@@ -10,7 +10,7 @@
 // ./program for backward compat with src/index.ts).
 // `runDoctor` is internal — called only from ./program.ts.
 
-import { existsSync, writeFileSync, readFileSync, mkdirSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createInterface } from 'node:readline';
 import type { Interface as ReadlineInterface } from 'node:readline';

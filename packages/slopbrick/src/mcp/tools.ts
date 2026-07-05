@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scanFile } from '../engine/worker.js';
 import { buildPatternInventory, checkFileConstitution } from './patterns.js';
-import { buildArchitectureScore, formatArchitectureScore } from '../engine/architecture-score.js';
+import { buildArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
 import { readStructureMarkdown } from '../engine/structure-md';
-import { runSuggestWithStructure } from './slop-suggest-structure.js';
+
 import type { Rule, ResolvedConfig } from '../types';
 
 export interface ToolContext {

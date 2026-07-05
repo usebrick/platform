@@ -14,15 +14,12 @@
 //   1  — --strict and bucket ∈ {high, critical}
 //   2  — fatal error (config not loadable, IO failure)
 
-import { resolve } from 'node:path';
+
 import { runScan } from './scan';
 import type { CliGlobalOptions, ScanRunResult } from './scan';
 import { runDrift } from './drift';
-import {
-  computeAiMaintenanceCost,
-  computeAiMaintenanceCostFromReport,
-} from '../engine/maintenance-cost';
-import { logger, setLoggerQuiet } from '../engine/logger';
+import { computeAiMaintenanceCostFromReport } from '../engine/maintenance-cost';
+import { setLoggerQuiet } from '../engine/logger';
 import type {
   AiMaintenanceCost,
   AiMaintenanceCostResult,

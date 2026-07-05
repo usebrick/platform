@@ -13,12 +13,12 @@
 //   1  — --strict set AND docDrift is 'high' or 'critical'
 //   2  — fatal error (config not loadable, IO failure)
 
-import { resolve } from 'node:path';
+
 import { runScan } from './scan';
 import type { CliGlobalOptions, ScanRunResult } from './scan';
 import { buildDocFreshness, DOC_RULE_WEIGHTS } from '../engine/doc-freshness';
 import type { BuildDocFreshnessResult } from '../engine/doc-freshness';
-import { logger, setLoggerQuiet } from '../engine/logger';
+import { setLoggerQuiet } from '../engine/logger';
 import type { DocDriftLevel, ResolvedConfig } from '../types';
 
 export interface DocsOptions {

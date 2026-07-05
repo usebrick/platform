@@ -25,7 +25,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { globby } from 'globby';
 import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../types';
-import { extractImports } from '../mcp/patterns';
+
 import { brokenLinkRule } from '../rules/docs/broken-link';
 import { staleFunctionReferenceRule } from '../rules/docs/stale-function-reference';
 import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference';

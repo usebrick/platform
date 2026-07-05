@@ -61,7 +61,7 @@ import {
 import { logger, setLoggerQuiet } from '../engine/logger';
 import { runProjectRules } from '../rules/project';
 import { RuleRegistry } from '../rules/registry';
-import { discoverAndLoad } from '../rules/composite-loader';
+
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';

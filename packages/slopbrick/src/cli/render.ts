@@ -5,7 +5,6 @@
 // write to stdout directly to drive the in-place scan progress bar).
 
 import type { ProjectReport } from '../types';
-import chalk from 'chalk';
 
 // v0.17.1: colorEnabled() respects --no-color flag and the NO_COLOR
 // env var per https://no-color.org. Defaults to true when stdout

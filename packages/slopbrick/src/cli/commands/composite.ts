@@ -21,8 +21,7 @@ import { logger } from '../../engine/logger';
 import { readTelemetry } from '../../engine/telemetry';
 import { runClusterer, describeComposite } from '../../engine/cluster';
 import { writeComposites, readComposites } from '../../rules/composite-loader';
-import { formatHeatmap } from '../../report/heatmap';
-import { buildPatternInventory } from '../../mcp/patterns';
+
 import type { CliGlobalOptions } from '../scan';
 
 export function registerComposite(program: Command): void {

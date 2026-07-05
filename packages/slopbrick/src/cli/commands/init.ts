@@ -7,7 +7,7 @@ import { refreshRegistrySnapshot, copyBundledSnapshotToCache } from '../../rules
 import { runScan, buildBaselineCache } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
 import { runInitWizard, isInteractive } from '../init.js';
-import { loadConfig, DEFAULT_CONFIG, detectStack, detectStylingSolution, buildInitConfig } from '../../config';
+import { DEFAULT_CONFIG, detectStack, detectStylingSolution, buildInitConfig } from '../../config';
 import type { ResolvedConfig } from '../../config';
 import { serializeConfig, appendGitignore } from '../threshold';
 import { getGitHead } from '../git.js';

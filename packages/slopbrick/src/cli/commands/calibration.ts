@@ -17,8 +17,8 @@
  */
 
 import { Command } from 'commander';
-import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import signalStrength from '../../rules/signal-strength.json';
 

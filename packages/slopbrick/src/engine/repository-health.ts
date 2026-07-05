@@ -29,7 +29,7 @@ import {
 } from '../types';
 import { computeMDLikelihood } from '@usebrick/engine';
 import { builtinRules } from '../rules/builtins.js';
-import { loadSignalStrength } from '../rules/signal-strength.js';
+
 import { buildDefaultMdlPriors } from '@usebrick/engine';
 
 const DEFAULT_MDL_PRIORS = buildDefaultMdlPriors(builtinRules);

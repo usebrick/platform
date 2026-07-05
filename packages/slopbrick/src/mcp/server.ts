@@ -11,7 +11,7 @@
 // MCP-aware client. Reference: https://modelcontextprotocol.io/
 
 import { builtinRules } from '../rules/builtins.js';
-import { scanFile } from '../engine/worker.js';
+
 import { DEFAULT_CONFIG } from '../config';
 import { VERSION } from '../types/_header.js';
 import type { Rule, ResolvedConfig } from '../types';

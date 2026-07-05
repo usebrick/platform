@@ -32,7 +32,7 @@ import {
   renderOutput,
   watchProject,
 } from './scan';
-import { runInitWizard, runDoctor, isInteractive } from './init';
+import { runInitWizard, runDoctor } from './init';
 // v0.17.5 (R-H1): per-command wiring lives in `cli/commands/<name>.ts`.
 // `program.ts` is the single source of truth for which commands exist;
 // the action callbacks (and their inline option lists) are now in
@@ -85,49 +85,22 @@ import { registerScan } from './commands/scan.js';
 // (architecture review F3).
 import { setExitOverride, dispatch } from './commands/_shared.js';
 
-import { loadConfig, DEFAULT_CONFIG, detectStack, detectMonorepoRoot, detectStylingSolution, buildInitConfig, resolveConfigPath as findConfigPath, ConfigValidationError } from '../config';
+import { detectMonorepoRoot, ConfigValidationError } from '../config';
 import type { ResolvedConfig } from '../config';
-import { getGitHead, getGitRoot } from './git.js';
-import { installHook, uninstallHook } from './installer.js';
+import { getGitHead } from './git.js';
+
 import { logger } from '../engine/logger';
-import { builtinRules } from '../rules/builtins';
-import {
-  refreshRegistrySnapshot,
-  copyBundledSnapshotToCache,
-} from '../rules/registry-loader';
-import { createProvider, generateSamples, analyzeSamples, extractAndCluster, clustersToCandidates, calibrate, reportToMarkdown } from '../research';
+
+
 import type { GeneratedSample } from '../research';
-import { buildTrend, trendToText, trendToMarkdown } from '../engine/trend';
-import { runMcpServer } from '../mcp/server.js';
-import {
-  generateCursorSnippet,
-  generateAgentsMdSnippet,
-  generateClaudeMdSnippet,
-  generateAiderSnippet,
-  generateWindsurfSnippet,
-  generateClineRules,
-  generateCursorrulesLegacySnippet,
-  generateGeminiSnippet,
-  generateCopilotSnippet,
-} from '../snippet/generators.js';
-import { RULE_HINTS } from '../snippet/data.js';
-import {
-  SNIPPET_TARGETS,
-  resolveTargetPath,
-  renderMatrix,
-} from '../snippet/targets.js';
-import { validateConfig as validateConfigSchema, formatConfigValidationErrors } from '../config/validation.js';
-import { getSignalStrength, isReliableSignal, loadSignalStrength } from '../rules/signal-strength.js';
-import { readDtcgTokensFile, summarizeTokens, formatSummary } from './tokens.js';
-import { formatJson } from '../report/json';
-import { formatPretty } from '../report/pretty';
-import { formatMarkdown } from '../report/markdown';
-import { formatSarif } from '../report/sarif';
-import { formatHtml } from '../report/html';
+
+
+
+
+
 import { formatUnifiedDiff } from '../report/unified-diff';
 import { buildHeatmap, formatHeatmap } from '../report/heatmap';
-import { formatFlywheel, summarizeTelemetry } from '../report/flywheel';
-import { readTelemetry } from '../engine/telemetry';
+
 import { readRuns } from '@usebrick/engine';
 import { fsMemoryIO } from './memory-io.js';
 import { applyFixes } from '../fix';

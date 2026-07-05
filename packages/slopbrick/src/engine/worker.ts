@@ -5,7 +5,7 @@ import { minimatch } from 'minimatch';
 import { parseFile } from '@usebrick/engine';
 import type { ParserCacheConfig } from '@usebrick/engine';
 import { extractFacts } from './visitor';
-import { BACKEND_EXTENSIONS } from './discover.js';
+
 import { RuleRegistry } from '../rules/registry';
 import { setLoggerQuiet } from './logger';
 import { compositeScore } from '@usebrick/engine';
