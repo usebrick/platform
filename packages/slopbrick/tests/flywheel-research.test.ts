@@ -78,3 +78,42 @@ describe('FlywheelState research field', () => {
     expect(state.research).toBeUndefined();
   });
 });
+
+describe('loadResearchMetricsFromDisk — v0.42.0 safeReadJson edges', () => {
+  let cwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), 'slopbrick-research-flywheel-'));
+    mkdirSync(join(cwd, '.slopbrick', 'flywheel'), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it('returns all-zero metrics when both files are corrupt JSON', () => {
+    writeFileSync(join(cwd, '.slopbrick', 'flywheel', 'analysis.json'), '{ malformed');
+    writeFileSync(join(cwd, '.slopbrick', 'flywheel', 'rule-candidates.json'), 'also bad');
+    const metrics = loadResearchMetricsFromDisk(cwd);
+    // Pre-refactor: this would have crashed on the second file.
+    // Post-refactor (v0.42.0): silent fallback to 0/0/0 across the board.
+    expect(metrics).toBeDefined();
+    expect(metrics?.generatedSampleCount).toBe(0);
+    expect(metrics?.generatedRuleCoverage).toBe(0);
+    expect(metrics?.candidateYield).toBe(0);
+  });
+
+  it('returns 0 metrics for an analysis.json with a null summary field', () => {
+    // Edge case: file parses, but the shape doesn't match what we expect.
+    // safeReadJson returns the fallback (0) without throwing.
+    writeFileSync(
+      join(cwd, '.slopbrick', 'flywheel', 'analysis.json'),
+      JSON.stringify({ summary: null }),
+    );
+    const metrics = loadResearchMetricsFromDisk(cwd);
+    expect(metrics?.generatedSampleCount).toBe(0);
+    expect(metrics?.generatedRuleCoverage).toBe(0);
+  });
+
+
+});

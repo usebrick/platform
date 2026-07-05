@@ -105,3 +105,50 @@ describe('docs/broken-link — v0.42.0 regex-shape filtering', () => {
     }
   });
 });
+
+
+// v0.42.0 follow-up: tests for the inBlockComment + inComment
+// annotations on extracted links. Same fix landed for the
+
+// v0.42.0 follow-up: tests for the inBlockComment + inComment
+// annotations on extracted links. Same fix landed for the
+// broken-link rule (commit 0f2df63) and the stale-function/
+// package-reference rules (commits bf83962 + c53bbca).
+// inBlockComment is true for /* ... */ block comments.
+// inComment is true for // line comments AND /* ... */ blocks.
+import { extractMarkdownLinks } from '../../src/engine/doc-freshness';
+
+describe('extractMarkdownLinks — v0.42.0 inBlockComment + inComment annotations', () => {
+  it('annotates links inside /* ... */ as inBlockComment=true (and inComment=true)', () => {
+    const src = `
+/**
+ * Extract markdown links \`[text](target)\`. Returns the target.
+ */
+const other = \`[real](docs/real.md)\`;
+`;
+    const links = extractMarkdownLinks(src);
+    expect(links.length).toBe(2);
+    expect(links[0]!.inBlockComment).toBe(true);
+    expect(links[0]!.inComment).toBe(true);
+    expect(links[1]!.inBlockComment).toBe(false);
+    expect(links[1]!.inComment).toBe(false);
+  });
+
+  it('annotates links on // comment lines as inComment=true (inBlockComment=false)', () => {
+    // Single-line // comment line; non-backticked link on the comment
+    // line, then a backticked link on the next line.
+    const src = '// See [docs](docs/intro.md)\nconst real = `[other](real.md)`;';
+    const links = extractMarkdownLinks(src);
+    expect(links.length).toBe(2);
+    expect(links[0]!.inComment).toBe(true);
+    expect(links[0]!.inBlockComment).toBe(false);
+    expect(links[1]!.inComment).toBe(false);
+    expect(links[1]!.inBlockComment).toBe(false);
+  });
+
+  it('preserves the index for callers that want byte-offset math', () => {
+    const src = '[text](real.md)';
+    const links = extractMarkdownLinks(src);
+    expect(links[0]!.index).toBe(0);
+  });
+});

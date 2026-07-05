@@ -193,14 +193,15 @@ export function extractFencedCodeBlocks(
  */
 export function extractMarkdownLinks(
   source: string,
-): Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean }> {
-  const hits: Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean }> = [];
+): Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean; inComment: boolean }> {
+  const hits: Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean; inComment: boolean }> = [];
   const re = /(?<!\!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
   // v0.42.0: scan the source for `/* ... */` block-comment ranges
   // once, up front. Each link's byte offset is then checked against
   // the sorted range list. Cheaper than walking character-by-character
   // inside the match loop.
   const blockRanges = findBlockCommentRanges(source);
+  const commentLines = findCommentLineRanges(source);
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     const target = m[2] ?? '';
@@ -214,6 +215,7 @@ export function extractMarkdownLinks(
       column,
       index: m.index,
       inBlockComment: isInBlockComment(blockRanges, m.index),
+      inComment: commentLines.has(line),
     });
   }
   return hits;
@@ -657,10 +659,10 @@ export function findCommentLineRanges(source: string): Set<number> {
     const line = lines[i]!;
     const lineNo = i + 1; // 1-indexed
     let j = 0;
-    if (inLineComment) {
-      out.add(lineNo);
-      inLineComment = false; // line comments terminate at end-of-line
-    }
+    // Note: a // line comment terminates at end-of-line. We do NOT
+    // propagate inLineComment to the next line — the next iteration
+    // starts with inLineComment=false and re-detects // on that line.
+    // (Earlier v0.42.0 code added the next line; that was wrong.)
     while (j < line.length) {
       const c = line[j]!;
       const next = line[j + 1];
