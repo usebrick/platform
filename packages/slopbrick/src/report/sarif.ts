@@ -87,6 +87,23 @@ interface SarifToolDriver {
   version: string;
   informationUri: string;
   rules: SarifRule[];
+  /**
+   * SARIF 2.1.0 §3.18 — the `properties` bag on a tool driver is
+   * free-form key/value. Sprint 2.3 §2b.1 uses it to surface the
+   * project-level Bayesian composite aggregate (tier, mean, max,
+   * fileCount) so SARIF consumers (GitHub code scanning, IDE
+   * security panels) can display the "is this codebase AI?"
+   * probability alongside the per-result findings. Present only
+   * when `report.compositeScore` is defined (i.e. v0.18.2+ shape).
+   */
+  properties?: {
+    compositeScore?: {
+      tier: 'LIKELY_HUMAN' | 'INCONCLUSIVE' | 'LIKELY_AI' | 'VERY_LIKELY_AI';
+      mean: number;
+      max: number;
+      fileCount: number;
+    };
+  };
 }
 
 interface SarifTool {
@@ -337,6 +354,15 @@ export function formatSarif(
     buildResultFromIssue(issue, options?.cwd, fileContentCache),
   );
 
+  // Sprint 2.3 §2b.1: gate the driver-level `properties.compositeScore`
+  // on the field being defined. v0.18.0-and-earlier reports omit
+  // it; the SARIF log should stay backward-compatible (no
+  // `properties` key at all) so consumers that key on its presence
+  // see the same shape they did before.
+  const driverProperties = report.compositeScore
+    ? { compositeScore: report.compositeScore }
+    : undefined;
+
   const log: SarifLog = {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
     version: '2.1.0',
@@ -348,6 +374,7 @@ export function formatSarif(
             version: report.version,
             informationUri: REPO_INFORMATION_URI,
             rules,
+            ...(driverProperties ? { properties: driverProperties } : {}),
           },
         },
         results,

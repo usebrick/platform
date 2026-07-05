@@ -585,6 +585,29 @@ function formatCompositeScore(report: ProjectReport): string {
       ),
     );
   }
+
+  // Sprint 2.3 §2b.1: surface the project-level Bayesian composite
+  // aggregate in the pretty report. Previously this lived only as
+  // a post-report log line at `persistRun.ts:229-230` (F12 — only
+  // visible in stderr, not in --format pretty or --brief). The
+  // format mirrors that log line so users see the same
+  // `composite=<tier>@<mean>` shape in both places: terse, no
+  // prose, gated on the field being present (the v0.18.0-and-
+  // earlier shape omits it, so older reports stay backward-compat).
+  // We gate on `report.compositeScore` (not `health.compositeScore`,
+  // per F13 — the in-memory report shape is the source of truth for
+  // what the pretty reporter renders).
+  const composite = report.compositeScore;
+  if (composite !== undefined) {
+    lines.push('');
+    lines.push(
+      chalk.dim(
+        `composite=${composite.tier}@${composite.mean.toFixed(2)} — ` +
+        `project-level Bayesian aggregate across ${composite.fileCount} file${composite.fileCount === 1 ? '' : 's'} ` +
+        `(max ${composite.max.toFixed(2)}); informational, does not gate CI.`,
+      ),
+    );
+  }
   return lines.join('\n');
 }
 
