@@ -22,6 +22,8 @@ import Parser from 'tree-sitter';
 //   module.exports = require('./bindings/node');
 // pnpm picks the matching prebuild under `prebuilds/<platform>/`.
 import Kotlin from 'tree-sitter-kotlin';
+// v0.42.0: shared tree-sitter parse helper + structural Tree/TSNode types. Each per-language parser still re-exports Tree/TSNode from parser-shared for source compat.
+import { parseTreeSitterSource, type Tree, type TSNode } from './parser-shared.js';
 
 // ---------------------------------------------------------------------------
 // Lazily-initialised module-level parser. We construct it once at module
@@ -113,26 +115,12 @@ function effectiveParser(): { ok: true; parser: Parser } | { ok: false; error: E
  * (only named node types are matched) rather than re-checking errors.
  */
 export function parseKotlin(source: string): Tree | null {
-  const result = effectiveParser();
-  if (!result.ok) return null;
-  if (!source || source.trim() === '') return null;
-
-  try {
-    const rawTree: unknown = result.parser.parse(source);
-    if (!rawTree) return null;
-    // tree-sitter's runtime Tree shape matches our structural
-    // interface but TS sees a distinct Symbol. Cast once at the
-    // boundary.
-    const tree = rawTree as Tree;
-    if (!tree || !tree.rootNode) return null;
-    // An empty/invalid source produces an `ERROR` root — surface as null.
-    if (tree.rootNode.type === 'ERROR' && tree.rootNode.childCount === 0) {
-      return null;
-    }
-    return tree;
-  } catch {
-    return null;
-  }
+  // v0.42.0: shared with parser-cpp/rust/kotlin via
+  // engine/parser-shared.ts:parseTreeSitterSource. The 18-line
+  // try/catch + ERROR-root validation body was duplicated verbatim
+  // across all four per-language files (42 dup/identical-block
+  // fires during self-scan).
+  return parseTreeSitterSource(effectiveParser(), source);
 }
 
 /**
@@ -140,33 +128,12 @@ export function parseKotlin(source: string): Tree | null {
  * in the published types. We re-export a structural type here so the
  * visitor can name its parameters. Mirrors `parser-rust.ts:147-173`.
  */
-export interface Tree {
-  rootNode: TSNode;
-  readonly [key: string]: unknown;
-}
+// v0.42.0: Tree + TSNode are declared in engine/parser-shared.ts.
+// Re-exported here for source-compatibility (callers and
+// visitors import these names from this module's path).
+export type { Tree, TSNode } from "./parser-shared.js";
 
-export interface TSNode {
-  type: string;
-  startIndex: number;
-  endIndex: number;
-  startPosition: { row: number; column: number };
-  endPosition: { row: number; column: number };
-  text: string;
-  childCount: number;
-  child(index: number): TSNode | null;
-  /** First non-null child of a given type, or null. */
-  childForFieldName(fieldName: string): TSNode | null;
-  /** Field name for child at `index`, or null if no field name. */
-  fieldNameForChild(index: number): string | null;
-  /** Parent node, or null at the root. */
-  parent: TSNode | null;
-  /** Named child count (excludes anonymous tokens like `(`, `,`). */
-  namedChildCount: number;
-  /** Named child at `index`. */
-  namedChild(index: number): TSNode | null;
-  /** Iteration cursor. */
-  readonly [key: string]: unknown;
-}
+
 
 /** True when the parser is loaded and ready. Used by tests + CLI flags
  *  to produce a loud "tree-sitter unavailable" diagnostic. */
