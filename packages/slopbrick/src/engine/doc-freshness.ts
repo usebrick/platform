@@ -162,13 +162,25 @@ export function extractFencedCodeBlocks(
 
 /**
  * Extract markdown links `[text](target)`. Returns the target + 1-based
- * line + column. Skips images (those start with `!`).
+ * line + column, plus the byte offset of the match and a flag for
+ * whether the match falls inside a `/* ... *​/` block comment. Skips
+ * images (those start with `!`).
+ *
+ * v0.42.0: the `inBlockComment` annotation lets `docs/broken-link`
+ * and `docs/stale-function-reference` distinguish real prose from
+ * JSDoc-regex examples like `` `[text]([^'"]+)` ``. Without this
+ * signal, every regex inside a comment produces a false positive.
  */
 export function extractMarkdownLinks(
   source: string,
-): Array<{ target: string; line: number; column: number }> {
-  const hits: Array<{ target: string; line: number; column: number }> = [];
+): Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean }> {
+  const hits: Array<{ target: string; line: number; column: number; index: number; inBlockComment: boolean }> = [];
   const re = /(?<!\!)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  // v0.42.0: scan the source for `/* ... */` block-comment ranges
+  // once, up front. Each link's byte offset is then checked against
+  // the sorted range list. Cheaper than walking character-by-character
+  // inside the match loop.
+  const blockRanges = findBlockCommentRanges(source);
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     const target = m[2] ?? '';
@@ -176,9 +188,71 @@ export function extractMarkdownLinks(
     const line = upTo.split('\n').length;
     const lastNl = upTo.lastIndexOf('\n');
     const column = lastNl === -1 ? m.index + 1 : m.index - lastNl;
-    hits.push({ target, line, column });
+    hits.push({
+      target,
+      line,
+      column,
+      index: m.index,
+      inBlockComment: isInBlockComment(blockRanges, m.index),
+    });
   }
   return hits;
+}
+
+/**
+ * v0.42.0: returns the sorted `[start, end)` ranges of every `/* ... *​/`
+ * block comment in `source`. Handles nested block comments (a JSDoc block
+ * inside an outer block) and string contents are NOT skipped here — this
+ * helper intentionally tracks only comment delimiters because markdown-link
+ * examples in regex-shaped JSDoc are the dominant FP source, and a regex
+ * inside a string is a real per-rule concern handled elsewhere.
+ */
+function findBlockCommentRanges(source: string): Array<readonly [number, number]> {
+  const ranges: Array<readonly [number, number]> = [];
+  const stack: number[] = [];
+  // v0.18.6-style scan: walk the source matching /* and */. Nested
+  // block comments are uncommon but allowed in TS — the stack
+  // tracks depth so the matching `*/` closes the innermost open.
+  let i = 0;
+  while (i < source.length) {
+    // Line comment: skip to end of line. Doesn't affect block state.
+    if (source[i] === '/' && source[i + 1] === '/') {
+      const eol = source.indexOf('\n', i);
+      i = eol === -1 ? source.length : eol + 1;
+      continue;
+    }
+    if (source[i] === '/' && source[i + 1] === '*') {
+      stack.push(i);
+      i += 2;
+      continue;
+    }
+    if (source[i] === '*' && source[i + 1] === '/' && stack.length > 0) {
+      const start = stack.pop()!;
+      ranges.push([start, i + 2]);
+      i += 2;
+      continue;
+    }
+    i += 1;
+  }
+  // Any unclosed block ranges (e.g. truncated source) don't
+  // produce false negatives because we only treat ranges that have
+  // a paired `*/` as "in comment" zones. Open blocks are ignored.
+  ranges.sort((a, b) => a[0] - b[0]);
+  return ranges;
+}
+
+function isInBlockComment(ranges: ReadonlyArray<readonly [number, number]>, pos: number): boolean {
+  // Binary search over sorted ranges.
+  let lo = 0;
+  let hi = ranges.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const [start, end] = ranges[mid]!;
+    if (pos < start) hi = mid - 1;
+    else if (pos >= end) lo = mid + 1;
+    else return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------

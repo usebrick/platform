@@ -8,6 +8,13 @@
 // Strategy: for each markdown link, resolve relative to the doc's
 // directory and check `existsSync`. If missing, fire.
 //
+// v0.42.0 post-self-scan fix: skip targets that look like regex
+// patterns (character classes `[^...]`, escapes like `\s\d\w`,
+// grouping `(?:...)` etc.). These are overwhelmingly JSDoc examples
+// of the markdown-link syntax — not real relative links. The
+// unshaped heuristic catches 2 of 3 false-positive buckets during
+// self-scan without affecting real markdown.
+//
 // Severity: low (broken links are usually cosmetic — but on a public
 // docs site they erode trust).
 //
@@ -18,6 +25,27 @@ import { dirname, join, resolve } from 'node:path';
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { extractMarkdownLinks } from '../../engine/doc-freshness';
+
+/**
+ * v0.42.0: returns true if a link target textually resembles a
+ * regex pattern rather than a file path. Catches JSDoc examples
+ * like `` `[text]([^'"]+)` `` where the rule would otherwise fire
+ * on a target that has no file-existence meaning.
+ */
+function looksLikeRegexSyntax(target: string): boolean {
+  // Common regex markers in markdown-link-target text:
+  //   [^...]   - character class
+  //   ?:?=?!   - group prefix (the link extractor strips the leading `(`,
+  //              so we check the prefix chars directly on the target)
+  //   \s \d \w \. - common escapes
+  //   | {n,m}   - alternation / quantifier
+  return (
+    /\[[^\]]*\]/.test(target) ||
+    /^\s*[?:=!]/.test(target) ||
+    /\\(?:s|d|w|S|D|W|t|n|r|[^\\])/.test(target) ||
+    /[{}|]/.test(target)
+  );
+}
 
 export const brokenLinkRule = createRule<RuleContext>({
   id: 'docs/broken-link',
@@ -47,6 +75,17 @@ export const brokenLinkRule = createRule<RuleContext>({
       if (target.startsWith('#')) continue;
       if (target.startsWith('//')) continue;
       if (target.startsWith('/')) continue;
+      // v0.42.0: skip JSDoc-comment links. Markdown-link examples
+      // inside `/* ... */` blocks (e.g. the regex-char-class
+      // examples in the engine doc-freshness JSDoc) are not real
+      // relative links — the extractor annotates them with
+      // `inBlockComment: true` so the rule can drop them cheaply.
+      if (link.inBlockComment) continue;
+      // v0.42.0: skip JSDoc-regex false positives (see
+      // `looksLikeRegexSyntax` above). Real broken links almost
+      // never look like a regex; their targets are file-shaped
+      // (letters + slashes + dots + extensions).
+      if (looksLikeRegexSyntax(target)) continue;
       // v0.18.6: strip the #anchor before checking file existence.
       // Without this, `./EXAMPLES.md#strict-ci-gate` fails the
       // existsSync check (no file with that name) and is reported
