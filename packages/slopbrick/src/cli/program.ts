@@ -41,6 +41,7 @@ import { runInitWizard, runDoctor, isInteractive } from './init';
 // commands will follow in subsequent PRs.
 import { registerBadge } from './commands/badge.js';
 import { registerSuggest } from './commands/suggest.js';
+import { registerComposite } from './commands/composite.js';
 import { registerExplain } from './commands/explain.js';
 import { registerCalibration } from './commands/calibration.js';
 import { registerInstall } from './commands/install.js';
@@ -189,6 +190,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       .option('--verbose', 'enable debug logging (file paths, timings, rule-fire counts)')
       .option('--strict', 'exit 2 if any high-severity issue remains')
       .option('--no-increase', 'exit 2 if slop index increased since last run')
+      // v0.42.0 (§3a.4): opt-in flag for the AGENTS.md auto-refresh
+      // hook. Without this flag (or
+      // `slopbrick.config.mjs#autoRefreshSnippets: true`), scans are
+      // read-only against AGENTS.md/CLAUDE.md.
+      .option('--refresh-snippets', 'rewrite the managed slopbrick block in AGENTS.md and CLAUDE.md after a scan')
       // v0.9.3: rules marked `defaultOff: true` in signal-strength.json
       // (INVERTED + NOISY) are off by default. No flag needed — opt back
       // in via `rules: { 'rule/id': 'medium' }` in slopbrick.config.mjs.
@@ -257,6 +263,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     registerBadge(program);
     registerSuggest(program);
     registerExplain(program);
+    registerComposite(program);
     registerCalibration(program);
     // explain registration above is the one in effect (line ~1500 was the old
     // duplicate that triggered "cannot add command 'explain' as already have

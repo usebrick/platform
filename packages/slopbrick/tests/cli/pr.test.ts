@@ -19,7 +19,7 @@ import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 
-import { runPrScan, formatPrReport, prExitCode } from '../../src/cli/pr';
+import { runPrScan, runPrScanFromDiffFile, formatPrReport, prExitCode, parseUnifiedDiffPaths } from '../../src/cli/pr';
 import { DEFAULT_CONFIG } from '../../src/config';
 import type { ResolvedConfig } from '../../src/types';
 
@@ -604,6 +604,71 @@ describe('slopbrick pr (CLI)', () => {
       expect(exitCode).toBe(1);
       expect(stdout).toContain('FAIL');
       expect(stdout).toContain('stateManagement');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v0.42.0 (Sprint 3, §3c.4): tests for the --diff <file> mode.
+// ---------------------------------------------------------------------------
+
+describe('parseUnifiedDiffPaths', () => {
+  it('extracts `+++ b/path` headers', () => {
+    const diff = [
+      'diff --git a/src/a.ts b/src/a.ts',
+      '--- a/src/a.ts',
+      '+++ b/src/a.ts',
+      '@@ -1,1 +1,1 @@',
+      '-old',
+      '+new',
+      'diff --git a/src/b.ts b/src/b.ts',
+      '--- a/src/b.ts',
+      '+++ b/src/b.ts',
+    ].join('\n');
+    expect(parseUnifiedDiffPaths(diff)).toEqual(['src/a.ts', 'src/b.ts']);
+  });
+  it('deduplicates paths', () => {
+    const diff = [
+      'diff --git a/x.ts b/x.ts',
+      '--- a/x.ts',
+      '+++ b/x.ts',
+      'diff --git a/x.ts b/x.ts',
+      '--- a/x.ts',
+      '+++ b/x.ts',
+    ].join('\n');
+    expect(parseUnifiedDiffPaths(diff)).toEqual(['x.ts']);
+  });
+  it('skips /dev/null (deletion markers)', () => {
+    const diff = [
+      '--- a/deleted.ts',
+      '+++ /dev/null',
+    ].join('\n');
+    expect(parseUnifiedDiffPaths(diff)).toEqual([]);
+  });
+});
+
+describe('runPrScanFromDiffFile — pure (no CLI)', () => {
+  it('throws when the diff file does not exist', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-pr-diff-'));
+    try {
+      await expect(runPrScanFromDiffFile(dir, DEFAULT_CONFIG, '/nonexistent.diff', {}))
+        .rejects.toThrow(/Diff file not found/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns an empty result when the diff has no changed paths', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-pr-diff-'));
+    try {
+      const emptyDiffPath = join(dir, 'empty.diff');
+      writeFileSync(emptyDiffPath, '', 'utf-8');
+      const result = await runPrScanFromDiffFile(dir, DEFAULT_CONFIG, emptyDiffPath, {});
+      expect(result.filesChanged).toBe(0);
+      expect(result.totalScore).toBe(0);
+      expect(result.passed).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

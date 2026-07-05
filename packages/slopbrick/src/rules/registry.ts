@@ -14,28 +14,31 @@ export interface EnabledRule {
  */
 export type RuleRegistryFactory<Context = unknown> = Rule<Context>;
 
+/**
+ * v0.42.0 (Sprint 3, §3b.4): a rule whose existence is a co-fire of
+ *  existing rules. The `RuleRegistry` treats composites uniformly
+ *  with built-ins \u2014 same `register` + `createContexts` lifecycle.
+ */
+export type CompositeAsRule = Rule & {
+  /** Member rule IDs that must co-fire for the composite to fire. */
+  compositeRuleIds: ReadonlyArray<string>;
+  /** Minimum number of members that must co-fire. */
+  compositeMinMatch: number;
+};
+
 export class RuleRegistry {
   private rules = new Map<string, Rule>();
 
-  register(rule: Rule): void;
-  register(id: string, factory: Rule): void;
-  register(ruleOrId: Rule | string, factory?: Rule): void {
-    if (typeof ruleOrId === 'string') {
-      if (!factory) {
-        throw new Error('Factory is required when registering by id');
-      }
-      const rule: Rule = {
-        id: ruleOrId,
-        category: factory.category,
-        severity: factory.severity,
-        aiSpecific: factory.aiSpecific,
-        create: factory.create,
-        analyze: factory.analyze,
-      };
-      this.rules.set(ruleOrId, rule);
-    } else {
-      this.rules.set(ruleOrId.id, ruleOrId);
-    }
+  /**
+   * Register a rule. The 2-arg overload `register(id, factory)` was
+   * deleted in v0.42.0 (architecture review F6): no callers used it,
+   * every `Rule` carries its own `id`, and the per-id registration
+   * was ergonomically redundant with the 1-arg form (`register(rule)`).
+   * External consumers that needed `register-by-id` semantics can
+   * construct a `Rule` directly and pass it in.
+   */
+  register(rule: Rule): void {
+    this.rules.set(rule.id, rule);
   }
 
   loadBuiltins(onlyRuleId?: string): void {
@@ -67,6 +70,17 @@ export class RuleRegistry {
 
   all(): Rule[] {
     return Array.from(this.rules.values());
+  }
+
+  /** v0.42.0 (§3b.5): look up a registered rule by id.
+   *  Returns undefined if not registered. */
+  get(id: string): Rule | undefined {
+    return this.rules.get(id);
+  }
+
+  /** v0.42.0 (§3b.5): check whether a rule id is registered. */
+  has(id: string): boolean {
+    return this.rules.has(id);
   }
 
   createContexts(

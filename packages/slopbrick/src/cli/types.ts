@@ -31,6 +31,13 @@ export interface ScanProjectOptions {
   noIncrease?: boolean;
   cache?: boolean;
   telemetry?: boolean;
+  /** v0.42.0 (§3a.4): opt-in flag for the AGENTS.md auto-refresh hook.
+   *  When true, `slopbrick scan` writes the freshly-built snippet body
+   *  inside the `<!-- slopbrick:begin:v3 --> ... -->` block in
+   *  AGENTS.md / CLAUDE.md, replacing only that block (user-edited
+   *  content outside the markers is preserved). Default false so
+   *  first-time users aren't surprised. */
+  autoRefreshSnippets?: boolean;
 }
 
 export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {

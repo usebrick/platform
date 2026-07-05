@@ -3,7 +3,12 @@ import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
-import { runPrScan, formatPrReport, prExitCode } from '../pr';
+import {
+  runPrScan,
+  runPrScanFromDiffFile,
+  formatPrReport,
+  prExitCode,
+} from '../pr';
 import type { PrFormat } from '../pr';
 import { parseCount, parseThreshold } from '../options.js';
 
@@ -34,6 +39,12 @@ export function registerPr(program: Command): void {
     .option('--format <text|json|markdown>', 'output format', 'text')
     .option('--threshold <n>', 'score threshold (overrides config.prScoreThreshold)', parseThreshold)
     .option('--max-files <n>', 'cap on files scanned', parseCount, 500)
+    // v0.42.0 (Sprint 3, §3c.1): accept a unified-diff file as the
+    // change list. Used by `slopbrick-review.yml` to score PRs that
+    // triggered on `pull_request opened`. Bypasses git refs entirely
+    // so the action works on shallow clones and forks. Mutually
+    // exclusive with `--base`/`--head`.
+    .option('--diff <file>', 'unified-diff file (overrides --base/--head; meant for CI/Action use)')
     .action(
       async (
         cmdOptions: {
@@ -42,6 +53,7 @@ export function registerPr(program: Command): void {
           format?: string;
           threshold?: number;
           maxFiles?: number;
+          diff?: string;
         },
         command: Command,
       ) => {
@@ -57,13 +69,19 @@ export function registerPr(program: Command): void {
               : 'text';
 
           const { config } = await runScan({ ...options, workspace: cwd });
-          const result = await runPrScan(cwd, config, {
-            base: cmdOptions.base,
-            head: cmdOptions.head,
-            format,
-            threshold: cmdOptions.threshold,
-            maxFiles: cmdOptions.maxFiles,
-          });
+          const result = cmdOptions.diff
+            ? await runPrScanFromDiffFile(cwd, config, cmdOptions.diff, {
+                format,
+                threshold: cmdOptions.threshold,
+                maxFiles: cmdOptions.maxFiles,
+              })
+            : await runPrScan(cwd, config, {
+                base: cmdOptions.base,
+                head: cmdOptions.head,
+                format,
+                threshold: cmdOptions.threshold,
+                maxFiles: cmdOptions.maxFiles,
+              });
           logger.info(formatPrReport(result, { format }));
           process.exit(prExitCode(result));
         } catch (err) {

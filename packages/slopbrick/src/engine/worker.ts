@@ -211,6 +211,44 @@ export async function scanFile(
     const triggeredRuleIds = Array.from(new Set(issues.map((i) => i.ruleId)));
     const compScore = compositeScore(triggeredRuleIds, loadSignalStrength());
 
+    // v0.42.0 (Sprint 3, §3b.5): re-run composite rules now that we
+    // know the full per-file fire-set. Composites read
+    // `facts.compositeFireSet` (the unique ruleIds that fired on
+    // this file) and decide whether to emit a synthetic Issue iff
+    // at least `minMatch` of their members fired. We attach the set
+    // to `facts` so the previously-evaluated composite rules can
+    // run a second pass over the resolved fire-set.
+    const fireSet = new Set(triggeredRuleIds);
+    const factsWithFireSet = Object.assign(facts, {
+      compositeFireSet: fireSet,
+    }) as typeof facts & { compositeFireSet: ReadonlySet<string> };
+    for (const { rule } of rules) {
+      if (!rule.id.startsWith('composite/')) continue;
+      try {
+        const compositeIssues = rule.analyze(
+          rule.create({
+            config,
+            filePath,
+            cwd,
+            framework: config.framework,
+            uiLibraries: config.uiLibraries,
+            hasTailwind: config.hasTailwind,
+            supportsRsc: config.supportsRsc,
+            hotspotIssues: [],
+          }),
+          factsWithFireSet,
+        );
+        if (compositeIssues.length > 0) {
+          issues.push(...compositeIssues);
+          for (const ci of compositeIssues) fireSet.add(ci.ruleId);
+        }
+      } catch (err) {
+        if (process.env.SLOP_AUDIT_DEBUG === '1') {
+          console.error(`[worker] composite ${rule.id} threw: ${(err as Error).message}`);
+        }
+      }
+    }
+
     const gapValues = collectGapValues(facts);
     const styleSources = collectStyleSources(facts);
     const elementTags = facts.v2.jsx.elements.map((e) => e.tag);

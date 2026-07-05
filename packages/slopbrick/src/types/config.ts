@@ -70,6 +70,106 @@ export interface Rule<Context = unknown> {
   analyze(context: Context, facts: ScanFacts): Issue[];
 }
 
+/**
+ * v0.42.0 (Sprint 3, task 3b.1): composite rule type. A composite
+ * fires when *at least `minMatch`* of its member `ruleIds` fire on the
+ * same file. Members are referenced by their existing `Rule.id`.
+ *
+ * Structurally parallel to `Rule<Context>` so the `RuleRegistry`
+ * treats it uniformly: same `create` + `analyze` lifecycle, same
+ * `defaultOff` opt-in semantics, same `severity` for reporter
+ * weighting. The engine wires composites after per-file `RuleRegistry`
+ * (see `engine/worker.ts` + task 3b.5).
+ *
+ * Design choice: `CompositeRule<Context>` is its own interface rather
+ * than a `Rule<Context>` variant because (a) it carries member-rule
+ * metadata (`ruleIds`, `minMatch`) that vanilla rules do not, and
+ * (b) the union of the two types would force every consumer to
+ * narrow, defeating the structural-parallelism goal.
+ */
+export interface CompositeRule<Context = unknown> {
+  id: string;
+  category: Category;
+  severity: Severity;
+  aiSpecific: boolean;
+  /** Short description shown by `slopbrick rules`. */
+  description?: string;
+  /** v0.42.0: composite rules are opt-in by default. */
+  defaultOff?: boolean;
+  /** Member rule IDs (sorted, unique). The composite fires when
+   *  at least `minMatch` of these fire on the same file. */
+  ruleIds: string[];
+  /** Minimum number of `ruleIds` that must fire together. */
+  minMatch: number;
+  create(context: RuleContext): Context;
+  analyze(context: Context, facts: ScanFacts): Issue[];
+}
+
+/**
+ * v0.42.0 (Sprint 3, task 3b.3): clusterer-emitted composite rule
+ * entry. The shape that `engine/cluster.ts` produces and that the
+ * `RuleRegistry` loader materializes into `CompositeRule<Context>`
+ * instances. Lives next to `CompositeRule<Context>` so the public
+ * type surface for empirical composites is in one place.
+ *
+ * Fields mirror the spec in `docs/superpowers/sprint-0.41-0.42.md`
+ * §3b STEP 5: id, ruleIds, minMatch, severity, defaultOff,
+ * description, calibration, provenance.
+ */
+export interface CompositeRuleEntry {
+  id: string;
+  ruleIds: string[];
+  minMatch: number;
+  severity: Severity;
+  defaultOff: true;
+  description: string;
+  calibration: {
+    recall: number;
+    /** False-positive rate, FP / neg_count. */
+    FP: number;
+    precision: number;
+    F1: number;
+    nFiles: number;
+  };
+  provenance: {
+    seed: 'auto-cluster' | 'hand-curated-by-brief';
+    discoveredAt: string;
+    nFiles: number;
+    members: number;
+    /** Strongest NPMI edge among cluster members (0 if singleton). */
+    npmi: number;
+    /** Strongest-edge Fisher's p (1 if singleton). */
+    fisherP: number;
+  };
+}
+
+/**
+ * v0.42.0 (Sprint 3, task 3b.2): input to the empirical composite
+ * clusterer. `fireMatrix` is the per-file fired-rule-set map; the
+ * other fields are optional inputs to STEP 4 calibration.
+ */
+export interface ClusterInput {
+  /** Per-file fired-rule-set map (file id → set of rule IDs that fired). */
+  fireMatrix: ReadonlyMap<string, ReadonlySet<string>>;
+  /** Positive (gold-standard) file IDs for recall/precision. */
+  positiveFiles?: ReadonlySet<string>;
+  /** Severity of each member rule; used to pick `severity = worst`. */
+  memberSeverities?: ReadonlyMap<string, Severity>;
+  /** Algorithm parameter overrides (all optional). */
+  params?: ClusterParamOverrides;
+  /** ISO timestamp embedded in `provenance.discoveredAt` for tests. */
+  now?: string;
+}
+
+export type ClusterParams = {
+  minSupport: number;
+  minNPMI: number;
+  fisherAlpha: number;
+  minClusterSize: number;
+};
+
+export type ClusterParamOverrides = Partial<ClusterParams>;
+
 
 
 export interface ResolvedConfig {

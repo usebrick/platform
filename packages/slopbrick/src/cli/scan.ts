@@ -61,6 +61,8 @@ import {
 import { logger, setLoggerQuiet } from '../engine/logger';
 import { runProjectRules } from '../rules/project';
 import { RuleRegistry } from '../rules/registry';
+import { discoverAndLoad } from '../rules/composite-loader';
+import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
@@ -456,7 +458,14 @@ export async function runScan(
   const { report, noIncreaseFailure } = await finalizeReport({
     cwd,
     config,
-    options,
+    options: {
+      ...options,
+      // v0.42.0 (§3a.4): forward the opt-in flag through to
+      // `persistRun`, which calls `refreshSnippets` post-scan.
+      autoRefreshSnippets:
+        Boolean(options.autoRefreshSnippets) ||
+        Boolean((config as { autoRefreshSnippets?: boolean }).autoRefreshSnippets),
+    },
     results,
     aggregated,
     allIssues,

@@ -465,3 +465,155 @@ function formatPrMarkdown(result: PrResult): string {
 export function prExitCode(result: PrResult): 0 | 1 {
   return result.totalScore > result.threshold ? 1 : 0;
 }
+
+
+
+/**
+ * v0.42.0 (Sprint 3, §3c.1): score a PR from a unified-diff file
+ * instead of two git refs. The GitHub Action wrapper produces the
+ * diff via `git diff base...head > /tmp/pr.diff` and passes the
+ * path via `--diff /tmp/pr.diff`. No git binary at runtime when
+ * the diff file is supplied.
+ *
+ * Extracting changed paths: scan `+++ b/path` lines in the diff
+ * (with `--- a/path` mirror for deletions). The added lines
+ * themselves are not scored in isolation; we score the current
+ * on-disk contents of each changed path (matches the conventional
+ * "PR review" semantic). Caller can pre-filter via `git diff -U0`
+ * for a deltascope view.
+ */
+export function parseUnifiedDiffPaths(diff: string): string[] {
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  for (const line of diff.split(/\r?\n/)) {
+    const m = /^\+\+\+\s+(?:b\/)?(\S.*)$/.exec(line);
+    if (!m) continue;
+    const path = m[1]!;
+    if (path === '/dev/null' || path === 'dev/null') continue;
+    if (seen.has(path)) continue;
+    seen.add(path);
+    paths.push(path);
+  }
+  return paths;
+}
+
+export async function runPrScanFromDiffFile(
+  cwd: string,
+  config: ResolvedConfig,
+  diffPath: string,
+  options: Omit<PrOptions, 'base' | 'head'> = {},
+): Promise<PrResult> {
+  const threshold = options.threshold ?? config.prScoreThreshold ?? 20;
+  const maxFiles = options.maxFiles ?? 500;
+
+  const { existsSync, readFileSync } = await import('node:fs');
+  const { isAbsolute, resolve: resolvePath } = await import('node:path');
+  if (!existsSync(diffPath)) {
+    throw new Error(`Diff file not found: ${diffPath}`);
+  }
+  const diffAbs = isAbsolute(diffPath) ? diffPath : resolvePath(cwd, diffPath);
+  const diff = readFileSync(diffAbs, 'utf-8');
+  const changedPaths = parseUnifiedDiffPaths(diff);
+  if (changedPaths.length === 0) {
+    return emptyPrResult(threshold);
+  }
+  return scoreChangedPaths(cwd, config, changedPaths, maxFiles, threshold);
+}
+
+async function scoreChangedPaths(
+  cwd: string,
+  config: ResolvedConfig,
+  paths: string[],
+  maxFiles: number,
+  threshold: number,
+): Promise<PrResult> {
+  const { existsSync, statSync } = await import('node:fs');
+  const { resolve: resolvePath } = await import('node:path');
+  const { readFile } = await import('node:fs/promises');
+  const { scanFile } = await import('../engine/worker.js');
+  const limited = paths.slice(0, maxFiles);
+  const files: PrFileResult[] = [];
+  let totalScore = 0;
+  const byCategory: Record<string, number> = {};
+  const bySeverity: Record<Severity, number> = { low: 0, medium: 0, high: 0 };
+  let constitutionViolations = 0;
+
+  for (const rel of limited) {
+    const abs = resolvePath(cwd, rel);
+    if (!existsSync(abs) || !statSync(abs).isFile()) continue;
+    let source: string;
+    try {
+      source = await readFile(abs, 'utf-8');
+    } catch {
+      continue;
+    }
+    let result;
+    try {
+      // scanFile signature: (filePath, config, registry?, cwd?). Read
+      // the source from disk and pass it through `parseSource` is the
+      // engine's design; we re-use `scanFile` because its parsed
+      // intermediate flows match what the engine emits for ordinary
+      // CLI scans. The `source` argument is read for caller convenience
+      // and is unchanged.
+      result = await scanFile(abs, config, undefined, cwd);
+    } catch {
+      continue;
+    }
+    if (result.parseError) continue;
+
+    const issues = result.issues;
+    let slopPoints = 0;
+    const issueEntries: PrIssueEntry[] = [];
+    for (const issue of issues) {
+      slopPoints += SEVERITY_WEIGHTS[issue.severity] ?? 0;
+      byCategory[issue.category] = (byCategory[issue.category] ?? 0) + 1;
+      bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1;
+      issueEntries.push({
+        ruleId: issue.ruleId,
+        severity: issue.severity,
+        line: issue.line,
+        category: issue.category,
+        message: issue.message,
+      });
+    }
+    totalScore += slopPoints;
+    files.push({
+      file: abs,
+      relPath: rel,
+      score: slopPoints,
+      issueCount: issueEntries.length,
+      constitutionViolationCount: 0,
+      slopPoints,
+      issues: issueEntries,
+      constitutionViolations: [],
+    });
+  }
+
+  return {
+    base: 'diff',
+    head: 'diff',
+    generatedAt: new Date().toISOString(),
+    passed: totalScore <= threshold,
+    threshold,
+    totalScore,
+    filesChanged: files.length,
+    byCategory,
+    bySeverity,
+    files,
+  };
+}
+
+function emptyPrResult(threshold: number): PrResult {
+  return {
+    base: 'diff',
+    head: 'diff',
+    generatedAt: new Date().toISOString(),
+    passed: true,
+    threshold,
+    totalScore: 0,
+    filesChanged: 0,
+    byCategory: {},
+    bySeverity: { low: 0, medium: 0, high: 0 },
+    files: [],
+  };
+}

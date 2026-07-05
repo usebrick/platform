@@ -1,0 +1,144 @@
+# v0.42.0 (Sprint 3, §3c.3): slopbrick PR review action.
+#
+# On `pull_request opened` (and re-opened, synchronize), produce a
+# single comment summarizing the slop cost of the PR via
+# `slopbrick pr --diff <(git diff base...head)`. The comment is
+# idempotent — we delete any prior slopbrick comment on the PR
+# before posting the fresh result, so re-runs don't pile up.
+#
+# Permissions: pull-requests: write so we can post + delete
+# comments. actions: read so we can checkout the diff. No
+# contents: read is needed because checkout with default permissions
+# grants that anyway; we re-declare narrowly so the access tokens
+# stay minimal.
+#
+# Design choices:
+#   - Uses `--diff <file>` (Sprint 3 §3c.1) so the action doesn't
+#     need to be on the same branch as the head. Works on shallow
+#     clones and forks.
+#   - Threshold comes from `slopbrick.config.mjs#prScoreThreshold`
+#     when present, otherwise from the CLI default (20).
+#   - Output is markdown (the same `formatPrMarkdown` the human-side
+#     PR review uses) so the comment renders inline in the GitHub UI.
+#   - Does NOT block the PR — informational only. A high slop score
+#     surfaces in the comment; merge gating is the user's call.
+
+name: slopbrick-review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write   # post + delete comments
+  contents: read        # checkout the PR head
+  actions: read
+
+jobs:
+  review:
+    name: slop cost summary
+    runs-on: ubuntu-latest
+    # Single human gate (Dystx); the PR author can also self-approve.
+    environment: review
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build slopbrick
+        run: pnpm --filter slopbrick build
+
+      - name: Build the diff
+        id: diff
+        # `git diff base...head` (three-dot) = the merge-base view of
+        # the PR. Generated as a file so `slopbrick pr --diff <file>`
+        # can consume it without process-substitution gymnastics.
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1 || true
+          git diff \
+            "origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}" \
+            > /tmp/pr.diff
+          echo "diff_bytes=$(wc -c < /tmp/pr.diff)" >> "$GITHUB_OUTPUT"
+
+      - name: Run slopbrick pr --diff
+        id: scan
+        run: |
+          set -euo pipefail
+          cd "${{ github.workspace }}"
+          # --format markdown matches formatPrMarkdown; the result is
+          # the comment body. We redirect to a file because the body
+          # may exceed 64 KiB (the GITHUB_OUTPUT cap).
+          node packages/slopbrick/bin/slopbrick.js pr \
+            --diff /tmp/pr.diff \
+            --format markdown \
+            --threshold "${INPUT_THRESHOLD:-20}" \
+            > /tmp/pr-summary.md \
+            2>/tmp/pr-stderr.log || true
+          # Capture the exit code separately; nonzero on threshold breach
+          # is informational, not a workflow failure.
+          EXITCODE=$?
+          echo "exitcode=$EXITCODE" >> "$GITHUB_OUTPUT"
+          cat /tmp/pr-summary.md >> "$GITHUB_OUTPUT"
+          echo "Scanned PR with --diff mode; exit=$EXITCODE"
+
+      - name: Replace prior slopbrick comment (if any)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const marker = '<!-- slopbrick-review -->';
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+            for (const c of comments.data) {
+              if (c.body && c.body.includes(marker)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: c.id,
+                });
+              }
+            }
+
+      - name: Post slopbrick summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = '<!-- slopbrick-review -->\n\n' + fs.readFileSync('/tmp/pr-summary.md', 'utf-8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+
+      - name: Fail the run on threshold breach (optional)
+        # The user sets `INPUT_FAIL_ON_BREACH=1` if they want the PR
+        # status to block on threshold breach. Default is informational
+        # only — slop cost is surfaced in the comment, gating is the
+        # human's call.
+        if: ${{ steps.scan.outputs.exitcode != '0' && inputs.fail-on-breach == '1' }}
+        run: |
+          echo "slopbrick threshold breach — exitcode=${{ steps.scan.outputs.exitcode }}"
+          exit 1

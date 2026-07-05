@@ -62,6 +62,10 @@ export interface PersistRunInput {
   incrementalSummary: { skipped: number; rescanned: number } | undefined;
   telemetryEnabled: boolean;
   machineReadableStdout: boolean;
+  /** v0.42.0 (§3a.4): when true, refreshSnippets() rewrites the
+   *  managed slopbrick block in AGENTS.md / CLAUDE.md after a
+   *  successful scan. Default false. */
+  autoRefreshSnippets?: boolean;
 }
 
 export async function persistRun(input: PersistRunInput): Promise<void> {
@@ -250,4 +254,27 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // gracefully: legacy payloads return `undefined` for `inventory`
   // and the diff math treats that as "no data".
   recordTelemetry(cwd, report, results, config, patternInventory);
+
+  // v0.42.0 (Sprint 3, §3a.3): post-scan snippet refresh. Opt-in via
+  // the `--refresh-snippets` flag or
+  // `slopbrick.config.mjs#autoRefreshSnippets: true`. Runs LAST so
+  // a partial failure earlier in this function doesn't surface
+  // stale data in AGENTS.md. Wrapped in try/catch because the
+  // snippet rewrite is a side-channel — a failure here is not a
+  // scan failure.
+  if (input.autoRefreshSnippets) {
+    try {
+      const { refreshSnippets } = await import('../../snippet/refresh.js');
+      const outcome = refreshSnippets(cwd, registry.getRules());
+      if (outcome.rewritten.length > 0 && !options.quiet && !machineReadableStdout) {
+        logger.info(
+          `Snippet refresh: rewrote ${outcome.rewritten.length} file(s) (${outcome.rewritten.join(', ')}).`,
+        );
+      }
+    } catch (err) {
+      if (options.quiet !== true && !machineReadableStdout) {
+        logger.warn(`snippet refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  }
 }
