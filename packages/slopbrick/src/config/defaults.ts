@@ -226,6 +226,14 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
       '**/src/rules/**',     // rule definitions are meta-code
       '**/snippet/**',       // RULE_HINTS examples are intentional bad code
       '**/tests/**',         // all test files (fixtures + unit + integration)
+      // v0.42.0 (post-self-scan cleanup): language visitors are
+      // intentional clones — see the §3 v0.42.0 release notes for
+      // the design rationale. `dup/identical-block` fires 100+
+      // times during self-scan because each visitor shares the
+      // same service-suffix arrays and import-walking preamble.
+      // Suppress these from the self-scan noise floor; they
+      // remain on for user codebases.
+      '**/src/engine/visitors/**',
     ],
   },
 };

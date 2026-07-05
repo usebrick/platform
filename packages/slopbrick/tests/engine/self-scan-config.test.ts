@@ -27,12 +27,13 @@ const SLOPBRICK_DIR = resolve(__dirname, '..', '..');
 
 describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
   describe('defaults', () => {
-    it('DEFAULT_CONFIG.selfScan excludes **/src/rules/**, **/snippet/**, **/tests/**', () => {
+    it('DEFAULT_CONFIG.selfScan excludes **/src/rules/**, **/snippet/**, **/tests/**, **/src/engine/visitors/**', () => {
       expect(DEFAULT_CONFIG.selfScan).toBeDefined();
       expect(DEFAULT_CONFIG.selfScan?.excludePaths).toEqual([
         '**/src/rules/**',
         '**/snippet/**',
         '**/tests/**',
+        '**/src/engine/visitors/**',
       ]);
     });
 
