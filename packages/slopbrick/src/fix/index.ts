@@ -106,7 +106,9 @@ export async function applyFixes(
         const result = applyLayoutTokenFix(filePath, group.replaces);
         const total = group.replaceApps.length;
         const appliedCount = Math.min(result.applied, total);
-        const skippedCount = total - appliedCount;
+        // v0.42.0: removed unused `skippedCount = total - appliedCount`.
+        // The slice call below uses `appliedCount` directly as the
+        // skip boundary — no separate count variable is needed.
         applied.push(...group.replaceApps.slice(0, appliedCount));
         skipped.push(...group.replaceApps.slice(appliedCount));
       } catch (err) {

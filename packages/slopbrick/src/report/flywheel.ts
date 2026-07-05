@@ -99,30 +99,40 @@ export function loadResearchMetrics(cwd: string): ResearchMetrics | undefined {
   const hasCandidates = existsSync(candidatesPath);
   if (!hasAnalysis && !hasCandidates) return undefined;
 
-  let generatedSampleCount = 0;
-  let generatedRuleCoverage = 0;
-  let candidateYield = 0;
-
-  if (hasAnalysis) {
-    try {
-      const raw = JSON.parse(readFileSync(analysisPath, 'utf8')) as {
-        summary?: { total?: number; coverage?: number };
-      };
-      generatedSampleCount = raw.summary?.total ?? 0;
-      generatedRuleCoverage = raw.summary?.coverage ?? 0;
-    } catch {
-      // Corrupt analysis.json — ignore, don't poison the whole summary.
-    }
-  }
-
-  if (hasCandidates) {
-    try {
-      const raw = JSON.parse(readFileSync(candidatesPath, 'utf8')) as { candidates?: unknown[] };
-      candidateYield = raw.candidates?.length ?? 0;
-    } catch {
-      // Ignore — same rationale as above.
-    }
-  }
+  // v0.42.0 (Tier-3 cleanup): the two try/catch blocks were
+  // identical 8-line boilerplate. Replaced with safeReadJson
+  // calls; both still silently tolerate corrupt JSON (pre-refactor
+  // behavior).
+  const generatedSampleCount = hasAnalysis
+    ? safeReadJson(
+        analysisPath,
+        (parsed) => {
+          const r = parsed as { summary?: { total?: number; coverage?: number } };
+          return r.summary?.total ?? 0;
+        },
+        0,
+      )
+    : 0;
+  const generatedRuleCoverage = hasAnalysis
+    ? safeReadJson(
+        analysisPath,
+        (parsed) => {
+          const r = parsed as { summary?: { total?: number; coverage?: number } };
+          return r.summary?.coverage ?? 0;
+        },
+        0,
+      )
+    : 0;
+  const candidateYield = hasCandidates
+    ? safeReadJson(
+        candidatesPath,
+        (parsed) => {
+          const r = parsed as { candidates?: unknown[] };
+          return r.candidates?.length ?? 0;
+        },
+        0,
+      )
+    : 0;
 
   return {
     generatedSampleCount,
@@ -187,4 +197,31 @@ export function formatFlywheel(summary: FlywheelSummary, options: { json?: boole
   }
 
   return lines.join('\n');
+}
+
+/**
+ * v0.42.0 (Tier-3 cleanup): local helper to deduplicate the
+ * "try read + parse JSON + ignore on error" pattern that appeared
+ * twice in loadResearchMetrics. Originally the same 8-line block
+ * was repeated for `.slopbrick/flywheel/analysis.json` and
+ * `rule-candidates.json`; the dup/identical-block rule fired
+ * 8 times during self-scan.
+ *
+ * Not exported — this is flywheel-internal. Live JSON-shape errors
+ * (corrupted file, missing fields) are silently absorbed and the
+ * caller's `default` is returned; that's the pre-refactor behavior
+ * preserved by this extraction.
+ */
+function safeReadJson<T>(
+  path: string,
+  extract: (parsed: unknown) => T,
+  fallback: T,
+): T {
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    return extract(parsed);
+  } catch {
+    // Pre-refactor: silent ignore on JSON parse / read errors.
+    return fallback;
+  }
 }

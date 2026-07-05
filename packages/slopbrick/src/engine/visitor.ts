@@ -216,8 +216,6 @@ export function extractFacts(
   config?: import('../types').ResolvedConfig,
 ): ScanFacts {
   const lineOffsets = buildLineOffsets(source);
-  const isTypeScript = /\.tsx?$/i.test(filePath);
-  const NON_JSX_FRAMEWORKS = new Set(['vue', 'svelte', 'astro']);
 
   // build at the bottom of this function. The legacy flat-shape fields
   // (interactiveElements, imageElements, consoleCalls, etc.) have been

@@ -373,7 +373,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         // CLI globs) so visual codemods run on every .tsx file scanned.
         const scannedFiles = results.map((r: FileScanResult) => r.filePath);
         const fixResults = await applyFixes(report, config, scannedFiles);
-        const { totalApplied, totalSkipped, hasErrors } = printFixSummary(fixResults, options.quiet ?? false);
+        const { hasErrors } = printFixSummary(fixResults, options.quiet ?? false);
 
         if (!options.showFixesDiff && !options.quiet) {
           logger.info('Tip: pass --show-fixes-diff to see the unified diff of proposed changes.');

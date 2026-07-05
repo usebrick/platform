@@ -99,7 +99,11 @@ export function buildTrigramLM(
     logProb(context, t) {
       const ctxKey = context.slice(-2).join('|');
       const triKey = `${ctxKey}|${t}`;
-      const biKey = context.slice(-1).join('|') + '|' + t;
+      // v0.42.0: removed unused `biKey` (bigram lookup key). The
+      // trigram logProb uses triKey + ctxKey directly; the bigram
+      // model would have been a fallback for short contexts but
+      // was never wired in. If a future change needs bigram-backed
+      // smoothing, reintroduce here.
       // Trigram probability: P(t | c2, c1) = (count(c2,c1,t) + α) /
       // (count(c2,c1) + α * V)
       const triCount = tri.get(triKey) ?? 0;

@@ -358,7 +358,11 @@ function formatWhyFailing(report: ProjectReport): string {
     const [ruleId, info] = ranked[i]!;
     const fileCount = info.files.size;
     const fileHint = fileCount > 0 ? ` across ${fileCount} file${fileCount === 1 ? '' : 's'}` : '';
-    const catShort = CATEGORY_GLOSSARY[info.count > 0 ? '' : '']?.short;
+    // v0.42.0: removed the `catShort` const that was computed and never read.
+    // The line below already derives `cat` correctly from the actual
+    // sampleIssue's category. (Separately, the prior ternary
+    // `info.count > 0 ? '' : ''` was always returning `''` regardless of
+    // info.count — a separate, pre-existing bug. Filed as a follow-up.)
     const sampleIssue = report.issues.find((i) => i.ruleId === ruleId);
     const cat = sampleIssue ? CATEGORY_GLOSSARY[sampleIssue.category]?.short : null;
     const catHint = cat ? chalk.dim(` [${cat}]`) : '';

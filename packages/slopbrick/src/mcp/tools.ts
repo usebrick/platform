@@ -607,18 +607,13 @@ export async function handleToolCall(
   args: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<ToolResult> {
-  // Soft-warn the agent when a deprecated tool is called. The call still
-  // succeeds (we keep backward compatibility through v0.12.x) but the
-  // response carries a `deprecation` field the MCP client can surface.
-  const deprecation = getDeprecation(toolName);
-  const deprecationNotice = deprecation
-    ? {
-        tool: toolName,
-        replacedBy: deprecation.replacedBy,
-        removedIn: deprecation.removedIn ?? 'next major',
-        reason: deprecation.reason,
-      }
-    : undefined;
+  // v0.42.0: removed unused `deprecationNotice` const. The planned
+  // "soft-warn agent when deprecated tool is called" surface was
+  // never wired into the response builder (each case returns its own
+  // shaped ToolResult). The const was dead-on-arrival — left over from
+  // an earlier prototype. getDeprecation(toolName) is no longer
+  // called here; if we want to wire the warning in a future change,
+  // add it back at this site.
 
   switch (toolName) {
     case 'slop_scan_file':
