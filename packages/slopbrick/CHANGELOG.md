@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.41.0] - 2026-07-05 — Temporal drift + compositeScore surfaces (Sprint 2 wrap)
+
+v0.41.0 closes Sprint 2 of the slopbrick evolution plan. Three
+workstreams ship together:
+
+1. **Sprint 2 architectural foundations** (`exitOverride` dispatcher,
+   `scans.jsonl` inventory summary, `runSuggest` consolidation) — 911 LoC
+   shipped in v0.41.0's preparation commit. The 13-finding architecture
+   review (F1–F13, archived at
+   `docs/superpowers/plans/2026-07-04-sprint-0.41-0.42-recovered.md §1.5`)
+   found three high-severity risks (engine-purity comment misleading,
+   `process.exit` in 59 of 75 action callbacks, telemetry didn't carry
+   inventory for `--since`). All three are fixed by the §2.0 dispatcher
+   (`src/cli/commands/_shared.ts`), §2a.1 telemetry extension
+   (`src/engine/telemetry.ts`), and §2b.0 MCP consolidation
+   (`src/mcp/tools.ts`). One file (`scripts/pre-push`, the symlinked
+   pre-push hook) re-runs the entire `publish.yml` gate on `git push
+   origin main`.
+
+2. **Temporal drift — `slopbrick drift --temporal-since <date>`**
+   (`§2a`). The new option computes a pattern set-difference between
+   the most-recent scan and a baseline scan (oldest scan
+   at-or-after `--temporal-since <iso-date>`, or the literal
+   `'baseline'` for the oldest scan in `scans.jsonl`). Pure-function
+   over the existing telemetry ledger — no re-scan needed.
+   Cross-checks introduced patterns against the declared constitution
+   (`config.constitution`) and surfaces the undeclared subset as a
+   CI-friendly exit-code signal. Naming note: the option was named
+   `--since <date>` in the plan, but `--since` and `--baseline` were
+   already taken by global scan flags in `program.ts`. Renamed to
+   `--temporal-since` to keep both surfaces disjoint without changing
+   the argument type. Exit code: 0 when nothing is undeclared,
+   1 when at least one introduced pattern is not in the declared
+   constitution.
+
+3. **compositeScore surfaces — pretty, sarif, mcp** (`§2b`). The
+   project-level Bayesian aggregate (computed since v0.18.2, previously
+   only visible as a post-scan stderr log line at `persistRun.ts:230`)
+   now reaches three named user surfaces: pretty reporter, SARIF tool
+   driver properties, MCP `slop_suggest` JSON payload. All three gate
+   on `report.compositeScore` being defined; pre-v0.18.2 reports
+   keep their original output verbatim. One scope divergence from the
+   plan: the MCP payload omits `topContributors` (rule ranking by
+   log-likelihood contribution) because the persisted `HealthFile`
+   shape doesn't carry it. Adding `topContributors` requires bumping
+   `@usebrick/core`'s `STRUCTURE_SCHEMA_VERSION`, which `AGENTS.md`
+   gates on a breaking change; it lands in v0.42.0 with the
+   empirical-composites engine (§3b), which produces ranking data
+   natively.
+
+Quality gates: typecheck green, build green, scoped tests 332/332 green
+(`cli + report + mcp + telemetry`). Full test suite reproduces the
+four pre-existing flakes on `main` (3× `calibration-expanded`
+chunk-write timeouts, 1× `dup/structural-clone` 1MB perf flake) — none
+touch v0.41.0 surface.
+
 ## [0.40.0] - 2026-07-04 — Self-calibration loop (relaxation half)
 
 v0.40.0 closes the one-way flywheel ratchet that's been the
