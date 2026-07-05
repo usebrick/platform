@@ -1,5 +1,155 @@
 # Changelog
 
+## [0.42.0] - 2026-07-05 — Sprint 3 (empirical composites + AGENTS.md refresh + PR Action)
+
+v0.42.0 closes Sprint 3 of the slopbrick evolution plan. Three
+workstreams land together — the empirical-composites engine
+(§3b), AGENTS.md auto-refresh on scan (§3a), and the PR review
+GitHub Action surface (§3c). All opt-in by default; nothing in
+this release changes the un-aided scan output.
+
+### Empirical composite rules (Sprint 3, §3b)
+
+- **New `src/engine/cluster.ts`** — in-tree single-linkage
+  clustering (HDBSCAN-style, no runtime dep). 5-step algorithm:
+    1. **STEP 1** — rule pre-filter by adaptive support
+       (`max(5%, 5 / |files|)`)
+    2. **STEP 2** — pairwise NPMI (Bouma 2009) + Fisher's exact
+       test on the 2×2 contingency table (correct for sparse
+       cells where chi-squared's Cochran rule fails)
+    3. **STEP 3** — union-find single-linkage clustering on the
+       edge-induced graph; threshold-free (no `k` parameter)
+    4. **STEP 4** — per-cluster calibration: sweep
+       `minMatch ∈ {1..|C|}`, pick the value maximizing F1
+       subject to AGENTS.md's documented `recall/FP ≥ 1.5×`
+       gate. Anti-correlated clusters are dropped.
+    5. **STEP 5** — emit `CompositeRuleEntry` with sha1-derived
+       id, `defaultOff: true`, full provenance.
+- **New `src/rules/composite-loader.ts`** — reads the auto-discovered
+  `composites.json` ledger plus the user-declared
+  `slopbrick.config.mjs#compositeRules` array, materializes each
+  into a `Rule`, and merges idempotently into the registry. A
+  per-file `facts.compositeFireSet` carries the run-time set of
+  fired rule ids, so the composite analyzer is just another
+  `Rule.analyze` step.
+- **New `slopbrick composite discover`** — runs the clusterer on
+  the existing `scans.jsonl` telemetry, writes `composites.json`
+  next to `signal-strength.json`. Appends the hand-curated seed
+  when the ledger is empty (cold-start). Prints per-cluster
+  recall/FP/F1.
+- **New `slopbrick composite enable <id>`** — adds one composite
+  to `slopbrick.config.mjs#compositeRules` so the next scan
+  applies it.
+- **New `slopbrick composite list`** — pretty-prints the current
+  composite ledger.
+- **Hand-curated seed** at `src/rules/composite-seed.ts`,
+  provenance-tagged `seed: "hand-curated-by-brief"`, `defaultOff: true`
+  until calibrated. The brief referred to
+  `segment_surprisal_cv` (underscore); the actual id is
+  `ai/segment-surprisal-cv` (hyphen). Corrected in the seed.
+
+### AGENTS.md auto-refresh (Sprint 3, §3a)
+
+- **`<!-- slopbrick:begin:v3 -->` / `<!-- slopbrick:end:v3 -->`**
+  markers delimit a "managed by slopbrick" block in
+  `AGENTS.md` / `CLAUDE.md`. `wrapWithMarkers(level, body)` in
+  `src/snippet/generators.ts` prepends a level-1 "managed-section"
+  heading so the block is discoverable in any markdown viewer.
+- **`safeRewrite` in `src/snippet/render.ts`** — three branches:
+  - both markers present → replace inner block, leave the
+    user's edits above and below untouched
+  - neither marker → **fail closed** (no-op, return original);
+    user wrote the file by hand, don't clobber
+  - one marker (intentional trim or prior rewrite break) →
+    warn + skip, surface via `RefreshResult.mismatched`
+  The atomically-renamed `path.tmp → path` write avoids a torn
+  rewrite on crash mid-flight.
+- **`refreshSnippets(cwd, rules)` in `src/snippet/refresh.ts`**
+  iterates AGENTS.md and CLAUDE.md. Reports `rewritten`,
+  `failClosed`, `mismatched`, `absent` so callers can audit.
+- **Opt-in flag** — `--refresh-snippets` on the CLI, or
+  `autoRefreshSnippets: true` in `slopbrick.config.mjs`.
+  Default `false` so first-time users aren't surprised.
+- **Hook fire site** in `src/cli/report/persistRun.ts` — runs
+  AFTER `recordTelemetry` so a partial scan failure doesn't
+  surface stale data in the rewritten block. Wrapped in try/catch
+  because the snippet refresh is a side-channel — failures here
+  don't fail the scan.
+
+### PR review primary surface (Sprint 3, §3c)
+
+- **`slopbrick pr --diff <file>`** — accepts a unified-diff file
+  (e.g. `git diff base...head > /tmp/pr.diff`). `parseUnifiedDiffPaths`
+  in `src/cli/pr.ts` extracts `+++ b/path` headers; the changed
+  files are then scored at their current on-disk contents. No
+  git binary at runtime, so the action works on shallow clones
+  and forks. Mutually exclusive with `--base`/`--head`.
+- **GitHub Action** at
+  `.github/workflows/slopbrick-review.yml`. On `pull_request
+  opened`/`reopened`/`synchronize`: checkout, build, generate
+  `/tmp/pr.diff`, run `slopbrick pr --diff /tmp/pr.diff
+  --format markdown`, post a single summary comment via
+  `actions/github-script@v7`. Prior `<!-- slopbrick-review -->`
+  comments are deleted first so re-runs are idempotent.
+  Permissions narrowed to `pull-requests: write`,
+  `contents: read`, `actions: read`. The new `review`
+  environment is the (single) human gate — the PR author can
+  self-approve; merge gating remains the user's call.
+
+### F6 fix (architecture review, §1.5)
+
+Deleted the dead 2-arg `register(id, factory)` overload on
+`RuleRegistry`. All callers use the 1-arg `register(rule)` form.
+Added `get(id)` and `has(id)` for the composite materialization
+in `composite-loader.ts`.
+
+### Tests added
+
+- `tests/engine/composite-cluster.test.ts` — 31 tests covering
+  adaptive support, buildContingency + NPMI + Fisher's,
+  single-linkage cluster, filesForComposite + calibrateCluster
+  (including the AGENTS.md gate), top-level runClusterer
+  end-to-end.
+- `tests/rules/composite-loader.test.ts` — 11 tests:
+  readComposites (missing/malformed/non-array), compositeToRule
+  (Issue emission gated on `minMatch`), loadCompositesInto
+  (idempotent + replace), discoverAndLoad (auto + user
+  merged), writeComposites (atomic write).
+- `tests/snippet/refresh.test.ts` — 13 tests: marker constants,
+  wrapWithMarkers, safeRewrite (both/neither/one/reversed),
+  generateAgentsMdSnippet (round-trip), refreshSnippets
+  (rewritten / absent / fail-closed).
+- `tests/cli/pr.test.ts` — 5 new tests for `parseUnifiedDiffPaths`
+  (header extraction, deduplication, `/dev/null` skip) and
+  `runPrScanFromDiffFile` (missing-file error, empty-diff result).
+
+### Scope divergence from plan
+
+The plan's §3b.2 call for the MCP `topContributors` slot
+on `compositeScore` was already deferred to v0.42.0 (from
+v0.41.0); it does not yet exist (the persisted `HealthFile`
+shape doesn't carry it). Adding `topContributors` requires a
+`STRUCTURE_SCHEMA_VERSION` bump, which `AGENTS.md` gates on a
+breaking change. The slot lands in v0.43.0 alongside any
+subsequent `HealthFile` schema work.
+
+### Notes
+
+- v0.42.0 is a **purely additive** release. No `HealthFile`
+  schema bumps, no `@usebrick/core` bumps, no breaking
+  signature changes. All opt-in surfaces (composites + snippet
+  refresh + PR Action) default to "off until the user opts in."
+- The empirical clusterer is **best-effort, audit-first**. The
+  `discover` command surfaces clusters that pass the calibration
+  gate but flags them with `defaultOff: true`. The user audits
+  the cluster via `composite list`, opts one in with `enable`,
+  and the next scan wires it in.
+- Self-scan scores reproduced: AI Slop Score `53.4/100`,
+  Engineering Hygiene `92`, no regression vs v0.41.0. The 7
+  newly-scored LOW issues are dead-import warnings on
+  `_shared.ts` / `discoverAndLoad` paths in `cli/program.ts`;
+  not blockers for this release (filed as a follow-up).
+
 ## [0.41.0] - 2026-07-05 — Temporal drift + compositeScore surfaces (Sprint 2 wrap)
 
 v0.41.0 closes Sprint 2 of the slopbrick evolution plan. Three
