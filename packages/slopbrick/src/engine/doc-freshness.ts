@@ -94,16 +94,29 @@ const ENGLISH_WORD_DENYLIST = new Set([
 
 /**
  * Extract inline code spans from markdown. Returns the literal text +
- * 1-based line + column + the index in the source.
+ * 1-based line + column + the index in the source + an `inBlockComment`
+ * flag set when the span falls inside a `/* ... *​/` block (the most
+ * common source of false-positive identifier-references in JSDoc
+ * comments).
+ *
+ * v0.42.0: added the inBlockComment annotation. Same path as
+ * `extractMarkdownLinks` — single source pre-scan of block-comment
+ * ranges (declared later in this file), binary-searched for each span.
  */
 export function extractInlineCodeSpans(
   source: string,
-): Array<{ text: string; line: number; column: number; index: number }> {
-  const hits: Array<{ text: string; line: number; column: number; index: number }> = [];
+): Array<{ text: string; line: number; column: number; index: number; inBlockComment: boolean; inComment: boolean }> {
+  const hits: Array<{ text: string; line: number; column: number; index: number; inBlockComment: boolean; inComment: boolean }> = [];
   // Match a single backtick + non-newline chars + backtick.
   // We don't handle ``code with ` inside`` because that's rare in
   // the failure mode we're flagging (stale package / function name).
   const re = /`([^`\n]+?)`/g;
+  // v0.42.0: scan for /* ... */ block-comment and // line-comment
+  // ranges once. The helpers live in the same file (declared after
+  // this function); lazy compute keeps the export order
+  // human-readable.
+  const blockRanges = findBlockCommentRanges(source);
+  const commentLines = findCommentLineRanges(source);
   let m: RegExpExecArray | null;
   while ((m = re.exec(source)) !== null) {
     const text = m[1] ?? '';
@@ -111,7 +124,14 @@ export function extractInlineCodeSpans(
     const line = upTo.split('\n').length;
     const lastNl = upTo.lastIndexOf('\n');
     const column = lastNl === -1 ? m.index + 1 : m.index - lastNl;
-    hits.push({ text, line, column, index: m.index });
+    hits.push({
+      text,
+      line,
+      column,
+      index: m.index,
+      inBlockComment: isInBlockComment(blockRanges, m.index),
+      inComment: commentLines.has(line),
+    });
   }
   return hits;
 }
@@ -617,4 +637,76 @@ export function docDriftFromFreshness(score: number): DocDriftLevel {
   if (score >= DOC_FRESHNESS_THRESHOLDS.medium) return 'medium';
   if (score >= DOC_FRESHNESS_THRESHOLDS.high) return 'high';
   return 'critical';
+}
+
+/**
+ * v0.42.0: returns a Set of 1-indexed line numbers that are inside
+ * either a /* ... *​/ block comment OR a `//` line comment. Used by
+ * the docs/stale-function-reference rule to skip inline-code spans
+ * that are documentation examples rather than real call references.
+ *
+ * Performance: O(n) single pass over the source (same code path
+ * as findBlockCommentRanges; share the scanning work).
+ */
+export function findCommentLineRanges(source: string): Set<number> {
+  const out = new Set<number>();
+  const stack: number[] = []; // line numbers where /* opens
+  let inLineComment = false;
+  const lines = source.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const lineNo = i + 1; // 1-indexed
+    let j = 0;
+    if (inLineComment) {
+      out.add(lineNo);
+      inLineComment = false; // line comments terminate at end-of-line
+    }
+    while (j < line.length) {
+      const c = line[j]!;
+      const next = line[j + 1];
+      // Line comment: // not inside a string (rough heuristic — the
+      // docs rules operate on JSDoc-style comments where strings are
+      // rare; a more precise tokenization is overkill for the false-
+      // positive class we're avoiding).
+      if (!stack.length && c === '/' && next === '/') {
+        inLineComment = true;
+        out.add(lineNo);
+        break;
+      }
+      // Block comment open.
+      if (c === '/' && next === '*') {
+        stack.push(lineNo);
+        out.add(lineNo);
+        j += 2;
+        continue;
+      }
+      // Block comment close.
+      if (c === '*' && next === '/' && stack.length > 0) {
+        stack.pop();
+        j += 2;
+        continue;
+      }
+      // String literal — skip the contents so we don't miscount.
+      // The docs rules don't actually fire inside string literals; this
+      // avoids false negatives when a JSDoc comment happens to contain
+      // // or /* in a string body.
+      if (c === '"' || c === "'" || c === '`') {
+        const quote = c;
+        j += 1;
+        while (j < line.length) {
+          if (line[j] === '\\') { j += 2; continue; }
+          if (line[j] === quote) { j += 1; break; }
+          j += 1;
+        }
+        continue;
+      }
+      j += 1;
+    }
+    // If still inside an unclosed block comment, the rest of the file
+    // is in comment.
+    if (stack.length > 0) {
+      out.add(lineNo);
+    }
+  }
+  return out;
 }

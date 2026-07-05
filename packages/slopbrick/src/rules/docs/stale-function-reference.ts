@@ -112,7 +112,15 @@ const RESERVED = new Set([
 
 const SOURCE_EXTS = new Set(['.ts','.tsx','.js','.jsx','.mjs','.cjs']);
 const SOURCE_ROOTS = ['src','lib','app','components'];
-const CAP = 200;
+// v0.42.0: bump from 200 → 4000. The v0.18.6 cap was a stop-gap that
+// silently dropped FPs in larger codebases. slopbrick's own src/
+// contains 310 files (counted at v0.42.0); the low cap meant
+// exports in the latter half of the src/ tree (notably under
+// src/cli/commands/composite.ts, src/rules/composite-*,
+// src/rules/docs/, etc.) were missing from the export set, so
+// the rule fired stale-function-reference FPs at those exported
+// names. 4000 covers any realistic single-package codebase.
+const CAP = 4000;
 
 function walk(dir: string, out: string[], cap: number): void {
   if (!existsSync(dir) || out.length >= cap) return;
@@ -213,6 +221,14 @@ export const staleFunctionReferenceRule = createRule<StaleFunctionContext>({
     if (!source) return issues;
     for (const span of extractInlineCodeSpans(source)) {
       const text = span.text;
+      // v0.42.0: skip identifier references inside JSDoc / `/* ... */`
+      // block comments. The rule's call-context heuristic (which looks
+      // for `foo(...)` on the same line) misfires when a JSDoc
+      // example includes a literal call — e.g. `` `foo()` `` in a
+      // comment about how the helper is invoked. The block-comment
+      // boundary reliably distinguishes prose-markdown from prose-JSDoc
+      // (the source of every FP the v0.42.0 self-scan surfaced).
+      if (span.inBlockComment || span.inComment) continue;
       if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(text)) continue;
       if (text.length < 3) continue;
       if (RESERVED.has(text.toLowerCase())) continue;
