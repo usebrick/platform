@@ -114,7 +114,9 @@ export const aiCommentRatioRule = createRule<RuleContext>({
         advice:
           direction === 'low'
             ? 'Add doc comments explaining intent (not just restating the next line) for non-obvious logic.'
-            : 'Trim comments that just restate the next line. Keep comments that explain WHY, not WHAT.',
+            : 'High comment ratio — consider whether the comments are intentional (api docs, type defs, tutorials). ' +
+              'For functional code, trim comments that just restate the next line. ' +
+              'Keep comments that explain WHY, not WHAT.',
       },
     ];
     return issues;
