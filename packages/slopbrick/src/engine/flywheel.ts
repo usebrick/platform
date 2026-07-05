@@ -226,9 +226,26 @@ export function computeFlywheelOutput(
   }
 
   if (currentTopFiles.length > 0 && runs.length >= CONSECUTIVE_THRESHOLD) {
+    // v0.42.0 (post-cleanup follow-up): the chronic-offender rule
+    // was firing on parser-* and engine/types.ts because the
+    // v0.42.0 refactor put them in the top-3 noise floor. The
+    // fires were all driven by default-off rules
+    // (ai/compression-profile, ai/comment-ratio,
+    // ai/segment-surprisal-cv, etc.) - a Tier 2 authorial
+    // fingerprint signal, not an actionable code defect. The fix:
+    // suppress the chronic-offender signal when the most recent
+    // run's top-3 offenses are entirely default-off. The user's
+    // action ("refactor or baseline") is moot when the noise is
+    // already accepted-by-default - they already opted out.
+    const latestRun = runs[runs.length - 1]!;
+    const onRulesInLatestTop = latestRun.topOffenseIds.filter(
+      (id) => ruleById.get(id)?.defaultOff !== true,
+    );
+    const skipChronicOnDefaultOffNoise = onRulesInLatestTop.length === 0;
     for (const file of currentTopFiles) {
       const consecutive = countConsecutiveTopFileAppearances(file.hash, recentTopHashes);
       if (consecutive >= CONSECUTIVE_THRESHOLD) {
+        if (skipChronicOnDefaultOffNoise) continue;
         hotspotIssues.push({
           ruleId: 'component/chronic-offender',
           category: 'component',
@@ -238,7 +255,7 @@ export function computeFlywheelOutput(
           filePath: file.filePath,
           line: 1,
           column: 1,
-          advice: 'Prioritize refactoring this file or add it to the baseline.',
+          advice: 'Run `slopbrick scan --baseline` to accept current scores as the new floor, or refactor the file to reduce its issue count.',
         });
       }
     }

@@ -59,6 +59,63 @@ describe('computeFlywheelOutput', () => {
     expect(output.hotspotIssues.some((i) => i.ruleId === 'component/chronic-offender')).toBe(true);
   });
 
+  it('suppresses chronic-offender when all top-3 are default-off rules (Tier 2 noise)', () => {
+    // v0.42.0 (post-cleanup follow-up): chronic-offender used to fire
+    // for parser-* files because their top-3 was dominated by
+    // default-off rules (ai/compression-profile, ai/comment-ratio,
+    // ai/segment-surprisal-cv). The signal was uninformative
+    // because the user has already opted those rules out. The fix:
+    // when the latest run's topOffenseIds are all default-off, skip
+    // the chronic-offender emission entirely.
+    const rulesWithDefaultsOff: Rule[] = [
+      {
+        id: 'ai/comment-ratio',
+        category: 'ai', severity: 'medium', aiSpecific: true, defaultOff: true,
+        create: () => ({}), analyze: () => [],
+      },
+      {
+        id: 'ai/compression-profile',
+        category: 'ai', severity: 'low', aiSpecific: true, defaultOff: true,
+        create: () => ({}), analyze: () => [],
+      },
+      {
+        id: 'ai/segment-surprisal-cv',
+        category: 'ai', severity: 'medium', aiSpecific: true, defaultOff: true,
+        create: () => ({}), analyze: () => [],
+      },
+    ];
+    const currentTopFiles = [{ filePath: 'parser-rust.ts', hash: 'def456' }];
+    const recentTopHashes = [['def456'], ['def456']];
+    const runs = [
+      makeRun(['ai/comment-ratio', 'ai/compression-profile', 'ai/segment-surprisal-cv'], 10),
+      makeRun(['ai/comment-ratio', 'ai/compression-profile', 'ai/segment-surprisal-cv'], 10),
+      makeRun(['ai/comment-ratio', 'ai/compression-profile', 'ai/segment-surprisal-cv'], 10),
+    ];
+    const output = computeFlywheelOutput(runs, currentTopFiles, recentTopHashes, [], config, rulesWithDefaultsOff);
+    expect(output.hotspotIssues.some((i) => i.ruleId === 'component/chronic-offender')).toBe(false);
+  });
+
+  it('still fires chronic-offender when at least one top-3 rule is non-default-off', () => {
+    // Same setup but the top-3 includes logic/key-prop-missing which
+    // is NOT default-off - so the chronic-offender should fire.
+    const rulesWithOneOn: Rule[] = [
+      {
+        id: 'ai/comment-ratio',
+        category: 'ai', severity: 'medium', aiSpecific: true, defaultOff: true,
+        create: () => ({}), analyze: () => [],
+      },
+    ];
+    const currentTopFiles = [{ filePath: 'real-problem.ts', hash: 'ghi789' }];
+    const recentTopHashes = [['ghi789'], ['ghi789']];
+    const runs = [
+      makeRun(['logic/key-prop-missing', 'ai/comment-ratio', 'ai/compression-profile'], 10),
+      makeRun(['logic/key-prop-missing', 'ai/comment-ratio', 'ai/compression-profile'], 10),
+      makeRun(['logic/key-prop-missing', 'ai/comment-ratio', 'ai/compression-profile'], 10),
+    ];
+    const output = computeFlywheelOutput(runs, currentTopFiles, recentTopHashes, [], config, rulesWithOneOn);
+    expect(output.hotspotIssues.some((i) => i.ruleId === 'component/chronic-offender')).toBe(true);
+  });
+
   it('suggests a rule for repeated unmatched strings', () => {
     const literals = ['AI generated content here', 'AI generated content here'];
     const output = computeFlywheelOutput([], [], [], literals, config, rules);
