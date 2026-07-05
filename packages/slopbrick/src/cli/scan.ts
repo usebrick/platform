@@ -42,6 +42,8 @@ import {
 import {
   loadCache,
   partitionByCache,
+  saveCache,
+  computeFileHash,
 } from '../engine/cache-incremental.js';
 import { WorkerPool } from '../engine/pool';
 import { scanFile } from '../engine/worker';
@@ -209,13 +211,23 @@ export async function runScan(
   }
 
   // the persisted cache. Cache invalidates on VERSION mismatch.
+  // v0.42.0 (post-cleanup follow-up): the unchanged list is also needed
+  // for the saveCache call at the end of runScan. We want the cache to
+  // include BOTH the freshly-scanned files AND the files that
+  // partitionByCache marked as unchanged, so the next run can skip
+  // either. The unchanged files' issueCount + hash come from the
+  // existing cache; the freshly-scanned ones from this run's results.
   let incrementalSummary: { skipped: number; rescanned: number } | undefined;
+  let cachePath: string | undefined;
+  let existingCache: ReturnType<typeof loadCache> | undefined;
+  let unchanged: string[] = [];
   if (options.incremental) {
-    const cachePath = options.cachePath ?? '.slopbrick-cache.json';
-    const existing = loadCache(cachePath);
-    const { toScan, unchanged } = partitionByCache(files, existing);
-    files = toScan;
-    incrementalSummary = { skipped: unchanged.length, rescanned: toScan.length };
+    cachePath = options.cachePath ?? '.slopbrick-cache.json';
+    existingCache = loadCache(cachePath);
+    const partition = partitionByCache(files, existingCache);
+    files = partition.toScan;
+    unchanged = partition.unchanged;
+    incrementalSummary = { skipped: unchanged.length, rescanned: partition.toScan.length };
   }
 
   // 0 files warning (Refactor 1): previously the scan would report "0 files,
@@ -479,6 +491,57 @@ export async function runScan(
     telemetryEnabled,
     machineReadableStdout,
   });
+
+  // v0.42.0 (post-cleanup follow-up): the --incremental cache
+  // was loaded but never written. The bug: a user runs --incremental
+  // once, gets 0 files skipped, runs it again, gets 0 skipped again.
+  // Save the cache here so the second run can actually skip unchanged
+  // files. Merge the freshly-scanned files (this run's results) with
+  // the unchanged files (from partitionByCache, re-using their prior
+  // hash + issueCount so the next run can skip them too).
+  if (options.incremental && cachePath !== undefined) {
+    const cachedFiles: Record<string, { hash: string; issueCount: number; lastScannedAt: string }> = {};
+    
+    for (const r of results) {
+      try {
+        cachedFiles[r.filePath] = {
+          hash: computeFileHash(r.filePath),
+          issueCount: r.issues.length,
+          lastScannedAt: new Date().toISOString(),
+        };
+      } catch {
+        // File may have been deleted between scan and write. Skip.
+      }
+    }
+    for (const f of unchanged) {
+      const cached = existingCache?.files[f];
+      if (cached) {
+        // Carry the prior hash + issueCount forward; the file was not
+        // re-scanned this run, so its data is still authoritative.
+        cachedFiles[f] = {
+          hash: cached.hash,
+          issueCount: cached.issueCount,
+          lastScannedAt: cached.lastScannedAt,
+        };
+      } else {
+        // unchanged but no cache entry (rare - happens when
+        // partitionByCache falls through to a hash mismatch). The
+        // safest thing is to drop the entry so the next run scans
+        // this file fresh.
+      }
+    }
+    try {
+      saveCache(cachePath, {
+        version: VERSION,
+        generatedAt: new Date().toISOString(),
+        files: cachedFiles,
+      });
+    } catch {
+      // Best-effort write. If saveCache fails (e.g. permission denied),
+      // we still return the scan result. The next --incremental run
+      // will simply not have a cache to consult.
+    }
+  }
 
   return {
     report,
