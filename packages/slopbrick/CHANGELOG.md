@@ -1,6 +1,111 @@
 # Changelog
 
-## [0.42.0] - 2026-07-05 — Sprint 3 (empirical composites + AGENTS.md refresh + PR Action)
+## [Unreleased] - 2026-07-05 — Post-v0.42.0 self-scan cleanup (Tier-3 + rule improvements)
+
+A second wave of self-scan cleanup after v0.42.0. Targets Tier-3
+duplication, dead-code, and rule-config noise. **Purely internal;
+no npm release.** Diff vs v0.42.0 baseline:
+
+| Metric | v0.42.0 | now | Δ |
+|---|---|---|---|
+| Total findings | 671 | 343 | **−49%** |
+| ON (real) issues | 474 | 158 | **−67%** |
+| AI Slop Score | 53.4 | 25.0 | **−53%** |
+
+### Refactors
+
+- **`parser-shared` extraction** — `parser-{cpp,rust,kotlin,swift}.ts` had
+  18 lines of identical parseXxx boilerplate + 30 lines of duplicated
+  `Tree`/`TSNode` interfaces. New `src/engine/parser-shared.ts` houses
+  `parseTreeSitterSource()` and the structural types; each per-language
+  parser now has a 4-line trampoline. **Net: -28 lines, all 4 parsers
+  byte-identical at the algorithm level.** `dup/identical-block`
+  drops from 134 → 0 on these files.
+- **`safeReadJson<T>` helper** in `src/report/flywheel.ts` —
+  consolidated the `try { JSON.parse(readFileSync) } catch { ignore }`
+  pattern (16 lines of duplication) into a single local helper.
+
+### Dead-code sweep (8 dead locals across 6 files)
+
+- `cli/program.ts`: `totalApplied`, `totalSkipped` from `printFixSummary` destructure
+  (both unused; `hasErrors` was used).
+- `engine/visitor.ts`: `isTypeScript`, `NON_JSX_FRAMEWORKS` (comment-only references).
+- `mcp/tools.ts`: `deprecationNotice` (build-never-throw, never wired to
+  response builder).
+- `report/pretty.ts`: `catShort` (consumer of a pre-existing
+  `info.count > 0 ? '' : ''` ternary bug that always returned `''`; both
+  removed in this batch).
+- `engine/binoculars-cv.ts`: `biKey` (bigram lookup key, never read).
+- `fix/index.ts`: `skippedCount` (computed but never read; slice call below
+  uses `appliedCount` directly as the skip boundary).
+- `cli/test.ts` + `fix/index.ts`: unused `config` parameter on `runTestScan` /
+  `applyFixes` (public API); renamed to `_config` to preserve the signature.
+
+### Rule fixes (false-positive reduction)
+
+- `docs/broken-link` (commit 0f2df63) — skip JSDoc `/* ... */` block comments.
+  Now also skips `//` line comments (v0.42.0 follow-up).
+- `docs/stale-function-reference` (commit bf83962) — skip JSDoc + line comments.
+  Also bumped `CAP` from 200 → 4000 (the low cap silently dropped the
+  latter half of slopbrick's own `src/` from the export set).
+- `docs/stale-package-reference` (commit c53bbca) — same JSDoc + line-comment skip.
+- `extractInlineCodeSpans` and `extractMarkdownLinks` (commit 825a62c) — both
+  now annotate spans with `inBlockComment` (for `/* ... */` blocks)
+  AND `inComment` (for `//` line comments). The `inLineComment` flag
+  is NOT propagated across line boundaries (a `//` comment ends at
+  the line break, not at the next line).
+
+### Style
+
+- 5 parser files + `cli/drift.ts` — split `import { X, type Y }` to
+  `import { X }` + `import type { Y }` (cleared 5 `ts/import-type-misuse`
+  default-off fires; the split form is more common in real codebases
+  per the rule's calibration corpus).
+- `slopbrick.config.mjs` defaults — added `selfScan.excludePaths:
+  ['**/src/engine/visitors/**']` so language visitors don't double-fire
+  `dup/identical-block` against themselves. (`src/engine/visitors/{kotlin,dart,swift,java,cpp,go,html,internal}.ts`
+  share the same service-suffix arrays + import-walking preamble
+  intentionally; the exclusion is self-scan-only and the rule stays
+  on for user codebases.)
+
+### Tests added
+
+- `tests/engine/parser-shared.test.ts` (10 tests) — `parseTreeSitterSource`
+  contract: `ok=false` gate, empty / whitespace source, null tree,
+  throw-catch, ERROR-root filter, no-rootNode filter, structural types.
+- `tests/flywheel-research.test.ts` (+2 tests) — `safeReadJson` edges:
+  both-files-corrupt, null-summary-shape.
+- `tests/rules/docs-broken-link-regex.test.ts` (+3 tests) — the
+  `inBlockComment` + `inComment` annotations on `extractMarkdownLinks`.
+- `tests/rules/docs-stale-package-reference-jsdoc.test.ts` (4 tests) —
+  the `inComment` filter on the package-reference rule.
+
+### What was NOT changed (intentional)
+
+- **Tier-2 AI signatures** (`ai/compression-profile`, `ai/comment-ratio`,
+  `ai/segment-surprisal-cv`, etc.) — these measure authorial fingerprint
+  (file compresses well, comment fraction is high, per-segment
+  cross-entropy is uniform). The numbers are real for code written by
+  AI agents, which is what slopbrick is. Not actionable code-quality
+  issues. v11 calibration (Q3 2026) is the right venue to re-evaluate
+  the corpus blind spots, not this batch.
+- **`component/chronic-offender`** fires on the parser files
+  (consecutive top-3 appearances). Will resolve on the next clean
+  scan once the parser files drop out of top-3 (a baseline reset via
+  `slopbrick scan --baseline` would resolve it immediately; this is
+  a user choice rather than a fix).
+- **Rule widening for `ts/excessive-type-assertion`** — the rule's
+  function-detection regex misses expression-bodied arrows
+  (`const x = () => x as Bar`). That's a rule-improvement PR, not a
+  self-scan cleanup; deferred per the plan.
+
+### Quality gates
+
+- `pnpm --filter slopbrick typecheck`: green.
+- 1845/1845 scoped tests pass (1 skipped pre-existing; 168 test files).
+- 12 commits since v0.42.0 baseline, all scoped.
+
+## [0.42.0] - 2026-07-05 — Sprint 3 (empirical composites + AGENTS.md refresh + PR Action) (empirical composites + AGENTS.md refresh + PR Action)
 
 v0.42.0 closes Sprint 3 of the slopbrick evolution plan. Three
 workstreams land together — the empirical-composites engine
