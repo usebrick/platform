@@ -332,6 +332,34 @@ export async function runSuggest(
     if (includeStructure) {
       payload.structureHint = STRUCTURE_NOT_FOUND_HINT;
     }
+    // v0.41.0 (Sprint 2, task 2b.2): surface the project-level
+    // Bayesian composite aggregate so MCP clients (Cursor, Claude
+    // Code, Continue) can show "is this codebase AI?" alongside
+    // the per-file suggestions. Read from .slopbrick/health.json
+    // when present — the same source the `pretty` and `sarif`
+    // reporters consume (F12). Skip when health.json is missing
+    // or pre-dates v0.18.2 (no composite field).
+    //
+    // Plan note: §2b.2 calls for the field to also carry
+    // `topContributors` (rules ranked by their log-likelihood
+    // contribution). The persisted shape (HealthFile.compositeScore,
+    // core/src/generated/health.ts:64) does NOT yet carry that —
+    // adding it requires bumping @usebrick/core's STRUCTURE_SCHEMA_VERSION,
+    // which AGENTS.md gates on a breaking change. We surface what
+    // exists today; the `topContributors` slot lands in v0.42.0
+    // alongside the empirical-composites engine (§3b), which
+    // produces ranking data natively.
+    try {
+      const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
+      const health = loadHealth(ctx.cwd);
+      if (health?.compositeScore) {
+        payload.compositeScore = health.compositeScore;
+      }
+    } catch {
+      // health.json missing or unreadable — composite is optional,
+      // skip silently so first-run users aren't blocked. The agent
+      // gets the per-file patterns without the aggregate hint.
+    }
 
     return {
       content: [

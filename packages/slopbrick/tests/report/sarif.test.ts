@@ -323,3 +323,43 @@ describe('formatSarif — partialFingerprints.primaryLocationLineHash', () => {
     );
   });
 });
+// ---------------------------------------------------------------------------
+// v0.41.0 (Sprint 2, task 2b.3): test that the SARIF 2.1.0 §3.18
+// `properties.compositeScore` surface at the tool driver level
+// reflects `report.compositeScore` and is gated on its presence.
+// Backward-compat: pre-v0.18.2 reports (no compositeScore) emit
+// no `properties` key at all.
+// ---------------------------------------------------------------------------
+
+describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1)', () => {
+  function driverProperties(report: ProjectReport): { compositeScore?: unknown } | undefined {
+    const log = JSON.parse(formatSarif(report)) as {
+      runs: Array<{ tool: { driver: { properties?: { compositeScore?: unknown } } } }>;
+    };
+    return log.runs[0]?.tool?.driver?.properties;
+  }
+
+  it('omits properties entirely when report.compositeScore is undefined', () => {
+    const props = driverProperties(makeReport());
+    expect(props).toBeUndefined();
+  });
+
+  it('surfaces compositeScore on driver.properties when defined', () => {
+    const composite = {
+      mean: 0.66,
+      max: 0.92,
+      tier: 'LIKELY_AI' as const,
+      fileCount: 17,
+    };
+    const props = driverProperties(makeReport({ compositeScore: composite }));
+    expect(props).toEqual({ compositeScore: composite });
+  });
+
+  it('does not surface properties when compositeScore is the empty shape (pre-v0.18.2 reports)', () => {
+    // The gate uses `report.compositeScore` truthiness — undefined,
+    // null, or omitted all yield a `properties`-free log. This matches
+    // the F12/F13 backward-compat decision in §2b.1.
+    const props = driverProperties(makeReport({ compositeScore: undefined }));
+    expect(props).toBeUndefined();
+  });
+});

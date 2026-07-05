@@ -138,3 +138,115 @@ describe('runSuggestWithStructure (backward-compat re-export)', () => {
     expect(result.content[0]!.text).toBe(cached);
   });
 });
+// ---------------------------------------------------------------------------
+// v0.41.0 (Sprint 2, task 2b.2): `runSuggest` surfaces the
+// project-level compositeScore from .slopbrick/health.json when
+// present. The field is OPTIONAL on the response — omitted when
+// health.json is missing or pre-v0.18.2 (no composite field). Wire
+// format stays backward-compatible for callers that key on the
+// legacy four-key payload (hint + doNotCreate + declaredStack +
+// existingPatterns).
+// ---------------------------------------------------------------------------
+
+import { STRUCTURE_SCHEMA_VERSION } from '@usebrick/core';
+
+describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
+  let cwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), 'slopbrick-run-suggest-composite-'));
+  });
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it('omits compositeScore when .slopbrick/health.json is absent', async () => {
+    const ctx = makeCtx(cwd);
+    const result = await runSuggest({}, ctx);
+    const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+    expect(parsed.compositeScore).toBeUndefined();
+    // Backward compat: legacy fields still present.
+    expect(parsed.hint).toBeDefined();
+    expect(parsed.doNotCreate).toBeDefined();
+    expect(parsed.declaredStack).toBeDefined();
+    expect(parsed.existingPatterns).toBeDefined();
+  });
+
+  it('surfaces compositeScore when health.json carries it', async () => {
+    const slopbrickDir = join(cwd, '.slopbrick');
+    mkdirSync(slopbrickDir, { recursive: true });
+    const composite = {
+      mean: 0.72,
+      max: 0.91,
+      tier: 'LIKELY_AI' as const,
+      fileCount: 42,
+    };
+    writeFileSync(
+      join(slopbrickDir, 'health.json'),
+      JSON.stringify({
+        version: STRUCTURE_SCHEMA_VERSION,
+        generatedAt: '2026-07-01T00:00:00.000Z',
+        workspace: cwd,
+        aiSlopScore: 30,
+        engineeringHygiene: 80,
+        security: 95,
+        repositoryHealth: 60,
+        issueCounts: { high: 0, medium: 0, low: 0 },
+        compositeScore: composite,
+      }),
+      'utf-8',
+    );
+
+    const ctx = makeCtx(cwd);
+    const result = await runSuggest({}, ctx);
+    const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+    expect(parsed.compositeScore).toEqual(composite);
+  });
+
+  it('omits compositeScore when health.json predates v0.18.2 (no composite field)', async () => {
+    const slopbrickDir = join(cwd, '.slopbrick');
+    mkdirSync(slopbrickDir, { recursive: true });
+    // Schema-correct (HealthFile v5) but missing the compositeScore
+    // field — simulates a pre-v0.18.2 health.json payload where the
+    // Bayesian aggregate didn't exist yet.
+    writeFileSync(
+      join(slopbrickDir, 'health.json'),
+      JSON.stringify({
+        version: STRUCTURE_SCHEMA_VERSION,
+        generatedAt: '2026-06-01T00:00:00.000Z',
+        workspace: cwd,
+        aiSlopScore: 30,
+        engineeringHygiene: 80,
+        security: 95,
+        repositoryHealth: 60,
+        issueCounts: { high: 0, medium: 0, low: 0 },
+      }),
+      'utf-8',
+    );
+
+    const ctx = makeCtx(cwd);
+    const result = await runSuggest({}, ctx);
+    const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+    expect(parsed.compositeScore).toBeUndefined();
+  });
+
+  it('omits compositeScore when health.json fails schema validation (graceful)', async () => {
+    const slopbrickDir = join(cwd, '.slopbrick');
+    mkdirSync(slopbrickDir, { recursive: true });
+    // Schema-INVALID payload (missing required fields); loadHealth
+    // returns null and runSuggest should silently omit compositeScore
+    // rather than crash.
+    writeFileSync(
+      join(slopbrickDir, 'health.json'),
+      JSON.stringify({ schemaVersion: '0', broken: true }),
+      'utf-8',
+    );
+
+    const ctx = makeCtx(cwd);
+    const result = await runSuggest({}, ctx);
+    expect(result.isError).toBeFalsy();
+    const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+    expect(parsed.compositeScore).toBeUndefined();
+  });
+});

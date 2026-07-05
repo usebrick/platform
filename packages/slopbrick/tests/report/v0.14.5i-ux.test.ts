@@ -448,3 +448,54 @@ describe('v0.14.5i UX improvements', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.41.0 (Sprint 2, task 2b.3): test that the pretty reporter
+// surfaces the project-level compositeScore as `composite=<tier>@<mean>`
+// under the headline when report.compositeScore is defined. Backward-
+// compat: pre-v0.18.2 reports (no compositeScore) emit no `composite=`
+// line at all, so older fixtures and dashboards stay green.
+// ---------------------------------------------------------------------------
+
+describe('compositeScore surface (v0.41.0 §2b.1)', () => {
+  it('omits the composite= line when report.compositeScore is undefined', () => {
+    const out = formatPretty(makeReport({ compositeScore: undefined }));
+    expect(out).not.toContain('composite=');
+  });
+
+  it('appends composite=<tier>@<mean> when report.compositeScore is defined', () => {
+    const out = formatPretty(
+      makeReport({
+        compositeScore: {
+          mean: 0.72,
+          max: 0.91,
+          tier: 'LIKELY_AI',
+          fileCount: 42,
+        },
+      }),
+    );
+    expect(out).toContain('composite=LIKELY_AI@0.72');
+    expect(out).toContain('42 files');
+  });
+
+  it('pluralizes correctly for a single contributing file', () => {
+    const out = formatPretty(
+      makeReport({
+        compositeScore: {
+          mean: 0.5,
+          max: 0.5,
+          tier: 'INCONCLUSIVE',
+          fileCount: 1,
+        },
+      }),
+    );
+    // Look at only the composite line; isolate via grepping for
+    // the prefix the emitter writes.
+    const compositeLine = out
+      .split('\n')
+      .find((line) => line.includes('composite=') && line.includes('@'));
+    expect(compositeLine).toBeDefined();
+    expect(compositeLine).toMatch(/across 1 file\b/);
+    expect(compositeLine).not.toMatch(/across 1 files\b/);
+  });
+});
