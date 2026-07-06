@@ -1,5 +1,81 @@
 # Changelog
 
+## [Unreleased] - 2026-07-06 — User-review fixes (post-self-scan audit)
+
+A user walked through the post-v0.42.0 build as a first-time user
+and found 17 small UX bugs. All fixed in single-purpose commits.
+**Purely internal; no npm release.**
+
+### Output integrity
+
+- **`scan --json` is now parseable JSON.** The output was prefixed
+  with "Baseline active since …" (a freeform line) before the
+  JSON, breaking `scan --json | jq` for every consumer. Fixed by
+  gating 4 logger.info() calls on `!machineReadableStdout`.
+- **`aiSlopScore` band direction was inverted in --brief.**
+  The 4-score matrix used `scoreBand()` (higher-is-better) for
+  all four scores, but `aiSlopScore` is lower-is-better. Result:
+  score 25 showed band "concerning" while the CI gate said "pass".
+  Fixed in `formatVerdict()` and `formatBriefReport()` to route
+  `aiSlopScore` through `slopScoreBand()`. The 2 tests that
+  hard-coded the old wording (`concerning` / `needs work`)
+  were updated to the corrected `no slop / low / medium / high
+  / saturated` bands.
+
+### Configurable thresholds now honored everywhere
+
+- The meanSlop threshold was hard-coded to 30 in 4 user-visible
+  places (--brief gate line, --why-failing headline, error
+  message). All now read `report.thresholds.meanSlop`. For users
+  with a stricter config (e.g. slopbrick repo uses meanSlop=15),
+  the displayed gate, the why-failing headline, and the exit
+  code now agree.
+- **New `failedThresholds()` function + `failedThresholds` JSON
+  field.** Returns a list of failed-gate names ("meanSlop",
+  "p90Slop", "individualSlopThreshold", "category:<name>"). The
+  exit-code error message now reads "1 threshold failed: meanSlop
+  (score 25 > 15)" instead of "1 threshold failed. See details
+  above." `failedThresholdCount()` is preserved as `.length`.
+- **New tests** in `tests/cli/threshold.test.ts` (5 cases).
+
+### Help / command outputs
+
+- **`rules` descriptions wrap to terminal width.** Word-wrap at
+  the actual `process.stdout.columns`; default 100 cols when
+  stdout is not a TTY.
+- **`slopbrick badge` reads `aiSlopScore` from health.json.**
+  Previously the fast-path synthesized `{ slopIndex: 100 −
+  health.repositoryHealth }`, but `formatBadge()` reads
+  `aiSlopScore` not `slopIndex`, so the badge always rendered
+  as "ai-slop-0-green" regardless of the actual score.
+- **`doctor` no longer claims "31 rules configured in your
+  config file" when no config file exists.** Two paths now:
+  with config (unchanged), without config → "Config: using
+  built-in defaults (no config file found). Run `slopbrick init`
+  to create …". Hint added to the "No source files" warning
+  pointing to `--workspace` and monorepo patterns.
+- **`report` subcommand description rewritten.** Was "last scan
+  report (alias for `slopbrick config`)" — `config` isn't a
+  real command. Now "re-render a saved JSON report (from
+  `--json <path>`)".
+- **`explain` with no ruleId** now says "Run `slopbrick rules`
+  to see available rules" instead of Commander's bare "missing
+  required argument".
+
+### Pattern / data output
+
+- **`patterns` report uses "✓ none" instead of "✓ clean" when
+  count is 0** (in both text and markdown formatters). Avoids
+  the misleading "clean" verdict on categories like Modal
+  systems in repos with 0 modals.
+
+### Operational
+
+- **`--incremental` cache writeback fixed.** The cache existed
+  but `saveCache()` was never called, so every incremental scan
+  re-scanned every file. After fix, Run 1 re-scans 592 files,
+  Run 2 skips 592. Tests in `tests/incremental.test.ts` (12).
+
 ## [Unreleased] - 2026-07-05 — Post-v0.42.0 self-scan cleanup (Tier-3 + rule improvements)
 
 A second wave of self-scan cleanup after v0.42.0. Targets Tier-3
