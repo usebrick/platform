@@ -806,18 +806,31 @@ function formatDriftSection(report: ProjectReport): string | null {
 
 function formatThresholds(report: ProjectReport): string[] {
   // v0.15.0 U.4+: the Thresholds section is the CI gate — it shows
-  // ONLY the AI Slop Score score, since that's the gate. The previous
+  // ONLY the AI Slop Score, since that's the gate. The previous
   // version showed Coherence here too, which made the gate look
   // ambiguous.
-  const limit = report.thresholds.meanSlop; // legacy field; not used anymore
+  //
+  // v0.42.0 (user-review fix): the previous code hardcoded a `>= 70`
+  // comparison and constant-string "≥ 70" in the display. That
+  // direction is the v0.15–v0.20.1 INVERTED reading where aiSlopScore
+  // was cleanliness (higher = better). Since v0.21.0, aiSlopScore is
+  // raw amount of slop (lower = better) and the gate is "<= meanSlop
+  // passes". For the slopbrick repo's config (meanSlop=15, score=25),
+  // the old code displayed:
+  //
+  //   Threshold (CI gate)
+  //     AI Slop Score      25.0 ≥ 70  fail
+  //
+  // which says "we expected ≥ 70 for pass and you got 25, so fail" —
+  // the OPPOSITE of the truth. Fix: use report.thresholds.meanSlop
+  // and the correct direction.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
   const headline = report.aiSlopScore;
-  const passed = headline >= 70;
-  const valueText = `${headline.toFixed(1)} ≥ 70`.padStart(12, ' ');
+  const passed = headline <= meanSlop;
+  const valueText = `${headline.toFixed(1)} ≤ ${meanSlop}`.padStart(12, ' ');
   const status = passed ? chalk.green('pass') : chalk.red('fail');
 
   const result: string[] = ['Threshold (CI gate)', `  AI Slop Score  ${valueText}  ${status}`];
-  // legacy limit reference (silence unused-variable lint without removing the field)
-  void limit;
   return result;
 }
 
@@ -962,12 +975,18 @@ export function formatPretty(report: ProjectReport): string {
  * footnote now matches the v0.17.x 4-score model and the
  * `metrics.ts:302-306` repositoryHealth formula.
  */
-function formatScoringExplainer(_report: ProjectReport): string {
+function formatScoringExplainer(report: ProjectReport): string {
+  // v0.42.0 (user-review fix): the previous version hardcoded a
+  // "higher = better" caveat for "AI Slop Score >= 70" — that's the
+  // v0.15–v0.20.1 INVERTED reading. Since v0.21.0, aiSlopScore is raw
+  // amount of slop and lower = cleaner. Fix: read the actual threshold
+  // from the report and use the correct comparison direction.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
   return chalk.dim(
-    'Four orthogonal scores (all 0-100, higher = better): ' +
-    'AI Slop Score (AI-slop signatures; the CI gate, AI Slop Score >= 70), ' +
-    'Engineering Hygiene (issues per category across arch/logic/layout/component/test), ' +
-    'Security (AI-flagged security risks, inverted from risk level), ' +
+    'Four orthogonal scores (all 0-100, **lower AI Slop Score = cleaner**): ' +
+    `AI Slop Score (AI-slop signatures; the CI gate, AI Slop Score ≤ ${meanSlop} passes), ` +
+    'Engineering Hygiene (issues per category across arch/logic/layout/component/test; higher = cleaner), ' +
+    'Security (AI-flagged security risks, inverted from risk level; higher = cleaner), ' +
     'Repository Health (composite: 0.4*AI Slop Score + 0.3*Engineering Hygiene + 0.2*Security + 0.1*Test Quality). ' +
     'Only AI Slop Score gates CI; the others are informational. ' +
     'Default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.',

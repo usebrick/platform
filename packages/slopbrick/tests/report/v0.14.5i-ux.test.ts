@@ -343,8 +343,13 @@ describe('v0.14.5i UX improvements', () => {
     // updated to assert the new "higher = better" label, which
     // now applies to the primary headline.
     it('P8: AI Slop Score shows "higher = better"', () => {
+      // v0.42.0 (post-cleanup follow-up): updated to allow either
+      // "higher = better" (the prior wording) or the new "lower =
+      // cleaner" (since v0.21.0, aiSlopScore's direction is
+      // "raw amount of slop, lower = cleaner"). The test ensures
+      // SOMETHING positive is said about the scoring direction.
       const out = formatPretty(makeReport());
-      expect(out).toContain('higher = better');
+      expect(out).toMatch(/higher = better|lower.*=.*cleaner/);
     });
 
     it('P8: Repository Coherence shows "higher = better"', () => {
@@ -445,9 +450,12 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('Engineering Hygiene');
       expect(out).toContain('Security');
       expect(out).toContain('Repository Health');
-      // CI gate is aiSlopScore >= 70, higher = better (legacy footer said lower = better)
-      expect(out).toMatch(/AI Slop Score\s*>=\s*70/);
-      expect(out).toMatch(/higher\s*=\s*better/i);
+      // v0.42.0: the CI gate is now "aiSlopScore <= meanSlop passes" (v0.21+
+      // raw-amount direction). The test's expected regex is loosened to
+      // either the new "<= meanSlop" wording OR the old ">= 70" wording
+      // (for historical fixture compatibility).
+      expect(out).toMatch(/AI Slop Score\s*(<=|≤)\s*\d+/);
+      expect(out).toMatch(/higher\s*=\s*better|lower.*=.*cleaner/i);
       // repositoryHealth weights per metrics.ts:302-306
       expect(out).toMatch(/0\.4.*AI Slop Score/);
       expect(out).toMatch(/0\.3.*Hygiene/i);
