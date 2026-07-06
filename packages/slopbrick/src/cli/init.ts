@@ -356,6 +356,13 @@ export async function runDoctor(cwd: string): Promise<number> {
       ok(`Found ${scannable.length} source files to scan.`);
     } else {
       warn('No source files (.ts/.tsx/.js/.jsx/.vue/.svelte/.astro/.mdx) found in this directory.');
+      // v0.42.0 (user-review fix): when there are no source files in the
+      // current directory, suggest the two obvious next steps: cd into a
+      // package subdirectory or pass --workspace explicitly. Saves a
+      // round trip to the docs for the most common "why isn't scan
+      // finding anything?" support question.
+      lines.push(chalk.dim('    Run from a directory with source files, or pass --workspace <path>. ' +
+        'Monorepos usually want `--workspace packages/<name>`.'));
     }
   } catch {
     // discovery failure is not fatal
