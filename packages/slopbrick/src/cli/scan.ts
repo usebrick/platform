@@ -263,6 +263,14 @@ export async function runScan(
       logger.warn(
         `No source files matched in ${cwd}. Adjust --include or check your config at ${projectRoot}.`,
       );
+      // v0.42.0 (user-review fix): the original 1-line warning left
+      // monorepo users stranded. The most common cause is running
+      // from the root when the project lives under packages/* — same
+      // hint as `slopbrick doctor` now prints.
+      logger.warn(
+        'Tip: run from a directory with source files, or pass --workspace <path> ' +
+          '(monorepos usually want `--workspace packages/<name>`).',
+      );
     }
   }
 
