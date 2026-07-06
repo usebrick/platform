@@ -1031,11 +1031,22 @@ export function formatBriefReport(report: ProjectReport): string {
   // is `aiSlopScore <= meanSlop` (the legacy v0.14 / v0.21+ direction
   // was always "<= meanSlop passes", only v0.15–v0.20.1 had the
   // inverted `>= 70` reading).
-  const passed = report.aiSlopScore <= 30;
+  //
+  // v0.42.0 (user-review fix): the previous version hardcoded the
+  // threshold to 30, which was wrong for users who set a stricter
+  // `meanSlop` (e.g. the slopbrick repo itself uses meanSlop=15).
+  // For those users, the brief showed "CI gate: AI Slop Score <= 30
+  // -> pass" while the actual scan returned exit code 1 with "1
+  // threshold failed". The displayed gate and the actual gate
+  // disagreed. Fix: read the threshold from the report (always set
+  // since v0.21 by project-report.ts), so the brief and the exit
+  // code always agree.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  const passed = report.aiSlopScore <= meanSlop;
   lines.push('');
   lines.push(
     chalk.dim(
-      `  CI gate: AI Slop Score <= 30 -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
+      `  CI gate: AI Slop Score <= ${meanSlop} -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
     ),
   );
 
