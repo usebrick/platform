@@ -1,5 +1,5 @@
 ---
-// StructureDemo — renders a real `structure.json` (the artifact the
+// StructureDemo — renders a real `health.json` (the artifact the
 // tool produces) as if it's being written to disk, one field at a time.
 // The animation is driven by the parent's scroll position via
 // `animation-timeline: view()`. Each field fades in as the user
@@ -9,14 +9,14 @@
 // showing you what the tool builds.
 ---
 
-<section class="structure-demo" aria-label="Example structure.json output">
+<section class="structure-demo" aria-label="Example health.json output">
   <div class="structure-demo__panel">
     <div class="structure-demo__bar">
       <span class="structure-demo__dot" aria-hidden="true"></span>
       <span class="structure-demo__dot" aria-hidden="true"></span>
       <span class="structure-demo__dot" aria-hidden="true"></span>
-      <span class="structure-demo__path">/your-repo/.slopbrick/structure.json</span>
+      <span class="structure-demo__path">/your-repo/.slopbrick/health.json</span>
     </div>
-    <pre class="structure-demo__body"><code><span class="sd-key">{</span><span class="sd-line" style="--i: 0">  <span class="sd-key">"version"</span>: <span class="sd-str">"5"</span>,</span><span class="sd-line" style="--i: 1">  <span class="sd-key">"generatedAt"</span>: <span class="sd-str">"2026-07-12T04:42:14.730Z"</span>,</span><span class="sd-line" style="--i: 2">  <span class="sd-key">"workspace"</span>: <span class="sd-str">"/your-repo"</span>,</span><span class="sd-line" style="--i: 3">  <span class="sd-key">"aiSlopScore"</span>: <span class="sd-num">13</span>,</span><span class="sd-line" style="--i: 4">  <span class="sd-key">"engineeringHygiene"</span>: <span class="sd-num">92</span>,</span><span class="sd-line" style="--i: 5">  <span class="sd-key">"security"</span>: <span class="sd-num">95</span>,</span><span class="sd-line" style="--i: 6">  <span class="sd-key">"repositoryHealth"</span>: <span class="sd-num">91</span>,</span><span class="sd-line" style="--i: 7">  <span class="sd-key">"issueCounts"</span>: {</span><span class="sd-line" style="--i: 8; --indent: 1">    <span class="sd-key">"high"</span>: <span class="sd-num">3</span>,</span><span class="sd-line" style="--i: 9; --indent: 1">    <span class="sd-key">"medium"</span>: <span class="sd-num">12</span>,</span><span class="sd-line" style="--i: 10; --indent: 1">    <span class="sd-key">"low"</span>: <span class="sd-num">47</span></span><span class="sd-line" style="--i: 11">  }</span><span class="sd-key">}</span></code></pre>
+    <pre class="structure-demo__body"><code><span class="sd-key">{</span><span class="sd-line" style="--i: 0">  <span class="sd-key">"version"</span>: <span class="sd-str">"5"</span>,</span><span class="sd-line" style="--i: 1">  <span class="sd-key">"generatedAt"</span>: <span class="sd-str">"2026-07-06T15:33:18.987Z"</span>,</span><span class="sd-line" style="--i: 2">  <span class="sd-key">"workspace"</span>: <span class="sd-str">"/your-repo"</span>,</span><span class="sd-line" style="--i: 3">  <span class="sd-key">"aiSlopScore"</span>: <span class="sd-num">25</span>,</span><span class="sd-line" style="--i: 4">  <span class="sd-key">"engineeringHygiene"</span>: <span class="sd-num">100</span>,</span><span class="sd-line" style="--i: 5">  <span class="sd-key">"security"</span>: <span class="sd-num">100</span>,</span><span class="sd-line" style="--i: 6">  <span class="sd-key">"repositoryHealth"</span>: <span class="sd-num">57</span>,</span><span class="sd-line" style="--i: 7">  <span class="sd-key">"issueCounts"</span>: {</span><span class="sd-line" style="--i: 8; --indent: 1">    <span class="sd-key">"high"</span>: <span class="sd-num">3</span>,</span><span class="sd-line" style="--i: 9; --indent: 1">    <span class="sd-key">"medium"</span>: <span class="sd-num">12</span>,</span><span class="sd-line" style="--i: 10; --indent: 1">    <span class="sd-key">"low"</span>: <span class="sd-num">47</span></span><span class="sd-line" style="--i: 11">  }</span><span class="sd-key">}</span></code></pre>
   </div>
 </section>
