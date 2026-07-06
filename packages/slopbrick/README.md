@@ -89,8 +89,8 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 |-------|------------------|-----------|----------|
 | **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). | **lower = cleaner** (raw amount) | **Yes** (`≤ meanSlop: 30` passes) |
 | **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
-| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | higher = better | No (informational) |
-| **`repositoryHealth`** (composite) | Weighted: `0.4 × (100 − aiSlopScore) + 0.3 × eng + 0.2 × sec + 0.1 × test` | higher = better (inverts `aiSlopScore` internally) | No (informational) |
+| **`security`** | AI Security Risk band: low=100, medium=75, high=40, critical=10 | higher = better | No (informational) |
+| **`repositoryHealth`** (composite) | Weighted average of 8 axes: slopIndex, architectureConsistency, aiSecurityRisk, designTokenViolations, testQuality, businessLogicCoherence, docFreshness, dbHealth (default weights from `REPOSITORY_HEALTH_WEIGHTS`). Formula in `src/engine/repository-health.ts`. | higher = better | No (informational) |
 
 **Score-band messages** (v0.21.0+): every score ships with a one-line
 verdict in the pretty output — e.g. `AI Slop Score: 25 → "low amount
