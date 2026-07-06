@@ -60,7 +60,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_explain_rule',
     description:
-      'Return metadata for a single rule (id, category, severity, aiSpecific) plus a rationale and the recommended fix. Use this before auto-applying --fix to understand what the rule catches.',
+      'Return metadata for a single rule: ruleId, category, severity, aiSpecific, a brief rationale string, and a whereToLook path into src/rules/. The actual fix-steps live in the rule source (whereToLook) rather than in this response — read that file to understand the rule before auto-applying --fix.',
     inputSchema: {
       type: 'object',
       properties: {
