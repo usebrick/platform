@@ -29,7 +29,8 @@ async function main(): Promise<void> {
     const elapsed = performance.now() - start;
 
     console.log(`Scanned ${report.componentCount} components in ${elapsed.toFixed(0)}ms`);
-    console.log(`Slop Index: ${(report.aiSlopScore ?? 0).toFixed(2)}`);
+    // v0.42.0 (post-cleanup): renamed for v0.21+ direction awareness.
+    console.log(`AI Slop Score (lower = cleaner): ${(report.aiSlopScore ?? 0).toFixed(2)}`);
 
     if (elapsed > BUDGET_MS) {
       throw new Error(`Performance budget exceeded: ${elapsed.toFixed(0)}ms > ${BUDGET_MS}ms`);
