@@ -24,7 +24,7 @@ export function registerCi(
   program
     .command('ci')
     .description('CI gate: run a scan and exit 1 on constitution violations, threshold breach, or new issues since the last run. Use this in GitHub Actions / GitLab CI.')
-    .option('--max-slop <n>', 'exit 1 if slopIndex exceeds this number', parseCount)
+    .option('--max-slop <n>', 'exit 1 if aiSlopScore exceeds this number (lower = cleaner since v0.21)', parseCount)
     .option('--max-new-issues <n>', 'exit 1 if new issues (vs .slop-audit-cache.json) exceed this number', parseCount)
     .option('--strict-constitution', 'exit 1 on any constitution violation')
     .option('--format <pretty|json>', 'output format', 'json')
