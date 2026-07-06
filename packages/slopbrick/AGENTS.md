@@ -66,7 +66,7 @@ node bin/slopbrick.js scan
 node bin/slopbrick.js architecture   # Architecture Consistency Score
 node bin/slopbrick.js security      # AI Security Risk
 node bin/slopbrick.js drift         # Constitution violations
-node bin/slopbrick.js trend         # Slop Index over time
+node bin/slopbrick.js trend         # AI Slop Score over time (lower = cleaner since v0.21)
 node bin/slopbrick.js pr            # PR slop score (single weighted number per PR)
 
 # MCP server (for AI agents like Claude Code / Cursor / Codex)
@@ -97,15 +97,15 @@ A typical failing run looks like this:
 
 ```text
 Scanned 312 files, 501 components, 1381 issues (high: 42, medium: 289, low: 1050)
-Slop Index:               31
+AI Slop Score:           31 / 100 [LOW]
 Architecture Consistency: 82
 AI Security Risk:         HIGH  (1 critical, 0 high, 3 medium)
 Constitution drift:        2 violations  (1 stateManagement, 1 dataFetching)
 Design-token drift:       7 violations  (5 spacing, 2 radius)
-(lower Slop Index is better; higher Architecture Consistency is better)
+(lower AI Slop Score is better since v0.21; higher Architecture Consistency is better)
 ```
 
-- **Slop Index** — the original headline score; lower is better.
+- **AI Slop Score** — the v0.21+ headline score; lower = cleaner (raw amount of slop). Replaces the legacy "Slop Index"
 - **Architecture Consistency** — one number for cross-file pattern duplication; higher is better. 100 = one of each, no drift.
 - **AI Security Risk** — categorical; a single hardcoded API key outranks everything else. Drives `slopbrick security [--strict]` (exit 1 on high/critical for CI gating).
 - **Constitution drift** — list of imports that violate declared constitution in `slopbrick.config.mjs`. Drives `slopbrick drift` (exit 1 on any violation).
