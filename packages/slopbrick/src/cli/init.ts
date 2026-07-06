@@ -10,6 +10,7 @@
 // ./program for backward compat with src/index.ts).
 // `runDoctor` is internal — called only from ./program.ts.
 
+import chalk from 'chalk';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -276,10 +277,19 @@ export async function runDoctor(cwd: string): Promise<number> {
 
   // 2. Config file
   try {
+    const configPath = findConfigPath(cwd);
     const config = await loadConfig(cwd);
-    lines.push(`\n  ✓ Config loaded from: ${findConfigPath(cwd) ?? '(default)'}`);
-    const ruleCount = Object.keys(config.rules ?? {}).length;
-    lines.push(`    ${ruleCount} rules configured in your config file.`);
+    if (configPath) {
+      const ruleCount = Object.keys(config.rules ?? {}).length;
+      lines.push(`\n  ✓ Config loaded from: ${configPath}`);
+      lines.push(`    ${ruleCount} rule${ruleCount === 1 ? '' : 's'} configured in your config file.`);
+    } else {
+      // No config file on disk — show '(default)' cleanly without the
+      // misleading "X rules configured in your config file" line (you
+      // don't have a config file). Hint: 'slopbrick init' creates one.
+      lines.push(`\n  ✓ Config: using built-in defaults (no config file found).`);
+      lines.push(chalk.dim(`    Run \`slopbrick init\` to create ${cwd.endsWith('/') ? cwd : cwd + '/'}slopbrick.config.mjs and tune rule severity/rules to your project.`));
+    }
   } catch (error) {
     fail(`Could not read your config: ${(error as Error).message}`);
     exitCode = 3;
