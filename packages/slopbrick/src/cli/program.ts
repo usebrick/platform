@@ -21,6 +21,7 @@ import { renderTrend } from './render';
 import {
   thresholdExceeded,
   failedThresholdCount,
+  failedThresholds,
   baselineStatusMessage,
   stagedGating,
 } from './threshold';
@@ -422,8 +423,28 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         if (options.staged && stagedGatingResult.reason) {
           logger.error(`Gating failure: ${stagedGatingResult.reason}`);
         } else {
-          const failed = failedThresholdCount(report, config);
-          logger.error(`${failed} threshold${failed === 1 ? '' : 's'} failed. See details above.`);
+          const failedNames = failedThresholds(report, config);
+          // v0.42.0 (user-review fix): previously the message was
+          // "1 threshold failed. See details above." with no
+          // indication of which threshold. In --brief the gate line
+          // ("AI Slop Score <= 15 -> fail") appears, but in --json or
+          // piped output the user has no idea which threshold tripped.
+          // Now we name the failed threshold(s) directly:
+          //   1 threshold failed: meanSlop (score 25 > limit 15)
+          //   2 thresholds failed: meanSlop, category:security
+          const detail = failedNames
+            .map((name) => {
+              if (name === 'meanSlop') return `meanSlop (score ${report.aiSlopScore} > ${config.thresholds.meanSlop})`;
+              if (name === 'p90Slop') return `p90Slop (score ${report.p90Score} > ${config.thresholds.p90Slop})`;
+              if (name === 'individualSlopThreshold') return `individualSlopThreshold (peak ${report.peakScore} > ${config.thresholds.individualSlopThreshold})`;
+              const cat = name.replace(/^category:/, '') as keyof typeof report.categoryScores;
+              const limit = config.thresholds.categoryThresholds?.[cat];
+              const score = report.categoryScores[cat];
+              return `${name} (score ${score} > ${limit})`;
+            })
+            .join(', ');
+          const failed = failedNames.length;
+          logger.error(`${failed} threshold${failed === 1 ? '' : 's'} failed: ${detail}`);
         }
       }
       if (!options.quiet && !machineReadableStdout) {

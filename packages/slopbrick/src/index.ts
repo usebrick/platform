@@ -33,6 +33,7 @@ export {
 export {
   thresholdExceeded,
   failedThresholdCount,
+  failedThresholds,
   baselineStatusMessage,
   stagedGating,
   filterIssues,

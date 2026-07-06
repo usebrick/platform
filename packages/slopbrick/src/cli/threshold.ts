@@ -29,25 +29,38 @@ export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig)
 }
 
 export function failedThresholdCount(report: ProjectReport, config: ResolvedConfig): number {
-  let count = 0;
-  // v0.21.0: aiSlopScore is now the raw amount of slop (0=clean, 100=saturated).
+  // v0.42.0: now wraps failedThresholds() so adding new threshold types
+  // is a one-line change.
+  return failedThresholds(report, config).length;
+}
+
+/**
+ * v0.42.0 (user-review fix): failedThresholdCount() returned just the
+ * count. The CLI then printed "{n} threshold(s) failed. See details
+ * above." — but in --brief the user sees only the headline CI gate
+ * ("AI Slop Score <= 15 -> fail"), not the per-threshold list.
+ *
+ * This function returns the actual list of failed threshold names so
+ * the caller can name them in the final error message.
+ */
+export function failedThresholds(report: ProjectReport, config: ResolvedConfig): string[] {
+  const failed: string[] = [];
+  // v0.21.0: aiSlopScore is raw amount of slop (0=clean, 100=saturated).
   // The `meanSlop` config field keeps its name (no breaking rename) but
   // the comparison flips: aiSlopScore > meanSlop fails (was `<` in v0.20.1
-  // when aiSlopScore was the inverted cleanliness). The legacy v0.14
-  // contract was `slopIndex > meanSlop` (raw amount) so v0.21.0 restores
-  // that direction.
-  if (report.aiSlopScore > config.thresholds.meanSlop) count += 1;
-  if (report.p90Score > config.thresholds.p90Slop) count += 1;
-  if (report.peakScore > config.thresholds.individualSlopThreshold) count += 1;
+  // when aiSlopScore was the inverted cleanliness).
+  if (report.aiSlopScore > config.thresholds.meanSlop) failed.push('meanSlop');
+  if (report.p90Score > config.thresholds.p90Slop) failed.push('p90Slop');
+  if (report.peakScore > config.thresholds.individualSlopThreshold) failed.push('individualSlopThreshold');
   const cat = config.thresholds.categoryThresholds;
   if (cat) {
     for (const [category, limit] of Object.entries(cat)) {
       if (limit === undefined) continue;
       const score = report.categoryScores[category as keyof typeof report.categoryScores];
-      if (score !== undefined && score > limit) count += 1;
+      if (score !== undefined && score > limit) failed.push(`category:${category}`);
     }
   }
-  return count;
+  return failed;
 }
 
 export function categoryThresholdBreached(
