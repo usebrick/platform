@@ -1,9 +1,10 @@
 ---
 // Compare — slopbrick vs "everything else" (pre-2026 status quo).
-// Side-by-side courses of bricks, each with concrete examples
-// instead of vague claims. The yay bricks are warm-toned and
-// clickable for the break-on-hover animation; the nay bricks
-// are cold-toned with pre-rendered crack lines.
+// Side-by-side courses of bricks separated by a centered VS divider.
+// The yay bricks are warm-toned (orange check); the nay bricks are
+// cold-toned with line-through (struck-through old ways). Each
+// section is a "course" in the wall — the masonry aesthetic carries
+// the visual metaphor.
 
 import BrickLayout from './BrickLayout.astro';
 
@@ -18,8 +19,6 @@ const yay = [
 ];
 
 // "What the alternative looks like" — the situation slopbrick replaces.
-// Not a vendor call-out; the actual maintenance cost of any pre-2026
-// repo without structured knowledge of itself.
 const nay = [
   'Linters that score every commit against the same stale rules',
   'CI gates that ship without a Constitution to enforce',
@@ -36,8 +35,8 @@ const nay = [
       Four scores, one Constitution, every <span class="compare-section__accent">writeable artifact</span>.
     </h2>
     <p class="compare-section__body">
-      576,750 files of v10 calibration. 103 rules across 22 categories. The 4-score model
-      (AI Slop Score, Engineering Hygiene, Security, Repository Health). A Constitution engine
+      576,750 files of v10 calibration. 103 rules across 22 categories. The 4-score
+      model (AI Slop Score, Engineering Hygiene, Security, Repository Health). A Constitution engine
       you declare. usebrick.dev writes <code>.slopbrick/</code> artifacts that agents read
       instead of re-parsing the AST.
     </p>
@@ -53,10 +52,22 @@ const nay = [
       </div>
       <div class="compare__items">
         {yay.map((line) => (
-          <div class="compare__item compare__item--yay">{line}</div>
+          <div class="compare__item">
+            <span class="compare__check">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span class="compare__item-text">{line}</span>
+          </div>
         ))}
       </div>
     </div>
+
+    <div class="compare__divider" aria-hidden="true">
+      <span>vs</span>
+    </div>
+
     <div class="compare__col compare__col--nay">
       <div class="compare__heading compare__heading--nay">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -67,7 +78,15 @@ const nay = [
       </div>
       <div class="compare__items">
         {nay.map((line) => (
-          <div class="compare__item compare__item--nay">{line}</div>
+          <div class="compare__item compare__item--struck">
+            <span class="compare__cross">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </span>
+            <span class="compare__item-text">{line}</span>
+          </div>
         ))}
       </div>
     </div>
