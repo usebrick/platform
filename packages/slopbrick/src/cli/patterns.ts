@@ -132,7 +132,15 @@ function formatText(report: PatternFragmentationReport): string {
     const label = CATEGORY_LABELS[cat].padEnd(20);
     const count = String(stats.count).padStart(2);
     const baseline = String(stats.baseline).padStart(1);
-    const excess = stats.excess > 0 ? `⚠ +${stats.excess} over` : '✓ clean';
+    // v0.42.0 (user-review fix): '✓ clean' is misleading when the
+    // count is 0 (no implementations to be over baseline). Distinguish
+    // 3 cases: count=0 (no implementations), 0<count<=baseline (within
+    // baseline), count>baseline (excess).
+    const excess: string = stats.excess > 0
+      ? `⚠ +${stats.excess} over`
+      : stats.count === 0
+        ? '✓ none'
+        : '✓ within baseline';
     lines.push(`  ${label} ${count} implementations  (baseline ${baseline})  ${excess}`);
   }
 
@@ -207,7 +215,12 @@ function formatMarkdown(report: PatternFragmentationReport): string {
   for (const cat of PATTERN_CATEGORIES) {
     const stats = report.byCategory[cat];
     const label = CATEGORY_LABELS[cat];
-    const excess = stats.excess > 0 ? `+${stats.excess}` : '—';
+    // Same 3-case handling as the text formatter above.
+    const excess: string = stats.excess > 0
+      ? `+${stats.excess}`
+      : stats.count === 0
+        ? '—'
+        : '·';
     lines.push(`| ${label} | ${stats.count} | ${stats.baseline} | ${excess} |`);
   }
 
