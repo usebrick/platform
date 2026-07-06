@@ -59,46 +59,48 @@ a different formula because it asks a different question:
 | Constitution Mapped | 10% | is there a declared `.slopbrick/constitution.json`? |
 | AI Debt | 10% | bucket of total AI debt detected |
 
-## Why two scores?
+## All four scores at a glance
 
-They measure different things:
+The four scores fall into two groups:
 
-| | Coherence LOW | Coherence HIGH |
-|---|---|---|
-| **Slop LOW** | Human-written, internally inconsistent (mixed conventions) | Hand-written, internally consistent (the ideal) |
-| **Slop HIGH** | AI-generated AND inconsistent (worst case) | AI-generated but using consistent patterns (just AI) |
+- **`AI Slop Score`** — RAW amount of slop, **lower = cleaner**.
+  CI gate. Inverted to its reciprocal internally to feed into
+  the repositoryHealth composite.
+- **`Engineering Hygiene`**, **`Security`**, **`Repository Health`**
+  — cleanliness-style composite scores, **higher = better**.
+  Informational; only the aiSlopScore line gates CI.
 
-A codebase can be:
-- **Low Slop, high Coherence**: hand-written, internally consistent (the ideal)
-- **High Slop, high Coherence**: AI-generated but using consistent patterns (just AI)
-- **Low Slop, low Coherence**: human-written but inconsistent (mixed conventions)
-- **High Slop, low Coherence**: AI-generated AND inconsistent (worst case)
+| Score | Direction | What it tells you |
+|-------|-----------|-------------------|
+| **AI Slop Score** | lower = cleaner | how much AI fingerprint the codebase has |
+| **Engineering Hygiene** | higher = better | per-category internal consistency |
+| **Security** | higher = better | AI-flags lowered for high-risk patterns (inverted) |
+| **Repository Health** | higher = better | weighted composite that inverts aiSlopScore internally |
 
 ## Which one should I focus on?
 
-**Fix the Slop Index first.** It's the CI gate and the headline.
-The other scores (Coherence, Code Hygiene, Accessibility, etc.)
-are signals that explain the Slop Index, not separate goals.
+**Start with AI Slop Score** — it's the CI gate and the headline.
 
-When the Slop Index is high but Coherence is high, the codebase is
-AI-generated but consistent — your team should focus on the AI
-slop rules, not the consistency rules.
+- The other three are signals that *explain* the headline, not
+  separate goals. If `engineeringHygiene` is low, the AI slop
+  rules will tell you which categories are misbehaving.
+- If the AI Slop Score is high but Engineering Hygiene is high,
+  the codebase is AI-generated but consistent — your team
+  should focus on the AI slop rules, not the consistency rules.
+- If both are low, the codebase has both AI slop AND internal
+  inconsistency — your team should run `slopbrick scan --why-failing`
+  to see which rules are firing.
 
-When both are high, the codebase has both AI slop AND internal
-inconsistency — your team should run `slopbrick scan --why-failing`
-to see which rules are firing.
+## Why was AI Slop Score the primary headline?
 
-## Why was Coherence the primary headline in v0.9.x?
-
-In v0.9.1 the team believed "consistency" was the more useful lens
-for AI-assisted development. In v0.14.5i that decision was rolled
-back because users found the dual-scoring confusing — they
-expected to see the same number in the CLI that they see in
-`health.json`, and `health.json` has always used Slop Index.
-
-Coherence is preserved as a secondary view because it carries
-information that the Slop Index doesn't — specifically, the
-architecture consistency lens.
+`health.json` has always carried the AI Slop Score. CLI users
+expected the headline number to match. In v0.15.0–v0.20.1 an
+intermediate rename to "cleanliness" inverted the score but
+caused confusion: users read "100" as "100% slop" and thought
+they were failing when they were passing. v0.21.0 flipped it
+back to the natural reading ("0 = no slop") while keeping
+the v0.14 field name semantics for telemetry consumers
+(`previousSlopIndex` on ProjectReport).
 
 ## How to read the per-category breakdown
 
@@ -115,11 +117,35 @@ bar shows raw severity totals so the user sees honest numbers.
 
 A category with 0 points is "clean" — it has no active rules firing.
 
-## What's the threshold?
+## What's the AI Slop Score threshold?
 
-**70 = pass** (B-grade). Below 70, the CI gate fails with `--strict`.
-Above 70 is "passing." 90+ is "excellent." 40-69 is "needs work."
-0-39 is "concerning."
+The CI gate uses `report.thresholds.meanSlop` from your config
+(the default is 30). The gate condition is:
 
-The band labels in the CLI output (excellent / passing / needs
-work / concerning) are derived from these thresholds.
+  **AI Slop Score ≤ meanSlop → pass** (lower = cleaner since v0.21)
+
+So a score of 25 with `meanSlop: 15` is **failing**, and a score
+of 25 with `meanSlop: 30` is **passing**. The slopbrick repo
+itself uses `meanSlop: 15` (a strict threshold for self-scan).
+
+Band labels in the CLI output ("no slop", "low", "medium",
+"high", "saturated") come from `slopScoreBand()`:
+
+| AI Slop Score | Band |
+|---|---|
+| 0–9 | no slop (green) |
+| 10–29 | low (green) |
+| 30–49 | medium (yellow) |
+| 50–69 | high (red) |
+| 70–100 | saturated (red) |
+
+For the **other three scores** (`engineeringHygiene`, `security`,
+`repositoryHealth`), the bands are inverted because those are
+higher-is-better:
+
+| Score | Band starts at |
+|---|---|
+| excellent | ≥ 90 |
+| passing | ≥ 70 |
+| needs work | ≥ 40 |
+| concerning | < 40 |
