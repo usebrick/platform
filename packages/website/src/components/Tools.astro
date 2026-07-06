@@ -20,7 +20,7 @@ const tools = [
   },
   {
     name: 'slopbrick',
-    desc: 'The CLI. Detect, classify, score, and report. 103 rules in 22 categories, 4 scores, JSON Schemas, MCP server. v10-calibrated against 576,750 files. The moat itself.',
+    desc: 'The CLI. Score code on 4 axes: AI Slop Score (CI gate, lower = cleaner), Engineering Hygiene, Security, Repository Health. 103 rules in 22 categories, .slopbrick/ artifacts, MCP server, JSON Schemas. v0.42.0, v10-calibrated against 576,750 files. The moat itself.',
     icon: 'slopbrick' as const,
   },
   {
@@ -38,8 +38,9 @@ const tools = [
         <span class="tools__label">the platform</span>
         <h2 class="tools__title">Four tools. One platform. <span class="tools__title-accent">Zero slop.</span></h2>
         <p class="tools__body">
-          Every tool reads the same JSON Schemas and writes the same shape.
-          Click a brick to crack it.
+          The 4-score model (AI Slop Score, Engineering Hygiene, Security,
+          Repository Health) + Constitution + MCP + JSON Schemas. Every
+          tool reads and writes the same shapes. Click a brick to crack it.
         </p>
       </div>
     </BrickLayout>
