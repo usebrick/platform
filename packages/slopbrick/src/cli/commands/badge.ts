@@ -33,15 +33,22 @@ export function registerBadge(program: Command): void {
       const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
       const health = loadHealth(cwd);
       if (health) {
-        // v0.15.0 U.4: badge now shows the composite repositoryHealth
-        // (the v3 replacement for the headline slopIndex). The shape
-        // passed to formatBadge is a ProjectReport-like — it still
-        // reads `slopIndex`, so we invert the value (lower = better
-        // for the legacy badge, higher = better for repositoryHealth)
-        // before passing it in. TODO(U.5): add a --format that
-        // shows all 4 scores.
+        // v0.42.0 (user-review fix): badge was reading
+        // `health.repositoryHealth` and inverting it as `slopIndex`.
+        // Two bugs in one:
+        //   (1) The badge label is "AI Slop" — so the value shown
+        //       should be health.aiSlopScore (raw amount of slop),
+        //       not the composite repositoryHealth.
+        //   (2) `formatBadge()` reads `report.aiSlopScore`, NOT
+        //       `slopIndex`. The previous code synthesized a
+        //       `{ slopIndex }` object, so formatBadge fell through
+        //       to `report.aiSlopScore ?? 0` — which is 0 (no
+        //       field set). The badge was rendering as "ai-slop-0"
+        //       regardless of the actual score.
+        // Fix: synthesize with the right field, and pass the raw
+        // aiSlopScore straight through.
         const synthetic = {
-          slopIndex: 100 - health.repositoryHealth,
+          aiSlopScore: health.aiSlopScore ?? 0,
         } as Parameters<typeof formatBadge>[0];
         logger.info(formatBadge(synthetic));
         process.exit(0);
