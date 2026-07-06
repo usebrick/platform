@@ -276,7 +276,7 @@ export function formatGroupedHelp(cmd: Command): string {
         '  migrate  v0.10.x slop-audit/ → v0.11.0+ .slopbrick/ migration',
         '  validate-config  validate slopbrick.config.mjs',
         '  tokens   merge a design-tokens.json layout values into the allowlist',
-        '  report   last scan report (alias for `slopbrick config`)',
+        '  report   re-render a saved JSON report (from --json <path>)',
         '  install / uninstall  manage the git pre-commit hook',
         '  mcp       run the MCP server (JSON-RPC 2.0 over stdio)',
         '  watch / --watch  re-run scan on file change',
