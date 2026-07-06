@@ -226,7 +226,7 @@ Next step:
 |-------------------|-----------|
 | Add a new rule (most common contribution) | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
 | Configure for strict CI, monorepo, Python, etc. | [`EXAMPLES.md`](./EXAMPLES.md) |
-| Understand the Slop Index vs Coherence | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
+| Understand the 4-score model (AI Slop Score, Engineering Hygiene, Security, Repository Health) | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
 | See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
 | See the 103 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
