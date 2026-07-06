@@ -43,7 +43,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_scan_file',
     description:
-      'Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, severity, line, column, message, advice) and the file-level Slop Index.',
+      'Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest.',
     inputSchema: {
       type: 'object',
       properties: {
