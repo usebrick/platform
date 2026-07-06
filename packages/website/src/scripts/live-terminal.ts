@@ -230,8 +230,8 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
-    appendLine('muted', 'slopbrick 0.38.0 · 4 scores · 103 rules · 22 categories · v10-calibrated · no telemetry');
-    appendLine('muted', "type `help` to list commands. the CLI itself runs offline.");
+    appendLine('muted', 'slopbrick v0.43.0 · 4 scores · 103 rules · 22 categories · v10-calibrated · offline');
+    appendLine('muted', "type `help` to list commands. the CLI itself runs without telemetry.");
     renderInputLine();
   };
 

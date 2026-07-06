@@ -1,15 +1,18 @@
 ---
-// Calibration — the calibration ritual.
-// The 4 score bricks count up from 0 to their target. The score
-// values are not just numbers; each one is a "calibrated" verdict
-// that the user can read into (13 = low amount of slop, 92 = strong,
-// 95 = solid, 91 = ready to ship). Below the stats, the live
-// `structure.json` demo shows what the tool actually produces.
+// Calibration — the four numbers that earn the "usebrick" name.
+// Count-up animation on reveal (counter.ts). Each brick shows a
+// `data-target` (the real value) and a verdict (the natural-language
+// restatement the user can read into).
 //
-// v0.21.0: aiSlopScore is the raw amount of slop (lower = cleaner),
-// not the inverted cleanliness reading. The 4 numbers are chosen so
-// the headline reads as "this repo has low slop" rather than the
-// confusing v0.20.1 "100 = clean" inversion.
+// v0.21.0: aiSlopScore is raw amount of slop (lower = cleaner), not
+// the inverted cleanliness reading. The 4 numbers below are the
+// slopbrick repo's own most-recent self-scan — a real example, not
+// a cherry-picked marketing number.
+
+// From `slopbrick scan --workspace packages/slopbrick --brief` on 2026-07-06.
+// Shape: aiSlopScore=25, engineeringHygiene=100, security=100, repositoryHealth=57.
+// The slopbrick repo's meanSlop is 15 (strict self-scan threshold).
+
 import StructureDemo from './StructureDemo.astro';
 ---
 
@@ -19,28 +22,34 @@ import StructureDemo from './StructureDemo.astro';
     <h2 class="calibration__title">
       The numbers that earn the name <span class="calibration__accent">usebrick</span>.
     </h2>
+    <p class="calibration__subhead">
+      From <code>slopbrick scan</code> on this site&apos;s own repo. Per-rule
+      calibration lives in <code>src/rules/signal-strength.json</code>;
+      no score is hand-picked, all are derived from v10-corpus
+      precision/recall against 576,750 files.
+    </p>
   </header>
 
   <div class="calibration__stats">
     <div class="calibration__stat">
-      <div class="calibration__value" data-target="13" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">aiSlopScore</div>
-      <div class="calibration__verdict">low amount of slop</div>
+      <div class="calibration__value" data-target="25" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">AI Slop Score</div>
+      <div class="calibration__verdict">low amount of AI slop</div>
     </div>
     <div class="calibration__stat">
-      <div class="calibration__value" data-target="92" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">engineeringHygiene</div>
-      <div class="calibration__verdict">strong</div>
+      <div class="calibration__value" data-target="100" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">Engineering Hygiene</div>
+      <div class="calibration__verdict">consistent across 6 categories</div>
     </div>
     <div class="calibration__stat">
-      <div class="calibration__value" data-target="95" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">security</div>
-      <div class="calibration__verdict">solid</div>
+      <div class="calibration__value" data-target="100" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">Security</div>
+      <div class="calibration__verdict">no AI-flagged security risks</div>
     </div>
-    <div class="calibration__stat">
-      <div class="calibration__value" data-target="91" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">repositoryHealth</div>
-      <div class="calibration__verdict">ready to ship</div>
+    <div class="calibration__stat calibration__stat--wide">
+      <div class="calibration__value" data-target="57" data-prefix="" data-suffix="">0</div>
+      <div class="calibration__axis">Repository Health</div>
+      <div class="calibration__verdict">composite, hierarchy + security-weighted</div>
     </div>
   </div>
 
@@ -51,7 +60,7 @@ import StructureDemo from './StructureDemo.astro';
     noise than signal goes back to <em>defaultOff</em> until it earns
     its way on. <strong>aiSlopScore</strong> uses the natural-reading
     direction (0 = clean, 100 = saturated) — the other three scores
-    are "higher = better". v0.21.0.
+    are &quot;higher = better&quot;. v0.21.0.
     <cite class="calibration__cite">the usebrick calibration contract</cite>
   </blockquote>
 </section>

@@ -1,26 +1,31 @@
 ---
-// Compare — two courses of bricks side by side.
-// The usebrick course is warm-toned; the "everything else" course
-// is cold-toned with cracks running through each brick. The crack
-// lines are pre-rendered (zero-length) and animated by the existing
-// `break-on-hover.ts` when a brick is interacted with.
+// Compare — slopbrick vs "everything else" (pre-2026 status quo).
+// Side-by-side courses of bricks, each with concrete examples
+// instead of vague claims. The yay bricks are warm-toned and
+// clickable for the break-on-hover animation; the nay bricks
+// are cold-toned with pre-rendered crack lines.
 
 import BrickLayout from './BrickLayout.astro';
 
+// "What slopbrick does" — 5 concrete capabilities you can verify
+// in the docs and the CLI output.
 const yay = [
-  'v10-calibrated against 576,750 real files',
-  '4 JSON Schemas, one contract: Inventory, Constitution, Structure, Health.',
-  'MCP server. Your editor, our structure.',
-  'Confidence-scored every change it proposes',
-  'Cross-language JSON Schemas, not just TypeScript types',
+  'v0.43.0, 103 rules, 22 categories, the 4-score model',
+  'Writes .slopbrick/{inventory,constitution,structure,health}.json — every agent reads the same shape',
+  'MCP server: Claude Code, Cursor, Copilot all consume the structure',
+  'Constitution engine — declare your stack once, drift exits 1',
+  'v10-calibrated against 576,750 real files, per-rule precision/recall on disk',
 ];
 
+// "What the alternative looks like" — the situation slopbrick replaces.
+// Not a vendor call-out; the actual maintenance cost of any pre-2026
+// repo without structured knowledge of itself.
 const nay = [
-  'Re-scans the same file 47 times per session',
-  'Rules with FP rates you have to memorize',
-  'Vendor lock-in to a single editor',
-  '"100% coverage" with the floor(0.5) rounding bug',
-  'TypeScript types that lie about the JSON',
+  'Linters that score every commit against the same stale rules',
+  'CI gates that ship without a Constitution to enforce',
+  'AI agents that retrain on each session — forgetting your patterns',
+  'Scan-results dashboards that nobody on the team opens',
+  'MCP servers that read but never write the structure files',
 ];
 ---
 
@@ -28,12 +33,13 @@ const nay = [
   <BrickLayout as="header" tone="raised" class="compare-section__head" span={2}>
     <span class="compare-section__label">the difference</span>
     <h2 class="compare-section__title">
-      Static analysis, but it <span class="compare-section__accent">structures</span>.
+      Four scores, one Constitution, every <span class="compare-section__accent">writeable artifact</span>.
     </h2>
     <p class="compare-section__body">
-      Linters check syntax. We check architecture. usebrick.dev reads
-      your repo once, writes a structure file, and never re-discovers
-      what it already knows about you.
+      576,750 files of v10 calibration. 103 rules across 22 categories. The 4-score model
+      (AI Slop Score, Engineering Hygiene, Security, Repository Health). A Constitution engine
+      you declare. usebrick.dev writes <code>.slopbrick/</code> artifacts that agents read
+      instead of re-parsing the AST.
     </p>
   </BrickLayout>
 
@@ -45,34 +51,23 @@ const nay = [
         </svg>
         <span>usebrick</span>
       </div>
-      <div class="compare__brick-wall">
+      <div class="compare__items">
         {yay.map((line) => (
-          <BrickLayout tone="accent" class="compare__brick">
-            <div class="compare__item">
-              <svg class="compare__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-              <span>{line}</span>
-            </div>
-          </BrickLayout>
+          <div class="compare__item compare__item--yay">{line}</div>
         ))}
       </div>
     </div>
-
     <div class="compare__col compare__col--nay">
-      <div class="compare__heading">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <div class="compare__heading compare__heading--nay">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
         <span>everything else</span>
       </div>
-      <div class="compare__brick-wall">
+      <div class="compare__items">
         {nay.map((line) => (
-          <BrickLayout tone="cracked" class="compare__brick">
-            <div class="compare__item">
-              <svg class="compare__cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-              <span>{line}</span>
-            </div>
-          </BrickLayout>
+          <div class="compare__item compare__item--nay">{line}</div>
         ))}
       </div>
     </div>

@@ -1,32 +1,36 @@
 ---
-// Tools — the 2x2 brick course.
-// Each tool is a brick. The first brick (`pickbrick`) is a header
-// brick that spans both columns, so the section reads top-down:
-// big intro, then four tools, then the wall continues to the next
-// section.
+// Tools — the slopbrick platform, broken into its surfaces.
+// 4 cards: CLI · MCP · JSON Schemas · Constitution. Each is a
+// real, shipped capability, not vaporware. (pickbrick/mendbrick
+// were "Planned" cards that looked unprofessional; removed in
+// v0.43.0 polish.)
 
 import BrickLayout from './BrickLayout.astro';
 
 const tools = [
   {
-    name: 'pickbrick',
-    desc: 'Pick the right patterns from a curated catalog of frontend, backend, and full-stack recipes. (Planned — see AGENTS.md roadmap.)',
-    icon: 'pickbrick' as const,
+    name: 'cli',
+    label: 'CLI',
+    desc: 'Score code on 4 axes. Writes .slopbrick/ artifacts. v0.43.0, 103 rules across 22 categories, v10-calibrated against 576,750 files.',
+    icon: 'cli' as const,
   },
   {
-    name: 'mendbrick',
-    desc: 'Migrate legacy code to modern patterns. The repair tool that scores its own confidence on every change it proposes. (Planned.)',
-    icon: 'mendbrick' as const,
+    name: 'mcp',
+    label: 'MCP',
+    desc: 'Talk to Claude Code, Cursor, Copilot. 5 tools, JSON-RPC 2.0 over stdio. Agents consume the structure, not the AST.',
+    icon: 'mcp' as const,
   },
   {
-    name: 'slopbrick',
-    desc: 'The CLI. Score code on 4 axes: AI Slop Score (CI gate, lower = cleaner), Engineering Hygiene, Security, Repository Health. 103 rules in 22 categories, .slopbrick/ artifacts, MCP server, JSON Schemas. v0.43.0, v10-calibrated against 576,750 files. The moat itself.',
-    icon: 'slopbrick' as const,
+    name: 'schemas',
+    label: 'JSON Schemas',
+    desc: '4 contracts: Inventory, Constitution, Structure, Health. The wire format every agent and dashboard agrees on. Cross-language.',
+    icon: 'schemas' as const,
   },
   {
-    name: 'core',
-    desc: 'The shared spec. inventory, constitution, structure, and health JSON Schemas that every tool reads and writes.',
-    icon: 'core' as const,
+    name: 'constitution',
+    label: 'Constitution',
+    desc: 'Declare your stack once in slopbrick.config.mjs. The agent + linter enforce it together. Drift is an exit code.',
+    icon: 'constitution' as const,
   },
 ];
 ---
@@ -36,62 +40,57 @@ const tools = [
     <BrickLayout as="header" tone="raised" class="tools__head" span={2}>
       <div class="tools__head-inner">
         <span class="tools__label">the platform</span>
-        <h2 class="tools__title">Four tools. One platform. <span class="tools__title-accent">Zero slop.</span></h2>
+        <h2 class="tools__title">One product. <span class="tools__title-accent">Four surfaces.</span></h2>
         <p class="tools__body">
-          The 4-score model (AI Slop Score, Engineering Hygiene, Security,
-          Repository Health) + Constitution + MCP + JSON Schemas. Every
-          tool reads and writes the same shapes. Click a brick to crack it.
+          slopbrick ships as a CLI, an MCP server, four JSON Schemas, and a Constitution engine.
+          Every surface reads and writes the same <code>.slopbrick/</code> artifacts — so
+          the agent and your CI agree on what they're seeing.
         </p>
       </div>
     </BrickLayout>
 
-    {tools.map((t, i) => (
+    {tools.map((t) => (
       <BrickLayout
         as="article"
         tone="default"
-        interactive
-        class={`tools__brick tools__brick--${i + 1}`}
-        ariaLabel={`${t.name} — click to crack`}
+        class={`tools__brick tools__brick--${t.icon}`}
+        data-tool={t.icon}
       >
         <article
           class="tool-card"
-          data-tool={t.name}
           role="button"
           tabindex="0"
-          aria-label={`Trigger crack animation on ${t.name} brick`}
+          aria-label={`Crack the ${t.label} brick`}
         >
           <svg class="tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            {t.icon === 'pickbrick' && (
+            {t.icon === 'cli' && (
               <>
-                <path d="M3 6h18l-2 12H5L3 6z" />
-                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <line x1="9" y1="11" x2="15" y2="11" />
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
               </>
             )}
-            {t.icon === 'mendbrick' && (
+            {t.icon === 'mcp' && (
               <>
-                <path d="M14 7l3-3 3 3-3 3-3-3z" />
-                <path d="M10 14l-3 3 3 3 3-3-3-3z" />
-                <line x1="13" y1="10" x2="11" y2="14" />
+                <rect x="3" y="6" width="18" height="12" rx="2" />
+                <path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10" />
               </>
             )}
-            {t.icon === 'slopbrick' && (
+            {t.icon === 'schemas' && (
               <>
-                <path d="M4 17l6-6 4 4 6-6" />
-                <path d="M14 9h6v6" />
-                <circle cx="6" cy="6" r="1" fill="currentColor" />
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="9" y1="13" x2="15" y2="13" />
+                <line x1="9" y1="17" x2="13" y2="17" />
               </>
             )}
-            {t.icon === 'core' && (
+            {t.icon === 'constitution' && (
               <>
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
+                <path d="M12 2l3 6 6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z" />
               </>
             )}
           </svg>
-          <h3 class="tool-card__name">{t.name}</h3>
+          <h3 class="tool-card__label">{t.label}</h3>
+          <p class="tool-card__name">{t.name}</p>
           <p class="tool-card__desc">{t.desc}</p>
           <span class="tool-card__hint">click to crack</span>
           <svg class="tool-card__cracks" viewBox="0 0 280 160" preserveAspectRatio="none" aria-hidden="true">
