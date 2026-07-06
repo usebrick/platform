@@ -6,7 +6,11 @@ import { parseCount } from '../options.js';
 /**
  * v0.18.x (R-H1): trend subcommand extracted from cli/program.ts.
  *
- * Slop Index over time, from `.slopbrick/flywheel/scans.jsonl`.
+ * AI Slop Score over time, from `.slopbrick/flywheel/scans.jsonl`.
+ *
+ * Since v0.21.0, AI Slop Score is raw amount of slop (lower = cleaner).
+ * The "delta" semantics in this command's output flip accordingly:
+ * a NEGATIVE delta (score went down) means cleaner, POSITIVE means worse.
  *
  * Renamed from `--format` to `--render` here (same as the original
  * inline action): a global `--format` option collides with this
@@ -15,7 +19,7 @@ import { parseCount } from '../options.js';
 export function registerTrend(program: Command): void {
   program
     .command('trend')
-    .description('Slop Index over time, from .slopbrick/flywheel/scans.jsonl')
+    .description('AI Slop Score over time, from .slopbrick/flywheel/scans.jsonl (lower = cleaner since v0.21)')
     .option('--max-points <n>', 'how many recent scans to plot', parseCount, 30)
     .option('--render <kind>', 'output rendering: text | markdown', 'text')
     .action((cmdOptions) => {
@@ -26,7 +30,12 @@ export function registerTrend(program: Command): void {
         logger.info(out);
         if (report.delta > 1) {
           logger.info('');
-          logger.info('Warning: Slop Index increased by ' + report.delta.toFixed(1) + ' points over this period.');
+          logger.info(// v0.42.0: the legacy 'Slop Index increased' message implied higher
+          // = worse, which is the v0.15-v0.20.1 inverted reading. Since v0.21,
+          // AI Slop Score is lower-is-better; an INCREASE is worse, but
+          // the warning should say "AI Slop Score got worse" or just
+          // "delta went up" so users don't have to remember the direction.
+          `Warning: AI Slop Score got worse by ${report.delta.toFixed(1)} points over this period (lower = cleaner since v0.21).`);
         }
       } catch (error) {
         logger.error(error instanceof Error ? error.message : String(error));

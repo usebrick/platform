@@ -163,7 +163,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       .option('--quiet', 'suppress non-error output')
       .option('--verbose', 'enable debug logging (file paths, timings, rule-fire counts)')
       .option('--strict', 'exit 2 if any high-severity issue remains')
-      .option('--no-increase', 'exit 2 if slop index increased since last run')
+      .option('--no-increase', 'exit 2 if AI Slop Score increased since last run (lower = cleaner since v0.21)')
       // v0.42.0 (§3a.4): opt-in flag for the AGENTS.md auto-refresh
       // hook. Without this flag (or
       // `slopbrick.config.mjs#autoRefreshSnippets: true`), scans are

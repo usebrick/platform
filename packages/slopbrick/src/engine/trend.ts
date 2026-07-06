@@ -81,19 +81,20 @@ export function trendToText(report: TrendReport): string {
   }
   const slopValues = report.points.map((p) => p.slopIndex);
   const spark = sparkline(slopValues);
-  lines.push('Slop Index trend (last ' + report.points.length + ' scans, ' + report.totalScans + ' total):');
+  lines.push('AI Slop Score trend (last ' + report.points.length + ' scans, ' + report.totalScans + ' total; lower = cleaner since v0.21):');
   lines.push('');
   lines.push('  ' + spark + '  ' + slopValues[0]!.toFixed(1) + ' -> ' + slopValues[slopValues.length - 1]!.toFixed(1));
   lines.push('');
   if (report.first && report.latest) {
     const direction = report.delta < 0 ? 'improved' : report.delta > 0 ? 'regressed' : 'unchanged';
     const arrow = report.delta < 0 ? 'v' : report.delta > 0 ? '^' : '=';
-    lines.push('  ' + arrow + ' Slop Index ' + direction + ' by ' + Math.abs(report.delta).toFixed(1) + ' points');
+    lines.push('  ' + arrow + ' AI Slop Score ' + direction + ' by ' + Math.abs(report.delta).toFixed(1) + ' points (lower = cleaner since v0.21)');
     lines.push('    ' + report.first.timestamp + '  ->  ' + report.latest.timestamp);
   }
   lines.push('');
   lines.push('Recent scans:');
-  lines.push('  Timestamp                  Slop    Health  Framework  Issues');
+  lines.push('  Timestamp                  AI Slop   Health  Framework  Issues');
+  lines.push('                             (lower=cleaner)');
   lines.push('  ────────────────────────   ────   ──────  ─────────  ──────');
   for (const p of report.points.slice(-10)) {
     const ts = p.timestamp.slice(0, 19).replace('T', ' ');
@@ -115,14 +116,14 @@ export function trendToText(report: TrendReport): string {
 
 export function trendToMarkdown(report: TrendReport): string {
   const lines: string[] = [];
-  lines.push('# Slop Index Trend');
+  lines.push('# AI Slop Score Trend (lower = cleaner since v0.21)');
   lines.push('');
   if (report.points.length === 0) {
     lines.push('No telemetry data yet. Run `slopbrick scan` to start tracking.');
     return lines.join('\n');
   }
   const slopValues = report.points.map((p) => p.slopIndex);
-  lines.push('Slop Index sparkline (last ' + report.points.length + ' scans):');
+  lines.push('AI Slop Score sparkline (last ' + report.points.length + ' scans; lower = cleaner since v0.21):');
   lines.push('');
   lines.push('```');
   lines.push(sparkline(slopValues));
@@ -130,10 +131,10 @@ export function trendToMarkdown(report: TrendReport): string {
   lines.push('');
   if (report.first && report.latest) {
     const direction = report.delta < 0 ? 'improved' : report.delta > 0 ? 'regressed' : 'unchanged';
-    lines.push('Slop Index ' + direction + ' by **' + Math.abs(report.delta).toFixed(1) + ' points** between first and latest scan.');
+    lines.push('AI Slop Score ' + direction + ' by **' + Math.abs(report.delta).toFixed(1) + ' points** between first and latest scan (lower = cleaner since v0.21).');
   }
   lines.push('');
-  lines.push('| Timestamp | Slop Index | Health | Framework | Issues |');
+  lines.push('| Timestamp | AI Slop Score (lower = cleaner) | Health | Framework | Issues |');
   lines.push('|-----------|-----------:|-------:|-----------|-------:|');
   for (const p of report.points) {
     lines.push('| ' + p.timestamp + ' | ' + p.slopIndex.toFixed(1) + ' | ' + p.assemblyHealth.toFixed(1) + ' | ' + p.framework + ' | ' + p.totalIssues + ' |');
