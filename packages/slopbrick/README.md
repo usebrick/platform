@@ -24,7 +24,7 @@ For the prevention layer:
 
 ```bash
 slopbrick watch           # re-run scan on every file change
-slopbrick lock            # install the Git pre-commit hook
+slopbrick install         # install the Git pre-commit hook
 slopbrick ci              # CI gate: exit 1 on constitution violation
 ```
 
@@ -40,14 +40,15 @@ on every scan — your repository, encoded for the next agent.
   inventory, constitution, health) make your codebase queryable by
   any AI agent in O(read file) instead of O(parse AST).
 - **LockBrick prevention** — `slopbrick watch` flags violations as you
-  write, `slopbrick lock` blocks AI-introduced slop at pre-commit,
+  write, `slopbrick install` blocks AI-introduced slop at pre-commit,
   `slopbrick ci` enforces the same in CI.
 - **Constitution** — declare your canonical stack (state lib, form
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.38.0 (current). See the [CHANGELOG](./CHANGELOG.md) for
-the full release notes.
+**Status:** v0.42.0 (current). Engine: 103 rules in 22 categories,
+4 headline scores, 9+ language frontends, v10-calibrated against 576,750
+real files. See [CHANGELOG](./CHANGELOG.md) for the full release notes.
 
 ---
 
@@ -78,27 +79,31 @@ For every other config question, see [`EXAMPLES.md`](./EXAMPLES.md).
 
 ## The headlines (4-score model, v0.21.0+)
 
-> **v0.15.0 introduced the 4-score model; v0.21.0 FLIPPED `aiSlopScore`
-> to the natural-reading "raw amount" direction (0=clean, 100=saturated).**
-> The other three scores stay "higher = better". The legacy `slopIndex`
-> field is kept as optional on `ProjectReport` for backward compat with
-> existing test fixtures and historical telemetry; the v0.14-compat
+> **v0.15.0 introduced the 4-score model. v0.21.0 FLIPPED `aiSlopScore`
+> to the natural-reading "raw amount of slop" direction
+> (0 = clean, 100 = saturated, **lower = cleaner**).** v0.18.0 added
+> the 4th score (security). The other three scores stay "higher = better".
+> The legacy `slopIndex` field is kept as optional on `ProjectReport`
+> for backward compat with existing test fixtures; the v0.14-compat
 > removal is tracked separately.
 
 | Score | What it measures | Direction | CI gate? |
 |-------|------------------|-----------|----------|
-| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). | **lower = cleaner** (raw amount) | **Yes** (`≤ meanSlop: 30` passes) |
+| **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). | **lower = cleaner** (raw amount of slop) | **Yes** (`≤ meanSlop` passes; default 30) |
 | **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
 | **`security`** | AI Security Risk band: low=100, medium=75, high=40, critical=10 | higher = better | No (informational) |
-| **`repositoryHealth`** (composite) | Weighted average of 8 axes: slopIndex, architectureConsistency, aiSecurityRisk, designTokenViolations, testQuality, businessLogicCoherence, docFreshness, dbHealth (default weights from `REPOSITORY_HEALTH_WEIGHTS`). Formula in `src/engine/repository-health.ts`. | higher = better | No (informational) |
+| **`repositoryHealth`** | Weighted average of 8 axes (slopIndex, architectureConsistency, aiSecurityRisk, designTokenViolations, testQuality, businessLogicCoherence, docFreshness, dbHealth). Default weights in `REPOSITORY_HEALTH_WEIGHTS`. | higher = better | No (informational) |
 
 **Score-band messages** (v0.21.0+): every score ships with a one-line
 verdict in the pretty output — e.g. `AI Slop Score: 25 → "low amount
-of slop"`, `Security Risk: 33 → "high risk"`. See `src/report/pretty.ts`.
+of AI slop"`, `Security Risk: low`. The band mapping for aiSlopScore
+is **0–9 no slop**, **10–29 low**, **30–49 medium**, **50–69 high**,
+**70–100 saturated** (v0.21.0 lower-is-better direction). See
+`src/report/pretty.ts`.
 
-The same numbers are in `.slopbrick/health.json`.
+The same numbers live in `.slopbrick/health.json`.
 
-For the full math, the 2×2 quadrant, and which one to focus on, see
+For the full math, the 4-score quadrant, and which one to focus on, see
 [`docs/scoring-explained.md`](./docs/scoring-explained.md).
 
 For per-rule precision/recall/FPR (auditable), see
@@ -110,8 +115,7 @@ For per-rule precision/recall/FPR (auditable), see
 
 Starting in **v0.24.0**, slopbrick can send a single one-shot usage
 ping after `slopbrick scan` completes. This is **opt-in** — the
-default is OFF — and is intended for the v9 corpus build script
-and self-hosted CI.
+default is OFF — and is intended for self-hosted CI telemetry.
 
 ### How to opt in
 
@@ -134,13 +138,13 @@ A single POST with `Content-Type: application/json` and exactly
 | Field | Type | Example | Source |
 |-------|------|---------|--------|
 | `schema_version` | string | `"1"` | constant |
-| `slopbrick_version` | string | `"0.24.0"` | `package.json` |
+| `slopbrick_version` | string | `"0.42.0"` | `package.json` |
 | `scan_id` | string (UUID v4) | `"f47ac10b-…"` | generated per run |
 | `file_count` | int | `42` | `results.length` |
-| `rule_count` | int | `95` | `builtinRules.length` |
+| `rule_count` | int | `103` | `builtinRules.length` |
 | `duration_ms` | int | `1834` | wall-clock scan time |
 | `platform` | string | `"darwin"` | `process.platform` |
-| `node_version` | string | `"v20.11.0"` | `process.version` |
+| `node_version` | string | `"v24.15.0"` | `process.version` |
 
 ### Privacy promise
 
@@ -182,41 +186,20 @@ for the receiver.
 
 ```text
 $ npx slopbrick scan
-Repo is concerning (25/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts. Run `slopbrick scan --why-failing` for the top 5 rules, or `slopbrick scan --suggest` for fixes.
+Repo is low (25/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts. Run `slopbrick scan --why-failing` for the top 5 rules, or `slopbrick scan --suggest` for fixes.
 
-AI Slop Score:  25 / 100 [HIGH]  ↑5 (worse)
-higher = better · measures AI-slop signatures. The same number in .slopbrick/health.json.
-  ├─ boundary:  10  (40%)  — structural integrity
-  ├─ context:   50  (35%)  — props / state / imports
-  └─ visual:     5  (25%)  — CSS / a11y / layout
+  AI Slop Score         25   low  (aiSlopScore)
+  Engineering Hygiene  100   excellent  (engineeringHygiene)
+  Security             100   excellent  (security)
+  Repository Health     80   passing  (repositoryHealth)
 
-Engineering Hygiene:  60 / 100 [NEEDS WORK] — higher = better · measures internal consistency. This is a secondary view; the AI Slop Score above is the gate.
-
-Other signals (not the gate):
-  Code Hygiene          75/100
-  Accessibility        100/100
-  Performance          100/100
-  Business Logic         0/100
-  Security Risk        LOW
-
-✓ 99 INVERTED/NOISY issues correctly suppressed from 24 default-off rules.
-
-Category breakdown (what kind of issue, and how much):
-  AI patterns      ████████████████████    167 — signatures of LLM-generated code
-  visual style     ████████░░░░░░░░░░░░     70 — colors, spacing, font sizes, layout
-  logic patterns   ████████░░░░░░░░░░░░     68 — state, hooks, prop usage
-  13 other categories are clean
-
-Next step:
-  → `slopbrick scan --rule src/cli/scan.ts` to drill into the worst file (4 issues)
-  → `slopbrick scan --suggest` for auto-fix advice
-  → `slopbrick scan --baseline` to accept today's scores as the new floor
-  → `slopbrick scan --why-failing` for the top 5 issues dragging the score down
+  CI gate: AI Slop Score <= 30 -> pass
 ```
 
 `--brief` (CI/scripts): same headline + threshold + delta in 4 lines.
 `--why-failing`: top 5 rules ranked by weighted impact.
 `--suggest`: per-rule auto-fix advice.
+`--human-only` / `--ai-only`: filter issues by category.
 
 ---
 
@@ -233,7 +216,7 @@ Next step:
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |
 | See what's changed in each release | [`CHANGELOG.md`](./CHANGELOG.md) |
-| See the strategic plan (0.14 → 0.15 → 1.0) | [`ROADMAP.md`](./ROADMAP.md) |
+| See the strategic plan (v0.x → v1.0) | [`ROADMAP.md`](./ROADMAP.md) |
 | See research behind the calibration | [`docs/research/`](./docs/research/) |
 | Report a security vulnerability | [`SECURITY.md`](./SECURITY.md) |
 | Run a CI gate | `slopbrick ci` (see [`EXAMPLES.md`](./EXAMPLES.md#strict-ci-gate)) |
@@ -249,8 +232,9 @@ The 19 subcommands are auto-generated from commander and run
 npm install -D slopbrick
 ```
 
-Requires Node 18+. The package ships ESM + CJS dual builds, TypeScript
-types, and is published to npm as `slopbrick`.
+Requires Node 20+ (verified by `slopbrick doctor`). The package ships
+ESM + CJS dual builds, TypeScript types, and is published to npm as
+`slopbrick`.
 
 For the MCP server, add to your AI agent's config:
 

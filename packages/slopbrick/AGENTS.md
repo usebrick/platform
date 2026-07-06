@@ -8,16 +8,16 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 
 ## What this project is
 
-`slopbrick` is a **Repository Constitution Engine for AI Coding Agents**. It scans React, Vue, Svelte, Solid, Qwik, Astro, and HTML files and computes **4 headline scores** (`aiQuality`, `engineeringHygiene`, `security`, `repositoryHealth`) backed by 80+ rules across 13 categories — but the moat is the **Constitution** (the `slopbrick.config.mjs` block that declares your stack), and every other score is a proof that the Constitution is being followed.
+`slopbrick` is a **Repository Constitution Engine for AI Coding Agents**. It scans React, Vue, Svelte, Solid, Qwik, Astro, and HTML files and computes **4 headline scores** (`aiSlopScore`, `engineeringHygiene`, `security`, `repositoryHealth`) backed by 103 rules across 22 categories — but the moat is the **Constitution** (the `slopbrick.config.mjs` block that declares your stack), and every other score is a proof that the Constitution is being followed.
 
-**Tier 1 — Headline scores (the 4-score model, v0.16.0+):**
+**Tier 1 — Headline scores (the 4-score model, v0.18.0+; aiSlopScore direction flipped v0.21.0):**
 
 | Score | Shape | Use it for |
 |-------|-------|------------|
-| **aiQuality** | 0–100 (higher = better) | AI-slop signatures (16 `ai/*` rules) — INVERTED from legacy Slop Index |
+| **aiSlopScore** | 0–100 (lower = cleaner, raw amount of slop since v0.21.0) | AI-slop signatures (16 `ai/*` rules). CI gate at `≤ meanSlop` (default 30). |
 | **engineeringHygiene** | 0–100 (higher = better) | Boundary / logic / layout / visual / component / test categories |
-| **security** | 0–100 (higher = better) | AI Security Risk (low/medium/high/critical → 100/67/33/0) |
-| **repositoryHealth** | 0–100 (higher = better) | Weighted composite: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test |
+| **security** | 0–100 (higher = better) | AI Security Risk (low/medium/high/critical → 100/75/40/10) |
+| **repositoryHealth** | 0–100 (higher = better) | Weighted composite of 8 axes (default weights in `REPOSITORY_HEALTH_WEIGHTS`). Inverts aiSlopScore internally. |
 
 **Tier 2 — Heuristic (specialised subcommands):**
 
@@ -50,7 +50,7 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 - AWS Kiro outage (Dec 2025): agentic coding tool deleted production, 13-hour outage. "Predictable given unchecked AI permissions."
 - Sonar 2025: **$306,000/yr per 1M LoC** of code-level technical debt. The calibration baseline for `slopbrick maintenance-cost` in 0.8.0.
 
-**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the 12-phase plan. Current state: Phases 1–12 shipped in v0.9.0 (Slop Index, Constitution, Architecture Consistency, AI Security Risk, Test Quality, Business Logic, Pattern Fragmentation, PR Slop Score, Documentation Freshness, Database Health, AI Maintenance Cost, Product Consistency, Repository Health composite + AI Debt band, MCP tool consolidation). Next milestone is v0.10 (the credibility milestone: per-rule P/R/FPR + peer-reviewed thresholds). v1.0 is the far-horizon stability commitment, at least six months after v0.10, and is not in this release train.
+**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the plan. Current state: v0.42.0 (the Sprints 2+3 release — temporal drift, empirical composites, and ~22 user-review fixes landed in the post-v0.42.0 cleanup arc). The 4-score model, Constitution, MCP server, flywheel, and PR Slop Score are all in production. v0.43+ focuses on calibration polish and incremental-scan ergonomics. v1.0 is the far-horizon stability commitment and is not yet scheduled.
 
 ---
 
@@ -123,7 +123,7 @@ Design-token drift:       7 violations  (5 spacing, 2 radius)
    node bin/slopbrick.js scan --baseline
    ```
 
-**The five scores are independent.** A project can have Slop Index 90 (great code quality) AND AI Security Risk CRITICAL (hardcoded API key). Do not let one score mask another.
+**The four headline scores are independent.** A project can have AI Slop Score 0 (no AI fingerprint) AND Security: critical (hardcoded API key). Do not let one score mask another.
 
 ## Calibration (v4.1, 2026-06-25)
 
