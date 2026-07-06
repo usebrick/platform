@@ -117,7 +117,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     // architectureConsistency / businessLogicCoherence.
     name: 'slop_check_constitution',
     description:
-      "Check a single file against the project's declared constitution (stateManagement, dataFetching, uiLibrary, forms, styling, routing, plus a forbidden deny-list in slopbrick.config.mjs). Returns a list of imports that violate declared values or hit the deny-list. Use this on a newly-written or modified file before suggesting a PR.",
+      "Check a single file against the project's declared constitution (stateManagement, dataFetching, uiLibrary, forms, styling, routing, plus a forbidden deny-list in slopbrick.config.mjs). Returns the file path, total import + violation counts, the parsed imports, the list of violations (each with import, category, and reason), and a conventionSource indicating whether the constitution was declared, detected, or absent. Use this on a newly-written or modified file before suggesting a PR.",
     inputSchema: {
       type: 'object',
       properties: {
