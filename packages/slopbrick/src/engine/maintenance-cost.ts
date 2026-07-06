@@ -98,19 +98,23 @@ function clamp100(n: number): number {
  * got there" for every axis.
  */
 function axisSlopIndex(slopIndex: number | undefined): MaintenanceAxisHealth {
+  // v0.42.0: the field name `slopIndex` is kept (backward compat
+  // with fixtures and downstream consumers), but the user-facing label
+  // now says "AI Slop Score" to match the brief, the trend command,
+  // and the verbiage since the v0.21 re-inversion.
   if (slopIndex === undefined || Number.isNaN(slopIndex)) {
     return {
       axis: 'slopIndex',
-      label: 'Slop Index',
+      label: 'AI Slop Score (raw)',
       health: 70,
       source: 'default (not measured) — neutral 70',
     };
   }
   return {
     axis: 'slopIndex',
-    label: 'Slop Index',
+    label: 'AI Slop Score (raw)',
     health: clamp100(100 - slopIndex),
-    source: `100 - slopIndex (${slopIndex.toFixed(1)}) → inverted`,
+    source: `100 - aiSlopScore (${slopIndex.toFixed(1)}) → inverted to cleanliness`,
   };
 }
 

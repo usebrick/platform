@@ -191,8 +191,9 @@ describe('engine/trend', () => {
         ],
       };
       const md = trendToMarkdown(report);
-      expect(md).toContain('# Slop Index Trend');
-      expect(md).toContain('| Timestamp | Slop Index | Health | Framework | Issues |');
+      // v0.42.0: trend renderer now uses "AI Slop Score" terminology.
+      expect(md).toMatch(/^# AI Slop Score Trend/);
+      expect(md).toContain('| Timestamp | AI Slop Score (lower = cleaner) | Health | Framework | Issues |');
       expect(md).toContain('improved');
     });
   });

@@ -36,7 +36,7 @@ function stubResult(): MaintenanceCostScanResult {
       health: 92,
       monthlyUSD: 350,
       axes: [
-        { axis: 'slopIndex', label: 'Slop Index', health: 95, source: '100 - 5.0 → inverted' },
+        { axis: 'slopIndex', label: 'AI Slop Score (raw)', health: 95, source: '100 - aiSlopScore (5.0) → inverted to cleanliness' },
         { axis: 'architectureConsistency', label: 'Architecture Consistency', health: 100, source: 'direct' },
         { axis: 'aiSecurityRisk', label: 'AI Security Risk', health: 100, source: 'low → 100' },
         { axis: 'constitutionDrift', label: 'Constitution Drift', health: 100, source: 'default' },
@@ -96,7 +96,7 @@ describe('formatMaintenanceCostReport', () => {
     expect(out).toMatch(/AI Maintenance Cost:\s*LOW/);
     expect(out).toMatch(/health 92\/100/);
     expect(out).toMatch(/~\$350\/month/);
-    expect(out).toMatch(/Slop Index/);
+    expect(out).toMatch(/AI Slop Score/);
     expect(out).toMatch(/Architecture Consistency/);
     expect(out).toMatch(/AI Security Risk/);
     expect(out).toMatch(/Constitution Drift/);
@@ -145,7 +145,7 @@ export const Foo = () => {
       expect(stdout).toMatch(/health \d+\/100/);
       expect(stdout).toMatch(/\/month/);
       // Per-axis breakdown lines
-      expect(stdout).toMatch(/Slop Index/);
+      expect(stdout).toMatch(/AI Slop Score/);
       expect(stdout).toMatch(/Architecture Consistency/);
       expect(stdout).toMatch(/AI Security Risk/);
       // exit code is 0 (informational) or 1 (with --strict) — not 2
