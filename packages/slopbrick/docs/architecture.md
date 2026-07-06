@@ -1,6 +1,6 @@
 # slopbrick Architecture (v0.15.0)
 
-> **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
+> **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v0.42.0 ships the calibration ritual + MCP server + JSON Schemas; v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 
 ## 1. Positioning
 
@@ -36,12 +36,12 @@ These are the 4 numbers humans and CI gates read. Each is 0–100, **higher is b
 
 | Score | Shape | Source | Confidence |
 |-------|-------|--------|------------|
-| **aiQuality** | 0–100 | 16 `ai/*` rules (slop signatures, LLM-detection math) | High — calibrated corpus, INVERTED |
+| **aiSlopScore** | 0–100 (lower = cleaner) | 16 `ai/*` rules (slop signatures, LLM-detection math). Raw amount of slop since v0.21. | High — calibrated corpus; CI gate at `≤ meanSlop` |
 | **engineeringHygiene** | 0–100 | Average of 6 category scores: arch, logic, layout, visual, component, test | High — 80+ deterministic rules |
 | **security** | 0–100 | AI Security Risk band (low=100, medium=67, high=33, critical=0) | High — categorical, not gamed |
 | **repositoryHealth** | 0–100 | Weighted composite: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | High — pure aggregation |
 
-The composite `repositoryHealth` is the single number for dashboards. The other three are the actionable axes: if `aiQuality` is low, the team has AI-slop; if `engineeringHygiene` is low, the structure is drifting; if `security` is low, fix the security findings.
+The composite `repositoryHealth` is the single number for dashboards (informational; doesn't gate CI). The CI gate is `aiSlopScore ≤ meanSlop`. The other three are the actionable axes: if `aiSlopScore` is high, the team has AI-slop; if `engineeringHygiene` is low, the structure is drifting; if `security` is low, fix the security findings.
 
 ### Tier 2 — Heuristic (specialised subcommands)
 

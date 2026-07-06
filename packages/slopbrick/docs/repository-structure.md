@@ -88,8 +88,8 @@ interface HealthFile {
   generatedAt: string;
   workspace: string;
   // The v0.15.0 4-score model — each is 0-100, higher is better.
-  // aiQuality replaces the legacy v0.14 slopIndex.
-  aiQuality: number;
+  // aiSlopScore replaces the legacy v0.14 slopIndex.
+  aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
   repositoryHealth: number;
@@ -232,7 +232,7 @@ validators are the canonical type guards.
 The schemas are designed to be consumed by:
 
 - **MCP tools** (slop_suggest_with_structure reads `structure.md`)
-- **CI status checks** (read `health.json`, fail on aiQuality < N)
+- **CI status checks** (read `health.json`, exit 1 when `aiSlopScore > meanSlop`)
 - **The website's `/projects` page** (read `health.json` for badges)
 - **Future usebrick.dev tools** (stackpick, gir, mendbrick) — all
   read these artifacts instead of re-scanning
