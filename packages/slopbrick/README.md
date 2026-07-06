@@ -185,15 +185,21 @@ for the receiver.
 ## Example output
 
 ```text
-$ npx slopbrick scan
-Repo is low (25/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts. Run `slopbrick scan --why-failing` for the top 5 rules, or `slopbrick scan --suggest` for fixes.
+$ npx slopbrick scan --brief
+[v0.42.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
+Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).
+
+Repo is low (25/100). The biggest problem is AI patterns — worst file is packages/slopbrick/src/engine/parser-rust.ts.
 
   AI Slop Score         25   low  (aiSlopScore)
   Engineering Hygiene  100   excellent  (engineeringHygiene)
   Security             100   excellent  (security)
-  Repository Health     80   passing  (repositoryHealth)
+  Repository Health     57   needs work  (repositoryHealth)
 
-  CI gate: AI Slop Score <= 30 -> pass
+  CI gate: AI Slop Score <= 15 -> fail
+
+  Scanned 593 files, 346 issues. Run with --all for the full report.
+1 threshold failed: meanSlop (score 25 > 15)
 ```
 
 `--brief` (CI/scripts): same headline + threshold + delta in 4 lines.

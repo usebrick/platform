@@ -96,20 +96,29 @@ Use `--workspace <path>` to scan a project other than the current directory.
 A typical failing run looks like this:
 
 ```text
-Scanned 312 files, 501 components, 1381 issues (high: 42, medium: 289, low: 1050)
-AI Slop Score:           31 / 100 [LOW]
-Architecture Consistency: 82
-AI Security Risk:         HIGH  (1 critical, 0 high, 3 medium)
-Constitution drift:        2 violations  (1 stateManagement, 1 dataFetching)
-Design-token drift:       7 violations  (5 spacing, 2 radius)
-(lower AI Slop Score is better since v0.21; higher Architecture Consistency is better)
+$ npx slopbrick scan --brief
+[v0.42.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
+Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).
+
+Repo is low (25/100). The biggest problem is AI patterns — worst file is packages/slopbrick/src/engine/parser-rust.ts.
+
+  AI Slop Score         25   low  (aiSlopScore)
+  Engineering Hygiene  100   excellent  (engineeringHygiene)
+  Security             100   excellent  (security)
+  Repository Health     57   needs work  (repositoryHealth)
+
+  CI gate: AI Slop Score <= 15 -> fail
+
+  Scanned 593 files, 346 issues. Run with --all for the full report.
+1 threshold failed: meanSlop (score 25 > 15)
 ```
 
-- **AI Slop Score** — the v0.21+ headline score; lower = cleaner (raw amount of slop). Replaces the legacy "Slop Index"
-- **Architecture Consistency** — one number for cross-file pattern duplication; higher is better. 100 = one of each, no drift.
-- **AI Security Risk** — categorical; a single hardcoded API key outranks everything else. Drives `slopbrick security [--strict]` (exit 1 on high/critical for CI gating).
-- **Constitution drift** — list of imports that violate declared constitution in `slopbrick.config.mjs`. Drives `slopbrick drift` (exit 1 on any violation).
-- **Design-token drift** — spacing/radius values off the declared scale. Drives `--fix` rewrites.
+- **AI Slop Score** — the v0.21+ headline score (raw amount of slop; lower = cleaner since the v0.21 re-inversion). Driven by 16 `ai/*` rules. CI gate is `≤ meanSlop` (default 30).
+- **Engineering Hygiene** — per-category average across 6 axes (boundary / logic / layout / visual / component / test). Higher = better. Informational only.
+- **Security** — categorical AI Security Risk band (low/medium/high/critical → 100/75/40/10). Higher = better. Drives `slopbrick security [--strict]` (exit 1 on high/critical for CI gating).
+- **Repository Health** — composite that inverts `aiSlopScore` internally (treats it as cleanliness) and combines it with the other three. Higher = better. Informational only.
+- **scanned files / 346 issues** — total count. `Run with --all for the full report` prints the per-issue breakdown by default-off, category, and severity.
+- **1 threshold failed: meanSlop (score 25 > 15)** — the named exit-code error message added in 500c2a5a. Tells CI consumers exactly which gate tripped.
 
 ---
 
