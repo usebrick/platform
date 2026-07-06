@@ -105,7 +105,30 @@ export function registerRules(program: Command): void {
           const sev = r.severity.padEnd(8);
           const tag = r.aiSpecific ? '[AI]' : '     ';
           lines.push(`  ${sev} ${tag} ${r.id}`);
-          if (r.description) lines.push(`           ${r.description}`);
+          if (r.description) {
+            // v0.42.0 (user-review fix): wrap long descriptions to the
+            // current terminal width. Default 100 cols if stdout isn't
+            // a TTY (consistent with `column -J`). Word boundaries so
+            // we don't break mid-word. Keeps the output readable in
+            // 80-col terminals AND in CI logs.
+            const cols = process.stdout.isTTY ? (process.stdout.columns ?? 100) : 100;
+            const indent = '           '; // 11 spaces, matches old layout
+            const firstCol = indent.length + 1;
+            const maxWidth = Math.max(40, cols - firstCol);
+            const words = r.description.split(' ');
+            let line = '';
+            for (const word of words) {
+              if (line === '') {
+                line = word;
+              } else if ((line + ' ' + word).length > maxWidth) {
+                lines.push(indent + line);
+                line = word;
+              } else {
+                line = line + ' ' + word;
+              }
+            }
+            if (line) lines.push(indent + line);
+          }
         }
       }
       logger.info(lines.join('\n'));
