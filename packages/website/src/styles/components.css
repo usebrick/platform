@@ -936,7 +936,7 @@
   background: linear-gradient(180deg,
     var(--surface-0) 0%,
     var(--surface-1) 100%);
-  min-height: 380px;
+  min-height: 200px;
   overflow-y: auto;
   cursor: text;
   outline: none;
