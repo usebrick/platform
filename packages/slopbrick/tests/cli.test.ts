@@ -698,7 +698,12 @@ describe('threshold failure wording', () => {
   it('reports how many thresholds failed', async () => {
     const { exitCode, stderr } = await run(['--workspace', dir]);
     expect(exitCode).toBe(1);
-    expect(stderr).toMatch(/\d+ thresholds? failed\. See details above\./);
+    // v0.42.0 (post-self-scan improvement): the wording now reads
+    // "N threshold(s) failed: <name> (score X > limit Y)" instead of
+    // "N thresholds failed. See details above." The intent — that
+    // the message names the actual failed threshold — is preserved
+    // by asserting the new form.
+    expect(stderr).toMatch(/\d+ thresholds? failed: meanSlop \(score \d+ > \d+\)/);
   });
 });
 
@@ -1248,7 +1253,7 @@ describe('report command (round 21)', () => {
     expect(stdout.split('\n').length).toBeGreaterThan(1);
     // contains the report-rendered header
     expect(stdout).toMatch(/Re-rendered from/i);
-    expect(stdout).toMatch(/Repository Coherence|Slop Index/i);
+    expect(stdout).toMatch(/AI Slop Score|Repository Coherence/i);
   });
 
   it('exits 2 when the report file is missing', async () => {
@@ -1304,6 +1309,6 @@ describe('report command (round 21)', () => {
     const { exitCode, stdout } = await run(['report', jsonPath, '--output-format', 'markdown']);
     expect(exitCode).toBe(0);
     expect(stdout).toMatch(/^#/m); // markdown heading
-    expect(stdout).toMatch(/Repository Coherence|Slop Index/i);
+    expect(stdout).toMatch(/AI Slop Score|Repository Coherence/i);
   });
 });
