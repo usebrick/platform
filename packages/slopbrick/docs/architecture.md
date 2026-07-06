@@ -1,4 +1,4 @@
-# slopbrick Architecture (v0.15.0)
+# slopbrick Architecture (v0.42.0)
 
 > **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v0.42.0 ships the calibration ritual + MCP server + JSON Schemas; v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 
@@ -32,7 +32,7 @@ The legacy v0.15.0 model had a single "Slop Index" composite plus 12 sub-scores,
 
 ### Tier 1 — Headline scores (the 4-score model)
 
-These are the 4 numbers humans and CI gates read. Each is 0–100, **higher is better** (inverted from the legacy v0.15.0 Slop Index).
+These are the 4 numbers humans and CI gates read. **Each is 0–100 with the score-direction matching the metric** (per v0.21+ convention):
 
 | Score | Shape | Source | Confidence |
 |-------|-------|--------|------------|
