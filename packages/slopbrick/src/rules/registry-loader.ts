@@ -98,7 +98,12 @@ export async function refreshRegistrySnapshot(
     snapshot: bundledSnapshot as RegistrySnapshot,
     ok: true,
     fresh: false,
-    message: 'Using bundled snapshot (upstream URL returns 404).',
+    // v0.42.0 (user-review fix): the previous message said
+    // "upstream URL returns 404" which is alarming without context —
+    // upstream has been dead since v0.39.0, and the bundled snapshot
+    // IS the snapshot in use. Replaced with a neutral message that
+    // doesn't suggest "something is wrong".
+    message: 'Using bundled shadcn/ui snapshot (built-in; no network fetch).',
   };
 }
 
