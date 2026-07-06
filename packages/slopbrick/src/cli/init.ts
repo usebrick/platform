@@ -26,6 +26,7 @@ import {
   hashConfig,
 } from '../engine/cache';
 import { logger } from '../engine/logger';
+import { VERSION } from '../types';
 import {
   refreshRegistrySnapshot,
   copyBundledSnapshotToCache,
@@ -268,9 +269,9 @@ export async function runDoctor(cwd: string): Promise<number> {
   lines.push('slopbrick doctor\n');
   lines.push('Checking your setup:\n');
 
-  // 1. Node version
+  // 1. Node + slopbrick versions
   const nodeMajor = parseInt(process.versions.node.split('.')[0] ?? '0', 10);
-  if (nodeMajor >= 20) ok(`Node ${process.versions.node}`);
+  if (nodeMajor >= 20) ok(`Node ${process.versions.node}, slopbrick ${VERSION}`);
   else fail(`Node ${process.versions.node} — slopbrick needs Node 20 or newer. Run: nvm install 20`);
 
   lines.push(`\n  Working in: ${cwd}`);
