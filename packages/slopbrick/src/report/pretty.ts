@@ -145,9 +145,17 @@ function formatDeltaSuffix(report: ProjectReport): string {
  * - If no issues: explicit "all clean" verdict
  */
 function formatVerdict(report: ProjectReport): string {
-  // v0.15.0 U.4+: slopIndex → aiSlopScore (0-100, higher is better).
+  // v0.42.0 (user-review fix): the verdict used to be derived from
+  // scoreBand(), which is correct for higher-is-better scores like
+  // boundaryScore/contextScore/visualScore/repositoryHealth (0 = bad,
+  // 100 = clean). But aiSlopScore is the OPPOSITE direction (0 = clean,
+  // 100 = saturated slop). The fix: route through slopScoreBand(),
+  // which has the correct band mapping for a cleanliness metric. The
+  // output was "Repo is concerning (25/100)" for the slopbrick repo,
+  // but score 25 is well below the 30 threshold and is in fact "low
+  // slop" - the verdict should reflect "this is OK" not "this is bad".
   const score = report.aiSlopScore;
-  const band = scoreBand(score);
+  const band = slopScoreBand(score);
 
   // Build context: dominant category + rule + file
   const ranked = rankByImpact(report.issues);
@@ -998,8 +1006,18 @@ export function formatBriefReport(report: ProjectReport): string {
     { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth },
   ];
   const deltaSuffix = formatDeltaSuffix(report);
+  // v0.42.0 (user-review fix): the 4-score matrix in --brief used
+  // scoreBand() for ALL four scores, but aiSlopScore has the
+  // INVERTED direction (0=clean, 100=saturated). With score=25 the
+  // band was "concerning" (>= 70 inverted to "passing", >= 40 to
+  // "needs work", else "concerning"). For the slopbrick repo this
+  // showed the headline score 25 with the band "concerning" which
+  // is the OPPOSITE of the truth. The fix: route aiSlopScore through
+  // slopScoreBand() (the correct band mapping for a cleanliness
+  // metric) and the other three through scoreBand() (their direction
+  // is unchanged - higher = better).
   scoreLines.forEach(({ label, field, value }, idx) => {
-    const band = scoreBand(value);
+    const band = field === 'aiSlopScore' ? slopScoreBand(value) : scoreBand(value);
     const paddedLabel = label.padEnd(20, ' ');
     const valueStr = value.toFixed(0).padStart(3, ' ');
     const delta = idx === 0 ? deltaSuffix : '';

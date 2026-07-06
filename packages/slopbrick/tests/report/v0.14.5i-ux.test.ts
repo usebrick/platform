@@ -287,7 +287,12 @@ describe('v0.14.5i UX improvements', () => {
       // First non-empty line should answer the user's actual question
       const firstLine = out.split('\n').find((l) => l.trim().length > 0) ?? '';
       expect(firstLine).toMatch(/Repo is/i);
-      expect(firstLine).toMatch(/concerning|passing|excellent|needs work/);
+      // v0.42.0 (post-cleanup follow-up): the verdict for aiSlopScore
+      // uses the slopScoreBand mapping (0=clean, 100=saturated, lower
+      // is better). The matched set of valid words is therefore
+      // 'low' (10-29) or 'no slop' (0-9), not the higher-is-better
+      // scoreBand mapping ('excellent'/'passing'/'needs work'/'concerning').
+      expect(firstLine).toMatch(/no slop|low|medium|high|saturated/);
     });
 
     it('P6: clean report gets a "all clean" verdict', () => {
@@ -303,7 +308,10 @@ describe('v0.14.5i UX improvements', () => {
           topOffenders: [{ filePath: 'src/bad.ts', adjustedScore: 100, issueCount: 1 }],
         }),
       );
-      const verdict = out.split('\n').find((l) => l.includes('needs work') || l.includes('concerning')) ?? '';
+      // v0.42.0: with the slopScoreBand mapping, score=50 lands in
+      // the 'high' band (50-69). The verdict line still includes
+      // the topOffender file path.
+      const verdict = out.split('\n').find((l) => l.includes('Repo is')) ?? '';
       expect(verdict).toContain('src/bad.ts');
       // Should not have the "AI patterns patterns" double word
       expect(verdict).not.toContain('patterns patterns');
