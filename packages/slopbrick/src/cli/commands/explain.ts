@@ -16,9 +16,18 @@ import { RULE_HINTS } from '../../snippet/data.js';
 
 export function registerExplain(program: Command): void {
   program
-    .command('explain <ruleId>')
-    .description('Print rationale, pattern, and remediation for a single rule')
-    .action((ruleId: string) => {
+    .command('explain [ruleId]')
+    .description('Print rationale, pattern, and remediation for a single rule. With no ruleId, lists the rules.')
+    .action((ruleId?: string) => {
+      // v0.42.0 (user-review fix): the previous version required a ruleId,
+      // so `slopbrick explain` alone produced Commander's unhelpful "missing
+      // required argument 'ruleId'". We make the arg optional and, when
+      // missing, just point the user at `slopbrick rules` so they know
+      // what's available.
+      if (!ruleId) {
+        logger.warn('Missing ruleId. Run `slopbrick rules` to see available rules, then `slopbrick explain <ruleId>`.');
+        process.exit(2);
+      }
       const result = explainRule(ruleId, builtinRules, RULE_HINTS);
       logger.info(formatExplain(result));
       if ('error' in result) process.exit(2);
