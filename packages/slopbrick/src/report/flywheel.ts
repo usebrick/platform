@@ -169,8 +169,25 @@ export function formatFlywheel(summary: FlywheelSummary, options: { json?: boole
   if (summary.firstRunAt && summary.latestRunAt) {
     lines.push(`  Window: ${summary.firstRunAt} → ${summary.latestRunAt}`);
   }
-  lines.push(`  Average slop index: ${summary.averageSlopIndex.toFixed(2)}`);
-  lines.push(`  Latest slop index: ${summary.latestSlopIndex.toFixed(2)}`);
+  // v0.42.0 (user-review fix): "Slop index" was the v0.14 wording.
+  // v0.15 inverted it to cleanliness (higher = better) but kept the
+  // name. v0.21 inverted it back to raw amount (lower = better),
+  // and renamed the field `aiSlopScore`. The flywheel summary
+  // showed the old "slop index" label with the same numeric scale,
+  // which contradicted what the brief showed. Fix: keep the field
+  // (slopIndex) for JSON compat, but relabel in the pretty output
+  // to match the brief.
+  // Note: per scan the value is `report.aiSlopScore` because the
+  // persistRun code computes slopIndex = report.slopIndex ??
+  // report.aiSlopScore (the v0.21 re-inversion). So the label
+  // matches the direction: lower = cleaner.
+  // v0.42.0: aiSlopScore is raw amount of slop since v0.21.0.
+  // Direction: lower = cleaner. The "(lower = cleaner)" note
+  // documents this so users don't have to memorize the
+  // post-v0.21 semantics.
+  const directionNote = '  (lower = cleaner since v0.21.0)';
+  lines.push(`  Average AI Slop Score: ${summary.averageSlopIndex.toFixed(2)}`);
+  lines.push(`  Latest AI Slop Score: ${summary.latestSlopIndex.toFixed(2)}${directionNote}`);
   lines.push(`  Average assembly health: ${summary.averageAssemblyHealth.toFixed(2)}`);
   lines.push(`  Latest assembly health: ${summary.latestAssemblyHealth.toFixed(2)}`);
 
