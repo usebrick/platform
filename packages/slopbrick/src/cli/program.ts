@@ -337,23 +337,23 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
         const cache = buildBaselineCache(report, configHash, gitHead, cwd);
         saveBaseline(cwd, cache);
-        if (!options.quiet) {
+        if (!options.quiet && !machineReadableStdout) {
           logger.info(`Saved baseline to ${baselinePath(cwd)}`);
         }
       }
 
       if (options.tighten && baseline) {
         saveBaseline(cwd, baseline);
-        if (!options.quiet) {
+        if (!options.quiet && !machineReadableStdout) {
           logger.info(`Tightened baseline saved (revision ${baseline.baseline_revision}).`);
         }
       }
 
-      if (options.doctor && !options.quiet) {
+      if (options.doctor && !options.quiet && !machineReadableStdout) {
         logger.info(`Doctor: bootstrap ${totalElapsed - scanElapsed}ms, scan ${scanElapsed}ms`);
       }
 
-      if (report.baseline && !options.quiet) {
+      if (report.baseline && !options.quiet && !machineReadableStdout) {
         logger.info(baselineStatusMessage(report.baseline));
       }
 
