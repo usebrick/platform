@@ -83,7 +83,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_suggest',
     description:
-      '**Primary entry point for AI agents.** Returns the project\'s existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), top issues by rule, hot files by issue count, and the composite Repository Health score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them.',
+      '**Primary entry point for AI agents.** Returns the project\'s existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path.',
     inputSchema: {
       type: 'object',
       properties: {
