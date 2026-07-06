@@ -1,6 +1,6 @@
-# slopbrick Architecture (v0.42.0)
+# slopbrick Architecture (v0.43.0)
 
-> **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v0.42.0 ships the calibration ritual + MCP server + JSON Schemas; v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
+> **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v0.43.0 ships the calibration ritual + MCP server + JSON Schemas; v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 
 ## 1. Positioning
 

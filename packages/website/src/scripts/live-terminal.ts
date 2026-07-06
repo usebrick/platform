@@ -38,7 +38,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'help',
     run: () => [
-      { kind: 'accent', text: 'available commands (v0.42.0)' },
+      { kind: 'accent', text: 'available commands (v0.43.0)' },
       { kind: 'output', text: '  help                              show this list' },
       { kind: 'output', text: '  npm install -g slopbrick          install the CLI' },
       { kind: 'output', text: '  slopbrick init                    write a slopbrick.config.mjs' },
@@ -56,7 +56,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'npm install -g slopbrick',
     run: () => [
-      { kind: 'muted',  text: 'fetching slopbrick@latest (v0.42.0)...' },
+      { kind: 'muted',  text: 'fetching slopbrick@latest (v0.43.0)...' },
       { kind: 'success', text: 'added 1 package in 3s' },
       { kind: 'output', text: '/usr/local/bin/slopbrick' },
       { kind: 'muted',  text: 'next: `slopbrick init` to write slopbrick.config.mjs, then `slopbrick scan`.' },
@@ -65,7 +65,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick scan',
     run: () => [
-      { kind: 'muted',  text: '[v0.42.0] auto-suppressed 0 INVERTED/NOISY issue(s) from 18 default-off rule(s).' },
+      { kind: 'muted',  text: '[v0.43.0] auto-suppressed 0 INVERTED/NOISY issue(s) from 18 default-off rule(s).' },
       { kind: 'muted',  text: 'Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).' },
       { kind: 'output', text: '' },
       { kind: 'output', text: 'Repo is low (13/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts.' },
@@ -96,7 +96,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '22 categories · 103 rules (v0.42.0; v10-calibrated against 576,750 files)' },
+      { kind: 'accent', text: '22 categories · 103 rules (v0.43.0; v10-calibrated against 576,750 files)' },
       { kind: 'output', text: '  ai           15   compression-profile, comment-ratio, segment-surprisal-cv, ...' },
       { kind: 'output', text: '  logic        12   ghost-defensive, zipf-slope-anomaly, dead-state, ...' },
       { kind: 'output', text: '  security     11   sql-construction, dangerous-cors, public-admin-route, ...' },

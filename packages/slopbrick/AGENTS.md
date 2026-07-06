@@ -50,7 +50,7 @@ Apply this file silently. Do not restate it unless the user asks for project rul
 - AWS Kiro outage (Dec 2025): agentic coding tool deleted production, 13-hour outage. "Predictable given unchecked AI permissions."
 - Sonar 2025: **$306,000/yr per 1M LoC** of code-level technical debt. The calibration baseline for `slopbrick maintenance-cost` in 0.8.0.
 
-**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the plan. Current state: v0.42.0 (the Sprints 2+3 release — temporal drift, empirical composites, and ~22 user-review fixes landed in the post-v0.42.0 cleanup arc). The 4-score model, Constitution, MCP server, flywheel, and PR Slop Score are all in production. v0.43+ focuses on calibration polish and incremental-scan ergonomics. v1.0 is the far-horizon stability commitment and is not yet scheduled.
+**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the plan. Current state: v0.43.0 (a user-review-driven bugfix release — ~25 output/wording/UX fixes landed after v0.42.0; no rule changes). v0.43.0 retains the same engine as v0.42.0 (Sprints 2+3 work — temporal drift, empirical composites, MCP server, JSON Schemas) but with consistent scoring directions, named-threshold error wording, and real (not fictional) example outputs across the public surface. v0.44+ focuses on the v0.21→repositoryHealth inversion correctness + ci --max-slop v0.21 alignment (the two remaining semantic fixes from the post-v0.42 arc). v1.0 is the far-horizon stability commitment and is not yet scheduled.
 
 ---
 
@@ -97,7 +97,7 @@ A typical failing run looks like this:
 
 ```text
 $ npx slopbrick scan --brief
-[v0.42.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
+[v0.43.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
 Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).
 
 Repo is low (25/100). The biggest problem is AI patterns — worst file is packages/slopbrick/src/engine/parser-rust.ts.

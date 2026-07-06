@@ -46,7 +46,7 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.42.0 (current). Engine: 103 rules in 22 categories,
+**Status:** v0.43.0 (current) (current). Engine: 103 rules in 22 categories,
 4 headline scores, 9+ language frontends, v10-calibrated against 576,750
 real files. See [CHANGELOG](./CHANGELOG.md) for the full release notes.
 
@@ -186,7 +186,7 @@ for the receiver.
 
 ```text
 $ npx slopbrick scan --brief
-[v0.42.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
+[v0.43.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
 Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).
 
 Repo is low (25/100). The biggest problem is AI patterns — worst file is packages/slopbrick/src/engine/parser-rust.ts.

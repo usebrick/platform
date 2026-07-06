@@ -1,10 +1,11 @@
 # Changelog
 
-## [Unreleased] - 2026-07-06 — User-review fixes (post-self-scan audit)
+## [0.43.0] - 2026-07-06 — Post-v0.42.0 user-review fixes (~25 bugfixes, no rule changes)
 
 A user walked through the post-v0.42.0 build as a first-time user
-and found 17 small UX bugs. All fixed in single-purpose commits.
-**Purely internal; no npm release.**
+and found ~25 small UX bugs. All fixed in single-purpose commits.
+**Recommended upgrade** for any consumer of the v0.42.0 CLI/MCP
+output. No rule additions or signature-strength changes.
 
 ### Output integrity
 
