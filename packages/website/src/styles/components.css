@@ -990,6 +990,179 @@
    StructureDemo — live JSON generation
    ============================================================ */
 
+/* ============================================================
+   Rules showcase — 8 cards with per-rule P/R/FPR
+   ============================================================ */
+.rules-showcase__head {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-8);
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.rules-showcase__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.rules-showcase__title {
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.rules-showcase__count {
+  color: var(--text-accent);
+  font-variant-numeric: tabular-nums;
+}
+.rules-showcase__accent { color: var(--text-accent); }
+.rules-showcase__body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-top: var(--space-3);
+}
+.rules-showcase__body code {
+  font-size: 12.5px;
+  padding: 1px 6px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+}
+
+.rules-showcase__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--mortar);
+}
+@media (max-width: 720px) {
+  .rules-showcase__grid { grid-template-columns: 1fr; }
+}
+
+.rules-showcase__card {
+  position: relative;
+  padding: var(--space-5);
+  background: var(--surface-1);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.rules-showcase__card:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
+}
+.rules-showcase__card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.rules-showcase__emoji {
+  font-size: 18px;
+  filter: saturate(0.7);
+}
+.rules-showcase__id {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rules-showcase__ai {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-on-accent);
+  background: var(--text-accent);
+  padding: 2px 6px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.rules-showcase__shape {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  flex: 1;
+}
+.rules-showcase__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0 var(--space-4);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border-top: 0.5px solid var(--border);
+  align-items: baseline;
+}
+.rules-showcase__metric {
+  display: contents;
+}
+.rules-showcase__metric dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  grid-column: 1;
+}
+.rules-showcase__metric dd {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  grid-column: 2;
+  text-align: right;
+  margin: 0;
+}
+.rules-showcase__metric--good { color: var(--text-success); }
+
+.rules-showcase__pill {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1.3;
+}
+.rules-showcase__pill--high {
+  color: var(--text-danger);
+  background: var(--bg-danger);
+}
+.rules-showcase__pill--medium {
+  color: var(--text-warning);
+  background: var(--bg-warning);
+}
+.rules-showcase__pill--low {
+  color: var(--text-info);
+  background: var(--bg-info);
+}
+
+/* ============================================================
+   Structure demo
+   ============================================================ */
+
 .structure-demo {
   margin: var(--space-8) 0;
 }

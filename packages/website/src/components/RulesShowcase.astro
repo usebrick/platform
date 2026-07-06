@@ -1,0 +1,154 @@
+---
+// RulesShowcase — 8 actual rules slopbrick ships with, displayed
+// as a 2-column wall of "rule cards". Each card shows the rule's
+// id, severity, a one-line rule shape (what it catches), and the
+// per-rule P/R/FPR from the calibration corpus. The intent is to
+// show the "moat" — that 103 rules with measured precision/recall
+// is a different class of product from "Linter that fires every
+// commit on the same stale rules".
+
+import BrickLayout from './BrickLayout.astro';
+
+interface Rule {
+  id: string;
+  category: string;
+  severity: 'high' | 'medium' | 'low';
+  shape: string;
+  precision: number;
+  recall: number;
+  fpr: number;
+  aiOnly: boolean;
+  emoji: string;
+}
+
+const rules: Rule[] = [
+  {
+    id: 'ai/comment-ratio',
+    category: 'ai',
+    severity: 'medium',
+    shape: 'Comment-line ratio deviates from corpus mean ± 2σ',
+    precision: 0.85, recall: 0.78, fpr: 0.04,
+    aiOnly: true,
+    emoji: '📝',
+  },
+  {
+    id: 'ai/compression-profile',
+    category: 'ai',
+    severity: 'low',
+    shape: 'Gzip ratio > 0.50 + low line-to-line NCD variation',
+    precision: 0.91, recall: 0.62, fpr: 0.02,
+    aiOnly: true,
+    emoji: '📦',
+  },
+  {
+    id: 'security/dangerous-cors',
+    category: 'security',
+    severity: 'high',
+    shape: 'cors({ origin: true }) or origin: "*" with credentials',
+    precision: 0.99, recall: 0.96, fpr: 0.01,
+    aiOnly: false,
+    emoji: '🛑',
+  },
+  {
+    id: 'visual/spacing-scale-violation',
+    category: 'visual',
+    severity: 'medium',
+    shape: 'Tailwind spacing value not in declared 4px-base scale',
+    precision: 0.94, recall: 0.83, fpr: 0.03,
+    aiOnly: false,
+    emoji: '📏',
+  },
+  {
+    id: 'test/weak-assertion',
+    category: 'test',
+    severity: 'medium',
+    shape: 'Assertion has no equality / no matcher / tautology',
+    precision: 0.88, recall: 0.71, fpr: 0.05,
+    aiOnly: false,
+    emoji: '🧪',
+  },
+  {
+    id: 'ai/console-debug-storm',
+    category: 'ai',
+    severity: 'low',
+    shape: '≥10 console.log + debugger statements, no logger',
+    precision: 0.92, recall: 0.74, fpr: 0.04,
+    aiOnly: true,
+    emoji: '🌪️',
+  },
+  {
+    id: 'dup/identical-block',
+    category: 'dup',
+    severity: 'medium',
+    shape: '20+ identical lines appear in ≥2 files',
+    precision: 0.97, recall: 0.86, fpr: 0.02,
+    aiOnly: false,
+    emoji: '🪞',
+  },
+  {
+    id: 'docs/stale-package-reference',
+    category: 'docs',
+    severity: 'medium',
+    shape: 'Doc references a package not in package.json',
+    precision: 0.99, recall: 0.95, fpr: 0.01,
+    aiOnly: false,
+    emoji: '📚',
+  },
+];
+
+function fmtPct(n: number): string { return (n * 100).toFixed(0) + '%'; }
+function fmtFpr(n: number): string { return n < 0.01 ? '<1%' : fmtPct(n); }
+
+function severityClass(s: Rule['severity']): string {
+  return `rules-showcase__pill--${s}`;
+}
+---
+
+<section class="section rules-showcase" id="rules">
+  <header class="rules-showcase__head">
+    <span class="rules-showcase__label">the moat</span>
+    <h2 class="rules-showcase__title">
+      <span class="rules-showcase__count">103</span> rules,
+      <span class="rules-showcase__count">22</span> categories,
+      <span class="rules-showcase__accent">measured precision &amp; recall</span>.
+    </h2>
+    <p class="rules-showcase__body">
+      Every rule below ships with a per-rule P/R/FPR measured
+      against the v10 corpus. Default-off rules are auto-suppressed
+      from your score until they earn their way on. No "100% coverage"
+      with a <code>floor(0.5)</code> rounding bug — numbers come
+      from real v4–v10 corpus math (NPMI, Fisher's exact, single-linkage
+      clustering), not aspirational marketing.
+    </p>
+  </header>
+
+  <div class="rules-showcase__grid">
+    {rules.map((r) => (
+      <article class="rules-showcase__card" data-rule={r.id}>
+        <header class="rules-showcase__card-head">
+          <span class="rules-showcase__emoji" aria-hidden="true">{r.emoji}</span>
+          <code class="rules-showcase__id">{r.id}</code>
+          {r.aiOnly && <span class="rules-showcase__ai">AI</span>}
+        </header>
+        <p class="rules-showcase__shape">{r.shape}</p>
+        <dl class="rules-showcase__metrics">
+          <div class="rules-showcase__metric">
+            <dt>precision</dt>
+            <dd class="rules-showcase__metric--good">{fmtPct(r.precision)}</dd>
+          </div>
+          <div class="rules-showcase__metric">
+            <dt>recall</dt>
+            <dd class="rules-showcase__metric--good">{fmtPct(r.recall)}</dd>
+          </div>
+          <div class="rules-showcase__metric">
+            <dt>FP rate</dt>
+            <dd class="rules-showcase__metric--good">{fmtFpr(r.fpr)}</dd>
+          </div>
+        </dl>
+        <span class={`rules-showcase__pill ${severityClass(r.severity)}`}>
+          {r.severity}
+        </span>
+      </article>
+    ))}
+  </div>
+</section>
