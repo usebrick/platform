@@ -117,14 +117,26 @@ function extractNamedScores(report: ProjectReport): NamedScores {
 }
 
 function renderThresholds(report: ProjectReport): string {
-  // v0.15.0+: threshold table now gates on `repositoryHealth` (higher = better,
-  // composite 0-100). The old `slopIndex` row was removed because the
-  // single-score model is gone.
-  const r = report as unknown as { repositoryHealth?: number };
-  const score = typeof r.repositoryHealth === 'number' ? r.repositoryHealth : report.repositoryHealth;
-  const limit = 70; // soft band; --strict for CI gating
-  const available = typeof score === 'number';
-  const failed = available && score! < limit;
+  // v0.21.0: the CI gate is `aiSlopScore <= meanSlop` (raw amount of
+  // slop, lower is better). Until v0.42.0 the HTML threshold table
+  // showed only Repository Health (the v0.15-composite) with a
+  // hardcoded "limit 70" — but that's NOT the CI gate. The render-time
+  // check `score < limit` was for the inverted v0.15-20.1 cleanliness
+  // reading. The HTML didn't surface the actual gate.
+  //
+  // v0.42.0 (user-review fix): add a row for the real gate and use
+  // `report.thresholds.meanSlop` for the limit (not the legacy 70).
+  // Repository Health is moved to "informational" since it doesn't
+  // gate anything by default.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  const aiAvailable = typeof report.aiSlopScore === 'number';
+  const aiPassed = aiAvailable && report.aiSlopScore <= meanSlop;
+  const rh = report.repositoryHealth;
+  const rhAvailable = typeof rh === 'number';
+  // Repository Health is higher-is-better. The legacy 70 is the soft
+  // band from `scoreBand()`. Keep it but label the row "informational".
+  const rhLimit = 70;
+  const rhPassed = rhAvailable && rh >= rhLimit;
 
   return `
   <section class="thresholds-section">
@@ -139,9 +151,14 @@ function renderThresholds(report: ProjectReport): string {
       </thead>
       <tbody>
         <tr>
-          <td>Repository Health (composite)</td>
-          <td>${available ? `${score!.toFixed(1)} / ${limit}` : '–'}</td>
-          <td><span class="status-badge ${thresholdStatusClass(failed)}">${available ? (failed ? 'fail' : 'pass') : 'n/a'}</span></td>
+          <td>AI Slop Score (CI gate)</td>
+          <td>${aiAvailable ? `${report.aiSlopScore.toFixed(1)} / ${meanSlop}` : '–'}</td>
+          <td><span class="status-badge ${thresholdStatusClass(!aiPassed)}">${aiAvailable ? (aiPassed ? 'pass' : 'fail') : 'n/a'}</span></td>
+        </tr>
+        <tr>
+          <td>Repository Health (informational)</td>
+          <td>${rhAvailable ? `${rh.toFixed(1)} / ${rhLimit}` : '–'}</td>
+          <td><span class="status-badge ${thresholdStatusClass(!rhPassed)}">${rhAvailable ? (rhPassed ? 'pass' : 'fail') : 'n/a'}</span></td>
         </tr>
       </tbody>
     </table>

@@ -86,7 +86,7 @@ describe('formatHtml', () => {
       // until then the renderer reads them through a temporary cast.
       repositoryHealth: 81,
     } as Partial<ProjectReport>));
-    expect(output).toContain('Repository Health (composite)');
+    expect(output).toContain('Repository Health');
     expect(output).toContain('AI Slop Score');
     expect(output).toContain('Engineering Hygiene');
     expect(output).toContain('Security');
@@ -99,8 +99,24 @@ describe('formatHtml', () => {
     const output = formatHtml(makeReport({
       repositoryHealth: 85,
     } as Partial<ProjectReport>));
-    expect(output).toContain('Repository Health (composite)');
+    expect(output).toContain('Repository Health');
     expect(output).toContain('status-pass');
+    expect(output).toContain('status-fail');
+  });
+
+  it('v0.42.0: AI Slop Score threshold row uses report.thresholds.meanSlop', () => {
+    // The HTML threshold table had hardcoded "limit 70" on the
+    // Repository Health row (the v0.15 inverted reading). v0.42.0
+    // fixed this by adding an explicit "AI Slop Score (CI gate)" row
+    // that reads report.thresholds.meanSlop and the lower-is-better
+    // direction.
+    const output = formatHtml(makeReport({
+      aiSlopScore: 25,
+      thresholds: { meanSlop: 15, p90Slop: 30, individualSlopThreshold: 60 },
+    } as Partial<ProjectReport>));
+    expect(output).toContain('AI Slop Score (CI gate)');
+    // The display reads "25.0 / 15" and shows fail (25 > 15).
+    expect(output).toContain('25.0 / 15');
     expect(output).toContain('status-fail');
   });
 
