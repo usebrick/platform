@@ -284,9 +284,8 @@ export const AI_SECURITY_NUMERIC: Record<'low' | 'medium' | 'high' | 'critical',
 
 /** Inputs to the pure `buildRepositoryHealth` function. Every input is optional. */
 export interface RepositoryHealthInputs {
-  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
-   *  that replaces slopIndex. Tests and callers should pass this
-   *  going forward. */
+  /** v0.21.0: 0-100, lower = better (raw amount of slop).
+   *  Replaces the v0.15-v0.20.1 inverted cleanliness reading. */
   aiSlopScore?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   engineeringHygiene?: number;

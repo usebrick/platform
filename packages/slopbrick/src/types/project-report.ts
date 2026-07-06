@@ -26,15 +26,15 @@ export interface ProjectReport {
   generatedAt: string;
   configPath?: string;
   /**
-   * v0.20.0: renamed from `aiSlopScore` to `aiSlopScore` because the
-   * old name implied a property of the *code* (quality) when it
-   * actually measures a property of the *tool's detection* (how
-   * many AI-detection rules fire on this codebase). 0-100, higher
-   * is better — but 'better' means 'fewer rule fires', not
-   * 'higher quality code'. The name "AI Slop Score" matches the
-   * existing description ("measures AI-slop signatures") and the
-   * slopbrick brand. See the pre-publish checklist in
-   * CONTRIBUTING.md for the full rationale.
+   * v0.21.0: 0-100, **lower = better** (raw amount of slop).
+   * The CI gate is `aiSlopScore <= meanSlop` (where meanSlop defaults
+   * to 30). Higher values mean more AI-detection rules fired on this
+   * codebase. The previous v0.15-v0.20.1 reading inverted this to
+   * "cleanliness" (higher = better), which made the JSON output and
+   * the CLI gate disagree. This field has been lower-is-better
+   * since v0.21.0; the JSDoc that said "0-100, higher is better"
+   * was a stale v0.15-era comment that survived past the inversion.
+   * Fixed in v0.42.0.
    */
   aiSlopScore: number;
   engineeringHygiene: number;
