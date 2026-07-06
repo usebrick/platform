@@ -196,6 +196,18 @@ export interface ProjectReport {
   parseErrors?: Array<{ filePath: string; error: string }>;
   baseline?: BaselineMeta;
   thresholds: { meanSlop: number; p90Slop: number; individualSlopThreshold: number };
+  /**
+   * v0.42.0 (user-review fix): names of thresholds that tripped in this
+   * scan. Optional for backward compat with v0.41 and earlier reports.
+   * Empty/undefined means all gates passed.
+   *
+   * Possible values: 'meanSlop', 'p90Slop', 'individualSlopThreshold',
+   * 'category:<name>' (per-category thresholds).
+   *
+   * CI consumers can grep this field directly instead of parsing the
+   * stderr message. See threshold.ts#failedThresholds for source.
+   */
+  failedThresholds?: string[];
   /** Research/flywheel snapshot — present when the flywheel directory has artifacts. */
   research?: ResearchMetrics;
   topOffenders?: TopOffender[];

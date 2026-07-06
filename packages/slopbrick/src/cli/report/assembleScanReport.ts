@@ -20,6 +20,7 @@ import type {
   FileScanResult,
 } from '../../types';
 import type { EnrichmentResult } from './enrichReport';
+import { failedThresholds } from '../threshold';
 import { VERSION } from '../../types';
 
 export interface AssembleScanReportInput {
@@ -90,6 +91,22 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
 
   const prSlopScore = computePrSlopScore(diffRef, allIssues);
 
+  // v0.42.0 (user-review fix): compute which thresholds tripped so the
+  // JSON output exposes them. The full `failedThresholds()` function
+  // expects a complete ProjectReport, but we only need the threshold-
+  // relevant fields. Inline-equivalent: check each threshold's condition
+  // using the aggregated scores already on the report.
+  const thresholdReport = {
+    aiSlopScore: aggregated.aiSlopScore,
+    p90Score: aggregated.p90Score,
+    peakScore: aggregated.peakScore,
+    categoryScores: aggregated.categoryScores,
+  };
+  const failedThresholds_ = failedThresholds(
+    thresholdReport as unknown as ProjectReport,
+    config,
+  );
+
   return {
     version: VERSION,
     generatedAt,
@@ -145,6 +162,11 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     parseErrors: parseErrors.length > 0 ? parseErrors : undefined,
     baseline: baselineMeta,
     thresholds: config.thresholds,
+    // v0.42.0 (user-review fix): expose which gates tripped so CI
+    // consumers can read the JSON output instead of grepping stderr.
+    // Optional field: absent when no thresholds tripped. Computed from
+    // the report's own scores so the JSON is self-describing.
+    failedThresholds: failedThresholds_,
     topOffenders: topOffenders.length > 0 ? topOffenders : undefined,
     coherence: enrichment.coherence,
     coherenceBreakdown: enrichment.coherenceBreakdown,
