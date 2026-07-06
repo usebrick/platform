@@ -5,7 +5,7 @@ export default defineConfig({
   site: 'https://usebrick.dev',
   trailingSlash: 'ignore',
   build: {
-    inlineStylesheets: 'auto',
+    inlineStylesheets: 'always',
     assets: 'assets',
   },
   vite: {
