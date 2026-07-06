@@ -3,7 +3,7 @@
 // Speaks JSON-RPC 2.0 over stdio (newline-delimited). Exposes three tools
 // AI agents can call:
 //
-//   slop.scan_file      — scan a single file, return issues + Slop Index
+//   slop.scan_file      — scan a single file, return issues + composite AI-likelihood score
 //   slop.explain_rule   — return rule metadata + rationale + advice
 //   slop.list_rules     — list all registered rules (optional category filter)
 //
