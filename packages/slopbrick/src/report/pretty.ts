@@ -311,11 +311,14 @@ function formatNextStep(report: ProjectReport): string {
     ),
   );
 
-  // Add the why-failing hint when failing. v0.21.0: aiSlopScore is
-  // raw amount of slop (0=clean, 100=saturated). Threshold is
-  // "exceeds 30" (default meanSlop: 30) — show the hint when over.
-  // The < 70 check (v0.15–v0.20.1 cleanliness) flips to > 30 (raw).
-  if (report.aiSlopScore > 30) {
+  // v0.42.0 (user-review fix): the hint was previously hardcoded to
+  // "exceeds 30" (the default meanSlop). For users with a stricter
+  // meanSlop (e.g. slopbrick repo's 15), the hint would only appear
+  // after the scan already failed — too late. It should mirror the
+  // actual gate: show --why-failing whenever aiSlopScore is over
+  // the user's configured threshold, not just the default.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  if (report.aiSlopScore > meanSlop) {
     lines.push(
       chalk.dim(
         `  → \`slopbrick scan --why-failing\` for the top 5 issues dragging the score down`,
