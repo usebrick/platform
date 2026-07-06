@@ -610,7 +610,7 @@ function formatCompositeScore(report: ProjectReport): string {
       chalk.dim(
         `Repository Coherence: ${coherenceValue} / 100 [${cohBand.label.toUpperCase()}] — ` +
         `higher = better · measures internal consistency. ` +
-        `This is a secondary view; the Slop Index above is the gate.`,
+        `This is a secondary view; the AI Slop Score above is the gate.`,
       ),
     );
   }
