@@ -91,8 +91,7 @@
           <span class="hero__preview-dot"></span>
           <span class="hero__preview-path" data-hero-path></span>
         </header>
-        <pre class="hero__preview-body" data-hero-body></pre>
-        <div class="hero__preview-stats" data-hero-stats></div>
+        <div class="hero__preview-body" data-hero-body></div>
       </aside>
     </div>
   </div>
@@ -179,11 +178,21 @@
     let i = 0;
     const render = (frame: Frame) => {
       if (pathEl) pathEl.textContent = frame.path;
-      const jsonStr = JSON.stringify(frame.json, null, 2)
-        .split('\n')
-        .map((line) => `<span class="hero__preview-line">${escapeHtml(line)}</span>`)
-        .join('\n');
-      if (bodyEl) bodyEl.innerHTML = jsonStr;
+      // The preview shows the user-facing rendering (the stats
+      // grid that lives in any HTML slopbrick generates) — NOT the
+      // raw .slopbrick/health.json shape. Users don't need to see
+      // internal field names like "aiSlopScore" — they need the
+      // verdict: low / consistent / no AI-flagged risks / etc.
+      if (bodyEl) {
+        bodyEl.innerHTML = frame.stats
+          .map(([k, v, c]) =>
+            `<div class="hero__preview-stat hero__preview-stat--${c}">
+              <span class="hero__preview-stat-key">${escapeHtml(k)}</span>
+              <span class="hero__preview-stat-val">${escapeHtml(v)}</span>
+            </div>`
+          )
+          .join('');
+      }
       if (statsEl) {
         statsEl.innerHTML = frame.stats
           .map(([k, v, c]) =>
