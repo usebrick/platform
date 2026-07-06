@@ -360,10 +360,18 @@ function formatWhyFailing(report: ProjectReport): string {
   // was wrong for a cleanliness metric — lower is better. When the
   // score is 25 we want to say "below the 30 threshold," not
   // "above." The fix: condition the qualifier on the direction.
+  //
+  // v0.42.0 (user-review fix): the threshold was hardcoded to 30 in
+  // 3 places here and 1 in --brief. For users who set their own
+  // meanSlop (e.g. slopbrick repo itself uses meanSlop=15) the
+  // why-failing output showed "PASS — below 30" while the actual
+  // scan returned exit code 1. Same bug as the brief one. Fix:
+  // read the threshold from the report.
   const headline = report.aiSlopScore;
-  const status = headline <= 30 ? 'PASS' : 'FAIL';
-  const colorize = headline <= 30 ? chalk.green : chalk.red;
-  const qualifier = headline <= 30 ? 'below 30' : 'above 30';
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  const status = headline <= meanSlop ? 'PASS' : 'FAIL';
+  const colorize = headline <= meanSlop ? chalk.green : chalk.red;
+  const qualifier = headline <= meanSlop ? `below ${meanSlop}` : `above ${meanSlop}`;
   const lines: string[] = [];
   lines.push(colorize.bold(`Headline score: ${headline.toFixed(0)}/100 (${status} — ${qualifier})`));
   lines.push('');
