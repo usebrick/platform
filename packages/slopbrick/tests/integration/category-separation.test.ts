@@ -101,7 +101,10 @@ async function measureDir(dir: string, max = 100): Promise<CategoryAcc> {
   return acc;
 }
 
-describe('composite Slop Index category separation', () => {
+// v0.42.0 (post-cleanup): renamed from 'composite Slop Index' to
+// 'composite AI Slop Score' for terminological consistency with the
+// rest of the surface.
+describe('composite AI Slop Score category separation', () => {
   it.skipIf(!existsSync(POSITIVE_DIR) || !existsSync(NEGATIVE_DIR))(
     'reports per-bucket separation between AI and human corpora',
     async () => {
