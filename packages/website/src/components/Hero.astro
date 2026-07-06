@@ -1,15 +1,18 @@
 ---
-// Hero — the first brick of the wall.
-// One oversized brick centered in the viewport. The title sits
-// inside it; the install button is the visual anchor; the meta
-// row lives at the bottom edge of the brick. The wall behind
-// the brick is rendered by CSS (see `.hero__wall` in components.css).
+// Hero — the first (oversized) brick, but it now does real work.
+// Two-column layout: brand/copy on the left, a live .slopbrick/
+// artifact preview on the right. The preview rotates through the
+// 4 files every 7s with a subtle cross-fade, so visitors see the
+// real shape without leaving the page.
+//
+// ScrollReveal adds a stagger on the children via the .sr class.
 
 import Logo from './Logo.astro';
 ---
 
 <header class="hero" id="top">
   <div class="hero__wall" aria-hidden="true"></div>
+  <div class="hero__grid-overlay" aria-hidden="true"></div>
 
   <div class="brick brick--hero brick--raised hero__brick">
     <div class="hero__nav-row">
@@ -17,53 +20,76 @@ import Logo from './Logo.astro';
     </div>
 
     <div class="hero__content">
-      <span class="hero__eyebrow">
-        <span class="hero__eyebrow-dot" aria-hidden="true"></span>
-        v0.43.0 · 103 rules in 22 categories, 4 scores, 9+ languages, v10 calibrated against 576,750 files
-      </span>
+      <aside class="hero__copy">
+        <span class="hero__eyebrow">
+          <span class="hero__eyebrow-dot" aria-hidden="true"></span>
+          v0.43.0 · 103 rules in 22 categories · 4 scores · v10-calibrated against 576,750 files
+        </span>
 
-      <h1 class="hero__title">
-        A <span class="hero__title-accent">repository structure</span> for your code.
-      </h1>
+        <h1 class="hero__title">
+          A <span class="hero__title-accent">repository structure</span>
+          <br class="hero__title-break" />for your code.
+        </h1>
 
-      <p class="hero__subtitle">
-        Detect, classify, ship. usebrick.dev turns an LLM-augmented codebase
-        into one that knows its frameworks, patterns, smells, and the rules
-        that catch them.
-      </p>
+        <p class="hero__subtitle">
+          Detect, classify, ship. usebrick.dev turns an LLM-augmented
+          codebase into one that knows its frameworks, patterns,
+          smells, and the rules that catch them.
+        </p>
 
-      <button
-        class="hero__install"
-        data-copy="npm install -g slopbrick"
-        data-magnetic
-        aria-label="Copy install command"
-      >
-        <span class="hero__install-prompt" aria-hidden="true">$</span>
-        <span class="hero__install-cmd">npm install -g slopbrick</span>
-        <svg
-          class="hero__install-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="9" y="9" width="13" height="13" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      </button>
-    </div>
+        <div class="hero__cta-row">
+          <button
+            class="hero__install"
+            data-copy="npm install -g slopbrick"
+            data-magnetic
+            aria-label="Copy install command"
+          >
+            <span class="hero__install-prompt" aria-hidden="true">$</span>
+            <span class="hero__install-cmd">npm install -g slopbrick</span>
+            <svg
+              class="hero__install-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+          <a
+            class="hero__secondary"
+            href="https://github.com/usebrick/platform"
+            rel="noopener"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.02C6.7 21.6 6.1 19.6 6.1 19.6c-.55-1.4-1.35-1.77-1.35-1.77-1.1-.75.08-.74.08-.74 1.22.08 1.86 1.25 1.86 1.25 1.08 1.85 2.84 1.32 3.53 1 .1-.78.42-1.32.77-1.62-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.58A12 12 0 0 0 12 .3z" />
+            </svg>
+            <span>github</span>
+          </a>
+        </div>
 
-    <div class="hero__meta">
-      <span>MIT</span>
-      <span class="hero__meta-sep" aria-hidden="true">·</span>
-      <span>~150 kB tarball</span>
-      <span class="hero__meta-sep" aria-hidden="true">·</span>
-      <span>no telemetry</span>
-      <span class="hero__meta-sep" aria-hidden="true">·</span>
-      <span>Node &ge; 20</span>
+        <ul class="hero__facts">
+          <li><span>~150 kB</span> tarball</li>
+          <li><span>offline</span> first run, no telemetry</li>
+          <li><span>MIT</span> license</li>
+          <li><span>Node ≥ 20</span></li>
+        </ul>
+      </aside>
+
+      <aside class="hero__preview" data-hero-preview aria-hidden="true">
+        <header class="hero__preview-bar">
+          <span class="hero__preview-dot"></span>
+          <span class="hero__preview-dot"></span>
+          <span class="hero__preview-dot"></span>
+          <span class="hero__preview-path" data-hero-path></span>
+        </header>
+        <pre class="hero__preview-body" data-hero-body></pre>
+        <div class="hero__preview-stats" data-hero-stats></div>
+      </aside>
     </div>
   </div>
 
@@ -72,3 +98,107 @@ import Logo from './Logo.astro';
     <span class="hero__scroll-line"></span>
   </div>
 </header>
+
+<script>
+  // Hero preview rotator — no framework, just toggling the data-* attributes.
+  // Cycles through 4 .slopbrick/ artifacts every 7s with a subtle cross-fade.
+  document.querySelectorAll<HTMLElement>('[data-hero-preview]').forEach((root) => {
+    const pathEl = root.querySelector<HTMLElement>('[data-hero-path]');
+    const bodyEl = root.querySelector<HTMLElement>('[data-hero-body]');
+    const statsEl = root.querySelector<HTMLElement>('[data-hero-stats]');
+
+    type Frame = {
+      path: string;
+      json: Record<string, unknown>;
+      stats: Array<[string, string, 'good' | 'mid' | 'bad']>;
+    };
+    const FRAMES: Frame[] = [
+      {
+        path: '~/your-repo/.slopbrick/health.json',
+        json: {
+          aiSlopScore: 25,
+          engineeringHygiene: 100,
+          security: 100,
+          repositoryHealth: 57,
+        },
+        stats: [
+          ['AI Slop Score', 'low', 'good'],
+          ['Engineering Hygiene', 'consistent', 'good'],
+          ['Security', 'no AI-flagged risks', 'good'],
+          ['Repository Health', 'composite (hierarchy + security)', 'mid'],
+        ],
+      },
+      {
+        path: '~/your-repo/.slopbrick/inventory.json',
+        json: {
+          files: 593,
+          patterns: { modal: 4, button: 6, 'data-fetch': 8, state: 3 },
+          components: 312,
+        },
+        stats: [
+          ['Patterns (modal)', '4 — vanilla.css', 'good'],
+          ['Patterns (state)', '3 — zustand', 'good'],
+          ['Patterns (data-fetch)', '8 — swr', 'good'],
+          ['Components', '312 components', 'good'],
+        ],
+      },
+      {
+        path: '~/your-repo/.slopbrick/constitution.json',
+        json: {
+          stateManagement: 'zustand',
+          dataFetching: 'swr',
+          uiLibrary: 'shadcn/ui',
+          forbidden: ['chart.js', 'redux'],
+        },
+        stats: [
+          ['stateManagement', 'zustand ✓', 'good'],
+          ['dataFetching', 'swr ✓', 'good'],
+          ['forbidden (chart.js)', 'blocked — drifts exits 1', 'good'],
+          ['Match against repo', '0 violations', 'good'],
+        ],
+      },
+      {
+        path: '~/your-repo/.slopbrick/structure.md',
+        json: {
+          section: 'Patterns',
+          counts: { 'state libs': 1, 'fetch libs': 1, modals: 1, 'API clients': 1 },
+        },
+        stats: [
+          ['Patterns (state)', '1 canonical — zustand', 'good'],
+          ['Patterns (fetch)', '1 canonical — swr', 'good'],
+          ['Patterns (modals)', '1 canonical — radix', 'good'],
+          ['Patterns (api)', '1 canonical — openapi-fetch', 'good'],
+        ],
+      },
+    ];
+
+    let i = 0;
+    const render = (frame: Frame) => {
+      if (pathEl) pathEl.textContent = frame.path;
+      const jsonStr = JSON.stringify(frame.json, null, 2)
+        .split('\n')
+        .map((line) => `<span class="hero__preview-line">${escapeHtml(line)}</span>`)
+        .join('\n');
+      if (bodyEl) bodyEl.innerHTML = jsonStr;
+      if (statsEl) {
+        statsEl.innerHTML = frame.stats
+          .map(([k, v, c]) =>
+            `<li class="hero__preview-stat hero__preview-stat--${c}"><span class="hero__preview-stat-key">${escapeHtml(k)}</span><span class="hero__preview-stat-val">${escapeHtml(v)}</span></li>`
+          )
+          .join('');
+      }
+    };
+    const escapeHtml = (s: string): string =>
+      s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    render(FRAMES[0]!);
+    setInterval(() => {
+      i = (i + 1) % FRAMES.length;
+      render(FRAMES[i]!);
+    }, 7000);
+  });
+</script>

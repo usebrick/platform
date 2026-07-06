@@ -177,19 +177,159 @@
 }
 
 /* ============================================================
+   Hero — one brick in a wall, two columns (copy + preview)
+   ============================================================ */
+
+.hero__content {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--space-10);
+  align-items: start;
+}
+@media (max-width: 920px) {
+  .hero__content { grid-template-columns: 1fr; gap: var(--space-8); }
+}
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.hero__subtitle {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 56ch;
+}
+.hero__preview {
+  background: linear-gradient(180deg, var(--surface-0), var(--surface-1));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  min-height: 360px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 36px rgba(0, 0, 0, 0.5);
+}
+.hero__preview-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.hero__preview-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  display: inline-block;
+}
+.hero__preview-dot:nth-child(1) { background: #b86a4a; }
+.hero__preview-dot:nth-child(2) { background: #c89060; }
+.hero__preview-dot:nth-child(3) { background: #84a07a; }
+.hero__preview-path {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero__preview-body {
+  padding: var(--space-4);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  max-height: 240px;
+  margin: 0;
+  flex: 0 0 auto;
+  transition: opacity 0.4s var(--ease-out);
+}
+.hero__preview-line {
+  display: block;
+}
+.hero__preview-stats {
+  list-style: none;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  margin: 0;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2) var(--space-3);
+  font-size: 12px;
+  background: var(--surface-1);
+}
+.hero__preview-stat {
+  display: contents;
+}
+.hero__preview-stat-key {
+  color: var(--text-muted);
+  grid-column: 1;
+}
+.hero__preview-stat-val {
+  color: var(--text-secondary);
+  grid-column: 2;
+  text-align: right;
+  font-feature-settings: 'tnum';
+}
+.hero__preview-stat--good .hero__preview-stat-val {
+  color: var(--text-success);
+}
+.hero__preview-stat--mid .hero__preview-stat-val {
+  color: var(--text-warning);
+}
+.hero__preview-stat--bad .hero__preview-stat-val {
+  color: var(--text-danger);
+}
+@keyframes hero-preview-fade {
+  0% { opacity: 1; }
+  49% { opacity: 1; }
+  50% { opacity: 0; }
+  99% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.hero__preview-body, .hero__preview-stats {
+  animation: hero-preview-pulse 0.6s var(--ease-out);
+}
+@keyframes hero-preview-pulse {
+  0% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+/* ============================================================
    Hero — one big brick in a wall
    ============================================================ */
 
 .hero {
   position: relative;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-12) 0;
+  padding: var(--space-10) 0 var(--space-12);
   overflow: hidden;
   isolation: isolate;
+}
+.hero__grid-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(220, 74, 38, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220, 74, 38, 0.025) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
 }
 
 /* The wall behind the hero brick — soft, ambient, no WebGL */
@@ -230,8 +370,8 @@
 }
 
 .hero__brick {
-  width: min(100%, 720px);
-  padding: var(--space-8) var(--space-8) var(--space-6);
+  width: min(1180px, 100% - var(--space-8));
+  padding: var(--space-10) var(--space-12);
   text-align: left;
   animation: brick-arrive 0.8s var(--ease-out) both;
 }
@@ -460,25 +600,44 @@
 .tool-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   height: 100%;
   cursor: pointer;
   position: relative;
+  transition: transform 0.2s var(--ease-out);
 }
+.tool-card:hover { transform: translateY(-2px); }
 .tool-card__icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   color: var(--text-accent);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
+  transition: transform 0.3s var(--ease-out);
+  filter: drop-shadow(0 0 8px rgba(220, 74, 38, 0.3));
 }
+.tool-card:hover .tool-card__icon { transform: rotate(-6deg) scale(1.08); }
 .tool-card__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-accent);
   margin-bottom: var(--space-1);
+}
+.tool-card__label::after {
+  content: '·  shipped';
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-success);
+  background: var(--bg-success);
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
 }
 .tool-card__name {
   font-family: var(--font-mono);
@@ -496,6 +655,7 @@
   line-height: 1.55;
   color: var(--text-secondary);
   flex: 1;
+  max-width: 38ch;
 }
 .tool-card__hint {
   font-family: var(--font-mono);
@@ -505,11 +665,12 @@
   text-transform: uppercase;
   margin-top: var(--space-3);
   opacity: 0;
-  transition: opacity 0.2s var(--ease-out);
+  transition: opacity 0.3s var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
-.tool-card:hover .tool-card__hint {
-  opacity: 0.7;
-}
+.tool-card:hover .tool-card__hint { opacity: 0.7; }
 .tool-card__cracks {
   position: absolute;
   inset: 0;
