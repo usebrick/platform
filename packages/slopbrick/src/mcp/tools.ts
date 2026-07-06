@@ -135,7 +135,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     // — no LLM, no embeddings, deterministic. Foundation for StackPick.
     name: 'slop_find_similar',
     description:
-      "Find the most similar existing function/component implementations across the codebase, ranked by Jaccard similarity over the union of (hooks ∪ props ∪ params). Use this BEFORE writing new code so the agent reuses an existing pattern instead of inventing a new one. Returns top-k matches with name, file, line, fingerprint, and similarity score in [0, 1].",
+      "Find the most similar existing function/component implementations across the codebase, ranked by Jaccard similarity over the union of (hooks ∪ props ∪ params). Use this BEFORE writing new code so the agent reuses an existing pattern instead of inventing a new one. Returns up to `limit` matches (default 10) with name, file, line, fingerprint (sha256 over signature), hooks, props, params, and similarity in [0, 1].",
     inputSchema: {
       type: 'object',
       properties: {
