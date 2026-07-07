@@ -202,6 +202,16 @@ describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
     const result = await runSuggest({}, ctx);
     const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
     expect(parsed.compositeScore).toEqual(composite);
+    // v0.43.0: when compositeScore is present, also surface
+    // scoreBriefs so MCP clients (Cursor, Claude Code, Continue)
+    // can explain what the score means to the agent without
+    // needing the docs.
+    expect(parsed.scoreBriefs).toEqual({
+      aiSlopScore: 'raw amount of AI slop, 0-100',
+      engineeringHygiene: 'cross-category consistency, 0-100',
+      security: 'AI Security Risk band, 0-100',
+      repositoryHealth: 'weighted composite, 0-100',
+    });
   });
 
   it('omits compositeScore when health.json predates v0.18.2 (no composite field)', async () => {

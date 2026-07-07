@@ -354,6 +354,19 @@ export async function runSuggest(
       const health = loadHealth(ctx.cwd);
       if (health?.compositeScore) {
         payload.compositeScore = health.compositeScore;
+        // v0.43.0: include the same scoreBriefs that the CLI
+        // --brief and --json surfaces now ship. MCP clients
+        // (Cursor, Claude Code, Continue) get the same plain-
+        // language explanation of each score the agent is
+        // going to act on. Without this, an agent receiving a
+        // compositeScore sees the number but not what it
+        // measures; the brief makes it self-explanatory.
+        payload.scoreBriefs = {
+          aiSlopScore: 'raw amount of AI slop, 0-100',
+          engineeringHygiene: 'cross-category consistency, 0-100',
+          security: 'AI Security Risk band, 0-100',
+          repositoryHealth: 'weighted composite, 0-100',
+        };
       }
     } catch {
       // health.json missing or unreadable — composite is optional,
