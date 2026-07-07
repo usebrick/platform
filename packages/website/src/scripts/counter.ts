@@ -33,7 +33,7 @@ export function initCounters(): () => void {
       const t = Math.min(1, (now - start) / duration);
       // ease-out cubic
       const e = 1 - Math.pow(1 - t, 3);
-      const value = Math.floor(target * e);
+      const value = t < 1 ? Math.floor(target * e) : target;
       el.textContent = `${value.toLocaleString()}${suffix}`;
       if (t < 1) requestAnimationFrame(tick);
     };
