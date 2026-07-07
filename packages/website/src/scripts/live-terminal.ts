@@ -112,6 +112,23 @@ const COMMANDS: CommandSpec[] = [
     ],
   },
   {
+    match: 'slopbrick explain ai/comment-ratio',
+    run: () => [
+      { kind: 'accent', text: 'Rule: ai/comment-ratio · Category: ai · Severity: medium · AI-specific: yes' },
+      { kind: 'output', text: '' },
+      { kind: 'output', text: '  Pattern:' },
+      { kind: 'output', text: '    AI tools either skip comments (reductive) or over-comment' },
+      { kind: 'output', text: '    (expansive). Match the corpus mean ± 2σ.' },
+      { kind: 'output', text: '    Source: Rahman et al. 2024, Bisztray et al. 2025.' },
+      { kind: 'output', text: '' },
+      { kind: 'output', text: '  Remediation:' },
+      { kind: 'output', text: '    See the rule source for the canonical before/after:' },
+      { kind: 'output', text: '    src/rules/ai/comment-ratio.ts' },
+      { kind: 'output', text: '' },
+      { kind: 'muted', text: 'Suppress: rules: { "ai/comment-ratio": "off" } in slopbrick.config.mjs' },
+    ],
+  },
+  {
     match: 'cat .slopbrick/structure.json',
     run: () => STRUCTURE_JSON.split('\n').map((text): Line => ({ kind: 'output', text })),
   },
