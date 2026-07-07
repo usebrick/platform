@@ -920,17 +920,7 @@ NOISY". */
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }
-.hero__title-accent::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.04em;
-  height: 0.06em;
-  background: var(--text-accent);
-  opacity: 0.3;
-  border-radius: 1px;
-}
+
 
 .hero__subtitle {
   font-size: clamp(0.95rem, 1.4vw, 1.05rem);
