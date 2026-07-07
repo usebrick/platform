@@ -7,30 +7,41 @@
 
 import BrickLayout from './BrickLayout.astro';
 
-const tools = [
+interface Tool {
+  name: string;
+  label: string;
+  desc: string;
+  icon: 'cli' | 'mcp' | 'schemas' | 'constitution';
+  /** v0.43.0 editorial layout: the CLI is the main entry point,
+   *  so it gets the featured treatment (spans both columns). */
+  featured?: boolean;
+}
+
+const tools: Tool[] = [
   {
     name: 'cli',
     label: 'CLI',
     desc: 'Score code on 4 axes. Writes .slopbrick/ artifacts. v0.43.0, 103 rules across 22 categories, v10-calibrated against 576,750 files.',
-    icon: 'cli' as const,
+    icon: 'cli',
+    featured: true,
   },
   {
     name: 'mcp',
     label: 'MCP',
     desc: 'Talk to Claude Code, Cursor, Copilot. 5 tools, JSON-RPC 2.0 over stdio. Agents consume the structure, not the AST.',
-    icon: 'mcp' as const,
+    icon: 'mcp',
   },
   {
     name: 'schemas',
     label: 'JSON Schemas',
     desc: '4 contracts: Inventory, Constitution, Structure, Health. The wire format every agent and dashboard agrees on. Cross-language.',
-    icon: 'schemas' as const,
+    icon: 'schemas',
   },
   {
     name: 'constitution',
     label: 'Constitution',
     desc: 'Declare your stack once in slopbrick.config.mjs. The agent + linter enforce it together. Drift is an exit code.',
-    icon: 'constitution' as const,
+    icon: 'constitution',
   },
 ];
 ---
@@ -53,8 +64,9 @@ const tools = [
       <BrickLayout
         as="article"
         tone="default"
-        class={`tools__brick tools__brick--${t.icon}`}
+        class={`tools__brick tools__brick--${t.icon}${t.featured ? ' tools__brick--featured' : ''}`}
         data-tool={t.icon}
+        span={t.featured ? 2 : 1}
       >
         <article
           class="tool-card"
