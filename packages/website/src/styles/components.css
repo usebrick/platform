@@ -917,8 +917,22 @@
 }
 .compare__item:last-child { border-bottom: 0; }
 .compare__item-text { flex: 1; }
+.compare__col--yay {
+  background: linear-gradient(180deg,
+    rgba(132, 160, 122, 0.04) 0%,
+    rgba(132, 160, 122, 0.0) 50%);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
 .compare__col--yay .compare__item {
   color: var(--text-primary);
+}
+.compare__col--nay {
+  background: linear-gradient(180deg,
+    rgba(184, 106, 74, 0.04) 0%,
+    rgba(184, 106, 74, 0.0) 50%);
+  border-radius: var(--radius);
+  padding: var(--space-4);
 }
 .compare__col--nay .compare__item {
   color: var(--text-muted);
