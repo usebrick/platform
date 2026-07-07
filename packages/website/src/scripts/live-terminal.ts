@@ -143,6 +143,13 @@ const COMMAND_INDEX = new Map(COMMANDS.map((c) => [c.match, c]));
 export function initLiveTerminal(): () => void {
   const root = document.querySelector<HTMLElement>('[data-live-terminal]');
   if (!root) return () => {};
+  
+  // v0.43.0: hide the static fallback content (rendered into the HTML
+  // so the terminal looks alive even when JS module fails to load —
+  // see LiveTerminal.astro). Without this, the static content would
+  // stay visible alongside the dynamic terminal output.
+  const staticEl = root.querySelector<HTMLElement>('[data-live-terminal-static]');
+  if (staticEl) staticEl.remove();
   const body = root.querySelector<HTMLElement>('[data-live-terminal-body]');
   if (!body) return () => {};
 

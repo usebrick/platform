@@ -30,6 +30,18 @@
         role="application"
         aria-label="Interactive terminal. Focus and type a command, then press Enter. Use Up and Down arrows to recall history."
       >
+        <div data-live-terminal-static>
+          <span class="lt-line lt-line--output">$ <span style="color: var(--text-accent)">slopbrick</span> scan</span>
+          <span class="lt-line lt-line--output">  AI Slop Score         25   low  (aiSlopScore)</span>
+          <span class="lt-line lt-line--output">                         raw amount of AI slop, 0-100</span>
+          <span class="lt-line lt-line--output">  Engineering Hygiene  100   excellent  (engineeringHygiene)</span>
+          <span class="lt-line lt-line--output">  Security             100   excellent  (security)</span>
+          <span class="lt-line lt-line--output">  Repository Health     57   needs work  (repositoryHealth)</span>
+          <span class="lt-line lt-line--output"></span>
+          <span class="lt-line lt-line--success">  CI gate: AI Slop Score &lt;= 15 -&gt; fail</span>
+          <span class="lt-line lt-line--output"></span>
+          <span class="lt-line lt-line--muted">  Scanned 593 files, 346 issues. Run with --all for the full report.</span>
+        </div>
         <noscript>
           <span class="lt-line lt-line--muted">
             This terminal needs JavaScript. The CLI itself runs without it: `npm install -g slopbrick`.
