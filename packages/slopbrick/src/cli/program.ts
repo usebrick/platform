@@ -412,7 +412,24 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       if (options.strict && report.issues.some((issue) => issue.severity === 'high')) {
         exitCode = 2;
         if (!options.quiet) {
-          logger.error('High-severity issues found with --strict.');
+          // v0.43.0: the previous message was "High-severity issues
+          // found with --strict." — accurate but unhelpful. Users
+          // staring at exit code 2 want to know WHICH rules tripped
+          // the gate, not just that something did. Show the top 5
+          // (by fire count) so they can `slopbrick explain <ruleId>`
+          // or `slopbrick rules` to drill in.
+          const topHigh = report.issues
+            .filter((i) => i.severity === 'high')
+            .reduce<Record<string, number>>((acc, i) => {
+              acc[i.ruleId] = (acc[i.ruleId] ?? 0) + 1;
+              return acc;
+            }, {});
+          const topList = Object.entries(topHigh)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([rule, n]) => `  ${rule} (${n})`)
+            .join('\n');
+          logger.error(`High-severity issues found with --strict. Top rules:\n${topList}`);
         }
       }
       if (noIncreaseFailure) {

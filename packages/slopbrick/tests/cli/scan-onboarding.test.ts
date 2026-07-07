@@ -124,4 +124,17 @@ describe('scan — first-time user onboarding (Refactor 9)', () => {
     expect(stderr).not.toContain('Repository Coherence Scanner');
     expect(stderr).not.toContain('No source files matched');
   });
+
+  // v0.43.0: --strict used to say "High-severity issues found with --strict."
+  // which was accurate but unhelpful — exit code 2 users want to know
+  // WHICH rules tripped. Verify the message now lists the top rules.
+  it('--strict message names the top high-severity rules (not just "issues found")', async () => {
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src/eval.ts'), `const x: any = eval('1+1');\nexport default x;\n`);
+    writeFileSync(join(dir, 'slopbrick.config.mjs'), `export default { include: ['src/**/*'], exclude: [] };`);
+    const { exitCode, stderr } = await run(['--workspace', dir, 'scan', '--strict']);
+    expect(exitCode).toBe(2);
+    expect(stderr).toMatch(/High-severity issues found with --strict/);
+    expect(stderr).toMatch(/security\/eval/);
+  });
 });
