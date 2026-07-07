@@ -1977,6 +1977,20 @@ NOISY". */
   text-underline-offset: 4px;
   text-decoration-color: rgba(26, 14, 8, 0.4);
 }
+
+/* v0.43.0: inline code chips in the CTA copy — adds editorial
+   typographic variety and breaks the "italic" pattern. */
+.cta__code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  font-style: normal;
+  font-weight: 500;
+  background: rgba(26, 14, 8, 0.25);
+  padding: 0.1em 0.5em;
+  border-radius: 4px;
+  color: var(--text-on-accent);
+  border: 0.5px solid rgba(26, 14, 8, 0.35);
+}
 .cta__body {
   color: rgba(26, 14, 8, 0.75);
   margin-bottom: var(--space-8);
