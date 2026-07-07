@@ -1,19 +1,57 @@
 ---
 // Calibration — the four numbers that earn the "usebrick" name.
-// Count-up animation on reveal (counter.ts). Each brick shows a
-// `data-target` (the real value) and a verdict (the natural-language
-// restatement the user can read into).
+// Count-up animation on reveal (counter.ts). Each stat shows:
+// - The actual score (e.g. 25) with band label (e.g. "low")
+// - A one-line brief explanation of what the score measures
+// - A natural-language verdict (e.g. "low amount of AI slop")
+//
+// From `slopbrick scan --workspace packages/slopbrick --brief` on 2026-07-06.
+// Shape: aiSlopScore=25, engineeringHygiene=100, security=100, repositoryHealth=57.
+// The slopbrick repo's meanSlop is 15 (strict self-scan threshold).
 //
 // v0.21.0: aiSlopScore is raw amount of slop (lower = cleaner), not
 // the inverted cleanliness reading. The 4 numbers below are the
 // slopbrick repo's own most-recent self-scan — a real example, not
 // a cherry-picked marketing number.
 
-// From `slopbrick scan --workspace packages/slopbrick --brief` on 2026-07-06.
-// Shape: aiSlopScore=25, engineeringHygiene=100, security=100, repositoryHealth=57.
-// The slopbrick repo's meanSlop is 15 (strict self-scan threshold).
-
 import StructureDemo from './StructureDemo.astro';
+
+// 4 stats with: number target, band label, brief explanation,
+// verdict text, severity class.
+const stats = [
+  {
+    target: 25,
+    band: 'low',
+    bandClass: 'good' as const,
+    name: 'AI Slop Score',
+    brief: 'raw amount of AI slop, 0-100',
+    verdict: 'low amount of AI slop',
+  },
+  {
+    target: 100,
+    band: 'excellent',
+    bandClass: 'good' as const,
+    name: 'Engineering Hygiene',
+    brief: 'cross-category consistency, 0-100',
+    verdict: 'consistent across 6 categories',
+  },
+  {
+    target: 100,
+    band: 'excellent',
+    bandClass: 'good' as const,
+    name: 'Security',
+    brief: 'AI Security Risk band, 0-100',
+    verdict: 'no AI-flagged security risks',
+  },
+  {
+    target: 57,
+    band: 'needs work',
+    bandClass: 'mid' as const,
+    name: 'Repository Health',
+    brief: 'weighted composite, 0-100',
+    verdict: 'composite, hierarchy + security-weighted',
+  },
+];
 ---
 
 <section class="section calibration" id="calibration">
@@ -23,34 +61,25 @@ import StructureDemo from './StructureDemo.astro';
       The numbers that earn the name <span class="calibration__accent">usebrick</span>.
     </h2>
     <p class="calibration__subhead">
-      From <code>slopbrick scan</code> on this site&apos;s own repo. Per-rule
-      calibration lives in <code>src/rules/signal-strength.json</code>;
-      no score is hand-picked, all are derived from v10-corpus
-      precision/recall against 576,750 files.
+      From <code>slopbrick scan</code> on this site&apos;s own repo.
+      Per-rule calibration lives in <code>src/rules/signal-strength.json</code>;
+      every score is derived from v10-corpus precision/recall against
+      576,750 files — no score is hand-picked.
     </p>
   </header>
 
   <div class="calibration__stats">
-    <div class="calibration__stat">
-      <div class="calibration__value" data-target="25" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">AI Slop Score</div>
-      <div class="calibration__verdict">low amount of AI slop</div>
-    </div>
-    <div class="calibration__stat">
-      <div class="calibration__value" data-target="100" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">Engineering Hygiene</div>
-      <div class="calibration__verdict">consistent across 6 categories</div>
-    </div>
-    <div class="calibration__stat">
-      <div class="calibration__value" data-target="100" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">Security</div>
-      <div class="calibration__verdict">no AI-flagged security risks</div>
-    </div>
-    <div class="calibration__stat calibration__stat--wide">
-      <div class="calibration__value" data-target="57" data-prefix="" data-suffix="">0</div>
-      <div class="calibration__axis">Repository Health</div>
-      <div class="calibration__verdict">composite, hierarchy + security-weighted</div>
-    </div>
+    {stats.map((s) => (
+      <div class={`calibration__stat calibration__stat--${s.bandClass}`}>
+        <div class="calibration__value-wrap">
+          <span class="calibration__value" data-target={s.target} data-prefix="" data-suffix="">0</span>
+          <span class="calibration__band">{s.band}</span>
+        </div>
+        <div class="calibration__axis">{s.name}</div>
+        <div class="calibration__brief">{s.brief}</div>
+        <div class="calibration__verdict">{s.verdict}</div>
+      </div>
+    ))}
   </div>
 
   <StructureDemo />
