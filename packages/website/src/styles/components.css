@@ -163,11 +163,14 @@
 
 /* terminal: distinctly darker, like a real terminal zone */
 .live-terminal-section {
+  /* v0.43.0 refinement: terminal is the second hero of the page.
+     Bigger, more visual weight, distinct background. */
   background: 
-    linear-gradient(180deg, var(--surface-0) 0%, var(--surface-1) 100%),
-    radial-gradient(ellipse at center top, rgba(220, 74, 38, .04), transparent 70%);
-  background-blend-mode: normal;
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(220, 74, 38, 0.08), transparent 70%),
+    linear-gradient(180deg, var(--surface-0) 0%, var(--surface-1) 100%);
   position: relative;
+  padding-top: var(--space-24);
+  padding-bottom: var(--space-24);
 }
 .live-terminal-section::before {
   content: "";
@@ -823,7 +826,7 @@
 .tools__wall {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: minmax(180px, auto);
+  grid-auto-rows: minmax(220px, auto);
   gap: var(--mortar);
 }
 
@@ -868,7 +871,7 @@
 .tool-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   height: 100%;
   cursor: pointer;
   position: relative;
@@ -876,8 +879,8 @@
 }
 .tool-card:hover { transform: translateY(-2px); }
 .tool-card__icon {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   color: var(--text-accent);
   margin-bottom: var(--space-1);
   transition: transform 0.3s var(--ease-out);
@@ -1628,7 +1631,7 @@
 }
 
 .live-terminal {
-  max-width: 920px;
+  max-width: 1100px;
   margin: 0 auto;
   position: relative;
   border-radius: var(--radius-lg);
@@ -1658,7 +1661,7 @@
   background: linear-gradient(180deg,
     var(--surface-0) 0%,
     var(--surface-1) 100%);
-  min-height: 200px;
+  min-height: 280px;
   overflow-y: auto;
   cursor: text;
   outline: none;

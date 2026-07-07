@@ -1,0 +1,136 @@
+---
+// TrustStrip — a thin horizontal strip of "trust" signals right
+// after the scoreboard. Quick reassurance for first-time visitors:
+// shipped, fast, free, MIT, works offline, Node 20+.
+//
+// v0.43.0 refinement: lives between the scoreboard (the "wow" moment)
+// and the tools section. Helps the visitor feel that the product
+// is real, not vapor.
+---
+
+<section class="section trust-strip" id="trust">
+  <div class="wall">
+    <div class="trust-strip__inner">
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">~150 kB</div>
+          <div class="trust-strip__label">tarball, single file</div>
+        </div>
+      </div>
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="6" x2="12" y2="12" />
+            <line x1="12" y1="12" x2="16" y2="14" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">5 min</div>
+          <div class="trust-strip__label">to first scan</div>
+        </div>
+      </div>
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">100% offline</div>
+          <div class="trust-strip__label">no telemetry, no network</div>
+        </div>
+      </div>
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12l2 2 4-4" />
+            <path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9c2 0 4 1 5 2l-2 2" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">MIT</div>
+          <div class="trust-strip__label">free, forever, no catches</div>
+        </div>
+      </div>
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h18v18H3z" />
+            <path d="M3 9h18M9 3v18" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">576,750</div>
+          <div class="trust-strip__label">files calibrated against</div>
+        </div>
+      </div>
+      <div class="trust-strip__item">
+        <span class="trust-strip__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+        </span>
+        <div>
+          <div class="trust-strip__value">9+ langs</div>
+          <div class="trust-strip__label">TypeScript, Swift, Rust, Go, ...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .trust-strip {
+    padding: var(--space-8) 0;
+    background: var(--surface-1);
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .trust-strip__inner {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-4);
+    align-items: center;
+  }
+  @media (max-width: 920px) {
+    .trust-strip__inner {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  .trust-strip__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2);
+  }
+  .trust-strip__icon {
+    flex-shrink: 0;
+    color: var(--text-accent);
+    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .trust-strip__value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  .trust-strip__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+</style>
