@@ -72,7 +72,7 @@ const stats = [
     {stats.map((s) => (
       <div class={`calibration__stat calibration__stat--${s.bandClass}`}>
         <div class="calibration__value-wrap">
-          <span class="calibration__value" data-target={s.target} data-prefix="" data-suffix="">0</span>
+          <span class="calibration__value" data-target={s.target} data-prefix="" data-suffix="">{s.target}</span>
           <span class="calibration__band">{s.band}</span>
         </div>
         <div class="calibration__axis">{s.name}</div>

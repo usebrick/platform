@@ -40,8 +40,22 @@ export function initCounters(): () => void {
     requestAnimationFrame(tick);
   };
 
+  // v0.43.0: render the target value IMMEDIATELY (before any scroll)
+  // so users who don't scroll to the section still see the right
+  // numbers. The counter animation overlays this by counting from 0
+  // to target when the element scrolls into view. Without this,
+  // anyone taking a quick screenshot, screen-reader user, or
+  // non-scrolling reader would see "0 LOW / 0 EXCELLENT / 0 EXCELLENT
+  // / 0 NEEDS WORK" which reads as "the repo has nothing".
+  for (const el of stats) {
+    const target = parseInt(el.dataset.target || '0', 10);
+    const suffix = el.dataset.suffix || '';
+    if (!Number.isNaN(target)) {
+      el.textContent = `${target.toLocaleString()}${suffix}`;
+    }
+  }
+
   if (typeof IntersectionObserver === 'undefined') {
-    stats.forEach(animate);
     return () => {};
   }
 
