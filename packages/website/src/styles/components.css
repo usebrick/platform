@@ -1213,7 +1213,9 @@
 }
 .rules-showcase__card:hover {
   border-color: var(--border-accent);
-  transform: translateY(-1px);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 .rules-showcase__card-head {
   display: flex;
@@ -1222,8 +1224,9 @@
   flex-wrap: wrap;
 }
 .rules-showcase__emoji {
-  font-size: 18px;
-  filter: saturate(0.7);
+  font-size: 20px;
+  filter: saturate(0.8);
+  line-height: 1;
 }
 .rules-showcase__id {
   font-family: var(--font-mono);
