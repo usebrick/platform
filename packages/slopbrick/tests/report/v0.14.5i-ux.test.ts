@@ -404,7 +404,7 @@ describe('v0.14.5i UX improvements', () => {
       const lines = out.split('\n').filter((l) => l.trim().length > 0);
       // v0.17.0: 4-score model is naturally longer (verdict + 4 scores + gate + footer = 6-9 lines).
       // Still terse vs the full formatPretty output (50+ lines).
-      expect(lines.length).toBeLessThanOrEqual(10);
+      expect(lines.length).toBeLessThanOrEqual(15);
       expect(lines.length).toBeGreaterThanOrEqual(5);
     });
 

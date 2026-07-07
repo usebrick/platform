@@ -1029,11 +1029,18 @@ export function formatBriefReport(report: ProjectReport): string {
   // what users copy-paste into PR comments, so the readable label
   // leads. JSON consumers reading --json get the raw field name
   // unchanged.
-  const scoreLines: Array<{ label: string; field: string; value: number }> = [
-    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore },
-    { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene },
-    { label: 'Security',            field: 'security',           value: report.security },
-    { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth },
+  // v0.43.0 (user-review parity with usebrick.dev): each score now
+  // includes a one-line "brief" — what the score measures in plain
+  // English. Mirrors the calibration section on the website so the
+  // CLI output and the marketing site tell the same story. The user
+  // can read the brief inline without having to consult the docs
+  // to understand what "Engineering Hygiene" or "Repository Health"
+  // actually means.
+  const scoreLines: Array<{ label: string; field: string; value: number; brief: string }> = [
+    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore,          brief: 'raw amount of AI slop, 0-100' },
+    { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene, brief: 'cross-category consistency, 0-100' },
+    { label: 'Security',            field: 'security',           value: report.security,           brief: 'AI Security Risk band, 0-100' },
+    { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth,   brief: 'weighted composite, 0-100' },
   ];
   const deltaSuffix = formatDeltaSuffix(report);
   // v0.42.0 (user-review fix): the 4-score matrix in --brief used
@@ -1046,14 +1053,19 @@ export function formatBriefReport(report: ProjectReport): string {
   // slopScoreBand() (the correct band mapping for a cleanliness
   // metric) and the other three through scoreBand() (their direction
   // is unchanged - higher = better).
-  scoreLines.forEach(({ label, field, value }, idx) => {
+  scoreLines.forEach(({ label, field, value, brief }, idx) => {
     const band = field === 'aiSlopScore' ? slopScoreBand(value) : scoreBand(value);
     const paddedLabel = label.padEnd(20, ' ');
     const valueStr = value.toFixed(0).padStart(3, ' ');
     const delta = idx === 0 ? deltaSuffix : '';
+    // Two-line format: first line is "<label> <value> <band> (<field>)",
+    // second line is the brief indented under the label. The brief
+    // is dimmer so the eye sees the score first and the explanation
+    // second.
     lines.push(
       `  ${paddedLabel} ${band.color(valueStr)}   ${chalk.dim(band.label)}  ${chalk.dim.italic(`(${field})`)}${delta}`,
     );
+    lines.push(`  ${' '.repeat(20)} ${chalk.dim(brief)}`);
   });
 
   // Gate info: v0.21.0 — aiSlopScore is raw amount of slop. The CI
