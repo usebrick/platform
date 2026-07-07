@@ -83,7 +83,16 @@ function renderStyles(): string {
     .security-score .score-value { color: var(--pass); }
     .health .score-value { color: var(--pass); }
 
-    .score-label {
+    .score-brief {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--muted, #8b8a85);
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+
+.score-label {
       display: block;
       color: var(--muted);
       font-size: 0.875rem;

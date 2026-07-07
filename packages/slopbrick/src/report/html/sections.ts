@@ -46,26 +46,32 @@ function renderHeader(report: ProjectReport): string {
       <div class="score-card coherence">
         <span class="score-value">${report.coherence ?? '–'}</span>
         <span class="score-label">Repository Coherence ${report.coherence !== undefined ? (report.coherence >= 70 ? '[PASS]' : '[FAIL]') : ''}</span>
+        <span class="score-brief">cross-category consistency, 0-100</span>
       </div>
       <div class="score-card repository-health-card">
         <span class="score-value">${namedScores.repositoryHealth}</span>
         <span class="score-label">Repository Health (composite)</span>
+        <span class="score-brief">weighted composite, 0-100</span>
       </div>
       <div class="score-card ai-quality">
         <span class="score-value">${namedScores.aiSlopScore}</span>
         <span class="score-label">AI Slop Score</span>
+        <span class="score-brief">raw amount of AI slop, 0-100</span>
       </div>
       <div class="score-card engineering-hygiene">
         <span class="score-value">${namedScores.engineeringHygiene}</span>
         <span class="score-label">Engineering Hygiene</span>
+        <span class="score-brief">cross-category consistency, 0-100</span>
       </div>
       <div class="score-card security-score">
         <span class="score-value">${namedScores.security}</span>
         <span class="score-label">Security</span>
+        <span class="score-brief">AI Security Risk band, 0-100</span>
       </div>
       <div class="score-card health">
         <span class="score-value">${roundedHealth}</span>
         <span class="score-label">Assembly Health</span>
+        <span class="score-brief"></span>
       </div>
     </div>
     <div class="severity-counts">
