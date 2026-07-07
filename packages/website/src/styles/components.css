@@ -134,6 +134,8 @@
 .section {
   padding: var(--space-20) 0;
   position: relative;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 /* v0.43.0 refinement: subtle section divider line with gradient.
    Sections get this between them so the page has visual rhythm. */
@@ -396,8 +398,9 @@
   gap: 2px;
   position: relative;
   z-index: 1;
-}
   overflow-x: auto;
+  max-width: 100vw;
+}
 .hero__terminal-footer {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1174,6 +1177,11 @@ NOISY". */
   font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
 .compare-section__accent { color: var(--text-accent); }
 .compare-section__body {
   color: var(--text-secondary);
@@ -1229,6 +1237,8 @@ NOISY". */
   display: flex;
   flex-direction: column;
   gap: var(--mortar);
+  min-width: 0;
+  overflow: hidden;
 }
 .compare__heading {
   display: flex;
@@ -1266,6 +1276,7 @@ NOISY". */
   color: var(--text-primary);
   padding: var(--space-3) 0;
   border-bottom: 0.5px solid var(--border);
+  min-width: 0;
 }
 .compare__item:last-child { border-bottom: 0; }
 .compare__item-text { flex: 1; }
@@ -1297,8 +1308,8 @@ NOISY". */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 22px !important;
+  height: 22px !important;
   margin-top: 0;
   border-radius: 999px;
   background: var(--bg-success);
@@ -1309,16 +1320,25 @@ NOISY". */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 22px !important;
+  height: 22px !important;
   margin-top: 0;
   border-radius: 999px;
   background: var(--bg-danger);
   color: var(--text-danger);
 }
+/* v0.43.0 fix: the SVGs have width="100%" height="100%" attributes
+   in the markup so they fill the parent on first render. The
+   12px x 12px sizing here is the only thing that constrains them
+   before the JS class is applied (or if JS fails to load). */
 .compare__check svg, .compare__cross svg {
-  width: 12px;
-  height: 12px;
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px;
+  min-height: 12px;
+  max-width: 12px;
+  max-height: 12px;
+  flex-shrink: 0;
 }
 
 /* ============================================================
@@ -1736,9 +1756,10 @@ NOISY". */
   font-size: 13px;
   line-height: 1.75;
   color: var(--text-primary);
-  white-space: pre;
+  white-space: pre-wrap;
   overflow-x: auto;
   margin: 0;
+  max-width: 100%;
 }
 .sd-key { color: var(--text-accent); }
 .sd-str { color: var(--text-success); }
