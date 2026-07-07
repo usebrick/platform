@@ -618,6 +618,26 @@ NOISY". */
   font-size: 11px;
   letter-spacing: 0.02em;
 }
+
+/* v0.43.0: "shipped" indicator — small pulsing dot like a real
+   product release indicator. Tells visitors "this is live, not vapor" */
+.hero__fact--live {
+  color: var(--text-success);
+}
+.hero__fact-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-success);
+  margin-right: 0.4em;
+  animation: live-pulse 2s ease-in-out infinite;
+  vertical-align: 0.1em;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
 .hero__facts li {
   display: inline-flex;
   align-items: center;
