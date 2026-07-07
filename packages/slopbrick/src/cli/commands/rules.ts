@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { builtinRules } from '../../rules/builtins';
 import { loadSignalStrength, isReliableSignal } from '../../rules/signal-strength.js';
+import { formatRulesList } from '../render.js';
 
 /**
  * v0.18.x (R-H1): rules subcommand extracted from cli/program.ts.
@@ -91,46 +92,8 @@ export function registerRules(program: Command): void {
         );
         return;
       }
-      // Pretty table grouped by category.
-      const byCategory = new Map<string, typeof rules>();
-      for (const r of rules) {
-        if (!byCategory.has(r.category)) byCategory.set(r.category, []);
-        byCategory.get(r.category)!.push(r);
-      }
-      const lines: string[] = [];
-      lines.push(`slopbrick rules — ${rules.length} of ${builtinRules.length} shown\n`);
-      for (const [cat, list] of [...byCategory.entries()].sort()) {
-        lines.push(`\n## ${cat} (${list.length})`);
-        for (const r of list.sort((a, b) => a.id.localeCompare(b.id))) {
-          const sev = r.severity.padEnd(8);
-          const tag = r.aiSpecific ? '[AI]' : '     ';
-          lines.push(`  ${sev} ${tag} ${r.id}`);
-          if (r.description) {
-            // v0.42.0 (user-review fix): wrap long descriptions to the
-            // current terminal width. Default 100 cols if stdout isn't
-            // a TTY (consistent with `column -J`). Word boundaries so
-            // we don't break mid-word. Keeps the output readable in
-            // 80-col terminals AND in CI logs.
-            const cols = process.stdout.isTTY ? (process.stdout.columns ?? 100) : 100;
-            const indent = '           '; // 11 spaces, matches old layout
-            const firstCol = indent.length + 1;
-            const maxWidth = Math.max(40, cols - firstCol);
-            const words = r.description.split(' ');
-            let line = '';
-            for (const word of words) {
-              if (line === '') {
-                line = word;
-              } else if ((line + ' ' + word).length > maxWidth) {
-                lines.push(indent + line);
-                line = word;
-              } else {
-                line = line + ' ' + word;
-              }
-            }
-            if (line) lines.push(indent + line);
-          }
-        }
-      }
-      logger.info(lines.join('\n'));
+      // v0.43.0: pretty-printing lives in render.ts so `slopbrick explain`
+      // (no ruleId) can reuse it. Keep the action small.
+      logger.info(formatRulesList(rules, builtinRules.length));
     });
 }

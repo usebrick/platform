@@ -18,15 +18,23 @@ export function registerExplain(program: Command): void {
   program
     .command('explain [ruleId]')
     .description('Print rationale, pattern, and remediation for a single rule. With no ruleId, lists the rules.')
-    .action((ruleId?: string) => {
+    .action(async (ruleId?: string) => {
       // v0.42.0 (user-review fix): the previous version required a ruleId,
       // so `slopbrick explain` alone produced Commander's unhelpful "missing
       // required argument 'ruleId'". We make the arg optional and, when
       // missing, just point the user at `slopbrick rules` so they know
       // what's available.
       if (!ruleId) {
-        logger.warn('Missing ruleId. Run `slopbrick rules` to see available rules, then `slopbrick explain <ruleId>`.');
-        process.exit(2);
+        // v0.43.0: actually run `slopbrick rules`-style output instead
+        // of just warning. The command description already says "With
+        // no ruleId, lists the rules" — making the implementation
+        // match the description means first-time users who type
+        // `slopbrick explain` to discover the CLI get useful output
+        // instead of a warning + non-zero exit.
+        const { formatRulesList } = await import('../render.js');
+        const { builtinRules } = await import('../../rules/builtins.js');
+        logger.info(formatRulesList(builtinRules));
+        return;
       }
       const result = explainRule(ruleId, builtinRules, RULE_HINTS);
       logger.info(formatExplain(result));

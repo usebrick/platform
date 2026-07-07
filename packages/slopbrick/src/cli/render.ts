@@ -174,3 +174,61 @@ export function clearProgress(): void {
     process.stdout.write(`\r${' '.repeat(80)}\r`);
   }
 }
+
+/**
+ * v0.43.0: pretty-print the built-in rules list, grouped by category,
+ * with wrapped descriptions. Shared between `slopbrick rules` and
+ * `slopbrick explain` (no ruleId) so the two surfaces stay in sync.
+ */
+export function formatRulesList(
+  rules: ReadonlyArray<{
+    id: string;
+    category: string;
+    severity: string;
+    aiSpecific: boolean;
+    description?: string;
+  }>,
+  totalCount?: number,
+): string {
+  type Rule = (typeof rules)[number];
+  const byCategory = new Map<string, Rule[]>();
+  for (const r of rules) {
+    let bucket = byCategory.get(r.category);
+    if (!bucket) {
+      bucket = [];
+      byCategory.set(r.category, bucket);
+    }
+    bucket.push(r);
+  }
+  const lines: string[] = [];
+  const shown = rules.length;
+  const total = totalCount ?? shown;
+  lines.push(`slopbrick rules — ${shown} of ${total} shown\n`);
+  for (const [cat, list] of [...byCategory.entries()].sort()) {
+    lines.push(`\n## ${cat} (${list.length})`);
+    for (const r of list.sort((a, b) => a.id.localeCompare(b.id))) {
+      const sev = r.severity.padEnd(8);
+      const tag = r.aiSpecific ? '[AI]' : '     ';
+      lines.push(`  ${sev} ${tag} ${r.id}`);
+      if (r.description) {
+        const cols = process.stdout.isTTY ? (process.stdout.columns ?? 100) : 100;
+        const indent = '           '; // 11 spaces, matches old layout
+        const maxWidth = Math.max(40, cols - indent.length - 1);
+        const words = r.description.split(' ');
+        let line = '';
+        for (const word of words) {
+          if (line === '') {
+            line = word;
+          } else if ((line + ' ' + word).length > maxWidth) {
+            lines.push(indent + line);
+            line = word;
+          } else {
+            line = line + ' ' + word;
+          }
+        }
+        if (line) lines.push(indent + line);
+      }
+    }
+  }
+  return lines.join('\n');
+}
