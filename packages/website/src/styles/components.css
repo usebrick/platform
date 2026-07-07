@@ -1387,7 +1387,8 @@
 
 .rules-showcase__card {
   position: relative;
-  padding: var(--space-5);
+  /* v0.43.0: bigger padding for editorial breathing room */
+  padding: var(--space-6);
   background: var(--surface-1);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
@@ -1751,7 +1752,7 @@
   opacity: 0.85;
 }
 .cta__title {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
