@@ -39,9 +39,14 @@
   --border-accent:  rgba(220, 74, 38, 0.40);
   --border-danger:  rgba(184, 106, 74, 0.40);
 
-  /* Type */
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  /* Type — v0.43.0 anti-AI: switched off Inter (overused AI default).
+     New stack:
+     - Display: Fraunces (variable serif, optical size axis)
+     - Sans: IBM Plex Sans (warmer than Inter, has character)
+     - Mono: JetBrains Mono (developer-grade, not the IBM Plex Mono) */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 
   /* Radii — bricks have small (3px) radii so they read as cut stone */
   --radius:    3px;

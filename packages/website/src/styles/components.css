@@ -290,9 +290,205 @@
   flex-direction: column;
   gap: 0;
 }
+
+/* ============================================================
+   Hero — terminal mock (right column)
+   v0.43.0 rework: a real, wide, visually-rich terminal showing
+   the actual `slopbrick scan` output with CRT scanlines, a pulsing
+   status indicator, a status footer, and full color treatment.
+   This is the proof-of-work for the page.
+   ============================================================ */
+.hero__terminal {
+  background: var(--surface-0);
+  border: 1px solid var(--border-accent);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.5),
+    inset 0 1px rgba(255,255,255,0.04);
+  position: relative;
+  /* CRT scanlines */
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0) 4px
+  );
+}
+.hero__terminal::before {
+  /* Subtle scanline glow on top */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top, rgba(220, 74, 38, 0.06), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.hero__terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  position: relative;
+  z-index: 1;
+}
+.hero__terminal-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.hero__terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  display: inline-block;
+}
+.hero__terminal-dot:nth-child(1) { background: #b86a4a; }
+.hero__terminal-dot:nth-child(2) { background: #c89060; }
+.hero__terminal-dot:nth-child(3) { background: #84a07a; }
+.hero__terminal-path {
+  margin-left: var(--space-2);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}
+.hero__terminal-pulse {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.hero__terminal-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-accent);
+  animation: terminal-pulse 1.4s ease-in-out infinite;
+}
+@keyframes terminal-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+.hero__terminal-body {
+  padding: var(--space-4) var(--space-5);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+  overflow-x: auto;
+.hero__terminal-footer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+.hero__terminal-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  background: var(--surface-1);
+  gap: 2px;
+}
+.hero__terminal-stat-n {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.hero__terminal-stat-l {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Line elements inside the body */
+/* v0.43.0: use white-space: pre so the long slopbrick output 
+   lines preserve their structure (column alignment) and don't
+   wrap mid-word like "INVERTED/NOISY" → "INVERTED/
+NOISY". */
+.lt-line {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+.lt-line--echo .lt-prompt {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+.lt-line--echo .lt-cmd {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.lt-line--output {
+  color: var(--text-secondary);
+}
+.lt-line--success {
+  color: var(--text-success);
+}
+.lt-line--muted {
+  color: var(--text-muted);
+}
+.lt-k { color: var(--text-muted); }
+.lt-v {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.lt-b {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.lt-b--good { color: var(--text-success); background: var(--bg-success); }
+.lt-b--mid { color: var(--text-warning); background: var(--bg-warning); }
+.lt-b--bad { color: var(--text-danger); background: var(--bg-danger); }
+.lt-f {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: italic;
+}
+.lt-bold {
+  color: var(--text-primary);
+  font-weight: 600;
+}
 .hero__eyebrow { margin-bottom: var(--space-5); }
 .hero__title { margin-bottom: var(--space-4); }
-.hero__subtitle { margin-bottom: var(--space-6); }
+.hero__subtitle { margin-bottom: var(--space-4); }
 .hero__cta-row { margin-bottom: var(--space-5); }
 .hero__subtitle {
   font-size: 16px;
@@ -316,7 +512,8 @@
   max-width: fit-content;
 }
 .hero__title {
-  font-size: clamp(2.8rem, 6.5vw, 5.2rem);
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5.5vw, 4.6rem);
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.025em;
@@ -695,7 +892,7 @@
 }
 
 .hero__title {
-  font-size: clamp(2.8rem, 6.5vw, 5.2rem);
+  font-size: clamp(2.4rem, 5.5vw, 4.6rem);
   font-weight: 600;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -847,6 +1044,7 @@
   text-transform: uppercase;
 }
 .tools__title {
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   font-weight: 500;
   letter-spacing: -0.015em;
@@ -973,13 +1171,9 @@
   margin-bottom: var(--space-2);
 }
 .compare-section__title {
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   font-weight: 500;
-  letter-spacing: -0.015em;
-  line-height: 1.25;
-  color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
 .compare-section__accent { color: var(--text-accent); }
 .compare-section__body {
   color: var(--text-secondary);
@@ -1350,9 +1544,9 @@
   text-transform: uppercase;
 }
 .rules-showcase__title {
+  font-family: var(--font-display);
   font-size: clamp(1.6rem, 3.4vw, 2.2rem);
   font-weight: 600;
-  letter-spacing: -0.018em;
   line-height: 1.2;
   color: var(--text-primary);
 }
@@ -1616,9 +1810,9 @@
   text-transform: uppercase;
 }
 .live-terminal-section__title {
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   font-weight: 500;
-  letter-spacing: -0.015em;
   line-height: 1.25;
   color: var(--text-primary);
 }
@@ -1673,10 +1867,15 @@
 .live-terminal__body::-webkit-scrollbar { width: 8px; }
 .live-terminal__body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 
+/* v0.43.0: use white-space: pre so the long slopbrick output 
+   lines preserve their structure (column alignment) and don't
+   wrap mid-word like "INVERTED/NOISY" → "INVERTED/
+NOISY". */
 .lt-line {
   display: block;
   white-space: pre-wrap;
   word-break: break-word;
+  font-variant-numeric: tabular-nums;
 }
 .lt-line--echo .lt-prompt { color: var(--text-accent); user-select: none; }
 .lt-line--output { color: var(--text-secondary); }
@@ -1752,9 +1951,9 @@
   opacity: 0.85;
 }
 .cta__title {
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 5vw, 3.6rem);
   font-weight: 600;
-  letter-spacing: -0.02em;
   line-height: 1.15;
   margin-bottom: var(--space-4);
   color: var(--text-on-accent);

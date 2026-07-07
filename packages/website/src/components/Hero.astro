@@ -84,15 +84,38 @@
         </ul>
       </aside>
 
-      <aside class="hero__preview" data-hero-preview aria-hidden="true">
-        <header class="hero__preview-bar">
-          <span class="hero__preview-dot"></span>
-          <span class="hero__preview-dot"></span>
-          <span class="hero__preview-dot"></span>
-          <span class="hero__preview-path" data-hero-path></span>
+      <aside class="hero__terminal" aria-label="slopbrick scan in progress" aria-hidden="true">
+        <header class="hero__terminal-bar">
+          <div class="hero__terminal-dots">
+            <span class="hero__terminal-dot"></span>
+            <span class="hero__terminal-dot"></span>
+            <span class="hero__terminal-dot"></span>
+          </div>
+          <span class="hero__terminal-path">~/your-repo</span>
+          <span class="hero__terminal-pulse">
+            <span class="hero__terminal-pulse-dot"></span>
+            <span>scanning</span>
+          </span>
         </header>
-        <div class="hero__preview-body hero__preview-stats" data-hero-body></div>
+        <div class="hero__terminal-body">
+          <span class="lt-line lt-line--echo"><span class="lt-prompt">$</span> <span class="lt-cmd">slopbrick scan</span></span>
+          <span class="lt-line"></span>
+          <span class="lt-line lt-line--output">  <span class="lt-k">AI Slop Score</span>          <span class="lt-v">25</span>  <span class="lt-b lt-b--good">low</span></span>
+          <span class="lt-line lt-line--output">  <span class="lt-k">Engineering Hygiene</span>   <span class="lt-v">100</span>  <span class="lt-b lt-b--good">excellent</span></span>
+          <span class="lt-line lt-line--output">  <span class="lt-k">Security</span>              <span class="lt-v">100</span>  <span class="lt-b lt-b--good">excellent</span></span>
+          <span class="lt-line lt-line--output">  <span class="lt-k">Repository Health</span>    <span class="lt-v">57</span>  <span class="lt-b lt-b--mid">needs work</span></span>
+          <span class="lt-line"></span>
+          <span class="lt-line lt-line--success">  ✓ CI gate: 25 &lt;= 30 → pass</span>
+          <span class="lt-line lt-line--muted">  0 issues · 593 files · 0.4s</span>
+        </div>
+        <footer class="hero__terminal-footer">
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">593</span><span class="hero__terminal-stat-l">files</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">103</span><span class="hero__terminal-stat-l">rules</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">22</span><span class="hero__terminal-stat-l">categories</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">9+</span><span class="hero__terminal-stat-l">langs</span></span>
+        </footer>
       </aside>
+
     </div>
   </div>
 
@@ -102,116 +125,4 @@
   </div>
 </header>
 
-<script>
-  // Hero preview rotator — no framework, just toggling the data-* attributes.
-  // Cycles through 4 .slopbrick/ artifacts every 7s with a subtle cross-fade.
-  document.querySelectorAll<HTMLElement>('[data-hero-preview]').forEach((root) => {
-    const pathEl = root.querySelector<HTMLElement>('[data-hero-path]');
-    const bodyEl = root.querySelector<HTMLElement>('[data-hero-body]');
-    const statsEl = root.querySelector<HTMLElement>('[data-hero-stats]');
 
-    type Frame = {
-      path: string;
-      json: Record<string, unknown>;
-      stats: Array<[string, string, 'good' | 'mid' | 'bad']>;
-    };
-    const FRAMES: Frame[] = [
-      {
-        path: '~/your-repo/.slopbrick/health.json',
-        json: {
-          aiSlopScore: 25,
-          engineeringHygiene: 100,
-          security: 100,
-          repositoryHealth: 57,
-        },
-        stats: [
-          ['AI Slop Score', '25 · low', 'good'],
-          ['Engineering Hygiene', '100 · consistent', 'good'],
-          ['Security', '100 · no AI-flagged risks', 'good'],
-          ['Repository Health', '57 · composite', 'mid'],
-        ],
-      },
-      {
-        path: '~/your-repo/.slopbrick/inventory.json',
-        json: {
-          files: 593,
-          patterns: { modal: 4, button: 6, 'data-fetch': 8, state: 3 },
-          components: 312,
-        },
-        stats: [
-          ['Patterns (modal)', '4 · vanilla.css', 'good'],
-          ['Patterns (state)', '3 · zustand', 'good'],
-          ['Patterns (data-fetch)', '8 · swr', 'good'],
-          ['Components', '312', 'good'],
-        ],
-      },
-      {
-        path: '~/your-repo/.slopbrick/constitution.json',
-        json: {
-          stateManagement: 'zustand',
-          dataFetching: 'swr',
-          uiLibrary: 'shadcn/ui',
-          forbidden: ['chart.js', 'redux'],
-        },
-        stats: [
-          ['stateManagement', 'zustand', 'good'],
-          ['dataFetching', 'swr', 'good'],
-          ['forbidden (chart.js)', 'blocked', 'good'],
-          ['Match against repo', '0 violations', 'good'],
-        ],
-      },
-      {
-        path: '~/your-repo/.slopbrick/structure.md',
-        json: {
-          section: 'Patterns',
-          counts: { 'state libs': 1, 'fetch libs': 1, modals: 1, 'API clients': 1 },
-        },
-        stats: [
-          ['Patterns (state)', '1 · zustand', 'good'],
-          ['Patterns (fetch)', '1 · swr', 'good'],
-          ['Patterns (modals)', '1 · radix', 'good'],
-          ['Patterns (api)', '1 · openapi-fetch', 'good'],
-        ],
-      },
-    ];
-
-    let i = 0;
-    const render = (frame: Frame) => {
-      if (pathEl) pathEl.textContent = frame.path;
-      // The preview shows the user-facing rendering (the stats
-      // grid that lives in any HTML slopbrick generates) — NOT the
-      // raw .slopbrick/health.json shape. Users don't need to see
-      // internal field names like "aiSlopScore" — they need the
-      // verdict: low / consistent / no AI-flagged risks / etc.
-      if (bodyEl) {
-        bodyEl.innerHTML = frame.stats
-          .map(([k, v, c]) =>
-            `<div class="hero__preview-stat hero__preview-stat--${c}">
-              <span class="hero__preview-stat-key">${escapeHtml(k)}</span>
-              <span class="hero__preview-stat-val">${escapeHtml(v)}</span>
-            </div>`
-          )
-          .join('');
-      }
-      if (statsEl) {
-        statsEl.innerHTML = frame.stats
-          .map(([k, v, c]) =>
-            `<li class="hero__preview-stat hero__preview-stat--${c}"><span class="hero__preview-stat-key">${escapeHtml(k)}</span><span class="hero__preview-stat-val">${escapeHtml(v)}</span></li>`
-          )
-          .join('');
-      }
-    };
-    const escapeHtml = (s: string): string =>
-      s
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-
-    render(FRAMES[0]!);
-    setInterval(() => {
-      i = (i + 1) % FRAMES.length;
-      render(FRAMES[i]!);
-    }, 7000);
-  });
-</script>
