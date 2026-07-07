@@ -300,7 +300,7 @@
   max-width: fit-content;
 }
 .hero__title {
-  font-size: clamp(3.2rem, 8vw, 6.5rem);
+  font-size: clamp(2.8rem, 6.5vw, 5.2rem);
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.025em;
@@ -673,7 +673,7 @@
 }
 
 .hero__title {
-  font-size: clamp(3.2rem, 8vw, 6.5rem);
+  font-size: clamp(2.8rem, 6.5vw, 5.2rem);
   font-weight: 600;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -1171,12 +1171,39 @@
 
 .calibration__stat {
   text-align: center;
-  padding: var(--space-6) var(--space-4);
+  /* v0.43.0 rework: editorial scoreboard layout, more vertical space
+     for the now-massive 7rem numbers. */
+  padding: var(--space-12) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   position: relative;
   overflow: hidden;
+}
+/* v0.43.0 rework: vertical accent line on the left of each stat for
+   the scoreboard look. */
+.calibration__stat::before {
+  content: '';
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  left: 0;
+  width: 2px;
+  background: var(--text-accent);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+.calibration__stat--good::before {
+  background: var(--text-success);
+  opacity: 0.5;
+}
+.calibration__stat--mid::before {
+  background: var(--text-warning);
+  opacity: 0.5;
+}
+.calibration__stat--bad::before {
+  background: var(--text-danger);
+  opacity: 0.5;
 }
 .calibration__stat::after {
   content: '';
@@ -1192,7 +1219,7 @@
   margin-bottom: var(--space-2);
 }
 .calibration__value {
-  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+  font-size: clamp(4rem, 8vw, 7rem);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
