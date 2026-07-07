@@ -42,6 +42,21 @@ export interface ProjectReport {
   repositoryHealth: number;
   assemblyHealth: number;
   totalScore: number;
+  /**
+   * v0.43.0 (user-review parity with --brief and useubrick.dev): a
+   * one-line "brief" for each of the 4 headline scores. Mirrors the
+   * calibration cards on the website so any consumer (CI dashboard,
+   * agent prompt, markdown report) gets the same plain-language
+   * explanation of what each score measures. The brief is the
+   * 2nd-line "what is this?" annotation that --brief renders in
+   * the CLI terminal.
+   */
+  scoreBriefs?: {
+    aiSlopScore?: string;
+    engineeringHygiene?: string;
+    security?: string;
+    repositoryHealth?: string;
+  };
   /** @deprecated v0.20.0: use `aiSlopScore`. Kept as optional for
    *  backward compat with existing test fixtures and historical
    *  telemetry. Will be removed in v0.21. */

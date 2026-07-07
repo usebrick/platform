@@ -95,4 +95,17 @@ describe('formatJson', () => {
     expect(parsed.research?.candidateYield).toBe(4);
     expect(parsed.research?.generatedSampleCount).toBe(12);
   });
+
+  it('embeds scoreBriefs in every report (v0.43.0 user-review parity)', () => {
+    const output = formatJson(makeReport());
+    const parsed = JSON.parse(output) as Record<string, unknown>;
+
+    expect(parsed.scoreBriefs).toEqual({
+      aiSlopScore: 'raw amount of AI slop, 0-100',
+      engineeringHygiene: 'cross-category consistency, 0-100',
+      security: 'AI Security Risk band, 0-100',
+      repositoryHealth: 'weighted composite, 0-100',
+    });
+  });
+
 });
