@@ -132,8 +132,21 @@
 }
 
 .section {
-  padding: var(--space-16) 0;
+  padding: var(--space-20) 0;
   position: relative;
+}
+/* v0.43.0 refinement: subtle section divider line with gradient.
+   Sections get this between them so the page has visual rhythm. */
+.section + .section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+  opacity: 0.4;
 }
 
 /* ============================================================
@@ -280,7 +293,7 @@
 .hero__cta-row { margin-bottom: var(--space-5); }
 .hero__subtitle {
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--text-secondary);
   max-width: 56ch;
 }
@@ -444,7 +457,7 @@
 .hero__preview-body {
   padding: var(--space-4);
   font-size: 12.5px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
@@ -600,11 +613,17 @@
 }
 
 .hero__brick {
-  width: min(1280px, 100% - var(--space-8));
-  /* v0.43.0 rework: bigger padding to accommodate the 6.5rem title */
-  padding: var(--space-12) var(--space-16);
+  /* v0.43.0 refinement: 1240px max (was 1280) for better fit on 1440 viewport;
+     80px horizontal padding for editorial breathing room. */
+  width: min(1240px, 100% - var(--space-8));
+  padding: var(--space-16) var(--space-20);
   text-align: left;
   animation: brick-arrive 0.8s var(--ease-out) both;
+}
+@media (max-width: 920px) {
+  .hero__brick {
+    padding: var(--space-8) var(--space-6);
+  }
 }
 @media (max-width: 720px) {
   .hero__brick {
@@ -687,11 +706,16 @@
   .hero__title-break::before { content: ' '; }
 }
 .hero__title-accent {
-  color: var(--text-accent);
+  /* v0.43.0 refinement: drop the italic (muddied at 5rem) and add a
+     gradient text fill so the accent word has real visual weight. */
   position: relative;
   white-space: nowrap;
-  font-style: italic;
-  font-weight: 500;
+  font-weight: 600;
+  background: linear-gradient(180deg, var(--text-accent) 0%, #f0653a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 .hero__title-accent::after {
   content: '';
@@ -814,9 +838,9 @@
 }
 .tools__label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .tools__title {
@@ -831,7 +855,7 @@
 }
 .tools__body {
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 15px;
   max-width: 60ch;
   margin-top: var(--space-2);
@@ -939,9 +963,9 @@
 .compare-section__label {
   display: block;
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: var(--space-2);
 }
@@ -956,7 +980,7 @@
 .compare-section__accent { color: var(--text-accent); }
 .compare-section__body {
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 15px;
   max-width: 60ch;
 }
@@ -1118,9 +1142,9 @@
 }
 .calibration__label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .calibration__title {
@@ -1317,9 +1341,9 @@
 }
 .rules-showcase__label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .rules-showcase__title {
@@ -1336,7 +1360,7 @@
 .rules-showcase__accent { color: var(--text-accent); }
 .rules-showcase__body {
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--text-secondary);
   margin-top: var(--space-3);
 }
@@ -1582,9 +1606,9 @@
 }
 .live-terminal-section__label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  color: var(--text-accent);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .live-terminal-section__title {
@@ -1597,7 +1621,7 @@
 .live-terminal-section__accent { color: var(--text-accent); }
 .live-terminal-section__body {
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 15px;
   max-width: 56ch;
   text-align: center;
@@ -1742,7 +1766,7 @@
 .cta__body {
   color: rgba(26, 14, 8, 0.75);
   margin-bottom: var(--space-8);
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 15px;
 }
 .cta__buttons {

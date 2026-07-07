@@ -1,0 +1,249 @@
+---
+// Scoreboard — the visual "wow" moment of the page. Big 4-score
+// scoreboard that shows the user exactly what slopbrick measures.
+// Sits right after the hero (which has the title + CTA) and before
+// the tools section.
+//
+// v0.43.0 added: 4 huge numbers in a horizontal strip with band
+// colors, verdicts, and a "from slopbrick scan" attribution line.
+---
+
+<section class="section scoreboard" id="scoreboard">
+  <div class="wall">
+    <div class="scoreboard__inner">
+      <header class="scoreboard__head">
+        <span class="scoreboard__label">the four scores</span>
+        <h2 class="scoreboard__title">One number per <span class="scoreboard__title-accent">dimension</span>.</h2>
+        <p class="scoreboard__subhead">
+          slopbrick measures a repo on 4 orthogonal axes. The headline
+          (AI Slop Score) is the gate; the other three explain the why.
+        </p>
+      </header>
+
+      <div class="scoreboard__grid">
+        <div class="scoreboard__cell scoreboard__cell--good">
+          <div class="scoreboard__axis">AI Slop Score</div>
+          <div class="scoreboard__value">25</div>
+          <div class="scoreboard__band">low</div>
+          <div class="scoreboard__brief">raw amount of AI slop, 0-100</div>
+          <div class="scoreboard__verdict">low amount of AI slop</div>
+        </div>
+        <div class="scoreboard__cell scoreboard__cell--good">
+          <div class="scoreboard__axis">Engineering Hygiene</div>
+          <div class="scoreboard__value">100</div>
+          <div class="scoreboard__band">excellent</div>
+          <div class="scoreboard__brief">cross-category consistency, 0-100</div>
+          <div class="scoreboard__verdict">consistent across 6 categories</div>
+        </div>
+        <div class="scoreboard__cell scoreboard__cell--good">
+          <div class="scoreboard__axis">Security</div>
+          <div class="scoreboard__value">100</div>
+          <div class="scoreboard__band">excellent</div>
+          <div class="scoreboard__brief">AI Security Risk band, 0-100</div>
+          <div class="scoreboard__verdict">no AI-flagged security risks</div>
+        </div>
+        <div class="scoreboard__cell scoreboard__cell--mid">
+          <div class="scoreboard__axis">Repository Health</div>
+          <div class="scoreboard__value">57</div>
+          <div class="scoreboard__band">needs work</div>
+          <div class="scoreboard__brief">weighted composite, 0-100</div>
+          <div class="scoreboard__verdict">composite, hierarchy + security-weighted</div>
+        </div>
+      </div>
+
+      <p class="scoreboard__attribution">
+        From <code>slopbrick scan</code> on this site's own repo, captured 2026-07-06.
+        Every score is derived from <code>503 rules</code> across <code>22 categories</code>,
+        v10-calibrated against <code>576,750 files</code>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .scoreboard {
+    background: linear-gradient(180deg, var(--surface-0) 0%, var(--surface-1) 100%);
+    position: relative;
+  }
+  .scoreboard::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-accent), transparent);
+    opacity: 0.5;
+  }
+  .scoreboard__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .scoreboard__head {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .scoreboard__label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .scoreboard__title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .scoreboard__title-accent {
+    color: var(--text-accent);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .scoreboard__subhead {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 56ch;
+    margin: 0;
+  }
+  .scoreboard__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-1);
+    overflow: hidden;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.5);
+  }
+  @media (max-width: 920px) {
+    .scoreboard__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  .scoreboard__cell {
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    position: relative;
+    border-right: 0.5px solid var(--border);
+  }
+  .scoreboard__cell:last-child {
+    border-right: none;
+  }
+  @media (max-width: 920px) {
+    .scoreboard__cell:nth-child(2) {
+      border-right: none;
+    }
+    .scoreboard__cell:nth-child(1),
+    .scoreboard__cell:nth-child(2) {
+      border-bottom: 0.5px solid var(--border);
+    }
+  }
+  .scoreboard__cell::before {
+    content: "";
+    position: absolute;
+    top: 30%;
+    bottom: 30%;
+    left: 0;
+    width: 2px;
+    background: var(--text-success);
+    opacity: 0.4;
+  }
+  .scoreboard__cell--good::before {
+    background: var(--text-success);
+    opacity: 0.5;
+  }
+  .scoreboard__cell--mid::before {
+    background: var(--text-warning);
+    opacity: 0.5;
+  }
+  .scoreboard__cell--bad::before {
+    background: var(--text-danger);
+    opacity: 0.5;
+  }
+  .scoreboard__axis {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--space-1);
+  }
+  .scoreboard__value {
+    font-size: clamp(4rem, 7vw, 6rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--text-accent);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: var(--space-2);
+  }
+  .scoreboard__band {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-success);
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--bg-success);
+    line-height: 1.2;
+    display: inline-block;
+  }
+  .scoreboard__cell--mid .scoreboard__band {
+    color: var(--text-warning);
+    background: var(--bg-warning);
+  }
+  .scoreboard__cell--bad .scoreboard__band {
+    color: var(--text-danger);
+    background: var(--bg-danger);
+  }
+  .scoreboard__brief {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin-top: var(--space-2);
+  }
+  .scoreboard__verdict {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-success);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: var(--space-1);
+  }
+  .scoreboard__cell--mid .scoreboard__verdict {
+    color: var(--text-warning);
+  }
+  .scoreboard__cell--bad .scoreboard__verdict {
+    color: var(--text-danger);
+  }
+  .scoreboard__attribution {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 64ch;
+    margin: 0 auto;
+  }
+  .scoreboard__attribution code {
+    font-size: 11px;
+    padding: 1px 6px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    color: var(--text-accent);
+  }
+</style>
