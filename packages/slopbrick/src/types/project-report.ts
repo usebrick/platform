@@ -299,6 +299,10 @@ export interface ProjectReport {
   /** v0.14.5i — Number of distinct rules marked defaultOff. The ratio
    *  suppressedCount / defaultOffRuleCount is the calibration coverage. */
   defaultOffRuleCount?: number;
+  /** v0.43.0 — Visible severity breakdown (excludes 'off' issues
+   *  that were auto-suppressed). High/medium/low numbers reflect
+   *  what the user can act on. */
+  issueCounts?: { high: number; medium: number; low: number };
   /** v0.14.5j — The previous run's value, if any. Used by
    *  formatPretty to render a "±N from last run" delta so the user
    *  can see the trajectory without grep'ing the run log. The

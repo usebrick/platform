@@ -29,7 +29,7 @@ function countBySeverity(issues: Issue[]): Record<Severity, number> {
     // v0.43.0: 'off' issues are default-off rules that are auto-
     // suppressed. They show in the JSON but should NOT be counted
     // in the visible severity breakdown.
-    if (issue.severity === 'off') continue;
+    if ((issue.severity as string) === 'off') continue;
     counts[issue.severity] += 1;
   }
   return counts;
@@ -39,7 +39,7 @@ function countBySeverity(issues: Issue[]): Record<Severity, number> {
  *  (excludes 'off'-severity suppressed issues). */
 function activeIssueCount(issues: Issue[]): number {
   let n = 0;
-  for (const i of issues) if (i.severity !== 'off') n++;
+  for (const i of issues) if ((i.severity as string) !== 'off') n++;
   return n;
 }
 
@@ -980,7 +980,7 @@ export function formatPretty(report: ProjectReport): string {
   // v0.43.0: filter 'off'-severity suppressed issues from the
   // full list. They show in the JSON for tooling but the report
   // shows only what the user can act on.
-  const active = report.issues.filter((i) => i.severity !== 'off');
+  const active = report.issues.filter((i) => (i.severity as string) !== 'off');
   if (active.length > 0) {
     sections.push(`Issues (${active.length})`);
     sections.push(...active.map(formatIssue));
