@@ -48,6 +48,7 @@ export const csEmptyCatchBlockRule = createRule<CsEmptyCatchBlockContext>({
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.cs$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(EMPTY_CATCH.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {

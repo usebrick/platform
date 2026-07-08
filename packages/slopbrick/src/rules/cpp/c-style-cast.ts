@@ -24,7 +24,7 @@
  *   are still flagged, but we require an actual cast-shaped
  *   target.
  * - Severity: low. Stylistic / review-hygiene signal.
- * - Default off (DORMANT) until calibrated on v10 C++ corpus.
+ * - Default off (DORMANT) until v10.2 corpus calibration with C++ files included.
  * The C++ subset of v10 (576,750 files) is the source data; the rule is
  * DORMANT because the v8 calibration on a smaller C++ slice had a
  * borderline FPR. Re-evaluation pending.

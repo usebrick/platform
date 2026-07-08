@@ -56,6 +56,7 @@ export const ktForceUnwrapRule = createRule<KtForceUnwrapContext>({
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.kt$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(FORCE_UNWRAP_REGEX.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {

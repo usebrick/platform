@@ -50,6 +50,7 @@ export const csAsyncWithoutAwaitRule = createRule<CsAsyncWithoutAwaitContext>({
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.cs$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(ASYNC_METHOD_REGEX.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {

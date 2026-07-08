@@ -22,7 +22,7 @@ import { isUIFile } from '../utils';
  * often deviate — brand colors, custom radii, custom shadows.
  *
  * This rule fires when the file has ≥ 3 of these "default Tailwind"
- * classes. * Calibrated as DORMANT until v10 AI-specific corpus data
+ * classes. * Calibrated as DORMANT until v10.2 corpus calibration
  * confirms the FPR stays below 0.5% on the full 576,750-file corpus.
  * Code is correct and the rule is wired in the registry; it just
  * needs a positive-vs-negative precision/recall pass on v10 data. *

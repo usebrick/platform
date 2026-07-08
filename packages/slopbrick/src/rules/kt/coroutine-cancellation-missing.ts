@@ -52,6 +52,7 @@ export const ktCoroutineCancellationMissingRule = createRule<KtCoroutineCancella
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.kt$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(LAUNCH_BLOCK_REGEX.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {

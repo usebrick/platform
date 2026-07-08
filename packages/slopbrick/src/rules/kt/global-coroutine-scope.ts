@@ -49,6 +49,7 @@ export const ktGlobalCoroutineScopeRule = createRule<KtGlobalCoroutineScopeConte
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.kt$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(GLOBAL_SCOPE_REGEX.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {

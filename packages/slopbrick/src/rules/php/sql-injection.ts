@@ -52,6 +52,7 @@ export const phpSqlInjectionRule = createRule<PhpSqlInjectionContext>({
     if (!source) return [];
 
     const issues: Issue[] = [];
+    if (!/\.php$/i.test(facts.filePath ?? "")) return issues;
     const re = new RegExp(PHP_INTERPOLATED_SQL.source, 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(source)) !== null) {
