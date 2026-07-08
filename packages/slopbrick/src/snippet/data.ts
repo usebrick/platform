@@ -276,6 +276,35 @@ const RULE_HINTS: Record<string, string> = {
     "Replace with `spdlog::info(...)`, `LOG(INFO) << ...` (glog), or `ABSL_LOG(INFO) << ...`. `printf` / `std::cout` have no levels, no redaction, no sink routing. (v0.24.0 — DORMANT.)",
   'cpp/magic-numbers':
     "Replace with `constexpr int MAX = 1024;` (or `static constexpr`). Named constants live next to their value, can be searched, force the reader to mean what they say. (v0.24.0 — DORMANT.)",
+
+    // v0.43.0 — Kotlin rules (DORMANT until v10.2 Kotlin corpus calibration)
+  'kt/string-template-injection':
+    'Use a parameterized query: `prepareStatement(sql, listOf(id))` with `?` placeholders, or Exposed/ktorm. Never concatenate user input into SQL. (v0.43.0 — DORMANT.)',
+  'kt/coroutine-cancellation-missing':
+    'Add `ensureActive()` inside long loops, use `delay()` (a suspension point), or wrap in `coroutineScope { ... }` so the coroutine respects parent cancellation. (v0.43.0 — DORMANT.)',
+  'kt/force-unwrap':
+    'Use safe call `?.` or the Elvis operator `?:`. If the value must be non-null, use `requireNotNull(x) { ... }` so you can throw a meaningful error. (v0.43.0 — DORMANT.)',
+  'kt/global-coroutine-scope':
+    'Use `coroutineScope { ... }` for structured concurrency, or inject a `CoroutineScope` via DI (Hilt, Koin) tied to the component lifecycle. (v0.43.0 — DORMANT.)',
+  // v0.43.0 — Ruby rules (DORMANT until v10.2 Ruby corpus calibration)
+  'rb/sql-string-concat':
+    'Use ActiveRecord: `User.where(id: params[:id])` or Sequel: `User.where(id: $id)`. Never interpolate user input into a SQL string. (v0.43.0 — DORMANT.)',
+  'rb/exception-swallowing':
+    'At minimum, log: `rescue => e; Rails.logger.error(e)`. Better: re-raise (`raise e`) or use a narrower exception class. (v0.43.0 — DORMANT.)',
+  'rb/n-plus-one-query':
+    'Use `.includes(:assoc)` (2 queries total) or `.preload(:assoc)` (1 query). For large datasets, use `.find_each(batch_size: 1000)`. (v0.43.0 — DORMANT.)',
+  // v0.43.0 — C# rules (DORMANT until v10.2 C# corpus calibration)
+  'cs/sql-string-interpolation':
+    'Use parameterized queries: `FromSqlInterpolated($"...id = {0}", id)` (EF Core), or `SqlCommand.Parameters.Add("@id", ...)`. (v0.43.0 — DORMANT.)',
+  'cs/async-without-await':
+    'Either remove the `async` modifier (return `Task` synchronously) or add a real `await` expression. (v0.43.0 — DORMANT.)',
+  'cs/empty-catch-block':
+    'At minimum, log: `catch (Exception ex) { logger.LogError(ex, "context"); }`. Better: re-throw with a wrapper exception that includes your operation context. (v0.43.0 — DORMANT.)',
+  // v0.43.0 — PHP rules (DORMANT until v10.2 PHP corpus calibration)
+  'php/sql-injection':
+    'Use PDO prepared statements: `$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([$id]);` (v0.43.0 — DORMANT.)',
+  'php/empty-catch':
+    'At minimum, log: `catch (Exception $e) { error_log($e->getMessage()); }`. Better: re-throw with a wrapper exception. (v0.43.0 — DORMANT.)',
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };
