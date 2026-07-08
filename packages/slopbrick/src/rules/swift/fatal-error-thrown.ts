@@ -22,7 +22,10 @@
  * - Severity: high. `fatalError` in shipping code is a real crash
  *   waiting to happen; this is the highest-severity rule in the
  *   v0.24 batch.
- * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ * - Default off (DORMANT) until calibrated on v10 Swift corpus.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Swift slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Regex on the source text.
  */

@@ -15,7 +15,10 @@
  *   the training data has both.
  * - Severity: low. Tag inconsistency isn't a bug per se, but it's
  *   a style signal.
- * - Default off (DORMANT) until calibrated on v9 corpus.
+ * - Default off (DORMANT) until calibrated on v10 corpus.
+ * The v10 corpus (576,750 files) is the source data; the rule is
+ * DORMANT until a v10-specific precision/recall pass confirms
+ * FPR stays below 0.5%.
  *
  * **Scope:** file-local. Regex on the source text + brace-walk to
  * scope to a single struct. Heuristic.

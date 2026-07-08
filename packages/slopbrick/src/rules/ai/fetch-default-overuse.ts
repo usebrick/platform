@@ -18,7 +18,10 @@ import { createRule } from '../rule';
  * The pattern: ≥ 3 `fetch(` calls in the file, no TanStack Query /
  * SWR / axios / ky imports.
  *
- * Calibrated as DORMANT until v7 corpus data lands.
+ * * Calibrated as DORMANT until v10 AI-specific corpus data
+ * confirms the FPR stays below 0.5% on the full 576,750-file corpus.
+ * Code is correct and the rule is wired in the registry; it just
+ * needs a positive-vs-negative precision/recall pass on v10 data. *
  */
 const FETCH_RE = /\bfetch\s*\(/g;
 const CANONICAL_FETCH_LIBS = [

@@ -17,7 +17,10 @@
  * - Severity: low. The rule is a heuristic — `never` can also be
  *   legitimate for branch-exhaustive switch statements (e.g.
  *   `const _: never = checkExhaustiveness(x);`).
- * - Default off (DORMANT) until calibrated on v9 corpus.
+ * - Default off (DORMANT) until calibrated on v10 corpus.
+ * The v10 corpus (576,750 files) is the source data; the rule is
+ * DORMANT until a v10-specific precision/recall pass confirms
+ * FPR stays below 0.5%.
  *
  * **Scope:** file-local. Uses regex on the source text + a simple
  * "no throw / no loop / no exit" check. This is a heuristic, not

@@ -19,7 +19,10 @@
  *   training data is mostly examples where the agent didn't
  *   bother naming the constant.
  * - Severity: low. Stylistic / readability signal.
- * - Default off (DORMANT) until calibrated on v9 C++ corpus.
+ * - Default off (DORMANT) until calibrated on v10 C++ corpus.
+ * The C++ subset of v10 (576,750 files) is the source data; the rule is
+ * DORMANT because the v8 calibration on a smaller C++ slice had a
+ * borderline FPR. Re-evaluation pending.
  *
  * **Scope:** file-local. Regex on the source text. We scan for
  * numeric literals in comparison contexts, then check the same

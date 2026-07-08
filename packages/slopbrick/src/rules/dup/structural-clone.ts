@@ -42,7 +42,7 @@
  *            issue is emitted. v0.24.0 ships minHits=1; v0.24.1
  *            raises it to 3 to suppress single-shared-clone FPs.
  *
- * v0.24.0 ships this rule `defaultOff` (DORMANT) until the v9
+ * v0.24.0 ships this rule `defaultOff` (DORMANT) until the v10
  * corpus confirms precision/recall.
  */
 

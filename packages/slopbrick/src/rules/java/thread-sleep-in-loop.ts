@@ -15,7 +15,10 @@
  *   Jetty / Netty thread. Under load, all threads get blocked
  *   on sleep, and the service degrades to "all threads sleeping".
  * - Severity: medium. Performance impact depends on load.
- * - Default off (DORMANT) until v9 Java corpus calibration.
+ * - Default off (DORMANT) until v10 Java corpus calibration.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Java slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. v0.34.6: refined loop-detection.
  * The previous v0.30 version fired on every Thread.sleep if

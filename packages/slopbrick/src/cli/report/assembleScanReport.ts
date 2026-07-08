@@ -147,6 +147,15 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     repositoryHealthWarnings: enrichment.repositoryHealthWarnings,
     defaultOffSuppressedCount: defaultOffApplied,
     defaultOffRuleCount,
+    // v0.43.0: visible severity breakdown for tooling. Excludes
+    // auto-suppressed default-off issues (which are counted in
+    // defaultOffSuppressedCount above). This lets downstream tools
+    // see the same numbers the human report shows.
+    issueCounts: {
+      high: allIssues.filter((i) => i.severity === 'high').length,
+      medium: allIssues.filter((i) => i.severity === 'medium').length,
+      low: allIssues.filter((i) => i.severity === 'low').length,
+    },
     // v0.15.0 U.4+: the previous-run value is stored as
     // `previousSlopIndex` on ProjectReport for backward compat with
     // historical telemetry. The value itself is the previous run's

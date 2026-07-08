@@ -26,9 +26,21 @@ function severityColor(severity: Severity): (text: string) => string {
 function countBySeverity(issues: Issue[]): Record<Severity, number> {
   const counts: Record<Severity, number> = { low: 0, medium: 0, high: 0 };
   for (const issue of issues) {
+    // v0.43.0: 'off' issues are default-off rules that are auto-
+    // suppressed. They show in the JSON but should NOT be counted
+    // in the visible severity breakdown.
+    if (issue.severity === 'off') continue;
     counts[issue.severity] += 1;
   }
   return counts;
+}
+
+/** v0.43.0: count of issues that are visible to the user
+ *  (excludes 'off'-severity suppressed issues). */
+function activeIssueCount(issues: Issue[]): number {
+  let n = 0;
+  for (const i of issues) if (i.severity !== 'off') n++;
+  return n;
 }
 
 function pluralize(count: number, word: string): string {
@@ -38,7 +50,12 @@ function pluralize(count: number, word: string): string {
 function formatSummary(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
   const fileCount = report.fileCount;
-  const base = `Scanned ${pluralize(fileCount, 'file')}, ${pluralize(report.componentCount, 'component')}, ${pluralize(report.issues.length, 'issue')} (high: ${counts.high}, medium: ${counts.medium}, low: ${counts.low})`;
+  // v0.43.0: count only active (non-off) issues in the visible
+  // summary. The total in the JSON includes suppressed issues for
+  // tooling, but the human-facing report shows what the user
+  // actually needs to fix.
+  const active = activeIssueCount(report.issues);
+  const base = `Scanned ${pluralize(fileCount, 'file')}, ${pluralize(report.componentCount, 'component')}, ${pluralize(active, 'issue')} (high: ${counts.high}, medium: ${counts.medium}, low: ${counts.low})`;
   // v0.10.1: PR Slop Score header for --diff <ref> mode (VibeDrift-compatible).
   if (report.prSlopScore !== undefined) {
     return `${base}\nComparing against \`${report.diffRef ?? 'HEAD~'}\`: PR Slop Score = ${report.prSlopScore}`;
@@ -960,9 +977,13 @@ export function formatPretty(report: ProjectReport): string {
   // separate doc.
   sections.push(formatScoringExplainer(report));
 
-  if (report.issues.length > 0) {
-    sections.push(`Issues (${report.issues.length})`);
-    sections.push(...report.issues.map(formatIssue));
+  // v0.43.0: filter 'off'-severity suppressed issues from the
+  // full list. They show in the JSON for tooling but the report
+  // shows only what the user can act on.
+  const active = report.issues.filter((i) => i.severity !== 'off');
+  if (active.length > 0) {
+    sections.push(`Issues (${active.length})`);
+    sections.push(...active.map(formatIssue));
   }
 
   return sections.join('\n\n');
@@ -1105,9 +1126,11 @@ export function formatBriefReport(report: ProjectReport): string {
 
   // Footer: where to find more
   lines.push('');
+  // v0.43.0: use active count (excludes auto-suppressed issues)
+  const active = activeIssueCount(report.issues);
   lines.push(
     chalk.dim(
-      `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${report.issues.length} issue${report.issues.length === 1 ? '' : 's'}. Run with --all for the full report.`,
+      `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${active} issue${active === 1 ? '' : 's'}. Run with --all for the full report.`,
     ),
   );
 

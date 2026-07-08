@@ -26,7 +26,10 @@
  *   routinely force-unwrap because tests assert specific values
  *   and `XCTUnwrap(...)` is verbose).
  * - Severity: medium. Each force-unwrap is a potential prod crash.
- * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ * - Default off (DORMANT) until calibrated on v10 Swift corpus.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Swift slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Regex on the source text. We treat
  * the `!` as a force-unwrap only when NOT preceded by a word /

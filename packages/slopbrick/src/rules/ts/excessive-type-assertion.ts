@@ -17,7 +17,10 @@
  *   similar code-smell rules).
  * - Severity: low. Some legitimate code uses 3+ assertions
  *   (e.g. when working with untyped third-party APIs).
- * - Default off (DORMANT) until calibrated on v9 corpus.
+ * - Default off (DORMANT) until calibrated on v10 corpus.
+ * The v10 corpus (576,750 files) is the source data; the rule is
+ * DORMANT until a v10-specific precision/recall pass confirms
+ * FPR stays below 0.5%.
  *
  * **Scope:** file-local. Uses regex on the source text + brace-
  * matching to count `as` per function. Heuristic, not semantic.

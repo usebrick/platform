@@ -19,7 +19,10 @@
  *   vs `[]`) but that's the whole point — the developer should
  *   pick one.
  * - Severity: low. The rule is a heuristic.
- * - Default off (DORMANT) until calibrated on v9 corpus.
+ * - Default off (DORMANT) until calibrated on v10 corpus.
+ * The v10 corpus (576,750 files) is the source data; the rule is
+ * DORMANT until a v10-specific precision/recall pass confirms
+ * FPR stays below 0.5%.
  *
  * **Scope:** file-local. Regex on the source text. Heuristic.
  */

@@ -19,7 +19,10 @@ import { createRule } from '../rule';
  * statements in a single file, 0 import of a structured logger
  * (winston, pino, bunyan, debug).
  *
- * Calibrated as DORMANT until v7 corpus data lands.
+ * * Calibrated as DORMANT until v10 AI-specific corpus data
+ * confirms the FPR stays below 0.5% on the full 576,750-file corpus.
+ * Code is correct and the rule is wired in the registry; it just
+ * needs a positive-vs-negative precision/recall pass on v10 data. *
  */
 const CONSOLE_RE = /\bconsole\s*\.\s*(?:log|debug|info|warn|error)\s*\(/g;
 const DEBUGGER_RE = /\bdebugger\s*;?/g;

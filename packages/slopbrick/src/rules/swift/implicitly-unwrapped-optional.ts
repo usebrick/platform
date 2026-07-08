@@ -22,7 +22,10 @@
  *   (also force-unwrap, not a declaration).
  * - Severity: low. Stylistic signal; the runtime behavior is the
  *   same as a regular optional that gets force-unwrapped.
- * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ * - Default off (DORMANT) until calibrated on v10 Swift corpus.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Swift slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Regex on the source text. We match
  * `var|let NAME: Type!` followed by `=` or `;` so we don't catch

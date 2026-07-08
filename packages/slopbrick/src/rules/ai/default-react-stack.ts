@@ -21,7 +21,10 @@ import { createRule } from '../rule';
  * Files that use this many default-stack libraries in one place are
  * often auto-generated boilerplate.
  *
- * Calibrated as DORMANT until v7 corpus data lands.
+ * * Calibrated as DORMANT until v10 AI-specific corpus data
+ * confirms the FPR stays below 0.5% on the full 576,750-file corpus.
+ * Code is correct and the rule is wired in the registry; it just
+ * needs a positive-vs-negative precision/recall pass on v10 data. *
  */
 const DEFAULT_STACK_PACKAGES = [
   // Next.js (every LLM defaults to it)

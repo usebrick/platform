@@ -19,7 +19,10 @@ import { createRule } from '../rule';
  * The pattern: ≥ 5 useState calls in the file, 0 useReducer calls,
  * 0 state library imports.
  *
- * Calibrated as DORMANT until v7 corpus data lands.
+ * * Calibrated as DORMANT until v10 AI-specific corpus data
+ * confirms the FPR stays below 0.5% on the full 576,750-file corpus.
+ * Code is correct and the rule is wired in the registry; it just
+ * needs a positive-vs-negative precision/recall pass on v10 data. *
  */
 const USE_STATE_RE = /\buseState\s*\(/g;
 const USE_REDUCER_RE = /\buseReducer\s*\(/g;

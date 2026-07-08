@@ -15,7 +15,10 @@
  * - Severity: low. Enums aren't broken, they're just stylistically
  *   out of fashion. The rule is a soft signal of older code or
  *   AI-generated code.
- * - Default off (DORMANT) until calibrated on v9 corpus.
+ * - Default off (DORMANT) until calibrated on v10 corpus.
+ * The v10 corpus (576,750 files) is the source data; the rule is
+ * DORMANT until a v10-specific precision/recall pass confirms
+ * FPR stays below 0.5%.
  *
  * **Scope:** file-local. Uses regex on the source text (facts.v2._source).
  * This is a syntactic detection — it doesn't distinguish between

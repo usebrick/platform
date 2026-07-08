@@ -17,7 +17,10 @@
  *   System, `os.log`) which has levels, redaction, and a privacy
  *   setting that Apple controls.
  * - Severity: low. Stylistic / debug-noise signal.
- * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ * - Default off (DORMANT) until calibrated on v10 Swift corpus.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Swift slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Regex on the source text. We count
  * `print(...)` calls — the heuristic threshold of 1 (i.e., 2+

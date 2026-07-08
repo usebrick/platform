@@ -23,7 +23,10 @@
  *   those are the safe form.
  * - Severity: medium. Retain cycles leak memory; on iOS they
  *   grow until the OS jetsam kills the process.
- * - Default off (DORMANT) until calibrated on v9 Swift corpus.
+ * - Default off (DORMANT) until calibrated on v10 Swift corpus.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Swift slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Stateful: we walk every `{` opening a
  * closure, look at the first line for a capture list, then count

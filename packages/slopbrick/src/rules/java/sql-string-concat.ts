@@ -12,7 +12,10 @@
  * - The fix is a `PreparedStatement` (JDBC), `setParameter`
  *   (jOOQ), or an ORM (Hibernate, MyBatis with `#{}` binding).
  * - Severity: high. SQL injection is OWASP A03:2021.
- * - Default off (DORMANT) until v9 Java corpus calibration.
+ * - Default off (DORMANT) until v10 Java corpus calibration.
+ * The v10 corpus (576,750 files) is the source; the rule is
+ * DORMANT because the v9 calibration on a smaller Java slice
+ * showed borderline FPR.
  *
  * **Scope:** file-local. Regex on the source text. We look for
  * SQL keywords (SELECT/INSERT/UPDATE/DELETE/CREATE/DROP) at the

@@ -24,7 +24,10 @@
  *   own quirks (`delete[]`) and is treated by other tooling.
  *   Real modern C++ uses `std::vector` / `std::array` instead.
  * - Severity: low. Stylistic / ownership-hygiene signal.
- * - Default off (DORMANT) until calibrated on v9 C++ corpus.
+ * - Default off (DORMANT) until calibrated on v10 C++ corpus.
+ * The C++ subset of v10 (576,750 files) is the source data; the rule is
+ * DORMANT because the v8 calibration on a smaller C++ slice had a
+ * borderline FPR. Re-evaluation pending.
  *
  * **Scope:** file-local. Regex on the source text. We count
  * NEW_CONSTRUCT and DELETE separately and only fire when BOTH
