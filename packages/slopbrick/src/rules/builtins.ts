@@ -23,6 +23,9 @@ import { cppCStyleCastRule } from './cpp/c-style-cast';
 import { cppMagicNumbersRule } from './cpp/magic-numbers';
 import { cppPrintfDebugRule } from './cpp/printf-debug';
 import { cppRawNewDeleteRule } from './cpp/raw-new-delete';
+import { csAsyncWithoutAwaitRule } from './cs/async-without-await';
+import { csEmptyCatchBlockRule } from './cs/empty-catch-block';
+import { csSqlStringInterpolationRule } from './cs/sql-string-interpolation';
 import { sqlConcatRule } from './db/sql-concat';
 import { deadBranchRule } from './dead/dead-branch';
 import { unreachableRule } from './dead/unreachable';
@@ -41,6 +44,10 @@ import { javaLostStackTraceRule } from './java/lost-stack-trace';
 import { javaSqlStringConcatRule } from './java/sql-string-concat';
 import { javaSuspiciousImplementationRule } from './java/suspicious-implementation';
 import { javaThreadSleepInLoopRule } from './java/thread-sleep-in-loop';
+import { ktCoroutineCancellationMissingRule } from './kt/coroutine-cancellation-missing';
+import { ktForceUnwrapRule } from './kt/force-unwrap';
+import { ktGlobalCoroutineScopeRule } from './kt/global-coroutine-scope';
+import { ktStringTemplateInjectionRule } from './kt/string-template-injection';
 import { gapMonopolyRule } from './layout/gap-monopoly';
 import { mathElementUniformityRule } from './layout/math-element-uniformity';
 import { mathGridUniformityRule } from './layout/math-grid-uniformity';
@@ -59,8 +66,13 @@ import { zipfSlopeAnomalyRule } from './logic/zipf-slope-anomaly';
 import { zombieStateRule } from './logic/zombie-state';
 import { clsImageRule } from './perf/cls-image';
 import { cssBloatRule } from './perf/css-bloat';
+import { phpEmptyCatchRule } from './php/empty-catch';
+import { phpSqlInjectionRule } from './php/sql-injection';
 import { terminologyDriftRule } from './product/terminology-drift';
 import { uxPatternFragmentationRule } from './product/ux-pattern-fragmentation';
+import { rbExceptionSwallowingRule } from './rb/exception-swallowing';
+import { rbNPlusOneQueryRule } from './rb/n-plus-one-query';
+import { rbSqlStringConcatRule } from './rb/sql-string-concat';
 import { rustStringlyTypedRule } from './rust/stringly-typed';
 import { rustTodoMacroRule } from './rust/todo-macro';
 import { rustUnusedPubFnRule } from './rust/unused-pub-fn';
@@ -128,6 +140,9 @@ export const builtinRules: Rule[] = [
   cppMagicNumbersRule,
   cppPrintfDebugRule,
   cppRawNewDeleteRule,
+  csAsyncWithoutAwaitRule,
+  csEmptyCatchBlockRule,
+  csSqlStringInterpolationRule,
   sqlConcatRule,
   deadBranchRule,
   unreachableRule,
@@ -146,6 +161,10 @@ export const builtinRules: Rule[] = [
   javaSqlStringConcatRule,
   javaSuspiciousImplementationRule,
   javaThreadSleepInLoopRule,
+  ktCoroutineCancellationMissingRule,
+  ktForceUnwrapRule,
+  ktGlobalCoroutineScopeRule,
+  ktStringTemplateInjectionRule,
   gapMonopolyRule,
   mathElementUniformityRule,
   mathGridUniformityRule,
@@ -164,8 +183,13 @@ export const builtinRules: Rule[] = [
   zombieStateRule,
   clsImageRule,
   cssBloatRule,
+  phpEmptyCatchRule,
+  phpSqlInjectionRule,
   terminologyDriftRule,
   uxPatternFragmentationRule,
+  rbExceptionSwallowingRule,
+  rbNPlusOneQueryRule,
+  rbSqlStringConcatRule,
   rustStringlyTypedRule,
   rustTodoMacroRule,
   rustUnusedPubFnRule,
