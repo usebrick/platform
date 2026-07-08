@@ -21,6 +21,12 @@ export function registerCalibrate(program: Command): void {
     .option('--negative-dir <path>', 'path to negative (real human) corpus', NEGATIVE_DIR)
     .option('--positive-limit <n>', 'limit positive files scanned', parseCount)
     .option('--negative-limit <n>', 'limit negative files scanned', parseCount)
+    // v0.10.2 (Phase 3): pre-built filelists. Use instead of (or with)
+    // --positive-dir / --negative-dir for faster calibration against
+    // corpora with many nested projects. Each line is one absolute file
+    // path. Comments (lines starting with #) are stripped.
+    .option('--positive-list <path>', 'path to a pre-built positive filelist (one path per line)')
+    .option('--negative-list <path>', 'path to a pre-built negative filelist (one path per line)')
     .option('--output <path>', 'markdown output path', 'corpus/calibration-empirical.md')
     .action(async (cmdOptions) => {
       try {
@@ -28,6 +34,8 @@ export function registerCalibrate(program: Command): void {
         const report = await calibrate(cwd, {
           positiveDir: cmdOptions.positiveDir,
           negativeDir: cmdOptions.negativeDir,
+          positiveList: cmdOptions.positiveList,
+          negativeList: cmdOptions.negativeList,
           positiveLimit: cmdOptions.positiveLimit,
           negativeLimit: cmdOptions.negativeLimit,
         });

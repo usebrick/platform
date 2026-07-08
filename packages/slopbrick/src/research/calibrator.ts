@@ -110,17 +110,36 @@ export async function calibrate(
   options: {
     positiveDir?: string;
     negativeDir?: string;
+    positiveList?: string;
+    negativeList?: string;
     positiveLimit?: number;
     negativeLimit?: number;
   } = {},
 ): Promise<CalibrationReport> {
   const positiveDir = options.positiveDir ?? DEFAULT_POSITIVE;
   const negativeDir = options.negativeDir ?? DEFAULT_NEGATIVE;
-  if (!existsSync(positiveDir)) throw new Error(`Positive corpus not found: ${positiveDir}`);
-  if (!existsSync(negativeDir)) throw new Error(`Negative corpus not found: ${negativeDir}`);
+  if (!options.positiveList && !existsSync(positiveDir)) {
+    throw new Error(`Positive corpus not found: ${positiveDir}`);
+  }
+  if (!options.negativeList && !existsSync(negativeDir)) {
+    throw new Error(`Negative corpus not found: ${negativeDir}`);
+  }
 
-  const positiveFiles = buildFileList(positiveDir, ['tsx', 'ts', 'jsx', 'js']);
-  const negativeFiles = buildFileList(negativeDir, ['tsx', 'ts']);
+  // v0.10.2 (Phase 3): pre-built filelist support. If --positive-list
+  // is given, read paths from that file (one per line). Otherwise fall
+  // back to the slow find via buildFileList. Comments (#) are stripped.
+  const readList = (path: string): string[] =>
+    readFileSync(path, 'utf8')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#'));
+
+  const positiveFiles = options.positiveList
+    ? readList(options.positiveList)
+    : buildFileList(positiveDir, ['tsx','ts','jsx','js','kt','cs','rb','php','java','cpp','go','swift','rs','py']);
+  const negativeFiles = options.negativeList
+    ? readList(options.negativeList)
+    : buildFileList(negativeDir, ['tsx','ts','jsx','js','kt','cs','rb','php','java','cpp','go','swift','rs','py']);
   const posSample = options.positiveLimit ? positiveFiles.slice(0, options.positiveLimit) : positiveFiles;
   const negSample = options.negativeLimit ? negativeFiles.slice(0, options.negativeLimit) : negativeFiles;
 
