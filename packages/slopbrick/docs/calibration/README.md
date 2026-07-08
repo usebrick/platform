@@ -1,60 +1,73 @@
-# Calibration Docs
+# Calibration
 
-This directory contains calibration documentation for slopbrick.
+Per-rule precision, recall, FPR, and lift calibration against
+the positive (AI-generated) and negative (real human) corpora.
 
-## Active plan
+## Calibration corpus
 
-- [v10.2-plan.md](./v10.2-plan.md) — full recalibration plan based
-  on the v0.43.0 audit. Phases 1-7, ~20 hours of work, references
-  included.
+The calibration corpus lives in two places:
 
-## Context
+1. **`/Users/cheng/corpus-expansion/`** — 91 positive + 39 negative
+   project subdirectories. ~1.13M files total.
 
-The current calibration (v0.10.1) is on 581k files. The actual
-corpus is 1,134,163 files — 2x more data. The v10.2 plan:
+2. **`/Users/cheng/ai-slop-baseline/extracted/`** — flat file
+   structure, ~58k files.
 
-1. Adds 4 missing language rule directories (Kotlin, Ruby, C#, PHP)
-2. Re-runs the calibrator on the full v10 corpus
-3. Adds per-language filtering
-4. Fixes 11 rules with 0/0 calibration data
-5. Updates DORMANT comments to v10.2
-6. Makes flywheel non-determinism predictable
-7. Verifies the full test suite
+## Filelists
 
-## Related docs
+Pre-built filelists used by the `calibrate` subcommand live at:
 
-- [`../scoring-runbook.md`](../scoring-runbook.md) — how the 4
-  scores work
-- [`../scoring-explained.md`](../scoring-explained.md) — what the
-  scores mean
-- [`../rule-catalog.md`](../rule-catalog.md) — the full 103-rule
-  catalog with calibration status
-- [`../research/`](../research/) — calibration tooling
-- [`../experiment-findings.md`](../experiment-findings.md) — the
-  v0.10.1 calibration methodology
+```
+/Users/cheng/corpus-expansion/filelists/pos-all-files.txt
+/Users/cheng/corpus-expansion/filelists/neg-all-files.txt
+```
+
+Each line is one absolute file path. **`#` comments are stripped.**
+
+Build with `bash /Users/cheng/corpus-expansion/build-filelists-v2.sh`.
+
+**Important:** these filelists were built on 2026-06-25 with a
+narrow extension filter (`*.ts *.tsx *.js *.jsx *.py *.go *.sql`).
+They cover only **~206k of the 1.13M corpus files (18%)**. The
+remainder (Java, C#, Rust, Swift, C++, Kotlin, Ruby, PHP) is
+**invisible to calibration**. See
+`v10.2-plan.md#phase-8` for the fix.
 
 ## Calibration history
 
-| Version | Date | Corpus | Method | Rules | Notes |
-|---|---|---|---|---|---|
-| v0.20.0 | 2026-06-28 | 184k | Naive | 66 | Java rules added |
-| v0.21.0 | 2026-06-29 | 184k | Naive | 81 | aiSlopScore flip |
-| v0.36.1 | 2026-07-04 | 576k | Full | 140 | First real calibration |
-| v0.38.0 | 2026-07-04 | 576k | Trim | 103 | Dropped 37 DORMANT |
-| v0.10.1 | 2026-07-04 | 581k | Wilcoxon | 103 | Statistical re-test |
-| **v0.10.2** | **planned** | **1.13M** | **Full** | **~115** | **Adds 4 langs** |
+| Version | Date | Files | Notes |
+|---------|------|-------|-------|
+| v0.43.0 (in progress) | 2026-07-08 | — | v10.2 calibration |
+| v0.10.1 | 2026-07-04 | 581k | Last full calib |
+| v8.5 | 2026-07-01 | 546k | TS/JS focused |
 
 ## Quick reference
 
 ```bash
-# Run calibration
+# Run calibration on the pre-built filelists (v10.2 corpus)
 slopbrick calibrate \
-  --positive-dir /Users/cheng/corpus-expansion/positive \
-  --negative-dir /Users/cheng/corpus-expansion/negative
+  --positive-list /Users/cheng/corpus-expansion/filelists/pos-all-files.txt \
+  --negative-list /Users/cheng/corpus-expansion/filelists/neg-all-files.txt \
+  --output /tmp/cal-results/v10.2-empirical.md
 
-# Self-scan (after calibration)
-slopbrick scan --workspace packages/slopbrick --brief
+# Smaller subset calibration (fast, for sanity)
+slopbrick calibrate \
+  --positive-list /Users/cheng/corpus-expansion/filelists/pos-all-files.txt \
+  --negative-list /Users/cheng/corpus-expansion/filelists/neg-all-files.txt \
+  --positive-limit 3000 \
+  --negative-limit 3000 \
+  --output /tmp/cal-results/v10.2-3k.md
 
-# View calibration state
-cat src/rules/signal-strength.json | python3 -m json.tool | head -50
+# Smoke test (~16s, 25 rules)
+slopbrick calibrate \
+  --positive-list /Users/cheng/corpus-expansion/filelists/pos-all-files.txt \
+  --negative-list /Users/cheng/corpus-expansion/filelists/neg-all-files.txt \
+  --positive-limit 50 \
+  --negative-limit 50 \
+  --output /tmp/cal-results/smoke.md
 ```
+
+## v10.2 plan
+
+See **`v10.2-plan.md`** (this directory) for the full plan,
+including the corpus-gap discovery and the revised phases.
