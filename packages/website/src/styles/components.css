@@ -2109,6 +2109,31 @@ NOISY". */
   margin-top: var(--space-12);
   margin-bottom: var(--space-6);
 }
+
+/* v0.43.0: footer ship-stamp with live dot. Reinforces the
+   "this is shipped" message from the hero. */
+.footer__head {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+}
+.footer__stamp {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-success);
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border: 0.5px solid rgba(132, 160, 122, 0.4);
+  border-radius: 999px;
+  background: var(--bg-success);
+  text-transform: lowercase;
+}
+.footer__tag em {
+  color: var(--text-accent);
+  font-style: italic;
+  font-weight: 500;
+}
 .brick--footer {
   padding: var(--space-6);
   text-align: center;
