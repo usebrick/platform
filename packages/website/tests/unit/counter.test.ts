@@ -66,14 +66,22 @@ describe('initCounters', () => {
     expect(io.unobserve).toHaveBeenCalledWith(el);
   });
 
-  it('does not animate for non-intersecting entries', () => {
+  it('renders the target value immediately even when never intersected (v0.43.0)', () => {
+    // v0.43.0: counters render the target value at init time so that
+    // non-scrolling readers, screen readers, and quick-screenshot
+    // users see the real numbers — not a wall of zeros. The
+    // IntersectionObserver still drives the count-up animation
+    // when the element scrolls into view, but the static text is
+    // already correct without it.
     const io = installMockIO();
     const el = makeCounter('99', '', '0');
     document.body.appendChild(el);
 
     initCounters();
+    expect(el.textContent).toBe('99');
+
     io.trigger([el], false);
-    expect(el.textContent).toBe('0');
+    expect(el.textContent).toBe('99');
   });
 
   it('applies data-suffix and locale-formats the rendered value', () => {
