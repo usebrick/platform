@@ -73,13 +73,11 @@ function totalEdgeWeight(
   edges: ReadonlyArray<readonly [string, string, number]>,
 ): number {
   let total = 0;
-  const seen = new Set<string>();
-  for (const [u, v, w] of edges) {
-    const key = u < v ? `${u}|${v}` : `${v}|${u}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    total += w;
-  }
+  // Normalize first so parallel/reversed triples have the same semantics as
+  // adjacency and degree construction.  Summing only the first raw triple
+  // under-counts a graph such as [a,b,1], [b,a,2] while the rest of the
+  // algorithm correctly treats that edge as weight 3.
+  for (const weight of normalizeEdgeWeights(edges).values()) total += weight;
   return total;
 }
 

@@ -12,7 +12,7 @@
 
 import { builtinRules } from '../rules/builtins.js';
 
-import { DEFAULT_CONFIG } from '../config';
+import { DEFAULT_CONFIG, loadConfig } from '../config/index.js';
 import { VERSION } from '../types/_header.js';
 import type { Rule, ResolvedConfig } from '../types';
 import { handleToolCall, TOOL_DEFINITIONS, getDeprecation } from './tools.js';
@@ -131,7 +131,17 @@ function errorResponse(id: number | string | null, code: number, message: string
  * from `input` and writes responses to `output`. Returns when the input
  * stream closes.
  */
-export async function runMcpServer(input: NodeJS.ReadableStream, output: NodeJS.WritableStream, cwd: string): Promise<void> {
+export async function runMcpServer(
+  input: NodeJS.ReadableStream,
+  output: NodeJS.WritableStream,
+  cwd: string,
+  resolvedConfig?: ResolvedConfig,
+): Promise<void> {
+  // Resolve configuration once, before accepting requests. This keeps every
+  // MCP tool on the same config/constitution as the CLI and avoids silently
+  // falling back to DEFAULT_CONFIG for long-lived agent sessions. Tests and
+  // embedders may inject an already-resolved config to avoid filesystem I/O.
+  const config = resolvedConfig ?? (await loadConfig(cwd));
   return new Promise<void>((resolve) => {
     let buffer = '';
     input.setEncoding('utf-8');
@@ -143,7 +153,7 @@ export async function runMcpServer(input: NodeJS.ReadableStream, output: NodeJS.
         if (line.length === 0) return;
         try {
           const req = JSON.parse(line) as JsonRpcRequest;
-          handleRequest(req, cwd).then((res) => {
+          handleRequest(req, cwd, builtinRules, config).then((res) => {
             if (res !== null) output.write(JSON.stringify(res) + '\n');
           }).catch((err) => {
             const message = err instanceof Error ? err.message : String(err);

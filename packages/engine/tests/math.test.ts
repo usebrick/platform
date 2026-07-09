@@ -27,7 +27,7 @@ import {
 } from '../src/lr-combiner';
 import { ksStatistic, ksPValue, ksTest } from '../src/ks';
 import { benjaminiHochberg, survivingFires } from '../src/multitest';
-import { louvainCommunityDetection } from '../src/louvain';
+import { computeModularityForTest, louvainCommunityDetection } from '../src/louvain';
 import { buildPriorLogOdds, compositeScore } from '../src/composite-scoring';
 import { computeZipfExponent, tokenizeIdentifiers } from '../src/zipf-heaps';
 import { computeKLNovelty } from '../src/kl-novelty';
@@ -291,6 +291,22 @@ describe('survivingFires', () => {
 // mock; we test the algorithm against synthetic graphs here).
 
 describe('louvainCommunityDetection', () => {
+  it('combines parallel and reversed edges consistently when computing modularity', () => {
+    const edges: Array<[string, string, number]> = [
+      ['a', 'b', 1],
+      ['b', 'a', 2],
+    ];
+    // The two triples describe one undirected edge of weight 3. For the
+    // all-in-one partition, internal weight and expected degree totals cancel
+    // exactly, so Newman-Girvan modularity is 0.
+    const modularity = computeModularityForTest(
+      ['a', 'b'],
+      () => 0,
+      edges,
+    );
+    expect(modularity).toBeCloseTo(0, 10);
+  });
+
   it('returns empty communities for an empty graph', () => {
     const result = louvainCommunityDetection({ nodes: [], edges: [] });
     expect(result.communities.length).toBe(0);
