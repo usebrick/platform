@@ -32,6 +32,7 @@ import {
   resolveConfigPath as findConfigPath,
 } from '../config';
 import { discoverFiles, ALL_SOURCE_EXTENSIONS } from '../engine/discover.js';
+import { discoverScanFiles } from './discovery.js';
 import {
   getGitHead,
   getGitRoot,
@@ -117,6 +118,7 @@ export async function runScan(
   if (!cwdStat.isDirectory()) {
     throw new Error(`Workspace is not a directory: ${cwd}`);
   }
+  const configPath = findConfigPath(cwd);
   const loadedConfig = await loadConfig(cwd);
   const config: ResolvedConfig = { ...loadedConfig };
 
@@ -189,7 +191,12 @@ export async function runScan(
     }
     files = expanded;
   } else {
-    files = await discoverFiles(cwd, config);
+    files = await discoverScanFiles({
+      workspace: cwd,
+      config,
+      configPath,
+      cliIncludeOverride: !!(options.include && options.include.length > 0),
+    });
   }
 
   if (options.staged) {
@@ -241,7 +248,7 @@ export async function runScan(
     options.format === 'sarif' ||
     options.format === 'html';
   if (files.length === 0 && !options.quiet && !machineReadableStdout) {
-    const projectRoot = await findConfigPath(cwd);
+    const projectRoot = configPath;
     if (!projectRoot) {
       // Refactor 9: first-time-user onboarding. When no config exists
       // anywhere on the walk-up AND 0 files matched, the original 1-line
