@@ -69,6 +69,9 @@
 - MCP workspace confinement: `eb7303272` plus TOCTOU correction `77077e31f`;
   MCP patterns 39/39 and slopbrick typecheck pass. Config/result parity and
   protocol-wide MCP contracts remain open.
+- ENGINE-02 Louvain normalization and MCP config parity: `060714730`; engine
+  48/48 and MCP server/pattern 41/41 pass, with independent approval. The
+  shared commit contains exactly the two scoped workstreams.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
