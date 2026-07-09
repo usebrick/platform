@@ -359,6 +359,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       }
 
       if (options.fix) {
+        const incompleteFailure = scanStats.status !== 'complete' &&
+          !(scanStats.status === 'empty' && (options.staged || options.changed));
         // v0.10.1: --show-fixes-diff prints what would change (renamed from
         // --diff to free --diff <ref> for the VibeDrift-compatible git-ref
         // alias of --since). With --dry-run, we skip the apply step entirely.
@@ -399,11 +401,13 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
-        process.exit(scanStats.status !== 'complete' && !options.staged && !options.changed ? 1 : 0);
+        process.exit(scanStats.status !== 'complete' &&
+          !(scanStats.status === 'empty' && (options.staged || options.changed)) ? 1 : 0);
       }
 
       let exitCode: 0 | 1 | 2 = thresholdExceeded(report, config) ? 1 : 0;
-      const incompleteFailure = scanStats.status !== 'complete' && !options.staged && !options.changed;
+      const incompleteFailure = scanStats.status !== 'complete' &&
+        !(scanStats.status === 'empty' && (options.staged || options.changed));
       if (incompleteFailure) {
         exitCode = 1;
         const summary = `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}.`;
