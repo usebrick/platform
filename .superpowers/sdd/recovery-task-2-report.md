@@ -24,3 +24,7 @@ The commit contains only the two named test files and selective hunks in the thr
 ## Review follow-up
 
 Commit `fix(slopbrick): close incomplete-scan paths` adds nonzero handling to `--fix`, `--fix --dry-run`, and `--heatmap`; preserves `--staged`/`--changed` empty no-op success; suppresses threshold diagnostics for incomplete scans; and declares completion fields as optional `ProjectReport` CLI extensions. Follow-up tests cover all early modes and no-op filters. `tsc --noEmit` and the focused completion/onboarding suites pass.
+
+## Commit-boundary correction
+
+The follow-up correction removed the pre-existing includeRule/excludeRule normalization, inline registry forwarding, and clearProgress change from the Task 2 commit history while leaving those changes dirty in the worktree. Corrected completion commits end at `9dbb02afe`; `git diff 83e1d2894..HEAD` contains no such unrelated hunks. Focused completion/onboarding tests: 15 passed; `tsc --noEmit` passed.
