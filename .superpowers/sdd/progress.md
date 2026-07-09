@@ -75,6 +75,8 @@
 - Gate 0 cleanup: `b3eed1836` aligns the candidate package/changelog to the
   selected unreleased v0.44.0 trust-restoration train and labels historical
   calibration paths as internal context; C# routing landed in `5e49764c8`.
+- C# language routing independently approved: parser/discovery/rule tests 9/9
+  across engine and SlopBrick, with package TypeScript validation passing.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
