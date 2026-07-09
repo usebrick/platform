@@ -1130,7 +1130,7 @@ export function formatBriefReport(report: ProjectReport): string {
   const active = activeIssueCount(report.issues);
   lines.push(
     chalk.dim(
-      `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${active} issue${active === 1 ? '' : 's'}. Run with --all for the full report.`,
+      `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${active} issue${active === 1 ? '' : 's'}. Run with --full for the full report.`,
     ),
   );
 

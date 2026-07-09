@@ -430,6 +430,12 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toMatch(/pass|fail/);
     });
 
+    it('P10: footer points to the implemented --full flag', () => {
+      const out = formatBriefReport(makeReport());
+      expect(out).toContain('Run with --full for the full report.');
+      expect(out).not.toContain('Run with --all for the full report.');
+    });
+
     it('P10: formatBriefReport omits the category breakdown and issues dump', () => {
       const out = formatBriefReport(makeReport({ issues: [makeIssue(), makeIssue(), makeIssue()] }));
       expect(out).not.toContain('Category breakdown');
