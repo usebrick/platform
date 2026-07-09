@@ -21,13 +21,14 @@
 
 ---
 
-### Task 0: Restore explicit source/ESM/CommonJS artifact parity
+### Task 0: Restore explicit source/ESM/CommonJS artifact parity — complete (`e8b7a2d4f`, APPROVE)
 
 **Files:**
 - Modify: `packages/slopbrick/package.json` (selective staging; version/description are already dirty)
 - Modify: `packages/slopbrick/tsup.config.ts`
 - Modify: `packages/slopbrick/src/engine/pool.ts`
 - Modify: `packages/slopbrick/src/cli/scan.ts` (selective staging)
+- Modify: `packages/slopbrick/src/index.ts`
 - Modify: `packages/slopbrick/tests/integration/packaged-worker.test.ts`
 - Test: `packages/slopbrick/tests/helpers/cli.ts`
 - Test: `packages/slopbrick/tests/integration/dist-bundle-paths.test.ts`
@@ -37,11 +38,11 @@
 - CommonJS: `dist/index.cjs`, `dist/engine/worker.cjs`.
 - Package exports: `import -> ./dist/index.js`, `require -> ./dist/index.cjs`.
 
-- [ ] **Step 1: Write/adjust the package contract test before production changes**
+- [x] **Step 1: Write/adjust the package contract test before production changes**
 
-Assert `type === 'module'`, the exact ESM/CJS paths above, successful dynamic import and `createRequire`, the presence of both worker formats, and source/built `--help` parity. Add a >3-file source scan so worker resolution is tested outside the bundle.
+Assert `type === 'module'`, the exact ESM/CJS paths above, successful dynamic import and `createRequire`, the presence of both worker formats, and source/built CLI `--help` parity. The source entry must remain importable as a library while invoking `runCli` when executed directly. Add a >3-file source scan so worker resolution is tested outside the bundle.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 ```bash
 node_modules/.bin/vitest run tests/integration/packaged-worker.test.ts tests/integration/dist-bundle-paths.test.ts
@@ -50,29 +51,29 @@ node_modules/.bin/tsx src/index.ts --help
 
 Expected: source help fails through `unicorn-magic`, and current metadata/build extensions contradict the target contract.
 
-- [ ] **Step 3: Make build extensions explicit**
+- [x] **Step 3: Make build extensions explicit**
 
 Restore `"type": "module"`; set `main`/`exports.require` to `./dist/index.cjs` and `module`/`exports.import` to `./dist/index.js`. Configure tsup `outExtension` so CJS emits `.cjs` and ESM emits `.js`. Preserve declaration output and the existing CJS `import.meta.url` banner.
 
-- [ ] **Step 4: Make worker construction lazy and source-compatible**
+- [x] **Step 4: Make worker construction lazy and source-compatible**
 
-Do not construct `WorkerPool` before the `files.length > INLINE_THRESHOLD` branch. Resolve an executable worker for both bundled output and the source `tsx` process; reject with the existing actionable candidate list when none is available. Do not weaken the startup/lifecycle guards.
+Do not construct `WorkerPool` before the `files.length > INLINE_THRESHOLD` branch. Resolve an executable worker for both bundled output and the source `tsx` process; reject with the existing actionable candidate list when none is available. Make `src/index.ts` invoke `runCli` only when it is the direct entry, without changing its import/export API. Do not weaken the startup/lifecycle guards.
 
-- [ ] **Step 5: Verify all three surfaces and commit**
+- [x] **Step 5: Verify all three surfaces and commit**
 
 ```bash
 node_modules/.bin/tsc --noEmit
 node_modules/.bin/tsup
 node_modules/.bin/tsx src/index.ts --help
 node_modules/.bin/vitest run tests/engine/pool.test.ts tests/integration/packaged-worker.test.ts tests/integration/dist-bundle-paths.test.ts tests/cli/diff-flag.test.ts tests/cli/test.test.ts
-git add packages/slopbrick/tsup.config.ts packages/slopbrick/src/engine/pool.ts packages/slopbrick/tests/integration/packaged-worker.test.ts packages/slopbrick/tests/helpers/cli.ts packages/slopbrick/tests/integration/dist-bundle-paths.test.ts
+git add packages/slopbrick/tsup.config.ts packages/slopbrick/src/engine/pool.ts packages/slopbrick/src/index.ts packages/slopbrick/tests/integration/packaged-worker.test.ts packages/slopbrick/tests/helpers/cli.ts packages/slopbrick/tests/integration/dist-bundle-paths.test.ts
 git add -p packages/slopbrick/package.json packages/slopbrick/src/cli/scan.ts
 git commit -m "fix(slopbrick): restore explicit module artifacts"
 ```
 
 ---
 
-### Task 1: Stable config-relative and monorepo-aware discovery
+### Task 1: Stable config-relative and monorepo-aware discovery — complete (`83e1d2894`, APPROVE)
 
 **Files:**
 - Create: `packages/slopbrick/src/cli/discovery.ts`
@@ -83,7 +84,7 @@ git commit -m "fix(slopbrick): restore explicit module artifacts"
 - Consumes: `discoverFiles(cwd, config)`, `resolveConfigPath(cwd)`, `findWorkspacePackages(cwd)`.
 - Produces: `discoverScanFiles(options): Promise<string[]>`, where options include `workspace`, `config`, `configPath`, and whether CLI include globs replaced config includes.
 
-- [ ] **Step 1: Write failing tests for the two reproduced defects**
+- [x] **Step 1: Write failing tests for the two reproduced defects**
 
 Create temporary fixtures proving:
 
@@ -96,7 +97,7 @@ it('resolves CLI include overrides from the requested workspace')
 
 The first fixture places `slopbrick.config.mjs` at a package root with `include: ['src/**/*.ts']`, requests the package's `src/` directory, and expects its TypeScript files. The monorepo fixture declares `packages/*`, creates two package `src/` trees plus one undeclared `vendor/` tree, and expects only the two declared package files.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 Run from `packages/slopbrick`:
 
@@ -106,7 +107,7 @@ node_modules/.bin/vitest run tests/cli/scan-discovery.test.ts
 
 Expected: ancestor-config fixture returns zero and monorepo root omits nested TypeScript before implementation.
 
-- [ ] **Step 3: Implement the discovery helper**
+- [x] **Step 3: Implement the discovery helper**
 
 The helper must:
 
@@ -123,11 +124,11 @@ export async function discoverScanFiles(options: ScanDiscoveryOptions): Promise<
 
 When `cliIncludeOverride` is true, call `discoverFiles(workspace, config)`. When a config path exists, call `discoverFiles(dirname(configPath), config)` and retain only paths inside `workspace` using `relative()` containment, never string-prefix matching. Otherwise, if `workspace` is its own detected monorepo root, prefix each default include with each declared package root relative to the monorepo and discover once with the shared config. De-duplicate and sort.
 
-- [ ] **Step 4: Wire `runScan` to the helper**
+- [x] **Step 4: Wire `runScan` to the helper**
 
 Capture the config path once, pass `options.include?.length > 0` as the override flag, and replace only the non-explicit-path `discoverFiles(cwd, config)` call. Preserve explicit path behavior.
 
-- [ ] **Step 5: Verify green and commit**
+- [x] **Step 5: Verify green and commit**
 
 ```bash
 node_modules/.bin/vitest run tests/cli/scan-discovery.test.ts tests/discover.test.ts
@@ -139,7 +140,7 @@ git commit -m "fix(slopbrick): discover configured workspace sources"
 
 ---
 
-### Task 2: Make empty and partial scan outcomes explicit
+### Task 2: Make empty and partial scan outcomes explicit — complete (`e388b4a0a`, APPROVE)
 
 **Files:**
 - Modify: `packages/slopbrick/src/cli/types.ts` (selective staging; already dirty)
@@ -151,25 +152,25 @@ git commit -m "fix(slopbrick): discover configured workspace sources"
 **Interfaces:**
 - Produces: `ScanCompletionStatus = 'complete' | 'empty' | 'partial'` and counts for requested, analyzed, and failed files in `ScanStats`.
 
-- [ ] **Step 1: Write failing subprocess and `runScan` tests**
+- [x] **Step 1: Write failing subprocess and `runScan` tests**
 
 Cover a normal complete scan, an empty ordinary workspace, JSON empty scan, and a worker result with `parseError`. Assert empty/partial scans never print a clean verdict or exit zero; JSON stdout remains parseable when emitted and carries status/counts.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 ```bash
 node_modules/.bin/vitest run tests/cli/scan-onboarding.test.ts tests/cli/scan-completion.test.ts
 ```
 
-- [ ] **Step 3: Add typed completion statistics**
+- [x] **Step 3: Add typed completion statistics**
 
 Compute requested count immediately after file selection, failed count from results containing `parseError`, analyzed count from successful results, and status from those counts. Preserve incremental skipped counts separately; do not call an unchanged cached file analyzed.
 
-- [ ] **Step 4: Prevent false-clean rendering**
+- [x] **Step 4: Prevent false-clean rendering**
 
 Route `empty` and `partial` through a documented non-zero outcome before the clean headline. Human output names requested/analyzed/failed counts and a corrective hint. Machine output includes the same fields without corrupting JSON stdout.
 
-- [ ] **Step 5: Verify and commit only task hunks**
+- [x] **Step 5: Verify and commit only task hunks**
 
 ```bash
 node_modules/.bin/vitest run tests/cli/scan-onboarding.test.ts tests/cli/scan-completion.test.ts tests/integration/packaged-worker.test.ts
@@ -181,7 +182,7 @@ git commit -m "fix(slopbrick): report incomplete scans honestly"
 
 ---
 
-### Task 3: Make the CI command consume the current scan outcome
+### Task 3: Make the CI command consume the current scan outcome — complete (`0da9150f5`, APPROVE)
 
 **Files:**
 - Modify: `packages/slopbrick/src/cli/program.ts` (selective staging)
@@ -192,11 +193,11 @@ git commit -m "fix(slopbrick): report incomplete scans honestly"
 - `scanAction` returns the current report/config/completion/threshold exit recommendation to callers instead of exiting when invoked by `ci`.
 - `ci` never reloads stale `.slopbrick/health.json` to decide the current run.
 
-- [ ] **Step 1: Write failing CI subprocess tests**
+- [x] **Step 1: Write failing CI subprocess tests**
 
 Cover pass, `--max-slop 1` failure against repository health below 99, normal scan-threshold failure, empty scan, malformed config, and JSON fields agreeing with the exit status.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 ```bash
 node_modules/.bin/vitest run tests/cli/ci.test.ts
@@ -204,15 +205,15 @@ node_modules/.bin/vitest run tests/cli/ci.test.ts
 
 Expected: the reproduced `--max-slop 1` command exits zero before the fix.
 
-- [ ] **Step 3: Return an outcome from the shared scan action**
+- [x] **Step 3: Return an outcome from the shared scan action**
 
 For the `ci` caller, return the current in-memory result before terminal exit. Keep scan/watch behavior unchanged in this task. Include the base scan threshold result and completion status.
 
-- [ ] **Step 4: Gate from current data and use shared exit propagation**
+- [x] **Step 4: Gate from current data and use shared exit propagation**
 
 Remove `loadHealth(cwd)` from CI decision-making. Evaluate the current report, combine base scan failure with CI-specific thresholds, and use the existing shared Commander exit mechanism rather than calling `process.exit` inside `registerCi`.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 ```bash
 node_modules/.bin/vitest run tests/cli/ci.test.ts tests/cli/shared-exit.test.ts tests/cli/scan-completion.test.ts
@@ -224,36 +225,40 @@ git commit -m "fix(slopbrick): enforce CI gates from current scan"
 
 ---
 
-### Task 4: Complete the Dart rule contracts without activating uncalibrated rules
+### Task 4: Complete the Dart rule contracts without activating uncalibrated rules — complete (`158ee8011`, APPROVE)
 
 **Files:**
+- Create: `packages/slopbrick/src/rules/dart/dynamic-call.ts`
+- Create: `packages/slopbrick/src/rules/dart/missing-dispose.ts`
+- Create: `packages/slopbrick/src/rules/dart/print-debug.ts`
+- Create: `packages/slopbrick/src/rules/dart/unwrapped-futures.ts`
 - Modify: `packages/slopbrick/src/snippet/data.ts`
 - Modify: `packages/slopbrick/src/rules/signal-strength.json`
 - Modify only if guardrails expose a registry issue: `packages/slopbrick/src/rules/builtins.ts` (selective staging; already dirty)
 - Test: `packages/slopbrick/tests/engine/rule-hints.test.ts`
 - Test: `packages/slopbrick/tests/engine/signal-strength-guardrails.test.ts`
-- Test: existing `packages/slopbrick/tests/rules/dart/*.test.ts`
+- Create: `packages/slopbrick/tests/rules/dart/contracts.test.ts`
 
-- [ ] **Step 1: Capture the existing red guardrails**
+- [x] **Step 1: Capture the existing red guardrails**
 
 ```bash
-node_modules/.bin/vitest run tests/engine/rule-hints.test.ts tests/engine/signal-strength-guardrails.test.ts tests/rules/dart
+node_modules/.bin/vitest run tests/engine/rule-hints.test.ts tests/engine/signal-strength-guardrails.test.ts tests/rules/dart/contracts.test.ts
 ```
 
 Expected: all four Dart IDs are missing hints and signal entries.
 
-- [ ] **Step 2: Add concise actionable hints**
+- [x] **Step 2: Add concise actionable hints**
 
 Add one ≤240-character remediation for each of `dart/dynamic-call`, `dart/missing-dispose`, `dart/print-debug`, and `dart/unwrapped-futures`.
 
-- [ ] **Step 3: Add conservative signal metadata**
+- [x] **Step 3: Add conservative signal metadata**
 
 Add all required numeric fields, `verdict: "DORMANT"`, `defaultOff: true`, `aiSpecific: false`, and an explicit note that corpus calibration is pending. Do not invent precision/recall evidence; use zero-valued uncalibrated metrics accepted by the guardrail schema.
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 ```bash
-node_modules/.bin/vitest run tests/engine/rule-hints.test.ts tests/engine/signal-strength-guardrails.test.ts tests/rules/dart
+node_modules/.bin/vitest run tests/engine/rule-hints.test.ts tests/engine/signal-strength-guardrails.test.ts tests/rules/dart/contracts.test.ts
 node_modules/.bin/tsc --noEmit
 git add packages/slopbrick/src/snippet/data.ts packages/slopbrick/src/rules/signal-strength.json
 git add -p packages/slopbrick/src/rules/builtins.ts
@@ -271,7 +276,7 @@ git commit -m "fix(slopbrick): complete Dart rule metadata"
 - Modify: `.superpowers/sdd/progress.md`
 - Create: `packages/slopbrick/docs/calibration/v0.45.0-execution-evidence.md`
 
-- [ ] **Step 1: Run fresh package verification**
+- [x] **Step 1: Run fresh package verification**
 
 ```bash
 node_modules/.bin/tsc --noEmit
@@ -279,7 +284,7 @@ node_modules/.bin/tsup
 node_modules/.bin/vitest run tests/engine/pool.test.ts tests/integration/packaged-worker.test.ts tests/cli/scan-discovery.test.ts tests/cli/scan-completion.test.ts tests/cli/ci.test.ts tests/engine/rule-hints.test.ts tests/engine/signal-strength-guardrails.test.ts tests/rules/dart
 ```
 
-- [ ] **Step 2: Run both documented scans from the fresh build**
+- [x] **Step 2: Run both documented scans from the fresh build**
 
 ```bash
 node bin/slopbrick.js scan --workspace /Users/cheng/platform/packages/slopbrick/src --threads 1 --json --no-telemetry --no-color
@@ -292,7 +297,7 @@ Record exit status, status/counts, four scores, elapsed time, top offenders, and
 
 Review every high finding and at least five medium/low findings spanning different rules/languages. Classify each as correct, useful-but-noisy, false positive, or harmful advice. Do not claim the score is release evidence if the sampled output is materially misleading.
 
-- [ ] **Step 4: Reconcile governing documentation from evidence**
+- [x] **Step 4: Reconcile governing documentation from evidence**
 
 Update the continuation plan and handoff with exact commit IDs, commands, pass/fail counts, and self-scan results. Check only requirements proven by fresh evidence. Add newly discovered blockers beside their governing gate. Remove stale claims such as prior zero-file “clean” scores. Update the durable ledger in the same bookkeeping pass.
 
