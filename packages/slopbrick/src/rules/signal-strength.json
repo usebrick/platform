@@ -3737,7 +3737,7 @@
     "verdict": "DORMANT",
     "defaultOff": true,
     "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
-    "aiSpecific": false,
+    "aiSpecific": true,
     "_v10Status": "DORMANT (Dart corpus calibration pending)"
   },
   "dart/missing-dispose": {
@@ -3749,7 +3749,7 @@
     "verdict": "DORMANT",
     "defaultOff": true,
     "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
-    "aiSpecific": false,
+    "aiSpecific": true,
     "_v10Status": "DORMANT (Dart corpus calibration pending)"
   },
   "dart/print-debug": {
@@ -3761,7 +3761,7 @@
     "verdict": "DORMANT",
     "defaultOff": true,
     "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
-    "aiSpecific": false,
+    "aiSpecific": true,
     "_v10Status": "DORMANT (Dart corpus calibration pending)"
   },
   "dart/unwrapped-futures": {
@@ -3773,7 +3773,7 @@
     "verdict": "DORMANT",
     "defaultOff": true,
     "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
-    "aiSpecific": false,
+    "aiSpecific": true,
     "_v10Status": "DORMANT (Dart corpus calibration pending)"
   }
 }
