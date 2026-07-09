@@ -22,18 +22,22 @@
 | 1 — config/monorepo discovery | `discovery_implementer` | APPROVE | `83e1d2894` | completed |
 | 2 — empty/partial outcomes | `completion_outcome_implementer` | APPROVE | `160e149bc`, `9dbb02afe`, `e388b4a0a` | completed |
 | 3 — authoritative CI outcome | `ci_gate_implementer` | APPROVE | `f94805af8`, `f5d87528c`, `0da9150f5` | completed |
-| 4 — Dart rule contracts | `dart_contract_implementer` | APPROVE | `158ee8011` | completed |
+| 4 — Dart rule contracts | `dart_contract_implementer` | APPROVE after metadata correction | `158ee8011`, `ea9c7c1d1` | completed |
 | 5 — self-scan/evidence/plan reconciliation | `evidence_reconciler` | docs/evidence pass recorded; broader gates remain open | `v0.45.0-execution-evidence.md` | completed |
 
 ### Current verified blockers
 
-- Full SlopBrick Vitest: 207 files passed / 13 failed; 2176 tests passed / 8 failed / 74 skipped on the 2026-07-09 triage snapshot.
-- Source CLI fails through ESM-only `unicorn-magic` after the prior package `type` removal.
-- Eight suite setups still expect old `.cjs` artifacts; source `runScan` eagerly resolves a worker even for inline scans.
-- Root self-scan discovers only 12 Python files; package `src/` self-scan discovers zero files.
-- CI-specific thresholds are bypassed because the shared scan action exits first.
-- Four Dart rules lack hints and signal metadata.
-- Kotlin test loading is locally blocked by node_modules installed with pnpm 11 while the repo pins pnpm 9; this is an environment/store mismatch pending a frozen reinstall, not yet a source defect.
+- Full-suite verification is not green: the rerun exposed structural-clone
+  performance at 2,748.9 ms against a 2,000 ms budget, calibration-db corpus
+  discovery at 0 against more than 50 expected files, category-separation
+  timeout at 60 seconds, and parser-kotlin setup blocked by the local native
+  addon/install environment.
+- Kotlin/parser setup remains an environment/store mismatch pending a frozen
+  reinstall with the repo-pinned pnpm 9; no source defect is asserted yet.
+- Both fresh self-scans are complete but exit 1 because `meanSlop` is 25 > 15;
+  this is recorded evidence, not a release pass.
+- Gate 0, score/CLI/MCP/core/engine contracts, v10.3 calibration/provenance,
+  and site/operations/release gates remain open.
 
 ### Recovery tranche evidence (2026-07-09)
 
@@ -46,3 +50,6 @@
 - Focused recovery verification: `tsc` and `tsup` passed; six focused test
   files passed with 38 tests; Dart guardrail/contracts subset passed with 17
   tests. Full-suite and broader Gate 0–6 evidence remain open.
+- Post-reconciliation Dart metadata follow-up `ea9c7c1d1`: four files and 19
+  tests passed, correcting `aiSpecific` drift. The subsequent full-suite run
+  exposed the blockers listed above and was stopped; it is not green evidence.
