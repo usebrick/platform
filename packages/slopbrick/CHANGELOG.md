@@ -6,6 +6,10 @@ This branch is not released. The current work restores scanner, schema, score,
 MCP, and package contracts. Calibration artifacts and ML experiments remain
 research-only until the provenance and full release gates pass.
 
+The historical draft entries below are retained for audit context only; their
+local corpus paths, measurements, and future-version statements are not public
+release claims.
+
 ## [0.45.0 draft] — not released; historical exploratory notes only
 
 Major data-quality and AI-detection-foundation release. The v5 corpus
@@ -73,8 +77,8 @@ Nguyen 2023 / GPTSniffer (arXiv:2307.09381).
 
 ### Dart support
 
-- **4 new Dart rules** (v0.44.0 already shipped these; the v0.45.0
-  release promotes them in the catalog):
+- **4 new Dart rules** are prepared for the unreleased v0.44.0 trust-restoration
+  train; they remain default-off until corpus calibration validates precision:
   - `dart/print-debug`: `print()` in production code; use
     `debugPrint()` or a logger.
   - `dart/unwrapped-futures`: async calls not awaited; errors

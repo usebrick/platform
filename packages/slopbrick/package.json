@@ -1,6 +1,6 @@
 {
   "name": "slopbrick",
-  "version": "0.45.0",
+  "version": "0.44.0",
   "description": "Discovered, modeled, and governed repository structure. SlopBrick scans source code against the versioned rule registry, computes four documented scores, and persists structure for AI agents and CI. The v0.44.0 trust-restoration train is unreleased; exploratory calibration and ML artifacts are not product claims.",
   "type": "module",
   "bin": {
