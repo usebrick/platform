@@ -430,9 +430,9 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toMatch(/pass|fail/);
     });
 
-    it('P10: footer points to the implemented --full flag', () => {
+    it('P10: footer explains how to reach the full report', () => {
       const out = formatBriefReport(makeReport());
-      expect(out).toContain('Run with --full for the full report.');
+      expect(out).toContain('Re-run without --brief for the full report.');
       expect(out).not.toContain('Run with --all for the full report.');
     });
 
