@@ -7,6 +7,9 @@ export default defineConfig({
     'engine/worker': 'src/engine/worker.ts',
   },
   format: ['cjs', 'esm'],
+  outExtension({ format }) {
+    return { js: format === 'cjs' ? '.cjs' : '.js' };
+  },
   target: 'node18',
   platform: 'node',
   splitting: false,

@@ -9,6 +9,10 @@
 //
 // The bin script (bin/slopbrick.js) imports { runCli } from here.
 
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { runCli as runCliEntry } from './cli/program';
+
 export * from './types';
 export { loadConfig, DEFAULT_CONFIG } from './config';
 
@@ -84,3 +88,8 @@ export {
 // need to know about @usebrick/core. Once @usebrick/core ships as a real
 // published package (the AGENTS.md moat: "defer until schema is earned
 // by ≥2 consumers like stackpick or gir"), we can re-export here.
+
+const entryPath = process.argv[1];
+if (entryPath && pathToFileURL(resolve(entryPath)).href === import.meta.url) {
+  void runCliEntry({ start: performance.now() });
+}

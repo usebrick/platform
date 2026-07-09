@@ -28,13 +28,24 @@ const MAX_RETRIES = 2;
 const MAX_STARTUP_FAILURES = 3;
 const DEFAULT_WORKER_TIMEOUT_MS = 60_000;
 
+function runsWithTsxLoader(): boolean {
+  return process.execArgv.some(
+    (argument) =>
+      argument === 'tsx' ||
+      argument.startsWith('tsx/') ||
+      argument.includes('/node_modules/tsx/') ||
+      argument.includes('\\node_modules\\tsx\\'),
+  );
+}
+
 function defaultWorkerScript(): string {
   // Prefer the CJS worker build: Node >= v24.14.0 can abort under concurrent
   // ESM->CJS preparse in worker threads (nodejs/node#63323). The CJS worker
   // uses require() for its dependencies and avoids that path.
-  const candidates = ['./engine/worker.cjs', './engine/worker.js', './engine/worker.mjs'].map(
-    (path) => fileURLToPath(new URL(path, import.meta.url)),
-  );
+  const relativeCandidates = ['./engine/worker.cjs', './engine/worker.js', './engine/worker.mjs'];
+  if (runsWithTsxLoader()) relativeCandidates.push('./worker.ts');
+
+  const candidates = relativeCandidates.map((path) => fileURLToPath(new URL(path, import.meta.url)));
   const workerScript = candidates.find(existsSync);
   if (workerScript) return workerScript;
 

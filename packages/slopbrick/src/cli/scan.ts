@@ -350,13 +350,6 @@ export async function runScan(
     }
   }
 
-  const pool = new WorkerPool({
-    config,
-    threadCount: options.threadCount,
-    quiet: options.quiet,
-    ...(options.workerScript ? { workerScript: options.workerScript } : {}),
-  });
-
   // machineReadableStdout was computed earlier (above the 0-files warning)
   // so the warning could gate on it; reuse it here.
   const showProgress = process.stdout.isTTY && !options.quiet && !machineReadableStdout;
@@ -372,12 +365,18 @@ export async function runScan(
    *  Larger scans go through the worker pool for parallelism. */
   const INLINE_THRESHOLD = 3;
   let results: FileScanResult[];
-  if (files.length > 0 && files.length <= INLINE_THRESHOLD) {
+  if (files.length <= INLINE_THRESHOLD) {
     results = [];
     for (const filePath of files) {
       results.push(await scanFile(filePath, config, undefined, cwd));
     }
   } else {
+    const pool = new WorkerPool({
+      config,
+      threadCount: options.threadCount,
+      quiet: options.quiet,
+      ...(options.workerScript ? { workerScript: options.workerScript } : {}),
+    });
     results = await pool.scan(files, showProgress ? renderProgress : undefined);
   }
   if (showProgress) {
