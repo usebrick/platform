@@ -60,4 +60,14 @@ describe('scan completion status', () => {
     const result = await run(['--workspace', dir, flag, '--quiet']);
     expect(result.exitCode).toBe(0);
   });
+
+  it.each(['--staged', '--changed'])('keeps parse-error %s scans incomplete', async (flag) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+    execFileSync('git', ['add', '.'], { cwd: dir, stdio: 'ignore' });
+    const result = await run(['--workspace', dir, flag, '--quiet']);
+    expect(result.exitCode).toBe(1);
+  });
 });

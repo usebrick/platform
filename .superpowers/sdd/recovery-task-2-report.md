@@ -28,3 +28,7 @@ Commit `fix(slopbrick): close incomplete-scan paths` adds nonzero handling to `-
 ## Commit-boundary correction
 
 The follow-up correction removed the pre-existing includeRule/excludeRule normalization, inline registry forwarding, and clearProgress change from the Task 2 commit history while leaving those changes dirty in the worktree. Corrected completion commits end at `9dbb02afe`; `git diff 83e1d2894..HEAD` contains no such unrelated hunks. Focused completion/onboarding tests: 15 passed; `tsc --noEmit` passed.
+
+## Partial filtered scan correction
+
+Commit `fix(slopbrick): reject partial filtered scans` restricts the staged/changed no-op exception to `status === 'empty'`. Parse-error partial scans remain nonzero across normal, fix, dry-run, and heatmap paths. Regression coverage includes staged and changed parse-error workspaces. Verification: completion/onboarding/packaged-worker tests 21 passed; `tsc --noEmit` passed.
