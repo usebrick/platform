@@ -28,7 +28,7 @@ These four JSON Schema files define the **Repository Structure Platform**:
 |--------|---------|-------------|-------------|
 | [`v1/inventory.schema.json`](./schemas/v1/inventory.schema.json) | Detected patterns + component fingerprints | `slopbrick scan` | `slopbrick`, `stackpick`, `gir`, `mcp` |
 | [`v1/constitution.schema.json`](./schemas/v1/constitution.schema.json) | Declared project constitution | `slopbrick scan` (auto from config) | `slopbrick drift`, `stackpick`, `gir`, `mcp` |
-| [`v1/structure.schema.json`](./schemas/v1/structure.schema.json) | Agent-readable markdown summary (was `memory.schema.json`) | `slopbrick scan` (auto-renders) | `slop_suggest_with_structure` MCP tool (was `slop_suggest_with_memory`) |
+| [`v1/structure.schema.json`](./schemas/v1/structure.schema.json) | Structured JSON projection of the agent-readable summary (the derived `.slopbrick/structure.md` rendering is not JSON input) | `slopbrick scan` (auto-renders) | `slop_suggest_with_structure` MCP tool (was `slop_suggest_with_memory`) |
 | [`v1/health.schema.json`](./schemas/v1/health.schema.json) | Per-scan health snapshot — 4-score model | `slopbrick scan` | website dashboards, CI integrations |
 
 ### Versioned schema URLs

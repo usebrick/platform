@@ -87,4 +87,4 @@ The JSON Schemas in `schemas/v1/*.json` are the source of truth for non-TypeScri
 | `inventory.schema.json`  | `.slop-audit/inventory.json`    | slopbrick scan |
 | `constitution.schema.json` | `.slop-audit/constitution.json` | `slopbrick init` |
 | `health.schema.json`     | `.slopbrick/health.json`        | slopbrick scan |
-| `structure.schema.json`  | the agent-readable markdown summary (rendered from inventory + constitution) | slopbrick scan |
+| `structure.schema.json`  | structured JSON projection for the agent-readable summary; `.slopbrick/structure.md` is a derived Markdown rendering | slopbrick scan |
