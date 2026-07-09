@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { WorkerPool } from '../../src/engine/pool';
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -256,6 +256,102 @@ setInterval(() => {}, 1_000);
       expect(attempts).toHaveLength(3);
     } finally {
       delete process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores a ready message queued after the ready-handshake timeout', async () => {
+    const dir = createTmpDir();
+    const attemptLog = join(dir, 'late-ready-attempts.log');
+    process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG = attemptLog;
+    try {
+      const workerScript = join(dir, 'late-ready-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const { parentPort } = require('node:worker_threads');
+const fs = require('node:fs');
+const logPath = process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG;
+const attempt = fs.existsSync(logPath) ? Number(fs.readFileSync(logPath, 'utf8')) + 1 : 1;
+fs.writeFileSync(logPath, String(attempt));
+if (attempt === 1) parentPort.postMessage({ type: 'ready' });
+setInterval(() => {}, 1_000);
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+        workerTimeoutMs: 25,
+      });
+      const scan = pool.scan(['late-ready.tsx']);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 300);
+
+      await expect(settlesWithin(scan, 1_000)).rejects.toThrow(
+        /workers could not start.*did not send ready within 25ms/i,
+      );
+      const attempts = Number(readFileSync(attemptLog, 'utf8'));
+      expect(attempts).toBeGreaterThanOrEqual(3);
+      expect(attempts).toBeLessThanOrEqual(4);
+    } finally {
+      delete process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('cleans up when constructing a worker throws synchronously', async () => {
+    vi.useFakeTimers();
+    try {
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript: 'relative-worker.cjs',
+      });
+
+      await expect(pool.scan(['invalid-worker.tsx'])).rejects.toThrow(/absolute path|ERR_WORKER_PATH/i);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects an out-of-protocol result before ready without clearing startup recovery', async () => {
+    const dir = createTmpDir();
+    const attemptLog = join(dir, 'pre-ready-result-attempts.log');
+    process.env.SLOP_POOL_PRE_READY_RESULT_ATTEMPT_LOG = attemptLog;
+    try {
+      const workerScript = join(dir, 'pre-ready-result-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const { parentPort } = require('node:worker_threads');
+const fs = require('node:fs');
+fs.appendFileSync(process.env.SLOP_POOL_PRE_READY_RESULT_ATTEMPT_LOG, 'spawn\\n');
+parentPort.postMessage({
+  type: 'result',
+  result: { filePath: 'unscheduled.tsx', componentCount: 1, issues: [], gapValues: [], styleSources: [] },
+});
+setInterval(() => {}, 1_000);
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+        workerTimeoutMs: 100,
+      });
+
+      await expect(settlesWithin(pool.scan(['scheduled.tsx']), 1_000)).rejects.toThrow(
+        /workers could not start.*result before ready or assignment/i,
+      );
+      const attempts = existsSync(attemptLog)
+        ? readFileSync(attemptLog, 'utf8').split('\n').filter(Boolean)
+        : [];
+      expect(attempts).toHaveLength(3);
+    } finally {
+      delete process.env.SLOP_POOL_PRE_READY_RESULT_ATTEMPT_LOG;
       rmSync(dir, { recursive: true, force: true });
     }
   });

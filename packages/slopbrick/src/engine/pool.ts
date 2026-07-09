@@ -233,12 +233,18 @@ export class WorkerPool {
 
       const spawnWorker = () => {
         if (settled) return;
-        const worker = new Worker(this.workerScript, {
-          workerData: {
-            config: this.config,
-            quiet: this.quiet,
-          },
-        });
+        let worker: Worker;
+        try {
+          worker = new Worker(this.workerScript, {
+            workerData: {
+              config: this.config,
+              quiet: this.quiet,
+            },
+          });
+        } catch (error) {
+          settleReject(error instanceof Error ? error : new Error(String(error)));
+          return;
+        }
         workers.push(worker);
         startingWorkers.add(worker);
         timers.set(
@@ -253,7 +259,7 @@ export class WorkerPool {
         );
 
         worker.on('message', (msg: { type?: string; result?: FileScanResult }) => {
-          if (settled) return;
+          if (settled || handledFailures.has(worker) || !workers.includes(worker)) return;
           if (msg.type === 'ready') {
             clearTimer(worker);
             startingWorkers.delete(worker);
@@ -262,6 +268,15 @@ export class WorkerPool {
             assignNext(worker);
             maybeResolve();
           } else if (msg.type === 'result' && msg.result) {
+            const filePath = inFlight.get(worker);
+            if (!readyWorkers.has(worker) || filePath !== msg.result.filePath) {
+              onWorkerFailure(
+                worker,
+                filePath,
+                new Error('Worker sent result before ready or assignment'),
+              );
+              return;
+            }
             clearTimer(worker);
             inFlight.delete(worker);
             handleResult(msg.result);
@@ -273,7 +288,7 @@ export class WorkerPool {
         });
 
         worker.on('exit', (code) => {
-          if (settled) return;
+          if (settled || handledFailures.has(worker) || !workers.includes(worker)) return;
           const filePath = inFlight.get(worker);
           if (code === 0 && readyWorkers.has(worker) && filePath === undefined) {
             clearTimer(worker);
