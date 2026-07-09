@@ -86,6 +86,10 @@
 - CLI brief UX: `6fbfa2b11` plus `f45ea9af5` replace the nonexistent `--full`
   hint with the actionable “rerun without --brief” guidance; 41 UX tests and
   package TypeScript validation pass. The full flag/command audit remains open.
+- The continuation ledger now records previously reviewed CLI-00/01/05/06,
+  CORE-07/08, and Dart contract gates as complete with their evidence commits;
+  CLI-03/04, MCP protocol schemas, score invariants, language matrix, and
+  release/calibration/site gates remain open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
