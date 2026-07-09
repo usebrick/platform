@@ -142,14 +142,18 @@ The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick
 
 ### 4.3 `@usebrick/engine` (workspace-only, NEW in v0.15.0)
 
-The pure-function engine extracted from `slopbrick/src/engine/`. No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, future web IDEs, future CI binaries.
+The scoring and `parseSource(source, filePath)` APIs are pure. The compatibility
+`parseFile(filePath)` and structure/find-similar helpers are explicit I/O
+adapters for CLI consumers; embedded callers should use the pure APIs when they
+already have source text. No engine path calls `console.log` or `process.exit`.
 
 **Public API** (`packages/engine/src/index.ts`):
 - `scanProject(options, io)` — pure scan, takes an `MemoryIO` interface for file I/O
 - `loadStructure` / `saveStructure` — structure persistence
 - `computeLikelihoodRatios(ruleIds, corpus)` — LR math
 - `bayesianPosterior(firedRuleIds, lrs)` — naive Bayes update
-- `parseFile(filePath, content)` — AST parsing
+- `parseSource(source, filePath)` — pure AST parsing
+- `parseFile(filePath)` — filesystem/cache compatibility adapter
 - 30+ more exports
 
 **v0.15.0 build dependency**: `slopbrick` imports `@usebrick/engine` (instead of `src/engine/`).

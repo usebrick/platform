@@ -1,10 +1,9 @@
 /**
  * v0.15.0 B.4: filesystem-backed `MemoryIO` for the engine.
  *
- * The `@usebrick/engine` package is pure (no `node:fs` imports), so it
- * takes a `MemoryIO` callback for every read/write. This file is the
- * concrete implementation: `fsMemoryIO` wraps `node:fs/promises` and
- * is what the slopbrick CLI passes in.
+ * The engine's scoring and `parseSource` APIs are pure. This file is the
+ * concrete filesystem implementation: `fsMemoryIO` wraps `node:fs/promises`
+ * and is what the SlopBrick CLI passes in for memory persistence.
  *
  * `read` returns `null` on ENOENT or any other I/O error so the
  * engine can treat missing files as a normal "no data" condition
