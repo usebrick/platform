@@ -53,6 +53,9 @@
 - CORE-03/04 schema parity and CI validation: `549d49af5`, tightened for
   RFC3339 year-zero parity in `116c0e621`; AJV fixtures, runtime validators,
   39 core tests, codegen, and direct tsup pass.
+- CORE-01 cache namespace separation: `e28f636ee`; core freshness data now
+  uses `.slopbrick/cache.json`, isolated from SlopBrick's root incremental
+  cache. Core structure and SlopBrick structure tests pass.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
