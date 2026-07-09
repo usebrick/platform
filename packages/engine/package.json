@@ -2,7 +2,7 @@
   "name": "@usebrick/engine",
   "version": "0.14.5",
   "private": true,
-  "description": "Pure scanning engine. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs.",
+  "description": "Scanning engine with pure parsing/scoring APIs and explicit filesystem adapters. Reusable from CLI, MCP, and future web IDEs.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

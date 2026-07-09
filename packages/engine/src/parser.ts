@@ -347,7 +347,15 @@ async function writeCacheWithRoot(
   await writeFile(path, JSON.stringify(result), 'utf8');
 }
 
-function parseSource(source: string, filePath: string): ParseResult {
+/**
+ * Parse source text without performing filesystem I/O.
+ *
+ * This is the pure parser entry point. Hosts that already own the source
+ * bytes (workers, editors, MCP adapters) should call this function directly;
+ * `parseFile` below is retained as the compatibility adapter for callers
+ * that still provide a path and need the engine's optional on-disk cache.
+ */
+export function parseSource(source: string, filePath: string): ParseResult {
   // Use basename to handle extension-less files whose last '.' may not be an
   // extension separator (e.g. file `bkg.foo__bar.tsx` → ext = "tsx").
   const base = filePath.split('/').pop() ?? filePath;

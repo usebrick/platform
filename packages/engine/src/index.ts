@@ -1,6 +1,8 @@
 /**
- * v0.14.5+: @usebrick/engine — pure scanning engine.
- * No I/O, no console.log, no process.exit.
+ * v0.14.5+: @usebrick/engine — scanning engine.
+ * Pure parsing/scoring APIs are exported alongside explicit compatibility
+ * adapters (`parseFile`, `findSimilarFunctions`, and MemoryIO persistence).
+ * The engine never logs or exits the process.
  *
  * Tasks B.2-B.7 move the pure functions from
  * packages/slopbrick/src/engine/ here.
@@ -28,6 +30,7 @@ export {
 // env-var reads in the engine.
 export {
   parseFile,
+  parseSource,
   type ParseResult,
   type ParseFileOptions,
   type ParserCacheConfig,

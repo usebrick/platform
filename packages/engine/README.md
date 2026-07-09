@@ -1,6 +1,6 @@
 # @usebrick/engine
 
-The pure scanning engine extracted from `slopbrick`. No I/O, no `console.log`, no `process.exit`. Reusable from the CLI, the MCP server, and future web IDEs.
+The scanning engine extracted from `slopbrick`. Pure parsing and scoring functions are reusable from the CLI, MCP server, and future web IDEs; compatibility adapters that explicitly perform filesystem I/O are called out below.
 
 > **v0.15.0:** Extracted from `slopbrick/src/engine/`. The engine is now its
 > own workspace package, consumed by `slopbrick` as a workspace dep. The
@@ -14,9 +14,14 @@ Pure functions that:
 - produce structured outputs (LRs, scores, classifications)
 - have no filesystem, network, or process side effects
 
+Pure core functions do not perform I/O. The package also retains a small set of
+explicit compatibility adapters for existing callers; these are listed in the
+API section and are the only filesystem-touching entry points.
+
 ## What does NOT live here
 
-Anything that touches the filesystem (`fs.readFile`, `fs.writeFile`), the process (`process.exit`, `process.argv`), or stdout/stderr (`console.log`). Those concerns live in the slopbrick CLI and MCP server.
+CLI orchestration, process control (`process.exit`, `process.argv`), and
+stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 
 ## Public API (`packages/engine/src/index.ts`)
 
@@ -27,7 +32,10 @@ Anything that touches the filesystem (`fs.readFile`, `fs.writeFile`), the proces
 - `loadHealth` / `saveHealth` — health snapshot persistence
 - `computeLikelihoodRatios(ruleIds, corpus)` — LR math
 - `bayesianPosterior(firedRuleIds, lrs)` — naive Bayes update
-- `parseFile(filePath, content)` — AST parsing
+- `parseSource(source, filePath)` — pure AST parsing (no filesystem access)
+- `parseFile(filePath, opts?)` — compatibility filesystem adapter with optional AST cache
+- `extractSignatures(source, filePath, workspaceDir)` — pure signature extraction
+- `findSimilarFunctions(query, options?)` — workspace adapter that reads files before using the pure similarity functions
 - 30+ more exports
 
 ## Build dependency

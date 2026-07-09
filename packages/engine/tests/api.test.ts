@@ -34,6 +34,7 @@ describe('@usebrick/engine public API', () => {
 
       // v0.15.0 B.3 — SWC-backed source file parser (parser.ts).
       'parseFile',
+      'parseSource',
 
       // v0.15.0 B.4 — Memory Platform bridge (structure/index.ts).
       'saveInventory',
