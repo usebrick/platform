@@ -196,7 +196,7 @@ function makeInventoryFixture(dir: string): InventoryFile {
     {
       name: 'Button',
       files: [fileA],
-      fingerprint: 'fp_button_00000000',
+      fingerprint: '1111111111111111',
       hooks: ['useState'],
       props: ['onClick', 'children'],
       line: 1,
@@ -205,7 +205,7 @@ function makeInventoryFixture(dir: string): InventoryFile {
     {
       name: 'ConfirmModal',
       files: [fileB],
-      fingerprint: 'fp_modal_00000000',
+      fingerprint: '2222222222222222',
       hooks: [],
       props: ['open', 'onClose'],
       line: 1,
