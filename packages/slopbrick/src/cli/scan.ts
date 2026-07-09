@@ -323,7 +323,16 @@ export async function runScan(
       process.exit(2);
     }
   }
-  registry.loadBuiltins(options.rule);
+  // v0.10.2 (Phase 10): validate --include-rule values so the user
+  // gets a clear error rather than an empty rule registry.
+  if (options.includeRules && options.includeRules.length > 0) {
+    const unknown = options.includeRules.filter((id) => !builtinRules.some((r) => r.id === id));
+    if (unknown.length > 0) {
+      logger.error(`Unknown --include-rule value(s): ${unknown.join(', ')}. Run \`slopbrick rules\` to see available rules.`);
+      process.exit(2);
+    }
+  }
+  registry.loadBuiltins(options.rule, { includeRules: options.includeRules, excludeRules: options.excludeRules });
   if (telemetryEnabled) {
     const flywheelState = loadFlywheelState(cwd);
     // v0.14.5g: skip autotune entries for rules marked defaultOff in
@@ -383,7 +392,10 @@ export async function runScan(
   if (files.length <= INLINE_THRESHOLD) {
     results = [];
     for (const filePath of files) {
-      results.push(await scanFile(filePath, config, undefined, cwd));
+      // v0.10.2 (Phase 10): pass the registry so --include-rule /
+      // --exclude-rule actually take effect in the inline path too.
+      // Without this, single-file scans ignore the include filter.
+      results.push(await scanFile(filePath, config, registry, cwd));
     }
   } else {
     const pool = new WorkerPool({
@@ -395,7 +407,6 @@ export async function runScan(
     results = await pool.scan(files, showProgress ? renderProgress : undefined);
   }
   if (showProgress) {
-    clearProgress();
   }
 
   for (const result of results) {
@@ -524,13 +535,11 @@ export async function runScan(
       : 'complete' as const;
   // Keep completion metadata in the JSON report without changing the shared
   // ProjectReport wire type in this task; formatJson spreads enumerable fields.
-  Object.assign(report, {
-    completionStatus,
-    requested: requestedFiles,
-    analyzed: analyzedFiles,
-    failed: failedFiles,
-    skipped: skippedFiles,
-  });
+  report.completionStatus = completionStatus;
+  report.requested = requestedFiles;
+  report.analyzed = analyzedFiles;
+  report.failed = failedFiles;
+  report.skipped = skippedFiles;
 
   // v0.42.0 (post-cleanup follow-up): the --incremental cache
   // was loaded but never written. The bug: a user runs --incremental

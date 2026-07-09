@@ -22,6 +22,12 @@ import type {
 import type { BaselineMeta, ResearchMetrics } from './baseline';
 
 export interface ProjectReport {
+  /** CLI scan completion extension; absent in legacy/programmatic reports. */
+  completionStatus?: 'complete' | 'empty' | 'partial';
+  requested?: number;
+  analyzed?: number;
+  failed?: number;
+  skipped?: number;
   version: string;
   generatedAt: string;
   configPath?: string;

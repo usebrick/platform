@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
 import { runScan } from '../../src/cli/scan';
 
@@ -12,6 +13,7 @@ describe('scan completion status', () => {
 
   it('reports a normal scan as complete with requested/analyzed counts', async () => {
     const dir = createTmpDir(); dirs.push(dir);
+    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
     mkdirSync(join(dir, 'src'));
     writeFileSync(join(dir, 'src', 'a.ts'), 'export const a = 1;\n');
     const result = await runScan({ workspace: dir, quiet: true });
@@ -42,5 +44,20 @@ describe('scan completion status', () => {
     expect(result.scanStats.status).toBe('partial');
     expect(result.scanStats.failed).toBe(1);
     expect(result.scanStats.analyzed).toBe(0);
+  });
+
+  it.each([
+    ['--fix'], ['--fix', '--dry-run'], ['--heatmap'],
+  ])('keeps empty %s scans non-zero', async (...args: string[]) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await run(['--workspace', dir, ...args]);
+    expect(result.exitCode).toBe(1);
+  });
+
+  it.each(['--staged', '--changed'])('treats empty %s as a successful no-op', async (flag) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+    const result = await run(['--workspace', dir, flag, '--quiet']);
+    expect(result.exitCode).toBe(0);
   });
 });
