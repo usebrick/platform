@@ -236,7 +236,12 @@ export function aggregateReport(
         SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1);
     }
   }
-  const denominator = componentCount || 1;
+  // Use analyzed files as the exposure denominator. Component counts are a
+  // UI/framework-specific implementation detail and are zero for backend,
+  // CLI, and library files; using them here made those scans incomparable
+  // (and could amplify a single backend file's score). An empty scan keeps a
+  // neutral denominator so all bucket scores remain at their clean baseline.
+  const denominator = scores.length || 1;
   // Raw slop amount per bucket (0=clean, 100=saturated). Feeds the
   // AI Slop Score headline directly. Higher = more slop detected.
   const slopAmount: Record<SubscoreBucket, number> = {

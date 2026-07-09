@@ -384,6 +384,27 @@ describe('aggregateReport', () => {
     expect(report.categoryScores.ai).toBeGreaterThan(0);
   });
 
+  it('uses analyzed-file count, not UI component count, as slop exposure denominator', () => {
+    const issueGroup = {
+      filePath: 'service.py',
+      issues: [{
+        ruleId: 'logic/boundary-violation',
+        category: 'logic' as const,
+        severity: 'high' as const,
+        aiSpecific: true,
+      }],
+    };
+    const files = [
+      scoreFile(fileResult({ filePath: 'service.py', componentCount: 0 }), 1, DEFAULT_CONFIG),
+      scoreFile(fileResult({ filePath: 'other.py', componentCount: 0 }), 1, DEFAULT_CONFIG),
+    ];
+    const report = aggregateReport(files, [issueGroup, { filePath: 'other.py', issues: [] }], DEFAULT_CONFIG);
+    const expected = Math.log10(1 + SEVERITY_WEIGHTS.high / files.length) / Math.log10(11) * 100;
+
+    expect(report.boundaryScore).toBeCloseTo(100 - expected, 8);
+    expect(report.componentCount).toBe(0);
+  });
+
   it('categoryScores stay bounded under self-scan-sized totals via log-saturation (v0.14.5h → v0.39.0)', () => {
     // Real self-scan numbers (slopbrick's own repo, 0 components):
     //   ai: 167 raw points, visual: 70, logic: 68
