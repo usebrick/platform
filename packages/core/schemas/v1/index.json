@@ -47,7 +47,7 @@
     "structure": {
       "$id": "https://usebrick.dev/schemas/v1/structure.schema.json",
       "file": "structure.schema.json",
-      "description": "Agent-readable markdown summary (rendered from inventory + constitution).",
+      "description": "Structured JSON projection of inventory + constitution; structure.md is a derived Markdown rendering.",
       "producedBy": [
         "slopbrick scan (auto-renders to .slopbrick/structure.md)"
       ],

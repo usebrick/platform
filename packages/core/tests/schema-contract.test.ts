@@ -30,6 +30,11 @@ describe('schema contract and package delivery', () => {
     expect(schema.description).toContain('structured JSON projection');
     expect(schema.description).toContain('derived');
     expect(schema.description).toContain('structure.md');
+    const index = JSON.parse(readFileSync(join(schemaDir, 'index.json'), 'utf8')) as {
+      schemas: { structure: { description: string } };
+    };
+    expect(index.schemas.structure.description.toLowerCase()).toContain('structured json projection');
+    expect(index.schemas.structure.description).toContain('derived Markdown');
   });
 
   it('validates the canonical structure projection fixture', () => {

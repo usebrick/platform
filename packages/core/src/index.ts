@@ -65,4 +65,7 @@ export type {
 } from './generated/inventory';
 export type { RepositoryStructureConstitution } from './generated/constitution';
 export type { RepositoryStructureHealth } from './generated/health';
-export type { RepositoryStructureStructureMarkdown } from './generated/structure';
+export type {
+  RepositoryStructureStructuredProjection,
+  RepositoryStructureStructuredProjection as RepositoryStructureStructureMarkdown,
+} from './generated/structure';
