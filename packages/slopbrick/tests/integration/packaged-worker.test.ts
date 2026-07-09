@@ -1,11 +1,37 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const binPath = resolve(__dirname, '..', '..', 'bin', 'slopbrick.js');
+const packagePath = resolve(__dirname, '..', '..', 'package.json');
+const packageRoot = resolve(__dirname, '..', '..');
 const tempDirs: string[] = [];
+
+interface PackageManifest {
+  bin: { slopbrick: string };
+  main: string;
+  module: string;
+  types: string;
+  exports: {
+    '.': {
+      types: string;
+      import: string;
+      require: string;
+    };
+  };
+}
+
+function readPackageManifest(): PackageManifest {
+  return JSON.parse(readFileSync(packagePath, 'utf8')) as PackageManifest;
+}
+
+function packageArtifact(path: string): string {
+  return resolve(packageRoot, path);
+}
 
 function runPackagedScan(workspace: string): Promise<{
   exitCode: number;
@@ -55,6 +81,36 @@ afterEach(() => {
 });
 
 describe('packaged default worker', () => {
+  it('keeps declared artifacts, entry points, and the default worker resolvable', async () => {
+    const manifest = readPackageManifest();
+    const entryPoint = manifest.exports['.'];
+
+    expect(manifest.main).toBe('./dist/index.js');
+    expect(manifest.module).toBe('./dist/index.mjs');
+    expect(entryPoint.import).toBe('./dist/index.mjs');
+    expect(entryPoint.require).toBe('./dist/index.js');
+
+    for (const artifact of [
+      manifest.bin.slopbrick,
+      manifest.main,
+      manifest.module,
+      manifest.types,
+      entryPoint.types,
+      entryPoint.import,
+      entryPoint.require,
+    ]) {
+      expect(existsSync(packageArtifact(artifact)), `missing declared artifact: ${artifact}`).toBe(true);
+    }
+
+    expect(existsSync(resolve(packageRoot, 'dist', 'engine', 'worker.js'))).toBe(true);
+
+    const esm = await import(pathToFileURL(packageArtifact(entryPoint.import)).href);
+    expect(esm).toHaveProperty('scanProject');
+
+    const commonjs = createRequire(packagePath)(packageArtifact(entryPoint.require)) as Record<string, unknown>;
+    expect(commonjs).toHaveProperty('scanProject');
+  });
+
   it('scans a multi-file workspace through the built CLI', async () => {
     const workspace = createWorkspace();
     const { exitCode, stdout, stderr } = await runPackagedScan(workspace);
