@@ -80,6 +80,9 @@
 - PKG-01/02 package contracts: `640e6124c` makes declarations self-contained
   for npm consumers; `e8b7a2d4f` restores ESM/CJS artifact parity. Pack-consumer
   tests 2/2, package tsc, dts build, and pack dry-run pass.
+- Gate 3 chunk accounting: `ce6fb90b3` plus `954ce523a` preserve skipped-chunk
+  metadata and reject malformed reports before aggregation. Focused merge,
+  calibrator, and UX tests pass (44 total); calibration provenance remains open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
