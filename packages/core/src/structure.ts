@@ -47,11 +47,6 @@ export function healthPath(workspaceDir: string): string {
   return join(workspaceDir, '.slopbrick', HEALTH_FILENAME);
 }
 
-/** Ensure the `.slopbrick/` directory exists. */
-function ensureSlopbrickDir(workspaceDir: string): void {
-  mkdirSync(join(workspaceDir, '.slopbrick'), { recursive: true });
-}
-
 /**
  * Atomic JSON write: serialize, write to `<path>.tmp`, then rename.
  * On most filesystems `renameSync` is atomic, so a process crash mid-write
@@ -60,7 +55,12 @@ function ensureSlopbrickDir(workspaceDir: string): void {
  * by the same call.
  */
 export function writeJsonAtomic(filePath: string, payload: unknown): void {
-  ensureSlopbrickDir(dirname(filePath));
+  // `filePath` may point at either a `.slopbrick/` artifact or the
+  // top-level incremental cache (`.slopbrick-cache.json`).  Creating a
+  // `.slopbrick` child of `dirname(filePath)` would produce the invalid
+  // `.slopbrick/.slopbrick` nesting when the artifact directory is absent.
+  // Always create exactly the parent directory requested by the caller.
+  mkdirSync(dirname(filePath), { recursive: true });
   const tmp = `${filePath}.tmp`;
   writeFileSync(tmp, JSON.stringify(payload, null, 2), 'utf-8');
   renameSync(tmp, filePath);

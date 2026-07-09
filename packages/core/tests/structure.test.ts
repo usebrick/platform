@@ -99,11 +99,12 @@ describe('memory — loaders/savers', () => {
     expect(loadConstitution(workspace)).toEqual(c);
   });
 
-  it('writeJsonAtomic creates the .slop-audit/ dir if missing', async () => {
+  it('writeJsonAtomic creates exactly the requested parent directory', async () => {
     const { existsSync } = await import('node:fs');
     await rm(join(workspace, '.slopbrick'), { recursive: true, force: true });
     writeJsonAtomic(join(workspace, '.slopbrick', 'x.json'), { ok: true });
     expect(existsSync(join(workspace, '.slopbrick', 'x.json'))).toBe(true);
+    expect(existsSync(join(workspace, '.slopbrick', '.slopbrick'))).toBe(false);
   });
 });
 
