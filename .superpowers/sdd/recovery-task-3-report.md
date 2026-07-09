@@ -25,3 +25,9 @@ The staged file list contains only `ci.ts`, `program.ts`, and the new `ci.test.t
 ## Concerns
 
 The existing working tree contains unrelated changes (including pre-existing scan option edits); they remain outside this commit. The report field for constitution drift is optional at runtime and is read defensively.
+
+## Scope correction
+
+The initial implementation commit (`f94805af8`) accidentally included pre-existing rule-filter normalization and scan/watch casts. Corrective commits `6f769fd7c` and `2090a5ba6` remove those hunks while preserving the current-outcome wiring. `git diff e388b4a0a..HEAD` now contains only the CI command, shared scan outcome, CI tests, and this report; the rule-filter edits remain dirty and unstaged.
+
+Post-correction verification reran the focused suite: 3 files / 25 tests passed, and `node_modules/.bin/tsc --noEmit` exited 0.
