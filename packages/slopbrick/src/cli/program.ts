@@ -108,12 +108,25 @@ import { applyFixes } from '../fix';
 import { saveBaseline, baselinePath, hashConfig } from '../engine/cache';
 import { VERSION } from '../types';
 import type { FileScanResult } from '../types';
+import type { ProjectReport } from '../types';
 // v0.18.4: --help clusters. See help.ts for category mapping.
 import { formatGroupedHelp } from './help';
 // v0.24.0 (Workstream C): opt-in network beacon. Fire-and-forget
 // from the scan action; `runScan` itself stays network-free so
 // `scanProject` (library API) and `ci`/`watch` are unaffected.
 import { BeaconEmitter } from '../beacon';
+
+/** Current in-memory result returned when the shared scan action is invoked by CI. */
+export interface ScanActionOutcome {
+  report: ProjectReport;
+  config: ResolvedConfig;
+  scanStats: import('./types').ScanStats;
+  /** Exit recommendation from the scan's own threshold gate. */
+  baseExitCode: 0 | 1;
+  /** Final scan recommendation, including completion/no-increase gates. */
+  exitCode: 0 | 1 | 2;
+  noIncreaseFailure: boolean;
+}
 
 //   0 = pass (slopIndex below threshold)
 //   1 = threshold breach (blocks git hooks)
@@ -249,12 +262,13 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
     const scanAction = async (
       paths: string[],
-      _options: CliGlobalOptions,
+      requestedOptions: CliGlobalOptions,
       command: Command,
-    ): Promise<void> => {
-      const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
+    ): Promise<ScanActionOutcome | void> => {
+      const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean; includeRule?: string[]; excludeRule?: string[] };
       const options: CliGlobalOptions = {
         ...rawGlobals,
+        ...requestedOptions,
         noIncrease: rawGlobals.increase === false,
       };
 
@@ -483,6 +497,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       if (!options.quiet && !machineReadableStdout) {
         logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
       }
+      if (invokedByCi) {
+        return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure };
+      }
       process.exit(exitCode);
     };
 
@@ -527,7 +544,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // v0.18.x (R-H1): watch action moved to ./commands/watch.ts
     // scanAction is the closure defined above; passed in to avoid
     // moving the ~160-line scan body into the watch module.
-    registerWatch(program, scanAction);
+    registerWatch(program, scanAction as unknown as (paths: string[], options: CliGlobalOptions, command: Command) => Promise<void>);
 
     // v0.18.x (R-H1): lock action moved to ./commands/lock.ts
     registerLock(program);
@@ -570,7 +587,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // v0.18.x (R-H1): scan (default) action moved to ./commands/scan.ts
     // scanAction is the closure defined above; passed in to keep
     // the ~160-line scan body inline (shared with watch and ci).
-    registerScan(program, scanAction);
+    registerScan(program, scanAction as unknown as (paths: string[], options: CliGlobalOptions, command: Command) => Promise<void>);
 
     // v0.18.4 (--help clusters): if the user passed --help-flat,
     // restore Commander's default helpInformation (the standard
