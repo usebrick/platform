@@ -27,6 +27,7 @@ interface ChunkReport {
   issues: IssueLite[];
   _calError?: boolean;
   _calExitCode?: number;
+  _firstFile?: string;
 }
 
 interface RuleAgg {
@@ -99,9 +100,9 @@ export function loadChunks(dir: string, polarity: 'positive' | 'negative'): { ru
   }
   for (const f of files) {
     const index = parseInt(f.replace(/^chunk-/, '').replace(/\.json$/, ''), 10);
-    let report: ChunkReport;
+    let report: unknown;
     try {
-      report = JSON.parse(readFileSync(join(dir, f), 'utf8')) as ChunkReport;
+      report = JSON.parse(readFileSync(join(dir, f), 'utf8')) as unknown;
     } catch {
       // A corrupt or truncated chunk is a failed chunk, not an absent one.
       // Omitting it silently biases the denominator and makes an incomplete
@@ -114,15 +115,38 @@ export function loadChunks(dir: string, polarity: 'positive' | 'negative'): { ru
       });
       continue;
     }
-    if (report._calError) {
+
+    const metadata = report !== null && typeof report === 'object' ? report as Record<string, unknown> : {};
+    const firstFile = typeof metadata._firstFile === 'string' ? metadata._firstFile : '';
+    if (metadata._calError === true) {
       skipped.push({
         polarity,
         index: Number.isFinite(index) ? index : 0,
-        firstFile: '',
-        reason: report._calExitCode === 124 ? 'timeout' : 'error',
+        firstFile,
+        reason: metadata._calExitCode === 124 ? 'timeout' : 'error',
       });
       continue;
     }
+
+    const issues = metadata.issues;
+    const validReport = Number.isFinite(metadata.fileCount) &&
+      typeof metadata.fileCount === 'number' && metadata.fileCount >= 0 &&
+      Array.isArray(issues) && issues.every((issue) => {
+        if (issue === null || typeof issue !== 'object') return false;
+        const candidate = issue as Record<string, unknown>;
+        return typeof candidate.ruleId === 'string' &&
+          (candidate.filePath === undefined || typeof candidate.filePath === 'string');
+      });
+    if (!validReport) {
+      skipped.push({
+        polarity,
+        index: Number.isFinite(index) ? index : 0,
+        firstFile,
+        reason: 'error',
+      });
+      continue;
+    }
+    report = metadata as unknown as ChunkReport;
     fileCount += report.fileCount;
     for (const issue of report.issues) {
       let agg = rules.get(issue.ruleId);
