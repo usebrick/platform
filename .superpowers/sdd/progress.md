@@ -55,6 +55,11 @@
   39 core tests, codegen, and direct tsup pass.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
+- Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
+  corrected in `818207d18`; structure tests pass (37/37). Focused score,
+  parser, structural-clone, category-separation, and structure verification
+  totals 99 tests passing. DB calibration still cannot run to completion from
+  the current external corpus/cache state.
 
 ### Recovery tranche evidence (2026-07-09)
 
