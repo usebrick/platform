@@ -36,8 +36,17 @@
   reinstall with the repo-pinned pnpm 9; no source defect is asserted yet.
 - Both fresh self-scans are complete but exit 1 because `meanSlop` is 25 > 15;
   this is recorded evidence, not a release pass.
-- Gate 0, score/CLI/MCP/core/engine contracts, v10.3 calibration/provenance,
+- Gate 0, remaining score/CLI/MCP/core/engine contracts, v10.3 calibration/provenance,
   and site/operations/release gates remain open.
+
+### Subsequent gate work (2026-07-09)
+
+- Gate 0 containment evidence: `58b5a2202`, `0113440c7` (branch isolation,
+  artifact hashes, dirty-tree classification, and explicit no-release decision).
+- SCORE-03 category separation: `0ed1fe300`; 41 focused metrics/category tests
+  and package TypeScript validation pass. Full Gate 1 remains open.
+- CORE-02 atomic artifact paths: `44db5737a`; core regression tests and
+  TypeScript validation pass. Remaining schema/engine/MCP contracts remain open.
 
 ### Recovery tranche evidence (2026-07-09)
 
