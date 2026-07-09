@@ -35,6 +35,12 @@ describe('memory-types — validators', () => {
       ).toBe(false);
     });
 
+    it('rejects categories outside the canonical schema enum', () => {
+      expect(
+        isStructurePattern({ category: 'unknown', name: 'x', imports: ['x'], fileCount: 1 }),
+      ).toBe(false);
+    });
+
     it('rejects null', () => {
       expect(isStructurePattern(null)).toBe(false);
     });

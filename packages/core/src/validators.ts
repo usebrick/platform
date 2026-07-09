@@ -62,10 +62,26 @@ function isNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+const STRUCTURE_PATTERN_CATEGORIES = new Set([
+  'stateManagement',
+  'dataFetching',
+  'uiLibrary',
+  'styling',
+  'forms',
+  'routing',
+  'modal',
+  'button',
+  'api',
+  'service',
+  'route',
+  'ormModel',
+]);
+
 export function isStructurePattern(value: unknown): value is StructurePattern {
   if (!isRecord(value)) return false;
   return (
     typeof value.category === 'string' &&
+    STRUCTURE_PATTERN_CATEGORIES.has(value.category) &&
     typeof value.name === 'string' &&
     isStringArray(value.imports) &&
     isNumber(value.fileCount)
