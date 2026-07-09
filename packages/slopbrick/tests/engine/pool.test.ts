@@ -335,6 +335,45 @@ parentPort.postMessage({ type: 'ready' });
     }
   });
 
+  it('returns every file when a worker sends duplicate ready notifications', async () => {
+    vi.useFakeTimers();
+    try {
+      const worker = new ControlledWorker();
+      const files = ['first.tsx', 'second.tsx', 'third.tsx'];
+      const result = (filePath: string) => ({
+        type: 'result',
+        result: { filePath, componentCount: 1, issues: [], gapValues: [], styleSources: [] },
+      });
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript: 'controlled-worker.cjs',
+        workerFactory: () => worker as never,
+      });
+      const scan = pool.scan(files);
+
+      worker.emit('message', { type: 'ready' });
+      worker.emit('message', { type: 'ready' });
+      expect(worker.postMessage).toHaveBeenCalledTimes(1);
+      expect(worker.postMessage).toHaveBeenLastCalledWith({ filePath: files[0] });
+
+      worker.emit('message', result(files[0]!));
+      worker.emit('message', { type: 'ready' });
+      worker.emit('message', result(files[1]!));
+      worker.emit('message', { type: 'ready' });
+      worker.emit('message', result(files[2]!));
+
+      await expect(scan).resolves.toMatchObject([
+        { filePath: files[0], componentCount: 1 },
+        { filePath: files[1], componentCount: 1 },
+        { filePath: files[2], componentCount: 1 },
+      ]);
+      expect(worker.postMessage).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('cleans up when constructing a worker throws synchronously', async () => {
     vi.useFakeTimers();
     try {
@@ -344,7 +383,9 @@ parentPort.postMessage({ type: 'ready' });
         workerScript: 'relative-worker.cjs',
       });
 
-      await expect(pool.scan(['invalid-worker.tsx'])).rejects.toThrow(/absolute path|ERR_WORKER_PATH/i);
+      await expect(pool.scan(['invalid-worker.tsx'])).rejects.toThrow(
+        /Scan workers could not start:.*absolute path|Scan workers could not start:.*ERR_WORKER_PATH/i,
+      );
       expect(vi.getTimerCount()).toBe(0);
     } finally {
       vi.useRealTimers();

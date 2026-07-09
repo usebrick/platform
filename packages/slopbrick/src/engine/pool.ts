@@ -55,7 +55,7 @@ function nodeVersionAtLeast(major: number, minor: number, patch: number): boolea
 }
 
 function isEsmWorkerScript(script: string): boolean {
-  return script.endsWith('.mjs') || (!script.endsWith('.cjs') && script.endsWith('.js'));
+  return script.endsWith('.mjs');
 }
 
 export class WorkerPool {
@@ -264,7 +264,8 @@ export class WorkerPool {
             },
           });
         } catch (error) {
-          settleReject(error instanceof Error ? error : new Error(String(error)));
+          const cause = error instanceof Error ? error : new Error(String(error));
+          settleReject(new Error(`Scan workers could not start: ${cause.message}`, { cause }));
           return;
         }
         workers.push(worker);
@@ -283,6 +284,7 @@ export class WorkerPool {
         worker.on('message', (msg: { type?: string; result?: FileScanResult }) => {
           if (settled || handledFailures.has(worker) || !workers.includes(worker)) return;
           if (msg.type === 'ready') {
+            if (inFlight.has(worker)) return;
             clearTimer(worker);
             startingWorkers.delete(worker);
             readyWorkers.add(worker);
