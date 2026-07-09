@@ -26,6 +26,10 @@ import { cppRawNewDeleteRule } from './cpp/raw-new-delete';
 import { csAsyncWithoutAwaitRule } from './cs/async-without-await';
 import { csEmptyCatchBlockRule } from './cs/empty-catch-block';
 import { csSqlStringInterpolationRule } from './cs/sql-string-interpolation';
+import { dartDynamicCallRule } from './dart/dynamic-call';
+import { dartMissingDisposeRule } from './dart/missing-dispose';
+import { dartPrintDebugRule } from './dart/print-debug';
+import { dartUnwrappedFuturesRule } from './dart/unwrapped-futures';
 import { sqlConcatRule } from './db/sql-concat';
 import { deadBranchRule } from './dead/dead-branch';
 import { unreachableRule } from './dead/unreachable';
@@ -143,6 +147,10 @@ export const builtinRules: Rule[] = [
   csAsyncWithoutAwaitRule,
   csEmptyCatchBlockRule,
   csSqlStringInterpolationRule,
+  dartDynamicCallRule,
+  dartMissingDisposeRule,
+  dartPrintDebugRule,
+  dartUnwrappedFuturesRule,
   sqlConcatRule,
   deadBranchRule,
   unreachableRule,

@@ -305,6 +305,15 @@ const RULE_HINTS: Record<string, string> = {
     'Use PDO prepared statements: `$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([$id]);` (v0.43.0 — DORMANT.)',
   'php/empty-catch':
     'At minimum, log: `catch (Exception $e) { error_log($e->getMessage()); }`. Better: re-throw with a wrapper exception. (v0.43.0 — DORMANT.)',
+  // v0.44.0 — Dart rules (DORMANT until v10.2 Dart corpus calibration)
+  'dart/dynamic-call':
+    'Replace `dynamic` and unchecked `as` casts with concrete types, typed parameters, or pattern matching so refactors fail at compile time. (v0.44.0 — DORMANT.)',
+  'dart/missing-dispose':
+    'Dispose every controller, subscription, and focus node in `State.dispose()` (for example, `controller.dispose()`) to prevent Flutter memory leaks. (v0.44.0 — DORMANT.)',
+  'dart/print-debug':
+    'Replace production `print()` calls with `debugPrint()` or a structured logger so release builds avoid unbounded stdout and accidental data disclosure. (v0.44.0 — DORMANT.)',
+  'dart/unwrapped-futures':
+    'Await async calls (`await fetchData()`) or intentionally chain `.then(...)`; otherwise Future errors can be swallowed and execution order becomes nondeterministic. (v0.44.0 — DORMANT.)',
 };
 
 export { CATEGORY_DIRECTIVES, RULE_HINTS };

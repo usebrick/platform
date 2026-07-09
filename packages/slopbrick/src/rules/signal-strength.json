@@ -3727,5 +3727,53 @@
     "_calibrationNote": "v10.2 calibration: rule added but await corpus calibration. Default-off (DORMANT) until v10.2. Target: \u22651.5\u00d7 P/R ratio with <0.5% FPR against the corpus-expansion positive + negative dirs.",
     "aiSpecific": false,
     "_v10Status": "DORMANT (no v10 corpus data yet, calibration pending Phase 2 of v10.2 plan)"
+  },
+  "dart/dynamic-call": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-07-04T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
+    "aiSpecific": false,
+    "_v10Status": "DORMANT (Dart corpus calibration pending)"
+  },
+  "dart/missing-dispose": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-07-04T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
+    "aiSpecific": false,
+    "_v10Status": "DORMANT (Dart corpus calibration pending)"
+  },
+  "dart/print-debug": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-07-04T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
+    "aiSpecific": false,
+    "_v10Status": "DORMANT (Dart corpus calibration pending)"
+  },
+  "dart/unwrapped-futures": {
+    "recall": 0,
+    "fpRate": 0,
+    "ratio": 0,
+    "precision": 0,
+    "lastCalibratedAt": "2026-07-04T00:00:00Z",
+    "verdict": "DORMANT",
+    "defaultOff": true,
+    "_calibrationNote": "v10.2 calibration pending: Dart corpus calibration has not run yet; metrics remain zero and this rule stays default-off.",
+    "aiSpecific": false,
+    "_v10Status": "DORMANT (Dart corpus calibration pending)"
   }
 }
