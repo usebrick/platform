@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -285,6 +285,45 @@ describe('buildPatternInventory', () => {
       expect(inv.scannedFiles).toBe(2);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('MCP file tools workspace boundary', () => {
+  it('scans a workspace-relative file and rejects traversal outside the workspace', async () => {
+    const dir = freshDir();
+    const outside = freshDir();
+    try {
+      writeFile(dir, 'src/example.ts', 'export const value = 1;');
+      writeFile(outside, 'secret.ts', 'export const secret = true;');
+      const ctx = { cwd: dir, rules: [], config: TEST_CONFIG };
+
+      const inside = await handleToolCall('slop_scan_file', { path: 'src/example.ts' }, ctx);
+      expect(inside.isError).toBeFalsy();
+      expect(JSON.parse(inside.content[0]!.text).filePath).toBe(join(dir, 'src/example.ts'));
+
+      const traversal = await handleToolCall('slop_scan_file', { path: '../' + outside.split('/').pop() + '/secret.ts' }, ctx);
+      expect(traversal.isError).toBe(true);
+      expect(traversal.content[0]!.text).toContain('inside the MCP workspace');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects symlinks that resolve outside the workspace for constitution checks', async () => {
+    const dir = freshDir();
+    const outside = freshDir();
+    try {
+      const secret = writeFile(outside, 'secret.ts', `import 'moment';`);
+      symlinkSync(secret, join(dir, 'linked.ts'));
+      const ctx = { cwd: dir, rules: [], config: TEST_CONFIG };
+      const result = await handleToolCall('slop_check_constitution', { path: 'linked.ts' }, ctx);
+      expect(result.isError).toBe(true);
+      expect(result.content[0]!.text).toContain('inside the MCP workspace');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
     }
   });
 });

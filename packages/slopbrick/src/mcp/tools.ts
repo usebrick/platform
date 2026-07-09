@@ -1,7 +1,7 @@
 // Round 17: MCP tool implementations.
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, realpathSync } from 'node:fs';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { scanFile } from '../engine/worker.js';
 import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore } from '../engine/architecture-score.js';
@@ -174,10 +174,50 @@ function toolError(message: string): ToolResult {
   };
 }
 
+/**
+ * Resolve an MCP file argument inside the server workspace. MCP clients may
+ * provide either an absolute path or a path relative to `ctx.cwd`, but they
+ * must not be able to make the server read arbitrary files from the host.
+ * Resolve symlinks when the target exists so a workspace link cannot escape
+ * the configured root either.
+ */
+function resolveWorkspaceFile(cwd: string, input: string): string | null {
+  const root = resolve(cwd);
+  const candidate = resolve(root, input);
+  let rootBoundary = root;
+  let candidateBoundary = candidate;
+  let candidateExists = false;
+  try {
+    rootBoundary = realpathSync(root);
+  } catch {
+    // The workspace should normally exist; retain the lexical path so the
+    // normal file-read error remains useful if a caller supplies a bad cwd.
+  }
+  try {
+    candidateBoundary = realpathSync(candidate);
+    candidateExists = true;
+  } catch {
+    // Let the caller report a missing-file error, but still enforce the
+    // lexical boundary below.
+  }
+  // If the target does not exist, compare lexical paths. This preserves the
+  // useful "Cannot read file" error for missing in-workspace files even on
+  // macOS, where `/var` is a symlink to `/private/var`.
+  if (!candidateExists) {
+    rootBoundary = root;
+    candidateBoundary = candidate;
+  }
+  const rel = relative(rootBoundary, candidateBoundary);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return null;
+  return candidate;
+}
+
 async function runScanFile(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const path = args.path as string | undefined;
   if (!path) return toolError('Missing required argument: path');
-  const result = await scanFile(path, ctx.config);
+  const absPath = resolveWorkspaceFile(ctx.cwd, path);
+  if (!absPath) return toolError('Path must be inside the MCP workspace');
+  const result = await scanFile(absPath, ctx.config, undefined, ctx.cwd);
   const simplified = {
     filePath: result.filePath,
     componentCount: result.componentCount,
@@ -432,7 +472,8 @@ async function runGovernance(
 function runCheckConstitution(args: Record<string, unknown>, ctx: ToolContext): ToolResult {
   const path = args.path as string | undefined;
   if (!path) return toolError('Missing required argument: path');
-  const absPath = resolve(ctx.cwd, path);
+  const absPath = resolveWorkspaceFile(ctx.cwd, path);
+  if (!absPath) return toolError('Path must be inside the MCP workspace');
   let source: string;
   try {
     source = readFileSync(absPath, 'utf-8');
