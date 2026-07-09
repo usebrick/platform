@@ -31,4 +31,4 @@ The follow-up correction removed the pre-existing includeRule/excludeRule normal
 
 ## Partial filtered scan correction
 
-Commit `fix(slopbrick): reject partial filtered scans` restricts the staged/changed no-op exception to `status === 'empty'`. Parse-error partial scans remain nonzero across normal, fix, dry-run, and heatmap paths. Regression coverage includes staged and changed parse-error workspaces. Verification: completion/onboarding/packaged-worker tests 21 passed; `tsc --noEmit` passed.
+Commit `fix(slopbrick): reject partial filtered scans` restricts the staged/changed no-op exception to `status === 'empty'`. Parse-error partial scans remain nonzero across normal, fix, dry-run, and heatmap paths. Regression coverage includes staged and changed parse-error workspaces. Verification: completion/onboarding/packaged-worker tests 21 passed; `tsc --noEmit` passed. Boundary correction commits `72485e659` and `80d4448cf` removed accidentally included unrelated CLI hunks; they remain dirty in the worktree.
