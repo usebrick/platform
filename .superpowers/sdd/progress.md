@@ -77,6 +77,9 @@
   calibration paths as internal context; C# routing landed in `5e49764c8`.
 - C# language routing independently approved: parser/discovery/rule tests 9/9
   across engine and SlopBrick, with package TypeScript validation passing.
+- PKG-01/02 package contracts: `640e6124c` makes declarations self-contained
+  for npm consumers; `e8b7a2d4f` restores ESM/CJS artifact parity. Pack-consumer
+  tests 2/2, package tsc, dts build, and pack dry-run pass.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
