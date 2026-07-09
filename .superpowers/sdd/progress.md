@@ -63,6 +63,12 @@
 - SCORE-05 denominator correction: `7a81a4158` uses analyzed file count for
   score exposure and passes 38 metrics tests; explicit denominator metadata in
   all renderers remains open.
+- ENGINE-01 pure boundary: `01aa7a7be` plus docs correction `fc91db6d9` expose
+  pure `parseSource` and document filesystem adapters; engine 47/47, typecheck,
+  and build pass.
+- MCP workspace confinement: `eb7303272` plus TOCTOU correction `77077e31f`;
+  MCP patterns 39/39 and slopbrick typecheck pass. Config/result parity and
+  protocol-wide MCP contracts remain open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
