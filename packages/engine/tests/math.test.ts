@@ -110,6 +110,16 @@ describe('computeLikelihoodRatios', () => {
     expect(Number.isFinite(lrs[0]!.lr)).toBe(true);
     expect(lrs[0]!.lr).toBeGreaterThan(0);
   });
+
+  it('deduplicates repeated rule IDs because a fire set is set-valued', () => {
+    const once = computeLikelihoodRatios(['ai/strong'], SIGNAL, CORPUS);
+    const repeated = computeLikelihoodRatios(
+      ['ai/strong', 'ai/strong', 'ai/strong'],
+      SIGNAL,
+      CORPUS,
+    );
+    expect(repeated).toEqual(once);
+  });
 });
 
 describe('bayesianPosterior', () => {
@@ -143,6 +153,13 @@ describe('bayesianPosterior', () => {
     expect(posterior).toBeLessThan(prior.pAI);
   });
 
+  it('is invariant to duplicate fires', () => {
+    const lrs = computeLikelihoodRatios(['ai/strong'], SIGNAL, CORPUS);
+    const once = bayesianPosterior(['ai/strong'], lrs);
+    const repeated = bayesianPosterior(['ai/strong', 'ai/strong'], lrs);
+    expect(repeated).toBeCloseTo(once, 12);
+  });
+
   it('posterior is always in [0, 1] regardless of inputs', () => {
     const lrs = computeLikelihoodRatios(['ai/strong'], SIGNAL, CORPUS);
     for (const prior of [
@@ -172,6 +189,15 @@ describe('combineFireSet (end-to-end)', () => {
     const one = combineFireSet(['ai/strong-a'], twoStrong, CORPUS, DEFAULT_PRIOR);
     const two = combineFireSet(['ai/strong-a', 'ai/strong-b'], twoStrong, CORPUS, DEFAULT_PRIOR);
     expect(two.posterior).toBeGreaterThan(one.posterior);
+  });
+
+  it('reports unique matched rules and posterior for repeated fires', () => {
+    const once = combineFireSet(['ai/strong'], SIGNAL, CORPUS);
+    const repeated = combineFireSet(['ai/strong', 'ai/strong'], SIGNAL, CORPUS);
+    expect(repeated.posterior).toBeCloseTo(once.posterior, 12);
+    expect(repeated.matchedRules).toBe(once.matchedRules);
+    expect(repeated.totalLogLr).toBeCloseTo(once.totalLogLr, 12);
+    expect(repeated.perRuleLrs).toHaveLength(once.perRuleLrs.length);
   });
 });
 

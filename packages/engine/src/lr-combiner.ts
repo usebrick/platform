@@ -120,7 +120,12 @@ export function computeLikelihoodRatios(
   const nPos = corpus?.nPositive ?? 76787;
   const nNeg = corpus?.nNegative ?? 86983;
   const out: RuleLikelihoodRatio[] = [];
-  for (const id of ruleIds) {
+  // A fire set is a set semantically: a rule can fire many times in one
+  // file, but its calibrated evidence must only be applied once. Deduping
+  // here keeps all downstream consumers (posterior, counts, and reporting)
+  // invariant to repeated rule IDs while preserving first-seen order.
+  const uniqueRuleIds = [...new Set(ruleIds)];
+  for (const id of uniqueRuleIds) {
     const s = signalData[id];
     if (!s) continue;
     const tp = s.recall * nPos;
@@ -158,7 +163,7 @@ export function bayesianPosterior(
   const logPriorOdds = Math.log(prior.pAI / prior.pHuman);
   let logLrSum = 0;
   let matchedCount = 0;
-  for (const id of firedRuleIds) {
+  for (const id of new Set(firedRuleIds)) {
     const lr = lrByRule.get(id);
     if (!lr) continue;
     logLrSum += lr.logLr;
@@ -190,11 +195,11 @@ export function combineFireSet(
 } {
   // Get LRs for all fired rules. If a fired rule has no calibration data,
   // we still report it in perRuleLrs as null and skip it from the sum.
-  const allRelevantRuleIds = firedRuleIds;
+  const allRelevantRuleIds = [...new Set(firedRuleIds)];
   const perRuleLrs = computeLikelihoodRatios(allRelevantRuleIds, signalData, corpus);
   const lrByRule = new Map(perRuleLrs.map((l) => [l.ruleId, l]));
-  const matchedIds = firedRuleIds.filter((id) => lrByRule.has(id));
-  const posterior = bayesianPosterior(firedRuleIds, perRuleLrs, prior);
+  const matchedIds = allRelevantRuleIds.filter((id) => lrByRule.has(id));
+  const posterior = bayesianPosterior(allRelevantRuleIds, perRuleLrs, prior);
   let totalLogLr = 0;
   for (const id of matchedIds) {
     totalLogLr += lrByRule.get(id)!.logLr;
