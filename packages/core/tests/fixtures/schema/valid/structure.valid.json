@@ -1,0 +1,4 @@
+{
+  "frontmatter": {"schemaVersion": "5", "generatedAt": "2026-07-09T00:00:00.000Z", "workspace": "/tmp/project"},
+  "sections": [{"id": "patterns", "title": "Patterns", "body": "- zustand"}]
+}

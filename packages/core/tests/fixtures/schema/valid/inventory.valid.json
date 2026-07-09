@@ -1,0 +1,9 @@
+{
+  "version": "5",
+  "generatedAt": "2026-07-09T00:00:00.000Z",
+  "workspace": "/tmp/project",
+  "scannedFiles": 1,
+  "scanDurationMs": 10,
+  "patterns": [{"category": "stateManagement", "name": "zustand", "imports": ["zustand"], "fileCount": 1}],
+  "components": [{"name": "Button", "files": ["src/Button.tsx"], "fingerprint": "0123456789abcdef", "hooks": [], "props": [], "line": 1, "endLine": 3}]
+}

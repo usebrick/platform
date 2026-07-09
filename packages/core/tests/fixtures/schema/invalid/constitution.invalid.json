@@ -1,0 +1,8 @@
+{
+  "version": "5",
+  "generatedAt": "2026-07-09T00:00:00.000Z",
+  "workspace": "/tmp/project",
+  "declared": {"stateManagement": ""},
+  "forbidden": ["redux", "redux"],
+  "forbiddenPrefixes": ["@legacy"]
+}

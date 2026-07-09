@@ -58,6 +58,42 @@ function isStringArray(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((i) => typeof i === 'string');
 }
 
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.length > 0;
+}
+
+function isUniqueStringArray(v: unknown): v is string[] {
+  return isStringArray(v) && new Set(v).size === v.length;
+}
+
+function isNonEmptyStringArray(v: unknown): v is string[] {
+  return isStringArray(v) && v.every((item) => item.length > 0);
+}
+
+function isUniqueNonEmptyStringArray(v: unknown): v is string[] {
+  return isUniqueStringArray(v) && v.every((item) => item.length > 0);
+}
+
+function isNonNegativeInteger(v: unknown): v is number {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0;
+}
+
+function isPositiveInteger(v: unknown): v is number {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 1;
+}
+
+function isScore(v: unknown): v is number {
+  return isNonNegativeInteger(v) && v <= 100;
+}
+
+function isDateTime(v: unknown): v is string {
+  return (
+    isNonEmptyString(v) &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) &&
+    !Number.isNaN(Date.parse(v))
+  );
+}
+
 function isNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
 }
@@ -82,22 +118,26 @@ export function isStructurePattern(value: unknown): value is StructurePattern {
   return (
     typeof value.category === 'string' &&
     STRUCTURE_PATTERN_CATEGORIES.has(value.category) &&
-    typeof value.name === 'string' &&
-    isStringArray(value.imports) &&
-    isNumber(value.fileCount)
+    isNonEmptyString(value.name) &&
+    isUniqueNonEmptyStringArray(value.imports) &&
+    isNonNegativeInteger(value.fileCount)
   );
 }
 
 export function isComponentFingerprint(value: unknown): value is ComponentFingerprint {
   if (!isRecord(value)) return false;
   return (
-    typeof value.name === 'string' &&
-    isStringArray(value.files) &&
+    isNonEmptyString(value.name) &&
+    isNonEmptyStringArray(value.files) &&
+    value.files.length >= 1 &&
     typeof value.fingerprint === 'string' &&
+    /^[0-9a-f]{16}$/.test(value.fingerprint) &&
     isStringArray(value.hooks) &&
     isStringArray(value.props) &&
-    isNumber(value.line) &&
-    isNumber(value.endLine)
+    new Set(value.hooks).size === value.hooks.length &&
+    new Set(value.props).size === value.props.length &&
+    isPositiveInteger(value.line) &&
+    isPositiveInteger(value.endLine)
   );
 }
 
@@ -113,10 +153,10 @@ function isVersion3(value: unknown): boolean {
 export function isInventoryFile(value: unknown): value is RepositoryStructureInventory {
   if (!isRecord(value)) return false;
   if (!isVersion3(value.version)) return false;
-  if (typeof value.generatedAt !== 'string') return false;
-  if (typeof value.workspace !== 'string') return false;
-  if (!isNumber(value.scannedFiles)) return false;
-  if (!isNumber(value.scanDurationMs)) return false;
+  if (!isDateTime(value.generatedAt)) return false;
+  if (!isNonEmptyString(value.workspace)) return false;
+  if (!isNonNegativeInteger(value.scannedFiles)) return false;
+  if (!isNonNegativeInteger(value.scanDurationMs)) return false;
   if (!Array.isArray(value.patterns) || !value.patterns.every(isStructurePattern)) return false;
   if (!Array.isArray(value.components) || !value.components.every(isComponentFingerprint)) return false;
   return true;
@@ -129,11 +169,13 @@ export function isInventoryFile(value: unknown): value is RepositoryStructureInv
 export function isConstitutionFile(value: unknown): value is RepositoryStructureConstitution {
   if (!isRecord(value)) return false;
   if (!isVersion3(value.version)) return false;
-  if (typeof value.generatedAt !== 'string') return false;
-  if (typeof value.workspace !== 'string') return false;
+  if (!isDateTime(value.generatedAt)) return false;
+  if (!isNonEmptyString(value.workspace)) return false;
   if (!isRecord(value.declared)) return false;
-  if (!isStringArray(value.forbidden)) return false;
-  if (!isStringArray(value.forbiddenPrefixes)) return false;
+  if (!Object.values(value.declared).every(isNonEmptyString)) return false;
+  if (!isUniqueNonEmptyStringArray(value.forbidden)) return false;
+  if (!isUniqueStringArray(value.forbiddenPrefixes)) return false;
+  if (!value.forbiddenPrefixes.every((prefix) => /.+\/$/.test(prefix))) return false;
   return true;
 }
 
@@ -161,8 +203,8 @@ export function isFileMtimeEntry(value: unknown): boolean {
 export function isHealthFile(value: unknown): value is RepositoryStructureHealth {
   if (!isRecord(value)) return false;
   if (!isVersion3(value.version)) return false;
-  if (typeof value.generatedAt !== 'string') return false;
-  if (typeof value.workspace !== 'string') return false;
+  if (!isDateTime(value.generatedAt)) return false;
+  if (!isNonEmptyString(value.workspace)) return false;
   // v0.15.0 U.4: the four headline scores are now the required
   // ones. The legacy `slopIndex` and `categoryScores` are optional
   // for backward compat.
@@ -171,27 +213,28 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
   // its meaning (old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 =
   // 70% slop). Readers handling v4 health.json files must migrate
   // explicitly: invert the value (100 - x) when reading.
-  if (!isNumber(value.aiSlopScore)) return false;
-  if (!isNumber(value.engineeringHygiene)) return false;
-  if (!isNumber(value.security)) return false;
-  if (!isNumber(value.repositoryHealth)) return false;
+  if (!isScore(value.aiSlopScore)) return false;
+  if (!isScore(value.engineeringHygiene)) return false;
+  if (!isScore(value.security)) return false;
+  if (!isScore(value.repositoryHealth)) return false;
   if (!isRecord(value.issueCounts)) return false;
   const counts = value.issueCounts as { high?: unknown; medium?: unknown; low?: unknown };
-  if (!isNumber(counts.high)) return false;
-  if (!isNumber(counts.medium)) return false;
-  if (!isNumber(counts.low)) return false;
-  if (value.slopIndex !== undefined && !isNumber(value.slopIndex)) return false;
+  if (!isNonNegativeInteger(counts.high)) return false;
+  if (!isNonNegativeInteger(counts.medium)) return false;
+  if (!isNonNegativeInteger(counts.low)) return false;
+  if (value.slopIndex !== undefined && !isScore(value.slopIndex)) return false;
   if (value.categoryScores !== undefined) {
     if (!isRecord(value.categoryScores)) return false;
     for (const score of Object.values(value.categoryScores)) {
-      if (!isNumber(score)) return false;
+      if (!isScore(score)) return false;
     }
   }
-  if (value.constitutionDrift !== undefined && !isNumber(value.constitutionDrift)) return false;
+  if (value.constitutionDrift !== undefined && !isNonNegativeInteger(value.constitutionDrift)) return false;
   if (value.topOffenseIds !== undefined) {
-    if (!isStringArray(value.topOffenseIds)) return false;
+    if (!isUniqueNonEmptyStringArray(value.topOffenseIds) || value.topOffenseIds.length > 3) return false;
+    if (!value.topOffenseIds.every((id) => /^[a-z]+\/[a-z-]+$/.test(id))) return false;
   }
-  if (value.scanDurationMs !== undefined && !isNumber(value.scanDurationMs)) return false;
+  if (value.scanDurationMs !== undefined && !isNonNegativeInteger(value.scanDurationMs)) return false;
   // v0.18.2: optional Bayesian composite aggregate. Validate the
   // shape when present (G6 schema/writer/validator coherence).
   // Omitted in v0.18.1 and earlier health.json files; readers
@@ -199,10 +242,10 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
   if (value.compositeScore !== undefined) {
     if (!isRecord(value.compositeScore)) return false;
     const cs = value.compositeScore as { mean?: unknown; max?: unknown; tier?: unknown; fileCount?: unknown };
-    if (typeof cs.mean !== 'number') return false;
-    if (typeof cs.max !== 'number') return false;
+    if (typeof cs.mean !== 'number' || !Number.isFinite(cs.mean) || cs.mean < 0 || cs.mean > 1) return false;
+    if (typeof cs.max !== 'number' || !Number.isFinite(cs.max) || cs.max < 0 || cs.max > 1) return false;
     if (cs.tier !== 'LIKELY_HUMAN' && cs.tier !== 'INCONCLUSIVE' && cs.tier !== 'LIKELY_AI' && cs.tier !== 'VERY_LIKELY_AI') return false;
-    if (typeof cs.fileCount !== 'number') return false;
+    if (!isNonNegativeInteger(cs.fileCount)) return false;
   }
   return true;
 }

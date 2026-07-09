@@ -44,7 +44,7 @@ describe('memory — loaders/savers', () => {
         {
           name: 'Button',
           files: [join(workspace, 'Button.tsx')],
-          fingerprint: 'abc',
+          fingerprint: '0123456789abcdef',
           hooks: ['useState'],
           props: ['onClick'],
           line: 1,

@@ -5,6 +5,7 @@ import {
   isComponentFingerprint,
   isInventoryFile,
   isConstitutionFile,
+  isHealthFile,
   isFileMtimeEntry,
 } from '../src/structure-types';
 
@@ -50,7 +51,7 @@ describe('memory-types — validators', () => {
     const valid = {
       name: 'Button',
       files: ['a.tsx'],
-      fingerprint: 'abc',
+      fingerprint: '0123456789abcdef',
       hooks: ['useState'],
       props: ['onClick'],
       line: 1,
@@ -97,6 +98,20 @@ describe('memory-types — validators', () => {
         }),
       ).toBe(false);
     });
+
+    it('rejects values that violate inventory bounds and formats', () => {
+      expect(isInventoryFile({ ...valid, generatedAt: 'not-a-date' })).toBe(false);
+      expect(isInventoryFile({ ...valid, scannedFiles: 1.5 })).toBe(false);
+      expect(
+        isInventoryFile({
+          ...valid,
+          components: [{
+            name: 'Button', files: ['a.tsx'], fingerprint: 'not-a-fingerprint',
+            hooks: [], props: [], line: 1, endLine: 2,
+          }],
+        }),
+      ).toBe(false);
+    });
   });
 
   describe('isConstitutionFile', () => {
@@ -119,6 +134,29 @@ describe('memory-types — validators', () => {
 
     it('rejects when forbidden is not an array', () => {
       expect(isConstitutionFile({ ...valid, forbidden: 'nope' })).toBe(false);
+    });
+
+    it('rejects forbidden prefixes without a trailing slash', () => {
+      expect(isConstitutionFile({ ...valid, forbiddenPrefixes: ['@scope'] })).toBe(false);
+    });
+  });
+
+  describe('isHealthFile', () => {
+    const valid = {
+      version: STRUCTURE_SCHEMA_VERSION,
+      generatedAt: '2026-06-25T00:00:00.000Z',
+      workspace: '/tmp',
+      aiSlopScore: 10,
+      engineeringHygiene: 90,
+      security: 100,
+      repositoryHealth: 80,
+      issueCounts: { high: 0, medium: 1, low: 2 },
+    };
+
+    it('rejects scores outside the schema range', () => {
+      expect(isHealthFile({ ...valid, aiSlopScore: 101 })).toBe(false);
+      expect(isHealthFile({ ...valid, issueCounts: { high: 1.2, medium: 0, low: 0 } })).toBe(false);
+      expect(isHealthFile({ ...valid, generatedAt: 'not-a-date' })).toBe(false);
     });
   });
 

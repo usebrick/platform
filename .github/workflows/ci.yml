@@ -70,8 +70,5 @@ jobs:
       - name: Test all packages
         run: pnpm -r test
 
-      - name: Validate schemas (future)
-        # When core's JSON Schemas are validated against test fixtures,
-        # this step runs `ajv` (or similar) against the bundled examples.
-        # Stub for now — the schemas are checked by the consuming tests.
-        run: echo "Schema validation stub — schemas checked by consuming tests today"
+      - name: Validate JSON schemas against fixtures
+        run: pnpm --filter '@usebrick/core' validate:schema

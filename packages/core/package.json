@@ -25,7 +25,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "codegen": "tsx scripts/codegen-types.ts",
-    "test:contract": "tsx scripts/verify-codegen-fresh.ts"
+    "test:contract": "tsx scripts/verify-codegen-fresh.ts",
+    "validate:schema": "tsx scripts/validate-schemas.ts"
   },
   "keywords": [
     "usebrick",
@@ -45,6 +46,8 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "json-schema-to-typescript": "^15.0.4",
     "tsup": "^8.5.1",
     "tsx": "^4.19.2",
