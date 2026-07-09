@@ -14,7 +14,7 @@ export default defineConfig({
   platform: 'node',
   splitting: false,
   sourcemap: true,
-  dts: { entry: { index: 'src/index.ts' } },
+  dts: { entry: { index: 'src/index.ts' }, resolve: /^@usebrick\// },
   clean: true,
   external: [
     '@swc/core',
