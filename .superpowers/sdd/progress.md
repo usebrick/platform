@@ -56,6 +56,13 @@
 - CORE-01 cache namespace separation: `e28f636ee`; core freshness data now
   uses `.slopbrick/cache.json`, isolated from SlopBrick's root incremental
   cache. Core structure and SlopBrick structure tests pass.
+- CORE-05/06 structure projection and schema delivery: `fce14364f` plus
+  `a26b91a2a`; index/README/API now agree that structure JSON is canonical and
+  Markdown is derived, with a backward-compatible type alias. Core 44/44,
+  schema fixtures, codegen, and typecheck pass.
+- SCORE-05 denominator correction: `7a81a4158` uses analyzed file count for
+  score exposure and passes 38 metrics tests; explicit denominator metadata in
+  all renderers remains open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
