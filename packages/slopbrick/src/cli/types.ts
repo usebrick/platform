@@ -89,6 +89,16 @@ export interface CliGlobalOptions extends ScanRunOptions {
  * report is rendered.
  */
 export interface ScanStats {
+  /** Outcome of the file scan before threshold evaluation. */
+  status: ScanCompletionStatus;
+  /** Files selected after discovery and all filters. */
+  requested: number;
+  /** Files successfully analyzed by a worker. */
+  analyzed: number;
+  /** Files whose worker result contained a parse error. */
+  failed: number;
+  /** Files omitted because the incremental cache was unchanged. */
+  skipped: number;
   /** UUID v4 generated at the top of `runScan`. */
   scanId: string;
   /** `results.length` — files that ran through the worker pool
@@ -99,6 +109,8 @@ export interface ScanStats {
   /** Wall-clock scan duration in milliseconds (entry → return). */
   durationMs: number;
 }
+
+export type ScanCompletionStatus = 'complete' | 'empty' | 'partial';
 
 export interface ScanRunResult {
   report: import('../types').ProjectReport;

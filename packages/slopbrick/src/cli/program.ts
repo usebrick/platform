@@ -402,9 +402,20 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         process.exit(0);
       }
 
-      renderOutput(report, options, cwd);
-
       let exitCode: 0 | 1 | 2 = thresholdExceeded(report, config) ? 1 : 0;
+      if (scanStats.status !== 'complete') {
+        exitCode = 1;
+        const summary = `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}.`;
+        if (machineReadableStdout) {
+          // JSON/SARIF consumers still receive a parseable report carrying
+          // the completion fields, but never a clean human verdict.
+          renderOutput(report, options, cwd);
+        } else if (!options.quiet) {
+          logger.error(`${summary} Check workspace/include patterns and retry.`);
+        }
+      } else {
+        renderOutput(report, options, cwd);
+      }
       const stagedGatingResult = options.staged ? stagedGating(scores, config, baseline, cwd) : { failed: false };
       if (options.staged && stagedGatingResult.failed) {
         exitCode = 1;

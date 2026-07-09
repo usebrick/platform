@@ -44,8 +44,7 @@ describe('scan — first-time user onboarding (Refactor 9)', () => {
     // to root and returns undefined → onboarding branch fires.
     const { exitCode, stderr } = await run(['--workspace', dir]);
 
-    // Refactor 1 baseline: scan completes cleanly even with 0 files.
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBe(1);
 
     // Required pieces present on stderr.
     expect(stderr).toContain('Repository Coherence Scanner');
@@ -69,7 +68,7 @@ describe('scan — first-time user onboarding (Refactor 9)', () => {
 
     const { exitCode, stderr } = await run(['--workspace', dir]);
 
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBe(1);
 
     // Original 1-line warning IS present.
     expect(stderr).toContain('No source files matched');
@@ -107,7 +106,7 @@ describe('scan — first-time user onboarding (Refactor 9)', () => {
       'json',
     ]);
 
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBe(1);
     expect(() => JSON.parse(stdout)).not.toThrow();
 
     expect(stderr).not.toContain('Repository Coherence Scanner');
@@ -119,7 +118,7 @@ describe('scan — first-time user onboarding (Refactor 9)', () => {
     // --quiet flips `!options.quiet` false → onboarding is suppressed.
     const { exitCode, stderr } = await run(['--workspace', dir, '--quiet']);
 
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBe(1);
 
     expect(stderr).not.toContain('Repository Coherence Scanner');
     expect(stderr).not.toContain('No source files matched');
