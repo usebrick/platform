@@ -152,6 +152,114 @@ parentPort.postMessage({ type: 'ready' });
     }
   });
 
+  it('retries a file when a ready worker exits cleanly during processing', async () => {
+    const dir = createTmpDir();
+    try {
+      const file = join(dir, 'lost-if-not-retried.tsx');
+      writeFileSync(file, 'export function LostIfNotRetried() { return <div />; }');
+      const workerScript = join(dir, 'clean-exit-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const { parentPort } = require('node:worker_threads');
+parentPort.on('message', () => process.exit(0));
+parentPort.postMessage({ type: 'ready' });
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+        workerTimeoutMs: 200,
+      });
+      const results = await settlesWithin(pool.scan([file]), 1_000);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({ filePath: file, parseError: 'Worker exited with code 0' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps waiting for a healthy initial worker after a sibling fails startup', async () => {
+    const dir = createTmpDir();
+    const attemptLog = join(dir, 'mixed-startup-attempts.log');
+    process.env.SLOP_POOL_MIXED_STARTUP_ATTEMPT_LOG = attemptLog;
+    try {
+      const workerScript = join(dir, 'mixed-startup-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const { parentPort } = require('node:worker_threads');
+const fs = require('node:fs');
+const logPath = process.env.SLOP_POOL_MIXED_STARTUP_ATTEMPT_LOG;
+const attempt = fs.existsSync(logPath) ? Number(fs.readFileSync(logPath, 'utf8')) + 1 : 1;
+fs.writeFileSync(logPath, String(attempt));
+if (attempt !== 2) throw new Error('fast startup failure');
+parentPort.on('message', ({ filePath }) => {
+  parentPort.postMessage({
+    type: 'result',
+    result: { filePath, componentCount: 1, issues: [], gapValues: [], styleSources: [] },
+  });
+  parentPort.postMessage({ type: 'ready' });
+});
+setTimeout(() => parentPort.postMessage({ type: 'ready' }), 200);
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 2,
+        workerScript,
+        workerTimeoutMs: 500,
+      });
+      const results = await settlesWithin(pool.scan(['healthy.tsx']), 1_000);
+
+      expect(results).toMatchObject([{ filePath: 'healthy.tsx', componentCount: 1 }]);
+      expect(readFileSync(attemptLog, 'utf8')).toBe('2');
+    } finally {
+      delete process.env.SLOP_POOL_MIXED_STARTUP_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects after bounded ready-handshake timeouts', async () => {
+    const dir = createTmpDir();
+    const attemptLog = join(dir, 'never-ready-attempts.log');
+    process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG = attemptLog;
+    try {
+      const workerScript = join(dir, 'never-ready-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const fs = require('node:fs');
+fs.appendFileSync(process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG, 'spawn\\n');
+setInterval(() => {}, 1_000);
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+        workerTimeoutMs: 50,
+      });
+
+      await expect(settlesWithin(pool.scan(['never-ready.tsx']), 1_000)).rejects.toThrow(
+        /workers could not start.*did not send ready within 50ms/i,
+      );
+
+      const attempts = existsSync(attemptLog)
+        ? readFileSync(attemptLog, 'utf8').split('\n').filter(Boolean)
+        : [];
+      expect(attempts).toHaveLength(3);
+    } finally {
+      delete process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects once after bounded pre-ready worker failures', async () => {
     const dir = createTmpDir();
     const attemptLog = join(dir, 'startup-attempts.log');

@@ -103,6 +103,7 @@ export class WorkerPool {
       const timers = new Map<Worker, ReturnType<typeof setTimeout>>();
       const retryCounts = new Map<string, number>();
       const readyWorkers = new Set<Worker>();
+      const startingWorkers = new Set<Worker>();
       const handledFailures = new Set<Worker>();
       let startupFailures = 0;
       let settled = false;
@@ -157,22 +158,26 @@ export class WorkerPool {
       const onWorkerFailure = (worker: Worker, filePath: string | undefined, err: Error) => {
         if (settled || handledFailures.has(worker)) return;
         handledFailures.add(worker);
-        const workerWasReady = readyWorkers.has(worker);
+        const workerWasReady = readyWorkers.delete(worker);
+        startingWorkers.delete(worker);
         clearTimer(worker);
         inFlight.delete(worker);
         removeWorker(worker);
         worker.terminate().catch(() => {});
 
         if (!workerWasReady) {
-          startupFailures += 1;
-          if (startupFailures >= MAX_STARTUP_FAILURES) {
-            settleReject(
-              new Error(
-                `Scan workers could not start after ${MAX_STARTUP_FAILURES} attempts: ${err.message}`,
-              ),
-            );
-          } else {
-            spawnWorker();
+          const hasViableWorker = readyWorkers.size > 0 || startingWorkers.size > 0;
+          if (!hasViableWorker) {
+            startupFailures += 1;
+            if (startupFailures >= MAX_STARTUP_FAILURES) {
+              settleReject(
+                new Error(
+                  `Scan workers could not start after ${MAX_STARTUP_FAILURES} consecutive failures with no viable worker: ${err.message}`,
+                ),
+              );
+            } else {
+              spawnWorker();
+            }
           }
           return;
         }
@@ -235,10 +240,23 @@ export class WorkerPool {
           },
         });
         workers.push(worker);
+        startingWorkers.add(worker);
+        timers.set(
+          worker,
+          setTimeout(() => {
+            onWorkerFailure(
+              worker,
+              undefined,
+              new Error(`Worker did not send ready within ${this.workerTimeoutMs}ms`),
+            );
+          }, this.workerTimeoutMs),
+        );
 
         worker.on('message', (msg: { type?: string; result?: FileScanResult }) => {
           if (settled) return;
           if (msg.type === 'ready') {
+            clearTimer(worker);
+            startingWorkers.delete(worker);
             readyWorkers.add(worker);
             startupFailures = 0;
             assignNext(worker);
@@ -256,9 +274,11 @@ export class WorkerPool {
 
         worker.on('exit', (code) => {
           if (settled) return;
-          if (code === 0 && readyWorkers.has(worker)) {
+          const filePath = inFlight.get(worker);
+          if (code === 0 && readyWorkers.has(worker) && filePath === undefined) {
             clearTimer(worker);
             inFlight.delete(worker);
+            readyWorkers.delete(worker);
             removeWorker(worker);
             if (pending.length > 0) {
               spawnWorker();
@@ -268,8 +288,8 @@ export class WorkerPool {
           } else {
             onWorkerFailure(
               worker,
-              inFlight.get(worker),
-              new Error(code === 0 ? 'Worker exited before sending ready' : `Worker exited with code ${code}`),
+              filePath,
+              new Error(`Worker exited with code ${code}`),
             );
           }
         });
