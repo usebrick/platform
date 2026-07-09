@@ -420,6 +420,11 @@ export function parseSource(source: string, filePath: string): ParseResult {
     case 'h':
     case 'hpp':
     case 'hxx':
+    // C# has no SWC parser, but cs/* rules are source-text based. Route it
+    // through the same blank-module adapter used by the other backend
+    // languages so rules receive the original source instead of a parse
+    // error.
+    case 'cs':
       return parseBlankModule(source);
     default:
       // parseWithSwc now handles all the candidate-dialect fallback

@@ -40,6 +40,10 @@ export const BACKEND_EXTENSIONS = new Set([
   '.java',
   '.rb',
   '.php',
+  // C# is supported by the cs/* regex rules. Keep it discoverable so
+  // workspace/path scans do not silently omit files that the registry can
+  // analyze.
+  '.cs',
 ]);
 
 /** Union used by the path-arg expansion in `slopbrick scan <dir>`. */

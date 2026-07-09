@@ -78,14 +78,15 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     // v0.9.2 — Repository Coherence is language-agnostic. Default include
     // covers frontend (TS/JS/Vue/Svelte/Astro) AND backend (Python/Go).
     // Projects that only have one of these can opt out via config.
-    'app/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go}',
-    'src/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go}',
-    'components/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go}',
-    'pages/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go}',
+    'app/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
+    'src/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
+    'components/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
+    'pages/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
     // Backend-only fallbacks: Python and Go repos often have files at
     // the root or under a single package directory, not under src/.
     '**/*.py',
     '**/*.go',
+    '**/*.cs',
   ],
   exclude: ['**/node_modules/**', '**/.next/**', '**/dist/**'],
   projectMemory: true,

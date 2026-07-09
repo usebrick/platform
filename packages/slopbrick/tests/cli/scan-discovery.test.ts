@@ -90,4 +90,17 @@ describe('discoverScanFiles', () => {
       cliIncludeOverride: true,
     })).resolves.toEqual([join(root, 'other.ts')]);
   });
+
+  it('discovers C# files when the include glob covers the workspace', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'slopbrick-discovery-')));
+    roots.push(root);
+    const source = join(root, 'Program.cs');
+    writeFileSync(source, 'class Program {}');
+
+    await expect(discoverScanFiles({
+      workspace: root,
+      config: makeConfig(['**/*']),
+      cliIncludeOverride: false,
+    })).resolves.toContain(source);
+  });
 });

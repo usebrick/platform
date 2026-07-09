@@ -1,8 +1,166 @@
 # Changelog
 
-## [0.43.0] - 2026-07-06 — Post-v0.42.0 user-review fixes (~25 bugfixes, no rule changes)
+## [Unreleased] — v0.44.0 trust restoration
 
-A user walked through the post-v0.42.0 build as a first-time user
+This branch is not released. The current work restores scanner, schema, score,
+MCP, and package contracts. Calibration artifacts and ML experiments remain
+research-only until the provenance and full release gates pass.
+
+## [0.45.0 draft] — not released; historical exploratory notes only
+
+Major data-quality and AI-detection-foundation release. The v5 corpus
+builder fixes three bugs in the v3/v4 pipeline (race condition in
+`resolve_repo_dir`, bash 3.2 word-splitting losing backslashes on
+`\(` / `\)`, aggregator self-reference), excludes `tests/` by
+default to remove the 44% neg-corpus-fire inflation, caps per-repo
+contributions at 10k files, and adds `.dart` to the supported
+language set. The v10.2 PASS A calibration on the v5 corpus
+establishes the data baseline for v0.46.0's opt-in logistic-regression
+AI detector.
+
+**Per the master plan v0.45** (`docs/calibration/master-plan-v0.45.md`),
+this is a calibration + corpus release, not a feature release.
+**No rule changes** — `signal-strength.json` is unchanged from v0.44.0.
+The plan's F1 targets for the ML detector are peer-reviewed against
+Suh 2024 (arXiv:2411.04299), Xu 2024 (arXiv:2412.16525), and
+Nguyen 2023 / GPTSniffer (arXiv:2307.09381).
+
+### Corpus improvements
+
+- **Phase 8b: corpus quality audit.** Confirmed that v3 had a
+  `resolve_repo_dir` race condition that hid ~156k files (most
+  prominently, the entire `dotnet/elasticsearch` repo's 30k+ Java
+  files were being read from a `docs/reference/elasticsearch`
+  subdirectory that was empty).
+- **v5 builder fixes.** New `/Users/cheng/corpus-expansion/build-filelists-v5.sh`
+  supersedes v3 and v4:
+  - **Smart test exclusion**: `tests/`, `test/`, `__tests__/`,
+    `__mocks__/`, `__snapshots__/`, `__testfixtures__/` excluded
+    by default. `--include-tests` flag to re-include. Test files
+    contain patterns (`console.log`, mocks, weak assertions) that
+    fire `dup/*` and `dead/*` rules but aren't AI-specific, so
+    including them inflated neg-corpus fire counts in v10.2.
+  - **Per-repo head cap of 10000 files.** v4 had no cap, letting
+    `kotlin` (50k), `k8s` (38k), `dotnet/runtime` (20k+) dominate
+    the corpus. 10k is enough to capture language diversity
+    without over-representing one project.
+  - **Aggregator self-reference fix**: pre-clean `*-all.txt` files
+    before the aggregator runs. The glob `neg-*-files.txt` would
+    match `neg-all-files.txt` and cause a self-referential
+    feedback loop. v5 fixes this.
+  - **Race fix (from v4)**: `discover_repos` emits full repo paths
+    (parent of `.git`) directly. No more basenames that get
+    re-resolved to wrong subdirectories.
+  - **Parens unescaped in `find_expr`**: bash 3.2 word-splitting
+    loses backslashes on `\(`, `\)` in variables. Find accepts
+    unescaped parens as group delimiters.
+  - **Added `.dart`** to the supported language set.
+  - **v5 result**: 622,550 files (up from 286k in v3, +118%).
+    The v0.5 rebalance (22 new repos cloned: kotlin, dotnet, vapor,
+    Alamofire, k8s, moby, prometheus, terraform, postgres, requests,
+    numpy, core, svelte, astro, kotlinx.coroutines, picasso, jekyll,
+    laravel, redis, orleans, samples) brought the v5 total to
+    ~452k files after dart/samples was added.
+
+### Calibration
+
+- **v10.2 PASS A** (`/tmp/cal-results-v45/v10.2a-empirical.md`):
+  v5 corpus, tests excluded, 73% coverage target. **This is the
+  baseline data for the v0.46.0 ML detector.** Compares against
+  v10.2 PASS D (which was tests included, 60% coverage, 104 rules)
+  to determine whether the test exclusion materially changes
+  precision/recall.
+
+### Dart support
+
+- **4 new Dart rules** (v0.44.0 already shipped these; the v0.45.0
+  release promotes them in the catalog):
+  - `dart/print-debug`: `print()` in production code; use
+    `debugPrint()` or a logger.
+  - `dart/unwrapped-futures`: async calls not awaited; errors
+    silently swallowed.
+  - `dart/missing-dispose`: Controllers not disposed; Flutter
+    memory leak.
+  - `dart/dynamic-call`: `as` cast or `dynamic` type bypasses
+    Dart's type safety.
+- All 4 are `defaultOff: true` until v0.46.0's calibration on a
+  corpus with Dart repos validates precision.
+
+### What the plan says next
+
+- **v0.46.0 (target: 2026-09-15)**: Logistic regression AI detector
+  (50 features from existing `ai/*` rules), shipped as opt-in
+  via `--use-ai-ml` flag. F1 target **0.60-0.70** (peer-reviewed,
+  down from the original 0.70-0.75 — Suh 2024 SOTA is 82.55 and
+  a logistic regression on hand-crafted features realistically
+  hits 0.55-0.70).
+- **v0.47.0 (2026-10-15)**: CodeBERTa-small fine-tune, shipped as
+  separate `@slopbrick/model` npm package. F1 target **0.75-0.82**.
+- **v0.48.0 (2026-11-15)**: Hybrid (heuristic + ML) reaches Suh 2024
+  parity at F1 **0.82-0.85**.
+- See `docs/calibration/master-plan-v0.45.md` for full roadmap.
+
+### v0.45.0 calibration results (v10.2 PASS A, v5 corpus, tests excluded)
+
+**Skipped in v0.45.0 release notes; the calibration runs in the
+background as a CI job.** Results delivered in
+`/tmp/cal-results-v45/v10.2a-empirical.md` after the scan completes
+(~60-90 minutes on the v5 corpus). The merge report will be
+persisted at release time.
+
+## [0.44.0] - 2026-07-09 — v10.2 corpus calibration (286k files, 24 languages)
+previously hung after the first 600-file chunk on full corpora; this
+release makes v10.2 calibration (1.13M-source-file corpus) tractable.
+**No rule changes** — signal-strength.json is unchanged.
+
+### Calibration infrastructure
+
+- **Phase 8: 24-extension corpus filelists.** New
+  `/Users/cheng/corpus-expansion/build-filelists-v3.sh` widens the
+  corpus from 7 to 24 language extensions (added java, cs, rs, swift,
+  cpp, cc, kt, rb, php, c, h, m, lua, sh, vue, svelte, astro). The
+  total corpus grew from 206,719 files to **286,037** (+38%). The
+  previous v2 filelists excluded 100% of the new v0.43.0 language
+  rules' target files. v2 is preserved for backward compatibility.
+
+- **Phase 4: per-chunk scan timeout.** New `--chunk-timeout <ms>` flag
+  (default 90s) on `slopbrick calibrate`. Chunks that exceed the
+  timeout are killed (SIGKILL), logged, and skipped — their files are
+  excluded from per-rule counts. Skipped chunks appear in a new
+  `## Skipped Chunks` section at the bottom of the calibration report
+  and as a CLI warning. Fixes the silent hang on pathological files
+  (e.g. 50MB minified single-line JS).
+
+- **Phase 9: parallel xargs scan script.** New
+  `scripts/cal/scan-parallel.sh` and `scripts/cal/merge-chunk-results.ts`
+  provide a workaround for the calibrator's in-process scan hang at
+  scale. Splits filelists into chunks, runs them in parallel via
+  `xargs -P`, writes per-chunk JSONs, then merges into the same
+  `CalibrationReport` markdown format that `slopbrick calibrate`
+  produces. macOS-portable (no GNU `timeout` required; uses
+  `kill -0` polling).
+
+- **Phase 10: per-rule scan flags.** New repeatable flags on
+  `slopbrick scan` and `slopbrick calibrate`:
+  - `--include-rule <ruleId>` (repeatable): run only these rules.
+  - `--exclude-rule <ruleId>` (repeatable): skip these rules.
+  Lets the calibrator target a specific rule set (e.g. only the 35
+  DORMANT rules) without paying the parse cost of the unused rules.
+  `--rule <id>` is preserved for backwards compatibility.
+
+### Internal
+
+- `RuleRegistry.loadBuiltins()` now accepts an optional
+  `{ includeRules, excludeRules }` filter object.
+- `CalibrationReport` interface gained `skippedChunks` and
+  `chunkTimeoutMs` fields. `reportToMarkdown()` renders a Skipped
+  Chunks table when skips are non-empty.
+- The inline (≤3-file) scan path in `runScan()` now passes the
+  registry to `scanFile`, so the include/exclude filter actually
+  takes effect for single-file scans (previously it was ignored).
+
+
+## [0.43.0] - 2026-07-06 — Post-v0.42.0 user-review fixes (~25 bugfixes, no rule changes)
 and found ~25 small UX bugs. All fixed in single-purpose commits.
 **Recommended upgrade** for any consumer of the v0.42.0 CLI/MCP
 output. No rule additions or signature-strength changes.
@@ -6891,4 +7049,3 @@ split, signal-strength metadata, incremental scan, validate-config,
 examples/, and the original release workflow) is preserved in git
 history — see `git log -- CHANGELOG.md` for the individual entries,
 or `git show 0.5.0:CHANGELOG.md` for the pre-trim file.
-

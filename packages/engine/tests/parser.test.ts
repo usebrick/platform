@@ -16,4 +16,12 @@ describe('parseSource', () => {
     expect(result.source).toBe(source);
     expect(result.ast.type).toBe('Module');
   });
+
+  it('routes C# through the source-preserving backend parser path', () => {
+    const source = 'async Task Save() { await repository.SaveAsync(); }';
+    const result = parseSource(source, '/virtual/Program.cs');
+
+    expect(result.source).toBe(source);
+    expect(result.ast.type).toBe('Module');
+  });
 });
