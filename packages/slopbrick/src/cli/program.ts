@@ -284,6 +284,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       }
 
       const cwd = resolve(options.workspace ?? process.cwd());
+      const invokedByCi = command.name() === 'ci';
 
       if (options.trend !== undefined) {
         const runs = await readRuns(cwd, fsMemoryIO);
@@ -418,7 +419,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           !(scanStats.status === 'empty' && (options.staged || options.changed)) ? 1 : 0);
       }
 
-      let exitCode: 0 | 1 | 2 = thresholdExceeded(report, config) ? 1 : 0;
+      const baseExitCode: 0 | 1 = thresholdExceeded(report, config) ? 1 : 0;
+      let exitCode: 0 | 1 | 2 = baseExitCode;
       const incompleteFailure = scanStats.status !== 'complete' &&
         !(scanStats.status === 'empty' && (options.staged || options.changed));
       if (incompleteFailure) {
