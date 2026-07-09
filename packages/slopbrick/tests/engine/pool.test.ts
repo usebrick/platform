@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { WorkerPool } from '../../src/engine/pool';
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -24,6 +25,11 @@ function settlesWithin<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       },
     );
   });
+}
+
+class ControlledWorker extends EventEmitter {
+  readonly postMessage = vi.fn();
+  readonly terminate = vi.fn(async () => 0);
 }
 
 describe('WorkerPool', () => {
@@ -260,22 +266,24 @@ setInterval(() => {}, 1_000);
     }
   });
 
-  it('ignores a ready message queued after the ready-handshake timeout', async () => {
+  it('recovers pending work when a worker does not announce readiness after a result', async () => {
     const dir = createTmpDir();
-    const attemptLog = join(dir, 'late-ready-attempts.log');
-    process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG = attemptLog;
     try {
-      const workerScript = join(dir, 'late-ready-worker.cjs');
+      const first = join(dir, 'first.tsx');
+      const second = join(dir, 'second.tsx');
+      const workerScript = join(dir, 'availability-worker.cjs');
       writeFileSync(
         workerScript,
         `
 const { parentPort } = require('node:worker_threads');
-const fs = require('node:fs');
-const logPath = process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG;
-const attempt = fs.existsSync(logPath) ? Number(fs.readFileSync(logPath, 'utf8')) + 1 : 1;
-fs.writeFileSync(logPath, String(attempt));
-if (attempt === 1) parentPort.postMessage({ type: 'ready' });
-setInterval(() => {}, 1_000);
+parentPort.on('message', ({ filePath }) => {
+  parentPort.postMessage({
+    type: 'result',
+    result: { filePath, componentCount: 1, issues: [], gapValues: [], styleSources: [] },
+  });
+  if (!filePath.endsWith('first.tsx')) parentPort.postMessage({ type: 'ready' });
+});
+parentPort.postMessage({ type: 'ready' });
 `,
       );
 
@@ -283,20 +291,47 @@ setInterval(() => {}, 1_000);
         config: DEFAULT_CONFIG,
         threadCount: 1,
         workerScript,
+        workerTimeoutMs: 50,
+      });
+      const results = await settlesWithin(pool.scan([first, second]), 1_000);
+
+      expect(results).toMatchObject([
+        { filePath: first, componentCount: 1 },
+        { filePath: second, componentCount: 1 },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores a ready event emitted after its handshake timeout has failed', async () => {
+    vi.useFakeTimers();
+    try {
+      const first = new ControlledWorker();
+      const second = new ControlledWorker();
+      const third = new ControlledWorker();
+      const workers = [first, second, third];
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript: 'controlled-worker.cjs',
         workerTimeoutMs: 25,
+        workerFactory: () => workers.shift() as never,
       });
       const scan = pool.scan(['late-ready.tsx']);
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 300);
 
-      await expect(settlesWithin(scan, 1_000)).rejects.toThrow(
-        /workers could not start.*did not send ready within 25ms/i,
-      );
-      const attempts = Number(readFileSync(attemptLog, 'utf8'));
-      expect(attempts).toBeGreaterThanOrEqual(3);
-      expect(attempts).toBeLessThanOrEqual(4);
+      await vi.advanceTimersByTimeAsync(25);
+      expect(first.terminate).toHaveBeenCalledOnce();
+
+      first.emit('message', { type: 'ready' });
+      second.emit('error', new Error('second startup failure'));
+      third.emit('error', new Error('third startup failure'));
+
+      await expect(scan).rejects.toThrow(/workers could not start.*third startup failure/i);
+      expect(first.postMessage).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
     } finally {
-      delete process.env.SLOP_POOL_LATE_READY_ATTEMPT_LOG;
-      rmSync(dir, { recursive: true, force: true });
+      vi.useRealTimers();
     }
   });
 

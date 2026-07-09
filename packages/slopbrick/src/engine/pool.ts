@@ -1,4 +1,4 @@
-import { Worker } from 'worker_threads';
+import { Worker, type WorkerOptions } from 'worker_threads';
 import { cpus } from 'os';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'url';
@@ -11,6 +11,7 @@ export interface WorkerPoolOptions {
   config: ResolvedConfig;
   workerTimeoutMs?: number;
   quiet?: boolean;
+  workerFactory?: (workerScript: string, options: WorkerOptions) => Worker;
 }
 
 // Maximum total attempts per file (first try + retries). If the worker
@@ -63,6 +64,7 @@ export class WorkerPool {
   private threadCount: number;
   private workerTimeoutMs: number;
   private quiet: boolean;
+  private workerFactory: (workerScript: string, options: WorkerOptions) => Worker;
 
   constructor(options: WorkerPoolOptions) {
     this.config = options.config;
@@ -76,6 +78,8 @@ export class WorkerPool {
     if (requested <= 0) throw new Error('threadCount must be > 0');
     this.threadCount = requested;
     this.workerScript = options.workerScript ?? defaultWorkerScript();
+    this.workerFactory =
+      options.workerFactory ?? ((workerScript, workerOptions) => new Worker(workerScript, workerOptions));
 
     if (
       options.workerScript &&
@@ -231,11 +235,29 @@ export class WorkerPool {
         return true;
       };
 
+      const waitForAvailability = (worker: Worker) => {
+        timers.set(
+          worker,
+          setTimeout(() => {
+            if (settled || inFlight.has(worker)) return;
+            if (pending.length === 0) {
+              maybeResolve();
+              return;
+            }
+            onWorkerFailure(
+              worker,
+              undefined,
+              new Error(`Worker did not become ready within ${this.workerTimeoutMs}ms`),
+            );
+          }, this.workerTimeoutMs),
+        );
+      };
+
       const spawnWorker = () => {
         if (settled) return;
         let worker: Worker;
         try {
-          worker = new Worker(this.workerScript, {
+          worker = this.workerFactory(this.workerScript, {
             workerData: {
               config: this.config,
               quiet: this.quiet,
@@ -280,6 +302,11 @@ export class WorkerPool {
             clearTimer(worker);
             inFlight.delete(worker);
             handleResult(msg.result);
+            if (pending.length > 0) {
+              waitForAvailability(worker);
+            } else {
+              maybeResolve();
+            }
           }
         });
 
