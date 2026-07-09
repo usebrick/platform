@@ -83,6 +83,9 @@
 - Gate 3 chunk accounting: `ce6fb90b3` plus `954ce523a` preserve skipped-chunk
   metadata and reject malformed reports before aggregation. Focused merge,
   calibrator, and UX tests pass (44 total); calibration provenance remains open.
+- CLI brief UX: `6fbfa2b11` plus `f45ea9af5` replace the nonexistent `--full`
+  hint with the actionable “rerun without --brief” guidance; 41 UX tests and
+  package TypeScript validation pass. The full flag/command audit remains open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
