@@ -3,7 +3,7 @@
 /**
  * This is the structured JSON projection of the repository structure summary. It is not the on-disk .slopbrick/structure.md file: that Markdown artifact is a derived human- and agent-readable rendering of inventory.json and constitution.json. Producers that emit the JSON projection MUST satisfy this schema; consumers of structure.md MUST treat the Markdown headings and body as a presentation format rather than validating the Markdown as JSON.
  */
-export interface RepositoryStructureStructureMarkdown {
+export interface RepositoryStructureStructuredProjection {
   /**
    * Metadata in the structured JSON projection. The derived structure.md renderer may present these values as Markdown/YAML frontmatter, but structure.md itself is not schema input.
    */
