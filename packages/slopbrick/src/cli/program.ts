@@ -368,7 +368,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
         if (options.dryRun) {
           logger.info('--dry-run: skipping apply step. Run without --dry-run to apply.');
-          process.exit(0);
+          process.exit(incompleteFailure ? 1 : 0);
         }
         // Round 20: pass the actual scanned file paths (not the input
         // CLI globs) so visual codemods run on every .tsx file scanned.
@@ -384,7 +384,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
 
-        process.exit(hasErrors ? 1 : 0);
+        process.exit(incompleteFailure || hasErrors ? 1 : 0);
       }
 
       // --show-fixes-diff without --fix: just show the diff (no apply).
@@ -399,12 +399,24 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
-        process.exit(0);
+        process.exit(scanStats.status !== 'complete' && !options.staged && !options.changed ? 1 : 0);
       }
 
-      renderOutput(report, options, cwd);
-
       let exitCode: 0 | 1 | 2 = thresholdExceeded(report, config) ? 1 : 0;
+      const incompleteFailure = scanStats.status !== 'complete' && !options.staged && !options.changed;
+      if (incompleteFailure) {
+        exitCode = 1;
+        const summary = `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}.`;
+        if (machineReadableStdout) {
+          // JSON/SARIF consumers still receive a parseable report carrying
+          // the completion fields, but never a clean human verdict.
+          renderOutput(report, options, cwd);
+        } else if (!options.quiet) {
+          logger.error(`${summary} Check workspace/include patterns and retry.`);
+        }
+      } else {
+        renderOutput(report, options, cwd);
+      }
       const stagedGatingResult = options.staged ? stagedGating(scores, config, baseline, cwd) : { failed: false };
       if (options.staged && stagedGatingResult.failed) {
         exitCode = 1;
@@ -436,7 +448,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         exitCode = 2;
       }
 
-      if (exitCode === 1) {
+      if (exitCode === 1 && !incompleteFailure) {
         if (options.staged && stagedGatingResult.reason) {
           logger.error(`Gating failure: ${stagedGatingResult.reason}`);
         } else {

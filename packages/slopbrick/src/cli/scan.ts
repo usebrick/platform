@@ -77,6 +77,8 @@ import type {
   ScanRunOptions,
   CliGlobalOptions,
   ScanRunResult,
+  ScanStats,
+  ScanCompletionStatus,
 } from './types';
 
 // Re-export the CLI-side helpers + types so callers (program.ts,
@@ -87,6 +89,8 @@ export type {
   ScanRunOptions,
   CliGlobalOptions,
   ScanRunResult,
+  ScanStats,
+  ScanCompletionStatus,
 } from './types';
 export { buildBaselineCache } from './report/baseline-cache';
 export { printFixSummary, type FixSummary } from './report/printFixSummary';
@@ -216,6 +220,10 @@ export async function runScan(
     const since = await getFilesSince(cwd, options.diffRef);
     files = intersectFiles(files, since, cwd);
   }
+
+  // Count the complete requested set before incremental partitioning. Cache
+  // skips remain distinct from files analyzed in this invocation.
+  const requestedFiles = files.length;
 
   // the persisted cache. Cache invalidates on VERSION mismatch.
   // v0.42.0 (post-cleanup follow-up): the unchanged list is also needed
@@ -506,6 +514,22 @@ export async function runScan(
     machineReadableStdout,
   });
 
+  const failedFiles = results.filter((result) => Boolean(result.parseError)).length;
+  const analyzedFiles = results.length - failedFiles;
+  const skippedFiles = unchanged.length;
+  const completionStatus = requestedFiles === 0
+    ? 'empty' as const
+    : failedFiles > 0 || analyzedFiles + skippedFiles < requestedFiles
+      ? 'partial' as const
+      : 'complete' as const;
+  // Keep completion metadata in the JSON report without changing the shared
+  // ProjectReport wire type in this task; formatJson spreads enumerable fields.
+  report.completionStatus = completionStatus;
+  report.requested = requestedFiles;
+  report.analyzed = analyzedFiles;
+  report.failed = failedFiles;
+  report.skipped = skippedFiles;
+
   // v0.42.0 (post-cleanup follow-up): the --incremental cache
   // was loaded but never written. The bug: a user runs --incremental
   // once, gets 0 files skipped, runs it again, gets 0 skipped again.
@@ -571,6 +595,11 @@ export async function runScan(
     // when `--rule <id>` narrows the run. `durationMs` = wall-clock
     // since `runScan` entry (matches `report.scanDurationMs`).
     scanStats: {
+      status: completionStatus,
+      requested: requestedFiles,
+      analyzed: analyzedFiles,
+      failed: failedFiles,
+      skipped: skippedFiles,
       scanId,
       fileCount: results.length,
       ruleCount: options.rule ? 1 : builtinRules.length,
