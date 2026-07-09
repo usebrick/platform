@@ -41,7 +41,11 @@ export function constitutionPath(workspaceDir: string): string {
   return join(workspaceDir, '.slopbrick', CONSTITUTION_FILENAME);
 }
 export function cachePath(workspaceDir: string): string {
-  return join(workspaceDir, '.slopbrick-cache.json');
+  // Keep the Repository Memory freshness cache in the artifact namespace.
+  // SlopBrick's incremental scan cache intentionally lives at the workspace
+  // root (`.slopbrick-cache.json`) and has a different object shape. Sharing
+  // that path lets either writer silently invalidate the other cache.
+  return join(workspaceDir, '.slopbrick', CACHE_FILENAME);
 }
 export function healthPath(workspaceDir: string): string {
   return join(workspaceDir, '.slopbrick', HEALTH_FILENAME);
@@ -55,10 +59,6 @@ export function healthPath(workspaceDir: string): string {
  * by the same call.
  */
 export function writeJsonAtomic(filePath: string, payload: unknown): void {
-  // `filePath` may point at either a `.slopbrick/` artifact or the
-  // top-level incremental cache (`.slopbrick-cache.json`).  Creating a
-  // `.slopbrick` child of `dirname(filePath)` would produce the invalid
-  // `.slopbrick/.slopbrick` nesting when the artifact directory is absent.
   // Always create exactly the parent directory requested by the caller.
   mkdirSync(dirname(filePath), { recursive: true });
   const tmp = `${filePath}.tmp`;

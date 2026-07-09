@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import {
   inventoryPath,
@@ -57,7 +58,7 @@ describe('memory — loaders/savers', () => {
   it('path helpers return the canonical locations', () => {
     expect(inventoryPath(workspace)).toBe(join(workspace, '.slopbrick', 'inventory.json'));
     expect(constitutionPath(workspace)).toBe(join(workspace, '.slopbrick', 'constitution.json'));
-    expect(cachePath(workspace)).toBe(join(workspace, '.slopbrick-cache.json'));
+    expect(cachePath(workspace)).toBe(join(workspace, '.slopbrick', 'cache.json'));
   });
 
   it('loadInventory returns null when file is missing', () => {
@@ -105,6 +106,25 @@ describe('memory — loaders/savers', () => {
     writeJsonAtomic(join(workspace, '.slopbrick', 'x.json'), { ok: true });
     expect(existsSync(join(workspace, '.slopbrick', 'x.json'))).toBe(true);
     expect(existsSync(join(workspace, '.slopbrick', '.slopbrick'))).toBe(false);
+  });
+
+  it('keeps the core freshness cache separate from SlopBrick incremental cache', async () => {
+    const incrementalPath = join(workspace, '.slopbrick-cache.json');
+    const incrementalCache = {
+      version: '0.45.0',
+      generatedAt: '2026-07-10T00:00:00.000Z',
+      files: {},
+    };
+    writeFileSync(incrementalPath, JSON.stringify(incrementalCache));
+
+    const file = join(workspace, 'Button.tsx');
+    await writeFile(file, 'export function Button() {}');
+    const inventory = buildInventory();
+    inventory.components[0]!.files = [file];
+    writeCacheFromInventory(workspace, inventory, () => 'hash');
+
+    expect(JSON.parse(readFileSync(incrementalPath, 'utf8'))).toEqual(incrementalCache);
+    expect(readCache(workspace)).toEqual([{ file, mtimeMs: expect.any(Number), hash: 'hash' }]);
   });
 });
 

@@ -759,9 +759,7 @@ describe('isInventoryFresh', () => {
     saveInventory(dir, fixture, computeFileHash);
 
     // Wipe the cache to simulate the first call after a fresh clone.
-    // v0.11.0+: cache file moved to top-level (`.slopbrick-cache.json`)
-    // because the on-disk convention stays a sibling of `.slopbrick/`.
-    rmSync(join(dir, '.slopbrick-cache.json'));
+    rmSync(join(dir, '.slopbrick', 'cache.json'));
 
     const loaded = await loadInventory(dir);
     expect(await isInventoryFresh(loaded as InventoryFile, dir)).toBe(false);
@@ -792,7 +790,7 @@ describe('invalidateFile', () => {
 
     await invalidateFile(dir, fileA);
 
-    const cachePath = join(dir, '.slopbrick-cache.json');
+    const cachePath = join(dir, '.slopbrick', 'cache.json');
     const cache = JSON.parse(readFileSync(cachePath, 'utf-8')) as Array<{ file: string }>;
     const remaining = cache.map((e) => e.file);
     expect(remaining).toContain(fileB);

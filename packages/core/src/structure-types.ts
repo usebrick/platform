@@ -36,7 +36,9 @@ export const STRUCTURE_SCHEMA_VERSION = '5' as const;
 
 /**
  * Per-file mtime + fingerprint for the incremental refresh path.
- * Stored as `.slopbrick/cache.json` (not part of the public schema).
+ * Stored as `.slopbrick/cache.json` (not part of the public schema). This is
+ * distinct from SlopBrick's root-level `.slopbrick-cache.json` incremental
+ * scan cache, which has a different format.
  */
 export interface FileMtimeEntry {
   /** Absolute path of the scanned file. */
