@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -300,7 +300,7 @@ describe('MCP file tools workspace boundary', () => {
 
       const inside = await handleToolCall('slop_scan_file', { path: 'src/example.ts' }, ctx);
       expect(inside.isError).toBeFalsy();
-      expect(JSON.parse(inside.content[0]!.text).filePath).toBe(join(dir, 'src/example.ts'));
+      expect(JSON.parse(inside.content[0]!.text).filePath).toBe(realpathSync(join(dir, 'src/example.ts')));
 
       const traversal = await handleToolCall('slop_scan_file', { path: '../' + outside.split('/').pop() + '/secret.ts' }, ctx);
       expect(traversal.isError).toBe(true);

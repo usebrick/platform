@@ -209,7 +209,11 @@ function resolveWorkspaceFile(cwd: string, input: string): string | null {
   }
   const rel = relative(rootBoundary, candidateBoundary);
   if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return null;
-  return candidate;
+  // Bind existing targets to the validated inode path. Returning the
+  // lexical path here would re-open a symlink race between validation and
+  // the subsequent read/parse (TOCTOU). Missing files keep the lexical path
+  // so callers still receive the normal "Cannot read file" diagnostic.
+  return candidateExists ? candidateBoundary : candidate;
 }
 
 async function runScanFile(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
