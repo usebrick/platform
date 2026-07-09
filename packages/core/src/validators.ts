@@ -87,11 +87,14 @@ function isScore(v: unknown): v is number {
 }
 
 function isDateTime(v: unknown): v is string {
-  return (
-    isNonEmptyString(v) &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) &&
-    !Number.isNaN(Date.parse(v))
-  );
+  if (!isNonEmptyString(v)) return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(v);
+  if (!match || Number.isNaN(Date.parse(v))) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth;
 }
 
 function isNumber(v: unknown): v is number {

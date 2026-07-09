@@ -101,6 +101,7 @@ describe('memory-types — validators', () => {
 
     it('rejects values that violate inventory bounds and formats', () => {
       expect(isInventoryFile({ ...valid, generatedAt: 'not-a-date' })).toBe(false);
+      expect(isInventoryFile({ ...valid, generatedAt: '2026-02-31T00:00:00.000Z' })).toBe(false);
       expect(isInventoryFile({ ...valid, scannedFiles: 1.5 })).toBe(false);
       expect(
         isInventoryFile({
