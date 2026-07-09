@@ -150,7 +150,16 @@ export function scoreFile(
 
 export function aggregateReport(
   scores: ComponentScore[],
-  issueGroups: Array<{ filePath: string; issues: Array<{ category: Category; severity: Severity; ruleId: string }> }>,
+  issueGroups: Array<{
+    filePath: string;
+    issues: Array<{
+      category: Category;
+      severity: Severity;
+      ruleId: string;
+      /** Whether this finding is calibrated as AI-specific evidence. */
+      aiSpecific?: boolean;
+    }>;
+  }>,
   config: ResolvedConfig,
   // v0.18.2: per-file Bayesian composite scores from worker.ts:98.
   // Optional for backward compat with existing test fixtures. When
@@ -212,6 +221,16 @@ export function aggregateReport(
   const bucketPoints: Record<SubscoreBucket, number> = { boundary: 0, context: 0, visual: 0 };
   for (const group of issueGroups) {
     for (const issue of group.issues) {
+      // The AI Slop Score is an AI-signal score, not a general quality
+      // score. Keep non-AI findings out even when their rule happens to be
+      // mapped to one of the AI-signal buckets. The optional fallback keeps
+      // legacy aggregateReport fixtures compatible with their historical
+      // `category: 'ai'` convention while production scan results carry the
+      // explicit rule metadata. Legacy callers that omit the field are
+      // treated as pre-filtered issue sets and remain included for
+      // backwards compatibility; scan/worker callers always provide it.
+      const isAiSpecific = issue.aiSpecific ?? true;
+      if (!isAiSpecific) continue;
       const bucket = bucketFor(issue.ruleId);
       bucketPoints[bucket] +=
         SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1);
@@ -317,7 +336,7 @@ export function aggregateReport(
         ruleId: issue.ruleId,
         category: issue.category,
         severity: issue.severity,
-        aiSpecific: issue.category === 'ai',
+        aiSpecific: issue.aiSpecific ?? issue.category === 'ai',
         filePath: group.filePath,
         message: '',
         line: 0,

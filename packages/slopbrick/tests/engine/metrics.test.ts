@@ -519,6 +519,48 @@ describe('aggregateReport', () => {
 });
 
 describe('aggregateReport — 4-score model (v0.16.0)', () => {
+  it('keeps non-AI findings out of aiSlopScore', () => {
+    const clean = aggregateReport(
+      [scoreFile(fileResult({ filePath: 'clean.ts' }), 1.0, DEFAULT_CONFIG)],
+      [{ filePath: 'clean.ts', issues: [] }],
+      DEFAULT_CONFIG,
+    );
+    const hygieneOnly: Issue[] = [{
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: false,
+      message: 'hygiene',
+      line: 1,
+      column: 1,
+    }];
+    const withHygiene = aggregateReport(
+      [scoreFile(fileResult({ filePath: 'hygiene.ts', issues: hygieneOnly }), 1.0, DEFAULT_CONFIG)],
+      [{ filePath: 'hygiene.ts', issues: hygieneOnly }],
+      DEFAULT_CONFIG,
+    );
+    expect(withHygiene.aiSlopScore).toBe(clean.aiSlopScore);
+    expect(withHygiene.engineeringHygiene).toBeLessThan(clean.engineeringHygiene);
+  });
+
+  it('uses explicitly AI-specific evidence regardless of its category', () => {
+    const issue: Issue = {
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      message: 'ai signal',
+      line: 1,
+      column: 1,
+    };
+    const report = aggregateReport(
+      [scoreFile(fileResult({ filePath: 'ai.ts', issues: [issue] }), 1.0, DEFAULT_CONFIG)],
+      [{ filePath: 'ai.ts', issues: [issue] }],
+      DEFAULT_CONFIG,
+    );
+    expect(report.aiSlopScore).toBeGreaterThan(0);
+  });
+
   // Regression test for the bug where engineeringHygiene, security,
   // and repositoryHealth all aliased aiSlopScore. The 4-score model
   // promised in v0.15.0 (CHANGELOG) was advertised but never
