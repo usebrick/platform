@@ -7,6 +7,25 @@ import { DEFAULT_CONFIG } from '../../src/config';
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-pool-test-'));
 
+function settlesWithin<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error(`Pool scan did not settle within ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
+
 describe('WorkerPool', () => {
   it('scans multiple files round-robin', async () => {
     const dir = createTmpDir();
@@ -20,7 +39,7 @@ describe('WorkerPool', () => {
       const pool = new WorkerPool({
         config: DEFAULT_CONFIG,
         threadCount: 2,
-        workerScript: resolve(__dirname, '../../dist/engine/worker.cjs'),
+        workerScript: resolve(__dirname, '../../dist/engine/worker.js'),
       });
       const results = await pool.scan(files);
       expect(results.length).toBe(4);
@@ -48,7 +67,7 @@ describe('WorkerPool', () => {
       const pool = new WorkerPool({
         config: DEFAULT_CONFIG,
         threadCount: 2,
-        workerScript: resolve(__dirname, '../../dist/engine/worker.cjs'),
+        workerScript: resolve(__dirname, '../../dist/engine/worker.js'),
       });
       const progress: Array<{ completed: number; total: number }> = [];
       const results = await pool.scan(files, (completed, total) => {
@@ -129,6 +148,41 @@ parentPort.postMessage({ type: 'ready' });
       expect(attempts.filter((p) => p === crash).length).toBeGreaterThanOrEqual(1);
     } finally {
       delete process.env.SLOP_AUDIT_TEST_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects once after bounded pre-ready worker failures', async () => {
+    const dir = createTmpDir();
+    const attemptLog = join(dir, 'startup-attempts.log');
+    process.env.SLOP_POOL_STARTUP_ATTEMPT_LOG = attemptLog;
+    try {
+      const workerScript = join(dir, 'pre-ready-failure-worker.cjs');
+      writeFileSync(
+        workerScript,
+        `
+const fs = require('node:fs');
+fs.appendFileSync(process.env.SLOP_POOL_STARTUP_ATTEMPT_LOG, 'spawn\\n');
+throw new Error('pre-ready fixture failure');
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+      });
+
+      await expect(settlesWithin(pool.scan(['first.tsx', 'second.tsx']), 1_000)).rejects.toThrow(
+        /workers could not start.*pre-ready fixture failure/i,
+      );
+
+      const attempts = existsSync(attemptLog)
+        ? readFileSync(attemptLog, 'utf8').split('\n').filter(Boolean)
+        : [];
+      expect(attempts).toHaveLength(3);
+    } finally {
+      delete process.env.SLOP_POOL_STARTUP_ATTEMPT_LOG;
       rmSync(dir, { recursive: true, force: true });
     }
   });

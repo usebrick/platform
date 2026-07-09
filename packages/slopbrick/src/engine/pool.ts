@@ -24,6 +24,7 @@ export interface WorkerPoolOptions {
 // Production runs should not see this line unless a real worker
 // crash or timeout occurs.
 const MAX_RETRIES = 2;
+const MAX_STARTUP_FAILURES = 3;
 const DEFAULT_WORKER_TIMEOUT_MS = 60_000;
 
 function defaultWorkerScript(): string {
@@ -93,165 +94,191 @@ export class WorkerPool {
   ): Promise<FileScanResult[]> {
     if (filePaths.length === 0) return [];
 
-    const results: FileScanResult[] = [];
-    const seen = new Set<string>();
-    const pending = filePaths.slice();
-    const workers: Worker[] = [];
-    const inFlight = new Map<Worker, string>();
-    const timers = new Map<Worker, ReturnType<typeof setTimeout>>();
-    const retryCounts = new Map<string, number>();
-    let resolved = false;
+    return new Promise((resolve, reject) => {
+      const results: FileScanResult[] = [];
+      const seen = new Set<string>();
+      const pending = filePaths.slice();
+      const workers: Worker[] = [];
+      const inFlight = new Map<Worker, string>();
+      const timers = new Map<Worker, ReturnType<typeof setTimeout>>();
+      const retryCounts = new Map<string, number>();
+      const readyWorkers = new Set<Worker>();
+      const handledFailures = new Set<Worker>();
+      let startupFailures = 0;
+      let settled = false;
+      let progressTimer: ReturnType<typeof setInterval> | undefined;
 
-    const handleResult = (result: FileScanResult) => {
-      if (!seen.has(result.filePath)) {
-        seen.add(result.filePath);
-        results.push(result);
-        onProgress?.(results.length, filePaths.length);
-      }
-    };
-
-    const maybeResolve = () => {
-      if (resolved) return;
-      if (pending.length === 0 && inFlight.size === 0) {
-        resolved = true;
-        for (const w of workers) {
-          w.terminate().catch(() => {});
+      const clearTimer = (worker: Worker) => {
+        const timer = timers.get(worker);
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          timers.delete(worker);
         }
-      }
-    };
+      };
 
-    const clearTimer = (worker: Worker) => {
-      const timer = timers.get(worker);
-      if (timer !== undefined) {
-        clearTimeout(timer);
-        timers.delete(worker);
-      }
-    };
+      const removeWorker = (worker: Worker) => {
+        const index = workers.indexOf(worker);
+        if (index !== -1) workers.splice(index, 1);
+      };
 
-    const onWorkerFailure = (worker: Worker, filePath: string | undefined, err: Error) => {
-      clearTimer(worker);
-      inFlight.delete(worker);
-      const index = workers.indexOf(worker);
-      if (index !== -1) workers.splice(index, 1);
-      worker.terminate().catch(() => {});
+      const cleanup = () => {
+        for (const timer of timers.values()) clearTimeout(timer);
+        timers.clear();
+        if (progressTimer !== undefined) clearInterval(progressTimer);
+        for (const worker of workers.splice(0)) worker.terminate().catch(() => {});
+      };
 
-      if (!filePath) {
-        // No file was assigned when the worker died. If work remains, replace
-        // the worker so the pool can still make progress.
-        if (pending.length > 0) spawnWorker();
-        maybeResolve();
-        return;
-      }
+      const settleResolve = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(results);
+      };
 
-      const retries = (retryCounts.get(filePath) ?? 0) + 1;
-      retryCounts.set(filePath, retries);
+      const settleReject = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(err);
+      };
 
-      if (retries <= MAX_RETRIES) {
-        logger.error(`Worker failed for ${filePath}; retrying (${retries}/${MAX_RETRIES})`);
-        pending.unshift(filePath);
-        spawnWorker();
-      } else {
-        logger.error(`Worker failed for ${filePath}; retries exhausted`);
-        handleResult({
-          filePath,
-          componentCount: 0,
-          issues: [],
-          parseError: err.message,
-          gapValues: [],
-          styleSources: [],
-        });
-      }
-      maybeResolve();
-    };
-
-    const assignNext = (worker: Worker): boolean => {
-      if (pending.length === 0) return false;
-      const filePath = pending.shift()!;
-      inFlight.set(worker, filePath);
-      clearTimer(worker);
-      timers.set(
-        worker,
-        setTimeout(() => {
-          if (resolved) return;
-          const activeFile = inFlight.get(worker);
-          logger.error(`Worker timed out processing ${activeFile ?? 'file'}`);
-          onWorkerFailure(
-            worker,
-            activeFile,
-            new Error(`Worker timed out after ${this.workerTimeoutMs}ms`),
-          );
-        }, this.workerTimeoutMs),
-      );
-      worker.postMessage({ filePath });
-      return true;
-    };
-
-    const spawnWorker = () => {
-      if (resolved) return;
-      const worker = new Worker(this.workerScript, {
-        workerData: {
-          config: this.config,
-          quiet: this.quiet,
-        },
-      });
-      workers.push(worker);
-
-      worker.on('message', (msg: { type?: string; result?: FileScanResult }) => {
-        if (resolved) return;
-        if (msg.type === 'ready') {
-          assignNext(worker);
-          maybeResolve();
-        } else if (msg.type === 'result' && msg.result) {
-          clearTimer(worker);
-          inFlight.delete(worker);
-          handleResult(msg.result);
+      const handleResult = (result: FileScanResult) => {
+        if (!seen.has(result.filePath)) {
+          seen.add(result.filePath);
+          results.push(result);
+          onProgress?.(results.length, filePaths.length);
         }
-      });
+      };
 
-      worker.on('error', (err) => {
-        if (resolved) return;
-        onWorkerFailure(worker, inFlight.get(worker), err);
-      });
+      const maybeResolve = () => {
+        if (!settled && pending.length === 0 && inFlight.size === 0) settleResolve();
+      };
 
-      worker.on('exit', (code) => {
-        if (resolved) return;
-        if (code === 0) {
-          clearTimer(worker);
-          inFlight.delete(worker);
-          const index = workers.indexOf(worker);
-          if (index !== -1) workers.splice(index, 1);
-          // If work is still pending, spawn a replacement worker so the
-          // pool doesn't starve. Without this, a worker that exits cleanly
-          // after one file would be removed from `workers` but no new
-          // worker would replace it — `pending` would still have 99+ files
-          // and `maybeResolve()` would return false forever, leaving the
-          // pool stuck.
-          if (pending.length > 0) {
-            spawnWorker();
+      const onWorkerFailure = (worker: Worker, filePath: string | undefined, err: Error) => {
+        if (settled || handledFailures.has(worker)) return;
+        handledFailures.add(worker);
+        const workerWasReady = readyWorkers.has(worker);
+        clearTimer(worker);
+        inFlight.delete(worker);
+        removeWorker(worker);
+        worker.terminate().catch(() => {});
+
+        if (!workerWasReady) {
+          startupFailures += 1;
+          if (startupFailures >= MAX_STARTUP_FAILURES) {
+            settleReject(
+              new Error(
+                `Scan workers could not start after ${MAX_STARTUP_FAILURES} attempts: ${err.message}`,
+              ),
+            );
           } else {
-            maybeResolve();
+            spawnWorker();
           }
+          return;
+        }
+
+        if (!filePath) {
+          if (pending.length > 0) spawnWorker();
+          maybeResolve();
+          return;
+        }
+
+        const retries = (retryCounts.get(filePath) ?? 0) + 1;
+        retryCounts.set(filePath, retries);
+
+        if (retries <= MAX_RETRIES) {
+          logger.error(`Worker failed for ${filePath}; retrying (${retries}/${MAX_RETRIES})`);
+          pending.unshift(filePath);
+          spawnWorker();
         } else {
-          onWorkerFailure(
-            worker,
-            inFlight.get(worker),
-            new Error(`Worker exited with code ${code}`),
-          );
+          logger.error(`Worker failed for ${filePath}; retries exhausted`);
+          handleResult({
+            filePath,
+            componentCount: 0,
+            issues: [],
+            parseError: err.message,
+            gapValues: [],
+            styleSources: [],
+          });
         }
-      });
-    };
+        maybeResolve();
+      };
 
-    for (let i = 0; i < this.threadCount; i++) {
-      spawnWorker();
-    }
+      const assignNext = (worker: Worker): boolean => {
+        if (pending.length === 0) return false;
+        const filePath = pending.shift()!;
+        inFlight.set(worker, filePath);
+        clearTimer(worker);
+        timers.set(
+          worker,
+          setTimeout(() => {
+            if (settled) return;
+            const activeFile = inFlight.get(worker);
+            logger.error(`Worker timed out processing ${activeFile ?? 'file'}`);
+            onWorkerFailure(
+              worker,
+              activeFile,
+              new Error(`Worker timed out after ${this.workerTimeoutMs}ms`),
+            );
+          }, this.workerTimeoutMs),
+        );
+        worker.postMessage({ filePath });
+        return true;
+      };
 
-    return new Promise((resolve) => {
-      const check = setInterval(() => {
-        if (resolved) {
-          clearInterval(check);
-          resolve(results);
-        }
-      }, 10);
+      const spawnWorker = () => {
+        if (settled) return;
+        const worker = new Worker(this.workerScript, {
+          workerData: {
+            config: this.config,
+            quiet: this.quiet,
+          },
+        });
+        workers.push(worker);
+
+        worker.on('message', (msg: { type?: string; result?: FileScanResult }) => {
+          if (settled) return;
+          if (msg.type === 'ready') {
+            readyWorkers.add(worker);
+            startupFailures = 0;
+            assignNext(worker);
+            maybeResolve();
+          } else if (msg.type === 'result' && msg.result) {
+            clearTimer(worker);
+            inFlight.delete(worker);
+            handleResult(msg.result);
+          }
+        });
+
+        worker.on('error', (err) => {
+          onWorkerFailure(worker, inFlight.get(worker), err);
+        });
+
+        worker.on('exit', (code) => {
+          if (settled) return;
+          if (code === 0 && readyWorkers.has(worker)) {
+            clearTimer(worker);
+            inFlight.delete(worker);
+            removeWorker(worker);
+            if (pending.length > 0) {
+              spawnWorker();
+            } else {
+              maybeResolve();
+            }
+          } else {
+            onWorkerFailure(
+              worker,
+              inFlight.get(worker),
+              new Error(code === 0 ? 'Worker exited before sending ready' : `Worker exited with code ${code}`),
+            );
+          }
+        });
+      };
+
+      progressTimer = setInterval(maybeResolve, 10);
+      for (let i = 0; i < this.threadCount; i++) {
+        spawnWorker();
+      }
     });
   }
 }
