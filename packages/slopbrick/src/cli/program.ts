@@ -269,7 +269,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       const options: CliGlobalOptions = {
         ...rawGlobals,
         ...requestedOptions,
-        noIncrease: rawGlobals.increase === false,
+        // CI passes an explicit noIncrease=true; preserve it over the
+        // global Commander default while keeping scan/watch semantics.
+        noIncrease: requestedOptions.noIncrease ?? (rawGlobals.increase === false),
       };
       if (command.getOptionValueSource('workspace') === 'default') {
         const autoRoot = detectMonorepoRoot(process.cwd());

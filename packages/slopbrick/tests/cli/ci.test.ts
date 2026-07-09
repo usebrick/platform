@@ -54,4 +54,18 @@ describe('ci gates the current scan outcome', () => {
     const report = JSON.parse(result.stdout) as Record<string, unknown>;
     expect(report.completionStatus).toBe('complete');
   });
+
+  it('forces the no-increase gate when the current scan gets worse', async () => {
+    const dir = workspace();
+    const first = await run(['--workspace', dir, '--format', 'json']);
+    expect(first.exitCode).toBe(0);
+    writeFileSync(join(dir, 'src', 'worse.tsx'), `import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { resolve, join, dirname, extname } from 'node:path';
+import { EventEmitter } from 'node:events';
+export function Worse() { const [count, setCount] = useState(0); return <div>{count}</div>; }
+`);
+    const result = await run(['ci', '--workspace', dir, '--format', 'json']);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toMatch(/AI Slop Score went UP|CI gate failed/);
+  });
 });

@@ -31,3 +31,7 @@ The existing working tree contains unrelated changes (including pre-existing sca
 The initial implementation commit (`f94805af8`) accidentally included pre-existing rule-filter normalization and scan/watch casts. Corrective commits `6f769fd7c` and `2090a5ba6` remove those hunks while preserving the current-outcome wiring. `git diff e388b4a0a..HEAD` now contains only the CI command, shared scan outcome, CI tests, and this report; the rule-filter edits remain dirty and unstaged.
 
 Post-correction verification reran the focused suite: 3 files / 25 tests passed, and `node_modules/.bin/tsc --noEmit` exited 0.
+
+## No-increase correction
+
+The shared scan action now gives an explicit caller option precedence, so CI's forced `noIncrease: true` survives Commander global defaults while ordinary scan/watch behavior remains unchanged. A regression persists a clean run, adds a high-slop changed file, and verifies `slopbrick ci` exits nonzero. Verification passed 3 files / 26 tests and `tsc --noEmit`.
