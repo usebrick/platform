@@ -117,6 +117,40 @@ describe('CLI output UX', () => {
     }
   });
 
+  it('keeps calibration output ANSI-free when NO_COLOR is set', async () => {
+    const result = await runBin(
+      ['calibration', '--top', '1'],
+      repoRoot,
+      { ...process.env, FORCE_COLOR: '1', NO_COLOR: '1' },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('slopbrick calibration report');
+    expect(result.stdout).not.toMatch(/\u001B\[/);
+  });
+
+  it('keeps calibration output ANSI-free for root and subcommand --no-color', async () => {
+    const env = { ...process.env, FORCE_COLOR: '1', NO_COLOR: '' };
+    const rootFlag = await runBin(['--no-color', 'calibration', '--top', '1'], repoRoot, env);
+    const commandFlag = await runBin(['calibration', '--top', '1', '--no-color'], repoRoot, env);
+
+    expect(rootFlag.exitCode).toBe(0);
+    expect(rootFlag.stdout).not.toMatch(/\u001B\[/);
+    expect(commandFlag.exitCode).toBe(0);
+    expect(commandFlag.stdout).not.toMatch(/\u001B\[/);
+  });
+
+  it('emits calibration ANSI when FORCE_COLOR is set', async () => {
+    const result = await runBin(
+      ['calibration', '--top', '1'],
+      repoRoot,
+      { ...process.env, FORCE_COLOR: '1', NO_COLOR: '' },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toMatch(/\u001B\[/);
+  });
+
   it('keeps redirected JSON strictly parseable and ANSI-free', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'slopbrick-output-ux-json-'));
     try {

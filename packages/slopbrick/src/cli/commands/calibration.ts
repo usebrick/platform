@@ -21,6 +21,7 @@ import { Command } from 'commander';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import signalStrength from '../../rules/signal-strength.json';
+import { colorEnabled } from '../render.js';
 
 interface V10Stats {
   precision: number;
@@ -154,7 +155,7 @@ export function registerCalibration(program: Command): void {
         return;
       }
 
-      const useColor = opts.color !== false;
+      const useColor = colorEnabled();
       const green = (s: string) => color(s, '32', useColor);
       const yellow = (s: string) => color(s, '33', useColor);
       const cyan = (s: string) => color(s, '36', useColor);
