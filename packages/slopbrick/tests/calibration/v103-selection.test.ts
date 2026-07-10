@@ -65,6 +65,14 @@ function manifest() {
         acquiredAt: '2026-07-10T00:00:00Z',
         license: 'MIT',
       },
+      {
+        repositoryId: 'quarantine-repo',
+        familyId: 'quarantine-family',
+        originUrl: 'https://example.test/quarantine-repo',
+        commitSha: 'd'.repeat(40),
+        acquiredAt: '2026-07-10T00:00:00Z',
+        license: 'MIT',
+      },
     ],
     files: [
       {
@@ -84,6 +92,12 @@ function manifest() {
         contentSha256: '3'.repeat(64), language: 'typescript', stratum: 'test', clusterId: 'mixed-cluster',
         label: 'mixed', tier: 'gold', split: 'mixed_evaluation',
         evidence: { kind: 'manual_protocol', reference: 'https://example.test/mixed-evidence', protocolId: 'protocol-1' },
+      },
+      {
+        sourceId: `quarantine-repo@${'d'.repeat(40)}:src/unproven.ts`, repositoryId: 'quarantine-repo', familyId: 'quarantine-family', normalizedPath: 'src/unproven.ts',
+        contentSha256: '4'.repeat(64), language: 'typescript', stratum: 'production', clusterId: 'quarantine-cluster',
+        label: 'quarantine', tier: 'quarantine', split: 'excluded', exclusionReason: 'unproven provenance',
+        evidence: { kind: 'manual_protocol', reference: 'https://example.test/quarantine-evidence', protocolId: 'protocol-1' },
       },
     ],
   };
@@ -106,10 +120,15 @@ describe('v10.3 canonical selection', () => {
 
     expect(renderSelectionJsonl(first.records)).toBe(renderSelectionJsonl(second.records));
     expect(first.ledger).toEqual(second.ledger);
-    expect(first.records).toHaveLength(3);
-    expect(first.records.map((record) => record.status)).toEqual(['selected', 'selected', 'excluded']);
+    expect(first.records).toHaveLength(4);
+    expect(first.records.map((record) => record.status)).toEqual(['selected', 'selected', 'excluded', 'excluded']);
     expect(first.records.find((record) => record.sourceId.startsWith('mixed-repo@'))).toMatchObject({
       status: 'excluded', exclusionReason: 'label_not_eligible',
+    });
+    expect(first.records.find((record) => record.sourceId.startsWith('quarantine-repo@'))).toMatchObject({
+      status: 'excluded',
+      exclusionReason: 'label_not_eligible',
+      manifestExclusionReason: 'unproven provenance',
     });
     expect(renderSelectionJsonl(first.records)).not.toMatch(/\/Users\/|\\\\Users\\\\|\/tmp\//);
   });
@@ -122,6 +141,7 @@ describe('v10.3 canonical selection', () => {
     expect(verifySelectionLedger(input, jsonl, selection.ledger)).toEqual({ ok: true });
     expect(verifySelectionLedger(input, `${jsonl}${jsonl.split('\n')[0]}\n`, selection.ledger)).toMatchObject({ ok: false });
     expect(verifySelectionLedger(input, jsonl.split('\n').slice(0, -2).join('\n') + '\n', selection.ledger)).toMatchObject({ ok: false });
+    expect(verifySelectionLedger(input, jsonl.replace('unproven provenance', 'rewritten provenance'), selection.ledger)).toMatchObject({ ok: false });
     expect(verifySelectionLedger({ ...input, generatedAt: '2026-07-11T00:00:00Z' }, jsonl, selection.ledger)).toMatchObject({ ok: false });
   });
 });

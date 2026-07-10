@@ -41,6 +41,8 @@ export interface SelectionRecord {
   readonly split: string;
   readonly selectionKey: string;
   readonly status: SelectionStatus;
+  /** Detailed reason supplied by the reviewed manifest when it was excluded. */
+  readonly manifestExclusionReason?: string;
   readonly exclusionReason?: SelectionExclusionReason;
 }
 
@@ -100,7 +102,7 @@ function baseRecord(
   file: CalibrationCorpusFile,
   manifest: SlopbrickCalibrationCorpusManifestV103,
   seed: string,
-): Omit<SelectionRecord, 'status' | 'exclusionReason'> {
+): Omit<SelectionRecord, 'status' | 'exclusionReason' | 'manifestExclusionReason'> & Pick<SelectionRecord, 'manifestExclusionReason'> {
   const fileId = stableCalibrationFileId(file, manifest.repositories);
   return {
     fileId,
@@ -116,6 +118,7 @@ function baseRecord(
     tier: file.tier,
     split: file.split,
     selectionKey: canonicalSha256({ seed, fileId }),
+    ...(file.exclusionReason === undefined ? {} : { manifestExclusionReason: file.exclusionReason }),
   };
 }
 
