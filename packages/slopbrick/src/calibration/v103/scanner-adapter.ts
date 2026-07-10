@@ -13,6 +13,6 @@ export async function invokeV103Scanner(invoke: ScannerInvoker, options: Omit<Sc
     if (!Array.isArray(json.issues)) return { kind: 'crash' };
     return { kind: 'success', findingsCount: json.issues.length };
   } catch (error) {
-    return error instanceof Error && (error.name === 'TimeoutError' || (error as { code?: string }).code === 'ETIMEDOUT') ? { kind: 'timeout' } : { kind: 'crash' };
+    return error instanceof Error && (error.name === 'TimeoutError' || (error as { code?: string }).code === 'ETIMEDOUT' || /^child timeout after \d+ms$/.test(error.message)) ? { kind: 'timeout' } : { kind: 'crash' };
   }
 }

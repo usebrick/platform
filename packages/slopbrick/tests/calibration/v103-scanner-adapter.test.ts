@@ -15,6 +15,7 @@ describe('v10.3 scanner adapter', () => {
   it('maps parser output, timeouts, and invalid/nonzero worker responses safely', async () => {
     await expect(invokeV103Scanner(async () => ({ exitCode: 0, json: { ok: true, issues: [], parseError: 'bad parse' } }), options)).resolves.toEqual({ kind: 'parse_failure' });
     await expect(invokeV103Scanner(async () => { const error = Object.assign(new Error('slow'), { code: 'ETIMEDOUT' }); throw error; }, options)).resolves.toEqual({ kind: 'timeout' });
+    await expect(invokeV103Scanner(async () => { throw new Error('child timeout after 90ms'); }, options)).resolves.toEqual({ kind: 'timeout' });
     await expect(invokeV103Scanner(async () => ({ exitCode: 1, json: { ok: true, issues: [] } }), options)).resolves.toEqual({ kind: 'crash' });
     await expect(invokeV103Scanner(async () => ({ exitCode: 0, json: { ok: false, issues: [] } }), options)).resolves.toEqual({ kind: 'crash' });
   });

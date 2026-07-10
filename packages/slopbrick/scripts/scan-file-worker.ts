@@ -25,6 +25,13 @@ import { RuleRegistry } from '../src/rules/registry.js';
 
 const filePath = process.argv[2];
 const resultPath = process.env.SLOP_RESULT_PATH;
+function readRuleFilter(name: 'SLOP_INCLUDE_RULES' | 'SLOP_EXCLUDE_RULES'): string[] {
+  const raw = process.env[name];
+  if (raw === undefined) return [];
+  const value: unknown = JSON.parse(raw);
+  if (!Array.isArray(value) || value.some((id) => typeof id !== 'string' || id.length === 0)) throw new Error(`${name} must be a JSON string array`);
+  return value;
+}
 if (!filePath) {
   console.error('Usage: scan-file-worker.ts <file-path>');
   process.exit(1);
@@ -38,7 +45,7 @@ if (!resultPath) {
   try {
     const config = await loadConfig(filePath);
     const registry = new RuleRegistry();
-    registry.loadBuiltins();
+    registry.loadBuiltins(undefined, { includeRules: readRuleFilter('SLOP_INCLUDE_RULES'), excludeRules: readRuleFilter('SLOP_EXCLUDE_RULES') });
     const result = await scanFile(filePath, config, registry, process.cwd());
     writeFileSync(resultPath, JSON.stringify({
       ok: true,
