@@ -247,3 +247,9 @@
   and next-line-disabled findings: all four effective scores and denominators
   remain invariant while audit evidence remains observable. Independent review
   approved it; scan completion passes 21/21.
+- Gate 2 accounting `caf41e1e3`/`635838c14` adds backward-compatible,
+  exhaustive selected/analyzed/cache/parse/timeout/crash/internal accounting.
+  It distinguishes parse from post-parse internal failures and classifies pool
+  retry exhaustion; focused pool + scan-completion tests pass 37/37 under
+  independent review. Reason-coded discovery exclusions and partial-score UX
+  remain open.
