@@ -4,6 +4,9 @@ import {
   isCalibrationRunManifestV103,
   type SlopBrickV103CalibrationRunManifest,
 } from '@usebrick/core';
+import { planV103Chunks } from './bisection';
+import { canonicalSha256 } from './canonical';
+import type { SelectionRecord } from './selection';
 
 type RunManifestDraft = Omit<SlopBrickV103CalibrationRunManifest, 'version' | 'inputHashes'> & {
   readonly version?: 'v10.3';
@@ -29,5 +32,23 @@ export function verifyV103RunInputs(run: unknown, checkoutMap: unknown): { ok: t
   if (!isCalibrationCheckoutMapV103(checkoutMap)) return { ok: false, error: 'Checkout map does not satisfy the v10.3 local contract' };
   if (run.runId !== checkoutMap.runId) return { ok: false, error: 'Checkout map run ID does not match run manifest' };
   if (run.inputHashes.checkoutMapSha256 !== calibrationCheckoutMapSha256(checkoutMap)) return { ok: false, error: 'Checkout map hash does not match run manifest' };
+  return { ok: true };
+}
+
+/** Ensure the portable run declaration names exactly the frozen selected corpus. */
+export function verifyV103ExpectedSelection(
+  run: SlopBrickV103CalibrationRunManifest,
+  records: readonly SelectionRecord[],
+): { ok: true } | { ok: false; error: string } {
+  for (const polarity of ['verified_ai', 'verified_human'] as const) {
+    const fileIds = records.filter((record) => record.status === 'selected' && record.label === polarity).map((record) => record.fileId);
+    const chunkIds = planV103Chunks(fileIds, run.settings.chunkSize).map(canonicalSha256);
+    if (JSON.stringify(run.expected.fileIdsByPolarity[polarity]) !== JSON.stringify(fileIds)) {
+      return { ok: false, error: `Run manifest expected file IDs do not match selected ${polarity} records` };
+    }
+    if (JSON.stringify(run.expected.chunkIdsByPolarity[polarity]) !== JSON.stringify(chunkIds)) {
+      return { ok: false, error: `Run manifest expected chunk IDs do not match selected ${polarity} records` };
+    }
+  }
   return { ok: true };
 }
