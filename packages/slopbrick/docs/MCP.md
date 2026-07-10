@@ -10,6 +10,23 @@ agent to it. The server exposes **7 canonical tools** that let the agent
 query the codebase for AI-slop patterns, get remediation advice,
 and check the Constitution before writing new code.
 
+<!-- slopbrick:mcp-registry:begin -->
+## Runtime registry (generated)
+
+This table is generated from `TOOL_DEFINITIONS`; it currently exposes 7 canonical tools: slop_scan_file, slop_explain_rule, slop_list_rules, slop_suggest, slop_suggest_with_structure, slop_check_constitution, slop_find_similar.
+
+| Tool | Inputs | Runtime description |
+| --- | --- | --- |
+| `slop_scan_file` | path (required), framework | Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
+| `slop_explain_rule` | ruleId (required) | Return metadata for a single rule: ruleId, category, severity, aiSpecific, a brief rationale string, and a whereToLook path into src/rules/. The actual fix-steps live in the rule source (whereToLook) rather than in this response — read that file to understand the rule before auto-applying --fix. |
+| `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual \| logic \| wcag \| security \| perf \| typo \| layout \| component \| arch). |
+| `slop_suggest` | maxFiles | **Primary entry point for AI agents.** Returns the project's existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path. |
+| `slop_suggest_with_structure` | maxFiles | Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first. |
+| `slop_check_constitution` | path (required) | Check a single file against the project's declared constitution (stateManagement, dataFetching, uiLibrary, forms, styling, routing, plus a forbidden deny-list in slopbrick.config.mjs). Returns the file path, total import + violation counts, the parsed imports, the list of violations (each with import, category, and reason), and a conventionSource indicating whether the constitution was declared, detected, or absent. Use this on a newly-written or modified file before suggesting a PR. |
+| `slop_find_similar` | name, hooks, props, limit | Find the most similar existing function/component implementations across the codebase, ranked by Jaccard similarity over the union of (hooks ∪ props ∪ params). Use this BEFORE writing new code so the agent reuses an existing pattern instead of inventing a new one. Returns up to `limit` matches (default 10) with name, file, line, fingerprint (sha256 over signature), hooks, props, params, and similarity in [0, 1]. |
+
+<!-- slopbrick:mcp-registry:end -->
+
 ## Quick start
 
 ### Claude Code
@@ -137,8 +154,7 @@ Return rule metadata + rationale + advice.
 List all registered rules, with optional category filter.
 
 **Input:**
-- `category` (string, optional) — e.g. `"ai"`, `"visual"`
-- `defaultOnOnly` (boolean, optional) — exclude `defaultOff` rules
+- `category` (string, optional) — filter by category (for example `"ai"` or `"visual"`)
 
 **Output:**
 ```json
@@ -165,7 +181,8 @@ List all registered rules, with optional category filter.
 
 Get the project's `doNotCreate` list + patterns to follow.
 
-**Input:** none (reads `.slopbrick/constitution.json` + `.slopbrick/structure.md`)
+**Input:**
+- `maxFiles` (number, optional) — cap the inventory scan; defaults to 200
 
 **Output:**
 ```json
@@ -205,7 +222,8 @@ measure the actual speed-up on the target repository.
 > The canonical artifact is `.slopbrick/structure.md`; older `memory.md`
 > terminology is historical and should not be used in new integrations.
 
-**Input:** none
+**Input:**
+- `maxFiles` (number, optional) — cap the slow-path fallback scan; defaults to 200
 
 **Output:** same as `slop_suggest`.
 
@@ -273,7 +291,7 @@ to know "what's the closest pattern to follow?"
 ## Typical agent flow
 
 ```
-1. slop_governance          — check the project is set up
+1. slop_suggest             — check the project is set up and read the declared patterns
 2. slop_suggest_with_structure  — get the doNotCreate list (always)
 3. slop_scan_file           — scan a draft before writing
 4. slop_explain_rule        — for each issue, understand why

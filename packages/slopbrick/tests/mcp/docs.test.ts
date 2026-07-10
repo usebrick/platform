@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { TOOL_DEFINITIONS } from '../../src/mcp/tools';
+import { verifyMcpDocsDocument } from '../../scripts/generate-mcp-docs';
+
+const docsPath = join(__dirname, '..', '..', 'docs', 'MCP.md');
+
+describe('MCP documentation registry contract', () => {
+  it('matches TOOL_DEFINITIONS without requiring a generated monolithic doc', () => {
+    const document = readFileSync(docsPath, 'utf8');
+    expect(verifyMcpDocsDocument(document)).toBe(document);
+  });
+
+  it('documents every canonical runtime tool section', () => {
+    const document = readFileSync(docsPath, 'utf8');
+    for (const tool of TOOL_DEFINITIONS.filter((entry) => !entry.deprecated)) {
+      expect(document).toContain(`#### \`${tool.name}\``);
+    }
+  });
+});
