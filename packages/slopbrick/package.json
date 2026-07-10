@@ -31,6 +31,7 @@
     "dev": "tsx src/index.ts",
     "generate:rules": "tsx scripts/generate-rule-registry.ts && tsx scripts/generate-rule-catalog.ts",
     "generate:rules:catalog": "tsx scripts/generate-rule-catalog.ts",
+    "generate:language-matrix": "tsx scripts/generate-language-support-matrix.ts",
     "bench:scan": "tsx scripts/bench-scan.ts",
     "prebuild": "pnpm --filter @usebrick/engine build",
     "build": "pnpm --filter @usebrick/engine build && pnpm generate:rules && tsup",
