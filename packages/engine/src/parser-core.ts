@@ -125,7 +125,7 @@ export function parseSource(source: string, filePath: string): ParseResult {
     case 'vue': case 'svelte': return parseScriptTemplate(source);
     case 'py': case 'go': case 'rs': case 'java': case 'kt': case 'kts':
     case 'swift': case 'cpp': case 'cc': case 'cxx': case 'c': case 'h':
-    case 'hpp': case 'hxx': case 'cs':
+    case 'hpp': case 'hxx': case 'cs': case 'dart': case 'rb': case 'php':
       return parseBlankModule(source);
     default: return parseWithSwc(source, filePath);
   }

@@ -220,6 +220,7 @@ Repo is low (25/100). The biggest problem is AI patterns — worst file is packa
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
 | See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
 | See the 103 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
+| See language discovery, parsing, rules, and calibration scope | [`docs/language-support-matrix.md`](./docs/language-support-matrix.md) |
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |
 | See what's changed in each release | [`CHANGELOG.md`](./CHANGELOG.md) |

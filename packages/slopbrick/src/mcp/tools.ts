@@ -10,6 +10,7 @@ import { readStructureMarkdown } from '../engine/structure-md';
 import { SCORE_BRIEFS } from '../report/score-contract.js';
 import { buildRuleExplanation } from '../rules/explanation.js';
 import { RULE_HINTS } from '../snippet/data.js';
+import { SCAN_FILE_TOOL_DESCRIPTION } from '../engine/language-support.js';
 
 import type { Issue, Rule, ResolvedConfig } from '../types';
 
@@ -45,8 +46,7 @@ export interface ToolDefinition {
 export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_scan_file',
-    description:
-      'Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice, and bounded whyItFired facts), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest.',
+    description: SCAN_FILE_TOOL_DESCRIPTION,
     inputSchema: {
       type: 'object',
       properties: {

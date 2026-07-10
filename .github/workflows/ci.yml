@@ -64,6 +64,9 @@ jobs:
         # locally and commit the result if this step fails.
         run: pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
 
+      - name: Check language support matrix is in sync
+        run: pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
+
       - name: Typecheck all packages
         run: pnpm -r typecheck
 

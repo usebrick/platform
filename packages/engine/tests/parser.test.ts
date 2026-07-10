@@ -24,4 +24,15 @@ describe('parseSource', () => {
     expect(result.source).toBe(source);
     expect(result.ast.type).toBe('Module');
   });
+
+  it.each([
+    ['Dart', 'main() { print(\'hello\'); }', '/virtual/main.dart'],
+    ['Ruby', 'class User; end', '/virtual/user.rb'],
+    ['PHP', '<?php echo \'hello\';', '/virtual/index.php'],
+  ])('routes %s through the source-preserving backend parser path', (_language, source, filePath) => {
+    const result = parseSource(source, filePath);
+
+    expect(result.source).toBe(source);
+    expect(result.ast.type).toBe('Module');
+  });
 });

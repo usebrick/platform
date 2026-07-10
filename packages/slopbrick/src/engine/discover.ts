@@ -3,8 +3,13 @@ import { minimatch } from 'minimatch';
 import { resolve, extname, relative, sep, basename, dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import type { ResolvedConfig } from '../types';
+import {
+  backendSourceExtensions,
+  frontendSourceExtensions,
+  supportedExtensions,
+} from './language-support.js';
 
-export const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte', '.astro', '.html']);
+export const SOURCE_EXTENSIONS = new Set(frontendSourceExtensions());
 
 /**
  * v0.9.2 — Backend language extensions. Files with these extensions are
@@ -21,35 +26,11 @@ export const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', 
  * one defined for Python + Go: `extractXxxPatterns(filePath, source) →
  * { service, route, ormModel }`.
  */
-export const BACKEND_EXTENSIONS = new Set([
-  '.py',
-  '.go',
-  // v0.14.0
-  '.swift',
-  '.kt',
-  '.kts',
-  '.dart',
-  '.rs',
-  '.cpp',
-  '.cc',
-  '.cxx',
-  '.c',
-  '.h',
-  '.hpp',
-  '.hxx',
-  '.java',
-  '.rb',
-  '.php',
-  // C# is supported by the cs/* regex rules. Keep it discoverable so
-  // workspace/path scans do not silently omit files that the registry can
-  // analyze.
-  '.cs',
-]);
+export const BACKEND_EXTENSIONS = new Set(backendSourceExtensions());
 
 /** Union used by the path-arg expansion in `slopbrick scan <dir>`. */
 export const ALL_SOURCE_EXTENSIONS: ReadonlySet<string> = new Set([
-  ...SOURCE_EXTENSIONS,
-  ...BACKEND_EXTENSIONS,
+  ...supportedExtensions(),
 ]);
 
 /**
