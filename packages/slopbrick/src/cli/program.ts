@@ -130,18 +130,23 @@ export interface ScanActionOutcome {
   noIncreaseFailure: boolean;
 }
 
+/** Map only the CLI's known user-correctable failures to exit status 2. */
+export function mapCliError(error: unknown): { exitCode: ScanExitCode; message: string } {
+  if (error instanceof ConfigValidationError || error instanceof CliUsageError) {
+    return { exitCode: ScanExitCode.usageOrConfig, message: error.message };
+  }
+  return {
+    exitCode: ScanExitCode.internal,
+    message: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+  };
+}
+
 // Stable scan statuses: 0 clean, 1 policy breach/partial scan, 2
 // user-correctable usage or config error, 3 unexpected internal failure.
 // The executable wrapper owns truly uncaught process-level failures.
 
 export async function runCli({ start }: { start: number }): Promise<void> {
   try {
-    // Deliberately double-gated test seam for the subprocess contract. It is
-    // unavailable in normal installations and exercises the same top-level
-    // catch as a genuine unexpected failure.
-    if (process.env.NODE_ENV === 'test' && process.env.SLOPBRICK_TEST_FORCE_INTERNAL_ERROR === '1') {
-      throw new Error('Injected top-level internal failure');
-    }
     // Apply colour policy before Commander dispatches any subcommand. Scan
     // applies it again with its resolved options so programmatic invocations
     // cannot leak a prior invocation's `--no-color` state.
@@ -664,12 +669,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       await program.parseAsync(process.argv);
     });
   } catch (err) {
-    if (err instanceof ConfigValidationError || err instanceof CliUsageError) {
-      logger.error(err.message);
-      process.exit(ScanExitCode.usageOrConfig);
-    }
-    logger.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(ScanExitCode.internal);
+    const mapped = mapCliError(err);
+    logger.error(mapped.message);
+    process.exit(mapped.exitCode);
   }
 }
 

@@ -55,6 +55,7 @@ export {
   formatSparkline,
 } from './cli/render';
 export { installBrokenPipeHandler } from './cli/output-stream';
+export { installProcessFaultHandlers } from './cli/process-fault';
 
 // --- Symbiotic-project surface (v0.10.1+) ---------------------------------
 //

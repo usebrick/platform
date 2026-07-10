@@ -354,8 +354,9 @@ export async function runScan(
   if (options.rule) {
     const known = builtinRules.some((r) => r.id === options.rule);
     if (!known) {
-      logger.error(`Unknown rule: ${options.rule}. Run \`slopbrick rules\` to see available rules.`);
-      process.exit(2);
+      throw new CliUsageError(
+        `Unknown rule: ${options.rule}. Run \`slopbrick rules\` to see available rules.`,
+      );
     }
   }
   // v0.10.2 (Phase 10): validate --include-rule values so the user
@@ -374,8 +375,9 @@ export async function runScan(
   if (options.includeRules && options.includeRules.length > 0) {
     const unknown = options.includeRules.filter((id) => !builtinRules.some((r) => r.id === id));
     if (unknown.length > 0) {
-      logger.error(`Unknown --include-rule value(s): ${unknown.join(', ')}. Run \`slopbrick rules\` to see available rules.`);
-      process.exit(2);
+      throw new CliUsageError(
+        `Unknown --include-rule value(s): ${unknown.join(', ')}. Run \`slopbrick rules\` to see available rules.`,
+      );
     }
   }
   registry.loadBuiltins(options.rule, { includeRules: effectiveIncludeRules, excludeRules: options.excludeRules });

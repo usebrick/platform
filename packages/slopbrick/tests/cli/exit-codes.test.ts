@@ -5,12 +5,15 @@ import { promisify } from 'node:util';
 import { join } from 'node:path';
 
 import { assertDistBuilt, binPath, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
+import { mapCliError } from '../../src/cli/program';
+import { installProcessFaultHandlers } from '../../src/cli/process-fault';
+import { CliUsageError, ScanExitCode } from '../../src/cli/exit-codes';
 
 const execFileAsync = promisify(execFile);
 
-async function runWithEnv(args: string[], env: NodeJS.ProcessEnv) {
+async function runNodeModule(script: string) {
   try {
-    const { stdout, stderr } = await execFileAsync('node', [binPath, ...args], { env });
+    const { stdout, stderr } = await execFileAsync('node', ['--input-type=module', '--eval', script]);
     return { stdout, stderr, exitCode: 0 };
   } catch (error) {
     const err = error as { stdout?: string | Buffer; stderr?: string | Buffer; code?: number };
@@ -79,16 +82,64 @@ describe('stable scan exit-code contract', () => {
     expect(result.stderr.match(/unknown option '--not-a-real-slopbrick-option'/g)).toHaveLength(1);
   });
 
-  it('returns 3 for a doubly-gated injected top-level internal failure', async () => {
+  it.each([
+    ['--rule', ['--rule', 'does/not-exist'], 'Unknown rule: does/not-exist'],
+    ['--include-rule', ['--include-rule', 'does/not-exist'], 'Unknown --include-rule value(s): does/not-exist'],
+  ])('routes an invalid %s scan filter through the typed usage boundary', async (_flag, args, expected) => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
     writeFileSync(join(dir, 'src', 'clean.ts'), 'export const answer = 42;\n');
-    const result = await runWithEnv(['--workspace', dir, '--quiet'], {
-      ...process.env,
-      NODE_ENV: 'test',
-      SLOPBRICK_TEST_FORCE_INTERNAL_ERROR: '1',
+
+    const result = await run(['--workspace', dir, ...args, '--quiet']);
+    expect(result.exitCode).toBe(ScanExitCode.usageOrConfig);
+    expect(result.stderr).toContain(expected);
+    expect(result.stderr).not.toContain('Unexpected error');
+  });
+
+  it('maps unexpected runCli failures to the internal status without a user environment seam', () => {
+    expect(mapCliError(new Error('top-level failure'))).toEqual({
+      exitCode: ScanExitCode.internal,
+      message: 'Unexpected error: top-level failure',
     });
+    expect(mapCliError(new CliUsageError('bad invocation'))).toEqual({
+      exitCode: ScanExitCode.usageOrConfig,
+      message: 'bad invocation',
+    });
+  });
+});
+
+describe('process-fault boundary', () => {
+  type Listener = (value: unknown) => void;
+
+  it('installs only fault listeners and does not intercept unrelated process events', () => {
+    const listeners = new Map<string, Listener>();
+    const writes: string[] = [];
+    const exits: number[] = [];
+    const host = {
+      on(event: string, listener: Listener) { listeners.set(event, listener); return this; },
+      stderr: { write(message: string) { writes.push(message); return true; } },
+      exit(code: number) { exits.push(code); return undefined as never; },
+    };
+
+    installProcessFaultHandlers(host);
+
+    expect([...listeners.keys()].sort()).toEqual(['uncaughtException', 'unhandledRejection']);
+    expect(listeners.get('warning')).toBeUndefined();
+    expect(writes).toEqual([]);
+    expect(exits).toEqual([]);
+  });
+
+  it.each([
+    ['unhandled rejection', "Promise.reject(new Error('rejection fault'))", 'unhandled rejection — rejection fault'],
+    ['uncaught exception', "setTimeout(() => { throw new Error('exception fault'); }, 0)", 'uncaught exception — exception fault'],
+  ])('maps a %s to exit 3 in a subprocess', async (_name, trigger, expected) => {
+    const distUrl = new URL('../../dist/index.js', import.meta.url).href;
+    const result = await runNodeModule(
+      `import { installProcessFaultHandlers } from ${JSON.stringify(distUrl)}; ` +
+      `installProcessFaultHandlers(process); ${trigger}`,
+    );
+
     expect(result.exitCode).toBe(3);
-    expect(result.stderr).toContain('Injected top-level internal failure');
+    expect(result.stderr).toContain(expected);
   });
 });
