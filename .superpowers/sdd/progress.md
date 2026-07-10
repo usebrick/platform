@@ -101,7 +101,7 @@
   `894ef1670` adds Aqueduct/Conduit `router.route` coverage with approval.
 - SCORE-04 directionality: `1daa779bc` inverts raw aiSlopScore before
   repository-health aggregation; `28b3f8ae7` aligns JSON/MCP briefs. Focused
-  score, maintenance, MCP, and report tests pass; independent review pending.
+  score, maintenance, MCP, and report tests pass; independent review approved.
 - Website version truth is aligned to published npm `0.43.0`; local `0.44.0`
   remains unreleased. The live-terminal change was included in the concurrent
   score commit and is pending a source-level website review.
