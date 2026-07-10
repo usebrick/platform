@@ -215,3 +215,6 @@
 - Generated language matrix `9354344cb` records extension, parser path, rules,
   defaults, fixtures, and calibration eligibility; deterministic `--check`
   passes. Experimental languages remain default-off and release-ineligible.
+- CLI filter surface follow-up `7635d2678` adds repeatable
+  `--include-rule`/`--exclude-rule` options and normalizes scan/watch callback
+  typing; CLI-03 is now backed by both option and worker-propagation commits.
