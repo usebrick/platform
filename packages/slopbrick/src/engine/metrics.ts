@@ -102,6 +102,18 @@ function p90(values: number[]): number {
   return sorted[Math.max(0, index)]!;
 }
 
+/**
+ * Sum numeric evidence in a canonical order so equivalent scan sets do not
+ * produce different IEEE-754 rounding solely because worker completion order
+ * changed.  The input is copied: callers retain their scan ordering for UI
+ * presentation while aggregate facts stay reproducible.
+ */
+function canonicalSum(values: readonly number[]): number {
+  return [...values]
+    .sort((a, b) => a - b)
+    .reduce((sum, value) => sum + value, 0);
+}
+
 export function sizeNormalisation(componentCount: number): number {
   if (componentCount === 0) return 0;
   if (componentCount <= 10) return 1.0;
@@ -473,7 +485,7 @@ export function aggregateReport(
     );
     if (defined.length > 0) {
       const probs = defined.map((s) => s.probability);
-      const mean = probs.reduce((sum, p) => sum + p, 0) / probs.length;
+      const mean = canonicalSum(probs) / probs.length;
       const max = probs.reduce((m, p) => (p > m ? p : m), 0);
       // Tier from the mean: re-derive rather than averaging tiers.
       // Per the engine's own classification logic (composite-scoring.ts),

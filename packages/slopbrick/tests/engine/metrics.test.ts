@@ -131,6 +131,65 @@ describe('scoreFile', () => {
 });
 
 describe('aggregateReport', () => {
+  it('is invariant to input order for equivalent scan evidence', () => {
+    const scores = [
+      { filePath: 'alpha.ts', rawScore: 6, componentScore: 6, adjustedScore: 6, componentCount: 1 },
+      { filePath: 'beta.ts', rawScore: 6, componentScore: 6, adjustedScore: 6, componentCount: 2 },
+      { filePath: 'gamma.ts', rawScore: 9, componentScore: 9, adjustedScore: 9, componentCount: 0 },
+    ];
+    const issueGroups = [
+      {
+        filePath: 'alpha.ts',
+        issues: [
+          { ruleId: 'logic/boundary-violation', category: 'logic' as const, severity: 'high' as const, aiSpecific: true },
+          { ruleId: 'security/public-admin-route', category: 'security' as const, severity: 'medium' as const, aiSpecific: false },
+        ],
+      },
+      {
+        filePath: 'beta.ts',
+        issues: [
+          { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'medium' as const, aiSpecific: true },
+          { ruleId: 'docs/stale-function-reference', category: 'docs' as const, severity: 'low' as const, aiSpecific: false },
+        ],
+      },
+      {
+        filePath: 'gamma.ts',
+        issues: [
+          { ruleId: 'logic/reactive-hook-soup', category: 'logic' as const, severity: 'low' as const, aiSpecific: true },
+        ],
+      },
+    ];
+    const compositeScores = [composite(0.1), composite(0.2), composite(0.3)];
+    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, compositeScores, 3);
+    const permuted = aggregateReport(
+      [scores[2]!, scores[0]!, scores[1]!],
+      [issueGroups[1]!, issueGroups[2]!, issueGroups[0]!],
+      DEFAULT_CONFIG,
+      [compositeScores[2]!, compositeScores[1]!, compositeScores[0]!],
+      3,
+    );
+
+    const aggregateFacts = (value: typeof report) => ({
+      aiSlopScore: value.aiSlopScore,
+      engineeringHygiene: value.engineeringHygiene,
+      security: value.security,
+      repositoryHealth: value.repositoryHealth,
+      slopIndex: value.slopIndex,
+      assemblyHealth: value.assemblyHealth,
+      categoryScores: value.categoryScores,
+      boundaryScore: value.boundaryScore,
+      contextScore: value.contextScore,
+      visualScore: value.visualScore,
+      subscores: value.subscores,
+      p90Score: value.p90Score,
+      peakScore: value.peakScore,
+      componentCount: value.componentCount,
+      compositeScore: value.compositeScore,
+    });
+
+    expect(aggregateFacts(permuted)).toEqual(aggregateFacts(report));
+  });
+
   it('aggregates composite slopIndex from boundary/context/visual subscores (Phase 2 §10)', () => {
     const scores = [
       scoreFile(fileResult({ filePath: 'A.tsx', issues: [issue('high', 'logic')] }), 1.0, DEFAULT_CONFIG),
