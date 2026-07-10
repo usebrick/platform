@@ -139,7 +139,7 @@ See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for f
 | `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. Published v0.43.0 exposes the 4-score model, 103 rules, MCP server, and calibrate subcommand; v10-calibrated against 576,750 files. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers + verdict taxonomy for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | The pure scanning engine extracted from slopbrick. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs. |
-| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
+| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + native browser animation APIs, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
 
@@ -265,10 +265,10 @@ platform/
 │   │   ├── bin/
 │   │   ├── examples/
 │   │   └── distribute/             (AUR PKGBUILD, Homebrew formula, etc.)
-│   └── website/                    usebrick.dev marketing site (Astro + Lenis + GSAP)
+│   └── website/                    usebrick.dev marketing site (Astro + native browser APIs)
 │       ├── src/
 │       │   ├── components/         Nav, Hero, Tools, Compare, Calibration, CTA, Footer
-│       │   ├── layouts/            Base.astro (Lenis + GSAP init)
+│       │   ├── layouts/            Base.astro (global scripts + native browser APIs)
 │       │   ├── pages/              index.astro (single-page site)
 │       │   ├── scripts/            brick-shader, reveal, counter, break-on-hover, copy-install, lenis, low-power
 │       │   ├── styles/             global.css (tokens), theme.css, components.css
