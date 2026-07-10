@@ -99,6 +99,12 @@
 - MCP response contract: `fa4ea80e1` restores `compositeScore` fields promised
   by `slop_scan_file`; full MCP suite 62/62 passes. Dart visitor routing:
   `894ef1670` adds Aqueduct/Conduit `router.route` coverage with approval.
+- SCORE-04 directionality: `1daa779bc` inverts raw aiSlopScore before
+  repository-health aggregation; `28b3f8ae7` aligns JSON/MCP briefs. Focused
+  score, maintenance, MCP, and report tests pass; independent review pending.
+- Website version truth is aligned to published npm `0.43.0`; local `0.44.0`
+  remains unreleased. The live-terminal change was included in the concurrent
+  score commit and is pending a source-level website review.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
@@ -121,3 +127,13 @@
 - Post-reconciliation Dart metadata follow-up `ea9c7c1d1`: four files and 19
   tests passed, correcting `aiSpecific` drift. The subsequent full-suite run
   exposed the blockers listed above and was stopped; it is not green evidence.
+
+- Score-direction follow-up `1d04106fa` clarifies raw AI Slop semantics in
+  telemetry and terminal briefs (`lower is better`); score/maintenance/report/
+  MCP focused tests pass 48/48 with package TypeScript validation.
+- MCP transport follow-up `ad5536dd4` flushes pending asynchronous JSON-RPC
+  responses before server completion; server/pattern/suggest tests pass 53/53.
+  CLI↔MCP golden parity remains open.
+- Generated language matrix `9354344cb` records extension, parser path, rules,
+  defaults, fixtures, and calibration eligibility; deterministic `--check`
+  passes. Experimental languages remain default-off and release-ineligible.
