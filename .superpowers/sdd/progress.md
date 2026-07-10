@@ -288,3 +288,7 @@
   calibration's raw-ANSI bypass, and tests NO_COLOR/FORCE_COLOR/no-color,
   redirected JSON, narrow wrapping, deterministic bytes, and EPIPE handling.
   Independent review approved the 10-test subprocess contract.
+- Gate 2 language-claim truth `eb88fae34`/`7c7ad475e`/`37e6bb340` restores
+  parserless Dart/Ruby/PHP routing, centralizes manifest-derived matrix/site
+  claims, CI drift checks, and the accessible canonical matrix link. Independent
+  review approved L9.4; parser/manifest/site checks pass.
