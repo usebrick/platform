@@ -7,7 +7,29 @@ export interface HttpsUsebrickDevSchemasV1CalibrationCoverageSchemaJson {
   successful: number;
   excluded: number;
   failed: number;
-  strata: unknown[];
-  repositories: unknown[];
-  families: unknown[];
+  strata: Stratum[];
+  repositories: Repository[];
+  families: Family[];
+}
+export interface Stratum {
+  language: string;
+  polarity: "verified_ai" | "verified_human";
+  requested: number;
+  successful: number;
+  excluded: number;
+  failed: number;
+}
+export interface Repository {
+  repositoryId: string;
+  requested: number;
+  successful: number;
+  excluded: number;
+  failed: number;
+}
+export interface Family {
+  familyId: string;
+  requested: number;
+  successful: number;
+  excluded: number;
+  failed: number;
 }
