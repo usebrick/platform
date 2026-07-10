@@ -5,7 +5,7 @@ This matrix is the release-facing contract for file discovery, parsing, rule exe
 
 | Language | Extensions | Parser / facts path | Rules executed | Defaults | Fixtures | Calibration eligibility |
 |---|---|---|---|---|---|---|
-| TypeScript / JavaScript | .ts, .tsx, .js, .jsx, .vue, .svelte, .astro, .html | SWC (framework-aware) | Shared registry; framework and generic rules | Mixed (see rule catalog) | tests/rules/**; framework fixtures | Eligible; calibrated cohorts vary |
+| TypeScript / JavaScript | .ts, .tsx, .js, .jsx, .vue, .svelte, .astro, .html | SWC for JS/TS + dedicated Vue/Svelte/Astro/HTML adapters | Shared registry; framework and generic rules | Mixed (see rule catalog) | tests/rules/**; framework fixtures | Eligible; calibrated cohorts vary |
 | Python | .py | Blank module + source-preserving facts | Shared regex/AI/security rules; Python MCP pattern visitor | No Python-specific scan rules | tests/engine/visitors/python.test.ts | Research-only unless cohort is declared |
 | Go | .go | Blank module + source-preserving facts | go/* plus shared regex/AI/security rules | go/* default-off (DORMANT) | tests/engine/visitors/go.test.ts; tests/rules/go | Research-only; current go/* cohort is dormant |
 | Rust | .rs | Blank module + tree-sitter Rust visitor | rust/* plus shared rules | rust/* default-on (USEFUL/OK) | tests/engine/rust-visitor.test.ts; tests/rules/rust | Eligible for existing v10 cohort |

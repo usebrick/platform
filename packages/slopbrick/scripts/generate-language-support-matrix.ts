@@ -24,7 +24,7 @@ type Row = {
 };
 
 const rows: Row[] = [
-  { language: 'TypeScript / JavaScript', extensions: '.ts, .tsx, .js, .jsx, .vue, .svelte, .astro, .html', parser: 'SWC (framework-aware)', rules: 'Shared registry; framework and generic rules', defaults: 'Mixed (see rule catalog)', fixtures: 'tests/rules/**; framework fixtures', calibration: 'Eligible; calibrated cohorts vary' },
+  { language: 'TypeScript / JavaScript', extensions: '.ts, .tsx, .js, .jsx, .vue, .svelte, .astro, .html', parser: 'SWC for JS/TS + dedicated Vue/Svelte/Astro/HTML adapters', rules: 'Shared registry; framework and generic rules', defaults: 'Mixed (see rule catalog)', fixtures: 'tests/rules/**; framework fixtures', calibration: 'Eligible; calibrated cohorts vary' },
   { language: 'Python', extensions: '.py', parser: 'Blank module + source-preserving facts', rules: 'Shared regex/AI/security rules; Python MCP pattern visitor', defaults: 'No Python-specific scan rules', fixtures: 'tests/engine/visitors/python.test.ts', calibration: 'Research-only unless cohort is declared' },
   { language: 'Go', extensions: '.go', parser: 'Blank module + source-preserving facts', rules: 'go/* plus shared regex/AI/security rules', defaults: 'go/* default-off (DORMANT)', fixtures: 'tests/engine/visitors/go.test.ts; tests/rules/go', calibration: 'Research-only; current go/* cohort is dormant' },
   { language: 'Rust', extensions: '.rs', parser: 'Blank module + tree-sitter Rust visitor', rules: 'rust/* plus shared rules', defaults: 'rust/* default-on (USEFUL/OK)', fixtures: 'tests/engine/rust-visitor.test.ts; tests/rules/rust', calibration: 'Eligible for existing v10 cohort' },
