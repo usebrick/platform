@@ -253,3 +253,10 @@
   retry exhaustion; focused pool + scan-completion tests pass 37/37 under
   independent review. Reason-coded discovery exclusions and partial-score UX
   remain open.
+- Gate 2 score validity `074ccd1aa`/`fb65d13df`/`5b325332f`/`4d9942745`
+  propagates explicit valid/incomplete/not-applicable status through core
+  health, renderers, SARIF, MCP, thresholding, and historical memory. Invalid
+  scans cannot become threshold/history evidence; core accounting conservation
+  is validated. Independent review approved it; scan completion + thresholds
+  pass 31/31. Numeric fields remain for wire compatibility and are explicitly
+  non-gating until a future wire-format migration.
