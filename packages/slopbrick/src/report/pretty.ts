@@ -1058,7 +1058,7 @@ export function formatBriefReport(report: ProjectReport): string {
   // to understand what "Engineering Hygiene" or "Repository Health"
   // actually means.
   const scoreLines: Array<{ label: string; field: string; value: number; brief: string }> = [
-    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore,          brief: 'raw amount of AI slop, 0-100' },
+    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore,          brief: 'raw amount of AI slop, 0-100 (lower is better)' },
     { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene, brief: 'cross-category consistency, 0-100' },
     { label: 'Security',            field: 'security',           value: report.security,           brief: 'AI Security Risk band, 0-100' },
     { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth,   brief: 'weighted composite, 0-100' },
