@@ -48,7 +48,7 @@ const COMMANDS: CommandSpec[] = [
       { kind: 'output', text: '  slopbrick explain <ruleId>        rationale + remediation for a rule' },
       { kind: 'output', text: '  slopbrick doctor                  check setup, config, environment' },
       { kind: 'output', text: '  slopbrick mcp                     start the MCP server (JSON-RPC 2.0 over stdio)' },
-      { kind: 'output', text: '  cat .slopbrick/structure.json     show what scan produces' },
+      { kind: 'output', text: '  cat .slopbrick/structure.md      show what scan produces' },
       { kind: 'output', text: '  clear                             clear the screen' },
       { kind: 'muted',  text: 'tip: Up/Down arrows recall past commands.' },
     ],
@@ -66,7 +66,7 @@ const COMMANDS: CommandSpec[] = [
     match: 'slopbrick scan',
     run: () => [
       { kind: 'muted',  text: '[v0.43.0] auto-suppressed 0 INVERTED/NOISY issue(s) from 18 default-off rule(s).' },
-      { kind: 'muted',  text: 'Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).' },
+      { kind: 'muted',  text: 'Memory persisted to .slopbrick/structure.md (0 patterns, 0 components, 537 bytes).' },
       { kind: 'output', text: '' },
       { kind: 'output', text: 'Repo is low (13/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts.' },
       { kind: 'output', text: '' },
@@ -89,12 +89,12 @@ const COMMANDS: CommandSpec[] = [
     match: 'slopbrick init',
     run: () => [
       { kind: 'output', text: '       ▸ creating .slopbrick/ ...' },
-      { kind: 'output', text: '       ▸ writing .slopbrick/structure.json' },
+      { kind: 'output', text: '       ▸ writing .slopbrick/structure.md' },
       { kind: 'output', text: '       ▸ writing .slopbrick/inventory.json' },
       { kind: 'output', text: '       ▸ writing .slopbrick/constitution.json' },
       { kind: 'output', text: '       ▸ writing .slopbrick/health.json' },
       { kind: 'success', text: '✓ slopbrick initialized in 0.18s' },
-      { kind: 'muted',  text: 'next: `slopbrick scan` to populate structure.json.' },
+      { kind: 'muted',  text: 'next: `slopbrick scan` to populate structure.md.' },
     ],
   },
   {
@@ -129,7 +129,7 @@ const COMMANDS: CommandSpec[] = [
     ],
   },
   {
-    match: 'cat .slopbrick/structure.json',
+    match: 'cat .slopbrick/structure.md',
     run: () => STRUCTURE_JSON.split('\n').map((text): Line => ({ kind: 'output', text })),
   },
   {
@@ -239,12 +239,13 @@ export function initLiveTerminal(): () => void {
           resolve();
           return;
         }
-        // Per-char jitter keeps it from feeling mechanical.
-        const base = 16;
+        // Per-char jitter keeps it from feeling mechanical without making
+        // command completion depend on a long wall-clock timeout.
+        const base = 6;
         const jitter = (text.charCodeAt(i) % 7) * 2;
         window.setTimeout(tick, base + jitter);
       };
-      window.setTimeout(tick, 16);
+      window.setTimeout(tick, 6);
     });
   };
 
@@ -258,6 +259,7 @@ export function initLiveTerminal(): () => void {
   // ----- Boot banner -----
 
   const seedBanner = (): void => {
+    body.dataset.commandComplete = 'seed';
     appendLine('muted', 'slopbrick v0.43.0 · 4 scores · 103 rules · 22 categories · v10-calibrated · offline');
     appendLine('muted', "type `help` to list commands. the CLI itself runs without telemetry.");
     renderInputLine();
@@ -268,6 +270,7 @@ export function initLiveTerminal(): () => void {
   const execute = async (raw: string): Promise<void> => {
     const cmd = raw.trim();
     state.busy = true;
+    delete body.dataset.commandComplete;
     appendLine('echo', cmd);
 
     if (cmd.length === 0) {
@@ -295,6 +298,7 @@ export function initLiveTerminal(): () => void {
       await typeLine(line.kind, line.text);
     }
     state.busy = false;
+    body.dataset.commandComplete = cmd;
   };
 
   // ----- Input -----

@@ -22,6 +22,7 @@ test('LiveTerminal: help command prints the command list', async ({ page }) => {
   await term.focus();
   await type(page, 'help');
   await page.keyboard.press('Enter');
+  await expect(term).toHaveAttribute('data-command-complete', 'help', { timeout: 20_000 });
   await expect(term.locator('text=available commands (v0.43.0; latest published)')).toBeVisible();
   await expect(term.locator('text=slopbrick scan')).toBeVisible();
 });
@@ -32,10 +33,11 @@ test('LiveTerminal: slopbrick scan prints the calibration ritual', async ({ page
   await term.focus();
   await type(page, 'slopbrick scan');
   await page.keyboard.press('Enter');
+  await expect(term).toHaveAttribute('data-command-complete', 'slopbrick scan', { timeout: 20_000 });
   // The output types character by character (~20ms each). 8 lines of
   // ~50 chars each = ~8s worst case. Generous timeout.
   await expect(term.locator('text=aiSlopScore')).toBeVisible({ timeout: 15_000 });
-  await expect(term.locator('text=.usebrick/structure.json')).toBeVisible();
+  await expect(term.locator('text=.slopbrick/structure.md')).toBeVisible();
 });
 
 test('LiveTerminal: ArrowUp recalls the previous command', async ({ page }) => {
@@ -44,10 +46,7 @@ test('LiveTerminal: ArrowUp recalls the previous command', async ({ page }) => {
   await term.focus();
   await type(page, 'help');
   await page.keyboard.press('Enter');
-  // Wait for the LAST line of the help output so we know typing finished.
-  await expect(term.locator('text=Up/Down arrows recall past commands')).toBeVisible({
-    timeout: 15_000,
-  });
+  await expect(term).toHaveAttribute('data-command-complete', 'help', { timeout: 20_000 });
   await page.keyboard.press('ArrowUp');
   // The live input line's value should now show "help".
   await expect(term.locator('.lt-input__value')).toHaveText('help');
