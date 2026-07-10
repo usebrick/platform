@@ -3,6 +3,7 @@
 export type Identifier = string;
 export type Sha = string;
 export type Sha256 = string;
+export type SafeArgument = string;
 
 export interface SlopBrickV103CalibrationRunManifest {
   version: "v10.3";
@@ -31,7 +32,7 @@ export interface SlopBrickV103CalibrationRunManifest {
   /**
    * @minItems 1
    */
-  commandArgs: [string, ...string[]];
+  commandArgs: [SafeArgument, ...SafeArgument[]];
 }
 export interface InputHashes {
   registrySha256: Sha256;

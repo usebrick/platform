@@ -1,0 +1,11 @@
+{
+  "version": "v10.3", "runId": "bad-run", "createdAt": "2026-07-10T00:00:00Z",
+  "git": { "sha": "cccccccccccccccccccccccccccccccccccccccc", "dirty": false },
+  "package": { "name": "slopbrick", "version": "0.44.0" },
+  "runtime": { "node": "v22", "pnpm": "10", "platform": "darwin", "arch": "arm64" }, "schemaVersion": "v10.3", "methodVersion": "v10.3.0",
+  "inputHashes": { "registrySha256": "1111111111111111111111111111111111111111111111111111111111111111", "signalTableSha256": "2222222222222222222222222222222222222222222222222222222222222222", "configSha256": "3333333333333333333333333333333333333333333333333333333333333333", "corpusManifestSha256": "4444444444444444444444444444444444444444444444444444444444444444", "selectionSha256": "5555555555555555555555555555555555555555555555555555555555555555", "checkoutMapSha256": "6666666666666666666666666666666666666666666666666666666666666666" },
+  "selection": { "seed": "seed", "policy": { "eligibleLabels": ["verified_ai"], "eligibleTiers": ["gold"], "eligibleStrata": ["production"], "maxPerStratum": 1 } },
+  "expected": { "fileIdsByPolarity": { "verified_ai": ["a"], "verified_human": ["b"] }, "chunkIdsByPolarity": { "verified_ai": ["ca"], "verified_human": ["cb"] } },
+  "settings": { "includeRuleIds": [], "excludeRuleIds": [], "maxFileBytes": 1, "chunkSize": 1, "chunkTimeoutMs": 1, "retryTimeoutMs": 1, "workerCount": 1 },
+  "commandArgs": ["--out=/private/corpus/output"]
+}

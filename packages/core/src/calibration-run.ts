@@ -7,6 +7,10 @@ const SHA = /^[a-f0-9]{40,64}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 const ABSOLUTE_PATH = /^(?:\/|[A-Za-z]:[\\/])/;
+const EMBEDDED_ABSOLUTE_PATH = /(?:^|[=\s'"[{(:,])(?:\/|[A-Za-z]:[\\/])|[A-Za-z][A-Za-z0-9+.-]*:\/{1,}/;
+// Canonical run artifacts may carry only tokenized command arguments. This
+// excludes shell/JSON payloads, URI forms, backslashes, and absolute paths.
+const SAFE_COMMAND_ARGUMENT = /^(?:--[a-z][a-z0-9-]*(?:=[A-Za-z0-9._:@+-]+(?:\/[A-Za-z0-9._:@+-]+)*)?|[A-Za-z0-9._:@+-]+(?:\/[A-Za-z0-9._:@+-]+)*)$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function ownKeys(value: Record<string, unknown>, keys: readonly string[]): boolean { return Object.keys(value).every((key) => keys.includes(key)); }
@@ -23,9 +27,13 @@ function canonical(value: unknown): string {
 }
 
 function containsAbsolutePath(value: unknown): boolean {
-  if (typeof value === 'string') return ABSOLUTE_PATH.test(value);
+  if (typeof value === 'string') return ABSOLUTE_PATH.test(value) || EMBEDDED_ABSOLUTE_PATH.test(value);
   if (Array.isArray(value)) return value.some(containsAbsolutePath);
   return isRecord(value) && Object.values(value).some(containsAbsolutePath);
+}
+
+function safeCommandArgument(value: string): boolean {
+  return SAFE_COMMAND_ARGUMENT.test(value) && !/(?:^|=)[A-Za-z][A-Za-z0-9+.-]*:\//.test(value);
 }
 
 export function calibrationCheckoutMapSha256(value: unknown): string {
@@ -49,6 +57,13 @@ function validPolarityIds(value: unknown): boolean {
   return isRecord(value) && ownKeys(value, ['verified_ai', 'verified_human']) && stringList(value.verified_ai, true) && stringList(value.verified_human, true);
 }
 
+function disjointPolarityIds(value: unknown): boolean {
+  if (!validPolarityIds(value)) return false;
+  const ids = value as { verified_ai: string[]; verified_human: string[] };
+  const ai = new Set(ids.verified_ai);
+  return ids.verified_human.every((id) => !ai.has(id));
+}
+
 /**
  * Validate the portable, canonical run record only. It intentionally cannot
  * inspect checkout paths; callers must hash and validate the separate local
@@ -56,13 +71,13 @@ function validPolarityIds(value: unknown): boolean {
  */
 export function isCalibrationRunManifestV103(value: unknown): value is SlopBrickV103CalibrationRunManifest {
   if (!isRecord(value) || containsAbsolutePath(value) || !ownKeys(value, ['version', 'runId', 'createdAt', 'git', 'package', 'runtime', 'schemaVersion', 'methodVersion', 'inputHashes', 'selection', 'expected', 'settings', 'commandArgs']) ||
-    value.version !== 'v10.3' || value.schemaVersion !== 'v10.3' || !ID.test(value.runId as string) || !nonEmpty(value.createdAt) || !ISO.test(value.createdAt) || Number.isNaN(Date.parse(value.createdAt)) || !/^v10\.3\.\d+$/.test(value.methodVersion as string) || !stringList(value.commandArgs, true)) return false;
+    value.version !== 'v10.3' || value.schemaVersion !== 'v10.3' || !ID.test(value.runId as string) || !nonEmpty(value.createdAt) || !ISO.test(value.createdAt) || Number.isNaN(Date.parse(value.createdAt)) || !/^v10\.3\.\d+$/.test(value.methodVersion as string) || !stringList(value.commandArgs, true) || !value.commandArgs.every(safeCommandArgument)) return false;
   if (!isRecord(value.git) || !ownKeys(value.git, ['sha', 'dirty']) || !SHA.test(value.git.sha as string) || typeof value.git.dirty !== 'boolean') return false;
   if (!isRecord(value.package) || !ownKeys(value.package, ['name', 'version']) || value.package.name !== 'slopbrick' || !nonEmpty(value.package.version)) return false;
   if (!isRecord(value.runtime) || !ownKeys(value.runtime, ['node', 'pnpm', 'platform', 'arch']) || !nonEmpty(value.runtime.node) || !nonEmpty(value.runtime.pnpm) || !nonEmpty(value.runtime.platform) || !nonEmpty(value.runtime.arch)) return false;
   if (!isRecord(value.inputHashes) || !ownKeys(value.inputHashes, ['registrySha256', 'signalTableSha256', 'configSha256', 'corpusManifestSha256', 'selectionSha256', 'checkoutMapSha256']) || !Object.values(value.inputHashes).every((hash) => typeof hash === 'string' && SHA256.test(hash))) return false;
   if (!isRecord(value.selection) || !ownKeys(value.selection, ['seed', 'policy']) || !nonEmpty(value.selection.seed) || !isRecord(value.selection.policy) || !ownKeys(value.selection.policy, ['eligibleLabels', 'eligibleTiers', 'eligibleStrata', 'maxPerStratum']) || !stringList(value.selection.policy.eligibleLabels, true) || !value.selection.policy.eligibleLabels.every((label) => label === 'verified_ai' || label === 'verified_human') || !stringList(value.selection.policy.eligibleTiers, true) || !value.selection.policy.eligibleTiers.every((tier) => tier === 'gold' || tier === 'silver') || !stringList(value.selection.policy.eligibleStrata, true) || !integer(value.selection.policy.maxPerStratum, 1)) return false;
-  if (!isRecord(value.expected) || !ownKeys(value.expected, ['fileIdsByPolarity', 'chunkIdsByPolarity']) || !validPolarityIds(value.expected.fileIdsByPolarity) || !validPolarityIds(value.expected.chunkIdsByPolarity)) return false;
+  if (!isRecord(value.expected) || !ownKeys(value.expected, ['fileIdsByPolarity', 'chunkIdsByPolarity']) || !disjointPolarityIds(value.expected.fileIdsByPolarity) || !disjointPolarityIds(value.expected.chunkIdsByPolarity)) return false;
   if (!isRecord(value.settings) || !ownKeys(value.settings, ['includeRuleIds', 'excludeRuleIds', 'maxFileBytes', 'chunkSize', 'chunkTimeoutMs', 'retryTimeoutMs', 'workerCount'])) return false;
   const settings = value.settings;
   const includeRuleIds = settings.includeRuleIds;

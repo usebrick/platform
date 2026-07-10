@@ -46,4 +46,30 @@ describe('v10.3 calibration run and checkout-map contracts', () => {
     const overlap = runManifest(); (overlap.settings.excludeRuleIds as string[]) = ['ai/comment-ratio'];
     expect(isCalibrationRunManifestV103(overlap)).toBe(false);
   });
+
+  it.each([
+    '--out=/private/corpus/output',
+    'file:///private/corpus/output',
+    '{"out":"/private/corpus/output"}',
+    '--out=C:\\private\\corpus\\output',
+  ])('rejects absolute paths embedded in canonical command arguments: %s', (argument) => {
+    const run = runManifest();
+    run.commandArgs = ['cal:scan', argument];
+    expect(isCalibrationRunManifestV103(run)).toBe(false);
+  });
+
+  it('rejects expected file or chunk identities that cross polarity', () => {
+    const fileLeak = runManifest();
+    fileLeak.expected.fileIdsByPolarity.verified_human = ['sbf_a'];
+    expect(isCalibrationRunManifestV103(fileLeak)).toBe(false);
+    const chunkLeak = runManifest();
+    chunkLeak.expected.chunkIdsByPolarity.verified_human = ['chunk-ai-001'];
+    expect(isCalibrationRunManifestV103(chunkLeak)).toBe(false);
+  });
+
+  it('rejects embedded absolute paths in any canonical run field', () => {
+    const run = runManifest();
+    run.runtime.platform = 'metadata=/private/corpus';
+    expect(isCalibrationRunManifestV103(run)).toBe(false);
+  });
 });
