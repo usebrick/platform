@@ -48,6 +48,12 @@ function pluralize(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? '' : 's'}`;
 }
 
+function formatScoreBasis(report: ProjectReport): string | null {
+  if (!report.scoreBasis) return null;
+  const { denominator, suppressedIssueCount, parseErrorCount } = report.scoreBasis;
+  return `Scores use ${pluralize(denominator, 'analysed file')}; effective findings only (${suppressedIssueCount} suppressed, ${parseErrorCount} parse errors).`;
+}
+
 function formatSummary(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
   const fileCount = report.fileCount;
@@ -57,9 +63,8 @@ function formatSummary(report: ProjectReport): string {
   // actually needs to fix.
   const active = activeIssueCount(report.issues);
   const base = `Scanned ${pluralize(fileCount, 'file')}, ${pluralize(report.componentCount, 'component')}, ${pluralize(active, 'issue')} (high: ${counts.high}, medium: ${counts.medium}, low: ${counts.low})`;
-  const basisLine = report.scoreBasis
-    ? `\nScores use ${pluralize(report.scoreBasis.denominator, 'analysed file')} and the effective issue set.`
-    : '';
+  const basis = formatScoreBasis(report);
+  const basisLine = basis ? `\n${basis}` : '';
   // v0.10.1: PR Slop Score header for --diff <ref> mode (VibeDrift-compatible).
   if (report.prSlopScore !== undefined) {
     return `${base}${basisLine}\nComparing against \`${report.diffRef ?? 'HEAD~'}\`: PR Slop Score = ${report.prSlopScore}`;
@@ -1144,13 +1149,8 @@ export function formatBriefReport(report: ProjectReport): string {
       `  Scanned ${report.fileCount} file${report.fileCount === 1 ? '' : 's'}, ${active} issue${active === 1 ? '' : 's'}. Re-run without --brief for the full report.`,
     ),
   );
-  if (report.scoreBasis) {
-    lines.push(
-      chalk.dim(
-        `  Score basis: ${report.scoreBasis.denominator} analysed file${report.scoreBasis.denominator === 1 ? '' : 's'}; effective findings only${report.scoreBasis.suppressedIssueCount > 0 ? ` (${report.scoreBasis.suppressedIssueCount} suppressed)` : ''}.`,
-      ),
-    );
-  }
+  const basis = formatScoreBasis(report);
+  if (basis) lines.push(chalk.dim(`  Score basis: ${basis.slice('Scores use '.length)}`));
 
   return lines.join('\n');
 }

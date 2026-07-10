@@ -194,6 +194,13 @@ describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
         security: 95,
         repositoryHealth: 60,
         issueCounts: { high: 0, medium: 0, low: 0 },
+        scoreBasis: {
+          denominator: 42,
+          analyzedFiles: 42,
+          issueSet: 'effective',
+          suppressedIssueCount: 3,
+          parseErrorCount: 1,
+        },
         compositeScore: composite,
       }),
       'utf-8',
@@ -203,6 +210,19 @@ describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
     const result = await runSuggest({}, ctx);
     const parsed = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
     expect(parsed.compositeScore).toEqual(composite);
+    expect(parsed.scores).toEqual({
+      aiSlopScore: 30,
+      engineeringHygiene: 80,
+      security: 95,
+      repositoryHealth: 60,
+    });
+    expect(parsed.scoreBasis).toEqual({
+      denominator: 42,
+      analyzedFiles: 42,
+      issueSet: 'effective',
+      suppressedIssueCount: 3,
+      parseErrorCount: 1,
+    });
     // v0.43.0: when compositeScore is present, also surface
     // scoreBriefs so MCP clients (Cursor, Claude Code, Continue)
     // can explain what the score means to the agent without

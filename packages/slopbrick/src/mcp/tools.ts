@@ -402,8 +402,8 @@ export async function runSuggest(
     try {
       const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
       const health = loadHealth(ctx.cwd);
-      if (health?.compositeScore) {
-        payload.compositeScore = health.compositeScore;
+      if (health) {
+        if (health.compositeScore) payload.compositeScore = health.compositeScore;
         payload.scoreBasis = health.scoreBasis;
         // v0.43.0: include the same scoreBriefs that the CLI
         // --brief and --json surfaces now ship. MCP clients
@@ -413,6 +413,12 @@ export async function runSuggest(
         // compositeScore sees the number but not what it
         // measures; the brief makes it self-explanatory.
         payload.scoreBriefs = SCORE_BRIEFS;
+        payload.scores = {
+          aiSlopScore: health.aiSlopScore,
+          engineeringHygiene: health.engineeringHygiene,
+          security: health.security,
+          repositoryHealth: health.repositoryHealth,
+        };
       }
     } catch {
       // health.json missing or unreadable — composite is optional,

@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { STRUCTURE_SCHEMA_VERSION } from '@usebrick/core';
+import { DEFAULT_CONFIG } from '../../src/config';
+import { runSuggest, type ToolContext } from '../../src/mcp/tools';
 import { formatHtml } from '../../src/report/html.js';
 import { formatJson } from '../../src/report/json.js';
 import { formatMarkdown } from '../../src/report/markdown.js';
 import { formatPretty, formatBriefReport } from '../../src/report/pretty.js';
 import { formatSarif } from '../../src/report/sarif.js';
-import type { Issue, ProjectReport } from '../../src/types.js';
+import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
+import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types.js';
 
 const scoreBasis = {
   denominator: 7,
@@ -78,11 +85,18 @@ describe('headline score renderer contract', () => {
       scoreBasis,
     });
     for (const output of textFormats) {
+      expect(output).toContain('AI Slop Score');
+      expect(output).toContain('Engineering Hygiene');
+      expect(output).toContain('Security');
+      expect(output).toContain('Repository Health');
       expect(output).toContain('12.3');
       expect(output).toContain('45.6');
       expect(output).toContain('78.9');
       expect(output).toContain('63.4');
-      expect(output).toContain('7 analysed file');
+      expect(output).toContain('7 analysed files');
+      expect(output).toContain('effective findings only');
+      expect(output).toContain('2 suppressed');
+      expect(output).toContain('1 parse errors');
     }
   });
 
@@ -102,5 +116,42 @@ describe('headline score renderer contract', () => {
     expect(html).not.toContain('test/off-rule');
     expect(json.issues).toEqual(expect.arrayContaining([expect.objectContaining({ ruleId: 'test/off-rule' })]));
     expect(sarif.runs[0].results).toEqual(expect.arrayContaining([expect.objectContaining({ ruleId: 'test/off-rule' })]));
+  });
+
+  it('gives MCP suggestions the same four scores, provenance, and score briefs from persisted health', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'slopbrick-renderer-contract-'));
+    try {
+      mkdirSync(join(cwd, '.slopbrick'), { recursive: true });
+      writeFileSync(join(cwd, '.slopbrick', 'health.json'), JSON.stringify({
+        version: STRUCTURE_SCHEMA_VERSION,
+        generatedAt: '2026-07-10T00:00:00.000Z',
+        workspace: cwd,
+        aiSlopScore: 12,
+        engineeringHygiene: 46,
+        security: 79,
+        repositoryHealth: 63,
+        issueCounts: { high: 0, medium: 0, low: 0 },
+        scoreBasis,
+      }), 'utf8');
+
+      const ctx: ToolContext = {
+        cwd,
+        rules: [],
+        config: DEFAULT_CONFIG as ResolvedConfig,
+      };
+      const result = await runSuggest({}, ctx);
+      const payload = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
+
+      expect(payload.scores).toEqual({
+        aiSlopScore: 12,
+        engineeringHygiene: 46,
+        security: 79,
+        repositoryHealth: 63,
+      });
+      expect(payload.scoreBasis).toEqual(scoreBasis);
+      expect(payload.scoreBriefs).toEqual(SCORE_BRIEFS);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 });

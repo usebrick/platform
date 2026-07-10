@@ -332,16 +332,31 @@ describe('formatSarif — partialFingerprints.primaryLocationLineHash', () => {
 // ---------------------------------------------------------------------------
 
 describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1)', () => {
-  function driverProperties(report: ProjectReport): { compositeScore?: unknown } | undefined {
+  function driverProperties(report: ProjectReport): {
+    compositeScore?: unknown;
+    scores?: {
+      aiSlopScore: number;
+      engineeringHygiene: number;
+      security: number;
+      repositoryHealth: number;
+    };
+  } | undefined {
     const log = JSON.parse(formatSarif(report)) as {
       runs: Array<{ tool: { driver: { properties?: { compositeScore?: unknown } } } }>;
     };
     return log.runs[0]?.tool?.driver?.properties;
   }
 
-  it('omits properties entirely when report.compositeScore is undefined', () => {
+  it('keeps headline scores in driver.properties when report has no optional score metadata', () => {
     const props = driverProperties(makeReport());
-    expect(props).toBeUndefined();
+    expect(props).toEqual({
+      scores: {
+        aiSlopScore: 30,
+        engineeringHygiene: 30,
+        security: 30,
+        repositoryHealth: 30,
+      },
+    });
   });
 
   it('surfaces compositeScore on driver.properties when defined', () => {
@@ -355,11 +370,15 @@ describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1
     expect(props).toMatchObject({ compositeScore: composite });
   });
 
-  it('does not surface properties when compositeScore is the empty shape (pre-v0.18.2 reports)', () => {
-    // The gate uses `report.compositeScore` truthiness — undefined,
-    // null, or omitted all yield a `properties`-free log. This matches
-    // the F12/F13 backward-compat decision in §2b.1.
+  it('keeps headline scores when compositeScore is the empty shape (pre-v0.18.2 reports)', () => {
+    // Legacy reports do not carry a Bayesian aggregate, but the four
+    // deterministic headline scores are present on every ProjectReport.
     const props = driverProperties(makeReport({ compositeScore: undefined }));
-    expect(props).toBeUndefined();
+    expect(props?.scores).toEqual({
+      aiSlopScore: 30,
+      engineeringHygiene: 30,
+      security: 30,
+      repositoryHealth: 30,
+    });
   });
 });

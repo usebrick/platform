@@ -93,8 +93,9 @@ interface SarifToolDriver {
    * project-level Bayesian composite aggregate (tier, mean, max,
    * fileCount) so SARIF consumers (GitHub code scanning, IDE
    * security panels) can display the "is this codebase AI?"
-   * probability alongside the per-result findings. Present only
-   * when `report.compositeScore` is defined (i.e. v0.18.2+ shape).
+   * probability alongside the per-result findings. The four deterministic
+   * headline scores are always present; optional metadata is added when the
+   * report carries it.
    */
   properties?: {
     compositeScore?: {
@@ -357,23 +358,19 @@ export function formatSarif(
     buildResultFromIssue(issue, options?.cwd, fileContentCache),
   );
 
-  // Sprint 2.3 §2b.1: gate the driver-level `properties.compositeScore`
-  // on the field being defined. v0.18.0-and-earlier reports omit
-  // it; the SARIF log should stay backward-compatible (no
-  // `properties` key at all) so consumers that key on its presence
-  // see the same shape they did before.
-  const driverProperties = report.compositeScore || report.scoreBasis
-    ? {
-        ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
-        ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
-        scores: {
-          aiSlopScore: report.aiSlopScore,
-          engineeringHygiene: report.engineeringHygiene,
-          security: report.security,
-          repositoryHealth: report.repositoryHealth,
-        },
-      }
-    : undefined;
+  // Every ProjectReport carries the deterministic headline scores, so every
+  // SARIF log carries them too. The Bayesian aggregate and score provenance
+  // remain optional for historical/programmatic reports that lack them.
+  const driverProperties = {
+    ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
+    ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
+    scores: {
+      aiSlopScore: report.aiSlopScore,
+      engineeringHygiene: report.engineeringHygiene,
+      security: report.security,
+      repositoryHealth: report.repositoryHealth,
+    },
+  };
 
   const log: SarifLog = {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
