@@ -92,8 +92,8 @@
   brief behavior. Typecheck and scan-completion 13/13 pass; CI/diff/UX focused
   suite 63/63 pass. Built-binary smoke covered JSON, security-only, verbose,
   full+brief, and watch SIGINT. The complete subprocess flag/command audit is
-  still open, and scan-side security/default-off changes remain uncommitted
-  shared work for the parent tranche.
+  still open; scan-side security/default-off changes are now included in the
+  score tranche commits.
 - CLI invalid-config smoke: `d268d629b` wraps config import/syntax failures in
   `ConfigValidationError`, restoring documented exit code 2 and actionable file
   context. Scan-completion suite is now 14/14; built-binary malformed-config
@@ -103,6 +103,12 @@
   metrics/scan/SARIF/structure/core checks pass. `b0c169701` applies the same
   effective finding set before scoring and uses analysed files as the exposure
   denominator. Full public score and golden renderer parity remain open.
+- HTML score provenance follow-up `fbc6da3dd` adds `scoreBasis` to the HTML
+  report and passes its 12-test focused suite.
+- Website truth follow-up `1f0d80ee9` replaces the stale 503-rule and ~150 kB
+  claims with the published v0.43.0 facts (103 rules; downloaded tarball
+  1,130,295 bytes). Full route/accessibility/deployment verification remains
+  open.
 - The continuation ledger now records previously reviewed CLI-00/01/05/06,
   CORE-07/08, and Dart contract gates as complete with their evidence commits;
   CLI-03/04, MCP protocol schemas, score invariants, language matrix, and
