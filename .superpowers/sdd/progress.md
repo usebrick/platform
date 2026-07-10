@@ -130,6 +130,12 @@
   `2c46c2466` complete refresh/output/no-telemetry/source-help/CI-forwarding
   coverage; `scan-completion` is 17/17 and CI threshold tests are 12/12. The
   remaining CLI gap is a dedicated source/CJS/ESM/tarball parity matrix.
+- Follow-up test reconciliation: `2c46c2466` and `b5c94065b` align CI and
+  integration fixtures with the raw AI-slop threshold and effective-file
+  denominator. Focused pool, structural-clone, watch, category-separation,
+  CLI-threshold, and CI suites pass in isolation; the concurrent all-suite run
+  hit resource/timing limits (notably calibration workers), so it is not green
+  evidence and must not be represented as such.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
