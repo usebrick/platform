@@ -126,6 +126,10 @@
   `structure.json`/`structure.md` mismatch and replaces timing-only assertions
   with command-completion state. Astro build/typecheck, 35 unit tests, and all
   9 Playwright/axe tests pass locally.
+- CLI contract closeout: `27dd71568`, `380ca1701`, `ebcdd8865`, and
+  `2c46c2466` complete refresh/output/no-telemetry/source-help/CI-forwarding
+  coverage; `scan-completion` is 17/17 and CI threshold tests are 12/12. The
+  remaining CLI gap is a dedicated source/CJS/ESM/tarball parity matrix.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
