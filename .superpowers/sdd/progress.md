@@ -136,6 +136,9 @@
   CLI-threshold, and CI suites pass in isolation; the concurrent all-suite run
   hit resource/timing limits (notably calibration workers), so it is not green
   evidence and must not be represented as such.
+- Calibration path portability: `021fc7af7` removes the shared runtime's
+  machine-specific corpus fallback in favor of `SLOPBRICK_CORPUS_DIR` or a
+  repository-local `corpus/` directory; custom-path calibration remains green.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
