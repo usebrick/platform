@@ -239,3 +239,7 @@
   parity now covers path exclusions, directives, default-off findings, scores,
   and score basis; independent review approved it and scan completion passes
   19/19.
+- Gate 1 aggregate-order parity `1376358a7`/`9142cf9bf` found one-ULP drift
+  in composite, AI-bucket, and category weighted sums. Canonical evidence
+  aggregation fixes it; decimal-weight permutation tests pass 40/40 and an
+  independent review approved the scope.
