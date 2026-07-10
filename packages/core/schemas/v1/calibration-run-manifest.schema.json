@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-run-manifest.schema.json",
+  "title": "SlopBrick v10.3 Calibration Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "createdAt", "git", "package", "runtime", "schemaVersion", "methodVersion", "inputHashes", "selection", "expected", "settings", "commandArgs"],
+  "properties": {
+    "version": { "const": "v10.3" }, "runId": { "$ref": "#/$defs/identifier" }, "createdAt": { "type": "string", "format": "date-time" },
+    "git": { "type": "object", "additionalProperties": false, "required": ["sha", "dirty"], "properties": { "sha": { "$ref": "#/$defs/sha" }, "dirty": { "type": "boolean" } } },
+    "package": { "type": "object", "additionalProperties": false, "required": ["name", "version"], "properties": { "name": { "const": "slopbrick" }, "version": { "type": "string", "minLength": 1 } } },
+    "runtime": { "type": "object", "additionalProperties": false, "required": ["node", "pnpm", "platform", "arch"], "properties": { "node": { "type": "string", "minLength": 1 }, "pnpm": { "type": "string", "minLength": 1 }, "platform": { "type": "string", "minLength": 1 }, "arch": { "type": "string", "minLength": 1 } } },
+    "schemaVersion": { "const": "v10.3" }, "methodVersion": { "type": "string", "pattern": "^v10\\.3\\.[0-9]+$" },
+    "inputHashes": { "$ref": "#/$defs/inputHashes" }, "selection": { "$ref": "#/$defs/selection" }, "expected": { "$ref": "#/$defs/expected" }, "settings": { "$ref": "#/$defs/settings" },
+    "commandArgs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" }, "sha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "inputHashes": { "type": "object", "additionalProperties": false, "required": ["registrySha256", "signalTableSha256", "configSha256", "corpusManifestSha256", "selectionSha256", "checkoutMapSha256"], "properties": { "registrySha256": { "$ref": "#/$defs/sha256" }, "signalTableSha256": { "$ref": "#/$defs/sha256" }, "configSha256": { "$ref": "#/$defs/sha256" }, "corpusManifestSha256": { "$ref": "#/$defs/sha256" }, "selectionSha256": { "$ref": "#/$defs/sha256" }, "checkoutMapSha256": { "$ref": "#/$defs/sha256" } } },
+    "selection": { "type": "object", "additionalProperties": false, "required": ["seed", "policy"], "properties": { "seed": { "type": "string", "minLength": 1 }, "policy": { "type": "object", "additionalProperties": false, "required": ["eligibleLabels", "eligibleTiers", "eligibleStrata", "maxPerStratum"], "properties": { "eligibleLabels": { "type": "array", "minItems": 1, "items": { "enum": ["verified_ai", "verified_human"] } }, "eligibleTiers": { "type": "array", "minItems": 1, "items": { "enum": ["gold", "silver"] } }, "eligibleStrata": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }, "maxPerStratum": { "type": "integer", "minimum": 1 } } } } },
+    "polarityIds": { "type": "object", "additionalProperties": false, "required": ["verified_ai", "verified_human"], "properties": { "verified_ai": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }, "verified_human": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } } } },
+    "expected": { "type": "object", "additionalProperties": false, "required": ["fileIdsByPolarity", "chunkIdsByPolarity"], "properties": { "fileIdsByPolarity": { "$ref": "#/$defs/polarityIds" }, "chunkIdsByPolarity": { "$ref": "#/$defs/polarityIds" } } },
+    "settings": { "type": "object", "additionalProperties": false, "required": ["includeRuleIds", "excludeRuleIds", "maxFileBytes", "chunkSize", "chunkTimeoutMs", "retryTimeoutMs", "workerCount"], "properties": { "includeRuleIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }, "excludeRuleIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }, "maxFileBytes": { "type": "integer", "minimum": 0 }, "chunkSize": { "type": "integer", "minimum": 1 }, "chunkTimeoutMs": { "type": "integer", "minimum": 1 }, "retryTimeoutMs": { "type": "integer", "minimum": 1 }, "workerCount": { "type": "integer", "minimum": 1 } } }
+  }
+}

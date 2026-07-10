@@ -1,0 +1,7 @@
+{
+  "version": "v10.3",
+  "runId": "smoke-001",
+  "entries": [
+    { "repositoryId": "ai-repo", "commitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "checkoutPath": "/private/corpus/ai-repo" }
+  ]
+}

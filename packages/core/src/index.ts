@@ -51,6 +51,11 @@ export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
 
 export { calibrationCorpusSourceId, isCalibrationCorpusManifestV103 } from './corpus-manifest';
+export {
+  calibrationCheckoutMapSha256,
+  isCalibrationCheckoutMapV103,
+  isCalibrationRunManifestV103,
+} from './calibration-run';
 
 // v0.15.0+: Types generated from schemas/v1/*.schema.json. These are
 // the public API for the on-disk shapes. v0.17.4 (R-H4 closeout):
@@ -77,3 +82,5 @@ export type {
   File as CalibrationCorpusFile,
   Evidence as CalibrationCorpusEvidence,
 } from './generated/calibration-corpus-manifest';
+export type { SlopBrickV103CalibrationCheckoutMapLocalOnly } from './generated/calibration-checkout-map';
+export type { SlopBrickV103CalibrationRunManifest } from './generated/calibration-run-manifest';
