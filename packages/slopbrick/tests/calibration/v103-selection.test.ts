@@ -114,6 +114,8 @@ describe('v10.3 canonical selection', () => {
 
   it('emits byte-identical, manifest-complete selection records with explicit exclusions', () => {
     const input = manifest();
+    input.files[0]!.pairGroupId = 'task-42';
+    input.files[1]!.pairGroupId = 'task-42';
     const reversed = { ...input, repositories: [...input.repositories].reverse(), files: [...input.files].reverse() };
     const first = buildSelection(input, { seed: 'smoke-1' });
     const second = buildSelection(reversed, { seed: 'smoke-1' });
@@ -130,6 +132,7 @@ describe('v10.3 canonical selection', () => {
       exclusionReason: 'label_not_eligible',
       manifestExclusionReason: 'unproven provenance',
     });
+    expect(first.records.filter((record) => record.pairGroupId === 'task-42')).toHaveLength(2);
     expect(renderSelectionJsonl(first.records)).not.toMatch(/\/Users\/|\\\\Users\\\\|\/tmp\//);
   });
 

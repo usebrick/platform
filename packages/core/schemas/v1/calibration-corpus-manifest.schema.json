@@ -82,7 +82,7 @@
         "normalizedPath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
         "contentSha256": { "$ref": "#/$defs/sha256" }, "language": { "type": "string", "minLength": 1 },
         "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
-        "clusterId": { "$ref": "#/$defs/identifier" }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
+        "clusterId": { "$ref": "#/$defs/identifier" }, "pairGroupId": { "$ref": "#/$defs/identifier", "description": "Optional reviewed human/AI benchmark pair identifier. The semantic verifier requires all non-excluded records in one pair group to use the same split." }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
         "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "mixed_evaluation", "excluded"] },
         "exclusionReason": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort." },
         "evidence": { "$ref": "#/$defs/evidence" }

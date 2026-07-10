@@ -5,7 +5,7 @@
  * dependency-free guard for TypeScript callers and additionally enforces
  * manifest-wide invariants JSON Schema cannot express: unique identities,
  * repository/file family agreement, and no verified-human/verified-AI family,
- * cluster, or split leakage.
+ * cluster, split, or pair-group leakage.
  */
 
 import type { SlopbrickCalibrationCorpusManifestV103 } from './generated/calibration-corpus-manifest';
@@ -94,7 +94,7 @@ export function calibrationCorpusSourceId(repositoryId: string, commitSha: strin
  * Versioned semantic verifier required after JSON Schema validation. Returns
  * `true` only for a complete v10.3 manifest with canonical source IDs,
  * immutable source revisions, correctly eligible gold/silver/mixed records,
- * and no declared human/AI family, content-cluster, or split leak. This
+ * and no declared human/AI family, content-cluster, split, or pair-group leak. This
  * function performs no I/O and does not establish that evidence URLs or
  * source revisions have been externally reviewed.
  */
@@ -133,13 +133,15 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
   const clusterLabels = new Map<string, Set<string>>();
   const familySplits = new Map<string, Set<string>>();
   const clusterSplits = new Map<string, Set<string>>();
+  const pairGroupSplits = new Map<string, Set<string>>();
   for (const file of value.files) {
-    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'label', 'tier', 'split', 'exclusionReason', 'evidence']) ||
+    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'pairGroupId', 'label', 'tier', 'split', 'exclusionReason', 'evidence']) ||
       !isNonEmptyString(file.sourceId) || sourceIds.has(file.sourceId) ||
       !IDENTIFIER.test(file.repositoryId as string) || !IDENTIFIER.test(file.familyId as string) ||
       repositories.get(file.repositoryId as string)?.familyId !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
       !SHA256.test(file.contentSha256 as string) || !isNonEmptyString(file.language) || !STRATA.has(file.stratum as string) ||
-      !IDENTIFIER.test(file.clusterId as string) || !LABELS.has(file.label as ManifestLabel) || !TIERS.has(file.tier as string) ||
+      !IDENTIFIER.test(file.clusterId as string) || (file.pairGroupId !== undefined && !IDENTIFIER.test(file.pairGroupId as string)) ||
+      !LABELS.has(file.label as ManifestLabel) || !TIERS.has(file.tier as string) ||
       !SPLITS.has(file.split as ManifestSplit) || !isEvidence(file.evidence)) {
       return false;
     }
@@ -157,7 +159,8 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     if (binaryLabel && (!addGroupValue(familyLabels, file.familyId as string, binaryLabel) ||
       !addGroupValue(clusterLabels, file.clusterId as string, binaryLabel))) return false;
     if (!addGroupValue(familySplits, file.familyId as string, file.split as string) ||
-      !addGroupValue(clusterSplits, file.clusterId as string, file.split as string)) return false;
+      !addGroupValue(clusterSplits, file.clusterId as string, file.split as string) ||
+      (file.pairGroupId !== undefined && !addGroupValue(pairGroupSplits, file.pairGroupId as string, file.split as string))) return false;
   }
   return true;
 }

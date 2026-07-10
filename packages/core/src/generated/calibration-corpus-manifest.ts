@@ -26,6 +26,10 @@ export type File = {
   language: string;
   stratum: "production" | "test" | "generated" | "vendor" | "minified" | "example" | "other";
   clusterId: Identifier;
+  /**
+   * Optional reviewed human/AI benchmark pair identifier. The semantic verifier requires all non-excluded records in one pair group to use the same split.
+   */
+  pairGroupId?: string;
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
   split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";
@@ -46,6 +50,10 @@ export type File = {
   language: string;
   stratum: "production" | "test" | "generated" | "vendor" | "minified" | "example" | "other";
   clusterId: Identifier;
+  /**
+   * Optional reviewed human/AI benchmark pair identifier. The semantic verifier requires all non-excluded records in one pair group to use the same split.
+   */
+  pairGroupId?: string;
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
   split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";

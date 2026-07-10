@@ -132,6 +132,30 @@ describe('v10.3 calibration corpus manifest contract', () => {
     expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
   });
 
+  it('allows a verified human/AI pair group when every eligible record stays in one split', () => {
+    const manifest = fixture();
+    const files = manifest.files as Array<Record<string, unknown>>;
+    files[0]!.pairGroupId = 'task-42';
+    files[1]!.pairGroupId = 'task-42';
+
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+  });
+
+  it('rejects a pair group when eligible records cross splits', () => {
+    const manifest = fixture();
+    const files = manifest.files as Array<Record<string, unknown>>;
+    files[0]!.pairGroupId = 'task-42';
+    files[1]!.pairGroupId = 'task-42';
+    files[1]!.split = 'validation';
+
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
   it('still rejects eligible split crossings within a family or content cluster', () => {
     const manifest = fixture();
     const repositories = manifest.repositories as Array<Record<string, unknown>>;

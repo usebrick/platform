@@ -36,6 +36,8 @@ export interface SelectionRecord {
   readonly contentSha256: string;
   readonly language: string;
   readonly stratum: string;
+  /** Reviewed benchmark pair identity, when supplied by the corpus manifest. */
+  readonly pairGroupId?: string;
   readonly label: string;
   readonly tier: string;
   readonly split: string;
@@ -114,6 +116,7 @@ function baseRecord(
     contentSha256: file.contentSha256,
     language: file.language,
     stratum: file.stratum,
+    ...(file.pairGroupId === undefined ? {} : { pairGroupId: file.pairGroupId }),
     label: file.label,
     tier: file.tier,
     split: file.split,
