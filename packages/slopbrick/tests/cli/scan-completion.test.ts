@@ -11,6 +11,7 @@ import { RuleRegistry } from '../../src/rules/registry';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
 import { runProjectRules } from '../../src/rules/project';
 import { enrichReport } from '../../src/cli/report/enrichReport';
+import { assembleScanReport } from '../../src/cli/report/assembleScanReport';
 import { aiDebtFromScore } from '../../src/engine/repository-health';
 import { AI_DEBT_NUMERIC } from '../../src/engine/coherence';
 import { formatJson } from '../../src/report/json';
@@ -105,6 +106,86 @@ describe('scan completion status', () => {
     // so ceil(5 / 5) is one deduction from 100. The suppressed medium
     // finding must not create a second deduction.
     expect(enriched.testQuality).toBe(99);
+  });
+
+  it('keeps suppressed test evidence out of the final four-axis health breakdown', async () => {
+    const issues = [
+      {
+        ruleId: 'test/audit-only',
+        category: 'test' as const,
+        severity: 'off' as const,
+        aiSpecific: false,
+        message: 'suppressed test-shaped evidence',
+        filePath: 'src/a.test.ts',
+        line: 1,
+        column: 1,
+      },
+      {
+        ruleId: 'test/weak-assertion',
+        category: 'test' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 'effective test finding',
+        filePath: 'src/a.test.ts',
+        line: 2,
+        column: 1,
+      },
+    ];
+    const results = [{
+      filePath: 'src/a.test.ts',
+      componentCount: 1,
+      issues,
+    }] as unknown as FileScanResult[];
+    const effectiveIssues = effectiveIssuesForScore(issues, DEFAULT_CONFIG);
+    const aggregated = aggregateReport(
+      [scoreFile({ ...results[0]!, issues: effectiveIssues }, 1, DEFAULT_CONFIG)],
+      [{ filePath: 'src/a.test.ts', issues: effectiveIssues }],
+      DEFAULT_CONFIG,
+      undefined,
+      1,
+    );
+    const enrichment = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      aggregated,
+      allIssues: issues,
+      options: { quiet: true, machineReadableStdout: true },
+    });
+    const report = assembleScanReport({
+      generatedAt: '2026-07-10T00:00:00.000Z',
+      configPath: undefined,
+      results,
+      aggregated,
+      allIssues: issues,
+      parseErrors: [],
+      topOffenders: [],
+      config: DEFAULT_CONFIG,
+      baselineMeta: undefined,
+      defaultOffApplied: 1,
+      defaultOffRuleCount: 1,
+      previousRun: undefined,
+      enrichment,
+    });
+
+    // One active high test issue costs one point. The off-severity audit
+    // finding must not become a second test-quality deduction.
+    expect(report.testQuality).toBe(99);
+    expect(report.repositoryHealthBreakdown).toEqual({
+      aiSlopCleanliness: 100 - report.aiSlopScore,
+      engineeringHygiene: report.engineeringHygiene,
+      security: report.security,
+      testQuality: 99,
+    });
+
+    // Rebuild the public formula from final-report axes rather than trusting
+    // either aggregateReport or the enrichment implementation.
+    const independentlyReconstructed =
+      0.4 * (100 - report.aiSlopScore) +
+      0.3 * report.engineeringHygiene +
+      0.2 * report.security +
+      0.1 * report.testQuality!;
+    expect(report.repositoryHealth).toBeCloseTo(independentlyReconstructed, 8);
   });
 
   it('reports a normal scan as complete with requested/analyzed counts', async () => {

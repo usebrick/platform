@@ -9,11 +9,17 @@
 | Score | Direction | One-line question |
 |-------|-----------|-------------------|
 | **AI Slop Score** | Lower is cleaner (0=no slop, 100=saturated) | "How much AI-style fingerprint is in this codebase?" |
-| **Engineering Hygiene** | Higher is better | "Is this codebase internally consistent — one stack, one pattern, no drift?" |
-| **Security** | Higher is better | "Are there security holes?" |
+| **Engineering Hygiene** | Higher is better | "How clean are the six effective engineering-category burdens?" |
+| **Security** | Higher is better | "How much effective security-finding burden remains?" |
 | **Repository Health** (composite) | Higher is better | "Will the codebase hold up at scale?" |
 
 `Repository Health` is the current four-axis headline: `0.4 × (100 - aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality`. It is computed from the effective per-file finding groups; suppressed findings remain audit evidence and do not contribute. The older optional-axis management composite (architecture/doc/DB signals) is legacy diagnostic code, not this headline.
+
+`engineeringHygiene` is the inverted mean burden across the six effective
+categories `arch`, `logic`, `layout`, `visual`, `component`, and `test`.
+The numeric `security` axis is continuous: with `N` effective security
+findings, it is `100 / (1 + N / 5)`. This is distinct from the categorical
+`AI Security Risk` diagnostic below.
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem. See [`docs/scoring-explained.md`](./scoring-explained.md) for the full math.
 
@@ -33,10 +39,10 @@
 | **Business Logic Coherence** | 0–100 | **Higher is better** | `slopbrick business-logic` subcommand |
 | **Documentation Freshness** | 0–100 | **Higher is better** | `slopbrick docs` subcommand |
 | **Database Health** | 0–100 | **Higher is better** | `slopbrick db` subcommand |
-| **Engineering Hygiene** | 0–100 | **Higher is better** | Composite of architecture + patterns + constitution + AI debt |
+| **Engineering Hygiene** | 0–100 | **Higher is better** | Inverted mean burden across effective arch, logic, layout, visual, component, and test findings |
 | **Repository Health** (composite) | 0–100 + `AI Debt` band | **Higher is better** | Headline number |
 | **AI Maintenance Cost** | `$/month` | **Lower is better** | `slopbrick maintenance-cost` |
-| **AI Debt band** | A / B / C / D / F | **Higher is better** | Letter grade from composite |
+| **AI Debt band** | `low` / `medium` / `high` / `critical` | Lower debt is better | Band from the canonical Repository Health headline |
 
 The 4 headline scores + 9 secondary scores are computed independently. A project can score `AI Slop Score 10` (clean) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
 

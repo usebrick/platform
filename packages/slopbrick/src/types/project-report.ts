@@ -179,10 +179,10 @@ export interface ProjectReport {
   businessLogicCoherence?: number;
   /** Phase 7: per-issue list backing the business-logic score. */
   businessLogicIssues?: import('../engine/business-logic').BusinessLogicIssue[];
-  /** Phase 5 — Test Quality Score (0-100, lower = more issues). Higher is better.
-   * Independent from slopIndex — derived from the four `test/*` rules when
-   * `slopbrick test` runs. Surfaced in the JSON report and the dedicated
-   * subcommand's pretty output. */
+  /** Test Quality Score (0-100, lower = more issues). Higher is better.
+   * Derived from the canonical effective finding set during scan enrichment;
+   * suppressed/default-off findings do not contribute. It is a four-axis
+   * Repository Health input and is also surfaced by `slopbrick test`. */
   testQuality?: number;
   /** Phase Memo #4 — AI Maintenance Cost (categorical headline + numeric breakdown).
    *  Derived from the existing signals in this report (no new file scanning).

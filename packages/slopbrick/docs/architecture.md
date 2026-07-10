@@ -44,9 +44,9 @@ These are the 4 numbers humans and CI gates read. **Each is 0–100 with the sco
 | Score | Shape | Source | Confidence |
 |-------|-------|--------|------------|
 | **aiSlopScore** | 0–100 (lower = cleaner) | 16 `ai/*` rules (slop signatures, LLM-detection math). Raw amount of slop since v0.21. | High — calibrated corpus; CI gate at `≤ meanSlop` |
-| **engineeringHygiene** | 0–100 | Average of 6 category scores: arch, logic, layout, visual, component, test | High — 80+ deterministic rules |
-| **security** | 0–100 | AI Security Risk band (low=100, medium=67, high=33, critical=0) | High — categorical, not gamed |
-| **repositoryHealth** | 0–100 | Weighted composite: 0.4×aiQ + 0.3×eng + 0.2×sec + 0.1×test | High — pure aggregation |
+| **engineeringHygiene** | 0–100 | Inverted mean burden across the six effective categories: arch, logic, layout, visual, component, test | High — deterministic effective-finding aggregation |
+| **security** | 0–100 | Continuous effective security-finding score: `100 / (1 + N / 5)` | High — deterministic effective-finding aggregation |
+| **repositoryHealth** | 0–100 | `0.4×(100−aiSlopScore) + 0.3×engineeringHygiene + 0.2×security + 0.1×testQuality` | High — pure aggregation |
 
 The composite `repositoryHealth` is the single number for dashboards (informational; doesn't gate CI). The CI gate is `aiSlopScore ≤ meanSlop`. The other three are the actionable axes: if `aiSlopScore` is high, the team has AI-slop; if `engineeringHygiene` is low, the structure is drifting; if `security` is low, fix the security findings.
 
@@ -56,7 +56,7 @@ These scores use heuristics that are calibrated against real projects but not as
 
 | Score | Shape | Source | Calibration |
 |-------|-------|--------|------------|
-| **Test Quality** | 0–100 | 4 `test/*` rules | Heuristic (FP control deferred to 0.9.x) |
+| **Test Quality** | 0–100 | Canonical effective finding set, including effective `test/*` findings | Heuristic (FP control deferred to 0.9.x) |
 | **Business Logic Coherence** | 0–100 | 8 `business-logic/*` rules | Heuristic (named constants, regex) |
 | **Documentation Freshness** | 0–100 + `docDrift` band | 4 `docs/*` rules (2 deferred) | Heuristic + arXiv 2606.04769 baseline F1=96.73% |
 | **Database Health** | 0–100 + `dbDrift` band | 6 `db/*` rules + `pgsql-parser` | Heuristic (live-DB in 8.1) |
@@ -68,8 +68,8 @@ These scores are pure aggregations of the axes above. They have no detection rul
 | Score | Shape | Composition | Anchored to |
 |-------|-------|-------------|-------------|
 | **AI Maintenance Cost** | categorical + `monthlyUSD` | Weighted + Sonar/CodeClimate/$ formula | Sonar $306K/yr/MLoC |
-| **Repository Health** | 0–100 | Weighted + renormalized | Endgame metric |
-| **AI Debt band** | A / B / C / D / F | Letter grade from Repository Health | Same |
+| **Repository Health** | 0–100 | Canonical four-axis weighted aggregate (not renormalized optional axes) | Headline metric |
+| **AI Debt band** | `low` / `medium` / `high` / `critical` | Band from canonical Repository Health (`≥80` / `≥60` / `≥40` / lower) | Same |
 
 Treating all 13 as equivalent would invite readers to compare a deterministic Tier 1 score against a heuristic Tier 2 score as if they had the same precision. The tier split makes it explicit: Tier 1 is the contract; Tier 2 is the diagnostic; Tier 3 is the dashboard.
 
@@ -108,9 +108,13 @@ The Constitution is the moat. Its lifecycle has four stages:
 
 The lifecycle is what makes the Constitution a working contract rather than a doc nobody reads. The "killer feature" is the Guide surface — agents that have the Constitution in their context window are measurably better-behaved than agents that don't.
 
-## 5. MCP tool surface (8 tools)
+## 5. Historical MCP tool surface (v0.9 planning artifact; not current)
 
-The 0.9.0 release ships 8 MCP tools. The roadmap called for collapsing to 4 (`slop_suggest`, `slop_scan_file`, `slop_check_constitution`, `slop_governance`) but that requires user feedback before wholesale deprecation. v1 ships all 8; v0.9.x will deprecate the per-phase tools in favour of the four canonical ones.
+The table below preserves the v0.9 planning proposal only. It is **not** a
+runtime tool registry: names such as `slop_governance`,
+`slop_architecture_score`, and `slop_business_logic_score` are not current
+MCP tools. The canonical seven-tool registry is generated in
+[`docs/MCP.md`](./MCP.md).
 
 | Tool | Purpose | Used by |
 |------|---------|---------|
