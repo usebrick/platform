@@ -198,6 +198,7 @@ export interface IssueFilterOptions {
   humanOnly?: boolean;
   ignoreWcag22?: boolean;
   rule?: string;
+  securityOnly?: boolean;
 }
 
 export function filterIssues(issues: Issue[], options: IssueFilterOptions): Issue[] {
@@ -214,6 +215,9 @@ export function filterIssues(issues: Issue[], options: IssueFilterOptions): Issu
   if (options.rule) {
     const targetRule = options.rule;
     result = result.filter((issue) => issue.ruleId === targetRule);
+  }
+  if (options.securityOnly) {
+    result = result.filter((issue) => issue.category === 'security' || issue.ruleId.startsWith('security/'));
   }
   return result;
 }
@@ -286,7 +290,7 @@ function serializeValue(value: unknown, indent = 0): string {
     const items = entries
       .map(([key, val]) => `${JSON.stringify(key)}: ${serializeValue(val, indent + 2)}`)
       .join(`,\n${nextIndent}`);
-    return `{\n${nextIndent}${items},\n${currentIndent}]`;
+    return `{\n${nextIndent}${items},\n${currentIndent}}`;
   }
   return JSON.stringify(value);
 }
