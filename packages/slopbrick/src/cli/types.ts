@@ -88,6 +88,8 @@ export interface CliGlobalOptions extends ScanRunOptions {
   /** v0.14.5i (P3): render the top 5 rules dragging the score down
    *  without the full report. For quick triage on a slow terminal. */
   whyFailing?: boolean;
+  /** Explain exact deterministic aggregate inputs behind headline scores. */
+  explainScore?: boolean;
   /** v0.14.5j (P10): terse output for CI / scripts. Just the headline,
    *  the verdict, the threshold, and the delta. No category breakdown,
    *  no top offenders, no issues dump. */

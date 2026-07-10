@@ -131,6 +131,47 @@ describe('scoreFile', () => {
 });
 
 describe('aggregateReport', () => {
+  it('records exact configured AI-bucket and four-axis headline inputs without per-rule attribution', () => {
+    const config: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      compositeWeights: { boundary: 0.5, context: 0.3, visual: 0.2 },
+    };
+    const issues = [
+      { ruleId: 'logic/boundary-violation', category: 'logic' as const, severity: 'high' as const, aiSpecific: true },
+      { ruleId: 'logic/key-prop-missing', category: 'logic' as const, severity: 'medium' as const, aiSpecific: true },
+      { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'low' as const, aiSpecific: true },
+    ];
+    const result = aggregateReport(
+      [{ filePath: 'src/a.ts', rawScore: 9, componentScore: 9, adjustedScore: 9, componentCount: 1 }],
+      [{ filePath: 'src/a.ts', issues }],
+      config,
+      undefined,
+      1,
+    ) as ReturnType<typeof aggregateReport> & { scoreExplanation?: Record<string, unknown> };
+
+    const explanation = result.scoreExplanation as {
+      attribution: string;
+      aiSlopScore: { buckets: Array<{ bucket: string; rawSlopAmount: number; weight: number; weightedAmount: number }> };
+      repositoryHealth: { inputs: Array<{ axis: string; value: number; weight: number; weightedAmount: number }> };
+    };
+    const bucket = (points: number) => Math.log10(1 + points) / Math.log10(11) * 100;
+    const logicWeight = config.categoryWeights!.logic ?? 1;
+    const visualWeight = config.categoryWeights!.visual ?? 1;
+
+    expect(explanation.attribution).toContain('No per-rule or Bayesian attribution');
+    expect(explanation.aiSlopScore.buckets).toEqual([
+      { bucket: 'boundary', rawSlopAmount: bucket(5 * logicWeight), weight: 0.5, weightedAmount: bucket(5 * logicWeight) * 0.5 },
+      { bucket: 'context', rawSlopAmount: bucket(3 * logicWeight), weight: 0.3, weightedAmount: bucket(3 * logicWeight) * 0.3 },
+      { bucket: 'visual', rawSlopAmount: bucket(visualWeight), weight: 0.2, weightedAmount: bucket(visualWeight) * 0.2 },
+    ]);
+    expect(explanation.repositoryHealth.inputs).toEqual(expect.arrayContaining([
+      expect.objectContaining({ axis: 'aiSlopCleanliness', value: 100 - result.aiSlopScore, weight: 0.4 }),
+      expect.objectContaining({ axis: 'engineeringHygiene', value: result.engineeringHygiene, weight: 0.3 }),
+      expect.objectContaining({ axis: 'security', value: result.security, weight: 0.2 }),
+      expect.objectContaining({ axis: 'testQuality', value: 100, weight: 0.1 }),
+    ]));
+  });
+
   it('is invariant to input order for equivalent scan evidence', () => {
     const scores = [
       { filePath: 'alpha.ts', rawScore: 6, componentScore: 6, adjustedScore: 6, componentCount: 1 },

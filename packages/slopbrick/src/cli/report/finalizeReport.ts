@@ -54,6 +54,7 @@ export interface FinalizeReportInput {
     | 'assemblyHealth'
     | 'totalScore'
     | 'categoryScores'
+    | 'scoreExplanation'
     | 'boundaryScore'
     | 'contextScore'
     | 'visualScore'

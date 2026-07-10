@@ -36,6 +36,7 @@ export interface AssembleScanReportInput {
     | 'assemblyHealth'
     | 'totalScore'
     | 'categoryScores'
+    | 'scoreExplanation'
     | 'boundaryScore'
     | 'contextScore'
     | 'visualScore'
@@ -115,6 +116,18 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
       suppressedIssueCount: allIssues.filter((issue) => issue.severity === ('off' as Issue['severity'])).length,
       parseErrorCount: parseErrors.length,
     },
+    scoreExplanation: aggregated.scoreExplanation
+      ? {
+          ...aggregated.scoreExplanation,
+          scoreBasis: {
+            denominator: results.filter((result) => !result.parseError).length,
+            analyzedFiles: results.filter((result) => !result.parseError).length,
+            issueSet: 'effective',
+            suppressedIssueCount: allIssues.filter((issue) => issue.severity === ('off' as Issue['severity'])).length,
+            parseErrorCount: parseErrors.length,
+          },
+        }
+      : undefined,
     version: VERSION,
     generatedAt,
     configPath,

@@ -170,6 +170,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // v0.14.5i (P3): quick triage view — top 5 rules dragging the
       // score down, without the full report.
       .option('--why-failing', 'print the top 5 rules dragging the score down')
+      .option('--explain-score', 'explain deterministic aggregate inputs behind the four headline scores')
       // v0.14.5j (P10): terse output for CI / scripts. Just the
       // headline + verdict + threshold + delta.
       .option('--brief', 'terse output (verdict + headline + threshold + delta only)')

@@ -15,6 +15,7 @@ import { writeFileSync } from 'node:fs';
 import { logger } from '../../engine/logger';
 import { formatJson } from '../../report/json';
 import { formatPretty, formatWhyFailingReport, formatBriefReport } from '../../report/pretty';
+import { formatScoreExplanation } from '../../report/score-explanation';
 import { formatSarif } from '../../report/sarif';
 import { formatHtml } from '../../report/html';
 import { formatAdvice } from '../../report/advice';
@@ -33,6 +34,28 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
       `Unknown --format value: ${options.format}. Valid: pretty, json, sarif, html.\n`,
     );
     process.exit(2);
+  }
+
+  // Explicit score explanation is intentionally opt-in. In JSON mode it
+  // adds the deterministic aggregate inputs; ordinary JSON stays stable and
+  // does not grow a report-only explanation field.
+  if (options.explainScore) {
+    if (options.json) {
+      const json = formatJson(report, { includeScoreExplanation: true });
+      if (typeof options.json === 'string') {
+        writeFileSync(resolve(options.json), json);
+        if (!options.quiet) logger.info(`Wrote JSON report to ${options.json}`);
+      } else {
+        logger.info(json);
+      }
+      return;
+    }
+    if (options.format === 'json') {
+      logger.info(formatJson(report, { includeScoreExplanation: true }));
+      return;
+    }
+    if (!options.quiet) logger.info(formatScoreExplanation(report));
+    return;
   }
 
   // --why-failing: quick triage view (top 5 rules dragging the score

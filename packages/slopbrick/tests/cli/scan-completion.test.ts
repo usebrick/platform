@@ -704,6 +704,26 @@ describe('scan completion status', () => {
     expect(existsSync(join(dir, '.slopbrick', 'flywheel', 'scans.jsonl'))).toBe(false);
   });
 
+  it('makes deterministic score explanation terminal and JSON output opt-in', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'x.ts'), 'export const x = 1;\n');
+
+    const ordinary = await run(['--workspace', dir, '--format', 'json', '--no-telemetry']);
+    expect(ordinary.exitCode).toBe(0);
+    expect(JSON.parse(ordinary.stdout)).not.toHaveProperty('scoreExplanation');
+
+    const explainedJson = await run(['--workspace', dir, '--explain-score', '--format', 'json', '--no-telemetry']);
+    expect(explainedJson.exitCode).toBe(0);
+    expect(JSON.parse(explainedJson.stdout)).toMatchObject({
+      scoreExplanation: { kind: 'deterministic-headline-score-explanation-v1' },
+    });
+
+    const explainedTerminal = await run(['--workspace', dir, '--explain-score', '--no-telemetry']);
+    expect(explainedTerminal.exitCode).toBe(0);
+    expect(explainedTerminal.stdout).toContain('Score explanation (deterministic aggregate inputs only)');
+  });
+
   it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     const { stdout, exitCode } = await run(['--workspace', dir, '--format', 'json']);

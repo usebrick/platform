@@ -95,6 +95,7 @@ export async function watchProject(
       assemblyHealth: aggregated.assemblyHealth,
       totalScore: aggregated.totalScore,
       categoryScores: aggregated.categoryScores,
+      scoreExplanation: aggregated.scoreExplanation,
       boundaryScore: aggregated.boundaryScore,
       contextScore: aggregated.contextScore,
       visualScore: aggregated.visualScore,

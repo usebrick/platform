@@ -18,10 +18,15 @@ import { SCORE_BRIEFS } from './score-contract.js';
  *      marketing copy; an enrichment step at JSON write keeps the
  *      schema clean.
  */
-export function formatJson(report: ProjectReport): string {
+export function formatJson(
+  report: ProjectReport,
+  options: { includeScoreExplanation?: boolean } = {},
+): string {
+  const { scoreExplanation, ...withoutScoreExplanation } = report;
   const enriched = {
-    ...report,
+    ...withoutScoreExplanation,
     scoreBriefs: SCORE_BRIEFS,
+    ...(options.includeScoreExplanation && scoreExplanation ? { scoreExplanation } : {}),
   };
   return JSON.stringify(enriched, null, 2);
 }

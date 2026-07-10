@@ -62,6 +62,43 @@ export interface SelectionAccounting {
  */
 export type ScoreValidity = 'valid' | 'incomplete' | 'not-applicable';
 
+/** Exact deterministic inputs behind the four public headline scores.
+ * This deliberately stops at aggregate components: nonlinear saturation and
+ * the separate Bayesian model make per-rule marginal attribution misleading. */
+export interface ScoreExplanation {
+  kind: 'deterministic-headline-score-explanation-v1';
+  attribution: 'No per-rule or Bayesian attribution is claimed; this explains deterministic aggregate inputs only.';
+  directions: {
+    aiSlopScore: 'lower-is-better';
+    engineeringHygiene: 'higher-is-better';
+    security: 'higher-is-better';
+    repositoryHealth: 'higher-is-better';
+  };
+  scoreBasis?: ProjectReport['scoreBasis'];
+  categoryBurden: {
+    direction: 'higher-is-worse';
+    note: string;
+  };
+  aiSlopScore: {
+    value: number;
+    buckets: Array<{
+      bucket: 'boundary' | 'context' | 'visual';
+      rawSlopAmount: number;
+      weight: number;
+      weightedAmount: number;
+    }>;
+  };
+  engineeringHygiene: {
+    value: number;
+    categories: Array<{ category: Category; burden: number; deduction: number }>;
+  };
+  security: { value: number; findingCount: number; formula: string };
+  repositoryHealth: {
+    value: number;
+    inputs: Array<{ axis: 'aiSlopCleanliness' | 'engineeringHygiene' | 'security' | 'testQuality'; value: number; weight: number; weightedAmount: number }>;
+  };
+}
+
 export interface ProjectReport {
   /**
    * Denominator and issue-set provenance for the headline scores.  Scores
@@ -75,6 +112,8 @@ export interface ProjectReport {
     suppressedIssueCount: number;
     parseErrorCount: number;
   };
+  /** Optional deterministic explanation of headline-score aggregate inputs. */
+  scoreExplanation?: ScoreExplanation;
   /** CLI scan completion extension; absent in legacy/programmatic reports. */
   completionStatus?: 'complete' | 'empty' | 'partial';
   /** Whether the headline numeric scores are safe to use for gating. */

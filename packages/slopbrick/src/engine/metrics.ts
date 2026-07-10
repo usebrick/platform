@@ -196,6 +196,7 @@ export function aggregateReport(
   | 'assemblyHealth'
   | 'totalScore'
   | 'categoryScores'
+  | 'scoreExplanation'
   | 'boundaryScore'
   | 'contextScore'
   | 'visualScore'
@@ -462,6 +463,52 @@ export function aggregateReport(
     0.1 * testQuality;
   const repositoryHealth = Math.max(0, Math.min(100, repositoryHealthRaw));
 
+  const scoreExplanation: ProjectReport['scoreExplanation'] = {
+    kind: 'deterministic-headline-score-explanation-v1',
+    attribution: 'No per-rule or Bayesian attribution is claimed; this explains deterministic aggregate inputs only.',
+    directions: {
+      aiSlopScore: 'lower-is-better',
+      engineeringHygiene: 'higher-is-better',
+      security: 'higher-is-better',
+      repositoryHealth: 'higher-is-better',
+    },
+    categoryBurden: {
+      direction: 'higher-is-worse',
+      note: 'Category burden is a diagnostic over the effective finding set; it is not per-rule score attribution.',
+    },
+    aiSlopScore: {
+      value: aiSlopScore,
+      buckets: (Object.keys(slopAmount) as SubscoreBucket[]).map((bucket) => ({
+        bucket,
+        rawSlopAmount: slopAmount[bucket],
+        weight: compositeWeights[bucket],
+        weightedAmount: compositeWeights[bucket] * slopAmount[bucket],
+      })),
+    },
+    engineeringHygiene: {
+      value: engineeringHygiene,
+      categories: (['arch', 'logic', 'layout', 'visual', 'component', 'test'] as Category[]).map((category) => ({
+        category,
+        burden: categoryScores[category],
+        deduction: categoryScores[category] / engineeringCategoryScores.length,
+      })),
+    },
+    security: {
+      value: security,
+      findingCount: securityIssueCount,
+      formula: '100 / (1 + securityFindingCount / 5)',
+    },
+    repositoryHealth: {
+      value: repositoryHealth,
+      inputs: [
+        { axis: 'aiSlopCleanliness', value: 100 - aiSlopScore, weight: 0.4, weightedAmount: 0.4 * (100 - aiSlopScore) },
+        { axis: 'engineeringHygiene', value: engineeringHygiene, weight: 0.3, weightedAmount: 0.3 * engineeringHygiene },
+        { axis: 'security', value: security, weight: 0.2, weightedAmount: 0.2 * security },
+        { axis: 'testQuality', value: testQuality, weight: 0.1, weightedAmount: 0.1 * testQuality },
+      ],
+    },
+  };
+
   // v0.18.2: project-level composite aggregate. Per-file composite
   // scores are computed at worker.ts:98 and attached to each
   // FileScanResult. They were previously dropped on the floor here
@@ -546,6 +593,7 @@ export function aggregateReport(
     assemblyHealth,
     totalScore: 0, // legacy field, removed in the cleanup
     categoryScores,
+    scoreExplanation,
     boundaryScore: subscore.boundary,
     contextScore: subscore.context,
     visualScore: subscore.visual,
