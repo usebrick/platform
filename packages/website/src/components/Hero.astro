@@ -15,7 +15,7 @@
 //   smaller). On mobile the title flows naturally.
 // - .hero__facts is flex-wrap: wrap with row gap so the 4
 //   short fact labels flow as pills and wrap on narrow.
-
+import languageSupport from '../data/language-support.json';
 ---
 
 <header class="hero" id="top">
@@ -113,7 +113,7 @@
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">593</span><span class="hero__terminal-stat-l">files</span></span>
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">103</span><span class="hero__terminal-stat-l">rules</span></span>
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">22</span><span class="hero__terminal-stat-l">categories</span></span>
-          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">9+</span><span class="hero__terminal-stat-l">langs</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{languageSupport.count}</span><span class="hero__terminal-stat-l">language families</span></span>
         </footer>
       </aside>
 
@@ -125,4 +125,3 @@
     <span class="hero__scroll-line"></span>
   </div>
 </header>
-

@@ -6,6 +6,7 @@
 // v0.43.0 refinement: lives between the scoreboard (the "wow" moment)
 // and the tools section. Helps the visitor feel that the product
 // is real, not vapor.
+import languageSupport from '../data/language-support.json';
 ---
 
 <section class="section trust-strip" id="trust">
@@ -79,8 +80,8 @@
           </svg>
         </span>
         <div>
-          <div class="trust-strip__value">9+ langs</div>
-          <div class="trust-strip__label">TypeScript, Swift, Rust, Go, ...</div>
+          <div class="trust-strip__value">{languageSupport.countLabel}</div>
+          <div class="trust-strip__label">See the support matrix for scope</div>
         </div>
       </div>
     </div>

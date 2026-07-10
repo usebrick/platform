@@ -13,6 +13,7 @@ import { LANGUAGE_SUPPORT } from '../src/engine/language-support.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'docs/language-support-matrix.md');
+const websiteSummaryOutput = path.join(root, '..', 'website', 'src', 'data', 'language-support.json');
 
 function render(): string {
   const lines = [
@@ -38,13 +39,29 @@ function render(): string {
   return lines.join('\n');
 }
 
+function renderWebsiteSummary(): string {
+  const names = LANGUAGE_SUPPORT.map((entry) => entry.language);
+  return JSON.stringify({
+    count: names.length,
+    countLabel: `${names.length} language families`,
+    names,
+  }, null, 2) + '\n';
+}
+
 const generated = render();
+const websiteSummary = renderWebsiteSummary();
 if (process.argv.includes('--check')) {
   const existing = await readFile(output, 'utf8').catch(() => '');
+  const existingWebsiteSummary = await readFile(websiteSummaryOutput, 'utf8').catch(() => '');
   if (existing !== generated) {
     console.error(`Language support matrix is stale: ${path.relative(process.cwd(), output)}`);
     process.exitCode = 1;
   }
+  if (existingWebsiteSummary !== websiteSummary) {
+    console.error(`Language support website summary is stale: ${path.relative(process.cwd(), websiteSummaryOutput)}`);
+    process.exitCode = 1;
+  }
 } else {
   await writeFile(output, generated, 'utf8');
+  await writeFile(websiteSummaryOutput, websiteSummary, 'utf8');
 }
