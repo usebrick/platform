@@ -23,6 +23,7 @@ import {
   runSuggest,
   STRUCTURE_NOT_FOUND_HINT,
 } from '../../src/mcp/tools';
+import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
 import { runSuggestWithStructure } from '../../src/mcp/slop-suggest-structure';
 import { DEFAULT_CONFIG } from '../../src/config';
 import type { ToolContext } from '../../src/mcp/tools';
@@ -206,12 +207,7 @@ describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
     // scoreBriefs so MCP clients (Cursor, Claude Code, Continue)
     // can explain what the score means to the agent without
     // needing the docs.
-    expect(parsed.scoreBriefs).toEqual({
-      aiSlopScore: 'raw amount of AI slop, 0-100',
-      engineeringHygiene: 'cross-category consistency, 0-100',
-      security: 'security posture, 0-100 (higher is better)',
-      repositoryHealth: 'weighted composite, 0-100',
-    });
+    expect(parsed.scoreBriefs).toEqual(SCORE_BRIEFS);
   });
 
   it('omits compositeScore when health.json predates v0.18.2 (no composite field)', async () => {

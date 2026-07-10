@@ -7,6 +7,7 @@ import { buildPatternInventory, checkFileConstitution } from './patterns.js';
 import { buildArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
 import { readStructureMarkdown } from '../engine/structure-md';
+import { SCORE_BRIEFS } from '../report/score-contract.js';
 
 import type { Rule, ResolvedConfig } from '../types';
 
@@ -411,12 +412,7 @@ export async function runSuggest(
         // going to act on. Without this, an agent receiving a
         // compositeScore sees the number but not what it
         // measures; the brief makes it self-explanatory.
-        payload.scoreBriefs = {
-          aiSlopScore: 'raw amount of AI slop, 0-100',
-          engineeringHygiene: 'cross-category consistency, 0-100',
-          security: 'security posture, 0-100 (higher is better)',
-          repositoryHealth: 'weighted composite, 0-100',
-        };
+        payload.scoreBriefs = SCORE_BRIEFS;
       }
     } catch {
       // health.json missing or unreadable — composite is optional,

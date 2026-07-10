@@ -57,7 +57,7 @@ describe('v0.14.5i UX improvements', () => {
       // "Slop Index" wording is replaced).
       expect(out).toContain('AI Slop Score:');
       expect(out).toContain('25');
-      expect(out).toMatch(/AI Slop Score: \s*25 \/ 100/);
+      expect(out).toMatch(/AI Slop Score: \s*25\.0 \/ 100/);
     });
 
     it('shows Coherence as secondary view when present', () => {

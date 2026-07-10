@@ -1,4 +1,5 @@
 import type { ProjectReport } from '../types';
+import { SCORE_BRIEFS } from './score-contract.js';
 
 /**
  * v0.43.0: every JSON report now embeds a `scoreBriefs` object —
@@ -17,13 +18,6 @@ import type { ProjectReport } from '../types';
  *      marketing copy; an enrichment step at JSON write keeps the
  *      schema clean.
  */
-const SCORE_BRIEFS: { aiSlopScore: string; engineeringHygiene: string; security: string; repositoryHealth: string } = {
-  aiSlopScore: 'raw amount of AI slop, 0-100',
-  engineeringHygiene: 'cross-category consistency, 0-100',
-  security: 'security posture, 0-100 (higher is better)',
-  repositoryHealth: 'weighted composite, 0-100',
-};
-
 export function formatJson(report: ProjectReport): string {
   const enriched = {
     ...report,

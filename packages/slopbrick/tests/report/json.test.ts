@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatJson } from '../../src/report/json.js';
+import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
 import type { ProjectReport } from '../../src/types.js';
 
 function makeReport(): ProjectReport {
@@ -100,12 +101,7 @@ describe('formatJson', () => {
     const output = formatJson(makeReport());
     const parsed = JSON.parse(output) as Record<string, unknown>;
 
-    expect(parsed.scoreBriefs).toEqual({
-      aiSlopScore: 'raw amount of AI slop, 0-100',
-      engineeringHygiene: 'cross-category consistency, 0-100',
-      security: 'security posture, 0-100 (higher is better)',
-      repositoryHealth: 'weighted composite, 0-100',
-    });
+    expect(parsed.scoreBriefs).toEqual(SCORE_BRIEFS);
   });
 
 });

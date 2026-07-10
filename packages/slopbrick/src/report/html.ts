@@ -24,6 +24,12 @@ import {
 import { renderStyles, renderScripts } from './html/static.js';
 
 export function formatHtml(report: ProjectReport): string {
+  // Human-facing reports surface only actionable findings. JSON and SARIF
+  // deliberately retain disabled findings for audit and tool integration.
+  const effectiveReport = {
+    ...report,
+    issues: report.issues.filter((issue) => (issue.severity as string) !== 'off'),
+  };
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,14 +39,14 @@ export function formatHtml(report: ProjectReport): string {
   ${renderStyles()}
 </head>
 <body>
-  ${renderHeader(report)}
-  ${renderThresholds(report)}
-  ${renderBuckets(report)}
-  ${renderCategoryBreakdown(report)}
-  ${renderTopOffenders(report)}
-  ${renderFiles(report)}
-  ${renderIssues(report)}
-  ${renderParseErrors(report)}
+  ${renderHeader(effectiveReport)}
+  ${renderThresholds(effectiveReport)}
+  ${renderBuckets(effectiveReport)}
+  ${renderCategoryBreakdown(effectiveReport)}
+  ${renderTopOffenders(effectiveReport)}
+  ${renderFiles(effectiveReport)}
+  ${renderIssues(effectiveReport)}
+  ${renderParseErrors(effectiveReport)}
   ${renderScripts()}
 </body>
 </html>`;

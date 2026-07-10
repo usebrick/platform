@@ -6,6 +6,7 @@ import type {
   Severity,
   TopOffender,
 } from '../types';
+import { HEADLINE_SCORES, REPOSITORY_HEALTH_FORMULA, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -580,7 +581,7 @@ function formatCompositeScore(report: ProjectReport): string {
   // the headline so the user can see the trend without grep'ing
   // the run log.
   const slop = report.aiSlopScore;
-  const slopValue = slop.toFixed(0).padStart(3, ' ');
+  const slopValue = formatHeadlineScore(slop);
   const band = slopScoreBand(slop);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
 
@@ -601,6 +602,13 @@ function formatCompositeScore(report: ProjectReport): string {
         'Same number in .slopbrick/health.json.',
     ),
   );
+
+  // Keep the other headline axes beside the AI-slop gate. They are not
+  // thresholds, but hiding them makes the pretty renderer lose report data.
+  for (const { field, label } of HEADLINE_SCORES.slice(1)) {
+    const value = report[field];
+    lines.push(chalk.dim(`${label}: ${formatHeadlineScore(value)} / 100 — ${SCORE_BRIEFS[field]}`));
+  }
 
   // Show the subscore breakdown with plain-language labels.
   // v0.20.0: each sub-score also gets a plain-language message.
@@ -1014,7 +1022,7 @@ function formatScoringExplainer(report: ProjectReport): string {
     `AI Slop Score (AI-slop signatures; the CI gate, AI Slop Score ≤ ${meanSlop} passes), ` +
     'Engineering Hygiene (issues per category across arch/logic/layout/component/test; higher = cleaner), ' +
     'Security (AI-flagged security risks, inverted from risk level; higher = cleaner), ' +
-    'Repository Health (composite: 0.4*AI Slop Score + 0.3*Engineering Hygiene + 0.2*Security + 0.1*Test Quality). ' +
+    `Repository Health (composite: ${REPOSITORY_HEALTH_FORMULA}). ` +
     'Only AI Slop Score gates CI; the others are informational. ' +
     'Default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.',
   );
@@ -1060,12 +1068,12 @@ export function formatBriefReport(report: ProjectReport): string {
   // can read the brief inline without having to consult the docs
   // to understand what "Engineering Hygiene" or "Repository Health"
   // actually means.
-  const scoreLines: Array<{ label: string; field: string; value: number; brief: string }> = [
-    { label: 'AI Slop Score',          field: 'aiSlopScore',          value: report.aiSlopScore,          brief: 'raw amount of AI slop, 0-100 (lower is better)' },
-    { label: 'Engineering Hygiene', field: 'engineeringHygiene', value: report.engineeringHygiene, brief: 'cross-category consistency, 0-100' },
-    { label: 'Security',            field: 'security',           value: report.security,           brief: 'AI Security Risk band, 0-100' },
-    { label: 'Repository Health',   field: 'repositoryHealth',   value: report.repositoryHealth,   brief: 'weighted composite, 0-100' },
-  ];
+  const scoreLines = HEADLINE_SCORES.map(({ label, field }) => ({
+    label,
+    field,
+    value: report[field],
+    brief: SCORE_BRIEFS[field],
+  }));
   const deltaSuffix = formatDeltaSuffix(report);
   // v0.42.0 (user-review fix): the 4-score matrix in --brief used
   // scoreBand() for ALL four scores, but aiSlopScore has the
@@ -1080,7 +1088,7 @@ export function formatBriefReport(report: ProjectReport): string {
   scoreLines.forEach(({ label, field, value, brief }, idx) => {
     const band = field === 'aiSlopScore' ? slopScoreBand(value) : scoreBand(value);
     const paddedLabel = label.padEnd(20, ' ');
-    const valueStr = value.toFixed(0).padStart(3, ' ');
+    const valueStr = formatHeadlineScore(value);
     const delta = idx === 0 ? deltaSuffix : '';
     // Two-line format: first line is "<label> <value> <band> (<field>)",
     // second line is the brief indented under the label. The brief

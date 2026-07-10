@@ -23,6 +23,7 @@ import {
   renderSignalBadge,
 } from './utils.js';
 import { bucketForVerdict, bucketDistribution } from '../buckets.js';
+import { SCORE_BRIEFS, formatHeadlineScore } from '../score-contract.js';
 
 function renderHeader(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
@@ -47,27 +48,27 @@ function renderHeader(report: ProjectReport): string {
       <div class="score-card coherence">
         <span class="score-value">${report.coherence ?? '–'}</span>
         <span class="score-label">Repository Coherence ${report.coherence !== undefined ? (report.coherence >= 70 ? '[PASS]' : '[FAIL]') : ''}</span>
-        <span class="score-brief">cross-category consistency, 0-100</span>
+        <span class="score-brief">${SCORE_BRIEFS.engineeringHygiene}</span>
       </div>
       <div class="score-card repository-health-card">
         <span class="score-value">${namedScores.repositoryHealth}</span>
         <span class="score-label">Repository Health (composite)</span>
-        <span class="score-brief">weighted composite, 0-100</span>
+        <span class="score-brief">${SCORE_BRIEFS.repositoryHealth}</span>
       </div>
       <div class="score-card ai-quality">
         <span class="score-value">${namedScores.aiSlopScore}</span>
         <span class="score-label">AI Slop Score</span>
-        <span class="score-brief">raw amount of AI slop, 0-100</span>
+        <span class="score-brief">${SCORE_BRIEFS.aiSlopScore}</span>
       </div>
       <div class="score-card engineering-hygiene">
         <span class="score-value">${namedScores.engineeringHygiene}</span>
         <span class="score-label">Engineering Hygiene</span>
-        <span class="score-brief">cross-category consistency, 0-100</span>
+        <span class="score-brief">${SCORE_BRIEFS.engineeringHygiene}</span>
       </div>
       <div class="score-card security-score">
         <span class="score-value">${namedScores.security}</span>
         <span class="score-label">Security</span>
-        <span class="score-brief">AI Security Risk band, 0-100</span>
+        <span class="score-brief">${SCORE_BRIEFS.security}</span>
       </div>
       <div class="score-card health">
         <span class="score-value">${roundedHealth}</span>
@@ -99,11 +100,11 @@ interface NamedScores {
 /**
  * v0.15.0+: Extract the 4 named scores from the report. Each field is
  * optional on the report until U.5 lands; we read through `unknown` so
- * typecheck passes today. Numbers are rounded to integers for display.
+ * typecheck passes today. Numbers retain one decimal place for display.
  */
 function extractNamedScores(report: ProjectReport): NamedScores {
   const score = (v: unknown): string =>
-    typeof v === 'number' && !Number.isNaN(v) ? Math.round(v).toString() : '–';
+    typeof v === 'number' && !Number.isNaN(v) ? formatHeadlineScore(v) : '–';
 
   // Cast to a record shape that holds the optional v0.15.0 fields. The
   // real fields land in U.5; until then we surface the new labels and

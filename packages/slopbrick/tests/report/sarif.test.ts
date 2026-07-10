@@ -352,7 +352,7 @@ describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1
       fileCount: 17,
     };
     const props = driverProperties(makeReport({ compositeScore: composite }));
-    expect(props).toEqual({ compositeScore: composite });
+    expect(props).toMatchObject({ compositeScore: composite });
   });
 
   it('does not surface properties when compositeScore is the empty shape (pre-v0.18.2 reports)', () => {

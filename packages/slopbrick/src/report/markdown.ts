@@ -1,4 +1,5 @@
 import type { ProjectReport } from '../types';
+import { HEADLINE_SCORES, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
 import { bucketForVerdict, bucketDistribution } from './buckets';
 import type { Bucket } from './buckets';
 import { getSignalStrength } from '../rules/signal-strength.js';
@@ -84,10 +85,10 @@ export function formatMarkdown(report: ProjectReport): string {
   // ----- Repository Health (4 named scores, replacing single slopIndex) -----
   lines.push(`## Repository Health`);
   lines.push('');
-  lines.push(`- **AI Slop Score** ${Math.round(ext.aiSlopScore ?? 0)}/100`);
-  lines.push(`- **Engineering Hygiene** ${Math.round(ext.engineeringHygiene ?? 0)}/100`);
-  lines.push(`- **Security** ${Math.round(ext.security ?? 0)}/100`);
-  lines.push(`- **Repository Health** ${Math.round(report.repositoryHealth ?? 0)}/100`);
+  for (const { field, label } of HEADLINE_SCORES) {
+    const value = ext[field] ?? 0;
+    lines.push(`- **${label}** ${formatHeadlineScore(value)}/100 — ${SCORE_BRIEFS[field]}`);
+  }
   lines.push('');
 
   // ----- Metadata (kept from the legacy header, minus the replaced scores) -----
