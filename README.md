@@ -16,7 +16,7 @@ usebrick is a four-product platform for the **Repository Structure Platform** (R
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the Constitution) | planned |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | **shipped** as `slopbrick@0.38.0` on npm (103 rules, v10-calibrated against 576,750 files) |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | **latest published** as `slopbrick@0.43.0` on npm (103 rules, v10-calibrated against 576,750 files); v0.44.0 trust-restoration work is unreleased |
 | **MendBrick** | Repairs the structure (the migrator) | planned |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned |
 
@@ -133,7 +133,7 @@ See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for f
 
 | Package | Status | Purpose |
 |---------|--------|---------|
-| `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. 4-score model, 103 rules in 24 categories, MCP server, calibrate subcommand. v10-calibrated against 576,750 files. |
+| `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. Published v0.43.0 exposes the 4-score model, 103 rules, MCP server, and calibrate subcommand; v10-calibrated against 576,750 files. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers + verdict taxonomy for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | The pure scanning engine extracted from slopbrick. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs. |
 | `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + Lenis + GSAP, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
@@ -253,7 +253,7 @@ platform/
 │   ├── slopbrick/                  slopbrick CLI (published as `slopbrick`)
 │   │   ├── src/
 │   │   │   ├── cli/                19 command modules + program.ts
-│   │   │   ├── rules/              103 rules in 24 categories (v0.38.0+, v10-calibrated)
+│   │   │   ├── rules/              published 103-rule catalog (v10-calibrated)
 │   │   │   ├── mcp/                MCP server
 │   │   │   ├── report/             pretty, JSON, HTML, markdown reporters
 │   │   │   ├── engine/             CLI-side I/O adapters

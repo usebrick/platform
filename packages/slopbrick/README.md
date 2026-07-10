@@ -46,9 +46,10 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.43.0 (current) (current). Engine: 103 rules in 22 categories,
-4 headline scores, 9+ language frontends, v10-calibrated against 576,750
-real files. See [CHANGELOG](./CHANGELOG.md) for the full release notes.
+**Status:** v0.43.0 is the latest published release; v0.44.0 is an unreleased
+trust-restoration candidate. The published train has 103 rules in 22
+categories, 4 headline scores, and v10 calibration against 576,750 real files.
+See [CHANGELOG](./CHANGELOG.md) for the full release notes.
 
 ---
 
