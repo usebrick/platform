@@ -292,3 +292,7 @@
   parserless Dart/Ruby/PHP routing, centralizes manifest-derived matrix/site
   claims, CI drift checks, and the accessible canonical matrix link. Independent
   review approved L9.4; parser/manifest/site checks pass.
+- Gate 2 exit codes `be4f5bb3d`/`fe22d2fc8` define and prove clean=0,
+  policy/partial=1, usage/config=2, and unexpected=3. Commander, typed scan
+  inputs, and bin fault handlers use the same mapping without shipping an
+  environment-triggered test seam; independent review approved 12/12 tests.
