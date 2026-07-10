@@ -13,7 +13,7 @@
 | **Security** | Higher is better | "Are there security holes?" |
 | **Repository Health** (composite) | Higher is better | "Will the codebase hold up at scale?" |
 
-`Repository Health` (composite) is a weighted sum of the 3 sub-scores plus secondary signals (architecture consistency, test quality, business logic coherence, doc freshness, DB health). For the AI Slop component, the composite uses `100 - aiSlopScore` (inverted at the call site) so the composite stays "higher = better".
+`Repository Health` is the current four-axis headline: `0.4 × (100 - aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality`. It is computed from the effective per-file finding groups; suppressed findings remain audit evidence and do not contribute. The older optional-axis management composite (architecture/doc/DB signals) is legacy diagnostic code, not this headline.
 
 **Why 4 scores, not 1:** The legacy `slopIndex` conflated AI-specific findings with engineering hygiene. Two repos could both score 70/100 for completely different reasons — one had AI drift, the other had pattern fragmentation. The 4-score model lets users see the actual problem. See [`docs/scoring-explained.md`](./scoring-explained.md) for the full math.
 

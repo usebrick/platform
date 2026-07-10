@@ -23,7 +23,6 @@ import { randomUUID } from 'node:crypto';
 import { renderProgress, clearProgress, resetNoColor, setNoColor } from './render';
 import {
   filterIssues,
-  filterByDisabledDirectives,
   intersectFiles,
 } from './threshold';
 
@@ -71,7 +70,11 @@ import { RuleRegistry } from '../rules/registry';
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
-import { effectiveIssuesForScore } from './effective-issues';
+import {
+  effectiveIssuesForScore,
+  markDefaultOffIssuesForAudit,
+  normalizeFileResultForDisplayAndScore,
+} from './effective-issues';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
 import { VERSION } from '../types';
@@ -468,15 +471,9 @@ export async function runScan(
     console.error(`[verbose] analyzed ${results.length - failed} file${results.length - failed === 1 ? '' : 's'}; ${failed} parse failure${failed === 1 ? '' : 's'}.`);
   }
 
+  let defaultOffApplied = 0;
   for (const result of results) {
-    result.issues = filterIssues(result.issues, options);
-    // directives at or above the issue's line.
-    filterByDisabledDirectives(result, result.facts?.v2?.disabledRules ?? []);
-    for (const issue of result.issues) {
-      if (issue.filePath === undefined) {
-        issue.filePath = result.filePath;
-      }
-    }
+    defaultOffApplied += normalizeFileResultForDisplayAndScore(result, config, options);
   }
 
   // Keep the score's effective issue set identical to the user-visible
@@ -486,7 +483,6 @@ export async function runScan(
   // so an INVERTED/NOISY finding could lower the score while disappearing
   // from issue counts and SARIF results.
   const defaultOff = getDefaultOffRules();
-  const userOverrides = new Set(Object.keys(config.rules));
   const multiplier = resolveFrameworkMultiplier(config);
   const scorableResults = results.filter((result) => !result.parseError);
   const scores = scorableResults.map((result) => scoreFile(
@@ -552,19 +548,10 @@ export async function runScan(
   //   - NOISY rules (recall < 0.1 in the v4 corpus — fires too rarely on
   //     AI code to be a useful default; engineers dismiss after the 3rd
   //     false sense of "doesn't matter" and stop reading the report)
-  // User `rules: { 'rule/id': 'medium' }` (or any non-off) overrides.
-  // Applied to all issues BEFORE the filterIssues pass so the severity
-  // filter (which skips 'off' issues) removes them from the report.
-  // Compute user-overrides ONCE: any rule explicitly set in config.rules
-  // (to anything, even 'off') is considered a user choice and we don't
-  // override it.
-  let defaultOffApplied = 0;
-  for (const issue of allIssues) {
-    if (!defaultOff.has(issue.ruleId)) continue;
-    if (userOverrides.has(issue.ruleId)) continue;
-    issue.severity = 'off' as Issue['severity'];
-    defaultOffApplied += 1;
-  }
+  // User `rules: { 'rule/id': 'medium' }` (or any explicit setting)
+  // overrides. File findings were normalized before scoring; this pass only
+  // handles project-level findings added after the per-file pipeline.
+  defaultOffApplied += markDefaultOffIssuesForAudit(allIssues, config);
   if (defaultOffApplied > 0 && !options.quiet && !machineReadableStdout) {
     console.error(
       `[v${VERSION}] auto-suppressed ${defaultOffApplied} INVERTED/NOISY issue(s) ` +

@@ -15,8 +15,11 @@ import {
   SEVERITY_WEIGHTS,
 } from '../engine/metrics';
 import { scanFile } from '../engine/worker';
-import { baselineStatusMessage, filterIssues } from './threshold';
-import { effectiveIssuesForScore } from './effective-issues';
+import { baselineStatusMessage } from './threshold';
+import {
+  effectiveIssuesForScore,
+  normalizeFileResultForDisplayAndScore,
+} from './effective-issues';
 import { baselinePath } from '../engine/cache';
 import {
   DEFAULT_CONFIG,
@@ -30,6 +33,19 @@ import { outputScanResults } from './report/renderOutput';
 import type { CliGlobalOptions } from './scan';
 import { VERSION } from '../types';
 import type { BaselineCache, ComponentScore, FileScanResult, Issue, ProjectReport, ResolvedConfig } from '../types';
+
+/**
+ * Normalize an incremental watch result exactly as the full scan pipeline
+ * does: directives remove findings and default-off findings remain auditable
+ * with runtime severity `off`.
+ */
+export function normalizeWatchResult(
+  result: FileScanResult,
+  config: ResolvedConfig,
+  options: CliGlobalOptions,
+): void {
+  normalizeFileResultForDisplayAndScore(result, config, options);
+}
 
 export async function watchProject(
   options: CliGlobalOptions,
@@ -94,12 +110,7 @@ export async function watchProject(
   }
 
   async function applyResult(result: FileScanResult): Promise<void> {
-    result.issues = filterIssues(result.issues, options);
-    for (const issue of result.issues) {
-      if (issue.filePath === undefined) {
-        issue.filePath = result.filePath;
-      }
-    }
+    normalizeWatchResult(result, currentConfig ?? DEFAULT_CONFIG, options);
 
     const multiplier = resolveFrameworkMultiplier(currentConfig ?? DEFAULT_CONFIG);
     const effectiveIssues = effectiveIssuesForScore(result.issues, currentConfig ?? DEFAULT_CONFIG);

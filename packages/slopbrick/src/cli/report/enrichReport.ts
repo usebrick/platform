@@ -22,6 +22,7 @@ import type { BusinessLogicIssue } from '../../engine/business-logic';
 import { computeAiSecurityRisk } from '../../engine/ai-security-risk';
 import { SEVERITY_WEIGHTS } from '../../engine/metrics';
 import { aiDebtFromScore } from '../../engine/repository-health';
+import { effectiveIssuesForScore } from '../effective-issues';
 import {
   getSignalStrength,
   loadSignalStrength,
@@ -171,6 +172,14 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   const { cwd, config, results, aggregated, allIssues, options } = input;
   const { quiet, machineReadableStdout } = options;
 
+  // Secondary diagnostics that mirror a headline aggregate must read the
+  // exact same per-file effective finding groups. `allIssues` is deliberately
+  // broader audit evidence (including project findings and default-off
+  // findings), so it is not a valid score input.
+  const effectiveAggregateIssues = results.flatMap((result) =>
+    effectiveIssuesForScore(result.issues, config),
+  );
+
   // v0.12.0 Bayesian stats — independent of the side computations,
   // computed first so it's available for the report builder below.
   const v012Stats = await computeV012Stats(allIssues, quiet);
@@ -231,7 +240,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   let testQuality: number;
   try {
     const { buildTestQualityScore } = await import('../../engine/test-quality');
-    testQuality = buildTestQualityScore(sortedIssues, results.length).score;
+    testQuality = buildTestQualityScore(effectiveAggregateIssues, results.length).score;
   } catch (err) {
     if (!quiet) {
       logger.warn(`test-quality: ${formatErrorMessage(err)}`);

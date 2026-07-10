@@ -16,6 +16,7 @@ import { AI_DEBT_NUMERIC } from '../../src/engine/coherence';
 import { formatJson } from '../../src/report/json';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { effectiveIssuesForScore } from '../../src/cli/effective-issues';
+import type { FileScanResult } from '../../src/types';
 
 beforeAll(assertDistBuilt);
 
@@ -54,6 +55,56 @@ describe('scan completion status', () => {
       ...DEFAULT_CONFIG,
       rules: { ...DEFAULT_CONFIG.rules, [defaultOffRule]: 'medium' },
     }).map((issue) => issue.ruleId)).toEqual([defaultOffRule, 'logic/active-evidence']);
+  });
+
+  it('derives test quality from the canonical effective issue groups', async () => {
+    const defaultOffRule = [...getDefaultOffRules()][0]!;
+    const issues = [
+      {
+        ruleId: defaultOffRule,
+        // Deliberately model a default-off rule misclassified as `test`:
+        // the test proves the aggregate input, not a particular builtin.
+        category: 'test' as const,
+        severity: 'medium' as const,
+        aiSpecific: true,
+        message: 'suppressed test-shaped evidence',
+        filePath: 'src/a.test.ts',
+        line: 1,
+        column: 1,
+      },
+      {
+        ruleId: 'test/weak-assertion',
+        category: 'test' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 'effective test finding',
+        filePath: 'src/a.test.ts',
+        line: 2,
+        column: 1,
+      },
+    ];
+    const results = [{ filePath: 'src/a.test.ts', issues }] as unknown as FileScanResult[];
+
+    const enriched = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      aggregated: {
+        aiSlopScore: 0,
+        engineeringHygiene: 100,
+        security: 100,
+        repositoryHealth: 100,
+        components: [],
+        categoryScores: {},
+      },
+      allIssues: issues,
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    // Independent reconstruction: only the high effective finding remains,
+    // so ceil(5 / 5) is one deduction from 100. The suppressed medium
+    // finding must not create a second deduction.
+    expect(enriched.testQuality).toBe(99);
   });
 
   it('reports a normal scan as complete with requested/analyzed counts', async () => {
@@ -402,6 +453,15 @@ describe('scan completion status', () => {
         parseErrorCount: 0,
       },
     });
+    // Do not reuse aggregateReport here: reconstruct the public headline
+    // from independently observed axes so a future alternate composite
+    // cannot silently replace the documented four-axis score.
+    const independentlyComputedRepositoryHealth =
+      0.4 * (100 - workerRun.report.aiSlopScore) +
+      0.3 * workerRun.report.engineeringHygiene +
+      0.2 * workerRun.report.security +
+      0.1 * (workerRun.report.repositoryHealthBreakdown?.testQuality ?? 100);
+    expect(workerRun.report.repositoryHealth).toBeCloseTo(independentlyComputedRepositoryHealth, 8);
     expect(serialEnrichment.repositoryHealth).toBe(serialAggregate.repositoryHealth);
     expect(serialEnrichment.aiDebt).toBe(aiDebtFromScore(serialAggregate.repositoryHealth));
     expect(serialEnrichment.repositoryHealthBreakdown).toEqual({

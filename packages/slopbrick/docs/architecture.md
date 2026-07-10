@@ -18,7 +18,7 @@
 - **Phase 2 + 11** made the Constitution enforceable: drift detection + forbidden deny-list + per-PR scoring.
 - **Phase 6/8** added documentation drift + database health scoring.
 - **Phase Memo #4** composed a derived categorical meta-score (AI Maintenance Cost) on top of all signals.
-- **Phase 12** (this release) composed a single endgame number that aggregates everything.
+- **Legacy Phase 12** experimented with a management-oriented optional-axis composite. It is retained only as historical/diagnostic code; it is not the current scan headline.
 
 The moat is **the Constitution** — the `slopbrick.config.mjs` block that declares your state management library, your form lib, your modal system, your forbidden packages. Everything else is a score that proves the Constitution is being followed.
 
@@ -31,7 +31,7 @@ This is a deliberate choice. The two-user framing has been the source of design 
 - **AI agent as primary user** → MCP tools, `doNotCreate` lists, governance breakdown. Agents don't read pretty-printed terminal output; they consume JSON.
 - **Human as primary user** → CLI subcommands, `--format pretty`, headline scores. Humans scan one number and act.
 
-The 0.9.0 release resolves this in favour of the agent. The 8 MCP tools are the canonical surface; the CLI subcommands are a thin wrapper. The composite Repository Health headline is the only number humans need to read; agents consume the per-axis breakdown.
+The historical 0.9.0 design resolved this in favour of the agent. Current tool counts and command surfaces are defined by `docs/MCP.md`; the current scan headline is the documented four-axis `repositoryHealth`, while legacy management composites are diagnostic only.
 
 ## 3. The 4 headline scores and 13 categories (v0.16.0+)
 

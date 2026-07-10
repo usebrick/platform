@@ -1,8 +1,8 @@
-// Repository Health + AI Debt — Phase 12 (shipped 0.9.0).
+// Legacy Phase-12 management composite + AI Debt.
 //
-// The composite score is the endgame of the 12-phase plan. It rolls
-// every prior score into one number a manager can read in two seconds,
-// plus a letter-grade `aiDebt` band (low | medium | high | critical).
+// This optional-axis diagnostic model is retained for compatibility. It is
+// not the current `ProjectReport.repositoryHealth` headline, which is the
+// four-axis aggregate computed from effective per-file issue groups.
 //
 // Inputs (every axis is optional):
 //   - slopIndex (0-100, lower = better; inverted to 100-x)
@@ -145,10 +145,11 @@ function perAxis(
 }
 
 /**
- * Compute the composite Repository Health score. Pure function — no IO.
+ * Compute the legacy optional-axis management composite. Pure function — no IO.
  * Graceful degradation: every axis is optional. Missing axes are
  * dropped from the composite; the remaining weights renormalize to 1.0.
  */
+/** @deprecated Use only for legacy diagnostic compatibility; it is not the scan headline. */
 export function buildRepositoryHealth(
   inputs: RepositoryHealthInputs,
 ): RepositoryHealth {
@@ -210,7 +211,7 @@ export function buildRepositoryHealth(
 }
 
 /**
- * Convenience wrapper: pull everything from a `ProjectReport` (plus
+ * Legacy convenience wrapper: pull diagnostic inputs from a `ProjectReport` (plus
  * an optional design-token count).
  *
  * v0.10 (Phase 3): if `options.mdlLogRatio` is provided, it is
@@ -220,6 +221,7 @@ export function buildRepositoryHealth(
  * This keeps the MDL axis "live" for downstream reporters without
  * forcing callers to wire it up explicitly.
  */
+/** @deprecated Use only for legacy diagnostic compatibility; it is not the scan headline. */
 export function buildRepositoryHealthFromReport(
   report: Pick<
     ProjectReport,
@@ -282,7 +284,7 @@ export function buildRepositoryHealthFromReport(
   return buildRepositoryHealth(inputs);
 }
 
-/** Pretty-print the Repository Health for terminal output. */
+/** @deprecated Pretty-print legacy diagnostic compatibility data only. */
 export function formatRepositoryHealth(health: RepositoryHealth): string {
   const lines: string[] = [];
   lines.push(health.headline);

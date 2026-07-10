@@ -263,7 +263,9 @@ export interface DbFinding {
 
 
 // ---------------------------------------------------------------------------
-// Phase 12 — Repository Health + AI Debt (target 0.9.0)
+// Legacy Phase 12 management composite. This optional-axis diagnostic model
+// is not ProjectReport.repositoryHealth, whose canonical headline formula is
+// defined by aggregateReport's four effective issue-group axes.
 // ---------------------------------------------------------------------------
 
 /**
@@ -289,7 +291,10 @@ export const AI_SECURITY_NUMERIC: Record<'low' | 'medium' | 'high' | 'critical',
 
 
 
-/** Inputs to the pure `buildRepositoryHealth` function. Every input is optional. */
+/**
+ * Inputs to the legacy optional-axis management composite. Every input is
+ * optional. Do not use this type to describe the current scan headline.
+ */
 export interface RepositoryHealthInputs {
   /** v0.21.0: 0-100, lower = better (raw amount of slop).
    *  Replaces the v0.15-v0.20.1 inverted cleanliness reading. */
@@ -330,7 +335,10 @@ export interface RepositoryHealthInputs {
 
 
 
-/** Result returned by `buildRepositoryHealth` + `buildRepositoryHealthFromReport`. */
+/**
+ * Result returned by the legacy optional-axis management composite helpers.
+ * This is diagnostic compatibility data, not the current scan headline.
+ */
 export interface RepositoryHealth {
   /** Composite 0-100 score (higher = better). */
   score: number;
