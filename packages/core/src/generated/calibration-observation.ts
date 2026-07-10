@@ -1,8 +1,6 @@
 // AUTO-GENERATED from calibration-observation.schema.json. Do not hand-edit.
 
 export type HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson = {
-  [k: string]: unknown;
-} & {
   version: "v10.3";
   runId: string;
   fileId: string;
@@ -20,4 +18,29 @@ export type HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson = {
   findingsCount?: number;
   exclusionReason?: string;
   failureCode?: string;
-};
+} & (
+  | {
+      status: "success_findings";
+      findingsCount: number;
+      exclusionReason?: never;
+      failureCode?: never;
+    }
+  | {
+      status: "success_zero";
+      findingsCount: 0;
+      exclusionReason?: never;
+      failureCode?: never;
+    }
+  | {
+      status: "excluded";
+      findingsCount?: never;
+      exclusionReason: string;
+      failureCode?: never;
+    }
+  | {
+      status: "parse_failure" | "timeout" | "scanner_failure";
+      findingsCount?: never;
+      exclusionReason?: never;
+      failureCode: string;
+    }
+);
