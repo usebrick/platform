@@ -306,7 +306,7 @@ function formatCategoryBreakdown(report: ProjectReport, topN = 5): string {
   const max = entries[0]?.[1] ?? 1;
   const barWidth = 20;
   const lines: string[] = [];
-  lines.push(chalk.bold('Category breakdown (what kind of issue, and how much):'));
+  lines.push(chalk.bold('Category breakdown (effective finding burden; higher is worse; diagnostic, not per-rule score attribution):'));
   const shown = entries.slice(0, topN);
   for (const [category, score] of shown) {
     const gloss = CATEGORY_GLOSSARY[category];

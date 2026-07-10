@@ -355,7 +355,7 @@ function renderCategoryBreakdown(report: ProjectReport): string {
 
   return `
   <section class="category-section">
-    <h2>Category breakdown</h2>
+    <h2>Category breakdown <small>(effective finding burden; higher is worse)</small></h2>
     <table class="data-table category-table" id="category-table">
       <thead>
         <tr>

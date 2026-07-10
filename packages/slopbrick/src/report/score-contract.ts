@@ -4,7 +4,7 @@ export const REPOSITORY_HEALTH_FORMULA =
 
 export const SCORE_BRIEFS = {
   aiSlopScore: 'raw amount of AI slop, 0-100 (lower is better)',
-  engineeringHygiene: 'cross-category consistency, 0-100 (higher is better)',
+  engineeringHygiene: 'cleanliness across arch, logic, layout, visual, component, and test categories, 0-100 (higher is better)',
   security: 'security posture, 0-100 (higher is better)',
   repositoryHealth: `weighted composite (${REPOSITORY_HEALTH_FORMULA}), 0-100 (higher is better)`,
 } as const;

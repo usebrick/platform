@@ -97,8 +97,8 @@ The single `slopIndex` is replaced by **4 independent scores** (all 0-100):
 | Score | What it measures | Direction | CI gate? |
 |-------|------------------|-----------|----------|
 | **`aiSlopScore`** | AI-slop signatures (16 `ai/*` rules). Raw amount of slop detected. | **lower = cleaner** (0=clean, 100=saturated) | **Yes** (`≤ meanSlop: 30` passes) |
-| **`engineeringHygiene`** | Average of 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
-| **`security`** | AI Security Risk band: low=100, medium=67, high=33, critical=0 | higher = better | No (informational) |
+| **`engineeringHygiene`** | Inverted average burden across 6 category scores: arch, logic, layout, visual, component, test | higher = better | No (informational) |
+| **`security`** | Security-finding posture: `100 / (1 + findingCount / 5)` | higher = better | No (informational) |
 | **`repositoryHealth`** (composite) | Weighted: `0.4 × (100 − aiSlopScore) + 0.3 × eng + 0.2 × sec + 0.1 × test` (inverts `aiSlopScore` internally) | higher = better | No (informational) |
 
 **v0.21.0 score-direction flip:** in v0.15.0–v0.20.1, `aiSlopScore` was

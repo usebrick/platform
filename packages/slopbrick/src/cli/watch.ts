@@ -16,6 +16,7 @@ import {
 } from '../engine/metrics';
 import { scanFile } from '../engine/worker';
 import { baselineStatusMessage, filterIssues } from './threshold';
+import { effectiveIssuesForScore } from './effective-issues';
 import { baselinePath } from '../engine/cache';
 import {
   DEFAULT_CONFIG,
@@ -43,6 +44,7 @@ export async function watchProject(
 
   const scoresMap = new Map<string, ComponentScore>();
   const issueGroupsMap = new Map<string, Issue[]>();
+  const displayIssueGroupsMap = new Map<string, Issue[]>();
   let currentConfig: ResolvedConfig | undefined;
   let currentBaseline: BaselineCache | undefined;
 
@@ -61,7 +63,7 @@ export async function watchProject(
       issues,
     }));
     const aggregated = aggregateReport(scores, issueGroups, currentConfig ?? DEFAULT_CONFIG);
-    const allIssues = Array.from(issueGroupsMap.values()).flat();
+    const allIssues = Array.from(displayIssueGroupsMap.values()).flat();
     allIssues.sort((a, b) => SEVERITY_WEIGHTS[b.severity] - SEVERITY_WEIGHTS[a.severity]);
 
     return {
@@ -100,15 +102,17 @@ export async function watchProject(
     }
 
     const multiplier = resolveFrameworkMultiplier(currentConfig ?? DEFAULT_CONFIG);
+    const effectiveIssues = effectiveIssuesForScore(result.issues, currentConfig ?? DEFAULT_CONFIG);
     const score = scoreFile(
-      result,
+      { ...result, issues: effectiveIssues },
       multiplier,
       currentConfig ?? DEFAULT_CONFIG,
       currentBaseline,
       cwd,
     );
     scoresMap.set(result.filePath, score);
-    issueGroupsMap.set(result.filePath, result.issues);
+    issueGroupsMap.set(result.filePath, effectiveIssues);
+    displayIssueGroupsMap.set(result.filePath, result.issues);
   }
 
   async function scanSingleFile(filePath: string): Promise<void> {
@@ -142,6 +146,7 @@ export async function watchProject(
       currentBaseline = baseline;
       scoresMap.clear();
       issueGroupsMap.clear();
+      displayIssueGroupsMap.clear();
       for (const result of results) {
         await applyResult(result);
       }

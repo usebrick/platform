@@ -206,11 +206,15 @@ export interface ProjectReport {
   dbDrift?: DbDriftLevel;
   /** Per-finding list behind the db-health score. */
   dbFindings?: DbFinding[];
-  /** Categorical AI Debt band, derived from `repositoryHealth`. */
+  /** Categorical AI Debt band, derived from the canonical four-axis
+   * `repositoryHealth` headline. */
   aiDebt?: AiDebt;
-  /** Per-axis breakdown of the composite. */
+  /** Exact raw inputs of the canonical Repository Health formula.
+   * `aiSlopCleanliness` is `100 - aiSlopScore`; all values are higher
+   * is better before the published formula applies its fixed weights. */
   repositoryHealthBreakdown?: Record<string, number>;
-  /** Warnings emitted during composite computation. */
+  /** Headline-composite warnings. Empty for the deterministic four-axis
+   * formula; retained as an optional compatibility field. */
   repositoryHealthWarnings?: string[];
   /** v0.9.1 — Repository Coherence (0-100, higher = better). The headline
    *  score under the new "Repository Coherence Scanner" framing. Composite

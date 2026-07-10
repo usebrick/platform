@@ -167,7 +167,7 @@ export function formatMarkdown(report: ProjectReport): string {
 
   // ----- Legacy category scores (unchanged) -----
   if (Object.keys(report.categoryScores).length > 0) {
-    lines.push(`## Category scores`);
+    lines.push(`## Category scores (effective finding burden; higher is worse)`);
     lines.push('');
     lines.push('| Category | Score |');
     lines.push('|----------|------:|');

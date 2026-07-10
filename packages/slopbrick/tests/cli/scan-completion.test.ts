@@ -11,14 +11,50 @@ import { RuleRegistry } from '../../src/rules/registry';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
 import { runProjectRules } from '../../src/rules/project';
 import { enrichReport } from '../../src/cli/report/enrichReport';
+import { aiDebtFromScore } from '../../src/engine/repository-health';
+import { AI_DEBT_NUMERIC } from '../../src/engine/coherence';
 import { formatJson } from '../../src/report/json';
 import { DEFAULT_CONFIG } from '../../src/config';
+import { effectiveIssuesForScore } from '../../src/cli/effective-issues';
 
 beforeAll(assertDistBuilt);
 
 describe('scan completion status', () => {
   const dirs: string[] = [];
   afterEach(() => { while (dirs.length) cleanupTempDir(dirs.pop()!); });
+
+  it('uses the same default-off effective set for every score producer', () => {
+    const defaultOffRule = [...getDefaultOffRules()][0]!;
+    const issues = [
+      {
+        ruleId: defaultOffRule,
+        category: 'logic' as const,
+        severity: 'medium' as const,
+        aiSpecific: true,
+        message: 'default-off evidence',
+        filePath: 'src/a.ts',
+        line: 1,
+        column: 1,
+      },
+      {
+        ruleId: 'logic/active-evidence',
+        category: 'logic' as const,
+        severity: 'medium' as const,
+        aiSpecific: true,
+        message: 'active evidence',
+        filePath: 'src/a.ts',
+        line: 2,
+        column: 1,
+      },
+    ];
+
+    expect(effectiveIssuesForScore(issues, DEFAULT_CONFIG).map((issue) => issue.ruleId))
+      .toEqual(['logic/active-evidence']);
+    expect(effectiveIssuesForScore(issues, {
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, [defaultOffRule]: 'medium' },
+    }).map((issue) => issue.ruleId)).toEqual([defaultOffRule, 'logic/active-evidence']);
+  });
 
   it('reports a normal scan as complete with requested/analyzed counts', async () => {
     const dir = createTmpDir(); dirs.push(dir);
@@ -353,7 +389,11 @@ describe('scan completion status', () => {
       aiSlopScore: serialAggregate.aiSlopScore,
       engineeringHygiene: serialAggregate.engineeringHygiene,
       security: serialAggregate.security,
-      repositoryHealth: serialEnrichment.repositoryHealth,
+      // The final CLI report must retain the same documented four-axis
+      // Repository Health value the worker/serial aggregate computed.
+      // Enrichment may add secondary diagnostics but must not replace a
+      // headline score with a different Phase-12 composite.
+      repositoryHealth: serialAggregate.repositoryHealth,
       scoreBasis: {
         denominator: serialResults.length,
         analyzedFiles: serialResults.length,
@@ -362,6 +402,16 @@ describe('scan completion status', () => {
         parseErrorCount: 0,
       },
     });
+    expect(serialEnrichment.repositoryHealth).toBe(serialAggregate.repositoryHealth);
+    expect(serialEnrichment.aiDebt).toBe(aiDebtFromScore(serialAggregate.repositoryHealth));
+    expect(serialEnrichment.repositoryHealthBreakdown).toEqual({
+      aiSlopCleanliness: 100 - serialAggregate.aiSlopScore,
+      engineeringHygiene: serialAggregate.engineeringHygiene,
+      security: serialAggregate.security,
+      testQuality: 100,
+    });
+    expect(serialEnrichment.coherenceBreakdown?.aiDebtMapped)
+      .toBe(AI_DEBT_NUMERIC[aiDebtFromScore(serialAggregate.repositoryHealth)]);
   });
 
   it('honors next-line directives in worker scans without diverging from serial results', async () => {

@@ -71,6 +71,7 @@ import { RuleRegistry } from '../rules/registry';
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
+import { effectiveIssuesForScore } from './effective-issues';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
 import { VERSION } from '../types';
@@ -486,16 +487,10 @@ export async function runScan(
   // from issue counts and SARIF results.
   const defaultOff = getDefaultOffRules();
   const userOverrides = new Set(Object.keys(config.rules));
-  const isSuppressedForScore = (issue: Issue): boolean =>
-    issue.severity === ('off' as Issue['severity']) ||
-    (defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId));
-  const effectiveIssues = (issues: Issue[]): Issue[] =>
-    issues.filter((issue) => !isSuppressedForScore(issue));
-
   const multiplier = resolveFrameworkMultiplier(config);
   const scorableResults = results.filter((result) => !result.parseError);
   const scores = scorableResults.map((result) => scoreFile(
-    { ...result, issues: effectiveIssues(result.issues) },
+    { ...result, issues: effectiveIssuesForScore(result.issues, config) },
     multiplier,
     config,
     baseline,
@@ -503,7 +498,7 @@ export async function runScan(
   ));
   const issueGroups = scorableResults.map((result) => ({
     filePath: result.filePath,
-    issues: effectiveIssues(result.issues),
+    issues: effectiveIssuesForScore(result.issues, config),
   }));
 
   if (options.since && baseline) {

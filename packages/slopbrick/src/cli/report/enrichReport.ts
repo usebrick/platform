@@ -21,6 +21,7 @@ import { analyzeBusinessLogic, buildBusinessLogicReport } from '../../engine/bus
 import type { BusinessLogicIssue } from '../../engine/business-logic';
 import { computeAiSecurityRisk } from '../../engine/ai-security-risk';
 import { SEVERITY_WEIGHTS } from '../../engine/metrics';
+import { aiDebtFromScore } from '../../engine/repository-health';
 import {
   getSignalStrength,
   loadSignalStrength,
@@ -306,53 +307,19 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     }
   }
 
-  // Repository Health composite + AI Debt band. Failure is non-fatal.
-  // v0.15.0 U.4+: repositoryHealth is now a required number (one of
-  // the 4 primary scores). Initialize with the input value as a
-  // fallback so the return type is satisfied even if the composite
-  // computation throws.
-  let repositoryHealth: ProjectReport['repositoryHealth'] = aggregated.repositoryHealth;
-  let aiDebt: ProjectReport['aiDebt'];
-  let repositoryHealthBreakdown: ProjectReport['repositoryHealthBreakdown'];
-  let repositoryHealthWarnings: ProjectReport['repositoryHealthWarnings'];
-  try {
-    const { buildRepositoryHealthFromReport } = await import(
-      '../../engine/repository-health'
-    );
-    const spacingCount = architectureDeductions?.find(
-      (d) => d.category === 'spacingScaleViolations',
-    )?.count ?? 0;
-    const radiusCount = architectureDeductions?.find(
-      (d) => d.category === 'radiusScaleViolations',
-    )?.count ?? 0;
-    const composite = buildRepositoryHealthFromReport(
-      {
-        aiSlopScore: aggregated.aiSlopScore ?? 0,
-        engineeringHygiene: aggregated.engineeringHygiene ?? 0,
-        security: aggregated.security ?? 0,
-        repositoryHealth: aggregated.repositoryHealth ?? 0,
-        architectureConsistency,
-        aiSecurityRisk,
-        testQuality,
-        businessLogicCoherence,
-        docFreshness,
-        dbHealth,
-        issues: sortedIssues,
-      },
-      {
-        spacingViolations: spacingCount,
-        radiusViolations: radiusCount,
-      },
-    );
-    repositoryHealth = composite.score;
-    aiDebt = composite.aiDebt;
-    repositoryHealthBreakdown = composite.breakdown;
-    repositoryHealthWarnings = composite.warnings;
-  } catch (err) {
-    if (!quiet) {
-      logger.warn(`repository-health: ${formatErrorMessage(err)}`);
-    }
-  }
+  // Repository Health is the documented four-axis headline computed by
+  // aggregateReport. Enrichment may decorate a scan, but must never replace
+  // that headline with the old Phase-12 management composite: doing so made
+  // scan and watch disagree and contradicted every public renderer.
+  const repositoryHealth: ProjectReport['repositoryHealth'] = aggregated.repositoryHealth;
+  const aiDebt = aiDebtFromScore(repositoryHealth);
+  const repositoryHealthBreakdown: ProjectReport['repositoryHealthBreakdown'] = {
+    aiSlopCleanliness: Math.max(0, Math.min(100, 100 - aggregated.aiSlopScore)),
+    engineeringHygiene: aggregated.engineeringHygiene,
+    security: aggregated.security,
+    testQuality,
+  };
+  const repositoryHealthWarnings: ProjectReport['repositoryHealthWarnings'] = [];
 
   // Repository Coherence composite + 3 secondary domain scores.
   let coherence: ProjectReport['coherence'];
