@@ -84,6 +84,12 @@ describe('formatJson', () => {
     expect(output).toContain('"version": "0.6.0"');
   });
 
+  it('is byte-stable for the same report input', () => {
+    const report = makeReport();
+
+    expect(formatJson(report)).toBe(formatJson(report));
+  });
+
   it('includes research metrics when present on the report', () => {
     const report = makeReport();
     report.research = {

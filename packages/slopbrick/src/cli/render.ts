@@ -4,12 +4,17 @@
 // possible (the exceptions are renderProgress / clearProgress, which
 // write to stdout directly to drive the in-place scan progress bar).
 
+import chalk from 'chalk';
 import type { ProjectReport } from '../types';
 
 // v0.17.1: colorEnabled() respects --no-color flag and the NO_COLOR
 // env var per https://no-color.org. Defaults to true when stdout
 // is a TTY, false when piped. The flag/env always win.
 let _noColorOverride: boolean | null = null;
+// Chalk resolves its supported level once at module load. Keep that level so a
+// prior `--no-color` invocation cannot permanently downgrade later scans in
+// the same process.
+const detectedChalkLevel = chalk.level;
 export function setNoColor(value: boolean): void {
   _noColorOverride = value;
 }
@@ -24,6 +29,28 @@ export function colorEnabled(): boolean {
   }
   if (process.env.FORCE_COLOR !== undefined) return true;
   return Boolean(process.stdout.isTTY);
+}
+
+/**
+ * Apply one colour policy to every Chalk-based renderer in this process.
+ *
+ * Commander parses global options after the program starts, while some
+ * subcommands render without calling runScan. Calling this at CLI startup and
+ * again at scan entry keeps `--no-color`, NO_COLOR, and FORCE_COLOR truthful
+ * for both paths and resets policy between library invocations.
+ */
+export function configureColorPolicy(noColor = false): void {
+  resetNoColor();
+  if (noColor) setNoColor(true);
+  if (!colorEnabled()) {
+    chalk.level = 0;
+    return;
+  }
+  // FORCE_COLOR intentionally enables basic ANSI even when the captured
+  // terminal capability was zero (for example, redirected subprocess tests).
+  chalk.level = (process.env.FORCE_COLOR !== undefined
+    ? Math.max(1, detectedChalkLevel)
+    : detectedChalkLevel) as typeof chalk.level;
 }
 
 // v0.17.1: redactSecrets() masks anything that looks like a secret
@@ -217,7 +244,10 @@ export function formatRulesList(
       if (r.description) {
         const cols = process.stdout.isTTY ? (process.stdout.columns ?? 100) : 100;
         const indent = '           '; // 11 spaces, matches old layout
-        const maxWidth = Math.max(40, cols - indent.length - 1);
+        // Keep a useful floor without forcing every description past a narrow
+        // terminal's edge. Long individual words may still overflow, but
+        // ordinary prose wraps inside a 20-column terminal.
+        const maxWidth = Math.max(8, cols - indent.length - 1);
         const words = r.description.split(' ');
         let line = '';
         for (const word of words) {

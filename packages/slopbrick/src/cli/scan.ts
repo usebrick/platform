@@ -20,7 +20,7 @@ import { existsSync, statSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { renderProgress, clearProgress, resetNoColor, setNoColor } from './render';
+import { renderProgress, clearProgress, configureColorPolicy } from './render';
 import {
   filterIssues,
   intersectFiles,
@@ -112,8 +112,7 @@ export async function runScan(
   // `--no-color` is a process-local renderer override. Reset it before
   // every run so a prior library/CLI invocation cannot leak color policy
   // into the next scan.
-  resetNoColor();
-  if (options.noColor) setNoColor(true);
+  configureColorPolicy(!!options.noColor);
   // v0.10.7 — Repository Memory Platform. Captured here so the inventory
   // persisted at the end of runScan reflects the wall-clock scan time
   // (same metric surfaced in `ProjectReport.scanDurationMs`).

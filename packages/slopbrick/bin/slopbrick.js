@@ -8,7 +8,9 @@
 (async () => {
   const start = performance.now();
   try {
-    const { runCli } = await import('../dist/index.js');
+    const { runCli, installBrokenPipeHandler } = await import('../dist/index.js');
+    installBrokenPipeHandler(process.stdout);
+    installBrokenPipeHandler(process.stderr);
     await runCli({ start });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

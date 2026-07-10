@@ -54,6 +54,7 @@ export {
   formatBadge,
   formatSparkline,
 } from './cli/render';
+export { installBrokenPipeHandler } from './cli/output-stream';
 
 // --- Symbiotic-project surface (v0.10.1+) ---------------------------------
 //

@@ -17,7 +17,7 @@ import { resolve } from 'node:path';
 import { Command } from 'commander';
 
 import { parseThreads, collectGlob, parseTrend } from './options';
-import { renderTrend } from './render';
+import { renderTrend, configureColorPolicy } from './render';
 import {
   evaluateThresholdGate,
   failedThresholdCount,
@@ -140,6 +140,10 @@ process.on('uncaughtException', (err) => {
 
 export async function runCli({ start }: { start: number }): Promise<void> {
   try {
+    // Apply colour policy before Commander dispatches any subcommand. Scan
+    // applies it again with its resolved options so programmatic invocations
+    // cannot leak a prior invocation's `--no-color` state.
+    configureColorPolicy(process.argv.includes('--no-color'));
     const program = new Command()
       .name('slopbrick')
       .description('Repository Coherence Scanner — surface AI-induced pattern drift, secret leaks, and design-token violations')
