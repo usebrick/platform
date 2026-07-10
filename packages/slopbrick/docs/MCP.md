@@ -6,7 +6,7 @@
 
 The slopbrick Model Context Protocol (MCP) server speaks JSON-RPC
 2.0 over stdio. Start it with `slopbrick mcp` and connect your AI
-agent to it. The server exposes **10 tools** that let the agent
+agent to it. The server exposes **7 canonical tools** that let the agent
 query the codebase for AI-slop patterns, get remediation advice,
 and check the Constitution before writing new code.
 
@@ -64,7 +64,7 @@ slopbrick implements [MCP 2024-11-05](https://modelcontextprotocol.io/specificat
 Any MCP-aware client works. The server speaks newline-delimited
 JSON-RPC 2.0 over stdio.
 
-## The 10 tools
+## The 7 canonical tools
 
 ### Tier 1 — Core (call these first)
 
@@ -73,15 +73,15 @@ JSON-RPC 2.0 over stdio.
 Scan a single file, return issues + per-category scores.
 
 **Input:**
-- `filePath` (string, required) — path to the file
-- `content` (string, optional) — file content; if omitted, read from disk
-- `category` (string, optional) — filter to one category
+- `path` (string, required) — absolute or workspace-relative path
+- `framework` (string, optional) — configured framework multiplier
 
 **Output:**
 ```json
 {
   "filePath": "src/Card.tsx",
   "componentCount": 1,
+  "compositeScore": { "probability": 0.12, "confidenceTier": "low" },
   "issues": [
     {
       "ruleId": "ai/compression-profile",
@@ -143,7 +143,7 @@ List all registered rules, with optional category filter.
 **Output:**
 ```json
 {
-  "total": 80,
+  "count": 103,
   "byCategory": {
     "ai": 8,
     "visual": 6,
@@ -199,13 +199,11 @@ patterns).
 
 Fast-path version of `slop_suggest` that reads from
 `.slopbrick/structure.md` (the pre-computed artifact, was `memory.md` in v0.14.5)
-instead of re-parsing the AST. **100-1000× faster** than `slop_suggest` on
-large codebases. **Use this one in production.**
+instead of re-parsing the AST. It avoids repeated parsing on subsequent calls;
+measure the actual speed-up on the target repository.
 
-> **v0.15.0 breaking change:** Renamed from `slop_suggest_with_memory` to
-> `slop_suggest_with_structure`. The on-disk artifact `.slopbrick/memory.md`
-> is now `.slopbrick/structure.md`. Any MCP client calling the old name
-> breaks.
+> The canonical artifact is `.slopbrick/structure.md`; older `memory.md`
+> terminology is historical and should not be used in new integrations.
 
 **Input:** none
 
@@ -221,8 +219,7 @@ call.
 Check a file or proposed change against the project Constitution.
 
 **Input:**
-- `filePath` (string, required)
-- `content` (string, optional)
+- `path` (string, required) — absolute or workspace-relative path
 
 **Output:**
 ```json
@@ -239,99 +236,32 @@ it lands.
 
 ### Tier 3 — Cross-file (call for architecture questions)
 
-#### `slop_architecture_score`
-
-Get the Architecture Consistency score + breakdown.
-
-**Input:** none (reads `.slopbrick/inventory.json`)
-
-**Output:**
-```json
-{
-  "score": 92,
-  "axes": {
-    "modal": { "unique": 1, "canonical": "react-modal", "offenders": [] },
-    "state": { "unique": 1, "canonical": "jotai", "offenders": [] },
-    "fetch": { "unique": 2, "canonical": null, "offenders": ["fetch", "axios"] }
-  },
-  "summary": "1 modal system, 1 state lib, 2 fetch libs (inconsistent)."
-}
-```
-
-**When to use:** the user asks "is this codebase consistent?" or
-"should I refactor before adding a new feature?"
-
-#### `slop_business_logic_score`
-
-Score the project's business-logic coherence — duplicate logic,
-missing validation, etc.
-
-**Input:** none
-
-**Output:**
-```json
-{
-  "score": 75,
-  "issues": [
-    { "ruleId": "logic/duplicate-business-logic", "severity": "high", "count": 3 },
-    { "ruleId": "logic/missing-input-validation", "severity": "medium", "count": 5 }
-  ]
-}
-```
-
-**When to use:** before a refactor or to assess codebase health
-for a new team member.
-
-#### `slop_governance`
-
-Get the project's governance state — Constitution declared,
-structure.md generated, defaultOff rules.
-
-**Input:** none
-
-**Output:**
-```json
-{
-  "constitution": {
-    "declared": true,
-    "path": ".slopbrick/constitution.json",
-    "categories": ["modal", "state", "fetch"]
-  },
-  "structure": {
-    "generated": true,
-    "path": ".slopbrick/structure.md",
-    "updated": "2026-06-26T22:00:00Z",
-    "stale": false
-  },
-  "calibration": {
-    "totalRules": 80,
-    "defaultOn": 60,
-    "defaultOff": 20,
-    "lastCalibration": "v7"
-  }
-}
-```
-
-**When to use:** to check if the project is set up correctly
-before doing any work.
+The former `slop_architecture_score`, `slop_business_logic_score`, and
+`slop_governance` tools were removed from the advertised registry. Their
+signals are consolidated into `slop_suggest` and the persisted health report.
 
 #### `slop_find_similar`
 
-Find similar files (by structure + pattern density) to a given
-file. Useful for "where else do I do X?"
+Find similar function/component implementations by signature features.
+Useful for "where else do I do X?"
 
 **Input:**
-- `filePath` (string, required)
-- `topK` (integer, optional, default 5)
+- `name` (string, optional) — function/component name
+- `hooks` (string array, optional)
+- `props` (string array, optional)
+- `limit` (integer, optional, default 10; capped at 50)
 
 **Output:**
 ```json
 {
-  "results": [
+  "matches": [
     {
-      "filePath": "src/Button.tsx",
+      "file": "src/Button.tsx",
+      "name": "Button",
       "similarity": 0.92,
-      "sharedPatterns": ["react-component", "tailwind-styles", "useState-once"]
+      "fingerprint": "sha256:...",
+      "hooks": ["useState"],
+      "props": ["variant"]
     }
   ]
 }
