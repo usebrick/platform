@@ -1,189 +1,219 @@
-# v0.45 closeout — Task 1 report
+# v0.45 closeout — Task 1 corrective report
 
 ## Status
 
-`DONE_WITH_CONCERNS`
+`DONE`
 
-The exact recursive test gate is green in two consecutive runs. The robust
-change serializes SlopBrick test files so Vitest file workers cannot multiply
-the CLI subprocess and scan-worker pools owned by those files. A second exact
-gate failure discovered during diagnosis was fixed in the website's mocked
-`requestAnimationFrame` helper: it now preserves the `performance.now()` epoch
-already observed by production code.
+This report supersedes the diagnosis in commit `ca4136060`. Independent review
+found direct power-log evidence for the historical failure, so the unsupported
+global SlopBrick serialization from that commit is removed in a separate
+corrective commit. The independently valid website rAF helper fix and its
+regression remain.
 
-No production code, timeout, release artifact, or unrelated dirty file was
-changed for this task.
+## Corrected diagnosis
 
-## Systematic debugging
+### The historical three-test failure was external suspension
 
-### Phase 1 — reproduce and gather evidence
+The failing run cited by the task brief is preserved in
+`/tmp/platform-recursive-test.log`:
 
-Starting point: `b072252043fd5a368f9cf73097c2470ef5bef017` on a host with
-10 CPUs and 16 GiB RAM.
+- SlopBrick started at `20:22:14`.
+- The three failures reported durations of `118,674ms`, `118,215ms`, and
+  `119,315ms` before surfacing their configured 30-second test timeout.
+- The complete Vitest run lasted `161.53s`.
 
-1. A pre-edit exact `corepack pnpm -r test` run failed before SlopBrick began.
-   Core and website ran concurrently; website's counter suite finished one
-   animation frame short (values `49`, `996,225 ms`, and `24`) in one run and
-   produced negative values in a second diagnostic run. The focused website
-   suite passed.
-2. That workspace phase reached 25 descendant processes and about 1.75 GiB
-   RSS. The uncapped core and website Vitest pools accounted for this initial
-   burst.
-3. `corepack pnpm -r --no-bail test` allowed all packages to run under the
-   same recursive scheduling despite the website failure. SlopBrick passed
-   248 files / 2,419 tests in 116.62s, confirming the original packaged-CLI
-   failure is intermittent rather than a deterministic product failure.
-4. During that four-file-worker SlopBrick run, live process snapshots showed
-   the Vitest parent, four file workers, and overlapping real CLI/tsx/npm
-   children. Samples peaked at 14 descendant processes, 107 threads, and
-   about 1.29 GiB RSS.
-5. SlopBrick's `WorkerPool` defaults to `floor(cpus / 2)`, which is five scan
-   worker threads on this host. Therefore `maxWorkers: 4` capped only one
-   layer: up to four test files could each launch a CLI that owned a separate
-   five-thread scan pool, in addition to Vitest/Node runtime threads and npm
-   children. The live 107-thread sample demonstrated this multiplicative
-   fan-out.
-6. No historical orphan was present before the diagnostic runs, and no
-   `npm install`, `npm pack`, Vitest, or pack-consumer process remained after
-   them. The previously observed three-hour orphan cannot be the sole cause:
-   it was reported during both failing and passing runs, and the current
-   failures reproduced without it.
-
-The three historical packaged-CLI failures did not reproduce in the captured
-diagnostic runs, so this report does not attribute them to one specific hung
-child. The demonstrated mechanism is resource starvation from nested fan-out;
-the exact gate also exposed an independent clock-mocking defect whose outcome
-changed with recursive startup delay.
-
-### Phase 2 — compare working and failing patterns
-
-- The four packaged/pool tests passed together quickly, while failures only
-  appeared in the full concurrent suite.
-- A prior serial SlopBrick full-suite run recorded in commit `ef2aa4ebb` had
-  passed.
-- The current four-worker diagnostic SlopBrick run also passed, but with the
-  measured 107-thread peak. This explains why a fixed cap of four reduced the
-  probability of failure without removing the mechanism.
-- `flushRAF()` started its synthetic clock at zero even though
-  `counter.ts` captured `performance.now()` before `flushRAF()` installed its
-  spy. When recursive startup took several seconds, synthetic frame timestamps
-  moved backwards relative to the production start time. Focused execution
-  started soon enough that the helper's 60 synthetic frames usually caught up.
-
-### Phase 3 — hypotheses and minimal tests
-
-Hypothesis A: serializing SlopBrick test files removes the multiplicative
-Vitest-file × CLI × scan-pool layer while preserving real worker behavior
-inside each test.
-
-Regression first:
+The host power log covers the same interval:
 
 ```text
-corepack pnpm --filter slopbrick exec vitest run tests/vitest-config.test.ts
-FAIL: expected test.fileParallelism=false; received undefined
+2026-07-10 20:22:42 +0100 Sleep  Entering Sleep state due to 'Clamshell Sleep' ... 120 secs
+2026-07-10 20:24:42 +0100 Wake   Wake from Deep Idle ...
 ```
 
-Hypothesis B: starting the synthetic rAF clock from the already-visible
-performance epoch prevents recursive-startup delay from sending time backward.
+The timeline is approximately 28 seconds awake, 120 seconds suspended, then
+13 seconds awake before Vitest exited. The shared ~118-second plateau is the
+suspension interval: on wake, the overdue asynchronous test timers fired and
+three tests reported their 30-second timeout. This is the actual mechanism for
+the historical failure. It is not evidence that a packaged CLI child or scan
+worker was deadlocked.
 
-Regression first:
+### Nested fan-out exists, but starvation was not established
+
+The original investigation correctly observed that SlopBrick test files can
+launch real CLI processes and that each CLI can create a default half-CPU scan
+pool. A four-file-worker diagnostic sample reached 107 threads, 14 descendant
+processes, and about 1.29 GiB RSS on this 10-CPU / 16-GiB host.
+
+That observation was incorrectly promoted to a causal diagnosis in
+`ca4136060`. At the 107-thread sample:
+
+- only three processes were runnable;
+- aggregate CPU was `210.6%` on ten CPUs;
+- RSS was about 1.29 GiB of 16 GiB; and
+- the same four-worker full SlopBrick run passed all 2,419 tests in 116.62s.
+
+The four historically implicated files also pass awake with four-way file
+parallelism. Nested fan-out remains a plausible resource risk worth observing,
+but no controlled awake-host failure tied it to the historical timeouts. Thread
+count alone does not justify serializing all 253 SlopBrick test files.
+
+The previously observed orphaned historical `npm install` process is likewise
+not causal evidence. It existed during a passing run, was absent during other
+failures, and no matching orphan remained after the current diagnostics.
+
+### Independent website clock defect
+
+The exact recursive gate also exposed a separate deterministic defect in the
+website test helper. Production code captured the real `performance.now()`
+epoch, then `flushRAF()` replaced it with a synthetic clock starting at zero.
+If test startup had already consumed several seconds, mocked animation-frame
+timestamps moved backward relative to the production-observed start. Focused
+runs often started early enough for 60 synthetic frames to catch up, while a
+recursive run produced incomplete or negative counter values.
+
+The direct regression first failed with:
 
 ```text
-corepack pnpm --filter @usebrick/website exec vitest run tests/unit/raf-helper.test.ts
-FAIL: expected frame time 100 to be greater than animation start 10000
+expected frame time 100 to be greater than animation start 10000
 ```
 
-### Phase 4 — smallest robust changes
+Initializing the synthetic clock from the current `performance.now()` epoch
+fixes that mechanism without changing production code or timeouts. Independent
+review accepted both the helper change and its monotonic-clock regression.
 
-- Replaced SlopBrick's dynamic four-worker cap with
-  `test.fileParallelism: false`. This is a mechanism fix, not a larger timeout:
-  real CLI and scan-worker tests still run, but only one test file can own a
-  nested process/worker tree at a time.
-- Changed `flushRAF()` to initialize its synthetic clock from the current
-  `performance.now()` value rather than zero.
-- Added a direct monotonic-clock regression and updated the Vitest resource
-  regression to assert serial file scheduling.
+## Final chosen changes
 
-Post-change SlopBrick samples during exact run 1 stayed around 4–7 descendant
-processes and 39–61 threads in the serial phase, versus the captured 107-thread
-four-worker peak. The workspace's initial core/website burst still reached 23
-processes / 211 threads, but the corrected rAF helper remained deterministic
-under it.
+### SlopBrick Vitest configuration
+
+Restore the bounded configuration from `b07225204`:
+
+```ts
+const maxTestWorkers = Math.max(
+  1,
+  Math.min(4, Math.floor(availableParallelism() / 2)),
+);
+
+// test config
+maxWorkers: maxTestWorkers,
+minWorkers: 1,
+```
+
+This retains cross-file concurrency coverage while reserving host capacity for
+test-owned subprocesses and scan workers. The configuration regression again
+asserts the computed cap and minimum worker count. The unsupported
+`fileParallelism: false` switch and its literal-only regression are removed.
+
+### Website test helper
+
+Retain the accepted changes from `ca4136060`:
+
+- `flushRAF()` starts from the performance epoch already visible to production
+  code;
+- `raf-helper.test.ts` proves a frame timestamp remains monotonic after a
+  production-observed `10_000` start.
+
+No test timeout is raised. No production source or dependency changes belong
+to this task.
 
 ## Files owned by this task
 
 - `packages/slopbrick/vitest.config.ts`
 - `packages/slopbrick/tests/vitest-config.test.ts`
-- `packages/website/tests/unit/_helpers.ts`
-- `packages/website/tests/unit/raf-helper.test.ts`
+- `packages/website/tests/unit/_helpers.ts` (retained from `ca4136060`)
+- `packages/website/tests/unit/raf-helper.test.ts` (retained from `ca4136060`)
 - `.superpowers/sdd/v045-task-1-report.md`
 
-## Verification
+## Verification evidence
 
-### Focused red/green checks
+### Focused checks after restoring four-worker scheduling
 
 ```text
-corepack pnpm --filter slopbrick exec vitest run tests/vitest-config.test.ts
-PASS: 1 file, 1 test
+corepack pnpm --filter slopbrick exec vitest run \
+  tests/vitest-config.test.ts \
+  tests/integration/dist-bundle-paths.test.ts \
+  tests/cli/scan-onboarding.test.ts \
+  tests/validate-config.test.ts \
+  tests/integration/packaged-worker.test.ts
 
+PASS: 5 files, 23 tests; duration 4.00s
+```
+
+```text
 corepack pnpm --filter @usebrick/website test
-PASS: 6 files, 37 tests
+PASS: 6 files, 37 tests; duration 2.03s
 ```
 
-### Required exact recursive tests
+### Uninterrupted exact recursive gates
 
-Run 1:
+After all concurrent source/build work was committed and the process tree was
+idle, two exact recursive gates ran sequentially under `caffeinate`:
 
 ```text
-corepack pnpm -r test
-exit 0, elapsed 268s
-SlopBrick: 248 files passed, 5 skipped; 2,419 tests passed, 9 skipped
-SlopBrick duration: 241.78s
+caffeinate -dimsu corepack pnpm -r test
+run 1: exit 0; 45s wall time
+SlopBrick: 248 files passed, 5 skipped; 2,429 tests passed, 9 skipped
+SlopBrick duration: 40.14s
 ```
-
-Run 2 (immediately consecutive):
 
 ```text
-corepack pnpm -r test
-exit 0
-SlopBrick: 248 files passed, 5 skipped; 2,419 tests passed, 9 skipped
+caffeinate -dimsu corepack pnpm -r test
+run 2: exit 0; 73s wall time
+SlopBrick: 248 files passed, 5 skipped; 2,429 tests passed, 9 skipped
+SlopBrick duration: 64.03s
 ```
 
-Run 2 crossed an external system suspension. `pmset -g log` records:
+Run 1 started at `2026-07-10T23:56:39+0100` and ended at `23:57:24`.
+Run 2 started at `23:57:34` and ended at `23:58:47`. Caffeinate held the
+system/display/idle-sleep assertions for each command; neither run crossed a
+sleep/wake event or the historical timeout plateau.
 
-```text
-2026-07-10 22:53:50 +0100 Sleep  Entering Sleep state due to 'Clamshell Sleep' ... 1054 secs
-2026-07-10 23:11:24 +0100 Wake   Wake from Deep Idle ...
-```
-
-That matches the apparent `npm pack` test duration of 1,058,165ms. The test
-resumed after wake, the pack-consumer file passed, the exact recursive command
-exited 0, and no child was orphaned. This is evidence that the 17.5-minute
-pause was macOS suspension, not a code-level stall.
-
-### Recursive compile/build gates
+### Recursive typecheck and build
 
 ```text
 corepack pnpm -r typecheck
 exit 0 for core, website, engine, and SlopBrick
+```
 
+Astro reported zero errors and four existing hints.
+
+```text
 corepack pnpm -r build
 exit 0 for core, website, engine, and SlopBrick
 ```
 
-Astro reported four existing hints and tsup emitted existing Zod declaration
-warnings; neither command reported an error. The build-generated change to
-`packages/website/src/data/version.json` was restored and was not included in
-the task commit.
+The build emitted the existing Zod declaration warnings but completed. Its
+generated change to `packages/website/src/data/version.json` was restored and
+is excluded from the corrective commit.
 
-## Concerns and trade-offs
+After all gates, `ps` found no `npm install`, `npm pack`, Vitest,
+pack-consumer, recursive-test, or caffeinate child remaining.
 
-1. Reliability intentionally costs wall time: SlopBrick's uninterrupted exact
-   run increased from the observed four-worker 116.62s to 241.78s when test
-   files were serialized. This keeps the gate below five minutes locally and
-   removes the multiplicative nested-worker layer.
-2. A sleeping laptop can still make any wall-clock test command appear stalled.
-   The second run proves this specific suspension resumes cleanly, but CI or
-   local release verification should run on an awake host.
-3. Unrelated pre-existing and concurrent worktree changes were preserved and
-   excluded from the commit.
+## Invalidated runs (not release evidence)
+
+1. The original 20:22 run is invalid normal-condition evidence because macOS
+   slept for 120 seconds across the implicated asynchronous tests.
+2. The second post-`ca4136060` run is also invalid normal-condition evidence:
+   macOS slept for 1,054 seconds during synchronous `npm pack`. It resumed and
+   exited zero, but does not prove asynchronous tests tolerate suspension.
+3. The first corrective run at 23:30 was protected by `caffeinate` but overlapped
+   another agent's in-progress source edits and `dist/` rebuild. That agent
+   confirmed the overlap. The run saw its eight not-yet-green scan-completion
+   assertions, two incremental assertions against transient behavior, and a
+   packaged-worker check while `dist/index.d.ts` was temporarily absent. It is
+   invalid shared-state evidence and is excluded from the final gate count.
+4. The next uninterrupted run, after `ed67401eb`, found one deterministic
+   watch-mode expectation that had not yet been updated for truthful empty-scan
+   output. That separate task corrected the contract in follow-up commit
+   `dae6909c5`. Because the run was intentionally stopped at one failure, it is
+   not counted among the two final green samples.
+
+## Remaining concerns
+
+- The four-worker cap bounds one concurrency layer; nested CLI/scan pools are
+  still observable. Current awake evidence does not show resource exhaustion,
+  so further mitigation requires a controlled reproducer rather than a thread
+  count alone.
+- A sleeping developer machine can invalidate wall-clock test evidence.
+  Corrective verification uses `caffeinate`; CI runners should already remain
+  awake by construction.
+- Unrelated planning, source, test, and generated worktree changes belong to
+  other tasks and remain untouched and excluded from this task's commit.
