@@ -84,6 +84,10 @@ describe('scan completion status', () => {
 
   it('keeps worker scans identical to serial scans under the resolved rule configuration', async () => {
     const dir = createTmpDir(); dirs.push(dir);
+    // The test runner lives in the monorepo while the requested scan workspace
+    // is a temporary directory. Keep this explicit so the fixture cannot
+    // accidentally stop exercising the worker-CWD boundary.
+    expect(resolve(process.cwd())).not.toBe(resolve(dir));
     mkdirSync(join(dir, 'src'));
     // This path must be evaluated relative to the requested workspace, not
     // the process that happens to host a worker thread.  The worker process
@@ -201,6 +205,58 @@ describe('scan completion status', () => {
         parseErrorCount: 0,
       },
     });
+  });
+
+  it('honors next-line directives in worker scans without diverging from serial results', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    expect(resolve(process.cwd())).not.toBe(resolve(dir));
+    mkdirSync(join(dir, 'src'));
+    const files = [
+      join(dir, 'src', 'suppressed-storm.ts'),
+      ...Array.from({ length: 4 }, (_, i) => join(dir, 'src', `storm-${i}.ts`)),
+    ];
+    writeFileSync(files[0]!, [
+      '// slopbrick-disable-next-line logic/math-console-log-storm',
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+    ].join('\n'));
+    for (const file of files.slice(1)) {
+      writeFileSync(file, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
+    }
+
+    const includeRules = ['logic/math-console-log-storm'];
+    const workerRun = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules,
+      threadCount: 2,
+      workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
+    });
+    expect(workerRun.scanStats).toMatchObject({ status: 'complete', requested: 5, analyzed: 5 });
+    const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
+    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(false);
+
+    const registry = new RuleRegistry();
+    registry.loadBuiltins(undefined, { includeRules });
+    const serialResults = await Promise.all(files.map((filePath) => scanFile(filePath, workerRun.config, registry, dir)));
+    for (const result of serialResults) {
+      result.issues = filterIssues(result.issues, {});
+      filterByDisabledDirectives(result, result.facts?.v2?.disabledRules ?? []);
+      for (const issue of result.issues) issue.filePath ??= result.filePath;
+    }
+
+    const canonical = (results: typeof serialResults) => results
+      .map((result) => ({
+        filePath: result.filePath,
+        componentCount: result.componentCount,
+        compositeScore: result.compositeScore,
+        parseError: result.parseError,
+        issues: result.issues.map(({ ruleId, category, severity, aiSpecific, filePath, message, line, column, advice, fixHint, extras }) => ({
+          ruleId, category, severity, aiSpecific, filePath, message, line, column, advice, fixHint, extras,
+        })).sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.line - b.line || a.column - b.column),
+      }))
+      .sort((a, b) => a.filePath.localeCompare(b.filePath));
+
+    expect(canonical(workerRun.results)).toEqual(canonical(serialResults));
   });
 
   it('returns empty and non-zero for an ordinary empty workspace', async () => {
