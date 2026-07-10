@@ -1,27 +1,23 @@
 /**
  * v0.18.2: single source of truth for the corpus directory layout.
  *
- * The corpus lives on disk at `CORPUS_ROOT` (default
- * `/Users/cheng/corpus-expansion`, override via the
- * `SLOPBRICK_CORPUS_DIR` env var for forks, CI runners, or
- * read-only mirrors). All TS code (CLI defaults, integration
- * tests, scripts) MUST import the derived paths from here
- * instead of hardcoding `/Users/cheng/corpus-expansion/...` —
+ * The corpus lives on disk at `CORPUS_ROOT` (explicitly supplied by
+ * `SLOPBRICK_CORPUS_DIR`, or the repository-local `corpus/` fallback).
+ * This keeps forks and CI runners portable. All TS code (CLI defaults,
+ * integration tests, scripts) MUST import the derived paths from here
+ * instead of hardcoding a machine-specific corpus path —
  * the hardcoded-string pattern is the bug class that caused
  * the v0.18.2 PR-1j sweep (the corpus was renamed from
  * `ai-slop-baseline/` to `corpus-expansion/` and ~7 files
  * had stale references).
  *
- * Python scripts in `scripts/` mirror this constant as
- * `CORPUS_ROOT = Path(os.environ.get('SLOPBRICK_CORPUS_DIR',
- * '/Users/cheng/corpus-expansion'))` (search-and-replace
- * version of the same idea). If you change the default here,
- * change it in the Python scripts too.
+ * Legacy Python scripts retain historical defaults for reproducibility;
+ * release calibration must always set `SLOPBRICK_CORPUS_DIR` explicitly.
  */
 import { join } from 'node:path';
 
 export const CORPUS_ROOT =
-  process.env['SLOPBRICK_CORPUS_DIR'] ?? '/Users/cheng/corpus-expansion';
+  process.env['SLOPBRICK_CORPUS_DIR'] ?? join(process.cwd(), 'corpus');
 
 /** AI-generated / AI-assisted code (positive class). */
 export const POSITIVE_DIR = join(CORPUS_ROOT, 'positive');
