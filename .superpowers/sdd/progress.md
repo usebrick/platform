@@ -139,6 +139,10 @@
 - Calibration path portability: `021fc7af7` removes the shared runtime's
   machine-specific corpus fallback in favor of `SLOPBRICK_CORPUS_DIR` or a
   repository-local `corpus/` directory; custom-path calibration remains green.
+- CLI command smoke closeout: packaged-worker (4/4) and pack-consumer (2/2)
+  contracts plus CLI/CI/watch/MCP/config smoke are green; CLI-04 is now marked
+  complete in the continuation ledger. The all-suite run itself remains
+  non-green under concurrent calibration-resource load.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
