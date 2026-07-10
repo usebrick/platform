@@ -91,5 +91,9 @@ export {
 
 const entryPath = process.argv[1];
 if (entryPath && pathToFileURL(resolve(entryPath)).href === import.meta.url) {
+  // pnpm's documented `pnpm dev -- --help` form forwards the separator as
+  // a literal argv entry for this script. Remove that wrapper token so the
+  // source/dev surface has the same help/version semantics as the bin.
+  if (process.argv[2] === '--') process.argv.splice(2, 1);
   void runCliEntry({ start: performance.now() });
 }
