@@ -91,7 +91,17 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
       constitution: resolveConstitution(undefined, detectedConstitution),
     };
   }
-  const user = await loadConfigFile(configPath);
+  let user: Partial<ResolvedConfig>;
+  try {
+    user = await loadConfigFile(configPath);
+  } catch (error) {
+    // Keep malformed JavaScript/config imports on the documented config
+    // error path. Without this boundary, a syntax error escaped as an
+    // unexpected internal error (exit 3), making `scan` and `ci` disagree
+    // with `validate-config` and hiding the actionable file path.
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ConfigValidationError(configPath, [`failed to load config: ${message}`], []);
+  }
   const validation = validateConfig(user);
   if (validation.errors.length > 0) {
     throw new ConfigValidationError(configPath, validation.errors, validation.warnings);

@@ -83,6 +83,16 @@ describe('scan completion status', () => {
     expect(stderr).toMatch(/requested 0|No source files matched/i);
   });
 
+  it('maps malformed config syntax to the documented config exit code', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'x.ts'), 'export const x = 1;\n');
+    writeFileSync(join(dir, 'slopbrick.config.mjs'), 'export default { thresholds: { ;\n');
+    const result = await run(['--workspace', dir, '--format', 'json']);
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toMatch(/invalid .*slopbrick\.config\.mjs|failed to load config/i);
+  });
+
   it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     const { stdout, exitCode } = await run(['--workspace', dir, '--format', 'json']);
