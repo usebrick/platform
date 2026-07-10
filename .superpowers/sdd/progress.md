@@ -139,6 +139,9 @@
 - Calibration path portability: `021fc7af7` removes the shared runtime's
   machine-specific corpus fallback in favor of `SLOPBRICK_CORPUS_DIR` or a
   repository-local `corpus/` directory; custom-path calibration remains green.
+- Calibration stale-output hardening `73dc5238d` prevents prior chunk JSON from
+  being reused after timeout/crash and records malformed reports as skipped
+  errors; calibrator/merge focused tests pass 15/15.
 - CLI command smoke closeout: packaged-worker (4/4) and pack-consumer (2/2)
   contracts plus CLI/CI/watch/MCP/config smoke are green; CLI-04 is now marked
   complete in the continuation ledger. The all-suite run itself remains
