@@ -284,3 +284,7 @@
   and JSON output from exact aggregate inputs, resolved weights, and canonical
   effective evidence. It preserves default JSON and explicitly refuses per-rule
   or Bayesian attribution; independent review approved its 43-test contract.
+- Gate 2 output UX `cb8b2b7dd`/`3c9db93ff` centralizes color policy, fixes
+  calibration's raw-ANSI bypass, and tests NO_COLOR/FORCE_COLOR/no-color,
+  redirected JSON, narrow wrapping, deterministic bytes, and EPIPE handling.
+  Independent review approved the 10-test subprocess contract.
