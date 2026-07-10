@@ -208,6 +208,11 @@ describe('headline score renderer contract', () => {
         security: 79,
         repositoryHealth: 63,
       });
+      expect(payload).toMatchObject({
+        completionStatus: 'partial',
+        scoreValidity: 'incomplete',
+        scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
+      });
       expect(payload.scoreBasis).toEqual(scoreBasis);
       expect(payload).toMatchObject({
         completionStatus: 'partial',

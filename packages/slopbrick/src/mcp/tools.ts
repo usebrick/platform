@@ -405,6 +405,11 @@ export async function runSuggest(
       if (health) {
         if (health.compositeScore) payload.compositeScore = health.compositeScore;
         payload.scoreBasis = health.scoreBasis;
+        // Preserve the health snapshot's gate-safety contract so MCP clients
+        // cannot treat a partial scan's numeric scores as deploy/CI evidence.
+        payload.completionStatus = health.completionStatus;
+        payload.scoreValidity = health.scoreValidity;
+        payload.scanAccounting = health.scanAccounting;
         // v0.43.0: include the same scoreBriefs that the CLI
         // --brief and --json surfaces now ship. MCP clients
         // (Cursor, Claude Code, Continue) get the same plain-
