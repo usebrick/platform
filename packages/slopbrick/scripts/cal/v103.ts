@@ -5,7 +5,7 @@
  * It validates provenance-backed manifests and produces/verifies the first
  * lossless artifact: a complete corpus-selection ledger.
  */
-import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
+import { access, constants, mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { isCalibrationCorpusManifestV103 } from '@usebrick/core';
 import {
@@ -14,8 +14,9 @@ import {
   verifySelectionLedger,
 } from '../../src/calibration/v103/selection';
 import { canonicalJson } from '../../src/calibration/v103/canonical';
+import { verifyV103RunInputs } from '../../src/calibration/v103/run-manifest';
 
-type Command = 'corpus:validate' | 'select' | 'verify';
+type Command = 'corpus:validate' | 'select' | 'verify' | 'scan';
 
 interface Arguments {
   readonly command: Command;
@@ -24,14 +25,15 @@ interface Arguments {
   readonly out?: string;
   readonly run?: string;
   readonly stage?: string;
+  readonly checkoutMap?: string;
 }
 
 class UsageError extends Error {}
 
 function parseArgs(argv: readonly string[]): Arguments {
   const [command, ...rest] = argv;
-  if (command !== 'corpus:validate' && command !== 'select' && command !== 'verify') {
-    throw new UsageError('Expected one of: corpus:validate, select, verify');
+  if (command !== 'corpus:validate' && command !== 'select' && command !== 'verify' && command !== 'scan') {
+    throw new UsageError('Expected one of: corpus:validate, select, verify, scan');
   }
   const values: Record<string, string> = {};
   for (let index = 0; index < rest.length; index += 2) {
@@ -44,7 +46,7 @@ function parseArgs(argv: readonly string[]): Arguments {
   }
   const allowed = command === 'corpus:validate' ? new Set(['--manifest'])
     : command === 'select' ? new Set(['--manifest', '--seed', '--out'])
-      : new Set(['--run', '--stage']);
+      : command === 'verify' ? new Set(['--run', '--stage']) : new Set(['--run', '--checkout-map']);
   if (Object.keys(values).some((flag) => !allowed.has(flag))) throw new UsageError('Unexpected option for command');
   if (command === 'corpus:validate' && !values['--manifest']) throw new UsageError('corpus:validate requires --manifest');
   if (command === 'select' && (!values['--manifest'] || !values['--seed'] || !values['--out'])) {
@@ -53,7 +55,8 @@ function parseArgs(argv: readonly string[]): Arguments {
   if (command === 'verify' && (!values['--run'] || values['--stage'] !== 'selection')) {
     throw new UsageError('verify requires --run and --stage selection');
   }
-  return { command, manifest: values['--manifest'], seed: values['--seed'], out: values['--out'], run: values['--run'], stage: values['--stage'] };
+  if (command === 'scan' && (!values['--run'] || !values['--checkout-map'])) throw new UsageError('scan requires --run and --checkout-map');
+  return { command, manifest: values['--manifest'], seed: values['--seed'], out: values['--out'], run: values['--run'], stage: values['--stage'], checkoutMap: values['--checkout-map'] };
 }
 
 async function readJson(path: string, label: string): Promise<unknown> {
@@ -77,6 +80,10 @@ async function writeNew(path: string, contents: string): Promise<void> {
   const temporary = `${path}.tmp`;
   await writeFile(temporary, contents, { encoding: 'utf8', flag: 'wx' });
   await rename(temporary, path);
+}
+
+async function ensureAbsent(path: string): Promise<void> {
+  try { await access(path, constants.F_OK); throw new UsageError('Refusing to overwrite existing scan artifacts'); } catch (error) { if (error instanceof UsageError) throw error; }
 }
 
 function result(payload: Record<string, unknown>): void {
@@ -116,6 +123,15 @@ async function run(args: Arguments): Promise<void> {
   const ledger = await readJson(join(args.run!, 'selection-ledger.json'), 'selection ledger');
   const verification = verifySelectionLedger(manifest, jsonl, ledger);
   if (!verification.ok) throw new UsageError(`Selection verification failed: ${verification.error}`);
+  if (args.command === 'scan') {
+    const runManifest = await readJson(join(args.run!, 'run-manifest.json'), 'run manifest');
+    const checkoutMap = await readJson(args.checkoutMap!, 'checkout map');
+    const inputs = verifyV103RunInputs(runManifest, checkoutMap);
+    if (!inputs.ok) throw new UsageError(`Run input verification failed: ${inputs.error}`);
+    await Promise.all(['observations.jsonl', 'failures.jsonl', 'coverage.json'].map((file) => ensureAbsent(join(args.run!, file))));
+    result({ ok: true, stage: 'scan:validated' });
+    return;
+  }
   result({ ok: true, stage: 'selection' });
 }
 
