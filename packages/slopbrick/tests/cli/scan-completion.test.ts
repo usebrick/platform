@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
@@ -130,6 +130,19 @@ describe('scan completion status', () => {
     expect(content).toContain('slopbrick:begin:v3');
     expect(content).not.toContain('\nold\n');
     expect(content).toContain('Category-level directives');
+  });
+
+  it('writes JSON/HTML output files and honors --no-telemetry', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'x.ts'), 'export const x = 1;\n');
+    const jsonPath = join(dir, 'report.json');
+    const htmlPath = join(dir, 'report.html');
+    expect((await run(['--workspace', dir, '--json', jsonPath, '--no-telemetry', '--quiet'])).exitCode).toBe(0);
+    expect((await run(['--workspace', dir, '--html', htmlPath, '--no-telemetry', '--quiet'])).exitCode).toBe(0);
+    expect(JSON.parse(readFileSync(jsonPath, 'utf8'))).toHaveProperty('completionStatus', 'complete');
+    expect(readFileSync(htmlPath, 'utf8')).toContain('<!DOCTYPE html>');
+    expect(existsSync(join(dir, '.slopbrick', 'flywheel', 'scans.jsonl'))).toBe(false);
   });
 
   it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
