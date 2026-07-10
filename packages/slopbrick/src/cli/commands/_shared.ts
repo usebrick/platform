@@ -43,6 +43,7 @@
 import type { Command } from 'commander';
 import { CommanderError } from 'commander';
 import { logger } from '../../engine/logger';
+import { ScanExitCode } from '../exit-codes';
 
 /**
  * Install Commander's `exitOverride()` on the program so that errors
@@ -58,7 +59,15 @@ import { logger } from '../../engine/logger';
  * `parseAsync` resolves.
  */
 export function setExitOverride(program: Command): void {
-  program.exitOverride();
+  program.exitOverride((err) => {
+    // Commander uses 1 for usage/parser errors by default. The public CLI
+    // reserves 1 for a completed policy breach or partial scan, so normalize
+    // user-correctable invocation errors to the documented status 2.
+    if (err.code !== 'commander.helpDisplayed' && err.code !== 'commander.help') {
+      err.exitCode = ScanExitCode.usageOrConfig;
+    }
+    throw err;
+  });
 }
 
 /**
@@ -91,7 +100,7 @@ export async function dispatch(program: Command, runFn: () => Promise<void>): Pr
       // code. `commander.helpDisplayed` / `commander.help` codes
       // mean Commander already printed help/version — those exit 0
       // and we don't add a redundant error line.
-      if (err.code !== 'commander.helpDisplayed' && err.code !== 'commander.help') {
+      if (err.code === 'slopbrick.exit') {
         logger.error(err.message);
       }
       // Commander sets exitCode=0 for help/version; honor it.

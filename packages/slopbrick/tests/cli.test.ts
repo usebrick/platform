@@ -666,9 +666,9 @@ describe('--strict', () => {
     cleanupTempDir(dir);
   });
 
-  it('exits with code 2 when high-severity issues remain', async () => {
+  it('exits with code 1 when high-severity issues remain', async () => {
     const { exitCode, stderr } = await run(['--workspace', dir, '--strict', '--json']);
-    expect(exitCode).toBe(2);
+    expect(exitCode).toBe(1);
     expect(stderr).toContain('High-severity issues found with --strict.');
   });
 
@@ -803,7 +803,7 @@ describe('--no-increase', () => {
     expect(stderr).toContain('no previous run found');
   });
 
-  it('exits 2 when aiSlopScore increased since the previous run', async () => {
+  it('exits 1 when aiSlopScore increased since the previous run', async () => {
     // v0.21.0: aiSlopScore is raw slop (lower = better). "Worse
     // than before" is "AI Slop Score went UP" (more slop detected).
     // The v0.15.0–v0.20.1 "went DOWN" wording (when aiSlopScore
@@ -817,7 +817,7 @@ describe('--no-increase', () => {
 
     writeHighSeverityFixture(dir);
     const second = await run(['--workspace', dir, '--no-increase', '--json']);
-    expect(second.exitCode).toBe(2);
+    expect(second.exitCode).toBe(1);
     expect(second.stderr).toMatch(/AI Slop Score went UP from [\d.]+ to [\d.]+/);
   });
 

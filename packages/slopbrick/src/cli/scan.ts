@@ -21,6 +21,7 @@ import { resolve, relative, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { renderProgress, clearProgress, configureColorPolicy } from './render';
+import { CliUsageError } from './exit-codes';
 import {
   filterIssues,
   intersectFiles,
@@ -127,11 +128,11 @@ export async function runScan(
   // scanned" was misleading users into thinking their scan succeeded on a
   // real project. Surface the failure clearly.
   if (!existsSync(cwd)) {
-    throw new Error(`Workspace not found: ${cwd}`);
+    throw new CliUsageError(`Workspace not found: ${cwd}`);
   }
   const cwdStat = statSync(cwd);
   if (!cwdStat.isDirectory()) {
-    throw new Error(`Workspace is not a directory: ${cwd}`);
+    throw new CliUsageError(`Workspace is not a directory: ${cwd}`);
   }
   const configPath = findConfigPath(cwd);
   const loadedConfig = await loadConfig(cwd);
@@ -151,7 +152,7 @@ export async function runScan(
   if (options.staged || options.changed || options.since) {
     if (!getGitRoot(cwd)) {
       const flag = options.changed ? '--changed' : options.staged ? '--staged' : '--since';
-      throw new Error(`${flag} requires a git repository (no .git found in ${cwd})`);
+      throw new CliUsageError(`${flag} requires a git repository (no .git found in ${cwd})`);
     }
   }
 

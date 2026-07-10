@@ -15,15 +15,15 @@
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`slopbrick: unhandled error — ${msg}\n`);
-    process.exit(1);
+    process.exit(3);
   }
 })();
 process.on('unhandledRejection', (reason) => {
   const msg = reason instanceof Error ? reason.message : String(reason);
   process.stderr.write(`slopbrick: unhandled rejection — ${msg}\n`);
-  process.exit(1);
+  process.exit(3);
 });
 process.on('uncaughtException', (err) => {
   process.stderr.write(`slopbrick: uncaught exception — ${err.message}\n`);
-  process.exit(1);
+  process.exit(3);
 });

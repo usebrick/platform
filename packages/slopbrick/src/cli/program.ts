@@ -116,6 +116,7 @@ import { formatGroupedHelp } from './help';
 // `scanProject` (library API) and `ci`/`watch` are unaffected.
 import { BeaconEmitter } from '../beacon';
 import { formatScanValidityNotice } from '../report/scan-validity';
+import { CliUsageError, ScanExitCode } from './exit-codes';
 
 /** Current in-memory result returned when the shared scan action is invoked by CI. */
 export interface ScanActionOutcome {
@@ -129,17 +130,18 @@ export interface ScanActionOutcome {
   noIncreaseFailure: boolean;
 }
 
-//   0 = pass (slopIndex below threshold)
-//   1 = threshold breach (blocks git hooks)
-//   2 = tool/usage error (config validation, parse errors that prevent scanning)
-//   3 = unexpected internal error
-process.on('uncaughtException', (err) => {
-  logger.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(3);
-});
+// Stable scan statuses: 0 clean, 1 policy breach/partial scan, 2
+// user-correctable usage or config error, 3 unexpected internal failure.
+// The executable wrapper owns truly uncaught process-level failures.
 
 export async function runCli({ start }: { start: number }): Promise<void> {
   try {
+    // Deliberately double-gated test seam for the subprocess contract. It is
+    // unavailable in normal installations and exercises the same top-level
+    // catch as a genuine unexpected failure.
+    if (process.env.NODE_ENV === 'test' && process.env.SLOPBRICK_TEST_FORCE_INTERNAL_ERROR === '1') {
+      throw new Error('Injected top-level internal failure');
+    }
     // Apply colour policy before Commander dispatches any subcommand. Scan
     // applies it again with its resolved options so programmatic invocations
     // cannot leak a prior invocation's `--no-color` state.
@@ -485,7 +487,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         exitCode = 1;
       }
       if (options.strict && report.issues.some((issue) => issue.severity === 'high')) {
-        exitCode = 2;
+        exitCode = ScanExitCode.policyOrPartial;
         if (!options.quiet) {
           // v0.43.0: the previous message was "High-severity issues
           // found with --strict." — accurate but unhelpful. Users
@@ -508,7 +510,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
       }
       if (noIncreaseFailure) {
-        exitCode = 2;
+        exitCode = ScanExitCode.policyOrPartial;
       }
 
       if (exitCode === 1 && !incompleteFailure) {
@@ -662,12 +664,12 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       await program.parseAsync(process.argv);
     });
   } catch (err) {
-    if (err instanceof ConfigValidationError) {
+    if (err instanceof ConfigValidationError || err instanceof CliUsageError) {
       logger.error(err.message);
-      process.exit(2);
+      process.exit(ScanExitCode.usageOrConfig);
     }
     logger.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(3);
+    process.exit(ScanExitCode.internal);
   }
 }
 
