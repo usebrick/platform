@@ -9,7 +9,7 @@
 // generated block). Caller is responsible for the precondition
 // check; this module is pure over the file system.
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { safeRewrite } from './render';
 import { generateAgentsMdSnippet } from './generators';
@@ -76,8 +76,7 @@ export function refreshSnippets(
       // Atomic write: tmp + rename.
       const tmp = `${path}.tmp`;
       writeFileSync(tmp, outcome.content, 'utf-8');
-      const fs = require('node:fs') as typeof import('node:fs');
-      fs.renameSync(tmp, path);
+      renameSync(tmp, path);
       result.rewritten.push(filename);
     } else if (outcome.failClosed) {
       result.failClosed.push(filename);
