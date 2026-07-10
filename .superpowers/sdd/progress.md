@@ -260,3 +260,8 @@
   is validated. Independent review approved it; scan completion + thresholds
   pass 31/31. Numeric fields remain for wire compatibility and are explicitly
   non-gating until a future wire-format migration.
+- Gate 2 pure engine API `a836c9e77`/`87c4d9762`/`d58634c85`/`a2230119a`
+  exposes a real Core-verdict → Engine-pure subpath with exact exports,
+  executable examples, and fresh isolated artifact-closure testing. The legacy
+  root remains adapter-capable; pure docs accurately say host/editor-safe, not
+  browser-portable. Independent review approved it; engine tests pass 56/56.
