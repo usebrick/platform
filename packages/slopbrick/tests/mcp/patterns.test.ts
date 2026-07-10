@@ -73,7 +73,7 @@ describe('extractImports', () => {
 });
 
 describe('MCP evidence contract', () => {
-  it('returns a rule explanation with honest calibration and effective config state', async () => {
+  it('returns a rule explanation with honest calibration and configuration policy state', async () => {
     const result = await handleToolCall(
       'slop_explain_rule',
       { ruleId: 'visual/test-rule' },
@@ -90,7 +90,7 @@ describe('MCP evidence contract', () => {
     expect(result.isError).toBeFalsy();
     const payload = JSON.parse(result.content[0]!.text) as {
       evidence: { category: string; calibration: { confidenceLimits: unknown; confidenceLimitsReason: string } };
-      configuration: { configuredSeverity: string; effectiveActivation: string };
+      configuration: { configuredSeverity: string; defaultOff: boolean; policyState: string };
       remediation: string;
       sourcePath: string;
       suppressionSnippet: string;
@@ -98,22 +98,59 @@ describe('MCP evidence contract', () => {
     expect(payload.evidence.category).toBe('ai-signal');
     expect(payload.evidence.calibration.confidenceLimits).toBeNull();
     expect(payload.evidence.calibration.confidenceLimitsReason).toContain('No validated confidence interval');
-    expect(payload.configuration).toMatchObject({ configuredSeverity: 'off', effectiveActivation: 'suppressed' });
+    expect(payload.configuration).toMatchObject({
+      configuredSeverity: 'off', defaultOff: false, policyState: 'configured-off',
+    });
+    expect(payload.configuration).not.toHaveProperty('effectiveActivation');
     expect(payload.remediation).toContain('src/rules');
     expect(payload.sourcePath).toContain('src/rules');
     expect(payload.suppressionSnippet).toContain('visual/test-rule');
   });
 
-  it('keeps bounded issue extras as why-it-fired facts without exposing scan facts', () => {
+  it('projects issue extras into bounded safe why-it-fired facts', () => {
     const finding = toMcpFinding({
       ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
-      message: 'Broken link', line: 3, column: 4, extras: { link: './missing.md' },
-    });
+      message: 'Broken link', line: 3, column: 4, extras: {
+        link: './missing.md',
+        absolutePath: '/tmp/mcp-evidence-secret.ts',
+        nested: { file: '/tmp/mcp-evidence-nested.ts', count: 2 },
+        externalPath: '/var/mcp-evidence-secret.ts',
+      },
+    }, '/tmp');
 
     expect(finding.whyItFired).toEqual({
-      summary: 'Broken link', location: { line: 3, column: 4 }, facts: { link: './missing.md' },
+      summary: 'Broken link',
+      location: { line: 3, column: 4 },
+      facts: {
+        link: './missing.md',
+        absolutePath: 'mcp-evidence-secret.ts',
+        nested: { file: 'mcp-evidence-nested.ts', count: 2 },
+        externalPath: '[redacted absolute path]',
+      },
     });
+    expect(JSON.stringify(finding)).not.toContain('/tmp/mcp-evidence');
     expect(finding).not.toHaveProperty('facts');
+  });
+
+  it('drops source-like, deeply nested, and oversized extras from MCP findings', () => {
+    const finding = toMcpFinding({
+      ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
+      message: 'Broken link', line: 3, column: 4, extras: {
+        source: 'const credential = "do-not-forward";\n'.repeat(300),
+        token: 'do-not-forward-token',
+        tooMany: Array.from({ length: 80 }, (_, index) => index),
+        deep: { a: { b: { c: { d: { e: 'hidden' } } } } },
+        fn: () => 'not-json',
+      },
+    });
+
+    expect(finding.whyItFired.facts).toEqual({
+      tooMany: '[omitted oversized array]',
+      deep: { a: { b: '[omitted nested value]' } },
+    });
+    expect(JSON.stringify(finding)).not.toContain('credential');
+    expect(JSON.stringify(finding)).not.toContain('do-not-forward-token');
+    expect(JSON.stringify(finding)).not.toContain('hidden');
   });
 });
 

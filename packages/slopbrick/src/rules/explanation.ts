@@ -3,13 +3,17 @@ import type { ResolvedConfig, Rule, RuleSeverity } from '../types';
 
 const RULES_BASE_URL = 'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules';
 
-export type EffectiveActivation = 'enabled' | 'suppressed';
+export type RulePolicyState = 'configured-off' | 'configured-severity' | 'default-off' | 'rule-default';
 
-export interface RuleActivation {
+/**
+ * Static policy derived from rule metadata and supplied configuration.
+ * It intentionally does not claim how any particular scan invocation
+ * (including MCP's direct-file scan) applied that policy at runtime.
+ */
+export interface RulePolicy {
   configuredSeverity: RuleSeverity | 'off' | null;
   defaultOff: boolean;
-  effectiveSeverity: RuleSeverity | 'off';
-  effectiveActivation: EffectiveActivation;
+  policyState: RulePolicyState;
 }
 
 function ruleIdToFilename(ruleId: string): string {
@@ -18,23 +22,22 @@ function ruleIdToFilename(ruleId: string): string {
 }
 
 /**
- * Resolve the activation state used in a project report: explicit config wins;
- * otherwise default-off rules are retained only for auditability and excluded
- * from the effective finding set.
+ * Describe configuration policy only. The caller must not use this as evidence
+ * of whether a particular scan runner executed or suppressed a rule.
  */
-export function resolveRuleActivation(rule: Rule, config: ResolvedConfig): RuleActivation {
+export function describeRulePolicy(rule: Rule, config: ResolvedConfig): RulePolicy {
   const configuredSeverity = config.rules[rule.id] ?? null;
   const defaultOff = rule.defaultOff === true || getDefaultOffRules().has(rule.id);
   if (configuredSeverity === 'off') {
-    return { configuredSeverity, defaultOff, effectiveSeverity: 'off', effectiveActivation: 'suppressed' };
+    return { configuredSeverity, defaultOff, policyState: 'configured-off' };
   }
   if (configuredSeverity !== null && configuredSeverity !== 'auto') {
-    return { configuredSeverity, defaultOff, effectiveSeverity: configuredSeverity, effectiveActivation: 'enabled' };
+    return { configuredSeverity, defaultOff, policyState: 'configured-severity' };
   }
   if (defaultOff) {
-    return { configuredSeverity, defaultOff, effectiveSeverity: 'off', effectiveActivation: 'suppressed' };
+    return { configuredSeverity, defaultOff, policyState: 'default-off' };
   }
-  return { configuredSeverity, defaultOff, effectiveSeverity: rule.severity, effectiveActivation: 'enabled' };
+  return { configuredSeverity, defaultOff, policyState: 'rule-default' };
 }
 
 export interface RuleExplanation {
@@ -59,7 +62,7 @@ export interface RuleExplanation {
       confidenceLimitsReason: string;
     };
   };
-  configuration: RuleActivation;
+  configuration: RulePolicy;
 }
 
 export function buildRuleExplanation(
@@ -98,6 +101,6 @@ export function buildRuleExplanation(
             confidenceLimitsReason: 'No validated confidence interval is available in the shipped calibration contract.',
           },
     },
-    configuration: resolveRuleActivation(rule, config),
+    configuration: describeRulePolicy(rule, config),
   };
 }

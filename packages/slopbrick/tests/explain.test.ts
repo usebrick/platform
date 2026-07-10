@@ -84,11 +84,12 @@ describe('buildRuleExplanation', () => {
     expect(result.evidence.calibration.confidenceLimits).toBeNull();
     expect(result.evidence.calibration.confidenceLimitsReason).toContain('No validated confidence interval');
     expect(result.configuration.configuredSeverity).toBe('off');
-    expect(result.configuration.effectiveActivation).toBe('suppressed');
+    expect(result.configuration.policyState).toBe('configured-off');
+    expect(result.configuration).not.toHaveProperty('effectiveActivation');
     expect(result.suppressionSnippet).toContain('visual/test-rule');
   });
 
-  it('marks a static default-off rule as suppressed when it has no user override', () => {
+  it('reports static default-off as configuration policy without claiming runtime suppression', () => {
     const result = buildRuleExplanation(
       { ...fakeRule, defaultOff: true },
       { ...DEFAULT_CONFIG, rules: {} },
@@ -96,6 +97,7 @@ describe('buildRuleExplanation', () => {
     );
 
     expect(result.configuration.defaultOff).toBe(true);
-    expect(result.configuration.effectiveActivation).toBe('suppressed');
+    expect(result.configuration.policyState).toBe('default-off');
+    expect(JSON.stringify(result)).not.toMatch(/effective|runtime|suppressed/i);
   });
 });

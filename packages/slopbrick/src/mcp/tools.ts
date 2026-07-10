@@ -63,7 +63,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_explain_rule',
     description:
-      'Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and the resolved project activation state.',
+      'Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and static configuration policy. The policy is not a claim about direct-file scan runtime behavior.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -234,19 +234,82 @@ async function runScanFile(args: Record<string, unknown>, ctx: ToolContext): Pro
     // the full object gives clients both the advertised probability/tier
     // and the contributing-rule details for explainability.
     compositeScore: result.compositeScore,
-    issues: result.issues.map(toMcpFinding),
+    issues: result.issues.map((issue) => toMcpFinding(issue, ctx.cwd)),
   };
   return {
     content: [{ type: 'text', text: JSON.stringify(simplified, null, 2) }],
   };
 }
 
+const MAX_MCP_FACT_KEYS = 32;
+const MAX_MCP_FACT_ARRAY_ITEMS = 32;
+const MAX_MCP_FACT_STRING_LENGTH = 512;
+const MAX_MCP_FACT_DEPTH = 3;
+
+const SOURCE_LIKE_FACT_KEY = /(?:^|[-_])(source|code|content|body|text|raw)(?:$|[-_])/i;
+const SENSITIVE_FACT_KEY = /(?:^|[-_])(token|secret|password|credential|authorization|cookie|api[-_]?key)(?:$|[-_])/i;
+const WINDOWS_ABSOLUTE_PATH = /^[A-Za-z]:[\\/]/;
+
+type McpFact = null | boolean | number | string | McpFact[] | { [key: string]: McpFact };
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isSourceLikeString(value: string): boolean {
+  return value.includes('\n') && /(?:\bimport\b|\bexport\b|\bconst\b|\bfunction\b|=>|<[A-Za-z])/.test(value);
+}
+
+function projectMcpPath(value: string, cwd?: string): string | null {
+  if (!isAbsolute(value) && !WINDOWS_ABSOLUTE_PATH.test(value) && !value.startsWith('file://')) return null;
+  if (!cwd || !isAbsolute(value)) return '[redacted absolute path]';
+
+  const pathFromWorkspace = relative(cwd, value);
+  if (pathFromWorkspace === '' || (!pathFromWorkspace.startsWith(`..${sep}`) && pathFromWorkspace !== '..' && !isAbsolute(pathFromWorkspace))) {
+    return pathFromWorkspace || '.';
+  }
+  return '[redacted absolute path]';
+}
+
+function projectMcpFact(value: unknown, cwd: string | undefined, depth: number): McpFact | undefined {
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'string') {
+    const path = projectMcpPath(value, cwd);
+    if (path !== null) return path;
+    if (value.length > MAX_MCP_FACT_STRING_LENGTH) return '[omitted oversized string]';
+    if (isSourceLikeString(value)) return '[omitted source-like value]';
+    return value;
+  }
+  if (depth >= MAX_MCP_FACT_DEPTH) return '[omitted nested value]';
+  if (Array.isArray(value)) {
+    if (value.length > MAX_MCP_FACT_ARRAY_ITEMS) return '[omitted oversized array]';
+    const projected = value
+      .map((item) => projectMcpFact(item, cwd, depth + 1))
+      .filter((item): item is McpFact => item !== undefined);
+    return projected;
+  }
+  if (!isPlainObject(value)) return undefined;
+
+  const projected: Record<string, McpFact> = {};
+  for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value)).slice(0, MAX_MCP_FACT_KEYS)) {
+    if (!('value' in descriptor) || SOURCE_LIKE_FACT_KEY.test(key) || SENSITIVE_FACT_KEY.test(key)) continue;
+    const fact = projectMcpFact(descriptor.value, cwd, depth + 1);
+    if (fact !== undefined) projected[key] = fact;
+  }
+  return projected;
+}
+
 /**
- * Bounded per-finding explanation. `Issue.extras` is an intentional,
- * rule-authored fact bag; exposing it helps agents understand a finding
- * without leaking the complete parser fact graph or source text.
+ * Projects rule-authored evidence into a small, JSON-safe explanation.
+ * This is deliberately not a parser fact dump: it rejects non-plain values,
+ * bounds shape and size, omits source-like values, and never returns absolute
+ * filesystem paths outside the workspace.
  */
-export function toMcpFinding(issue: Issue) {
+export function toMcpFinding(issue: Issue, cwd?: string) {
+  const facts = issue.extras ? projectMcpFact(issue.extras, cwd, 0) : null;
   return {
     ruleId: issue.ruleId,
     category: issue.category,
@@ -258,7 +321,7 @@ export function toMcpFinding(issue: Issue) {
     whyItFired: {
       summary: issue.message,
       location: { line: issue.line, column: issue.column },
-      facts: issue.extras ?? null,
+      facts: facts && !Array.isArray(facts) && typeof facts === 'object' ? facts : null,
     },
   };
 }

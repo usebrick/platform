@@ -18,7 +18,7 @@ This table is generated from `TOOL_DEFINITIONS`; it currently exposes 7 canonica
 | Tool | Inputs | Runtime description |
 | --- | --- | --- |
 | `slop_scan_file` | path (required), framework | Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice, and bounded whyItFired facts), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
-| `slop_explain_rule` | ruleId (required) | Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and the resolved project activation state. |
+| `slop_explain_rule` | ruleId (required) | Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and static configuration policy. The policy is not a claim about direct-file scan runtime behavior. |
 | `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual \| logic \| wcag \| security \| perf \| typo \| layout \| component \| arch). |
 | `slop_suggest` | maxFiles | **Primary entry point for AI agents.** Returns the project's existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path. |
 | `slop_suggest_with_structure` | maxFiles | Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first. |
@@ -150,14 +150,18 @@ Return rule metadata + rationale + advice.
   "configuration": {
     "configuredSeverity": null,
     "defaultOff": false,
-    "effectiveSeverity": "high",
-    "effectiveActivation": "enabled"
+    "policyState": "rule-default"
   }
 }
 ```
 
 **When to use:** when the agent fires a rule and wants to know
 *why* and what to do about it.
+
+`configuration` describes rule metadata plus the supplied project policy. It
+does not state whether a particular `slop_scan_file` invocation executed or
+suppressed the rule; inspect that invocation's returned findings for runtime
+behavior.
 
 #### `slop_list_rules`
 
