@@ -90,6 +90,12 @@
   CORE-07/08, and Dart contract gates as complete with their evidence commits;
   CLI-03/04, MCP protocol schemas, score invariants, language matrix, and
   release/calibration/site gates remain open.
+- Score evidence: `622814466` deduplicates fired rule IDs before Bayesian/LR
+  combination; engine 52/52 plus SlopBrick LR/guardrail 30/30 pass. Full
+  public score semantics and renderer parity remain open.
+- CLI-03 filter parity: `043a0dc35` forwards include/exclude/rule filters to
+  workerData; scan-completion 12/12, typecheck, and build pass with independent
+  approval. CLI-04 smoke coverage remains open.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
