@@ -280,3 +280,7 @@
   watch effective score inputs, and documents the published four-axis formula.
   The final suppressed-test/non-default contribution regression is independently
   reconstructed; review approved the complete sequence.
+- Gate 2 score transparency `09e7b1b98` adds opt-in `--explain-score` terminal
+  and JSON output from exact aggregate inputs, resolved weights, and canonical
+  effective evidence. It preserves default JSON and explicitly refuses per-rule
+  or Bayesian attribution; independent review approved its 43-test contract.
