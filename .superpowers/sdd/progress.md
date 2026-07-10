@@ -224,3 +224,7 @@
 - Architecture-doc truth note `ea9c13528` labels the long historical design
   record and points current work to the v0.44 continuation plan, seven-tool MCP
   guide, support matrix, and actual website implementation.
+- Calibration controls tranche `d126df6f8` exposes bounded chunk timeout and
+  repeatable rule filters, routes parserless language extensions, and reports
+  skipped chunks in Markdown. Calibration evidence remains diagnostic until
+  provenance and coverage gates pass.
