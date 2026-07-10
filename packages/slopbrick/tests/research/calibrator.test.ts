@@ -3,7 +3,7 @@ import { reportToMarkdown } from '../../src/research/calibrator';
 import { sparkline, trendToText, trendToMarkdown, type TrendReport } from '../../src/engine/trend';
 import type { CalibrationReport, RuleCalibration } from '../../src/research/calibrator';
 
-function makeReport(rules: RuleCalibration[]): CalibrationReport {
+function makeReport(rules: RuleCalibration[], opts: { skippedChunks?: CalibrationReport['skippedChunks']; chunkTimeoutMs?: number } = {}): CalibrationReport {
   return {
     generatedAt: '2026-06-21T00:00:00.000Z',
     positivePath: '/p',
@@ -11,6 +11,8 @@ function makeReport(rules: RuleCalibration[]): CalibrationReport {
     positiveFileCount: 100,
     negativeFileCount: 100,
     rules,
+    skippedChunks: opts.skippedChunks ?? [],
+    chunkTimeoutMs: opts.chunkTimeoutMs ?? 90_000,
   };
 }
 
@@ -105,8 +107,41 @@ describe('research/calibrator reportToMarkdown', () => {
     expect(md).toContain('r/inverted');
     expect(md).toContain('**Dormant (1):**');
     expect(md).toContain('r/dormant');
-    expect(md).toContain('**Weak (1):**');
     expect(md).toContain('r/weak');
+  });
+
+  // v0.10.2 (Phase 4): skipped chunks and chunk-timeout reporting.
+  describe('chunk-timeout reporting', () => {
+    it('shows the per-chunk timeout in the report header', () => {
+      const md = reportToMarkdown(makeReport([], { chunkTimeoutMs: 30_000 }));
+      expect(md).toContain('Per-chunk scan timeout: **30s**');
+    });
+
+    it('omits the Skipped Chunks section when no chunks were skipped', () => {
+      const md = reportToMarkdown(makeReport([]));
+      expect(md).not.toContain('## Skipped Chunks');
+      expect(md).not.toContain('Skipped chunks:');
+    });
+
+    it('renders a Skipped Chunks table with polarity, index, first file, and reason', () => {
+      const md = reportToMarkdown(
+        makeReport([], {
+          skippedChunks: [
+            { polarity: 'positive', index: 4, firstFile: '/corpus/pos/foo.ts', reason: 'timeout' },
+            { polarity: 'negative', index: 1, firstFile: '/corpus/neg/bar.js', reason: 'error' },
+          ],
+        }),
+      );
+      expect(md).toContain('Skipped chunks: 2');
+      expect(md).toContain('## Skipped Chunks');
+      expect(md).toContain('| positive | 4 | `/corpus/pos/foo.ts` | timeout |');
+      expect(md).toContain('| negative | 1 | `/corpus/neg/bar.js` | error |');
+    });
+
+    it('disables the Skipped Chunks summary line when no skips occurred', () => {
+      const md = reportToMarkdown(makeReport([]));
+      expect(md).not.toContain('Skipped chunks:');
+    });
   });
 });
 

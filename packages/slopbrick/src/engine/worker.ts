@@ -156,10 +156,13 @@ export async function scanFile(
   // Swift. The 5 cpp rules gate themselves on a regex that matches
   // all C/C++ file extensions inside their `analyze()`.
   const ext = extname(filePath).toLowerCase();
-  const UNSUPPORTED_LANGS = new Set([
-    '.dart',
-    '.rb', '.php',
-  ]);
+  // v0.10.2 (Phase 11 review): removed '.rb' and '.php' from this
+  // list. v0.44.0 (Dart): also removed '.dart' now that we have
+  // 4 dart/* rules registered. UNSUPPORTED_LANGS used to gate
+  // languages with no visitor; with v0.44.0 the new dart rules
+  // (print-debug, unwrapped-futures, missing-dispose,
+  // dynamic-call) should fire on .dart files.
+  const UNSUPPORTED_LANGS = new Set<string>([]);
   if (UNSUPPORTED_LANGS.has(ext)) {
     return {
       filePath,

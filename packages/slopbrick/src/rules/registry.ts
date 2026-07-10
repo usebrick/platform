@@ -41,9 +41,24 @@ export class RuleRegistry {
     this.rules.set(rule.id, rule);
   }
 
-  loadBuiltins(onlyRuleId?: string): void {
+  /**
+   * Load all built-in rules, optionally narrowed by include/exclude
+   * id lists. The two filters compose: a rule is loaded if
+   *   (includeRules is empty OR includeRules contains rule.id)
+   * AND (rule.id is not in excludeRules)
+   *
+   * v0.10.2 (Phase 10): the calibrator uses this to scan a chunk
+   * twice — once for the enabled-rule set, once for the
+   * default-off/DORMANT set — without paying the parse cost of the
+   * unused rules on each pass.
+   */
+  loadBuiltins(onlyRuleId?: string, options: { includeRules?: string[]; excludeRules?: string[] } = {}): void {
+    const includeSet = new Set(options.includeRules ?? []);
+    const excludeSet = new Set(options.excludeRules ?? []);
     for (const rule of builtinRules) {
       if (onlyRuleId && rule.id !== onlyRuleId) continue;
+      if (includeSet.size > 0 && !includeSet.has(rule.id)) continue;
+      if (excludeSet.has(rule.id)) continue;
       this.register(rule);
     }
   }
