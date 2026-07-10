@@ -18,6 +18,12 @@ describe('scan completion status', () => {
     writeFileSync(join(dir, 'src', 'a.ts'), 'export const a = 1;\n');
     const result = await runScan({ workspace: dir, quiet: true });
     expect(result.scanStats).toMatchObject({ status: 'complete', requested: 1, analyzed: 1, failed: 0 });
+    expect(result.report.scoreBasis).toMatchObject({
+      denominator: 1,
+      analyzedFiles: 1,
+      issueSet: 'effective',
+      parseErrorCount: 0,
+    });
   });
 
   it('forwards rule filters to worker scans (not only inline scans)', async () => {
@@ -43,6 +49,32 @@ describe('scan completion status', () => {
     );
   });
 
+  it('keeps --security-only scoped to security rules on worker scans', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const source = [
+      'const API_KEY = "AKIA1234567890ABCDEF";',
+      'localStorage.setItem("access_token", API_KEY);',
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+    ].join('\n');
+    for (let i = 0; i < 4; i++) {
+      writeFileSync(join(dir, 'src', `mixed-${i}.ts`), `${source}\nexport const value${i} = ${i};\n`);
+    }
+
+    const result = await runScan({
+      workspace: dir,
+      quiet: true,
+      securityOnly: true,
+      threadCount: 2,
+      workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
+    });
+
+    expect(result.scanStats).toMatchObject({ status: 'complete', requested: 4, analyzed: 4 });
+    const issues = result.results.flatMap((file) => file.issues);
+    expect(issues.length).toBeGreaterThan(0);
+    expect(issues.every((issue) => issue.ruleId.startsWith('security/'))).toBe(true);
+  });
+
   it('returns empty and non-zero for an ordinary empty workspace', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     const { stdout, stderr, exitCode } = await run(['--workspace', dir]);
@@ -57,6 +89,7 @@ describe('scan completion status', () => {
     expect(exitCode).toBe(1);
     const parsed = JSON.parse(stdout) as Record<string, unknown>;
     expect(parsed).toMatchObject({ completionStatus: 'empty', requested: 0, analyzed: 0, failed: 0 });
+    expect(parsed.scoreBasis).toMatchObject({ denominator: 0, analyzedFiles: 0, issueSet: 'effective' });
   });
 
   it('marks parse errors as partial and non-zero', async () => {

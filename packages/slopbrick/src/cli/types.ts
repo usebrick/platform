@@ -25,6 +25,12 @@ export interface ScanProjectOptions {
   cachePath?: string;
   tokens?: string;
   threadCount?: number;
+  /** Restrict the scan to rules in the security/* namespace. */
+  securityOnly?: boolean;
+  /** Force the complete report view when paired with --brief. */
+  full?: boolean;
+  /** Disable ANSI color output for this invocation. */
+  noColor?: boolean;
   tighten?: boolean;
   workerScript?: string;
   strict?: boolean;

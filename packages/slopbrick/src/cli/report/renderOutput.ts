@@ -48,7 +48,11 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   // --brief: terse output for CI / scripts. Just the verdict, headline,
   // threshold, delta, and trust signal. Takes precedence over --format
   // pretty for the same reason as --why-failing.
-  if (options.brief) {
+  // `--full` is an explicit override for scripts that compose a shared
+  // option set (for example `--brief --full`). The normal pretty renderer
+  // is already the complete report, so this branch only needs to cancel
+  // the terse view rather than inventing a second formatter.
+  if (options.brief && !options.full) {
     if (!options.quiet) {
       logger.info(formatBriefReport(report));
     }

@@ -265,13 +265,40 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       requestedOptions: CliGlobalOptions,
       command: Command,
     ): Promise<ScanActionOutcome | void> => {
-      const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
+      const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & {
+        increase?: boolean;
+        includeRule?: string[];
+        excludeRule?: string[];
+        threads?: number;
+        diff?: string;
+        refreshSnippets?: boolean;
+        securityOnly?: boolean;
+        full?: boolean;
+        verbose?: boolean;
+        color?: boolean;
+      };
       const options: CliGlobalOptions = {
         ...rawGlobals,
         ...requestedOptions,
         // CI passes an explicit noIncrease=true; preserve it over the
         // global Commander default while keeping scan/watch semantics.
         noIncrease: requestedOptions.noIncrease ?? (rawGlobals.increase === false),
+        // v0.10.2 (Phase 10): commander turns `--include-rule` into
+        // `includeRule` and `--exclude-rule` into `excludeRule`.
+        // Our ScanRunOptions type uses the plural form; normalize.
+        includeRules: rawGlobals.includeRule,
+        excludeRules: rawGlobals.excludeRule,
+        // Commander uses the option spelling's camel-case key for these
+        // globals. Normalize them to the library-facing ScanRunOptions so
+        // every public flag reaches the scan pipeline (including ci/watch).
+        threadCount: requestedOptions.threadCount ?? rawGlobals.threads,
+        diffRef: requestedOptions.diffRef ?? rawGlobals.diff,
+        autoRefreshSnippets:
+          requestedOptions.autoRefreshSnippets ?? rawGlobals.refreshSnippets,
+        securityOnly: requestedOptions.securityOnly ?? rawGlobals.securityOnly,
+        full: requestedOptions.full ?? rawGlobals.full,
+        verbose: requestedOptions.verbose ?? rawGlobals.verbose,
+        noColor: requestedOptions.noColor ?? rawGlobals.color === false,
       };
       if (command.getOptionValueSource('workspace') === 'default') {
         const autoRoot = detectMonorepoRoot(process.cwd());

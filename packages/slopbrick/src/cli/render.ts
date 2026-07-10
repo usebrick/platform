@@ -13,6 +13,10 @@ let _noColorOverride: boolean | null = null;
 export function setNoColor(value: boolean): void {
   _noColorOverride = value;
 }
+/** Clear a previous invocation's explicit color override. */
+export function resetNoColor(): void {
+  _noColorOverride = null;
+}
 export function colorEnabled(): boolean {
   if (_noColorOverride !== null) return !_noColorOverride;
   if (process.env.NO_COLOR !== undefined && process.env.NO_COLOR !== '') {
