@@ -13,8 +13,8 @@ function timeoutError(timeoutMs: number): Error {
 
 function defaultRunner(input: { readonly filePath: string; readonly resultPath: string; readonly timeoutMs: number; readonly env: NodeJS.ProcessEnv }): Promise<{ readonly exitCode: number }> {
   return new Promise((resolve, reject) => {
-    const workerScript = fileURLToPath(new URL('../../../scripts/scan-file-worker.ts', import.meta.url));
-    const child = spawn('npx', ['tsx', workerScript, input.filePath], { cwd: process.cwd(), env: input.env, stdio: ['ignore', 'ignore', 'pipe'] });
+    const workerScript = fileURLToPath(new URL('./worker-process.cjs', import.meta.url));
+    const child = spawn(process.execPath, [workerScript, input.filePath], { cwd: process.cwd(), env: input.env, stdio: ['ignore', 'ignore', 'pipe'] });
     const timer = setTimeout(() => { child.kill('SIGKILL'); reject(timeoutError(input.timeoutMs)); }, input.timeoutMs);
     child.once('error', (error) => { clearTimeout(timer); reject(error); });
     child.once('exit', (code) => { clearTimeout(timer); resolve({ exitCode: code ?? 1 }); });
