@@ -583,7 +583,7 @@ export async function runScan(
     machineReadableStdout,
   });
 
-  const failedFiles = results.filter((result) => Boolean(result.parseError)).length;
+  const failedFiles = results.filter((result) => Boolean(result.failureKind ?? result.parseError)).length;
   const analyzedFiles = results.length - failedFiles;
   const skippedFiles = unchanged.length;
   const completionStatus = requestedFiles === 0
@@ -601,14 +601,16 @@ export async function runScan(
   const scanAccounting = {
     selected: requestedFiles,
     analyzed: analyzedFiles,
+    // Retained issue count after CLI filters/directives; this is not a
+    // statement about whether a file had pre-filter audit findings.
     zeroFinding: results.filter((result) => !result.parseError && result.issues.length === 0).length,
     incrementalCached: skippedFiles,
     parseFailed: results.filter((result) => result.failureKind === 'parse').length,
-    // Worker timeout/crash classification is not part of this compatibility
-    // slice; keep the fields explicit and stable until those outcomes gain a
-    // dedicated transport contract.
-    timedOut: 0,
-    crashed: 0,
+    timedOut: results.filter((result) => result.failureKind === 'timeout').length,
+    crashed: results.filter((result) => result.failureKind === 'crash').length,
+    internalFailed: results.filter(
+      (result) => result.failureKind === 'internal' || (!result.failureKind && Boolean(result.parseError)),
+    ).length,
   };
   report.scanAccounting = scanAccounting;
 

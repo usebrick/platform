@@ -184,7 +184,12 @@ export class WorkerPool {
         if (!settled && pending.length === 0 && inFlight.size === 0) settleResolve();
       };
 
-      const onWorkerFailure = (worker: Worker, filePath: string | undefined, err: Error) => {
+      const onWorkerFailure = (
+        worker: Worker,
+        filePath: string | undefined,
+        err: Error,
+        failureKind: 'timeout' | 'crash' = 'crash',
+      ) => {
         if (settled || handledFailures.has(worker)) return;
         handledFailures.add(worker);
         const workerWasReady = readyWorkers.delete(worker);
@@ -231,6 +236,7 @@ export class WorkerPool {
             componentCount: 0,
             issues: [],
             parseError: err.message,
+            failureKind,
             gapValues: [],
             styleSources: [],
           });
@@ -253,6 +259,7 @@ export class WorkerPool {
               worker,
               activeFile,
               new Error(`Worker timed out after ${this.workerTimeoutMs}ms`),
+              'timeout',
             );
           }, this.workerTimeoutMs),
         );

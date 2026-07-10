@@ -144,6 +144,7 @@ parentPort.postMessage({ type: 'ready' });
       expect(results.length).toBe(2);
       expect(goodResult?.componentCount).toBe(1);
       expect(crashResult?.parseError).toBeTruthy();
+      expect(crashResult?.failureKind).toBe('crash');
 
       const attempts = existsSync(attemptLog)
         ? readFileSync(attemptLog, 'utf8')
@@ -154,6 +155,39 @@ parentPort.postMessage({ type: 'ready' });
       expect(attempts.filter((p) => p === crash).length).toBeGreaterThanOrEqual(1);
     } finally {
       delete process.env.SLOP_AUDIT_TEST_ATTEMPT_LOG;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('classifies retry-exhausted worker timeouts as timeouts', async () => {
+    const dir = createTmpDir();
+    try {
+      const file = join(dir, 'hang.tsx');
+      const workerScript = join(dir, 'timeout-worker.cjs');
+      writeFileSync(file, 'export function Hang() { return <div />; }');
+      writeFileSync(
+        workerScript,
+        `
+const { parentPort } = require('node:worker_threads');
+parentPort.on('message', () => {});
+parentPort.postMessage({ type: 'ready' });
+`,
+      );
+
+      const pool = new WorkerPool({
+        config: DEFAULT_CONFIG,
+        threadCount: 1,
+        workerScript,
+        workerTimeoutMs: 150,
+      });
+      const [result] = await settlesWithin(pool.scan([file]), 2_000);
+
+      expect(result).toMatchObject({
+        filePath: file,
+        failureKind: 'timeout',
+        parseError: expect.stringMatching(/timed out/i),
+      });
+    } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
@@ -259,7 +293,11 @@ setInterval(() => {}, 1_000);
       const attempts = existsSync(attemptLog)
         ? readFileSync(attemptLog, 'utf8').split('\n').filter(Boolean)
         : [];
-      expect(attempts).toHaveLength(3);
+      // The pool makes three bounded startup attempts; the last worker can
+      // be terminated immediately on rejection before its fixture process
+      // gets a scheduling slice to append the log.
+      expect(attempts.length).toBeGreaterThanOrEqual(2);
+      expect(attempts.length).toBeLessThanOrEqual(3);
     } finally {
       delete process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG;
       rmSync(dir, { recursive: true, force: true });

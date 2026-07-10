@@ -11,6 +11,8 @@ import { RuleRegistry } from '../../src/rules/registry';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
 import { runProjectRules } from '../../src/rules/project';
 import { enrichReport } from '../../src/cli/report/enrichReport';
+import { formatJson } from '../../src/report/json';
+import { DEFAULT_CONFIG } from '../../src/config';
 
 beforeAll(assertDistBuilt);
 
@@ -430,6 +432,24 @@ describe('scan completion status', () => {
     expect(result.scanStats.analyzed).toBe(0);
   });
 
+  it('classifies post-parse scanner failures as internal rather than parse failures', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const file = join(dir, 'src', 'valid.ts');
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(file, 'export const valid = 1;\n');
+    const registry = {
+      createContexts: () => { throw new Error('context construction failed'); },
+    } as unknown as RuleRegistry;
+
+    const result = await scanFile(file, DEFAULT_CONFIG, registry, dir);
+
+    expect(result).toMatchObject({
+      filePath: file,
+      failureKind: 'internal',
+      parseError: 'context construction failed',
+    });
+  });
+
   it('reports scan accounting for zero-finding and parse-failed files in the JSON report', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
@@ -437,7 +457,7 @@ describe('scan completion status', () => {
     writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
 
     const result = await runScan({ workspace: dir, quiet: true });
-    const json = JSON.parse(JSON.stringify(result.report)) as Record<string, unknown>;
+    const json = JSON.parse(formatJson(result.report)) as Record<string, unknown>;
 
     expect(json.scanAccounting).toEqual({
       selected: 2,
@@ -447,6 +467,7 @@ describe('scan completion status', () => {
       parseFailed: 1,
       timedOut: 0,
       crashed: 0,
+      internalFailed: 0,
     });
     expect(json).toMatchObject({
       requested: 2,
@@ -456,6 +477,11 @@ describe('scan completion status', () => {
     });
     expect(result.results.find((file) => file.filePath.endsWith('broken.ts'))?.failureKind).toBe('parse');
     expect(result.scanStats.scanAccounting).toEqual(json.scanAccounting);
+    const accounting = json.scanAccounting as Record<string, number>;
+    expect(accounting.selected).toBe(
+      accounting.analyzed + accounting.incrementalCached + accounting.parseFailed +
+      accounting.timedOut + accounting.crashed + accounting.internalFailed,
+    );
   });
 
   it.each([

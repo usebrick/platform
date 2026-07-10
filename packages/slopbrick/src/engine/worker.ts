@@ -175,8 +175,24 @@ export async function scanFile(
     };
   }
 
+  let parsed: Awaited<ReturnType<typeof parseFile>>;
   try {
-    const { ast, source } = await parseFile(filePath, { cache });
+    parsed = await parseFile(filePath, { cache });
+  } catch (err) {
+    return {
+      filePath,
+      componentCount: 0,
+      issues: [],
+      parseError: err instanceof Error ? err.message : String(err),
+      failureKind: 'parse',
+      gapValues: [],
+      styleSources: [],
+      unmatchedStringLiterals: [],
+    };
+  }
+
+  try {
+    const { ast, source } = parsed;
     const facts = extractFacts(filePath, ast, source, config.supportsRsc ?? true, config.framework ?? 'react', config);
 
     const activeRegistry = registry ?? new RuleRegistry();
@@ -274,7 +290,7 @@ export async function scanFile(
       componentCount: 0,
       issues: [],
       parseError: err instanceof Error ? err.message : String(err),
-      failureKind: 'parse',
+      failureKind: 'internal',
       gapValues: [],
       styleSources: [],
       unmatchedStringLiterals: [],

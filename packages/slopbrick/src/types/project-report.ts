@@ -28,11 +28,14 @@ import type { BaselineMeta, ResearchMetrics } from './baseline';
 export interface ScanAccounting {
   selected: number;
   analyzed: number;
+  /** Successfully analyzed files with no retained findings after CLI filtering. */
   zeroFinding: number;
   incrementalCached: number;
   parseFailed: number;
   timedOut: number;
   crashed: number;
+  /** Scan failures after parsing, e.g. fact extraction or scoring. */
+  internalFailed: number;
 }
 
 export interface ProjectReport {
