@@ -1,7 +1,8 @@
 # usebrick.dev — marketing site
 
-The brick-themed landing page for the slopbrick monorepo. Astro + Lenis
-+ GSAP, with a WebGL fragment shader for the hero brick wall.
+The brick-themed landing page for the slopbrick monorepo. Astro with native
+IntersectionObserver/Web Animations APIs and a WebGL fragment shader for the
+hero brick wall.
 
 ## Dev
 
@@ -29,8 +30,8 @@ slopbrick release.
 - **Astro Islands** for the few interactive pieces:
   - `BrickShader` (`client:load`) — WebGL canvas in the hero
   - `BreakOnHover` (`client:visible`) — click-to-break on the 4 tools
-- **Lenis** for smooth scroll (initialized in the Base layout)
-- **GSAP** for ScrollTrigger reveals, stat counter animation, click shake
+- **Native browser APIs** for smooth-scroll behavior, reveals, counters, and
+  click feedback; no Lenis or GSAP runtime dependency is required.
 - **Tabler Icons** for the small icon set (file, copy, etc.)
 
 ## Theme
@@ -48,7 +49,7 @@ src/
 ├── pages/
 │   └── index.astro          # the single landing page
 ├── layouts/
-│   └── Base.astro           # shared <head>, font loading, Lenis + GSAP init
+│   └── Base.astro           # shared <head>, font loading, and global scripts
 ├── components/              # one .astro per section
 ├── scripts/                 # TS modules (shader, reveals, counters, copy)
 ├── styles/                  # global.css (tokens), theme.css, components.css
