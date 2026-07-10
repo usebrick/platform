@@ -143,6 +143,10 @@
   contracts plus CLI/CI/watch/MCP/config smoke are green; CLI-04 is now marked
   complete in the continuation ledger. The all-suite run itself remains
   non-green under concurrent calibration-resource load.
+- SCORE-05 denominator gate is now complete in the ledger: analysed-file
+  exposure and `scoreBasis` provenance are present in every listed renderer,
+  including HTML via `fbc6da3dd`; SCORE-01/02 public semantics and golden
+  renderer parity remain open.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
