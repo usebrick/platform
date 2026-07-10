@@ -265,3 +265,8 @@
   executable examples, and fresh isolated artifact-closure testing. The legacy
   root remains adapter-capable; pure docs accurately say host/editor-safe, not
   browser-portable. Independent review approved it; engine tests pass 56/56.
+- Gate 2 MCP evidence `d365fc043`/`6b6bbdf8d`/`6048c5011` shares truthful
+  CLI/MCP explanations, formatter-safe remediation, static policy (not runtime)
+  state, and bounded/redacted why-fired facts. Calibration limits are explicitly
+  unavailable rather than invented; independent review approved the global
+  2 KiB evidence contract and targeted MCP/explain tests pass 80/80.
