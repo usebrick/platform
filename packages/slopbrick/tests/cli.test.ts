@@ -544,7 +544,10 @@ describe('--watch', () => {
 
       expect(stderr).not.toContain('not implemented');
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('Repository Coherence');
+      expect(stdout).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+      expect(stdout).toContain('Watching for changes...');
+      expect(stdout).not.toMatch(/Repository Coherence|AI Slop Score|Repository Health|Threshold \(CI gate\)|✓ Clean|Memory persisted/);
+      expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
     } finally {
       if (!child.killed) {
         child.kill('SIGINT');

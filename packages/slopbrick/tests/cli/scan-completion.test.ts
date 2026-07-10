@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
@@ -624,11 +624,31 @@ describe('scan completion status', () => {
 
   it('returns empty and non-zero for an ordinary empty workspace', async () => {
     const dir = createTmpDir(); dirs.push(dir);
-    const { stdout, stderr, exitCode } = await run(['--workspace', dir]);
+    const cachePath = join(dir, 'ordinary-empty-cache.json');
+    const { stdout, stderr, exitCode } = await run([
+      '--workspace', dir,
+      '--incremental', '--cache-path', cachePath,
+      '--baseline', '--tighten',
+    ]);
     expect(exitCode).toBe(1);
     expect(stdout).not.toMatch(/AI Slop Score|clean/i);
     expect(stderr).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
     expect(stderr).toMatch(/requested 0|No source files matched/i);
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+    expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it('does not attach prior-run trend data to an ordinary empty source scan', async () => {
+    const dir = createCleanGitWorkspace();
+    const seeded = await runScan({ workspace: dir, telemetry: false, quiet: true });
+    expect(seeded.report.scoreValidity).toBe('valid');
+
+    rmSync(join(dir, 'src', 'clean.ts'));
+    const empty = await runScan({ workspace: dir, telemetry: false, quiet: true });
+
+    expect(empty.report.scoreValidity).toBe('not-applicable');
+    expect(empty.report.previousSlopIndex).toBeUndefined();
+    expect(empty.report.previousRunTimestamp).toBeUndefined();
   });
 
   it('preserves project-memory run history for a not-applicable empty scan', async () => {

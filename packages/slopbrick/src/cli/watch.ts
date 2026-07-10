@@ -153,7 +153,10 @@ export async function watchProject(
     }
 
     try {
-      const { report, results, config, baseline } = await runScan(options, paths);
+      const { report, results, config, baseline } = await runScan(
+        { ...options, watch: true },
+        paths,
+      );
       currentConfig = config;
       currentBaseline = baseline;
       scoresMap.clear();

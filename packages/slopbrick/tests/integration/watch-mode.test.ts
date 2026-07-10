@@ -87,9 +87,10 @@ describe('slopbrick --watch (v0.5.2)', () => {
       });
       // No files in the dir → no components, but the watcher should
       // still print the initial header.
-      // v0.42.0: updated to match the post-v0.21 surface. `Slop Index`
-// is no longer a header in the scan output.
-expect(stdout).toMatch(/No files|Repository Coherence|AI Slop Score|slopbrick/i);
+      expect(stdout).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+      expect(stdout).toContain('Watching for changes...');
+      expect(stdout).not.toMatch(/Repository Coherence|AI Slop Score|Repository Health|Threshold \(CI gate\)|✓ Clean|Memory persisted/);
+      expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

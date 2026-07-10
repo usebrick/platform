@@ -118,6 +118,7 @@ import { BeaconEmitter } from '../beacon';
 import {
   formatScanValidityNotice,
   isGitScopedEmptySelection,
+  isNotApplicableScan,
 } from '../report/scan-validity';
 import { CliUsageError, ScanExitCode } from './exit-codes';
 
@@ -366,6 +367,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       } = await runScan(options, paths);
       const scanElapsed = Math.round(performance.now() - scanStart);
       const totalElapsed = Math.round(performance.now() - start);
+      const notApplicableScan = isNotApplicableScan(report);
 
       // Empty Git scopes are common in hooks and CI. They are successful
       // no-ops, but they have no score-bearing evidence. Stop before every
@@ -395,7 +397,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // delay `process.exit` below. The emitter is silent on every
       // failure mode (errors caught, errors swallowed).
       const beaconEnv = process.env.SLOPBRICK_TELEMETRY_ENDPOINT;
-      if (options.reportUsage && beaconEnv && command.name() === 'scan') {
+      if (!notApplicableScan && options.reportUsage && beaconEnv && command.name() === 'scan') {
         const beacon = new BeaconEmitter({
           flag: true,
           envEndpoint: beaconEnv,
@@ -409,7 +411,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         });
       }
 
-      if (options.baseline) {
+      if (options.baseline && !notApplicableScan) {
         const cwd = resolve(options.workspace ?? process.cwd());
         const configHash = hashConfig(config);
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
@@ -420,7 +422,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
       }
 
-      if (options.tighten && baseline) {
+      if (options.tighten && baseline && !notApplicableScan) {
         saveBaseline(cwd, baseline);
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`Tightened baseline saved (revision ${baseline.baseline_revision}).`);

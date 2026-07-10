@@ -5,16 +5,23 @@ type GitSelectionOptions = {
   changed?: boolean;
 };
 
+type ScanValiditySummary = Pick<ProjectReport, 'requested' | 'scoreValidity'>;
+
+/** Score-bearing persistence and comparisons require at least one request. */
+export function isNotApplicableScan(scan: ScanValiditySummary): boolean {
+  return scan.scoreValidity === 'not-applicable' || scan.requested === 0;
+}
+
 /**
  * A Git-scoped scan with no selected files is an intentional successful
  * no-op, not a clean scored scan. Keep this predicate shared by rendering,
  * persistence, and exit handling so those boundaries cannot drift apart.
  */
 export function isGitScopedEmptySelection(
-  scan: Pick<ProjectReport, 'requested'> | { requested: number },
+  scan: ScanValiditySummary,
   options: GitSelectionOptions,
 ): boolean {
-  return scan.requested === 0 && (options.staged === true || options.changed === true);
+  return isNotApplicableScan(scan) && (options.staged === true || options.changed === true);
 }
 
 export function formatGitScopedEmptySelectionNotice(): string {

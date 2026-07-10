@@ -25,10 +25,9 @@ export function registerWatch(program: Command, scanAction: (paths: string[], op
         noIncrease: rawGlobals.increase === false,
       };
       const cwd = resolve(options.workspace ?? process.cwd());
-      // Run an initial scan to populate the report + write the .slopbrick/
-      // artifacts, then `watchProject` keeps the report in sync as files
-      // change. The first scan is mandatory — without it the watcher
-      // would diff against an empty baseline and report every file as new.
+      // Run an initial scan to populate the report and, when files are
+      // selected, the score-bearing artifacts. Empty workspaces stay
+      // side-effect free while `watchProject` waits for the first file.
       await scanAction([], options, command);
       await watchProject(options, cwd, []);
     });
