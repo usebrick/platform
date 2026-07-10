@@ -218,3 +218,6 @@
 - CLI filter surface follow-up `7635d2678` adds repeatable
   `--include-rule`/`--exclude-rule` options and normalizes scan/watch callback
   typing; CLI-03 is now backed by both option and worker-propagation commits.
+- MCP documentation follow-up `0d89b3abf` reconciles the guide with the seven
+  canonical tools, current request/response fields, removed legacy tools, and
+  structure.md terminology; automated registry drift generation remains open.
