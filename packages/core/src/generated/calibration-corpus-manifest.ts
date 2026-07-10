@@ -5,6 +5,17 @@ export type HttpsUri = string;
 export type File = {
   [k: string]: unknown;
 } & {
+  [k: string]: unknown;
+} & {
+  [k: string]: unknown;
+} & {
+  [k: string]: unknown;
+} & {
+  [k: string]: unknown;
+} & {
+  /**
+   * Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation.
+   */
   sourceId: string;
   repositoryId: Identifier;
   familyId: Identifier;
@@ -15,9 +26,12 @@ export type File = {
   clusterId: Identifier;
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
-  split: "train" | "validation" | "test" | "excluded";
+  split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";
   evidence: Evidence;
 } & {
+  /**
+   * Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation.
+   */
   sourceId: string;
   repositoryId: Identifier;
   familyId: Identifier;
@@ -28,7 +42,7 @@ export type File = {
   clusterId: Identifier;
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
-  split: "train" | "validation" | "test" | "excluded";
+  split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";
   evidence: Evidence;
 };
 export type Sha256 = string;
@@ -54,7 +68,7 @@ export type Evidence =
     };
 
 /**
- * Immutable, provenance-backed corpus manifest for the SlopBrick v10.3 calibration protocol. It records only reviewed corpus metadata; it does not assert that a corpus is valid for release until selection, execution, coverage, and review gates also pass.
+ * Immutable, provenance-backed corpus manifest for the SlopBrick v10.3 calibration protocol. Every consumer MUST validate this JSON Schema and then run the versioned @usebrick/core semantic verifier, which checks cross-record identity and leakage invariants JSON Schema cannot express. It records only reviewed corpus metadata; it does not assert that a corpus is valid for release until selection, execution, coverage, and review gates also pass.
  */
 export interface SlopbrickCalibrationCorpusManifestV103 {
   /**

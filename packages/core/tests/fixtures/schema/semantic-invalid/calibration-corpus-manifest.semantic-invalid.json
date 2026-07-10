@@ -16,19 +16,11 @@
       "commitSha": "0123456789abcdef0123456789abcdef01234567",
       "acquiredAt": "2026-07-09T00:00:00.000Z",
       "license": "MIT"
-    },
-    {
-      "repositoryId": "human-baseline",
-      "familyId": "human-family-001",
-      "originUrl": "https://example.test/human-baseline",
-      "commitSha": "89abcdef0123456789abcdef0123456789abcdef",
-      "acquiredAt": "2026-07-09T00:00:00.000Z",
-      "license": "Apache-2.0"
     }
   ],
   "files": [
     {
-      "sourceId": "paired-task-ai@0123456789abcdef0123456789abcdef01234567:src/app.ts",
+      "sourceId": "arbitrary-local-path",
       "repositoryId": "paired-task-ai",
       "familyId": "paired-task-001",
       "normalizedPath": "src/app.ts",
@@ -46,24 +38,6 @@
         "promptTaskId": "task-001",
         "generatedAt": "2026-07-01T00:00:00.000Z",
         "humanEditStatus": "none"
-      }
-    },
-    {
-      "sourceId": "human-baseline@89abcdef0123456789abcdef0123456789abcdef:src/app.ts",
-      "repositoryId": "human-baseline",
-      "familyId": "human-family-001",
-      "normalizedPath": "src/app.ts",
-      "contentSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      "language": "typescript",
-      "stratum": "production",
-      "clusterId": "cluster-human-001",
-      "label": "verified_human",
-      "tier": "gold",
-      "split": "test",
-      "evidence": {
-        "kind": "manual_protocol",
-        "reference": "https://example.test/human-baseline/provenance",
-        "protocolId": "human-review-v1"
       }
     }
   ]

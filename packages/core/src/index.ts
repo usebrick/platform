@@ -50,7 +50,7 @@ export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 
 export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
 
-export { isCalibrationCorpusManifestV103 } from './corpus-manifest';
+export { calibrationCorpusSourceId, isCalibrationCorpusManifestV103 } from './corpus-manifest';
 
 // v0.15.0+: Types generated from schemas/v1/*.schema.json. These are
 // the public API for the on-disk shapes. v0.17.4 (R-H4 closeout):

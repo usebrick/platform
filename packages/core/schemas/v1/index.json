@@ -59,7 +59,7 @@
     "calibration-corpus-manifest": {
       "$id": "https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json",
       "file": "calibration-corpus-manifest.schema.json",
-      "description": "Immutable repository/file provenance manifest for the SlopBrick v10.3 calibration protocol. It is corpus metadata, not a release verdict.",
+      "description": "Immutable repository/file provenance manifest for the SlopBrick v10.3 calibration protocol. Consumers must validate this schema and run the versioned semantic verifier before selection or calibration. It is corpus metadata, not a release verdict.",
       "producedBy": [
         "reviewed corpus-manifest preparation"
       ],

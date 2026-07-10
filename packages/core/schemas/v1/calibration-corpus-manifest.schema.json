@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json",
   "title": "SlopbrickCalibrationCorpusManifestV103",
-  "description": "Immutable, provenance-backed corpus manifest for the SlopBrick v10.3 calibration protocol. It records only reviewed corpus metadata; it does not assert that a corpus is valid for release until selection, execution, coverage, and review gates also pass.",
+  "description": "Immutable, provenance-backed corpus manifest for the SlopBrick v10.3 calibration protocol. Every consumer MUST validate this JSON Schema and then run the versioned @usebrick/core semantic verifier, which checks cross-record identity and leakage invariants JSON Schema cannot express. It records only reviewed corpus metadata; it does not assert that a corpus is valid for release until selection, execution, coverage, and review gates also pass.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "generatedAt", "methodVersion", "leakageReview", "repositories", "files"],
@@ -77,16 +77,32 @@
       "additionalProperties": false,
       "required": ["sourceId", "repositoryId", "familyId", "normalizedPath", "contentSha256", "language", "stratum", "clusterId", "label", "tier", "split", "evidence"],
       "properties": {
-        "sourceId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "sourceId": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation." },
         "repositoryId": { "$ref": "#/$defs/identifier" }, "familyId": { "$ref": "#/$defs/identifier" },
         "normalizedPath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
         "contentSha256": { "$ref": "#/$defs/sha256" }, "language": { "type": "string", "minLength": 1 },
         "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
         "clusterId": { "$ref": "#/$defs/identifier" }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
-        "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "excluded"] },
+        "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "mixed_evaluation", "excluded"] },
         "evidence": { "$ref": "#/$defs/evidence" }
       },
       "allOf": [
+        {
+          "if": { "properties": { "tier": { "const": "silver" } }, "required": ["tier"] },
+          "then": { "properties": { "split": { "enum": ["train", "excluded"] } } }
+        },
+        {
+          "if": { "properties": { "label": { "const": "mixed" } }, "required": ["label"] },
+          "then": { "properties": { "tier": { "const": "gold" }, "split": { "const": "mixed_evaluation" } } }
+        },
+        {
+          "if": { "properties": { "label": { "enum": ["verified_ai", "verified_human"] } }, "required": ["label"] },
+          "then": { "properties": { "split": { "enum": ["train", "validation", "test", "excluded"] } } }
+        },
+        {
+          "if": { "properties": { "tier": { "const": "quarantine" } }, "required": ["tier"] },
+          "then": { "properties": { "label": { "const": "quarantine" }, "split": { "const": "excluded" } } }
+        },
         {
           "if": { "properties": { "label": { "const": "quarantine" } }, "required": ["label"] },
           "then": { "properties": { "tier": { "const": "quarantine" }, "split": { "const": "excluded" } } }

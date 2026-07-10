@@ -10,6 +10,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const schemaPath = join(root, 'schemas', 'v1', 'calibration-corpus-manifest.schema.json');
 const fixturePath = join(root, 'tests', 'fixtures', 'schema', 'valid', 'calibration-corpus-manifest.valid.json');
 const invalidFixturePath = join(root, 'tests', 'fixtures', 'schema', 'invalid', 'calibration-corpus-manifest.invalid.json');
+const semanticInvalidFixturePath = join(root, 'tests', 'fixtures', 'schema', 'semantic-invalid', 'calibration-corpus-manifest.semantic-invalid.json');
 
 function fixture(): Record<string, unknown> {
   return JSON.parse(readFileSync(fixturePath, 'utf8')) as Record<string, unknown>;
@@ -51,6 +52,46 @@ describe('v10.3 calibration corpus manifest contract', () => {
     const manifest = fixture();
     manifest.unreviewedShortcut = true;
 
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('rejects silver evidence from validation or test splits through both schema and semantic verification', () => {
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    for (const split of ['validation', 'test']) {
+      const manifest = fixture();
+      const files = manifest.files as Array<Record<string, unknown>>;
+      files[0]!.tier = 'silver';
+      files[0]!.split = split;
+
+      expect(validate(manifest)).toBe(false);
+      expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+    }
+  });
+
+  it('accepts a gold mixed record only in its separate mixed-evaluation stratum', () => {
+    const manifest = fixture();
+    const files = manifest.files as Array<Record<string, unknown>>;
+    files[1] = { ...files[1], label: 'mixed', tier: 'gold', split: 'mixed_evaluation' };
+
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+  });
+
+  it('requires the semantic verifier after JSON Schema validation for derived source identity', () => {
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const manifest = JSON.parse(readFileSync(semanticInvalidFixturePath, 'utf8')) as unknown;
+
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
     expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
   });
 

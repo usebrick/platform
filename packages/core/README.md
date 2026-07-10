@@ -22,7 +22,8 @@
 
 ## The schemas — `packages/core/schemas/v1/`
 
-These four JSON Schema files define the **Repository Structure Platform**:
+These JSON Schema files define the **Repository Structure Platform** and its
+versioned calibration-evidence contract:
 
 | Schema | Purpose | Produced by | Consumed by |
 |--------|---------|-------------|-------------|
@@ -30,6 +31,13 @@ These four JSON Schema files define the **Repository Structure Platform**:
 | [`v1/constitution.schema.json`](./schemas/v1/constitution.schema.json) | Declared project constitution | `slopbrick scan` (auto from config) | `slopbrick drift`, `stackpick`, `gir`, `mcp` |
 | [`v1/structure.schema.json`](./schemas/v1/structure.schema.json) | Structured JSON projection of the agent-readable summary (the derived `.slopbrick/structure.md` rendering is not JSON input) | `slopbrick scan` (auto-renders) | `slop_suggest_with_structure` MCP tool (was `slop_suggest_with_memory`) |
 | [`v1/health.schema.json`](./schemas/v1/health.schema.json) | Per-scan health snapshot — 4-score model | `slopbrick scan` | website dashboards, CI integrations |
+| [`v1/calibration-corpus-manifest.schema.json`](./schemas/v1/calibration-corpus-manifest.schema.json) | Immutable v10.3 repository/file provenance manifest | reviewed corpus preparation | calibration selection and verifier |
+
+The calibration corpus manifest is a two-part contract: validate the JSON
+Schema **and** call `isCalibrationCorpusManifestV103` before selection or
+calibration. The semantic verifier enforces canonical source IDs and
+cross-record family/cluster/split leakage rules which JSON Schema cannot
+express alone.
 
 ### Versioned schema URLs
 
@@ -40,6 +48,7 @@ https://usebrick.dev/schemas/v1/inventory.schema.json
 https://usebrick.dev/schemas/v1/constitution.schema.json
 https://usebrick.dev/schemas/v1/structure.schema.json
 https://usebrick.dev/schemas/v1/health.schema.json
+https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json
 ```
 
 The version directory (`v1/`, future `v2/`, ...) is the **contract version**. Older tools keep reading `v1/` even after `v2/` ships — that's the whole point of versioning. New tools can opt into `v2/` when ready.

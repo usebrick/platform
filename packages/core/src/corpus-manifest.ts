@@ -11,7 +11,7 @@
 import type { SlopbrickCalibrationCorpusManifestV103 } from './generated/calibration-corpus-manifest';
 
 type ManifestLabel = 'verified_ai' | 'verified_human' | 'mixed' | 'quarantine';
-type ManifestSplit = 'train' | 'validation' | 'test' | 'excluded';
+type ManifestSplit = 'train' | 'validation' | 'test' | 'mixed_evaluation' | 'excluded';
 
 const IDENTIFIER = /^[a-z0-9][a-z0-9._-]{0,127}$/;
 const COMMIT_SHA = /^[a-f0-9]{40,64}$/;
@@ -20,7 +20,7 @@ const METHOD_VERSION = /^v10\.3\.\d+$/;
 const NORMALIZED_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@+%=-]+(?:\/[A-Za-z0-9._@+%=-]+)*$/;
 const LABELS = new Set<ManifestLabel>(['verified_ai', 'verified_human', 'mixed', 'quarantine']);
 const TIERS = new Set(['gold', 'silver', 'quarantine']);
-const SPLITS = new Set<ManifestSplit>(['train', 'validation', 'test', 'excluded']);
+const SPLITS = new Set<ManifestSplit>(['train', 'validation', 'test', 'mixed_evaluation', 'excluded']);
 const STRATA = new Set(['production', 'test', 'generated', 'vendor', 'minified', 'example', 'other']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -82,9 +82,20 @@ function addGroupValue(groups: Map<string, Set<string>>, group: string, value: s
 }
 
 /**
- * Return `true` only for a complete v10.3 manifest with immutable source
- * revisions and no declared human/AI family, content-cluster, or split leak.
- * This function performs no I/O and does not establish that evidence URLs or
+ * Canonical v10.3 file identity. It contains no local path: the repository
+ * identifier, immutable Git object ID, and normalized repository-relative
+ * path are the complete source identity.
+ */
+export function calibrationCorpusSourceId(repositoryId: string, commitSha: string, normalizedPath: string): string {
+  return `${repositoryId}@${commitSha}:${normalizedPath}`;
+}
+
+/**
+ * Versioned semantic verifier required after JSON Schema validation. Returns
+ * `true` only for a complete v10.3 manifest with canonical source IDs,
+ * immutable source revisions, correctly eligible gold/silver/mixed records,
+ * and no declared human/AI family, content-cluster, or split leak. This
+ * function performs no I/O and does not establish that evidence URLs or
  * source revisions have been externally reviewed.
  */
 export function isCalibrationCorpusManifestV103(value: unknown): value is SlopbrickCalibrationCorpusManifestV103 {
@@ -103,7 +114,7 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     return false;
   }
 
-  const repositories = new Map<string, string>();
+  const repositories = new Map<string, { familyId: string; commitSha: string }>();
   for (const repository of value.repositories) {
     if (!isRecord(repository) || !hasOnlyKeys(repository, ['repositoryId', 'familyId', 'originUrl', 'commitSha', 'acquiredAt', 'license']) ||
       !IDENTIFIER.test(repository.repositoryId as string) || !IDENTIFIER.test(repository.familyId as string) ||
@@ -111,7 +122,10 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
       !isIsoDateTime(repository.acquiredAt) || !isNonEmptyString(repository.license) || repositories.has(repository.repositoryId as string)) {
       return false;
     }
-    repositories.set(repository.repositoryId as string, repository.familyId as string);
+    repositories.set(repository.repositoryId as string, {
+      familyId: repository.familyId as string,
+      commitSha: repository.commitSha as string,
+    });
   }
 
   const sourceIds = new Set<string>();
@@ -123,13 +137,18 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'label', 'tier', 'split', 'evidence']) ||
       !isNonEmptyString(file.sourceId) || sourceIds.has(file.sourceId) ||
       !IDENTIFIER.test(file.repositoryId as string) || !IDENTIFIER.test(file.familyId as string) ||
-      repositories.get(file.repositoryId as string) !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
+      repositories.get(file.repositoryId as string)?.familyId !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
       !SHA256.test(file.contentSha256 as string) || !isNonEmptyString(file.language) || !STRATA.has(file.stratum as string) ||
       !IDENTIFIER.test(file.clusterId as string) || !LABELS.has(file.label as ManifestLabel) || !TIERS.has(file.tier as string) ||
       !SPLITS.has(file.split as ManifestSplit) || !isEvidence(file.evidence)) {
       return false;
     }
-    if (file.label === 'quarantine' && (file.tier !== 'quarantine' || file.split !== 'excluded')) return false;
+    const repository = repositories.get(file.repositoryId as string);
+    if (!repository || file.sourceId !== calibrationCorpusSourceId(file.repositoryId as string, repository.commitSha, file.normalizedPath as string)) return false;
+    if (file.tier === 'silver' && file.split !== 'train' && file.split !== 'excluded') return false;
+    if (file.label === 'mixed' && (file.tier !== 'gold' || file.split !== 'mixed_evaluation')) return false;
+    if ((file.label === 'verified_ai' || file.label === 'verified_human') && file.split === 'mixed_evaluation') return false;
+    if ((file.label === 'quarantine' || file.tier === 'quarantine') && (file.label !== 'quarantine' || file.tier !== 'quarantine' || file.split !== 'excluded')) return false;
     sourceIds.add(file.sourceId);
 
     const binaryLabel = file.label === 'verified_ai' || file.label === 'verified_human' ? file.label : '';
