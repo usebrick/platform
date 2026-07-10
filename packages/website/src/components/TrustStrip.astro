@@ -81,7 +81,10 @@ import languageSupport from '../data/language-support.json';
         </span>
         <div>
           <div class="trust-strip__value">{languageSupport.countLabel}</div>
-          <div class="trust-strip__label">See the support matrix for scope</div>
+          <a
+            class="trust-strip__label"
+            href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/language-support-matrix.md"
+          >See the support matrix for scope</a>
         </div>
       </div>
     </div>
@@ -133,5 +136,9 @@ import languageSupport from '../data/language-support.json';
     color: var(--text-muted);
     letter-spacing: 0.02em;
     line-height: 1.3;
+  }
+  a.trust-strip__label:hover,
+  a.trust-strip__label:focus-visible {
+    color: var(--text-accent);
   }
 </style>
