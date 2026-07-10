@@ -28,6 +28,19 @@ function terminal(fileId: string, result: SyntheticScanResult): TerminalSyntheti
   return undefined;
 }
 
+function validResult(value: unknown): value is SyntheticScanResult {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const result = value as Record<string, unknown>;
+  if (result.kind === 'success') return Object.keys(result).length === 2 && Number.isSafeInteger(result.findingsCount) && (result.findingsCount as number) >= 0;
+  return (result.kind === 'parse_failure' || result.kind === 'timeout' || result.kind === 'crash') && Object.keys(result).length === 1;
+}
+
+function validChunkResponse(value: unknown, ids: readonly string[]): value is Readonly<Record<string, SyntheticScanResult>> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const result = value as Record<string, unknown>;
+  return Object.keys(result).length === ids.length && ids.every((id) => validResult(result[id])) && Object.keys(result).every((id) => ids.includes(id));
+}
+
 /** Pure recovery model: unstable chunk results are bisected; a singleton gets one longer retry. */
 export async function executeSyntheticBisection(
   fileIds: readonly string[],
@@ -43,7 +56,7 @@ export async function executeSyntheticBisection(
   const run = async (ids: readonly string[], timeoutMs: number, singletonRetry: boolean): Promise<void> => {
     let result: Readonly<Record<string, SyntheticScanResult>>;
     try { result = await adapter(ids, timeoutMs); } catch { result = Object.fromEntries(ids.map((id) => [id, { kind: 'crash' as const }])); }
-    if (Object.keys(result).length !== ids.length || ids.some((id) => result[id] === undefined) || Object.keys(result).some((id) => !ids.includes(id))) throw new Error('adapter returned incomplete or unexpected chunk results');
+    if (!validChunkResponse(result, ids)) result = Object.fromEntries(ids.map((id) => [id, { kind: 'crash' as const }]));
     const unstable: string[] = [];
     for (const id of ids) {
       const finished = terminal(id, result[id]!);

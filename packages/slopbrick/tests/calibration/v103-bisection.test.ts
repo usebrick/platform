@@ -31,4 +31,17 @@ describe('v10.3 synthetic bisection', () => {
     expect(calls).toEqual([{ ids: ['a', 'b'], timeout: 10 }, { ids: ['a'], timeout: 10 }, { ids: ['a'], timeout: 20 }, { ids: ['b'], timeout: 10 }, { ids: ['b'], timeout: 20 }]);
     expect(outcomes).toEqual([{ fileId: 'a', status: 'scanner_failure' }, { fileId: 'b', status: 'scanner_failure' }]);
   });
+
+  it('contains malformed resolved responses as crash recovery instead of aborting the run', async () => {
+    const outcomes = await executeSyntheticBisection(['a', 'b'], { chunkSize: 2, timeoutMs: 10, retryTimeoutMs: 20 }, async (ids) => {
+      if (ids.length > 1) return { a: { kind: 'timeout' } } as never;
+      return { [ids[0]!]: { kind: 'success', findingsCount: 0 } };
+    });
+    expect(outcomes).toEqual([{ fileId: 'a', status: 'success_zero' }, { fileId: 'b', status: 'success_zero' }]);
+  });
+
+  it('contains invalid finding payloads rather than emitting invalid terminal records', async () => {
+    const outcomes = await executeSyntheticBisection(['a'], { chunkSize: 1, timeoutMs: 10, retryTimeoutMs: 20 }, async () => ({ a: { kind: 'success' } } as never));
+    expect(outcomes).toEqual([{ fileId: 'a', status: 'scanner_failure' }]);
+  });
 });
