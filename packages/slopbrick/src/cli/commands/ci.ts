@@ -49,6 +49,17 @@ export function registerCi(
         if (!outcome) {
           throw new Error('CI scan did not return a current outcome.');
         }
+        // Incomplete/empty scans have no valid numeric gate result. The
+        // shared scan action already rendered their truthful status; do not
+        // reinterpret synthetic numbers as max-slop or "CI gate passed".
+        if (outcome.report.scoreValidity !== 'valid') {
+          withExitCode(
+            outcome,
+            () => outcome.exitCode,
+            outcome.exitCode === 0 ? '' : `CI gate failed (exit ${outcome.exitCode})`,
+          );
+          return;
+        }
         let exitCode = outcome.exitCode;
         const constitutionDrift = (outcome.report as typeof outcome.report & { constitutionDrift?: number }).constitutionDrift ?? 0;
         // `--max-slop` is defined in terms of the raw aiSlopScore: higher

@@ -22,8 +22,24 @@ import {
   renderParseErrors,
 } from './html/sections.js';
 import { renderStyles, renderScripts } from './html/static.js';
+import { formatScanValidityNotice } from './scan-validity.js';
 
 export function formatHtml(report: ProjectReport): string {
+  if (report.scoreValidity === 'not-applicable') {
+    const notice = formatScanValidityNotice(report) ?? 'NO FILES ANALYSED — scores are not applicable for gating.';
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="slopbrick-score-validity" content="not-applicable">
+  <title>slopbrick report</title>
+</head>
+<body>
+  <main><p data-score-validity="not-applicable">${notice}</p></main>
+</body>
+</html>`;
+  }
   // Human-facing reports surface only actionable findings. JSON and SARIF
   // deliberately retain disabled findings for audit and tool integration.
   const effectiveReport = {

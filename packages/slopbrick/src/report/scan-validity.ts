@@ -1,5 +1,26 @@
 import type { ProjectReport } from '../types';
 
+type GitSelectionOptions = {
+  staged?: boolean;
+  changed?: boolean;
+};
+
+/**
+ * A Git-scoped scan with no selected files is an intentional successful
+ * no-op, not a clean scored scan. Keep this predicate shared by rendering,
+ * persistence, and exit handling so those boundaries cannot drift apart.
+ */
+export function isGitScopedEmptySelection(
+  scan: Pick<ProjectReport, 'requested'> | { requested: number },
+  options: GitSelectionOptions,
+): boolean {
+  return scan.requested === 0 && (options.staged === true || options.changed === true);
+}
+
+export function formatGitScopedEmptySelectionNotice(): string {
+  return 'NO FILES SELECTED — scores are not applicable.';
+}
+
 /**
  * Human-readable gate-safety notice shared by every report renderer.
  * Historical/programmatic reports omit scoreValidity and intentionally keep

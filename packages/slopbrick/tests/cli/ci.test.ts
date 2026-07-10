@@ -2,7 +2,11 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Command } from 'commander';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
+import { DEFAULT_CONFIG } from '../../src/config';
+import { registerCi } from '../../src/cli/commands/ci';
+import type { ProjectReport } from '../../src/types';
 
 beforeAll(assertDistBuilt);
 
@@ -46,7 +50,40 @@ describe('ci gates the current scan outcome', () => {
     execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
     const result = await run(['ci', '--workspace', dir, '--format', 'json']);
     expect(result.exitCode).toBe(0);
-    expect(JSON.parse(result.stdout)).toMatchObject({ completionStatus: 'empty', requested: 0 });
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+      requested: 0,
+    });
+  });
+
+  it('does not evaluate numeric CI gates for a not-applicable scan outcome', async () => {
+    const program = new Command().name('slopbrick');
+    registerCi(program, async () => ({
+      report: {
+        scoreValidity: 'not-applicable',
+        aiSlopScore: 100,
+      } as ProjectReport,
+      config: DEFAULT_CONFIG,
+      scanStats: {
+        status: 'empty',
+        requested: 0,
+        analyzed: 0,
+        failed: 0,
+        skipped: 0,
+        scanId: 'test-scan',
+        fileCount: 0,
+        ruleCount: 0,
+        durationMs: 0,
+      },
+      baseExitCode: 0,
+      exitCode: 0,
+      noIncreaseFailure: false,
+    }));
+
+    await expect(program.parseAsync([
+      'node', 'slopbrick', 'ci', '--max-slop', '1', '--format', 'json',
+    ])).resolves.toBe(program);
   });
 
   it('returns a non-zero status for malformed configuration', async () => {

@@ -115,7 +115,10 @@ import { formatGroupedHelp } from './help';
 // from the scan action; `runScan` itself stays network-free so
 // `scanProject` (library API) and `ci`/`watch` are unaffected.
 import { BeaconEmitter } from '../beacon';
-import { formatScanValidityNotice } from '../report/scan-validity';
+import {
+  formatScanValidityNotice,
+  isGitScopedEmptySelection,
+} from '../report/scan-validity';
 import { CliUsageError, ScanExitCode } from './exit-codes';
 
 /** Current in-memory result returned when the shared scan action is invoked by CI. */
@@ -363,6 +366,24 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       } = await runScan(options, paths);
       const scanElapsed = Math.round(performance.now() - scanStart);
       const totalElapsed = Math.round(performance.now() - start);
+
+      // Empty Git scopes are common in hooks and CI. They are successful
+      // no-ops, but they have no score-bearing evidence. Stop before every
+      // mutation/gate/fix path and let the renderer emit either one concise
+      // human notice or an explicitly not-applicable machine report.
+      if (isGitScopedEmptySelection(report, options)) {
+        renderOutput(report, options, cwd);
+        const outcome: ScanActionOutcome = {
+          report,
+          config,
+          scanStats,
+          baseExitCode: 0,
+          exitCode: 0,
+          noIncreaseFailure: false,
+        };
+        if (invokedByCi) return outcome;
+        process.exit(0);
+      }
 
       // v0.24.0 (Workstream C): opt-in network beacon. Fires ONLY
       // when all three are true: the user passed --report-usage,

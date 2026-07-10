@@ -78,6 +78,7 @@ import {
 } from './effective-issues';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
+import { isGitScopedEmptySelection } from '../report/scan-validity.js';
 import { VERSION } from '../types';
 import type { FileScanResult, Issue, ProjectReport, ResolvedConfig, BaselineMeta, BaselineCache, ComponentScore } from '../types';
 import type {
@@ -259,6 +260,10 @@ export async function runScan(
   // Count the complete requested set before incremental partitioning. Cache
   // skips remain distinct from files analyzed in this invocation.
   const requestedFiles = files.length;
+  const gitScopedEmptySelection = isGitScopedEmptySelection(
+    { requested: requestedFiles },
+    options,
+  );
 
   // the persisted cache. Cache invalidates on VERSION mismatch.
   // v0.42.0 (post-cleanup follow-up): the unchanged list is also needed
@@ -290,7 +295,7 @@ export async function runScan(
     options.format === 'json' ||
     options.format === 'sarif' ||
     options.format === 'html';
-  if (files.length === 0 && !options.quiet && !machineReadableStdout) {
+  if (files.length === 0 && !gitScopedEmptySelection && !options.quiet && !machineReadableStdout) {
     const projectRoot = configPath;
     if (!projectRoot) {
       // Refactor 9: first-time-user onboarding. When no config exists
@@ -328,7 +333,7 @@ export async function runScan(
   const gitHead = (await getGitHead(cwd)) ?? 'unknown';
   let baseline: BaselineCache | undefined;
   let baselineMeta: BaselineMeta | undefined;
-  const baselineCache = loadBaseline(cwd);
+  const baselineCache = gitScopedEmptySelection ? undefined : loadBaseline(cwd);
 
   if (baselineCache) {
     const validation = validateBaseline(baselineCache, configHash, gitHead);
@@ -640,7 +645,7 @@ export async function runScan(
   // files. Merge the freshly-scanned files (this run's results) with
   // the unchanged files (from partitionByCache, re-using their prior
   // hash + issueCount so the next run can skip them too).
-  if (options.incremental && cachePath !== undefined) {
+  if (options.incremental && cachePath !== undefined && !gitScopedEmptySelection) {
     const cachedFiles: Record<string, { hash: string; issueCount: number; lastScannedAt: string }> = {};
     
     for (const r of results) {

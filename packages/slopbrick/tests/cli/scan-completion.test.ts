@@ -25,6 +25,21 @@ describe('scan completion status', () => {
   const dirs: string[] = [];
   afterEach(() => { while (dirs.length) cleanupTempDir(dirs.pop()!); });
 
+  function createCleanGitWorkspace(): string {
+    const dir = createTmpDir();
+    dirs.push(dir);
+    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'clean.ts'), 'export const answer = 42;\n');
+    execFileSync('git', ['add', '.'], { cwd: dir, stdio: 'ignore' });
+    execFileSync(
+      'git',
+      ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'initial'],
+      { cwd: dir, stdio: 'ignore' },
+    );
+    return dir;
+  }
+
   it('uses the same default-off effective set for every score producer', () => {
     const defaultOffRule = [...getDefaultOffRules()][0]!;
     const issues = [
@@ -825,11 +840,142 @@ describe('scan completion status', () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it.each(['--staged', '--changed'])('treats empty %s as a successful no-op', async (flag) => {
-    const dir = createTmpDir(); dirs.push(dir);
-    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
-    const result = await run(['--workspace', dir, flag, '--quiet']);
+  it.each(['staged', 'changed'] as const)('keeps an empty %s source scan not-applicable and side-effect free', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const cachePath = join(dir, 'custom-incremental-cache.json');
+    const result = await runScan({
+      workspace: dir,
+      [scope]: true,
+      incremental: true,
+      cachePath,
+      telemetry: false,
+      quiet: true,
+    });
+
+    expect(result.scanStats).toMatchObject({ status: 'empty', requested: 0, analyzed: 0, failed: 0 });
+    expect(result.report).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+    });
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+    expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)('does not attach prior-run trend data to an empty %s source scan', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const seeded = await runScan({ workspace: dir, telemetry: false, quiet: true });
+    expect(seeded.report.scoreValidity).toBe('valid');
+
+    const noOp = await runScan({
+      workspace: dir,
+      [scope]: true,
+      telemetry: false,
+      quiet: true,
+    });
+
+    expect(noOp.report.scoreValidity).toBe('not-applicable');
+    expect(noOp.report.previousSlopIndex).toBeUndefined();
+    expect(noOp.report.previousRunTimestamp).toBeUndefined();
+  });
+
+  it.each(['staged', 'changed'] as const)('renders one truthful message for an empty --%s packaged scan', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const cachePath = join(dir, 'custom-incremental-cache.json');
+    const result = await run([
+      '--workspace', dir, `--${scope}`, '--incremental', '--cache-path', cachePath, '--no-telemetry',
+    ]);
+
     expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe('NO FILES SELECTED — scores are not applicable.');
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+    expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)('keeps empty --%s machine reports parseable and explicitly not-applicable', async (scope) => {
+    const jsonDir = createCleanGitWorkspace();
+    const jsonResult = await run([
+      '--workspace', jsonDir, `--${scope}`, '--format', 'json', '--no-telemetry',
+    ]);
+    expect(jsonResult.exitCode).toBe(0);
+    expect(JSON.parse(jsonResult.stdout)).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+    });
+    expect(jsonResult.stderr).toBe('');
+    expect(existsSync(join(jsonDir, '.slopbrick'))).toBe(false);
+
+    const sarifDir = createCleanGitWorkspace();
+    const sarifResult = await run([
+      '--workspace', sarifDir, `--${scope}`, '--format', 'sarif', '--no-telemetry',
+    ]);
+    expect(sarifResult.exitCode).toBe(0);
+    const sarif = JSON.parse(sarifResult.stdout) as {
+      runs: Array<{ tool: { driver: { properties?: Record<string, unknown> } } }>;
+    };
+    expect(sarif.runs[0]?.tool.driver.properties).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+    });
+    expect(sarifResult.stderr).toBe('');
+    expect(existsSync(join(sarifDir, '.slopbrick'))).toBe(false);
+
+    const htmlDir = createCleanGitWorkspace();
+    const htmlResult = await run([
+      '--workspace', htmlDir, `--${scope}`, '--format', 'html', '--no-telemetry',
+    ]);
+    expect(htmlResult.exitCode).toBe(0);
+    expect(htmlResult.stdout).toContain('<!DOCTYPE html>');
+    expect(htmlResult.stdout).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+    expect(htmlResult.stdout).not.toMatch(/AI Slop Score|Repository Health|Threshold \(CI gate\)/);
+    expect(htmlResult.stderr).toBe('');
+    expect(existsSync(join(htmlDir, '.slopbrick'))).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)('does not update baseline or project memory for an empty --%s scan', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const baselineRun = await run([
+      '--workspace', dir, '--baseline', '--no-telemetry', '--quiet',
+    ]);
+    expect(baselineRun.exitCode).toBe(0);
+
+    const memoryPaths = [
+      join(dir, '.slopbrick', 'cache', 'baseline.json'),
+      join(dir, '.slopbrick', 'structure.json'),
+      join(dir, '.slopbrick', 'health.json'),
+      join(dir, '.slopbrick', 'inventory.json'),
+      join(dir, '.slopbrick', 'constitution.json'),
+      join(dir, '.slopbrick', 'structure.md'),
+    ];
+    const before = new Map(
+      memoryPaths
+        .filter((path) => existsSync(path))
+        .map((path) => [path, readFileSync(path, 'utf8')]),
+    );
+    expect(before.has(memoryPaths[0]!)).toBe(true);
+    expect(before.has(memoryPaths[1]!)).toBe(true);
+
+    const noOp = await run([
+      '--workspace', dir, `--${scope}`, '--tighten', '--refresh-snippets', '--no-telemetry', '--format', 'json',
+    ]);
+
+    expect(noOp.exitCode).toBe(0);
+    const noOpReport = JSON.parse(noOp.stdout) as Record<string, unknown>;
+    expect(noOpReport).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+    });
+    expect(noOpReport).not.toHaveProperty('previousSlopIndex');
+    expect(noOp.stderr).toBe('');
+    for (const [path, content] of before) {
+      expect(readFileSync(path, 'utf8')).toBe(content);
+    }
   });
 
   it.each(['--staged', '--changed'])('keeps parse-error %s scans incomplete', async (flag) => {

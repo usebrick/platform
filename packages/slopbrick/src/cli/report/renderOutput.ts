@@ -20,6 +20,11 @@ import { formatSarif } from '../../report/sarif';
 import { formatHtml } from '../../report/html';
 import { formatAdvice } from '../../report/advice';
 import { formatUnifiedDiff } from '../../report/unified-diff';
+import {
+  formatGitScopedEmptySelectionNotice,
+  formatScanValidityNotice,
+  isGitScopedEmptySelection,
+} from '../../report/scan-validity.js';
 import type { CliGlobalOptions } from '../scan';
 import type { ProjectReport } from '../../types';
 
@@ -34,6 +39,32 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
       `Unknown --format value: ${options.format}. Valid: pretty, json, sarif, html.\n`,
     );
     process.exit(2);
+  }
+
+  // A zero-file report deliberately retains numeric placeholders for wire
+  // compatibility, but those values are not scores. Machine formats keep
+  // their schema and explicit scoreValidity; every human view collapses to
+  // one truthful notice instead of clean/health/threshold/advice claims.
+  if (report.scoreValidity === 'not-applicable') {
+    const machineReportRequested = Boolean(options.html || options.json) ||
+      options.format === 'json' || options.format === 'sarif' || options.format === 'html';
+    if (!machineReportRequested) {
+      if (!options.quiet) {
+        logger.info(
+          isGitScopedEmptySelection(report, options)
+            ? formatGitScopedEmptySelectionNotice()
+            : formatScanValidityNotice(report) ?? 'NO FILES ANALYSED — scores are not applicable for gating.',
+        );
+      }
+      return;
+    }
+    options = {
+      ...options,
+      explainScore: false,
+      whyFailing: false,
+      brief: false,
+      suggest: false,
+    };
   }
 
   // Explicit score explanation is intentionally opt-in. In JSON mode it

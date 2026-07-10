@@ -46,6 +46,7 @@ import { evaluateThresholdGate } from '../threshold';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
+import { isGitScopedEmptySelection } from '../../report/scan-validity.js';
 import { VERSION } from '../../types';
 import type { FileScanResult, ProjectReport, ResolvedConfig } from '../../types';
 import type { RuleRegistry } from '../../rules/registry';
@@ -81,6 +82,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     telemetryEnabled,
     machineReadableStdout,
   } = input;
+
+  // An empty --staged/--changed selection is a successful no-op. Persisting
+  // its synthetic zero-file report would overwrite valid memory with fake
+  // clean scores, update run history, or trigger refresh/flywheel side effects.
+  if (isGitScopedEmptySelection(report, options)) return;
 
   // Build a MemoryReport-shaped projection so the engine accepts it
   // regardless of whether the caller has computed all 4 scores.
