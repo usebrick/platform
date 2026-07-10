@@ -270,3 +270,8 @@
   state, and bounded/redacted why-fired facts. Calibration limits are explicitly
   unavailable rather than invented; independent review approved the global
   2 KiB evidence contract and targeted MCP/explain tests pass 80/80.
+- Gate 2 discovery accounting `ff8c1e617` adds exclusive observed-candidate
+  selection accounting without inventing ignored/deleted/glob-miss populations.
+  It fixes extensionless config-exclude handling and propagates aggregate data
+  through health/MCP/SARIF/JSON/terminal; independent review approved it and
+  focused SlopBrick/Core contracts pass 49/49 and 24/24.
