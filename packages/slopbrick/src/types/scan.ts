@@ -410,6 +410,8 @@ export interface FileScanResult {
   componentCount: number;
   issues: Issue[];
   parseError?: string;
+  /** Optional classified outcome for a scan failure. */
+  failureKind?: 'parse';
   gapValues?: string[];
   styleSources?: string[];
   elementTags?: string[];

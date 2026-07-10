@@ -598,6 +598,19 @@ export async function runScan(
   report.analyzed = analyzedFiles;
   report.failed = failedFiles;
   report.skipped = skippedFiles;
+  const scanAccounting = {
+    selected: requestedFiles,
+    analyzed: analyzedFiles,
+    zeroFinding: results.filter((result) => !result.parseError && result.issues.length === 0).length,
+    incrementalCached: skippedFiles,
+    parseFailed: results.filter((result) => result.failureKind === 'parse').length,
+    // Worker timeout/crash classification is not part of this compatibility
+    // slice; keep the fields explicit and stable until those outcomes gain a
+    // dedicated transport contract.
+    timedOut: 0,
+    crashed: 0,
+  };
+  report.scanAccounting = scanAccounting;
 
   // v0.42.0 (post-cleanup follow-up): the --incremental cache
   // was loaded but never written. The bug: a user runs --incremental
@@ -669,6 +682,7 @@ export async function runScan(
       analyzed: analyzedFiles,
       failed: failedFiles,
       skipped: skippedFiles,
+      scanAccounting,
       scanId,
       fileCount: results.length,
       ruleCount: options.rule ? 1 : builtinRules.length,

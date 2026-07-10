@@ -274,6 +274,7 @@ export async function scanFile(
       componentCount: 0,
       issues: [],
       parseError: err instanceof Error ? err.message : String(err),
+      failureKind: 'parse',
       gapValues: [],
       styleSources: [],
       unmatchedStringLiterals: [],

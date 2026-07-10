@@ -21,6 +21,20 @@ import type {
 } from './report';
 import type { BaselineMeta, ResearchMetrics } from './baseline';
 
+/**
+ * Accounting for every file selected by a CLI scan. Optional so historical
+ * reports and programmatic consumers retain their existing wire contract.
+ */
+export interface ScanAccounting {
+  selected: number;
+  analyzed: number;
+  zeroFinding: number;
+  incrementalCached: number;
+  parseFailed: number;
+  timedOut: number;
+  crashed: number;
+}
+
 export interface ProjectReport {
   /**
    * Denominator and issue-set provenance for the headline scores.  Scores
@@ -40,6 +54,8 @@ export interface ProjectReport {
   analyzed?: number;
   failed?: number;
   skipped?: number;
+  /** Detailed file-outcome accounting for CLI scans. */
+  scanAccounting?: ScanAccounting;
   version: string;
   generatedAt: string;
   configPath?: string;

@@ -5,6 +5,8 @@
 // backwards compatibility — callers should prefer importing them
 // from `./types` directly when possible.
 
+import type { ScanAccounting } from '../types';
+
 export interface ScanProjectOptions {
   cwd: string;
   framework?: string;
@@ -110,6 +112,8 @@ export interface ScanStats {
   failed: number;
   /** Files omitted because the incremental cache was unchanged. */
   skipped: number;
+  /** Detailed file-outcome accounting mirrored in the JSON report. */
+  scanAccounting?: ScanAccounting;
   /** UUID v4 generated at the top of `runScan`. */
   scanId: string;
   /** `results.length` — files that ran through the worker pool

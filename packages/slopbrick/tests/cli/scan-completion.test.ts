@@ -430,6 +430,34 @@ describe('scan completion status', () => {
     expect(result.scanStats.analyzed).toBe(0);
   });
 
+  it('reports scan accounting for zero-finding and parse-failed files in the JSON report', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'valid.ts'), 'export const valid = 1;\n');
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+
+    const result = await runScan({ workspace: dir, quiet: true });
+    const json = JSON.parse(JSON.stringify(result.report)) as Record<string, unknown>;
+
+    expect(json.scanAccounting).toEqual({
+      selected: 2,
+      analyzed: 1,
+      zeroFinding: 1,
+      incrementalCached: 0,
+      parseFailed: 1,
+      timedOut: 0,
+      crashed: 0,
+    });
+    expect(json).toMatchObject({
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    });
+    expect(result.results.find((file) => file.filePath.endsWith('broken.ts'))?.failureKind).toBe('parse');
+    expect(result.scanStats.scanAccounting).toEqual(json.scanAccounting);
+  });
+
   it.each([
     ['--fix'], ['--fix', '--dry-run'], ['--heatmap'],
   ])('keeps empty %s scans non-zero', async (...args: string[]) => {
