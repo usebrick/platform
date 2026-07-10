@@ -150,6 +150,9 @@
 - Full `tests/cli.test.ts` rerun after the raw-threshold fixture corrections:
   62/62 pass. This closes the previously stale empty-health and hygiene-only
   threshold expectations without claiming the concurrent all-suite run green.
+- Public performance-claim cleanup `00610bbf4` removes the unsupported fixed
+  100–1000× speed-up statement from root/package READMEs and points readers to
+  repository-specific measurement.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
