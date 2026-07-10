@@ -86,6 +86,23 @@
 - CLI brief UX: `6fbfa2b11` plus `f45ea9af5` replace the nonexistent `--full`
   hint with the actionable “rerun without --brief” guidance; 41 UX tests and
   package TypeScript validation pass. The full flag/command audit remains open.
+- CLI advertised-flag tranche: `40b2de70f` normalizes Commander option keys for
+  `--threads`, `--diff`, `--refresh-snippets`, `--security-only`, `--full`,
+  `--verbose`, and `--no-color`; adds security-only worker coverage and full-over-
+  brief behavior. Typecheck and scan-completion 13/13 pass; CI/diff/UX focused
+  suite 63/63 pass. Built-binary smoke covered JSON, security-only, verbose,
+  full+brief, and watch SIGINT. The complete subprocess flag/command audit is
+  still open, and scan-side security/default-off changes remain uncommitted
+  shared work for the parent tranche.
+- CLI invalid-config smoke: `d268d629b` wraps config import/syntax failures in
+  `ConfigValidationError`, restoring documented exit code 2 and actionable file
+  context. Scan-completion suite is now 14/14; built-binary malformed-config
+  smoke confirms the error path.
+- Score provenance tranche: `9e1bf8d97` adds optional `scoreBasis` through
+  report, health, JSON, Markdown, SARIF, MCP, and engine persistence; focused
+  metrics/scan/SARIF/structure/core checks pass. `b0c169701` applies the same
+  effective finding set before scoring and uses analysed files as the exposure
+  denominator. Full public score and golden renderer parity remain open.
 - The continuation ledger now records previously reviewed CLI-00/01/05/06,
   CORE-07/08, and Dart contract gates as complete with their evidence commits;
   CLI-03/04, MCP protocol schemas, score invariants, language matrix, and
