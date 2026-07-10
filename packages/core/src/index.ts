@@ -56,6 +56,7 @@ export {
   isCalibrationCheckoutMapV103,
   isCalibrationRunManifestV103,
 } from './calibration-run';
+export { isCalibrationObservationV103, isCalibrationFailureV103, isCalibrationCoverageV103 } from './calibration-observations';
 
 // v0.15.0+: Types generated from schemas/v1/*.schema.json. These are
 // the public API for the on-disk shapes. v0.17.4 (R-H4 closeout):
@@ -84,3 +85,6 @@ export type {
 } from './generated/calibration-corpus-manifest';
 export type { SlopBrickV103CalibrationCheckoutMapLocalOnly } from './generated/calibration-checkout-map';
 export type { SlopBrickV103CalibrationRunManifest } from './generated/calibration-run-manifest';
+export type { HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson as CalibrationObservation } from './generated/calibration-observation';
+export type { HttpsUsebrickDevSchemasV1CalibrationFailureSchemaJson as CalibrationFailure } from './generated/calibration-failure';
+export type { HttpsUsebrickDevSchemasV1CalibrationCoverageSchemaJson as CalibrationCoverage } from './generated/calibration-coverage';

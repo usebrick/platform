@@ -21,7 +21,7 @@ for (const file of schemaFiles) {
 
 function validateDirectory(directory: string, expected: boolean): void {
   for (const file of readdirSync(directory).filter((entry) => entry.endsWith('.json'))) {
-    const match = /^(inventory|constitution|health|structure|calibration-corpus-manifest|calibration-run-manifest|calibration-checkout-map)\./.exec(file);
+    const match = /^(inventory|constitution|health|structure|calibration-corpus-manifest|calibration-run-manifest|calibration-checkout-map|calibration-observation|calibration-failure|calibration-coverage)\./.exec(file);
     if (!match) throw new Error(`Fixture ${file} does not identify a schema`);
     const validate = validators.get(match[1]);
     if (!validate) throw new Error(`No schema loaded for ${match[1]}`);

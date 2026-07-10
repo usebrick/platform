@@ -13,7 +13,7 @@ const index = JSON.parse(readFileSync(join(schemaDir, 'index.json'), 'utf8')) as
 
 describe('schema contract and package delivery', () => {
   it('indexes every canonical schema at the exact on-disk path and id', () => {
-    const expected = ['inventory', 'constitution', 'health', 'structure', 'calibration-corpus-manifest', 'calibration-run-manifest', 'calibration-checkout-map'];
+    const expected = ['inventory', 'constitution', 'health', 'structure', 'calibration-corpus-manifest', 'calibration-run-manifest', 'calibration-checkout-map', 'calibration-observation', 'calibration-failure', 'calibration-coverage'];
     expect(Object.keys(index.schemas).sort()).toEqual(expected.sort());
 
     for (const [name, entry] of Object.entries(index.schemas)) {

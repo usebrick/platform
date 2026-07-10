@@ -1,0 +1,16 @@
+import { isCalibrationCoverageV103, isCalibrationFailureV103, isCalibrationObservationV103 } from '@usebrick/core';
+type Polarity = 'verified_ai'|'verified_human';
+type Context = { runId: string; expectedFileIdsByPolarity: Record<Polarity, readonly string[]> };
+export function verifyV103Observations(context: Context, observations: unknown, failures: unknown, coverage: unknown): {ok:true}|{ok:false;error:string} {
+  if (!Array.isArray(observations)||!Array.isArray(failures)||!isCalibrationCoverageV103(coverage)) return {ok:false,error:'Malformed or stale artifacts'};
+  const checkedCoverage = coverage as {runId:string;requested:number;successful:number;excluded:number;failed:number;strata:Array<{language:string;polarity:Polarity;requested:number;successful:number;excluded:number;failed:number}>}; if(checkedCoverage.runId!==context.runId)return {ok:false,error:'Malformed or stale artifacts'};
+  const expected=new Map<string,Polarity>(); for(const p of ['verified_ai','verified_human'] as const) for(const id of context.expectedFileIdsByPolarity[p]) { if(expected.has(id)) return {ok:false,error:'Cross-polarity expected ID'}; expected.set(id,p); }
+  const seen=new Map<string,Record<string,unknown>>(); for(const item of observations){ if(!isCalibrationObservationV103(item)||item.runId!==context.runId||expected.get(item.fileId)!==item.polarity||seen.has(item.fileId)) return {ok:false,error:'Invalid, unexpected, stale, or duplicate observation'}; seen.set(item.fileId,item as Record<string,unknown>); }
+  if(seen.size!==expected.size) return {ok:false,error:'Missing terminal observation'};
+  const derived=[...seen.values()].filter(o=>['parse_failure','timeout','scanner_failure'].includes(o.status as string)).map(o=>`${o.fileId}\0${o.status}\0${o.failureCode}`).sort();
+  const actual:string[]=[]; for(const f of failures){ if(!isCalibrationFailureV103(f)||f.runId!==context.runId) return {ok:false,error:'Malformed or stale failure'}; actual.push(`${f.fileId}\0${f.status}\0${f.failureCode}`); } actual.sort(); if(JSON.stringify(actual)!==JSON.stringify(derived))return {ok:false,error:'Failures are not derived from observations'};
+  const counts={successful:0,excluded:0,failed:0}; const strata=new Map<string,typeof counts>(); for(const [id,o] of seen){const status=o.status as string; const bucket=status.startsWith('success')?'successful':status==='excluded'?'excluded':'failed'; counts[bucket]++; const key=`${o.language}\0${o.polarity}`; const s=strata.get(key)??{successful:0,excluded:0,failed:0};s[bucket]++;strata.set(key,s);}
+  if(checkedCoverage.requested!==expected.size||checkedCoverage.successful!==counts.successful||checkedCoverage.excluded!==counts.excluded||checkedCoverage.failed!==counts.failed)return {ok:false,error:'Coverage totals mismatch'};
+  for(const s of checkedCoverage.strata){const actualS=strata.get(`${s.language}\0${s.polarity}`);if(!actualS||s.requested!==s.successful+s.excluded+s.failed||s.successful!==actualS.successful||s.excluded!==actualS.excluded||s.failed!==actualS.failed)return {ok:false,error:'Coverage stratum mismatch'};} if(checkedCoverage.strata.length!==strata.size)return {ok:false,error:'Missing coverage stratum'};
+  return {ok:true};
+}

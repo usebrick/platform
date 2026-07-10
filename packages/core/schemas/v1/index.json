@@ -81,6 +81,10 @@
       "description": "Local-only mapping from pinned repository revisions to checkout paths. Its hash, not its paths, is recorded in canonical run artifacts.",
       "producedBy": ["local calibration environment"],
       "consumedBy": ["slopbrick calibration control plane"]
+    },
+    "calibration-observation": { "$id": "https://usebrick.dev/schemas/v1/calibration-observation.schema.json", "file": "calibration-observation.schema.json", "description": "One terminal v10.3 calibration observation per selected file.", "producedBy": ["slopbrick calibration scanner"], "consumedBy": ["slopbrick calibration verifier"] },
+    "calibration-failure": { "$id": "https://usebrick.dev/schemas/v1/calibration-failure.schema.json", "file": "calibration-failure.schema.json", "description": "Derived v10.3 terminal failure record.", "producedBy": ["slopbrick calibration scanner"], "consumedBy": ["slopbrick calibration verifier"] },
+    "calibration-coverage": { "$id": "https://usebrick.dev/schemas/v1/calibration-coverage.schema.json", "file": "calibration-coverage.schema.json", "description": "v10.3 overall and language/polarity coverage accounting.", "producedBy": ["slopbrick calibration verifier"], "consumedBy": ["slopbrick calibration reporting"]
     }
   }
 }
