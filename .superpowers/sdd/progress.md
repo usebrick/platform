@@ -243,3 +243,7 @@
   in composite, AI-bucket, and category weighted sums. Canonical evidence
   aggregation fixes it; decimal-weight permutation tests pass 40/40 and an
   independent review approved the scope.
+- Gate 1 suppression invariance `769e0f3da` exercises real runScan default-off
+  and next-line-disabled findings: all four effective scores and denominators
+  remain invariant while audit evidence remains observable. Independent review
+  approved it; scan completion passes 21/21.
