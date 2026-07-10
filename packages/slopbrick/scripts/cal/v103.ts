@@ -14,10 +14,10 @@ import {
   verifySelectionLedger,
 } from '../../src/calibration/v103/selection';
 import { canonicalCorpusManifestSha256, canonicalJson, canonicalSha256 } from '../../src/calibration/v103/canonical';
-import { verifyV103ExpectedSelection, verifyV103RunInputs } from '../../src/calibration/v103/run-manifest';
+import { verifyV103ExpectedSelection, verifyV103RunInputs, verifyV103SelectionBinding } from '../../src/calibration/v103/run-manifest';
 import { createV103WorkerInvoker } from '../../src/calibration/v103/worker-invoker';
 import { runV103Scan } from '../../src/calibration/v103/run-scan';
-import type { SelectionRecord } from '../../src/calibration/v103/selection';
+import type { SelectionLedger, SelectionRecord } from '../../src/calibration/v103/selection';
 
 type Command = 'corpus:validate' | 'select' | 'verify' | 'scan';
 
@@ -131,6 +131,8 @@ async function run(args: Arguments): Promise<void> {
     const checkoutMap = await readJson(args.checkoutMap!, 'checkout map');
     const inputs = verifyV103RunInputs(runManifest, checkoutMap);
     if (!inputs.ok) throw new UsageError(`Run input verification failed: ${inputs.error}`);
+    const selectionBinding = verifyV103SelectionBinding(runManifest as SlopBrickV103CalibrationRunManifest, ledger as SelectionLedger);
+    if (!selectionBinding.ok) throw new UsageError(selectionBinding.error);
     const frozenHashes = (runManifest as { inputHashes: { corpusManifestSha256: string; selectionSha256: string } }).inputHashes;
     if (frozenHashes.corpusManifestSha256 !== canonicalCorpusManifestSha256(manifest)) {
       throw new UsageError('Run manifest input hashes do not match the selected corpus artifacts');
@@ -151,12 +153,16 @@ async function run(args: Arguments): Promise<void> {
   result({ ok: true, stage: 'selection' });
 }
 
-try {
-  await run(parseArgs(process.argv.slice(2)));
-} catch (error) {
-  const message = error instanceof Error ? error.message : 'Calibration command failed';
-  // Keep stdout machine-readable and avoid leaking caller-local paths.
-  result({ ok: false, error: message.replaceAll(basename(process.cwd()), 'workspace') });
-  process.stderr.write(`v10.3 calibration: ${message}\n`);
-  process.exitCode = 2;
+async function main(): Promise<void> {
+  try {
+    await run(parseArgs(process.argv.slice(2)));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Calibration command failed';
+    // Keep stdout machine-readable and avoid leaking caller-local paths.
+    result({ ok: false, error: message.replaceAll(basename(process.cwd()), 'workspace') });
+    process.stderr.write(`v10.3 calibration: ${message}\n`);
+    process.exitCode = 2;
+  }
 }
+
+void main();

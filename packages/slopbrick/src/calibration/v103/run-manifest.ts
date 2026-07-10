@@ -5,8 +5,8 @@ import {
   type SlopBrickV103CalibrationRunManifest,
 } from '@usebrick/core';
 import { planV103Chunks } from './bisection';
-import { canonicalSha256 } from './canonical';
-import type { SelectionRecord } from './selection';
+import { canonicalJson, canonicalSha256 } from './canonical';
+import type { SelectionLedger, SelectionRecord } from './selection';
 
 type RunManifestDraft = Omit<SlopBrickV103CalibrationRunManifest, 'version' | 'inputHashes'> & {
   readonly version?: 'v10.3';
@@ -49,6 +49,18 @@ export function verifyV103ExpectedSelection(
     if (JSON.stringify(run.expected.chunkIdsByPolarity[polarity]) !== JSON.stringify(chunkIds)) {
       return { ok: false, error: `Run manifest expected chunk IDs do not match selected ${polarity} records` };
     }
+  }
+  return { ok: true };
+}
+
+/** Bind the portable run declaration to the already manifest-verified selection ledger. */
+export function verifyV103SelectionBinding(
+  run: SlopBrickV103CalibrationRunManifest,
+  ledger: SelectionLedger,
+): { ok: true } | { ok: false; error: string } {
+  if (run.selection.seed !== ledger.seed) return { ok: false, error: 'Run manifest selection seed does not match selection ledger' };
+  if (canonicalJson(run.selection.policy) !== canonicalJson(ledger.policy)) {
+    return { ok: false, error: 'Run manifest selection policy does not match selection ledger' };
   }
   return { ok: true };
 }

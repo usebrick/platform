@@ -92,13 +92,27 @@ describe('v10.3 calibration CLI', () => {
     const runManifest = createV103RunManifest({
       runId: 'fixture-v103', createdAt: generatedAt, git: { sha: 'a'.repeat(40), dirty: false }, package: { name: 'slopbrick', version: '0.44.0' }, runtime: { node: process.version, pnpm: 'fixture', platform: process.platform, arch: process.arch }, schemaVersion: 'v10.3', methodVersion: 'v10.3.0',
       inputHashes: { registrySha256: '1'.repeat(64), signalTableSha256: '2'.repeat(64), configSha256: '3'.repeat(64), corpusManifestSha256: canonicalCorpusManifestSha256(manifest), selectionSha256: canonicalSha256(records) },
-      selection: { seed: 'fixture-seed', policy: { eligibleLabels: ['verified_ai', 'verified_human'], eligibleTiers: ['gold'], eligibleStrata: ['production', 'test', 'generated', 'vendor', 'minified', 'example', 'other'], maxPerStratum: Number.MAX_SAFE_INTEGER } },
+      selection: { seed: 'fixture-seed', policy: { eligibleLabels: ['verified_ai', 'verified_human'], eligibleTiers: ['gold'], eligibleStrata: ['example', 'generated', 'minified', 'other', 'production', 'test', 'vendor'], maxPerStratum: Number.MAX_SAFE_INTEGER } },
       expected: { fileIdsByPolarity: { verified_ai: [aiRecord.fileId!], verified_human: [humanRecord.fileId!] }, chunkIdsByPolarity: { verified_ai: [chunkId(aiRecord.fileId!)], verified_human: [chunkId(humanRecord.fileId!)] } },
       settings: { includeRuleIds: [], excludeRuleIds: [], maxFileBytes: 1_000_000, chunkSize: 1, chunkTimeoutMs: 30_000, retryTimeoutMs: 60_000, workerCount: 1 }, commandArgs: ['cal:scan', '--run=fixture-v103'],
     }, checkoutMap);
     writeFileSync(join(runDirectory, 'run-manifest.json'), JSON.stringify(runManifest));
     const checkoutMapPath = join(root, 'checkout-map.json');
     writeFileSync(checkoutMapPath, JSON.stringify(checkoutMap));
+
+    writeFileSync(join(runDirectory, 'run-manifest.json'), JSON.stringify({
+      ...runManifest,
+      selection: { ...runManifest.selection, seed: 'forged-seed' },
+    }));
+    await expect(execFileAsync(tsx, [script, 'scan', '--run', runDirectory, '--checkout-map', checkoutMapPath], { cwd: packageRoot })).rejects.toMatchObject({ code: 2 });
+    expect(() => readFileSync(join(runDirectory, 'observations.jsonl'), 'utf8')).toThrow();
+
+    writeFileSync(join(runDirectory, 'run-manifest.json'), JSON.stringify({
+      ...runManifest,
+      selection: { ...runManifest.selection, policy: { ...runManifest.selection.policy, maxPerStratum: 1 } },
+    }));
+    await expect(execFileAsync(tsx, [script, 'scan', '--run', runDirectory, '--checkout-map', checkoutMapPath], { cwd: packageRoot })).rejects.toMatchObject({ code: 2 });
+    expect(() => readFileSync(join(runDirectory, 'observations.jsonl'), 'utf8')).toThrow();
 
     writeFileSync(join(runDirectory, 'run-manifest.json'), JSON.stringify({
       ...runManifest,
