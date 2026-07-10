@@ -209,7 +209,7 @@ describe('runSuggest (consolidated) — 2b.2 compositeScore surface', () => {
     expect(parsed.scoreBriefs).toEqual({
       aiSlopScore: 'raw amount of AI slop, 0-100',
       engineeringHygiene: 'cross-category consistency, 0-100',
-      security: 'AI Security Risk band, 0-100',
+      security: 'security posture, 0-100 (higher is better)',
       repositoryHealth: 'weighted composite, 0-100',
     });
   });

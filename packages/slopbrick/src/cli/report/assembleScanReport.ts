@@ -159,7 +159,7 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     // v0.15.0 U.4+: the previous-run value is stored as
     // `previousSlopIndex` on ProjectReport for backward compat with
     // historical telemetry. The value itself is the previous run's
-    // aiSlopScore (higher = better).
+    // aiSlopScore (lower = better; raw amount of detected slop).
     previousSlopIndex: previousRun?.slopIndex,
     previousRunTimestamp: previousRun?.timestamp,
     p90Score: aggregated.p90Score,
