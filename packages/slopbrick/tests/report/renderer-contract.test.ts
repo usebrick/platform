@@ -87,6 +87,17 @@ describe('headline score renderer contract', () => {
         crashed: 0,
         internalFailed: 0,
       },
+      selectionAccounting: {
+        observedCandidates: 9,
+        selected: 7,
+        excluded: {
+          configExclude: 1,
+          unsupportedFileType: 0,
+          extensionlessDuplicate: 0,
+          outsideWorkspace: 0,
+          gitScope: 1,
+        },
+      },
     }) as ProjectReport;
     const json = JSON.parse(formatJson(input)) as Record<string, unknown>;
     const sarif = JSON.parse(formatSarif(input)) as {
@@ -102,6 +113,7 @@ describe('headline score renderer contract', () => {
       scoreValidity: 'incomplete',
       completionStatus: 'partial',
       scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
+      selectionAccounting: { observedCandidates: 9, selected: 7, excluded: { gitScope: 1 } },
       scores: { aiSlopScore: 12.3 },
     });
     for (const output of [
@@ -115,6 +127,8 @@ describe('headline score renderer contract', () => {
       expect(output).toContain('not valid for gating');
       expect(output).toContain('requested 7');
     }
+    expect(formatPretty(input)).toContain('9 observed; 7 selected; 2 excluded');
+    expect(formatBriefReport(input)).toContain('9 observed; 7 selected; 2 excluded');
   });
 
   it('preserves all four score values and score-basis provenance in every report format', () => {
@@ -192,6 +206,14 @@ describe('headline score renderer contract', () => {
           selected: 7, analyzed: 6, zeroFinding: 6, incrementalCached: 0,
           parseFailed: 1, timedOut: 0, crashed: 0, internalFailed: 0,
         },
+        selectionAccounting: {
+          observedCandidates: 9,
+          selected: 7,
+          excluded: {
+            configExclude: 1, unsupportedFileType: 0, extensionlessDuplicate: 0,
+            outsideWorkspace: 0, gitScope: 1,
+          },
+        },
       }), 'utf8');
 
       const ctx: ToolContext = {
@@ -212,6 +234,7 @@ describe('headline score renderer contract', () => {
         completionStatus: 'partial',
         scoreValidity: 'incomplete',
         scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
+        selectionAccounting: { observedCandidates: 9, selected: 7, excluded: { gitScope: 1 } },
       });
       expect(payload.scoreBasis).toEqual(scoreBasis);
       expect(payload).toMatchObject({

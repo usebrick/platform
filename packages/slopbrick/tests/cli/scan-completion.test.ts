@@ -35,6 +35,79 @@ describe('scan completion status', () => {
     });
   });
 
+  it('persists aggregate discovery exclusions without changing selected-file outcomes', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'accepted.ts'), 'export const accepted = true;\n');
+    writeFileSync(join(dir, 'src', 'excluded.ts'), 'export const excluded = true;\n');
+    writeFileSync(join(dir, 'src', 'styles.css'), 'body {}\n');
+    writeFileSync(join(dir, 'slopbrick.config.mjs'), [
+      'export default {',
+      "  include: ['src/*'],",
+      "  exclude: ['src/excluded.ts'],",
+      '};',
+    ].join('\n'));
+
+    const result = await runScan({ workspace: dir, quiet: true });
+
+    expect(result.report.selectionAccounting).toEqual({
+      observedCandidates: 3,
+      selected: 1,
+      excluded: {
+        configExclude: 1,
+        unsupportedFileType: 1,
+        extensionlessDuplicate: 0,
+        outsideWorkspace: 0,
+        gitScope: 0,
+      },
+    });
+    expect(result.scanStats).toMatchObject({ requested: 1, analyzed: 1, skipped: 0 });
+    const health = JSON.parse(readFileSync(join(dir, '.slopbrick', 'health.json'), 'utf8')) as Record<string, unknown>;
+    expect(health.selectionAccounting).toEqual(result.report.selectionAccounting);
+  });
+
+  it('attributes normal-discovery files removed by --changed to git scope', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.email', 'tests@example.invalid'], { cwd: dir });
+    execFileSync('git', ['config', 'user.name', 'SlopBrick Tests'], { cwd: dir });
+    mkdirSync(join(dir, 'src'));
+    const changed = join(dir, 'src', 'changed.ts');
+    writeFileSync(changed, 'export const changed = 1;\n');
+    writeFileSync(join(dir, 'src', 'unchanged.ts'), 'export const unchanged = 1;\n');
+    execFileSync('git', ['add', '.'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'fixture'], { cwd: dir, stdio: 'ignore' });
+    writeFileSync(changed, 'export const changed = 2;\n');
+
+    const result = await runScan({ workspace: dir, quiet: true, changed: true });
+
+    expect(result.report.selectionAccounting).toMatchObject({
+      observedCandidates: 2,
+      selected: 1,
+      excluded: { gitScope: 1 },
+    });
+    expect(result.scanStats).toMatchObject({ requested: 1, analyzed: 1 });
+  });
+
+  it('accounts explicit directory expansion but leaves direct-file scans unclassified', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const accepted = join(dir, 'src', 'accepted.ts');
+    writeFileSync(accepted, 'export const accepted = true;\n');
+    writeFileSync(join(dir, 'src', 'ignored.css'), 'body {}\n');
+    writeFileSync(join(dir, 'slopbrick.config.mjs'), "export default { include: ['src/*'] };\n");
+
+    const directory = await runScan({ workspace: dir, quiet: true }, ['src']);
+    expect(directory.report.selectionAccounting).toMatchObject({
+      observedCandidates: 2,
+      selected: 1,
+      excluded: { unsupportedFileType: 1 },
+    });
+
+    const direct = await runScan({ workspace: dir, quiet: true }, [accepted]);
+    expect(direct.report.selectionAccounting).toBeUndefined();
+  });
+
   it('forwards rule filters to worker scans (not only inline scans)', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));

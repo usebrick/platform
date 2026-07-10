@@ -17,7 +17,7 @@
 // in ./init.ts.
 
 import { existsSync, statSync } from 'node:fs';
-import { resolve, relative, extname, sep } from 'node:path';
+import { resolve, relative, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import { renderProgress, clearProgress, resetNoColor, setNoColor } from './render';
@@ -31,8 +31,11 @@ import {
   loadConfig,
   resolveConfigPath as findConfigPath,
 } from '../config';
-import { discoverFiles, ALL_SOURCE_EXTENSIONS } from '../engine/discover.js';
-import { discoverScanFiles } from './discovery.js';
+import {
+  classifyDiscoveryCandidates,
+  type SelectionAccounting,
+} from '../engine/discover.js';
+import { discoverScanFilesWithDiagnostics } from './discovery.js';
 import {
   getGitHead,
   getGitRoot,
@@ -175,55 +178,78 @@ export async function runScan(
   }
 
   let files: string[];
+  let selectionAccounting: SelectionAccounting | undefined;
   if (explicitPaths && explicitPaths.length > 0) {
     const { globby } = await import('globby');
     const { minimatch } = await import('minimatch');
     const resolved = explicitPaths.map((p) => resolve(cwd, p));
-    const expanded: string[] = [];
+    const directoryCandidates: string[] = [];
+    const explicitFiles: string[] = [];
     for (const p of resolved) {
       if (existsSync(p) && statSync(p).isDirectory()) {
         const found = await globby(`${p}/**/*`, { absolute: true, onlyFiles: true });
         for (const f of found) {
-          if (!ALL_SOURCE_EXTENSIONS.has(extname(f).toLowerCase())) continue;
           const rel = relative(cwd, f).split(sep).join('/');
           if (config.include.length > 0 && !config.include.some((pattern) => minimatch(rel, pattern))) {
             continue;
           }
-          if (config.exclude.some((pattern) => minimatch(rel, pattern, { dot: true }))) {
-            continue;
-          }
-          expanded.push(f);
+          directoryCandidates.push(f);
         }
       } else {
-        expanded.push(p);
+        // A direct file argument is an explicit request, and historically
+        // bypasses discovery/type/config filtering. Preserve that behavior
+        // rather than pretending it belongs to the observed-candidate set.
+        explicitFiles.push(p);
       }
     }
-    files = expanded;
+    const classifiedDirectories = classifyDiscoveryCandidates(cwd, directoryCandidates, config);
+    files = [...classifiedDirectories.files, ...explicitFiles];
+    // Only directory expansion has a truthful observed-candidate population.
+    // Mixed direct-file invocations retain their long-standing semantics and
+    // intentionally omit selection accounting altogether.
+    if (explicitFiles.length === 0) selectionAccounting = classifiedDirectories.selectionAccounting;
   } else {
-    files = await discoverScanFiles({
+    const discovered = await discoverScanFilesWithDiagnostics({
       workspace: cwd,
       config,
       configPath,
       cliIncludeOverride: !!(options.include && options.include.length > 0),
     });
+    files = discovered.files;
+    selectionAccounting = discovered.selectionAccounting;
   }
+
+  const applyGitScope = (nextFiles: string[]) => {
+    if (selectionAccounting) {
+      const removed = files.length - nextFiles.length;
+      selectionAccounting = {
+        ...selectionAccounting,
+        selected: selectionAccounting.selected - removed,
+        excluded: {
+          ...selectionAccounting.excluded,
+          gitScope: selectionAccounting.excluded.gitScope + removed,
+        },
+      };
+    }
+    files = nextFiles;
+  };
 
   if (options.staged) {
     const changed = await getChangedFiles(cwd);
-    files = intersectFiles(files, changed, cwd);
+    applyGitScope(intersectFiles(files, changed, cwd));
   }
   if (options.changed) {
     const changed = await getWorkingTreeChanges(cwd);
-    files = intersectFiles(files, changed, cwd);
+    applyGitScope(intersectFiles(files, changed, cwd));
   }
   if (options.since) {
     const since = await getFilesSince(cwd, options.since);
-    files = intersectFiles(files, since, cwd);
+    applyGitScope(intersectFiles(files, since, cwd));
   }
   // v0.10.1: --diff <ref> is the VibeDrift-compatible alias for --since.
   if (options.diffRef) {
     const since = await getFilesSince(cwd, options.diffRef);
-    files = intersectFiles(files, since, cwd);
+    applyGitScope(intersectFiles(files, since, cwd));
   }
 
   // Count the complete requested set before incremental partitioning. Cache
@@ -591,6 +617,7 @@ export async function runScan(
     failed: failedFiles,
     skipped: skippedFiles,
     scanAccounting,
+    ...(selectionAccounting ? { selectionAccounting } : {}),
   };
 
   // Finalize: build the ProjectReport and persist all side-effects.

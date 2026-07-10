@@ -104,6 +104,17 @@ export interface MemoryReport {
     crashed: number;
     internalFailed: number;
   };
+  selectionAccounting?: {
+    observedCandidates: number;
+    selected: number;
+    excluded: {
+      configExclude: number;
+      unsupportedFileType: number;
+      extensionlessDuplicate: number;
+      outsideWorkspace: number;
+      gitScope: number;
+    };
+  };
 }
 
 /** Resolved config, minimal fields used by `buildConstitutionFromConfig`. */
@@ -525,6 +536,7 @@ export function buildHealthFromReport(
     ...(report.failed !== undefined && { failed: report.failed }),
     ...(report.skipped !== undefined && { skipped: report.skipped }),
     ...(report.scanAccounting !== undefined && { scanAccounting: report.scanAccounting }),
+    ...(report.selectionAccounting !== undefined && { selectionAccounting: report.selectionAccounting }),
     ...(options.compositeScore && { compositeScore: options.compositeScore }),
   };
 }

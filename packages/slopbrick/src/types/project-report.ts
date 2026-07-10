@@ -39,6 +39,23 @@ export interface ScanAccounting {
 }
 
 /**
+ * Aggregate-only evidence for candidates observed by discovery or explicit
+ * directory expansion.  It intentionally omits direct explicit-file scans,
+ * for which no comparable discovery population exists.
+ */
+export interface SelectionAccounting {
+  observedCandidates: number;
+  selected: number;
+  excluded: {
+    configExclude: number;
+    unsupportedFileType: number;
+    extensionlessDuplicate: number;
+    outsideWorkspace: number;
+    gitScope: number;
+  };
+}
+
+/**
  * Explicit gate-safety status for the numeric headline scores. Numeric score
  * fields are retained on partial scans for diagnosis, but only `valid` may
  * be used for threshold/CI decisions.
@@ -68,6 +85,8 @@ export interface ProjectReport {
   skipped?: number;
   /** Detailed file-outcome accounting for CLI scans. */
   scanAccounting?: ScanAccounting;
+  /** Aggregate selection evidence before selected files enter scan accounting. */
+  selectionAccounting?: SelectionAccounting;
   version: string;
   generatedAt: string;
   configPath?: string;

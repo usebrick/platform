@@ -73,6 +73,25 @@ function formatSummary(report: ProjectReport): string {
   return `${base}${basisLine}`;
 }
 
+/** Aggregate-only selection context. Never reveals source paths or patterns. */
+function formatSelectionAccounting(report: ProjectReport): string | null {
+  const accounting = report.selectionAccounting;
+  if (!accounting) return null;
+  const { excluded } = accounting;
+  const excludedTotal = excluded.configExclude + excluded.unsupportedFileType +
+    excluded.extensionlessDuplicate + excluded.outsideWorkspace + excluded.gitScope;
+  if (excludedTotal === 0) return null;
+  const reasonCounts: Array<[string, number]> = [
+    ['config', excluded.configExclude],
+    ['unsupported type', excluded.unsupportedFileType],
+    ['extensionless duplicate', excluded.extensionlessDuplicate],
+    ['outside workspace', excluded.outsideWorkspace],
+    ['git scope', excluded.gitScope],
+  ];
+  const reasons = reasonCounts.filter(([, count]) => count > 0).map(([reason, count]) => `${count} ${reason}`);
+  return `Selection: ${accounting.observedCandidates} observed; ${accounting.selected} selected; ${excludedTotal} excluded (${reasons.join(', ')}).`;
+}
+
 /**
  * v0.14.5i — Trust-signal section: surfaces the count of issues
  * auto-suppressed because their rule was marked `defaultOff: true` in
@@ -929,6 +948,8 @@ export function formatPretty(report: ProjectReport): string {
   // noise — the user came for the score, not the file count. Put
   // it after the verdict where it provides supporting context.
   sections.push(formatSummary(report));
+  const selectionSummary = formatSelectionAccounting(report);
+  if (selectionSummary) sections.push(chalk.dim(selectionSummary));
 
   sections.push(formatCompositeScore(report));
 
@@ -1068,6 +1089,8 @@ export function formatBriefReport(report: ProjectReport): string {
 
   // One-line verdict
   lines.push(formatVerdict(report));
+  const selectionSummary = formatSelectionAccounting(report);
+  if (selectionSummary) lines.push(chalk.dim(selectionSummary));
   lines.push('');
 
   // 4 named scores, each on its own line with band label.

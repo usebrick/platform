@@ -287,6 +287,20 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
     if (value.failed !== undefined && value.failed !== parseFailed + timedOut + crashed + internalFailed) return false;
     if (value.skipped !== undefined && value.skipped !== incrementalCached) return false;
   }
+  if (value.selectionAccounting !== undefined) {
+    if (!isRecord(value.selectionAccounting)) return false;
+    const selection = value.selectionAccounting as Record<string, unknown>;
+    if (!isNonNegativeInteger(selection.observedCandidates) || !isNonNegativeInteger(selection.selected)) return false;
+    if (!isRecord(selection.excluded)) return false;
+    const excluded = selection.excluded as Record<string, unknown>;
+    const fields = ['configExclude', 'unsupportedFileType', 'extensionlessDuplicate', 'outsideWorkspace', 'gitScope'];
+    for (const field of fields) {
+      if (!isNonNegativeInteger(excluded[field])) return false;
+    }
+    const excludedTotal = fields.reduce((sum, field) => sum + (excluded[field] as number), 0);
+    if ((selection.observedCandidates as number) !== (selection.selected as number) + excludedTotal) return false;
+    if (value.requested !== undefined && (selection.selected as number) !== value.requested) return false;
+  }
   // v0.18.2: optional Bayesian composite aggregate. Validate the
   // shape when present (G6 schema/writer/validator coherence).
   // Omitted in v0.18.1 and earlier health.json files; readers

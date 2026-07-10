@@ -105,6 +105,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     failed: report.failed,
     skipped: report.skipped,
     scanAccounting: report.scanAccounting,
+    selectionAccounting: report.selectionAccounting,
   };
 
   // Append to the historical memory log (`.slopbrick/structure.json`). Skip when
@@ -235,6 +236,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
         // spread so that `undefined` doesn't pollute the JSON.
         ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
       });
+      // `buildHealthFromReport` may be supplied by an already-built engine
+      // artifact during package-consumer tests. Keep this additive report
+      // provenance at the CLI persistence boundary as well, so health.json
+      // always mirrors the run's machine report.
+      if (report.selectionAccounting) health.selectionAccounting = report.selectionAccounting;
       saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
         // v0.18.2: include the Bayesian composite aggregate in the

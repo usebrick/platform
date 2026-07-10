@@ -94,6 +94,20 @@ export interface RepositoryStructureHealth {
     internalFailed: number;
   };
   /**
+   * Aggregate-only accounting for candidates observed by discovery or explicit directory expansion. It does not claim counts for paths outside that observable population.
+   */
+  selectionAccounting?: {
+    observedCandidates: number;
+    selected: number;
+    excluded: {
+      configExclude: number;
+      unsupportedFileType: number;
+      extensionlessDuplicate: number;
+      outsideWorkspace: number;
+      gitScope: number;
+    };
+  };
+  /**
    * v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.
    */
   compositeScore?: {

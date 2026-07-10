@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, realpathSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DEFAULT_CONFIG } from '../../src/config';
-import { discoverScanFiles } from '../../src/cli/discovery';
+import { discoverScanFiles, discoverScanFilesWithDiagnostics } from '../../src/cli/discovery';
 import type { ResolvedConfig } from '../../src/types';
 
 const makeConfig = (include: string[]): ResolvedConfig => ({
@@ -36,6 +36,33 @@ describe('discoverScanFiles', () => {
       configPath,
       cliIncludeOverride: false,
     })).resolves.toEqual([source]);
+  });
+
+  it('accounts for ancestor-config candidates outside the requested workspace', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'slopbrick-discovery-')));
+    roots.push(root);
+    const packageRoot = join(root, 'packages', 'app');
+    mkdirSync(join(packageRoot, 'src'), { recursive: true });
+    mkdirSync(join(root, 'other', 'src'), { recursive: true });
+    const source = join(packageRoot, 'src', 'index.ts');
+    writeFileSync(source, 'export {}');
+    writeFileSync(join(root, 'other', 'src', 'outside.ts'), 'export {}');
+    const configPath = join(root, 'slopbrick.config.mjs');
+    writeFileSync(configPath, 'export default {}');
+
+    const result = await discoverScanFilesWithDiagnostics({
+      workspace: packageRoot,
+      config: makeConfig(['**/src/**/*.ts']),
+      configPath,
+      cliIncludeOverride: false,
+    });
+
+    expect(result.files).toEqual([source]);
+    expect(result.selectionAccounting).toMatchObject({
+      observedCandidates: 2,
+      selected: 1,
+      excluded: { outsideWorkspace: 1 },
+    });
   });
 
   it('discovers TypeScript source in every declared pnpm workspace package', async () => {

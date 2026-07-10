@@ -108,6 +108,7 @@ interface SarifToolDriver {
     completionStatus?: NonNullable<ProjectReport['completionStatus']>;
     scoreValidity?: NonNullable<ProjectReport['scoreValidity']>;
     scanAccounting?: NonNullable<ProjectReport['scanAccounting']>;
+    selectionAccounting?: NonNullable<ProjectReport['selectionAccounting']>;
     /** Headline values carried with SARIF so integrations retain scan context. */
     scores?: Pick<ProjectReport, 'aiSlopScore' | 'engineeringHygiene' | 'security' | 'repositoryHealth'>;
   };
@@ -370,6 +371,7 @@ export function formatSarif(
     ...(report.completionStatus !== undefined ? { completionStatus: report.completionStatus } : {}),
     ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
     ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
+    ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
     scores: {
       aiSlopScore: report.aiSlopScore,
       engineeringHygiene: report.engineeringHygiene,

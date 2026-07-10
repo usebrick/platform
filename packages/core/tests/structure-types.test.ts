@@ -237,6 +237,34 @@ describe('memory-types — validators', () => {
       expect(isHealthFile({ ...withAccounting, failed: 0 })).toBe(false);
       expect(isHealthFile({ ...withAccounting, skipped: 1 })).toBe(false);
     });
+
+    it('accepts only additive observed-candidate selection accounting', () => {
+      const withSelectionAccounting = {
+        ...valid,
+        requested: 2,
+        selectionAccounting: {
+          observedCandidates: 5,
+          selected: 2,
+          excluded: {
+            configExclude: 1,
+            unsupportedFileType: 1,
+            extensionlessDuplicate: 0,
+            outsideWorkspace: 1,
+            gitScope: 0,
+          },
+        },
+      };
+      expect(isHealthFile(withSelectionAccounting)).toBe(true);
+      expect(isHealthFile({
+        ...withSelectionAccounting,
+        selectionAccounting: { ...withSelectionAccounting.selectionAccounting, observedCandidates: 4 },
+      })).toBe(false);
+      expect(isHealthFile({
+        ...withSelectionAccounting,
+        selectionAccounting: { ...withSelectionAccounting.selectionAccounting, selected: 1 },
+      })).toBe(false);
+      expect(isHealthFile({ ...withSelectionAccounting, requested: 3 })).toBe(false);
+    });
   });
 
   describe('isFileMtimeEntry', () => {

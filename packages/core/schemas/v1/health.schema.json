@@ -149,6 +149,26 @@
         "internalFailed": { "type": "integer", "minimum": 0 }
       }
     },
+    "selectionAccounting": {
+      "description": "Aggregate-only accounting for candidates observed by discovery or explicit directory expansion. It does not claim counts for paths outside that observable population.",
+      "type": "object",
+      "required": ["observedCandidates", "selected", "excluded"],
+      "properties": {
+        "observedCandidates": { "type": "integer", "minimum": 0 },
+        "selected": { "type": "integer", "minimum": 0 },
+        "excluded": {
+          "type": "object",
+          "required": ["configExclude", "unsupportedFileType", "extensionlessDuplicate", "outsideWorkspace", "gitScope"],
+          "properties": {
+            "configExclude": { "type": "integer", "minimum": 0 },
+            "unsupportedFileType": { "type": "integer", "minimum": 0 },
+            "extensionlessDuplicate": { "type": "integer", "minimum": 0 },
+            "outsideWorkspace": { "type": "integer", "minimum": 0 },
+            "gitScope": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
     "compositeScore": {
       "description": "v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.",
       "type": "object",

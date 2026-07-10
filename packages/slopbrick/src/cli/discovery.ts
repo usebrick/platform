@@ -1,6 +1,9 @@
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ResolvedConfig } from '../types';
-import { discoverFiles } from '../engine/discover.js';
+import {
+  discoverFilesWithDiagnostics,
+  type SelectionAccounting,
+} from '../engine/discover.js';
 import { detectMonorepoRoot, findWorkspacePackages } from '../config/detect/monorepo';
 
 export interface ScanDiscoveryOptions {
@@ -10,22 +13,39 @@ export interface ScanDiscoveryOptions {
   cliIncludeOverride: boolean;
 }
 
+export interface ScanDiscoveryResult {
+  files: string[];
+  selectionAccounting: SelectionAccounting;
+}
+
 function containsPath(parent: string, candidate: string): boolean {
   const rel = relative(resolve(parent), resolve(candidate));
   return rel === '' || (!isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`));
 }
 
-export async function discoverScanFiles(options: ScanDiscoveryOptions): Promise<string[]> {
+export async function discoverScanFilesWithDiagnostics(options: ScanDiscoveryOptions): Promise<ScanDiscoveryResult> {
   const workspace = resolve(options.workspace);
 
   if (options.cliIncludeOverride) {
-    return Array.from(new Set(await discoverFiles(workspace, options.config))).sort();
+    return discoverFilesWithDiagnostics(workspace, options.config);
   }
 
   if (options.configPath) {
     const configRoot = dirname(resolve(options.configPath));
-    const files = await discoverFiles(configRoot, options.config);
-    return files.filter((file) => containsPath(workspace, file));
+    const discovered = await discoverFilesWithDiagnostics(configRoot, options.config);
+    const files = discovered.files.filter((file) => containsPath(workspace, file));
+    const outsideWorkspace = discovered.files.length - files.length;
+    return {
+      files,
+      selectionAccounting: {
+        ...discovered.selectionAccounting,
+        selected: files.length,
+        excluded: {
+          ...discovered.selectionAccounting.excluded,
+          outsideWorkspace: discovered.selectionAccounting.excluded.outsideWorkspace + outsideWorkspace,
+        },
+      },
+    };
   }
 
   if (detectMonorepoRoot(workspace) === workspace) {
@@ -35,9 +55,14 @@ export async function discoverScanFiles(options: ScanDiscoveryOptions): Promise<
       const include = options.config.include.flatMap((pattern) =>
         roots.map((root) => (root ? `${root}/${pattern}` : pattern)),
       );
-      return discoverFiles(workspace, { ...options.config, include });
+      return discoverFilesWithDiagnostics(workspace, { ...options.config, include });
     }
   }
 
-  return discoverFiles(workspace, options.config);
+  return discoverFilesWithDiagnostics(workspace, options.config);
+}
+
+/** Backward-compatible files-only facade. */
+export async function discoverScanFiles(options: ScanDiscoveryOptions): Promise<string[]> {
+  return (await discoverScanFilesWithDiagnostics(options)).files;
 }

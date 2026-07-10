@@ -75,7 +75,7 @@ export interface FinalizeReportInput {
   machineReadableStdout: boolean;
   /** Computed in runScan before persistence so health snapshots retain it. */
   scanMetadata: Pick<ProjectReport,
-    'completionStatus' | 'scoreValidity' | 'requested' | 'analyzed' | 'failed' | 'skipped' | 'scanAccounting'>;
+    'completionStatus' | 'scoreValidity' | 'requested' | 'analyzed' | 'failed' | 'skipped' | 'scanAccounting' | 'selectionAccounting'>;
 }
 
 export interface FinalizeReportResult {

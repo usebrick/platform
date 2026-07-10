@@ -53,6 +53,29 @@ export const ALL_SOURCE_EXTENSIONS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Aggregate-only selection evidence for files that an include glob actually
+ * observed.  It deliberately says nothing about paths an include glob never
+ * returned (including dotfiles and gitignore policy): those populations are
+ * not available to the scanner.
+ */
+export interface SelectionAccounting {
+  observedCandidates: number;
+  selected: number;
+  excluded: {
+    configExclude: number;
+    unsupportedFileType: number;
+    extensionlessDuplicate: number;
+    outsideWorkspace: number;
+    gitScope: number;
+  };
+}
+
+export interface DiscoveryResult {
+  files: string[];
+  selectionAccounting: SelectionAccounting;
+}
+
+/**
  * Sniff the first 512 bytes of a file to guess its source-extension-less type.
  * Returns a synthetic extension (e.g. ".tsx") if the file looks like a known
  * source format, otherwise null. Used to scan files like the slopbrick
@@ -115,41 +138,68 @@ function hasExtendedSibling(filePath: string): boolean {
   return false;
 }
 
-export async function discoverFiles(cwd: string, config: ResolvedConfig): Promise<string[]> {
-  const include = config.include.map((pattern) => resolve(cwd, pattern));
-  const raw = await globby(include, { absolute: true, onlyFiles: true });
+export function classifyDiscoveryCandidates(
+  cwd: string,
+  candidates: readonly string[],
+  config: ResolvedConfig,
+): DiscoveryResult {
+  const observed = Array.from(new Set(candidates)).sort();
+  const excluded: SelectionAccounting['excluded'] = {
+    configExclude: 0,
+    unsupportedFileType: 0,
+    extensionlessDuplicate: 0,
+    outsideWorkspace: 0,
+    gitScope: 0,
+  };
+  const files: string[] = [];
 
-  // Partition: known extensions vs extension-less files
-  const known: string[] = [];
-  const extensionless: string[] = [];
-  for (const file of raw) {
-    if (extname(file) === '') {
-      extensionless.push(file);
-    } else {
-      known.push(file);
-    }
-  }
-
-  // Sniff extension-less files and add them to the known list with synthetic paths
-  // so downstream parsers see them as the right type. Skip if a same-basename
-  // sibling with a real extension already exists (no double-scan).
-  for (const file of extensionless) {
-    if (hasExtendedSibling(file)) continue;
-    const ext = sniffExtension(file);
-    if (ext) known.push(file);
-  }
-
-  const filtered = known.filter((file) => {
-    // Allow extension-less files (they'll be routed by sniffExtension result)
-    const ext = extname(file);
-    if (ext === '') return true; // already sniffed and accepted above
-    if (!ALL_SOURCE_EXTENSIONS.has(ext)) return false;
+  for (const file of observed) {
     const rel = relative(cwd, file).split(sep).join('/');
-    if (config.exclude.some((pattern) => minimatch(rel, pattern))) {
-      return false;
+    // A configured exclusion is the owner's explicit policy. It wins over
+    // type classification so each observed candidate has one reason only.
+    if (config.exclude.some((pattern) => minimatch(rel, pattern, { dot: true }))) {
+      excluded.configExclude += 1;
+      continue;
     }
-    return true;
-  });
 
-  return Array.from(new Set(filtered)).sort();
+    const ext = extname(file).toLowerCase();
+    if (ext === '') {
+      if (hasExtendedSibling(file)) {
+        excluded.extensionlessDuplicate += 1;
+        continue;
+      }
+      if (!sniffExtension(file)) {
+        excluded.unsupportedFileType += 1;
+        continue;
+      }
+      files.push(file);
+      continue;
+    }
+
+    if (!ALL_SOURCE_EXTENSIONS.has(ext)) {
+      excluded.unsupportedFileType += 1;
+      continue;
+    }
+    files.push(file);
+  }
+
+  return {
+    files,
+    selectionAccounting: {
+      observedCandidates: observed.length,
+      selected: files.length,
+      excluded,
+    },
+  };
+}
+
+export async function discoverFilesWithDiagnostics(cwd: string, config: ResolvedConfig): Promise<DiscoveryResult> {
+  const include = config.include.map((pattern) => resolve(cwd, pattern));
+  const candidates = await globby(include, { absolute: true, onlyFiles: true });
+  return classifyDiscoveryCandidates(cwd, candidates, config);
+}
+
+/** Backward-compatible discovery facade for existing callers. */
+export async function discoverFiles(cwd: string, config: ResolvedConfig): Promise<string[]> {
+  return (await discoverFilesWithDiagnostics(cwd, config)).files;
 }

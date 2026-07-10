@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { discoverFiles } from '../src/engine/discover';
+import { discoverFiles, discoverFilesWithDiagnostics } from '../src/engine/discover';
 import { DEFAULT_CONFIG } from '../src/config';
 import type { ResolvedConfig } from '../src/types';
 
@@ -122,5 +122,36 @@ describe('discoverFiles', () => {
     writeFileSync(join(dir, 'src', 'data'), '{"foo": "bar"}\n');
     const files = await discoverFiles(dir, makeConfig({ include: ['src/*'] }));
     expect(files).toEqual([]);
+  });
+
+  it('accounts for every observed discovery candidate with one exclusive reason', async () => {
+    mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(join(dir, 'src', 'accepted.ts'), 'export const accepted = true;');
+    writeFileSync(join(dir, 'src', 'excluded'), 'export const excluded = true;');
+    writeFileSync(join(dir, 'src', 'styles.css'), 'body {}');
+    writeFileSync(join(dir, 'src', 'data'), '{"not": "source"}');
+    writeFileSync(join(dir, 'src', 'Duplicate'), 'export const duplicate = true;');
+    writeFileSync(join(dir, 'src', 'Duplicate.ts'), 'export const duplicate = true;');
+
+    const discovered = await discoverFilesWithDiagnostics(dir, makeConfig({
+      include: ['src/*'],
+      exclude: ['src/excluded'],
+    }));
+
+    expect(discovered.files).toEqual([
+      join(dir, 'src', 'Duplicate.ts'),
+      join(dir, 'src', 'accepted.ts'),
+    ]);
+    expect(discovered.selectionAccounting).toEqual({
+      observedCandidates: 6,
+      selected: 2,
+      excluded: {
+        configExclude: 1,
+        unsupportedFileType: 2,
+        extensionlessDuplicate: 1,
+        outsideWorkspace: 0,
+        gitScope: 0,
+      },
+    });
   });
 });

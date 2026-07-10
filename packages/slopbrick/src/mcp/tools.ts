@@ -521,6 +521,7 @@ export async function runSuggest(
         payload.completionStatus = health.completionStatus;
         payload.scoreValidity = health.scoreValidity;
         payload.scanAccounting = health.scanAccounting;
+        payload.selectionAccounting = health.selectionAccounting;
         // v0.43.0: include the same scoreBriefs that the CLI
         // --brief and --json surfaces now ship. MCP clients
         // (Cursor, Claude Code, Continue) get the same plain-
