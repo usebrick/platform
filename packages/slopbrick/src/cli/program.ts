@@ -574,7 +574,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // v0.18.x (R-H1): watch action moved to ./commands/watch.ts
     // scanAction is the closure defined above; passed in to avoid
     // moving the ~160-line scan body into the watch module.
-    registerWatch(program, scanAction);
+    registerWatch(program, scanAction as unknown as (paths: string[], options: CliGlobalOptions, command: Command) => Promise<void>);
 
     // v0.18.x (R-H1): lock action moved to ./commands/lock.ts
     registerLock(program);
@@ -617,7 +617,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
     // v0.18.x (R-H1): scan (default) action moved to ./commands/scan.ts
     // scanAction is the closure defined above; passed in to keep
     // the ~160-line scan body inline (shared with watch and ci).
-    registerScan(program, scanAction);
+    registerScan(program, scanAction as unknown as (paths: string[], options: CliGlobalOptions, command: Command) => Promise<void>);
 
     // v0.18.4 (--help clusters): if the user passed --help-flat,
     // restore Commander's default helpInformation (the standard

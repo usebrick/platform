@@ -67,6 +67,11 @@ export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
   html?: true | string;
   telemetry?: boolean;
   rule?: string;
+  // v0.10.2 (Phase 10): multi-value rule filters for the calibrator.
+  // `--include-rule` and `--exclude-rule` may be specified multiple
+  // times; `loadBuiltins` applies them after parsing.
+  includeRules?: string[];
+  excludeRules?: string[];
   /** v0.24.0 (Workstream C): opt-in network beacon. Distinct from
    *  `telemetry` (which gates the local flywheel). When true AND
    *  `SLOPBRICK_TELEMETRY_ENDPOINT` is set, a single 8-field POST

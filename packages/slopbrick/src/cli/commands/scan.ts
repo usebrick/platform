@@ -20,6 +20,21 @@ export function registerScan(
     .command('scan [paths...]', { isDefault: true })
     .description('scan files for slop')
     .option('--no-telemetry', 'disable telemetry collection for this run')
+    // v0.10.2 (Phase 10): multi-value rule filters. `--rule` (single)
+    // remains for backwards compat; the calibrator uses these new
+    // flags to scan a chunk twice with different rule sets.
+    .option(
+      '--include-rule <ruleId>',
+      'include only this rule (repeatable; may be specified multiple times). Mutually exclusive with --rule.',
+      (value: string, prev: string[]) => (prev ?? []).concat(value),
+      [] as string[],
+    )
+    .option(
+      '--exclude-rule <ruleId>',
+      'exclude this rule (repeatable; may be specified multiple times).',
+      (value: string, prev: string[]) => (prev ?? []).concat(value),
+      [] as string[],
+    )
     .option(
       '--rule <ruleId>',
       'run only a single rule by id (e.g. visual/math-default-font). All others are skipped.',
