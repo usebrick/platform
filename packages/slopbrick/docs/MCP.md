@@ -17,8 +17,8 @@ This table is generated from `TOOL_DEFINITIONS`; it currently exposes 7 canonica
 
 | Tool | Inputs | Runtime description |
 | --- | --- | --- |
-| `slop_scan_file` | path (required), framework | Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
-| `slop_explain_rule` | ruleId (required) | Return metadata for a single rule: ruleId, category, severity, aiSpecific, a brief rationale string, and a whereToLook path into src/rules/. The actual fix-steps live in the rule source (whereToLook) rather than in this response — read that file to understand the rule before auto-applying --fix. |
+| `slop_scan_file` | path (required), framework | Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice, and bounded whyItFired facts), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
+| `slop_explain_rule` | ruleId (required) | Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and the resolved project activation state. |
 | `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual \| logic \| wcag \| security \| perf \| typo \| layout \| component \| arch). |
 | `slop_suggest` | maxFiles | **Primary entry point for AI agents.** Returns the project's existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path. |
 | `slop_suggest_with_structure` | maxFiles | Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first. |
@@ -106,14 +106,15 @@ Scan a single file, return issues + per-category scores.
       "severity": "high",
       "line": 12,
       "column": 5,
-      "message": "repetitive token pattern"
+      "message": "repetitive token pattern",
+      "advice": "Review the specific pattern before changing code.",
+      "whyItFired": {
+        "summary": "repetitive token pattern",
+        "location": { "line": 12, "column": 5 },
+        "facts": null
+      }
     }
-  ],
-  "categoryScores": {
-    "ai": 5,
-    "visual": 0,
-    "logic": 0
-  }
+  ]
 }
 ```
 
@@ -133,16 +134,25 @@ Return rule metadata + rationale + advice.
   "ruleId": "ai/compression-profile",
   "category": "ai",
   "aiSpecific": true,
-  "defaultSeverity": "high",
-  "defaultOff": false,
-  "calibration": {
-    "precision": 0.85,
-    "recall": 0.72,
-    "fpr": 0.03
+  "severity": "high",
+  "pattern": "...",
+  "remediation": "See the rule source for the canonical before/after: src/rules/ai/compression-profile.ts",
+  "sourcePath": "src/rules/ai/compression-profile.ts",
+  "suppressionSnippet": "rules: { \"ai/compression-profile\": \"off\" }  // or set to a lower severity",
+  "evidence": {
+    "category": "ai-signal",
+    "calibration": {
+      "status": "historical-point-estimate-only",
+      "confidenceLimits": null,
+      "confidenceLimitsReason": "No validated confidence interval is available in the shipped calibration contract."
+    }
   },
-  "rationale": "LLM-generated code reuses the same handful of identifier names...",
-  "references": ["Hindle et al., ICSE 2012, 'On the Naturalness of Software'"],
-  "advice": "Rewrite the file with more identifier diversity. Or add a comment explaining the repetition."
+  "configuration": {
+    "configuredSeverity": null,
+    "defaultOff": false,
+    "effectiveSeverity": "high",
+    "effectiveActivation": "enabled"
+  }
 }
 ```
 

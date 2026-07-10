@@ -9,7 +9,7 @@ import {
   buildPatternInventory,
   checkFileConstitution,
 } from '../../src/mcp/patterns';
-import { handleToolCall, TOOL_DEFINITIONS } from '../../src/mcp/tools';
+import { handleToolCall, TOOL_DEFINITIONS, toMcpFinding } from '../../src/mcp/tools';
 import { DEFAULT_CONFIG } from '../../src/config';
 import type { ResolvedConfig, Constitution } from '../../src/types';
 
@@ -69,6 +69,51 @@ describe('extractImports', () => {
   it('handles scoped packages with subpath correctly', () => {
     const src = `import { foo } from '@tanstack/react-query/devtools';`;
     expect(extractImports(src)).toEqual(['@tanstack/react-query/devtools']);
+  });
+});
+
+describe('MCP evidence contract', () => {
+  it('returns a rule explanation with honest calibration and effective config state', async () => {
+    const result = await handleToolCall(
+      'slop_explain_rule',
+      { ruleId: 'visual/test-rule' },
+      {
+        cwd: '/tmp',
+        rules: [{
+          id: 'visual/test-rule', category: 'visual', severity: 'medium', aiSpecific: true,
+          create: () => ({}), analyze: () => [],
+        }],
+        config: { ...TEST_CONFIG, rules: { 'visual/test-rule': 'off' } },
+      },
+    );
+
+    expect(result.isError).toBeFalsy();
+    const payload = JSON.parse(result.content[0]!.text) as {
+      evidence: { category: string; calibration: { confidenceLimits: unknown; confidenceLimitsReason: string } };
+      configuration: { configuredSeverity: string; effectiveActivation: string };
+      remediation: string;
+      sourcePath: string;
+      suppressionSnippet: string;
+    };
+    expect(payload.evidence.category).toBe('ai-signal');
+    expect(payload.evidence.calibration.confidenceLimits).toBeNull();
+    expect(payload.evidence.calibration.confidenceLimitsReason).toContain('No validated confidence interval');
+    expect(payload.configuration).toMatchObject({ configuredSeverity: 'off', effectiveActivation: 'suppressed' });
+    expect(payload.remediation).toContain('src/rules');
+    expect(payload.sourcePath).toContain('src/rules');
+    expect(payload.suppressionSnippet).toContain('visual/test-rule');
+  });
+
+  it('keeps bounded issue extras as why-it-fired facts without exposing scan facts', () => {
+    const finding = toMcpFinding({
+      ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
+      message: 'Broken link', line: 3, column: 4, extras: { link: './missing.md' },
+    });
+
+    expect(finding.whyItFired).toEqual({
+      summary: 'Broken link', location: { line: 3, column: 4 }, facts: { link: './missing.md' },
+    });
+    expect(finding).not.toHaveProperty('facts');
   });
 });
 

@@ -49,6 +49,8 @@ describe('ai/whitespace-regularity', () => {
     expect(issues.length).toBeGreaterThanOrEqual(1);
     expect(issues[0].ruleId).toBe('ai/whitespace-regularity');
     expect(issues[0].aiSpecific).toBe(true);
+    expect(issues[0].advice).toContain('Do not manually vary formatting');
+    expect(issues[0].advice).not.toContain('Vary inter-token spacing');
   });
 
   it('does not flag file with varied indent widths (human pattern)', async () => {

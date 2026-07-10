@@ -132,7 +132,7 @@ export const aiWhitespaceRegularityRule = createRule<RuleContext>({
         line: 1,
         column: 1,
         advice:
-          'Vary inter-token spacing (use single spaces in most places, occasional alignment in tables or arrays).',
+          'Do not manually vary formatting to satisfy this heuristic. Keep formatter output, review whether the statistical signal is relevant here, and disable or configure the rule if the style is intentional.',
       },
     ];
     return issues;

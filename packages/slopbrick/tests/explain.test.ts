@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { explainRule, formatExplain } from '../src/cli/explain';
+import { buildRuleExplanation } from '../src/rules/explanation';
+import { DEFAULT_CONFIG } from '../src/config';
 import type { Rule } from '../src/types';
 
 const fakeRule: Rule = {
@@ -68,5 +70,32 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
   it('renders an error string when given an error result', () => {
     const out = formatExplain({ error: 'Unknown rule: foo' });
     expect(out).toBe('Unknown rule: foo');
+  });
+});
+
+describe('buildRuleExplanation', () => {
+  it('reports an unavailable confidence interval instead of fabricating one', () => {
+    const result = buildRuleExplanation(fakeRule, {
+      ...DEFAULT_CONFIG,
+      rules: { 'visual/test-rule': 'off' },
+    }, fakeHints);
+
+    expect(result.evidence.category).toBe('ai-signal');
+    expect(result.evidence.calibration.confidenceLimits).toBeNull();
+    expect(result.evidence.calibration.confidenceLimitsReason).toContain('No validated confidence interval');
+    expect(result.configuration.configuredSeverity).toBe('off');
+    expect(result.configuration.effectiveActivation).toBe('suppressed');
+    expect(result.suppressionSnippet).toContain('visual/test-rule');
+  });
+
+  it('marks a static default-off rule as suppressed when it has no user override', () => {
+    const result = buildRuleExplanation(
+      { ...fakeRule, defaultOff: true },
+      { ...DEFAULT_CONFIG, rules: {} },
+      fakeHints,
+    );
+
+    expect(result.configuration.defaultOff).toBe(true);
+    expect(result.configuration.effectiveActivation).toBe('suppressed');
   });
 });

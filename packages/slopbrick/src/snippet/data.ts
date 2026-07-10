@@ -174,7 +174,7 @@ const RULE_HINTS: Record<string, string> = {
   'ai/comment-ratio':
     'AI tools either skip comments (reductive models) or over-comment (expansive models). Match the corpus mean ± 2σ (Rahman et al. 2024, Bisztray et al. 2025).',
   'ai/whitespace-regularity':
-    'Vary inter-token spacing (single spaces mostly, occasional alignment in tables). Uniform runs are an AI tell (Shi et al. DetectCodeGPT 2024).',
+    'Do not manually vary formatting to satisfy this heuristic. Keep formatter output; review whether the statistical signal is relevant, and disable or configure the rule if the style is intentional (Shi et al. DetectCodeGPT 2024).',
   'ai/text-like-ratio':
     'Move natural-language explanations to README files or doc comments. Inline prose in source code is hard to maintain (Yotkova 2026).',
   'ai/errors-near-eof':

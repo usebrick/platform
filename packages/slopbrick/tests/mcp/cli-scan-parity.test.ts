@@ -81,6 +81,11 @@ describe('CLI and MCP single-file scan parity', () => {
         column: issue.column,
         message: issue.message,
         advice: issue.advice,
+        whyItFired: {
+          summary: issue.message,
+          location: { line: issue.line, column: issue.column },
+          facts: issue.extras ?? null,
+        },
       })));
       expect(payload.issues).toEqual(expect.arrayContaining([
         expect.objectContaining({ ruleId: 'logic/math-console-log-storm', severity: 'low' }),

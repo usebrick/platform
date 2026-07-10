@@ -8,8 +8,10 @@ import { buildArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
 import { readStructureMarkdown } from '../engine/structure-md';
 import { SCORE_BRIEFS } from '../report/score-contract.js';
+import { buildRuleExplanation } from '../rules/explanation.js';
+import { RULE_HINTS } from '../snippet/data.js';
 
-import type { Rule, ResolvedConfig } from '../types';
+import type { Issue, Rule, ResolvedConfig } from '../types';
 
 export interface ToolContext {
   cwd: string;
@@ -44,7 +46,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_scan_file',
     description:
-      'Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest.',
+      'Scan a single TypeScript/JavaScript file for AI-generated frontend slop. Returns issues (ruleId, category, severity, line, column, message, advice, and bounded whyItFired facts), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -61,7 +63,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_explain_rule',
     description:
-      'Return metadata for a single rule: ruleId, category, severity, aiSpecific, a brief rationale string, and a whereToLook path into src/rules/. The actual fix-steps live in the rule source (whereToLook) rather than in this response — read that file to understand the rule before auto-applying --fix.',
+      'Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and the resolved project activation state.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -232,18 +234,32 @@ async function runScanFile(args: Record<string, unknown>, ctx: ToolContext): Pro
     // the full object gives clients both the advertised probability/tier
     // and the contributing-rule details for explainability.
     compositeScore: result.compositeScore,
-    issues: result.issues.map((i) => ({
-      ruleId: i.ruleId,
-      category: i.category,
-      severity: i.severity,
-      line: i.line,
-      column: i.column,
-      message: i.message,
-      advice: i.advice,
-    })),
+    issues: result.issues.map(toMcpFinding),
   };
   return {
     content: [{ type: 'text', text: JSON.stringify(simplified, null, 2) }],
+  };
+}
+
+/**
+ * Bounded per-finding explanation. `Issue.extras` is an intentional,
+ * rule-authored fact bag; exposing it helps agents understand a finding
+ * without leaking the complete parser fact graph or source text.
+ */
+export function toMcpFinding(issue: Issue) {
+  return {
+    ruleId: issue.ruleId,
+    category: issue.category,
+    severity: issue.severity,
+    line: issue.line,
+    column: issue.column,
+    message: issue.message,
+    advice: issue.advice,
+    whyItFired: {
+      summary: issue.message,
+      location: { line: issue.line, column: issue.column },
+      facts: issue.extras ?? null,
+    },
   };
 }
 
@@ -252,21 +268,7 @@ function explainRule(args: Record<string, unknown>, ctx: ToolContext): ToolResul
   if (!ruleId) return toolError('Missing required argument: ruleId');
   const rule = ctx.rules.find((r) => r.id === ruleId);
   if (!rule) return toolError('Unknown rule: ' + ruleId);
-  const explanation = {
-    ruleId: rule.id,
-    category: rule.category,
-    severity: rule.severity,
-    aiSpecific: rule.aiSpecific,
-    rationale:
-      'This rule flags ' +
-      rule.category +
-      ' patterns associated with AI-generated code. It is marked as ' +
-      (rule.aiSpecific ? 'AI-specific' : 'cross-cutting') +
-      '. Severity: ' +
-      rule.severity +
-      '.',
-    whereToLook: 'src/rules/' + rule.category + '/' + rule.id.replace(/^[^/]+\//, '') + '.ts',
-  };
+  const explanation = buildRuleExplanation(rule, ctx.config, RULE_HINTS);
   return {
     content: [{ type: 'text', text: JSON.stringify(explanation, null, 2) }],
   };
