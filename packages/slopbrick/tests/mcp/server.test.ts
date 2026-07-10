@@ -25,6 +25,36 @@ function collectOutput(): { output: Writable; lines: () => Record<string, unknow
 }
 
 describe('MCP server configuration', () => {
+  it('flushes asynchronous tool responses before the input stream completes', async () => {
+    const dir = tempWorkspace();
+    try {
+      mkdirSync(join(dir, 'src'), { recursive: true });
+      writeFileSync(join(dir, 'src', 'example.ts'), 'export const answer = 42;\n');
+      const { output, lines } = collectOutput();
+      const requests = [
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'slop_suggest', arguments: { maxFiles: 10 } },
+        },
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: { name: 'slop_check_constitution', arguments: { path: 'src/example.ts' } },
+        },
+      ];
+      await runMcpServer(Readable.from(requests.map((request) => JSON.stringify(request) + '\n')), output, dir);
+
+      const responses = lines();
+      expect(responses).toHaveLength(2);
+      expect(responses.map((response) => response.id)).toEqual(expect.arrayContaining([1, 2]));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('loads the workspace config once and applies its constitution to tool calls', async () => {
     const dir = tempWorkspace();
     try {

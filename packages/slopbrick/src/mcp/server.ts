@@ -144,6 +144,18 @@ export async function runMcpServer(
   const config = resolvedConfig ?? (await loadConfig(cwd));
   return new Promise<void>((resolve) => {
     let buffer = '';
+    // Keep the transport open until every request queued from the input
+    // stream has produced a response. `Readable.from([...])` emits `end`
+    // immediately after the final line; resolving here would otherwise let
+    // embedders observe an empty/truncated response before async tool calls
+    // (for example `slop_scan_file`) finish.
+    const pending = new Set<Promise<void>>();
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      void Promise.all(pending).then(() => resolve());
+    };
     input.setEncoding('utf-8');
     input.on('data', (chunk: string) => {
       buffer += chunk;
@@ -153,7 +165,7 @@ export async function runMcpServer(
         if (line.length === 0) return;
         try {
           const req = JSON.parse(line) as JsonRpcRequest;
-          handleRequest(req, cwd, builtinRules, config).then((res) => {
+          const responseTask = handleRequest(req, cwd, builtinRules, config).then((res) => {
             if (res !== null) output.write(JSON.stringify(res) + '\n');
           }).catch((err) => {
             const message = err instanceof Error ? err.message : String(err);
@@ -164,6 +176,8 @@ export async function runMcpServer(
             };
             output.write(JSON.stringify(res) + '\n');
           });
+          pending.add(responseTask);
+          void responseTask.finally(() => pending.delete(responseTask));
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           const res: JsonRpcResponse = {
@@ -180,7 +194,7 @@ export async function runMcpServer(
         nlIdx = buffer.indexOf('\n');
       }
     });
-    input.on('end', () => resolve());
-    input.on('close', () => resolve());
+    input.on('end', finish);
+    input.on('close', finish);
   });
 }
