@@ -21,5 +21,6 @@ describe('v10.3 observation verifier', () => {
     expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, observations.slice(0, 1), [], coverage)).toMatchObject({ ok: false });
     expect(verifyV103Observations({ runId: 'smoke-002', expectedFileIdsByPolarity: expected }, observations, failures, coverage)).toMatchObject({ ok: false });
     expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, observations, [], coverage)).toMatchObject({ ok: false });
+    expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, observations, failures, { ...coverage, strata: [coverage.strata[0]!, coverage.strata[0]!] })).toMatchObject({ ok: false });
   });
 });
