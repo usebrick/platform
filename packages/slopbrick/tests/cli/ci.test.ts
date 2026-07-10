@@ -25,10 +25,19 @@ describe('ci gates the current scan outcome', () => {
     expect(report).toMatchObject({ completionStatus: 'complete' });
   });
 
-  it('fails --max-slop 1 using the current repository health, not stale health.json', async () => {
+  it('forwards root performance/display flags through the ci subcommand', async () => {
+    const result = await run([
+      'ci', '--workspace', workspace(), '--threads', '1', '--no-color', '--format', 'json',
+    ]);
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ completionStatus: 'complete' });
+    expect(result.stdout).not.toMatch(/\x1b\[/);
+  });
+
+  it('passes --max-slop 1 for a clean current scan', async () => {
     const dir = workspace();
     const result = await run(['ci', '--workspace', dir, '--max-slop', '1', '--format', 'json']);
-    expect(result.exitCode).toBe(1);
+    expect(result.exitCode).toBe(0);
     expect(result.stdout).toMatch(/repositoryHealth/);
   });
 
@@ -48,7 +57,7 @@ describe('ci gates the current scan outcome', () => {
   });
 
   it('keeps JSON completion status available when the scan fails its threshold', async () => {
-    const dir = workspace();
+    const dir = workspace('```ts\nexport const value = 1;\n```\n');
     const result = await run(['ci', '--workspace', dir, '--max-slop', '1', '--format', 'json']);
     expect(result.exitCode).toBe(1);
     const report = JSON.parse(result.stdout) as Record<string, unknown>;

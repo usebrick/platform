@@ -51,17 +51,13 @@ export function registerCi(
         }
         let exitCode = outcome.exitCode;
         const constitutionDrift = (outcome.report as typeof outcome.report & { constitutionDrift?: number }).constitutionDrift ?? 0;
-        // v0.15.0 U.4: --max-slop now gates on the composite
-        // repositoryHealth (the v3 replacement for slopIndex).
-        // Because repositoryHealth is "higher = better" while
-        // --max-slop is "fail if higher than N" (legacy semantics
-        // were "fail if slopIndex > N" where lower is better), we
-        // invert the comparison so users see the same behavior.
-        // TODO(U.5): replace --max-slop with --min-repository-health.
+        // `--max-slop` is defined in terms of the raw aiSlopScore: higher
+        // values mean more detected slop and fail the configured ceiling.
+        // Repository Health is a separate higher-is-better informational
+        // score and must not be used as an inverted proxy here.
         if (cmdOptions.maxSlop !== undefined) {
-          const maxInverse = 100 - cmdOptions.maxSlop;
-          if (outcome.report.repositoryHealth < maxInverse) {
-            logger.warn(`repositoryHealth ${outcome.report.repositoryHealth} < ${cmdOptions.maxSlop} (max-slop)`);
+          if (outcome.report.aiSlopScore > cmdOptions.maxSlop) {
+            logger.warn(`aiSlopScore ${outcome.report.aiSlopScore} > ${cmdOptions.maxSlop} (max-slop)`);
             exitCode = 1;
           }
         }
