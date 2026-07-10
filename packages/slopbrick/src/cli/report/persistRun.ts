@@ -249,16 +249,22 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       if (report.selectionAccounting) health.selectionAccounting = report.selectionAccounting;
       saveHealth(cwd, health);
       if (!options.quiet && !machineReadableStdout) {
-        // v0.18.2: include the Bayesian composite aggregate in the
-        // log line so users can see the per-scan probability without
-        // having to crack open health.json. Off by default — only
-        // present when the scan produced a non-empty aggregate.
-        const compositeSuffix = health.compositeScore
-          ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
-          : '';
-        logger.info(
-          `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiSlopScore} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
-        );
+        if (report.scoreValidity !== 'incomplete') {
+          // v0.18.2: include the Bayesian composite aggregate in the
+          // log line so users can see the per-scan probability without
+          // having to crack open health.json. Off by default — only
+          // present when the scan produced a non-empty aggregate.
+          const compositeSuffix = health.compositeScore
+            ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
+            : '';
+          logger.info(
+            `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiSlopScore} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
+          );
+        } else {
+          logger.info(
+            `Diagnostic memory persisted to .slopbrick/ (scoreValidity=${report.scoreValidity}; numeric scores are not valid for gating).`,
+          );
+        }
       }
     } catch (err) {
       if (!options.quiet && !machineReadableStdout) {

@@ -24,6 +24,72 @@ function createTmp(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-watch-'));
 }
 
+async function waitUntil(predicate: () => boolean, timeoutMs: number): Promise<void> {
+  const startedAt = Date.now();
+  while (!predicate()) {
+    if (Date.now() - startedAt >= timeoutMs) {
+      throw new Error(`condition not met within ${timeoutMs}ms`);
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 25));
+  }
+}
+
+async function exerciseEmptyStartWatch(
+  cwd: string,
+  invocation: 'flag' | 'subcommand',
+): Promise<{
+  initialOutput: string;
+  finalOutput: string;
+  exitCode: number | null;
+  memoryExistedBeforeFirstFile: boolean;
+}> {
+  const args = invocation === 'flag'
+    ? [BIN, 'scan', '--watch', '--workspace', cwd, '--no-telemetry']
+    : [BIN, 'watch', '--workspace', cwd];
+  const proc = spawn('node', args, {
+    cwd,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '';
+  proc.stdout?.on('data', (chunk) => (output += chunk.toString()));
+  proc.stderr?.on('data', (chunk) => (output += chunk.toString()));
+
+  try {
+    await waitUntil(
+      () => output.includes('Watching for changes...') || proc.exitCode !== null,
+      5_000,
+    );
+    if (!output.includes('Watching for changes...')) {
+      throw new Error(`watch process exited before installing its watcher:\n${output}`);
+    }
+
+    const initialOutput = output;
+    const memoryExistedBeforeFirstFile = existsSync(join(cwd, '.slopbrick'));
+    mkdirSync(join(cwd, 'src'), { recursive: true });
+    writeFileSync(join(cwd, 'src', 'added.ts'), 'export const added = 1;\n');
+
+    await waitUntil(
+      () => output.split('Watching for changes...').length - 1 >= 2 || proc.exitCode !== null,
+      8_000,
+    );
+    if (proc.exitCode !== null) {
+      throw new Error(`watch process exited before rescanning the first file:\n${output}`);
+    }
+
+    proc.kill('SIGINT');
+    const exitCode = await new Promise<number | null>((resolveExit, reject) => {
+      const timeout = setTimeout(() => reject(new Error('watch process ignored SIGINT')), 5_000);
+      proc.once('close', (code) => {
+        clearTimeout(timeout);
+        resolveExit(code);
+      });
+    });
+    return { initialOutput, finalOutput: output, exitCode, memoryExistedBeforeFirstFile };
+  } finally {
+    if (proc.exitCode === null) proc.kill('SIGKILL');
+  }
+}
+
 /**
  * Spawn the CLI in --watch mode, wait for the initial scan, write
  * a burst of files, wait for the debounce window, then close.
@@ -75,6 +141,27 @@ async function runWatchBurst(opts: {
 }
 
 describe('slopbrick --watch (v0.5.2)', () => {
+  it.each([
+    ['global --watch flag', 'flag'],
+    ['watch subcommand', 'subcommand'],
+  ] as const)('keeps the %s alive from empty through first file and exits cleanly', async (_label, invocation) => {
+    if (skipIfNoBin()) return;
+    const dir = createTmp();
+    try {
+      const result = await exerciseEmptyStartWatch(dir, invocation);
+      expect(result.initialOutput).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+      expect(result.initialOutput).toContain('Watching for changes...');
+      expect(result.initialOutput).not.toMatch(
+        /Repository Coherence|AI Slop Score|Repository Health|Threshold \(CI gate\)|✓ Clean|Memory persisted/,
+      );
+      expect(result.memoryExistedBeforeFirstFile).toBe(false);
+      expect(result.finalOutput.split('Watching for changes...').length - 1).toBeGreaterThanOrEqual(2);
+      expect(result.exitCode).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 20_000);
+
   it('runs an initial scan before watching', async () => {
     if (skipIfNoBin()) return;
     const dir = createTmp();

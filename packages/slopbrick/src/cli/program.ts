@@ -369,22 +369,34 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       const totalElapsed = Math.round(performance.now() - start);
       const notApplicableScan = isNotApplicableScan(report);
 
-      // Empty Git scopes are common in hooks and CI. They are successful
-      // no-ops, but they have no score-bearing evidence. Stop before every
-      // mutation/gate/fix path and let the renderer emit either one concise
-      // human notice or an explicitly not-applicable machine report.
-      if (isGitScopedEmptySelection(report, options)) {
-        renderOutput(report, options, cwd);
+      // No zero-file scan has score-bearing evidence. Stop before every
+      // mutation, fix, heatmap, comparison, and gate path, then preserve the
+      // narrower exit contract: empty Git scopes are successful no-ops while
+      // an ordinary unmatched workspace remains an error.
+      if (notApplicableScan) {
+        const gitScopedNoOp = isGitScopedEmptySelection(report, options);
+        if (!gitScopedNoOp && !machineReadableStdout) {
+          if (!options.quiet) {
+            logger.error(
+              formatScanValidityNotice(report) ??
+                'NO FILES ANALYSED — scores are not applicable for gating.',
+            );
+            logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
+          }
+        } else {
+          renderOutput(report, options, cwd);
+        }
+        const exitCode: 0 | 1 = gitScopedNoOp ? 0 : 1;
         const outcome: ScanActionOutcome = {
           report,
           config,
           scanStats,
           baseExitCode: 0,
-          exitCode: 0,
+          exitCode,
           noIncreaseFailure: false,
         };
         if (invokedByCi) return outcome;
-        process.exit(0);
+        process.exit(exitCode);
       }
 
       // v0.24.0 (Workstream C): opt-in network beacon. Fires ONLY

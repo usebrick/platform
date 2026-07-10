@@ -21,6 +21,102 @@ import type { FileScanResult } from '../../src/types';
 
 beforeAll(assertDistBuilt);
 
+const NOT_APPLICABLE_JSON_KEYS = new Set([
+  'version',
+  'generatedAt',
+  'configPath',
+  'completionStatus',
+  'scoreValidity',
+  'reason',
+  'message',
+  'requested',
+  'analyzed',
+  'failed',
+  'skipped',
+  'scanAccounting',
+  'selectionAccounting',
+  'diagnostics',
+]);
+
+function expectNotApplicableJsonEnvelope(value: unknown): asserts value is Record<string, unknown> {
+  expect(value).toBeTypeOf('object');
+  expect(value).not.toBeNull();
+  const envelope = value as Record<string, unknown>;
+  expect(envelope).toMatchObject({
+    completionStatus: 'empty',
+    scoreValidity: 'not-applicable',
+    reason: 'no-files-analyzed',
+    message: 'NO FILES ANALYSED — scores are not applicable for gating.',
+    requested: 0,
+    analyzed: 0,
+    failed: 0,
+    skipped: 0,
+    scanAccounting: {
+      selected: 0,
+      analyzed: 0,
+      zeroFinding: 0,
+      incrementalCached: 0,
+      parseFailed: 0,
+      timedOut: 0,
+      crashed: 0,
+      internalFailed: 0,
+    },
+  });
+  expect(envelope.version).toBeTypeOf('string');
+  expect(envelope.generatedAt).toBeTypeOf('string');
+  expect(Object.keys(envelope).filter((key) => !NOT_APPLICABLE_JSON_KEYS.has(key))).toEqual([]);
+}
+
+function expectNotApplicableSarifEnvelope(value: unknown): void {
+  expect(value).toBeTypeOf('object');
+  const sarif = value as {
+    $schema?: unknown;
+    version?: unknown;
+    runs?: Array<{
+      tool?: { driver?: { version?: unknown; properties?: Record<string, unknown> } };
+      results?: unknown[];
+    }>;
+  };
+  expect(sarif.$schema).toBe('https://json.schemastore.org/sarif-2.1.0.json');
+  expect(sarif.version).toBe('2.1.0');
+  expect(sarif.runs?.[0]?.tool?.driver?.version).toBeTypeOf('string');
+  expect(sarif.runs?.[0]?.results).toEqual([]);
+  const properties = sarif.runs?.[0]?.tool?.driver?.properties;
+  expect(properties).toMatchObject({
+    completionStatus: 'empty',
+    scoreValidity: 'not-applicable',
+    reason: 'no-files-analyzed',
+    message: 'NO FILES ANALYSED — scores are not applicable for gating.',
+    requested: 0,
+    analyzed: 0,
+    failed: 0,
+    skipped: 0,
+    scanAccounting: {
+      selected: 0,
+      analyzed: 0,
+      zeroFinding: 0,
+      incrementalCached: 0,
+      parseFailed: 0,
+      timedOut: 0,
+      crashed: 0,
+      internalFailed: 0,
+    },
+  });
+  expect(properties?.selectionAccounting).toBeTypeOf('object');
+  expect(Object.keys(properties ?? {}).sort()).toEqual([
+    'analyzed',
+    'completionStatus',
+    'failed',
+    'message',
+    'reason',
+    'requested',
+    'scanAccounting',
+    'scoreValidity',
+    'selectionAccounting',
+    'skipped',
+  ]);
+}
+
 describe('scan completion status', () => {
   const dirs: string[] = [];
   afterEach(() => { while (dirs.length) cleanupTempDir(dirs.pop()!); });
@@ -759,13 +855,11 @@ describe('scan completion status', () => {
     expect(explainedTerminal.stdout).toContain('Score explanation (deterministic aggregate inputs only)');
   });
 
-  it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
+  it('renders an empty JSON scan as a score-free not-applicable envelope', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     const { stdout, exitCode } = await run(['--workspace', dir, '--format', 'json']);
     expect(exitCode).toBe(1);
-    const parsed = JSON.parse(stdout) as Record<string, unknown>;
-    expect(parsed).toMatchObject({ completionStatus: 'empty', requested: 0, analyzed: 0, failed: 0 });
-    expect(parsed.scoreBasis).toMatchObject({ denominator: 0, analyzedFiles: 0, issueSet: 'effective' });
+    expectNotApplicableJsonEnvelope(JSON.parse(stdout));
   });
 
   it('marks parse errors as partial and non-zero', async () => {
@@ -850,14 +944,195 @@ describe('scan completion status', () => {
     expect(result.stdout).toContain('INCOMPLETE SCAN');
     expect(result.stdout).toContain('not valid for gating');
     expect(result.stderr).toContain('Scan partial');
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
+      /AI Slop Score:|Repository Health:|Repository Coherence:|Threshold \(CI gate\)|✓ Clean|health\.json: repo=|codebase is clean|no detectable AI slop/i,
+    );
+  });
+
+  it('renders partial HTML as an invalid diagnostic envelope without clean or pass claims', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+
+    const result = await run(['--workspace', dir, '--format', 'html', '--no-telemetry']);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('<!DOCTYPE html>');
+    expect(result.stdout).toContain('data-score-validity="incomplete"');
+    expect(result.stdout).toContain('INCOMPLETE SCAN');
+    expect(result.stdout).not.toMatch(
+      /AI Slop Score|Repository Health|Repository Coherence|Threshold \(CI gate\)|✓ Clean|codebase is clean|no detectable AI slop/i,
+    );
   });
 
   it.each([
-    ['--fix'], ['--fix', '--dry-run'], ['--heatmap'],
-  ])('keeps empty %s scans non-zero', async (...args: string[]) => {
+    ['pretty', ['--format', 'pretty']],
+    ['fix', ['--fix']],
+    ['fix dry-run', ['--fix', '--dry-run']],
+    ['heatmap', ['--heatmap']],
+    ['suggest', ['--suggest']],
+    ['brief', ['--brief']],
+    ['why-failing', ['--why-failing']],
+    ['explain-score', ['--explain-score']],
+  ] as const)('routes an ordinary empty %s scan through the human validity boundary', async (_label, args) => {
     const dir = createTmpDir(); dirs.push(dir);
     const result = await run(['--workspace', dir, ...args]);
     expect(result.exitCode).toBe(1);
+    expect(`${result.stdout}\n${result.stderr}`).toContain(
+      'NO FILES ANALYSED — scores are not applicable for gating.',
+    );
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
+      /AI Slop Score:|Repository Health:|Repository Coherence:|Threshold \(CI gate\)|✓ Clean|Fixes applied|ROI\s+Score|--dry-run:|auto-fix advice/,
+    );
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+  });
+
+  it.each([
+    ['json', ['--format', 'json']],
+    ['fix JSON', ['--fix', '--format', 'json']],
+    ['heatmap JSON', ['--heatmap', '--format', 'json']],
+    ['suggest JSON', ['--suggest', '--format', 'json']],
+    ['brief JSON', ['--brief', '--format', 'json']],
+    ['why-failing JSON', ['--why-failing', '--format', 'json']],
+    ['explain-score JSON', ['--explain-score', '--format', 'json']],
+  ] as const)('routes an ordinary empty %s scan through the JSON validity boundary', async (_label, args) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await run(['--workspace', dir, '--no-telemetry', ...args]);
+    expect(result.exitCode).toBe(1);
+    expectNotApplicableJsonEnvelope(JSON.parse(result.stdout));
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)(
+    'routes empty --%s alternate human views through the successful no-op boundary',
+    async (scope) => {
+      for (const args of [
+        ['--fix'],
+        ['--fix', '--dry-run'],
+        ['--heatmap'],
+        ['--suggest'],
+        ['--brief'],
+        ['--why-failing'],
+        ['--explain-score'],
+      ]) {
+        const dir = createCleanGitWorkspace();
+        const result = await run(['--workspace', dir, `--${scope}`, '--no-telemetry', ...args]);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout.trim()).toBe('NO FILES SELECTED — scores are not applicable.');
+        expect(result.stderr).toBe('');
+        expect(result.stdout).not.toMatch(
+          /AI Slop Score:|Repository Health:|Repository Coherence:|Threshold \(CI gate\)|✓ Clean|auto-fix advice|Score explanation/,
+        );
+        expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+      }
+    },
+  );
+
+  it.each(['staged', 'changed'] as const)(
+    'keeps empty --%s alternate JSON views typed and score-free',
+    async (scope) => {
+      for (const args of [
+        ['--fix'],
+        ['--heatmap'],
+        ['--suggest'],
+        ['--brief'],
+        ['--why-failing'],
+        ['--explain-score'],
+      ]) {
+        const dir = createCleanGitWorkspace();
+        const result = await run([
+          '--workspace', dir, `--${scope}`, '--no-telemetry', '--format', 'json', ...args,
+        ]);
+        expect(result.exitCode).toBe(0);
+        expectNotApplicableJsonEnvelope(JSON.parse(result.stdout));
+        expect(result.stderr).toBe('');
+        expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+      }
+    },
+  );
+
+  it.each([
+    ['ordinary', undefined, 1],
+    ['staged', 'staged', 0],
+    ['changed', 'changed', 0],
+  ] as const)('writes typed score-free files for an empty %s scan', async (_label, scope, expectedExit) => {
+    for (const format of ['json', 'html'] as const) {
+      const dir = scope ? createCleanGitWorkspace() : createTmpDir();
+      if (!scope) dirs.push(dir);
+      const outputPath = join(dir, `not-applicable.${format}`);
+      const result = await run([
+        '--workspace', dir,
+        ...(scope ? [`--${scope}`] : []),
+        `--${format}`, outputPath,
+        '--no-telemetry',
+        '--quiet',
+      ]);
+
+      expect(result.exitCode).toBe(expectedExit);
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toBe('');
+      expect(existsSync(outputPath)).toBe(true);
+      if (format === 'json') {
+        expectNotApplicableJsonEnvelope(JSON.parse(readFileSync(outputPath, 'utf8')));
+      } else {
+        const html = readFileSync(outputPath, 'utf8');
+        expect(html).toContain('<!DOCTYPE html>');
+        expect(html).toContain('data-score-validity="not-applicable"');
+        expect(html).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+        expect(html).not.toMatch(/AI Slop Score|Repository Health|Threshold \(CI gate\)|auto-fix advice/);
+      }
+      expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+    }
+  });
+
+  it.each([
+    ['ordinary', undefined, 1],
+    ['staged', 'staged', 0],
+    ['changed', 'changed', 0],
+  ] as const)('preserves quiet output for an empty %s scan', async (_label, scope, expectedExit) => {
+    const dir = scope ? createCleanGitWorkspace() : createTmpDir();
+    if (!scope) dirs.push(dir);
+    const result = await run([
+      '--workspace', dir,
+      ...(scope ? [`--${scope}`] : []),
+      '--suggest',
+      '--quiet',
+      '--no-telemetry',
+    ]);
+    expect(result.exitCode).toBe(expectedExit);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+  });
+
+  it.each([
+    ['sarif', ['--format', 'sarif']],
+    ['fix SARIF', ['--fix', '--format', 'sarif']],
+    ['heatmap SARIF', ['--heatmap', '--format', 'sarif']],
+  ] as const)('routes an ordinary empty %s scan through the SARIF validity boundary', async (_label, args) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await run(['--workspace', dir, '--no-telemetry', ...args]);
+    expect(result.exitCode).toBe(1);
+    expectNotApplicableSarifEnvelope(JSON.parse(result.stdout));
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+  });
+
+  it.each([
+    ['html', ['--format', 'html']],
+    ['fix HTML', ['--fix', '--format', 'html']],
+    ['heatmap HTML', ['--heatmap', '--format', 'html']],
+  ] as const)('routes an ordinary empty %s scan through the HTML validity boundary', async (_label, args) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await run(['--workspace', dir, '--no-telemetry', ...args]);
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('<!DOCTYPE html>');
+    expect(result.stdout).toContain('data-score-validity="not-applicable"');
+    expect(result.stdout).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
+    expect(result.stdout).not.toMatch(/AI Slop Score|Repository Health|Threshold \(CI gate\)|Fixes applied|ROI\s+Score/);
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
   });
 
   it.each(['staged', 'changed'] as const)('keeps an empty %s source scan not-applicable and side-effect free', async (scope) => {
@@ -921,13 +1196,7 @@ describe('scan completion status', () => {
       '--workspace', jsonDir, `--${scope}`, '--format', 'json', '--no-telemetry',
     ]);
     expect(jsonResult.exitCode).toBe(0);
-    expect(JSON.parse(jsonResult.stdout)).toMatchObject({
-      completionStatus: 'empty',
-      scoreValidity: 'not-applicable',
-      requested: 0,
-      analyzed: 0,
-      failed: 0,
-    });
+    expectNotApplicableJsonEnvelope(JSON.parse(jsonResult.stdout));
     expect(jsonResult.stderr).toBe('');
     expect(existsSync(join(jsonDir, '.slopbrick'))).toBe(false);
 
@@ -939,10 +1208,7 @@ describe('scan completion status', () => {
     const sarif = JSON.parse(sarifResult.stdout) as {
       runs: Array<{ tool: { driver: { properties?: Record<string, unknown> } } }>;
     };
-    expect(sarif.runs[0]?.tool.driver.properties).toMatchObject({
-      completionStatus: 'empty',
-      scoreValidity: 'not-applicable',
-    });
+    expectNotApplicableSarifEnvelope(sarif);
     expect(sarifResult.stderr).toBe('');
     expect(existsSync(join(sarifDir, '.slopbrick'))).toBe(false);
 

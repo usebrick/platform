@@ -1,6 +1,4 @@
-import { resolve } from 'node:path';
 import { Command } from 'commander';
-import { watchProject } from '../watch.js';
 import type { CliGlobalOptions } from '../scan.js';
 
 /**
@@ -23,12 +21,11 @@ export function registerWatch(program: Command, scanAction: (paths: string[], op
       const options: CliGlobalOptions = {
         ...rawGlobals,
         noIncrease: rawGlobals.increase === false,
+        watch: true,
       };
-      const cwd = resolve(options.workspace ?? process.cwd());
-      // Run an initial scan to populate the report and, when files are
-      // selected, the score-bearing artifacts. Empty workspaces stay
-      // side-effect free while `watchProject` waits for the first file.
+      // Mark the mode before entering the shared action. scanAction delegates
+      // directly to watchProject, whose doScan owns the single initial scan;
+      // a normal scanAction would exit before a watcher could be installed.
       await scanAction([], options, command);
-      await watchProject(options, cwd, []);
     });
 }

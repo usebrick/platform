@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { Category, Issue, ProjectReport, Severity } from '../types';
+import { isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 interface SarifArtifactLocation {
   uri: string;
@@ -107,6 +108,12 @@ interface SarifToolDriver {
     scoreBasis?: NonNullable<ProjectReport['scoreBasis']>;
     completionStatus?: NonNullable<ProjectReport['completionStatus']>;
     scoreValidity?: NonNullable<ProjectReport['scoreValidity']>;
+    reason?: 'no-files-analyzed';
+    message?: string;
+    requested?: number;
+    analyzed?: number;
+    failed?: number;
+    skipped?: number;
     scanAccounting?: NonNullable<ProjectReport['scanAccounting']>;
     selectionAccounting?: NonNullable<ProjectReport['selectionAccounting']>;
     /** Headline values carried with SARIF so integrations retain scan context. */
@@ -348,8 +355,10 @@ export function formatSarif(
   report: ProjectReport,
   options?: { cwd?: string },
 ): string {
+  const notApplicable = isNotApplicableScan(report);
+  const reportableIssues = notApplicable ? [] : report.issues;
   const rulesById = new Map<string, SarifRule>();
-  for (const issue of report.issues) {
+  for (const issue of reportableIssues) {
     if (!rulesById.has(issue.ruleId)) {
       rulesById.set(issue.ruleId, buildRuleFromIssue(issue));
     }
@@ -358,27 +367,30 @@ export function formatSarif(
   const rules = Array.from(rulesById.values()).sort((a, b) => a.id.localeCompare(b.id));
   // One read per file, even when many issues share the same source.
   const fileContentCache = new Map<string, string>();
-  const results = report.issues.map((issue) =>
+  const results = reportableIssues.map((issue) =>
     buildResultFromIssue(issue, options?.cwd, fileContentCache),
   );
 
-  // Every ProjectReport carries the deterministic headline scores, so every
-  // SARIF log carries them too. The Bayesian aggregate and score provenance
-  // remain optional for historical/programmatic reports that lack them.
-  const driverProperties = {
-    ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
-    ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
-    ...(report.completionStatus !== undefined ? { completionStatus: report.completionStatus } : {}),
-    ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
-    ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
-    ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
-    scores: {
-      aiSlopScore: report.aiSlopScore,
-      engineeringHygiene: report.engineeringHygiene,
-      security: report.security,
-      repositoryHealth: report.repositoryHealth,
-    },
-  };
+  // Valid reports retain the established score-bearing SARIF metadata.
+  // Empty reports use a discriminated, accounting-only projection so loose
+  // consumers cannot mistake internal 0/100 placeholders for measurements.
+  const driverProperties: NonNullable<SarifToolDriver['properties']> =
+    notApplicable
+      ? projectNotApplicableScan(report)
+      : {
+          ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
+          ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
+          ...(report.completionStatus !== undefined ? { completionStatus: report.completionStatus } : {}),
+          ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
+          ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
+          ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
+          scores: {
+            aiSlopScore: report.aiSlopScore,
+            engineeringHygiene: report.engineeringHygiene,
+            security: report.security,
+            repositoryHealth: report.repositoryHealth,
+          },
+        };
 
   const log: SarifLog = {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',

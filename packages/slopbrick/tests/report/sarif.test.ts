@@ -63,6 +63,37 @@ describe('formatSarif — SARIF 2.1.0 envelope', () => {
     expect(log.runs[0].results).toEqual([]);
     expect(log.runs[0].tool.driver.rules).toEqual([]);
   });
+
+  it('drops stale rules and results from a contradictory not-applicable report', () => {
+    const log = JSON.parse(formatSarif(makeReport({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+      skipped: 0,
+      scanAccounting: {
+        selected: 0,
+        analyzed: 0,
+        zeroFinding: 0,
+        incrementalCached: 0,
+        parseFailed: 0,
+        timedOut: 0,
+        crashed: 0,
+        internalFailed: 0,
+      },
+      issues: [sampleIssue],
+    }))) as {
+      runs: Array<{
+        results: unknown[];
+        tool: { driver: { rules: unknown[]; properties: Record<string, unknown> } };
+      }>;
+    };
+
+    expect(log.runs[0].results).toEqual([]);
+    expect(log.runs[0].tool.driver.rules).toEqual([]);
+    expect(log.runs[0].tool.driver.properties).not.toHaveProperty('scores');
+  });
 });
 
 // ---------- Per-result shape ----------

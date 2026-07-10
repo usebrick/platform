@@ -1,5 +1,6 @@
 import type { ProjectReport } from '../types';
 import { SCORE_BRIEFS } from './score-contract.js';
+import { isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 /**
  * v0.43.0: every JSON report now embeds a `scoreBriefs` object —
@@ -22,6 +23,16 @@ export function formatJson(
   report: ProjectReport,
   options: { includeScoreExplanation?: boolean } = {},
 ): string {
+  if (isNotApplicableScan(report)) {
+    const envelope = {
+      version: report.version,
+      generatedAt: report.generatedAt,
+      ...(report.configPath ? { configPath: report.configPath } : {}),
+      ...projectNotApplicableScan(report),
+    };
+    return JSON.stringify(envelope, null, 2);
+  }
+
   const { scoreExplanation, ...withoutScoreExplanation } = report;
   const enriched = {
     ...withoutScoreExplanation,

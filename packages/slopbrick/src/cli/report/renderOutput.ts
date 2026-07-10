@@ -24,6 +24,7 @@ import {
   formatGitScopedEmptySelectionNotice,
   formatScanValidityNotice,
   isGitScopedEmptySelection,
+  isNotApplicableScan,
 } from '../../report/scan-validity.js';
 import type { CliGlobalOptions } from '../scan';
 import type { ProjectReport } from '../../types';
@@ -41,13 +42,14 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
     process.exit(2);
   }
 
-  // A zero-file report deliberately retains numeric placeholders for wire
-  // compatibility, but those values are not scores. Machine formats keep
-  // their schema and explicit scoreValidity; every human view collapses to
-  // one truthful notice instead of clean/health/threshold/advice claims.
-  if (report.scoreValidity === 'not-applicable') {
-    const machineReportRequested = Boolean(options.html || options.json) ||
-      options.format === 'json' || options.format === 'sarif' || options.format === 'html';
+  const machineReportRequested = Boolean(options.html || options.json) ||
+    options.format === 'json' || options.format === 'sarif' || options.format === 'html';
+
+  // Internal score aggregation still needs numeric fields, but zero-file
+  // renderers must never expose those placeholders as measurements. Machine
+  // serializers project a discriminated metadata envelope; every human view
+  // collapses to one truthful notice.
+  if (isNotApplicableScan(report)) {
     if (!machineReportRequested) {
       if (!options.quiet) {
         logger.info(
@@ -65,6 +67,20 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
       brief: false,
       suggest: false,
     };
+  }
+
+  // A partial scan may retain findings for diagnosis, but its aggregate
+  // placeholders are not measurements. Keep machine formats parseable with
+  // their explicit incomplete discriminator; suppress every human score,
+  // clean/pass, advice, and threshold view behind the validity notice.
+  if (report.scoreValidity === 'incomplete' && !machineReportRequested) {
+    if (!options.quiet) {
+      logger.info(
+        formatScanValidityNotice(report) ??
+          'INCOMPLETE SCAN — scores are not valid for gating.',
+      );
+    }
+    return;
   }
 
   // Explicit score explanation is intentionally opt-in. In JSON mode it

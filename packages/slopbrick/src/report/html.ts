@@ -22,21 +22,29 @@ import {
   renderParseErrors,
 } from './html/sections.js';
 import { renderStyles, renderScripts } from './html/static.js';
-import { formatScanValidityNotice } from './scan-validity.js';
+import { formatScanValidityNotice, isNotApplicableScan } from './scan-validity.js';
 
 export function formatHtml(report: ProjectReport): string {
-  if (report.scoreValidity === 'not-applicable') {
-    const notice = formatScanValidityNotice(report) ?? 'NO FILES ANALYSED — scores are not applicable for gating.';
+  const invalidValidity = isNotApplicableScan(report)
+    ? 'not-applicable'
+    : report.scoreValidity === 'incomplete'
+      ? 'incomplete'
+      : undefined;
+  if (invalidValidity) {
+    const notice = formatScanValidityNotice(report) ??
+      (invalidValidity === 'not-applicable'
+        ? 'NO FILES ANALYSED — scores are not applicable for gating.'
+        : 'INCOMPLETE SCAN — scores are not valid for gating.');
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="slopbrick-score-validity" content="not-applicable">
+  <meta name="slopbrick-score-validity" content="${invalidValidity}">
   <title>slopbrick report</title>
 </head>
 <body>
-  <main><p data-score-validity="not-applicable">${notice}</p></main>
+  <main><p data-score-validity="${invalidValidity}">${notice}</p></main>
 </body>
 </html>`;
   }
