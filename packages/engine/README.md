@@ -1,11 +1,13 @@
 # @usebrick/engine
 
-The scanning engine extracted from `slopbrick`. Pure parsing and scoring functions are reusable from the CLI, MCP server, and future web IDEs; compatibility adapters that explicitly perform filesystem I/O are called out below.
+The scanning engine extracted from `slopbrick`. The package root preserves
+Node compatibility adapters; pure parsing and scoring functions are available
+from the explicit `@usebrick/engine/pure` subpath.
 
 > **v0.15.0:** Extracted from `slopbrick/src/engine/`. The engine is now its
 > own workspace package, consumed by `slopbrick` as a workspace dep. The
-> pure-function surface (parser, scoring, LR combiner, structure
-> persistence, Bayesian math) is the engine's public API.
+> pure-function surface is a separately testable public API. The root entry
+> point remains a Node-oriented compatibility API.
 
 ## What lives here
 
@@ -14,28 +16,42 @@ Pure functions that:
 - produce structured outputs (LRs, scores, classifications)
 - have no filesystem, network, or process side effects
 
-Pure core functions do not perform I/O. The package also retains a small set of
-explicit compatibility adapters for existing callers; these are listed in the
-API section and are the only filesystem-touching entry points.
+`@usebrick/engine/pure` has no filesystem discovery, `globby`, process-control,
+or console dependency. The root package retains explicit Node adapters for
+existing CLI callers.
 
 ## What does NOT live here
 
 CLI orchestration, process control (`process.exit`, `process.argv`), and
 stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 
-## Public API (`packages/engine/src/index.ts`)
+## Public APIs
 
-- `MemoryIO` builders — `buildInventoryFromScan`, `buildConstitutionFromConfig`,
-  and `buildHealthFromReport`; `saveInventory`, `readRuns`, and `appendRun` are
-  the explicit persistence adapters
-- `computeLikelihoodRatios(ruleIds, corpus)` — LR math
-- `bayesianPosterior(firedRuleIds, lrs)` — naive Bayes update
-- `parseSource(source, filePath)` — pure AST parsing (no filesystem access)
+### Pure API (`@usebrick/engine/pure`)
+
+- `parseSource(source, filePath)` — parse text supplied by the host
+- `extractSignatures(source, filePath, workspaceDir)`,
+  `fingerprintSignature(signature)`, and `signatureSimilarity(a, b)`
+- `computeLikelihoodRatios(ruleIds, signalData, corpus?)` and
+  `bayesianPosterior(firedRuleIds, likelihoodRatios, prior?)`
+- pure graph, distribution, novelty, scoring, and statistical helpers
+
+The exact runtime export contract is enforced by
+[`tests/pure-api.test.ts`](./tests/pure-api.test.ts). These runnable, compiled
+examples are the documentation source for the three most common calls:
+
+- [`examples/pure-parse.ts`](./examples/pure-parse.ts)
+- [`examples/pure-signatures.ts`](./examples/pure-signatures.ts)
+- [`examples/pure-likelihood.ts`](./examples/pure-likelihood.ts)
+
+### Node compatibility API (`@usebrick/engine`)
+
 - `parseFile(filePath, opts?)` — compatibility filesystem adapter with optional AST cache
-- `extractSignatures(source, filePath, workspaceDir)` — pure signature extraction
-- `findSimilarFunctions(query, options?)` — workspace adapter that reads files before using the pure similarity functions
-- Additional pure graph, distribution, novelty, and statistical helpers are
-  listed and locked by `tests/api.test.ts` (the runtime export snapshot).
+- `findSimilarFunctions(query, options?)` — workspace adapter that reads files
+- `saveInventory`, `readRuns`, and `appendRun` — persistence adapters
+- `buildInventoryFromScan`, `buildConstitutionFromConfig`, and
+  `buildHealthFromReport` remain root-only until their `@usebrick/core`
+  runtime I/O dependency is separated.
 
 ## Build dependency
 
@@ -46,9 +62,9 @@ stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 
 ## Status
 
-v0.14.5 workspace package: the pure scanning logic lives here; the CLI-side
-I/O adapters and command modules stay in `slopbrick/`. The API snapshot and
-package typecheck must pass before changing public exports.
+The root compatibility API and pure subpath have independent exact export
+contracts. Package typecheck, examples, and both contracts must pass before
+changing public exports.
 
 ## License
 

@@ -121,7 +121,10 @@ The legacy `slopIndex` field is kept as optional on `ProjectReport` for backward
 v0.15.0 is a **hard-break release** that ships the full v0.15.0 plan:
 
 - **Rebrand**: "Repository Memory Platform" → **"Repository Structure Platform"**. The on-disk artifact `.slopbrick/memory.md` is now `.slopbrick/structure.md`. Types renamed: `MemoryFile` → `StructureFile`, `loadMemory` → `loadStructure`, etc.
-- **Engine extraction**: `packages/engine/` is a new workspace package containing the pure scanning logic (parser, scoring, LR combiner, structure persistence). No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs.
+- **Engine extraction**: `packages/engine/` contains pure parsing/scoring APIs
+  at `@usebrick/engine/pure` plus explicit Node compatibility adapters at the
+  root entry point. The pure subpath prohibits filesystem discovery,
+  `console.log`, and process control.
 - **Multi-score model**: The single `slopIndex` is replaced by 4 independent scores: `aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth` (composite). (Originally `aiQuality` in v0.15.0; renamed in v0.21.0 when the field was flipped to the natural-reading "raw amount of slop" direction.)
 - **Engine/UI taxonomy seam**: The engine's 6 verdict taxonomy (USEFUL/OK/NOISY/INVERTED/HYGIENE/DORMANT) is decoupled from the user-facing 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) via `bucketForVerdict()`.
 - **Schema codegen**: JSON Schemas are now the single source of truth; TypeScript types are codegen'd from them. CI fails if schemas and types drift.
@@ -138,7 +141,7 @@ See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for f
 |---------|--------|---------|
 | `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. Published v0.43.0 exposes the 4-score model, 103 rules, MCP server, and calibrate subcommand; v10-calibrated against 576,750 files. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers + verdict taxonomy for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
-| `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | The pure scanning engine extracted from slopbrick. No I/O, no console.log, no process.exit. Reusable from CLI, MCP, future web IDEs. |
+| `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | Pure scanning APIs at `@usebrick/engine/pure`; the root retains explicit Node adapters for CLI compatibility. |
 | `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + native browser animation APIs, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
@@ -157,7 +160,7 @@ So:
 ```
 slopbrick              ← the CLI (this monorepo, published)
 @usebrick/core         ← the schema + readers (workspace-only for now)
-@usebrick/engine       ← the pure scanning engine (workspace-only, new in v0.15.0)
+@usebrick/engine/pure  ← pure parsing/scoring API (workspace-only, new in v0.15.0)
 @usebrick/mcp          ← future: standalone MCP server (library)
 @usebrick/sdk          ← future: programmatic SDK (library)
 ```
@@ -173,7 +176,7 @@ slopbrick              ← the CLI (this monorepo, published)
                                │ calls
                                ▼
                   ┌────────────────────────────┐
-                  │   @usebrick/engine         │  ← pure functions (packages/engine/)
+                  │   @usebrick/engine/pure    │  ← pure functions (packages/engine/)
                   │   parser, scoring,         │
                   │   lr-combiner, visitors    │
                   └────────────┬───────────────┘

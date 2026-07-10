@@ -111,8 +111,6 @@ describe('@usebrick/engine public API', () => {
       'KL_NOVELTY_EPSILON',
     ];
 
-    for (const name of expected) {
-      expect(engine, `engine should export ${name}`).toHaveProperty(name);
-    }
+    expect(Object.keys(engine).sort()).toEqual(expected.sort());
   });
 });

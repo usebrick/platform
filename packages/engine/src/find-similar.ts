@@ -25,38 +25,21 @@
  * no embedding dependency, fast even on 100k+ files.
  */
 
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
+import {
+  extractSignatures,
+  fingerprintSignature,
+  signatureSimilarity,
+  type ComponentSignature,
+} from './signatures';
 
-/** Local `matchAll` — copied from slopbrick's `rules/utils.ts` to
- *  avoid a workspace-level dep. The engine can't import from slopbrick
- *  (would create a circular dep). */
-function matchAll(re: RegExp, source: string): RegExpExecArray[] {
-  // String.prototype.matchAll requires the regex to have the g flag.
-  const gRe = re.global ? re : new RegExp(re.source, re.flags + 'g');
-  return Array.from(source.matchAll(gRe));
-}
-
-/**
- * Normalized signature for a single function/component in the codebase.
- */
-export interface ComponentSignature {
-  /** Function/component name (PascalCase for components, camelCase for hooks). */
-  name: string;
-  /** Absolute path of the file the signature lives in. */
-  file: string;
-  /** Path relative to the workspace, for display in results. */
-  fileRel: string;
-  /** Line number (1-indexed) where the signature is defined. */
-  line: number;
-  /** Sorted, deduplicated parameter names (without `:` types). */
-  params: string[];
-  /** React hooks used (useState, useEffect, etc.). */
-  hooks: string[];
-  /** Component props accepted (for React components). */
-  props: string[];
-}
+export {
+  extractSignatures,
+  fingerprintSignature,
+  signatureSimilarity,
+  type ComponentSignature,
+} from './signatures';
 
 /** A single result from `findSimilarFunctions`. */
 export interface SimilarMatch {
@@ -82,143 +65,6 @@ export interface FindSimilarQuery {
   limit?: number;
   /** Workspace directory to search. */
   workspaceDir: string;
-}
-
-const NAME_RE = /(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)/g;
-const ARROW_RE = /(?:export\s+(?:default\s+)?)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>/g;
-const HOOK_RE = /\b(use[A-Z][\w$]*)\s*\(/g;
-
-const PARAM_TOKEN_RE = /[A-Za-z_$][\w$]*/g;
-const PROP_TOKEN_RE = /([A-Za-z_$][\w$]*)(?=\s*[?:])/g;
-
-/**
- * Extract every component/function signature from a single source string.
- * Pure function — no I/O.
- */
-export function extractSignatures(source: string, filePath: string, workspaceDir: string): ComponentSignature[] {
-  const signatures: ComponentSignature[] = [];
-  const seen = new Set<string>();
-
-  // Match named functions: `function Foo(...)`, `export function Bar(...)`, `async function Baz(...)`.
-  for (const m of matchAll(NAME_RE, source)) {
-    const name = m[1];
-    if (!name || seen.has(name)) continue;
-    const paramList = m[2] ?? '';
-    const line = source.slice(0, m.index).split('\n').length;
-    const hooks = unique(extractHooks(source));
-    const props = extractPropsFromSignature(paramList);
-    const params = extractParamNames(paramList);
-    seen.add(name);
-    signatures.push({
-      name,
-      file: filePath,
-      fileRel: relativeOrSelf(workspaceDir, filePath),
-      line,
-      params,
-      hooks,
-      props,
-    });
-  }
-
-  // Match arrow consts: `const Foo = (...) =>`, `export const Bar = (...) =>`.
-  for (const m of matchAll(ARROW_RE, source)) {
-    const name = m[1];
-    if (!name || seen.has(name)) continue;
-    const paramList = m[2] ?? '';
-    const line = source.slice(0, m.index).split('\n').length;
-    const hooks = unique(extractHooks(source));
-    const props = extractPropsFromSignature(paramList);
-    const params = extractParamNames(paramList);
-    seen.add(name);
-    signatures.push({
-      name,
-      file: filePath,
-      fileRel: relativeOrSelf(workspaceDir, filePath),
-      line,
-      params,
-      hooks,
-      props,
-    });
-  }
-
-  return signatures;
-}
-
-function extractHooks(source: string): string[] {
-  const hooks: string[] = [];
-  for (const m of matchAll(HOOK_RE, source)) {
-    if (m[1]) hooks.push(m[1]);
-  }
-  return hooks;
-}
-
-function extractPropsFromSignature(paramList: string): string[] {
-  // For typed React components, props appear as `{ name: type, ... }` or
-  // `{ name }` shorthand. Strip the type annotation before the colon.
-  const props: string[] = [];
-  // Walk the param list and extract identifier names. Simple regex:
-  // matches identifiers that look like object keys (followed by `:`,
-  // `?`, or `,`). Doesn't handle deeply nested generics, but it's a
-  // good-enough heuristic for component props.
-  const segments = paramList.split(',');
-  for (const seg of segments) {
-    const trimmed = seg.trim();
-    // Skip destructuring with rest/spread.
-    if (trimmed.startsWith('...') || trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      // Inside a destructuring pattern, capture identifiers.
-      for (const m of trimmed.matchAll(PARAM_TOKEN_RE)) {
-        if (m[0] && !props.includes(m[0])) props.push(m[0]);
-      }
-      continue;
-    }
-    // Skip the trivial `props` shorthand parameter — not a prop name.
-    if (trimmed === 'props') continue;
-    // Take identifier before `:` or `?` or `=`.
-    const id = trimmed.match(PARAM_TOKEN_RE)?.[0];
-    if (id && id !== 'props') props.push(id);
-  }
-  return unique(props);
-}
-
-function extractParamNames(paramList: string): string[] {
-  // Top-level param list (might have nested generics). Extract every
-  // identifier. This is intentionally lenient — false positives in the
-  // fingerprint are rare and don't affect similarity ranking much.
-  const tokens: string[] = [];
-  for (const m of paramList.matchAll(PARAM_TOKEN_RE)) {
-    if (m[0]) tokens.push(m[0]);
-  }
-  // Filter out common TS keyword-like tokens.
-  const filtered = tokens.filter(
-    (t) => t !== 'props' && t !== 'state' && !t.match(/^[A-Z]/),
-  );
-  return unique(filtered);
-}
-
-/** Stable fingerprint: sha256 over sorted feature set. */
-export function fingerprintSignature(sig: Pick<ComponentSignature, 'hooks' | 'props' | 'params'>): string {
-  const sortedHooks = [...sig.hooks].sort();
-  const sortedProps = [...sig.props].sort();
-  const sortedParams = [...sig.params].sort();
-  const payload = `${sortedHooks.join(',')}|${sortedProps.join(',')}|${sortedParams.join(',')}`;
-  return createHash('sha256').update(payload).digest('hex').slice(0, 16);
-}
-
-/**
- * Jaccard similarity over the union of (hooks ∪ props ∪ params).
- * Returns 0..1. Identical sets → 1. Disjoint → 0.
- */
-export function signatureSimilarity(
-  a: Pick<ComponentSignature, 'hooks' | 'props' | 'params'>,
-  b: Pick<ComponentSignature, 'hooks' | 'props' | 'params'>,
-): number {
-  const aSet = new Set([...a.hooks, ...a.props, ...a.params]);
-  const bSet = new Set([...b.hooks, ...b.props, ...b.params]);
-  if (aSet.size === 0 && bSet.size === 0) return 0;
-  let intersection = 0;
-  for (const x of aSet) if (bSet.has(x)) intersection += 1;
-  const union = aSet.size + bSet.size - intersection;
-  return union === 0 ? 0 : intersection / union;
 }
 
 const DEFAULT_INCLUDE = ['**/*.{ts,tsx,js,jsx}'];
@@ -290,12 +136,4 @@ export async function findSimilarFunctions(
 
 function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
-}
-
-function relativeOrSelf(workspaceDir: string, filePath: string): string {
-  try {
-    return relative(workspaceDir, filePath) || filePath;
-  } catch {
-    return filePath;
-  }
 }
