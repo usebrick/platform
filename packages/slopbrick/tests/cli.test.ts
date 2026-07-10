@@ -406,20 +406,16 @@ describe('scanProject', () => {
       await import('node:fs').then((m) => m.readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')),
     ) as { version: string };
     expect(report.version).toBe(pkg.version);
-    // v0.21.0: an empty project has zero AI slop (aiSlopScore=0)
-    // and perfect (highest) engineeringHygiene/security. The
-    // repositoryHealth composite includes a testQuality component
-    // (0.1 * testQuality) which is computed from the test
-    // infrastructure; for an empty project with no scanned files,
-    // testQuality is 0 by default (the buildTestQualityScore helper
-    // has no test issues to deduct from, but the 0.10 weight on a
-    // 0 score pulls the composite down to ~78 instead of 100).
+    // v0.21.0: an empty project has zero AI slop (aiSlopScore=0) and
+    // neutral/clean scores. With the effective-file denominator, an
+    // empty input is explicitly the clean baseline rather than a
+    // synthetic low-health result.
     // The legacy `slopIndex` field stores the raw amount (0 = no
     // slop), matching aiSlopScore.
     expect(report.aiSlopScore).toBe(0);
     expect(report.engineeringHygiene).toBe(100);
     expect(report.security).toBe(100);
-    expect(report.repositoryHealth).toBeCloseTo(77.8, 0);
+    expect(report.repositoryHealth).toBeCloseTo(100, 0);
     expect(report.slopIndex ?? 0).toBe(0);
     expect(report.assemblyHealth).toBe(100);
     expect(report.issues).toEqual([]);
@@ -675,9 +671,9 @@ describe('--strict', () => {
     expect(stderr).toContain('High-severity issues found with --strict.');
   });
 
-  it('falls back to threshold exit code 1 without --strict', async () => {
+  it('passes without --strict when only hygiene findings remain', async () => {
     const { exitCode } = await run(['--workspace', dir, '--json']);
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(0);
   });
 });
 
@@ -687,6 +683,7 @@ describe('threshold failure wording', () => {
   beforeEach(() => {
     dir = createTmpDir();
     writeSloppyProject(dir);
+    writeFileSync(join(dir, 'src', 'LeakedBlock.ts'), '```typescript\nexport const value = 1;\n```\n');
     // v0.15.0 U.4: see the --strict describe for rationale.
     writeAlwaysBreachConfig(dir);
   });
@@ -703,7 +700,7 @@ describe('threshold failure wording', () => {
     // "N thresholds failed. See details above." The intent — that
     // the message names the actual failed threshold — is preserved
     // by asserting the new form.
-    expect(stderr).toMatch(/\d+ thresholds? failed: meanSlop \(score \d+ > \d+\)/);
+    expect(stderr).toMatch(/\d+ thresholds? failed: meanSlop \(score [\d.]+ > \d+\)/);
   });
 });
 
@@ -716,12 +713,8 @@ describe('--include / --exclude', () => {
     const libDir = join(dir, 'lib');
     mkdirSync(libDir, { recursive: true });
     writeFileSync(join(libDir, 'Helper.tsx'), 'export function Helper() { return <button>ok</button>; }');
-    // v0.15.0 U.4: the "skips --exclude" test expects exit 1 from
-    // the still-sloppy WcagSlop.tsx. Force a threshold breach
-    // here so the sloppy file (excluded or not) still trips the
-    // gate. The "discovers --include" test below overrides
-    // `meanSlop` to 0 via writeNeverBreachConfig since it scans
-    // only the clean Helper.tsx.
+    // The fixture contains hygiene findings, but the raw AI-slop gate
+    // must not fail merely because those findings exist.
     writeAlwaysBreachConfig(dir);
   });
 
@@ -758,7 +751,7 @@ describe('--include / --exclude', () => {
       '--format',
       'json',
     ]);
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(0);
     const report = JSON.parse(stdout) as ProjectReport;
     const filePaths = report.components.map((c) => c.filePath);
     expect(filePaths.some((p) => p.includes('AiSlop.tsx'))).toBe(false);
