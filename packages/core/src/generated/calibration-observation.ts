@@ -1,9 +1,13 @@
 // AUTO-GENERATED from calibration-observation.schema.json. Do not hand-edit.
 
-export interface HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson {
+export type HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson = {
+  [k: string]: unknown;
+} & {
   version: "v10.3";
   runId: string;
   fileId: string;
+  repositoryId: string;
+  familyId: string;
   language: string;
   polarity: "verified_ai" | "verified_human";
   status:
@@ -16,4 +20,4 @@ export interface HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson {
   findingsCount?: number;
   exclusionReason?: string;
   failureCode?: string;
-}
+};

@@ -7,12 +7,7 @@ export interface HttpsUsebrickDevSchemasV1CalibrationCoverageSchemaJson {
   successful: number;
   excluded: number;
   failed: number;
-  strata: {
-    language: string;
-    polarity: "verified_ai" | "verified_human";
-    requested: number;
-    successful: number;
-    excluded: number;
-    failed: number;
-  }[];
+  strata: unknown[];
+  repositories: unknown[];
+  families: unknown[];
 }
