@@ -6,6 +6,8 @@ import { logger } from './logger';
 import type { FileScanResult, ResolvedConfig } from '../types';
 
 export interface WorkerPoolOptions {
+  /** Requested scan workspace, forwarded to workers for path-relative rules. */
+  cwd?: string;
   threadCount?: number;
   workerScript?: string;
   config: ResolvedConfig;
@@ -76,6 +78,7 @@ function isEsmWorkerScript(script: string): boolean {
 export class WorkerPool {
   private workerScript: string;
   private config: ResolvedConfig;
+  private cwd: string;
   private threadCount: number;
   private workerTimeoutMs: number;
   private quiet: boolean;
@@ -86,6 +89,7 @@ export class WorkerPool {
 
   constructor(options: WorkerPoolOptions) {
     this.config = options.config;
+    this.cwd = options.cwd ?? process.cwd();
     this.workerTimeoutMs = options.workerTimeoutMs ?? DEFAULT_WORKER_TIMEOUT_MS;
     this.quiet = options.quiet ?? false;
     this.rule = options.rule;
@@ -281,6 +285,7 @@ export class WorkerPool {
           worker = this.workerFactory(this.workerScript, {
             workerData: {
               config: this.config,
+              cwd: this.cwd,
               quiet: this.quiet,
               rule: this.rule,
               includeRules: this.includeRules,

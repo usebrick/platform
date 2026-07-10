@@ -284,6 +284,7 @@ export async function scanFile(
 async function run(): Promise<void> {
   const data = workerData as {
     config: unknown;
+    cwd?: unknown;
     quiet?: unknown;
     rule?: string;
     includeRules?: string[];
@@ -294,6 +295,7 @@ async function run(): Promise<void> {
   }
   setLoggerQuiet(data.quiet === true);
   const { config } = data as { config: ResolvedConfig };
+  const cwd = typeof data.cwd === 'string' ? data.cwd : process.cwd();
 
   const registry = new RuleRegistry();
   registry.loadBuiltins(data.rule, {
@@ -307,7 +309,7 @@ async function run(): Promise<void> {
 
   parentPort.on('message', async (msg: { filePath?: string }) => {
     if (!parentPort || !msg.filePath) return;
-    const result = await scanFile(msg.filePath, config, registry, process.cwd());
+    const result = await scanFile(msg.filePath, config, registry, cwd);
     parentPort.postMessage({ type: 'result', result });
     parentPort.postMessage({ type: 'ready' });
   });

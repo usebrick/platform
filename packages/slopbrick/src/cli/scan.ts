@@ -423,6 +423,7 @@ export async function runScan(
   } else {
     const pool = new WorkerPool({
       config,
+      cwd,
       threadCount: options.threadCount,
       quiet: options.quiet,
       rule: options.rule,

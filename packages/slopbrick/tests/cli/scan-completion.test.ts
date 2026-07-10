@@ -85,17 +85,23 @@ describe('scan completion status', () => {
   it('keeps worker scans identical to serial scans under the resolved rule configuration', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
+    // This path must be evaluated relative to the requested workspace, not
+    // the process that happens to host a worker thread.  The worker process
+    // runs from the monorepo, where this exact workspace-relative glob does
+    // not match the temporary file.
+    writeFileSync(join(dir, 'slopbrick.config.mjs'), [
+      'export default {',
+      "  selfScan: { excludePaths: ['src/excluded.ts'] },",
+      '};',
+    ].join('\n'));
     const files = [
       join(dir, 'src', 'storm.ts'),
-      join(dir, 'src', 'suppressed-storm.ts'),
+      join(dir, 'src', 'excluded.ts'),
       join(dir, 'src', 'enum.ts'),
       join(dir, 'src', 'secret.ts'),
     ];
     writeFileSync(files[0]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
-    writeFileSync(files[1]!, [
-      '// slopbrick-disable-next-line logic/math-console-log-storm',
-      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
-    ].join('\n'));
+    writeFileSync(files[1]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
     writeFileSync(files[2]!, "enum Color { Red = 'red', Blue = 'blue' }\n");
     writeFileSync(files[3]!, 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n');
 
@@ -114,7 +120,7 @@ describe('scan completion status', () => {
 
     const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
     expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(true);
-    expect(workerByFile.get(files[1]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(false);
+    expect(workerByFile.get(files[1]!)?.issues).toEqual([]);
     expect(workerByFile.get(files[2]!)?.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ ruleId: 'ts/enum-vs-as-const', severity: 'off' }),
     ]));
