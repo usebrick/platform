@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json",
+  "title": "SlopbrickCalibrationCorpusManifestV103",
+  "description": "Immutable, provenance-backed corpus manifest for the SlopBrick v10.3 calibration protocol. It records only reviewed corpus metadata; it does not assert that a corpus is valid for release until selection, execution, coverage, and review gates also pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generatedAt", "methodVersion", "leakageReview", "repositories", "files"],
+  "properties": {
+    "version": { "const": "v10.3", "description": "Manifest contract version, separate from the Repository Structure schema version." },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "methodVersion": { "type": "string", "pattern": "^v10\\.3\\.[0-9]+$" },
+    "leakageReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolVersion", "reviewedAt", "reviewerIds", "noCrossPolarityFamilyOrCluster"],
+      "properties": {
+        "protocolVersion": { "type": "string", "minLength": 1 },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewerIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "noCrossPolarityFamilyOrCluster": { "const": true }
+      }
+    },
+    "repositories": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/repository" } },
+    "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/file" } }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "httpsUri": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference", "model", "promptTaskId", "generatedAt", "humanEditStatus"],
+          "properties": {
+            "kind": { "const": "generator_record" }, "reference": { "$ref": "#/$defs/httpsUri" },
+            "model": { "type": "string", "minLength": 1 }, "promptTaskId": { "type": "string", "minLength": 1 },
+            "generatedAt": { "type": "string", "format": "date-time" },
+            "humanEditStatus": { "enum": ["none", "light", "substantial", "unknown"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference", "benchmarkId", "benchmarkVersion"],
+          "properties": {
+            "kind": { "const": "benchmark" }, "reference": { "$ref": "#/$defs/httpsUri" },
+            "benchmarkId": { "type": "string", "minLength": 1 }, "benchmarkVersion": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "reference", "protocolId"],
+          "properties": {
+            "kind": { "const": "manual_protocol" }, "reference": { "$ref": "#/$defs/httpsUri" },
+            "protocolId": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repositoryId", "familyId", "originUrl", "commitSha", "acquiredAt", "license"],
+      "properties": {
+        "repositoryId": { "$ref": "#/$defs/identifier" }, "familyId": { "$ref": "#/$defs/identifier" },
+        "originUrl": { "$ref": "#/$defs/httpsUri" },
+        "commitSha": { "type": "string", "description": "Immutable Git object id; branches, tags, and symbolic refs are forbidden.", "pattern": "^[a-f0-9]{40,64}$" },
+        "acquiredAt": { "type": "string", "format": "date-time" }, "license": { "type": "string", "minLength": 1 }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "repositoryId", "familyId", "normalizedPath", "contentSha256", "language", "stratum", "clusterId", "label", "tier", "split", "evidence"],
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "repositoryId": { "$ref": "#/$defs/identifier" }, "familyId": { "$ref": "#/$defs/identifier" },
+        "normalizedPath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
+        "contentSha256": { "$ref": "#/$defs/sha256" }, "language": { "type": "string", "minLength": 1 },
+        "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
+        "clusterId": { "$ref": "#/$defs/identifier" }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
+        "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "excluded"] },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "label": { "const": "quarantine" } }, "required": ["label"] },
+          "then": { "properties": { "tier": { "const": "quarantine" }, "split": { "const": "excluded" } } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "version": "v10.3",
+  "generatedAt": "2026-07-10T00:00:00.000Z",
+  "methodVersion": "v10.3.0",
+  "leakageReview": {
+    "protocolVersion": "v10.3.0",
+    "reviewedAt": "2026-07-10T00:00:00.000Z",
+    "reviewerIds": ["reviewer-a", "reviewer-b"],
+    "noCrossPolarityFamilyOrCluster": true
+  },
+  "repositories": [
+    {
+      "repositoryId": "paired-task-ai",
+      "familyId": "paired-task-001",
+      "originUrl": "https://example.test/paired-task-ai",
+      "commitSha": "0123456789abcdef0123456789abcdef01234567",
+      "acquiredAt": "2026-07-09T00:00:00.000Z",
+      "license": "MIT"
+    },
+    {
+      "repositoryId": "human-baseline",
+      "familyId": "human-family-001",
+      "originUrl": "https://example.test/human-baseline",
+      "commitSha": "89abcdef0123456789abcdef0123456789abcdef",
+      "acquiredAt": "2026-07-09T00:00:00.000Z",
+      "license": "Apache-2.0"
+    }
+  ],
+  "files": [
+    {
+      "sourceId": "paired-task-ai:src/app.ts",
+      "repositoryId": "paired-task-ai",
+      "familyId": "paired-task-001",
+      "normalizedPath": "src/app.ts",
+      "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "language": "typescript",
+      "stratum": "production",
+      "clusterId": "cluster-ai-001",
+      "label": "verified_ai",
+      "tier": "gold",
+      "split": "test",
+      "evidence": {
+        "kind": "generator_record",
+        "reference": "https://example.test/paired-task-ai/provenance",
+        "model": "example-model-1",
+        "promptTaskId": "task-001",
+        "generatedAt": "2026-07-01T00:00:00.000Z",
+        "humanEditStatus": "none"
+      }
+    },
+    {
+      "sourceId": "human-baseline:src/app.ts",
+      "repositoryId": "human-baseline",
+      "familyId": "human-family-001",
+      "normalizedPath": "src/app.ts",
+      "contentSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "language": "typescript",
+      "stratum": "production",
+      "clusterId": "cluster-human-001",
+      "label": "verified_human",
+      "tier": "gold",
+      "split": "test",
+      "evidence": {
+        "kind": "manual_protocol",
+        "reference": "https://example.test/human-baseline/provenance",
+        "protocolId": "human-review-v1"
+      }
+    }
+  ]
+}

@@ -50,6 +50,8 @@ export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 
 export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
 
+export { isCalibrationCorpusManifestV103 } from './corpus-manifest';
+
 // v0.15.0+: Types generated from schemas/v1/*.schema.json. These are
 // the public API for the on-disk shapes. v0.17.4 (R-H4 closeout):
 // also export the underlying `Pattern` and `Component` shapes from
@@ -69,3 +71,9 @@ export type {
   RepositoryStructureStructuredProjection,
   RepositoryStructureStructuredProjection as RepositoryStructureStructureMarkdown,
 } from './generated/structure';
+export type {
+  SlopbrickCalibrationCorpusManifestV103,
+  Repository as CalibrationCorpusRepository,
+  File as CalibrationCorpusFile,
+  Evidence as CalibrationCorpusEvidence,
+} from './generated/calibration-corpus-manifest';

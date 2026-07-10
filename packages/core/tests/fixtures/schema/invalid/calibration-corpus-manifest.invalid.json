@@ -1,0 +1,44 @@
+{
+  "version": "v10.3",
+  "generatedAt": "2026-07-10T00:00:00.000Z",
+  "methodVersion": "v10.3.0",
+  "leakageReview": {
+    "protocolVersion": "v10.3.0",
+    "reviewedAt": "2026-07-10T00:00:00.000Z",
+    "reviewerIds": ["reviewer-a"],
+    "noCrossPolarityFamilyOrCluster": true
+  },
+  "repositories": [
+    {
+      "repositoryId": "mutable-ref",
+      "familyId": "mutable-family",
+      "originUrl": "https://example.test/mutable-ref",
+      "commitSha": "main",
+      "acquiredAt": "2026-07-09T00:00:00.000Z",
+      "license": "MIT"
+    }
+  ],
+  "files": [
+    {
+      "sourceId": "mutable-ref:src/app.ts",
+      "repositoryId": "mutable-ref",
+      "familyId": "mutable-family",
+      "normalizedPath": "src/app.ts",
+      "contentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "language": "typescript",
+      "stratum": "production",
+      "clusterId": "mutable-cluster",
+      "label": "verified_ai",
+      "tier": "gold",
+      "split": "test",
+      "evidence": {
+        "kind": "generator_record",
+        "reference": "https://example.test/provenance",
+        "model": "example-model-1",
+        "promptTaskId": "task-001",
+        "generatedAt": "2026-07-01T00:00:00.000Z",
+        "humanEditStatus": "none"
+      }
+    }
+  ]
+}
