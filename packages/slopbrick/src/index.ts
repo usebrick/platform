@@ -36,6 +36,7 @@ export {
 // scanner).
 export {
   thresholdExceeded,
+  evaluateThresholdGate,
   failedThresholdCount,
   failedThresholds,
   baselineStatusMessage,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { failedThresholds, failedThresholdCount } from '../../src/cli/threshold';
+import { evaluateThresholdGate, failedThresholds, failedThresholdCount } from '../../src/cli/threshold';
 import type { ProjectReport, ResolvedConfig } from '../../src/types';
 
 const baseConfig: ResolvedConfig = {
@@ -33,11 +33,23 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
     p90Score: 40, peakScore: 30,
     componentCount: 5, fileCount: 10,
     thresholds: baseConfig.thresholds,
+    scoreValidity: 'valid',
     ...overrides,
   } as ProjectReport;
 }
 
 describe('v0.42.0: failedThresholds() and failedThresholdCount()', () => {
+  it('returns an explicit non-gating result for an incomplete report', () => {
+    const result = evaluateThresholdGate(makeReport({
+      scoreValidity: 'incomplete',
+      aiSlopScore: 99,
+      p90Score: 99,
+      peakScore: 99,
+    }), baseConfig);
+
+    expect(result).toEqual({ status: 'invalid', scoreValidity: 'incomplete' });
+  });
+
   it('returns empty list when all scores are under threshold', () => {
     const report = makeReport({
       aiSlopScore: 10, p90Score: 20, peakScore: 30,

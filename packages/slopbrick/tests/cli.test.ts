@@ -70,6 +70,7 @@ const makeReport = (
   visualScore: 50.0,
   componentCount: 2,
   fileCount: 1,
+  scoreValidity: 'valid',
   thresholds: { meanSlop: 25, p90Slop: 50, individualSlopThreshold: 50 },
   components: [
     {

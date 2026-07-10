@@ -16,16 +16,78 @@ import type {
 
 // ─── Threshold logic ──────────────────────────────────────────────────────
 
+/**
+ * The only reusable boundary for numeric threshold decisions.
+ *
+ * Incomplete and empty scans retain diagnostic scores, but those numbers must
+ * never be reinterpreted as a threshold pass or failure by a CLI, CI adapter,
+ * or persisted history consumer.
+ */
+export type ThresholdGateResult =
+  | { status: 'passed'; failedThresholds: [] }
+  | { status: 'failed'; failedThresholds: string[] }
+  | { status: 'invalid'; scoreValidity: Exclude<ProjectReport['scoreValidity'], undefined> | undefined };
+
+function numericFailedThresholds(report: ProjectReport, config: ResolvedConfig): string[] {
+  const failed: string[] = [];
+  if (report.aiSlopScore > config.thresholds.meanSlop) failed.push('meanSlop');
+  if (report.p90Score > config.thresholds.p90Slop) failed.push('p90Slop');
+  if (report.peakScore > config.thresholds.individualSlopThreshold) failed.push('individualSlopThreshold');
+  const cat = config.thresholds.categoryThresholds;
+  if (cat) {
+    for (const [category, limit] of Object.entries(cat)) {
+      if (limit === undefined) continue;
+      const score = report.categoryScores[category as keyof typeof report.categoryScores];
+      if (score !== undefined && score > limit) failed.push(`category:${category}`);
+    }
+  }
+  return failed;
+}
+
+function gateFailedThresholds(report: ProjectReport, config: ResolvedConfig): string[] {
+  const failed: string[] = [];
+  if (report.aiSlopScore > config.thresholds.meanSlop) failed.push('meanSlop');
+  const categoryThresholds = config.thresholds.categoryThresholds;
+  if (categoryThresholds) {
+    for (const [category, limit] of Object.entries(categoryThresholds)) {
+      if (limit === undefined) continue;
+      const score = report.categoryScores[category as keyof typeof report.categoryScores];
+      if (score !== undefined && score > limit) failed.push(`category:${category}`);
+    }
+  }
+  return failed;
+}
+
+export function evaluateThresholdGate(report: ProjectReport, config: ResolvedConfig): ThresholdGateResult {
+  if (report.scoreValidity !== 'valid') {
+    return { status: 'invalid', scoreValidity: report.scoreValidity };
+  }
+  const failedThresholds = gateFailedThresholds(report, config);
+  return failedThresholds.length === 0
+    ? { status: 'passed', failedThresholds: [] }
+    : { status: 'failed', failedThresholds };
+}
+
 export function thresholdExceeded(report: ProjectReport, config: ResolvedConfig): boolean {
+  return evaluateThresholdGate(report, config).status === 'failed';
+}
+
+export function categoryThresholdBreached(
+  report: ProjectReport,
+  categoryThresholds?: Partial<Record<string, number>>,
+): boolean {
   // v0.21.0: aiSlopScore is now the RAW amount of slop (0=clean, 100=saturated).
   // The CI gate keeps the `meanSlop` config name (no breaking rename of the
   // user's config file) but flips the comparison: aiSlopScore > meanSlop fails.
   // In v0.15–v0.20.1 the check was `aiSlopScore < meanSlop` (the v0.15.0
   // inversion, where aiSlopScore was cleanliness).
-  if ((report.aiSlopScore ?? 0) > config.thresholds.meanSlop) {
-    return true;
+  if (!categoryThresholds) return false;
+  for (const [category, limit] of Object.entries(categoryThresholds)) {
+    if (limit === undefined) continue;
+    const score = report.categoryScores[category as keyof typeof report.categoryScores];
+    if (score !== undefined && score > limit) return true;
   }
-  return categoryThresholdBreached(report, config.thresholds.categoryThresholds);
+  return false;
 }
 
 export function failedThresholdCount(report: ProjectReport, config: ResolvedConfig): number {
@@ -44,36 +106,8 @@ export function failedThresholdCount(report: ProjectReport, config: ResolvedConf
  * the caller can name them in the final error message.
  */
 export function failedThresholds(report: ProjectReport, config: ResolvedConfig): string[] {
-  const failed: string[] = [];
-  // v0.21.0: aiSlopScore is raw amount of slop (0=clean, 100=saturated).
-  // The `meanSlop` config field keeps its name (no breaking rename) but
-  // the comparison flips: aiSlopScore > meanSlop fails (was `<` in v0.20.1
-  // when aiSlopScore was the inverted cleanliness).
-  if (report.aiSlopScore > config.thresholds.meanSlop) failed.push('meanSlop');
-  if (report.p90Score > config.thresholds.p90Slop) failed.push('p90Slop');
-  if (report.peakScore > config.thresholds.individualSlopThreshold) failed.push('individualSlopThreshold');
-  const cat = config.thresholds.categoryThresholds;
-  if (cat) {
-    for (const [category, limit] of Object.entries(cat)) {
-      if (limit === undefined) continue;
-      const score = report.categoryScores[category as keyof typeof report.categoryScores];
-      if (score !== undefined && score > limit) failed.push(`category:${category}`);
-    }
-  }
-  return failed;
-}
-
-export function categoryThresholdBreached(
-  report: ProjectReport,
-  categoryThresholds?: Partial<Record<string, number>>,
-): boolean {
-  if (!categoryThresholds) return false;
-  for (const [category, limit] of Object.entries(categoryThresholds)) {
-    if (limit === undefined) continue;
-    const score = report.categoryScores[category as keyof typeof report.categoryScores];
-    if (score !== undefined && score > limit) return true;
-  }
-  return false;
+  const gate = evaluateThresholdGate(report, config);
+  return gate.status === 'invalid' ? [] : numericFailedThresholds(report, config);
 }
 
 export function baselineStatusMessage(baseline: BaselineMeta): string {

@@ -273,6 +273,19 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
     for (const field of ['selected', 'analyzed', 'zeroFinding', 'incrementalCached', 'parseFailed', 'timedOut', 'crashed', 'internalFailed']) {
       if (!isNonNegativeInteger(accounting[field])) return false;
     }
+    const selected = accounting.selected as number;
+    const analyzed = accounting.analyzed as number;
+    const incrementalCached = accounting.incrementalCached as number;
+    const parseFailed = accounting.parseFailed as number;
+    const timedOut = accounting.timedOut as number;
+    const crashed = accounting.crashed as number;
+    const internalFailed = accounting.internalFailed as number;
+    if (selected !== analyzed + incrementalCached + parseFailed + timedOut + crashed + internalFailed) return false;
+    if ((accounting.zeroFinding as number) > analyzed) return false;
+    if (value.requested !== undefined && value.requested !== selected) return false;
+    if (value.analyzed !== undefined && value.analyzed !== analyzed) return false;
+    if (value.failed !== undefined && value.failed !== parseFailed + timedOut + crashed + internalFailed) return false;
+    if (value.skipped !== undefined && value.skipped !== incrementalCached) return false;
   }
   // v0.18.2: optional Bayesian composite aggregate. Validate the
   // shape when present (G6 schema/writer/validator coherence).

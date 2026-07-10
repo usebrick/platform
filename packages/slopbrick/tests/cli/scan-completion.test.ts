@@ -348,7 +348,16 @@ describe('scan completion status', () => {
     const { stdout, stderr, exitCode } = await run(['--workspace', dir]);
     expect(exitCode).toBe(1);
     expect(stdout).not.toMatch(/AI Slop Score|clean/i);
+    expect(stderr).toContain('NO FILES ANALYSED — scores are not applicable for gating.');
     expect(stderr).toMatch(/requested 0|No source files matched/i);
+  });
+
+  it('does not append an empty scan as threshold history evidence', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await runScan({ workspace: dir, quiet: true });
+
+    expect(result.report.scoreValidity).toBe('not-applicable');
+    expect(existsSync(join(dir, '.slopbrick', 'structure.json'))).toBe(false);
   });
 
   it('maps malformed config syntax to the documented config exit code', async () => {

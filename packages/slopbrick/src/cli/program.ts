@@ -19,7 +19,7 @@ import { Command } from 'commander';
 import { parseThreads, collectGlob, parseTrend } from './options';
 import { renderTrend } from './render';
 import {
-  thresholdExceeded,
+  evaluateThresholdGate,
   failedThresholdCount,
   failedThresholds,
   baselineStatusMessage,
@@ -115,6 +115,7 @@ import { formatGroupedHelp } from './help';
 // from the scan action; `runScan` itself stays network-free so
 // `scanProject` (library API) and `ci`/`watch` are unaffected.
 import { BeaconEmitter } from '../beacon';
+import { formatScanValidityNotice } from '../report/scan-validity';
 
 /** Current in-memory result returned when the shared scan action is invoked by CI. */
 export interface ScanActionOutcome {
@@ -448,7 +449,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           !(scanStats.status === 'empty' && (options.staged || options.changed)) ? 1 : 0);
       }
 
-      const baseExitCode: 0 | 1 = thresholdExceeded(report, config) ? 1 : 0;
+      const thresholdGate = evaluateThresholdGate(report, config);
+      const baseExitCode: 0 | 1 = thresholdGate.status === 'failed' ? 1 : 0;
       let exitCode: 0 | 1 | 2 = baseExitCode;
       const incompleteFailure = scanStats.status !== 'complete' &&
         !(scanStats.status === 'empty' && (options.staged || options.changed));
@@ -466,6 +468,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           // behaviour terse: its synthetic zero scores must not read as a
           // clean verdict.
           if (scanStats.status === 'partial') renderOutput(report, options, cwd);
+          if (scanStats.status === 'empty') {
+            logger.error(formatScanValidityNotice(report) ?? 'NO FILES ANALYSED — scores are not applicable for gating.');
+          }
         }
       } else {
         renderOutput(report, options, cwd);

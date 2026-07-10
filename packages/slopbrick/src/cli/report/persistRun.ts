@@ -42,7 +42,7 @@ import {
   renderStructureMarkdown,
   writeStructureMarkdown,
 } from '../../engine/structure-md';
-import { thresholdExceeded } from '../threshold';
+import { evaluateThresholdGate } from '../threshold';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
@@ -109,13 +109,16 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
 
   // Append to run history (`.slopbrick/runs.json`). Skip when
   // projectMemory is explicitly disabled in config.
-  if (config.projectMemory !== false) {
+  // A diagnostic partial/empty score is neither a pass nor a failure. Do not
+  // append it as numeric threshold evidence to historical trend data.
+  const thresholdGate = evaluateThresholdGate(report, config);
+  if (config.projectMemory !== false && thresholdGate.status !== 'invalid') {
     await appendRun(
       cwd,
       memoryReport,
       VERSION,
       fsMemoryIO,
-      thresholdExceeded(report, config),
+      thresholdGate.status === 'failed',
     );
   }
 

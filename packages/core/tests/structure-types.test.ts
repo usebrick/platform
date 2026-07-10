@@ -202,6 +202,41 @@ describe('memory-types — validators', () => {
       expect(isHealthFile({ ...valid, scoreValidity: 'unknown' })).toBe(false);
       expect(isHealthFile({ ...valid, completionStatus: 'partial', scoreValidity: 'valid' })).toBe(false);
     });
+
+    it('rejects non-conserving or contradictory optional scan accounting', () => {
+      const withAccounting = {
+        ...valid,
+        completionStatus: 'partial',
+        scoreValidity: 'incomplete',
+        requested: 4,
+        analyzed: 3,
+        failed: 1,
+        skipped: 0,
+        scanAccounting: {
+          selected: 4,
+          analyzed: 3,
+          zeroFinding: 3,
+          incrementalCached: 0,
+          parseFailed: 1,
+          timedOut: 0,
+          crashed: 0,
+          internalFailed: 0,
+        },
+      };
+      expect(isHealthFile(withAccounting)).toBe(true);
+      expect(isHealthFile({
+        ...withAccounting,
+        scanAccounting: { ...withAccounting.scanAccounting, selected: 3 },
+      })).toBe(false);
+      expect(isHealthFile({
+        ...withAccounting,
+        scanAccounting: { ...withAccounting.scanAccounting, zeroFinding: 4 },
+      })).toBe(false);
+      expect(isHealthFile({ ...withAccounting, requested: 5 })).toBe(false);
+      expect(isHealthFile({ ...withAccounting, analyzed: 2 })).toBe(false);
+      expect(isHealthFile({ ...withAccounting, failed: 0 })).toBe(false);
+      expect(isHealthFile({ ...withAccounting, skipped: 1 })).toBe(false);
+    });
   });
 
   describe('isFileMtimeEntry', () => {
