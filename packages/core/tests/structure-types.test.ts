@@ -161,6 +161,23 @@ describe('memory-types — validators', () => {
       expect(isHealthFile({ ...valid, issueCounts: { high: 1.2, medium: 0, low: 0 } })).toBe(false);
       expect(isHealthFile({ ...valid, generatedAt: 'not-a-date' })).toBe(false);
     });
+
+    it('accepts optional score-basis provenance', () => {
+      expect(isHealthFile({
+        ...valid,
+        scoreBasis: {
+          denominator: 4,
+          analyzedFiles: 4,
+          issueSet: 'effective',
+          suppressedIssueCount: 2,
+          parseErrorCount: 1,
+        },
+      })).toBe(true);
+      expect(isHealthFile({
+        ...valid,
+        scoreBasis: { denominator: -1, analyzedFiles: 0, issueSet: 'effective', suppressedIssueCount: 0, parseErrorCount: 0 },
+      })).toBe(false);
+    });
   });
 
   describe('isFileMtimeEntry', () => {

@@ -96,6 +96,9 @@ export function formatMarkdown(report: ProjectReport): string {
   }
   lines.push(`- **Components:** ${report.componentCount}`);
   lines.push(`- **Files:** ${report.fileCount}`);
+  if (report.scoreBasis) {
+    lines.push(`- **Score basis:** ${report.scoreBasis.denominator} analysed files; effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed, ${report.scoreBasis.parseErrorCount} parse errors)`);
+  }
   lines.push(`- **Generated:** ${report.generatedAt}`);
   lines.push('');
 

@@ -552,6 +552,20 @@ describe('buildHealthFromReport', () => {
     expect(out.categoryScores!.visual).toBe(12);
   });
 
+  it('carries score-basis provenance into health snapshots', () => {
+    const report = makeReport(12, {
+      scoreBasis: {
+        denominator: 3,
+        analyzedFiles: 3,
+        issueSet: 'effective',
+        suppressedIssueCount: 1,
+        parseErrorCount: 0,
+      },
+    });
+    const out = buildHealthFromReport(report, '/work');
+    expect(out.scoreBasis).toEqual(report.scoreBasis);
+  });
+
   it('omits optional fields when not provided', () => {
     const report = makeReport(0, { issues: [] });
     const out = buildHealthFromReport(report, '/w');

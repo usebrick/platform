@@ -22,6 +22,18 @@ import type {
 import type { BaselineMeta, ResearchMetrics } from './baseline';
 
 export interface ProjectReport {
+  /**
+   * Denominator and issue-set provenance for the headline scores.  Scores
+   * are computed over successfully analysed files and effective findings;
+   * suppressed/default-off findings remain auditable but do not contribute.
+   */
+  scoreBasis?: {
+    denominator: number;
+    analyzedFiles: number;
+    issueSet: 'effective';
+    suppressedIssueCount: number;
+    parseErrorCount: number;
+  };
   /** CLI scan completion extension; absent in legacy/programmatic reports. */
   completionStatus?: 'complete' | 'empty' | 'partial';
   requested?: number;

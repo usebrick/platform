@@ -405,6 +405,29 @@ describe('aggregateReport', () => {
     expect(report.componentCount).toBe(0);
   });
 
+  it('does not let synthetic baseline rows dilute the exposure denominator', () => {
+    const issueGroup = {
+      filePath: 'changed.py',
+      issues: [{
+        ruleId: 'logic/boundary-violation',
+        category: 'logic' as const,
+        severity: 'high' as const,
+        aiSpecific: true,
+      }],
+    };
+    const changed = scoreFile(fileResult({ filePath: 'changed.py' }), 1, DEFAULT_CONFIG);
+    const syntheticBaseline = scoreFile(fileResult({ filePath: 'unchanged.py' }), 1, DEFAULT_CONFIG);
+    const report = aggregateReport(
+      [changed, syntheticBaseline],
+      [issueGroup, { filePath: 'unchanged.py', issues: [] }],
+      DEFAULT_CONFIG,
+      undefined,
+      1,
+    );
+    const expected = Math.log10(1 + SEVERITY_WEIGHTS.high) / Math.log10(11) * 100;
+    expect(report.boundaryScore).toBeCloseTo(100 - expected, 8);
+  });
+
   it('categoryScores stay bounded under self-scan-sized totals via log-saturation (v0.14.5h → v0.39.0)', () => {
     // Real self-scan numbers (slopbrick's own repo, 0 components):
     //   ai: 167 raw points, visual: 70, logic: 68

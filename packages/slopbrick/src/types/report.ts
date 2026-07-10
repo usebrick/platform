@@ -88,6 +88,13 @@ export interface HealthFile {
   constitutionDrift?: number;
   topOffenseIds?: string[];
   scanDurationMs?: number;
+  scoreBasis?: {
+    denominator: number;
+    analyzedFiles: number;
+    issueSet: 'effective';
+    suppressedIssueCount: number;
+    parseErrorCount: number;
+  };
 }
 
 

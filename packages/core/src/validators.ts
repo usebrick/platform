@@ -239,6 +239,21 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
     if (!value.topOffenseIds.every((id) => /^[a-z]+\/[a-z-]+$/.test(id))) return false;
   }
   if (value.scanDurationMs !== undefined && !isNonNegativeInteger(value.scanDurationMs)) return false;
+  if (value.scoreBasis !== undefined) {
+    if (!isRecord(value.scoreBasis)) return false;
+    const basis = value.scoreBasis as {
+      denominator?: unknown;
+      analyzedFiles?: unknown;
+      issueSet?: unknown;
+      suppressedIssueCount?: unknown;
+      parseErrorCount?: unknown;
+    };
+    if (!isNonNegativeInteger(basis.denominator)) return false;
+    if (!isNonNegativeInteger(basis.analyzedFiles)) return false;
+    if (basis.issueSet !== 'effective') return false;
+    if (!isNonNegativeInteger(basis.suppressedIssueCount)) return false;
+    if (!isNonNegativeInteger(basis.parseErrorCount)) return false;
+  }
   // v0.18.2: optional Bayesian composite aggregate. Validate the
   // shape when present (G6 schema/writer/validator coherence).
   // Omitted in v0.18.1 and earlier health.json files; readers

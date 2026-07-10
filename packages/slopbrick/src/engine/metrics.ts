@@ -167,6 +167,13 @@ export function aggregateReport(
   // fileCount) into the report. Informational — does not affect the
   // 4 headline scores.
   compositeScores?: ReadonlyArray<CompositeScore | undefined>,
+  /**
+   * Number of successfully analysed files to use as the exposure
+   * denominator.  Callers that add synthetic baseline rows (for example
+   * `--since`) must pass the real analysed count so those rows cannot
+   * silently dilute the score.
+   */
+  exposureFiles?: number,
 ): Pick<
   ProjectReport,
   | 'aiSlopScore'
@@ -241,7 +248,7 @@ export function aggregateReport(
   // CLI, and library files; using them here made those scans incomparable
   // (and could amplify a single backend file's score). An empty scan keeps a
   // neutral denominator so all bucket scores remain at their clean baseline.
-  const denominator = scores.length || 1;
+  const denominator = (exposureFiles ?? scores.length) || 1;
   // Raw slop amount per bucket (0=clean, 100=saturated). Feeds the
   // AI Slop Score headline directly. Higher = more slop detected.
   const slopAmount: Record<SubscoreBucket, number> = {

@@ -403,6 +403,7 @@ export async function runSuggest(
       const health = loadHealth(ctx.cwd);
       if (health?.compositeScore) {
         payload.compositeScore = health.compositeScore;
+        payload.scoreBasis = health.scoreBasis;
         // v0.43.0: include the same scoreBriefs that the CLI
         // --brief and --json surfaces now ship. MCP clients
         // (Cursor, Claude Code, Continue) get the same plain-
@@ -463,6 +464,7 @@ async function runGovernance(
               aiDebt: report.aiDebt,
               breakdown: report.repositoryHealthBreakdown,
               warnings: report.repositoryHealthWarnings ?? [],
+              scoreBasis: report.scoreBasis,
               headline: report.repositoryHealth != null
                 ? `Repository Health: ${report.repositoryHealth}/100  (AI Debt: ${report.aiDebt ?? 'unknown'})`
                 : 'Repository Health: not computed',

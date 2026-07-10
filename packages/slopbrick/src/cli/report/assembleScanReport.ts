@@ -108,6 +108,13 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
   );
 
   return {
+    scoreBasis: {
+      denominator: results.filter((result) => !result.parseError).length,
+      analyzedFiles: results.filter((result) => !result.parseError).length,
+      issueSet: 'effective',
+      suppressedIssueCount: allIssues.filter((issue) => issue.severity === ('off' as Issue['severity'])).length,
+      parseErrorCount: parseErrors.length,
+    },
     version: VERSION,
     generatedAt,
     configPath,

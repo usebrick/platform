@@ -81,6 +81,13 @@ export interface MemoryReport {
   repositoryHealth: number;
   categoryScores: Record<string, number>;
   issues: ReadonlyArray<{ ruleId: string; severity: string }>;
+  scoreBasis?: {
+    denominator: number;
+    analyzedFiles: number;
+    issueSet: 'effective';
+    suppressedIssueCount: number;
+    parseErrorCount: number;
+  };
 }
 
 /** Resolved config, minimal fields used by `buildConstitutionFromConfig`. */
@@ -494,6 +501,7 @@ export function buildHealthFromReport(
     ...(options.scanDurationMs !== undefined && {
       scanDurationMs: options.scanDurationMs,
     }),
+    ...(report.scoreBasis && { scoreBasis: report.scoreBasis }),
     ...(options.compositeScore && { compositeScore: options.compositeScore }),
   };
 }

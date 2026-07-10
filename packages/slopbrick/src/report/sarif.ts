@@ -103,6 +103,7 @@ interface SarifToolDriver {
       max: number;
       fileCount: number;
     };
+    scoreBasis?: NonNullable<ProjectReport['scoreBasis']>;
   };
 }
 
@@ -359,8 +360,11 @@ export function formatSarif(
   // it; the SARIF log should stay backward-compatible (no
   // `properties` key at all) so consumers that key on its presence
   // see the same shape they did before.
-  const driverProperties = report.compositeScore
-    ? { compositeScore: report.compositeScore }
+  const driverProperties = report.compositeScore || report.scoreBasis
+    ? {
+        ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
+        ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
+      }
     : undefined;
 
   const log: SarifLog = {

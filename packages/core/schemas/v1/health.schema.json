@@ -108,6 +108,18 @@
       "type": "integer",
       "minimum": 0
     },
+    "scoreBasis": {
+      "description": "Provenance for headline scores: the analysed-file denominator and effective issue set used by the scanner.",
+      "type": "object",
+      "required": ["denominator", "analyzedFiles", "issueSet", "suppressedIssueCount", "parseErrorCount"],
+      "properties": {
+        "denominator": { "type": "integer", "minimum": 0 },
+        "analyzedFiles": { "type": "integer", "minimum": 0 },
+        "issueSet": { "const": "effective" },
+        "suppressedIssueCount": { "type": "integer", "minimum": 0 },
+        "parseErrorCount": { "type": "integer", "minimum": 0 }
+      }
+    },
     "compositeScore": {
       "description": "v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.",
       "type": "object",
