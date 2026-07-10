@@ -98,6 +98,9 @@
   `ConfigValidationError`, restoring documented exit code 2 and actionable file
   context. Scan-completion suite is now 14/14; built-binary malformed-config
   smoke confirms the error path.
+- Packaged CLI display/performance smoke: `f612ba0a0` proves subprocess
+  normalization for `--threads`, `--verbose`, `--brief --full`, and
+  `--no-color`; scan-completion is now 15/15.
 - Score provenance tranche: `9e1bf8d97` adds optional `scoreBasis` through
   report, health, JSON, Markdown, SARIF, MCP, and engine persistence; focused
   metrics/scan/SARIF/structure/core checks pass. `b0c169701` applies the same
