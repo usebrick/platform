@@ -101,6 +101,13 @@
 - Packaged CLI display/performance smoke: `f612ba0a0` proves subprocess
   normalization for `--threads`, `--verbose`, `--brief --full`, and
   `--no-color`; scan-completion is now 15/15.
+- Refresh-snippets forwarding: `27dd71568` passes the opt-in flag as an
+  explicit persistence input (the previous finalize call dropped it) and adds
+  an initialized-AGENTS packaged subprocess regression; scan-completion is
+  now 16/16.
+- Output/telemetry subprocess smoke: `380ca1701` covers `--json <path>`,
+  `--html <path>`, and `--no-telemetry` (no flywheel telemetry file); the
+  scan-completion suite is now 17/17.
 - Score provenance tranche: `9e1bf8d97` adds optional `scoreBasis` through
   report, health, JSON, Markdown, SARIF, MCP, and engine persistence; focused
   metrics/scan/SARIF/structure/core checks pass. `b0c169701` applies the same
@@ -115,6 +122,10 @@
 - Documentation truth follow-up `7d3b102c6` updates root/package release status
   to published v0.43.0 versus unreleased v0.44.0, removes remaining hard-coded
   local calibration paths, and replaces the stale 24-category tree claim.
+- Website interaction follow-up `597ffa422` fixes the live-terminal
+  `structure.json`/`structure.md` mismatch and replaces timing-only assertions
+  with command-completion state. Astro build/typecheck, 35 unit tests, and all
+  9 Playwright/axe tests pass locally.
 - Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
   328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
   99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
