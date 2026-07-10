@@ -4,6 +4,13 @@ import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
 import { runScan } from '../../src/cli/scan';
+import { filterByDisabledDirectives, filterIssues } from '../../src/cli/threshold';
+import { scanFile } from '../../src/engine/worker';
+import { aggregateReport, resolveFrameworkMultiplier, scoreFile } from '../../src/engine/metrics';
+import { RuleRegistry } from '../../src/rules/registry';
+import { getDefaultOffRules } from '../../src/rules/signal-strength';
+import { runProjectRules } from '../../src/rules/project';
+import { enrichReport } from '../../src/cli/report/enrichReport';
 
 beforeAll(assertDistBuilt);
 
@@ -73,6 +80,121 @@ describe('scan completion status', () => {
     const issues = result.results.flatMap((file) => file.issues);
     expect(issues.length).toBeGreaterThan(0);
     expect(issues.every((issue) => issue.ruleId.startsWith('security/'))).toBe(true);
+  });
+
+  it('keeps worker scans identical to serial scans under the resolved rule configuration', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const files = [
+      join(dir, 'src', 'storm.ts'),
+      join(dir, 'src', 'suppressed-storm.ts'),
+      join(dir, 'src', 'enum.ts'),
+      join(dir, 'src', 'secret.ts'),
+    ];
+    writeFileSync(files[0]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
+    writeFileSync(files[1]!, [
+      '// slopbrick-disable-next-line logic/math-console-log-storm',
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+    ].join('\n'));
+    writeFileSync(files[2]!, "enum Color { Red = 'red', Blue = 'blue' }\n");
+    writeFileSync(files[3]!, 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n');
+
+    const includeRules = [
+      'logic/math-console-log-storm',
+      'ts/enum-vs-as-const',
+      'security/hardcoded-secret',
+    ];
+    const workerRun = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules,
+      threadCount: 2,
+      workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
+    });
+
+    const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
+    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(true);
+    expect(workerByFile.get(files[1]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(false);
+    expect(workerByFile.get(files[2]!)?.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: 'ts/enum-vs-as-const', severity: 'off' }),
+    ]));
+
+    const registry = new RuleRegistry();
+    registry.loadBuiltins(undefined, { includeRules });
+    const serialResults = await Promise.all(
+      files.map((filePath) => scanFile(filePath, workerRun.config, registry, dir)),
+    );
+    for (const result of serialResults) {
+      result.issues = filterIssues(result.issues, {});
+      filterByDisabledDirectives(result, result.facts?.v2?.disabledRules ?? []);
+      for (const issue of result.issues) issue.filePath ??= result.filePath;
+    }
+
+    const defaultOff = getDefaultOffRules();
+    const userOverrides = new Set(Object.keys(workerRun.config.rules));
+    const isSuppressedForScore = (issue: typeof serialResults[number]['issues'][number]) =>
+      issue.severity === ('off' as typeof issue.severity) ||
+      (defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId));
+    const serialScores = serialResults.map((result) => scoreFile(
+      { ...result, issues: result.issues.filter((issue) => !isSuppressedForScore(issue)) },
+      resolveFrameworkMultiplier(workerRun.config),
+      workerRun.config,
+      undefined,
+      dir,
+    ));
+    const serialIssueGroups = serialResults.map((result) => ({
+      filePath: result.filePath,
+      issues: result.issues.filter((issue) => !isSuppressedForScore(issue)),
+    }));
+    const serialAggregate = aggregateReport(
+      serialScores,
+      serialIssueGroups,
+      workerRun.config,
+      serialResults.map((result) => result.compositeScore),
+      serialResults.length,
+    );
+    const serialProjectIssues = runProjectRules(serialResults, workerRun.config);
+    const serialAllIssues = [...serialResults.flatMap((result) => result.issues), ...serialProjectIssues];
+    for (const issue of serialAllIssues) {
+      if (defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId)) {
+        issue.severity = 'off' as typeof issue.severity;
+      }
+    }
+    const serialEnrichment = await enrichReport({
+      cwd: dir,
+      config: workerRun.config,
+      results: serialResults,
+      aggregated: serialAggregate,
+      allIssues: serialAllIssues,
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    const canonical = (results: typeof serialResults) => results
+      .map((result) => ({
+        filePath: result.filePath,
+        componentCount: result.componentCount,
+        compositeScore: result.compositeScore,
+        parseError: result.parseError,
+        issues: result.issues.map(({ ruleId, category, severity, aiSpecific, filePath, message, line, column, advice, fixHint, extras }) => ({
+          ruleId, category, severity, aiSpecific, filePath, message, line, column, advice, fixHint, extras,
+        })).sort((a, b) => a.ruleId.localeCompare(b.ruleId) || a.line - b.line || a.column - b.column),
+      }))
+      .sort((a, b) => a.filePath.localeCompare(b.filePath));
+
+    expect(canonical(workerRun.results)).toEqual(canonical(serialResults));
+    expect(workerRun.report).toMatchObject({
+      aiSlopScore: serialAggregate.aiSlopScore,
+      engineeringHygiene: serialAggregate.engineeringHygiene,
+      security: serialAggregate.security,
+      repositoryHealth: serialEnrichment.repositoryHealth,
+      scoreBasis: {
+        denominator: serialResults.length,
+        analyzedFiles: serialResults.length,
+        issueSet: 'effective',
+        suppressedIssueCount: serialAllIssues.filter((issue) => issue.severity === ('off' as typeof issue.severity)).length,
+        parseErrorCount: 0,
+      },
+    });
   });
 
   it('returns empty and non-zero for an ordinary empty workspace', async () => {
