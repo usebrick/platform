@@ -16,9 +16,11 @@ Pure functions that:
 - produce structured outputs (LRs, scores, classifications)
 - have no filesystem, network, or process side effects
 
-`@usebrick/engine/pure` has no filesystem discovery, `globby`, process-control,
-or console dependency. The root package retains explicit Node adapters for
-existing CLI callers.
+`@usebrick/engine/pure` is host/editor-safe: it has no filesystem discovery,
+`globby`, process-control, or console dependency. It is not a browser
+portability guarantee because SWC and Node-compatible crypto/path dependencies
+remain deliberate requirements. The root package retains explicit Node adapters
+for existing CLI callers.
 
 ## What does NOT live here
 

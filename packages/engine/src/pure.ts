@@ -1,8 +1,10 @@
 /**
  * Side-effect-free engine functions for hosts that already own source text.
  *
- * The package root retains Node filesystem compatibility adapters. Do not add
- * discovery, filesystem, process, or console dependencies to this entry.
+ * The package root retains Node filesystem compatibility adapters. This is a
+ * host/editor-safe entrypoint, not a browser portability guarantee: SWC and
+ * Node-compatible crypto/path dependencies remain deliberate requirements.
+ * Do not add discovery, filesystem, process, or console dependencies here.
  */
 
 export {
