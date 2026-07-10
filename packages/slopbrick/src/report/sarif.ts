@@ -105,6 +105,9 @@ interface SarifToolDriver {
       fileCount: number;
     };
     scoreBasis?: NonNullable<ProjectReport['scoreBasis']>;
+    completionStatus?: NonNullable<ProjectReport['completionStatus']>;
+    scoreValidity?: NonNullable<ProjectReport['scoreValidity']>;
+    scanAccounting?: NonNullable<ProjectReport['scanAccounting']>;
     /** Headline values carried with SARIF so integrations retain scan context. */
     scores?: Pick<ProjectReport, 'aiSlopScore' | 'engineeringHygiene' | 'security' | 'repositoryHealth'>;
   };
@@ -364,6 +367,9 @@ export function formatSarif(
   const driverProperties = {
     ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
     ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
+    ...(report.completionStatus !== undefined ? { completionStatus: report.completionStatus } : {}),
+    ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
+    ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
     scores: {
       aiSlopScore: report.aiSlopScore,
       engineeringHygiene: report.engineeringHygiene,

@@ -38,6 +38,13 @@ export interface ScanAccounting {
   internalFailed: number;
 }
 
+/**
+ * Explicit gate-safety status for the numeric headline scores. Numeric score
+ * fields are retained on partial scans for diagnosis, but only `valid` may
+ * be used for threshold/CI decisions.
+ */
+export type ScoreValidity = 'valid' | 'incomplete' | 'not-applicable';
+
 export interface ProjectReport {
   /**
    * Denominator and issue-set provenance for the headline scores.  Scores
@@ -53,6 +60,8 @@ export interface ProjectReport {
   };
   /** CLI scan completion extension; absent in legacy/programmatic reports. */
   completionStatus?: 'complete' | 'empty' | 'partial';
+  /** Whether the headline numeric scores are safe to use for gating. */
+  scoreValidity?: ScoreValidity;
   requested?: number;
   analyzed?: number;
   failed?: number;

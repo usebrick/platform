@@ -3,6 +3,7 @@ import { HEADLINE_SCORES, SCORE_BRIEFS, formatHeadlineScore } from './score-cont
 import { bucketForVerdict, bucketDistribution } from './buckets';
 import type { Bucket } from './buckets';
 import { getSignalStrength } from '../rules/signal-strength.js';
+import { formatScanValidityNotice } from './scan-validity.js';
 import type { Verdict } from '@usebrick/core';
 
 /**
@@ -79,6 +80,11 @@ export function formatMarkdown(report: ProjectReport): string {
   const lines: string[] = [];
   lines.push(`# Slop Audit Report`);
   lines.push('');
+  const validityNotice = formatScanValidityNotice(report);
+  if (validityNotice) {
+    lines.push(`> **${validityNotice}**`);
+    lines.push('');
+  }
 
   const ext = report as ProjectReport & ProjectReportV015;
 

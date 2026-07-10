@@ -555,6 +555,44 @@ export async function runScan(
 
   allIssues.sort((a, b) => SEVERITY_WEIGHTS[b.severity] - SEVERITY_WEIGHTS[a.severity]);
 
+  // Resolve scan outcome before finalisation: finalisation persists
+  // `.slopbrick/health.json`, so every persisted consumer must receive the
+  // same validity truth as the CLI report.
+  const failedFiles = results.filter((result) => Boolean(result.failureKind ?? result.parseError)).length;
+  const analyzedFiles = results.length - failedFiles;
+  const skippedFiles = unchanged.length;
+  const completionStatus = requestedFiles === 0
+    ? 'empty' as const
+    : failedFiles > 0 || analyzedFiles + skippedFiles < requestedFiles
+      ? 'partial' as const
+      : 'complete' as const;
+  const scoreValidity = completionStatus === 'complete'
+    ? 'valid' as const
+    : completionStatus === 'partial'
+      ? 'incomplete' as const
+      : 'not-applicable' as const;
+  const scanAccounting = {
+    selected: requestedFiles,
+    analyzed: analyzedFiles,
+    zeroFinding: results.filter((result) => !result.parseError && result.issues.length === 0).length,
+    incrementalCached: skippedFiles,
+    parseFailed: results.filter((result) => result.failureKind === 'parse').length,
+    timedOut: results.filter((result) => result.failureKind === 'timeout').length,
+    crashed: results.filter((result) => result.failureKind === 'crash').length,
+    internalFailed: results.filter(
+      (result) => result.failureKind === 'internal' || (!result.failureKind && Boolean(result.parseError)),
+    ).length,
+  };
+  const scanMetadata = {
+    completionStatus,
+    scoreValidity,
+    requested: requestedFiles,
+    analyzed: analyzedFiles,
+    failed: failedFiles,
+    skipped: skippedFiles,
+    scanAccounting,
+  };
+
   // Finalize: build the ProjectReport and persist all side-effects.
   // The finalize phase handles parseErrors, topOffenders, previousRun,
   // enrichment, assembly, --no-increase check, and persistence.
@@ -581,38 +619,8 @@ export async function runScan(
     incrementalSummary,
     telemetryEnabled,
     machineReadableStdout,
+    scanMetadata,
   });
-
-  const failedFiles = results.filter((result) => Boolean(result.failureKind ?? result.parseError)).length;
-  const analyzedFiles = results.length - failedFiles;
-  const skippedFiles = unchanged.length;
-  const completionStatus = requestedFiles === 0
-    ? 'empty' as const
-    : failedFiles > 0 || analyzedFiles + skippedFiles < requestedFiles
-      ? 'partial' as const
-      : 'complete' as const;
-  // Keep completion metadata in the JSON report without changing the shared
-  // ProjectReport wire type in this task; formatJson spreads enumerable fields.
-  report.completionStatus = completionStatus;
-  report.requested = requestedFiles;
-  report.analyzed = analyzedFiles;
-  report.failed = failedFiles;
-  report.skipped = skippedFiles;
-  const scanAccounting = {
-    selected: requestedFiles,
-    analyzed: analyzedFiles,
-    // Retained issue count after CLI filters/directives; this is not a
-    // statement about whether a file had pre-filter audit findings.
-    zeroFinding: results.filter((result) => !result.parseError && result.issues.length === 0).length,
-    incrementalCached: skippedFiles,
-    parseFailed: results.filter((result) => result.failureKind === 'parse').length,
-    timedOut: results.filter((result) => result.failureKind === 'timeout').length,
-    crashed: results.filter((result) => result.failureKind === 'crash').length,
-    internalFailed: results.filter(
-      (result) => result.failureKind === 'internal' || (!result.failureKind && Boolean(result.parseError)),
-    ).length,
-  };
-  report.scanAccounting = scanAccounting;
 
   // v0.42.0 (post-cleanup follow-up): the --incremental cache
   // was loaded but never written. The bug: a user runs --incremental

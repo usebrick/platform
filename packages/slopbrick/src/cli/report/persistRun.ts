@@ -98,6 +98,13 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     categoryScores: report.categoryScores,
     issues: report.issues ?? [],
     scoreBasis: report.scoreBasis,
+    completionStatus: report.completionStatus,
+    scoreValidity: report.scoreValidity,
+    requested: report.requested,
+    analyzed: report.analyzed,
+    failed: report.failed,
+    skipped: report.skipped,
+    scanAccounting: report.scanAccounting,
   };
 
   // Append to run history (`.slopbrick/runs.json`). Skip when

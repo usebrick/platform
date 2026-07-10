@@ -88,6 +88,22 @@ export interface MemoryReport {
     suppressedIssueCount: number;
     parseErrorCount: number;
   };
+  completionStatus?: 'complete' | 'empty' | 'partial';
+  scoreValidity?: 'valid' | 'incomplete' | 'not-applicable';
+  requested?: number;
+  analyzed?: number;
+  failed?: number;
+  skipped?: number;
+  scanAccounting?: {
+    selected: number;
+    analyzed: number;
+    zeroFinding: number;
+    incrementalCached: number;
+    parseFailed: number;
+    timedOut: number;
+    crashed: number;
+    internalFailed: number;
+  };
 }
 
 /** Resolved config, minimal fields used by `buildConstitutionFromConfig`. */
@@ -502,6 +518,13 @@ export function buildHealthFromReport(
       scanDurationMs: options.scanDurationMs,
     }),
     ...(report.scoreBasis && { scoreBasis: report.scoreBasis }),
+    ...(report.completionStatus !== undefined && { completionStatus: report.completionStatus }),
+    ...(report.scoreValidity !== undefined && { scoreValidity: report.scoreValidity }),
+    ...(report.requested !== undefined && { requested: report.requested }),
+    ...(report.analyzed !== undefined && { analyzed: report.analyzed }),
+    ...(report.failed !== undefined && { failed: report.failed }),
+    ...(report.skipped !== undefined && { skipped: report.skipped }),
+    ...(report.scanAccounting !== undefined && { scanAccounting: report.scanAccounting }),
     ...(options.compositeScore && { compositeScore: options.compositeScore }),
   };
 }

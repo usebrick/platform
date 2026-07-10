@@ -7,6 +7,7 @@ import type {
   TopOffender,
 } from '../types';
 import { HEADLINE_SCORES, REPOSITORY_HEALTH_FORMULA, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
+import { formatScanValidityNotice } from './scan-validity.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -916,6 +917,8 @@ function formatIssue(issue: Issue): string {
 
 export function formatPretty(report: ProjectReport): string {
   const sections: string[] = [];
+  const validityNotice = formatScanValidityNotice(report);
+  if (validityNotice) sections.push(chalk.bold.yellow(validityNotice));
 
   // v0.14.5j (P6): plain-language verdict FIRST. The user opens the
   // scan output and the first thing they see is a one-sentence answer
@@ -1040,7 +1043,10 @@ function formatScoringExplainer(report: ProjectReport): string {
  * terminal.
  */
 export function formatWhyFailingReport(report: ProjectReport): string {
-  return formatWhyFailing(report);
+  const validityNotice = formatScanValidityNotice(report);
+  return validityNotice
+    ? `${chalk.bold.yellow(validityNotice)}\n\n${formatWhyFailing(report)}`
+    : formatWhyFailing(report);
 }
 
 /**
@@ -1054,6 +1060,11 @@ export function formatBriefReport(report: ProjectReport): string {
   // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;
   // the 4-score model shows all 4 orthogonal axes up front.
   const lines: string[] = [];
+  const validityNotice = formatScanValidityNotice(report);
+  if (validityNotice) {
+    lines.push(chalk.bold.yellow(validityNotice));
+    lines.push('');
+  }
 
   // One-line verdict
   lines.push(formatVerdict(report));

@@ -24,10 +24,12 @@ import {
 } from './utils.js';
 import { bucketForVerdict, bucketDistribution } from '../buckets.js';
 import { SCORE_BRIEFS, formatHeadlineScore } from '../score-contract.js';
+import { formatScanValidityNotice } from '../scan-validity.js';
 
 function renderHeader(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
   const roundedHealth = Math.round(report.assemblyHealth);
+  const validityNotice = formatScanValidityNotice(report);
 
   // v0.15.0+: 4 named scores replace the single `slopIndex`.
   // `repositoryHealth` is the only one already on `ProjectReport` — the
@@ -42,6 +44,7 @@ function renderHeader(report: ProjectReport): string {
     <div class="header-title">
       <h1>slopbrick report</h1>
       <p class="meta">Version ${escapeHtml(report.version)} · Generated at ${escapeHtml(report.generatedAt)}</p>
+      ${validityNotice ? `<p class="meta"><strong>${escapeHtml(validityNotice)}</strong></p>` : ''}
       ${report.scoreBasis ? `<p class="meta">Scores use ${report.scoreBasis.denominator} analysed file${report.scoreBasis.denominator === 1 ? '' : 's'} and the effective issue set; effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed; ${report.scoreBasis.parseErrorCount} parse errors).</p>` : ''}
     </div>
     <div class="score-cards">

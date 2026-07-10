@@ -461,6 +461,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           renderOutput(report, options, cwd);
         } else if (!options.quiet) {
           logger.error(`${summary} Check workspace/include patterns and retry.`);
+          // A partial scan still has useful diagnostic findings, but carries
+          // a prominent validity banner. Keep ordinary empty-workspace
+          // behaviour terse: its synthetic zero scores must not read as a
+          // clean verdict.
+          if (scanStats.status === 'partial') renderOutput(report, options, cwd);
         }
       } else {
         renderOutput(report, options, cwd);

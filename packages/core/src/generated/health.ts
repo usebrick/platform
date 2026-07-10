@@ -69,6 +69,31 @@ export interface RepositoryStructureHealth {
     parseErrorCount: number;
   };
   /**
+   * Outcome of the source scan. Optional so historical health snapshots remain valid.
+   */
+  completionStatus?: "complete" | "empty" | "partial";
+  /**
+   * Whether headline numeric scores are safe to use for gating. `incomplete` means only a subset of requested files was analysed; `not-applicable` means no files were selected.
+   */
+  scoreValidity?: "valid" | "incomplete" | "not-applicable";
+  requested?: number;
+  analyzed?: number;
+  failed?: number;
+  skipped?: number;
+  /**
+   * Additive outcome accounting for every selected file. Optional for compatibility with historical snapshots.
+   */
+  scanAccounting?: {
+    selected: number;
+    analyzed: number;
+    zeroFinding: number;
+    incrementalCached: number;
+    parseFailed: number;
+    timedOut: number;
+    crashed: number;
+    internalFailed: number;
+  };
+  /**
    * v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.
    */
   compositeScore?: {

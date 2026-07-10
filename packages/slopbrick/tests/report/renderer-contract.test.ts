@@ -8,7 +8,7 @@ import { runSuggest, type ToolContext } from '../../src/mcp/tools';
 import { formatHtml } from '../../src/report/html.js';
 import { formatJson } from '../../src/report/json.js';
 import { formatMarkdown } from '../../src/report/markdown.js';
-import { formatPretty, formatBriefReport } from '../../src/report/pretty.js';
+import { formatPretty, formatBriefReport, formatWhyFailingReport } from '../../src/report/pretty.js';
 import { formatSarif } from '../../src/report/sarif.js';
 import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
 import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types.js';
@@ -67,6 +67,56 @@ function report(): ProjectReport {
 }
 
 describe('headline score renderer contract', () => {
+  it('marks incomplete scores as invalid for every renderer without changing their numeric values', () => {
+    const input = Object.assign(report(), {
+      completionStatus: 'partial' as const,
+      // Added by the scan completion contract. Keep this structural here so
+      // the assertion proves renderer behaviour before the type lands.
+      scoreValidity: 'incomplete' as const,
+      requested: 7,
+      analyzed: 6,
+      failed: 1,
+      skipped: 0,
+      scanAccounting: {
+        selected: 7,
+        analyzed: 6,
+        zeroFinding: 6,
+        incrementalCached: 0,
+        parseFailed: 1,
+        timedOut: 0,
+        crashed: 0,
+        internalFailed: 0,
+      },
+    }) as ProjectReport;
+    const json = JSON.parse(formatJson(input)) as Record<string, unknown>;
+    const sarif = JSON.parse(formatSarif(input)) as {
+      runs: Array<{ tool: { driver: { properties?: Record<string, unknown> } } }>;
+    };
+
+    expect(json).toMatchObject({
+      scoreValidity: 'incomplete',
+      completionStatus: 'partial',
+      aiSlopScore: 12.3,
+    });
+    expect(sarif.runs[0].tool.driver.properties).toMatchObject({
+      scoreValidity: 'incomplete',
+      completionStatus: 'partial',
+      scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
+      scores: { aiSlopScore: 12.3 },
+    });
+    for (const output of [
+      formatPretty(input),
+      formatBriefReport(input),
+      formatWhyFailingReport(input),
+      formatMarkdown(input),
+      formatHtml(input),
+    ]) {
+      expect(output).toContain('INCOMPLETE SCAN');
+      expect(output).toContain('not valid for gating');
+      expect(output).toContain('requested 7');
+    }
+  });
+
   it('preserves all four score values and score-basis provenance in every report format', () => {
     const input = report();
     const json = JSON.parse(formatJson(input)) as Record<string, unknown>;
@@ -132,6 +182,16 @@ describe('headline score renderer contract', () => {
         repositoryHealth: 63,
         issueCounts: { high: 0, medium: 0, low: 0 },
         scoreBasis,
+        completionStatus: 'partial',
+        scoreValidity: 'incomplete',
+        requested: 7,
+        analyzed: 6,
+        failed: 1,
+        skipped: 0,
+        scanAccounting: {
+          selected: 7, analyzed: 6, zeroFinding: 6, incrementalCached: 0,
+          parseFailed: 1, timedOut: 0, crashed: 0, internalFailed: 0,
+        },
       }), 'utf8');
 
       const ctx: ToolContext = {
@@ -149,6 +209,11 @@ describe('headline score renderer contract', () => {
         repositoryHealth: 63,
       });
       expect(payload.scoreBasis).toEqual(scoreBasis);
+      expect(payload).toMatchObject({
+        completionStatus: 'partial',
+        scoreValidity: 'incomplete',
+        scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
+      });
       expect(payload.scoreBriefs).toEqual(SCORE_BRIEFS);
     } finally {
       rmSync(cwd, { recursive: true, force: true });

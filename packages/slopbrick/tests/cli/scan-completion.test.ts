@@ -482,6 +482,28 @@ describe('scan completion status', () => {
       accounting.analyzed + accounting.incrementalCached + accounting.parseFailed +
       accounting.timedOut + accounting.crashed + accounting.internalFailed,
     );
+    const health = JSON.parse(readFileSync(join(dir, '.slopbrick', 'health.json'), 'utf8')) as Record<string, unknown>;
+    expect(health).toMatchObject({
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      scanAccounting: { selected: 2, analyzed: 1, parseFailed: 1 },
+    });
+  });
+
+  it('renders a partial human report with an explicit invalid-for-gating banner', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+
+    const result = await run(['--workspace', dir]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain('INCOMPLETE SCAN');
+    expect(result.stdout).toContain('not valid for gating');
+    expect(result.stderr).toContain('Scan partial');
   });
 
   it.each([

@@ -73,6 +73,9 @@ export interface FinalizeReportInput {
   incrementalSummary: { skipped: number; rescanned: number } | undefined;
   telemetryEnabled: boolean;
   machineReadableStdout: boolean;
+  /** Computed in runScan before persistence so health snapshots retain it. */
+  scanMetadata: Pick<ProjectReport,
+    'completionStatus' | 'scoreValidity' | 'requested' | 'analyzed' | 'failed' | 'skipped' | 'scanAccounting'>;
 }
 
 export interface FinalizeReportResult {
@@ -99,6 +102,7 @@ export async function finalizeReport(
     incrementalSummary,
     telemetryEnabled,
     machineReadableStdout,
+    scanMetadata,
   } = input;
 
   const parseErrors = results
@@ -180,6 +184,7 @@ export async function finalizeReport(
     previousRun,
     enrichment,
   });
+  Object.assign(report, scanMetadata);
 
   // --no-increase check: fail the run if the AI Slop Score went UP.
   // v0.21.0: aiSlopScore is now the RAW amount of slop (0=clean,

@@ -178,6 +178,30 @@ describe('memory-types — validators', () => {
         scoreBasis: { denominator: -1, analyzedFiles: 0, issueSet: 'effective', suppressedIssueCount: 0, parseErrorCount: 0 },
       })).toBe(false);
     });
+
+    it('accepts optional score-validity and completion accounting', () => {
+      expect(isHealthFile({
+        ...valid,
+        completionStatus: 'partial',
+        scoreValidity: 'incomplete',
+        requested: 4,
+        analyzed: 3,
+        failed: 1,
+        skipped: 0,
+        scanAccounting: {
+          selected: 4,
+          analyzed: 3,
+          zeroFinding: 3,
+          incrementalCached: 0,
+          parseFailed: 1,
+          timedOut: 0,
+          crashed: 0,
+          internalFailed: 0,
+        },
+      })).toBe(true);
+      expect(isHealthFile({ ...valid, scoreValidity: 'unknown' })).toBe(false);
+      expect(isHealthFile({ ...valid, completionStatus: 'partial', scoreValidity: 'valid' })).toBe(false);
+    });
   });
 
   describe('isFileMtimeEntry', () => {

@@ -254,6 +254,26 @@ export function isHealthFile(value: unknown): value is RepositoryStructureHealth
     if (!isNonNegativeInteger(basis.suppressedIssueCount)) return false;
     if (!isNonNegativeInteger(basis.parseErrorCount)) return false;
   }
+  if (value.completionStatus !== undefined && value.completionStatus !== 'complete' && value.completionStatus !== 'empty' && value.completionStatus !== 'partial') return false;
+  if (value.scoreValidity !== undefined && value.scoreValidity !== 'valid' && value.scoreValidity !== 'incomplete' && value.scoreValidity !== 'not-applicable') return false;
+  if (value.completionStatus !== undefined && value.scoreValidity !== undefined) {
+    const expectedValidity = value.completionStatus === 'complete'
+      ? 'valid'
+      : value.completionStatus === 'partial'
+        ? 'incomplete'
+        : 'not-applicable';
+    if (value.scoreValidity !== expectedValidity) return false;
+  }
+  for (const field of ['requested', 'analyzed', 'failed', 'skipped'] as const) {
+    if (value[field] !== undefined && !isNonNegativeInteger(value[field])) return false;
+  }
+  if (value.scanAccounting !== undefined) {
+    if (!isRecord(value.scanAccounting)) return false;
+    const accounting = value.scanAccounting as Record<string, unknown>;
+    for (const field of ['selected', 'analyzed', 'zeroFinding', 'incrementalCached', 'parseFailed', 'timedOut', 'crashed', 'internalFailed']) {
+      if (!isNonNegativeInteger(accounting[field])) return false;
+    }
+  }
   // v0.18.2: optional Bayesian composite aggregate. Validate the
   // shape when present (G6 schema/writer/validator coherence).
   // Omitted in v0.18.1 and earlier health.json files; readers

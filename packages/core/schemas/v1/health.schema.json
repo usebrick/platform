@@ -120,6 +120,35 @@
         "parseErrorCount": { "type": "integer", "minimum": 0 }
       }
     },
+    "completionStatus": {
+      "description": "Outcome of the source scan. Optional so historical health snapshots remain valid.",
+      "type": "string",
+      "enum": ["complete", "empty", "partial"]
+    },
+    "scoreValidity": {
+      "description": "Whether headline numeric scores are safe to use for gating. `incomplete` means only a subset of requested files was analysed; `not-applicable` means no files were selected.",
+      "type": "string",
+      "enum": ["valid", "incomplete", "not-applicable"]
+    },
+    "requested": { "type": "integer", "minimum": 0 },
+    "analyzed": { "type": "integer", "minimum": 0 },
+    "failed": { "type": "integer", "minimum": 0 },
+    "skipped": { "type": "integer", "minimum": 0 },
+    "scanAccounting": {
+      "description": "Additive outcome accounting for every selected file. Optional for compatibility with historical snapshots.",
+      "type": "object",
+      "required": ["selected", "analyzed", "zeroFinding", "incrementalCached", "parseFailed", "timedOut", "crashed", "internalFailed"],
+      "properties": {
+        "selected": { "type": "integer", "minimum": 0 },
+        "analyzed": { "type": "integer", "minimum": 0 },
+        "zeroFinding": { "type": "integer", "minimum": 0 },
+        "incrementalCached": { "type": "integer", "minimum": 0 },
+        "parseFailed": { "type": "integer", "minimum": 0 },
+        "timedOut": { "type": "integer", "minimum": 0 },
+        "crashed": { "type": "integer", "minimum": 0 },
+        "internalFailed": { "type": "integer", "minimum": 0 }
+      }
+    },
     "compositeScore": {
       "description": "v0.18.2: project-level Bayesian aggregate of the per-file composite scores (see worker.ts:98). Informational addition; does not affect the four headline scores. The `mean` is the headline 'is this codebase AI?' signal; `tier` is derived from the mean using Jaeschke 1994 JAMA thresholds. Optional for backward compat with v0.18.1 and earlier readers.",
       "type": "object",
