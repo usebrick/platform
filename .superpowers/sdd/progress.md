@@ -220,7 +220,8 @@
   typing; CLI-03 is now backed by both option and worker-propagation commits.
 - MCP documentation follow-up `0d89b3abf` reconciles the guide with the seven
   canonical tools, current request/response fields, removed legacy tools, and
-  structure.md terminology; automated registry drift generation remains open.
+  structure.md terminology; `51056e179` now enforces generated registry drift
+  with `generate:mcp-docs` and two docs-contract tests.
 - Architecture-doc truth note `ea9c13528` labels the long historical design
   record and points current work to the v0.44 continuation plan, seven-tool MCP
   guide, support matrix, and actual website implementation.
