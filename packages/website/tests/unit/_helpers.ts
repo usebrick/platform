@@ -99,7 +99,9 @@ export function installMockRAF(): void {
  * actually complete within the loop.
  */
 export function flushRAF(stepMs = 100): void {
-  let time = 0;
+  // Production code can read the real clock before this drain begins. Keep
+  // the same epoch so mocked frame timestamps never move backwards.
+  let time = performance.now();
   const spy = vi.spyOn(performance, 'now').mockImplementation(() => (time += stepMs));
   try {
     for (let safety = 0; safety < 60; safety++) {
