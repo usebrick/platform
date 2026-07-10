@@ -15,6 +15,8 @@ import {
 } from '../../src/calibration/v103/selection';
 import { canonicalJson } from '../../src/calibration/v103/canonical';
 import { verifyV103RunInputs } from '../../src/calibration/v103/run-manifest';
+import { createV103WorkerInvoker } from '../../src/calibration/v103/worker-invoker';
+import { runV103Scan } from '../../src/calibration/v103/run-scan';
 
 type Command = 'corpus:validate' | 'select' | 'verify' | 'scan';
 
@@ -129,7 +131,12 @@ async function run(args: Arguments): Promise<void> {
     const inputs = verifyV103RunInputs(runManifest, checkoutMap);
     if (!inputs.ok) throw new UsageError(`Run input verification failed: ${inputs.error}`);
     await Promise.all(['observations.jsonl', 'failures.jsonl', 'coverage.json'].map((file) => ensureAbsent(join(args.run!, file))));
-    result({ ok: true, stage: 'scan:validated' });
+    let records: unknown[];
+    try { records = jsonl.trim() === '' ? [] : jsonl.trimEnd().split('\n').map((line) => JSON.parse(line)); } catch { throw new UsageError('Selection JSONL is malformed'); }
+    const frozen = runManifest as { runId: string; settings: { chunkSize: number; chunkTimeoutMs: number; retryTimeoutMs: number; includeRuleIds: string[]; excludeRuleIds: string[] } };
+    const evidence = await runV103Scan({ directory: args.run!, runId: frozen.runId, records: records as never, checkoutMap, chunkSize: frozen.settings.chunkSize, timeoutMs: frozen.settings.chunkTimeoutMs, retryTimeoutMs: frozen.settings.retryTimeoutMs, includeRules: frozen.settings.includeRuleIds, excludeRules: frozen.settings.excludeRuleIds, invoker: createV103WorkerInvoker() });
+    result({ ok: true, stage: 'scan', requested: evidence.coverage.requested, successful: evidence.coverage.successful, failed: evidence.coverage.failed, diagnosticOnly: evidence.verification.diagnosticOnly, gateFailures: evidence.verification.gateFailures });
+    if (evidence.verification.diagnosticOnly) process.exitCode = 1;
     return;
   }
   result({ ok: true, stage: 'selection' });

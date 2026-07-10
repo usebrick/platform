@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +14,9 @@ function timeoutError(timeoutMs: number): Error {
 
 function defaultRunner(input: { readonly filePath: string; readonly resultPath: string; readonly timeoutMs: number; readonly env: NodeJS.ProcessEnv }): Promise<{ readonly exitCode: number }> {
   return new Promise((resolve, reject) => {
-    const workerScript = fileURLToPath(new URL('./worker-process.cjs', import.meta.url));
+    const sibling = fileURLToPath(new URL('./worker-process.cjs', import.meta.url));
+    const builtFallback = fileURLToPath(new URL('../../../dist/calibration/v103/worker-process.cjs', import.meta.url));
+    const workerScript = existsSync(sibling) ? sibling : builtFallback;
     const child = spawn(process.execPath, [workerScript, input.filePath], { cwd: process.cwd(), env: input.env, stdio: ['ignore', 'ignore', 'pipe'] });
     const timer = setTimeout(() => { child.kill('SIGKILL'); reject(timeoutError(input.timeoutMs)); }, input.timeoutMs);
     child.once('error', (error) => { clearTimeout(timer); reject(error); });
