@@ -4,7 +4,7 @@
 // Extracted from `cli/scan.ts` `runScan`. The scan pipeline produces
 // a `ProjectReport`; this module takes care of all the disk + log
 // side-effects that come after:
-//   - Append the run to the run history (`.slopbrick/runs.json`)
+//   - Append the run to the historical memory log (`.slopbrick/structure.json`)
 //   - Save the incremental file hash cache (when `--incremental`)
 //   - Update the flywheel state + rule suggestions (when telemetry on)
 //   - Record telemetry payload
@@ -107,7 +107,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     scanAccounting: report.scanAccounting,
   };
 
-  // Append to run history (`.slopbrick/runs.json`). Skip when
+  // Append to the historical memory log (`.slopbrick/structure.json`). Skip when
   // projectMemory is explicitly disabled in config.
   // A diagnostic partial/empty score is neither a pass nor a failure. Do not
   // append it as numeric threshold evidence to historical trend data.

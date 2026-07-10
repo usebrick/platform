@@ -352,12 +352,30 @@ describe('scan completion status', () => {
     expect(stderr).toMatch(/requested 0|No source files matched/i);
   });
 
-  it('does not append an empty scan as threshold history evidence', async () => {
+  it('preserves project-memory run history for a not-applicable empty scan', async () => {
     const dir = createTmpDir(); dirs.push(dir);
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      'export default { projectMemory: true };\n',
+    );
+    mkdirSync(join(dir, '.slopbrick'));
+    // appendRun currently owns `.slopbrick/structure.json`; seed a valid
+    // legacy history entry and require that an invalid score cannot rewrite it.
+    const historyPath = join(dir, '.slopbrick', 'structure.json');
+    const seededHistory = JSON.stringify([{
+      timestamp: '2026-07-01T00:00:00.000Z',
+      version: '0.44.0',
+      slopIndex: 12,
+      categoryScores: {},
+      topOffenseIds: [],
+      thresholdExceeded: false,
+    }], null, 2) + '\n';
+    writeFileSync(historyPath, seededHistory);
+
     const result = await runScan({ workspace: dir, quiet: true });
 
     expect(result.report.scoreValidity).toBe('not-applicable');
-    expect(existsSync(join(dir, '.slopbrick', 'structure.json'))).toBe(false);
+    expect(readFileSync(historyPath, 'utf8')).toBe(seededHistory);
   });
 
   it('maps malformed config syntax to the documented config exit code', async () => {
