@@ -38,7 +38,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'help',
     run: () => [
-      { kind: 'accent', text: 'available commands (v0.43.0)' },
+      { kind: 'accent', text: 'available commands (v0.43.0; latest published)' },
       { kind: 'output', text: '  help                              show this list' },
       { kind: 'output', text: '  npm install -g slopbrick          install the CLI' },
       { kind: 'output', text: '  slopbrick init                    write a slopbrick.config.mjs' },
@@ -56,7 +56,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'npm install -g slopbrick',
     run: () => [
-      { kind: 'muted',  text: 'fetching slopbrick@latest (v0.43.0)...' },
+      { kind: 'muted',  text: 'fetching slopbrick@latest (v0.43.0; latest published)...' },
       { kind: 'success', text: 'added 1 package in 3s' },
       { kind: 'output', text: '/usr/local/bin/slopbrick' },
       { kind: 'muted',  text: 'next: `slopbrick init` to write slopbrick.config.mjs, then `slopbrick scan`.' },

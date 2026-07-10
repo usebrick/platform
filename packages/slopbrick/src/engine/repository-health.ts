@@ -59,17 +59,17 @@ function perAxis(
 ): Array<{ axis: string; health: number; weight: number }> {
   const out: Array<{ axis: string; health: number; weight: number }> = [];
 
-  // v0.15.0 U.4: prefer the new `aiSlopScore` input (0-100,
-  // higher = better). Fall back to the legacy `slopIndex`
+  // v0.21.0: prefer the new `aiSlopScore` input (0-100,
+  // lower = better; it is the raw amount of detected slop). Fall back to the legacy `slopIndex`
   // field (which is also kept optional on the inputs type for
   // backward compat with v0.14 callers) and apply the v0.14
-  // inversion only on that path. The axis name stays
+  // inversion on both paths. The axis name stays
   // "slopIndex" so existing dashboards and per-axis
   // breakdowns don't have to migrate.
   if (inputs.aiSlopScore !== undefined && !Number.isNaN(inputs.aiSlopScore)) {
     out.push({
       axis: 'slopIndex',
-      health: clamp100(inputs.aiSlopScore),
+      health: clamp100(100 - inputs.aiSlopScore),
       weight: REPOSITORY_HEALTH_WEIGHTS.slopIndex,
     });
   } else if (inputs.slopIndex !== undefined && !Number.isNaN(inputs.slopIndex)) {
@@ -246,8 +246,8 @@ export function buildRepositoryHealthFromReport(
   const totalDesignTokens =
     (options.spacingViolations ?? 0) + (options.radiusViolations ?? 0);
   const inputs: RepositoryHealthInputs = {
-    // v0.15.0 U.4+: the v3 headline score. Passed as the
-    // `aiSlopScore` input (higher = better). The perAxis handler
+    // v0.21.0+: the v3 headline score. Passed as the
+    // `aiSlopScore` input (lower = better). The perAxis handler
     // maps it to the "slopIndex" axis in the breakdown so
     // dashboards don't have to migrate.
     aiSlopScore: report.aiSlopScore,

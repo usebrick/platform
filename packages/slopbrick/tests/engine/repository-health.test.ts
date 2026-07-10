@@ -39,13 +39,19 @@ describe('aiDebtFromScore', () => {
 });
 
 describe('buildRepositoryHealth', () => {
+  it('inverts raw aiSlopScore so more detected slop lowers repository health', () => {
+    const clean = buildRepositoryHealth({ aiSlopScore: 5 });
+    const sloppy = buildRepositoryHealth({ aiSlopScore: 80 });
+    expect(clean.breakdown.slopIndex).toBe(95);
+    expect(sloppy.breakdown.slopIndex).toBe(20);
+    expect(clean.score).toBeGreaterThan(sloppy.score);
+  });
+
   it('returns the "low" bucket for a clean repo with all axes', () => {
-    // v0.15.0 U.4: "clean" means high aiSlopScore (the new headline
-    // is higher = better). The test data is updated to use 95
-    // (the legacy test value of 5 inverted through the v0.14
-    // logic) so a healthy composite remains healthy.
+    // v0.21.0: aiSlopScore is raw slop (lower = better), so a clean
+    // repository uses a low score.
     const result = buildRepositoryHealth({
-      aiSlopScore: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
+      aiSlopScore: 5, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
       architectureConsistency: 95,
       aiSecurityRisk: 'low',
       designTokenViolations: { spacing: 0, radius: 0 },
@@ -62,7 +68,7 @@ describe('buildRepositoryHealth', () => {
 
   it('returns "critical" when aiSecurityRisk is critical (penalty applied)', () => {
     const result = buildRepositoryHealth({
-      aiSlopScore: 95, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
+      aiSlopScore: 5, engineeringHygiene: 95, security: 95, repositoryHealth: 95,
       architectureConsistency: 95,
       aiSecurityRisk: 'critical',
     });
@@ -142,10 +148,10 @@ describe('buildRepositoryHealthFromReport', () => {
   });
 
   it('handles a report with no issues', () => {
-    // v0.15.0 U.4: high aiSlopScore + clean axes → high score
+    // v0.21.0: low aiSlopScore + clean axes → high score
     // (no penalty because no high-severity issues).
     const result = buildRepositoryHealthFromReport({
-      aiSlopScore: 90, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
+      aiSlopScore: 10, engineeringHygiene: 90, security: 90, repositoryHealth: 90,
       architectureConsistency: 90,
       aiSecurityRisk: 'low',
       issues: [],

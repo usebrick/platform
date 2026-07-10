@@ -412,7 +412,7 @@ export function computeAiMaintenanceCostFromReport(
   const approxLoc = options.linesOfCode ?? (report.fileCount ?? 0) * 50;
   // Recompute monthlyUSD with the actual medium/low issue counts.
   const axes: MaintenanceAxes = {
-    slopIndex: report.aiSlopScore, // The axis is named slopIndex for historical naming; the value is now aiSlopScore (0-100, higher is better, but axisSlopIndex inverts it)
+    slopIndex: report.aiSlopScore, // Historical axis name; aiSlopScore is raw slop (0-100, lower is better), and axisSlopIndex inverts it.
     architectureConsistency: report.architectureConsistency,
     aiSecurityRisk: report.aiSecurityRisk,
     constitutionViolations: options.constitutionViolations,

@@ -20,7 +20,7 @@ import type { ProjectReport } from '../types';
 const SCORE_BRIEFS: { aiSlopScore: string; engineeringHygiene: string; security: string; repositoryHealth: string } = {
   aiSlopScore: 'raw amount of AI slop, 0-100',
   engineeringHygiene: 'cross-category consistency, 0-100',
-  security: 'AI Security Risk band, 0-100',
+  security: 'security posture, 0-100 (higher is better)',
   repositoryHealth: 'weighted composite, 0-100',
 };
 
@@ -31,4 +31,3 @@ export function formatJson(report: ProjectReport): string {
   };
   return JSON.stringify(enriched, null, 2);
 }
-
