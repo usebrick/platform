@@ -9,9 +9,9 @@ The fix is one command: `npx slopbrick scan` writes
 `.slopbrick/{inventory.json, constitution.json, health.json, structure.md}`.
 The next time your AI agent writes a file — Claude Code, Cursor,
 Copilot, Aider — it reads `.slopbrick/structure.md` instead of re-parsing
-the AST. **100–1000× faster** on the agent integration, and the
-agent's first suggestion matches what the project already uses, not
-what the LLM trained on.
+the AST. The cached artifact avoids repeated parsing; actual speed-up depends
+on repository size and cache state. The agent's first suggestion matches what
+the project already uses, not what the LLM trained on.
 
 ```bash
 npm install -D slopbrick

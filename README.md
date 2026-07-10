@@ -54,7 +54,10 @@ npx slopbrick scan
 npx slopbrick mcp
 ```
 
-That's it. The next time an AI agent writes a file in your repo, it reads `.slopbrick/structure.md` instead of re-parsing the AST. **100–1000× faster** on the agent integration, and the agent's first suggestion matches what the project already uses, not what the LLM trained on.
+That's it. The next time an AI agent writes a file in your repo, it reads
+`.slopbrick/structure.md` instead of re-parsing the AST. The cached artifact
+avoids repeated parsing; measure the improvement on your own repository rather
+than relying on a fixed speed-up claim.
 
 **This isn't CLAUDE.md.** CLAUDE.md is a static file the agent reads once per session. `.slopbrick/structure.md` is a generated artifact that updates on every scan — your repository, encoded for the next agent.
 
