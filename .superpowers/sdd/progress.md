@@ -96,6 +96,9 @@
 - CLI-03 filter parity: `043a0dc35` forwards include/exclude/rule filters to
   workerData; scan-completion 12/12, typecheck, and build pass with independent
   approval. CLI-04 smoke coverage remains open.
+- MCP response contract: `fa4ea80e1` restores `compositeScore` fields promised
+  by `slop_scan_file`; full MCP suite 62/62 passes. Dart visitor routing:
+  `894ef1670` adds Aqueduct/Conduit `router.route` coverage with approval.
 - Kotlin native parser environment was repaired by compiling the pinned
   `tree-sitter-kotlin` addon for Node 24; parser-kotlin tests now pass (5/5).
 - Post-schema SlopBrick compatibility: invalid synthetic fingerprints were
