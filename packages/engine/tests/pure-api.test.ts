@@ -64,7 +64,16 @@ const PURE_RUNTIME_EXPORTS = [
   'tokenizeIdentifiers',
 ] as const;
 
-const FORBIDDEN_IMPORTS = new Set(['fs', 'fs/promises', 'node:fs', 'node:fs/promises', 'globby']);
+const FORBIDDEN_IMPORTS = new Set([
+  'fs',
+  'fs/promises',
+  'node:fs',
+  'node:fs/promises',
+  'globby',
+  // The root Core facade owns persistence adapters. A pure engine entry may
+  // only reach an explicitly-audited Core subpath.
+  '@usebrick/core',
+]);
 const SPECIFIER_PATTERNS = [
   /\b(?:import|export)\s+(?:[\s\S]*?\s+from\s+)?['"]([^'"]+)['"]/g,
   /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
@@ -79,6 +88,13 @@ function localModulePath(parent: string, specifier: string): string | undefined 
   return specifier.startsWith('.') ? resolve(parent, '..', specifier) : undefined;
 }
 
+function workspaceModulePath(specifier: string): string | undefined {
+  if (specifier === '@usebrick/core/verdicts') {
+    return resolve(fileURLToPath(new URL('../../core/dist/verdicts.js', import.meta.url)));
+  }
+  return undefined;
+}
+
 function findPureGraphViolations(entry: string): string[] {
   const pending = [entry];
   const visited = new Set<string>();
@@ -90,7 +106,7 @@ function findPureGraphViolations(entry: string): string[] {
     const source = readFileSync(module, 'utf8');
     for (const specifier of importSpecifiers(source)) {
       if (FORBIDDEN_IMPORTS.has(specifier)) violations.push(`${module}: ${specifier}`);
-      const local = localModulePath(module, specifier);
+      const local = localModulePath(module, specifier) ?? workspaceModulePath(specifier);
       if (local) pending.push(local);
     }
     if (/\bprocess\.(?:argv|exit)\b/.test(source)) violations.push(`${module}: process control`);
@@ -115,7 +131,7 @@ describe('@usebrick/engine/pure public API', () => {
     ]);
   });
 
-  it('builds a complete local module graph without prohibited dependencies', () => {
+  it('builds a complete pure module graph without root Core or filesystem dependencies', () => {
     const entry = resolve(fileURLToPath(new URL('..', import.meta.url)), 'dist/pure.js');
     expect(findPureGraphViolations(entry)).toEqual([]);
   });

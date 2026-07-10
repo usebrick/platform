@@ -40,7 +40,8 @@
 //   - Cui, Z. et al. (2025), "Who is using AI to code? Global
 //     diffusion and impact of generative AI" (sets the prior at 0.30)
 
-import { isDefaultOff, type SignalStrengthEntry, type Verdict } from '@usebrick/core';
+import { isDefaultOff, type Verdict } from '@usebrick/core/verdicts';
+import type { SignalStrengthEntry } from '@usebrick/core';
 
 // ---- Constants --------------------------------------------------------
 

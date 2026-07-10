@@ -1,4 +1,11 @@
 /**
+ * Standalone, side-effect-free verdict contract.
+ *
+ * This module is also published as `@usebrick/core/verdicts` so pure
+ * consumers can use the taxonomy without loading the root Core facade and
+ * its persistence adapters. Keep it free of filesystem, process, and root
+ * facade imports.
+ *
  * v0.14.5+: Single source of truth for the verdict taxonomy.
  * Adding a new verdict is a breaking change — bump STRUCTURE_SCHEMA_VERSION
  * (or a new VERDICT_SCHEMA_VERSION constant) and update the Zod schema.
