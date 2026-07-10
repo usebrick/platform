@@ -46,6 +46,7 @@
     "cal:corpus:validate": "tsx scripts/cal/v103.ts corpus:validate",
     "cal:select": "tsx scripts/cal/v103.ts select",
     "cal:verify": "tsx scripts/cal/v103.ts verify",
+    "cal:scan": "tsx scripts/cal/v103.ts scan",
     "typecheck": "tsc --noEmit",
     "prepack": "node scripts/prepack-guard.mjs",
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build && pnpm prepack",
