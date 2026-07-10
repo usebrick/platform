@@ -93,6 +93,25 @@ describe('scan completion status', () => {
     expect(result.stderr).toMatch(/invalid .*slopbrick\.config\.mjs|failed to load config/i);
   });
 
+  it('normalizes public display/performance flags in the packaged subprocess', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    for (let i = 0; i < 4; i++) {
+      writeFileSync(join(dir, 'src', `file-${i}.ts`), `export const value${i} = ${i};\n`);
+    }
+    const result = await run([
+      '--workspace', dir,
+      '--threads', '1',
+      '--verbose',
+      '--brief', '--full',
+      '--no-color',
+    ]);
+    expect(result.stderr).toMatch(/\[verbose\] selected 4 files/);
+    expect(result.stdout).toContain('AI Slop Score:');
+    expect(result.stdout).not.toContain('Re-run without --brief for the full report.');
+    expect(result.stdout).not.toMatch(/\x1b\[/);
+  });
+
   it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     const { stdout, exitCode } = await run(['--workspace', dir, '--format', 'json']);
