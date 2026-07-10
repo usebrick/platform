@@ -50,6 +50,16 @@ describe('schema contract and package delivery', () => {
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
+  it('compiles the closed calibration coverage schema under strict AJV', () => {
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    const schema = JSON.parse(readFileSync(join(schemaDir, 'calibration-coverage.schema.json'), 'utf8')) as object;
+    const validate = ajv.compile(schema);
+    const valid = JSON.parse(readFileSync(join(root, 'tests/fixtures/schema/valid/calibration-coverage.valid.json'), 'utf8')) as unknown;
+    const invalid = JSON.parse(readFileSync(join(root, 'tests/fixtures/schema/invalid/calibration-coverage.invalid.json'), 'utf8')) as unknown;
+    expect(validate(valid), JSON.stringify(validate.errors)).toBe(true);
+    expect(validate(invalid)).toBe(false);
+  });
+
   it('ships schemas through the package files declaration', () => {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
       files?: string[];
