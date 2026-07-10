@@ -234,3 +234,8 @@
   and separates human-actionable from machine-audit findings. Independent
   review approved the follow-up; report/MCP slice passes 182/182 and package
   TypeScript validation passes.
+- Gate 1 worker parity `378543990`/`0914b5e98`/`a1779f989` found and fixed
+  worker use of process cwd instead of the requested workspace. Direct/worker
+  parity now covers path exclusions, directives, default-off findings, scores,
+  and score basis; independent review approved it and scan completion passes
+  19/19.
