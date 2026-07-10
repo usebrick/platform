@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
 import { runScan } from '../../src/cli/scan';
@@ -18,6 +18,29 @@ describe('scan completion status', () => {
     writeFileSync(join(dir, 'src', 'a.ts'), 'export const a = 1;\n');
     const result = await runScan({ workspace: dir, quiet: true });
     expect(result.scanStats).toMatchObject({ status: 'complete', requested: 1, analyzed: 1, failed: 0 });
+  });
+
+  it('forwards rule filters to worker scans (not only inline scans)', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const noisy = Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n');
+    for (let i = 0; i < 4; i++) {
+      writeFileSync(join(dir, 'src', `noisy-${i}.ts`), `${noisy}\nexport const value${i} = ${i};\n`);
+    }
+
+    const result = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm'],
+      threadCount: 2,
+      workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
+    });
+
+    expect(result.scanStats).toMatchObject({ status: 'complete', requested: 4, analyzed: 4 });
+    expect(result.report.issues.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(result.results.flatMap((file) => file.issues.map((issue) => issue.ruleId)))).toEqual(
+      new Set(['logic/math-console-log-storm']),
+    );
   });
 
   it('returns empty and non-zero for an ordinary empty workspace', async () => {

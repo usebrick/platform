@@ -11,6 +11,10 @@ export interface WorkerPoolOptions {
   config: ResolvedConfig;
   workerTimeoutMs?: number;
   quiet?: boolean;
+  /** Rule registry narrowing requested by the CLI. */
+  rule?: string;
+  includeRules?: string[];
+  excludeRules?: string[];
   workerFactory?: (workerScript: string, options: WorkerOptions) => Worker;
 }
 
@@ -75,12 +79,18 @@ export class WorkerPool {
   private threadCount: number;
   private workerTimeoutMs: number;
   private quiet: boolean;
+  private rule?: string;
+  private includeRules?: string[];
+  private excludeRules?: string[];
   private workerFactory: (workerScript: string, options: WorkerOptions) => Worker;
 
   constructor(options: WorkerPoolOptions) {
     this.config = options.config;
     this.workerTimeoutMs = options.workerTimeoutMs ?? DEFAULT_WORKER_TIMEOUT_MS;
     this.quiet = options.quiet ?? false;
+    this.rule = options.rule;
+    this.includeRules = options.includeRules;
+    this.excludeRules = options.excludeRules;
     // over-subscription on hybrid-core (P/E-core) machines where
     // reserving all logical cores causes context-switch thrashing.
     // Matches ESLint's auto heuristic. Explicit --threadCount still wins.
@@ -272,6 +282,9 @@ export class WorkerPool {
             workerData: {
               config: this.config,
               quiet: this.quiet,
+              rule: this.rule,
+              includeRules: this.includeRules,
+              excludeRules: this.excludeRules,
             },
           });
         } catch (error) {

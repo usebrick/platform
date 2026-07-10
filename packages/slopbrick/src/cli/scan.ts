@@ -390,6 +390,9 @@ export async function runScan(
       config,
       threadCount: options.threadCount,
       quiet: options.quiet,
+      rule: options.rule,
+      includeRules: options.includeRules,
+      excludeRules: options.excludeRules,
       ...(options.workerScript ? { workerScript: options.workerScript } : {}),
     });
     results = await pool.scan(files, showProgress ? renderProgress : undefined);

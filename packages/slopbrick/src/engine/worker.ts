@@ -279,7 +279,13 @@ export async function scanFile(
 }
 
 async function run(): Promise<void> {
-  const data = workerData as { config: unknown; quiet?: unknown };
+  const data = workerData as {
+    config: unknown;
+    quiet?: unknown;
+    rule?: string;
+    includeRules?: string[];
+    excludeRules?: string[];
+  };
   if (!data.config || typeof data.config !== 'object') {
     throw new Error('workerData.config must be a ResolvedConfig object');
   }
@@ -287,7 +293,10 @@ async function run(): Promise<void> {
   const { config } = data as { config: ResolvedConfig };
 
   const registry = new RuleRegistry();
-  registry.loadBuiltins();
+  registry.loadBuiltins(data.rule, {
+    includeRules: data.includeRules,
+    excludeRules: data.excludeRules,
+  });
 
   if (!parentPort) {
     throw new Error('parentPort is not available in worker thread');
