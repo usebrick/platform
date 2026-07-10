@@ -112,6 +112,14 @@
   claims with the published v0.43.0 facts (103 rules; downloaded tarball
   1,130,295 bytes). Full route/accessibility/deployment verification remains
   open.
+- Documentation truth follow-up `7d3b102c6` updates root/package release status
+  to published v0.43.0 versus unreleased v0.44.0, removes remaining hard-coded
+  local calibration paths, and replaces the stale 24-category tree claim.
+- Fresh packaged self-scan after rebuilding `dist` (2026-07-10): 328 requested,
+  328 analysed, 0 parse failures, exit 0; AI Slop 6.9267, Engineering Hygiene
+  99.5793, Security 100, Repository Health 95.7. JSON includes `scoreBasis`
+  (denominator 328, effective issue set, 195 suppressed issues) and stderr is
+  clean. This is UX evidence, not calibration or release evidence.
 - The continuation ledger now records previously reviewed CLI-00/01/05/06,
   CORE-07/08, and Dart contract gates as complete with their evidence commits;
   CLI-03/04, MCP protocol schemas, score invariants, language matrix, and
