@@ -275,3 +275,8 @@
   It fixes extensionless config-exclude handling and propagates aggregate data
   through health/MCP/SARIF/JSON/terminal; independent review approved it and
   focused SlopBrick/Core contracts pass 49/49 and 24/24.
+- Gate 1 canonical Repository Health `b1b25ea09`/`614d43f03`/`3b869688a`/
+  `8779c1a49` removes the legacy Phase-12 headline overwrite, aligns scan and
+  watch effective score inputs, and documents the published four-axis formula.
+  The final suppressed-test/non-default contribution regression is independently
+  reconstructed; review approved the complete sequence.
