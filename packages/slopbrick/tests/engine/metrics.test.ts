@@ -137,35 +137,49 @@ describe('aggregateReport', () => {
       { filePath: 'beta.ts', rawScore: 6, componentScore: 6, adjustedScore: 6, componentCount: 2 },
       { filePath: 'gamma.ts', rawScore: 9, componentScore: 9, adjustedScore: 9, componentCount: 0 },
     ];
+    // Decimal severity/category products deliberately exercise IEEE-754
+    // accumulation order. Each group carries both AI-specific and
+    // cross-cutting evidence: only the former belongs in the AI bucket,
+    // while both must contribute to the visual category score.
     const issueGroups = [
       {
         filePath: 'alpha.ts',
         issues: [
-          { ruleId: 'logic/boundary-violation', category: 'logic' as const, severity: 'high' as const, aiSpecific: true },
-          { ruleId: 'security/public-admin-route', category: 'security' as const, severity: 'medium' as const, aiSpecific: false },
+          { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'medium' as const, aiSpecific: true },
+          { ruleId: 'visual/non-ai-alpha', category: 'visual' as const, severity: 'medium' as const, aiSpecific: false },
         ],
       },
       {
         filePath: 'beta.ts',
         issues: [
-          { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'medium' as const, aiSpecific: true },
-          { ruleId: 'docs/stale-function-reference', category: 'docs' as const, severity: 'low' as const, aiSpecific: false },
+          { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'low' as const, aiSpecific: true },
+          { ruleId: 'visual/non-ai-beta', category: 'visual' as const, severity: 'low' as const, aiSpecific: false },
         ],
       },
       {
         filePath: 'gamma.ts',
         issues: [
-          { ruleId: 'logic/reactive-hook-soup', category: 'logic' as const, severity: 'low' as const, aiSpecific: true },
+          { ruleId: 'visual/inline-style-dominance', category: 'visual' as const, severity: 'high' as const, aiSpecific: true },
+          { ruleId: 'visual/non-ai-gamma', category: 'visual' as const, severity: 'medium' as const, aiSpecific: false },
         ],
       },
     ];
-    const compositeScores = [composite(0.1), composite(0.2), composite(0.3)];
-    const report = aggregateReport(scores, issueGroups, DEFAULT_CONFIG, compositeScores, 3);
+    const config: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      categoryWeights: {
+        ...DEFAULT_CONFIG.categoryWeights!,
+        visual: 0.17,
+        logic: 0.2,
+        docs: 0.3,
+      },
+    };
+    const compositeScores = [composite(0.2), composite(0.3), composite(0.1)];
+    const report = aggregateReport(scores, issueGroups, config, compositeScores, 3);
     const permuted = aggregateReport(
       [scores[2]!, scores[0]!, scores[1]!],
-      [issueGroups[1]!, issueGroups[2]!, issueGroups[0]!],
-      DEFAULT_CONFIG,
-      [compositeScores[2]!, compositeScores[1]!, compositeScores[0]!],
+      [issueGroups[2]!, issueGroups[0]!, issueGroups[1]!],
+      config,
+      [compositeScores[2]!, compositeScores[0]!, compositeScores[1]!],
       3,
     );
 

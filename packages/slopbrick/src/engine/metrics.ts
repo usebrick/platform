@@ -237,7 +237,11 @@ export function aggregateReport(
   // invert to cleanliness: 100 - raw. Sub-scores stay "higher = better"
   // consistent with engineeringHygiene, security, repositoryHealth.
   const categoryWeights = config.categoryWeights ?? {} as Record<Category, number>;
-  const bucketPoints: Record<SubscoreBucket, number> = { boundary: 0, context: 0, visual: 0 };
+  const bucketEvidence: Record<SubscoreBucket, number[]> = {
+    boundary: [],
+    context: [],
+    visual: [],
+  };
   for (const group of issueGroups) {
     for (const issue of group.issues) {
       // The AI Slop Score is an AI-signal score, not a general quality
@@ -251,10 +255,16 @@ export function aggregateReport(
       const isAiSpecific = issue.aiSpecific ?? true;
       if (!isAiSpecific) continue;
       const bucket = bucketFor(issue.ruleId);
-      bucketPoints[bucket] +=
-        SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1);
+      bucketEvidence[bucket].push(
+        SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1),
+      );
     }
   }
+  const bucketPoints: Record<SubscoreBucket, number> = {
+    boundary: canonicalSum(bucketEvidence.boundary),
+    context: canonicalSum(bucketEvidence.context),
+    visual: canonicalSum(bucketEvidence.visual),
+  };
   // Use analyzed files as the exposure denominator. Component counts are a
   // UI/framework-specific implementation detail and are zero for backend,
   // CLI, and library files; using them here made those scans incomparable
@@ -308,15 +318,34 @@ export function aggregateReport(
   // dependency, no division-by-zero, scores are comparable across
   // project sizes. The saturation point (500 points = 100%)
   // matches the empirical max we've seen in v0.36+ calibrations.
-  const categoryPoints: Record<Category, number> = {
-    visual: 0, typo: 0, wcag: 0, layout: 0, component: 0, logic: 0, arch: 0, perf: 0, security: 0, test: 0, docs: 0, db: 0, ai: 0, context: 0, product: 0, i18n: 0,
+  const categoryEvidence: Record<Category, number[]> = {
+    visual: [], typo: [], wcag: [], layout: [], component: [], logic: [], arch: [], perf: [], security: [], test: [], docs: [], db: [], ai: [], context: [], product: [], i18n: [],
   };
   for (const group of issueGroups) {
     for (const issue of group.issues) {
-      categoryPoints[issue.category] +=
-        SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1);
+      categoryEvidence[issue.category].push(
+        SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1),
+      );
     }
   }
+  const categoryPoints: Record<Category, number> = {
+    visual: canonicalSum(categoryEvidence.visual),
+    typo: canonicalSum(categoryEvidence.typo),
+    wcag: canonicalSum(categoryEvidence.wcag),
+    layout: canonicalSum(categoryEvidence.layout),
+    component: canonicalSum(categoryEvidence.component),
+    logic: canonicalSum(categoryEvidence.logic),
+    arch: canonicalSum(categoryEvidence.arch),
+    perf: canonicalSum(categoryEvidence.perf),
+    security: canonicalSum(categoryEvidence.security),
+    test: canonicalSum(categoryEvidence.test),
+    docs: canonicalSum(categoryEvidence.docs),
+    db: canonicalSum(categoryEvidence.db),
+    ai: canonicalSum(categoryEvidence.ai),
+    context: canonicalSum(categoryEvidence.context),
+    product: canonicalSum(categoryEvidence.product),
+    i18n: canonicalSum(categoryEvidence.i18n),
+  };
   const categoryScores: Record<Category, number> = { ...categoryPoints };
   // Log-saturation: score = log10(1 + points/500) / log10(11) * 100,
   // capped at 100. This is the same formula used by aiSlopScore
