@@ -38,7 +38,7 @@ interface RuleAgg {
   negativeFiles: Set<string>;
 }
 
-interface CalibOutput {
+export interface CalibOutput {
   generatedAt: string;
   positivePath: string;
   negativePath: string;
@@ -64,12 +64,13 @@ interface CalibOutput {
   chunkTimeoutMs: number;
 }
 
-function parseArgs(argv: string[]): { outputDir: string; chunkTimeoutMs: number; posList: string; negList: string; markdownOut: string } {
+function parseArgs(argv: string[]): { outputDir: string; chunkTimeoutMs: number; posList: string; negList: string; markdownOut: string; jsonOut: string } {
   let outputDir = '/tmp/cal-chunks';
   let chunkTimeoutMs = 90_000;
   let posList = '';
   let negList = '';
   let markdownOut = '';
+  let jsonOut = '';
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--output-dir') outputDir = argv[++i];
@@ -77,15 +78,17 @@ function parseArgs(argv: string[]): { outputDir: string; chunkTimeoutMs: number;
     else if (a === '--positive-list') posList = argv[++i];
     else if (a === '--negative-list') negList = argv[++i];
     else if (a === '--markdown-out') markdownOut = argv[++i];
+    else if (a === '--json-out') jsonOut = argv[++i];
     else if (a === '-h' || a === '--help') {
       process.stderr.write(
-        'Usage: merge-chunk-results.ts --output-dir DIR [--positive-list FILE] [--negative-list FILE] [--markdown-out FILE]\n',
+        'Usage: merge-chunk-results.ts --output-dir DIR [--positive-list FILE] [--negative-list FILE] [--markdown-out FILE] [--json-out FILE]\n',
       );
       process.exit(0);
     }
   }
   if (!markdownOut) markdownOut = join(outputDir, 'calibration-empirical.md');
-  return { outputDir, chunkTimeoutMs, posList, negList, markdownOut };
+  if (!jsonOut) jsonOut = join(outputDir, 'calibration-empirical.json');
+  return { outputDir, chunkTimeoutMs, posList, negList, markdownOut, jsonOut };
 }
 
 export function loadChunks(dir: string, polarity: 'positive' | 'negative'): { rules: Map<string, RuleAgg>; fileCount: number; skipped: CalibOutput['skippedChunks'] } {
@@ -175,7 +178,7 @@ function classify(posFiles: number, negFiles: number): 'strong' | 'weak' | 'inve
   return 'strong';
 }
 
-function toMarkdown(out: CalibOutput): string {
+export function toMarkdown(out: CalibOutput): string {
   const lines: string[] = [];
   lines.push('# Empirical Calibration Report');
   lines.push('');
@@ -242,8 +245,13 @@ function toMarkdown(out: CalibOutput): string {
   return lines.join('\n');
 }
 
-function main(): void {
-  const args = parseArgs(process.argv.slice(2));
+export function mergeCalibrationChunks(args: {
+  outputDir: string;
+  chunkTimeoutMs: number;
+  posList?: string;
+  negList?: string;
+  generatedAt?: string;
+}): CalibOutput {
   const posResult = loadChunks(join(args.outputDir, 'pos'), 'positive');
   const negResult = loadChunks(join(args.outputDir, 'neg'), 'negative');
   const allRuleIds = new Set<string>([...posResult.rules.keys(), ...negResult.rules.keys()]);
@@ -273,7 +281,7 @@ function main(): void {
   }
   rules.sort((a, b) => b.f1 - a.f1 || b.precision - a.precision);
   const out: CalibOutput = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: args.generatedAt ?? new Date().toISOString(),
     positivePath: args.posList || join(args.outputDir, 'pos'),
     negativePath: args.negList || join(args.outputDir, 'neg'),
     positiveFileCount: posResult.fileCount,
@@ -282,10 +290,18 @@ function main(): void {
     skippedChunks: [...posResult.skipped, ...negResult.skipped],
     chunkTimeoutMs: args.chunkTimeoutMs,
   };
+  return out;
+}
+
+function main(): void {
+  const args = parseArgs(process.argv.slice(2));
+  const out = mergeCalibrationChunks(args);
   mkdirSync(resolve(args.markdownOut, '..'), { recursive: true });
+  mkdirSync(resolve(args.jsonOut, '..'), { recursive: true });
   writeFileSync(args.markdownOut, toMarkdown(out), 'utf8');
+  writeFileSync(args.jsonOut, JSON.stringify(out, null, 2) + '\n', 'utf8');
   process.stdout.write(
-    'Wrote ' + args.markdownOut + ' (' + rules.length + ' rules; ' +
+    'Wrote ' + args.markdownOut + ' and ' + args.jsonOut + ' (' + out.rules.length + ' rules; ' +
       out.skippedChunks.length + ' skipped chunks)\n',
   );
 }

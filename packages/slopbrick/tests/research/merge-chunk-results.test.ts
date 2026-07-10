@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
-import { loadChunks } from '../../scripts/cal/merge-chunk-results';
+import { loadChunks, mergeCalibrationChunks, toMarkdown } from '../../scripts/cal/merge-chunk-results';
 
 describe('calibration chunk merge accounting', () => {
   it('records corrupt chunk output as skipped instead of silently shrinking the denominator', () => {
@@ -55,5 +55,31 @@ describe('calibration chunk merge accounting', () => {
     expect(result.skipped).toEqual([
       { polarity: 'positive', index: 2, firstFile: '/corpus/positive/bad.json', reason: 'error' },
     ]);
+  });
+
+  it('produces deterministic machine data and Markdown from the same chunk evidence', () => {
+    const root = mkdtempSync(join(tmpdir(), 'slopbrick-merge-'));
+    const pos = join(root, 'pos');
+    const neg = join(root, 'neg');
+    mkdirSync(pos);
+    mkdirSync(neg);
+    writeFileSync(join(pos, 'chunk-0000.json'), JSON.stringify({
+      fileCount: 2,
+      issues: [{ ruleId: 'ai/example', filePath: '/corpus/pos/a.ts' }],
+    }));
+    writeFileSync(join(neg, 'chunk-0000.json'), JSON.stringify({
+      fileCount: 2,
+      issues: [{ ruleId: 'ai/example', filePath: '/corpus/neg/a.ts' }],
+    }));
+
+    const first = mergeCalibrationChunks({ outputDir: root, chunkTimeoutMs: 30_000, posList: 'pos.txt', negList: 'neg.txt', generatedAt: '2026-07-10T00:00:00.000Z' });
+    const second = mergeCalibrationChunks({ outputDir: root, chunkTimeoutMs: 30_000, posList: 'pos.txt', negList: 'neg.txt', generatedAt: '2026-07-10T00:00:00.000Z' });
+
+    expect(second).toEqual(first);
+    expect(first).toMatchObject({ positiveFileCount: 2, negativeFileCount: 2, generatedAt: '2026-07-10T00:00:00.000Z' });
+    expect(first.rules).toEqual([expect.objectContaining({ ruleId: 'ai/example', positiveFiles: 1, negativeFiles: 1 })]);
+    const markdown = toMarkdown(first);
+    expect(markdown).toContain('Positive corpus (AI-generated): **2** files from `pos.txt`');
+    expect(markdown).toContain('`ai/example`');
   });
 });

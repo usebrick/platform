@@ -16,6 +16,7 @@ function makeWorkspace(): string {
       "module.exports = {",
       "  include: ['src/**/*.tsx'],",
       "  framework: 'react',",
+      '  telemetry: false,',
       "  rules: {",
       "    'logic/math-console-log-storm': 'low',",
       "    'dup/near-duplicate': 'off',",
@@ -46,8 +47,8 @@ describe('CLI and MCP single-file scan parity', () => {
   it('uses the same workspace config and returns the same findings and composite score', async () => {
     const dir = makeWorkspace();
     try {
-      const cli = await runScan({ workspace: dir, quiet: true, telemetry: false }, ['src/example.tsx']);
       const config = await loadConfig(dir);
+      const cli = await runScan({ workspace: dir, quiet: true }, ['src/example.tsx']);
       const mcp = await handleToolCall(
         'slop_scan_file',
         { path: 'src/example.tsx' },
