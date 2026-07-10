@@ -152,6 +152,39 @@ describe('MCP evidence contract', () => {
     expect(JSON.stringify(finding)).not.toContain('do-not-forward-token');
     expect(JSON.stringify(finding)).not.toContain('hidden');
   });
+
+  it('enforces one deterministic global evidence budget across wide nested extras', () => {
+    const hugeKey = 'x'.repeat(200);
+    const extras = {
+      stable: { clonePath: '/tmp/components/Button.tsx', count: 2 },
+      zWide: Object.fromEntries(
+        Array.from({ length: 40 }, (_, index) => [
+          `field-${String(index).padStart(2, '0')}`,
+          { ordinal: index, sample: 'x'.repeat(400) },
+        ]),
+      ),
+      [hugeKey]: 'must not be forwarded',
+    };
+
+    const first = toMcpFinding({
+      ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
+      message: 'Broken link', line: 3, column: 4, extras,
+    }, '/tmp');
+    const second = toMcpFinding({
+      ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
+      message: 'Broken link', line: 3, column: 4, extras,
+    }, '/tmp');
+
+    const facts = first.whyItFired.facts as Record<string, unknown>;
+    expect(Buffer.byteLength(JSON.stringify(facts), 'utf8')).toBeLessThanOrEqual(2048);
+    expect(facts).toMatchObject({
+      stable: { clonePath: 'components/Button.tsx', count: 2 },
+      zWide: { 'field-00': { ordinal: 0, sample: 'x'.repeat(400) } },
+    });
+    expect(facts).not.toHaveProperty(hugeKey);
+    expect((facts.zWide as Record<string, unknown>)).not.toHaveProperty('field-39');
+    expect(second.whyItFired.facts).toEqual(first.whyItFired.facts);
+  });
 });
 
 describe('categorizeImport', () => {

@@ -245,12 +245,38 @@ const MAX_MCP_FACT_KEYS = 32;
 const MAX_MCP_FACT_ARRAY_ITEMS = 32;
 const MAX_MCP_FACT_STRING_LENGTH = 512;
 const MAX_MCP_FACT_DEPTH = 3;
+const MAX_MCP_FACT_KEY_LENGTH = 128;
+const MAX_MCP_FACT_NODES = 64;
+const MAX_MCP_FACT_BYTES = 2048;
 
 const SOURCE_LIKE_FACT_KEY = /(?:^|[-_])(source|code|content|body|text|raw)(?:$|[-_])/i;
 const SENSITIVE_FACT_KEY = /(?:^|[-_])(token|secret|password|credential|authorization|cookie|api[-_]?key)(?:$|[-_])/i;
 const WINDOWS_ABSOLUTE_PATH = /^[A-Za-z]:[\\/]/;
 
 type McpFact = null | boolean | number | string | McpFact[] | { [key: string]: McpFact };
+
+interface McpFactBudget {
+  nodes: number;
+  bytes: number;
+}
+
+function utf8Bytes(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function consumeMcpFact(budget: McpFactBudget, value: McpFact): boolean {
+  const bytes = utf8Bytes(JSON.stringify(value));
+  if (budget.nodes >= MAX_MCP_FACT_NODES || budget.bytes + bytes > MAX_MCP_FACT_BYTES) return false;
+  budget.nodes += 1;
+  budget.bytes += bytes;
+  return true;
+}
+
+function reserveMcpFactBytes(budget: McpFactBudget, bytes: number): boolean {
+  if (budget.bytes + bytes > MAX_MCP_FACT_BYTES) return false;
+  budget.bytes += bytes;
+  return true;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -273,30 +299,50 @@ function projectMcpPath(value: string, cwd?: string): string | null {
   return '[redacted absolute path]';
 }
 
-function projectMcpFact(value: unknown, cwd: string | undefined, depth: number): McpFact | undefined {
-  if (value === null || typeof value === 'boolean') return value;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+function projectMcpFact(value: unknown, cwd: string | undefined, depth: number, budget: McpFactBudget): McpFact | undefined {
+  if (value === null || typeof value === 'boolean') return consumeMcpFact(budget, value) ? value : undefined;
+  if (typeof value === 'number') return Number.isFinite(value) && consumeMcpFact(budget, value) ? value : undefined;
   if (typeof value === 'string') {
     const path = projectMcpPath(value, cwd);
-    if (path !== null) return path;
-    if (value.length > MAX_MCP_FACT_STRING_LENGTH) return '[omitted oversized string]';
-    if (isSourceLikeString(value)) return '[omitted source-like value]';
-    return value;
+    const projected = path ?? (value.length > MAX_MCP_FACT_STRING_LENGTH
+      ? '[omitted oversized string]'
+      : isSourceLikeString(value) ? '[omitted source-like value]' : value);
+    return consumeMcpFact(budget, projected) ? projected : undefined;
   }
-  if (depth >= MAX_MCP_FACT_DEPTH) return '[omitted nested value]';
+  if (depth >= MAX_MCP_FACT_DEPTH) {
+    const omitted = '[omitted nested value]';
+    return consumeMcpFact(budget, omitted) ? omitted : undefined;
+  }
   if (Array.isArray(value)) {
-    if (value.length > MAX_MCP_FACT_ARRAY_ITEMS) return '[omitted oversized array]';
-    const projected = value
-      .map((item) => projectMcpFact(item, cwd, depth + 1))
-      .filter((item): item is McpFact => item !== undefined);
+    if (value.length > MAX_MCP_FACT_ARRAY_ITEMS) {
+      const omitted = '[omitted oversized array]';
+      return consumeMcpFact(budget, omitted) ? omitted : undefined;
+    }
+    const projected: McpFact[] = [];
+    if (!consumeMcpFact(budget, projected)) return undefined;
+    for (const item of value) {
+      // Reserve punctuation before descending, so the final JSON can never
+      // exceed the global evidence byte ceiling.
+      if (!reserveMcpFactBytes(budget, 1)) break;
+      const fact = projectMcpFact(item, cwd, depth + 1, budget);
+      if (fact !== undefined) projected.push(fact);
+    }
     return projected;
   }
   if (!isPlainObject(value)) return undefined;
 
   const projected: Record<string, McpFact> = {};
-  for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value)).slice(0, MAX_MCP_FACT_KEYS)) {
+  if (!consumeMcpFact(budget, projected)) return undefined;
+  const entries = Object.entries(Object.getOwnPropertyDescriptors(value))
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+    .slice(0, MAX_MCP_FACT_KEYS);
+  for (const [key, descriptor] of entries) {
     if (!('value' in descriptor) || SOURCE_LIKE_FACT_KEY.test(key) || SENSITIVE_FACT_KEY.test(key)) continue;
-    const fact = projectMcpFact(descriptor.value, cwd, depth + 1);
+    if (key.length > MAX_MCP_FACT_KEY_LENGTH) continue;
+    // A property needs a quoted key, colon, and (except the last) comma.
+    // Counting a comma for every entry is deliberately conservative.
+    if (!reserveMcpFactBytes(budget, utf8Bytes(JSON.stringify(key)) + 2)) break;
+    const fact = projectMcpFact(descriptor.value, cwd, depth + 1, budget);
     if (fact !== undefined) projected[key] = fact;
   }
   return projected;
@@ -309,7 +355,7 @@ function projectMcpFact(value: unknown, cwd: string | undefined, depth: number):
  * filesystem paths outside the workspace.
  */
 export function toMcpFinding(issue: Issue, cwd?: string) {
-  const facts = issue.extras ? projectMcpFact(issue.extras, cwd, 0) : null;
+  const facts = issue.extras ? projectMcpFact(issue.extras, cwd, 0, { nodes: 0, bytes: 0 }) : null;
   return {
     ruleId: issue.ruleId,
     category: issue.category,
