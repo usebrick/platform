@@ -236,6 +236,7 @@ export async function finalizeReport(
     incrementalSummary,
     telemetryEnabled,
     machineReadableStdout,
+    autoRefreshSnippets: Boolean(options.autoRefreshSnippets),
   });
 
   return { report, noIncreaseFailure };

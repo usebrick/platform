@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
@@ -110,6 +110,26 @@ describe('scan completion status', () => {
     expect(result.stdout).toContain('AI Slop Score:');
     expect(result.stdout).not.toContain('Re-run without --brief for the full report.');
     expect(result.stdout).not.toMatch(/\x1b\[/);
+  });
+
+  it('refreshes an initialized AGENTS.md block from the packaged subprocess', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'x.ts'), 'export const x = 1;\n');
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      'export default { include: ["src/**/*.ts"], exclude: [], projectMemory: true };\n',
+    );
+    writeFileSync(
+      join(dir, 'AGENTS.md'),
+      '# project notes\n<!-- slopbrick:begin:v3 -->\nold\n<!-- slopbrick:end:v3 -->\n',
+    );
+    const result = await run(['--workspace', dir, '--refresh-snippets', '--quiet']);
+    expect(result.exitCode).toBe(0);
+    const content = readFileSync(join(dir, 'AGENTS.md'), 'utf8');
+    expect(content).toContain('slopbrick:begin:v3');
+    expect(content).not.toContain('\nold\n');
+    expect(content).toContain('Category-level directives');
   });
 
   it('keeps JSON parseable and includes completion counts for an empty scan', async () => {
