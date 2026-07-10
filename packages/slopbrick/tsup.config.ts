@@ -6,6 +6,7 @@ export default defineConfig({
     index: 'src/index.ts',
     'engine/worker': 'src/engine/worker.ts',
     'calibration/v103/worker-process': 'src/calibration/v103/worker-process.ts',
+    'calibration/v103/worker-invoker': 'src/calibration/v103/worker-invoker.ts',
   },
   format: ['cjs', 'esm'],
   outExtension({ format }) {
