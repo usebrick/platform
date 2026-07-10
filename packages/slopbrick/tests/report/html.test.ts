@@ -79,6 +79,20 @@ describe('formatHtml', () => {
     expect(output).toContain('low');
   });
 
+  it('renders score-basis provenance when supplied', () => {
+    const output = formatHtml(makeReport({
+      scoreBasis: {
+        denominator: 4,
+        analyzedFiles: 4,
+        issueSet: 'effective',
+        suppressedIssueCount: 2,
+        parseErrorCount: 1,
+      },
+    }));
+    expect(output).toContain('Scores use 4 analysed files and the effective issue set');
+    expect(output).toContain('2 suppressed');
+  });
+
   it('renders the 4 named scores (v0.15.0+) replacing the single slopIndex', () => {
     const output = formatHtml(makeReport({
       // v0.15.0+: provide the 4 named scores so they render with

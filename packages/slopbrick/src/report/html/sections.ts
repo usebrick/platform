@@ -41,6 +41,7 @@ function renderHeader(report: ProjectReport): string {
     <div class="header-title">
       <h1>slopbrick report</h1>
       <p class="meta">Version ${escapeHtml(report.version)} · Generated at ${escapeHtml(report.generatedAt)}</p>
+      ${report.scoreBasis ? `<p class="meta">Scores use ${report.scoreBasis.denominator} analysed file${report.scoreBasis.denominator === 1 ? '' : 's'} and the effective issue set (${report.scoreBasis.suppressedIssueCount} suppressed; ${report.scoreBasis.parseErrorCount} parse errors).</p>` : ''}
     </div>
     <div class="score-cards">
       <div class="score-card coherence">
