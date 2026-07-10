@@ -44,7 +44,7 @@ findings, it is `100 / (1 + N / 5)`. This is distinct from the categorical
 | **AI Maintenance Cost** | `$/month` | **Lower is better** | `slopbrick maintenance-cost` |
 | **AI Debt band** | `low` / `medium` / `high` / `critical` | Lower debt is better | Band from the canonical Repository Health headline |
 
-The 4 headline scores + 9 secondary scores are computed independently. A project can score `AI Slop Score 10` (clean) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
+Most diagnostics are measured independently; the canonical Repository Health headline is derived from AI Slop, Engineering Hygiene, Security, and Test Quality. A project can still score `AI Slop Score 10` (clean) AND `AI Security Risk CRITICAL` (hardcoded API key). Do not let one score mask another.
 
 ---
 
