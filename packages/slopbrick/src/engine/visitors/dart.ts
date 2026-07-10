@@ -81,7 +81,7 @@ const DART_SERVICE_RE = new RegExp(
  * GoRoute path is captured from `path: '/path'`.
  */
 const DART_ROUTE_RE = new RegExp(
-  `\\b(?:router|app|handler|router\\.route)\\.(?:get|post|put|delete|patch|all)\\(\\s*['"](\\/[^'"]+)['"]`,
+  `\\b(?:(?:router|app|handler)\\.(?:get|post|put|delete|patch|all)|router\\.route)\\(\\s*['"](\\/[^'"]+)['"]`,
   'g',
 );
 const DART_GO_ROUTE_RE = /GoRoute\s*\(\s*path:\s*['"](\/[^'"]+)['"]/g;
