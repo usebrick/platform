@@ -13,6 +13,8 @@ export type File = {
 } & {
   [k: string]: unknown;
 } & {
+  [k: string]: unknown;
+} & {
   /**
    * Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation.
    */
@@ -27,6 +29,10 @@ export type File = {
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
   split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";
+  /**
+   * Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort.
+   */
+  exclusionReason?: string;
   evidence: Evidence;
 } & {
   /**
@@ -43,6 +49,10 @@ export type File = {
   label: "verified_ai" | "verified_human" | "mixed" | "quarantine";
   tier: "gold" | "silver" | "quarantine";
   split: "train" | "validation" | "test" | "mixed_evaluation" | "excluded";
+  /**
+   * Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort.
+   */
+  exclusionReason?: string;
   evidence: Evidence;
 };
 export type Sha256 = string;

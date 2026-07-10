@@ -84,9 +84,15 @@
         "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
         "clusterId": { "$ref": "#/$defs/identifier" }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
         "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "mixed_evaluation", "excluded"] },
+        "exclusionReason": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort." },
         "evidence": { "$ref": "#/$defs/evidence" }
       },
       "allOf": [
+        {
+          "if": { "properties": { "split": { "const": "excluded" } }, "required": ["split"] },
+          "then": { "properties": { "exclusionReason": true }, "required": ["exclusionReason"] },
+          "else": { "properties": { "exclusionReason": true }, "not": { "required": ["exclusionReason"] } }
+        },
         {
           "if": { "properties": { "tier": { "const": "silver" } }, "required": ["tier"] },
           "then": { "properties": { "split": { "enum": ["train", "excluded"] } } }

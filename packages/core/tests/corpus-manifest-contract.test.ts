@@ -95,6 +95,59 @@ describe('v10.3 calibration corpus manifest contract', () => {
     expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
   });
 
+  it('requires an exclusion reason only for retained excluded records', () => {
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+    const ajv = new Ajv({ allErrors: true, strict: true });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const manifest = fixture();
+    const files = manifest.files as Array<Record<string, unknown>>;
+    files[0]!.split = 'excluded';
+
+    expect(validate(manifest)).toBe(false);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+
+    files[0]!.exclusionReason = 'generated fixture retained for exclusion accounting';
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+
+    files[0]!.split = 'train';
+    expect(validate(manifest)).toBe(false);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('does not treat an excluded record as a leakage cohort', () => {
+    const manifest = fixture();
+    const repositories = manifest.repositories as Array<Record<string, unknown>>;
+    const files = manifest.files as Array<Record<string, unknown>>;
+    repositories[1]!.familyId = files[0]!.familyId;
+    files[1] = {
+      ...files[1],
+      familyId: files[0]!.familyId,
+      clusterId: files[0]!.clusterId,
+      split: 'excluded',
+      exclusionReason: 'paired baseline retained for exclusion accounting'
+    };
+
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+  });
+
+  it('still rejects eligible split crossings within a family or content cluster', () => {
+    const manifest = fixture();
+    const repositories = manifest.repositories as Array<Record<string, unknown>>;
+    const files = manifest.files as Array<Record<string, unknown>>;
+    repositories[1]!.familyId = files[0]!.familyId;
+    files[1] = {
+      ...files[1],
+      familyId: files[0]!.familyId,
+      clusterId: files[0]!.clusterId,
+      label: 'verified_ai',
+      split: 'validation'
+    };
+
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
   it('rejects a family or content cluster that crosses verified human/AI labels', () => {
     const manifest = fixture();
     const files = manifest.files as Array<Record<string, unknown>>;

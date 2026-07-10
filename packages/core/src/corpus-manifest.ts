@@ -134,7 +134,7 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
   const familySplits = new Map<string, Set<string>>();
   const clusterSplits = new Map<string, Set<string>>();
   for (const file of value.files) {
-    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'label', 'tier', 'split', 'evidence']) ||
+    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'label', 'tier', 'split', 'exclusionReason', 'evidence']) ||
       !isNonEmptyString(file.sourceId) || sourceIds.has(file.sourceId) ||
       !IDENTIFIER.test(file.repositoryId as string) || !IDENTIFIER.test(file.familyId as string) ||
       repositories.get(file.repositoryId as string)?.familyId !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
@@ -145,12 +145,14 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     }
     const repository = repositories.get(file.repositoryId as string);
     if (!repository || file.sourceId !== calibrationCorpusSourceId(file.repositoryId as string, repository.commitSha, file.normalizedPath as string)) return false;
+    if ((file.split === 'excluded') !== isNonEmptyString(file.exclusionReason)) return false;
     if (file.tier === 'silver' && file.split !== 'train' && file.split !== 'excluded') return false;
     if (file.label === 'mixed' && (file.tier !== 'gold' || file.split !== 'mixed_evaluation')) return false;
     if ((file.label === 'verified_ai' || file.label === 'verified_human') && file.split === 'mixed_evaluation') return false;
     if ((file.label === 'quarantine' || file.tier === 'quarantine') && (file.label !== 'quarantine' || file.tier !== 'quarantine' || file.split !== 'excluded')) return false;
     sourceIds.add(file.sourceId);
 
+    if (file.split === 'excluded') continue;
     const binaryLabel = file.label === 'verified_ai' || file.label === 'verified_human' ? file.label : '';
     if (binaryLabel && (!addGroupValue(familyLabels, file.familyId as string, binaryLabel) ||
       !addGroupValue(clusterLabels, file.clusterId as string, binaryLabel))) return false;

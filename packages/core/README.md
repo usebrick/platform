@@ -37,7 +37,9 @@ The calibration corpus manifest is a two-part contract: validate the JSON
 Schema **and** call `isCalibrationCorpusManifestV103` before selection or
 calibration. The semantic verifier enforces canonical source IDs and
 cross-record family/cluster/split leakage rules which JSON Schema cannot
-express alone.
+express alone. Excluded records remain countable audit evidence and must carry
+an `exclusionReason`; the semantic verifier does not treat them as a data
+cohort for split-leakage checks.
 
 ### Versioned schema URLs
 
