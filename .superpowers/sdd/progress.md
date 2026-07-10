@@ -229,3 +229,8 @@
   repeatable rule filters, routes parserless language extensions, and reports
   skipped chunks in Markdown. Calibration evidence remains diagnostic until
   provenance and coverage gates pass.
+- Gate 1 renderer contract `9fb68690c`/`f28db4525`/`9fcb46b33` centralizes
+  score semantics, makes MCP/SARIF carry numeric headline scores and basis,
+  and separates human-actionable from machine-audit findings. Independent
+  review approved the follow-up; report/MCP slice passes 182/182 and package
+  TypeScript validation passes.
