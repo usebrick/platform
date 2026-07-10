@@ -56,6 +56,88 @@ describe('scan completion status', () => {
     );
   });
 
+  it('keeps default-off findings out of effective run-level scores while retaining them for audit', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'mixed.ts'), [
+      "enum Color { Red = 'red', Blue = 'blue' }",
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+      '',
+    ].join('\n'));
+
+    const baseline = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm'],
+    });
+    const withDefaultOff = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm', 'ts/enum-vs-as-const'],
+    });
+
+    const headline = (report: typeof baseline.report) => ({
+      aiSlopScore: report.aiSlopScore,
+      engineeringHygiene: report.engineeringHygiene,
+      security: report.security,
+      repositoryHealth: report.repositoryHealth,
+    });
+    expect(headline(withDefaultOff.report)).toEqual(headline(baseline.report));
+    expect(withDefaultOff.report.scoreBasis?.denominator).toBe(baseline.report.scoreBasis?.denominator);
+    expect(withDefaultOff.report.scoreBasis?.analyzedFiles).toBe(baseline.report.scoreBasis?.analyzedFiles);
+    expect(withDefaultOff.report.scoreBasis?.suppressedIssueCount).toBe(
+      (baseline.report.scoreBasis?.suppressedIssueCount ?? 0) + 1,
+    );
+    expect(withDefaultOff.report.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: 'ts/enum-vs-as-const', severity: 'off' }),
+    ]));
+    expect(withDefaultOff.report.defaultOffSuppressedCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('keeps inline-disabled findings out of effective run-level scores while retaining the directive audit fact', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const target = join(dir, 'src', 'storm.ts');
+    writeFileSync(target, [
+      '// slopbrick-disable-next-line logic/math-console-log-storm',
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+      '',
+    ].join('\n'));
+
+    const baseline = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['security/hardcoded-secret'],
+    });
+    const withDisabledRule = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm'],
+    });
+
+    const headline = (report: typeof baseline.report) => ({
+      aiSlopScore: report.aiSlopScore,
+      engineeringHygiene: report.engineeringHygiene,
+      security: report.security,
+      repositoryHealth: report.repositoryHealth,
+    });
+    expect(headline(withDisabledRule.report)).toEqual(headline(baseline.report));
+    expect(withDisabledRule.report.scoreBasis).toMatchObject({
+      denominator: baseline.report.scoreBasis?.denominator,
+      analyzedFiles: baseline.report.scoreBasis?.analyzedFiles,
+      suppressedIssueCount: baseline.report.scoreBasis?.suppressedIssueCount,
+    });
+    expect(withDisabledRule.report.issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: 'logic/math-console-log-storm' }),
+    ]));
+    expect(withDisabledRule.results[0]?.facts?.v2.disabledRules).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ruleId: 'logic/math-console-log-storm',
+        scope: 'next-line',
+      }),
+    ]));
+  });
+
   it('keeps --security-only scoped to security rules on worker scans', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
