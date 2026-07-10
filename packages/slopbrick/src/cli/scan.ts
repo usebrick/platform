@@ -20,7 +20,7 @@ import { existsSync, statSync } from 'node:fs';
 import { resolve, relative, extname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { renderProgress, clearProgress } from './render';
+import { renderProgress, clearProgress, resetNoColor, setNoColor } from './render';
 import {
   filterIssues,
   filterByDisabledDirectives,
@@ -102,6 +102,11 @@ export async function runScan(
   explicitPaths?: string[],
 ): Promise<ScanRunResult> {
   setLoggerQuiet(!!options.quiet);
+  // `--no-color` is a process-local renderer override. Reset it before
+  // every run so a prior library/CLI invocation cannot leak color policy
+  // into the next scan.
+  resetNoColor();
+  if (options.noColor) setNoColor(true);
   // v0.10.7 — Repository Memory Platform. Captured here so the inventory
   // persisted at the end of runScan reflects the wall-clock scan time
   // (same metric surfaced in `ProjectReport.scanDurationMs`).
@@ -323,7 +328,27 @@ export async function runScan(
       process.exit(2);
     }
   }
-  registry.loadBuiltins(options.rule);
+  // v0.10.2 (Phase 10): validate --include-rule values so the user
+  // gets a clear error rather than an empty rule registry.
+  // `--security-only` is a rule-set selector, not merely an output filter:
+  // keep it identical across inline and worker paths by deriving the same
+  // effective include set once at the scan boundary.
+  const securityRuleIds = options.securityOnly
+    ? builtinRules.filter((rule) => rule.id.startsWith('security/')).map((rule) => rule.id)
+    : undefined;
+  const effectiveIncludeRules = securityRuleIds
+    ? (options.includeRules && options.includeRules.length > 0
+      ? options.includeRules.filter((id) => securityRuleIds.includes(id))
+      : securityRuleIds)
+    : options.includeRules;
+  if (options.includeRules && options.includeRules.length > 0) {
+    const unknown = options.includeRules.filter((id) => !builtinRules.some((r) => r.id === id));
+    if (unknown.length > 0) {
+      logger.error(`Unknown --include-rule value(s): ${unknown.join(', ')}. Run \`slopbrick rules\` to see available rules.`);
+      process.exit(2);
+    }
+  }
+  registry.loadBuiltins(options.rule, { includeRules: effectiveIncludeRules, excludeRules: options.excludeRules });
   if (telemetryEnabled) {
     const flywheelState = loadFlywheelState(cwd);
     // v0.14.5g: skip autotune entries for rules marked defaultOff in
@@ -368,6 +393,13 @@ export async function runScan(
   // machineReadableStdout was computed earlier (above the 0-files warning)
   // so the warning could gate on it; reuse it here.
   const showProgress = process.stdout.isTTY && !options.quiet && !machineReadableStdout;
+  if (options.verbose && !options.quiet && !machineReadableStdout) {
+    console.error(
+      `[verbose] selected ${requestedFiles} file${requestedFiles === 1 ? '' : 's'} ` +
+      `(${files.length} to analyze${options.incremental ? `, ${unchanged.length} cached` : ''}); ` +
+      `${registry.all().length} rule${registry.all().length === 1 ? '' : 's'} enabled.`,
+    );
+  }
 
   // typical of --staged / --changed pre-commit runs), skip the worker
   // spin-up overhead and scan inline. Larger scans keep the
@@ -383,7 +415,10 @@ export async function runScan(
   if (files.length <= INLINE_THRESHOLD) {
     results = [];
     for (const filePath of files) {
-      results.push(await scanFile(filePath, config, undefined, cwd));
+      // v0.10.2 (Phase 10): pass the registry so --include-rule /
+      // --exclude-rule actually take effect in the inline path too.
+      // Without this, single-file scans ignore the include filter.
+      results.push(await scanFile(filePath, config, registry, cwd));
     }
   } else {
     const pool = new WorkerPool({
@@ -391,7 +426,7 @@ export async function runScan(
       threadCount: options.threadCount,
       quiet: options.quiet,
       rule: options.rule,
-      includeRules: options.includeRules,
+      includeRules: effectiveIncludeRules,
       excludeRules: options.excludeRules,
       ...(options.workerScript ? { workerScript: options.workerScript } : {}),
     });
@@ -399,6 +434,10 @@ export async function runScan(
   }
   if (showProgress) {
     clearProgress();
+  }
+  if (options.verbose && !options.quiet && !machineReadableStdout) {
+    const failed = results.filter((result) => Boolean(result.parseError)).length;
+    console.error(`[verbose] analyzed ${results.length - failed} file${results.length - failed === 1 ? '' : 's'}; ${failed} parse failure${failed === 1 ? '' : 's'}.`);
   }
 
   for (const result of results) {
@@ -412,12 +451,32 @@ export async function runScan(
     }
   }
 
+  // Keep the score's effective issue set identical to the user-visible
+  // contract.  Default-off findings remain attached to the report as
+  // `severity: off` for auditability, but must not contribute to scoreFile
+  // or aggregateReport.  Previously suppression happened after scoring,
+  // so an INVERTED/NOISY finding could lower the score while disappearing
+  // from issue counts and SARIF results.
+  const defaultOff = getDefaultOffRules();
+  const userOverrides = new Set(Object.keys(config.rules));
+  const isSuppressedForScore = (issue: Issue): boolean =>
+    issue.severity === ('off' as Issue['severity']) ||
+    (defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId));
+  const effectiveIssues = (issues: Issue[]): Issue[] =>
+    issues.filter((issue) => !isSuppressedForScore(issue));
+
   const multiplier = resolveFrameworkMultiplier(config);
   const scorableResults = results.filter((result) => !result.parseError);
-  const scores = scorableResults.map((result) => scoreFile(result, multiplier, config, baseline, cwd));
+  const scores = scorableResults.map((result) => scoreFile(
+    { ...result, issues: effectiveIssues(result.issues) },
+    multiplier,
+    config,
+    baseline,
+    cwd,
+  ));
   const issueGroups = scorableResults.map((result) => ({
     filePath: result.filePath,
-    issues: result.issues,
+    issues: effectiveIssues(result.issues),
   }));
 
   if (options.since && baseline) {
@@ -441,9 +500,17 @@ export async function runScan(
   // still drive the 4 headline scores; the composite aggregate is
   // an informational addition (does not affect aiSlopScore/etc).
   const perFileCompositeScores = scorableResults.map((r) => r.compositeScore);
-  const aggregated = aggregateReport(scores, issueGroups, config, perFileCompositeScores);
+  const aggregated = aggregateReport(
+    scores,
+    issueGroups,
+    config,
+    perFileCompositeScores,
+    scorableResults.length,
+  );
 
-  const projectIssues = filterIssues(runProjectRules(results, config), options);
+  const projectIssues = options.securityOnly
+    ? []
+    : filterIssues(runProjectRules(results, config), options);
   const allIssues = [...results.flatMap((result) => result.issues), ...projectIssues];
   // Reporters (JSON, HTML, markdown) read this field to color-code or
   // annotate. The loader is cheap — single JSON read at module load.
@@ -466,11 +533,9 @@ export async function runScan(
   // User `rules: { 'rule/id': 'medium' }` (or any non-off) overrides.
   // Applied to all issues BEFORE the filterIssues pass so the severity
   // filter (which skips 'off' issues) removes them from the report.
-  const defaultOff = getDefaultOffRules();
   // Compute user-overrides ONCE: any rule explicitly set in config.rules
   // (to anything, even 'off') is considered a user choice and we don't
   // override it.
-  const userOverrides = new Set(Object.keys(config.rules));
   let defaultOffApplied = 0;
   for (const issue of allIssues) {
     if (!defaultOff.has(issue.ruleId)) continue;
