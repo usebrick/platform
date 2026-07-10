@@ -226,6 +226,11 @@ async function runScanFile(args: Record<string, unknown>, ctx: ToolContext): Pro
     filePath: result.filePath,
     componentCount: result.componentCount,
     parseError: result.parseError,
+    // Keep the per-file Bayesian score promised by the MCP contract. The
+    // worker computes this for every successfully parsed file; preserving
+    // the full object gives clients both the advertised probability/tier
+    // and the contributing-rule details for explainability.
+    compositeScore: result.compositeScore,
     issues: result.issues.map((i) => ({
       ruleId: i.ruleId,
       category: i.category,

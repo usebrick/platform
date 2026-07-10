@@ -300,7 +300,16 @@ describe('MCP file tools workspace boundary', () => {
 
       const inside = await handleToolCall('slop_scan_file', { path: 'src/example.ts' }, ctx);
       expect(inside.isError).toBeFalsy();
-      expect(JSON.parse(inside.content[0]!.text).filePath).toBe(realpathSync(join(dir, 'src/example.ts')));
+      const payload = JSON.parse(inside.content[0]!.text);
+      expect(payload.filePath).toBe(realpathSync(join(dir, 'src/example.ts')));
+      // The tool definition promises the per-file Bayesian score. Keep the
+      // probability and confidence tier on the wire so MCP clients can use
+      // the advertised AI-likelihood signal instead of inferring it from
+      // issue counts.
+      expect(payload.compositeScore).toMatchObject({
+        probability: expect.any(Number),
+        confidenceTier: expect.any(String),
+      });
 
       const traversal = await handleToolCall('slop_scan_file', { path: '../' + outside.split('/').pop() + '/secret.ts' }, ctx);
       expect(traversal.isError).toBe(true);
