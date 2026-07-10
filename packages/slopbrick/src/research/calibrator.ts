@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { POSITIVE_DIR, NEGATIVE_DIR } from '../corpus-paths';
 
@@ -32,6 +32,10 @@ export interface CalibrationReport {
   positiveFileCount: number;
   negativeFileCount: number;
   rules: RuleCalibration[];
+  // v0.10.2 (Phase 4): tracks chunks that the calibrator skipped
+  // (timeout or other error) so users can see what didn't make it.
+  skippedChunks: Array<{ polarity: 'positive' | 'negative'; index: number; firstFile: string; reason: 'timeout' | 'error' }>;
+  chunkTimeoutMs: number;
 }
 
 // v0.18.2 PR-1k: imported from src/corpus-paths.ts (single source
@@ -50,50 +54,86 @@ function buildFileList(dir: string, extensions: string[]): string[] {
   return out.trim().split('\n').filter(Boolean);
 }
 
-function runScan(fileListPath: string): {
+interface ScanResult {
   fileCount: number;
   ruleFires: Map<string, number>;
   uniqueFilesPerRule: Map<string, number>;
-} {
+  skippedChunks: Array<{ index: number; firstFile: string; reason: 'timeout' | 'error' }>;
+}
+
+function runScan(fileListPath: string, options: { chunkTimeoutMs?: number; includeRules?: string[]; excludeRules?: string[] } = {}): ScanResult {
   const files = readFileSync(fileListPath, 'utf8').trim().split('\n').filter(Boolean);
   const CHUNK = 600;
+  // v0.10.2 (Phase 4): per-chunk timeout. Default 90s; configurable
+  // via calibrate's --chunk-timeout. A pathological file (e.g. a 50MB
+  // minified single-line JS) can take 5-20 min to parse; without a
+  // timeout, the orchestrator gets stuck after the first bad chunk.
+  const chunkTimeoutMs = options.chunkTimeoutMs ?? 90_000;
+  // v0.10.2 (Phase 10): per-chunk --include-rule / --exclude-rule
+  // passthrough. The calibrator's full-corpus run can target a
+  // specific rule set (e.g. only DORMANT rules) without paying the
+  // parse cost of the unused rules.
+  const includeArgs = (options.includeRules ?? []).flatMap((r) => ['--include-rule', r]);
+  const excludeArgs = (options.excludeRules ?? []).flatMap((r) => ['--exclude-rule', r]);
   const ruleFires = new Map<string, number>();
   const uniqueFilesPerRule = new Map<string, Set<string>>();
+  const skippedChunks: ScanResult['skippedChunks'] = [];
   let fileCount = 0;
   const tmpOut = join('/tmp', `calibrate-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
   for (let i = 0; i < files.length; i += CHUNK) {
     const chunk = files.slice(i, i + CHUNK);
+    const chunkIndex = Math.floor(i / CHUNK);
+    const firstFile = chunk[0] ?? '';
+    // Never let a prior chunk's JSON satisfy a later chunk after a timeout
+    // or child crash. Each chunk owns a fresh output path lifecycle.
+    if (existsSync(tmpOut)) unlinkSync(tmpOut);
     try {
       execFileSync(
         'node',
-        [join(process.cwd(), 'bin', 'slopbrick.js'), 'scan', ...chunk, '--json', tmpOut, '--no-telemetry', '--quiet'],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+        [join(process.cwd(), 'bin', 'slopbrick.js'), 'scan', ...chunk, ...includeArgs, ...excludeArgs, '--json', tmpOut, '--no-telemetry', '--quiet'],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: chunkTimeoutMs, killSignal: 'SIGKILL' },
       );
-    } catch {
-      // non-zero exit is fine (threshold violation); JSON is still written
+    } catch (err) {
+      // Two failure modes to distinguish:
+      //   1. Child exceeded chunkTimeoutMs — skip chunk, record reason.
+      //   2. Non-zero exit (threshold violation) — JSON is still
+      //      written, so we proceed to parse it below.
+      const code = (err as { status?: number; signal?: string; killed?: boolean } | null);
+      const timedOut = code?.killed === true || code?.signal === 'SIGKILL';
+      if (timedOut) {
+        skippedChunks.push({ index: chunkIndex, firstFile, reason: 'timeout' });
+        continue;
+      }
+      // Non-timeout error: fall through and try to parse the JSON
+      // anyway (legacy behavior: threshold violations still write
+      // valid JSON even on non-zero exit).
     }
-    if (!existsSync(tmpOut)) continue;
-    const report = JSON.parse(readFileSync(tmpOut, 'utf8')) as {
-      fileCount: number;
-      issues: Array<{ ruleId: string; filePath: string }>;
-    };
+    if (!existsSync(tmpOut)) {
+      skippedChunks.push({ index: chunkIndex, firstFile, reason: 'error' });
+      continue;
+    }
+    let report: { fileCount: number; issues: Array<{ ruleId: string; filePath: string }> };
+    try {
+      report = JSON.parse(readFileSync(tmpOut, 'utf8')) as typeof report;
+    } catch {
+      skippedChunks.push({ index: chunkIndex, firstFile, reason: 'error' });
+      continue;
+    }
     fileCount += report.fileCount;
-    // Derive unique files per rule from the issues (each issue carries its
-    // filePath). This gives us a per-rule file set, deduped.
     for (const issue of report.issues) {
       ruleFires.set(issue.ruleId, (ruleFires.get(issue.ruleId) ?? 0) + 1);
       if (!issue.filePath) continue;
       if (!uniqueFilesPerRule.has(issue.ruleId)) uniqueFilesPerRule.set(issue.ruleId, new Set());
       uniqueFilesPerRule.get(issue.ruleId)!.add(issue.filePath);
     }
-    execFileSync('rm', ['-f', tmpOut]);
+    unlinkSync(tmpOut);
   }
-  execFileSync('rm', ['-f', tmpOut]);
+  if (existsSync(tmpOut)) unlinkSync(tmpOut);
   const uniqueFilesMap = new Map<string, number>();
   for (const [ruleId, set] of uniqueFilesPerRule) {
     uniqueFilesMap.set(ruleId, set.size);
   }
-  return { fileCount, ruleFires, uniqueFilesPerRule: uniqueFilesMap };
+  return { fileCount, ruleFires, uniqueFilesPerRule: uniqueFilesMap, skippedChunks };
 }
 
 function classify(posFiles: number, negFiles: number): RuleCalibration['signal'] {
@@ -114,9 +154,15 @@ export async function calibrate(
     negativeList?: string;
     positiveLimit?: number;
     negativeLimit?: number;
+    // v0.10.2 (Phase 4): per-chunk timeout. Default 90s.
+    chunkTimeoutMs?: number;
+    // v0.10.2 (Phase 10): per-chunk rule-set filter.
+    includeRules?: string[];
+    excludeRules?: string[];
   } = {},
 ): Promise<CalibrationReport> {
   const positiveDir = options.positiveDir ?? DEFAULT_POSITIVE;
+  const chunkTimeoutMs = options.chunkTimeoutMs ?? 90_000;
   const negativeDir = options.negativeDir ?? DEFAULT_NEGATIVE;
   if (!options.positiveList && !existsSync(positiveDir)) {
     throw new Error(`Positive corpus not found: ${positiveDir}`);
@@ -155,11 +201,14 @@ export async function calibrate(
   for (const r of builtinRules) {
     metaById.set(r.id, { category: r.category, severity: r.severity });
   }
+  const posScan = runScan(posListPath, { chunkTimeoutMs, includeRules: options.includeRules, excludeRules: options.excludeRules });
+  const negScan = runScan(negListPath, { chunkTimeoutMs, includeRules: options.includeRules, excludeRules: options.excludeRules });
+  const skippedChunks: CalibrationReport['skippedChunks'] = [
+    ...posScan.skippedChunks.map((s) => ({ ...s, polarity: 'positive' as const })),
+    ...negScan.skippedChunks.map((s) => ({ ...s, polarity: 'negative' as const })),
+  ];
 
-  const posScan = runScan(posListPath);
-  const negScan = runScan(negListPath);
-
-  execFileSync('rm', ['-f', posListPath, negListPath]);
+   execFileSync('rm', ['-f', posListPath, negListPath]);
 
   const allRuleIds = new Set<string>([
     ...posScan.ruleFires.keys(),
@@ -201,6 +250,8 @@ export async function calibrate(
     positiveFileCount: posScan.fileCount,
     negativeFileCount: negScan.fileCount,
     rules,
+    skippedChunks,
+    chunkTimeoutMs,
   };
 }
 
@@ -209,9 +260,14 @@ export function reportToMarkdown(report: CalibrationReport): string {
   lines.push('# Empirical Calibration Report');
   lines.push('');
   lines.push('Generated: ' + report.generatedAt);
-  lines.push('');
   lines.push('- Positive corpus (AI-generated): **' + report.positiveFileCount + '** files from `' + report.positivePath + '`');
   lines.push('- Negative corpus (real human): **' + report.negativeFileCount + '** files from `' + report.negativePath + '`');
+  // v0.10.2 (Phase 4): always show the chunk timeout so users know
+  // what to expect, and surface skipped chunks if any.
+  lines.push('- Per-chunk scan timeout: **' + Math.round(report.chunkTimeoutMs / 1000) + 's**');
+  if (report.skippedChunks.length > 0) {
+    lines.push('- **Skipped chunks: ' + report.skippedChunks.length + '** (see [Skipped Chunks](#skipped-chunks) below)');
+  }
   lines.push('');
   lines.push('`precision` = fires-on-positive / total-fires. Higher = fewer false positives.');
   lines.push('`recall` = fires-on-positive / positive-files. Higher = catches more AI slop.');
@@ -255,8 +311,21 @@ export function reportToMarkdown(report: CalibrationReport): string {
     for (const r of weak) lines.push('- `' + r.ruleId + '` (precision ' + (r.precision * 100).toFixed(0) + ')');
     lines.push('');
   }
+  if (report.skippedChunks.length > 0) {
+    lines.push('## Skipped Chunks');
+    lines.push('');
+    lines.push('These chunks failed to scan within the per-chunk timeout or produced no JSON output. Their files are NOT included in the per-rule counts above.');
+    lines.push('');
+    lines.push('| Polarity | Chunk # | First file | Reason |');
+    lines.push('|----------|---------|------------|--------|');
+    for (const s of report.skippedChunks) {
+      lines.push('| ' + s.polarity + ' | ' + s.index + ' | `' + s.firstFile + '` | ' + s.reason + ' |');
+    }
+    lines.push('');
+  }
   return lines.join('\n');
 }
+
 
 export function writeCalibrationReport(report: CalibrationReport, cwd: string): string {
   const out = resolve(cwd, 'corpus', 'calibration-empirical.md');
