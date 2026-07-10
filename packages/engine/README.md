@@ -25,18 +25,17 @@ stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 
 ## Public API (`packages/engine/src/index.ts`)
 
-- `scanProject(options, io)` — pure scan, takes a `MemoryIO` interface for file I/O
-- `loadStructure` / `saveStructure` — structure persistence (was `loadMemory` / `saveMemory` in v0.14.5)
-- `loadInventory` / `saveInventory` — pattern inventory persistence
-- `loadConstitution` / `saveConstitution` — declared constitution persistence
-- `loadHealth` / `saveHealth` — health snapshot persistence
+- `MemoryIO` builders — `buildInventoryFromScan`, `buildConstitutionFromConfig`,
+  and `buildHealthFromReport`; `saveInventory`, `readRuns`, and `appendRun` are
+  the explicit persistence adapters
 - `computeLikelihoodRatios(ruleIds, corpus)` — LR math
 - `bayesianPosterior(firedRuleIds, lrs)` — naive Bayes update
 - `parseSource(source, filePath)` — pure AST parsing (no filesystem access)
 - `parseFile(filePath, opts?)` — compatibility filesystem adapter with optional AST cache
 - `extractSignatures(source, filePath, workspaceDir)` — pure signature extraction
 - `findSimilarFunctions(query, options?)` — workspace adapter that reads files before using the pure similarity functions
-- 30+ more exports
+- Additional pure graph, distribution, novelty, and statistical helpers are
+  listed and locked by `tests/api.test.ts` (the runtime export snapshot).
 
 ## Build dependency
 
@@ -47,7 +46,9 @@ stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 
 ## Status
 
-v0.15.0: **shipped** (B.1–B.8 complete). The pure scanning logic lives here; the CLI-side I/O adapters and command modules stay in `slopbrick/`.
+v0.14.5 workspace package: the pure scanning logic lives here; the CLI-side
+I/O adapters and command modules stay in `slopbrick/`. The API snapshot and
+package typecheck must pass before changing public exports.
 
 ## License
 
