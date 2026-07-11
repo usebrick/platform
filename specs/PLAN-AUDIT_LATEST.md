@@ -98,6 +98,10 @@ These are hard execution gates, not planning gaps:
       private canonical cache authority, explicit TLS/parser/size ceilings, and
       targeted independent rereview at final release SHA
       `3c115b75b63544c8fa281fb32532be25ed5d0a71b0afad7571163829668e93c5`.
+- [x] Release-materialization Task 3: commit `14998b539`; mutation-proven
+      default-denied bounded HTTPS acquisition, final 184/184 focused and
+      200/200 combined boundary tests, SlopBrick typecheck, staged gate, and
+      independent specification plus OWASP A01-A10 approvals.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
 - [ ] Exact dependency resolution/audit and adversarial `safe-zip-v1` proof.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
@@ -107,12 +111,15 @@ These are hard execution gates, not planning gaps:
 - [ ] Commit-bound Task 9A/9B approvals, exact package tarball, and clean Node 22/24 consumer receipts.
 - [ ] Admission-backed manifest round trip, two deterministic smoke runs, exact 10k canary, and post-canary full-count freeze.
 - [ ] Statistical/provenance review before any rule verdict or signal change.
-- [ ] Separate self-scan UX, installed-hook design, package/release, website, deployment, and live-publication gates.
+- [ ] Separate self-scan UX (including staged-score determinism, type-only use,
+      not-applicable axes, suppressed-count separation, state writes, and
+      baseline migration), installed-hook design, package/release, website,
+      deployment, and live-publication gates.
 
 ## Verdict
 
-**READY TO EXECUTE.** Tasks 1-2 are approved; continue with
-release-materialization Task 3 and proceed
+**READY TO EXECUTE.** Tasks 1-3 are approved; continue with
+release-materialization Task 4 and proceed
 task-by-task with test-first implementation, a specification reviewer, a code-
 quality reviewer, and verification evidence before advancing. Any change to a
 frozen plan requires a new hash and targeted rereview. Any implementation
