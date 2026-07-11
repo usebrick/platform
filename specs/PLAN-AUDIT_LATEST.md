@@ -128,8 +128,11 @@ These are hard execution gates, not planning gaps:
       is pinned and adds no known advisory; the workspace audit remains red and
       is not release evidence.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
-- [ ] Task 4A shared trusted-POSIX-cache refactor with all Task 3 behavior and
-      tests preserved.
+- [x] Task 4A shared trusted-POSIX-cache refactor: commit `521c0e888`; explicit
+      RED, 43 direct plus 184 byte-unchanged acquisition tests (227/227),
+      typecheck/build/diff gates, independent specification and code/security
+      approvals, and persisted review at
+      `.superpowers/sdd/v103-release-task4a-review.md`.
 - [ ] Task 4B raw ZIP/CRC/receipt/reference proof and Task 4C adversarial
       extraction/publication/reuse proof.
 - [ ] Separate remediation and independent review of the 17 production and 20
@@ -148,8 +151,8 @@ These are hard execution gates, not planning gaps:
 
 ## Verdict
 
-**READY TO EXECUTE.** Tasks 1-3 are approved and Task 4's corrected plan is
-approved; continue with release-materialization Task 4A and proceed
+**READY TO EXECUTE.** Tasks 1-3 and Task 4A are approved; continue with
+release-materialization Task 4B and proceed
 task-by-task with test-first implementation, a specification reviewer, a code-
 quality reviewer, and verification evidence before advancing. Any change to a
 frozen plan requires a new hash and targeted rereview. Any implementation
