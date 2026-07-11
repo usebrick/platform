@@ -6,7 +6,7 @@
 
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
-| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `3c115b75b63544c8fa281fb32532be25ed5d0a71b0afad7571163829668e93c5` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. |
+| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `08d30d9dca5b177764c5c631d98d570d75b2702a556438eaf8c10dadf292c26f` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `233ede7262dd408318230f32ab4cc5d2103caf8b5662ae4fb228088531f70e75` | Owns provenance admission Tasks 0-11, including the v10.3.2 witness-bound manifest and final in-process consumer authority. |
 
 The independent full-plan review is
@@ -27,28 +27,42 @@ their final candidate SHA. This approves planning only; it does not claim that
 implementation, corpus evidence, manifests, smoke, canary, or release gates
 already pass.
 
+Task 4 dependency inspection and adversarial rereview then found that the
+baseline ZIP plan did not yet define raw local/central validation, descriptor
+lifetime, complete resource caps, durable no-replace tree publication, or
+identity-safe cleanup precisely enough to implement. The corrected Task 4
+contract is independently approved at the table's final release SHA and is
+recorded in `.superpowers/sdd/v103-release-task4-plan-rereview.md`. It freezes
+an ASCII-only `safe-zip-v1` raw grammar, descriptor-bound reads and rechecks,
+owned inflate/CRC/receipt verification, and local-POSIX reference publication.
+It also records the existing dependency advisories as a separate release gate;
+the planning verdict does not call the workspace audit clean.
+
 ## Canonical execution order
 
-1. Implement and independently approve release-materialization Tasks 1-6.
+1. Implement and independently approve release-materialization Tasks 1-5.
    This opens one coordinated, unreleased Core `0.3.0` schema tranche and
    preserves the existing Git path.
-2. Execute admission Tasks 0-3B as reviewed vertical TDD slices: durable tool
+2. Close the production/development dependency-security remediation tranche,
+   independently verify the resulting audit decisions, then implement and
+   approve release Task 6's packed prerequisite.
+3. Execute admission Tasks 0-3B as reviewed vertical TDD slices: durable tool
    and evidence authority, complete register/review authority, scalable exact
    overlap, final context, exact witnesses, and transactional census.
-3. Execute admission Tasks 4-8 against the centralized external v10.3 corpus:
+4. Execute admission Tasks 4-8 against the centralized external v10.3 corpus:
    reproduce the honest zero census, audit bounded source batches, acquire only
    after a reviewed deficit, and freeze an independently reviewed 100/100
    witness. AI is positive; human is negative. Quarantine is not a third label.
-4. Close admission Task 9A at its single-writer Core-schema point. Adopt and
+5. Close admission Task 9A at its single-writer Core-schema point. Adopt and
    verify the Node 22/24 supported-runtime policy before Task 9B freezes its
    implementation commit/tarball. Task 9B alone adds the v10.3.2 manifest
    builder and complete-reference consumer integration, proves that installed
    tarball under Node 22/24, reruns release Task 6, and freezes commit-bound
    prerequisite receipts before any manifest output.
-5. Execute release Tasks 7-8 without adding a side manifest or changing frozen
+6. Execute release Tasks 7-8 without adding a side manifest or changing frozen
    consumer code. Then execute admission Tasks 10-11 for the deterministic
    100/100 smoke and exact 5,000/5,000 canary.
-6. Freeze the post-canary full-run count from all and only `eligible_gold`
+7. Freeze the post-canary full-run count from all and only `eligible_gold`
    records under the approved method. Review any signal/verdict change in a
    separate reversible commit. Release operations remain separately gated.
 
@@ -65,6 +79,7 @@ already pass.
 | Overlap and leakage | READY | The complete 452,382-plus-new stream supplies authoritative sides to an exact disk-backed join. Hash/near/family/pair/source/split leakage blocks readiness; LSH remains diagnostic. |
 | Resource bounds | READY | Heap, RSS, disk, open-file, shard, wall-time, search-node, per-unit, acquisition-round, transfer, and materialized-byte limits are explicit. Stock Git transport bytes are honestly described as not hard-capped. |
 | Network and archive security | READY | Network is default-denied. Authorized acquisition constrains exact origins/redirects/DNS addresses, credentials/config/hooks, and archive extraction. ZIP traversal, collisions, symlinks, unsupported modes, bombs, and reuse mutation are tested. |
+| Archive materialization | READY | `safe-zip-v1` has a raw comment-free EOCD/ZIP64-v1/local/central grammar, ASCII-only paths, exact type/flag/extra-field rules, BigInt-safe limits, owned inflate/CRC checks, deterministic receipts, descriptor lifetime, durable local-POSIX publication/reuse, and identity-safe cleanup. Unicode, Windows reparse points, unsigned descriptors, entry ZIP64, hostile same-euid defense, and network/distributed cache filesystems require later policy versions. |
 | Transaction safety | READY | Create/replace CAS, `wx` locks, intended transaction IDs, file/directory fsyncs, immutable generations, projection-last promotion, lock-only recovery, transaction-before-lock cleanup, and unknown-file preservation are operative and fault-injected. |
 | Consumer authority | READY | A complete self-hashed current/generation/build-receipt/manifest reference is routing only. Each v10.3.2 validate/materialize/select process reopens the full graph, reconstructs a private WeakSet brand, and rereads current before output or mutation. |
 | Compatibility | READY | Legacy v10.3.0/v10.3.1 manifest bytes and flat-path mode remain stable. v10.3.2 requires a non-null admission binding and the complete reference mode; it cannot downgrade to flat-path authority. |
@@ -74,8 +89,10 @@ already pass.
 
 ## Mechanical audit
 
-- Admission TypeScript fences: 13; Bash fences: 35; syntax failures: 0.
-- Release TypeScript fences: 4; Bash fences: 14; syntax failures: 0.
+- Admission executable fences: 13 TypeScript and 3 Bash; 19 total fenced
+  blocks; prior syntax failures: 0.
+- Release executable fences: 9 TypeScript and 17 Bash; 35 total fenced blocks;
+  prior syntax failures: 0.
 - Duplicate TypeScript members/declarations: 0.
 - Markdown fence parity and stale synthetic-source/flat-manifest scans: clean.
 - `git diff --check`: clean at the frozen hashes.
@@ -102,8 +119,21 @@ These are hard execution gates, not planning gaps:
       default-denied bounded HTTPS acquisition, final 184/184 focused and
       200/200 combined boundary tests, SlopBrick typecheck, staged gate, and
       independent specification plus OWASP A01-A10 approvals.
+- [x] Task 4 plan correction: exact dependency inspection, primary-source
+      research, read-only intended-asset compatibility probes, raw ZIP and
+      POSIX publication contract, two independent exact-hash approvals, and
+      persisted rereview at final release SHA
+      `08d30d9dca5b177764c5c631d98d570d75b2702a556438eaf8c10dadf292c26f`.
+- [x] Exact Task 4 dependency resolution and audit attribution: the ZIP delta
+      is pinned and adds no known advisory; the workspace audit remains red and
+      is not release evidence.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
-- [ ] Exact dependency resolution/audit and adversarial `safe-zip-v1` proof.
+- [ ] Task 4A shared trusted-POSIX-cache refactor with all Task 3 behavior and
+      tests preserved.
+- [ ] Task 4B raw ZIP/CRC/receipt/reference proof and Task 4C adversarial
+      extraction/publication/reuse proof.
+- [ ] Separate remediation and independent review of the 17 production and 20
+      complete-graph workspace advisories before packed Task 6 evidence.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
 - [ ] Truthful 329/329 generation-0 review and byte-backed external evidence.
 - [ ] Real 452,382-row overlap/resource receipt and honest reproduced census.
@@ -118,8 +148,8 @@ These are hard execution gates, not planning gaps:
 
 ## Verdict
 
-**READY TO EXECUTE.** Tasks 1-3 are approved; continue with
-release-materialization Task 4 and proceed
+**READY TO EXECUTE.** Tasks 1-3 are approved and Task 4's corrected plan is
+approved; continue with release-materialization Task 4A and proceed
 task-by-task with test-first implementation, a specification reviewer, a code-
 quality reviewer, and verification evidence before advancing. Any change to a
 frozen plan requires a new hash and targeted rereview. Any implementation
