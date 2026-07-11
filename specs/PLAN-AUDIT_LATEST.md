@@ -133,8 +133,12 @@ These are hard execution gates, not planning gaps:
       typecheck/build/diff gates, independent specification and code/security
       approvals, and persisted review at
       `.superpowers/sdd/v103-release-task4a-review.md`.
-- [ ] Task 4B raw ZIP/CRC/receipt/reference proof and Task 4C adversarial
-      extraction/publication/reuse proof.
+- [x] Task 4B raw ZIP/CRC/receipt/reference proof: commit `6ce6259da`;
+      safe ZIP 30/30, receipt 44/44, combined Task 3/4A/4B boundary 301/301,
+      strict direct test compile, package typecheck/build/diff, exact dependency
+      attribution, independent receipt/specification/security approvals, and
+      persisted review at `.superpowers/sdd/v103-release-task4b-review.md`.
+- [ ] Task 4C adversarial extraction/publication/reuse proof.
 - [ ] Separate remediation and independent review of the 17 production and 20
       complete-graph workspace advisories before packed Task 6 evidence.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
@@ -144,15 +148,17 @@ These are hard execution gates, not planning gaps:
 - [ ] Commit-bound Task 9A/9B approvals, exact package tarball, and clean Node 22/24 consumer receipts.
 - [ ] Admission-backed manifest round trip, two deterministic smoke runs, exact 10k canary, and post-canary full-count freeze.
 - [ ] Statistical/provenance review before any rule verdict or signal change.
-- [ ] Separate self-scan UX (including staged-score determinism, type-only use,
-      not-applicable axes, suppressed-count separation, state writes, and
-      baseline migration), installed-hook design, package/release, website,
-      deployment, and live-publication gates.
+- [ ] Separate self-scan UX. Commit `efb069b90` closes staged-score drift,
+      implicit Git-scoped state writes, sequential duplicate-cache leakage,
+      and concurrent in-process isolation with 240/240 focused tests and
+      independent approval. Type-only use, not-applicable axes,
+      suppressed-count separation, baseline migration, installed-hook design,
+      package/release, website, deployment, and live-publication gates remain.
 
 ## Verdict
 
-**READY TO EXECUTE.** Tasks 1-3 and Task 4A are approved; continue with
-release-materialization Task 4B and proceed
+**READY TO EXECUTE.** Tasks 1-3 and Tasks 4A-4B are approved; continue with
+release-materialization Task 4C and proceed
 task-by-task with test-first implementation, a specification reviewer, a code-
 quality reviewer, and verification evidence before advancing. Any change to a
 frozen plan requires a new hash and targeted rereview. Any implementation
