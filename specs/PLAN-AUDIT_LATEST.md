@@ -6,14 +6,19 @@
 
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
-| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `0115a2c73dcfd0a086c70b1e3fe6519558bf7c34ff4942d97d52c3dfa92c585d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. |
+| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `7a20d89c35dcea0d9255e21d3e9cdadf89404c229a7c2dcb474b6bbacac7cb41` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `233ede7262dd408318230f32ab4cc5d2103caf8b5662ae4fb228088531f70e75` | Owns provenance admission Tasks 0-11, including the v10.3.2 witness-bound manifest and final in-process consumer authority. |
 
-The independent final review is
-`.superpowers/sdd/v103-corpus-admission-plan-final-review.md` and records
-**READY TO EXECUTE** against these exact hashes. This approves planning only;
-it does not claim that implementation, corpus evidence, manifests, smoke,
-canary, or release gates already pass.
+The independent full-plan review is
+`.superpowers/sdd/v103-corpus-admission-plan-final-review.md`. During Task 3
+RED/design work, official Node/POSIX/IANA/RFC research exposed a rename-race
+and raw-header/deadline gap in the release plan. The focused correction from
+release SHA `0115a2c73dcfd0a086c70b1e3fe6519558bf7c34ff4942d97d52c3dfa92c585d`
+to the tabled SHA is independently approved in
+`.superpowers/sdd/v103-release-task3-plan-rereview.md`. Together they record
+**READY TO EXECUTE**. This approves planning only; it does not claim that
+implementation, corpus evidence, manifests, smoke, canary, or release gates
+already pass.
 
 ## Canonical execution order
 
@@ -80,6 +85,10 @@ These are hard execution gates, not planning gaps:
       IDs, complete release-identity mutation matrix, 16/16 focused boundary
       tests, SlopBrick typecheck, and independent specification/code-quality
       approvals.
+- [x] Task 3 plan correction: Node built-ins only, atomic no-overwrite hard-link
+      promotion, distinct raw headers, complete per-hop SSRF controls, bounded
+      aborts, stable redaction, and targeted independent rereview at release
+      SHA `7a20d89c35dcea0d9255e21d3e9cdadf89404c229a7c2dcb474b6bbacac7cb41`.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
 - [ ] Exact dependency resolution/audit and adversarial `safe-zip-v1` proof.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
