@@ -171,6 +171,14 @@ unhashed URLs. Treat GitHub release URLs as locators, not immutable identity:
 the recorded SHA-256 is authoritative because maintainers can replace an asset
 at the same URL.
 
+Task 3 acquisition is intentionally IPv4-only and POSIX-only for this tranche.
+Arbitrary RFC 6052 NAT64 prefixes defeat address-only private-IPv4 detection,
+and Windows reparse-safe path handling needs a separate explicit design. A
+verified offline cache remains usable, but online IPv6-only and native Windows
+acquisition fail closed until trusted-prefix/network-sandbox and reparse-safe
+authorities are planned and reviewed. The caller must provide a pre-existing
+private canonical cache root under a trusted ancestor chain.
+
 Freeze the admission-backed path as method v10.3.2 before producing a real
 selection. A verified archive is still quarantine/sensitivity until the
 independent admission witness approves exact records.

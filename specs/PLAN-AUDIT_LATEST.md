@@ -6,7 +6,7 @@
 
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
-| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `7a20d89c35dcea0d9255e21d3e9cdadf89404c229a7c2dcb474b6bbacac7cb41` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. |
+| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `3c115b75b63544c8fa281fb32532be25ed5d0a71b0afad7571163829668e93c5` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `233ede7262dd408318230f32ab4cc5d2103caf8b5662ae4fb228088531f70e75` | Owns provenance admission Tasks 0-11, including the v10.3.2 witness-bound manifest and final in-process consumer authority. |
 
 The independent full-plan review is
@@ -14,9 +14,16 @@ The independent full-plan review is
 RED/design work, official Node/POSIX/IANA/RFC research exposed a rename-race
 and raw-header/deadline gap in the release plan. The focused correction from
 release SHA `0115a2c73dcfd0a086c70b1e3fe6519558bf7c34ff4942d97d52c3dfa92c585d`
-to the tabled SHA is independently approved in
+to `7a20d89c35dcea0d9255e21d3e9cdadf89404c229a7c2dcb474b6bbacac7cb41`
+is independently approved in
 `.superpowers/sdd/v103-release-task3-plan-rereview.md`. Together they record
-**READY TO EXECUTE**. This approves planning only; it does not claim that
+**READY TO EXECUTE**. Follow-on Task 3 security review then tightened that
+candidate to IPv4-only/POSIX-only fail-closed acquisition with a private
+canonical cache authority, an honest cooperative filesystem deadline, explicit
+TLS/parser limits, and a 5-GiB ceiling. Those deltas are independently approved
+in `.superpowers/sdd/v103-release-task3-ipv4-plan-rereview.md` and
+`.superpowers/sdd/v103-release-task3-cache-plan-rereview.md`; the table contains
+their final candidate SHA. This approves planning only; it does not claim that
 implementation, corpus evidence, manifests, smoke, canary, or release gates
 already pass.
 
@@ -87,8 +94,10 @@ These are hard execution gates, not planning gaps:
       approvals.
 - [x] Task 3 plan correction: Node built-ins only, atomic no-overwrite hard-link
       promotion, distinct raw headers, complete per-hop SSRF controls, bounded
-      aborts, stable redaction, and targeted independent rereview at release
-      SHA `7a20d89c35dcea0d9255e21d3e9cdadf89404c229a7c2dcb474b6bbacac7cb41`.
+      aborts, stable redaction, IPv4-only/POSIX-only fail-closed execution,
+      private canonical cache authority, explicit TLS/parser/size ceilings, and
+      targeted independent rereview at final release SHA
+      `3c115b75b63544c8fa281fb32532be25ed5d0a71b0afad7571163829668e93c5`.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
 - [ ] Exact dependency resolution/audit and adversarial `safe-zip-v1` proof.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
