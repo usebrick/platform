@@ -93,11 +93,14 @@ const DEFAULT_CONTEXT: StructuralCloneContext = {
 const structuralCache: Map<string, Uint32Array> = new Map();
 const identifierCache: Map<string, Uint32Array> = new Map();
 
-/** Test-only: clear both caches. */
-export function _resetStructuralCloneCacheForTesting(): void {
+/** Clear both per-process caches before a new project scan. */
+export function resetStructuralCloneCache(): void {
   structuralCache.clear();
   identifierCache.clear();
 }
+
+/** Backward-compatible test helper. */
+export const _resetStructuralCloneCacheForTesting = resetStructuralCloneCache;
 
 export const structuralCloneRule = createRule<StructuralCloneContext>({
   id: 'dup/structural-clone',

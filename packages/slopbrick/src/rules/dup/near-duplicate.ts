@@ -62,10 +62,13 @@ const DEFAULT_CONTEXT: NearDuplicateContext = {
  */
 const signatureCache: Map<string, Uint32Array> = new Map();
 
-/** Test-only: clear the dedup cache. */
-export function _resetNearDupCacheForTesting(): void {
+/** Clear the per-process cache before a new project scan. */
+export function resetNearDuplicateCache(): void {
   signatureCache.clear();
 }
+
+/** Backward-compatible test helper. */
+export const _resetNearDupCacheForTesting = resetNearDuplicateCache;
 
 export const nearDuplicateRule = createRule<NearDuplicateContext>({
   id: 'dup/near-duplicate',

@@ -73,14 +73,13 @@ const HASH_PREFIX_LENGTH = 16;
  */
 const DEDUP_CACHE: Map<string, Array<{ file: string; line: number }>> = new Map();
 
-/**
- * Test-only: clear the in-memory dedup cache. Used by the test suite to
- * ensure each test starts with a fresh cache. Not exported from the
- * rule's public API (no callers outside the test suite).
- */
-export function _resetDedupCacheForTesting(): void {
+/** Clear the per-process cache before a new project scan. */
+export function resetIdenticalBlockCache(): void {
   DEDUP_CACHE.clear();
 }
+
+/** Backward-compatible test helper. */
+export const _resetDedupCacheForTesting = resetIdenticalBlockCache;
 
 export interface DupIdenticalBlockContext {
   // No configuration needed. Future: add minLines, ignore patterns, etc.

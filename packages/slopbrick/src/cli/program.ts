@@ -332,6 +332,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
       const cwd = resolve(options.workspace ?? process.cwd());
       const invokedByCi = command.name() === 'ci';
+      const readOnlyGitScope = options.staged === true || options.changed === true;
 
       if (options.trend !== undefined) {
         const runs = await readRuns(cwd, fsMemoryIO);
@@ -433,7 +434,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         });
       }
 
-      if (options.baseline) {
+      if (options.baseline && !readOnlyGitScope) {
         const cwd = resolve(options.workspace ?? process.cwd());
         const configHash = hashConfig(config);
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
@@ -444,7 +445,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
       }
 
-      if (options.tighten && baseline) {
+      if (options.tighten && baseline && !readOnlyGitScope) {
         saveBaseline(cwd, baseline);
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`Tightened baseline saved (revision ${baseline.baseline_revision}).`);

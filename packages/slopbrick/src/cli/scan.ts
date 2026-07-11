@@ -67,6 +67,7 @@ import {
 import { logger, setLoggerQuiet } from '../engine/logger';
 import { runProjectRules } from '../rules/project';
 import { RuleRegistry } from '../rules/registry';
+import { resetDuplicationRuleState } from '../rules/dup/index.js';
 
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
@@ -109,7 +110,48 @@ export { printFixSummary, type FixSummary } from './report/printFixSummary';
 export { renderOutput, outputScanResults } from './report/renderOutput';
 export { watchProject } from './watch';
 
+// Cross-file duplicate detection and the parser-cache adapter currently use
+// process-scoped state. Serialize public runScan() calls until those internals
+// become run-owned so concurrent library callers cannot contaminate each
+// other's findings or environment.
+let scanRunTail: Promise<void> = Promise.resolve();
+
 export async function runScan(
+  options: ScanRunOptions,
+  explicitPaths?: string[],
+): Promise<ScanRunResult> {
+  const previousRun = scanRunTail;
+  let releaseRun!: () => void;
+  scanRunTail = new Promise<void>((resolveRun) => {
+    releaseRun = resolveRun;
+  });
+  await previousRun;
+
+  const previousParserCacheSetting = process.env.SLOP_AUDIT_CACHE;
+  const readOnlyGitScope = options.staged === true || options.changed === true;
+  if (readOnlyGitScope) {
+    process.env.SLOP_AUDIT_CACHE = '0';
+  } else if (options.cache) {
+    process.env.SLOP_AUDIT_CACHE = '1';
+  }
+
+  // Cross-file duplication rules keep per-process caches while files in one
+  // scan are analyzed. The public/library API can execute multiple scans in
+  // the same process, so each run needs a fresh project-scoped cache.
+  try {
+    resetDuplicationRuleState();
+    return await runScanWithScopedState(options, explicitPaths);
+  } finally {
+    if (previousParserCacheSetting === undefined) {
+      delete process.env.SLOP_AUDIT_CACHE;
+    } else {
+      process.env.SLOP_AUDIT_CACHE = previousParserCacheSetting;
+    }
+    releaseRun();
+  }
+}
+
+async function runScanWithScopedState(
   options: ScanRunOptions,
   explicitPaths?: string[],
 ): Promise<ScanRunResult> {
@@ -140,7 +182,10 @@ export async function runScan(
   }
   const configPath = findConfigPath(cwd);
   const loadedConfig = await loadConfig(cwd);
-  const config: ResolvedConfig = { ...loadedConfig };
+  const config: ResolvedConfig = {
+    ...loadedConfig,
+    rules: { ...loadedConfig.rules },
+  };
 
   if (options.framework) {
     config.framework = options.framework;
@@ -160,20 +205,14 @@ export async function runScan(
     }
   }
 
-  const telemetryEnabled = options.telemetry !== false && config.telemetry !== false;
-  config.telemetry = telemetryEnabled;
-
-  if (options.cache) {
-    // v0.18.3 (R-MED env-var fix): the parser cache is now
-    // a passed option, not an env-var read inside the engine.
-    // The slopbrick CLI is the boundary that reads env vars.
-    // We set this here so the worker child thread inherits it
-    // via the Node.js process env-var contract; the worker
-    // (slopbrick/src/engine/worker.ts:20) reads the var,
-    // builds a ParserCacheConfig, and passes it as opts to
-    // parseFile. The engine itself no longer reads process.env.
-    process.env.SLOP_AUDIT_CACHE = '1';
-  }
+  // Git-scoped verification is used by pre-commit hooks. It must be a pure
+  // observation of the repository/config bytes under review: teaching the
+  // flywheel from a staged run makes an immediate repeat score differently,
+  // and persisting a partial-project snapshot corrupts whole-project memory.
+  const readOnlyGitScope = options.staged === true || options.changed === true;
+  const configuredTelemetryEnabled = options.telemetry !== false && config.telemetry !== false;
+  const telemetryEnabled = configuredTelemetryEnabled && !readOnlyGitScope;
+  config.telemetry = configuredTelemetryEnabled;
 
   if (options.tokens) {
     const tokenResult = readDtcgTokensFile(resolve(cwd, options.tokens));
@@ -655,7 +694,12 @@ export async function runScan(
   // files. Merge the freshly-scanned files (this run's results) with
   // the unchanged files (from partitionByCache, re-using their prior
   // hash + issueCount so the next run can skip them too).
-  if (options.incremental && cachePath !== undefined && report.scoreValidity === 'valid') {
+  if (
+    !readOnlyGitScope &&
+    options.incremental &&
+    cachePath !== undefined &&
+    report.scoreValidity === 'valid'
+  ) {
     const cachedFiles: Record<string, { hash: string; issueCount: number; lastScannedAt: string }> = {};
     
     for (const r of results) {

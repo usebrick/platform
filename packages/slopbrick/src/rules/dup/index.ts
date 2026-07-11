@@ -3,9 +3,20 @@
 // v0.23: + `dup/near-duplicate` (Type-2 clone, MinHash + LSH).
 // v0.24: + `dup/structural-clone` (Type-3 clone, identifier-canonical MinHash).
 
+import { resetIdenticalBlockCache } from './identical-block';
+import { resetNearDuplicateCache } from './near-duplicate';
+import { resetStructuralCloneCache } from './structural-clone';
+
 export { dupIdenticalBlockRule } from './identical-block';
 export { default as dupIdenticalBlockRuleDefault } from './identical-block';
 export { nearDuplicateRule, _resetNearDupCacheForTesting } from './near-duplicate';
 export { default as nearDuplicateRuleDefault } from './near-duplicate';
 export { structuralCloneRule, _resetStructuralCloneCacheForTesting } from './structural-clone';
 export { default as structuralCloneRuleDefault } from './structural-clone';
+
+/** Clear per-process cross-file state at the boundary of every scan run. */
+export function resetDuplicationRuleState(): void {
+  resetIdenticalBlockCache();
+  resetNearDuplicateCache();
+  resetStructuralCloneCache();
+}

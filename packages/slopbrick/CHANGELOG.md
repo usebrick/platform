@@ -6,6 +6,16 @@ This branch is not released. The current work restores scanner, schema, score,
 MCP, and package contracts. Calibration artifacts and ML experiments remain
 research-only until the provenance and full release gates pass.
 
+### Fixed
+
+- Made non-empty `--staged` and `--changed` verification read-only and
+  independent of local flywheel tuning. Repeating the same Git-scoped scan no
+  longer teaches the next run, replaces whole-project memory, or changes its
+  score because of prior hook executions.
+- Reset cross-file duplication caches at every `runScan()` boundary so library
+  callers can run sequential scans in one process without leaking findings
+  from the previous project/run.
+
 The historical draft entries below are retained for audit context only; their
 local corpus paths, measurements, and future-version statements are not public
 release claims.

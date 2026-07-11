@@ -85,8 +85,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
 
   // A not-applicable zero-file report is not score-bearing evidence.
   // Persisting it would overwrite valid memory with fake clean scores, update
-  // run history, or trigger refresh/flywheel side effects.
-  if (isNotApplicableScan(report)) return;
+  // run history, or trigger refresh/flywheel side effects. Non-empty Git-
+  // scoped verification is also read-only: it represents only the changed
+  // subset, so it must not replace whole-project memory or teach a flywheel
+  // that would change the next pre-commit result for identical bytes.
+  if (isNotApplicableScan(report) || options.staged || options.changed) return;
   const validScan = report.scoreValidity === 'valid';
 
   // Build a MemoryReport-shaped projection so the engine accepts it

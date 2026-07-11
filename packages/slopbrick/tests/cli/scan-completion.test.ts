@@ -136,6 +136,15 @@ describe('scan completion status', () => {
     return dir;
   }
 
+  function compressionProfileFixture(): string {
+    return [
+      'export const repeatedValues = [',
+      ...Array.from({ length: 200 }, () => "  'repeated-value',"),
+      '] as const;',
+      '',
+    ].join('\n');
+  }
+
   function createPartialWorkspace(): string {
     const dir = createTmpDir();
     dirs.push(dir);
@@ -1422,6 +1431,197 @@ describe('scan completion status', () => {
     });
     expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
     expect(existsSync(cachePath)).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)('keeps a non-empty %s source scan deterministic and side-effect free', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const sourcePath = join(dir, 'src', 'clean.ts');
+    writeFileSync(sourcePath, compressionProfileFixture());
+    execFileSync('git', ['add', 'src/clean.ts'], { cwd: dir, stdio: 'ignore' });
+
+    const first = await runScan({ workspace: dir, [scope]: true, quiet: true });
+    const second = await runScan({ workspace: dir, [scope]: true, quiet: true });
+
+    const scoreProjection = (result: Awaited<ReturnType<typeof runScan>>) => ({
+      aiSlopScore: result.report.aiSlopScore,
+      engineeringHygiene: result.report.engineeringHygiene,
+      security: result.report.security,
+      repositoryHealth: result.report.repositoryHealth,
+      issues: result.report.issues.map(({ ruleId, severity, filePath, line, column }) => ({
+        ruleId,
+        severity,
+        filePath,
+        line,
+        column,
+      })),
+      scores: result.scores.map(({ filePath, rawScore, adjustedScore }) => ({
+        filePath,
+        rawScore,
+        adjustedScore,
+      })),
+    });
+
+    expect(first.report.scoreValidity).toBe('valid');
+    expect(first.scanStats.analyzed).toBe(1);
+    expect(first.report.issues.find((issue) => issue.ruleId === 'ai/compression-profile')).toMatchObject({
+      severity: 'low',
+    });
+    expect(scoreProjection(second)).toEqual(scoreProjection(first));
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+
+    const flywheelDir = join(dir, '.slopbrick', 'flywheel');
+    const statePath = join(flywheelDir, 'auto-tuned.json');
+    const telemetryPath = join(flywheelDir, 'scans.jsonl');
+    mkdirSync(flywheelDir, { recursive: true });
+    writeFileSync(
+      statePath,
+      JSON.stringify({
+        version: '3',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        autoTuned: [{
+          ruleId: 'ai/compression-profile',
+          severity: 'high',
+          reason: 'test sentinel',
+        }],
+        autoRelaxed: [],
+      }),
+    );
+    writeFileSync(telemetryPath, '{"sentinel":true}\n');
+    const stateBefore = readFileSync(statePath, 'utf8');
+    const telemetryBefore = readFileSync(telemetryPath, 'utf8');
+
+    const withPriorFlywheelState = await runScan({
+      workspace: dir,
+      [scope]: true,
+      quiet: true,
+    });
+
+    expect(scoreProjection(withPriorFlywheelState)).toEqual(scoreProjection(first));
+    expect(readFileSync(statePath, 'utf8')).toBe(stateBefore);
+    expect(readFileSync(telemetryPath, 'utf8')).toBe(telemetryBefore);
+    expect(existsSync(join(dir, '.slopbrick', 'health.json'))).toBe(false);
+    expect(existsSync(join(dir, '.slopbrick', 'structure.json'))).toBe(false);
+  });
+
+  it.each(['staged', 'changed'] as const)('suppresses inherited parser-cache writes during non-empty %s verification', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    writeFileSync(join(dir, 'src', 'clean.ts'), compressionProfileFixture());
+    execFileSync('git', ['add', 'src/clean.ts'], { cwd: dir, stdio: 'ignore' });
+    const previousCacheSetting = process.env.SLOP_AUDIT_CACHE;
+    process.env.SLOP_AUDIT_CACHE = '1';
+    try {
+      const result = await runScan({
+        workspace: dir,
+        [scope]: true,
+        cache: true,
+        quiet: true,
+      });
+      expect(result.report.scoreValidity).toBe('valid');
+      expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+      expect(process.env.SLOP_AUDIT_CACHE).toBe('1');
+    } finally {
+      if (previousCacheSetting === undefined) delete process.env.SLOP_AUDIT_CACHE;
+      else process.env.SLOP_AUDIT_CACHE = previousCacheSetting;
+    }
+  });
+
+  it('does not leak an ordinary scan flywheel override into a later staged scan', async () => {
+    const dir = createCleanGitWorkspace();
+    const sourcePath = join(dir, 'src', 'clean.ts');
+    const flywheelDir = join(dir, '.slopbrick', 'flywheel');
+    writeFileSync(sourcePath, compressionProfileFixture());
+    mkdirSync(flywheelDir, { recursive: true });
+    writeFileSync(
+      join(flywheelDir, 'auto-tuned.json'),
+      JSON.stringify({
+        version: '3',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        autoTuned: [{
+          ruleId: 'ai/compression-profile',
+          severity: 'high',
+          reason: 'test sentinel',
+        }],
+        autoRelaxed: [],
+      }),
+    );
+
+    const ordinary = await runScan({ workspace: dir, quiet: true });
+    const ordinaryCompression = ordinary.report.issues.find(
+      (issue) => issue.ruleId === 'ai/compression-profile',
+    );
+    expect(ordinaryCompression?.severity).not.toBe('low');
+
+    execFileSync('git', ['add', 'src/clean.ts'], { cwd: dir, stdio: 'ignore' });
+    const staged = await runScan({ workspace: dir, staged: true, quiet: true });
+    expect(staged.report.issues.find(
+      (issue) => issue.ruleId === 'ai/compression-profile',
+    )).toMatchObject({ severity: 'low' });
+  });
+
+  it.each(['staged', 'changed'] as const)('blocks every implicit repository-state write during non-empty packaged %s verification', async (scope) => {
+    const dir = createCleanGitWorkspace();
+    const sourcePath = join(dir, 'src', 'clean.ts');
+    const cachePath = join(dir, 'custom-incremental-cache.json');
+    writeFileSync(
+      join(dir, 'slopbrick.config.cjs'),
+      'module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n',
+    );
+    execFileSync('git', ['add', 'slopbrick.config.cjs'], { cwd: dir, stdio: 'ignore' });
+    execFileSync(
+      'git',
+      ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'add config'],
+      { cwd: dir, stdio: 'ignore' },
+    );
+    writeFileSync(sourcePath, compressionProfileFixture());
+    execFileSync('git', ['add', 'src/clean.ts'], { cwd: dir, stdio: 'ignore' });
+
+    const result = await run([
+      '--workspace', dir,
+      `--${scope}`,
+      '--baseline',
+      '--tighten',
+      '--incremental',
+      '--cache-path', cachePath,
+      '--cache',
+      '--refresh-snippets',
+      '--format', 'json',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      completionStatus: 'complete',
+      scoreValidity: 'valid',
+      analyzed: 1,
+    });
+    expect(result.stderr).toBe('');
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+    expect(existsSync(cachePath)).toBe(false);
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
+  });
+
+  it('isolates concurrent programmatic scans that use process-scoped cross-file rules', async () => {
+    const firstDir = createTmpDir(); dirs.push(firstDir);
+    const secondDir = createTmpDir(); dirs.push(secondDir);
+    const sharedSource = Array.from(
+      { length: 30 },
+      (_, index) => `export const sharedValue${index} = ${index};`,
+    ).join('\n');
+    for (const workspace of [firstDir, secondDir]) {
+      mkdirSync(join(workspace, 'src'));
+      writeFileSync(join(workspace, 'src', 'shared.ts'), sharedSource);
+    }
+
+    const [first, second] = await Promise.all([
+      runScan({ workspace: firstDir, telemetry: false, quiet: true }),
+      runScan({ workspace: secondDir, telemetry: false, quiet: true }),
+    ]);
+
+    for (const result of [first, second]) {
+      expect(result.report.scoreValidity).toBe('valid');
+      expect(result.report.issues.some((issue) => issue.ruleId === 'dup/identical-block')).toBe(false);
+      expect(result.report.issues.some((issue) => issue.ruleId === 'dup/near-duplicate')).toBe(false);
+      expect(result.report.issues.some((issue) => issue.ruleId === 'dup/structural-clone')).toBe(false);
+    }
   });
 
   it.each(['staged', 'changed'] as const)('does not attach prior-run trend data to an empty %s source scan', async (scope) => {
