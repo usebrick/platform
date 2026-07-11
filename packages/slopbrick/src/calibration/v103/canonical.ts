@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { ReleaseArchiveMaterialization } from '@usebrick/core';
 
 export type CanonicalJsonValue = null | boolean | number | string | readonly CanonicalJsonValue[] | { readonly [key: string]: CanonicalJsonValue };
 
@@ -39,6 +40,7 @@ interface ManifestRepositoryIdentity {
   repositoryId: string;
   familyId: string;
   commitSha: string;
+  materialization?: ReleaseArchiveMaterialization;
 }
 
 /**
@@ -59,6 +61,14 @@ export function stableCalibrationFileId(
     repositoryId: file.repositoryId,
     commitSha: repository.commitSha,
     normalizedPath: file.normalizedPath,
+    ...(repository.materialization === undefined ? {} : {
+      materialization: {
+        kind: repository.materialization.kind,
+        assetSha256: repository.materialization.assetSha256,
+        rootPrefix: repository.materialization.rootPrefix,
+        extractionPolicy: repository.materialization.extractionPolicy,
+      },
+    }),
   })}`;
 }
 

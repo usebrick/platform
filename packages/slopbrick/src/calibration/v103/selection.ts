@@ -1,6 +1,8 @@
 import {
   isCalibrationCorpusManifestV103,
   type CalibrationCorpusFile,
+  type CalibrationCorpusRepository,
+  type ReleaseArchiveCheckoutBinding,
   type SlopbrickCalibrationCorpusManifestV103,
 } from '@usebrick/core';
 import {
@@ -32,6 +34,7 @@ export interface SelectionRecord {
   readonly repositoryId: string;
   readonly familyId: string;
   readonly commitSha: string;
+  readonly materialization?: ReleaseArchiveCheckoutBinding;
   readonly normalizedPath: string;
   readonly contentSha256: string;
   readonly language: string;
@@ -94,10 +97,13 @@ function assertManifest(manifest: unknown): asserts manifest is SlopbrickCalibra
   if (!isCalibrationCorpusManifestV103(manifest)) throw new Error('Manifest does not satisfy the v10.3 corpus contract');
 }
 
-function repositoryCommit(manifest: SlopbrickCalibrationCorpusManifestV103, repositoryId: string): string {
+function manifestRepository(
+  manifest: SlopbrickCalibrationCorpusManifestV103,
+  repositoryId: string,
+): CalibrationCorpusRepository {
   const repository = manifest.repositories.find((candidate) => candidate.repositoryId === repositoryId);
   if (!repository) throw new Error(`Missing repository record for ${repositoryId}`);
-  return repository.commitSha;
+  return repository;
 }
 
 function baseRecord(
@@ -105,13 +111,21 @@ function baseRecord(
   manifest: SlopbrickCalibrationCorpusManifestV103,
   seed: string,
 ): Omit<SelectionRecord, 'status' | 'exclusionReason' | 'manifestExclusionReason'> & Pick<SelectionRecord, 'manifestExclusionReason'> {
+  const repository = manifestRepository(manifest, file.repositoryId);
   const fileId = stableCalibrationFileId(file, manifest.repositories);
   return {
     fileId,
     sourceId: file.sourceId,
     repositoryId: file.repositoryId,
     familyId: file.familyId,
-    commitSha: repositoryCommit(manifest, file.repositoryId),
+    commitSha: repository.commitSha,
+    ...(repository.materialization === undefined ? {} : {
+      materialization: {
+        kind: repository.materialization.kind,
+        assetSha256: repository.materialization.assetSha256,
+        extractionPolicy: repository.materialization.extractionPolicy,
+      },
+    }),
     normalizedPath: file.normalizedPath,
     contentSha256: file.contentSha256,
     language: file.language,
