@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
   getGitHead,
+  getGitIndexPath,
   getGitRoot,
   getStagedFiles,
   getChangedFiles,
@@ -77,6 +78,13 @@ describe('git helpers', () => {
 
     it('returns undefined outside a git repository', async () => {
       expect(await getGitHead(tmpdir())).toBeUndefined();
+    });
+  });
+
+  describe('getGitIndexPath', () => {
+    it('resolves the canonical index path and fails closed outside Git', async () => {
+      expect(await getGitIndexPath(repo)).toBe(join(repo, '.git', 'index'));
+      expect(await getGitIndexPath(tmpdir())).toBeUndefined();
     });
   });
 

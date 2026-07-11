@@ -1,5 +1,6 @@
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
+import { resolve } from 'node:path';
 
 const execFileAsync = promisify(execFile);
 
@@ -31,6 +32,12 @@ async function runGit(cwd: string, args: string[]): Promise<string | undefined> 
 
 export async function getGitHead(cwd: string): Promise<string | undefined> {
   return runGit(cwd, ['rev-parse', 'HEAD']);
+}
+
+/** Resolve the index Git actually uses, including linked worktrees/submodules. */
+export async function getGitIndexPath(cwd: string): Promise<string | undefined> {
+  const path = await runGit(cwd, ['rev-parse', '--git-path', 'index']);
+  return path ? resolve(cwd, path) : undefined;
 }
 
 export async function getStagedFiles(cwd: string): Promise<string[]> {

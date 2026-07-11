@@ -87,6 +87,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // Persisting it would overwrite valid memory with fake clean scores, update
   // run history, or trigger refresh/flywheel side effects.
   if (isNotApplicableScan(report)) return;
+  const validScan = report.scoreValidity === 'valid';
 
   // Build a MemoryReport-shaped projection so the engine accepts it
   // regardless of whether the caller has computed all 4 scores.
@@ -132,7 +133,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // Incremental file-hash cache. Only written when `--incremental`.
   // Files in the old cache that we skipped are kept as-is (their hash
   // is still valid).
-  if (options.incremental) {
+  if (options.incremental && validScan) {
     const cachePath = options.cachePath ?? '.slopbrick-cache.json';
     const existing = loadCache(cachePath) ?? emptyCache();
     const next: ScanCache = { ...existing, generatedAt: new Date().toISOString() };
@@ -158,7 +159,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   }
 
   // Telemetry + flywheel. Only when telemetry is enabled.
-  if (telemetryEnabled) {
+  if (telemetryEnabled && validScan) {
     const runs = await readRuns(cwd, fsMemoryIO);
     const telemetryPayloads = readTelemetry(cwd);
     const recentTopHashes = telemetryPayloads.map((payload) =>
@@ -282,7 +283,9 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // is well-formed and downstream `--since` queries degrade
   // gracefully: legacy payloads return `undefined` for `inventory`
   // and the diff math treats that as "no data".
-  recordTelemetry(cwd, report, results, config, patternInventory);
+  if (validScan) {
+    recordTelemetry(cwd, report, results, config, patternInventory);
+  }
 
   // v0.42.0 (Sprint 3, §3a.3): post-scan snippet refresh. Opt-in via
   // the `--refresh-snippets` flag or
@@ -291,7 +294,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // stale data in AGENTS.md. Wrapped in try/catch because the
   // snippet rewrite is a side-channel — a failure here is not a
   // scan failure.
-  if (input.autoRefreshSnippets) {
+  if (input.autoRefreshSnippets && validScan) {
     try {
       const { refreshSnippets } = await import('../../snippet/refresh.js');
       const outcome = refreshSnippets(cwd, registry.getRules());

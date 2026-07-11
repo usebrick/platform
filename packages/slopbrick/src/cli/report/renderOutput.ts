@@ -28,19 +28,20 @@ import {
 } from '../../report/scan-validity.js';
 import type { CliGlobalOptions } from '../scan';
 import type { ProjectReport } from '../../types';
+import { validateOutputFormat } from './output-format.js';
 
-const VALID_FORMATS = new Set(['pretty', 'json', 'sarif', 'html']);
+function withoutScoreDerivedViews(options: CliGlobalOptions): CliGlobalOptions {
+  return {
+    ...options,
+    explainScore: false,
+    whyFailing: false,
+    brief: false,
+    suggest: false,
+  };
+}
 
 export function renderOutput(report: ProjectReport, options: CliGlobalOptions, cwd: string): void {
-  // Validate --format up front. Previously an unknown --format value
-  // silently fell through to pretty — users with CI scripts that
-  // depended on JSON output got HTML or pretty and never noticed.
-  if (options.format && !VALID_FORMATS.has(options.format)) {
-    process.stderr.write(
-      `Unknown --format value: ${options.format}. Valid: pretty, json, sarif, html.\n`,
-    );
-    process.exit(2);
-  }
+  validateOutputFormat(options.format);
 
   const machineReportRequested = Boolean(options.html || options.json) ||
     options.format === 'json' || options.format === 'sarif' || options.format === 'html';
@@ -60,27 +61,24 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
       }
       return;
     }
-    options = {
-      ...options,
-      explainScore: false,
-      whyFailing: false,
-      brief: false,
-      suggest: false,
-    };
+    options = withoutScoreDerivedViews(options);
   }
 
   // A partial scan may retain findings for diagnosis, but its aggregate
   // placeholders are not measurements. Keep machine formats parseable with
   // their explicit incomplete discriminator; suppress every human score,
   // clean/pass, advice, and threshold view behind the validity notice.
-  if (report.scoreValidity === 'incomplete' && !machineReportRequested) {
-    if (!options.quiet) {
-      logger.info(
-        formatScanValidityNotice(report) ??
-          'INCOMPLETE SCAN — scores are not valid for gating.',
-      );
+  if (report.scoreValidity === 'incomplete') {
+    if (!machineReportRequested) {
+      if (!options.quiet) {
+        logger.info(
+          formatScanValidityNotice(report) ??
+            'INCOMPLETE SCAN — scores are not valid for gating.',
+        );
+      }
+      return;
     }
-    return;
+    options = withoutScoreDerivedViews(options);
   }
 
   // Explicit score explanation is intentionally opt-in. In JSON mode it
@@ -197,10 +195,16 @@ export async function outputScanResults(
   options: CliGlobalOptions,
   cwd: string,
 ): Promise<void> {
+  if (isNotApplicableScan(report) || report.scoreValidity === 'incomplete') {
+    renderOutput(report, options, cwd);
+    return;
+  }
   if (options.heatmap) {
     const { buildHeatmap, formatHeatmap } = await import('../../report/heatmap');
     const entries = await buildHeatmap(report, cwd);
-    logger.info(formatHeatmap(entries, { json: options.format === 'json' }));
+    if (!options.quiet) {
+      logger.info(formatHeatmap(entries, { json: options.format === 'json' }));
+    }
     return;
   }
   renderOutput(report, options, cwd);

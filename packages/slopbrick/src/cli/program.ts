@@ -20,7 +20,6 @@ import { parseThreads, collectGlob, parseTrend } from './options';
 import { renderTrend, configureColorPolicy } from './render';
 import {
   evaluateThresholdGate,
-  failedThresholdCount,
   failedThresholds,
   baselineStatusMessage,
   stagedGating,
@@ -121,6 +120,7 @@ import {
   isNotApplicableScan,
 } from '../report/scan-validity';
 import { CliUsageError, ScanExitCode } from './exit-codes';
+import { validateOutputFormat } from './report/output-format.js';
 
 /** Current in-memory result returned when the shared scan action is invoked by CI. */
 export interface ScanActionOutcome {
@@ -317,6 +317,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         verbose: requestedOptions.verbose ?? rawGlobals.verbose,
         noColor: requestedOptions.noColor ?? rawGlobals.color === false,
       };
+      validateOutputFormat(options.format);
       if (command.getOptionValueSource('workspace') === 'default') {
         const autoRoot = detectMonorepoRoot(process.cwd());
         if (autoRoot) {
@@ -367,15 +368,24 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       } = await runScan(options, paths);
       const scanElapsed = Math.round(performance.now() - scanStart);
       const totalElapsed = Math.round(performance.now() - start);
-      const notApplicableScan = isNotApplicableScan(report);
+      // Validity is the first post-run decision. Nothing below this branch may
+      // mutate sources/baselines or consume scores from an incomplete scan.
+      if (report.scoreValidity !== 'valid') {
+        const notApplicableScan = isNotApplicableScan(report);
+        const gitScopedNoOp = notApplicableScan && isGitScopedEmptySelection(report, options);
+        const exitCode: 0 | 1 = gitScopedNoOp ? 0 : 1;
 
-      // No zero-file scan has score-bearing evidence. Stop before every
-      // mutation, fix, heatmap, comparison, and gate path, then preserve the
-      // narrower exit contract: empty Git scopes are successful no-ops while
-      // an ordinary unmatched workspace remains an error.
-      if (notApplicableScan) {
-        const gitScopedNoOp = isGitScopedEmptySelection(report, options);
-        if (!gitScopedNoOp && !machineReadableStdout) {
+        if (report.scoreValidity === 'incomplete') {
+          if (!options.quiet && !machineReadableStdout) {
+            logger.error(
+              `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}. Check workspace/include patterns and retry.`,
+            );
+          }
+          renderOutput(report, options, cwd);
+          if (!options.quiet && !machineReadableStdout) {
+            logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
+          }
+        } else if (!gitScopedNoOp && !machineReadableStdout) {
           if (!options.quiet) {
             logger.error(
               formatScanValidityNotice(report) ??
@@ -386,7 +396,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         } else {
           renderOutput(report, options, cwd);
         }
-        const exitCode: 0 | 1 = gitScopedNoOp ? 0 : 1;
+
         const outcome: ScanActionOutcome = {
           report,
           config,
@@ -409,7 +419,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // delay `process.exit` below. The emitter is silent on every
       // failure mode (errors caught, errors swallowed).
       const beaconEnv = process.env.SLOPBRICK_TELEMETRY_ENDPOINT;
-      if (!notApplicableScan && options.reportUsage && beaconEnv && command.name() === 'scan') {
+      if (options.reportUsage && beaconEnv && command.name() === 'scan') {
         const beacon = new BeaconEmitter({
           flag: true,
           envEndpoint: beaconEnv,
@@ -423,7 +433,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         });
       }
 
-      if (options.baseline && !notApplicableScan) {
+      if (options.baseline) {
         const cwd = resolve(options.workspace ?? process.cwd());
         const configHash = hashConfig(config);
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
@@ -434,7 +444,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
       }
 
-      if (options.tighten && baseline && !notApplicableScan) {
+      if (options.tighten && baseline) {
         saveBaseline(cwd, baseline);
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`Tightened baseline saved (revision ${baseline.baseline_revision}).`);
@@ -450,8 +460,6 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       }
 
       if (options.fix) {
-        const incompleteFailure = scanStats.status !== 'complete' &&
-          !(scanStats.status === 'empty' && (options.staged || options.changed));
         // v0.10.1: --show-fixes-diff prints what would change (renamed from
         // --diff to free --diff <ref> for the VibeDrift-compatible git-ref
         // alias of --since). With --dry-run, we skip the apply step entirely.
@@ -461,7 +469,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
         if (options.dryRun) {
           logger.info('--dry-run: skipping apply step. Run without --dry-run to apply.');
-          process.exit(incompleteFailure ? 1 : 0);
+          process.exit(0);
         }
         // Round 20: pass the actual scanned file paths (not the input
         // CLI globs) so visual codemods run on every .tsx file scanned.
@@ -477,7 +485,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
 
-        process.exit(incompleteFailure || hasErrors ? 1 : 0);
+        process.exit(hasErrors ? 1 : 0);
       }
 
       // --show-fixes-diff without --fix: just show the diff (no apply).
@@ -492,36 +500,13 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
-        process.exit(scanStats.status !== 'complete' &&
-          !(scanStats.status === 'empty' && (options.staged || options.changed)) ? 1 : 0);
+        process.exit(0);
       }
 
       const thresholdGate = evaluateThresholdGate(report, config);
       const baseExitCode: 0 | 1 = thresholdGate.status === 'failed' ? 1 : 0;
       let exitCode: 0 | 1 | 2 = baseExitCode;
-      const incompleteFailure = scanStats.status !== 'complete' &&
-        !(scanStats.status === 'empty' && (options.staged || options.changed));
-      if (incompleteFailure) {
-        exitCode = 1;
-        const summary = `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}.`;
-        if (machineReadableStdout) {
-          // JSON/SARIF consumers still receive a parseable report carrying
-          // the completion fields, but never a clean human verdict.
-          renderOutput(report, options, cwd);
-        } else if (!options.quiet) {
-          logger.error(`${summary} Check workspace/include patterns and retry.`);
-          // A partial scan still has useful diagnostic findings, but carries
-          // a prominent validity banner. Keep ordinary empty-workspace
-          // behaviour terse: its synthetic zero scores must not read as a
-          // clean verdict.
-          if (scanStats.status === 'partial') renderOutput(report, options, cwd);
-          if (scanStats.status === 'empty') {
-            logger.error(formatScanValidityNotice(report) ?? 'NO FILES ANALYSED — scores are not applicable for gating.');
-          }
-        }
-      } else {
-        renderOutput(report, options, cwd);
-      }
+      renderOutput(report, options, cwd);
       const stagedGatingResult = options.staged ? stagedGating(scores, config, baseline, cwd) : { failed: false };
       if (options.staged && stagedGatingResult.failed) {
         exitCode = 1;
@@ -553,7 +538,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         exitCode = ScanExitCode.policyOrPartial;
       }
 
-      if (exitCode === 1 && !incompleteFailure) {
+      if (exitCode === 1) {
         if (options.staged && stagedGatingResult.reason) {
           logger.error(`Gating failure: ${stagedGatingResult.reason}`);
         } else {

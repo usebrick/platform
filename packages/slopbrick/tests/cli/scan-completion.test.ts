@@ -136,6 +136,35 @@ describe('scan completion status', () => {
     return dir;
   }
 
+  function createPartialWorkspace(): string {
+    const dir = createTmpDir();
+    dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'valid.ts'), 'export const valid = 1;\n');
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+    return dir;
+  }
+
+  function createFixablePartialWorkspace(): { dir: string; sourcePath: string; source: string } {
+    const dir = createTmpDir();
+    dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const sourcePath = join(dir, 'src', 'Card.tsx');
+    const source = 'export const Card = () => <div style={{ color: "red" }}>x</div>;\n';
+    writeFileSync(sourcePath, source);
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+    return { dir, sourcePath, source };
+  }
+
+  function expectOnlyInvalidFormatUsage(result: Awaited<ReturnType<typeof run>>, dir: string): void {
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe('');
+    expect(result.stderr.trim()).toBe(
+      'Unknown --format value: bogus. Valid: pretty, json, sarif, html.',
+    );
+    expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
+  }
+
   it('uses the same default-off effective set for every score producer', () => {
     const defaultOffRule = [...getDefaultOffRules()][0]!;
     const issues = [
@@ -783,6 +812,47 @@ describe('scan completion status', () => {
     expect(result.stderr).toMatch(/invalid .*slopbrick\.config\.mjs|failed to load config/i);
   });
 
+  it.each([false, true])(
+    'rejects an invalid output format before every scan outcome (quiet=%s)',
+    async (quiet) => {
+      const cases: Array<{ dir: string; args: string[] }> = [];
+
+      const ordinary = createTmpDir(); dirs.push(ordinary);
+      cases.push({ dir: ordinary, args: [] });
+
+      const staged = createCleanGitWorkspace();
+      cases.push({ dir: staged, args: ['--staged'] });
+
+      const changed = createCleanGitWorkspace();
+      cases.push({ dir: changed, args: ['--changed'] });
+
+      const valid = createTmpDir(); dirs.push(valid);
+      mkdirSync(join(valid, 'src'));
+      writeFileSync(join(valid, 'src', 'valid.ts'), 'export const valid = 1;\n');
+      cases.push({ dir: valid, args: [] });
+
+      const partial = createPartialWorkspace();
+      cases.push({ dir: partial, args: [] });
+
+      for (const { dir, args } of cases) {
+        const result = await run([
+          '--workspace', dir, '--format', 'bogus', ...args, ...(quiet ? ['--quiet'] : []),
+        ]);
+        expectOnlyInvalidFormatUsage(result, dir);
+      }
+    },
+  );
+
+  it.each([
+    ['trend', ['--trend', '5']],
+    ['doctor', ['--doctor']],
+  ] as const)('rejects an invalid output format before %s work', async (_label, extraArgs) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    const result = await run(['--workspace', dir, '--format', 'bogus', ...extraArgs]);
+    expectOnlyInvalidFormatUsage(result, dir);
+    expect(result.stderr).not.toMatch(/trend|doctor|No source files matched/i);
+  });
+
   it('normalizes public display/performance flags in the packaged subprocess', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
@@ -964,6 +1034,201 @@ describe('scan completion status', () => {
       /AI Slop Score|Repository Health|Repository Coherence|Threshold \(CI gate\)|✓ Clean|codebase is clean|no detectable AI slop/i,
     );
   });
+
+  it.each([
+    ['fix', ['--fix']],
+    ['fix HTML', ['--fix', '--format', 'html']],
+    ['fix quiet', ['--fix', '--quiet']],
+    ['dry-run', ['--fix', '--dry-run']],
+    ['show-fixes-diff', ['--show-fixes-diff']],
+    ['fix with diff', ['--fix', '--show-fixes-diff']],
+    ['heatmap', ['--heatmap']],
+    ['heatmap HTML', ['--heatmap', '--format', 'html']],
+  ] as const)('fails a partial %s scan closed before actions and score views', async (_label, args) => {
+    const { dir, sourcePath, source } = createFixablePartialWorkspace();
+    const baseline = join(dir, '.slopbrick', 'cache', 'baseline.json');
+
+    const result = await run(['--workspace', dir, '--no-telemetry', ...args]);
+
+    expect(result.exitCode).toBe(1);
+    expect(readFileSync(sourcePath, 'utf8')).toBe(source);
+    expect(existsSync(baseline)).toBe(false);
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
+      /Fixes applied|--dry-run:|--- a\/|\+\+\+ b\/|ROI\s+Score|AI Slop Score went UP|Saved baseline|Tightened baseline|Threshold \(CI gate\)|✓ Clean/,
+    );
+    if (args.includes('--quiet')) {
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toBe('');
+    } else if (args.includes('html')) {
+      expect(result.stdout).toContain('data-score-validity="incomplete"');
+    } else {
+      expect(`${result.stdout}\n${result.stderr}`).toContain('INCOMPLETE SCAN');
+    }
+  });
+
+  it('does not create a baseline from a partial scan', async () => {
+    const { dir } = createFixablePartialWorkspace();
+    const path = join(dir, '.slopbrick', 'cache', 'baseline.json');
+
+    const result = await run(['--workspace', dir, '--baseline', '--no-telemetry']);
+
+    expect(result.exitCode).toBe(1);
+    expect(existsSync(path)).toBe(false);
+    expect(`${result.stdout}\n${result.stderr}`).toContain('INCOMPLETE SCAN');
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(/Saved baseline|AI Slop Score:|Threshold \(CI gate\)/);
+  });
+
+  it('does not tighten an existing baseline from a partial scan', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'valid.ts'), 'export const valid = 1;\n');
+    expect((await run(['--workspace', dir, '--baseline', '--no-telemetry', '--quiet'])).exitCode).toBe(0);
+    const path = join(dir, '.slopbrick', 'cache', 'baseline.json');
+    const before = readFileSync(path, 'utf8');
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+
+    const result = await run(['--workspace', dir, '--tighten', '--no-telemetry']);
+
+    expect(result.exitCode).toBe(1);
+    expect(readFileSync(path, 'utf8')).toBe(before);
+    expect(`${result.stdout}\n${result.stderr}`).not.toContain('Tightened baseline');
+  });
+
+  it('does not compare an incomplete score for --no-increase', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'valid.ts'), 'export const valid = 1;\n');
+    expect((await run(['--workspace', dir, '--quiet', '--no-telemetry'])).exitCode).toBe(0);
+    writeFileSync(
+      join(dir, 'src', 'comment-heavy.ts'),
+      `${Array.from({ length: 40 }, (_, index) => `// repeated generated explanation ${index}`).join('\n')}\nexport const changed = 1;\n`,
+    );
+    writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+
+    const result = await run(['--workspace', dir, '--no-increase', '--no-telemetry']);
+
+    expect(result.exitCode).toBe(1);
+    expect(`${result.stdout}\n${result.stderr}`).toContain('INCOMPLETE SCAN');
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(/AI Slop Score went UP|nothing to compare/);
+  });
+
+  it('persists only validity-aware diagnostics for a partial scan', async () => {
+    const { dir } = createFixablePartialWorkspace();
+    const cachePath = join(dir, 'custom-incremental-cache.json');
+    const seededCache = '{"version":"seed","generatedAt":"seed","files":{}}\n';
+    writeFileSync(cachePath, seededCache);
+    const agentsPath = join(dir, 'AGENTS.md');
+    const seededAgents = '# notes\n<!-- slopbrick:begin:v3 -->\nkeep me\n<!-- slopbrick:end:v3 -->\n';
+    writeFileSync(agentsPath, seededAgents);
+
+    const result = await run([
+      '--workspace', dir,
+      '--incremental', '--cache-path', cachePath,
+      '--refresh-snippets',
+      '--quiet',
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    expect(readFileSync(cachePath, 'utf8')).toBe(seededCache);
+    expect(existsSync(`${cachePath}.tmp`)).toBe(false);
+    expect(existsSync(join(dir, '.slopbrick-cache.json'))).toBe(false);
+    expect(readFileSync(agentsPath, 'utf8')).toBe(seededAgents);
+    expect(existsSync(join(dir, '.slopbrick', 'structure.json'))).toBe(false);
+    expect(existsSync(join(dir, '.slopbrick', 'flywheel'))).toBe(false);
+
+    const health = JSON.parse(
+      readFileSync(join(dir, '.slopbrick', 'health.json'), 'utf8'),
+    ) as Record<string, unknown>;
+    expect(health).toMatchObject({
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+    });
+    expect(existsSync(join(dir, '.slopbrick', 'inventory.json'))).toBe(true);
+    expect(existsSync(join(dir, '.slopbrick', 'constitution.json'))).toBe(true);
+    expect(existsSync(join(dir, '.slopbrick', 'structure.md'))).toBe(true);
+  });
+
+  it('keeps the deferred partial JSON and SARIF numeric shape explicitly incomplete', async () => {
+    const jsonWorkspace = createPartialWorkspace();
+    const jsonResult = await run([
+      '--workspace', jsonWorkspace, '--format', 'json', '--no-telemetry',
+    ]);
+    expect(jsonResult.exitCode).toBe(1);
+    const json = JSON.parse(jsonResult.stdout) as Record<string, unknown>;
+    expect(json).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
+    expect(json.aiSlopScore).toBeTypeOf('number');
+    expect(json.repositoryHealth).toBeTypeOf('number');
+
+    const sarifWorkspace = createPartialWorkspace();
+    const sarifResult = await run([
+      '--workspace', sarifWorkspace, '--format', 'sarif', '--no-telemetry',
+    ]);
+    expect(sarifResult.exitCode).toBe(1);
+    const sarif = JSON.parse(sarifResult.stdout) as {
+      runs: Array<{ tool: { driver: { properties: Record<string, unknown> } } }>;
+    };
+    expect(sarif.runs[0].tool.driver.properties).toMatchObject({
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+    });
+    expect(sarif.runs[0].tool.driver.properties.scores).toBeTypeOf('object');
+  });
+
+  it.each([
+    ['suggest', ['--suggest']],
+    ['brief', ['--brief']],
+    ['why-failing', ['--why-failing']],
+    ['explain-score', ['--explain-score']],
+  ] as const)(
+    'neutralizes partial %s before every machine-format dispatch',
+    async (_label, alternateArgs) => {
+      const variants = [
+        { kind: 'json', args: (_dir: string) => ['--format', 'json'] },
+        { kind: 'sarif', args: (_dir: string) => ['--format', 'sarif'] },
+        { kind: 'html', args: (_dir: string) => ['--format', 'html'] },
+        { kind: 'json', args: (dir: string) => ['--json', join(dir, 'partial.json')], file: 'partial.json' },
+        { kind: 'html', args: (dir: string) => ['--html', join(dir, 'partial.html')], file: 'partial.html' },
+      ] as const;
+
+      for (const variant of variants) {
+        const dir = createPartialWorkspace();
+        const result = await run([
+          '--workspace', dir,
+          '--no-telemetry',
+          ...alternateArgs,
+          ...variant.args(dir),
+        ]);
+        expect(result.exitCode).toBe(1);
+        const output = variant.file
+          ? readFileSync(join(dir, variant.file), 'utf8')
+          : result.stdout;
+
+        if (variant.kind === 'json') {
+          const json = JSON.parse(output) as Record<string, unknown>;
+          expect(json).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
+          expect(json).not.toHaveProperty('scoreExplanation');
+        } else if (variant.kind === 'sarif') {
+          const sarif = JSON.parse(output) as {
+            runs: Array<{ tool: { driver: { properties: Record<string, unknown> } } }>;
+          };
+          expect(sarif.runs[0].tool.driver.properties).toMatchObject({
+            completionStatus: 'partial',
+            scoreValidity: 'incomplete',
+          });
+        } else {
+          expect(output).toContain('data-score-validity="incomplete"');
+          expect(output).not.toMatch(/AI Slop Score|Repository Health|Threshold \(CI gate\)/);
+        }
+        expect(output).not.toMatch(
+          /Remediation advice|Per-issue guidance|Top 5 rules dragging|Score explanation \(deterministic|✓ Clean|ROI\s+Score/,
+        );
+      }
+    },
+    20_000,
+  );
 
   it.each([
     ['pretty', ['--format', 'pretty']],

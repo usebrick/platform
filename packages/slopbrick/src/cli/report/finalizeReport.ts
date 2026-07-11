@@ -28,7 +28,6 @@ import { resolveConfigPath as findConfigPath } from '../../config';
 import { enrichReport } from './enrichReport';
 import { assembleScanReport } from './assembleScanReport';
 import { persistRun } from './persistRun';
-import { isNotApplicableScan } from '../../report/scan-validity.js';
 import type { RuleRegistry } from '../../rules/registry';
 import type {
   FileScanResult,
@@ -112,14 +111,14 @@ export async function finalizeReport(
     .map((result) => ({ filePath: result.filePath, error: result.parseError as string }));
 
   const configPath = findConfigPath(cwd);
-  const notApplicableScan = isNotApplicableScan(scanMetadata);
+  const validScan = scanMetadata.scoreValidity === 'valid';
 
   // v0.14.5j (P9): read the previous run so formatPretty can render
   // a "±N from last run" delta. Capped at 1 read because we only
   // need the most-recent run. If no previous run exists, the field
   // is undefined and the delta line is omitted from the output.
   let previousRun: { slopIndex: number; timestamp: string } | undefined;
-  if (!notApplicableScan) {
+  if (validScan) {
     try {
       const runs = await readRuns(cwd, fsMemoryIO);
       const last = runs.at(-1);
@@ -207,7 +206,7 @@ export async function finalizeReport(
   // in the engine that writes `previous.slopIndex`; finalizeReport
   // just compares the raw-amount values.
   let noIncreaseFailure = false;
-  if (options.noIncrease && !notApplicableScan) {
+  if (options.noIncrease && validScan) {
     const previous = (await readRuns(cwd, fsMemoryIO)).at(-1);
     if (previous) {
       // Data-flow contract: `previous.slopIndex` is the raw amount

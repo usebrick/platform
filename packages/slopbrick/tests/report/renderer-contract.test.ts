@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +11,7 @@ import { formatMarkdown } from '../../src/report/markdown.js';
 import { formatPretty, formatBriefReport, formatWhyFailingReport } from '../../src/report/pretty.js';
 import { formatSarif } from '../../src/report/sarif.js';
 import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
+import { outputScanResults } from '../../src/cli/report/renderOutput.js';
 import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types.js';
 
 const scoreBasis = {
@@ -67,6 +68,27 @@ function report(): ProjectReport {
 }
 
 describe('headline score renderer contract', () => {
+  it.each([
+    ['not-applicable', { completionStatus: 'empty', scoreValidity: 'not-applicable', requested: 0, analyzed: 0, failed: 0, skipped: 0 }],
+    ['incomplete', { completionStatus: 'partial', scoreValidity: 'incomplete', requested: 2, analyzed: 1, failed: 1, skipped: 0 }],
+  ] as const)('checks %s validity before direct heatmap dispatch', async (_label, validity) => {
+    const input = Object.assign(report(), validity) as ProjectReport;
+    const logged: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((value) => {
+      logged.push(String(value));
+    });
+    try {
+      await outputScanResults(input, { heatmap: true, format: 'pretty' }, process.cwd());
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(logged.join('\n')).toContain(
+      validity.scoreValidity === 'not-applicable' ? 'scores are not applicable' : 'INCOMPLETE SCAN',
+    );
+    expect(logged.join('\n')).not.toMatch(/ROI\s+Score/);
+  });
+
   it('marks incomplete scores as invalid for every renderer without changing their numeric values', () => {
     const input = Object.assign(report(), {
       completionStatus: 'partial' as const,

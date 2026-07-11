@@ -655,7 +655,7 @@ export async function runScan(
   // files. Merge the freshly-scanned files (this run's results) with
   // the unchanged files (from partitionByCache, re-using their prior
   // hash + issueCount so the next run can skip them too).
-  if (options.incremental && cachePath !== undefined && !emptySelection) {
+  if (options.incremental && cachePath !== undefined && report.scoreValidity === 'valid') {
     const cachedFiles: Record<string, { hash: string; issueCount: number; lastScannedAt: string }> = {};
     
     for (const r of results) {
