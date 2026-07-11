@@ -76,6 +76,10 @@ These are hard execution gates, not planning gaps:
 - [x] Release-materialization Task 1: commit `ca72d0b15`; mutation-proven TDD,
       exact Core schema/codegen/contracts/type/test/build, SlopBrick typecheck,
       and independent specification/code-quality approvals.
+- [x] Release-materialization Task 2: commit `704abef0e`; frozen Git bytes and
+      IDs, complete release-identity mutation matrix, 16/16 focused boundary
+      tests, SlopBrick typecheck, and independent specification/code-quality
+      approvals.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
 - [ ] Exact dependency resolution/audit and adversarial `safe-zip-v1` proof.
 - [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
@@ -89,8 +93,8 @@ These are hard execution gates, not planning gaps:
 
 ## Verdict
 
-**READY TO EXECUTE.** Task 1 is approved; continue with release-materialization
-Task 2 and proceed
+**READY TO EXECUTE.** Tasks 1-2 are approved; continue with
+release-materialization Task 3 and proceed
 task-by-task with test-first implementation, a specification reviewer, a code-
 quality reviewer, and verification evidence before advancing. Any change to a
 frozen plan requires a new hash and targeted rereview. Any implementation
