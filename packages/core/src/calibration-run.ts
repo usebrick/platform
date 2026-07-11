@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import type { SlopBrickV103CalibrationCheckoutMapLocalOnly } from './generated/calibration-checkout-map';
+import type {
+  ReleaseArchiveCheckoutBinding,
+  SlopBrickV103CalibrationCheckoutMapLocalOnly,
+} from './generated/calibration-checkout-map';
 import type { SlopBrickV103CalibrationRunManifest } from './generated/calibration-run-manifest';
 
 const ID = /^[a-z0-9][a-z0-9._-]{0,127}$/;
@@ -36,6 +39,12 @@ function safeCommandArgument(value: string): boolean {
   return SAFE_COMMAND_ARGUMENT.test(value) && !/(?:^|=)[A-Za-z][A-Za-z0-9+.-]*:\//.test(value);
 }
 
+function isReleaseArchiveCheckoutBinding(value: unknown): value is ReleaseArchiveCheckoutBinding {
+  return isRecord(value) && ownKeys(value, ['kind', 'assetSha256', 'extractionPolicy']) &&
+    value.kind === 'release_archive' && typeof value.assetSha256 === 'string' && SHA256.test(value.assetSha256) &&
+    value.extractionPolicy === 'safe-zip-v1';
+}
+
 export function calibrationCheckoutMapSha256(value: unknown): string {
   return createHash('sha256').update(canonical(value), 'utf8').digest('hex');
 }
@@ -45,8 +54,14 @@ export function isCalibrationCheckoutMapV103(value: unknown): value is SlopBrick
   if (!isRecord(value) || !ownKeys(value, ['version', 'runId', 'entries']) || value.version !== 'v10.3' || !ID.test(value.runId as string) || !Array.isArray(value.entries) || value.entries.length === 0) return false;
   const identities = new Set<string>();
   return value.entries.every((entry) => {
-    if (!isRecord(entry) || !ownKeys(entry, ['repositoryId', 'commitSha', 'checkoutPath']) || !ID.test(entry.repositoryId as string) || !SHA.test(entry.commitSha as string) || !nonEmpty(entry.checkoutPath) || !ABSOLUTE_PATH.test(entry.checkoutPath)) return false;
-    const identity = `${entry.repositoryId}\u0000${entry.commitSha}`;
+    if (!isRecord(entry) || !ownKeys(entry, ['repositoryId', 'commitSha', 'checkoutPath', 'materialization']) ||
+      !ID.test(entry.repositoryId as string) || !SHA.test(entry.commitSha as string) ||
+      !nonEmpty(entry.checkoutPath) || !ABSOLUTE_PATH.test(entry.checkoutPath) ||
+      (entry.materialization !== undefined && !isReleaseArchiveCheckoutBinding(entry.materialization))) return false;
+    const materializationIdentity = entry.materialization === undefined
+      ? 'git_tree'
+      : `${entry.materialization.kind}:${entry.materialization.assetSha256}:${entry.materialization.extractionPolicy}`;
+    const identity = `${entry.repositoryId}\u0000${entry.commitSha}\u0000${materializationIdentity}`;
     if (identities.has(identity)) return false;
     identities.add(identity);
     return true;

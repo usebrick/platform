@@ -2,6 +2,7 @@
 
 export type Identifier = string;
 export type Sha = string;
+export type Sha256 = string;
 
 export interface SlopBrickV103CalibrationCheckoutMapLocalOnly {
   version: "v10.3";
@@ -15,4 +16,10 @@ export interface Entry {
   repositoryId: Identifier;
   commitSha: Sha;
   checkoutPath: string;
+  materialization?: ReleaseArchiveCheckoutBinding;
+}
+export interface ReleaseArchiveCheckoutBinding {
+  kind: "release_archive";
+  assetSha256: Sha256;
+  extractionPolicy: "safe-zip-v1";
 }

@@ -28,6 +28,27 @@
     "identifier": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
     "httpsUri": { "type": "string", "format": "uri", "pattern": "^https://" },
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "releaseArchiveMaterialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "assetUrl", "assetSha256", "assetBytes", "archiveFormat", "rootPrefix", "extractionPolicy"],
+      "properties": {
+        "kind": { "const": "release_archive" },
+        "assetUrl": { "$ref": "#/$defs/httpsUri" },
+        "assetSha256": { "$ref": "#/$defs/sha256" },
+        "assetBytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "archiveFormat": { "const": "zip" },
+        "rootPrefix": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$",
+          "description": "Archive-relative directory prefix that becomes the verified materialization root. Release-archive file normalizedPath values are relative to this root.",
+          "not": { "const": "." }
+        },
+        "extractionPolicy": { "const": "safe-zip-v1" }
+      }
+    },
     "evidence": {
       "oneOf": [
         {
@@ -69,7 +90,8 @@
         "repositoryId": { "$ref": "#/$defs/identifier" }, "familyId": { "$ref": "#/$defs/identifier" },
         "originUrl": { "$ref": "#/$defs/httpsUri" },
         "commitSha": { "type": "string", "description": "Immutable Git object id; branches, tags, and symbolic refs are forbidden.", "pattern": "^[a-f0-9]{40,64}$" },
-        "acquiredAt": { "type": "string", "format": "date-time" }, "license": { "type": "string", "minLength": 1 }
+        "acquiredAt": { "type": "string", "format": "date-time" }, "license": { "type": "string", "minLength": 1 },
+        "materialization": { "$ref": "#/$defs/releaseArchiveMaterialization" }
       }
     },
     "file": {
@@ -77,9 +99,9 @@
       "additionalProperties": false,
       "required": ["sourceId", "repositoryId", "familyId", "normalizedPath", "contentSha256", "language", "stratum", "clusterId", "label", "tier", "split", "evidence"],
       "properties": {
-        "sourceId": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation." },
+        "sourceId": { "type": "string", "minLength": 1, "maxLength": 4361, "description": "Canonical Git-tree value: <repositoryId>@<immutable commitSha>:<normalizedPath>. Canonical release-archive value: <repositoryId>@<immutable commitSha>+asset-<assetSha256>:<normalizedPath>. The compact release identity intentionally adds only the archive-byte digest; the validated manifest and its hash retain root and extraction-policy authority, and later selection identity binds the full materialization. The semantic verifier checks this cross-record derivation." },
         "repositoryId": { "$ref": "#/$defs/identifier" }, "familyId": { "$ref": "#/$defs/identifier" },
-        "normalizedPath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
+        "normalizedPath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$", "description": "Path relative to the immutable Git repository root, or to the verified materialization.rootPrefix for a release archive." },
         "contentSha256": { "$ref": "#/$defs/sha256" }, "language": { "type": "string", "minLength": 1 },
         "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
         "clusterId": { "$ref": "#/$defs/identifier" }, "pairGroupId": { "$ref": "#/$defs/identifier", "description": "Optional reviewed human/AI benchmark pair identifier. The semantic verifier requires all non-excluded records in one pair group to use the same split." }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },

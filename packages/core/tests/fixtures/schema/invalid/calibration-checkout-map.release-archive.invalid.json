@@ -1,0 +1,15 @@
+{
+  "version": "v10.3",
+  "runId": "release-smoke-001",
+  "entries": [
+    {
+      "repositoryId": "release-repo",
+      "commitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "checkoutPath": "/private/corpus/release-repo",
+      "materialization": {
+        "kind": "release_archive",
+        "assetSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    }
+  ]
+}

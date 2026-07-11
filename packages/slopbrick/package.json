@@ -68,7 +68,7 @@
   "//_usebrick_note": "@usebrick/core and @usebrick/engine are private workspace packages. They are listed in devDependencies to keep pnpm-lock.yaml in sync; tsup.config.ts \u2192 noExternal bundles them into dist/; the prepack-guard.mjs allowlist includes both. Neither ends up in the published tarball's runtime deps. See https://github.com/usebrick/platform/blob/main/docs/repository-structure.md",
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "@usebrick/core": "workspace:*",
+    "@usebrick/core": "workspace:^0.3.0",
     "@usebrick/engine": "workspace:^",
     "@vitest/coverage-v8": "^2.1.9",
     "fast-check": "^4.8.0",

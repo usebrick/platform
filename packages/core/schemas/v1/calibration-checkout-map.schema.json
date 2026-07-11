@@ -13,13 +13,25 @@
   "$defs": {
     "identifier": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
     "sha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "releaseArchiveCheckoutBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "assetSha256", "extractionPolicy"],
+      "properties": {
+        "kind": { "const": "release_archive" },
+        "assetSha256": { "$ref": "#/$defs/sha256" },
+        "extractionPolicy": { "const": "safe-zip-v1" }
+      }
+    },
     "entry": {
       "type": "object", "additionalProperties": false,
       "required": ["repositoryId", "commitSha", "checkoutPath"],
       "properties": {
         "repositoryId": { "$ref": "#/$defs/identifier" },
         "commitSha": { "$ref": "#/$defs/sha" },
-        "checkoutPath": { "type": "string", "minLength": 2, "pattern": "^(?:/|[A-Za-z]:[\\\\/]).+" }
+        "checkoutPath": { "type": "string", "minLength": 2, "pattern": "^(?:/|[A-Za-z]:[\\\\/]).+" },
+        "materialization": { "$ref": "#/$defs/releaseArchiveCheckoutBinding" }
       }
     }
   }

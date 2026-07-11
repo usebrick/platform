@@ -8,7 +8,10 @@
  * cluster, split, or pair-group leakage.
  */
 
-import type { SlopbrickCalibrationCorpusManifestV103 } from './generated/calibration-corpus-manifest';
+import type {
+  ReleaseArchiveMaterialization,
+  SlopbrickCalibrationCorpusManifestV103,
+} from './generated/calibration-corpus-manifest';
 
 type ManifestLabel = 'verified_ai' | 'verified_human' | 'mixed' | 'quarantine';
 type ManifestSplit = 'train' | 'validation' | 'test' | 'mixed_evaluation' | 'excluded';
@@ -18,6 +21,8 @@ const COMMIT_SHA = /^[a-f0-9]{40,64}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const METHOD_VERSION = /^v10\.3\.\d+$/;
 const NORMALIZED_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@+%=-]+(?:\/[A-Za-z0-9._@+%=-]+)*$/;
+const ROOT_PREFIX = /^(?!\/)(?!.*(?:^|\/)\.{1,2}(?:\/|$))[A-Za-z0-9._@+%=-]+(?:\/[A-Za-z0-9._@+%=-]+)*$/;
+const MAX_SOURCE_ID_LENGTH = 4361;
 const LABELS = new Set<ManifestLabel>(['verified_ai', 'verified_human', 'mixed', 'quarantine']);
 const TIERS = new Set(['gold', 'silver', 'quarantine']);
 const SPLITS = new Set<ManifestSplit>(['train', 'validation', 'test', 'mixed_evaluation', 'excluded']);
@@ -74,6 +79,21 @@ function isEvidence(value: unknown): boolean {
   return value.kind === 'manual_protocol' && hasOnlyKeys(value, ['kind', 'reference', 'protocolId']) && isNonEmptyString(value.protocolId);
 }
 
+function isReleaseArchiveMaterialization(value: unknown): value is ReleaseArchiveMaterialization {
+  return isRecord(value) &&
+    hasOnlyKeys(value, ['kind', 'assetUrl', 'assetSha256', 'assetBytes', 'archiveFormat', 'rootPrefix', 'extractionPolicy']) &&
+    value.kind === 'release_archive' && isHttpsUrl(value.assetUrl) &&
+    typeof value.assetSha256 === 'string' && SHA256.test(value.assetSha256) &&
+    typeof value.assetBytes === 'number' && Number.isSafeInteger(value.assetBytes) && value.assetBytes > 0 &&
+    value.archiveFormat === 'zip' && typeof value.rootPrefix === 'string' && value.rootPrefix.length <= 4096 && value.rootPrefix !== '.' &&
+    ROOT_PREFIX.test(value.rootPrefix) && value.extractionPolicy === 'safe-zip-v1';
+}
+
+function supportsReleaseArchive(methodVersion: string): boolean {
+  const match = /^v10\.3\.(\d+)$/.exec(methodVersion);
+  return match !== null && Number(match[1]) >= 1;
+}
+
 function addGroupValue(groups: Map<string, Set<string>>, group: string, value: string): boolean {
   const entries = groups.get(group) ?? new Set<string>();
   entries.add(value);
@@ -83,11 +103,20 @@ function addGroupValue(groups: Map<string, Set<string>>, group: string, value: s
 
 /**
  * Canonical v10.3 file identity. It contains no local path: the repository
- * identifier, immutable Git object ID, and normalized repository-relative
- * path are the complete source identity.
+ * identifier, immutable Git object ID, optional release-archive digest, and
+ * normalized repository-relative path are the complete compact source
+ * identity. For an archive, the validated manifest and its hash retain root
+ * and extraction-policy authority; later selection identity binds the full
+ * materialization.
  */
-export function calibrationCorpusSourceId(repositoryId: string, commitSha: string, normalizedPath: string): string {
-  return `${repositoryId}@${commitSha}:${normalizedPath}`;
+export function calibrationCorpusSourceId(
+  repositoryId: string,
+  commitSha: string,
+  normalizedPath: string,
+  materialization?: ReleaseArchiveMaterialization,
+): string {
+  const assetIdentity = materialization === undefined ? '' : `+asset-${materialization.assetSha256}`;
+  return `${repositoryId}@${commitSha}${assetIdentity}:${normalizedPath}`;
 }
 
 /**
@@ -100,7 +129,8 @@ export function calibrationCorpusSourceId(repositoryId: string, commitSha: strin
  */
 export function isCalibrationCorpusManifestV103(value: unknown): value is SlopbrickCalibrationCorpusManifestV103 {
   if (!isRecord(value) || !hasOnlyKeys(value, ['version', 'generatedAt', 'methodVersion', 'leakageReview', 'repositories', 'files']) ||
-    value.version !== 'v10.3' || !isIsoDateTime(value.generatedAt) || !METHOD_VERSION.test(value.methodVersion as string)) {
+    value.version !== 'v10.3' || !isIsoDateTime(value.generatedAt) ||
+    typeof value.methodVersion !== 'string' || !METHOD_VERSION.test(value.methodVersion)) {
     return false;
   }
   if (!isRecord(value.leakageReview) || !hasOnlyKeys(value.leakageReview, ['protocolVersion', 'reviewedAt', 'reviewerIds', 'noCrossPolarityFamilyOrCluster']) ||
@@ -114,17 +144,26 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     return false;
   }
 
-  const repositories = new Map<string, { familyId: string; commitSha: string }>();
+  const repositories = new Map<string, {
+    familyId: string;
+    commitSha: string;
+    materialization?: ReleaseArchiveMaterialization;
+  }>();
   for (const repository of value.repositories) {
-    if (!isRecord(repository) || !hasOnlyKeys(repository, ['repositoryId', 'familyId', 'originUrl', 'commitSha', 'acquiredAt', 'license']) ||
+    if (!isRecord(repository) || !hasOnlyKeys(repository, ['repositoryId', 'familyId', 'originUrl', 'commitSha', 'acquiredAt', 'license', 'materialization']) ||
       !IDENTIFIER.test(repository.repositoryId as string) || !IDENTIFIER.test(repository.familyId as string) ||
       !isHttpsUrl(repository.originUrl) || !COMMIT_SHA.test(repository.commitSha as string) ||
       !isIsoDateTime(repository.acquiredAt) || !isNonEmptyString(repository.license) || repositories.has(repository.repositoryId as string)) {
       return false;
     }
+    if (repository.materialization !== undefined &&
+      (!isReleaseArchiveMaterialization(repository.materialization) || !supportsReleaseArchive(value.methodVersion as string))) {
+      return false;
+    }
     repositories.set(repository.repositoryId as string, {
       familyId: repository.familyId as string,
       commitSha: repository.commitSha as string,
+      ...(repository.materialization === undefined ? {} : { materialization: repository.materialization }),
     });
   }
 
@@ -136,7 +175,7 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
   const pairGroupSplits = new Map<string, Set<string>>();
   for (const file of value.files) {
     if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'pairGroupId', 'label', 'tier', 'split', 'exclusionReason', 'evidence']) ||
-      !isNonEmptyString(file.sourceId) || sourceIds.has(file.sourceId) ||
+      !isNonEmptyString(file.sourceId) || file.sourceId.length > MAX_SOURCE_ID_LENGTH || sourceIds.has(file.sourceId) ||
       !IDENTIFIER.test(file.repositoryId as string) || !IDENTIFIER.test(file.familyId as string) ||
       repositories.get(file.repositoryId as string)?.familyId !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
       !SHA256.test(file.contentSha256 as string) || !isNonEmptyString(file.language) || !STRATA.has(file.stratum as string) ||
@@ -146,7 +185,12 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
       return false;
     }
     const repository = repositories.get(file.repositoryId as string);
-    if (!repository || file.sourceId !== calibrationCorpusSourceId(file.repositoryId as string, repository.commitSha, file.normalizedPath as string)) return false;
+    if (!repository || file.sourceId !== calibrationCorpusSourceId(
+      file.repositoryId as string,
+      repository.commitSha,
+      file.normalizedPath as string,
+      repository.materialization,
+    )) return false;
     if ((file.split === 'excluded') !== isNonEmptyString(file.exclusionReason)) return false;
     if (file.tier === 'silver' && file.split !== 'train' && file.split !== 'excluded') return false;
     if (file.label === 'mixed' && (file.tier !== 'gold' || file.split !== 'mixed_evaluation')) return false;

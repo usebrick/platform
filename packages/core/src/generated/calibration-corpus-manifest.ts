@@ -2,6 +2,7 @@
 
 export type Identifier = string;
 export type HttpsUri = string;
+export type Sha256 = string;
 export type File = {
   [k: string]: unknown;
 } & {
@@ -16,11 +17,14 @@ export type File = {
   [k: string]: unknown;
 } & {
   /**
-   * Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation.
+   * Canonical Git-tree value: <repositoryId>@<immutable commitSha>:<normalizedPath>. Canonical release-archive value: <repositoryId>@<immutable commitSha>+asset-<assetSha256>:<normalizedPath>. The compact release identity intentionally adds only the archive-byte digest; the validated manifest and its hash retain root and extraction-policy authority, and later selection identity binds the full materialization. The semantic verifier checks this cross-record derivation.
    */
   sourceId: string;
   repositoryId: Identifier;
   familyId: Identifier;
+  /**
+   * Path relative to the immutable Git repository root, or to the verified materialization.rootPrefix for a release archive.
+   */
   normalizedPath: string;
   contentSha256: Sha256;
   language: string;
@@ -40,11 +44,14 @@ export type File = {
   evidence: Evidence;
 } & {
   /**
-   * Canonical value: <repositoryId>@<immutable commitSha>:<normalizedPath>. The semantic verifier checks this cross-record derivation.
+   * Canonical Git-tree value: <repositoryId>@<immutable commitSha>:<normalizedPath>. Canonical release-archive value: <repositoryId>@<immutable commitSha>+asset-<assetSha256>:<normalizedPath>. The compact release identity intentionally adds only the archive-byte digest; the validated manifest and its hash retain root and extraction-policy authority, and later selection identity binds the full materialization. The semantic verifier checks this cross-record derivation.
    */
   sourceId: string;
   repositoryId: Identifier;
   familyId: Identifier;
+  /**
+   * Path relative to the immutable Git repository root, or to the verified materialization.rootPrefix for a release archive.
+   */
   normalizedPath: string;
   contentSha256: Sha256;
   language: string;
@@ -63,7 +70,6 @@ export type File = {
   exclusionReason?: string;
   evidence: Evidence;
 };
-export type Sha256 = string;
 export type Evidence =
   | {
       kind: "generator_record";
@@ -123,4 +129,17 @@ export interface Repository {
   commitSha: string;
   acquiredAt: string;
   license: string;
+  materialization?: ReleaseArchiveMaterialization;
+}
+export interface ReleaseArchiveMaterialization {
+  kind: "release_archive";
+  assetUrl: HttpsUri;
+  assetSha256: Sha256;
+  assetBytes: number;
+  archiveFormat: "zip";
+  /**
+   * Archive-relative directory prefix that becomes the verified materialization root. Release-archive file normalizedPath values are relative to this root.
+   */
+  rootPrefix: string;
+  extractionPolicy: "safe-zip-v1";
 }

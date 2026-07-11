@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv from 'ajv/dist/2020.js';
+import type { ReleaseArchiveCheckoutBinding } from '../src/index';
 import {
   calibrationCheckoutMapSha256,
   isCalibrationCheckoutMapV103,
@@ -6,6 +11,30 @@ import {
 } from '../src/calibration-run';
 
 const sha = (character: string) => character.repeat(64);
+const root = fileURLToPath(new URL('..', import.meta.url));
+const checkoutSchemaPath = join(root, 'schemas', 'v1', 'calibration-checkout-map.schema.json');
+const releaseCheckoutFixturePath = join(root, 'tests', 'fixtures', 'schema', 'valid', 'calibration-checkout-map.release-archive.valid.json');
+
+function releaseBinding(character: string): ReleaseArchiveCheckoutBinding {
+  return {
+    kind: 'release_archive',
+    assetSha256: sha(character),
+    extractionPolicy: 'safe-zip-v1',
+  };
+}
+
+function checkoutSchemaValidator() {
+  const schema = JSON.parse(readFileSync(checkoutSchemaPath, 'utf8')) as object;
+  return new Ajv({ allErrors: true, strict: true }).compile(schema);
+}
+
+function releaseCheckoutMap() {
+  return JSON.parse(readFileSync(releaseCheckoutFixturePath, 'utf8')) as {
+    version: string;
+    runId: string;
+    entries: Array<Record<string, unknown>>;
+  };
+}
 
 function checkoutMap() {
   return {
@@ -35,6 +64,65 @@ describe('v10.3 calibration run and checkout-map contracts', () => {
     expect(isCalibrationCheckoutMapV103(checkoutMap())).toBe(true);
     expect(isCalibrationRunManifestV103(runManifest())).toBe(true);
     expect(JSON.stringify(runManifest())).not.toContain('/private/corpus');
+  });
+
+  it('accepts coexisting Git-tree and exactly bound release-archive checkout entries', () => {
+    const map = releaseCheckoutMap();
+    const validate = checkoutSchemaValidator();
+
+    expect(validate(map), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCheckoutMapV103(map)).toBe(true);
+  });
+
+  it.each([
+    ['missing kind', (binding: Record<string, unknown>) => { delete binding.kind; }],
+    ['missing digest', (binding: Record<string, unknown>) => { delete binding.assetSha256; }],
+    ['missing policy', (binding: Record<string, unknown>) => { delete binding.extractionPolicy; }],
+    ['uppercase digest', (binding: Record<string, unknown>) => { binding.assetSha256 = 'C'.repeat(64); }],
+    ['array-wrapped digest', (binding: Record<string, unknown>) => { binding.assetSha256 = [sha('c')]; }],
+    ['unknown kind', (binding: Record<string, unknown>) => { binding.kind = 'git_tree'; }],
+    ['unknown policy', (binding: Record<string, unknown>) => { binding.extractionPolicy = 'safe-zip-v2'; }],
+    ['unknown key', (binding: Record<string, unknown>) => { binding.assetUrl = 'https://example.test/archive.zip'; }],
+  ])('rejects a release checkout binding with %s', (_name, mutate) => {
+    const map = releaseCheckoutMap();
+    const binding = map.entries[1]!.materialization as Record<string, unknown>;
+    mutate(binding);
+    const validate = checkoutSchemaValidator();
+
+    expect([
+      validate(map),
+      isCalibrationCheckoutMapV103(map),
+    ]).toEqual([false, false]);
+  });
+
+  it('keys checkout uniqueness by repository, commit, and materialization identity', () => {
+    const commitSha = 'a'.repeat(40);
+    const checkoutPath = '/private/corpus/shared-source';
+    const baseEntry = {
+      repositoryId: 'shared-repo',
+      commitSha,
+      checkoutPath,
+      materialization: releaseBinding('c'),
+    };
+    const map = {
+      version: 'v10.3',
+      runId: 'identity-smoke-001',
+      entries: [
+        baseEntry,
+        { ...baseEntry, repositoryId: 'other-repo', materialization: { ...baseEntry.materialization } },
+        { ...baseEntry, commitSha: 'b'.repeat(40), materialization: { ...baseEntry.materialization } },
+        { ...baseEntry, materialization: releaseBinding('d') },
+      ],
+    };
+
+    expect(isCalibrationCheckoutMapV103(map)).toBe(true);
+
+    map.entries.push({
+      ...baseEntry,
+      materialization: { ...baseEntry.materialization },
+      checkoutPath: '/private/corpus/release-c-duplicate',
+    });
+    expect(isCalibrationCheckoutMapV103(map)).toBe(false);
   });
 
   it('rejects canonical path leaks, duplicate checkouts, and overlapping filters', () => {

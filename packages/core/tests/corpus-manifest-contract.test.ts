@@ -4,16 +4,74 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { isCalibrationCorpusManifestV103 } from '../src/corpus-manifest';
+import type { ReleaseArchiveMaterialization } from '../src/index';
+import {
+  calibrationCorpusSourceId,
+  isCalibrationCorpusManifestV103,
+} from '../src/corpus-manifest';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const schemaPath = join(root, 'schemas', 'v1', 'calibration-corpus-manifest.schema.json');
 const fixturePath = join(root, 'tests', 'fixtures', 'schema', 'valid', 'calibration-corpus-manifest.valid.json');
+const releaseFixturePath = join(root, 'tests', 'fixtures', 'schema', 'valid', 'calibration-corpus-manifest.release-archive.valid.json');
 const invalidFixturePath = join(root, 'tests', 'fixtures', 'schema', 'invalid', 'calibration-corpus-manifest.invalid.json');
 const semanticInvalidFixturePath = join(root, 'tests', 'fixtures', 'schema', 'semantic-invalid', 'calibration-corpus-manifest.semantic-invalid.json');
+const releaseSemanticInvalidFixturePath = join(root, 'tests', 'fixtures', 'schema', 'semantic-invalid', 'calibration-corpus-manifest.release-archive.semantic-invalid.json');
+const RELEASE_ASSET_SHA256 = 'c'.repeat(64);
+const MAX_REPOSITORY_ID = 'r'.repeat(128);
+const MAX_COMMIT_SHA = 'c'.repeat(64);
+const MAX_NORMALIZED_PATH = 'p'.repeat(4096);
 
 function fixture(): Record<string, unknown> {
   return JSON.parse(readFileSync(fixturePath, 'utf8')) as Record<string, unknown>;
+}
+
+function releaseFixture(): Record<string, unknown> {
+  return JSON.parse(readFileSync(releaseFixturePath, 'utf8')) as Record<string, unknown>;
+}
+
+function manifestSchemaValidator() {
+  const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as object;
+  const ajv = new Ajv({ allErrors: true, strict: true });
+  addFormats(ajv);
+  return ajv.compile(schema);
+}
+
+function releaseRepository(manifest: Record<string, unknown>): Record<string, unknown> {
+  return (manifest.repositories as Array<Record<string, unknown>>)[0]!;
+}
+
+function releaseMaterialization(manifest: Record<string, unknown>): Record<string, unknown> {
+  return releaseRepository(manifest).materialization as Record<string, unknown>;
+}
+
+function maximumGitManifest(): Record<string, unknown> {
+  const manifest = fixture();
+  const repository = (manifest.repositories as Array<Record<string, unknown>>)[0]!;
+  const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+  repository.repositoryId = MAX_REPOSITORY_ID;
+  repository.commitSha = MAX_COMMIT_SHA;
+  file.repositoryId = MAX_REPOSITORY_ID;
+  file.normalizedPath = MAX_NORMALIZED_PATH;
+  file.sourceId = calibrationCorpusSourceId(MAX_REPOSITORY_ID, MAX_COMMIT_SHA, MAX_NORMALIZED_PATH);
+  return manifest;
+}
+
+function maximumReleaseManifest(): Record<string, unknown> {
+  const manifest = releaseFixture();
+  const repository = releaseRepository(manifest);
+  const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+  repository.repositoryId = MAX_REPOSITORY_ID;
+  repository.commitSha = MAX_COMMIT_SHA;
+  file.repositoryId = MAX_REPOSITORY_ID;
+  file.normalizedPath = MAX_NORMALIZED_PATH;
+  file.sourceId = calibrationCorpusSourceId(
+    MAX_REPOSITORY_ID,
+    MAX_COMMIT_SHA,
+    MAX_NORMALIZED_PATH,
+    repository.materialization as ReleaseArchiveMaterialization,
+  );
+  return manifest;
 }
 
 describe('v10.3 calibration corpus manifest contract', () => {
@@ -26,6 +84,179 @@ describe('v10.3 calibration corpus manifest contract', () => {
 
     expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
     expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+  });
+
+  it('preserves the canonical source identity of the existing Git-tree fixture', () => {
+    const manifest = fixture();
+    const repository = (manifest.repositories as Array<Record<string, unknown>>)[0]!;
+    const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+
+    expect(calibrationCorpusSourceId(
+      repository.repositoryId as string,
+      repository.commitSha as string,
+      file.normalizedPath as string,
+    )).toBe('paired-task-ai@0123456789abcdef0123456789abcdef01234567:src/app.ts');
+    expect(file.sourceId).toBe('paired-task-ai@0123456789abcdef0123456789abcdef01234567:src/app.ts');
+  });
+
+  it.each(['v10.3.1', 'v10.3.2'])('accepts a complete release archive at method %s and derives its asset-backed source ID', (methodVersion) => {
+    const manifest = releaseFixture();
+    manifest.methodVersion = methodVersion;
+    const repository = releaseRepository(manifest);
+    const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+    const validate = manifestSchemaValidator();
+
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+    expect(calibrationCorpusSourceId(
+      repository.repositoryId as string,
+      repository.commitSha as string,
+      file.normalizedPath as string,
+      repository.materialization as ReleaseArchiveMaterialization,
+    )).toBe(`evalplus-release@${'d'.repeat(40)}+asset-${RELEASE_ASSET_SHA256}:data/humaneval/0.py`);
+    expect(file.sourceId).toBe(`evalplus-release@${'d'.repeat(40)}+asset-${RELEASE_ASSET_SHA256}:data/humaneval/0.py`);
+  });
+
+  it('requires method v10.3.1 or later for a release archive after schema validation', () => {
+    const manifest = JSON.parse(readFileSync(releaseSemanticInvalidFixturePath, 'utf8')) as unknown;
+    const validate = manifestSchemaValidator();
+
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('rejects a JSON array that string-coerces to a valid method version', () => {
+    const manifest = releaseFixture();
+    manifest.methodVersion = ['v10.3.1'];
+    const validate = manifestSchemaValidator();
+
+    expect([
+      validate(manifest),
+      isCalibrationCorpusManifestV103(manifest),
+    ]).toEqual([false, false]);
+  });
+
+  it.each([
+    ['missing kind', (materialization: Record<string, unknown>) => { delete materialization.kind; }],
+    ['missing asset URL', (materialization: Record<string, unknown>) => { delete materialization.assetUrl; }],
+    ['missing asset digest', (materialization: Record<string, unknown>) => { delete materialization.assetSha256; }],
+    ['missing byte size', (materialization: Record<string, unknown>) => { delete materialization.assetBytes; }],
+    ['missing archive format', (materialization: Record<string, unknown>) => { delete materialization.archiveFormat; }],
+    ['missing root prefix', (materialization: Record<string, unknown>) => { delete materialization.rootPrefix; }],
+    ['missing extraction policy', (materialization: Record<string, unknown>) => { delete materialization.extractionPolicy; }],
+    ['HTTP asset URL', (materialization: Record<string, unknown>) => { materialization.assetUrl = 'http://example.test/evalplus.zip'; }],
+    ['local file URL', (materialization: Record<string, unknown>) => { materialization.assetUrl = 'file:///tmp/evalplus.zip'; }],
+    ['local path', (materialization: Record<string, unknown>) => { materialization.assetUrl = '/tmp/evalplus.zip'; }],
+    ['zero byte size', (materialization: Record<string, unknown>) => { materialization.assetBytes = 0; }],
+    ['unsafe byte size', (materialization: Record<string, unknown>) => { materialization.assetBytes = Number.MAX_SAFE_INTEGER + 1; }],
+    ['fractional byte size', (materialization: Record<string, unknown>) => { materialization.assetBytes = 1.5; }],
+    ['empty root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = ''; }],
+    ['current-directory root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = '.'; }],
+    ['traversing root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = '../evalplus'; }],
+    ['absolute root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = '/evalplus'; }],
+    ['backslash root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = 'evalplus\\src'; }],
+    ['overlong root prefix', (materialization: Record<string, unknown>) => { materialization.rootPrefix = 'a'.repeat(4097); }],
+    ['unknown archive format', (materialization: Record<string, unknown>) => { materialization.archiveFormat = 'tar'; }],
+    ['unknown extraction policy', (materialization: Record<string, unknown>) => { materialization.extractionPolicy = 'safe-zip-v2'; }],
+    ['uppercase asset digest', (materialization: Record<string, unknown>) => { materialization.assetSha256 = 'C'.repeat(64); }],
+    ['array-wrapped asset digest', (materialization: Record<string, unknown>) => { materialization.assetSha256 = [RELEASE_ASSET_SHA256]; }],
+    ['leading current-directory root segment', (materialization: Record<string, unknown>) => { materialization.rootPrefix = './evalplus'; }],
+    ['interior current-directory root segment', (materialization: Record<string, unknown>) => { materialization.rootPrefix = 'evalplus/./src'; }],
+    ['unknown key', (materialization: Record<string, unknown>) => { materialization.unreviewedShortcut = true; }],
+  ])('rejects a release archive with %s through schema and semantic validation', (_name, mutate) => {
+    const manifest = releaseFixture();
+    mutate(releaseMaterialization(manifest));
+    const validate = manifestSchemaValidator();
+
+    expect([
+      validate(manifest),
+      isCalibrationCorpusManifestV103(manifest),
+    ]).toEqual([false, false]);
+  });
+
+  it.each([
+    ['Git tree', maximumGitManifest, 4290],
+    ['release archive', maximumReleaseManifest, 4361],
+  ])('accepts the maximum canonical %s source identity', (_kind, buildManifest, expectedSourceIdLength) => {
+    const manifest = buildManifest();
+    const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+    const validate = manifestSchemaValidator();
+
+    expect(file.sourceId).toHaveLength(expectedSourceIdLength);
+    expect([
+      validate(manifest),
+      isCalibrationCorpusManifestV103(manifest),
+    ]).toEqual([true, true]);
+  });
+
+  it('rejects a 4362-character source ID specifically at the schema maximum', () => {
+    const manifest = maximumReleaseManifest();
+    const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
+    file.sourceId = `${file.sourceId as string}x`;
+    const validate = manifestSchemaValidator();
+
+    expect(file.sourceId).toHaveLength(4362);
+    expect(validate(manifest)).toBe(false);
+    expect(validate.errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        instancePath: '/files/0/sourceId',
+        keyword: 'maxLength',
+        params: { limit: 4361 },
+      }),
+    ]));
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('allows repositories to share an immutable commit only when repository IDs remain distinct', () => {
+    const manifest = releaseFixture();
+    const repositories = manifest.repositories as Array<Record<string, unknown>>;
+    const files = manifest.files as Array<Record<string, unknown>>;
+    const originalRepository = repositories[0]!;
+    const originalFile = files[0]!;
+    const siblingRepository = {
+      ...originalRepository,
+      repositoryId: 'evalplus-release-2',
+      materialization: { ...releaseMaterialization(manifest) },
+    };
+    const siblingMaterialization = siblingRepository.materialization as unknown as ReleaseArchiveMaterialization;
+    const siblingFile = {
+      ...originalFile,
+      repositoryId: siblingRepository.repositoryId,
+      sourceId: calibrationCorpusSourceId(
+        siblingRepository.repositoryId,
+        originalRepository.commitSha as string,
+        originalFile.normalizedPath as string,
+        siblingMaterialization,
+      ),
+    };
+    const originalRepositoryAuthority = { ...originalRepository };
+    const siblingRepositoryAuthority = { ...siblingRepository } as Record<string, unknown>;
+    delete originalRepositoryAuthority.repositoryId;
+    delete siblingRepositoryAuthority.repositoryId;
+    expect(siblingRepositoryAuthority).toEqual(originalRepositoryAuthority);
+    const originalFileAuthority = { ...originalFile };
+    const siblingFileAuthority = { ...siblingFile } as Record<string, unknown>;
+    delete originalFileAuthority.repositoryId;
+    delete originalFileAuthority.sourceId;
+    delete siblingFileAuthority.repositoryId;
+    delete siblingFileAuthority.sourceId;
+    expect(siblingFileAuthority).toEqual(originalFileAuthority);
+    repositories.push(siblingRepository);
+    files.push(siblingFile);
+
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+  });
+
+  it('rejects a repeated repository ID even when another repository field differs', () => {
+    const manifest = releaseFixture();
+    const repositories = manifest.repositories as Array<Record<string, unknown>>;
+    repositories.unshift({
+      ...repositories[0]!,
+      familyId: 'different-family',
+      materialization: { ...releaseMaterialization(manifest) },
+    });
+
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
   });
 
   it('rejects mutable revisions and an AI label without a complete traceable evidence record', () => {

@@ -82,8 +82,12 @@ export type {
   Repository as CalibrationCorpusRepository,
   File as CalibrationCorpusFile,
   Evidence as CalibrationCorpusEvidence,
+  ReleaseArchiveMaterialization,
 } from './generated/calibration-corpus-manifest';
-export type { SlopBrickV103CalibrationCheckoutMapLocalOnly } from './generated/calibration-checkout-map';
+export type {
+  SlopBrickV103CalibrationCheckoutMapLocalOnly,
+  ReleaseArchiveCheckoutBinding,
+} from './generated/calibration-checkout-map';
 export type { SlopBrickV103CalibrationRunManifest } from './generated/calibration-run-manifest';
 export type { HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson as CalibrationObservation } from './generated/calibration-observation';
 export type { HttpsUsebrickDevSchemasV1CalibrationFailureSchemaJson as CalibrationFailure } from './generated/calibration-failure';

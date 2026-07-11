@@ -1,0 +1,51 @@
+{
+  "version": "v10.3",
+  "generatedAt": "2026-07-10T00:00:00.000Z",
+  "methodVersion": "v10.3.1",
+  "leakageReview": {
+    "protocolVersion": "v10.3.1",
+    "reviewedAt": "2026-07-10T00:00:00.000Z",
+    "reviewerIds": ["reviewer-a", "reviewer-b"],
+    "noCrossPolarityFamilyOrCluster": true
+  },
+  "repositories": [
+    {
+      "repositoryId": "evalplus-release",
+      "familyId": "evalplus-family",
+      "originUrl": "https://github.com/evalplus/evalplus",
+      "commitSha": "dddddddddddddddddddddddddddddddddddddddd",
+      "acquiredAt": "2026-07-09T00:00:00.000Z",
+      "license": "Apache-2.0",
+      "materialization": {
+        "kind": "release_archive",
+        "assetUrl": "https://github.com/evalplus/evalplus/releases/download/v0.3.1/evalplus.zip",
+        "assetSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "assetBytes": 4096,
+        "archiveFormat": "zip",
+        "rootPrefix": "evalplus-0.3.1",
+        "extractionPolicy": "safe-zip-v1"
+      }
+    }
+  ],
+  "files": [
+    {
+      "sourceId": "evalplus-release@dddddddddddddddddddddddddddddddddddddddd+asset-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc:data/humaneval/0.py",
+      "repositoryId": "evalplus-release",
+      "familyId": "evalplus-family",
+      "normalizedPath": "data/humaneval/0.py",
+      "contentSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "language": "python",
+      "stratum": "production",
+      "clusterId": "evalplus-cluster-0",
+      "label": "verified_ai",
+      "tier": "gold",
+      "split": "test",
+      "evidence": {
+        "kind": "benchmark",
+        "reference": "https://github.com/evalplus/evalplus",
+        "benchmarkId": "evalplus",
+        "benchmarkVersion": "0.3.1"
+      }
+    }
+  ]
+}

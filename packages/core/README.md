@@ -32,6 +32,7 @@ versioned calibration-evidence contract:
 | [`v1/structure.schema.json`](./schemas/v1/structure.schema.json) | Structured JSON projection of the agent-readable summary (the derived `.slopbrick/structure.md` rendering is not JSON input) | `slopbrick scan` (auto-renders) | `slop_suggest_with_structure` MCP tool (was `slop_suggest_with_memory`) |
 | [`v1/health.schema.json`](./schemas/v1/health.schema.json) | Per-scan health snapshot — 4-score model | `slopbrick scan` | website dashboards, CI integrations |
 | [`v1/calibration-corpus-manifest.schema.json`](./schemas/v1/calibration-corpus-manifest.schema.json) | Immutable v10.3 repository/file provenance manifest | reviewed corpus preparation | calibration selection and verifier |
+| [`v1/calibration-checkout-map.schema.json`](./schemas/v1/calibration-checkout-map.schema.json) | Local-only v10.3 checkout locations with exact source-materialization bindings | corpus intake | calibration resolver and verifier |
 
 The calibration corpus manifest is a two-part contract: validate the JSON
 Schema **and** call `isCalibrationCorpusManifestV103` before selection or
@@ -40,6 +41,28 @@ cross-record family/cluster/split leakage rules which JSON Schema cannot
 express alone. Excluded records remain countable audit evidence and must carry
 an `exclusionReason`; the semantic verifier does not treat them as a data
 cohort for split-leakage checks.
+
+Beginning with `@usebrick/core` 0.3.0 and calibration method `v10.3.1`, a
+repository may optionally declare an immutable HTTPS `release_archive`
+materialization. Its URL, exact byte size, lowercase SHA-256 digest, ZIP
+format, archive-relative root prefix, and frozen `safe-zip-v1` extraction
+policy are schema-backed. Omitting `materialization` keeps the original Git
+tree contract and its source IDs byte-for-byte compatible. Archive-backed
+source IDs add the asset digest:
+
+```text
+<repositoryId>@<commitSha>+asset-<assetSha256>:<normalizedPath>
+```
+
+For a release archive, `rootPrefix` names the verified root inside the archive
+and each file's `normalizedPath` is relative to that root. The compact
+`sourceId` intentionally adds only the archive-byte digest. The validated
+manifest and its hash retain the root and extraction policy; later selection
+identity binds the complete materialization.
+
+The local-only checkout map copies only the archive digest and extraction
+policy. `@usebrick/core` validates that binding and its identity; it performs
+no download, extraction, or other I/O.
 
 ### Versioned schema URLs
 
@@ -51,6 +74,7 @@ https://usebrick.dev/schemas/v1/constitution.schema.json
 https://usebrick.dev/schemas/v1/structure.schema.json
 https://usebrick.dev/schemas/v1/health.schema.json
 https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json
+https://usebrick.dev/schemas/v1/calibration-checkout-map.schema.json
 ```
 
 The version directory (`v1/`, future `v2/`, ...) is the **contract version**. Older tools keep reading `v1/` even after `v2/` ships — that's the whole point of versioning. New tools can opt into `v2/` when ready.
