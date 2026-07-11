@@ -10,15 +10,17 @@ import { constants } from 'node:fs';
 import { link, lstat, open, realpath, type FileHandle, unlink } from 'node:fs/promises';
 import { request as httpsRequest } from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { inspect as nodeInspect } from 'node:util';
-
-interface BigIntFileIdentity {
-  readonly dev: bigint;
-  readonly ino: bigint;
-  readonly size: bigint;
-  isFile(): boolean;
-}
+import {
+  inspectTrustedCanonicalCacheDirectory,
+  requireTrustedPosixCapabilities,
+  verifyTrustedRegularFile,
+  type TrustedPosixFilesystemSecurityCapabilities,
+  type TrustedPosixLstat,
+  type TrustedPosixOpenFile,
+  type TrustedPosixRealpath,
+} from './trusted-posix-cache';
 
 // These are frozen acquisition-policy budgets, not performance tuning knobs.
 const IDLE_TIMEOUT_MS = 30_000;
@@ -27,7 +29,6 @@ const MAX_REDIRECTS = 5;
 const MAX_DNS_ANSWERS = 16;
 const MAX_ARTIFACT_BYTES = 5 * 1024 ** 3;
 const TEMP_ATTEMPTS = 8;
-const READ_BUFFER_BYTES = 64 * 1024;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 export interface AcquireArtifactOptions {
@@ -66,15 +67,11 @@ export type RawAddressLookup = (
   callback: (error: NodeJS.ErrnoException | null, addresses: LookupAddress[]) => void,
 ) => void;
 
-export type ArtifactOpenFile = (
-  path: string,
-  flags: string | number,
-  mode?: number,
-) => Promise<FileHandle>;
+export type ArtifactOpenFile = TrustedPosixOpenFile;
 
 export type ArtifactLinkFile = (existingPath: string, newPath: string) => Promise<void>;
-export type ArtifactRealpath = (path: string) => Promise<string>;
-export type ArtifactLstat = typeof lstat;
+export type ArtifactRealpath = TrustedPosixRealpath;
+export type ArtifactLstat = TrustedPosixLstat;
 export type ArtifactUnlinkFile = (path: string) => Promise<void>;
 
 export interface ArtifactTimerScheduler {
@@ -82,11 +79,7 @@ export interface ArtifactTimerScheduler {
   readonly clearTimeout: (handle: unknown) => void;
 }
 
-export interface ArtifactFilesystemSecurityCapabilities {
-  readonly noFollowFlag: number | undefined;
-  readonly nonBlockingFlag: number | undefined;
-  readonly effectiveUid: number | undefined;
-}
+export type ArtifactFilesystemSecurityCapabilities = TrustedPosixFilesystemSecurityCapabilities;
 
 export interface ArtifactDownloadDependencies {
   readonly transport?: ArtifactTransport;
@@ -447,107 +440,26 @@ async function verifyRegularArchive(
   openFlags: number = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
   lstatFile: ArtifactLstat = lstat,
 ): Promise<'missing' | 'valid' | 'invalid'> {
-  const expectedSize = BigInt(expectedBytes);
-  let pathBeforeOpen: BigIntFileIdentity;
-  try {
-    checkDeadline();
-    pathBeforeOpen = await lstatFile(path, { bigint: true });
-    checkDeadline();
-  } catch (error) {
-    if (error instanceof ArtifactAcquisitionError) throw error;
-    checkDeadline();
-    return errorCode(error) === 'ENOENT' ? 'missing' : 'invalid';
-  }
-  if (!pathBeforeOpen.isFile() || pathBeforeOpen.size !== expectedSize) return 'invalid';
-
-  let handle: FileHandle | undefined;
-  try {
-    checkDeadline();
-    handle = await openFile(path, openFlags);
-    checkDeadline();
-  } catch (error) {
-    if (error instanceof ArtifactAcquisitionError) throw error;
-    checkDeadline();
-    return 'invalid';
-  }
-  let valid = false;
-  let finalHandleIdentity: BigIntFileIdentity | undefined;
-  try {
-    const metadata = await handle.stat({ bigint: true });
-    checkDeadline();
-    if (
-      metadata.isFile()
-      && metadata.size === expectedSize
-      && metadata.dev === pathBeforeOpen.dev
-      && metadata.ino === pathBeforeOpen.ino
-    ) {
-      const hash = createHash('sha256');
-      const buffer = Buffer.allocUnsafe(Math.min(READ_BUFFER_BYTES, expectedBytes));
-      let position = 0;
-      while (position < expectedBytes) {
-        const length = Math.min(buffer.byteLength, expectedBytes - position);
-        const { bytesRead } = await handle.read(buffer, 0, length, position);
-        checkDeadline();
-        if (bytesRead === 0) break;
-        hash.update(buffer.subarray(0, bytesRead));
-        position += bytesRead;
-      }
-      const finalMetadata = await handle.stat({ bigint: true });
-      checkDeadline();
-      finalHandleIdentity = finalMetadata;
-      valid = finalMetadata.isFile()
-        && finalMetadata.size === expectedSize
-        && finalMetadata.dev === pathBeforeOpen.dev
-        && finalMetadata.ino === pathBeforeOpen.ino
-        && finalMetadata.dev === metadata.dev
-        && finalMetadata.ino === metadata.ino
-        && position === expectedBytes
-        && hash.digest('hex') === expectedSha256;
-    }
-  } catch (error) {
-    if (error instanceof ArtifactAcquisitionError) throw error;
-    valid = false;
-  } finally {
-    try {
-      await handle.close();
-    } catch {
-      valid = false;
-    }
-  }
-  checkDeadline();
-  if (!valid || !finalHandleIdentity) return 'invalid';
-  try {
-    const pathAfterClose = await lstatFile(path, { bigint: true });
-    checkDeadline();
-    return pathAfterClose.isFile()
-      && pathAfterClose.size === expectedSize
-      && pathAfterClose.dev === pathBeforeOpen.dev
-      && pathAfterClose.ino === pathBeforeOpen.ino
-      && pathAfterClose.dev === finalHandleIdentity.dev
-      && pathAfterClose.ino === finalHandleIdentity.ino
-      ? 'valid'
-      : 'invalid';
-  } catch (error) {
-    if (error instanceof ArtifactAcquisitionError) throw error;
-    checkDeadline();
-    return 'invalid';
-  }
+  return verifyTrustedRegularFile(
+    path,
+    expectedBytes,
+    expectedSha256,
+    openFile,
+    checkDeadline,
+    openFlags,
+    lstatFile,
+    (error) => error instanceof ArtifactAcquisitionError,
+  );
 }
 
 function requireFilesystemSecurity(
   capabilities: ArtifactFilesystemSecurityCapabilities,
-): { readonly noFollowFlag: number; readonly nonBlockingFlag: number; readonly effectiveUid: number } {
+): { readonly noFollowFlag: number; readonly nonBlockingFlag: number; readonly effectiveUid: number; readonly regularFileReadFlags: number } {
   // Windows reparse points/ACLs do not satisfy these POSIX invariants. Missing
   // no-follow, nonblocking, or effective-UID primitives therefore fails closed.
-  if (
-    !Number.isInteger(capabilities.noFollowFlag)
-    || capabilities.noFollowFlag! <= 0
-    || !Number.isInteger(capabilities.nonBlockingFlag)
-    || capabilities.nonBlockingFlag! <= 0
-    || !Number.isInteger(capabilities.effectiveUid)
-    || capabilities.effectiveUid! < 0
-  ) fail('ERR_ARTIFACT_CACHE_UNTRUSTED');
-  return capabilities as { readonly noFollowFlag: number; readonly nonBlockingFlag: number; readonly effectiveUid: number };
+  const required = requireTrustedPosixCapabilities(capabilities);
+  if (!required) fail('ERR_ARTIFACT_CACHE_UNTRUSTED');
+  return required;
 }
 
 async function trustedCanonicalCacheDirectory(
@@ -559,35 +471,17 @@ async function trustedCanonicalCacheDirectory(
 ): Promise<string> {
   // Every ancestor must be controlled by root or this euid. Root-owned sticky
   // directories (for example /tmp) are the sole writable-ancestor exception.
-  try {
-    const absolute = resolve(cacheDirectory);
-    checkDeadline();
-    const canonical = await realpathFile(absolute);
-    checkDeadline();
-    if (canonical !== absolute) fail('ERR_ARTIFACT_CACHE_UNTRUSTED');
-    let current = canonical;
-    while (true) {
-      checkDeadline();
-      const metadata = await lstatFile(current);
-      checkDeadline();
-      const writableByOthers = (metadata.mode & 0o022) !== 0;
-      const rootOwnedSticky = metadata.uid === 0 && (metadata.mode & 0o1000) !== 0;
-      if (
-        !metadata.isDirectory()
-        || (metadata.uid !== 0 && metadata.uid !== effectiveUid)
-        || (writableByOthers && !rootOwnedSticky)
-        || (current === canonical && (metadata.uid !== effectiveUid || (metadata.mode & 0o077) !== 0))
-      ) fail('ERR_ARTIFACT_CACHE_UNTRUSTED');
-      const parent = dirname(current);
-      if (parent === current) break;
-      current = parent;
-    }
-    return canonical;
-  } catch (error) {
-    if (error instanceof ArtifactAcquisitionError) throw error;
-    checkDeadline();
-    fail('ERR_ARTIFACT_CACHE_IO');
-  }
+  const result = await inspectTrustedCanonicalCacheDirectory(
+    cacheDirectory,
+    effectiveUid,
+    realpathFile,
+    lstatFile,
+    checkDeadline,
+    (error) => error instanceof ArtifactAcquisitionError,
+  );
+  if (result.status === 'trusted') return result.path;
+  if (result.status === 'untrusted') fail('ERR_ARTIFACT_CACHE_UNTRUSTED');
+  fail('ERR_ARTIFACT_CACHE_IO');
 }
 
 async function createTemporaryArchive(
@@ -659,7 +553,7 @@ export async function acquireArtifact(
     nonBlockingFlag: constants.O_NONBLOCK,
     effectiveUid: typeof process.geteuid === 'function' ? process.geteuid() : undefined,
   });
-  const regularOpenFlags = constants.O_RDONLY | filesystemSecurity.noFollowFlag | filesystemSecurity.nonBlockingFlag;
+  const regularOpenFlags = filesystemSecurity.regularFileReadFlags;
   const operationController = new AbortController();
   let deadline: 'ERR_ARTIFACT_IDLE_TIMEOUT' | 'ERR_ARTIFACT_TOTAL_TIMEOUT' | undefined;
   let activeResponse: ArtifactTransportResponse | undefined;
