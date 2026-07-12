@@ -419,12 +419,24 @@ describe('slopbrick --watch (v0.5.2)', () => {
         ['update-index', '--cacheinfo', '100644', blob, 'src/tracked.ts'],
         { cwd: worktree },
       );
-      await waitForValidHealth(worktree, 1);
-      await assertStableForSeveralDebounces(
-        handle,
-        worktree,
-        noticesBeforeIndexChange + 1,
+      const noticesAfterIndexChange = noticesBeforeIndexChange + 1;
+      await waitUntil(
+        () => watchNoticeCount(handle.output()) >= noticesAfterIndexChange ||
+          handle.proc.exitCode !== null || handle.proc.signalCode !== null,
+        8_000,
       );
+      expect(handle.proc.exitCode).toBeNull();
+      expect(handle.proc.signalCode).toBeNull();
+      expect(handle.output()).toContain('Scanned 1 file,');
+      expect(watchNoticeCount(handle.output())).toBe(noticesAfterIndexChange);
+      expect(existsSync(join(worktree, '.slopbrick'))).toBe(false);
+      expect(handle.output()).not.toContain('Memory persisted to .slopbrick/');
+
+      const afterIndexOutput = handle.output();
+      await new Promise((resolveWait) => setTimeout(resolveWait, 650));
+      expect(handle.output()).toBe(afterIndexOutput);
+      expect(watchNoticeCount(handle.output())).toBe(noticesAfterIndexChange);
+      expect(existsSync(join(worktree, '.slopbrick'))).toBe(false);
 
       expect(await stopWatch(handle)).toBe(0);
     } finally {

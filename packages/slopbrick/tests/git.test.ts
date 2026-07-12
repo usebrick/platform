@@ -176,14 +176,20 @@ describe('git helpers', () => {
 
   describe('getFileEditCount', () => {
     it('returns the number of edits in the requested window', async () => {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
       const file = join(repo, 'counter.ts');
+      writeFileSync(file, 'let n = -1;');
+      git(repo, 'add', 'counter.ts');
+      gitCommitAt(repo, 'outside window', new Date(now - 45 * dayMs).toISOString());
+
       writeFileSync(file, 'let n = 0;');
       git(repo, 'add', 'counter.ts');
-      gitCommitAt(repo, 'first', '2026-06-12T00:00:00Z');
+      gitCommitAt(repo, 'first', new Date(now - 2 * dayMs).toISOString());
 
       writeFileSync(file, 'let n = 1;');
       git(repo, 'add', 'counter.ts');
-      gitCommitAt(repo, 'second', '2026-06-14T00:00:00Z');
+      gitCommitAt(repo, 'second', new Date(now - dayMs).toISOString());
 
       expect(await getFileEditCount(repo, 'counter.ts', 30)).toBe(2);
     });
