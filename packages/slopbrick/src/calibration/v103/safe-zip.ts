@@ -1,4 +1,17 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes as cryptoRandomBytes } from 'node:crypto';
+import { constants, Dir, type BigIntStats } from 'node:fs';
+import {
+  link as linkFileDefault,
+  lstat as lstatFileDefault,
+  mkdir as mkdirDirectoryDefault,
+  open as openFileDefault,
+  opendir as openDirectoryDefault,
+  realpath as realpathFileDefault,
+  rmdir as removeDirectoryDefault,
+  unlink as unlinkFileDefault,
+  type FileHandle,
+} from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { Readable, Transform, Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { inspect as nodeInspect } from 'node:util';
@@ -7,6 +20,7 @@ import * as yauzl from 'yauzl';
 
 import {
   MATERIALIZATION_RECEIPT_FILENAME,
+  CACHE_REF_BYTES,
   MAX_ASSET_BYTES as MAX_MATERIALIZATION_ASSET_BYTES,
   MAX_DEPTH as MAX_MATERIALIZATION_DEPTH,
   MAX_MATERIALIZATION_ENTRIES,
@@ -15,8 +29,27 @@ import {
   MAX_MATERIALIZATION_TOTAL_PATH_BYTES,
   MAX_PATH_BYTES as MAX_MATERIALIZATION_PATH_BYTES,
   MAX_SEGMENT_BYTES as MAX_MATERIALIZATION_SEGMENT_BYTES,
+  MAX_RECEIPT_BYTES,
+  buildMaterializationCacheRefV1,
+  buildMaterializationReceiptV1,
   isCanonicalMaterializationPathV1,
+  parseCanonicalMaterializationCacheRefV1,
+  parseCanonicalMaterializationReceiptV1,
+  renderMaterializationCacheRefV1,
+  renderMaterializationReceiptV1,
+  type MaterializationInventoryEntryV1,
+  type MaterializationReceiptV1,
 } from './materialization-receipt';
+import {
+  hashFileHandleSha256,
+  inspectTrustedCanonicalCacheDirectory,
+  requireTrustedPosixCapabilities,
+  sameTrustedPosixFileIdentity,
+  type TrustedPosixFilesystemSecurityCapabilities,
+  type TrustedPosixLstat,
+  type TrustedPosixOpenFile,
+  type TrustedPosixRealpath,
+} from './trusted-posix-cache';
 
 export const MAX_ENTRIES = MAX_MATERIALIZATION_ENTRIES;
 export const MAX_ARCHIVE_BYTES = MAX_MATERIALIZATION_ASSET_BYTES;
@@ -29,6 +62,9 @@ export const MAX_DEPTH = MAX_MATERIALIZATION_DEPTH;
 export const MAX_TOTAL_PATH_BYTES = MAX_MATERIALIZATION_TOTAL_PATH_BYTES;
 export const MAX_EXTRA_FIELD_BYTES = 1024;
 export const POSITIONAL_READ_CHUNK_BYTES = 64 * 1024;
+export const DIR_MODE = 0o700;
+export const FILE_MODE = 0o600;
+export const TEMP_ATTEMPTS = 8;
 
 const EOCD_SIGNATURE = 0x0605_4b50;
 const ZIP64_EOCD_SIGNATURE = 0x0606_4b50;
@@ -1262,4 +1298,1905 @@ export async function openValidatedSafeZipV1FromBorrowedHandle(
     },
     release,
   };
+}
+
+export interface ExtractReleaseArchiveOptions {
+  readonly archivePath: string;
+  readonly expectedAssetSha256: string;
+  readonly expectedAssetBytes: number;
+  readonly cacheDirectory: string;
+  readonly extractionPolicy: 'safe-zip-v1';
+}
+
+export interface ExtractReleaseArchiveResult {
+  readonly treePath: string;
+  readonly receipt: MaterializationReceiptV1;
+  readonly cacheStatus: 'created' | 'reused';
+}
+
+export interface ExtractReleaseArchiveFilesystemSecurity
+  extends TrustedPosixFilesystemSecurityCapabilities {
+  readonly directoryFlag?: number | undefined;
+}
+
+export interface ExtractReleaseArchiveDependencies {
+  readonly filesystemSecurity?: ExtractReleaseArchiveFilesystemSecurity;
+  readonly realpathFile?: TrustedPosixRealpath;
+  readonly lstatFile?: TrustedPosixLstat;
+  readonly openFile?: TrustedPosixOpenFile;
+  readonly mkdirDirectory?: typeof mkdirDirectoryDefault;
+  readonly openDirectory?: typeof openDirectoryDefault;
+  readonly linkFile?: typeof linkFileDefault;
+  readonly unlinkFile?: typeof unlinkFileDefault;
+  readonly removeDirectory?: typeof removeDirectoryDefault;
+  readonly randomBytes?: (size: number) => Uint8Array;
+}
+
+interface SnapshotExtractReleaseArchiveOptions extends ExtractReleaseArchiveOptions {}
+
+interface RequiredExtractReleaseArchiveDependencies {
+  readonly filesystemSecurity: ExtractReleaseArchiveFilesystemSecurity;
+  readonly realpathFile: TrustedPosixRealpath;
+  readonly lstatFile: TrustedPosixLstat;
+  readonly openFile: TrustedPosixOpenFile;
+  readonly mkdirDirectory: typeof mkdirDirectoryDefault;
+  readonly openDirectory: typeof openDirectoryDefault;
+  readonly linkFile: typeof linkFileDefault;
+  readonly unlinkFile: typeof unlinkFileDefault;
+  readonly removeDirectory: typeof removeDirectoryDefault;
+  readonly randomBytes: (size: number) => Uint8Array;
+}
+
+interface OwnedArchiveV1 {
+  readonly handle: FileHandle;
+  readonly pathIdentity: BigIntStats;
+  closed: boolean;
+}
+
+interface TrustedReadResultV1 {
+  readonly bytes: Buffer;
+  readonly sha256: string;
+  readonly identity: BigIntStats;
+}
+
+interface VerifiedTreeV1 {
+  readonly treePath: string;
+  readonly receipt: MaterializationReceiptV1;
+  readonly receiptSha256: string;
+  readonly identitySnapshot: readonly VerifiedTreeIdentitySnapshotEntryV1[];
+}
+
+interface VerifiedStableReferenceV1 {
+  readonly dev: bigint;
+  readonly ino: bigint;
+  readonly bytes: number;
+  readonly sha256: string;
+}
+
+interface VerifiedPublicationV1 {
+  readonly tree: VerifiedTreeV1;
+  readonly stableReference: VerifiedStableReferenceV1;
+}
+
+interface RetainedTreePathV1 {
+  readonly path: string;
+  readonly canonicalPath: string;
+  readonly kind: VerifiedTreeIdentitySnapshotEntryV1['kind'];
+  readonly identity: BigIntStats;
+  readonly expectedBytes?: number;
+}
+
+interface VerifiedTreeIdentitySnapshotEntryV1 {
+  readonly path: string;
+  readonly kind: 'root' | 'receipt' | 'directory' | 'file';
+  readonly dev: bigint;
+  readonly ino: bigint;
+  readonly bytes?: number;
+}
+
+interface OwnedPathV1 {
+  readonly path: string;
+  readonly kind: 'file' | 'directory';
+  readonly dev: bigint;
+  readonly ino: bigint;
+}
+
+const LOWER_SHA256_V1 = /^[0-9a-f]{64}$/;
+const TREE_BASENAME_V1 = /^\.v103-tree-[0-9a-f]{32}$/;
+const EXTRACT_OPTION_KEYS_V1 = [
+  'archivePath',
+  'cacheDirectory',
+  'expectedAssetBytes',
+  'expectedAssetSha256',
+  'extractionPolicy',
+] as const;
+
+function errnoCodeV1(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  try {
+    return 'code' in error && typeof error.code === 'string' ? error.code : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function snapshotExtractReleaseArchiveOptionsV1(
+  input: unknown,
+): SnapshotExtractReleaseArchiveOptions {
+  try {
+    if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+      fail('ERR_SAFE_ZIP_ARGUMENT');
+    }
+    const record = input as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    if (
+      keys.length !== EXTRACT_OPTION_KEYS_V1.length
+      || !keys.every((key, index) => key === EXTRACT_OPTION_KEYS_V1[index])
+    ) fail('ERR_SAFE_ZIP_ARGUMENT');
+    const archivePath = record.archivePath;
+    const expectedAssetSha256 = record.expectedAssetSha256;
+    const expectedAssetBytes = record.expectedAssetBytes;
+    const cacheDirectory = record.cacheDirectory;
+    const extractionPolicy = record.extractionPolicy;
+    if (
+      typeof archivePath !== 'string'
+      || typeof expectedAssetSha256 !== 'string'
+      || !LOWER_SHA256_V1.test(expectedAssetSha256)
+      || typeof expectedAssetBytes !== 'number'
+      || !Number.isSafeInteger(expectedAssetBytes)
+      || !isSafeZipArchiveBytesV1(BigInt(expectedAssetBytes))
+      || typeof cacheDirectory !== 'string'
+      || extractionPolicy !== 'safe-zip-v1'
+      || !isAbsolute(cacheDirectory)
+      || resolve(cacheDirectory) !== cacheDirectory
+      || !isAbsolute(archivePath)
+      || resolve(archivePath) !== archivePath
+      || archivePath !== join(cacheDirectory, `${expectedAssetSha256}.zip`)
+      || dirname(archivePath) !== cacheDirectory
+    ) fail('ERR_SAFE_ZIP_ARGUMENT');
+    return {
+      archivePath,
+      expectedAssetSha256,
+      expectedAssetBytes,
+      cacheDirectory,
+      extractionPolicy,
+    };
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_ARGUMENT');
+  }
+}
+
+function optionalDependencyV1<T>(value: unknown, fallback: T): T {
+  if (value === undefined) return fallback;
+  if (typeof value !== 'function') fail('ERR_SAFE_ZIP_ARGUMENT');
+  return value as T;
+}
+
+function snapshotExtractDependenciesV1(
+  input: ExtractReleaseArchiveDependencies | undefined,
+): RequiredExtractReleaseArchiveDependencies {
+  try {
+    if (input !== undefined && (typeof input !== 'object' || input === null || Array.isArray(input))) {
+      fail('ERR_SAFE_ZIP_ARGUMENT');
+    }
+    const record = (input ?? {}) as ExtractReleaseArchiveDependencies;
+    const suppliedSecurity = record.filesystemSecurity;
+    if (
+      suppliedSecurity !== undefined
+      && (typeof suppliedSecurity !== 'object' || suppliedSecurity === null || Array.isArray(suppliedSecurity))
+    ) fail('ERR_SAFE_ZIP_ARGUMENT');
+    const defaultEffectiveUid = typeof process.geteuid === 'function' ? process.geteuid() : undefined;
+    return {
+      filesystemSecurity: {
+        noFollowFlag: suppliedSecurity === undefined ? constants.O_NOFOLLOW : suppliedSecurity.noFollowFlag,
+        nonBlockingFlag: suppliedSecurity === undefined
+          ? constants.O_NONBLOCK
+          : suppliedSecurity.nonBlockingFlag,
+        directoryFlag: suppliedSecurity === undefined ? constants.O_DIRECTORY : suppliedSecurity.directoryFlag,
+        effectiveUid: suppliedSecurity === undefined ? defaultEffectiveUid : suppliedSecurity.effectiveUid,
+      },
+      realpathFile: optionalDependencyV1(record.realpathFile, realpathFileDefault),
+      lstatFile: optionalDependencyV1(record.lstatFile, lstatFileDefault),
+      openFile: optionalDependencyV1(record.openFile, openFileDefault),
+      mkdirDirectory: optionalDependencyV1(record.mkdirDirectory, mkdirDirectoryDefault),
+      openDirectory: optionalDependencyV1(record.openDirectory, openDirectoryDefault),
+      linkFile: optionalDependencyV1(record.linkFile, linkFileDefault),
+      unlinkFile: optionalDependencyV1(record.unlinkFile, unlinkFileDefault),
+      removeDirectory: optionalDependencyV1(record.removeDirectory, removeDirectoryDefault),
+      randomBytes: optionalDependencyV1(record.randomBytes, cryptoRandomBytes),
+    };
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_ARGUMENT');
+  }
+}
+
+async function lstatBigV1(
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  path: string,
+): Promise<BigIntStats> {
+  return dependencies.lstatFile(path, { bigint: true }) as unknown as Promise<BigIntStats>;
+}
+
+function exactModeV1(metadata: BigIntStats, mode: number): boolean {
+  return Number(metadata.mode & 0o7777n) === mode;
+}
+
+function ownedByV1(metadata: BigIntStats, effectiveUid: number): boolean {
+  return metadata.uid === BigInt(effectiveUid);
+}
+
+function sameIdentityV1(left: BigIntStats, right: BigIntStats): boolean {
+  return sameTrustedPosixFileIdentity(left, right);
+}
+
+async function closeNonOwnerFileHandleBoundedV1(
+  handle: FileHandle,
+): Promise<{ readonly firstCloseFailed: boolean }> {
+  try {
+    await handle.close();
+    return { firstCloseFailed: false };
+  } catch {
+    return { firstCloseFailed: true };
+  }
+}
+
+async function closeNonOwnerFileHandleBestEffortV1(handle: FileHandle): Promise<void> {
+  try { await closeNonOwnerFileHandleBoundedV1(handle); } catch { /* preserve the primary failure */ }
+}
+
+async function closeFileHandleV1(handle: FileHandle, code: SafeZipErrorCode): Promise<void> {
+  const outcome = await closeNonOwnerFileHandleBoundedV1(handle);
+  if (outcome.firstCloseFailed) fail(code);
+}
+
+async function closeDirectoryBoundedV1(
+  directory: Dir,
+): Promise<{ readonly firstCloseFailed: boolean }> {
+  try {
+    await directory.close();
+    return { firstCloseFailed: false };
+  } catch {
+    let genuineDirectory = false;
+    try { genuineDirectory = directory instanceof Dir; } catch { /* stable failure below */ }
+    if (genuineDirectory) {
+      try {
+        await (Dir.prototype.close as (this: Dir) => Promise<void>).call(directory);
+      } catch {
+        // A first close may have completed before reporting failure. The one
+        // branded recovery is best effort and ERR_DIR_CLOSED is acceptable.
+      }
+    }
+    return { firstCloseFailed: true };
+  }
+}
+
+async function closeDirectoryBestEffortV1(directory: Dir): Promise<void> {
+  try { await closeDirectoryBoundedV1(directory); } catch { /* preserve the primary failure */ }
+}
+
+async function openOwnedArchiveV1(
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+): Promise<OwnedArchiveV1> {
+  let before: BigIntStats;
+  try {
+    before = await lstatBigV1(dependencies, options.archivePath);
+    if (
+      !before.isFile()
+      || before.size !== BigInt(options.expectedAssetBytes)
+      || !ownedByV1(before, effectiveUid)
+      || before.nlink !== 1n
+    ) fail('ERR_SAFE_ZIP_ARCHIVE_INVALID');
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_ARCHIVE_INVALID');
+  }
+
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(options.archivePath, readFlags);
+  } catch {
+    fail('ERR_SAFE_ZIP_ARCHIVE_INVALID');
+  }
+  const owned: OwnedArchiveV1 = { handle, pathIdentity: before, closed: false };
+  try {
+    const opened = await handle.stat({ bigint: true });
+    if (
+      !opened.isFile()
+      || opened.size !== BigInt(options.expectedAssetBytes)
+      || !ownedByV1(opened, effectiveUid)
+      || opened.nlink !== 1n
+      || !sameIdentityV1(opened, before)
+    ) fail('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    await verifyArchiveDescriptorV1(owned, options, dependencies, effectiveUid);
+    return owned;
+  } catch (error) {
+    owned.closed = true;
+    try { await handle.close(); } catch { /* stable failure below */ }
+    rethrowStable(error, 'ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+  }
+}
+
+async function verifyArchiveDescriptorV1(
+  archive: OwnedArchiveV1,
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+): Promise<BigIntStats> {
+  if (archive.closed) fail('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+  try {
+    const before = await archive.handle.stat({ bigint: true });
+    if (
+      !before.isFile()
+      || before.size !== BigInt(options.expectedAssetBytes)
+      || before.nlink !== 1n
+      || !ownedByV1(before, effectiveUid)
+      || !sameIdentityV1(before, archive.pathIdentity)
+    ) fail('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    const hashed = await hashFileHandleSha256(archive.handle, options.expectedAssetBytes);
+    if (
+      hashed.status !== 'hashed'
+      || hashed.bytesRead !== options.expectedAssetBytes
+      || hashed.sha256 !== options.expectedAssetSha256
+    ) fail('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    const after = await archive.handle.stat({ bigint: true });
+    const pathAfter = await lstatBigV1(dependencies, options.archivePath);
+    if (
+      !after.isFile()
+      || after.size !== BigInt(options.expectedAssetBytes)
+      || after.nlink !== 1n
+      || !ownedByV1(after, effectiveUid)
+      || !sameIdentityV1(after, before)
+      || !sameIdentityV1(after, archive.pathIdentity)
+      || !pathAfter.isFile()
+      || pathAfter.size !== BigInt(options.expectedAssetBytes)
+      || pathAfter.nlink !== 1n
+      || !ownedByV1(pathAfter, effectiveUid)
+      || !sameIdentityV1(pathAfter, archive.pathIdentity)
+    ) fail('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    return after;
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+  }
+}
+
+async function readExactFileHandleV1(
+  handle: FileHandle,
+  byteLength: number,
+  code: SafeZipErrorCode,
+): Promise<Buffer> {
+  if (!Number.isSafeInteger(byteLength) || byteLength < 0) fail(code);
+  const bytes = Buffer.alloc(byteLength);
+  let position = 0;
+  while (position < byteLength) {
+    const length = Math.min(POSITIONAL_READ_CHUNK_BYTES, byteLength - position);
+    let bytesRead: number;
+    try {
+      ({ bytesRead } = await handle.read(bytes, position, length, position));
+    } catch {
+      fail(code);
+    }
+    if (!Number.isInteger(bytesRead) || bytesRead <= 0 || bytesRead > length) fail(code);
+    position += bytesRead;
+  }
+  return bytes;
+}
+
+async function readTrustedFileV1(
+  path: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+  minimumBytes: number,
+  maximumBytes: number,
+  exactBytes: number | undefined,
+  code: SafeZipErrorCode,
+  allowTransientSecondLink = false,
+): Promise<TrustedReadResultV1> {
+  const allowedLinkCount = (value: bigint): boolean => (
+    value === 1n || (allowTransientSecondLink && value === 2n)
+  );
+  let before: BigIntStats;
+  try {
+    before = await lstatBigV1(dependencies, path);
+  } catch {
+    fail(code);
+  }
+  const size = before.size;
+  if (
+    !before.isFile()
+    || !ownedByV1(before, effectiveUid)
+    || !allowedLinkCount(before.nlink)
+    || !exactModeV1(before, FILE_MODE)
+    || size < BigInt(minimumBytes)
+    || size > BigInt(maximumBytes)
+    || (exactBytes !== undefined && size !== BigInt(exactBytes))
+  ) fail(code);
+  const byteLength = safeNumberV1(size, code);
+
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(path, readFlags);
+  } catch {
+    fail(code);
+  }
+  let bytes: Buffer;
+  let finalIdentity: BigIntStats;
+  try {
+    const opened = await handle.stat({ bigint: true });
+    if (
+      !opened.isFile()
+      || opened.size !== size
+      || !allowedLinkCount(opened.nlink)
+      || !ownedByV1(opened, effectiveUid)
+      || !exactModeV1(opened, FILE_MODE)
+      || !sameIdentityV1(opened, before)
+    ) fail(code);
+    bytes = await readExactFileHandleV1(handle, byteLength, code);
+    finalIdentity = await handle.stat({ bigint: true });
+    if (
+      !finalIdentity.isFile()
+      || finalIdentity.size !== size
+      || !allowedLinkCount(finalIdentity.nlink)
+      || !ownedByV1(finalIdentity, effectiveUid)
+      || !exactModeV1(finalIdentity, FILE_MODE)
+      || !sameIdentityV1(finalIdentity, opened)
+    ) fail(code);
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, code);
+  }
+  await closeFileHandleV1(handle, code);
+  let after: BigIntStats;
+  try {
+    after = await lstatBigV1(dependencies, path);
+  } catch {
+    fail(code);
+  }
+  if (
+    !after.isFile()
+    || after.size !== size
+    || !allowedLinkCount(after.nlink)
+    || !ownedByV1(after, effectiveUid)
+    || !exactModeV1(after, FILE_MODE)
+    || !sameIdentityV1(after, before)
+    || !sameIdentityV1(after, finalIdentity)
+  ) fail(code);
+  return {
+    bytes,
+    sha256: createHash('sha256').update(bytes).digest('hex'),
+    identity: after,
+  };
+}
+
+async function hashTrustedMaterializedFileV1(
+  path: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+): Promise<{ readonly bytes: number; readonly sha256: string; readonly identity: BigIntStats }> {
+  let before: BigIntStats;
+  try {
+    before = await lstatBigV1(dependencies, path);
+  } catch {
+    fail('ERR_SAFE_ZIP_TREE');
+  }
+  if (
+    !before.isFile()
+    || before.size < 0n
+    || before.size > BigInt(MAX_FILE_BYTES)
+    || before.nlink !== 1n
+    || !ownedByV1(before, effectiveUid)
+    || !exactModeV1(before, FILE_MODE)
+  ) fail('ERR_SAFE_ZIP_TREE');
+  const bytes = safeNumberV1(before.size, 'ERR_SAFE_ZIP_TREE');
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(path, readFlags);
+  } catch {
+    fail('ERR_SAFE_ZIP_TREE');
+  }
+  let afterHandle: BigIntStats;
+  let sha256: string;
+  try {
+    const opened = await handle.stat({ bigint: true });
+    if (
+      !opened.isFile()
+      || opened.size !== before.size
+      || opened.nlink !== 1n
+      || !ownedByV1(opened, effectiveUid)
+      || !exactModeV1(opened, FILE_MODE)
+      || !sameIdentityV1(opened, before)
+    ) fail('ERR_SAFE_ZIP_TREE');
+    const hashed = await hashFileHandleSha256(handle, bytes);
+    if (hashed.status !== 'hashed' || hashed.bytesRead !== bytes) fail('ERR_SAFE_ZIP_TREE');
+    sha256 = hashed.sha256;
+    afterHandle = await handle.stat({ bigint: true });
+    if (
+      !afterHandle.isFile()
+      || afterHandle.size !== before.size
+      || afterHandle.nlink !== 1n
+      || !ownedByV1(afterHandle, effectiveUid)
+      || !exactModeV1(afterHandle, FILE_MODE)
+      || !sameIdentityV1(afterHandle, opened)
+    ) fail('ERR_SAFE_ZIP_TREE');
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, 'ERR_SAFE_ZIP_TREE');
+  }
+  await closeFileHandleV1(handle, 'ERR_SAFE_ZIP_TREE');
+  let afterPath: BigIntStats;
+  try {
+    afterPath = await lstatBigV1(dependencies, path);
+  } catch {
+    fail('ERR_SAFE_ZIP_TREE');
+  }
+  if (
+    !afterPath.isFile()
+    || afterPath.size !== before.size
+    || afterPath.nlink !== 1n
+    || !ownedByV1(afterPath, effectiveUid)
+    || !exactModeV1(afterPath, FILE_MODE)
+    || !sameIdentityV1(afterPath, before)
+    || !sameIdentityV1(afterPath, afterHandle)
+  ) fail('ERR_SAFE_ZIP_TREE');
+  return { bytes, sha256, identity: afterPath };
+}
+
+async function openTrustedDirectoryHandleV1(
+  path: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  directoryReadFlags: number,
+  code: SafeZipErrorCode,
+): Promise<{ readonly handle: FileHandle; readonly identity: BigIntStats }> {
+  let before: BigIntStats;
+  try {
+    before = await lstatBigV1(dependencies, path);
+  } catch {
+    fail(code);
+  }
+  if (!before.isDirectory() || !ownedByV1(before, effectiveUid) || !exactModeV1(before, DIR_MODE)) {
+    fail(code);
+  }
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(path, directoryReadFlags);
+  } catch {
+    fail(code);
+  }
+  try {
+    const opened = await handle.stat({ bigint: true });
+    if (
+      !opened.isDirectory()
+      || !ownedByV1(opened, effectiveUid)
+      || !exactModeV1(opened, DIR_MODE)
+      || !sameIdentityV1(opened, before)
+    ) fail(code);
+    return { handle, identity: before };
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, code);
+  }
+}
+
+async function finishTrustedDirectoryHandleV1(
+  path: string,
+  opened: { readonly handle: FileHandle; readonly identity: BigIntStats },
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  code: SafeZipErrorCode,
+): Promise<void> {
+  let handleIdentity: BigIntStats;
+  try {
+    handleIdentity = await opened.handle.stat({ bigint: true });
+    if (
+      !handleIdentity.isDirectory()
+      || !ownedByV1(handleIdentity, effectiveUid)
+      || !exactModeV1(handleIdentity, DIR_MODE)
+      || !sameIdentityV1(handleIdentity, opened.identity)
+    ) fail(code);
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(opened.handle);
+    rethrowStable(error, code);
+  }
+  await closeFileHandleV1(opened.handle, code);
+  let after: BigIntStats;
+  try {
+    after = await lstatBigV1(dependencies, path);
+  } catch {
+    fail(code);
+  }
+  if (
+    !after.isDirectory()
+    || !ownedByV1(after, effectiveUid)
+    || !exactModeV1(after, DIR_MODE)
+    || !sameIdentityV1(after, opened.identity)
+    || !sameIdentityV1(after, handleIdentity)
+  ) fail(code);
+}
+
+function entriesMatchV1(
+  left: readonly MaterializationInventoryEntryV1[],
+  right: readonly MaterializationInventoryEntryV1[],
+): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((entry, index) => {
+    const other = right[index];
+    if (other === undefined || entry.path !== other.path || entry.kind !== other.kind) return false;
+    return entry.kind === 'directory'
+      || (other.kind === 'file' && entry.bytes === other.bytes && entry.sha256 === other.sha256);
+  });
+}
+
+function compareAsciiPathV1(
+  left: MaterializationInventoryEntryV1,
+  right: MaterializationInventoryEntryV1,
+): number {
+  return left.path < right.path ? -1 : left.path > right.path ? 1 : 0;
+}
+
+async function revalidateRetainedTreePathsV1(
+  retained: readonly RetainedTreePathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+): Promise<readonly VerifiedTreeIdentitySnapshotEntryV1[]> {
+  const snapshot: VerifiedTreeIdentitySnapshotEntryV1[] = [];
+  for (const expected of retained) {
+    const code: SafeZipErrorCode = expected.kind === 'receipt'
+      ? 'ERR_SAFE_ZIP_RECEIPT'
+      : 'ERR_SAFE_ZIP_TREE';
+    try {
+      const current = await lstatBigV1(dependencies, expected.path);
+      if (
+        !sameIdentityV1(current, expected.identity)
+        || !ownedByV1(current, effectiveUid)
+        || (expected.kind === 'directory' || expected.kind === 'root'
+          ? !current.isDirectory() || !exactModeV1(current, DIR_MODE)
+          : !current.isFile()
+            || !exactModeV1(current, FILE_MODE)
+            || current.nlink !== 1n
+            || current.size !== BigInt(expected.expectedBytes!))
+      ) fail(code);
+      const base = {
+        path: expected.canonicalPath,
+        kind: expected.kind,
+        dev: current.dev,
+        ino: current.ino,
+      } as const;
+      snapshot.push(Object.freeze(
+        expected.kind === 'file' || expected.kind === 'receipt'
+          ? { ...base, bytes: expected.expectedBytes! }
+          : base,
+      ));
+    } catch (error) {
+      rethrowStable(error, code);
+    }
+  }
+  snapshot.sort((left, right) => (
+    left.path < right.path ? -1
+      : left.path > right.path ? 1
+        : left.kind < right.kind ? -1
+          : left.kind > right.kind ? 1
+            : 0
+  ));
+  return Object.freeze(snapshot);
+}
+
+function identitySnapshotsMatchV1(
+  left: readonly VerifiedTreeIdentitySnapshotEntryV1[],
+  right: readonly VerifiedTreeIdentitySnapshotEntryV1[],
+): boolean {
+  return left.length === right.length && left.every((entry, index) => {
+    const other = right[index];
+    return other !== undefined
+      && entry.path === other.path
+      && entry.kind === other.kind
+      && entry.dev === other.dev
+      && entry.ino === other.ino
+      && entry.bytes === other.bytes;
+  });
+}
+
+function sameVerifiedTreeV1(left: VerifiedTreeV1, right: VerifiedTreeV1): boolean {
+  return left.treePath === right.treePath
+    && left.receiptSha256 === right.receiptSha256
+    && identitySnapshotsMatchV1(left.identitySnapshot, right.identitySnapshot)
+    && left.receipt.assetSha256 === right.receipt.assetSha256
+    && left.receipt.assetBytes === right.receipt.assetBytes
+    && left.receipt.inventorySha256 === right.receipt.inventorySha256
+    && entriesMatchV1(left.receipt.entries, right.receipt.entries);
+}
+
+function sameVerifiedPublicationV1(
+  left: VerifiedPublicationV1,
+  right: VerifiedPublicationV1,
+): boolean {
+  return left.stableReference.dev === right.stableReference.dev
+    && left.stableReference.ino === right.stableReference.ino
+    && left.stableReference.bytes === right.stableReference.bytes
+    && left.stableReference.sha256 === right.stableReference.sha256
+    && sameVerifiedTreeV1(left.tree, right.tree);
+}
+
+async function verifyMaterializedTreeV1(
+  treePath: string,
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+  directoryReadFlags: number,
+  expectedReceiptSha256?: string,
+): Promise<VerifiedTreeV1> {
+  if (
+    dirname(treePath) !== options.cacheDirectory
+    || !TREE_BASENAME_V1.test(basename(treePath))
+  ) fail('ERR_SAFE_ZIP_TREE');
+
+  const receiptPath = join(treePath, MATERIALIZATION_RECEIPT_FILENAME);
+  const receiptDocument = await readTrustedFileV1(
+    receiptPath,
+    dependencies,
+    effectiveUid,
+    readFlags,
+    1,
+    MAX_RECEIPT_BYTES,
+    undefined,
+    'ERR_SAFE_ZIP_RECEIPT',
+  );
+  const parsedReceipt = parseCanonicalMaterializationReceiptV1(receiptDocument.bytes);
+  if (
+    !parsedReceipt.ok
+    || parsedReceipt.value.sha256 !== receiptDocument.sha256
+    || (expectedReceiptSha256 !== undefined && parsedReceipt.value.sha256 !== expectedReceiptSha256)
+    || parsedReceipt.value.value.assetSha256 !== options.expectedAssetSha256
+    || parsedReceipt.value.value.assetBytes !== options.expectedAssetBytes
+  ) fail('ERR_SAFE_ZIP_RECEIPT');
+
+  const inventoryBudget = new SafeZipInventoryBudgetV1();
+  const collisionPaths = new Map<string, string>();
+  const actualEntries: MaterializationInventoryEntryV1[] = [];
+  const retainedPaths: RetainedTreePathV1[] = [{
+    path: receiptPath,
+    canonicalPath: MATERIALIZATION_RECEIPT_FILENAME,
+    kind: 'receipt',
+    identity: receiptDocument.identity,
+    expectedBytes: receiptDocument.bytes.byteLength,
+  }];
+  const directories: Array<{ readonly absolute: string; readonly relative: string }> = [
+    { absolute: treePath, relative: '' },
+  ];
+  let receiptSeen = false;
+  let totalFileBytes = 0n;
+  let rootIdentity: BigIntStats | undefined;
+
+  for (let directoryIndex = 0; directoryIndex < directories.length; directoryIndex += 1) {
+    const current = directories[directoryIndex]!;
+    const opened = await openTrustedDirectoryHandleV1(
+      current.absolute,
+      dependencies,
+      effectiveUid,
+      directoryReadFlags,
+      'ERR_SAFE_ZIP_TREE',
+    );
+    if (current.relative === '') rootIdentity = opened.identity;
+    retainedPaths.push({
+      path: current.absolute,
+      canonicalPath: current.relative,
+      kind: current.relative === '' ? 'root' : 'directory',
+      identity: opened.identity,
+    });
+    let directory;
+    try {
+      directory = await dependencies.openDirectory(current.absolute);
+    } catch {
+      await closeNonOwnerFileHandleBestEffortV1(opened.handle);
+      fail('ERR_SAFE_ZIP_TREE');
+    }
+    let directoryFailed = false;
+    try {
+      while (true) {
+        const entry = await directory.read();
+        if (entry === null) break;
+        const relativePath = current.relative === ''
+          ? entry.name
+          : `${current.relative}/${entry.name}`;
+        if (current.relative === '' && entry.name === MATERIALIZATION_RECEIPT_FILENAME) {
+          if (receiptSeen) fail('ERR_SAFE_ZIP_TREE');
+          receiptSeen = true;
+          continue;
+        }
+        if (!isCanonicalMaterializationPathV1(relativePath)) fail('ERR_SAFE_ZIP_TREE');
+        const collisionKey = asciiFoldV1(relativePath);
+        const priorPath = collisionPaths.get(collisionKey);
+        if (priorPath !== undefined && priorPath !== relativePath) fail('ERR_SAFE_ZIP_TREE');
+        collisionPaths.set(collisionKey, relativePath);
+        inventoryBudget.reservePath(relativePath);
+
+        const absolutePath = join(treePath, ...relativePath.split('/'));
+        if (dirname(absolutePath) === absolutePath || !absolutePath.startsWith(`${treePath}/`)) {
+          fail('ERR_SAFE_ZIP_TREE');
+        }
+        let metadata: BigIntStats;
+        try {
+          metadata = await lstatBigV1(dependencies, absolutePath);
+        } catch {
+          fail('ERR_SAFE_ZIP_TREE');
+        }
+        if (metadata.isDirectory()) {
+          if (!ownedByV1(metadata, effectiveUid) || !exactModeV1(metadata, DIR_MODE)) {
+            fail('ERR_SAFE_ZIP_TREE');
+          }
+          actualEntries.push({ path: relativePath, kind: 'directory' });
+          directories.push({ absolute: absolutePath, relative: relativePath });
+          continue;
+        }
+        if (!metadata.isFile()) fail('ERR_SAFE_ZIP_TREE');
+        totalFileBytes += metadata.size;
+        if (!isSafeZipTotalUncompressedBytesV1(totalFileBytes)) fail('ERR_SAFE_ZIP_TREE');
+        const hashed = await hashTrustedMaterializedFileV1(
+          absolutePath,
+          dependencies,
+          effectiveUid,
+          readFlags,
+        );
+        retainedPaths.push({
+          path: absolutePath,
+          canonicalPath: relativePath,
+          kind: 'file',
+          identity: hashed.identity,
+          expectedBytes: hashed.bytes,
+        });
+        actualEntries.push({
+          path: relativePath,
+          kind: 'file',
+          bytes: hashed.bytes,
+          sha256: hashed.sha256,
+        });
+      }
+    } catch (error) {
+      directoryFailed = true;
+      await closeDirectoryBestEffortV1(directory);
+      await closeNonOwnerFileHandleBestEffortV1(opened.handle);
+      rethrowStable(error, 'ERR_SAFE_ZIP_TREE');
+    }
+    if (!directoryFailed) {
+      const directoryClose = await closeDirectoryBoundedV1(directory);
+      if (directoryClose.firstCloseFailed) {
+        await closeNonOwnerFileHandleBestEffortV1(opened.handle);
+        fail('ERR_SAFE_ZIP_TREE');
+      }
+      await finishTrustedDirectoryHandleV1(
+        current.absolute,
+        opened,
+        dependencies,
+        effectiveUid,
+        'ERR_SAFE_ZIP_TREE',
+      );
+    }
+  }
+
+  if (!receiptSeen || rootIdentity === undefined) fail('ERR_SAFE_ZIP_TREE');
+  actualEntries.sort(compareAsciiPathV1);
+  const rebuilt = buildMaterializationReceiptV1({
+    assetSha256: options.expectedAssetSha256,
+    assetBytes: options.expectedAssetBytes,
+    entries: actualEntries,
+  });
+  if (!rebuilt.ok || !entriesMatchV1(rebuilt.value.entries, actualEntries)) fail('ERR_SAFE_ZIP_TREE');
+  const rendered = renderMaterializationReceiptV1(rebuilt.value);
+  if (
+    !rendered.ok
+    || rendered.value.text !== receiptDocument.bytes.toString('utf8')
+    || rendered.value.sha256 !== parsedReceipt.value.sha256
+    || !entriesMatchV1(rendered.value.value.entries, parsedReceipt.value.value.entries)
+  ) fail('ERR_SAFE_ZIP_RECEIPT');
+
+  const identitySnapshot = await revalidateRetainedTreePathsV1(
+    retainedPaths,
+    dependencies,
+    effectiveUid,
+  );
+
+  let finalRoot: BigIntStats;
+  try {
+    finalRoot = await lstatBigV1(dependencies, treePath);
+  } catch {
+    fail('ERR_SAFE_ZIP_TREE');
+  }
+  if (
+    !finalRoot.isDirectory()
+    || !ownedByV1(finalRoot, effectiveUid)
+    || !exactModeV1(finalRoot, DIR_MODE)
+    || !sameIdentityV1(finalRoot, rootIdentity)
+  ) fail('ERR_SAFE_ZIP_TREE');
+  return {
+    treePath,
+    receipt: rendered.value.value,
+    receiptSha256: rendered.value.sha256,
+    identitySnapshot,
+  };
+}
+
+async function verifyPublishedReferenceV1(
+  referencePath: string,
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+  directoryReadFlags: number,
+  allowTransientSecondReferenceLink = false,
+): Promise<VerifiedPublicationV1> {
+  const referenceDocument = await readTrustedFileV1(
+    referencePath,
+    dependencies,
+    effectiveUid,
+    readFlags,
+    CACHE_REF_BYTES,
+    CACHE_REF_BYTES,
+    CACHE_REF_BYTES,
+    'ERR_SAFE_ZIP_PUBLICATION',
+    allowTransientSecondReferenceLink,
+  );
+  const parsedReference = parseCanonicalMaterializationCacheRefV1(referenceDocument.bytes);
+  if (!parsedReference.ok || parsedReference.value.sha256 !== referenceDocument.sha256) {
+    fail('ERR_SAFE_ZIP_PUBLICATION');
+  }
+  const treePath = join(options.cacheDirectory, parsedReference.value.value.treeBasename);
+  if (
+    dirname(treePath) !== options.cacheDirectory
+    || basename(treePath) !== parsedReference.value.value.treeBasename
+  ) fail('ERR_SAFE_ZIP_PUBLICATION');
+  const tree = await verifyMaterializedTreeV1(
+    treePath,
+    options,
+    dependencies,
+    effectiveUid,
+    readFlags,
+    directoryReadFlags,
+    parsedReference.value.value.receiptSha256,
+  );
+  let stableReference: VerifiedStableReferenceV1;
+  try {
+    const referenceAfter = await lstatBigV1(dependencies, referencePath);
+    if (
+      !referenceAfter.isFile()
+      || referenceAfter.size !== BigInt(CACHE_REF_BYTES)
+      || (referenceAfter.nlink !== 1n
+        && (!allowTransientSecondReferenceLink || referenceAfter.nlink !== 2n))
+      || !ownedByV1(referenceAfter, effectiveUid)
+      || !exactModeV1(referenceAfter, FILE_MODE)
+      || !sameIdentityV1(referenceAfter, referenceDocument.identity)
+    ) fail('ERR_SAFE_ZIP_PUBLICATION');
+    stableReference = Object.freeze({
+      dev: referenceAfter.dev,
+      ino: referenceAfter.ino,
+      bytes: CACHE_REF_BYTES,
+      sha256: referenceDocument.sha256,
+    });
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_PUBLICATION');
+  }
+  return Object.freeze({ tree, stableReference });
+}
+
+async function stableReferenceExistsV1(
+  referencePath: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<boolean> {
+  try {
+    await lstatBigV1(dependencies, referencePath);
+    return true;
+  } catch (error) {
+    if (errnoCodeV1(error) === 'ENOENT') return false;
+    fail('ERR_SAFE_ZIP_PUBLICATION');
+  }
+}
+
+function randomHexTokenV1(
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  code: SafeZipErrorCode,
+): string {
+  try {
+    const bytes = dependencies.randomBytes(16);
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength !== 16) fail(code);
+    return Buffer.from(bytes).toString('hex');
+  } catch (error) {
+    rethrowStable(error, code);
+  }
+}
+
+async function createPrivateDirectoryV1(
+  path: string,
+  owned: OwnedPathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  directoryReadFlags: number,
+  code: SafeZipErrorCode,
+): Promise<void> {
+  try {
+    await dependencies.mkdirDirectory(path, { mode: DIR_MODE });
+  } catch (error) {
+    if (errnoCodeV1(error) === 'EEXIST') throw error;
+    fail(code);
+  }
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(path, directoryReadFlags);
+  } catch {
+    fail(code);
+  }
+  let openedIdentity: BigIntStats;
+  try {
+    await handle.chmod(DIR_MODE);
+    const metadata = await handle.stat({ bigint: true });
+    if (!metadata.isDirectory() || !ownedByV1(metadata, effectiveUid) || !exactModeV1(metadata, DIR_MODE)) {
+      fail(code);
+    }
+    openedIdentity = metadata;
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, code);
+  }
+  await closeFileHandleV1(handle, code);
+  let pathAfterClose: BigIntStats;
+  try {
+    pathAfterClose = await lstatBigV1(dependencies, path);
+    if (
+      !pathAfterClose.isDirectory()
+      || !ownedByV1(pathAfterClose, effectiveUid)
+      || !exactModeV1(pathAfterClose, DIR_MODE)
+      || !sameIdentityV1(pathAfterClose, openedIdentity)
+    ) fail(code);
+  } catch (error) {
+    rethrowStable(error, code);
+  }
+  owned.push({
+    path,
+    kind: 'directory',
+    dev: openedIdentity.dev,
+    ino: openedIdentity.ino,
+  });
+}
+
+async function createRandomTreeV1(
+  options: SnapshotExtractReleaseArchiveOptions,
+  owned: OwnedPathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  directoryReadFlags: number,
+): Promise<string> {
+  for (let attempt = 0; attempt < TEMP_ATTEMPTS; attempt += 1) {
+    const path = join(options.cacheDirectory, `.v103-tree-${randomHexTokenV1(dependencies, 'ERR_SAFE_ZIP_TREE')}`);
+    try {
+      await createPrivateDirectoryV1(
+        path,
+        owned,
+        dependencies,
+        effectiveUid,
+        directoryReadFlags,
+        'ERR_SAFE_ZIP_TREE',
+      );
+      return path;
+    } catch (error) {
+      if (errnoCodeV1(error) === 'EEXIST') continue;
+      rethrowStable(error, 'ERR_SAFE_ZIP_TREE');
+    }
+  }
+  fail('ERR_SAFE_ZIP_TREE');
+}
+
+async function writeAllV1(
+  handle: FileHandle,
+  bytes: Uint8Array,
+  startPosition: number,
+  code: SafeZipErrorCode,
+): Promise<number> {
+  let offset = 0;
+  while (offset < bytes.byteLength) {
+    let bytesWritten: number;
+    try {
+      ({ bytesWritten } = await handle.write(bytes, offset, bytes.byteLength - offset, startPosition + offset));
+    } catch {
+      fail(code);
+    }
+    if (!Number.isInteger(bytesWritten) || bytesWritten <= 0 || bytesWritten > bytes.byteLength - offset) {
+      fail(code);
+    }
+    offset += bytesWritten;
+  }
+  return offset;
+}
+
+async function openExclusiveOutputV1(
+  path: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  outputFlags: number,
+  owned: OwnedPathV1[],
+  code: SafeZipErrorCode,
+): Promise<FileHandle> {
+  let handle: FileHandle;
+  try {
+    handle = await dependencies.openFile(path, outputFlags, FILE_MODE);
+  } catch (error) {
+    if (errnoCodeV1(error) === 'EEXIST') throw error;
+    fail(code);
+  }
+  try {
+    await handle.chmod(FILE_MODE);
+    const metadata = await handle.stat({ bigint: true });
+    if (
+      !metadata.isFile()
+      || metadata.nlink !== 1n
+      || !ownedByV1(metadata, effectiveUid)
+      || !exactModeV1(metadata, FILE_MODE)
+    ) fail(code);
+    owned.push({ path, kind: 'file', dev: metadata.dev, ino: metadata.ino });
+    return handle;
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, code);
+  }
+}
+
+async function writeExclusiveSyncedFileV1(
+  path: string,
+  bytes: Uint8Array,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  outputFlags: number,
+  owned: OwnedPathV1[],
+  code: SafeZipErrorCode,
+): Promise<void> {
+  const handle = await openExclusiveOutputV1(
+    path,
+    dependencies,
+    effectiveUid,
+    outputFlags,
+    owned,
+    code,
+  );
+  try {
+    await writeAllV1(handle, bytes, 0, code);
+    const metadata = await handle.stat({ bigint: true });
+    if (metadata.size !== BigInt(bytes.byteLength) || metadata.nlink !== 1n) fail(code);
+    await handle.sync();
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(handle);
+    rethrowStable(error, code);
+  }
+  await closeFileHandleV1(handle, code);
+}
+
+async function syncTrustedDirectoryV1(
+  path: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  directoryReadFlags: number,
+  code: SafeZipErrorCode,
+): Promise<void> {
+  const opened = await openTrustedDirectoryHandleV1(
+    path,
+    dependencies,
+    effectiveUid,
+    directoryReadFlags,
+    code,
+  );
+  try {
+    await opened.handle.sync();
+  } catch (error) {
+    await closeNonOwnerFileHandleBestEffortV1(opened.handle);
+    rethrowStable(error, code);
+  }
+  await finishTrustedDirectoryHandleV1(path, opened, dependencies, effectiveUid, code);
+}
+
+function isPrivateCacheDirectoryV1(metadata: BigIntStats, effectiveUid: number): boolean {
+  return metadata.isDirectory()
+    && ownedByV1(metadata, effectiveUid)
+    && (metadata.mode & 0o077n) === 0n;
+}
+
+async function syncTrustedCacheDirectoryV1(
+  cacheDirectory: string,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  directoryReadFlags: number,
+): Promise<void> {
+  try {
+    const trusted = await inspectTrustedCanonicalCacheDirectory(
+      cacheDirectory,
+      effectiveUid,
+      dependencies.realpathFile,
+      dependencies.lstatFile,
+    );
+    if (trusted.status !== 'trusted' || trusted.path !== cacheDirectory) {
+      fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+    }
+    const before = await lstatBigV1(dependencies, cacheDirectory);
+    if (!isPrivateCacheDirectoryV1(before, effectiveUid)) fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+    const handle = await dependencies.openFile(cacheDirectory, directoryReadFlags);
+    try {
+      const opened = await handle.stat({ bigint: true });
+      if (!isPrivateCacheDirectoryV1(opened, effectiveUid) || !sameIdentityV1(opened, before)) {
+        fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+      }
+      await handle.sync();
+      const afterSync = await handle.stat({ bigint: true });
+      if (!isPrivateCacheDirectoryV1(afterSync, effectiveUid) || !sameIdentityV1(afterSync, opened)) {
+        fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+      }
+    } catch (error) {
+      await closeNonOwnerFileHandleBestEffortV1(handle);
+      rethrowStable(error, 'ERR_SAFE_ZIP_PUBLICATION');
+    }
+    await closeFileHandleV1(handle, 'ERR_SAFE_ZIP_PUBLICATION');
+    const after = await lstatBigV1(dependencies, cacheDirectory);
+    if (!isPrivateCacheDirectoryV1(after, effectiveUid) || !sameIdentityV1(after, before)) {
+      fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+    }
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_PUBLICATION');
+  }
+}
+
+async function unlinkOwnedFileV1(
+  owned: OwnedPathV1,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<boolean> {
+  try {
+    const current = await lstatBigV1(dependencies, owned.path);
+    if (!current.isFile() || current.dev !== owned.dev || current.ino !== owned.ino) return false;
+    await dependencies.unlinkFile(owned.path);
+    return true;
+  } catch (error) {
+    return errnoCodeV1(error) === 'ENOENT';
+  }
+}
+
+async function cleanupOwnedPathsV1(
+  owned: readonly OwnedPathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<void> {
+  for (let index = owned.length - 1; index >= 0; index -= 1) {
+    const candidate = owned[index]!;
+    try {
+      const current = await lstatBigV1(dependencies, candidate.path);
+      if (
+        current.dev !== candidate.dev
+        || current.ino !== candidate.ino
+        || (candidate.kind === 'file' ? !current.isFile() : !current.isDirectory())
+      ) continue;
+      if (candidate.kind === 'file') await dependencies.unlinkFile(candidate.path);
+      else await dependencies.removeDirectory(candidate.path);
+    } catch {
+      // An uncertain cleanup intentionally leaves a safe, unreferenced orphan.
+    }
+  }
+}
+
+async function recordedPathStillOwnedV1(
+  candidate: OwnedPathV1,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<boolean> {
+  try {
+    const current = await lstatBigV1(dependencies, candidate.path);
+    return current.dev === candidate.dev
+      && current.ino === candidate.ino
+      && (candidate.kind === 'file' ? current.isFile() : current.isDirectory());
+  } catch {
+    return false;
+  }
+}
+
+async function recordedAncestorChainStillOwnedV1(
+  ancestors: readonly OwnedPathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<boolean> {
+  for (const ancestor of ancestors) {
+    if (!await recordedPathStillOwnedV1(ancestor, dependencies)) return false;
+  }
+  return true;
+}
+
+async function cleanupOwnedTreePathsV1(
+  owned: readonly OwnedPathV1[],
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+): Promise<void> {
+  const directories = new Map<string, OwnedPathV1>();
+  for (const candidate of owned) {
+    if (candidate.kind === 'directory') directories.set(candidate.path, candidate);
+  }
+  const roots = [...directories.values()].filter((candidate) => !directories.has(dirname(candidate.path)));
+  if (roots.length !== 1) return;
+  const root = roots[0]!;
+  const children = new Map<string, OwnedPathV1[]>();
+  for (const candidate of owned) {
+    if (candidate.path === root.path) continue;
+    const parent = dirname(candidate.path);
+    if (!directories.has(parent)) continue;
+    const siblings = children.get(parent) ?? [];
+    siblings.push(candidate);
+    children.set(parent, siblings);
+  }
+  for (const siblings of children.values()) {
+    siblings.sort((left, right) => right.path < left.path ? -1 : right.path > left.path ? 1 : 0);
+  }
+
+  const cleanupDirectory = async (
+    directory: OwnedPathV1,
+    ancestors: readonly OwnedPathV1[],
+  ): Promise<void> => {
+    const chain = [...ancestors, directory];
+    if (chain.length > MAX_DEPTH + 1 || !await recordedAncestorChainStillOwnedV1(chain, dependencies)) {
+      return;
+    }
+    for (const child of children.get(directory.path) ?? []) {
+      // Recheck the complete root-to-current chain before even inspecting a
+      // child. A replacement or uncertainty stops this entire subtree.
+      if (!await recordedAncestorChainStillOwnedV1(chain, dependencies)) return;
+      if (child.kind === 'directory') {
+        await cleanupDirectory(child, chain);
+        continue;
+      }
+      if (!await recordedPathStillOwnedV1(child, dependencies)) continue;
+      if (!await recordedAncestorChainStillOwnedV1(chain, dependencies)) return;
+      if (!await recordedPathStillOwnedV1(child, dependencies)) continue;
+      try {
+        await dependencies.unlinkFile(child.path);
+      } catch {
+        // Leave an identity-uncertain or busy descendant as a safe orphan.
+      }
+    }
+    if (!await recordedAncestorChainStillOwnedV1(chain, dependencies)) return;
+    try {
+      await dependencies.removeDirectory(directory.path);
+    } catch {
+      // Nonempty, replaced, or otherwise uncertain directories are preserved.
+    }
+  };
+
+  await cleanupDirectory(root, []);
+}
+
+async function extractUnpublishedTreeV1(
+  archive: OwnedArchiveV1,
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  outputFlags: number,
+  readFlags: number,
+  directoryReadFlags: number,
+  ownedTreePaths: OwnedPathV1[],
+): Promise<VerifiedTreeV1> {
+  const opened = await openValidatedSafeZipV1FromBorrowedHandle(
+    archive.handle,
+    options.expectedAssetBytes,
+  );
+  let releaseRequired = true;
+  try {
+    const treePath = await createRandomTreeV1(
+      options,
+      ownedTreePaths,
+      dependencies,
+      effectiveUid,
+      directoryReadFlags,
+    );
+    const inventoryEntries: MaterializationInventoryEntryV1[] = [];
+    const directoryPaths = opened.index.inventory
+      .filter((entry) => entry.kind === 'directory')
+      .map((entry) => entry.path)
+      .sort((left, right) => left < right ? -1 : left > right ? 1 : 0);
+    for (const relativePath of directoryPaths) {
+      const path = join(treePath, ...relativePath.split('/'));
+      if (!path.startsWith(`${treePath}/`)) fail('ERR_SAFE_ZIP_TREE');
+      try {
+        await createPrivateDirectoryV1(
+          path,
+          ownedTreePaths,
+          dependencies,
+          effectiveUid,
+          directoryReadFlags,
+          'ERR_SAFE_ZIP_TREE',
+        );
+      } catch (error) {
+        rethrowStable(error, 'ERR_SAFE_ZIP_TREE');
+      }
+      inventoryEntries.push({ path: relativePath, kind: 'directory' });
+    }
+
+    let remainingTotalBytes = MAX_TOTAL_UNCOMPRESSED_BYTES;
+    const fileEntries = opened.index.archiveEntries
+      .filter((entry) => entry.kind === 'file')
+      .sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+    for (const entry of fileEntries) {
+      const path = join(treePath, ...entry.path.split('/'));
+      if (!path.startsWith(`${treePath}/`)) fail('ERR_SAFE_ZIP_TREE');
+      const output = await openExclusiveOutputV1(
+        path,
+        dependencies,
+        effectiveUid,
+        outputFlags,
+        ownedTreePaths,
+        'ERR_SAFE_ZIP_TREE',
+      );
+      let position = 0;
+      let validated: ValidatedSafeZipEntryContentV1;
+      try {
+        validated = await opened.validateEntryContent(entry, {
+          maxTotalUncompressedBytes: remainingTotalBytes,
+          onChunk: async (chunk) => {
+            position += await writeAllV1(output, chunk, position, 'ERR_SAFE_ZIP_STREAM');
+          },
+        });
+        const metadata = await output.stat({ bigint: true });
+        if (
+          metadata.size !== BigInt(entry.uncompressedBytes)
+          || metadata.nlink !== 1n
+          || !ownedByV1(metadata, effectiveUid)
+          || !exactModeV1(metadata, FILE_MODE)
+        ) fail('ERR_SAFE_ZIP_TREE');
+        await output.sync();
+      } catch (error) {
+        await closeNonOwnerFileHandleBestEffortV1(output);
+        rethrowStable(error, 'ERR_SAFE_ZIP_STREAM');
+      }
+      await closeFileHandleV1(output, 'ERR_SAFE_ZIP_TREE');
+      remainingTotalBytes = validated.remainingTotalUncompressedBytes;
+      inventoryEntries.push({
+        path: entry.path,
+        kind: 'file',
+        bytes: validated.bytes,
+        sha256: validated.sha256,
+      });
+    }
+
+    await opened.release();
+    releaseRequired = false;
+    const receipt = buildMaterializationReceiptV1({
+      assetSha256: options.expectedAssetSha256,
+      assetBytes: options.expectedAssetBytes,
+      entries: inventoryEntries,
+    });
+    if (!receipt.ok) fail('ERR_SAFE_ZIP_RECEIPT');
+    const renderedReceipt = renderMaterializationReceiptV1(receipt.value);
+    if (!renderedReceipt.ok) fail('ERR_SAFE_ZIP_RECEIPT');
+    const receiptPath = join(treePath, MATERIALIZATION_RECEIPT_FILENAME);
+    await writeExclusiveSyncedFileV1(
+      receiptPath,
+      Buffer.from(renderedReceipt.value.text, 'utf8'),
+      dependencies,
+      effectiveUid,
+      outputFlags,
+      ownedTreePaths,
+      'ERR_SAFE_ZIP_RECEIPT',
+    );
+
+    const verifiedBeforeSync = await verifyMaterializedTreeV1(
+      treePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+      renderedReceipt.value.sha256,
+    );
+    for (const relativePath of [...directoryPaths].sort((left, right) => {
+      const depth = right.split('/').length - left.split('/').length;
+      return depth !== 0 ? depth : right < left ? -1 : right > left ? 1 : 0;
+    })) {
+      await syncTrustedDirectoryV1(
+        join(treePath, ...relativePath.split('/')),
+        dependencies,
+        effectiveUid,
+        directoryReadFlags,
+        'ERR_SAFE_ZIP_TREE',
+      );
+    }
+    await syncTrustedDirectoryV1(
+      treePath,
+      dependencies,
+      effectiveUid,
+      directoryReadFlags,
+      'ERR_SAFE_ZIP_TREE',
+    );
+    await syncTrustedCacheDirectoryV1(
+      options.cacheDirectory,
+      dependencies,
+      effectiveUid,
+      directoryReadFlags,
+    );
+    const verifiedAfterSync = await verifyMaterializedTreeV1(
+      treePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+      renderedReceipt.value.sha256,
+    );
+    if (!sameVerifiedTreeV1(verifiedBeforeSync, verifiedAfterSync)) fail('ERR_SAFE_ZIP_TREE');
+    return verifiedAfterSync;
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_STREAM');
+  } finally {
+    if (releaseRequired) {
+      try { await opened.release(); } catch { /* retain the primary stable failure */ }
+    }
+  }
+  fail('ERR_SAFE_ZIP_STREAM');
+}
+
+async function createTemporaryReferenceV1(
+  options: SnapshotExtractReleaseArchiveOptions,
+  referenceBytes: Buffer,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  outputFlags: number,
+  ownedTemporaryPaths: OwnedPathV1[],
+): Promise<OwnedPathV1> {
+  for (let attempt = 0; attempt < TEMP_ATTEMPTS; attempt += 1) {
+    const path = join(
+      options.cacheDirectory,
+      `.v103-ref-${randomHexTokenV1(dependencies, 'ERR_SAFE_ZIP_PUBLICATION')}.tmp`,
+    );
+    try {
+      await writeExclusiveSyncedFileV1(
+        path,
+        referenceBytes,
+        dependencies,
+        effectiveUid,
+        outputFlags,
+        ownedTemporaryPaths,
+        'ERR_SAFE_ZIP_PUBLICATION',
+      );
+      return ownedTemporaryPaths[ownedTemporaryPaths.length - 1]!;
+    } catch (error) {
+      if (errnoCodeV1(error) === 'EEXIST') continue;
+      rethrowStable(error, 'ERR_SAFE_ZIP_PUBLICATION');
+    }
+  }
+  fail('ERR_SAFE_ZIP_PUBLICATION');
+}
+
+async function materializeOrReuseV1(
+  archive: OwnedArchiveV1,
+  options: SnapshotExtractReleaseArchiveOptions,
+  dependencies: RequiredExtractReleaseArchiveDependencies,
+  effectiveUid: number,
+  readFlags: number,
+  outputFlags: number,
+  directoryReadFlags: number,
+): Promise<ExtractReleaseArchiveResult> {
+  const referencePath = join(
+    options.cacheDirectory,
+    `${options.expectedAssetSha256}.safe-zip-v1.ref.json`,
+  );
+  if (await stableReferenceExistsV1(referencePath, dependencies)) {
+    const firstReuse = await verifyPublishedReferenceV1(
+      referencePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+      true,
+    );
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    const reused = await verifyPublishedReferenceV1(
+      referencePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+    );
+    if (!sameVerifiedPublicationV1(firstReuse, reused)) fail('ERR_SAFE_ZIP_PUBLICATION');
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    return {
+      treePath: reused.tree.treePath,
+      receipt: reused.tree.receipt,
+      cacheStatus: 'reused',
+    };
+  }
+
+  const ownedTreePaths: OwnedPathV1[] = [];
+  const ownedTemporaryPaths: OwnedPathV1[] = [];
+  let treePublished = false;
+  try {
+    const candidate = await extractUnpublishedTreeV1(
+      archive,
+      options,
+      dependencies,
+      effectiveUid,
+      outputFlags,
+      readFlags,
+      directoryReadFlags,
+      ownedTreePaths,
+    );
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    const reference = buildMaterializationCacheRefV1({
+      treeBasename: basename(candidate.treePath),
+      receiptSha256: candidate.receiptSha256,
+    });
+    if (!reference.ok) fail('ERR_SAFE_ZIP_PUBLICATION');
+    const renderedReference = renderMaterializationCacheRefV1(reference.value);
+    if (!renderedReference.ok) fail('ERR_SAFE_ZIP_PUBLICATION');
+    const temporaryReference = await createTemporaryReferenceV1(
+      options,
+      Buffer.from(renderedReference.value.text, 'utf8'),
+      dependencies,
+      effectiveUid,
+      outputFlags,
+      ownedTemporaryPaths,
+    );
+
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    const candidateImmediatelyBeforeLink = await verifyMaterializedTreeV1(
+      candidate.treePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+      candidate.receiptSha256,
+    );
+    if (!sameVerifiedTreeV1(candidate, candidateImmediatelyBeforeLink)) {
+      fail('ERR_SAFE_ZIP_TREE');
+    }
+
+    let wonPublication = false;
+    let linkReportedFailureAfterPublication = false;
+    let authoritativeEexist = false;
+    let verifiedEexistWinner: VerifiedPublicationV1 | undefined;
+    try {
+      await dependencies.linkFile(temporaryReference.path, referencePath);
+      wonPublication = true;
+      treePublished = true;
+    } catch (error) {
+      // A thrown hard-link call has an uncertain syscall outcome. Ownership
+      // transfers conservatively until an authoritative EEXIST winner is
+      // fully verified as both a different reference and a different tree.
+      treePublished = true;
+      const linkErrorCode = errnoCodeV1(error);
+      let stableReference: BigIntStats | undefined;
+      try {
+        stableReference = await lstatBigV1(dependencies, referencePath);
+      } catch (inspectionError) {
+        if (errnoCodeV1(inspectionError) !== 'ENOENT') {
+          // The hard-link outcome is uncertain. Preserve the candidate tree;
+          // cleanup may never delete content that a completed link references.
+          treePublished = true;
+          fail('ERR_SAFE_ZIP_PUBLICATION');
+        }
+      }
+      let completedLink = false;
+      try {
+        completedLink = stableReference !== undefined
+          && stableReference.isFile()
+          && stableReference.dev === temporaryReference.dev
+          && stableReference.ino === temporaryReference.ino;
+      } catch {
+        treePublished = true;
+        fail('ERR_SAFE_ZIP_PUBLICATION');
+      }
+      if (completedLink) {
+        // The syscall completed before reporting an error. Ownership transfers
+        // at the instant this identity match is observed.
+        treePublished = true;
+        wonPublication = true;
+        linkReportedFailureAfterPublication = true;
+      } else if (linkErrorCode === 'EEXIST') {
+        authoritativeEexist = true;
+      } else {
+        fail('ERR_SAFE_ZIP_PUBLICATION');
+      }
+    }
+
+    if (!wonPublication && authoritativeEexist) {
+      verifiedEexistWinner = await verifyPublishedReferenceV1(
+        referencePath,
+        options,
+        dependencies,
+        effectiveUid,
+        readFlags,
+        directoryReadFlags,
+        true,
+      );
+      if (
+        verifiedEexistWinner.stableReference.dev === temporaryReference.dev
+        && verifiedEexistWinner.stableReference.ino === temporaryReference.ino
+      ) {
+        wonPublication = true;
+        linkReportedFailureAfterPublication = true;
+      }
+    }
+
+    if (wonPublication) {
+      await syncTrustedCacheDirectoryV1(
+        options.cacheDirectory,
+        dependencies,
+        effectiveUid,
+        directoryReadFlags,
+      );
+      if (!await unlinkOwnedFileV1(temporaryReference, dependencies)) {
+        fail('ERR_SAFE_ZIP_PUBLICATION');
+      }
+      await syncTrustedCacheDirectoryV1(
+        options.cacheDirectory,
+        dependencies,
+        effectiveUid,
+        directoryReadFlags,
+      );
+      const firstPublished = await verifyPublishedReferenceV1(
+        referencePath,
+        options,
+        dependencies,
+        effectiveUid,
+        readFlags,
+        directoryReadFlags,
+      );
+      if (
+        firstPublished.stableReference.dev !== temporaryReference.dev
+        || firstPublished.stableReference.ino !== temporaryReference.ino
+        || firstPublished.stableReference.bytes !== CACHE_REF_BYTES
+        || firstPublished.stableReference.sha256 !== renderedReference.value.sha256
+        || !sameVerifiedTreeV1(firstPublished.tree, candidateImmediatelyBeforeLink)
+      ) fail('ERR_SAFE_ZIP_PUBLICATION');
+      await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+      const published = await verifyPublishedReferenceV1(
+        referencePath,
+        options,
+        dependencies,
+        effectiveUid,
+        readFlags,
+        directoryReadFlags,
+      );
+      if (!sameVerifiedPublicationV1(firstPublished, published)) fail('ERR_SAFE_ZIP_PUBLICATION');
+      await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+      if (linkReportedFailureAfterPublication) fail('ERR_SAFE_ZIP_PUBLICATION');
+      return {
+        treePath: published.tree.treePath,
+        receipt: published.tree.receipt,
+        cacheStatus: 'created',
+      };
+    }
+
+    if (!authoritativeEexist) fail('ERR_SAFE_ZIP_PUBLICATION');
+    const winner = verifiedEexistWinner!;
+    const verifiedDifferentWinner = (
+      (winner.stableReference.dev !== temporaryReference.dev
+        || winner.stableReference.ino !== temporaryReference.ino)
+      && !sameVerifiedTreeV1(winner.tree, candidateImmediatelyBeforeLink)
+    );
+    if (verifiedDifferentWinner) treePublished = false;
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    await cleanupOwnedPathsV1(ownedTemporaryPaths, dependencies);
+    if (verifiedDifferentWinner) await cleanupOwnedTreePathsV1(ownedTreePaths, dependencies);
+    await syncTrustedCacheDirectoryV1(
+      options.cacheDirectory,
+      dependencies,
+      effectiveUid,
+      directoryReadFlags,
+    );
+    const finalWinner = await verifyPublishedReferenceV1(
+      referencePath,
+      options,
+      dependencies,
+      effectiveUid,
+      readFlags,
+      directoryReadFlags,
+    );
+    if (!sameVerifiedPublicationV1(winner, finalWinner)) fail('ERR_SAFE_ZIP_PUBLICATION');
+    await verifyArchiveDescriptorV1(archive, options, dependencies, effectiveUid);
+    return {
+      treePath: finalWinner.tree.treePath,
+      receipt: finalWinner.tree.receipt,
+      cacheStatus: 'reused',
+    };
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_STREAM');
+  } finally {
+    await cleanupOwnedPathsV1(ownedTemporaryPaths, dependencies);
+    if (!treePublished) await cleanupOwnedTreePathsV1(ownedTreePaths, dependencies);
+  }
+  fail('ERR_SAFE_ZIP_STREAM');
+}
+
+/**
+ * Materializes one checksum-pinned release ZIP into a private verified tree and
+ * publishes only a no-replace local reference. All exposed failures are stable,
+ * path-free, and cause-free.
+ */
+export async function extractReleaseArchive(
+  optionsInput: ExtractReleaseArchiveOptions,
+  dependenciesInput?: ExtractReleaseArchiveDependencies,
+): Promise<ExtractReleaseArchiveResult> {
+  const options = snapshotExtractReleaseArchiveOptionsV1(optionsInput);
+  const dependencies = snapshotExtractDependenciesV1(dependenciesInput);
+  const capabilities = requireTrustedPosixCapabilities(dependencies.filesystemSecurity);
+  const directoryFlag = dependencies.filesystemSecurity.directoryFlag;
+  if (
+    capabilities === undefined
+    || !Number.isInteger(directoryFlag)
+    || directoryFlag! <= 0
+  ) fail('ERR_SAFE_ZIP_PLATFORM');
+  try {
+    const trustedCache = await inspectTrustedCanonicalCacheDirectory(
+      options.cacheDirectory,
+      capabilities.effectiveUid,
+      dependencies.realpathFile,
+      dependencies.lstatFile,
+    );
+    if (trustedCache.status !== 'trusted' || trustedCache.path !== options.cacheDirectory) {
+      fail('ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+    }
+  } catch (error) {
+    rethrowStable(error, 'ERR_SAFE_ZIP_CACHE_UNTRUSTED');
+  }
+  const readFlags = capabilities.regularFileReadFlags;
+  const directoryReadFlags = readFlags | directoryFlag!;
+  const outputFlags = constants.O_WRONLY
+    | constants.O_CREAT
+    | constants.O_EXCL
+    | capabilities.noFollowFlag
+    | capabilities.nonBlockingFlag;
+
+  const archive = await openOwnedArchiveV1(
+    options,
+    dependencies,
+    capabilities.effectiveUid,
+    readFlags,
+  );
+  let result: ExtractReleaseArchiveResult | undefined;
+  let primaryError: SafeZipError | undefined;
+  try {
+    result = await materializeOrReuseV1(
+      archive,
+      options,
+      dependencies,
+      capabilities.effectiveUid,
+      readFlags,
+      outputFlags,
+      directoryReadFlags,
+    );
+    await verifyArchiveDescriptorV1(
+      archive,
+      options,
+      dependencies,
+      capabilities.effectiveUid,
+    );
+  } catch (error) {
+    primaryError = error instanceof SafeZipError
+      ? error
+      : new SafeZipError('ERR_SAFE_ZIP_STREAM');
+  }
+
+  if (!archive.closed) {
+    archive.closed = true;
+    try {
+      await archive.handle.close();
+    } catch {
+      primaryError ??= new SafeZipError('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    }
+  }
+  if (primaryError === undefined) {
+    try {
+      const pathAfterClose = await lstatBigV1(dependencies, options.archivePath);
+      if (
+        !pathAfterClose.isFile()
+        || pathAfterClose.size !== BigInt(options.expectedAssetBytes)
+        || pathAfterClose.nlink !== 1n
+        || !ownedByV1(pathAfterClose, capabilities.effectiveUid)
+        || !sameIdentityV1(pathAfterClose, archive.pathIdentity)
+      ) primaryError = new SafeZipError('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    } catch {
+      primaryError = new SafeZipError('ERR_SAFE_ZIP_ARCHIVE_MUTATED');
+    }
+  }
+  if (primaryError !== undefined) throw primaryError;
+  if (result === undefined) fail('ERR_SAFE_ZIP_STREAM');
+  return result;
 }
