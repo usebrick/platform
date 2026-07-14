@@ -11,11 +11,17 @@ import {
   calibrationAdmissionQualityLedgerSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
+  calibrationAdmissionToolReceiptSha256,
   isCalibrationAdmissionAuthorityCurrentV1,
+  isCalibrationAdmissionOverlapResourceReceiptV1,
   isCalibrationAdmissionPreWitnessBundleV1,
   isCalibrationAdmissionRecordV103,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
+  isCalibrationAdmissionToolReceiptV1,
   validateCalibrationAdmissionPreWitnessBundleV1,
+  validateCalibrationAdmissionLineageLedgerV1,
+  validateCalibrationAdmissionPrivacyLedgerV1,
+  validateCalibrationAdmissionQualityLedgerV1,
   validateCalibrationAdmissionRecordStreamV1,
   validateCalibrationAdmissionSourceRegisterReviewSet,
   type CalibrationAdmissionPreWitnessBundleV1,
@@ -32,7 +38,7 @@ const CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 const STATIC_ROOT = 'review/admission/authority/static-generations';
 const STREAM_RELATIVE_PATH = 'review/admission/admission-records.jsonl';
 const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
-const HASH = /^[a-f0-9]{64}$/u;
+const OVERLAP_TOOL_PROFILE_ID = 'admission-static-ledgers-v1';
 
 const verifiedAdmissionContextBrand: unique symbol = Symbol('slopbrick.verified-admission-context');
 
@@ -163,24 +169,19 @@ function parseCanonicalJsonl(bytes: Uint8Array): readonly unknown[] {
   return values;
 }
 
-function staticArtifactPath(staticPath: string, relativePath: string): string {
-  if (typeof relativePath !== 'string' || relativePath.length === 0 || relativePath.includes('\\') || relativePath.startsWith('/') || relativePath.split('/').some((part) => part === '.' || part === '..' || part.length === 0)) {
-    throw new Error('static artifact path is unsafe');
-  }
-  return join(staticPath, relativePath);
-}
-
-function validHash(value: unknown): value is string {
-  return typeof value === 'string' && HASH.test(value);
-}
-
-function validateBundleLedgers(bundle: CalibrationAdmissionPreWitnessBundleV1, recordSetSha256: string): readonly string[] {
+function validateBundleLedgers(bundle: CalibrationAdmissionPreWitnessBundleV1, recordIds: readonly string[]): readonly string[] {
   const errors: string[] = [];
   const stream = bundle.admissionRecordStream;
+  const recordSetSha256 = calibrationAdmissionSha256(recordIds);
   if (stream.recordIdSetSha256 !== recordSetSha256) errors.push('record stream recordIdSetSha256 does not match its records');
-  if (bundle.privacyLedger.admissionRecordSetSha256 !== recordSetSha256) errors.push('privacy ledger record set does not match the record stream');
-  if (bundle.qualityLedger.admissionRecordSetSha256 !== recordSetSha256) errors.push('quality ledger record set does not match the record stream');
-  if (bundle.lineageLedger.admissionRecordSetSha256 !== recordSetSha256) errors.push('lineage ledger record set does not match the record stream');
+  const ledgers: readonly [string, { readonly ok: boolean; readonly errors: readonly string[] }][] = [
+    ['privacy', validateCalibrationAdmissionPrivacyLedgerV1(bundle.privacyLedger, recordIds)],
+    ['quality', validateCalibrationAdmissionQualityLedgerV1(bundle.qualityLedger, recordIds)],
+    ['lineage', validateCalibrationAdmissionLineageLedgerV1(bundle.lineageLedger, recordIds)],
+  ];
+  for (const [name, validation] of ledgers) {
+    if (!validation.ok) errors.push(...validation.errors.map((error) => `${name} ledger: ${error}`));
+  }
   try {
     if (calibrationAdmissionPrivacyLedgerSha256(bundle.privacyLedger) !== bundle.privacyLedger.ledgerSha256) errors.push('privacy ledger self-hash does not match canonical bytes');
     if (calibrationAdmissionQualityLedgerSha256(bundle.qualityLedger) !== bundle.qualityLedger.ledgerSha256) errors.push('quality ledger self-hash does not match canonical bytes');
@@ -188,99 +189,158 @@ function validateBundleLedgers(bundle: CalibrationAdmissionPreWitnessBundleV1, r
   } catch {
     errors.push('ledger canonical hash validation failed');
   }
-  const overlap = bundle.overlapResourceReceipt as unknown as Record<string, unknown>;
-  if (overlap.coverageComplete !== true || overlap.withinAllLimits !== true) errors.push('overlap resource receipt is incomplete or exceeded a configured limit');
   return errors;
 }
 
-async function verifyStaticArtifacts(root: AdmissionRoot, staticPath: string, staticGeneration: Record<string, unknown>): Promise<readonly string[]> {
+function validateOverlapResourceReceipt(bundle: CalibrationAdmissionPreWitnessBundleV1): readonly string[] {
   const errors: string[] = [];
-  const artifacts = Array.isArray(staticGeneration.artifacts) ? staticGeneration.artifacts : [];
-  const seen = new Set<string>();
-  for (const artifact of artifacts) {
-    if (!isRecord(artifact) || typeof artifact.relativePath !== 'string') {
-      errors.push('static authority artifact receipt is malformed');
-      continue;
-    }
-    if (seen.has(artifact.relativePath)) {
-      errors.push(`duplicate static authority artifact path ${artifact.relativePath}`);
-      continue;
-    }
-    seen.add(artifact.relativePath);
-    try {
-      const bytes = await readContainedFile(root, staticArtifactPath(staticPath, artifact.relativePath));
-      if (bytes.byteLength !== artifact.bytes) errors.push(`static artifact ${artifact.relativePath} byte count mismatch`);
-      if (!validHash(artifact.sha256) || hashBytes(bytes) !== artifact.sha256) errors.push(`static artifact ${artifact.relativePath} hash mismatch`);
-    } catch (error) {
-      errors.push(`static artifact ${artifact.relativePath}: ${errorMessage(error)}`);
-    }
+  const overlap = bundle.overlapResourceReceipt;
+  if (!isCalibrationAdmissionOverlapResourceReceiptV1(overlap)) {
+    errors.push('overlap resource receipt failed Core validation');
+    return errors;
+  }
+  if (overlap.coverageComplete !== true || overlap.withinAllLimits !== true) {
+    errors.push('overlap resource receipt is incomplete or exceeded a configured limit');
+  }
+  const matching = bundle.toolReceipts.filter((receipt) => {
+    if (calibrationAdmissionToolReceiptSha256(receipt) !== overlap.toolReceiptSha256) return false;
+    const profile = bundle.toolProfiles.find((candidate) => candidate.profileId === receipt.profileId);
+    const intent = bundle.invocationIntents.find((candidate) => candidate.intentId === receipt.invocationIntentId);
+    return profile !== undefined && intent !== undefined && isCalibrationAdmissionToolReceiptV1(receipt, profile, intent)
+      && receipt.profileId === OVERLAP_TOOL_PROFILE_ID
+      && receipt.action === 'authority:overlap'
+      && receipt.exitCode === 0
+      && bundle.toolAuthoritySnapshot.receiptIds.includes(receipt.receiptId)
+      && bundle.toolAuthoritySnapshot.invocationIntentIds.includes(intent.intentId);
+  });
+  if (matching.length !== 1) {
+    errors.push('overlap resource receipt must bind exactly one successful indexed authority:overlap tool receipt');
   }
   return errors;
 }
 
-async function loadAndVerify(root: AdmissionRoot, evidence: VerifiedAdmissionEvidenceContextV1): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
-  const currentPath = join(root.projectRoot, CURRENT_RELATIVE_PATH);
-  const currentInput = await readCanonicalJson(root, currentPath, 'authority current pointer');
-  if (!isCalibrationAdmissionAuthorityCurrentV1(currentInput)) throw new Error('authority current pointer failed Core validation');
-  const current = currentInput;
-  if (current.currentSha256 !== calibrationAdmissionAuthorityCurrentSha256(current)) throw new Error('authority current pointer self-hash mismatch');
-  const expectedStaticRelative = `${STATIC_ROOT}/${current.staticGenerationSha256}`;
-  if (current.staticGenerationRelativePath !== expectedStaticRelative) throw new Error('authority current pointer static path/hash join mismatch');
-  const staticPath = join(root.projectRoot, current.staticGenerationRelativePath);
-  if (!pathInside(root.admissionRoot, staticPath)) throw new Error('authority static generation escapes the contained admission root');
-  const staticInput = await readCanonicalJson(root, join(staticPath, 'generation.json'), 'static authority generation');
-  // The generation object is conventionally stored at generation.json in the
-  // fixture/runtime directory. A hash-named generation may also carry the
-  // object as static-generation.json; no directory discovery is allowed.
-  const staticGenerationInput = staticInput;
-  if (!isCalibrationAdmissionStaticAuthorityGenerationV1(staticGenerationInput)) throw new Error('static authority generation failed Core validation');
-  const staticGeneration = staticGenerationInput;
-  if (staticGeneration.generationSha256 !== calibrationAdmissionStaticAuthorityGenerationSha256(staticGeneration)) throw new Error('static authority generation self-hash mismatch');
-  if (current.generation !== staticGeneration.generation || current.staticGenerationSha256 !== staticGeneration.generationSha256) throw new Error('authority current pointer does not bind static generation');
-  const staticArtifacts = await verifyStaticArtifacts(root, staticPath, staticGeneration as unknown as Record<string, unknown>);
-  if (staticArtifacts.length > 0) throw new Error(staticArtifacts.join('; '));
-  const requiredArtifacts = [
-    ['bundle', STATIC_BUNDLE_PATH],
-    ['ledger', 'privacy-ledger.json'],
-    ['ledger', 'quality-ledger.json'],
-    ['ledger', 'lineage-ledger.json'],
-  ] as const;
-  for (const [kind, artifactPath] of requiredArtifacts) {
-    const matches = staticGeneration.artifacts.filter((artifact) => artifact.kind === kind && artifact.relativePath === artifactPath);
-    if (matches.length !== 1) throw new Error(`static authority generation must contain exactly one ${artifactPath} artifact`);
+function bundleArtifactReceipt(staticGeneration: { readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[] }): { readonly bytes: number; readonly sha256: string } {
+  const match = staticGeneration.artifacts.find((artifact) => artifact.kind === 'bundle' && artifact.relativePath === STATIC_BUNDLE_PATH);
+  if (match === undefined) {
+    throw new Error('static authority generation must contain exactly one pre-witness-bundle.json artifact');
   }
-  const bundleArtifact = staticGeneration.artifacts.find((artifact) => artifact.relativePath === STATIC_BUNDLE_PATH && artifact.kind === 'bundle')!;
-  const bundleInput = await readCanonicalJson(root, join(staticPath, STATIC_BUNDLE_PATH), 'pre-witness bundle');
+  return match;
+}
+
+function verifyBundleArtifactReceipt(bundleArtifact: { readonly bytes: number; readonly sha256: string }, bundle: CalibrationAdmissionPreWitnessBundleV1): void {
+  const canonical = Buffer.from(calibrationAdmissionCanonicalJson(bundle));
+  if (bundleArtifact.sha256 !== hashBytes(canonical) || bundleArtifact.bytes !== canonical.byteLength) {
+    throw new Error('pre-witness bundle artifact receipt does not match canonical bytes');
+  }
+}
+
+function verifyStaticLedgerAnchors(bundle: CalibrationAdmissionPreWitnessBundleV1, staticGeneration: { readonly privacyLedgerSha256: string; readonly qualityLedgerSha256: string; readonly lineageLedgerSha256: string; readonly preWitnessBundleSha256: string }): void {
+  if (staticGeneration.preWitnessBundleSha256 !== bundle.preWitnessBundleSha256) throw new Error('static generation does not bind the pre-witness bundle hash');
+  if (staticGeneration.privacyLedgerSha256 !== bundle.privacyLedger.ledgerSha256 || staticGeneration.qualityLedgerSha256 !== bundle.qualityLedger.ledgerSha256 || staticGeneration.lineageLedgerSha256 !== bundle.lineageLedger.ledgerSha256) {
+    throw new Error('static generation ledger joins do not match the rich bundle');
+  }
+}
+
+function verifyToolAuthoritySnapshotEquality(bundle: CalibrationAdmissionPreWitnessBundleV1, staticGeneration: { readonly toolAuthoritySnapshot: unknown }): void {
+  if (calibrationAdmissionCanonicalJson(staticGeneration.toolAuthoritySnapshot) !== calibrationAdmissionCanonicalJson(bundle.toolAuthoritySnapshot)) {
+    throw new Error('static and rich bundle tool authority snapshots differ');
+  }
+}
+
+function verifyStaticGenerationShape(staticGeneration: unknown): staticGeneration is {
+  readonly generation: number;
+  readonly generationSha256: string;
+  readonly preWitnessBundleSha256: string;
+  readonly privacyLedgerSha256: string;
+  readonly qualityLedgerSha256: string;
+  readonly lineageLedgerSha256: string;
+  readonly toolAuthoritySnapshot: unknown;
+  readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[];
+} {
+  return isCalibrationAdmissionStaticAuthorityGenerationV1(staticGeneration);
+}
+
+function verifyStaticGeneration(staticInput: unknown, current: { readonly generation: number; readonly staticGenerationSha256: string }): {
+  readonly generation: number;
+  readonly generationSha256: string;
+  readonly preWitnessBundleSha256: string;
+  readonly privacyLedgerSha256: string;
+  readonly qualityLedgerSha256: string;
+  readonly lineageLedgerSha256: string;
+  readonly toolAuthoritySnapshot: unknown;
+  readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[];
+} {
+  if (!verifyStaticGenerationShape(staticInput)) throw new Error('static authority generation failed Core validation');
+  if (staticInput.generationSha256 !== calibrationAdmissionStaticAuthorityGenerationSha256(staticInput)) throw new Error('static authority generation self-hash mismatch');
+  if (current.generation !== staticInput.generation || current.staticGenerationSha256 !== staticInput.generationSha256) throw new Error('authority current pointer does not bind static generation');
+  return staticInput;
+}
+
+function verifyCurrentPointer(currentInput: unknown): { readonly generation: number; readonly staticGenerationSha256: string; readonly staticGenerationRelativePath: string; readonly currentSha256: string } {
+  if (!isCalibrationAdmissionAuthorityCurrentV1(currentInput)) throw new Error('authority current pointer failed Core validation');
+  if (currentInput.currentSha256 !== calibrationAdmissionAuthorityCurrentSha256(currentInput)) throw new Error('authority current pointer self-hash mismatch');
+  const expectedStaticRelative = `${STATIC_ROOT}/${currentInput.staticGenerationSha256}`;
+  if (currentInput.staticGenerationRelativePath !== expectedStaticRelative) throw new Error('authority current pointer static path/hash join mismatch');
+  return currentInput;
+}
+
+function verifyBundle(bundleInput: unknown): CalibrationAdmissionPreWitnessBundleV1 {
   if (!isCalibrationAdmissionPreWitnessBundleV1(bundleInput)) {
     const validation = validateCalibrationAdmissionPreWitnessBundleV1(bundleInput);
     throw new Error(`pre-witness bundle failed Core validation${!validation.ok && validation.errors.length > 0 ? `: ${validation.errors.join(', ')}` : ''}`);
   }
-  const bundle = bundleInput;
-  if (bundle.preWitnessBundleSha256 !== calibrationAdmissionPreWitnessBundleSha256(bundle)) throw new Error('pre-witness bundle self-hash mismatch');
-  if (bundleArtifact.sha256 !== hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(bundle))) || bundleArtifact.bytes !== Buffer.byteLength(calibrationAdmissionCanonicalJson(bundle))) throw new Error('pre-witness bundle artifact receipt does not match canonical bytes');
-  if (staticGeneration.preWitnessBundleSha256 !== bundle.preWitnessBundleSha256) throw new Error('static generation does not bind the pre-witness bundle hash');
-  if (staticGeneration.privacyLedgerSha256 !== bundle.privacyLedger.ledgerSha256 || staticGeneration.qualityLedgerSha256 !== bundle.qualityLedger.ledgerSha256 || staticGeneration.lineageLedgerSha256 !== bundle.lineageLedger.ledgerSha256) throw new Error('static generation ledger joins do not match the rich bundle');
-  if (calibrationAdmissionCanonicalJson(staticGeneration.toolAuthoritySnapshot) !== calibrationAdmissionCanonicalJson(bundle.toolAuthoritySnapshot)) throw new Error('static and rich bundle tool authority snapshots differ');
-  const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
-  if (stream.relativePath !== STREAM_RELATIVE_PATH) throw new Error('pre-witness bundle record stream path is not the fixed admission path');
-  const streamPath = join(root.projectRoot, stream.relativePath);
-  const streamBytes = await readContainedFile(root, streamPath);
+  if (bundleInput.preWitnessBundleSha256 !== calibrationAdmissionPreWitnessBundleSha256(bundleInput)) throw new Error('pre-witness bundle self-hash mismatch');
+  return bundleInput;
+}
+
+function verifyStreamRecords(bundle: CalibrationAdmissionPreWitnessBundleV1, streamBytes: Buffer): { readonly recordIds: readonly string[]; readonly recordMap: ReadonlyMap<string, VerifiedRecord> } {
   const parsedRecords = parseCanonicalJsonl(streamBytes);
+  const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
   const streamValidation = validateCalibrationAdmissionRecordStreamV1(stream, streamBytes, parsedRecords);
   if (!streamValidation.ok) throw new Error(`record stream failed Core validation: ${streamValidation.errors.join(', ')}`);
   const recordMap = new Map<string, VerifiedRecord>();
+  const recordIds: string[] = [];
   for (const value of parsedRecords) {
     if (!isCalibrationAdmissionRecordV103(value)) throw new Error('record stream contains a record that failed Core validation');
     if (recordMap.has(value.recordId)) throw new Error(`record stream contains duplicate record ID ${value.recordId}`);
+    recordIds.push(value.recordId);
     recordMap.set(value.recordId, value as unknown as VerifiedRecord);
   }
-  const sourceReviewValidation = validateCalibrationAdmissionSourceRegisterReviewSet(bundle.sourceRegister, bundle.sourceReviews);
-  if (!sourceReviewValidation.ok) throw new Error(`source register/review ID or binding validation failed: ${sourceReviewValidation.errors.join(', ')}`);
-  const ledgerErrors = validateBundleLedgers(bundle, stream.recordIdSetSha256);
-  if (ledgerErrors.length > 0) throw new Error(ledgerErrors.join('; '));
+  return { recordIds, recordMap };
+}
+
+function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, staticGeneration: ReturnType<typeof verifyStaticGeneration>): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
+  return (async () => {
+    const bundleArtifact = bundleArtifactReceipt(staticGeneration);
+    const bundle = verifyBundle(await readCanonicalJson(root, join(staticPath, STATIC_BUNDLE_PATH), 'pre-witness bundle'));
+    verifyBundleArtifactReceipt(bundleArtifact, bundle);
+    verifyStaticLedgerAnchors(bundle, staticGeneration);
+    verifyToolAuthoritySnapshotEquality(bundle, staticGeneration);
+    const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
+    if (stream.relativePath !== STREAM_RELATIVE_PATH) throw new Error('pre-witness bundle record stream path is not the fixed admission path');
+    const streamBytes = await readContainedFile(root, join(root.projectRoot, stream.relativePath));
+    const verifiedRecords = verifyStreamRecords(bundle, streamBytes);
+    const recordIds = verifiedRecords.recordIds;
+    const sourceReviewValidation = validateCalibrationAdmissionSourceRegisterReviewSet(bundle.sourceRegister, bundle.sourceReviews);
+    if (!sourceReviewValidation.ok) throw new Error(`source register/review ID or binding validation failed: ${sourceReviewValidation.errors.join(', ')}`);
+    const ledgerErrors = validateBundleLedgers(bundle, recordIds);
+    if (ledgerErrors.length > 0) throw new Error(ledgerErrors.join('; '));
+    const overlapErrors = validateOverlapResourceReceipt(bundle);
+    if (overlapErrors.length > 0) throw new Error(overlapErrors.join('; '));
+    return { bundle, streamBytes, records: verifiedRecords.recordMap };
+  })();
+}
+
+async function loadAndVerify(root: AdmissionRoot, evidence: VerifiedAdmissionEvidenceContextV1): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
+  const currentPath = join(root.projectRoot, CURRENT_RELATIVE_PATH);
+  const current = verifyCurrentPointer(await readCanonicalJson(root, currentPath, 'authority current pointer'));
+  const staticPath = join(root.projectRoot, current.staticGenerationRelativePath);
+  if (!pathInside(root.admissionRoot, staticPath)) throw new Error('authority static generation escapes the contained admission root');
+  const staticGeneration = verifyStaticGeneration(await readCanonicalJson(root, join(staticPath, 'generation.json'), 'static authority generation'), current);
+  const verified = await verifyStaticBundleAndStream(root, staticPath, staticGeneration);
   // The evidence brand is checked before any evidence object property is read.
   if (!isVerifiedAdmissionEvidenceContext(evidence)) throw new Error('evidence context is not a verified SlopBrick context');
-  return { bundle, streamBytes, records: recordMap };
+  return verified;
 }
 
 /**

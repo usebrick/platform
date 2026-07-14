@@ -17,16 +17,16 @@ unknown IDs or invalid context objects.
   collection with `Cannot find module '../../src/calibration/v103/admission-context'`.
 - GREEN: the focused context and disposition tests pass with one worker and a
   bounded heap: 2 files, 12 tests passed.
-- The disposition test reuses the temporary fixture helper exported by the
-  context test; consequently running that file alone also registers the five
-  context cases. This is test-fixture reuse only and does not add a production
-  seam.
+- The initial implementation reused a temporary fixture helper exported by the
+  context test; the review fix moved that helper into a standalone test module
+  so each focused file owns its cleanup and registration.
 
 ## Files
 
 - `packages/slopbrick/src/calibration/v103/admission-context.ts`
 - `packages/slopbrick/src/calibration/v103/admission-disposition.ts`
 - `packages/slopbrick/tests/calibration/v103-admission-context.test.ts`
+- `packages/slopbrick/tests/calibration/v103-admission-context-fixture.ts`
 - `packages/slopbrick/tests/calibration/v103-admission-disposition.test.ts`
 
 ## Gates
@@ -39,3 +39,39 @@ unknown IDs or invalid context objects.
 No changes were made to `v103-admission.ts`, corpus/release artifacts,
 package version, or remote refs. Existing unrelated untracked paths (`.astro/`,
 `TODO.md`, and `src/`) remain untouched.
+
+## Review-fix closeout — 2026-07-14
+
+The reviewed slice was tightened without adding a filesystem/input seam,
+rebuild orchestration, CLI work, corpus writes, or release changes.
+
+- Static-authority resolution now reads only the fixed current pointer, its
+  exact hash-named `generation.json`, the exact `pre-witness-bundle.json`, and
+  the exact record stream. It verifies the bundle artifact receipt and does
+  not read arbitrary `staticGeneration.artifacts` projections.
+- Parsed stream record IDs are passed directly to Core privacy, quality, and
+  lineage validators; their covered/unresolved partitions must equal that
+  exact stream set.
+- Overlap admission now requires both completion/limit flags and exactly one
+  indexed, successful `authority:overlap` receipt from the frozen static-ledger
+  profile whose canonical receipt hash equals `toolReceiptSha256`. Placeholder
+  and wrong-action receipts fail closed.
+- Focused mutation coverage includes pointer/generation/bundle/stream joins,
+  projection-orphan non-discovery, stream bytes/count/set/aggregate/path,
+  source-review drift, all three ledger partitions, overlap flags/receipt
+  binding, traversal, and malformed inputs. The shared fixture is now in
+  `v103-admission-context-fixture.ts`, so disposition no longer imports a test
+  file.
+
+### Review-fix gates
+
+- Focused context + disposition: **2 files / 8 tests passed** with one worker
+  and bounded heap.
+- Disposition file alone: **1 file / 2 tests passed**.
+- `corepack pnpm --filter slopbrick typecheck`: passed.
+- `corepack pnpm --filter slopbrick build`: passed; existing non-fatal Zod
+  declaration warnings remain.
+- `git diff --check`: passed.
+
+The implementation fix is committed separately; the exact commit is recorded
+in the handoff message after commit creation.

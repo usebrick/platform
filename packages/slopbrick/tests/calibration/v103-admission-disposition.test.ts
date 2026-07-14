@@ -7,14 +7,14 @@ import {
   buildVerifiedAdmissionContext,
   isVerifiedAdmissionContext,
 } from '../../src/calibration/v103/admission-context';
-import { runtimeFixture } from './v103-admission-context.test';
-
-const contexts: Array<{ readonly root: string }> = [];
+import {
+  cleanupRuntimeFixtures,
+  runtimeFixture,
+} from './v103-admission-context-fixture';
 
 describe('v10.3 verified admission disposition', () => {
   it('uses the durable record disposition and rejection reasons', async () => {
     const fixture = await runtimeFixture();
-    contexts.push(fixture);
     const built = await buildVerifiedAdmissionContext(fixture.root, fixture.evidence);
     expect(built.ok).toBe(true);
     if (!built.ok) return;
@@ -31,7 +31,6 @@ describe('v10.3 verified admission disposition', () => {
 
   it('rejects casts, clones, deserialization, and contexts from another module instance', async () => {
     const fixture = await runtimeFixture();
-    contexts.push(fixture);
     const built = await buildVerifiedAdmissionContext(fixture.root, fixture.evidence);
     expect(built.ok).toBe(true);
     if (!built.ok) return;
@@ -46,8 +45,4 @@ describe('v10.3 verified admission disposition', () => {
   });
 });
 
-// runtimeFixture owns the temporary roots; this hook only documents that the
-// disposition tests do not retain any filesystem or context authority.
-afterEach(() => {
-  contexts.splice(0);
-});
+afterEach(cleanupRuntimeFixtures);
