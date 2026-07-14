@@ -73,5 +73,5 @@ rebuild orchestration, CLI work, corpus writes, or release changes.
   declaration warnings remain.
 - `git diff --check`: passed.
 
-The implementation fix is committed separately; the exact commit is recorded
-in the handoff message after commit creation.
+The implementation fix is committed as `89d6f1d19` (`fix(calibration):
+tighten runtime context authority joins`).
