@@ -39,3 +39,15 @@ without throwing. A regression mutation covers this path.
 - `corepack pnpm --filter @usebrick/core typecheck` — passed.
 - `corepack pnpm --filter @usebrick/core test` — passed (29 files, 217 tests).
 - `git diff --check` — passed.
+
+## Follow-up hostile-input hardening
+
+The public validator now wraps the complete validation path in a fail-closed
+boundary. Undefined witness constraints, malformed/undefined record streams,
+throwing root proxies, nested getter failures, and exact-key/hash access
+failures return `{ ok: false }` instead of escaping an exception.
+
+- Focused test: `corepack pnpm --filter @usebrick/core exec vitest run tests/calibration-admission-pre-witness-bundle-contract.test.ts --maxWorkers=1 --minWorkers=1` — 12/12 passed.
+- `corepack pnpm --filter @usebrick/core typecheck` — passed.
+- `corepack pnpm --filter @usebrick/core test` — passed (29 files, 219 tests).
+- `git diff --check` — passed.

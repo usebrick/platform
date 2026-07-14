@@ -70,6 +70,30 @@ describe('v10.3 rich pre-witness bundle Core contract', () => {
     expect(validateCalibrationAdmissionPreWitnessBundleV1(malformed).ok).toBe(false);
   });
 
+  it('fails closed for undefined witness constraints and malformed record streams', () => {
+    const value = fixture();
+    const undefinedConstraints = {
+      ...value,
+      witnessPolicies: [{ ...value.witnessPolicies[0], constraints: undefined }, value.witnessPolicies[1]],
+    } as unknown as CalibrationAdmissionPreWitnessBundleV1;
+    expect(() => validateCalibrationAdmissionPreWitnessBundleV1(undefinedConstraints)).not.toThrow();
+    expect(validateCalibrationAdmissionPreWitnessBundleV1(undefinedConstraints).ok).toBe(false);
+    const undefinedStream = { ...value, admissionRecordStream: undefined } as unknown as CalibrationAdmissionPreWitnessBundleV1;
+    expect(() => validateCalibrationAdmissionPreWitnessBundleV1(undefinedStream)).not.toThrow();
+    expect(validateCalibrationAdmissionPreWitnessBundleV1(undefinedStream).ok).toBe(false);
+  });
+
+  it('fails closed for a throwing root proxy', () => {
+    const value = fixture();
+    const hostile = new Proxy(value, {
+      get() {
+        throw new Error('hostile getter');
+      },
+    });
+    expect(() => validateCalibrationAdmissionPreWitnessBundleV1(hostile)).not.toThrow();
+    expect(validateCalibrationAdmissionPreWitnessBundleV1(hostile).ok).toBe(false);
+  });
+
   it('requires the exact admission record stream path and structural fields', () => {
     const value = fixture();
     expect(validateCalibrationAdmissionPreWitnessBundleV1(rehash({

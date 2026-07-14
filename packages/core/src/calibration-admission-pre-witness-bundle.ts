@@ -359,17 +359,21 @@ export function calibrationAdmissionPreWitnessBundleSha256(value: unknown): stri
 
 export function validateCalibrationAdmissionPreWitnessBundleV1(input: unknown): CalibrationAdmissionPreWitnessBundleValidationResultV1 {
   const errors: string[] = [];
-  const value = record(input);
-  if (value === undefined) return { ok: false, errors: ['pre-witness bundle must be an object'] };
-  if (!exactKeys(value, BUNDLE_KEYS)) errors.push('pre-witness bundle keys are invalid');
-  if (value.version !== VERSION) errors.push('pre-witness bundle version is invalid');
-  if (!isSha256(value.preWitnessBundleSha256)) errors.push('preWitnessBundleSha256 must be sha256');
   try {
-    if (isSha256(value.preWitnessBundleSha256) && calibrationAdmissionPreWitnessBundleSha256(value) !== value.preWitnessBundleSha256) errors.push('preWitnessBundleSha256 does not match canonical bytes');
+    const value = record(input);
+    if (value === undefined) return { ok: false, errors: ['pre-witness bundle must be an object'] };
+    if (!exactKeys(value, BUNDLE_KEYS)) errors.push('pre-witness bundle keys are invalid');
+    if (value.version !== VERSION) errors.push('pre-witness bundle version is invalid');
+    if (!isSha256(value.preWitnessBundleSha256)) errors.push('preWitnessBundleSha256 must be sha256');
+    try {
+      if (isSha256(value.preWitnessBundleSha256) && calibrationAdmissionPreWitnessBundleSha256(value) !== value.preWitnessBundleSha256) errors.push('preWitnessBundleSha256 does not match canonical bytes');
+    } catch {
+      errors.push('pre-witness bundle cannot be canonicalized');
+    }
+    validateArrayGuards(value, errors);
   } catch {
-    errors.push('pre-witness bundle cannot be canonicalized');
+    errors.push('pre-witness bundle contains malformed or inaccessible JSON');
   }
-  validateArrayGuards(value, errors);
   if (errors.length > 0) return { ok: false, errors: [...new Set(errors)] };
   return result(true, [], input as CalibrationAdmissionPreWitnessBundleV1);
 }
