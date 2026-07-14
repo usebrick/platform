@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-privacy-result.schema.json",
+  "title": "AdmissionPrivacyResultV1",
+  "description": "Hash-bound privacy and secret scan result for one admission record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "recordId", "contentSha256", "privacyStatus", "secretStatus", "findings", "reviewerDecisionIds", "toolReceiptSha256", "resultSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-privacy-result-v1" },
+    "recordId": { "$ref": "#/$defs/id" },
+    "contentSha256": { "$ref": "#/$defs/sha256" },
+    "privacyStatus": { "enum": ["pass", "review", "fail"] },
+    "secretStatus": { "enum": ["pass", "review", "fail"] },
+    "findings": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "confidence", "findingFingerprintSha256"],
+        "properties": {
+          "kind": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,63}$" },
+          "confidence": { "enum": ["high", "low"] },
+          "findingFingerprintSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "reviewerDecisionIds": { "type": "array", "maxItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "resultSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-privacy-ledger.schema.json",
+  "title": "AdmissionPrivacyLedgerV1",
+  "description": "Hash-bound privacy authority ledger covering every admission record or explicitly unresolved record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "admissionRecordSetSha256", "results", "coveredRecordIds", "unresolvedRecordIds", "ledgerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-privacy-ledger-v1" },
+    "admissionRecordSetSha256": { "$ref": "#/$defs/sha256" },
+    "results": { "type": "array", "maxItems": 452382, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-privacy-result.schema.json" } },
+    "coveredRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "unresolvedRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "ledgerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

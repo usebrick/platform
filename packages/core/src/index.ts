@@ -256,6 +256,17 @@ export type { CalibrationAdmissionDecisionLedgerV1 } from './generated/calibrati
 export type { CalibrationAdmissionBlindAssignmentV1 } from './generated/calibration-admission-blind-assignment';
 export type { CalibrationAdmissionBlindReviewReceiptV1 } from './generated/calibration-admission-blind-review-receipt';
 export type { CalibrationHistoricalTemporalAttestationV1 } from './generated/calibration-historical-temporal-attestation';
+export type { AdmissionPrivacyResultV1 } from './generated/calibration-admission-privacy-result';
+export type { AdmissionPrivacyLedgerV1 } from './generated/calibration-admission-privacy-ledger';
+export {
+  calibrationAdmissionPrivacyResultSha256,
+  calibrationAdmissionPrivacyLedgerSha256,
+  isCalibrationAdmissionPrivacyResultV1,
+  isCalibrationAdmissionPrivacyLedgerV1,
+  validateCalibrationAdmissionPrivacyResultV1,
+  validateCalibrationAdmissionPrivacyLedgerV1,
+} from './calibration-admission-privacy';
+export type { CalibrationAdmissionPrivacyValidationV1 } from './calibration-admission-privacy';
 
 export {
   calibrationAdmissionSourceGenerationProposalSha256,
