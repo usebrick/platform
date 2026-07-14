@@ -29,6 +29,8 @@ Implementation commit: `286741d152cdf7b829ee45670b493bfe8a54eb65`
 
 ## Follow-up hostile-input fix
 
+Follow-up fix commit: `f828fdaf5246034b4eec06de6f9573305a20b29e`
+
 The validator now guards policy validation before calling
 `expandAdmissionWitnessConstraints`, so malformed policy JSON fails closed
 without throwing. A regression mutation covers this path.
