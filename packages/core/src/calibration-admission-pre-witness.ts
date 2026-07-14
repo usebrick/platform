@@ -1,8 +1,5 @@
 import { calibrationAdmissionSha256 } from './calibration-admission-evidence';
-import type {
-  AdmissionPreWitnessBundleV1,
-  Artifact as AdmissionPreWitnessArtifactV1,
-} from './generated/calibration-admission-pre-witness-bundle';
+import type { AdmissionPreWitnessBoundaryV1 } from './generated/calibration-admission-pre-witness-boundary';
 import {
   exactKeys,
   isJsonRecord,
@@ -10,9 +7,10 @@ import {
   withoutJsonKey,
 } from './calibration-admission-primitives';
 
-export type { AdmissionPreWitnessBundleV1, AdmissionPreWitnessArtifactV1 };
+export type { AdmissionPreWitnessBoundaryV1 };
+export type AdmissionPreWitnessArtifactV1 = AdmissionPreWitnessBoundaryV1['artifacts'][number];
 
-export interface CalibrationAdmissionPreWitnessValidationV1 {
+export interface CalibrationAdmissionPreWitnessBoundaryValidationV1 {
   readonly ok: boolean;
   readonly errors: readonly string[];
 }
@@ -42,7 +40,7 @@ const ARTIFACT_HASH_KEYS: Readonly<Record<ArtifactKind, string>> = {
   record_stream: 'recordStreamSha256',
 };
 
-function validation(errors: string[]): CalibrationAdmissionPreWitnessValidationV1 {
+function validation(errors: string[]): CalibrationAdmissionPreWitnessBoundaryValidationV1 {
   return { ok: errors.length === 0, errors };
 }
 
@@ -56,15 +54,15 @@ function isSafeRelativeStaticPath(value: unknown): value is string {
     && !value.endsWith('/');
 }
 
-export function calibrationAdmissionPreWitnessBundleSha256(
-  value: Omit<AdmissionPreWitnessBundleV1, 'preWitnessSha256'> | JsonObject,
+export function calibrationAdmissionPreWitnessBoundarySha256(
+  value: Omit<AdmissionPreWitnessBoundaryV1, 'preWitnessSha256'> | JsonObject,
 ): string {
   return calibrationAdmissionSha256(withoutJsonKey(value, 'preWitnessSha256'));
 }
 
-export function validateCalibrationAdmissionPreWitnessBundleV1(
+export function validateCalibrationAdmissionPreWitnessBoundaryV1(
   value: unknown,
-): CalibrationAdmissionPreWitnessValidationV1 {
+): CalibrationAdmissionPreWitnessBoundaryValidationV1 {
   const errors: string[] = [];
   if (!isJsonRecord(value) || !exactKeys(value, [
     'version',
@@ -77,9 +75,9 @@ export function validateCalibrationAdmissionPreWitnessBundleV1(
     'toolReceiptSha256',
     'artifacts',
     'preWitnessSha256',
-  ])) return validation(['pre-witness bundle shape is invalid']);
+  ])) return validation(['pre-witness boundary shape is invalid']);
 
-  if (value.version !== 'v10.3-admission-pre-witness-bundle-v1') errors.push('pre-witness bundle version is invalid');
+  if (value.version !== 'v10.3-admission-pre-witness-boundary-v1') errors.push('pre-witness boundary version is invalid');
   for (const key of [
     'admissionRecordSetSha256',
     'recordStreamSha256',
@@ -134,15 +132,15 @@ export function validateCalibrationAdmissionPreWitnessBundleV1(
 
   try {
     if (isSha256(value.preWitnessSha256)
-      && calibrationAdmissionPreWitnessBundleSha256(value) !== value.preWitnessSha256) {
-      errors.push('pre-witness bundle self-hash does not match canonical bytes');
+      && calibrationAdmissionPreWitnessBoundarySha256(value) !== value.preWitnessSha256) {
+      errors.push('pre-witness boundary self-hash does not match canonical bytes');
     }
   } catch {
-    errors.push('pre-witness bundle cannot be canonicalized');
+    errors.push('pre-witness boundary cannot be canonicalized');
   }
   return validation(errors);
 }
 
-export function isCalibrationAdmissionPreWitnessBundleV1(value: unknown): value is AdmissionPreWitnessBundleV1 {
-  return validateCalibrationAdmissionPreWitnessBundleV1(value).ok;
+export function isCalibrationAdmissionPreWitnessBoundaryV1(value: unknown): value is AdmissionPreWitnessBoundaryV1 {
+  return validateCalibrationAdmissionPreWitnessBoundaryV1(value).ok;
 }

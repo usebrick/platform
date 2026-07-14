@@ -293,14 +293,15 @@ export type {
   AdmissionLineageResultV1,
   CalibrationAdmissionLineageValidationV1,
 } from './calibration-admission-lineage';
-export type { AdmissionPreWitnessBundleV1, Artifact as AdmissionPreWitnessArtifactV1 } from './generated/calibration-admission-pre-witness-bundle';
+export type { AdmissionPreWitnessBoundaryV1 } from './generated/calibration-admission-pre-witness-boundary';
+export type { AdmissionPreWitnessArtifactV1 } from './calibration-admission-pre-witness';
 export {
-  calibrationAdmissionPreWitnessBundleSha256,
-  isCalibrationAdmissionPreWitnessBundleV1,
-  validateCalibrationAdmissionPreWitnessBundleV1,
+  calibrationAdmissionPreWitnessBoundarySha256,
+  isCalibrationAdmissionPreWitnessBoundaryV1,
+  validateCalibrationAdmissionPreWitnessBoundaryV1,
 } from './calibration-admission-pre-witness';
 export type {
-  CalibrationAdmissionPreWitnessValidationV1,
+  CalibrationAdmissionPreWitnessBoundaryValidationV1,
 } from './calibration-admission-pre-witness';
 
 export {

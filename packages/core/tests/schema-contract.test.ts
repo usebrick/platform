@@ -99,7 +99,7 @@ describe('schema contract and package delivery', () => {
       'calibration-admission-privacy-ledger',
       'calibration-admission-quality-ledger',
       'calibration-admission-lineage-ledger',
-      'calibration-admission-pre-witness-bundle',
+      'calibration-admission-pre-witness-boundary',
     ];
     expect(Object.keys(index.schemas).sort()).toEqual(expected.sort());
 

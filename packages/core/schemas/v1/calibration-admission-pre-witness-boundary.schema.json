@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-pre-witness-boundary.schema.json",
+  "title": "AdmissionPreWitnessBoundaryV1",
+  "description": "Hash-bound static admission inputs. This provisional boundary is intentionally witness-free; the richer pre-witness bundle remains a separate contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "admissionRecordSetSha256",
+    "recordStreamSha256",
+    "privacyLedgerSha256",
+    "qualityLedgerSha256",
+    "lineageLedgerSha256",
+    "overlapGenerationSha256",
+    "toolReceiptSha256",
+    "artifacts",
+    "preWitnessSha256"
+  ],
+  "properties": {
+    "version": { "const": "v10.3-admission-pre-witness-boundary-v1" },
+    "admissionRecordSetSha256": { "$ref": "#/$defs/sha256" },
+    "recordStreamSha256": { "$ref": "#/$defs/sha256" },
+    "privacyLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "qualityLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "lineageLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "overlapGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "prefixItems": [
+        { "$ref": "#/$defs/lineageArtifact" },
+        { "$ref": "#/$defs/overlapArtifact" },
+        { "$ref": "#/$defs/privacyArtifact" },
+        { "$ref": "#/$defs/qualityArtifact" },
+        { "$ref": "#/$defs/recordArtifact" }
+      ],
+      "items": false
+    },
+    "preWitnessSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "lineageArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relativePath", "sha256"],
+      "properties": {
+        "kind": { "const": "lineage_ledger" },
+        "relativePath": { "const": "static/lineage.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "overlapArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relativePath", "sha256"],
+      "properties": {
+        "kind": { "const": "overlap_generation" },
+        "relativePath": { "const": "static/overlap.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "privacyArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relativePath", "sha256"],
+      "properties": {
+        "kind": { "const": "privacy_ledger" },
+        "relativePath": { "const": "static/privacy.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "qualityArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relativePath", "sha256"],
+      "properties": {
+        "kind": { "const": "quality_ledger" },
+        "relativePath": { "const": "static/quality.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "recordArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relativePath", "sha256"],
+      "properties": {
+        "kind": { "const": "record_stream" },
+        "relativePath": { "const": "static/records.jsonl" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

@@ -58,6 +58,15 @@ const localSchemaResolver = {
  * stronger tuple types without hand-editing generated files.
  */
 function strengthenFixedTuples(file: string, generated: string): string {
+  // json-schema-to-typescript currently renders a `prefixItems` tuple with
+  // `items: false` as `never[]`. Preserve the five canonical artifact shapes
+  // in the generated public type while leaving the JSON Schema authoritative.
+  if (file === 'calibration-admission-pre-witness-boundary.schema.json') {
+    return generated.replace(
+      'artifacts: never[];',
+      'artifacts: [{ kind: "lineage_ledger"; relativePath: "static/lineage.json"; sha256: Sha256 }, { kind: "overlap_generation"; relativePath: "static/overlap.json"; sha256: Sha256 }, { kind: "privacy_ledger"; relativePath: "static/privacy.json"; sha256: Sha256 }, { kind: "quality_ledger"; relativePath: "static/quality.json"; sha256: Sha256 }, { kind: "record_stream"; relativePath: "static/records.jsonl"; sha256: Sha256 }];',
+    );
+  }
   if (file === 'calibration-admission-decision.schema.json') {
     return generated.replace('adjudicatesDecisionIds?: [unknown, unknown];', 'adjudicatesDecisionIds?: [Sha256, Sha256];');
   }
