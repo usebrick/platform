@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-quality-ledger.schema.json",
+  "title": "AdmissionQualityLedgerV1",
+  "description": "Hash-bound syntax, scaffold, and triviality outcomes for every admission record or explicitly unresolved record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "admissionRecordSetSha256", "results", "coveredRecordIds", "unresolvedRecordIds", "ledgerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-quality-ledger-v1" },
+    "admissionRecordSetSha256": { "$ref": "#/$defs/sha256" },
+    "results": {
+      "type": "array",
+      "maxItems": 452382,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "recordId", "contentSha256", "syntaxStatus", "scaffoldStatus", "scaffoldByteShare", "trivialStatus", "toolReceiptSha256", "resultSha256"],
+        "properties": {
+          "version": { "const": "v10.3-admission-quality-result-v1" },
+          "recordId": { "$ref": "#/$defs/id" },
+          "contentSha256": { "$ref": "#/$defs/sha256" },
+          "syntaxStatus": { "enum": ["pass", "fail", "unsupported"] },
+          "scaffoldStatus": { "enum": ["pass", "fail"] },
+          "scaffoldByteShare": { "type": "number", "minimum": 0, "maximum": 1 },
+          "trivialStatus": { "enum": ["pass", "fail"] },
+          "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+          "resultSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "coveredRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "unresolvedRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "ledgerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
