@@ -181,7 +181,7 @@ release Tasks 1-6 are bounded-complete, and the clean Task 6 prerequisite is
 now reproduced against commit `5f366143c` with zero status entries and packed
 Node 22/24 receipts. The installed-hook and incremental-cache policies are
 verified, the owner-authorized local commit boundary is complete, and the
-current continuation ledger is 99/178 checked.
+current continuation ledger is 98/178 checked.
 Admission is only 2/76 task items checked; the instructional checkbox example
 is excluded. The legacy corpus remains centralized under
 `/Users/cheng/corpus-expansion`; the two-source bounded round is persisted as
