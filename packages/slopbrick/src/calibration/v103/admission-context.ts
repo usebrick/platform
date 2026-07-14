@@ -39,6 +39,12 @@ const STATIC_ROOT = 'review/admission/authority/static-generations';
 const STREAM_RELATIVE_PATH = 'review/admission/admission-records.jsonl';
 const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
 const OVERLAP_TOOL_PROFILE_ID = 'admission-static-ledgers-v1';
+const REQUIRED_STATIC_ARTIFACTS = [
+  ['ledger', 'privacy-ledger.json'],
+  ['ledger', 'quality-ledger.json'],
+  ['ledger', 'lineage-ledger.json'],
+  ['bundle', STATIC_BUNDLE_PATH],
+] as const;
 
 const verifiedAdmissionContextBrand: unique symbol = Symbol('slopbrick.verified-admission-context');
 
@@ -220,6 +226,11 @@ function validateOverlapResourceReceipt(bundle: CalibrationAdmissionPreWitnessBu
 }
 
 function bundleArtifactReceipt(staticGeneration: { readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[] }): { readonly bytes: number; readonly sha256: string } {
+  for (const [kind, relativePath] of REQUIRED_STATIC_ARTIFACTS) {
+    if (!staticGeneration.artifacts.some((artifact) => artifact.kind === kind && artifact.relativePath === relativePath)) {
+      throw new Error(`static authority generation must contain exactly one ${relativePath} artifact`);
+    }
+  }
   const match = staticGeneration.artifacts.find((artifact) => artifact.kind === 'bundle' && artifact.relativePath === STATIC_BUNDLE_PATH);
   if (match === undefined) {
     throw new Error('static authority generation must contain exactly one pre-witness-bundle.json artifact');
