@@ -680,3 +680,19 @@ pass, and the package build succeeds. The recursive build still stops at the
 intentional Core codegen-freshness guard for uncommitted observation/health
 peers. This does not advance the real corpus, external tool authority,
 admission, clean-builder, release, or deployment gates.
+
+## Task 2B Core rich pre-witness contract checkpoint — 2026-07-14
+
+The subagent implementation and independent re-review approve the final rich
+pre-witness Core contract slice. The strict 40-key schema, generated peer,
+schema/index/fixture parity, pure validator, self-hash, smoke/canary policy
+expansion, stable component arrays, record-stream path/shape, and witness/search
+partition rejection are covered by 12 focused tests. Follow-up hostile-input
+fixes make malformed policy, undefined nested fields, malformed streams, and
+throwing proxies fail closed. Core passes 29 files/219 tests, codegen,
+schema validation, typecheck, build, and diff-check. This closes only the
+Core rich-bundle contract; authority rebuild, byte-backed context/disposition,
+CLI, real corpus, witness authority, and release gates remain open.
+
+- SDD ledger: Task 2B Core rich pre-witness contract: complete; commits
+  `286741d15..b6c85ad8f`; review clean.
