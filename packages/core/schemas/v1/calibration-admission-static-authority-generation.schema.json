@@ -20,7 +20,7 @@
     "artifacts": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 1000000,
+      "maxItems": 65536,
       "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" }
     },
     "generationSha256": { "$ref": "#/$defs/sha256" }

@@ -20,7 +20,7 @@
     "sourceGenerationProposals": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 1000000,
+      "maxItems": 452382,
       "items": {
         "type": "object",
         "additionalProperties": false,

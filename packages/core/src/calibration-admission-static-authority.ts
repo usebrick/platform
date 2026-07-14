@@ -33,6 +33,8 @@ const AUTHORITY_ROOT = 'review/admission/authority';
 const STATIC_GENERATIONS_ROOT = `${AUTHORITY_ROOT}/static-generations`;
 const SOURCE_GENERATIONS_ROOT = 'review/admission/sources';
 const SAFE_RELATIVE_PATH = /^(?!\/)(?!.*\\)(?!.*(?:^|\/)\.{1,2}(?:\/|$))(?!.*\/\/)(?!.*\/$)[^\u0000-\u001f]+$/;
+const MAX_SOURCE_REFERENCES = 452382;
+const MAX_GENERATION_ARTIFACTS = 65536;
 
 function result(errors: readonly string[]): CalibrationAdmissionStaticAuthorityValidationV1 {
   return { ok: errors.length === 0, errors: [...new Set(errors)] };
@@ -81,7 +83,7 @@ function authorityArtifact(value: unknown): value is CalibrationAdmissionArtifac
 }
 
 function sortedAuthorityArtifacts(value: unknown, allowEmpty = false): value is readonly CalibrationAdmissionArtifactReceiptV1[] {
-  if (!Array.isArray(value) || (!allowEmpty && value.length === 0) || !value.every(authorityArtifact)) return false;
+  if (!Array.isArray(value) || value.length > MAX_GENERATION_ARTIFACTS || (!allowEmpty && value.length === 0) || !value.every(authorityArtifact)) return false;
   const identities = value.map((entry) => `${entry.pathBase}\u0000${entry.relativePath}`);
   if (new Set(identities).size !== identities.length) return false;
   const keys = value.map((entry) => `${entry.pathBase}\u0000${entry.relativePath}\u0000${entry.kind}\u0000${entry.sha256}`);
@@ -104,7 +106,7 @@ function sourceProposal(value: unknown): boolean {
 }
 
 function sortedSourceProposals(value: unknown): value is readonly Record<string, unknown>[] {
-  if (!Array.isArray(value) || value.length === 0 || !value.every(sourceProposal)) return false;
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_SOURCE_REFERENCES || !value.every(sourceProposal)) return false;
   return sortedUniqueByPredicate(value.map((entry) => String((entry as Record<string, unknown>).sourceId)), isAdmissionId, true);
 }
 
@@ -121,7 +123,7 @@ function sourceGeneration(value: unknown): boolean {
 }
 
 function sortedSourceGenerations(value: unknown): value is readonly Record<string, unknown>[] {
-  if (!Array.isArray(value) || value.length === 0 || !value.every(sourceGeneration)) return false;
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_SOURCE_REFERENCES || !value.every(sourceGeneration)) return false;
   return sortedUniqueByPredicate(value.map((entry) => String((entry as Record<string, unknown>).sourceId)), isAdmissionId, true);
 }
 
