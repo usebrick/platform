@@ -11,6 +11,7 @@ import {
   calibrationAdmissionQualityLedgerSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionSourceCurrentSha256,
+  calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionToolReceiptSha256,
 } from '@usebrick/core';
@@ -188,6 +189,31 @@ describe('v10.3 byte-backed verified admission context', () => {
         : artifact),
     }));
     await expectRejected(receiptHash.root, receiptHash.evidence);
+  });
+
+  it('rejects a self-hashed source generation stored under a different current pointer hash', async () => {
+    const fixture = await runtimeFixture();
+    const sourceId = String(fixture.bundle.sourceReviews[0]!.sourceId);
+    const admissionRoot = join(fixture.root, 'review', 'admission');
+    const currentPath = join(admissionRoot, 'sources', sourceId, 'current.json');
+    const current = JSON.parse(await readFile(currentPath, 'utf8')) as {
+      readonly generationSha256: string;
+      readonly generationRelativePath: string;
+    };
+    const generationPath = join(admissionRoot, current.generationRelativePath, 'source-generation.json');
+    const generation = JSON.parse(await readFile(generationPath, 'utf8')) as Record<string, unknown>;
+    const generationBody = {
+      ...generation,
+      proposalId: `${String(generation.proposalId)}-alternate`,
+      generationSha256: '',
+    };
+    const mismatchedGeneration = {
+      ...generationBody,
+      generationSha256: calibrationAdmissionSourceGenerationSha256(generationBody),
+    };
+    expect(mismatchedGeneration.generationSha256).not.toBe(current.generationSha256);
+    await writeFile(generationPath, calibrationAdmissionCanonicalJson(mismatchedGeneration));
+    await expectRejected(fixture.root, fixture.evidence);
   });
 
   it('rejects a ledger artifact receipt hash mutation after generation/current rehashing', async () => {

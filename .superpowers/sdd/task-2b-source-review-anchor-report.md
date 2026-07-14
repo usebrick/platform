@@ -8,15 +8,19 @@ now resolves every rich-bundle source review through the exact
 `review/admission/sources/<sourceId>/current.json` pointer, its Core-validated
 hash-named generation, and `source-generation.json`. The runtime checks
 canonical UTF-8/no-BOM bytes, contained regular files and symlink ancestors,
-current/generation self-hashes and source/path joins, the generation's exact
-`sourceReviewSha256`, and the on-disk `source-review.json` receipt (canonical
-review JSON plus one final newline, exact byte count, and SHA-256).
+current/generation self-hashes and source/path joins (including the
+current-pointer generation hash against the loaded generation's own hash), the
+generation's exact `sourceReviewSha256`, and the on-disk `source-review.json`
+receipt (canonical review JSON plus one final newline, exact byte count, and
+SHA-256).
 
 The test-only fixture now materializes a minimal Core-valid genesis authority
 for all 329 fixture source reviews. Focused mutations cover missing source
 authorities, hash/path joins, receipt byte/hash drift, traversal, BOMs, and a
 rich-bundle review-reason mutation whose record/stream/bundle/static/current
-graph is rehashed while the external source generation remains unchanged.
+graph is rehashed while the external source generation remains unchanged, plus
+a self-hashed generation payload stored under a different current-pointer
+directory hash.
 
 ## Files
 
@@ -26,7 +30,7 @@ graph is rehashed while the external source generation remains unchanged.
 
 ## Gates
 
-- Focused context + disposition tests: **2 files / 13 tests passed**, one worker
+- Focused context + disposition tests: **2 files / 14 tests passed**, one worker
   with `NODE_OPTIONS=--max-old-space-size=2048`.
 - `corepack pnpm --filter slopbrick exec tsc --noEmit --pretty false` — passed.
 - `corepack pnpm --filter slopbrick build` — passed. The existing non-fatal

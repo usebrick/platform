@@ -380,6 +380,7 @@ async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: Calibr
     if (!isCalibrationAdmissionSourceGenerationV1(generationInput)) throw new Error(`source ${sourceId} generation failed Core validation`);
     const generation = generationInput as CalibrationAdmissionSourceGenerationV1;
     if (generation.generationSha256 !== calibrationAdmissionSourceGenerationSha256(generation)) throw new Error(`source ${sourceId} generation self-hash mismatch`);
+    if (generation.generationSha256 !== current.generationSha256) throw new Error(`source ${sourceId} generation hash does not match its current pointer`);
     const sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(review);
     if (generation.sourceId !== sourceId || generation.sourceReviewSha256 !== sourceReviewSha256) {
       throw new Error(`source ${sourceId} generation source-review hash is not bound to the rich bundle`);
