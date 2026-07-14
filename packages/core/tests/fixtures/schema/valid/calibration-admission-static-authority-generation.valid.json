@@ -1,0 +1,28 @@
+{
+  "version": "v10.3-admission-static-authority-generation-v1",
+  "generation": 0,
+  "inputGenerationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "overlapGenerationSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "privacyLedgerSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "qualityLedgerSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "lineageLedgerSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "preWitnessBundleSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "toolAuthoritySnapshot": {
+    "version": "v10.3-admission-tool-authority-snapshot-v1",
+    "indexGenerationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "profileIds": ["admission-static-ledgers-v1"],
+    "invocationIntentIds": [],
+    "receiptIds": [],
+    "snapshotSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "artifacts": [
+    {
+      "pathBase": "generation_local",
+      "relativePath": "privacy-ledger.json",
+      "kind": "ledger",
+      "bytes": 1,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "generationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

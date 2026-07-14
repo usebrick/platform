@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-input-generation.schema.json",
+  "title": "CalibrationAdmissionInputGenerationV1",
+  "description": "Immutable, content-addressed input generation joining source generations and overlap inputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generation", "evidenceBundleSha256", "sourceGenerations", "admissionRecordStreamSha256", "overlapUniverseSha256", "overlapUniverseRecordsSha256", "artifacts", "generationSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-input-generation-v1" },
+    "generation": { "$ref": "#/$defs/nonNegativeInteger" },
+    "parentInputGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceBundleSha256": { "$ref": "#/$defs/sha256" },
+    "sourceGenerations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId", "generationSha256", "relativePath", "artifactSetSha256"],
+        "properties": {
+          "sourceId": { "$ref": "#/$defs/id" },
+          "generationSha256": { "$ref": "#/$defs/sha256" },
+          "relativePath": { "$ref": "#/$defs/relativePath" },
+          "artifactSetSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "admissionRecordStreamSha256": { "$ref": "#/$defs/sha256" },
+    "overlapUniverseSha256": { "$ref": "#/$defs/sha256" },
+    "overlapUniverseRecordsSha256": { "$ref": "#/$defs/sha256" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" }
+    },
+    "generationSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

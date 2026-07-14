@@ -1,0 +1,37 @@
+{
+  "version": "v10.3-admission-input-generation-proposal-v1",
+  "proposalId": "genesis-input",
+  "operation": "create",
+  "expectedCurrentState": { "kind": "absent" },
+  "evidenceBundleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sourceGenerationProposals": [
+    {
+      "sourceId": "source-a",
+      "proposalId": "source-a-proposal",
+      "proposalRelativePath": "review/admission/sources/source-a/proposals/source-a-proposal.json",
+      "proposalSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "admissionRecordStream": {
+    "pathBase": "generation_local",
+    "relativePath": "admission-records.jsonl",
+    "kind": "record_stream",
+    "bytes": 1,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "overlapUniverse": {
+    "pathBase": "generation_local",
+    "relativePath": "overlap-universe.json",
+    "kind": "overlap_universe",
+    "bytes": 1,
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "overlapUniverseRecords": {
+    "pathBase": "generation_local",
+    "relativePath": "overlap-universe-records.jsonl",
+    "kind": "overlap_universe_stream",
+    "bytes": 1,
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "proposalSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

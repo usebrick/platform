@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-input-generation-proposal.schema.json",
+  "title": "CalibrationAdmissionInputGenerationProposalV1",
+  "description": "Reviewed, hash-bound proposal for publishing an immutable admission input generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "proposalId", "operation", "expectedCurrentState", "evidenceBundleSha256", "sourceGenerationProposals", "admissionRecordStream", "overlapUniverse", "overlapUniverseRecords", "proposalSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-input-generation-proposal-v1" },
+    "proposalId": { "$ref": "#/$defs/id" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "staticGenerationSha256"], "properties": { "kind": { "const": "existing" }, "staticGenerationSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "evidenceBundleSha256": { "$ref": "#/$defs/sha256" },
+    "sourceGenerationProposals": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId", "proposalId", "proposalRelativePath", "proposalSha256"],
+        "properties": {
+          "sourceId": { "$ref": "#/$defs/id" },
+          "proposalId": { "$ref": "#/$defs/id" },
+          "proposalRelativePath": { "$ref": "#/$defs/relativePath" },
+          "proposalSha256": { "$ref": "#/$defs/sha256" },
+          "approvalRelativePath": { "$ref": "#/$defs/relativePath" },
+          "approvalSha256": { "$ref": "#/$defs/sha256" }
+        },
+        "allOf": [
+          {
+            "if": { "required": ["approvalRelativePath"], "properties": { "approvalRelativePath": {} } },
+            "then": { "required": ["approvalSha256"], "properties": { "approvalSha256": {} } }
+          },
+          {
+            "if": { "required": ["approvalSha256"], "properties": { "approvalSha256": {} } },
+            "then": { "required": ["approvalRelativePath"], "properties": { "approvalRelativePath": {} } }
+          }
+        ]
+      }
+    },
+    "admissionRecordStream": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" },
+    "overlapUniverse": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" },
+    "overlapUniverseRecords": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" },
+    "proposalSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

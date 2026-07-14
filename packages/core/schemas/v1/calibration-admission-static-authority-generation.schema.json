@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-static-authority-generation.schema.json",
+  "title": "CalibrationAdmissionStaticAuthorityGenerationV1",
+  "description": "Immutable, content-addressed static authority generation joining all pre-witness ledgers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generation", "inputGenerationSha256", "overlapGenerationSha256", "privacyLedgerSha256", "qualityLedgerSha256", "lineageLedgerSha256", "preWitnessBundleSha256", "toolAuthoritySnapshot", "artifacts", "generationSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-static-authority-generation-v1" },
+    "generation": { "$ref": "#/$defs/nonNegativeInteger" },
+    "parentStaticGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "inputGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "overlapGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "privacyLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "qualityLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "lineageLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "preWitnessBundleSha256": { "$ref": "#/$defs/sha256" },
+    "toolAuthoritySnapshot": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-authority-snapshot.schema.json" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-artifact-receipt.schema.json" }
+    },
+    "generationSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+  }
+}

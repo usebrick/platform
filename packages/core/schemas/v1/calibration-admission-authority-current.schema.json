@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-authority-current.schema.json",
+  "title": "CalibrationAdmissionAuthorityCurrentV1",
+  "description": "Self-hashed current pointer for the published static admission authority generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generation", "staticGenerationSha256", "staticGenerationRelativePath", "currentSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-authority-current-v1" },
+    "generation": { "$ref": "#/$defs/nonNegativeInteger" },
+    "staticGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "staticGenerationRelativePath": { "$ref": "#/$defs/relativePath" },
+    "currentSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

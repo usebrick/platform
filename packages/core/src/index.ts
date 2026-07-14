@@ -327,6 +327,28 @@ export type {
 } from './calibration-admission-source-generation';
 
 export {
+  calibrationAdmissionInputGenerationProposalSha256,
+  calibrationAdmissionInputGenerationSha256,
+  calibrationAdmissionStaticAuthorityGenerationSha256,
+  calibrationAdmissionAuthorityCurrentSha256,
+  isCalibrationAdmissionInputGenerationProposalV1,
+  isCalibrationAdmissionInputGenerationV1,
+  isCalibrationAdmissionStaticAuthorityGenerationV1,
+  isCalibrationAdmissionAuthorityCurrentV1,
+  validateCalibrationAdmissionInputGenerationProposalV1,
+  validateCalibrationAdmissionInputGenerationV1,
+  validateCalibrationAdmissionStaticAuthorityGenerationV1,
+  validateCalibrationAdmissionAuthorityCurrentV1,
+} from './calibration-admission-static-authority';
+export type {
+  CalibrationAdmissionStaticAuthorityValidationV1,
+} from './calibration-admission-static-authority';
+export type { CalibrationAdmissionInputGenerationProposalV1 } from './generated/calibration-admission-input-generation-proposal';
+export type { CalibrationAdmissionInputGenerationV1 } from './generated/calibration-admission-input-generation';
+export type { CalibrationAdmissionStaticAuthorityGenerationV1 } from './generated/calibration-admission-static-authority-generation';
+export type { CalibrationAdmissionAuthorityCurrentV1 } from './generated/calibration-admission-authority-current';
+
+export {
   calibrationAdmissionBlindAssignmentId,
   calibrationAdmissionBlindReviewReceiptId,
   calibrationAdmissionAdjudicatorAssignmentId,
