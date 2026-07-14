@@ -19,7 +19,7 @@ export interface CalibrationAdmissionStaticAuthorityGenerationV1 {
   toolAuthoritySnapshot: CalibrationAdmissionToolAuthoritySnapshotV1;
   /**
    * @minItems 1
-   * @maxItems 1000000
+   * @maxItems 65536
    */
   artifacts: [CalibrationAdmissionArtifactReceiptV1, ...CalibrationAdmissionArtifactReceiptV1[]];
   generationSha256: Sha256;

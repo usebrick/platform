@@ -21,7 +21,7 @@ export interface CalibrationAdmissionInputGenerationProposalV1 {
   evidenceBundleSha256: Sha256;
   /**
    * @minItems 1
-   * @maxItems 1000000
+   * @maxItems 452382
    */
   sourceGenerationProposals: [
     {

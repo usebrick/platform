@@ -15,7 +15,7 @@ export interface CalibrationAdmissionInputGenerationV1 {
   evidenceBundleSha256: Sha256;
   /**
    * @minItems 1
-   * @maxItems 1000000
+   * @maxItems 452382
    */
   sourceGenerations: [
     {
@@ -36,7 +36,7 @@ export interface CalibrationAdmissionInputGenerationV1 {
   overlapUniverseRecordsSha256: Sha256;
   /**
    * @minItems 1
-   * @maxItems 1000000
+   * @maxItems 65536
    */
   artifacts: [CalibrationAdmissionArtifactReceiptV1, ...CalibrationAdmissionArtifactReceiptV1[]];
   generationSha256: Sha256;
