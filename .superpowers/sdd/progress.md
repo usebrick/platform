@@ -724,3 +724,26 @@ CLI `rebuild:pre-witness`, `static-authority:recover`, and `census:preview`,
 byte-backed rebuild/recovery, census/witness/resource receipts, corpus
 admission, and release gates remain open; no corpus or remote/release state
 changed.
+
+### Task 2B prebuilt byte-backed authority graph checkpoint — 2026-07-14
+
+The bounded SlopBrick prebuilt graph validator is implemented and independently
+approved at commits `136ad461a`, `383bf4c09`, and `f115bf7e6`; evidence is in
+`.superpowers/sdd/task-2b-authority-rebuild-graph-report.md` and review is in
+`.superpowers/sdd/task-2b-authority-rebuild-graph-review.md`. Focused Vitest is
+**13/13**, with SlopBrick typecheck, build, and `git diff --check` green.
+
+The pure fail-closed boundary requires exact top-level keys, canonical
+proposal/input/static/current bytes, an all-or-nothing prior-current byte pair,
+exact input/static receipt maps, and ordered per-source generation/current/
+source-review/artifact maps. Core validates proposal → input → static →
+current/prior relation joins; source IDs, paths, hashes, fixed review role, raw
+byte sizes, and SHA-256 values are bound. It performs no filesystem, CLI,
+corpus, publication, recovery, witness/context, or release I/O.
+
+This remains a bounded prebuilt validator, not full Task 2B. The ledger stays
+`98/178` continuation and `2/76` admission; `static_authority_unavailable` and
+`witness_authority_unavailable` remain, and filesystem publication/recovery,
+CLI, real receipts/corpus, witness/context authority, corpus admission, and
+release gates are deferred. No corpus labels/bytes or remote/release state
+changed.
