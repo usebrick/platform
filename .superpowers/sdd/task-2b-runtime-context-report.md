@@ -47,11 +47,22 @@ rebuild orchestration, CLI work, corpus writes, or release changes.
 
 - Static-authority resolution now reads only the fixed current pointer, its
   exact hash-named `generation.json`, the exact `pre-witness-bundle.json`, and
-  the exact record stream. It verifies the bundle artifact receipt and does
-  not read arbitrary `staticGeneration.artifacts` projections.
+  the exact record stream. It requires exactly one metadata receipt for each
+  static ledger/bundle role, binds every receipt `sha256` to the corresponding
+  static-generation semantic hash, checks canonical projection byte counts,
+  and does not read arbitrary `staticGeneration.artifacts` projections.
 - Parsed stream record IDs are passed directly to Core privacy, quality, and
   lineage validators; their covered/unresolved partitions must equal that
   exact stream set.
+- The private record map now retains each complete canonical record plus its
+  canonical JSON/hash. Records are joined to the matching source review and,
+  when present, privacy/quality/lineage result fields and reviewer decisions;
+  records unresolved by any required ledger are forced to remain quarantined.
+  The current Core schema exposes no independent per-record hash beyond the
+  stream's canonical-record aggregate, so this slice does not invent a second
+  trust field; represented cross-ledger joins fail closed instead.
+- Canonical JSON and JSONL readers reject a UTF-8 BOM before decoding, avoiding
+  `TextDecoder`'s BOM stripping behavior.
 - Overlap admission now requires both completion/limit flags and exactly one
   indexed, successful `authority:overlap` receipt from the frozen static-ledger
   profile whose canonical receipt hash equals `toolReceiptSha256`. Placeholder
@@ -65,7 +76,7 @@ rebuild orchestration, CLI work, corpus writes, or release changes.
 
 ### Review-fix gates
 
-- Focused context + disposition: **2 files / 8 tests passed** with one worker
+- Focused context + disposition: **2 files / 11 tests passed** with one worker
   and bounded heap.
 - Disposition file alone: **1 file / 2 tests passed**.
 - `corepack pnpm --filter slopbrick typecheck`: passed.
@@ -76,4 +87,5 @@ rebuild orchestration, CLI work, corpus writes, or release changes.
 The implementation fix is committed as `89d6f1d19` (`fix(calibration):
 tighten runtime context authority joins`), with the metadata-only static role
 anchor follow-up in `da724db75` (`fix(calibration): retain static artifact role
-anchors`).
+anchors`). This closeout includes the focused mutation and integrity fixes in
+the current commit.

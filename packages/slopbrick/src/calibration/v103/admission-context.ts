@@ -10,6 +10,7 @@ import {
   calibrationAdmissionPrivacyLedgerSha256,
   calibrationAdmissionQualityLedgerSha256,
   calibrationAdmissionSha256,
+  calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
   calibrationAdmissionToolReceiptSha256,
   isCalibrationAdmissionAuthorityCurrentV1,
@@ -59,7 +60,11 @@ export type VerifiedAdmissionContextResult =
   | { readonly ok: false; readonly errors: readonly string[] };
 
 const verifiedContexts = new WeakSet<object>();
-type VerifiedRecord = Readonly<Pick<CalibrationAdmissionRecordV103, 'recordId' | 'declaredDisposition' | 'rejectionReasons'>>;
+type VerifiedRecord = Readonly<{
+  readonly record: CalibrationAdmissionRecordV103;
+  readonly canonicalJson: string;
+  readonly canonicalSha256: string;
+}>;
 const verifiedRecordMaps = new WeakMap<object, ReadonlyMap<string, VerifiedRecord>>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -77,6 +82,10 @@ function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
 
 function hashBytes(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
+}
+
+function hasUtf8Bom(bytes: Uint8Array): boolean {
+  return bytes.byteLength >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
 }
 
 function errorMessage(error: unknown): string {
@@ -133,6 +142,7 @@ async function readContainedFile(root: AdmissionRoot, absolutePath: string): Pro
 
 async function readCanonicalJson(root: AdmissionRoot, absolutePath: string, label: string): Promise<unknown> {
   const bytes = await readContainedFile(root, absolutePath);
+  if (hasUtf8Bom(bytes)) throw new Error(`${label} must not contain a UTF-8 BOM`);
   let text: string;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
@@ -156,6 +166,7 @@ async function readCanonicalJson(root: AdmissionRoot, absolutePath: string, labe
 }
 
 function parseCanonicalJsonl(bytes: Uint8Array): readonly unknown[] {
+  if (hasUtf8Bom(bytes)) throw new Error('record stream must not contain a UTF-8 BOM');
   const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   if (text.length === 0) return [];
   if (!text.endsWith('\n')) throw new Error('record stream must end with a final newline');
@@ -225,23 +236,38 @@ function validateOverlapResourceReceipt(bundle: CalibrationAdmissionPreWitnessBu
   return errors;
 }
 
-function bundleArtifactReceipt(staticGeneration: { readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[] }): { readonly bytes: number; readonly sha256: string } {
-  for (const [kind, relativePath] of REQUIRED_STATIC_ARTIFACTS) {
-    if (!staticGeneration.artifacts.some((artifact) => artifact.kind === kind && artifact.relativePath === relativePath)) {
-      throw new Error(`static authority generation must contain exactly one ${relativePath} artifact`);
-    }
-  }
-  const match = staticGeneration.artifacts.find((artifact) => artifact.kind === 'bundle' && artifact.relativePath === STATIC_BUNDLE_PATH);
-  if (match === undefined) {
-    throw new Error('static authority generation must contain exactly one pre-witness-bundle.json artifact');
-  }
-  return match;
+type StaticArtifactReceipt = Readonly<{ readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }>;
+
+type RequiredStaticArtifactReceipts = Readonly<{
+  readonly privacyLedger: StaticArtifactReceipt;
+  readonly qualityLedger: StaticArtifactReceipt;
+  readonly lineageLedger: StaticArtifactReceipt;
+  readonly bundle: StaticArtifactReceipt;
+}>;
+
+function requiredStaticArtifactReceipts(staticGeneration: { readonly artifacts: readonly StaticArtifactReceipt[] }): RequiredStaticArtifactReceipts {
+  const findExactlyOne = (kind: string, relativePath: string): StaticArtifactReceipt => {
+    const matches = staticGeneration.artifacts.filter((artifact) => artifact.kind === kind && artifact.relativePath === relativePath);
+    if (matches.length !== 1) throw new Error(`static authority generation must contain exactly one ${relativePath} artifact`);
+    return matches[0]!;
+  };
+  return {
+    privacyLedger: findExactlyOne(REQUIRED_STATIC_ARTIFACTS[0]![0], REQUIRED_STATIC_ARTIFACTS[0]![1]),
+    qualityLedger: findExactlyOne(REQUIRED_STATIC_ARTIFACTS[1]![0], REQUIRED_STATIC_ARTIFACTS[1]![1]),
+    lineageLedger: findExactlyOne(REQUIRED_STATIC_ARTIFACTS[2]![0], REQUIRED_STATIC_ARTIFACTS[2]![1]),
+    bundle: findExactlyOne(REQUIRED_STATIC_ARTIFACTS[3]![0], REQUIRED_STATIC_ARTIFACTS[3]![1]),
+  };
 }
 
-function verifyBundleArtifactReceipt(bundleArtifact: { readonly bytes: number; readonly sha256: string }, bundle: CalibrationAdmissionPreWitnessBundleV1): void {
-  const canonical = Buffer.from(calibrationAdmissionCanonicalJson(bundle));
-  if (bundleArtifact.sha256 !== hashBytes(canonical) || bundleArtifact.bytes !== canonical.byteLength) {
-    throw new Error('pre-witness bundle artifact receipt does not match canonical bytes');
+function verifyCanonicalArtifactBytes(
+  artifact: StaticArtifactReceipt,
+  expected: unknown,
+  expectedSha256: string,
+  label: string,
+): void {
+  const canonical = Buffer.from(calibrationAdmissionCanonicalJson(expected), 'utf8');
+  if (artifact.sha256 !== expectedSha256 || artifact.bytes !== canonical.byteLength) {
+    throw new Error(`${label} artifact receipt does not match canonical bytes/hash`);
   }
 }
 
@@ -250,6 +276,25 @@ function verifyStaticLedgerAnchors(bundle: CalibrationAdmissionPreWitnessBundleV
   if (staticGeneration.privacyLedgerSha256 !== bundle.privacyLedger.ledgerSha256 || staticGeneration.qualityLedgerSha256 !== bundle.qualityLedger.ledgerSha256 || staticGeneration.lineageLedgerSha256 !== bundle.lineageLedger.ledgerSha256) {
     throw new Error('static generation ledger joins do not match the rich bundle');
   }
+}
+
+function verifyStaticArtifactReceipts(
+  artifacts: RequiredStaticArtifactReceipts,
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  staticGeneration: {
+    readonly privacyLedgerSha256: string;
+    readonly qualityLedgerSha256: string;
+    readonly lineageLedgerSha256: string;
+    readonly preWitnessBundleSha256: string;
+  },
+): void {
+  // Static-generation artifact sha256 fields are the semantic hashes carried
+  // by the static graph; their byte counts still bind the exact canonical rich
+  // projections without reading those projections from disk.
+  verifyCanonicalArtifactBytes(artifacts.privacyLedger, bundle.privacyLedger, staticGeneration.privacyLedgerSha256, 'privacy ledger');
+  verifyCanonicalArtifactBytes(artifacts.qualityLedger, bundle.qualityLedger, staticGeneration.qualityLedgerSha256, 'quality ledger');
+  verifyCanonicalArtifactBytes(artifacts.lineageLedger, bundle.lineageLedger, staticGeneration.lineageLedgerSha256, 'lineage ledger');
+  verifyCanonicalArtifactBytes(artifacts.bundle, bundle, staticGeneration.preWitnessBundleSha256, 'pre-witness bundle');
 }
 
 function verifyToolAuthoritySnapshotEquality(bundle: CalibrationAdmissionPreWitnessBundleV1, staticGeneration: { readonly toolAuthoritySnapshot: unknown }): void {
@@ -315,17 +360,86 @@ function verifyStreamRecords(bundle: CalibrationAdmissionPreWitnessBundleV1, str
     if (!isCalibrationAdmissionRecordV103(value)) throw new Error('record stream contains a record that failed Core validation');
     if (recordMap.has(value.recordId)) throw new Error(`record stream contains duplicate record ID ${value.recordId}`);
     recordIds.push(value.recordId);
-    recordMap.set(value.recordId, value as unknown as VerifiedRecord);
+    const canonicalJson = calibrationAdmissionCanonicalJson(value);
+    recordMap.set(value.recordId, {
+      record: value as unknown as CalibrationAdmissionRecordV103,
+      canonicalJson,
+      canonicalSha256: hashBytes(Buffer.from(canonicalJson, 'utf8')),
+    });
   }
   return { recordIds, recordMap };
 }
 
+function validateRecordAuthority(
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  records: ReadonlyMap<string, VerifiedRecord>,
+): readonly string[] {
+  const errors: string[] = [];
+  const sourceReviews = new Map(bundle.sourceReviews.map((review) => [review.sourceId, review]));
+  const privacyResults = new Map(bundle.privacyLedger.results.map((result) => [result.recordId, result]));
+  const qualityResults = new Map(bundle.qualityLedger.results.map((result) => [result.recordId, result]));
+  const lineageResults = new Map(bundle.lineageLedger.results.map((result) => [result.recordId, result]));
+  const unresolvedRecordIds = new Set([
+    ...bundle.privacyLedger.unresolvedRecordIds,
+    ...bundle.qualityLedger.unresolvedRecordIds,
+    ...bundle.lineageLedger.unresolvedRecordIds,
+  ]);
+
+  for (const verified of records.values()) {
+    const record = verified.record;
+    if (verified.canonicalSha256 !== calibrationAdmissionSha256(record)
+      || verified.canonicalJson !== calibrationAdmissionCanonicalJson(record)) {
+      errors.push(`record ${record.recordId} canonical binding is invalid`);
+    }
+
+    const sourceReview = sourceReviews.get(record.materialSourceId);
+    if (sourceReview === undefined || record.sourceReviewSha256 !== calibrationAdmissionSourceReviewSha256(sourceReview)) {
+      errors.push(`record ${record.recordId} source review hash is not bound to its material source`);
+    }
+    if (unresolvedRecordIds.has(record.recordId) && record.declaredDisposition !== 'quarantine') {
+      errors.push(`record ${record.recordId} is unresolved but not quarantined`);
+    }
+
+    const privacy = privacyResults.get(record.recordId);
+    if (privacy !== undefined) {
+      if (record.contentSha256 !== privacy.contentSha256) errors.push(`record ${record.recordId} content hash differs from privacy result`);
+      if (record.claimedAudits.privacy !== privacy.privacyStatus || record.claimedAudits.secrets !== privacy.secretStatus) {
+        errors.push(`record ${record.recordId} claimed privacy audits differ from the privacy result`);
+      }
+      if (privacy.reviewerDecisionIds.some((decisionId) => !record.reviewerDecisionIds.includes(decisionId))) {
+        errors.push(`record ${record.recordId} does not include all privacy reviewer decisions`);
+      }
+    }
+
+    const quality = qualityResults.get(record.recordId);
+    if (quality !== undefined) {
+      if (record.contentSha256 !== quality.contentSha256) errors.push(`record ${record.recordId} content hash differs from quality result`);
+      if (record.claimedAudits.syntax !== quality.syntaxStatus || record.claimedAudits.scaffoldByteShare !== quality.scaffoldByteShare) {
+        errors.push(`record ${record.recordId} claimed quality audits differ from the quality result`);
+      }
+    }
+
+    const lineage = lineageResults.get(record.recordId);
+    if (lineage !== undefined) {
+      const claimedPairGroupId = record.claimedLineage.pairGroupId ?? null;
+      if (record.contentSha256 !== lineage.contentSha256
+        || record.claimedLineage.familyId !== lineage.familyId
+        || claimedPairGroupId !== lineage.pairGroupId
+        || record.claimedLineage.exactClusterId !== lineage.exactClusterId
+        || record.claimedLineage.nearClusterId !== lineage.nearClusterId) {
+        errors.push(`record ${record.recordId} claimed lineage differs from the lineage result`);
+      }
+    }
+  }
+  return errors;
+}
+
 function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, staticGeneration: ReturnType<typeof verifyStaticGeneration>): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
   return (async () => {
-    const bundleArtifact = bundleArtifactReceipt(staticGeneration);
+    const artifacts = requiredStaticArtifactReceipts(staticGeneration);
     const bundle = verifyBundle(await readCanonicalJson(root, join(staticPath, STATIC_BUNDLE_PATH), 'pre-witness bundle'));
-    verifyBundleArtifactReceipt(bundleArtifact, bundle);
     verifyStaticLedgerAnchors(bundle, staticGeneration);
+    verifyStaticArtifactReceipts(artifacts, bundle, staticGeneration);
     verifyToolAuthoritySnapshotEquality(bundle, staticGeneration);
     const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
     if (stream.relativePath !== STREAM_RELATIVE_PATH) throw new Error('pre-witness bundle record stream path is not the fixed admission path');
@@ -336,6 +450,8 @@ function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, st
     if (!sourceReviewValidation.ok) throw new Error(`source register/review ID or binding validation failed: ${sourceReviewValidation.errors.join(', ')}`);
     const ledgerErrors = validateBundleLedgers(bundle, recordIds);
     if (ledgerErrors.length > 0) throw new Error(ledgerErrors.join('; '));
+    const recordAuthorityErrors = validateRecordAuthority(bundle, verifiedRecords.recordMap);
+    if (recordAuthorityErrors.length > 0) throw new Error(recordAuthorityErrors.join('; '));
     const overlapErrors = validateOverlapResourceReceipt(bundle);
     if (overlapErrors.length > 0) throw new Error(overlapErrors.join('; '));
     return { bundle, streamBytes, records: verifiedRecords.recordMap };
@@ -411,5 +527,5 @@ export function deriveAdmissionDisposition(context: VerifiedAdmissionContextV1, 
   if (!isVerifiedAdmissionContext(context)) throw new InvalidAdmissionContextError();
   const record = verifiedRecordMaps.get(context as object)?.get(recordId);
   if (!record) return { disposition: 'quarantine', reasons: ['unknown_record_id'] };
-  return { disposition: record.declaredDisposition, reasons: [...record.rejectionReasons] };
+  return { disposition: record.record.declaredDisposition, reasons: [...record.record.rejectionReasons] };
 }

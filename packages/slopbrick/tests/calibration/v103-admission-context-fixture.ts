@@ -34,6 +34,7 @@ import {
   isCalibrationAdmissionPreWitnessBundleV1,
   validateCalibrationAdmissionPreWitnessBundleV1,
   type CalibrationAdmissionPreWitnessBundleV1,
+  type CalibrationAdmissionRecordV103,
   type CalibrationAdmissionStaticAuthorityGenerationV1,
 } from '@usebrick/core';
 
@@ -286,10 +287,10 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   const qualityBytes = Buffer.from(calibrationAdmissionCanonicalJson(qualityLedger));
   const lineageBytes = Buffer.from(calibrationAdmissionCanonicalJson(lineageLedger));
   const artifacts = [
-    { pathBase: 'generation_local' as const, relativePath: 'lineage-ledger.json', kind: 'ledger' as const, bytes: lineageBytes.byteLength, sha256: sha(lineageBytes.toString('utf8')) },
-    { pathBase: 'generation_local' as const, relativePath: 'pre-witness-bundle.json', kind: 'bundle' as const, bytes: bundleBytes.byteLength, sha256: sha(bundleBytes.toString('utf8')) },
-    { pathBase: 'generation_local' as const, relativePath: 'privacy-ledger.json', kind: 'ledger' as const, bytes: privacyBytes.byteLength, sha256: sha(privacyBytes.toString('utf8')) },
-    { pathBase: 'generation_local' as const, relativePath: 'quality-ledger.json', kind: 'ledger' as const, bytes: qualityBytes.byteLength, sha256: sha(qualityBytes.toString('utf8')) },
+    { pathBase: 'generation_local' as const, relativePath: 'lineage-ledger.json', kind: 'ledger' as const, bytes: lineageBytes.byteLength, sha256: lineageLedger.ledgerSha256 },
+    { pathBase: 'generation_local' as const, relativePath: 'pre-witness-bundle.json', kind: 'bundle' as const, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 },
+    { pathBase: 'generation_local' as const, relativePath: 'privacy-ledger.json', kind: 'ledger' as const, bytes: privacyBytes.byteLength, sha256: privacyLedger.ledgerSha256 },
+    { pathBase: 'generation_local' as const, relativePath: 'quality-ledger.json', kind: 'ledger' as const, bytes: qualityBytes.byteLength, sha256: qualityLedger.ledgerSha256 },
   ].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
   const staticBody = {
     version: 'v10.3-admission-static-authority-generation-v1' as const,
@@ -349,7 +350,7 @@ export async function rewriteRuntimeBundle(
   const bundle = { ...mutatedBody, preWitnessBundleSha256: calibrationAdmissionPreWitnessBundleSha256(mutatedBody) } as CalibrationAdmissionPreWitnessBundleV1;
   const bundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(bundle), 'utf8');
   const artifacts = staticGeneration.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === 'pre-witness-bundle.json'
-    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: sha(bundleBytes.toString('utf8')) }
+    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 }
     : artifact);
   const staticBody = {
     ...staticGeneration,
@@ -366,6 +367,64 @@ export async function rewriteRuntimeBundle(
   await mkdir(nextStaticPath, { recursive: true });
   await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextStatic));
   await writeFile(join(nextStaticPath, 'pre-witness-bundle.json'), bundleBytes);
+  const currentBody = {
+    ...current,
+    staticGenerationSha256: nextStatic.generationSha256,
+    staticGenerationRelativePath: `review/admission/authority/static-generations/${nextStatic.generationSha256}`,
+    currentSha256: '',
+  };
+  const nextCurrent = { ...currentBody, currentSha256: calibrationAdmissionAuthorityCurrentSha256(currentBody) };
+  await writeFile(currentPath, calibrationAdmissionCanonicalJson(nextCurrent));
+}
+
+/** Rewrite the exact record stream and re-publish its enclosing authority graph. */
+export async function rewriteRuntimeRecord(
+  root: string,
+  mutate: (record: CalibrationAdmissionRecordV103) => CalibrationAdmissionRecordV103,
+): Promise<void> {
+  const currentPath = join(root, 'review', 'admission', 'authority', 'current.json');
+  const current = JSON.parse(await readFile(currentPath, 'utf8')) as {
+    readonly generation: number;
+    readonly staticGenerationSha256: string;
+    readonly staticGenerationRelativePath: string;
+    readonly currentSha256: string;
+    readonly version: 'v10.3-admission-authority-current-v1';
+  };
+  const staticPath = join(root, current.staticGenerationRelativePath);
+  const staticGeneration = JSON.parse(await readFile(join(staticPath, 'generation.json'), 'utf8')) as CalibrationAdmissionStaticAuthorityGenerationV1;
+  const existingBundle = JSON.parse(await readFile(join(staticPath, 'pre-witness-bundle.json'), 'utf8')) as CalibrationAdmissionPreWitnessBundleV1;
+  const existingStream = await readFile(join(root, 'review', 'admission', 'admission-records.jsonl'), 'utf8');
+  const records = existingStream.trimEnd().split('\n').filter((line) => line.length > 0).map((line) => JSON.parse(line) as CalibrationAdmissionRecordV103);
+  const mutatedRecords = records.map(mutate);
+  const streamBytes = Buffer.from(`${mutatedRecords.map((record) => calibrationAdmissionCanonicalJson(record)).join('\n')}\n`, 'utf8');
+  const streamBody = {
+    ...existingBundle.admissionRecordStream,
+    recordsJsonlSha256: admissionRecordStreamContentSha256(streamBytes),
+    recordCount: mutatedRecords.length,
+    recordIdSetSha256: calibrationAdmissionSha256(mutatedRecords.map((record) => record.recordId).sort()),
+    canonicalRecordHashesSha256: calibrationAdmissionSha256(mutatedRecords.map((record) => calibrationAdmissionSha256(record)).sort()),
+    streamSha256: '',
+  };
+  const stream = { ...streamBody, streamSha256: admissionRecordStreamSha256(streamBody) };
+  const bundleBody = { ...existingBundle, admissionRecordStream: stream, preWitnessBundleSha256: '' };
+  const bundle = { ...bundleBody, preWitnessBundleSha256: calibrationAdmissionPreWitnessBundleSha256(bundleBody) } as CalibrationAdmissionPreWitnessBundleV1;
+  const bundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(bundle), 'utf8');
+  const artifacts = staticGeneration.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === 'pre-witness-bundle.json'
+    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 }
+    : artifact);
+  const staticBody = {
+    ...staticGeneration,
+    preWitnessBundleSha256: bundle.preWitnessBundleSha256,
+    toolAuthoritySnapshot: bundle.toolAuthoritySnapshot,
+    artifacts,
+    generationSha256: '',
+  };
+  const nextStatic = { ...staticBody, generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(staticBody) };
+  const nextStaticPath = join(root, 'review', 'admission', 'authority', 'static-generations', nextStatic.generationSha256);
+  await mkdir(nextStaticPath, { recursive: true });
+  await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextStatic));
+  await writeFile(join(nextStaticPath, 'pre-witness-bundle.json'), bundleBytes);
+  await writeFile(join(root, 'review', 'admission', 'admission-records.jsonl'), streamBytes);
   const currentBody = {
     ...current,
     staticGenerationSha256: nextStatic.generationSha256,

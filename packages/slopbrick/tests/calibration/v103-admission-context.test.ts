@@ -16,6 +16,7 @@ import {
 import {
   cleanupRuntimeFixtures,
   rewriteRuntimeBundle,
+  rewriteRuntimeRecord,
   rewriteRuntimeStaticGeneration,
   runtimeFixture,
 } from './v103-admission-context-fixture';
@@ -120,6 +121,56 @@ describe('v10.3 byte-backed verified admission context', () => {
       })(),
     }));
     await expectRejected(snapshotJoin.root, snapshotJoin.evidence);
+  });
+
+  it('rejects a ledger artifact receipt hash mutation after generation/current rehashing', async () => {
+    const fixture = await runtimeFixture();
+    await rewriteRuntimeStaticGeneration(fixture.root, (generation) => ({
+      ...generation,
+      artifacts: generation.artifacts.map((artifact) => artifact.kind === 'ledger' && artifact.relativePath === 'privacy-ledger.json'
+        ? { ...artifact, sha256: 'f'.repeat(64) }
+        : artifact),
+    }));
+    await expectRejected(fixture.root, fixture.evidence);
+
+    const bundle = await runtimeFixture();
+    await rewriteRuntimeStaticGeneration(bundle.root, (generation) => ({
+      ...generation,
+      artifacts: generation.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === 'pre-witness-bundle.json'
+        ? { ...artifact, sha256: 'f'.repeat(64) }
+        : artifact),
+    }));
+    await expectRejected(bundle.root, bundle.evidence);
+  });
+
+  it('rejects UTF-8 BOM prefixes on every canonical authority read', async () => {
+    const current = await runtimeFixture();
+    const currentPath = join(current.root, 'review', 'admission', 'authority', 'current.json');
+    await writeFile(currentPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), await readFile(currentPath)]));
+    await expectRejected(current.root, current.evidence);
+
+    const generation = await runtimeFixture();
+    const generationCurrent = JSON.parse(await readFile(join(generation.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const generationPath = join(generation.root, generationCurrent.staticGenerationRelativePath, 'generation.json');
+    await writeFile(generationPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), await readFile(generationPath)]));
+    await expectRejected(generation.root, generation.evidence);
+
+    const bundle = await runtimeFixture();
+    const bundleCurrent = JSON.parse(await readFile(join(bundle.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const bundlePath = join(bundle.root, bundleCurrent.staticGenerationRelativePath, 'pre-witness-bundle.json');
+    await writeFile(bundlePath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), await readFile(bundlePath)]));
+    await expectRejected(bundle.root, bundle.evidence);
+
+    const stream = await runtimeFixture();
+    const streamPath = join(stream.root, 'review', 'admission', 'admission-records.jsonl');
+    await writeFile(streamPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), await readFile(streamPath)]));
+    await expectRejected(stream.root, stream.evidence);
+  });
+
+  it('rejects a same-ID record mutation after stream, bundle, static, and current rehashing', async () => {
+    const fixture = await runtimeFixture();
+    await rewriteRuntimeRecord(fixture.root, (record) => ({ ...record, sourceReviewSha256: 'f'.repeat(64) }));
+    await expectRejected(fixture.root, fixture.evidence);
   });
 
   it('rejects record-stream byte, count, ID-set, aggregate, and path mutations', async () => {
