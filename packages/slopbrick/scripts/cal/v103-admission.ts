@@ -8,6 +8,8 @@ import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission
 import { requireContainedAdmissionPath } from '../../src/calibration/v103/admission-path';
 import {
   AcquisitionPublicationPendingError,
+  publishAdmissionToolInvocationIntent,
+  publishAdmissionToolReceipt,
   publishAcquisitionPublication,
   recoverAcquisitionPublication,
   recoverToolAuthorityPublication,
@@ -32,6 +34,12 @@ function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
+function toolAuthorityRootFor(root: string): string {
+  return /(?:^|[\\/])review[\\/]admission[\\/]?$/.test(root)
+    ? join(root, 'tool-authority')
+    : join(root, 'review', 'admission', 'tool-authority');
+}
+
 interface ParsedArguments {
   readonly command: string;
   readonly root: string;
@@ -39,6 +47,11 @@ interface ParsedArguments {
   readonly operation?: 'create' | 'replace';
   readonly expectedCurrentIndexSha256?: string;
   readonly toolProfile?: string;
+  readonly action?: string;
+  readonly canonicalArgvSha256?: string;
+  readonly inputSetSha256?: string;
+  readonly executableBehaviorSha256?: string;
+  readonly networkAuthorizationSha256?: string;
   readonly invocationIntentId?: string;
   readonly transactionId?: string;
   readonly fromLock?: boolean;
@@ -63,17 +76,25 @@ interface ParsedArguments {
   readonly inputGenerationSha256?: string;
   readonly expectedCurrentGenerationSha256?: string;
   readonly selectedGenerationSha256?: string;
+  readonly outputSetSha256?: string;
+  readonly exitCode?: number;
+  readonly observedResourceUsage?: string;
 }
 
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
   let operation: 'create' | 'replace' | undefined;
   let expectedCurrentIndexSha256: string | undefined;
   let toolProfile: string | undefined;
+  let action: string | undefined;
+  let canonicalArgvSha256: string | undefined;
+  let inputSetSha256: string | undefined;
+  let executableBehaviorSha256: string | undefined;
+  let networkAuthorizationSha256: string | undefined;
   let invocationIntentId: string | undefined;
   let transactionId: string | undefined;
   let fromLock = false;
@@ -98,6 +119,9 @@ function parse(argv: readonly string[]): ParsedArguments {
   let inputGenerationSha256: string | undefined;
   let expectedCurrentGenerationSha256: string | undefined;
   let selectedGenerationSha256: string | undefined;
+  let outputSetSha256: string | undefined;
+  let exitCode: number | undefined;
+  let observedResourceUsage: string | undefined;
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
     if (flag === '--from-lock' || flag === '--acknowledge-no-live-writer') {
@@ -111,7 +135,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--operation', '--expected-current-index-sha256', '--tool-profile', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--operation', '--expected-current-index-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -130,6 +154,21 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--tool-profile') {
       if (toolProfile !== undefined) throw new Error('--tool-profile may only be supplied once');
       toolProfile = value;
+    } else if (flag === '--action') {
+      if (action !== undefined) throw new Error('--action may only be supplied once');
+      action = value;
+    } else if (flag === '--canonical-argv-sha256') {
+      if (canonicalArgvSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--canonical-argv-sha256 must be a lowercase SHA-256');
+      canonicalArgvSha256 = value;
+    } else if (flag === '--input-set-sha256') {
+      if (inputSetSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--input-set-sha256 must be a lowercase SHA-256');
+      inputSetSha256 = value;
+    } else if (flag === '--executable-behavior-sha256') {
+      if (executableBehaviorSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--executable-behavior-sha256 must be a lowercase SHA-256');
+      executableBehaviorSha256 = value;
+    } else if (flag === '--network-authorization-sha256') {
+      if (networkAuthorizationSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--network-authorization-sha256 must be a lowercase SHA-256');
+      networkAuthorizationSha256 = value;
     } else if (flag === '--invocation-intent') {
       if (invocationIntentId !== undefined) throw new Error('--invocation-intent may only be supplied once');
       if (!/^[a-f0-9]{64}$/.test(value)) throw new Error('--invocation-intent must be a lowercase SHA-256');
@@ -198,11 +237,25 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--generation-sha256') {
       if (selectedGenerationSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--generation-sha256 must be a lowercase SHA-256');
       selectedGenerationSha256 = value;
+    } else if (flag === '--output-set-sha256') {
+      if (outputSetSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--output-set-sha256 must be a lowercase SHA-256');
+      outputSetSha256 = value;
+    } else if (flag === '--exit-code') {
+      if (exitCode !== undefined || !/^\d+$/.test(value)) throw new Error('--exit-code must be an integer from 0 to 255');
+      exitCode = Number(value);
+      if (!Number.isSafeInteger(exitCode) || exitCode > 255) throw new Error('--exit-code must be an integer from 0 to 255');
+    } else if (flag === '--observed-resource-usage') {
+      if (observedResourceUsage !== undefined) throw new Error('--observed-resource-usage may only be supplied once');
+      observedResourceUsage = value;
     }
     index += 1;
   }
   if (!root) throw new Error(`${command ?? 'admission command'} requires --root <v10.3-root or review/admission>`);
-  if (command === 'evidence:verify' || command === 'source:census') {
+  if (command === 'tool-authority:intent') {
+    if (!toolProfile || !action || !canonicalArgvSha256 || !inputSetSha256 || !executableBehaviorSha256 || invocationIntentId || outputSetSha256 || exitCode !== undefined || observedResourceUsage !== undefined || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:intent requires --tool-profile, --action, and the three input hashes only');
+  } else if (command === 'tool-authority:receipt') {
+    if (!invocationIntentId || !outputSetSha256 || exitCode === undefined || !observedResourceUsage || toolProfile || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:receipt requires --invocation-intent, --output-set-sha256, --exit-code, and --observed-resource-usage only');
+  } else if (command === 'evidence:verify' || command === 'source:census') {
     if (proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error(`Unexpected acquisition option for ${command}`);
     if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error('evidence:verify requires --tool-profile admission-context-v1 and --invocation-intent');
     if (command === 'source:census' && (!sourceRegisterPath || !sourceReviewsPath)) throw new Error('source:census requires --source-register and --source-reviews');
@@ -237,7 +290,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, operation, expectedCurrentIndexSha256, toolProfile, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256 };
+  return { command, root, proposalPath, operation, expectedCurrentIndexSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage };
 }
 
 async function main(): Promise<void> {
@@ -245,6 +298,33 @@ async function main(): Promise<void> {
   try {
     requestedCommand = process.argv[2] ?? requestedCommand;
     const args = parse(process.argv.slice(2));
+    if (args.command === 'tool-authority:intent') {
+      const result = await publishAdmissionToolInvocationIntent({
+        toolAuthorityRoot: toolAuthorityRootFor(args.root),
+        profileId: args.toolProfile!,
+        action: args.action!,
+        canonicalArgvSha256: args.canonicalArgvSha256!,
+        inputSetSha256: args.inputSetSha256!,
+        executableBehaviorSha256: args.executableBehaviorSha256!,
+        networkAuthorizationSha256: args.networkAuthorizationSha256,
+      });
+      output({ ok: true, command: args.command, ...result });
+      return;
+    }
+    if (args.command === 'tool-authority:receipt') {
+      let observedResourceUsage: unknown;
+      try { observedResourceUsage = JSON.parse(args.observedResourceUsage!); } catch { throw new Error('--observed-resource-usage must be a JSON object'); }
+      if (!observedResourceUsage || typeof observedResourceUsage !== 'object' || Array.isArray(observedResourceUsage)) throw new Error('--observed-resource-usage must be a JSON object');
+      const result = await publishAdmissionToolReceipt({
+        toolAuthorityRoot: toolAuthorityRootFor(args.root),
+        invocationIntentId: args.invocationIntentId!,
+        observedResourceUsage: observedResourceUsage as Readonly<Record<string, number>>,
+        exitCode: args.exitCode!,
+        outputSetSha256: args.outputSetSha256!,
+      });
+      output({ ok: true, command: args.command, ...result });
+      return;
+    }
     if (args.command === 'authority:overlap:verify') {
       const result = await verifyAdmissionOverlap(args.root, args.selectedGenerationSha256);
       output({ ok: result.ok, command: args.command, ...result });

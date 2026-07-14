@@ -11,6 +11,8 @@ import {
   acquisitionIndexSha256,
   acquisitionPublicationProposalId,
   acquisitionPublicationProposalSha256,
+  publishAdmissionToolInvocationIntent,
+  publishAdmissionToolReceipt,
   publishAcquisitionPublication,
   recoverAcquisitionPublication,
   recoverToolAuthorityPublication,
@@ -79,6 +81,112 @@ async function writeProposal(root: string, proposal: unknown, name = 'proposal.j
 }
 
 describe('offline acquisition publication', () => {
+  it('publishes a real admission intent before its successful receipt and is idempotent', async () => {
+    const fixture = await setup();
+    try {
+      const authorityRoot = join(fixture.root, 'review', 'admission', 'tool-authority');
+      const intentResult = await publishAdmissionToolInvocationIntent({
+        toolAuthorityRoot: authorityRoot,
+        profileId: 'admission-context-v1',
+        action: 'evidence:verify',
+        canonicalArgvSha256: sha('a'),
+        inputSetSha256: sha('b'),
+        executableBehaviorSha256: sha('c'),
+      });
+      expect(intentResult.intent.intentId).toMatch(/^[a-f0-9]{64}$/);
+      expect(intentResult.intent.intentSha256).toMatch(/^[a-f0-9]{64}$/);
+      expect(intentResult.toolAuthorityIndexSha256).toMatch(/^[a-f0-9]{64}$/);
+
+      const receiptResult = await publishAdmissionToolReceipt({
+        toolAuthorityRoot: authorityRoot,
+        invocationIntentId: intentResult.intent.intentId,
+        observedResourceUsage: { heapBytes: 2_147_483_648, workers: 1 },
+        exitCode: 0,
+        outputSetSha256: sha('d'),
+      });
+      expect(receiptResult.receipt.invocationIntentId).toBe(intentResult.intent.intentId);
+      expect(receiptResult.receipt.action).toBe('evidence:verify');
+      expect(receiptResult.receipt.receiptId).toMatch(/^[a-f0-9]{64}$/);
+
+      const repeatedIntent = await publishAdmissionToolInvocationIntent({
+        toolAuthorityRoot: authorityRoot,
+        profileId: 'admission-context-v1',
+        action: 'evidence:verify',
+        canonicalArgvSha256: sha('a'),
+        inputSetSha256: sha('b'),
+        executableBehaviorSha256: sha('c'),
+      });
+      const repeatedReceipt = await publishAdmissionToolReceipt({
+        toolAuthorityRoot: authorityRoot,
+        invocationIntentId: intentResult.intent.intentId,
+        observedResourceUsage: { heapBytes: 2_147_483_648, workers: 1 },
+        exitCode: 0,
+        outputSetSha256: sha('d'),
+      });
+      expect(repeatedIntent.intent.intentId).toBe(intentResult.intent.intentId);
+      expect(repeatedIntent.toolAuthorityIndexSha256).toBe(receiptResult.toolAuthorityIndexSha256);
+      expect(repeatedReceipt.receipt.receiptId).toBe(receiptResult.receipt.receiptId);
+      expect(repeatedReceipt.toolAuthorityIndexSha256).toBe(receiptResult.toolAuthorityIndexSha256);
+      await expect(readFile(join(authorityRoot, 'tool-authority.lock'))).rejects.toThrow();
+      await expect(readFile(join(authorityRoot, 'tool-authority-transaction.json'))).rejects.toThrow();
+    } finally { await fixture.cleanup(); }
+  });
+
+  it('rejects an admission authority intent with an unknown profile or action', async () => {
+    const fixture = await setup();
+    try {
+      const authorityRoot = join(fixture.root, 'tool-authority');
+      await expect(publishAdmissionToolInvocationIntent({
+        toolAuthorityRoot: authorityRoot,
+        profileId: 'admission-unknown-v1',
+        action: 'evidence:verify',
+        canonicalArgvSha256: sha('a'),
+        inputSetSha256: sha('b'),
+        executableBehaviorSha256: sha('c'),
+      })).rejects.toThrow(/profile/i);
+      await expect(publishAdmissionToolInvocationIntent({
+        toolAuthorityRoot: authorityRoot,
+        profileId: 'admission-context-v1',
+        action: 'evidence:acquire',
+        canonicalArgvSha256: sha('a'),
+        inputSetSha256: sha('b'),
+        executableBehaviorSha256: sha('c'),
+      })).rejects.toThrow(/intent|action|invalid/i);
+      await expect(readFile(join(authorityRoot, 'index.json'))).rejects.toThrow();
+    } finally { await fixture.cleanup(); }
+  });
+
+  it('publishes the two-phase authority pair through the admission CLI', async () => {
+    const fixture = await setup();
+    try {
+      const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
+      const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+      const intentRun = await execFileAsync(tsx, [
+        script,
+        'tool-authority:intent',
+        '--root', fixture.root,
+        '--tool-profile', 'admission-context-v1',
+        '--action', 'evidence:verify',
+        '--canonical-argv-sha256', sha('a'),
+        '--input-set-sha256', sha('b'),
+        '--executable-behavior-sha256', sha('c'),
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
+      const intentOutput = JSON.parse(intentRun.stdout.trim()) as { ok: boolean; intent: { intentId: string } };
+      expect(intentOutput.ok).toBe(true);
+      const receiptRun = await execFileAsync(tsx, [
+        script,
+        'tool-authority:receipt',
+        '--root', fixture.root,
+        '--invocation-intent', intentOutput.intent.intentId,
+        '--output-set-sha256', sha('d'),
+        '--exit-code', '0',
+        '--observed-resource-usage', JSON.stringify({ heapBytes: 1024, workers: 1 }),
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
+      const receiptOutput = JSON.parse(receiptRun.stdout.trim()) as { ok: boolean; receipt: { invocationIntentId: string; exitCode: number } };
+      expect(receiptOutput).toMatchObject({ ok: true, receipt: { invocationIntentId: intentOutput.intent.intentId, exitCode: 0 } });
+    } finally { await fixture.cleanup(); }
+  });
+
   it('creates and receipts an empty immutable generation 0', async () => {
     const fixture = await setup();
     try {

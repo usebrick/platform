@@ -27,6 +27,7 @@ import {
   FROZEN_ADMISSION_PROFILE_IDS,
   calibrationAdmissionCanonicalJson,
   calibrationAdmissionInvocationIntentId,
+  calibrationAdmissionInvocationIntentSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionToolReceiptId,
   isCalibrationAdmissionEvidenceBundleV1,
@@ -126,6 +127,39 @@ export type ToolAuthorityPublicationPhase =
   | 'complete'
   | 'transaction-unlinked'
   | 'lock-unlinked';
+
+export interface AdmissionToolInvocationIntentPublicationRequest {
+  readonly toolAuthorityRoot: string;
+  readonly profileId: string;
+  readonly action: string;
+  readonly canonicalArgvSha256: string;
+  readonly inputSetSha256: string;
+  readonly executableBehaviorSha256: string;
+  readonly networkAuthorizationSha256?: string;
+  readonly phaseHook?: (phase: ToolAuthorityPublicationPhase) => void | Promise<void>;
+}
+
+export interface AdmissionToolInvocationIntentPublicationResult {
+  readonly intent: CalibrationAdmissionInvocationIntentV1;
+  readonly toolAuthorityIndexSha256: string;
+  readonly transactionId?: string;
+}
+
+export interface AdmissionToolReceiptPublicationRequest {
+  readonly toolAuthorityRoot: string;
+  readonly invocationIntentId: string;
+  readonly observedResourceUsage: Readonly<Record<string, number>>;
+  readonly exitCode: number;
+  readonly outputSetSha256: string;
+  readonly phaseHook?: (phase: ToolAuthorityPublicationPhase) => void | Promise<void>;
+}
+
+export interface AdmissionToolReceiptPublicationResult {
+  readonly receipt: CalibrationAdmissionToolReceiptV1;
+  readonly receiptSha256: string;
+  readonly toolAuthorityIndexSha256: string;
+  readonly transactionId?: string;
+}
 
 export interface AcquisitionPublicationReceiptInput {
   readonly root: string;
@@ -283,6 +317,10 @@ function isRelativePath(value: unknown): value is string {
 
 function isSafeBytes(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= MAX_ARTIFACT_BYTES;
+}
+
+function isObservedResourceUsage(value: unknown): value is Readonly<Record<string, number>> {
+  return isRecord(value) && Object.values(value).every((entry) => typeof entry === 'number' && Number.isFinite(entry));
 }
 
 function deepCanonical(value: unknown): string {
@@ -1749,7 +1787,7 @@ const TOOL_AUTHORITY_TRANSACTION_NAME = 'tool-authority-transaction.json';
 const TOOL_AUTHORITY_TRANSACTIONS_ROOT = 'transactions';
 const TOOL_AUTHORITY_COMPLETIONS_ROOT = 'completions';
 
-function toolAuthorityProfile(profileId: (typeof FROZEN_ADMISSION_PROFILE_IDS)[number]): Record<string, unknown> {
+function toolAuthorityProfile(profileId: (typeof FROZEN_ADMISSION_PROFILE_IDS)[number]): CalibrationAdmissionToolProfileV1 {
   const readOnly = new Set([
     'admission-context-v1',
     'admission-static-ledgers-v1',
@@ -1777,7 +1815,7 @@ function toolAuthorityProfile(profileId: (typeof FROZEN_ADMISSION_PROFILE_IDS)[n
   };
   const profile = { ...withoutHash, profileSha256: calibrationAdmissionSha256(withoutHash) };
   if (!isCalibrationAdmissionToolProfileV1(profile)) throw new Error(`Unable to construct frozen tool profile ${profileId}`);
-  return profile as unknown as Record<string, unknown>;
+  return profile;
 }
 
 function authorityIndexHash(value: Record<string, unknown>): string {
@@ -2568,14 +2606,12 @@ async function bootstrapToolAuthority(authorityRoot: string): Promise<void> {
       throw new Error('Tool-authority current index is absent but authority history exists');
     }
   }
-  const profiles: Array<Record<string, unknown>> = [];
   const refs: Array<Record<string, unknown>> = [];
   const artifacts: AuthorityArtifactSpec[] = [];
   for (const profileId of [...FROZEN_ADMISSION_PROFILE_IDS].sort()) {
     const profile = toolAuthorityProfile(profileId);
     const profilePath = `profiles/${profileId}.json`;
     const profileBytes = Buffer.from(deepCanonical(profile), 'utf8');
-    profiles.push(profile);
     refs.push({ profileId, relativePath: profilePath, sha256: createHash('sha256').update(profileBytes).digest('hex') });
     artifacts.push({
       stagedRelativePath: `${TOOL_AUTHORITY_TRANSACTIONS_ROOT}/pending/profile-${profileId}.json`,
@@ -2602,7 +2638,189 @@ async function bootstrapToolAuthority(authorityRoot: string): Promise<void> {
   });
 }
 
-function publicationIntent(profile: Record<string, unknown>, input: AcquisitionPublicationReceiptInput): Record<string, unknown> {
+type FrozenAdmissionProfileId = (typeof FROZEN_ADMISSION_PROFILE_IDS)[number];
+
+function frozenAdmissionProfileId(value: string): value is FrozenAdmissionProfileId {
+  return (FROZEN_ADMISSION_PROFILE_IDS as readonly string[]).includes(value);
+}
+
+async function prepareToolAuthorityRoot(rootInput: string): Promise<string> {
+  const absolute = resolve(rootInput);
+  await mkdir(absolute, { recursive: true, mode: 0o700 });
+  return realpath(absolute);
+}
+
+async function authorityProfileForId(
+  authorityRoot: string,
+  index: AuthorityIndex,
+  profileId: FrozenAdmissionProfileId,
+): Promise<CalibrationAdmissionToolProfileV1> {
+  const ref = index.profiles.find((candidate) => candidate.profileId === profileId);
+  if (!ref) throw new Error(`Tool-authority profile is not indexed: ${profileId}`);
+  const profile = await readAuthorityReferencedJson(authorityRoot, ref.relativePath, ref.sha256);
+  if (!isCalibrationAdmissionToolProfileV1(profile) || profile.profileId !== profileId) throw new Error(`Tool-authority profile is invalid: ${profileId}`);
+  return profile;
+}
+
+function buildAdmissionInvocationIntent(
+  profile: CalibrationAdmissionToolProfileV1,
+  input: Pick<AdmissionToolInvocationIntentPublicationRequest, 'action' | 'canonicalArgvSha256' | 'inputSetSha256' | 'executableBehaviorSha256' | 'networkAuthorizationSha256'>,
+): CalibrationAdmissionInvocationIntentV1 {
+  if (!isSha(input.canonicalArgvSha256) || !isSha(input.inputSetSha256) || !isSha(input.executableBehaviorSha256)
+    || (input.networkAuthorizationSha256 !== undefined && !isSha(input.networkAuthorizationSha256))) {
+    throw new Error('Admission tool intent hashes must be lowercase SHA-256 values');
+  }
+  const withoutId: Record<string, unknown> = {
+    version: 'v10.3-admission-invocation-intent-v1',
+    intentId: '',
+    profileId: profile.profileId,
+    profileSha256: profile.profileSha256,
+    action: input.action,
+    canonicalArgvSha256: input.canonicalArgvSha256,
+    inputSetSha256: input.inputSetSha256,
+    executableBehaviorSha256: input.executableBehaviorSha256,
+    intentSha256: '',
+  };
+  if (input.networkAuthorizationSha256 !== undefined) withoutId.networkAuthorizationSha256 = input.networkAuthorizationSha256;
+  const withId = { ...withoutId, intentId: calibrationAdmissionInvocationIntentId(withoutId) };
+  const intent = { ...withId, intentSha256: calibrationAdmissionInvocationIntentSha256(withId) };
+  if (!isCalibrationAdmissionInvocationIntentV1(intent, profile)) throw new Error('Admission tool invocation intent is invalid for its frozen profile/action');
+  return intent;
+}
+
+/** Publish the immutable invocation intent that authorizes one offline action. */
+export async function publishAdmissionToolInvocationIntent(
+  request: AdmissionToolInvocationIntentPublicationRequest,
+): Promise<AdmissionToolInvocationIntentPublicationResult> {
+  if (!frozenAdmissionProfileId(request.profileId)) throw new Error(`Unknown admission tool profile: ${request.profileId}`);
+  if (typeof request.action !== 'string' || request.action.length === 0) throw new Error('Admission tool action must be a non-empty string');
+  // Validate the requested capability before creating a directory or a
+  // bootstrap generation. Invalid requests must be side-effect free.
+  buildAdmissionInvocationIntent(toolAuthorityProfile(request.profileId), request);
+  const authorityRoot = await prepareToolAuthorityRoot(request.toolAuthorityRoot);
+  await bootstrapToolAuthority(authorityRoot);
+  const index = await authorityCurrentIndex(authorityRoot);
+  await validateAuthorityGenerationObjects(authorityRoot, index);
+  const profile = await authorityProfileForId(authorityRoot, index, request.profileId);
+  const intent = buildAdmissionInvocationIntent(profile, request);
+  const intentBytes = Buffer.from(deepCanonical(intent), 'utf8');
+  const intentSha256 = createHash('sha256').update(intentBytes).digest('hex');
+  const intentRef = {
+    intentId: intent.intentId,
+    relativePath: `invocation-intents/${intent.intentId}.json`,
+    sha256: intentSha256,
+  };
+  const existing = index.invocationIntents.find((candidate) => candidate.intentId === intent.intentId);
+  if (existing) {
+    if (existing.sha256 !== intentSha256) throw new Error('Admission tool invocation intent collision');
+    const existingValue = await readAuthorityReferencedJson(authorityRoot, existing.relativePath, existing.sha256);
+    if (!isCalibrationAdmissionInvocationIntentV1(existingValue, profile)) throw new Error('Indexed admission tool invocation intent is invalid');
+    return { intent: existingValue, toolAuthorityIndexSha256: index.indexSha256 };
+  }
+  const withoutHash = {
+    version: index.version,
+    generation: index.generation + 1,
+    parentIndexSha256: index.indexSha256,
+    profiles: index.profiles,
+    invocationIntents: [...index.invocationIntents, intentRef].sort((left, right) => left.intentId.localeCompare(right.intentId)),
+    receipts: index.receipts,
+  };
+  const nextIndex = { ...withoutHash, indexSha256: authorityIndexHash(withoutHash) } as AuthorityIndex;
+  if (!validateAuthorityIndex(nextIndex)) throw new Error('Admission tool intent generation is invalid');
+  const result = await publishAuthorityGeneration({
+    authorityRoot,
+    operation: 'replace',
+    expectedCurrentState: { kind: 'existing', indexSha256: index.indexSha256 },
+    nextIndex,
+    artifacts: [{
+      stagedRelativePath: `${TOOL_AUTHORITY_TRANSACTIONS_ROOT}/pending/intent-object.json`,
+      finalRelativePath: intentRef.relativePath,
+      value: intent,
+      bytes: intentBytes.byteLength,
+      sha256: intentSha256,
+    }],
+    phaseHook: request.phaseHook,
+  });
+  return { intent, toolAuthorityIndexSha256: result.indexSha256, transactionId: result.transactionId || undefined };
+}
+
+/** Publish the immutable receipt produced after one authorized offline action. */
+export async function publishAdmissionToolReceipt(
+  request: AdmissionToolReceiptPublicationRequest,
+): Promise<AdmissionToolReceiptPublicationResult> {
+  if (!isLowerId(request.invocationIntentId)) throw new Error('Admission tool receipt requires a lowercase SHA-256 invocation intent id');
+  if (!Number.isSafeInteger(request.exitCode) || request.exitCode < 0 || request.exitCode > 255) throw new Error('Admission tool receipt exit code must be an integer from 0 to 255');
+  if (!isSha(request.outputSetSha256)) throw new Error('Admission tool receipt output hash must be a lowercase SHA-256');
+  if (!isObservedResourceUsage(request.observedResourceUsage)) throw new Error('Admission tool receipt resource usage must be a finite-number object');
+  const authorityRoot = await prepareToolAuthorityRoot(request.toolAuthorityRoot);
+  await bootstrapToolAuthority(authorityRoot);
+  const index = await authorityCurrentIndex(authorityRoot);
+  await validateAuthorityGenerationObjects(authorityRoot, index);
+  const intentRef = index.invocationIntents.find((candidate) => candidate.intentId === request.invocationIntentId);
+  if (!intentRef) throw new Error(`Admission tool invocation intent is not indexed: ${request.invocationIntentId}`);
+  const intentValue = await readAuthorityReferencedJson(authorityRoot, intentRef.relativePath, intentRef.sha256);
+  if (!isRecord(intentValue) || typeof intentValue.profileId !== 'string' || !frozenAdmissionProfileId(intentValue.profileId)) throw new Error('Indexed admission tool invocation intent has an unknown profile');
+  const profileId = intentValue.profileId;
+  const profile = await authorityProfileForId(authorityRoot, index, profileId);
+  if (!isCalibrationAdmissionInvocationIntentV1(intentValue, profile) || intentValue.intentId !== request.invocationIntentId) throw new Error('Indexed admission tool invocation intent is invalid');
+  const withoutId: Record<string, unknown> = {
+    version: 'v10.3-admission-tool-receipt-v1',
+    receiptId: '',
+    invocationIntentId: intentValue.intentId,
+    profileId: profile.profileId,
+    profileSha256: profile.profileSha256,
+    action: intentValue.action,
+    canonicalArgvSha256: intentValue.canonicalArgvSha256,
+    inputSetSha256: intentValue.inputSetSha256,
+    executableBehaviorSha256: intentValue.executableBehaviorSha256,
+    observedResourceUsage: request.observedResourceUsage,
+    exitCode: request.exitCode,
+    outputSetSha256: request.outputSetSha256,
+  };
+  if (intentValue.networkAuthorizationSha256 !== undefined) withoutId.networkAuthorizationSha256 = intentValue.networkAuthorizationSha256;
+  const receipt = { ...withoutId, receiptId: calibrationAdmissionToolReceiptId(withoutId) };
+  if (!isCalibrationAdmissionToolReceiptV1(receipt, profile, intentValue)) throw new Error('Admission tool receipt is invalid for its frozen intent/profile');
+  const receiptBytes = Buffer.from(deepCanonical(receipt), 'utf8');
+  const receiptSha256 = createHash('sha256').update(receiptBytes).digest('hex');
+  const receiptRef = { receiptId: receipt.receiptId, relativePath: `receipts/${receipt.receiptId}.json`, sha256: receiptSha256 };
+  const existing = index.receipts.find((candidate) => candidate.receiptId === receipt.receiptId);
+  if (existing) {
+    if (existing.sha256 !== receiptSha256) throw new Error('Admission tool receipt collision');
+    const existingValue = await readAuthorityReferencedJson(authorityRoot, existing.relativePath, existing.sha256);
+    if (!isCalibrationAdmissionToolReceiptV1(existingValue, profile, intentValue)) throw new Error('Indexed admission tool receipt is invalid');
+    return { receipt: existingValue, receiptSha256, toolAuthorityIndexSha256: index.indexSha256 };
+  }
+  const withoutHash = {
+    version: index.version,
+    generation: index.generation + 1,
+    parentIndexSha256: index.indexSha256,
+    profiles: index.profiles,
+    invocationIntents: index.invocationIntents,
+    receipts: [...index.receipts, receiptRef].sort((left, right) => left.receiptId.localeCompare(right.receiptId)),
+  };
+  const nextIndex = { ...withoutHash, indexSha256: authorityIndexHash(withoutHash) } as AuthorityIndex;
+  if (!validateAuthorityIndex(nextIndex)) throw new Error('Admission tool receipt generation is invalid');
+  const result = await publishAuthorityGeneration({
+    authorityRoot,
+    operation: 'replace',
+    expectedCurrentState: { kind: 'existing', indexSha256: index.indexSha256 },
+    nextIndex,
+    artifacts: [{
+      stagedRelativePath: `${TOOL_AUTHORITY_TRANSACTIONS_ROOT}/pending/receipt-object.json`,
+      finalRelativePath: receiptRef.relativePath,
+      value: receipt,
+      bytes: receiptBytes.byteLength,
+      sha256: receiptSha256,
+    }],
+    phaseHook: request.phaseHook,
+  });
+  return { receipt, receiptSha256, toolAuthorityIndexSha256: result.indexSha256, transactionId: result.transactionId || undefined };
+}
+
+function publicationIntent(
+  profile: Pick<CalibrationAdmissionToolProfileV1, 'profileId' | 'profileSha256'>,
+  input: AcquisitionPublicationReceiptInput,
+): Record<string, unknown> {
   const withoutHashes = {
     version: 'v10.3-admission-invocation-intent-v1',
     intentId: '',
@@ -2814,7 +3032,7 @@ async function publishLocalToolAuthorityIntent(
   const index = await authorityCurrentIndex(authorityRoot);
   await validateAuthorityGenerationObjects(authorityRoot, index);
   const profile = await publicationProfile(authorityRoot, index);
-  const intent = publicationIntent(profile as unknown as Record<string, unknown>, input);
+  const intent = publicationIntent(profile, input);
   if (intent.intentId !== input.invocationIntentId) throw new Error('Publication invocation intent id does not match the frozen profile/input contract');
   if (!isCalibrationAdmissionInvocationIntentV1(intent, profile)) throw new Error('Publication invocation intent is invalid');
   const intentBytes = Buffer.from(deepCanonical(intent), 'utf8');
