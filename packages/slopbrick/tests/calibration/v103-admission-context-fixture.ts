@@ -19,6 +19,10 @@ import {
   calibrationAdmissionQualityLedgerSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionSourceRegisterEntrySha256,
+  calibrationAdmissionSourceCurrentSha256,
+  calibrationAdmissionSourceGenerationArtifactSetSha256,
+  calibrationAdmissionSourceGenerationProposalSha256,
+  calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionRecordId,
   calibrationAdmissionStaticAuthorityGenerationSha256,
@@ -32,9 +36,13 @@ import {
   expandAdmissionWitnessConstraints,
   isCalibrationAdmissionAuthorityCurrentV1,
   isCalibrationAdmissionPreWitnessBundleV1,
+  isCalibrationAdmissionSourceCurrentV1,
+  isCalibrationAdmissionSourceGenerationV1,
+  validateCalibrationAdmissionSourceGenerationGraphV1,
   validateCalibrationAdmissionPreWitnessBundleV1,
   type CalibrationAdmissionPreWitnessBundleV1,
   type CalibrationAdmissionRecordV103,
+  type CalibrationAdmissionSourceGenerationV1,
   type CalibrationAdmissionStaticAuthorityGenerationV1,
 } from '@usebrick/core';
 
@@ -175,6 +183,79 @@ function sourceReviews(register: Record<string, unknown>): unknown[] {
       reasons: ['review_incomplete', 'source_wide_quarantine'],
     };
   });
+}
+
+/** Materialize the minimal immutable source-review authority used by runtime tests. */
+async function materializeSourceReviewAuthorities(
+  root: string,
+  reviews: readonly unknown[],
+  evidenceBundle: unknown,
+): Promise<void> {
+  const admissionRoot = join(root, 'review', 'admission');
+  const evidenceBundleSha256 = (evidenceBundle as { readonly bundleSha256: string }).bundleSha256;
+  await Promise.all(reviews.map(async (value) => {
+    const review = value as Record<string, unknown>;
+    const sourceId = String(review.sourceId);
+    const sourceReviewCanonical = calibrationAdmissionCanonicalJson(review);
+    const sourceReviewBytes = Buffer.from(`${sourceReviewCanonical}\n`, 'utf8');
+    const sourceReviewArtifact = {
+      pathBase: 'generation_local' as const,
+      relativePath: 'source-review.json',
+      kind: 'source_review' as const,
+      bytes: sourceReviewBytes.byteLength,
+      sha256: createHash('sha256').update(sourceReviewBytes).digest('hex'),
+    };
+    const artifacts = [sourceReviewArtifact] as const;
+    const proposalBody = {
+      version: 'v10.3-admission-source-generation-proposal-v1' as const,
+      proposalId: `proposal-${sourceId}`,
+      sourceId,
+      operation: 'create' as const,
+      expectedCurrentState: { kind: 'absent' as const },
+      sourceReviewSha256: calibrationAdmissionSourceReviewSha256(review),
+      materializationAuthority: { kind: 'genesis' as const, evidenceBundleSha256 },
+      artifacts,
+    };
+    const proposal = { ...proposalBody, proposalSha256: calibrationAdmissionSourceGenerationProposalSha256(proposalBody) };
+    const generationBody = {
+      version: 'v10.3-admission-source-generation-v1' as const,
+      sourceId,
+      generation: 0,
+      proposalId: proposal.proposalId,
+      proposalSha256: proposal.proposalSha256,
+      approval: { kind: 'genesis_quarantine' as const, reason: 'review_incomplete' as const },
+      sourceReviewSha256: proposal.sourceReviewSha256,
+      artifacts,
+      artifactSetSha256: calibrationAdmissionSourceGenerationArtifactSetSha256(artifacts),
+    };
+    const generation = { ...generationBody, generationSha256: calibrationAdmissionSourceGenerationSha256(generationBody) };
+    const currentBody = {
+      version: 'v10.3-admission-source-current-v1' as const,
+      sourceId,
+      generationSha256: generation.generationSha256,
+      generationRelativePath: `sources/${sourceId}/generations/${generation.generationSha256}`,
+    };
+    const current = { ...currentBody, currentSha256: calibrationAdmissionSourceCurrentSha256(currentBody) };
+    const validation = validateCalibrationAdmissionSourceGenerationGraphV1({
+      proposal,
+      sourceReview: review,
+      generation,
+      evidenceBundle,
+    });
+    if (!validation.ok) {
+      throw new Error(`source-generation fixture failed validation for ${sourceId}: ${validation.errors.join('; ')}`);
+    }
+    if (!isCalibrationAdmissionSourceGenerationV1(generation) || !isCalibrationAdmissionSourceCurrentV1(current)) {
+      throw new Error(`source-generation fixture shape failed for ${sourceId}`);
+    }
+    const generationDirectory = join(admissionRoot, current.generationRelativePath);
+    await mkdir(generationDirectory, { recursive: true });
+    await writeFile(join(generationDirectory, 'source-generation.json'), calibrationAdmissionCanonicalJson(generation));
+    await writeFile(join(generationDirectory, 'source-review.json'), sourceReviewBytes);
+    const currentDirectory = join(admissionRoot, 'sources', sourceId);
+    await mkdir(currentDirectory, { recursive: true });
+    await writeFile(join(currentDirectory, 'current.json'), calibrationAdmissionCanonicalJson(current));
+  }));
 }
 
 export async function runtimeFixture(): Promise<{ readonly root: string; readonly evidence: Awaited<ReturnType<typeof emptyEvidenceContext>>; readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly recordId: string }> {
@@ -325,7 +406,9 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   await writeFile(join(staticRoot, 'quality-ledger.json'), qualityBytes);
   await writeFile(join(staticRoot, 'lineage-ledger.json'), lineageBytes);
   await writeFile(join(root, 'review', 'admission', 'admission-records.jsonl'), streamBytes);
-  return { root, evidence: await emptyEvidenceContext(), bundle, recordId };
+  const evidence = await emptyEvidenceContext();
+  await materializeSourceReviewAuthorities(root, reviews, evidence.bundle);
+  return { root, evidence, bundle, recordId };
 }
 
 /** Rewrite the exact authority graph after a focused bundle mutation. */
@@ -464,6 +547,40 @@ export async function rewriteRuntimeStaticGeneration(
     currentSha256: '',
   };
   const nextCurrent = { ...currentBody, currentSha256: calibrationAdmissionAuthorityCurrentSha256(currentBody) };
+  await writeFile(currentPath, calibrationAdmissionCanonicalJson(nextCurrent));
+}
+
+/** Rewrite one source authority while preserving its external review bytes. */
+export async function rewriteRuntimeSourceGeneration(
+  root: string,
+  sourceId: string,
+  mutate: (generation: CalibrationAdmissionSourceGenerationV1) => CalibrationAdmissionSourceGenerationV1,
+): Promise<void> {
+  const admissionRoot = join(root, 'review', 'admission');
+  const currentPath = join(admissionRoot, 'sources', sourceId, 'current.json');
+  const current = JSON.parse(await readFile(currentPath, 'utf8')) as {
+    readonly version: 'v10.3-admission-source-current-v1';
+    readonly sourceId: string;
+    readonly generationSha256: string;
+    readonly generationRelativePath: string;
+    readonly currentSha256: string;
+  };
+  const generationDirectory = join(admissionRoot, current.generationRelativePath);
+  const generation = JSON.parse(await readFile(join(generationDirectory, 'source-generation.json'), 'utf8')) as CalibrationAdmissionSourceGenerationV1;
+  const sourceReviewBytes = await readFile(join(generationDirectory, 'source-review.json'));
+  const generationBody = { ...mutate(structuredClone(generation)), generationSha256: '' };
+  const nextGeneration = { ...generationBody, generationSha256: calibrationAdmissionSourceGenerationSha256(generationBody) };
+  const nextGenerationDirectory = join(admissionRoot, 'sources', sourceId, 'generations', nextGeneration.generationSha256);
+  await mkdir(nextGenerationDirectory, { recursive: true });
+  await writeFile(join(nextGenerationDirectory, 'source-generation.json'), calibrationAdmissionCanonicalJson(nextGeneration));
+  await writeFile(join(nextGenerationDirectory, 'source-review.json'), sourceReviewBytes);
+  const currentBody = {
+    ...current,
+    generationSha256: nextGeneration.generationSha256,
+    generationRelativePath: `sources/${sourceId}/generations/${nextGeneration.generationSha256}`,
+    currentSha256: '',
+  };
+  const nextCurrent = { ...currentBody, currentSha256: calibrationAdmissionSourceCurrentSha256(currentBody) };
   await writeFile(currentPath, calibrationAdmissionCanonicalJson(nextCurrent));
 }
 

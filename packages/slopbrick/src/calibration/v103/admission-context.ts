@@ -10,6 +10,8 @@ import {
   calibrationAdmissionPrivacyLedgerSha256,
   calibrationAdmissionQualityLedgerSha256,
   calibrationAdmissionSha256,
+  calibrationAdmissionSourceCurrentSha256,
+  calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
   calibrationAdmissionToolReceiptSha256,
@@ -17,6 +19,8 @@ import {
   isCalibrationAdmissionOverlapResourceReceiptV1,
   isCalibrationAdmissionPreWitnessBundleV1,
   isCalibrationAdmissionRecordV103,
+  isCalibrationAdmissionSourceCurrentV1,
+  isCalibrationAdmissionSourceGenerationV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
   isCalibrationAdmissionToolReceiptV1,
   validateCalibrationAdmissionPreWitnessBundleV1,
@@ -28,6 +32,8 @@ import {
   type CalibrationAdmissionPreWitnessBundleV1,
   type CalibrationAdmissionRecordV103,
   type CalibrationAdmissionRecordStreamV1,
+  type CalibrationAdmissionSourceCurrentV1,
+  type CalibrationAdmissionSourceGenerationV1,
 } from '@usebrick/core';
 
 import {
@@ -36,6 +42,7 @@ import {
 } from './admission-evidence-context';
 
 const CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
+const SOURCES_ROOT = 'sources';
 const STATIC_ROOT = 'review/admission/authority/static-generations';
 const STREAM_RELATIVE_PATH = 'review/admission/admission-records.jsonl';
 const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
@@ -349,6 +356,51 @@ function verifyBundle(bundleInput: unknown): CalibrationAdmissionPreWitnessBundl
   return bundleInput;
 }
 
+/**
+ * Bind every rich-bundle source review to its immutable, byte-backed source
+ * generation.  The source layout is deliberately fixed: callers cannot
+ * substitute a projection path or discover a different generation directory.
+ */
+async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: CalibrationAdmissionPreWitnessBundleV1): Promise<void> {
+  for (const review of bundle.sourceReviews) {
+    const sourceId = review.sourceId;
+    const currentPath = join(root.admissionRoot, SOURCES_ROOT, sourceId, 'current.json');
+    const currentInput = await readCanonicalJson(root, currentPath, `source ${sourceId} current pointer`);
+    if (!isCalibrationAdmissionSourceCurrentV1(currentInput)) throw new Error(`source ${sourceId} current pointer failed Core validation`);
+    const current = currentInput as CalibrationAdmissionSourceCurrentV1;
+    if (current.currentSha256 !== calibrationAdmissionSourceCurrentSha256(current)) throw new Error(`source ${sourceId} current pointer self-hash mismatch`);
+    const expectedGenerationRelativePath = `${SOURCES_ROOT}/${sourceId}/generations/${current.generationSha256}`;
+    if (current.sourceId !== sourceId || current.generationRelativePath !== expectedGenerationRelativePath) {
+      throw new Error(`source ${sourceId} current pointer source/hash/path join mismatch`);
+    }
+
+    const generationDirectory = join(root.admissionRoot, current.generationRelativePath);
+    if (!pathInside(root.admissionRoot, generationDirectory)) throw new Error(`source ${sourceId} generation escapes the contained admission root`);
+    const generationInput = await readCanonicalJson(root, join(generationDirectory, 'source-generation.json'), `source ${sourceId} generation`);
+    if (!isCalibrationAdmissionSourceGenerationV1(generationInput)) throw new Error(`source ${sourceId} generation failed Core validation`);
+    const generation = generationInput as CalibrationAdmissionSourceGenerationV1;
+    if (generation.generationSha256 !== calibrationAdmissionSourceGenerationSha256(generation)) throw new Error(`source ${sourceId} generation self-hash mismatch`);
+    const sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(review);
+    if (generation.sourceId !== sourceId || generation.sourceReviewSha256 !== sourceReviewSha256) {
+      throw new Error(`source ${sourceId} generation source-review hash is not bound to the rich bundle`);
+    }
+
+    const sourceReviewArtifacts = generation.artifacts.filter((artifact) => artifact.kind === 'source_review' && artifact.relativePath === 'source-review.json');
+    if (sourceReviewArtifacts.length !== 1) throw new Error(`source ${sourceId} generation must contain exactly one source-review artifact`);
+    const sourceReviewArtifact = sourceReviewArtifacts[0]!;
+    if (sourceReviewArtifact.pathBase !== 'generation_local') throw new Error(`source ${sourceId} source-review artifact must be generation-local`);
+    const sourceReviewBytes = await readContainedFile(root, join(generationDirectory, sourceReviewArtifact.relativePath));
+    if (hasUtf8Bom(sourceReviewBytes)) throw new Error(`source ${sourceId} source-review artifact must not contain a UTF-8 BOM`);
+    const expectedSourceReviewBytes = Buffer.from(`${calibrationAdmissionCanonicalJson(review)}\n`, 'utf8');
+    if (sourceReviewArtifact.bytes !== expectedSourceReviewBytes.byteLength
+      || sourceReviewBytes.byteLength !== sourceReviewArtifact.bytes
+      || sourceReviewArtifact.sha256 !== hashBytes(sourceReviewBytes)
+      || !sourceReviewBytes.equals(expectedSourceReviewBytes)) {
+      throw new Error(`source ${sourceId} source-review artifact receipt does not match canonical bytes/hash`);
+    }
+  }
+}
+
 function verifyStreamRecords(bundle: CalibrationAdmissionPreWitnessBundleV1, streamBytes: Buffer): { readonly recordIds: readonly string[]; readonly recordMap: ReadonlyMap<string, VerifiedRecord> } {
   const parsedRecords = parseCanonicalJsonl(streamBytes);
   const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
@@ -441,6 +493,7 @@ function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, st
     verifyStaticLedgerAnchors(bundle, staticGeneration);
     verifyStaticArtifactReceipts(artifacts, bundle, staticGeneration);
     verifyToolAuthoritySnapshotEquality(bundle, staticGeneration);
+    await verifySourceReviewAuthorities(root, bundle);
     const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
     if (stream.relativePath !== STREAM_RELATIVE_PATH) throw new Error('pre-witness bundle record stream path is not the fixed admission path');
     const streamBytes = await readContainedFile(root, join(root.projectRoot, stream.relativePath));
