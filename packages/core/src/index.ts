@@ -280,6 +280,19 @@ export type {
   AdmissionQualityResultV1,
   CalibrationAdmissionQualityValidationV1,
 } from './calibration-admission-quality';
+export type { AdmissionLineageLedgerV1 } from './generated/calibration-admission-lineage-ledger';
+export {
+  calibrationAdmissionLineageResultSha256,
+  calibrationAdmissionLineageLedgerSha256,
+  isCalibrationAdmissionLineageResultV1,
+  isCalibrationAdmissionLineageLedgerV1,
+  validateCalibrationAdmissionLineageResultV1,
+  validateCalibrationAdmissionLineageLedgerV1,
+} from './calibration-admission-lineage';
+export type {
+  AdmissionLineageResultV1,
+  CalibrationAdmissionLineageValidationV1,
+} from './calibration-admission-lineage';
 
 export {
   calibrationAdmissionSourceGenerationProposalSha256,

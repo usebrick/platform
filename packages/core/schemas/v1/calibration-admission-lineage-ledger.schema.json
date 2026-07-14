@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-lineage-ledger.schema.json",
+  "title": "AdmissionLineageLedgerV1",
+  "description": "Hash-bound family, pair, split, and overlap-cluster lineage for every admission record or explicitly unresolved record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "admissionRecordSetSha256", "results", "coveredRecordIds", "unresolvedRecordIds", "ledgerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-lineage-ledger-v1" },
+    "admissionRecordSetSha256": { "$ref": "#/$defs/sha256" },
+    "results": {
+      "type": "array",
+      "maxItems": 452382,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "recordId", "contentSha256", "polarity", "familyId", "pairGroupId", "split", "exactClusterId", "nearClusterId", "toolReceiptSha256", "lineageSha256"],
+        "properties": {
+          "version": { "const": "v10.3-admission-lineage-result-v1" },
+          "recordId": { "$ref": "#/$defs/id" },
+          "contentSha256": { "$ref": "#/$defs/sha256" },
+          "polarity": { "enum": ["ai_side", "human_side", "unassigned"] },
+          "familyId": { "$ref": "#/$defs/id" },
+          "pairGroupId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+          "split": { "enum": ["train", "validation", "test", "unassigned"] },
+          "exactClusterId": { "$ref": "#/$defs/id" },
+          "nearClusterId": { "$ref": "#/$defs/id" },
+          "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+          "lineageSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "coveredRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "unresolvedRecordIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "ledgerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
