@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `b39e6579aa5f13548c6a3a98b2273b97013b5fc7b878e5b5818cb980fe9a7d8c` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. |
-| `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `d11ed31986d3dc544bb20c1ee6ed186e9058291bd62bd4df12b4ff9f1d275025` | Current recovery/release gate order and evidence authority; live Task 1A and bounded Task 1B checkpoints record the approved census, register-authority Core contract, register-publication runtime, Core/SlopBrick diagnostic slice, acquisition-round contract, structured record/decision consumption, temporal/adjudicator authority, completed dirty-boundary reduction pass, the independently approved Task 2A Core overlap-contract, SlopBrick normalizer/universe, exact-similarity, external-sort fixture, artifact-contract/runtime, incremental-stream, bounded-overlap-computation, approved overlap-authority publication/CLI slice, bounded fault/CAS matrix, CLI E2E, selected-generation and envelope-relation verification, terminal checkpoint/resume and sidecar-integrity recovery validation, recursive typecheck/build boundary, scope-control and clean-boundary audit, migration-scoped website accessibility verification, score/property and valid-report accounting including unknown-count `n/a`, HTML finding-evidence parity, workspace-binary self-scan correction with threshold parity, dependency audit, DB/docs validity, website dev-data generation, workflow pnpm pinning, stronger schema/type freshness checks, the live 307-file/3,540-test package-gate correction plus repository-polarity and normalized-summary hardening, the health-wire/heatmap/doctor validity matrix, the latest disposable 227-file/531-issue self-scan refresh and brief-output UX review, the 2026-07-14 scope correction/implementation freeze, the post-gate authority-runtime consolidation target, the current-state pointer, the external corpus review-artifact refresh, the recursive build-boundary refresh, the synthetic clean-snapshot build diagnostic, the live-site/documentation truth refresh including measured-versus-unmeasured rule claim correction, the current dirty same-tarball consumer diagnostic, the current 460-file/757-entry diff census refresh, the MCP no-trailing-newline transport correction, the current corpus authority audit refresh, the read-only 329-entry genesis composition diagnostic with deterministic blocker counts and receipt, the built-CLI 45/45 partial-watch validity matrix with all-five-field stream/file assertions and explicit skip semantics, the latest synthetic clean-snapshot consumer, recursive typecheck, full JSON genesis diagnostic, live-diff census/hash correction, current AAX30H clean-snapshot packed-consumer pair, reproducible genesis/typecheck/packer evidence, corrected v3 external-packer provenance receipts, historical website demo-label corrections, the current runnable-versus-planned admission CLI boundary, the reproducible disposable Python/pyarrow bootstrap setup, the staged beacon/large-output boundary review, the independent corpus deficit/acquisition decision audit, the live package-local self-scan/dead-code cleanup review, the row-versus-content overlap audit showing 3,522 cross-polarity hashes with a recursive-canonical diagnostic receipt, the owner-authorized local commit plus two-source bounded quarantine acquisition, static audits, proposals, and cumulative round receipt, the deterministic 10,000-file quarantine projection verification, the immutable acquisition generation-0/1 plus diagnostic evidence-bundle checkpoint, the reviewed two-phase evidence-verification authority plus bound source-census checkpoint, and the bounded full Core/engine/website/SlopBrick verification closeout. |
+| `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `e058de27cb73f61b2971eea953a26118989f8098f336af5296569c5953652bec` | Current recovery/release gate order and evidence authority; live Task 1A and bounded Task 1B checkpoints record the approved census, register-authority Core contract, register-publication runtime, Core/SlopBrick diagnostic slice, acquisition-round contract, structured record/decision consumption, temporal/adjudicator authority, completed dirty-boundary reduction pass, the independently approved Task 2A Core overlap-contract, SlopBrick normalizer/universe, exact-similarity, external-sort fixture, artifact-contract/runtime, incremental-stream, bounded-overlap-computation, approved overlap-authority publication/CLI slice, bounded fault/CAS matrix, CLI E2E, selected-generation and envelope-relation verification, terminal checkpoint/resume and sidecar-integrity recovery validation, recursive typecheck/build boundary, scope-control and clean-boundary audit, migration-scoped website accessibility verification, score/property and valid-report accounting including unknown-count `n/a`, HTML finding-evidence parity, workspace-binary self-scan correction with threshold parity, dependency audit, DB/docs validity, website dev-data generation, workflow pnpm pinning, stronger schema/type freshness checks, the live 307-file/3,540-test package-gate correction plus repository-polarity and normalized-summary hardening, the health-wire/heatmap/doctor validity matrix, the latest disposable 227-file/531-issue self-scan refresh and brief-output UX review, the 2026-07-14 scope correction/implementation freeze, the post-gate authority-runtime consolidation target, the current-state pointer, the external corpus review-artifact refresh, the recursive build-boundary refresh, the synthetic clean-snapshot build diagnostic, the live-site/documentation truth refresh including measured-versus-unmeasured rule claim correction, the current dirty same-tarball consumer diagnostic, the current 460-file/757-entry diff census refresh, the MCP no-trailing-newline transport correction, the current corpus authority audit refresh, the read-only 329-entry genesis composition diagnostic with deterministic blocker counts and receipt, the built-CLI 45/45 partial-watch validity matrix with all-five-field stream/file assertions and explicit skip semantics, the latest synthetic clean-snapshot consumer, recursive typecheck, full JSON genesis diagnostic, live-diff census/hash correction, current AAX30H clean-snapshot packed-consumer pair, reproducible genesis/typecheck/packer evidence, corrected v3 external-packer provenance receipts, historical website demo-label corrections, the current runnable-versus-planned admission CLI boundary, the reproducible disposable Python/pyarrow bootstrap setup, the staged beacon/large-output boundary review, the independent corpus deficit/acquisition decision audit, the live package-local self-scan/dead-code cleanup review, the row-versus-content overlap audit showing 3,522 cross-polarity hashes with a recursive-canonical diagnostic receipt, the owner-authorized local commit plus two-source bounded quarantine acquisition, static audits, proposals, and cumulative round receipt, the deterministic 10,000-file quarantine projection verification, the immutable acquisition generation-0/1 plus diagnostic evidence-bundle checkpoint, the reviewed two-phase evidence-verification authority plus bound source-census checkpoint, the bounded full Core/engine/website/SlopBrick verification closeout, and the superseding clean Task 6 boundary plus dependency rereview rebind. |
 
 The independent full-plan review is
 `.superpowers/sdd/v103-corpus-admission-plan-final-review.md`. During Task 3
@@ -152,9 +152,10 @@ These are hard execution gates, not planning gaps:
       the latest zero-moderate dirty-byte result, before a clean release
       boundary. The bounded migration rereview in
       `.superpowers/sdd/dependency-remediation-rereview.md` is independently
-      **APPROVE** for the current dirty bytes; the clean commit-bound rerun is
-      still required before this gate can be checked.
-- [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary; the owner-authorized commit-bound recursive typecheck/build and Core contract freshness pass, while the complete post-commit recursive test/dependency clean-bound rerun remains required.
+      **APPROVE** for the reviewed bytes; its eight input hashes are rebound to
+      `5f366143c`, but this mechanical rebind is not a fresh audit or the
+      required independent clean-bound release approval.
+- [x] Current clean Task 6 Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates: detached commit `5f366143c`; recursive clean typecheck, lint, test, and build all pass, including Core 185/185, engine 59/59, website 38/38, and SlopBrick 3,544/9 skipped. Future release boundaries still require their own commit-bound gates.
 - [ ] Truthful 329/329 generation-0 review and byte-backed external evidence.
 - [x] Reviewed two-phase `evidence:verify` tool authority: immutable intent
       before the read-only replay, receipt after success, CLI round trip, and
@@ -163,7 +164,7 @@ These are hard execution gates, not planning gaps:
       open.
 - [ ] Real 452,382-row overlap/resource receipt and honest reproduced census.
 - [ ] Independently reviewed 100/100 witness; bounded acquisition only if its census proves a deficit.
-- [ ] Commit-bound Task 9A/9B approvals, exact package tarball, and clean Node 22/24 consumer receipts. The current dirty same-tarball pair is 9/9 on each runtime and is not clean-bound evidence.
+- [ ] Commit-bound Task 9A/9B approvals and the final `0.45.0` package/tarball boundary remain open. The current `0.44.0` clean Task 6 tarball and Node 22/24 receipts are prerequisite evidence only; they do not substitute for the later Task 9A/9B approval receipt.
 - [ ] Admission-backed manifest round trip, two deterministic smoke runs, exact 10k canary, and post-canary full-count freeze.
 - [ ] Statistical/provenance review before any rule verdict or signal change.
 - [ ] Separate self-scan UX. Commit `efb069b90` closes staged-score drift,
@@ -176,9 +177,11 @@ These are hard execution gates, not planning gaps:
 ## Current execution status
 
 The plan remains **READY TO EXECUTE**, but execution is not release-ready:
-release Tasks 1-6 are bounded-complete on dirty bytes, the installed-hook and
-incremental-cache policies are verified, the owner-authorized local commit
-boundary is complete, and the current continuation ledger is 98/178 checked.
+release Tasks 1-6 are bounded-complete, and the clean Task 6 prerequisite is
+now reproduced against commit `5f366143c` with zero status entries and packed
+Node 22/24 receipts. The installed-hook and incremental-cache policies are
+verified, the owner-authorized local commit boundary is complete, and the
+current continuation ledger is 99/178 checked.
 Admission is only 2/76 task items checked; the instructional checkbox example
 is excluded. The legacy corpus remains centralized under
 `/Users/cheng/corpus-expansion`; the two-source bounded round is persisted as
@@ -191,10 +194,13 @@ successful receipt now join the canonical empty bundle; bound `evidence:verify`
 and diagnostic `source:census` both run. The census remains non-ready with
 452,382 quarantined/unrepresented units, zero candidate units, zero eligible
 units, and blockers `static_authority_unavailable` and
-`witness_authority_unavailable`. The next ordered action is static-ledger and
-witness authority recovery, then generator/rights/lineage evidence, followed
-by an acquisition-bound register delta and deterministic census. Do not pull
-more repositories until that census proves a measured deficit.
+`witness_authority_unavailable`. The next ordered action is Task 2B
+static-ledger and witness authority recovery, then generator/rights/lineage
+evidence, followed by an acquisition-bound register delta and deterministic
+census. Do not pull more repositories until that census proves a measured
+deficit. The mechanical dependency rereview rebind is recorded in
+`.superpowers/sdd/dependency-remediation-rereview-rebind-2026-07-14.md`; its
+independent approval receipt is still required.
 
 Any implementation failure that exposes a contract defect reopens planning
 rather than silently weakening provenance, security, resource, or readiness
