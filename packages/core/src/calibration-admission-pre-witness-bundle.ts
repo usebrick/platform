@@ -34,7 +34,6 @@ import {
   isCalibrationRegisterGenerationReceiptV1,
 } from './calibration-admission-register-authority';
 import {
-  isCalibrationAdmissionRecordStreamV1,
   isCalibrationAdmissionReviewSampleV1,
   isCalibrationAdmissionDecisionLedgerV1,
   isCalibrationAdmissionDecisionV103,
@@ -57,19 +56,15 @@ import {
 } from './calibration-admission-overlap-artifacts';
 import {
   isCalibrationAdmissionPrivacyLedgerV1,
-  validateCalibrationAdmissionPrivacyLedgerV1,
 } from './calibration-admission-privacy';
 import {
   isCalibrationAdmissionQualityLedgerV1,
-  validateCalibrationAdmissionQualityLedgerV1,
 } from './calibration-admission-quality';
 import {
   isCalibrationAdmissionLineageLedgerV1,
-  validateCalibrationAdmissionLineageLedgerV1,
 } from './calibration-admission-lineage';
 import {
   exactKeys,
-  isAdmissionId,
   isJsonRecord,
   isSha256,
   sortedUniqueByPredicate,
@@ -223,17 +218,18 @@ function validateArrayGuards(value: RecordValue, errors: string[]): void {
   stableArray(profiles, 'toolProfiles', 'profileId', errors, MAX_TOOL_PROFILES);
   if (!Array.isArray(profiles) || profiles.length > MAX_TOOL_PROFILES) errors.push('toolProfiles exceeds the frozen profile set');
   for (const profile of profiles) guard('tool profile', profile, isCalibrationAdmissionToolProfileV1, errors);
-  if (!isCalibrationAdmissionPolicyV1(value.policy, profiles)) errors.push('policy is invalid or does not bind the exact tool profile set');
+  const policyValid = guard('policy', value.policy, (candidate) => isCalibrationAdmissionPolicyV1(candidate, profiles), errors);
+  if (!policyValid) errors.push('policy is invalid or does not bind the exact tool profile set');
 
   if (!Array.isArray(value.witnessPolicies) || value.witnessPolicies.length !== 2) {
     errors.push('witnessPolicies must contain exactly smoke and canary');
   } else {
     const witnessPolicies = value.witnessPolicies;
     if (record(witnessPolicies[0])?.gate !== 'smoke' || record(witnessPolicies[1])?.gate !== 'canary') errors.push('witnessPolicies must be ordered smoke then canary');
-    for (const witness of witnessPolicies) guard('witness policy', witness, (candidate) => isAdmissionWitnessPolicyV1(candidate, value.policy as CalibrationAdmissionPolicyV1), errors);
+    for (const witness of witnessPolicies) guard('witness policy', witness, (candidate) => policyValid && isAdmissionWitnessPolicyV1(candidate, value.policy as CalibrationAdmissionPolicyV1), errors);
     for (const [index, gate] of (['smoke', 'canary'] as const).entries()) {
       const witness = record(witnessPolicies[index]);
-      if (witness !== undefined && isJsonRecord(value.policy) && witness.gate === gate) {
+      if (policyValid && witness !== undefined && witness.gate === gate) {
         const expected = expandAdmissionWitnessConstraints(value.policy as unknown as CalibrationAdmissionPolicyV1, gate);
         if (calibrationAdmissionCanonicalJson(witness.constraints) !== calibrationAdmissionCanonicalJson(expected)) errors.push(`${gate} witness policy is not the exact policy expansion`);
       }

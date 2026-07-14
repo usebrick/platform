@@ -26,3 +26,14 @@ Implementation commit: `286741d152cdf7b829ee45670b493bfe8a54eb65`
 - The validator intentionally wraps existing Core guards and adds stricter pre-witness partition checks; it does not construct runtime context or perform I/O.
 - The initial RED run was a fixture-setup failure (`ENOENT`) rather than a semantic assertion failure; all focused semantic mutations are green after the fixture and implementation were added.
 - Unrelated pre-existing untracked paths (`.astro/`, `TODO.md`, `src/`) were left untouched.
+
+## Follow-up hostile-input fix
+
+The validator now guards policy validation before calling
+`expandAdmissionWitnessConstraints`, so malformed policy JSON fails closed
+without throwing. A regression mutation covers this path.
+
+- Focused test: `corepack pnpm --filter @usebrick/core exec vitest run tests/calibration-admission-pre-witness-bundle-contract.test.ts --maxWorkers=1 --minWorkers=1` — 10/10 passed.
+- `corepack pnpm --filter @usebrick/core typecheck` — passed.
+- `corepack pnpm --filter @usebrick/core test` — passed (29 files, 217 tests).
+- `git diff --check` — passed.

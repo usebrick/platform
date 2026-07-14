@@ -63,6 +63,13 @@ describe('v10.3 rich pre-witness bundle Core contract', () => {
     expect(validateCalibrationAdmissionPreWitnessBundleV1(rehash({ ...value, policy: invalidPolicy })).ok).toBe(false);
   });
 
+  it('fails closed for malformed policy JSON without expanding witness constraints', () => {
+    const value = fixture();
+    const malformed = rehash({ ...value, policy: { malformed: true } });
+    expect(() => validateCalibrationAdmissionPreWitnessBundleV1(malformed)).not.toThrow();
+    expect(validateCalibrationAdmissionPreWitnessBundleV1(malformed).ok).toBe(false);
+  });
+
   it('requires the exact admission record stream path and structural fields', () => {
     const value = fixture();
     expect(validateCalibrationAdmissionPreWitnessBundleV1(rehash({
