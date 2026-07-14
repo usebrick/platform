@@ -365,6 +365,8 @@ describe('formatSarif — partialFingerprints.primaryLocationLineHash', () => {
 describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1)', () => {
   function driverProperties(report: ProjectReport): {
     compositeScore?: unknown;
+    completionStatus?: string;
+    scoreValidity?: string;
     scores?: {
       aiSlopScore: number;
       engineeringHygiene: number;
@@ -399,6 +401,27 @@ describe('formatSarif — driver-level properties.compositeScore (v0.41.0 §2b.1
     };
     const props = driverProperties(makeReport({ compositeScore: composite }));
     expect(props).toMatchObject({ compositeScore: composite });
+  });
+
+  it('omits score aggregates from driver.properties for an incomplete report', () => {
+    const composite = {
+      mean: 0.66,
+      max: 0.92,
+      tier: 'LIKELY_AI' as const,
+      fileCount: 17,
+    };
+    const props = driverProperties(makeReport({
+      compositeScore: composite,
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    }));
+    expect(props?.compositeScore).toBeUndefined();
+    expect(props?.scores).toBeUndefined();
+    expect(props).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
   });
 
   it('keeps headline scores when compositeScore is the empty shape (pre-v0.18.2 reports)', () => {

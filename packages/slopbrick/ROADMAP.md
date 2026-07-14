@@ -213,7 +213,7 @@ const monthlyUSD = Math.round(
 **Sanity check:** a 100k LoC project, medium bucket, 50 issues (10 high / 30 medium / 10 low), AI signals detected → `(100 × 25.50 + (10×400 + 30×150 + 10×50)) × 1.8 ≈ $20,800/month`, ≈ $250k/year — in the same order of magnitude as Sonar's $306k/yr/MLoC.
 
 **Axes consumed:**
-- `aiQuality` (0–100, higher is better — v0.15.0 replacement for `slopIndex`)
+- `aiSlopScore` (0–100, lower is cleaner — raw AI-slop amount; v0.21.0 replacement for `slopIndex`)
 - `engineeringHygiene` (0–100, higher is better)
 - `security` (0–100, higher is better)
 - `architectureConsistency` (0–100, direct)
@@ -546,4 +546,3 @@ v0.10 was listed as "2026-Q3 (target)" in the calibration trajectory table. Per 
 ### Documentation debt (cross-reference)
 
 The same shipped-but-undocumented work also needs CHANGELOG entries. See CHANGELOG `[Unreleased]` section and `docs/research/v0.10-implementation-plan.md` "Documentation debt" section for the backfill list (Phases 6/8/9/11 of the v0.10 plan).
-

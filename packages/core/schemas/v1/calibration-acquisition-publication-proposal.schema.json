@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-publication-proposal.schema.json",
+  "title": "CalibrationAcquisitionPublicationProposalV1",
+  "description": "Frozen artifact set and expected-current contract for an acquisition index publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "proposalId", "operation", "expectedCurrentState", "nextIndex", "artifacts", "proposalSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-publication-proposal-v1" },
+    "proposalId": { "$ref": "#/$defs/id" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "nextIndex": { "$ref": "calibration-admission-acquisition-index.schema.json" },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "proposalSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\x00-\\x1f]+$" },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "indexSha256"], "properties": { "kind": { "const": "existing" }, "indexSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "objectId", "sourceRelativePath", "finalRelativePath", "bytes", "sha256"],
+      "properties": {
+        "kind": { "enum": ["evidence_authorization", "source_authorization", "round_authorization", "evidence_receipt", "evidence_cas_primary_completion", "source_receipt", "round_receipt", "materialization_receipt", "materialization_receipt_ledger", "evidence_envelope", "evidence_index", "evidence_payload_set", "evidence_verification_receipt_ledger", "evidence_bundle"] },
+        "objectId": { "$ref": "#/$defs/id" },
+        "sourceRelativePath": { "$ref": "#/$defs/relativePath" },
+        "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

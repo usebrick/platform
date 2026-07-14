@@ -1,12 +1,35 @@
-import { availableParallelism } from 'node:os';
+import { realpathSync } from 'node:fs';
+import { availableParallelism, tmpdir } from 'node:os';
 import { defineConfig } from 'vitest/config';
 
-const maxTestWorkers = Math.max(
+const automaticWorkerBudget = (available: number): number => Math.max(
   1,
-  Math.min(4, Math.floor(availableParallelism() / 2)),
+  Math.min(4, Math.floor(available / 2)),
 );
 
+/** Resolve the bounded worker count used by the subprocess-heavy suite. */
+export function resolveTestWorkers(
+  available: number,
+  requested = process.env.SLOPBRICK_VITEST_WORKERS,
+): number {
+  const automatic = automaticWorkerBudget(available);
+  if (requested === undefined || requested.trim() === '') return automatic;
+  const parsed = Number(requested);
+  if (!Number.isInteger(parsed) || parsed < 1) return automatic;
+  return Math.min(automatic, parsed);
+}
+
+const maxTestWorkers = resolveTestWorkers(availableParallelism());
+
 export default defineConfig({
+  server: {
+    fs: {
+      // CLI contract tests create real user configs in the OS temp directory.
+      // Vitest 3/Vite 6 otherwise rejects those deliberate files at the SSR
+      // filesystem boundary even though the production loader is valid.
+      allow: [realpathSync(tmpdir())],
+    },
+  },
   test: {
     globals: false,
     environment: 'node',

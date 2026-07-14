@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-adjudicator-receipt.schema.json",
+  "title": "CalibrationAdmissionAdjudicatorReceiptV1",
+  "description": "A receipt binding one adjudication decision to the exact two-decision peer receipt it resolved.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "assignmentId", "priorDecisionIds", "priorBlindReviewReceiptId", "evidenceSetSha256", "adjudicationDecisionId", "adjudicatorId", "priorPeerReceiptObservedBeforeAdjudication", "protocolAuditorId", "protocolAuditEvidenceIds"],
+  "properties": {
+    "version": { "const": "v10.3-admission-adjudicator-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "assignmentId": { "$ref": "#/$defs/sha256" },
+    "priorDecisionIds": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }],
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "priorBlindReviewReceiptId": { "$ref": "#/$defs/sha256" },
+    "evidenceSetSha256": { "$ref": "#/$defs/sha256" },
+    "adjudicationDecisionId": { "$ref": "#/$defs/sha256" },
+    "adjudicatorId": { "$ref": "#/$defs/id" },
+    "priorPeerReceiptObservedBeforeAdjudication": { "const": true },
+    "protocolAuditorId": { "$ref": "#/$defs/id" },
+    "protocolAuditEvidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+  }
+}

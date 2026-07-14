@@ -1,0 +1,10 @@
+{
+  "version": "v10.3-admission-register-delta-v1",
+  "deltaId": "delta-1",
+  "generation": 1,
+  "parentRegisterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "acquisitionRoundId": "round-1",
+  "acquisitionRoundReceiptSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "addedSources": [],
+  "deltaSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+}

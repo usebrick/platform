@@ -121,8 +121,8 @@ export const naturalnessAnomalyRule = createRule<NaturalnessAnomalyContext>({
         line,
         column,
         advice:
-          'Mix in more domain-specific identifier names so the vocabulary reflects the actual problem domain ' +
-          '(Hindle 2012 §4.3: LLM-generated code reuses a narrow band of training-data identifiers).',
+          'Review identifier vocabulary for domain clarity; use specific names when they communicate meaning. ' +
+          'This statistic is not an authorship verdict.',
       });
     }
 

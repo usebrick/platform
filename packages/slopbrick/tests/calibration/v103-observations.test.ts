@@ -23,4 +23,12 @@ describe('v10.3 observation verifier', () => {
     expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, observations, [], coverage)).toMatchObject({ ok: false });
     expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, observations, failures, { ...coverage, strata: [coverage.strata[0]!, coverage.strata[0]!] })).toMatchObject({ ok: false });
   });
+
+  it('fails closed for malformed or duplicate per-rule evidence', () => {
+    const validEvidence = { ruleId: 'ai/comment-ratio', category: 'ai', aiSpecific: true, severity: 'high', count: 1 };
+    const malformed = [{ ...observations[0], ruleEvidence: [{ ruleId: 'ai/comment-ratio', category: 'ai', aiSpecific: true, severity: 'high' }] }, observations[1]];
+    expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, malformed, failures, coverage)).toMatchObject({ ok: false });
+    const duplicate = [{ ...observations[0], ruleEvidence: [validEvidence, { ...validEvidence, count: 2 }] }, observations[1]];
+    expect(verifyV103Observations({ runId: 'smoke-001', expectedFileIdsByPolarity: expected }, duplicate, failures, coverage)).toMatchObject({ ok: false });
+  });
 });

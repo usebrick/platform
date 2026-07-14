@@ -163,6 +163,19 @@ describe('perf/css-bloat', () => {
 });
 
 describe('runProjectRules', () => {
+  it('ignores failed per-file results even when stale project facts are present', () => {
+    const failed = {
+      ...makeResult('/failed.tsx', ['gap-4'], ['repeated-style'], ['View', 'Text']),
+      parseError: 'parser failed',
+      failureKind: 'parse' as const,
+    };
+
+    // A single successful gap-bearing file would legitimately trigger the
+    // small-project monopoly threshold. A failed result must not be allowed
+    // to contribute those stale facts to any project detector.
+    expect(runProjectRules([failed], baseConfig)).toHaveLength(0);
+  });
+
   it('returns issues from all enabled project rules', () => {
     const duplicated = 'centered';
     const results = [
@@ -269,5 +282,4 @@ describe('layout/duplicated-screen', () => {
   });
 
 });
-
 

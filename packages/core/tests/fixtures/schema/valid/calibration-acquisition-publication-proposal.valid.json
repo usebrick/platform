@@ -1,0 +1,16 @@
+{
+  "version": "v10.3-acquisition-publication-proposal-v1",
+  "proposalId": "e423ab9909d0760dd33c124366091d45a91a5a9620459445a02a0fcc17726e80",
+  "operation": "create",
+  "expectedCurrentState": {
+    "kind": "absent"
+  },
+  "nextIndex": {
+    "version": "v10.3-admission-acquisition-index-v1",
+    "generation": 0,
+    "artifacts": [],
+    "indexSha256": "6b8cc4bc10c986f31205edd4d8f971dcaa3eb3263df6ca07145dc22ad23f271c"
+  },
+  "artifacts": [],
+  "proposalSha256": "b1284f0f0fbf4ebd682100749e5f4a8413428d7150ceaff55a573e6e60a528b3"
+}

@@ -69,13 +69,13 @@ export const zipfSlopeAnomalyRule = createRule<RuleContext>({
       message:
         `Zipf exponent s=${fit.exponent.toFixed(3)} is ${direction} than corpus baseline ` +
         `(${exponentMean.toFixed(2)} ± ${exponentStd.toFixed(2)}, z=${z.toFixed(2)}σ, R²=${fit.rSquared.toFixed(2)}). ` +
-        `LLM-generated code has systematically different token-frequency slopes.`,
+        `This identifier-frequency statistic can reflect domain vocabulary, generated output, or boilerplate; it is not an authorship verdict.`,
       line: 1,
       column: 1,
       advice:
-        `Inspect for LLM-style frequency distribution: this file's identifier usage is ` +
+        `Review identifier vocabulary and repeated structure in context: this file's usage is ` +
         `${direction === 'steeper' ? 'more peaked (one dominant token)' : 'flatter (more uniform usage)'} ` +
-        `than typical human code.`,
+        `than the calibrated baseline. Rename only when it improves domain clarity, not to alter a detector statistic.`,
     });
     return issues;
   },

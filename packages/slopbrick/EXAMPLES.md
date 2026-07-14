@@ -247,26 +247,25 @@ be updated based on the corpus data.
 
 ---
 
-## Custom category weights
+## Custom composite weights
 
-The default weights for the headline `repositoryHealth` (v0.16.0+):
+The default weights for the headline `repositoryHealth` are applied to the
+three AI-slop buckets (boundary, context, visual):
 
 | Subscore | Default weight |
 |---|---|
-| `aiQuality` | 40% |
-| `engineeringHygiene` | 30% |
-| `security` | 20% |
-| `testQuality` | 10% |
+| `boundary` | 40% |
+| `context` | 35% |
+| `visual` | 25% |
 
-To change them (e.g. you care more about AI quality than security):
+To change them (e.g. you want to emphasize structural evidence):
 
 ```js
 export default defineConfig({
-  categoryWeights: {
-    aiQuality: 0.50,
-    security: 0.10,
-    engineeringHygiene: 0.30,
-    testQuality: 0.10,
+  compositeWeights: {
+    boundary: 0.50,
+    context: 0.30,
+    visual: 0.20,
   },
 });
 ```
@@ -324,7 +323,8 @@ everything slopbrick knows. Most teams should leave it off.
 | `workspaces` | `string[]` | `[]` | Monorepo workspace globs |
 | `rules` | `Record<string, Severity\|'off'>` | `{}` | Per-rule severity overrides |
 | `thresholds` | `{ meanSlop, p90Slop, individualSlopThreshold }` | `{ 15, 30, 60 }` | CI gate thresholds |
-| `categoryWeights` | `Record<string, number>` | `{ aiQuality: 0.40, engineeringHygiene: 0.30, security: 0.20, testQuality: 0.10 }` | repositoryHealth composite weights |
+| `categoryWeights` | `Record<string, number>` | per-category multipliers | Severity weighting for engineering/category burdens |
+| `compositeWeights` | `{ boundary, context, visual }` | `{ 0.40, 0.35, 0.25 }` | AI-slop bucket weights in the repositoryHealth composite |
 | `mcp` | `{ preloadStructure, includeDefaultOff, trustMode }` | `{ true, false, false }` | MCP server settings |
 | `constitution` | `string` | `null` | Path to a custom `.slopbrick/constitution.json` |
 | `output` | `{ format, dir }` | `{ format: 'pretty', dir: '.slopbrick' }` | Output settings |

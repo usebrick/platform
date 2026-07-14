@@ -1,0 +1,18 @@
+{
+  "version": "v10.3-admission-source-register-v1",
+  "generation": 0,
+  "initialSourceIdsSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "appliedDeltaIds": [],
+  "rawDiscoveryPopulation": {
+    "declaredAi": 635830,
+    "declaredHuman": 842520,
+    "closedWorld": false
+  },
+  "selectedCoverage": {
+    "total": 452382,
+    "baselineMaterialUnits": 58089,
+    "repositoryMaterialUnits": 394293
+  },
+  "entries": [],
+  "registerSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}

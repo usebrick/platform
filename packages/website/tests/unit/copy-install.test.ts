@@ -64,7 +64,10 @@ describe('initCopyInstall', () => {
   it('falls back to document.execCommand("copy") when clipboard is unavailable', async () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     const execCommand = vi.fn();
-    document.execCommand = execCommand;
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
 
     const div = document.createElement('div');
     div.dataset.copy = 'echo hi';

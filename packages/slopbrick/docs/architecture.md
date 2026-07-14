@@ -5,7 +5,8 @@
 > **Current-state correction (2026-07-10):** the latest published package is
 > `slopbrick@0.43.0`; the v0.44.0 trust-restoration train is unreleased. The
 > canonical MCP registry currently exposes seven tools (see `docs/MCP.md`),
-> and the website uses native browser APIs plus WebGL rather than Lenis/GSAP.
+> and the website uses native browser APIs plus a CSS brick surface rather than
+> Lenis/GSAP or a WebGL hero.
 > Sections below preserve historical design decisions; package code, schemas,
 > the support matrix, and the continuation plan are normative for current work.
 

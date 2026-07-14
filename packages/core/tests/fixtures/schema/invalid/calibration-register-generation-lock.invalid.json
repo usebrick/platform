@@ -1,0 +1,12 @@
+{
+  "version": "v10.3-register-generation-lock-v1",
+  "lockId": "lock-1",
+  "intendedTransactionId": "transaction-1",
+  "invocationIntentId": "7777777777777777777777777777777777777777777777777777777777777777",
+  "expectedCurrentRegisterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "nextRegisterSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "deltaId": "delta-1",
+  "recoveryNonce": "8888888888888888888888888888888888888888888888888888888888888888",
+  "lockSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+  "extra": true
+}

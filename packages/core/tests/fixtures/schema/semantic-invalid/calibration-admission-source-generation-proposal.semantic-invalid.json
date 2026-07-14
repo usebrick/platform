@@ -1,0 +1,11 @@
+{
+  "version": "v10.3-admission-source-generation-proposal-v1",
+  "proposalId": "proposal-fixture",
+  "sourceId": "source-fixture",
+  "operation": "replace",
+  "expectedCurrentState": { "kind": "absent" },
+  "sourceReviewSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "materializationAuthority": { "kind": "genesis", "evidenceBundleSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+  "artifacts": [{ "pathBase": "generation_local", "relativePath": "source-review.json", "kind": "source_review", "bytes": 1, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+  "proposalSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

@@ -31,6 +31,10 @@ function tempDir(): string {
   return dir;
 }
 
+function fileSha256(path: string): string {
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
 function manifest() {
   return {
     version: 'v10.3',
@@ -281,18 +285,18 @@ describe('v10.3 selection entrypoint', () => {
     const script = join(process.cwd(), 'scripts', 'cal', 'v103.ts');
     const tsx = join(process.cwd(), 'node_modules', '.bin', 'tsx');
 
-    await expect(execFileAsync(tsx, [script, 'corpus:validate', '--manifest', badManifest])).rejects.toMatchObject({ code: 2 });
+    await expect(execFileAsync(tsx, [script, 'corpus:validate', '--manifest', badManifest, '--expected-manifest-sha256', fileSha256(badManifest)])).rejects.toMatchObject({ code: 2 });
 
     const validManifest = join(dir, 'manifest.json');
     writeFileSync(validManifest, JSON.stringify(manifest()));
     const out = join(dir, 'run');
     mkdirSync(out);
     writeFileSync(join(out, 'keep.txt'), 'do not overwrite');
-    await expect(execFileAsync(tsx, [script, 'select', '--manifest', validManifest, '--seed', 'smoke-1', '--out', out])).rejects.toMatchObject({ code: 2 });
+    await expect(execFileAsync(tsx, [script, 'select', '--manifest', validManifest, '--expected-manifest-sha256', fileSha256(validManifest), '--seed', 'smoke-1', '--out', out])).rejects.toMatchObject({ code: 2 });
     expect(readFileSync(join(out, 'keep.txt'), 'utf8')).toBe('do not overwrite');
 
     const freshRun = join(dir, 'fresh-run');
-    await expect(execFileAsync(tsx, [script, 'select', '--manifest', validManifest, '--seed', 'smoke-1', '--out', freshRun])).resolves.toMatchObject({});
+    await expect(execFileAsync(tsx, [script, 'select', '--manifest', validManifest, '--expected-manifest-sha256', fileSha256(validManifest), '--seed', 'smoke-1', '--out', freshRun])).resolves.toMatchObject({});
     expect(readFileSync(join(freshRun, 'corpus-selection.jsonl'), 'utf8')).not.toContain(dir);
     await expect(execFileAsync(tsx, [script, 'verify', '--run', freshRun, '--stage', 'selection'])).resolves.toMatchObject({});
   });

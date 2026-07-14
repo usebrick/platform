@@ -84,8 +84,7 @@ export const rustUnusedPubFnRule = createRule<RustUnusedPubFnContext>({
         advice:
           `Remove the function or call it somewhere. Rust's compiler doesn't warn on ` +
           `pub fns missing consumers unless \`#![warn(dead_code)]\` is set at the crate ` +
-          `root. AI agents that iterate on a file often leave these behind — the most ` +
-          `common AI-rotation signature for Rust after unused-imports.`,
+          `root. Enable that lint or remove intentionally unused public functions so the API surface stays clear.`,
       });
     }
 

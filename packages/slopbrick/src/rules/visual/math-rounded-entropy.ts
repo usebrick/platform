@@ -81,7 +81,7 @@ export const mathRoundedEntropyRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Border-radius tokens have low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
-        `AI tends to repeat lg/xl/full; humans mix sm/md/lg/xl/2xl/3xl/full.`,
+        `Review radii against the component and design system; repeated values are valid when intentional.`,
       line: anchor.line,
       column: anchor.column,
       advice:

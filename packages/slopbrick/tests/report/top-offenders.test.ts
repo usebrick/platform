@@ -34,7 +34,8 @@ function makeReport(overrides: Partial<ProjectReport> = {}): ProjectReport {
 describe('topOffenders rendering', () => {
   it('formatPretty renders top 5 offenders with adjusted score + issue count', () => {
     const out = formatPretty(makeReport());
-    expect(out).toContain('Top offending components (by adjusted score)');
+    expect(out).toContain('Top offending files (by adjusted score)');
+    expect(out).not.toContain('Top offending components (by adjusted score)');
     expect(out).toContain('src/Card.tsx');
     expect(out).toContain('src/Modal.tsx');
     expect(out).toContain('src/Hero.tsx');
@@ -55,9 +56,34 @@ describe('topOffenders rendering', () => {
     expect(out).not.toContain('1 issues');
   });
 
-  it('formatPretty omits section when topOffenders absent', () => {
-    const out = formatPretty(makeReport({ topOffenders: undefined }));
-    expect(out).not.toContain('Top offending components');
+  it('formatPretty treats an explicit empty topOffenders list as authoritative', () => {
+    const out = formatPretty(makeReport({
+      components: [{
+        filePath: 'src/Clean.tsx',
+        rawScore: 0,
+        componentScore: 0,
+        adjustedScore: 0,
+        componentCount: 1,
+      }],
+      topOffenders: [],
+    }));
+    expect(out).not.toContain('Top offending');
+    expect(out).not.toContain('src/Clean.tsx');
+  });
+
+  it('formatPretty keeps the component-score fallback for legacy reports', () => {
+    const out = formatPretty(makeReport({
+      components: [{
+        filePath: 'src/Legacy.tsx',
+        rawScore: 10,
+        componentScore: 10,
+        adjustedScore: 10,
+        componentCount: 1,
+      }],
+      topOffenders: undefined,
+    }));
+    expect(out).toContain('Top offending components');
+    expect(out).toContain('src/Legacy.tsx');
   });
 
   it('formatHtml renders top offenders in a dedicated section', () => {

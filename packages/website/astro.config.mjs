@@ -9,9 +9,6 @@ export default defineConfig({
     assets: 'assets',
   },
   vite: {
-    ssr: {
-      noExternal: ['gsap', 'lenis'],
-    },
     server: {
       // Match the dev port to the README's documented URL
       port: 4321,

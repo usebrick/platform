@@ -89,7 +89,7 @@ export const tsNeverVsUnknownRule = createRule<TsNeverVsUnknownContext>({
         category: 'typo',
         severity: 'low',
         aiSpecific: true,
-        message: `Function '${fnName}' returns 'never' but its body has no throw, loop, or exit — likely AI misuse`,
+        message: `Function '${fnName}' returns 'never' but its body has no throw, loop, or exit — review the return type`,
         line,
         column: match[0].indexOf('never') + 1,
         advice:

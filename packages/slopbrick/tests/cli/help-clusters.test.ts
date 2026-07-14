@@ -17,7 +17,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
+import { Command } from 'commander';
 import { binPath } from '../helpers/cli';
+import { registerScan } from '../../src/cli/commands/scan';
 
 const SLOPBRICK = binPath;
 
@@ -121,5 +123,16 @@ describe('v0.18.4 — --help clusters', () => {
     // tells users about the --help-flat opt-out.
     const out = runHelp(['--help']);
     expect(out).toContain('--help-flat');
+  });
+
+  it('clarifies that --no-telemetry disables the local flywheel, not project memory', () => {
+    const program = new Command();
+    registerScan(program, async () => {});
+    const scan = program.commands.find((command) => command.name() === 'scan');
+    const option = scan?.options.find((candidate) => candidate.long === '--no-telemetry');
+
+    expect(option?.description).toContain('local flywheel');
+    expect(option?.description).toContain('project-memory artifacts still write');
+    expect(option?.description).toContain('projectMemory: false');
   });
 });

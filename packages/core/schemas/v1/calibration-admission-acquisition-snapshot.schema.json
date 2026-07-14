@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-acquisition-snapshot.schema.json",
+  "title": "CalibrationAdmissionAcquisitionSnapshotV1",
+  "description": "Content-addressed projection of an acquisition index generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "indexGenerationSha256", "artifactKeys", "snapshotSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-acquisition-snapshot-v1" },
+    "indexGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "artifactKeys": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "snapshotSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" }
+  }
+}

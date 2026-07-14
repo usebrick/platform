@@ -1,0 +1,22 @@
+{
+  "version": "v10.3-admission-register-delta-v1",
+  "deltaId": "delta-1",
+  "generation": 1,
+  "parentRegisterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "acquisitionRoundId": "round-1",
+  "acquisitionRoundReceiptSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "addedSources": [
+    {
+      "sourceId": "source-a",
+      "sourceGenerationSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "registerEntrySha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "sourceReviewSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "sourceAcquisitionAuthorizationId": "authorization-a",
+      "sourceAcquisitionReceiptId": "acquisition-a",
+      "sourceAcquisitionReceiptSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "materializationReceiptId": "materialization-a",
+      "materializationReceiptSha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  ],
+  "deltaSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+}

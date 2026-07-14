@@ -1,0 +1,12 @@
+{
+  "version": "v10.3-admission-overlap-policy-v1",
+  "method": "prefix-filter-exact-jaccard-0.80-v1",
+  "maxUnitBytes": 33554432,
+  "maxShardBytes": 67108864,
+  "maxOpenFiles": 64,
+  "maxHeapBytes": 4294967296,
+  "maxRssBytes": 6442450944,
+  "maxWorkBytes": 214748364800,
+  "maxWallMilliseconds": 86400000,
+  "policySha256": "7384953cacee622cc9ef2647727e3eca591127548f163a969834ec45af18c859"
+}

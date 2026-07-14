@@ -45,4 +45,16 @@ describe('v10.3 durable synthetic adapter', () => {
     await run();
     expect(calls).toBe(firstCalls);
   });
+
+  it('replays an excluded terminal result without treating it as corrupt', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'durable-')); dirs.push(directory);
+    let calls = 0;
+    const adapter = durableSyntheticAdapter({ directory, runId: 'run', inputHash: hash, initialTimeoutMs: 10, adapter: async (ids) => {
+      calls++;
+      return Object.fromEntries(ids.map((id) => [id, { kind: 'excluded' as const, exclusionReason: 'max_file_bytes' }]));
+    } });
+    await adapter(['a'], 10);
+    await expect(adapter(['a'], 10)).resolves.toEqual({ a: { kind: 'excluded', exclusionReason: 'max_file_bytes' } });
+    expect(calls).toBe(1);
+  });
 });

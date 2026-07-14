@@ -62,7 +62,7 @@ export const tsEnumVsAsConstRule = createRule<TsEnumVsAsConstContext>({
         category: 'typo',
         severity: 'low',
         aiSpecific: true,
-        message: `'enum' is an AI / older-TS pattern — prefer 'as const' for a frozen object literal`,
+        message: `'enum' has runtime semantics that may not fit this use — prefer 'as const' for a frozen object literal`,
         line,
         column: match[0].indexOf('enum') + 1,
         advice:

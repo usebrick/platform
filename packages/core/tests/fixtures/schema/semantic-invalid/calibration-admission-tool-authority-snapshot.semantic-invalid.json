@@ -1,0 +1,25 @@
+{
+  "version": "v10.3-admission-tool-authority-snapshot-v1",
+  "indexGenerationSha256": "290a4e057a39cb9c3488510cf6ce5bed02059c6c8c085f5afd8ca0ed0a4310bb",
+  "profileIds": [
+    "admission-acquisition-publication-v1",
+    "admission-acquisition-round-v1",
+    "admission-census-v1",
+    "admission-context-v1",
+    "admission-core-contract-v1",
+    "admission-evidence-acquire-v1",
+    "admission-git-acquire-v1",
+    "admission-manifest-v1",
+    "admission-release-acquire-v1",
+    "admission-source-node-v1",
+    "admission-source-parquet-v1",
+    "admission-static-ledgers-v1"
+  ],
+  "invocationIntentIds": [
+    "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35"
+  ],
+  "receiptIds": [
+    "5ce269221e67fedc9c981f60b0142c72967525edeffcbc44c674acf0040ccb27"
+  ],
+  "snapshotSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

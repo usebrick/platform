@@ -182,9 +182,8 @@ export const structuralCloneRule = createRule<StructuralCloneContext>({
           'Refactor to a shared helper. This is a Type-3 clone — ' +
           'two files share canonical shape after identifier ' +
           'normalization and likely a few added/removed statements. ' +
-          'AI agents produce Type-3 clones when iterating on a ' +
-          'function: same control flow, different names, a few ' +
-          'lines added. (v0.24.0 — two-stage MinHash on canonical ' +
+          'Treat the similarity as maintainability evidence and verify whether ' +
+          'the behavior should evolve together. (v0.24.0 — two-stage MinHash on canonical ' +
           'k=8 + identifier k=5 shingles.)',
         extras: {
           structuralDuplicateOf: {

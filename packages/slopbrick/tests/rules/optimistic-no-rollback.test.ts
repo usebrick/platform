@@ -61,6 +61,61 @@ function Component() {
     expect(issues[0].ruleId).toBe('logic/optimistic-no-rollback');
   });
 
+  it('flags a useState setter inside a custom hook without JSX', async () => {
+    const source = `
+function useItems() {
+  const [items, setItems] = useState([]);
+  const addItem = async (item) => {
+    try {
+      setItems([...items, item]);
+      await saveItem(item);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  return { items, addItem };
+}
+`;
+    const issues = await runRule(source, makeConfig());
+    expect(issues).toHaveLength(1);
+    expect(issues[0].ruleId).toBe('logic/optimistic-no-rollback');
+  });
+
+  it('flags an optimistic React.useState setter', async () => {
+    const source = `
+function Component() {
+  const [items, setItems] = React.useState([]);
+  const addItem = async (item) => {
+    try {
+      setItems([...items, item]);
+      await saveItem(item);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  return <button onClick={addItem}>Add</button>;
+}
+`;
+    const issues = await runRule(source, makeConfig());
+    expect(issues).toHaveLength(1);
+    expect(issues[0].ruleId).toBe('logic/optimistic-no-rollback');
+  });
+
+  it('does not flag a non-state setLoggerQuiet call before await', async () => {
+    const source = `
+async function runWorker() {
+  try {
+    setLoggerQuiet(true);
+    await runRules();
+  } catch (error) {
+    console.error(error);
+  }
+}
+`;
+    const issues = await runRule(source, makeConfig());
+    expect(issues).toHaveLength(0);
+  });
+
   it('does not flag when catch rolls back', async () => {
     const source = `
 function Component() {

@@ -33,6 +33,7 @@
 //   rule.
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { maskJsComments } from '../../engine/source-lex';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
 
@@ -66,13 +67,17 @@ export const failOpenAuthRule = createRule<RuleContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // The rule documentation intentionally contains the exact bypass shapes
+    // as examples. Keep those comments out of matching while preserving line
+    // offsets and quoted environment values in executable code.
+    const code = maskJsComments(source);
     for (const re of FAIL_OPEN_PATTERNS) {
-      const match = source.match(re);
+      const match = code.match(re);
       if (!match) continue;
       // Find the actual offset via RegExp.exec — match() doesn't return
       // indices in older Node, but exec with a fresh regex does.
       const re2 = new RegExp(re.source, re.flags);
-      const exec = re2.exec(source);
+      const exec = re2.exec(code);
       if (!exec) continue;
       issues.push({
         ruleId: 'security/fail-open-auth',

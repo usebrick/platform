@@ -72,4 +72,12 @@ export default {
     targetSizeRequireTailwind: true,
   },
   prScoreThreshold: 20,
+  selfScan: {
+    excludePaths: [
+      '**/src/rules/**',
+      '**/snippet/**',
+      '**/tests/**',
+      '**/src/engine/visitors/**',
+    ],
+  },
 };

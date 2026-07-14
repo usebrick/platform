@@ -157,44 +157,55 @@ export async function runMcpServer(
       void Promise.all(pending).then(() => resolve());
     };
     input.setEncoding('utf-8');
-    input.on('data', (chunk: string) => {
-      buffer += chunk;
-      let nlIdx = buffer.indexOf('\n');
-      const processLine = (rawLine: string) => {
-        const line = rawLine.trim();
-        if (line.length === 0) return;
-        try {
-          const req = JSON.parse(line) as JsonRpcRequest;
-          const responseTask = handleRequest(req, cwd, builtinRules, config).then((res) => {
-            if (res !== null) output.write(JSON.stringify(res) + '\n');
-          }).catch((err) => {
-            const message = err instanceof Error ? err.message : String(err);
-            const res: JsonRpcResponse = {
-              jsonrpc: '2.0',
-              id: null,
-              error: { code: -32603, message },
-            };
-            output.write(JSON.stringify(res) + '\n');
-          });
-          pending.add(responseTask);
-          void responseTask.finally(() => pending.delete(responseTask));
-        } catch (err) {
+    const processLine = (rawLine: string) => {
+      const line = rawLine.trim();
+      if (line.length === 0) return;
+      try {
+        const req = JSON.parse(line) as JsonRpcRequest;
+        const responseTask = handleRequest(req, cwd, builtinRules, config).then((res) => {
+          if (res !== null) output.write(JSON.stringify(res) + '\n');
+        }).catch((err) => {
           const message = err instanceof Error ? err.message : String(err);
           const res: JsonRpcResponse = {
             jsonrpc: '2.0',
             id: null,
-            error: { code: -32700, message: 'Parse error: ' + message },
+            error: { code: -32603, message },
           };
           output.write(JSON.stringify(res) + '\n');
-        }
-      };
+        });
+        pending.add(responseTask);
+        void responseTask.finally(() => pending.delete(responseTask));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const res: JsonRpcResponse = {
+          jsonrpc: '2.0',
+          id: null,
+          error: { code: -32700, message: 'Parse error: ' + message },
+        };
+        output.write(JSON.stringify(res) + '\n');
+      }
+    };
+    const flushBuffer = () => {
+      const finalLine = buffer;
+      buffer = '';
+      if (finalLine.trim().length > 0) processLine(finalLine);
+    };
+    input.on('data', (chunk: string) => {
+      buffer += chunk;
+      let nlIdx = buffer.indexOf('\n');
       while (nlIdx !== -1) {
         processLine(buffer.slice(0, nlIdx));
         buffer = buffer.slice(nlIdx + 1);
         nlIdx = buffer.indexOf('\n');
       }
     });
-    input.on('end', finish);
-    input.on('close', finish);
+    input.on('end', () => {
+      flushBuffer();
+      finish();
+    });
+    input.on('close', () => {
+      flushBuffer();
+      finish();
+    });
   });
 }

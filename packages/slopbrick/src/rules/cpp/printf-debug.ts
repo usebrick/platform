@@ -103,9 +103,7 @@ export const cppPrintfDebugRule = createRule<CppPrintfDebugContext>({
         'or `ABSL_LOG(INFO) << ...` (Abseil). All of these are level-' +
         'aware and have a configurable sink, and they route to stderr ' +
         'by default. `printf` / `std::cout` have no levels, no redaction, ' +
-        'no sink routing, and can\'t be silenced in release builds. AI ' +
-        'agents reach for these because their training data has countless ' +
-        'C++ textbook examples with them. Reference: cpp/printf-debug ' +
+        'no sink routing, and can\'t be silenced in release builds. Reference: cpp/printf-debug ' +
         'v0.34.7 (refined to skip test files for higher precision).',
     });
 

@@ -8,9 +8,10 @@
 > `MemoryCategory` → `StructureCategory`, `MemoryPattern` → `StructurePattern`.
 > Functions: `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`.
 > Schema version constant: `MEMORY_SCHEMA_VERSION` (value `'2'`) →
-> `STRUCTURE_SCHEMA_VERSION` (value `'3'`). The legacy `slopIndex` field is
-> replaced by 4 independent scores (`aiQuality` / `engineeringHygiene` /
-> `security` / `repositoryHealth`).
+> `STRUCTURE_SCHEMA_VERSION` (value `'5'`). The legacy `slopIndex` field is
+> replaced by 4 independent scores (`aiSlopScore` / `engineeringHygiene` /
+> `security` / `repositoryHealth`). Empty or not-applicable scans use a
+> score-free scan-report envelope; `health.json` remains score-bearing.
 
 `@usebrick/core` is:
 
@@ -85,17 +86,22 @@ The version directory (`v1/`, future `v2/`, ...) is the **contract version**. Ol
 
 ### v0.15.0 schema codegen
 
-The TypeScript types in `packages/core/src/structure-types.ts` are **codegen'd** from the JSON Schemas by `packages/core/scripts/codegen-types.ts`. The generated types are the public API. CI runs the codegen and fails if the schemas and types drift out of sync.
+The TypeScript types in `packages/core/src/structure-types.ts` are **codegen'd** from the JSON Schemas by `packages/core/scripts/codegen-types.ts`. The generated types are the public API. CI runs the codegen and fails if the schemas and types drift out of sync, including staged or untracked schema/type files and missing or orphaned schema peers. Run `pnpm --filter @usebrick/core test:contract` before a clean commit.
 
 ## Why this is private for now
 
 `@usebrick/core` is marked `private: true` in `package.json` and is **not published to npm** in this initial release. The reason:
 
-- The schema is `version: '3'` (was `'2'` in v0.14.5) but the underlying data model is still settling. Repository Structure needs at least two consumers (`slopbrick` for write, `stackpick` or `gir` for read) before the schema is "earned."
+- The schema is `version: '5'` (was `'2'` in v0.14.5) but the underlying data model is still settling. Repository Structure needs at least two consumers (`slopbrick` for write, `stackpick` or `gir` for read) before the schema is "earned."
 - Publishing `@usebrick/core` to npm forces you to maintain semver on every schema tweak. Keeping it internal means you can iterate freely.
 - The schemas-as-moat argument only holds if the schemas are stable. Premature publication locks in a shape you might want to change.
 
 **When to publish `@usebrick/core`:** after at least one non-slopbrick tool has shipped and is reading the schemas in production. Not before.
+
+## Runtime support
+
+Core follows the platform runtime policy: Node.js 22 or 24
+(`^22.0.0 || ^24.0.0`).
 
 ## What's next
 
@@ -103,7 +109,9 @@ For now the monorepo is enough — `@usebrick/core` lives at `packages/core/` an
 
 1. Remove `"private": true` from `packages/core/package.json`
 2. Add `"publishConfig": { "access": "public" }`
-3. `pnpm publish --filter @usebrick/core` from the monorepo root
+3. Publish only through the reviewed GitHub Release/OIDC workflow when the
+   package is no longer private; never run `pnpm publish` or `npm publish`
+   locally.
 
 The schemas stay backward-compatible (we never delete fields, only add them with defaults) so existing consumers don't break when you bump `STRUCTURE_SCHEMA_VERSION`.
 

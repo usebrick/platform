@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-tool-authority-publication-transaction.schema.json",
+  "title": "CalibrationToolAuthorityPublicationTransactionV1",
+  "description": "Recoverable state machine for publishing one immutable tool-authority index generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "operation", "expectedCurrentState", "nextIndexSha256", "artifacts", "immutableIndexGenerationRelativePath", "nextIndexTemporaryRelativePath", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-tool-authority-publication-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "nextIndexSha256": { "$ref": "#/$defs/sha256" },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "immutableIndexGenerationRelativePath": { "$ref": "#/$defs/relativePath" },
+    "nextIndexTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "indexSha256"], "properties": { "kind": { "const": "existing" }, "indexSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stagedRelativePath", "finalRelativePath", "bytes", "sha256"],
+      "properties": {
+        "stagedRelativePath": { "$ref": "#/$defs/relativePath" },
+        "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase"],
+      "properties": {
+        "phase": { "enum": ["intent_fsynced", "artifacts_staged_fsynced", "artifacts_promoted", "index_generation_fsynced", "next_index_temporary_fsynced", "index_promoted", "output_directories_fsynced", "complete"] }
+      }
+    }
+  }
+}

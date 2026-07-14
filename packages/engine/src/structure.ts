@@ -74,7 +74,7 @@ export type Category = string;
 /** A scan report, minimal fields used by `buildHealthFromReport`. */
 export interface MemoryReport {
   generatedAt: string;
-  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, higher is better. */
+  /** v0.15.0 U.4+: replaces the legacy slopIndex. 0-100, lower is better. */
   aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
@@ -467,11 +467,12 @@ function buildComponentFingerprints(
 // ---------------------------------------------------------------------------
 
 /**
- * Pure function: build the headline `HealthFile` snapshot from a
- * completed scan report. The schema (`health.schema.json`) is the
- * contract dashboards and CI integrations consume; the writer is
- * `saveHealth()` in `@usebrick/core`. This function does the
- * transformation only — it does NOT touch the filesystem.
+ * Pure function: build the score-bearing `HealthFile` snapshot from a
+ * completed or partial scan report. The schema (`health.schema.json`) is the
+ * contract dashboards and CI integrations consume; score-free empty reports
+ * are filtered by Slopbrick's persistence boundary. The writer is
+ * `saveHealth()` in `@usebrick/core`. This function does the transformation
+ * only — it does NOT touch the filesystem.
  */
 export function buildHealthFromReport(
   report: MemoryReport,
@@ -537,6 +538,13 @@ export function buildHealthFromReport(
     ...(report.skipped !== undefined && { skipped: report.skipped }),
     ...(report.scanAccounting !== undefined && { scanAccounting: report.scanAccounting }),
     ...(report.selectionAccounting !== undefined && { selectionAccounting: report.selectionAccounting }),
-    ...(options.compositeScore && { compositeScore: options.compositeScore }),
+    // A partial scan may retain rounded compatibility scores, but its
+    // project-level Bayesian aggregate is not a complete-project measure.
+    // Keep that aggregate off the persisted health wire until a complete
+    // scan has established the full population.
+    ...(options.compositeScore &&
+      (report.scoreValidity === 'valid' ||
+        (report.scoreValidity === undefined && report.completionStatus !== 'partial' && report.completionStatus !== 'empty')) &&
+      { compositeScore: options.compositeScore }),
   };
 }

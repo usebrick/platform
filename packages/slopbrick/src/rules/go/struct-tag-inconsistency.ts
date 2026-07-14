@@ -111,9 +111,9 @@ export const goStructTagInconsistencyRule = createRule<GoStructTagInconsistencyC
           column: 1,
           advice:
             'Pick one tag style per struct. If most fields are ' +
-            '`json:"foo"`, this field should be too. Real Go code ' +
-            'maintains consistency within a struct (or within a ' +
-            'package). Reference: go/struct-tag-inconsistency v0.19.',
+            '`json:"foo"`, this field should be too. Consistent tags ' +
+            'keep serialization predictable within a struct or package. ' +
+            'Reference: go/struct-tag-inconsistency v0.19.',
         });
       }
       // Avoid duplicate struct-level flagging.

@@ -18,4 +18,14 @@ describe('MCP documentation registry contract', () => {
       expect(document).toContain(`#### \`${tool.name}\``);
     }
   });
+
+  it('documents optional bounded finding evidence without parser dumps or provenance claims', () => {
+    const document = readFileSync(docsPath, 'utf8');
+    expect(document).toContain('optional bounded `whyItFired.evidence`');
+    expect(document).toContain('exact matched source span');
+    expect(document).toContain('bounded top-level `calibration`');
+    expect(document).toContain('`provenance.source` and');
+    expect(document).not.toContain('parser fact tree');
+    expect(document).not.toContain('authorship provenance');
+  });
 });

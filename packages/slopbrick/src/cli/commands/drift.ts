@@ -13,7 +13,7 @@ import {
 } from '../drift';
 import { loadConfig } from '../../config/load';
 import { parseCount } from '../options.js';
-import { withExitCode } from './_shared';
+import { renderInvalidScan, withExitCode } from './_shared';
 
 /**
  * v0.18.x (R-H1): drift subcommand extracted from cli/program.ts.
@@ -118,7 +118,21 @@ export function registerDrift(program: Command): void {
         }
 
         // Default (syntactic) mode: unchanged from v0.40.x.
-        const { config } = await runScan({ ...options, workspace: cwd });
+        const { config, report } = await runScan({ ...options, workspace: cwd });
+        const invalidExitCode = renderInvalidScan(
+          report,
+          options,
+          cwd,
+          format === 'json' ? 'json' : undefined,
+        );
+        if (invalidExitCode !== undefined) {
+          withExitCode(
+            { exitCode: invalidExitCode },
+            (outcome) => outcome.exitCode,
+            invalidExitCode === 0 ? '' : 'drift: scan is not valid for gating',
+          );
+          return;
+        }
         const result = await runDrift(cwd, config, { maxFiles: cmdOptions.maxFiles });
         logger.info(formatDrift(result, { json: format === 'json' }));
         // Throws a CommanderError when the code is non-zero; the

@@ -24,6 +24,7 @@ import type { BaselineCache, ResolvedConfig, ScanFacts } from '../types';
 // ===========================================================================
 
 const BASELINE_VERSION = VERSION;
+const BASELINE_CONFIG_HASH_DOMAIN = 'slopbrick:baseline-config:v2\0';
 
 function parseVersion(version: string): [number, number, number] {
   const parts = version.split('.').map((part) => parseInt(part, 10));
@@ -79,6 +80,9 @@ const BASELINE_HASH_KEYS = new Set<keyof ResolvedConfig>([
   'arbitraryValueAllowlist',
   'clampAllowlist',
   'wcag',
+  'include',
+  'exclude',
+  'selfScan',
 ]);
 
 function stripDefaults(value: unknown, defaultValue: unknown): unknown {
@@ -121,6 +125,7 @@ function pickBaselineConfig(config: ResolvedConfig): Record<string, unknown> {
 
 export function hashConfig(config: ResolvedConfig): string {
   return createHash('sha256')
+    .update(BASELINE_CONFIG_HASH_DOMAIN)
     .update(JSON.stringify(sanitizeForHash(pickBaselineConfig(config))))
     .digest('hex');
 }
@@ -204,6 +209,9 @@ export function validateBaseline(
     };
   }
 
+  if (cache.config_hash !== configHash) return { valid: false, reason: 'config_hash mismatch' };
+  if (cache.git_head !== gitHead) return { valid: false, reason: 'git_head mismatch' };
+
   if (current[1] !== cached[1] || current[2] !== cached[2]) {
     return {
       valid: true,
@@ -211,8 +219,6 @@ export function validateBaseline(
     };
   }
 
-  if (cache.config_hash !== configHash) return { valid: false, reason: 'config_hash mismatch' };
-  if (cache.git_head !== gitHead) return { valid: false, reason: 'git_head mismatch' };
   return { valid: true };
 }
 

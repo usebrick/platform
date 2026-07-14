@@ -12,7 +12,7 @@ export function formatScoreExplanation(report: ProjectReport): string {
   lines.push(explanation.attribution);
   const basis = explanation.scoreBasis ?? report.scoreBasis;
   if (basis) {
-    lines.push(`Basis: ${basis.denominator} analysed file${basis.denominator === 1 ? '' : 's'}; effective findings only (${basis.suppressedIssueCount} suppressed, ${basis.parseErrorCount} parse errors).`);
+    lines.push(`Coverage: ${basis.denominator} successfully analysed file${basis.denominator === 1 ? '' : 's'}; per-file AI burdens are additive (the count does not dilute them); effective findings only (${basis.suppressedIssueCount} suppressed, ${basis.parseErrorCount} parse errors).`);
   }
   lines.push('');
   lines.push(`AI Slop Score: ${formatHeadlineScore(explanation.aiSlopScore.value)}/100 (lower is better)`);

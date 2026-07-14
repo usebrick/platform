@@ -14,6 +14,7 @@ import { enrichReport } from '../../src/cli/report/enrichReport';
 import { assembleScanReport } from '../../src/cli/report/assembleScanReport';
 import { aiDebtFromScore } from '../../src/engine/repository-health';
 import { AI_DEBT_NUMERIC } from '../../src/engine/coherence';
+import { computeAiMaintenanceCostFromReport } from '../../src/engine/maintenance-cost';
 import { formatJson } from '../../src/report/json';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { effectiveIssuesForScore } from '../../src/cli/effective-issues';
@@ -205,6 +206,82 @@ describe('scan completion status', () => {
       ...DEFAULT_CONFIG,
       rules: { ...DEFAULT_CONFIG.rules, [defaultOffRule]: 'medium' },
     }).map((issue) => issue.ruleId)).toEqual([defaultOffRule, 'logic/active-evidence']);
+
+    expect(effectiveIssuesForScore([
+      { ...issues[1]!, severity: 'high' },
+    ], {
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, 'logic/active-evidence': 'off' },
+    })).toEqual([]);
+  });
+
+  it('keeps default-off evidence out of Bayesian and maintenance diagnostics', async () => {
+    const defaultOffRule = [...getDefaultOffRules()][0]!;
+    const suppressed = Array.from({ length: 3 }, (_, index) => ({
+      ruleId: defaultOffRule,
+      category: 'logic' as const,
+      severity: 'high' as const,
+      aiSpecific: true,
+      message: 'default-off audit evidence',
+      filePath: 'src/a.ts',
+      line: index + 1,
+      column: 1,
+    }));
+    const active = {
+      ruleId: 'logic/active-evidence',
+      category: 'logic' as const,
+      severity: 'medium' as const,
+      aiSpecific: false,
+      message: 'active evidence',
+      filePath: 'src/a.ts',
+      line: 4,
+      column: 1,
+    };
+    const projectActive = {
+      ruleId: 'layout/project-active-evidence',
+      category: 'layout' as const,
+      severity: 'high' as const,
+      aiSpecific: false,
+      message: 'active project-only evidence',
+      line: 1,
+      column: 1,
+    };
+    const fileIssues = [...suppressed, active];
+    const allIssues = [...fileIssues, projectActive];
+    const results = [{ filePath: 'src/a.ts', issues: fileIssues }] as unknown as FileScanResult[];
+
+    const enriched = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      projectIssues: [projectActive],
+      selectedFilePaths: [],
+      aggregated: {
+        aiSlopScore: 0,
+        engineeringHygiene: 100,
+        security: 100,
+        repositoryHealth: 100,
+        components: [],
+        categoryScores: {},
+      },
+      allIssues,
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    const expectedMaintenance = computeAiMaintenanceCostFromReport(
+      {
+        aiSlopScore: 0,
+        architectureConsistency: enriched.architectureConsistency,
+        aiSecurityRisk: enriched.aiSecurityRisk,
+        highSeverityIssueCount: 1,
+        issues: [{ severity: 'high' }, { severity: 'medium' }],
+        fileCount: results.length,
+      },
+      { hasAiSignals: false },
+    );
+
+    expect(enriched.v012Stats?.totalFiresCount).toBe(2);
+    expect(enriched.aiMaintenanceCost).toEqual(expectedMaintenance);
   });
 
   it('derives test quality from the canonical effective issue groups', async () => {
@@ -239,6 +316,7 @@ describe('scan completion status', () => {
       cwd: process.cwd(),
       config: DEFAULT_CONFIG,
       results,
+      projectIssues: [],
       aggregated: {
         aiSlopScore: 0,
         engineeringHygiene: 100,
@@ -255,6 +333,206 @@ describe('scan completion status', () => {
     // so ceil(5 / 5) is one deduction from 100. The suppressed medium
     // finding must not create a second deduction.
     expect(enriched.testQuality).toBe(99);
+  });
+
+  it('includes active project findings in secondary effective score inputs', async () => {
+    const projectIssue = {
+      ruleId: 'test/project-active',
+      category: 'test' as const,
+      severity: 'high' as const,
+      aiSpecific: false,
+      message: 'active project-only test evidence',
+      line: 1,
+      column: 1,
+    };
+    const results = [{ filePath: 'src/a.ts', issues: [] }] as unknown as FileScanResult[];
+
+    const enriched = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      projectIssues: [projectIssue],
+      aggregated: {
+        aiSlopScore: 0,
+        engineeringHygiene: 100,
+        security: 100,
+        repositoryHealth: 100,
+        components: [],
+        categoryScores: {},
+      },
+      allIssues: [projectIssue],
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    // Project rules are part of the same effective report set as file rules;
+    // an active project-level test finding must therefore lower testQuality.
+    expect(enriched.testQuality).toBe(99);
+  });
+
+  it('derives categorical security risk from active effective findings only', async () => {
+    const issues = [
+      {
+        ruleId: 'security/active',
+        category: 'security' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 'active security evidence',
+        filePath: 'src/a.ts',
+        line: 1,
+        column: 1,
+      },
+      ...Array.from({ length: 3 }, (_, index) => ({
+        ruleId: `security/suppressed-${index}`,
+        category: 'security' as const,
+        severity: 'off' as const,
+        aiSpecific: false,
+        message: 'suppressed security evidence',
+        filePath: 'src/a.ts',
+        line: index + 2,
+        column: 1,
+      })),
+    ];
+    const results = [{ filePath: 'src/a.ts', issues }] as unknown as FileScanResult[];
+
+    const enriched = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      projectIssues: [],
+      aggregated: {
+        aiSlopScore: 0,
+        engineeringHygiene: 100,
+        security: 100,
+        repositoryHealth: 100,
+        components: [],
+        categoryScores: {},
+      },
+      allIssues: issues as unknown as FileScanResult['issues'],
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    expect(enriched.aiSecurityRisk).toBe('high');
+    expect(enriched.aiSecurityFindings).toEqual({ critical: 0, high: 1, medium: 0, low: 0 });
+  });
+
+  it('derives domain scores from active file and project findings while retaining audit evidence', async () => {
+    const fileIssues = [
+      {
+        ruleId: 'logic/active',
+        category: 'logic' as const,
+        severity: 'high' as const,
+        aiSpecific: false,
+        message: 'active logic evidence',
+        filePath: 'src/a.ts',
+        line: 1,
+        column: 1,
+      },
+      ...([
+        ['logic/audit-only', 'logic'],
+        ['wcag/audit-only', 'wcag'],
+        ['perf/audit-only', 'perf'],
+        ['security/audit-only', 'security'],
+      ] as const).map(([ruleId, category], index) => ({
+        ruleId,
+        category,
+        severity: 'off' as const,
+        aiSpecific: false,
+        message: 'audit-only evidence',
+        filePath: 'src/a.ts',
+        line: index + 2,
+        column: 1,
+      })),
+    ];
+    const projectIssues = [
+      {
+        ruleId: 'layout/project-active',
+        category: 'layout' as const,
+        severity: 'medium' as const,
+        aiSpecific: false,
+        message: 'active project-only layout evidence',
+        line: 1,
+        column: 1,
+      },
+      {
+        ruleId: 'perf/project-active',
+        category: 'perf' as const,
+        severity: 'medium' as const,
+        aiSpecific: false,
+        message: 'active project-only performance evidence',
+        line: 1,
+        column: 1,
+      },
+      {
+        ruleId: 'wcag/project-audit-only',
+        category: 'wcag' as const,
+        severity: 'off' as const,
+        aiSpecific: false,
+        message: 'suppressed project-only accessibility evidence',
+        line: 1,
+        column: 1,
+      },
+    ];
+    const results = [{
+      filePath: 'src/a.ts',
+      componentCount: 1,
+      issues: fileIssues,
+    }] as unknown as FileScanResult[];
+    const allIssues = [...fileIssues, ...projectIssues] as unknown as FileScanResult['issues'];
+    const effectiveIssues = effectiveIssuesForScore(
+      fileIssues as unknown as FileScanResult['issues'],
+      DEFAULT_CONFIG,
+    );
+    const effectiveProjection = [
+      ...effectiveIssues,
+      ...effectiveIssuesForScore(projectIssues, DEFAULT_CONFIG),
+    ];
+    const aggregated = aggregateReport(
+      [scoreFile({ ...results[0]!, issues: effectiveIssues }, 1, DEFAULT_CONFIG)],
+      [{ filePath: 'src/a.ts', issues: effectiveIssues }],
+      DEFAULT_CONFIG,
+      undefined,
+      1,
+    );
+
+    const enrichment = await enrichReport({
+      cwd: process.cwd(),
+      config: DEFAULT_CONFIG,
+      results,
+      projectIssues,
+      aggregated,
+      allIssues,
+      options: { quiet: true, machineReadableStdout: true },
+    });
+    const report = assembleScanReport({
+      generatedAt: '2026-07-12T00:00:00.000Z',
+      configPath: undefined,
+      results,
+      aggregated,
+      allIssues,
+      effectiveIssues: effectiveProjection,
+      parseErrors: [],
+      topOffenders: [],
+      config: DEFAULT_CONFIG,
+      baselineMeta: undefined,
+      defaultOffApplied: 5,
+      defaultOffRuleCount: 5,
+      previousRun: undefined,
+      enrichment,
+    });
+
+    expect(enrichment).toMatchObject({
+      codeHygiene: 92,
+      accessibility: 100,
+      performance: 96,
+      domainIssues: {
+        codeHygiene: 2,
+        accessibility: 0,
+        performance: 1,
+        security: 0,
+      },
+    });
+    expect(report.issues).toHaveLength(8);
+    expect(report.issues.filter((issue) => (issue.severity as string) === 'off')).toHaveLength(5);
   });
 
   it('keeps suppressed test evidence out of the final four-axis health breakdown', async () => {
@@ -297,6 +575,7 @@ describe('scan completion status', () => {
       cwd: process.cwd(),
       config: DEFAULT_CONFIG,
       results,
+      projectIssues: [],
       aggregated,
       allIssues: issues,
       options: { quiet: true, machineReadableStdout: true },
@@ -307,6 +586,7 @@ describe('scan completion status', () => {
       results,
       aggregated,
       allIssues: issues,
+      effectiveIssues,
       parseErrors: [],
       topOffenders: [],
       config: DEFAULT_CONFIG,
@@ -350,6 +630,36 @@ describe('scan completion status', () => {
       issueSet: 'effective',
       parseErrorCount: 0,
     });
+  });
+
+  it('includes effective project-rule findings in the headline aggregate', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    for (const name of ['a', 'b', 'c']) {
+      writeFileSync(
+        join(dir, 'src', `${name}.tsx`),
+        `export const ${name} = () => <div className="gap-4">${name}</div>;\n`,
+      );
+    }
+
+    const result = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    const projectIssue = result.report.issues.find(
+      (issue) => issue.ruleId === 'layout/gap-monopoly',
+    );
+
+    expect(projectIssue).toMatchObject({
+      severity: 'medium',
+      aiSpecific: true,
+    });
+    // `layout/gap-monopoly` is a project-level AI-specific finding. It must
+    // enter the same effective issue groups as file findings; otherwise this
+    // clean fixture incorrectly reports a zero AI Slop Score.
+    expect(result.report.aiSlopScore).toBeGreaterThan(0);
+    expect(result.report.scoreExplanation?.aiSlopScore.buckets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ bucket: 'visual', rawSlopAmount: expect.any(Number) }),
+      ]),
+    );
   });
 
   it('persists aggregate discovery exclusions without changing selected-file outcomes', async () => {
@@ -486,6 +796,37 @@ describe('scan completion status', () => {
     expect(withDefaultOff.report.defaultOffSuppressedCount).toBeGreaterThanOrEqual(1);
   });
 
+  it('keeps suppressed findings out of top-offender counts and omits suppressed-only rows', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(join(dir, 'src', 'mixed.ts'), [
+      "enum Color { Red = 'red', Blue = 'blue' }",
+      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+      '',
+    ].join('\n'));
+
+    const activeOnly = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm'],
+    });
+    const mixed = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['logic/math-console-log-storm', 'ts/enum-vs-as-const'],
+    });
+    const suppressedOnly = await runScan({
+      workspace: dir,
+      quiet: true,
+      includeRules: ['ts/enum-vs-as-const'],
+    });
+
+    expect(mixed.report.topOffenders?.[0]?.issueCount)
+      .toBe(activeOnly.report.topOffenders?.[0]?.issueCount);
+    expect(mixed.report.topOffenders?.every((offender) => offender.issueCount > 0)).toBe(true);
+    expect(suppressedOnly.report.topOffenders).toEqual([]);
+  });
+
   it('keeps inline-disabled findings out of effective run-level scores while retaining the directive audit fact', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
@@ -577,11 +918,13 @@ describe('scan completion status', () => {
       join(dir, 'src', 'excluded.ts'),
       join(dir, 'src', 'enum.ts'),
       join(dir, 'src', 'secret.ts'),
+      join(dir, 'src', 'plain.ts'),
     ];
     writeFileSync(files[0]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
     writeFileSync(files[1]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
     writeFileSync(files[2]!, "enum Color { Red = 'red', Blue = 'blue' }\n");
     writeFileSync(files[3]!, 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n');
+    writeFileSync(files[4]!, 'export const plain = true;\n');
 
     const includeRules = [
       'logic/math-console-log-storm',
@@ -596,17 +939,24 @@ describe('scan completion status', () => {
       workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
     });
 
+    expect(workerRun.scanStats).toMatchObject({ requested: 4, analyzed: 4 });
+    expect(workerRun.report.selectionAccounting).toMatchObject({
+      observedCandidates: 5,
+      selected: 4,
+      excluded: { configExclude: 1 },
+    });
     const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
     expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(true);
-    expect(workerByFile.get(files[1]!)?.issues).toEqual([]);
+    expect(workerByFile.has(files[1]!)).toBe(false);
     expect(workerByFile.get(files[2]!)?.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ ruleId: 'ts/enum-vs-as-const', severity: 'off' }),
     ]));
 
     const registry = new RuleRegistry();
     registry.loadBuiltins(undefined, { includeRules });
+    const selectedFiles = files.filter((filePath) => filePath !== files[1]);
     const serialResults = await Promise.all(
-      files.map((filePath) => scanFile(filePath, workerRun.config, registry, dir)),
+      selectedFiles.map((filePath) => scanFile(filePath, workerRun.config, registry, dir)),
     );
     for (const result of serialResults) {
       result.issues = filterIssues(result.issues, {});
@@ -648,6 +998,7 @@ describe('scan completion status', () => {
       cwd: dir,
       config: workerRun.config,
       results: serialResults,
+      projectIssues: serialProjectIssues,
       aggregated: serialAggregate,
       allIssues: serialAllIssues,
       options: { quiet: true, machineReadableStdout: true },
@@ -1160,7 +1511,7 @@ describe('scan completion status', () => {
     expect(existsSync(join(dir, '.slopbrick', 'structure.md'))).toBe(true);
   });
 
-  it('keeps the deferred partial JSON and SARIF numeric shape explicitly incomplete', async () => {
+  it('suppresses partial JSON and SARIF headline scores while preserving validity', async () => {
     const jsonWorkspace = createPartialWorkspace();
     const jsonResult = await run([
       '--workspace', jsonWorkspace, '--format', 'json', '--no-telemetry',
@@ -1168,8 +1519,10 @@ describe('scan completion status', () => {
     expect(jsonResult.exitCode).toBe(1);
     const json = JSON.parse(jsonResult.stdout) as Record<string, unknown>;
     expect(json).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
-    expect(json.aiSlopScore).toBeTypeOf('number');
-    expect(json.repositoryHealth).toBeTypeOf('number');
+    expect(json).not.toHaveProperty('aiSlopScore');
+    expect(json).not.toHaveProperty('engineeringHygiene');
+    expect(json).not.toHaveProperty('security');
+    expect(json).not.toHaveProperty('repositoryHealth');
 
     const sarifWorkspace = createPartialWorkspace();
     const sarifResult = await run([
@@ -1183,7 +1536,7 @@ describe('scan completion status', () => {
       completionStatus: 'partial',
       scoreValidity: 'incomplete',
     });
-    expect(sarif.runs[0].tool.driver.properties.scores).toBeTypeOf('object');
+    expect(sarif.runs[0].tool.driver.properties.scores).toBeUndefined();
   });
 
   it.each([
@@ -1238,6 +1591,99 @@ describe('scan completion status', () => {
     },
     20_000,
   );
+
+  it('fails closed for the standalone suggest command on an incomplete scan', async () => {
+    const dir = createPartialWorkspace();
+    const result = await run([
+      'suggest', '--workspace', dir,
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    const output = `${result.stdout}\n${result.stderr}`;
+    expect(output).toContain('INCOMPLETE SCAN — scores are not valid for gating.');
+    expect(output).toContain('requested 2');
+    expect(output).toContain('analyzed 1');
+    expect(output).not.toMatch(
+      /Remediation advice|Per-issue guidance|Suggested patches|No problem categories detected|AI Slop Score|Repository Health/,
+    );
+  });
+
+  it('fails closed for a fresh incomplete standalone badge scan', async () => {
+    const dir = createPartialWorkspace();
+    const result = await run(['badge', '--workspace', dir]);
+
+    expect(result.exitCode).toBe(1);
+    const output = `${result.stdout}\n${result.stderr}`;
+    expect(output).toContain('INCOMPLETE SCAN — scores are not valid for gating.');
+    expect(output).not.toMatch(/img\.shields\.io\/badge\/ai--slop-|ai-slop-\d+/);
+  });
+
+  it('fails closed for a legacy-partial persisted health badge', async () => {
+    const dir = createTmpDir();
+    dirs.push(dir);
+    const slopbrickDir = join(dir, '.slopbrick');
+    mkdirSync(slopbrickDir, { recursive: true });
+    writeFileSync(join(slopbrickDir, 'health.json'), JSON.stringify({
+      version: '5',
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      workspace: dir,
+      aiSlopScore: 88,
+      engineeringHygiene: 42,
+      security: 55,
+      repositoryHealth: 37,
+      issueCounts: { high: 1, medium: 0, low: 0 },
+      completionStatus: 'partial',
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    }), 'utf8');
+
+    const result = await run(['badge', '--workspace', dir]);
+
+    expect(result.exitCode).toBe(1);
+    const output = `${result.stdout}\n${result.stderr}`;
+    expect(output).toContain('INCOMPLETE SCAN — scores are not valid for gating.');
+    expect(output).not.toMatch(/img\.shields\.io\/badge\/ai--slop-|ai-slop-88/);
+  });
+
+  it('keeps an empty staged standalone badge a successful no-op', async () => {
+    const dir = createCleanGitWorkspace();
+    const result = await run(['badge', '--workspace', dir, '--staged']);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe('NO FILES SELECTED — scores are not applicable.');
+    expect(result.stdout).not.toMatch(/img\.shields\.io\/badge\/ai--slop-|ai-slop-\d+/);
+    expect(result.stderr).toBe('');
+  });
+
+  it('does not reuse a complete persisted badge for an empty staged scan', async () => {
+    const dir = createCleanGitWorkspace();
+    const slopbrickDir = join(dir, '.slopbrick');
+    mkdirSync(slopbrickDir, { recursive: true });
+    writeFileSync(join(slopbrickDir, 'health.json'), JSON.stringify({
+      version: '5',
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      workspace: dir,
+      aiSlopScore: 10,
+      engineeringHygiene: 90,
+      security: 90,
+      repositoryHealth: 90,
+      issueCounts: { high: 0, medium: 0, low: 0 },
+      completionStatus: 'complete',
+      scoreValidity: 'valid',
+      requested: 1,
+      analyzed: 1,
+      failed: 0,
+      skipped: 0,
+    }), 'utf8');
+
+    const result = await run(['badge', '--workspace', dir, '--staged']);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe('NO FILES SELECTED — scores are not applicable.');
+    expect(result.stdout).not.toMatch(/img\.shields\.io\/badge\/ai--slop-|ai-slop-10/);
+  });
 
   it.each([
     ['pretty', ['--format', 'pretty']],
@@ -1622,6 +2068,145 @@ describe('scan completion status', () => {
       expect(result.report.issues.some((issue) => issue.ruleId === 'dup/near-duplicate')).toBe(false);
       expect(result.report.issues.some((issue) => issue.ruleId === 'dup/structural-clone')).toBe(false);
     }
+  });
+
+  it('does not run the default-off identical-block coordinator until explicitly opted in', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const shared = Array.from({ length: 20 }, (_, index) => `void shared${index};`).join('\n');
+    writeFileSync(join(dir, 'src', 'a.ts'), `${shared}\n`);
+    writeFileSync(join(dir, 'src', 'b.ts'), `${shared}\n`);
+
+    const ordinary = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    expect(ordinary.report.issues.some((issue) => issue.ruleId === 'dup/identical-block')).toBe(false);
+    expect(ordinary.report.scanAccounting?.identicalBlockCandidateWindows).toBeUndefined();
+
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      "export default { rules: { 'dup/identical-block': 'medium' } };\n",
+    );
+    const optedIn = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    expect(optedIn.report.issues.filter((issue) => issue.ruleId === 'dup/identical-block')).toHaveLength(2);
+    expect(optedIn.report.scanAccounting).toMatchObject({
+      identicalBlockCandidateWindows: 2,
+      identicalBlockTruncated: false,
+    });
+  });
+
+  it.each([
+    ['--rule', { rule: 'dup/identical-block' }],
+    ['--include-rule', { includeRules: ['dup/identical-block'] }],
+  ] as const)('honors %s as explicit identical-block coordinator opt-in', async (_flag, scanOptions) => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const shared = Array.from({ length: 20 }, (_, index) => `void shared${index};`).join('\n');
+    writeFileSync(join(dir, 'src', 'a.ts'), `${shared}\n`);
+    writeFileSync(join(dir, 'src', 'b.ts'), `${shared}\n`);
+
+    const optedIn = await runScan({
+      workspace: dir,
+      quiet: true,
+      telemetry: false,
+      ...scanOptions,
+    });
+
+    expect(optedIn.report.issues.filter((issue) => issue.ruleId === 'dup/identical-block')).toHaveLength(2);
+    expect(optedIn.report.scanAccounting).toMatchObject({
+      identicalBlockCandidateWindows: 2,
+      identicalBlockTruncated: false,
+    });
+  });
+
+  it('does not enrich business logic from failed file results', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const validPath = join(dir, 'src', 'valid.ts');
+    const failedPath = join(dir, 'src', 'failed.ts');
+    const source = 'export const rounded = Math.round(total * 100);\n';
+    writeFileSync(validPath, source);
+    writeFileSync(failedPath, source);
+
+    const results = [
+      { filePath: validPath, issues: [] },
+      { filePath: failedPath, issues: [], parseError: 'syntax error' },
+    ] as unknown as FileScanResult[];
+    const enriched = await enrichReport({
+      cwd: dir,
+      config: DEFAULT_CONFIG,
+      results,
+      projectIssues: [],
+      aggregated: {
+        aiSlopScore: 0,
+        engineeringHygiene: 100,
+        security: 100,
+        repositoryHealth: 100,
+        components: [],
+        categoryScores: {},
+      },
+      allIssues: [],
+      options: { quiet: true, machineReadableStdout: true },
+    });
+
+    expect(enriched.businessLogicIssues).toHaveLength(1);
+    expect(enriched.businessLogicIssues?.[0]?.filePath).toBe('src/valid.ts');
+  });
+
+  it('keeps identical-block evidence parity when one clone file is incremental-cached', async () => {
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      "export default { rules: { 'dup/identical-block': 'medium' } };\n",
+    );
+    const shared = Array.from({ length: 20 }, (_, index) => `void shared${index};`).join('\n');
+    const fileA = join(dir, 'src', 'a.ts');
+    const fileB = join(dir, 'src', 'b.ts');
+    writeFileSync(fileA, `${shared}\n`);
+    writeFileSync(fileB, `${shared}\n`);
+    const cachePath = join(dir, 'clone-incremental-cache.json');
+
+    const seeded = await runScan({
+      workspace: dir,
+      incremental: true,
+      cachePath,
+      quiet: true,
+      telemetry: false,
+    });
+    expect(seeded.report.scanAccounting).toMatchObject({
+      incrementalCached: 0,
+      identicalBlockCandidateWindows: 2,
+    });
+
+    writeFileSync(fileB, `${shared}\nvoid changedAfterSeed;\n`);
+    const incremental = await runScan({
+      workspace: dir,
+      incremental: true,
+      cachePath,
+      quiet: true,
+      telemetry: false,
+    });
+    expect(incremental.report.scanAccounting).toMatchObject({
+      incrementalCached: 1,
+      analyzed: 1,
+      identicalBlockCandidateWindows: 3,
+      identicalBlockTruncated: false,
+    });
+
+    const full = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    const cloneProjection = (result: Awaited<ReturnType<typeof runScan>>) => result.report.issues
+      .filter((issue) => issue.ruleId === 'dup/identical-block')
+      .map(({ filePath, line, message, extras }) => ({ filePath, line, message, extras }))
+      .sort((a, b) => (a.filePath ?? '').localeCompare(b.filePath ?? '') || a.line - b.line);
+    expect(cloneProjection(incremental)).toEqual(cloneProjection(full));
+    // The cached clone remains visible as audit evidence, but it was not part
+    // of this invocation's successful score exposure. Secondary domain
+    // diagnostics must therefore count only the rescanned clone (one active
+    // logic finding), while a complete run counts both file findings.
+    expect(incremental.report.issues.filter(
+      (issue) => issue.ruleId === 'dup/identical-block',
+    )).toHaveLength(2);
+    expect(incremental.report.domainIssues?.codeHygiene).toBe(1);
+    expect(full.report.domainIssues?.codeHygiene).toBe(2);
   });
 
   it.each(['staged', 'changed'] as const)('does not attach prior-run trend data to an empty %s source scan', async (scope) => {

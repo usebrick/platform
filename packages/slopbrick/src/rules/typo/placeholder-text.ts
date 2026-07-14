@@ -14,7 +14,11 @@
 // wrote it — but AI vibe-coding produces this pattern heavily).
 // severity: low (cosmetic / unfinished work, not a bug).
 
-import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import {
+  ISSUE_EVIDENCE_MAX_SNIPPET_BYTES,
+  ISSUE_EVIDENCE_MAX_SNIPPET_CHARS,
+} from '../../types';
+import type { Issue, IssueEvidence, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
 
@@ -46,11 +50,27 @@ function isBadPlaceholder(value: string, config: PlaceholderConfig): boolean {
   return BAD_PATTERNS.some((re) => re.test(trimmed));
 }
 
+function utf8Bytes(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
+}
+
 function scanForBadPlaceholders(
   source: string,
   config: PlaceholderConfig,
-): Array<{ message: string; line: number; column: number; value: string }> {
-  const hits: Array<{ message: string; line: number; column: number; value: string }> = [];
+): Array<{
+  message: string;
+  line: number;
+  column: number;
+  value: string;
+  evidence: IssueEvidence;
+}> {
+  const hits: Array<{
+    message: string;
+    line: number;
+    column: number;
+    value: string;
+    evidence: IssueEvidence;
+  }> = [];
   const seen = new Set<number>();
   const re = /placeholder\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*"([^"]*)"\s*\}|\{\s*'([^']*)'\s*\})/gi;
   let m: RegExpExecArray | null;
@@ -59,13 +79,47 @@ function scanForBadPlaceholders(
     seen.add(m.index);
     const value = m[1] ?? m[2] ?? m[3] ?? m[4] ?? '';
     if (!isBadPlaceholder(value, config)) continue;
+    const endOffset = m.index + m[0].length - 1;
+    const startColumn = m.index - source.lastIndexOf('\n', m.index - 1);
+    const endColumn = endOffset - source.lastIndexOf('\n', endOffset - 1);
+    const snippet = source.slice(m.index, m.index + m[0].length);
+    const snippetChars = snippet.length;
+    const snippetBytes = utf8Bytes(snippet);
+    const valueBytes = utf8Bytes(value);
+    const exact = snippetChars <= ISSUE_EVIDENCE_MAX_SNIPPET_CHARS &&
+      snippetBytes <= ISSUE_EVIDENCE_MAX_SNIPPET_BYTES;
+    const location = {
+      start: { line: lineOfSource(source, m.index), column: startColumn },
+      end: { line: lineOfSource(source, endOffset), column: endColumn },
+    };
     hits.push({
       message:
-        `Placeholder text "${value}" is a dev/AI default. Replace with real copy ` +
+        `Placeholder text "${exact ? value : '[omitted oversized value]'}" is a development placeholder. Replace with real copy ` +
         `describing the expected input (e.g. "Search products", "Email address").`,
       line: lineOfSource(source, m.index),
-      column: m.index - source.lastIndexOf('\n', m.index - 1),
+      column: startColumn,
       value,
+      evidence: exact
+        ? {
+            kind: 'matched-source-span',
+            status: 'exact',
+            snippet,
+            location,
+            matched: { field: 'placeholder', key: 'placeholder', value },
+          }
+        : {
+            kind: 'matched-source-span',
+            status: 'omitted',
+            location,
+            matched: { field: 'placeholder', key: 'placeholder' },
+            omission: {
+              reason: 'oversized',
+              snippetChars,
+              snippetBytes,
+              valueChars: value.length,
+              valueBytes,
+            },
+          },
     });
   }
   return hits;
@@ -96,6 +150,7 @@ export const placeholderTextRule = createRule<RuleContext>({
         line: hit.line,
         column: hit.column,
         advice: 'Replace with specific, user-facing copy.',
+        evidence: hit.evidence,
       });
     }
     return issues;

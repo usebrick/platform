@@ -1,13 +1,16 @@
 # Repository Structure — the `.slopbrick/` artifact contract
 
-Every `slopbrick scan` writes four artifacts to `.slopbrick/` (and one
-sibling to the project root). Together they form the **Repository
-Structure** — a structured summary of the codebase that downstream
+Every completed or partial `slopbrick scan` writes four artifacts to
+`.slopbrick/` (and one sibling to the project root). An empty or
+not-applicable scan returns a score-free report envelope and does not create
+a score-bearing health artifact. Together the persisted artifacts form the
+**Repository Structure** — a structured summary of the codebase that downstream
 consumers (MCP tools, CI gates, dashboards, future usebrick.dev tools)
 read **instead of re-parsing the AST**.
 
-> **v0.15.0+:** The on-disk artifact `.slopbrick/memory.md` is renamed to
-> `.slopbrick/structure.md`. The schema version bumps from `'2'` to `'3'`.
+> **v0.15.0+:** The on-disk artifact `.slopbrick/memory.md` was renamed to
+> `.slopbrick/structure.md` (the historical schema bump was from `'2'` to
+> `'3'`). The current `STRUCTURE_SCHEMA_VERSION` is `'5'`.
 > Types: `MemoryFile` → `StructureFile`, `MemoryPattern` → `StructurePattern`.
 > Functions: `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`.
 
@@ -38,7 +41,7 @@ delete without losing project structure. The other four files are the
 
 ```ts
 interface InventoryFile {
-  version: '3';
+  version: '5';
   generatedAt: string;        // ISO 8601
   workspace: string;          // absolute path
   scannedFiles: number;
@@ -64,7 +67,7 @@ files listed.
 
 ```ts
 interface ConstitutionFile {
-  version: '2';
+  version: '5';
   generatedAt: string;
   workspace: string;
   declared: Partial<Record<MemoryCategory, string>>;
@@ -82,13 +85,13 @@ tools can read it without parsing TS/JS.
 **Schema:** [`health.schema.json`](../../core/schemas/v1/health.schema.json) (new in v0.14.5d)
 
 ```ts
-// v0.15.0+ (schema version '3')
+// Current schema version '5'
 interface HealthFile {
-  version: '3';
+  version: '5';
   generatedAt: string;
   workspace: string;
-  // The v0.15.0 4-score model — each is 0-100, higher is better.
-  // aiSlopScore replaces the legacy v0.14 slopIndex.
+  // Canonical 4-score model — aiSlopScore is lower = cleaner;
+  // engineeringHygiene, security, and repositoryHealth are higher = better.
   aiSlopScore: number;
   engineeringHygiene: number;
   security: number;
@@ -153,8 +156,10 @@ _Run `slopbrick scan` to populate cross-file drift findings._
 
 ## How artifacts are written
 
-`scan.ts` writes all four artifacts **atomically** at the end of
-every successful scan (see `src/cli/scan.ts` ~line 1035). Each writer
+`scan.ts` writes the project-memory artifacts **atomically** at the end of
+every successful scan (see `src/cli/scan.ts` ~line 1035). Score-bearing
+`health.json` is written only for completed or partial scans; an empty or
+not-applicable scan uses the score-free report envelope. Each writer
 goes through `writeJsonAtomic()` (write to `.tmp` + `renameSync`),
 which is atomic on POSIX — a crash mid-write leaves either the old or
 the new version, never a partial mix.
@@ -162,11 +167,11 @@ the new version, never a partial mix.
 The order is:
 1. `inventory.json` — `buildInventoryFromScan` + `saveInventory`
 2. `constitution.json` — `buildConstitutionFromConfig` + `saveConstitution`
-3. `memory.md` — `renderMemoryMarkdown` + `writeMemoryMarkdown`
-4. `health.json` — `buildHealthFromReport` + `saveHealth`
+3. `structure.md` — `renderStructureMarkdown` + structure writer
+4. `health.json` — `buildHealthFromReport` + `saveHealth` (score-bearing scans)
 
-The first three share a single `try` block; `health.json` is written
-in the same try because it derives from the same `ProjectReport`.
+The project-memory writers share a single `try` block; health persistence is
+skipped for not-applicable empty scans because there are no headline scores.
 
 ## How artifacts are read
 
@@ -214,7 +219,7 @@ points the user at `slopbrick scan` to refresh.
 
 ## Versioning
 
-The artifacts are versioned via the top-level `version: '3'` field
+The artifacts are versioned via the top-level `version: '5'` field
 (`STRUCTURE_SCHEMA_VERSION` in `@usebrick/core`, was `'2'` in v0.14.5).
 Adding an optional field is non-breaking. Renaming a required field,
 or changing the on-disk directory from `.slopbrick/` to something
@@ -232,7 +237,7 @@ validators are the canonical type guards.
 The schemas are designed to be consumed by:
 
 - **MCP tools** (slop_suggest_with_structure reads `structure.md`)
-- **CI status checks** (read `health.json`, exit 1 when `aiSlopScore > meanSlop`)
+- **CI status checks** (read score-bearing `health.json`, exit 1 when `aiSlopScore > meanSlop`; empty/not-applicable scans use the score-free report envelope)
 - **The website's `/projects` page** (read `health.json` for badges)
 - **Future usebrick.dev tools** (stackpick, gir, mendbrick) — all
   read these artifacts instead of re-scanning

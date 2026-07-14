@@ -4,6 +4,7 @@ import { logger } from '../../engine/logger';
 import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
 import { computeAiSecurityRisk, formatAiSecurityRiskLine } from '../../engine/ai-security-risk';
+import { renderInvalidScan } from './_shared.js';
 
 /**
  * v0.18.x (R-H1): security subcommand extracted from cli/program.ts.
@@ -35,6 +36,16 @@ export function registerSecurity(program: Command): void {
 
           const cwd = resolve(options.workspace ?? process.cwd());
           const { report } = await runScan({ ...options, workspace: cwd });
+          const invalidExitCode = renderInvalidScan(
+            report,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (invalidExitCode !== undefined) {
+            process.exit(invalidExitCode);
+            return;
+          }
           const securityIssues = report.issues.filter((i) => i.category === 'security');
           const { risk, findings } = computeAiSecurityRisk(securityIssues);
 

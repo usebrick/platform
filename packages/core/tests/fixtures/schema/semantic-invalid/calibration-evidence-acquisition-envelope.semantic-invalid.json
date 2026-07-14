@@ -1,0 +1,21 @@
+{
+  "version": "v10.3-evidence-acquisition-envelope-v1",
+  "envelopeId": "f50e5da7c761dbefcd5ca3850be3f6047afdb31ff412eaa40e231d66895d4380",
+  "authorizationId": "auth-1",
+  "reservation": {
+    "version": "v10.3-evidence-acquisition-reservation-v1",
+    "reservationId": "756fe100708714a86f3dc3b0115c3f14ceff077bad998c83ec9c18432efab7ad",
+    "authorizationId": "auth-1",
+    "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+    "recoveryNonce": "7777777777777777777777777777777777777777777777777777777777777777",
+    "reservationSha256": "47641aca37148015e24e6b71f8386debfc19d417cf285d0d945c4b0ddd9249f1"
+  },
+  "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "casTransactionId": "cas-txn-1",
+  "primaryCompletionRelativePath": "evidence-cas/completions/cas-txn-1.json",
+  "primaryCompletionSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "acquisitionReceiptSha256": "b9bf69b5471f94d221fd14ff6a19c5b52b395159f54ba25d3b596bb622682958",
+  "payloadId": "050a8920b03fe747de29a567334587a513f7e1a6cc5e17b650ff7e93c5dc579a",
+  "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+  "envelopeSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

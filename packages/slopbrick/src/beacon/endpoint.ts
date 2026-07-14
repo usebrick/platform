@@ -77,6 +77,10 @@ export const sendBeacon: BeaconTransport = (url, payload, timeoutMs) => {
     }
 
     req.on('error', settle);
+    // The CLI deliberately does not await this best-effort request. Let any
+    // other event-loop activity carry it forward, but never let the assigned
+    // socket keep an otherwise completed scan process alive.
+    req.on('socket', (socket) => socket.unref());
     // Enforce the wall-clock timeout. `setTimeout` on the
     // request, not on the socket — covers the connect phase too.
     req.setTimeout(timeoutMs, () => {

@@ -35,6 +35,10 @@ export interface DocsScanResult {
   scan: ScanRunResult;
 }
 
+export const DOCS_NOT_APPLICABLE_REASON = 'no-documentation-files-analyzed' as const;
+export const DOCS_NOT_APPLICABLE_MESSAGE =
+  'NO DOCUMENTATION FILES ANALYSED — documentation freshness is not applicable for this workspace.' as const;
+
 /**
  * Run the docs scan. We re-use `runScan` to load config + cache, then
  * call `buildDocFreshness` which does the cross-referencing.
@@ -87,6 +91,36 @@ export function formatDocsReport(
     return formatDocsMarkdown(result);
   }
   return formatDocsPretty(result);
+}
+
+/**
+ * Render the domain-specific no-denominator result without exposing the
+ * engine's neutral `100/100` placeholder as a measured freshness score.
+ */
+export function formatDocsNotApplicable(
+  result: DocsScanResult,
+  opts: { json?: boolean; markdown?: boolean } = {},
+): string {
+  const metadata = {
+    version: '0.8.0',
+    completionStatus: 'empty' as const,
+    scoreValidity: 'not-applicable' as const,
+    reason: DOCS_NOT_APPLICABLE_REASON,
+    message: DOCS_NOT_APPLICABLE_MESSAGE,
+    requested: 0,
+    analyzed: 0,
+    failed: 0,
+    skipped: 0,
+    scannedDocFiles: result.result.scannedDocFiles,
+    scannedSourceFiles: result.result.scannedSourceFiles,
+    byRule: result.result.byRule,
+    findings: result.result.findings,
+  };
+  if (opts.json) return JSON.stringify(metadata, null, 2);
+  if (opts.markdown) {
+    return `## Documentation Freshness: not-applicable\n\n${DOCS_NOT_APPLICABLE_MESSAGE}`;
+  }
+  return DOCS_NOT_APPLICABLE_MESSAGE;
 }
 
 function formatDocsPretty(result: DocsScanResult): string {

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-register-delta.schema.json",
+  "title": "CalibrationAdmissionRegisterDeltaV1",
+  "description": "Hash-bound one- or two-source addition to a v10.3 admission register.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "deltaId", "generation", "parentRegisterSha256", "acquisitionRoundId", "acquisitionRoundReceiptSha256", "addedSources", "deltaSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-register-delta-v1" },
+    "deltaId": { "$ref": "#/$defs/id" },
+    "generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "parentRegisterSha256": { "$ref": "#/$defs/sha256" },
+    "acquisitionRoundId": { "$ref": "#/$defs/id" },
+    "acquisitionRoundReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "addedSources": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/addedSource" } },
+    "deltaSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "addedSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "sourceGenerationSha256", "registerEntrySha256", "sourceReviewSha256", "sourceAcquisitionAuthorizationId", "sourceAcquisitionReceiptId", "sourceAcquisitionReceiptSha256", "materializationReceiptId", "materializationReceiptSha256"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/id" },
+        "sourceGenerationSha256": { "$ref": "#/$defs/sha256" },
+        "registerEntrySha256": { "$ref": "#/$defs/sha256" },
+        "sourceReviewSha256": { "$ref": "#/$defs/sha256" },
+        "sourceAcquisitionAuthorizationId": { "$ref": "#/$defs/id" },
+        "sourceAcquisitionReceiptId": { "$ref": "#/$defs/id" },
+        "sourceAcquisitionReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "materializationReceiptId": { "$ref": "#/$defs/id" },
+        "materializationReceiptSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

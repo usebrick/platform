@@ -26,8 +26,15 @@ import { resolve } from 'node:path';
 import {
   computeHeapsExponent,
   computeZipfExponent,
+  parseSource,
   tokenizeIdentifiers,
 } from '@usebrick/engine';
+import {
+  countNonEmptyJsLines,
+  countSwcCommentLines,
+  hasFullSourceSwcCommentAst,
+  JS_COMMENT_LINE_METRIC_ID,
+} from '../src/engine/js-comment-lines.js';
 
 const [, , workspace, sampleArg] = process.argv;
 if (!workspace) {
@@ -37,7 +44,16 @@ if (!workspace) {
 const SAMPLE_SIZE = sampleArg ? parseInt(sampleArg, 10) : 10000;
 const absWorkspace = resolve(workspace);
 
-const SOURCE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.svelte', '.astro', '.html', '.py', '.go']);
+const JS_COMMENT_EXT = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts']);
+const SOURCE_EXT = new Set([
+  ...JS_COMMENT_EXT,
+  '.vue',
+  '.svelte',
+  '.astro',
+  '.html',
+  '.py',
+  '.go',
+]);
 
 function listFiles(dir: string): string[] {
   const files: string[] = [];
@@ -111,20 +127,24 @@ for (const file of sample) {
     const tokens = tokenizeIdentifiers(source);
     for (const t of tokens) identifierLengthsAll.push(t.length);
 
-    // Comment density: fraction of lines that are entirely comments or empty
-    let commentCount = 0;
-    let nonEmptyCount = 0;
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.length === 0) continue;
-      nonEmptyCount++;
-      if (trimmed.startsWith('//') || trimmed.startsWith('/*') ||
-          trimmed.startsWith('*') || trimmed.startsWith('#') ||
-          trimmed.startsWith('--')) {
-        commentCount++;
+    // Comment density is meaningful only for the exact parser-backed
+    // JS-family extractor used by ai/comment-ratio.
+    const extension = file.match(/\.[^.]+$/)?.[0]?.toLowerCase() ?? '';
+    if (JS_COMMENT_EXT.has(extension)) {
+      try {
+        const { ast } = parseSource(source, file);
+        // Use the same admission guard as runtime fact extraction. This
+        // excludes declaration placeholders (.d.ts/.d.mts/.d.cts) and any
+        // other identity that parser-core did not parse as complete JS source.
+        if (hasFullSourceSwcCommentAst(file, ast, source)) {
+          const nonEmptyCount = countNonEmptyJsLines(source);
+          const commentCount = countSwcCommentLines(ast, source);
+          commentDensitiesAll.push(nonEmptyCount > 0 ? commentCount / nonEmptyCount : 0);
+        }
+      } catch {
+        // The baseline must abstain when SWC cannot prove lexical structure.
       }
     }
-    commentDensitiesAll.push(nonEmptyCount > 0 ? commentCount / nonEmptyCount : 0);
 
     if (tokens.length >= 50) {
       const heaps = computeHeapsExponent(tokens);
@@ -172,6 +192,9 @@ const baselines = {
   generatedAt: new Date().toISOString(),
   corpusWorkspace: absWorkspace,
   sampleSize: SAMPLE_SIZE,
+  extractors: {
+    commentDensity: JS_COMMENT_LINE_METRIC_ID,
+  },
   features: {
     lineLengths: {
       n: lineLengthsAll.length,

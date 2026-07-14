@@ -209,9 +209,17 @@ export const PROJECT_RULE_IDS: string[] = [
 ];
 
 export function runProjectRules(results: FileScanResult[], config: ResolvedConfig): Issue[] {
+  // Project detectors consume facts extracted from each file. A terminal
+  // worker failure is not an empty, trustworthy result: if a caller happens
+  // to retain partial facts on that object, including it would let a failed
+  // file create or suppress a project finding. Keep this boundary defensive
+  // even though the scan orchestrator already passes its successful subset.
+  const successfulResults = results.filter(
+    (result) => result.failureKind === undefined && result.parseError === undefined,
+  );
   return [
-    ...analyzeGapMonopoly(results, config),
-    ...analyzeCssBloat(results, config),
-    ...analyzeDuplicatedScreens(results, config),
+    ...analyzeGapMonopoly(successfulResults, config),
+    ...analyzeCssBloat(successfulResults, config),
+    ...analyzeDuplicatedScreens(successfulResults, config),
   ];
 }

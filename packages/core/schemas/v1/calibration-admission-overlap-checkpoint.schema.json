@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-checkpoint.schema.json",
+  "title": "AdmissionOverlapCheckpointV1",
+  "description": "Hash-bound resumable overlap phase checkpoint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "checkpointId", "universeSha256", "normalizerRegistrySha256", "overlapPolicySha256", "invocationIntentId", "phase", "inputShardSha256s", "outputShardSha256s", "continuationCursorSha256", "checkpointSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-overlap-checkpoint-v1" },
+    "checkpointId": { "$ref": "#/$defs/id" },
+    "universeSha256": { "$ref": "#/$defs/sha256" },
+    "normalizerRegistrySha256": { "$ref": "#/$defs/sha256" },
+    "overlapPolicySha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "phase": { "enum": ["postings", "candidate_pairs", "exact_edges", "clusters"] },
+    "inputShardSha256s": { "type": "array", "maxItems": 65536, "uniqueItems": true, "items": { "$ref": "#/$defs/sha256" } },
+    "outputShardSha256s": { "type": "array", "maxItems": 65536, "uniqueItems": true, "items": { "$ref": "#/$defs/sha256" } },
+    "continuationCursorSha256": { "$ref": "#/$defs/sha256" },
+    "checkpointSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

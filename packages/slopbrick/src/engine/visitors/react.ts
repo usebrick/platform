@@ -61,19 +61,24 @@ export function buildLineOffsets(source: string): number[] {
   const offsets: number[] = [0];
   let byteOffset = 0;
   for (let i = 0; i < source.length; i++) {
-    const char = source[i];
+    const codePoint = source.codePointAt(i)!;
+    const char = String.fromCodePoint(codePoint);
+    if (char.length === 2) i++;
     if (char === '\n') {
-      byteOffset += Buffer.byteLength(char, 'utf-8');
+      byteOffset += 1;
       offsets.push(byteOffset);
     } else if (char === '\r') {
-      byteOffset += Buffer.byteLength(char, 'utf-8');
+      byteOffset += 1;
       if (i + 1 < source.length && source[i + 1] === '\n') {
-        byteOffset += Buffer.byteLength('\n', 'utf-8');
+        byteOffset += 1;
         i++;
       }
       offsets.push(byteOffset);
+    } else if (char === '\u2028' || char === '\u2029') {
+      byteOffset += 3;
+      offsets.push(byteOffset);
     } else {
-      byteOffset += Buffer.byteLength(char!, 'utf-8');
+      byteOffset += Buffer.byteLength(char, 'utf-8');
     }
   }
   return offsets;

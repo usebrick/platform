@@ -97,6 +97,17 @@ describe('dead/unused-import', () => {
     expect(issue).toBeDefined();
   });
 
+  it('ignores inline type-only specifiers but still flags an unused value sibling', async () => {
+    const source = `import { run, type Adapter, type Result as R } from './adapter';
+export const marker = true;
+`;
+
+    const issues = await runRule(source, 'module.ts');
+    const unusedNames = issues.map((issue) => issue.message.match(/'([^']+)'/)?.[1]);
+
+    expect(unusedNames).toEqual(['run']);
+  });
+
   it('does not flag a namespace import that IS used', async () => {
     const source = `import * as React from 'react';\nexport const Component = () => <div>{React.useState ? 'x' : 'y'}</div>;\n`;
     const issues = await runRule(source);

@@ -87,11 +87,12 @@ export const aiErrorsNearEofRule = createRule<RuleContext>({
         message:
           `Unbalanced delimiters cluster near EOF: ${opens} open vs ${closes} close in the last 20% of lines ` +
           `(imbalance ${imbalance}, ratio ${(imbalanceRatio * 100).toFixed(0)}%) vs ${fileImbalance} file-wide. ` +
-          `Yotkova 2026: AI code truncated by max-token cutoffs often leaves unclosed braces near EOF.`,
+          `This can reflect tool or merge truncation, an incomplete edit, or another ` +
+          `source-integrity problem; inspect the ending before repairing it.`,
         line: eofStart + 1,
         column: 1,
         advice:
-          'Check whether the file was truncated by a token limit. The unbalanced delimiters near EOF suggest the model ran out of output budget before completing the file.',
+          'Check for tool or merge truncation and incomplete edits near EOF before repairing the delimiters.',
       },
     ];
   },

@@ -118,15 +118,13 @@ export const aiDefaultReactStackRule = createRule<RuleContext>({
         message:
           `File imports ${hits.length} packages from the default React stack ` +
           `(${hits.slice(0, 4).join(', ')}${hits.length > 4 ? ', ...' : ''}). ` +
-          `Sascha 2025: 9/9 top LLMs default to Next.js + Tailwind + shadcn/ui + ` +
-          `TanStack Query + Zustand. Nam et al. MSR 2026: 27% of AI directives ` +
-          `mention Tailwind, 18% mention shadcn/ui.`,
+          `Review whether each dependency solves a current product need and whether ` +
+          `the choices are documented for this codebase.`,
         line: 1,
         column: 1,
         advice:
-          'Verify the file is intentionally using the default stack. Files that import 3+ of these packages ' +
-          'together are often AI-generated boilerplate. Consider project-specific alternatives or document ' +
-          'why the default stack is appropriate for this codebase.',
+          'Confirm each dependency and abstraction solves a product need; remove unused layers or document ' +
+          'intentional choices. This is architecture guidance, not authorship proof.',
       },
     ];
   },

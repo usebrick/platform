@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-round-transaction.schema.json",
+  "title": "CalibrationAcquisitionRoundTransactionV1",
+  "description": "Recoverable one- or two-source acquisition-round transaction with explicit paths, child receipts, and phase transitions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "roundId", "orchestratorInvocationIntentId", "sourceInvocations", "maxTotalMaterializedBytes", "reservedMaterializedBytes", "recoveryNonce", "sources", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-round-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "roundId": { "$ref": "#/$defs/sha256" },
+    "orchestratorInvocationIntentId": { "$ref": "#/$defs/sha256" },
+    "sourceInvocations": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sourceInvocation" } },
+    "maxTotalMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+    "reservedMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "sources": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/source" } },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
+    "sourceInvocation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authorizationId", "invocationIntentId", "profileId", "profileSha256"],
+      "properties": {
+        "authorizationId": { "$ref": "#/$defs/sha256" }, "invocationIntentId": { "$ref": "#/$defs/sha256" },
+        "profileId": { "enum": ["admission-git-acquire-v1", "admission-release-acquire-v1"] }, "profileSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authorizationId", "temporaryRelativePath", "finalRelativePath", "expectedIdentitySha256", "maxMaterializedBytes", "networkObservationRelativePath", "sourceReceiptTemporaryRelativePath", "sourceReceiptFinalRelativePath", "materializationReceiptTemporaryRelativePath", "materializationReceiptFinalRelativePath", "toolReceiptTemporaryRelativePath", "state"],
+      "properties": {
+        "authorizationId": { "$ref": "#/$defs/sha256" },
+        "temporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+        "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "expectedIdentitySha256": { "$ref": "#/$defs/sha256" },
+        "maxMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+        "networkObservationRelativePath": { "$ref": "#/$defs/relativePath" },
+        "sourceReceiptTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+        "sourceReceiptFinalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "materializationReceiptTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+        "materializationReceiptFinalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "toolReceiptTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+        "state": { "$ref": "#/$defs/sourceState" }
+      }
+    },
+    "sourceState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "enum": ["not_started", "transport_complete"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "networkObservationSha256"], "properties": { "phase": { "enum": ["network_observation_fsynced", "tree_verified", "temporary_fsynced", "destination_promoted", "destination_directory_fsynced"] }, "networkObservationSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "networkObservationSha256", "childToolReceiptId", "childToolReceiptSha256", "toolAuthorityIndexSha256", "materializationReceiptId", "materializationReceiptSha256"], "properties": { "phase": { "const": "materialization_receipt_staged_fsynced" }, "networkObservationSha256": { "$ref": "#/$defs/sha256" }, "childToolReceiptId": { "$ref": "#/$defs/sha256" }, "childToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "materializationReceiptId": { "$ref": "#/$defs/id" }, "materializationReceiptSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "networkObservationSha256", "childToolReceiptId", "childToolReceiptSha256", "toolAuthorityIndexSha256", "materializationReceiptId", "materializationReceiptSha256", "sourceReceiptId", "sourceReceiptSha256"], "properties": { "phase": { "const": "source_receipt_staged_fsynced" }, "networkObservationSha256": { "$ref": "#/$defs/sha256" }, "childToolReceiptId": { "$ref": "#/$defs/sha256" }, "childToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "materializationReceiptId": { "$ref": "#/$defs/id" }, "materializationReceiptSha256": { "$ref": "#/$defs/sha256" }, "sourceReceiptId": { "$ref": "#/$defs/sha256" }, "sourceReceiptSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "enum": ["intent_fsynced", "all_sources_verified", "all_destinations_promoted"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "orchestratorToolReceiptId", "orchestratorToolReceiptSha256", "toolAuthorityIndexSha256"], "properties": { "phase": { "const": "orchestrator_tool_receipt_indexed" }, "orchestratorToolReceiptId": { "$ref": "#/$defs/sha256" }, "orchestratorToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "orchestratorToolReceiptId", "orchestratorToolReceiptSha256", "toolAuthorityIndexSha256", "roundReceiptId", "roundReceiptSha256", "roundReceiptTemporaryRelativePath"], "properties": { "phase": { "const": "round_receipt_staged_fsynced" }, "orchestratorToolReceiptId": { "$ref": "#/$defs/sha256" }, "orchestratorToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "roundReceiptId": { "$ref": "#/$defs/sha256" }, "roundReceiptSha256": { "$ref": "#/$defs/sha256" }, "roundReceiptTemporaryRelativePath": { "$ref": "#/$defs/relativePath" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "orchestratorToolReceiptId", "orchestratorToolReceiptSha256", "toolAuthorityIndexSha256", "roundReceiptId", "roundReceiptSha256", "roundReceiptTemporaryRelativePath", "acquisitionIndexSha256", "acquisitionPublicationTransactionId", "materializationReceiptLedgerSha256", "evidenceBundleSha256"], "properties": { "phase": { "enum": ["metadata_publication_complete", "complete"] }, "orchestratorToolReceiptId": { "$ref": "#/$defs/sha256" }, "orchestratorToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "roundReceiptId": { "$ref": "#/$defs/sha256" }, "roundReceiptSha256": { "$ref": "#/$defs/sha256" }, "roundReceiptTemporaryRelativePath": { "$ref": "#/$defs/relativePath" }, "acquisitionIndexSha256": { "$ref": "#/$defs/sha256" }, "acquisitionPublicationTransactionId": { "$ref": "#/$defs/id" }, "materializationReceiptLedgerSha256": { "$ref": "#/$defs/sha256" }, "evidenceBundleSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

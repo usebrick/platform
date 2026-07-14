@@ -18,8 +18,8 @@
  *
  * Math:
  *
- *   Compression ratio:
- *     C(x) = bytes_after_compression(x) / bytes_before(x)
+ *   Compression savings:
+ *     S(x) = 1 - bytes_after_compression(x) / bytes_before(x)
  *
  *   NCD(x, y):
  *     NCD(x, y) = (C(xy) − min(C(x), C(y))) / max(C(x), C(y)))
@@ -32,12 +32,11 @@
  *
  * Why this matters for slopbrick:
  *
- *   AI-generated text compresses ~5–15% better than human text
- *   under zstd/bz2 (multiple 2019-2024 replications). For code,
- *   the pattern is stronger: AI code reuses more boilerplate,
- *   so the per-character entropy is lower and the gzip/bz2
- *   ratio is higher. NCD against a curated AI reference corpus
- *   is a direct, calibration-free AI-vs-human discriminator.
+ *   Compression and NCD expose reusable structure and similarity. A
+ *   project may find an association with generated code, but the result
+ *   depends on the corpus, language mix, file type, and thresholds. These
+ *   primitives are therefore evidence for calibration, not a direct or
+ *   calibration-free AI-vs-human discriminator.
  *
  *   We use Node's built-in `zlib` (gzip, deflate) for the
  *   compression primitives. The NCD output is bounded in
@@ -52,9 +51,9 @@ import { gzipSync, brotliCompressSync, constants as zlibConstants } from 'node:z
 export interface CompressionProfile {
   /** Length of file in bytes. */
   bytes: number;
-  /** gzip compression ratio (0 = incompressible, 1 = fully compresses to 0). */
+  /** gzip size savings fraction (0 = no savings, 1 = complete savings). */
   gzipRatio: number;
-  /** brotli compression ratio. */
+  /** brotli size savings fraction. */
   brotliRatio: number;
   /** gzip bytes after compression (raw). */
   gzipBytes: number;
@@ -63,9 +62,10 @@ export interface CompressionProfile {
 }
 
 /**
- * Compute the compression profile of a file. Higher ratio = more
- * compressible = more likely to be AI-generated (per the
- * literature).
+ * Compute the compression profile of a file. Higher savings means the input
+ * is more compressible. Compression/NCD are similarity and complexity
+ * proxies; they are not authorship proof and require project-level
+ * calibration before being interpreted as an AI signal.
  */
 export function computeCompressionProfile(content: string | Buffer): CompressionProfile {
   const buf = typeof content === 'string' ? Buffer.from(content, 'utf8') : content;
@@ -126,8 +126,8 @@ export function compressionDifferential(
 }
 
 /**
- * File-level AI compression signature: average compression ratio
- * of the file's lines. AI code tends to have:
+ * File-level compression profile: average compression savings
+ * of the file's lines. A calibrated AI association may use:
  *   - High overall gzipRatio (more boilerplate)
  *   - High line-to-line NCD similarity (repeats the same patterns)
  *   - Low coefficient of variation across lines (uniform)

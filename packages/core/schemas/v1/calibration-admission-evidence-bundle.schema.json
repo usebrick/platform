@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-bundle.schema.json",
+  "title": "CalibrationAdmissionEvidenceBundleV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "policy", "witnessPolicies", "toolProfiles", "invocationIntents", "toolReceipts", "toolAuthoritySnapshot", "evidenceIndex", "evidencePayloadSet", "approvedEvidenceAcquisitions", "evidenceAcquisitionReceipts", "evidenceAcquisitionEnvelopes", "acquisitionAuthoritySnapshot", "evidenceReceipts", "materializationReceipts", "bundleSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-evidence-bundle-v1" },
+    "policy": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-policy.schema.json" },
+    "witnessPolicies": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-witness-policy.schema.json" } },
+    "toolProfiles": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-profile.schema.json" } },
+    "invocationIntents": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-invocation-intent.schema.json" } },
+    "toolReceipts": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-receipt.schema.json" } },
+    "toolAuthoritySnapshot": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-authority-snapshot.schema.json" },
+    "evidenceIndex": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-index.schema.json" },
+    "evidencePayloadSet": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-payload-set.schema.json" },
+    "approvedEvidenceAcquisitions": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-approved-evidence-acquisition.schema.json" } },
+    "evidenceAcquisitionReceipts": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-evidence-acquisition-receipt.schema.json" } },
+    "evidenceAcquisitionEnvelopes": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-evidence-acquisition-envelope.schema.json" } },
+    "acquisitionAuthoritySnapshot": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-acquisition-snapshot.schema.json" },
+    "evidenceReceipts": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-receipt.schema.json" } },
+    "materializationReceipts": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-materialization-receipt.schema.json" } },
+    "bundleSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

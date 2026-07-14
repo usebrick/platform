@@ -28,21 +28,45 @@ export interface ScanCache {
   files: Record<string, CachedFile>;
 }
 
-export function loadCache(cachePath: string): ScanCache | undefined {
-  const abs = isAbsolute(cachePath) ? cachePath : resolve(process.cwd(), cachePath);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isCachedFile(value: unknown): value is CachedFile {
+  if (!isRecord(value)) return false;
+  return typeof value.hash === 'string' && /^[a-f0-9]{32}$/u.test(value.hash)
+    && Number.isInteger(value.issueCount) && (value.issueCount as number) >= 0
+    && typeof value.lastScannedAt === 'string' && value.lastScannedAt.length > 0;
+}
+
+function isScanCache(value: unknown): value is ScanCache {
+  if (!isRecord(value)) return false;
+  if (typeof value.version !== 'string' || value.version.length === 0) return false;
+  if (typeof value.generatedAt !== 'string' || value.generatedAt.length === 0) return false;
+  if (!isRecord(value.files)) return false;
+  return Object.values(value.files).every(isCachedFile);
+}
+
+/** Resolve a relative cache path against the scan workspace, never the caller's cwd. */
+export function resolveCachePath(cachePath: string, baseDir = process.cwd()): string {
+  return isAbsolute(cachePath) ? cachePath : resolve(baseDir, cachePath);
+}
+
+export function loadCache(cachePath: string, baseDir = process.cwd()): ScanCache | undefined {
+  const abs = resolveCachePath(cachePath, baseDir);
   if (!existsSync(abs)) return undefined;
   try {
     const raw = readFileSync(abs, 'utf-8');
-    const parsed = JSON.parse(raw) as ScanCache;
-    if (parsed.version !== VERSION) return undefined; // version mismatch → invalid
+    const parsed: unknown = JSON.parse(raw);
+    if (!isScanCache(parsed) || parsed.version !== VERSION) return undefined; // mismatch/corruption → rescan
     return parsed;
   } catch {
     return undefined;
   }
 }
 
-export function saveCache(cachePath: string, cache: ScanCache): void {
-  const abs = isAbsolute(cachePath) ? cachePath : resolve(process.cwd(), cachePath);
+export function saveCache(cachePath: string, cache: ScanCache, baseDir = process.cwd()): void {
+  const abs = resolveCachePath(cachePath, baseDir);
   mkdirSync(dirname(abs), { recursive: true });
   // saveCache call before writing our own. The .tmp is purely
   // diagnostic — loadCache ignores it — but lingering files are noise.
@@ -55,9 +79,20 @@ export function saveCache(cachePath: string, cache: ScanCache): void {
       // will overwrite it anyway.
     }
   }
-  // Atomic write: write to .tmp, then rename.
+  // Atomic write: write to .tmp, then rename. Remove a failed temporary
+  // artifact before rethrowing so callers can report the write failure without
+  // leaving a misleading cache fragment behind.
   writeFileSync(tmp, JSON.stringify(cache, null, 2), 'utf-8');
-  renameSync(tmp, abs);
+  try {
+    renameSync(tmp, abs);
+  } catch (error) {
+    try {
+      unlinkSync(tmp);
+    } catch {
+      // Preserve the original write/rename error.
+    }
+    throw error;
+  }
 }
 
 export function computeFileHash(filePath: string): string {

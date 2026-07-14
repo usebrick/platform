@@ -45,7 +45,9 @@ describe('ai/fetch-default-overuse', () => {
       `const d = fetch("/api/comments").then(r => r.json());`,
     ].join('\n');
     const issues = await runRule(source);
-    expect(issues.some(i => i.ruleId === 'ai/fetch-default-overuse')).toBe(true);
+    const issue = issues.find(i => i.ruleId === 'ai/fetch-default-overuse');
+    expect(issue).toBeDefined();
+    expect(`${issue?.message}\n${issue?.advice}`).not.toMatch(/LLM|human code|verify authorship/i);
   });
 
   it('does not flag file that imports a canonical fetch lib (axios)', async () => {

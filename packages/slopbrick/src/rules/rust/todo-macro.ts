@@ -87,9 +87,8 @@ function collectMacroIssues(
           column: node.startPosition.column,
           advice:
             `Implement the function body or remove the stub. '${macroName}!()' is fine in ` +
-            `test scaffolding (#[cfg(test)]); here it is a panic risk. AI agents commonly ` +
-            `leave these behind after iterative refactors when the placeholder branch is ` +
-            `never filled in.`,
+            `test scaffolding (#[cfg(test)]); here it is a panic risk. Implement the branch ` +
+            `or keep the macro inside test-only code.`,
         });
       }
     }

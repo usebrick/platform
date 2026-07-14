@@ -35,6 +35,8 @@
 // spacing-scale + radius-scale rules across the project. Drift
 // detection reuses the cluster.ts helpers.
 
+import { resolve } from 'node:path';
+
 import { buildPatternInventory } from '../mcp/patterns.js';
 import type { PatternInventory } from '../mcp/patterns.js';
 import { detectCrossFileDrift, detectCrossCategoryDrift } from '@usebrick/engine';
@@ -111,16 +113,25 @@ const SCALE_VIOLATIONS_PER_DEDUCTION_UNIT = 5;
  * Refactor 2: when the caller has already scanned (the CLI main scan
  * path), pass `results` to reuse the pre-extracted `facts` from each
  * FileScanResult. This eliminates a second parse + extractFacts call
- * per file in the scale-violation sweep.
+ * per file in the scale-violation sweep. `selectedFilePaths` is the full
+ * pre-incremental selection; callers that omit it fall back to result paths.
  */
 export async function buildArchitectureScore(
   cwd: string,
   config: ResolvedConfig,
   maxFiles = 500,
   results?: FileScanResult[],
+  selectedFilePaths?: readonly string[],
 ): Promise<ArchitectureScore> {
-  const inventory = await buildPatternInventory(cwd, config, maxFiles);
-  const scaleIssues = await collectScaleViolations(cwd, config, maxFiles, results);
+  const exactCandidateFiles = selectedFilePaths ?? results?.map((result) => result.filePath);
+  const inventory = await buildPatternInventory(cwd, config, maxFiles, exactCandidateFiles);
+  const scaleIssues = await collectScaleViolations(
+    cwd,
+    config,
+    maxFiles,
+    results,
+    exactCandidateFiles,
+  );
   const scannedFiles = inventory.scannedFiles;
 
   // v0.9.2 — detect drift from the same inventory used above. Computing
@@ -304,19 +315,58 @@ async function collectScaleViolations(
   config: ResolvedConfig,
   maxFiles: number,
   results?: FileScanResult[],
+  selectedFilePaths?: readonly string[],
 ): Promise<{ spacing: number; radius: number }> {
   let spacing = 0;
   let radius = 0;
+
+  const analyzeFacts = (
+    filePath: string,
+    facts: NonNullable<FileScanResult['facts']>,
+  ): void => {
+    const ctx: RuleContext = { config, filePath, cwd };
+    const spacingCtx = spacingScaleViolationRule.create(ctx);
+    const radiusCtx = radiusScaleViolationRule.create(ctx);
+    spacing += spacingScaleViolationRule.analyze(spacingCtx, facts).length;
+    radius += radiusScaleViolationRule.analyze(radiusCtx, facts).length;
+  };
+
+  if (selectedFilePaths !== undefined) {
+    const selected = [...new Set(
+      selectedFilePaths.map((filePath) => resolve(cwd, filePath)),
+    )].sort().slice(0, maxFiles);
+    const resultsByPath = new Map(
+      (results ?? []).map((result) => [resolve(cwd, result.filePath), result]),
+    );
+
+    for (const filePath of selected) {
+      const existingResult = resultsByPath.get(filePath);
+      if (existingResult) {
+        if (existingResult.facts) analyzeFacts(filePath, existingResult.facts);
+        continue;
+      }
+      try {
+        const { ast, source } = await parseFile(filePath);
+        analyzeFacts(filePath, extractFacts(
+          filePath,
+          ast,
+          source,
+          config.supportsRsc ?? true,
+          config.framework ?? 'react',
+          config,
+        ));
+      } catch {
+        continue;
+      }
+    }
+    return { spacing, radius };
+  }
 
   if (results) {
     // Reuse facts from the main scan.
     for (const r of results.slice(0, maxFiles)) {
       if (!r.facts) continue;
-      const ctx: RuleContext = { config, filePath: r.filePath, cwd };
-      const spacingCtx = spacingScaleViolationRule.create(ctx);
-      const radiusCtx = radiusScaleViolationRule.create(ctx);
-      spacing += spacingScaleViolationRule.analyze(spacingCtx, r.facts).length;
-      radius += radiusScaleViolationRule.analyze(radiusCtx, r.facts).length;
+      analyzeFacts(r.filePath, r.facts);
     }
     return { spacing, radius };
   }
@@ -327,15 +377,18 @@ async function collectScaleViolations(
     let facts: ReturnType<typeof extractFacts>;
     try {
       const { ast, source } = await parseFile(filePath);
-      facts = extractFacts(filePath, ast, source);
+      facts = extractFacts(
+        filePath,
+        ast,
+        source,
+        config.supportsRsc ?? true,
+        config.framework ?? 'react',
+        config,
+      );
     } catch {
       continue;
     }
-    const ctx: RuleContext = { config, filePath, cwd };
-    const spacingCtx = spacingScaleViolationRule.create(ctx);
-    const radiusCtx = radiusScaleViolationRule.create(ctx);
-    spacing += spacingScaleViolationRule.analyze(spacingCtx, facts).length;
-    radius += radiusScaleViolationRule.analyze(radiusCtx, facts).length;
+    analyzeFacts(filePath, facts);
   }
   return { spacing, radius };
 }

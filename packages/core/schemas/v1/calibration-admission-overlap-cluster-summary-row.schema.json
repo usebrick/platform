@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-cluster-summary-row.schema.json",
+  "title": "AdmissionOverlapClusterSummaryRowV1",
+  "description": "Bounded summary row for one exact or near connected component.",
+  "type": "object", "additionalProperties": false,
+  "required": ["clusterId", "kind", "canonicalCandidateUnitId", "memberCount", "overlapSideSet", "membershipRowsSha256"],
+  "properties": { "clusterId": { "$ref": "#/$defs/id" }, "kind": { "enum": ["exact", "near"] }, "canonicalCandidateUnitId": { "$ref": "#/$defs/id" }, "memberCount": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }, "overlapSideSet": { "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": { "$ref": "#/$defs/side" } }, "membershipRowsSha256": { "$ref": "#/$defs/sha256" } },
+  "$defs": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "side": { "enum": ["ai_side", "human_side", "unassigned"] } }
+}

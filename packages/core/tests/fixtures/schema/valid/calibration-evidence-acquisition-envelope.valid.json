@@ -1,0 +1,21 @@
+{
+  "version": "v10.3-evidence-acquisition-envelope-v1",
+  "envelopeId": "c0cb0619cd78e29b246065f95d5ae6119a0ce4f665bc0242784e77260ef65d6e",
+  "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+  "reservation": {
+    "version": "v10.3-evidence-acquisition-reservation-v1",
+    "reservationId": "3cfee84af298ad241fdbed683e77145c5136b22357e9885dafff09fd8ef8acbb",
+    "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+    "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+    "recoveryNonce": "7777777777777777777777777777777777777777777777777777777777777777",
+    "reservationSha256": "b9c6107b109c73a56b0f2105c287765373a63aecb3fd29f81655582bd4ee4d39"
+  },
+  "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "casTransactionId": "cas-txn-1",
+  "primaryCompletionRelativePath": "evidence-cas/completions/cas-txn-1.json",
+  "primaryCompletionSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "acquisitionReceiptSha256": "3f731276c9357914de8a0c04e4f937647fd8a5a026496e63ecbf72613b16a5c2",
+  "payloadId": "050a8920b03fe747de29a567334587a513f7e1a6cc5e17b650ff7e93c5dc579a",
+  "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+  "envelopeSha256": "0d259c19ec1d7977188c548d894a1098baf75cc03298b9996092fac8e0478820"
+}

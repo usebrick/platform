@@ -44,7 +44,7 @@ describe('score explanation output', () => {
     expect(output).toContain('AI Slop Score: 20.0/100 (lower is better)');
     expect(output).toContain('boundary');
     expect(output).toContain('Repository Health: 82.0/100 (higher is better;');
-    expect(output).toContain('1 analysed file');
+    expect(output).toContain('1 successfully analysed file');
     expect(output).toContain('No per-rule or Bayesian attribution');
     expect(output).not.toContain('ruleId');
   });

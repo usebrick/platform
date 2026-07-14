@@ -1,5 +1,12 @@
 # SlopBrick Mathematical Foundations
 
+> **Historical formula notice (2026-07-13):** The examples in this document
+> describe the earlier v0.37-era implementation. The current public score
+> contract is versioned `v2` and the canonical formulas are documented in
+> [`packages/slopbrick/docs/scoring-explained.md`](../packages/slopbrick/docs/scoring-explained.md)
+> and `packages/slopbrick/src/report/score-contract.ts`. Do not use the
+> historical equations below to reconstruct current scores.
+
 > **Authoritative reference for every mathematical method used in slopbrick.**
 >
 > **Authors:** slopbrick project (dystx) with Kimi Code CLI; 14 dimensions from `.research/slopbrick-deep-research/`, 10 from `.research/code-stylometry/`

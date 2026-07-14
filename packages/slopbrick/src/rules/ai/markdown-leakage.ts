@@ -114,8 +114,8 @@ export const aiMarkdownLeakageRule = createRule<RuleContext>({
             severity: 'high',
             aiSpecific: true,
             message:
-              `Stray Markdown fence at line ${i + 1} (\`\`\`${lang}\`) — AI tools often leak the fenced-block format ` +
-              `from chat output into standalone code files. Remove the fence.`,
+              `Stray Markdown fence at line ${i + 1} (\`\`\`${lang}\`) in a standalone source file. ` +
+              `Remove the fence so the file contains valid source syntax.`,
             line: i + 1,
             column: 1,
             advice:
@@ -137,8 +137,8 @@ export const aiMarkdownLeakageRule = createRule<RuleContext>({
             severity: 'high',
             aiSpecific: true,
             message:
-              `Bare language name on line ${i + 1} (\`${line.trim()}\`) — looks like a leaked Markdown language tag. ` +
-              `AI chat outputs often emit \`python\` / \`javascript\` / etc. as a heading before the code.`,
+              `Bare language name on line ${i + 1} (\`${line.trim()}\`) looks like a Markdown language tag. ` +
+              `Remove it so the file begins with valid source syntax.`,
             line: i + 1,
             column: 1,
             advice:

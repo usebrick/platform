@@ -18,6 +18,12 @@ function skipIfNoBin(): boolean {
   return !existsSync(BIN);
 }
 
+// Keep the opt-in suite genuinely skipped when the package bin has not been
+// built. The per-test guard below is retained for defensive clarity, but a
+// plain early return would otherwise report green tests without exercising
+// the subprocess contract.
+const watchSuite = existsSync(BIN) ? describe : describe.skip;
+
 function createTmp(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-watch-'));
 }
@@ -112,8 +118,40 @@ async function waitForValidHealth(cwd: string, requested: number): Promise<void>
   }, 8_000);
 }
 
+async function waitForPartialHealth(
+  cwd: string,
+  requested: number,
+  analyzed: number,
+  failed: number,
+): Promise<void> {
+  await waitUntil(() => {
+    const health = readHealth(cwd);
+    return health?.scoreValidity === 'incomplete' &&
+      health.completionStatus === 'partial' &&
+      health.requested === requested &&
+      health.analyzed === analyzed &&
+      health.failed === failed;
+  }, 8_000);
+}
+
 function watchNoticeCount(output: string): number {
   return output.split('Watching for changes...').length - 1;
+}
+
+function expectNoPartialScoreLeak(output: string): void {
+  // Match only top-level JSON headline fields. Diagnostic breakdowns may
+  // legitimately retain numeric compatibility values at deeper indentation.
+  expect(output).not.toMatch(/^  "aiSlopScore":\s*(?:-?\d|null)/m);
+  expect(output).not.toMatch(/^  "engineeringHygiene":\s*(?:-?\d|null)/m);
+  expect(output).not.toMatch(/^  "security":\s*(?:-?\d|null)/m);
+  expect(output).not.toMatch(/^  "repositoryHealth":\s*(?:-?\d|null)/m);
+  expect(output).not.toMatch(/^  "compositeScore":\s*(?:-?\d|null)/m);
+  expect(output).not.toMatch(/AI Slop Score:\s*-?\d/);
+  expect(output).not.toMatch(/Engineering Hygiene:\s*-?\d/);
+  expect(output).not.toMatch(/Security:\s*-?\d/);
+  expect(output).not.toMatch(/Repository Health:\s*-?\d/);
+  expect(output).not.toMatch(/Composite Score:\s*-?\d/);
+  expect(output).not.toMatch(/Threshold \(CI gate\)|✓ Clean/);
 }
 
 async function assertStableForSeveralDebounces(
@@ -140,7 +178,7 @@ async function assertStableForSeveralDebounces(
   }
 }
 
-describe('slopbrick --watch (v0.5.2)', () => {
+watchSuite('slopbrick --watch (v0.5.2)', () => {
   const invocations = [
     ['global --watch flag', 'flag'],
     ['watch subcommand', 'subcommand'],
@@ -286,6 +324,71 @@ describe('slopbrick --watch (v0.5.2)', () => {
             variant.quiet ? undefined : 2,
           );
           if (variant.quiet) expect(handle.output()).toBe('');
+          expect(await stopWatch(handle)).toBe(0);
+        } finally {
+          if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
+          rmSync(dir, { recursive: true, force: true });
+        }
+      }, 20_000);
+    }
+  }
+
+  for (const [invocationLabel, invocation] of invocations) {
+    for (const variant of heatmapVariants) {
+      it(`keeps partial ${invocationLabel} heatmap ${variant.name} score-free and bounded`, async () => {
+        if (skipIfNoBin()) return;
+        const dir = createTmp();
+        const handle = startWatch(dir, invocation, variant.args(dir));
+        try {
+          await waitForWatchReady(handle, variant.quiet);
+          mkdirSync(join(dir, 'src'), { recursive: true });
+          writeFileSync(join(dir, 'src', 'valid.ts'), 'export const value = 1;\n');
+          writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
+          await waitForPartialHealth(dir, 2, 1, 1);
+
+          const health = readHealth(dir);
+          expect(health).toMatchObject({
+            completionStatus: 'partial',
+            scoreValidity: 'incomplete',
+            requested: 2,
+            analyzed: 1,
+            failed: 1,
+          });
+
+          if (variant.kind === 'quiet') {
+            expect(handle.output()).toBe('');
+          } else if (variant.kind === 'json-file') {
+            const json = JSON.parse(readFileSync(join(dir, 'watch.json'), 'utf8')) as Record<string, unknown>;
+            expect(json).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
+            expect(json).not.toHaveProperty('aiSlopScore');
+            expect(json).not.toHaveProperty('engineeringHygiene');
+            expect(json).not.toHaveProperty('security');
+            expect(json).not.toHaveProperty('repositoryHealth');
+            expect(json).not.toHaveProperty('compositeScore');
+            expectNoPartialScoreLeak(handle.stdout());
+            expectNoPartialScoreLeak(handle.stderr());
+          } else if (variant.kind === 'html-file') {
+            const html = readFileSync(join(dir, 'watch.html'), 'utf8');
+            expect(html).toContain('data-score-validity="incomplete"');
+            expect(html).not.toContain('AI Slop Score:');
+            expectNoPartialScoreLeak(handle.stdout());
+            expectNoPartialScoreLeak(handle.stderr());
+          } else if (variant.kind === 'json') {
+            expect(handle.output()).toContain('"scoreValidity": "incomplete"');
+            expectNoPartialScoreLeak(handle.output());
+          } else if (variant.kind === 'html') {
+            expect(handle.output()).toContain('data-score-validity="incomplete"');
+            expectNoPartialScoreLeak(handle.output());
+          } else if (variant.kind === 'sarif') {
+            expect(handle.output()).toContain('"scoreValidity": "incomplete"');
+            expect(handle.output()).not.toContain('"scores"');
+          } else {
+            expect(handle.output()).toContain('INCOMPLETE SCAN');
+          }
+
+          expect(handle.output()).not.toMatch(/Threshold \(CI gate\)|✓ Clean/);
+          await new Promise((resolveWait) => setTimeout(resolveWait, 650));
+          expect(readHealth(dir)).toMatchObject({ scoreValidity: 'incomplete', failed: 1 });
           expect(await stopWatch(handle)).toBe(0);
         } finally {
           if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');

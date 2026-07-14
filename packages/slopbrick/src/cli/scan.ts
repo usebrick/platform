@@ -16,7 +16,7 @@
 // Commander wiring lives in ./program.ts. Init/doctor helpers live
 // in ./init.ts.
 
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -33,6 +33,7 @@ import {
 } from '../config';
 import {
   classifyDiscoveryCandidates,
+  isExcludedBySelfScan,
   type SelectionAccounting,
 } from '../engine/discover.js';
 import { discoverScanFilesWithDiagnostics } from './discovery.js';
@@ -48,6 +49,7 @@ import {
   partitionByCache,
   saveCache,
   computeFileHash,
+  resolveCachePath,
 } from '../engine/cache-incremental.js';
 import { WorkerPool } from '../engine/pool';
 import { scanFile } from '../engine/worker';
@@ -65,9 +67,14 @@ import {
   hashConfig,
 } from '../engine/cache';
 import { logger, setLoggerQuiet } from '../engine/logger';
+import { formatErrorMessage } from './format/error';
 import { runProjectRules } from '../rules/project';
 import { RuleRegistry } from '../rules/registry';
 import { resetDuplicationRuleState } from '../rules/dup/index.js';
+import {
+  collectIdenticalBlockIssues,
+  type IdenticalBlockIssueMap,
+} from '../rules/dup/identical-block.js';
 
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
@@ -77,11 +84,13 @@ import {
   markDefaultOffIssuesForAudit,
   normalizeFileResultForDisplayAndScore,
 } from './effective-issues';
+import { countSuccessfullyAnalyzed, isSuccessfullyAnalyzed } from './scan-accounting';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
 import { finalizeReport } from './report/finalizeReport';
 import {
   isGitScopedEmptySelection,
   isNotApplicableScan,
+  isReadOnlyGitSubset,
 } from '../report/scan-validity.js';
 import { VERSION } from '../types';
 import type { FileScanResult, Issue, ProjectReport, ResolvedConfig, BaselineMeta, BaselineCache, ComponentScore } from '../types';
@@ -128,7 +137,7 @@ export async function runScan(
   await previousRun;
 
   const previousParserCacheSetting = process.env.SLOP_AUDIT_CACHE;
-  const readOnlyGitScope = options.staged === true || options.changed === true;
+  const readOnlyGitScope = isReadOnlyGitSubset(options);
   if (readOnlyGitScope) {
     process.env.SLOP_AUDIT_CACHE = '0';
   } else if (options.cache) {
@@ -197,10 +206,16 @@ async function runScanWithScopedState(
     config.exclude = [...config.exclude, ...options.exclude];
   }
 
-  // Round 22: guard --changed/--staged/--since against running outside a git repo.
-  if (options.staged || options.changed || options.since) {
+  // Git-selected scans require a repository for every supported selector.
+  if (isReadOnlyGitSubset(options)) {
     if (!getGitRoot(cwd)) {
-      const flag = options.changed ? '--changed' : options.staged ? '--staged' : '--since';
+      const flag = options.changed
+        ? '--changed'
+        : options.staged
+          ? '--staged'
+          : options.diffRef !== undefined
+            ? '--diff'
+            : '--since';
       throw new CliUsageError(`${flag} requires a git repository (no .git found in ${cwd})`);
     }
   }
@@ -209,7 +224,7 @@ async function runScanWithScopedState(
   // observation of the repository/config bytes under review: teaching the
   // flywheel from a staged run makes an immediate repeat score differently,
   // and persisting a partial-project snapshot corrupts whole-project memory.
-  const readOnlyGitScope = options.staged === true || options.changed === true;
+  const readOnlyGitScope = isReadOnlyGitSubset(options);
   const configuredTelemetryEnabled = options.telemetry !== false && config.telemetry !== false;
   const telemetryEnabled = configuredTelemetryEnabled && !readOnlyGitScope;
   config.telemetry = configuredTelemetryEnabled;
@@ -243,9 +258,10 @@ async function runScanWithScopedState(
           directoryCandidates.push(f);
         }
       } else {
-        // A direct file argument is an explicit request, and historically
-        // bypasses discovery/type/config filtering. Preserve that behavior
-        // rather than pretending it belongs to the observed-candidate set.
+        // A direct file argument bypasses discovery/type/general-exclude
+        // classification, so it does not belong to the observed-candidate
+        // population. The repository selfScan policy is applied uniformly
+        // below before requested-file accounting.
         explicitFiles.push(p);
       }
     }
@@ -264,6 +280,25 @@ async function runScanWithScopedState(
     });
     files = discovered.files;
     selectionAccounting = discovered.selectionAccounting;
+  }
+
+  const selfScanExcludePaths = config.selfScan?.excludePaths;
+  if (selfScanExcludePaths && selfScanExcludePaths.length > 0) {
+    const beforeSelfScanSelection = files.length;
+    files = files.filter((filePath) =>
+      !isExcludedBySelfScan(filePath, cwd, selfScanExcludePaths),
+    );
+    const removed = beforeSelfScanSelection - files.length;
+    if (selectionAccounting && removed > 0) {
+      selectionAccounting = {
+        ...selectionAccounting,
+        selected: selectionAccounting.selected - removed,
+        excluded: {
+          ...selectionAccounting.excluded,
+          configExclude: selectionAccounting.excluded.configExclude + removed,
+        },
+      };
+    }
   }
 
   const applyGitScope = (nextFiles: string[]) => {
@@ -299,6 +334,12 @@ async function runScanWithScopedState(
     applyGitScope(intersectFiles(files, since, cwd));
   }
 
+  // Preserve the exact post-filter project selection before incremental
+  // partitioning removes cache hits from the files analyzed in this run.
+  // Secondary analysis and persisted memory must never rediscover paths that
+  // config, self-scan, or Git scope excluded.
+  const selectedFilePaths = [...files];
+
   // Count the complete requested set before incremental partitioning. Cache
   // skips remain distinct from files analyzed in this invocation.
   const requestedFiles = files.length;
@@ -320,7 +361,7 @@ async function runScanWithScopedState(
   let existingCache: ReturnType<typeof loadCache> | undefined;
   let unchanged: string[] = [];
   if (options.incremental) {
-    cachePath = options.cachePath ?? '.slopbrick-cache.json';
+    cachePath = resolveCachePath(options.cachePath ?? '.slopbrick-cache.json', cwd);
     existingCache = loadCache(cachePath);
     const partition = partitionByCache(files, existingCache);
     files = partition.toScan;
@@ -339,7 +380,7 @@ async function runScanWithScopedState(
     options.format === 'sarif' ||
     options.format === 'html';
   if (
-    files.length === 0 &&
+    requestedFiles === 0 &&
     !gitScopedEmptySelection &&
     !options.watch &&
     !options.quiet &&
@@ -523,8 +564,78 @@ async function runScanWithScopedState(
     clearProgress();
   }
   if (options.verbose && !options.quiet && !machineReadableStdout) {
-    const failed = results.filter((result) => Boolean(result.parseError)).length;
-    console.error(`[verbose] analyzed ${results.length - failed} file${results.length - failed === 1 ? '' : 's'}; ${failed} parse failure${failed === 1 ? '' : 's'}.`);
+    const analyzed = countSuccessfullyAnalyzed(results);
+    const failed = results.length - analyzed;
+    console.error(`[verbose] analyzed ${analyzed} file${analyzed === 1 ? '' : 's'}; ${failed} scan failure${failed === 1 ? '' : 's'}.`);
+  }
+
+  // Cross-file Type-1 clone detection is a project-level post-pass.  It is
+  // explicitly opt-in while its signal entry is default-off: do not spend
+  // parser/candidate memory on ordinary scans.  A severity override (low,
+  // medium, or high) is the user opt-in; `auto` preserves the default-off
+  // policy and `off` always disables the post-pass.
+  const duplicateRuleId = 'dup/identical-block';
+  const duplicateConfiguredSeverity = config.rules[duplicateRuleId];
+  const duplicateExplicitlyEnabled =
+    (duplicateConfiguredSeverity !== undefined &&
+      duplicateConfiguredSeverity !== 'auto' &&
+      duplicateConfiguredSeverity !== 'off') ||
+    options.rule === duplicateRuleId ||
+    options.includeRules?.includes(duplicateRuleId) === true;
+  const duplicateCoordinatorEnabled =
+    registry.has(duplicateRuleId) &&
+    (!getDefaultOffRules().has(duplicateRuleId) || duplicateExplicitlyEnabled);
+  let duplicateIssues: IdenticalBlockIssueMap | undefined;
+  let duplicateCachedIssues: Issue[] = [];
+  let duplicateSourceReadFailures = 0;
+  if (duplicateCoordinatorEnabled) {
+    const duplicateSources = results
+      .filter((result) => isSuccessfullyAnalyzed(result) && typeof result.facts?.v2?._source === 'string')
+      .map((result) => ({
+        filePath: result.filePath,
+        source: result.facts!.v2._source!,
+      }));
+    const analyzedPaths = new Set(results.map((result) => result.filePath));
+    // Incremental cache entries contain hashes/counts, not source text. Read
+    // unchanged paths from the exact post-filter selection so a clone spanning
+    // one cached and one rescanned file has the same evidence as a full scan.
+    if (options.incremental && unchanged.length > 0) {
+      const selectedPathSet = new Set(selectedFilePaths);
+      for (const filePath of unchanged) {
+        if (!selectedPathSet.has(filePath) || analyzedPaths.has(filePath)) continue;
+        try {
+          duplicateSources.push({ filePath, source: readFileSync(filePath, 'utf8') });
+        } catch {
+          duplicateSourceReadFailures += 1;
+        }
+      }
+    }
+    duplicateIssues = collectIdenticalBlockIssues(duplicateSources);
+    for (const result of results) {
+      const issues = duplicateIssues.get(result.filePath);
+      if (issues) result.issues.push(...issues);
+    }
+    // Cached files have no FileScanResult to attach to, but their verified
+    // findings still belong in the project report (the scan is already marked
+    // partial/incomplete because cached files were skipped).
+    for (const [filePath, issues] of duplicateIssues) {
+      if (analyzedPaths.has(filePath)) continue;
+      for (const issue of issues) {
+        issue.filePath ??= filePath;
+      }
+      duplicateCachedIssues.push(...filterIssues(issues, options));
+    }
+    if (
+      duplicateIssues.truncated &&
+      !options.quiet &&
+      !machineReadableStdout
+    ) {
+      logger.warn(
+        `dup/identical-block post-pass capped at ${duplicateIssues.maxCandidateWindows.toLocaleString()} ` +
+        `candidate windows; clone findings may be incomplete. ` +
+        `${duplicateIssues.skippedInputs + duplicateSourceReadFailures} input(s) were skipped.`,
+      );
+    }
   }
 
   let defaultOffApplied = 0;
@@ -540,7 +651,15 @@ async function runScanWithScopedState(
   // from issue counts and SARIF results.
   const defaultOff = getDefaultOffRules();
   const multiplier = resolveFrameworkMultiplier(config);
-  const scorableResults = results.filter((result) => !result.parseError);
+  const scorableResults = results.filter(isSuccessfullyAnalyzed);
+  // Project rules run after the per-file pipeline, but their active findings
+  // are part of the same effective score contract.  Build this set before
+  // aggregateReport so project-level AI/hygiene evidence cannot appear in the
+  // report while silently disappearing from the four headline scores.
+  const projectIssues = options.securityOnly
+    ? []
+    : filterIssues(runProjectRules(scorableResults, config), options);
+  const effectiveProjectIssues = effectiveIssuesForScore(projectIssues, config);
   const scores = scorableResults.map((result) => scoreFile(
     { ...result, issues: effectiveIssuesForScore(result.issues, config) },
     multiplier,
@@ -552,20 +671,41 @@ async function runScanWithScopedState(
     filePath: result.filePath,
     issues: effectiveIssuesForScore(result.issues, config),
   }));
+  if (effectiveProjectIssues.length > 0) {
+    issueGroups.push({ filePath: '<project>', issues: effectiveProjectIssues });
+  }
+  // Keep one explicit effective projection for every downstream report
+  // consumer. It contains only findings exposed to this invocation's score:
+  // successful per-file findings plus active project findings. In particular,
+  // duplicate findings hydrated from incremental-cache source reads remain in
+  // the broad audit envelope below but cannot inflate --diff PR scoring.
+  const effectiveIssues = [
+    ...scorableResults.flatMap((result) => effectiveIssuesForScore(result.issues, config)),
+    ...effectiveProjectIssues,
+  ];
 
-  if (options.since && baseline) {
-    const scannedPaths = new Set(results.map((result) => result.filePath));
+  const subsetRef = options.since ?? options.diffRef;
+  if (subsetRef && baseline) {
+    const baselineIdentity = (filePath: string) =>
+      relative(cwd, resolve(cwd, filePath)).split(sep).join('/');
+    const includedPaths = new Set(
+      results.map((result) => baselineIdentity(result.filePath)),
+    );
     for (const [filePath, cached] of Object.entries(baseline.scores)) {
-      if (scannedPaths.has(filePath)) continue;
-      if (!existsSync(filePath)) continue;
+      const absoluteFilePath = resolve(cwd, filePath);
+      const identity = baselineIdentity(absoluteFilePath);
+      if (includedPaths.has(identity)) continue;
+      if (isExcludedBySelfScan(absoluteFilePath, cwd, selfScanExcludePaths)) continue;
+      if (!existsSync(absoluteFilePath)) continue;
+      includedPaths.add(identity);
       scores.push({
-        filePath,
+        filePath: absoluteFilePath,
         rawScore: 0,
         componentScore: 0,
         adjustedScore: 0,
         componentCount: cached.componentCount,
       });
-      issueGroups.push({ filePath, issues: [] });
+      issueGroups.push({ filePath: absoluteFilePath, issues: [] });
     }
   }
 
@@ -582,10 +722,11 @@ async function runScanWithScopedState(
     scorableResults.length,
   );
 
-  const projectIssues = options.securityOnly
-    ? []
-    : filterIssues(runProjectRules(results, config), options);
-  const allIssues = [...results.flatMap((result) => result.issues), ...projectIssues];
+  const allIssues = [
+    ...results.flatMap((result) => result.issues),
+    ...duplicateCachedIssues,
+    ...projectIssues,
+  ];
   // Reporters (JSON, HTML, markdown) read this field to color-code or
   // annotate. The loader is cheap — single JSON read at module load.
   // Look up happens once per issue; cache the lookup table.
@@ -622,12 +763,12 @@ async function runScanWithScopedState(
   // Resolve scan outcome before finalisation: finalisation persists
   // `.slopbrick/health.json`, so every persisted consumer must receive the
   // same validity truth as the CLI report.
-  const failedFiles = results.filter((result) => Boolean(result.failureKind ?? result.parseError)).length;
-  const analyzedFiles = results.length - failedFiles;
+  const analyzedFiles = countSuccessfullyAnalyzed(results);
+  const failedFiles = results.length - analyzedFiles;
   const skippedFiles = unchanged.length;
   const completionStatus = requestedFiles === 0
     ? 'empty' as const
-    : failedFiles > 0 || analyzedFiles + skippedFiles < requestedFiles
+    : failedFiles > 0 || skippedFiles > 0 || analyzedFiles + skippedFiles < requestedFiles
       ? 'partial' as const
       : 'complete' as const;
   const scoreValidity = completionStatus === 'complete'
@@ -638,7 +779,7 @@ async function runScanWithScopedState(
   const scanAccounting = {
     selected: requestedFiles,
     analyzed: analyzedFiles,
-    zeroFinding: results.filter((result) => !result.parseError && result.issues.length === 0).length,
+    zeroFinding: results.filter((result) => isSuccessfullyAnalyzed(result) && result.issues.length === 0).length,
     incrementalCached: skippedFiles,
     parseFailed: results.filter((result) => result.failureKind === 'parse').length,
     timedOut: results.filter((result) => result.failureKind === 'timeout').length,
@@ -646,6 +787,14 @@ async function runScanWithScopedState(
     internalFailed: results.filter(
       (result) => result.failureKind === 'internal' || (!result.failureKind && Boolean(result.parseError)),
     ).length,
+    ...(duplicateIssues
+      ? {
+          identicalBlockCandidateWindows: duplicateIssues.candidateWindows,
+          identicalBlockCandidateWindowLimit: duplicateIssues.maxCandidateWindows,
+          identicalBlockInputSkips: duplicateIssues.skippedInputs + duplicateSourceReadFailures,
+          identicalBlockTruncated: duplicateIssues.truncated,
+        }
+      : {}),
   };
   const scanMetadata = {
     completionStatus,
@@ -673,8 +822,11 @@ async function runScanWithScopedState(
         Boolean((config as { autoRefreshSnippets?: boolean }).autoRefreshSnippets),
     },
     results,
+    selectedFilePaths,
     aggregated,
     allIssues,
+    projectIssues,
+    effectiveIssues,
     baseline,
     baselineMeta,
     defaultOffApplied,
@@ -736,10 +888,18 @@ async function runScanWithScopedState(
         generatedAt: new Date().toISOString(),
         files: cachedFiles,
       });
-    } catch {
+    } catch (error) {
       // Best-effort write. If saveCache fails (e.g. permission denied),
       // we still return the scan result. The next --incremental run
       // will simply not have a cache to consult.
+      if (!options.quiet && !machineReadableStdout) {
+        logger.warn(`Incremental cache not saved: ${formatErrorMessage(error)}`);
+      }
+    }
+    if (incrementalSummary && !options.quiet && !machineReadableStdout) {
+      logger.info(
+        `Incremental: re-scanned ${incrementalSummary.rescanned}, skipped ${incrementalSummary.skipped} (unchanged).`,
+      );
     }
   }
 

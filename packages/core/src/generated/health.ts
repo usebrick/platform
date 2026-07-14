@@ -1,7 +1,7 @@
 // AUTO-GENERATED from health.schema.json. Do not hand-edit.
 
 /**
- * Repository health snapshot from a single slopbrick scan. v5 (v0.21.0) FLIPS the aiSlopScore semantics: it now stores the raw amount of AI slop (0 = no AI slop, 100 = max AI slop, higher = worse), matching the natural reading of the name. The v0.15–0.20.1 inversion (100 = good) was confusing — users read 'AI Slop Score: 100' as '100% slop'. aiQuality (v0.15–0.20.0 alias) removed because semantics are now MEANINGFULLY DIFFERENT (old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 = 70% slop). engineeringHygiene, security, repositoryHealth unchanged (still 'higher = better'; the composite inverts aiSlopScore at the call site).
+ * Repository health snapshot from a completed or partial slopbrick scan. The canonical four fields are aiSlopScore (0–100, lower is better), engineeringHygiene (0–100, higher is better), security (0–100, higher is better), and repositoryHealth (0–100, higher is better). Repository Health is 0.4 × (100 − aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality. Scores are rounded to nearest integer in this health snapshot; JSON/SARIF retain full precision and human renderers show one decimal. An empty or not-applicable scan is represented by the score-free scan-report envelope, not by this health artifact.
  */
 export interface RepositoryStructureHealth {
   /**
@@ -15,7 +15,7 @@ export interface RepositoryStructureHealth {
    */
   aiSlopScore: number;
   /**
-   * v0.15.0: engineering hygiene score (0-100, higher is better). Code organization, naming, dead code, complexity, test coverage, type safety.
+   * Canonical engineering hygiene score (0-100, higher is better): 100 minus the mean bounded burden across effective arch, logic, layout, visual, component, and test categories.
    */
   engineeringHygiene: number;
   /**
@@ -23,7 +23,7 @@ export interface RepositoryStructureHealth {
    */
   security: number;
   /**
-   * v0.15.0: repository health composite (0-100, higher is better). The v3 replacement for the headline slopIndex. Weighted blend of the three scores above.
+   * Canonical repository health composite (0-100, higher is better): 0.4 × (100 − aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality. The score is rounded to nearest integer in health.json.
    */
   repositoryHealth: number;
   /**

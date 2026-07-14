@@ -1,0 +1,18 @@
+{
+  "version": "v10.3-admission-adjudicator-assignment-v1",
+  "assignmentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "target": { "kind": "source", "sourceId": "source-a" },
+  "priorDecisionIds": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  ],
+  "priorBlindReviewReceiptId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evidenceIds": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  ],
+  "evidenceSetSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "protocolEvidenceId": "protocol-a",
+  "adjudicatorId": "adjudicator-a",
+  "priorPeerReceiptRequired": true
+}

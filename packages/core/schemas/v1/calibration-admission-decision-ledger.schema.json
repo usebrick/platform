@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-decision-ledger.schema.json",
+  "title": "CalibrationAdmissionDecisionLedgerV1",
+  "description": "Hash receipt joining admission decisions, blind assignments, post-decision receipts, and optional dedicated adjudication ledgers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "ledgerId", "sourceId", "sourceReviewSha256", "admissionRecordSetSha256", "decisionJsonlSha256", "decisionIds", "blindAssignmentJsonlSha256", "blindAssignmentIds", "blindReviewReceiptJsonlSha256", "blindReviewReceiptIds", "adjudicationDecisionIds", "ledgerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-decision-ledger-v1" },
+    "ledgerId": { "$ref": "#/$defs/id" },
+    "sourceId": { "$ref": "#/$defs/id" },
+    "sourceReviewSha256": { "$ref": "#/$defs/sha256" },
+    "admissionRecordSetSha256": { "$ref": "#/$defs/sha256" },
+    "reviewSampleId": { "$ref": "#/$defs/id" },
+    "decisionJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "decisionIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "blindAssignmentJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "blindAssignmentIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "blindReviewReceiptJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "blindReviewReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "adjudicatorAssignmentJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "adjudicatorAssignmentIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "adjudicatorReceiptJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "adjudicatorReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "adjudicationDecisionIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "ledgerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "dependentRequired": {
+    "adjudicatorAssignmentJsonlSha256": ["adjudicatorAssignmentIds"],
+    "adjudicatorAssignmentIds": ["adjudicatorAssignmentJsonlSha256"],
+    "adjudicatorReceiptJsonlSha256": ["adjudicatorReceiptIds"],
+    "adjudicatorReceiptIds": ["adjudicatorReceiptJsonlSha256"]
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+  }
+}

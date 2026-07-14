@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-evidence-acquisition-receipt.schema.json",
+  "title": "CalibrationEvidenceAcquisitionReceiptV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "authorizationId", "authorizationSha256", "evidenceId", "observedBytes", "observedSha256", "observedMediaType", "redirectChain", "resolvedPublicAddressesSha256", "casTransactionId", "primaryCompletionSha256", "toolReceiptSha256", "receiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-evidence-acquisition-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "authorizationId": { "$ref": "#/$defs/id" },
+    "authorizationSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "observedBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+    "observedSha256": { "$ref": "#/$defs/sha256" },
+    "observedMediaType": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "redirectChain": { "type": "array", "items": { "$ref": "#/$defs/https" } },
+    "resolvedPublicAddressesSha256": { "$ref": "#/$defs/sha256" },
+    "casTransactionId": { "$ref": "#/$defs/id" },
+    "primaryCompletionSha256": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "https": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+  }
+}

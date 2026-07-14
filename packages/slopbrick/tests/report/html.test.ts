@@ -73,7 +73,7 @@ describe('formatHtml', () => {
     const output = formatHtml(makeReport());
     expect(output).toContain('Version 0.6.0');
     expect(output).toContain('2026-06-15T00:00:00.000Z');
-    expect(output).toContain('66'); // rounded assembly health
+    expect(output).not.toContain('Assembly Health'); // compatibility-only field is not a headline
     expect(output).toContain('high');
     expect(output).toContain('medium');
     expect(output).toContain('low');
@@ -89,7 +89,7 @@ describe('formatHtml', () => {
         parseErrorCount: 1,
       },
     }));
-    expect(output).toContain('Scores use 4 analysed files and the effective issue set');
+    expect(output).toContain('Coverage: 4 successfully analysed files; per-file AI burdens are additive');
     expect(output).toContain('2 suppressed');
   });
 
@@ -159,6 +159,50 @@ describe('formatHtml', () => {
     expect(output).toContain('1 Noisy'); // suppressed bucket summary
   });
 
+  it('derives buckets from ordinary issues when saved reports lack ruleVerdicts', () => {
+    const output = formatHtml(
+      makeReport({
+        issues: [
+          makeIssue({ ruleId: 'ai/any-density', aiSpecific: true, category: 'ai' }),
+          makeIssue({ ruleId: 'perf/css-bloat', aiSpecific: false, category: 'perf' }),
+        ],
+      }),
+    );
+    const aiSectionStart = output.indexOf('<section class="ai-findings">');
+    const hygieneSectionStart = output.indexOf('<section class="engineering-hygiene-bucket">');
+    const aiSection = output.slice(aiSectionStart, hygieneSectionStart);
+    const hygieneSection = output.slice(hygieneSectionStart);
+
+    expect(aiSection).toContain('<span class="bucket-count">1</span>');
+    expect(aiSection).toContain('ai/any-density');
+    expect(aiSection).not.toContain('perf/css-bloat');
+    expect(hygieneSection).toContain('<span class="bucket-count">1</span>');
+    expect(hygieneSection).toContain('perf/css-bloat');
+  });
+
+  it('keeps default-off audit findings out of actionable buckets', () => {
+    const output = formatHtml(
+      makeReport({
+        issues: [
+          makeIssue({
+            ruleId: 'ai/segment-surprisal-cv',
+            filePath: 'src/example.ts',
+            severity: 'off',
+          }),
+        ],
+      }),
+    );
+    const aiSectionStart = output.indexOf('<section class="ai-findings">');
+    const hygieneSectionStart = output.indexOf('<section class="engineering-hygiene-bucket">');
+    const suppressedSectionStart = output.indexOf('<section class="suppressed-bucket">');
+    const actionable = output.slice(aiSectionStart, suppressedSectionStart);
+
+    expect(actionable).toContain('<span class="bucket-count">0</span>');
+    expect(actionable).not.toContain('ai/segment-surprisal-cv');
+    expect(output).toContain('Default-off audit:');
+    expect(output).toContain('1 suppressed finding instance across 1 rule');
+  });
+
   it('renders category breakdown with labels and bars', () => {
     const output = formatHtml(makeReport());
     expect(output).toContain('Visual');
@@ -186,6 +230,53 @@ describe('formatHtml', () => {
     expect(output).toContain('magic-spacing');
     expect(output).toContain('Avoid magic spacing values in layout');
     expect(output).toContain('Replace with a spacing token from the design system.');
+  });
+
+  it('renders exact or explicitly omitted finding evidence in human HTML', () => {
+    const output = formatHtml(makeReport({
+      issues: [
+        makeIssue({
+          ruleId: 'typo/placeholder-text',
+          filePath: 'src/components/Button.tsx',
+          evidence: {
+            kind: 'matched-source-span',
+            status: 'exact',
+            snippet: '<Button label="TODO">',
+            location: {
+              start: { line: 14, column: 22 },
+              end: { line: 14, column: 42 },
+            },
+            matched: { field: 'attribute', key: 'label', value: 'TODO' },
+          },
+        }),
+        makeIssue({
+          ruleId: 'typo/placeholder-text',
+          filePath: 'src/components/Input.tsx',
+          evidence: {
+            kind: 'matched-source-span',
+            status: 'omitted',
+            location: {
+              start: { line: 3, column: 1 },
+              end: { line: 3, column: 12 },
+            },
+            matched: { field: 'attribute', key: 'placeholder' },
+            omission: {
+              reason: 'oversized',
+              snippetChars: 300,
+              snippetBytes: 300,
+              valueChars: 300,
+              valueBytes: 300,
+            },
+          },
+        }),
+      ],
+    }));
+
+    expect(output).toContain('Evidence:');
+    expect(output).toContain('&lt;Button label=&quot;TODO&quot;&gt;');
+    expect(output).toContain('14:22-14:42');
+    expect(output).toContain('Evidence omitted:</strong> oversized');
+    expect(output).not.toContain('<Button label="TODO">');
   });
 
   it('escapes HTML characters in issue messages and advice', () => {

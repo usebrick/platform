@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatJson } from '../../src/report/json.js';
-import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
+import { SCORE_BRIEFS, SCORE_CONTRACT } from '../../src/report/score-contract.js';
 import type { ProjectReport } from '../../src/types.js';
 
 function makeReport(): ProjectReport {
@@ -53,7 +53,7 @@ describe('formatJson', () => {
 
     expect(parsed.version).toBe('0.6.0');
     // v0.15.0 U.4: the v3 headline score is aiSlopScore (0-100,
-    // higher = better). The legacy `slopIndex` field is also
+    // lower = cleaner). The legacy `slopIndex` field is also
     // kept on the wire for backward compat with v0.14
     // consumers; it should mirror aiSlopScore (the value is
     // sourced from aiSlopScore for historical payload compat).
@@ -108,6 +108,108 @@ describe('formatJson', () => {
     const parsed = JSON.parse(output) as Record<string, unknown>;
 
     expect(parsed.scoreBriefs).toEqual(SCORE_BRIEFS);
+  });
+
+  it('embeds the canonical score decision and machine/human rounding policy', () => {
+    const parsed = JSON.parse(formatJson(makeReport())) as Record<string, unknown>;
+
+    expect(parsed.scoreContract).toEqual(SCORE_CONTRACT);
+    expect(parsed.assemblyHealth).toBe(65.8);
+    expect(parsed).not.toHaveProperty('totalScore');
+    expect(SCORE_CONTRACT.deprecatedFields.assemblyHealth).toContain('not a canonical headline');
+    expect(SCORE_CONTRACT.canonicalFields).toEqual([
+      'aiSlopScore',
+      'engineeringHygiene',
+      'security',
+      'repositoryHealth',
+    ]);
+    expect(SCORE_CONTRACT.canonicalNameDecisions.hygieneScore).toContain('engineeringHygiene');
+    expect(SCORE_CONTRACT.canonicalNameDecisions.backendScore).toContain('not exposed');
+    expect(SCORE_CONTRACT.version).toBe('v2');
+    expect(SCORE_CONTRACT.bounds).toEqual({ min: 0, max: 100 });
+    expect(SCORE_CONTRACT.directions).toEqual({
+      aiSlopScore: 'lower-is-better',
+      engineeringHygiene: 'higher-is-better',
+      security: 'higher-is-better',
+      repositoryHealth: 'higher-is-better',
+    });
+    expect(SCORE_CONTRACT.denominator.unit).toBe('analysed-files');
+    expect(SCORE_CONTRACT.effectiveIssueSet.name).toBe('effective');
+    expect(SCORE_CONTRACT.effectiveIssueSet.suppression).toContain('constitution drift');
+    expect(SCORE_CONTRACT.outcomes.empty).toContain('not-applicable');
+    expect(SCORE_CONTRACT.outcomes.incomplete).toContain('diagnostic');
+    expect(SCORE_CONTRACT.rounding).toEqual({
+      json: 'preserve full numeric precision',
+      sarif: 'preserve full numeric precision',
+      human: 'one decimal place',
+      health: 'nearest integer',
+    });
+  });
+
+  it('keeps precise JSON scores for complete scans but omits scores for empty scans', () => {
+    const precise = makeReport();
+    precise.aiSlopScore = 12.3456789;
+    precise.repositoryHealth = 63.456789;
+    const parsed = JSON.parse(formatJson(precise)) as Record<string, unknown>;
+    expect(parsed.aiSlopScore).toBe(12.3456789);
+    expect(parsed.repositoryHealth).toBe(63.456789);
+
+    const empty = Object.assign(makeReport(), {
+      completionStatus: 'empty' as const,
+      scoreValidity: 'not-applicable' as const,
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+      skipped: 0,
+    });
+    const emptyParsed = JSON.parse(formatJson(empty)) as Record<string, unknown>;
+    expect(emptyParsed).toMatchObject({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+    });
+    expect(emptyParsed).not.toHaveProperty('aiSlopScore');
+    expect(emptyParsed).not.toHaveProperty('engineeringHygiene');
+    expect(emptyParsed).not.toHaveProperty('security');
+    expect(emptyParsed).not.toHaveProperty('repositoryHealth');
+    expect(emptyParsed).not.toHaveProperty('scoreContract');
+  });
+
+  it('suppresses headline scores for incomplete scans with an explicit invalid marker', () => {
+    const incomplete = Object.assign(makeReport(), {
+      completionStatus: 'partial' as const,
+      scoreValidity: 'incomplete' as const,
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+      compositeScore: {
+        mean: 0.72,
+        max: 0.91,
+        tier: 'LIKELY_AI' as const,
+        fileCount: 1,
+      },
+      scoreExplanation: {
+        kind: 'deterministic-headline-score-explanation-v1',
+      } as ProjectReport['scoreExplanation'],
+    });
+    // Exercise the explicit diagnostic explanation opt-in as well: it must
+    // not bypass the incomplete-report score aggregate boundary.
+    const parsed = JSON.parse(formatJson(incomplete, { includeScoreExplanation: true })) as Record<string, unknown>;
+    expect(parsed).toMatchObject({
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      scoreContract: SCORE_CONTRACT,
+    });
+    for (const field of ['aiSlopScore', 'engineeringHygiene', 'security', 'repositoryHealth']) {
+      expect(parsed).not.toHaveProperty(field);
+    }
+    expect(parsed).not.toHaveProperty('compositeScore');
+    expect(parsed).not.toHaveProperty('scoreExplanation');
+    // Compatibility/diagnostic numerics remain available, but are not
+    // canonical gating scores on an incomplete report.
+    expect(parsed.assemblyHealth).toBe(65.8);
+    expect((parsed.categoryScores as Record<string, number>).logic).toBe(21.4);
+    expect(parsed.scoreContract).toEqual(SCORE_CONTRACT);
   });
 
 });

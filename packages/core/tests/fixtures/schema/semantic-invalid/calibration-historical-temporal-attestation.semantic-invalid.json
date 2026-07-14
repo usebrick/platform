@@ -1,0 +1,25 @@
+{
+  "version": "v10.3-historical-temporal-attestation-v1",
+  "attestationId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "repositoryId": "repository-a",
+  "immutableCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "normalizedPath": "src/a.ts",
+  "blobSha": "cccccccccccccccccccccccccccccccccccccccc",
+  "completeCommitGraphSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "shallowRepository": false,
+  "graftsOrReplaceRefsPresent": false,
+  "introducedCommitSha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "lastChangedCommitSha": "ffffffffffffffffffffffffffffffffffffffff",
+  "introducedAt": "2019-01-01T00:00:00.000Z",
+  "lastChangedAt": "2019-02-01T00:00:00.000Z",
+  "cutoff": "2020-01-01T00:00:00.000Z",
+  "bulkImportOrigin": "ruled_out",
+  "independentExternalObservation": {
+    "kind": "timestamped_source_archive",
+    "observedAt": "2019-02-02T00:00:00.000Z",
+    "exactBlobOrContentSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "evidenceIds": ["archive-a"],
+    "evidenceReceiptIds": ["2222222222222222222222222222222222222222222222222222222222222222"]
+  },
+  "toolReceiptSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+}

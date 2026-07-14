@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-cluster-membership-row.schema.json",
+  "title": "AdmissionOverlapClusterMembershipRowV1",
+  "description": "One candidate membership in an exact or near component.",
+  "type": "object", "additionalProperties": false,
+  "required": ["kind", "clusterId", "candidateUnitId", "overlapSide"],
+  "properties": { "kind": { "enum": ["exact", "near"] }, "clusterId": { "$ref": "#/$defs/id" }, "candidateUnitId": { "$ref": "#/$defs/id" }, "overlapSide": { "$ref": "#/$defs/side" } },
+  "$defs": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }, "side": { "enum": ["ai_side", "human_side", "unassigned"] } }
+}

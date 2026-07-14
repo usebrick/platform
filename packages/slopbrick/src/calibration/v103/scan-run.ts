@@ -19,7 +19,9 @@ export function materializeV103Scan(runId: string, records: readonly SelectionRe
     const observation: Record<string, unknown> = { version: 'v10.3', runId, fileId: record.fileId, repositoryId: record.repositoryId, familyId: record.familyId, language: record.language, polarity, status: outcome.status };
     if (outcome.status === 'success_findings') observation.findingsCount = outcome.findingsCount;
     else if (outcome.status === 'success_zero') observation.findingsCount = 0;
+    else if (outcome.status === 'excluded') observation.exclusionReason = outcome.exclusionReason;
     else observation.failureCode = outcome.status;
+    if (outcome.ruleEvidence !== undefined) observation.ruleEvidence = outcome.ruleEvidence;
     observations.push(observation);
     if (outcome.status === 'parse_failure' || outcome.status === 'timeout' || outcome.status === 'scanner_failure') failures.push({ version: 'v10.3', runId, fileId: record.fileId, status: outcome.status, failureCode: outcome.status });
     for (const [map, key] of [[strata, `${record.language}\0${polarity}`], [repositories, record.repositoryId], [families, record.familyId]] as const) { const counts = map.get(key) ?? blank(); add(counts, outcome.status); map.set(key, counts); }

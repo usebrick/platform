@@ -8,6 +8,45 @@ research-only until the provenance and full release gates pass.
 
 ### Fixed
 
+- Versioned the public score contract as **v2** for the per-file log-burden
+  and fixed-scale additive AI bucket arithmetic. Consumers must use the
+  advertised `scoreContract` metadata rather than reconstructing the retired
+  global weighted-points/file-count average; constitution drift remains a
+  separate diagnostic and does not silently enter headline scoring.
+- Made the comment-ratio signal parser-backed and fail closed when the source
+  cannot be trusted, with explicit extractor/version provenance.
+- Added bounded lexical masking/token extraction for security rules so comments,
+  advice text, and regex literals no longer masquerade as executable SQL or
+  fail-open authentication code; the self-scan contract tests now verify a real
+  scan without requiring those false positives.
+- Restricted dangerous-CORS findings to AST-proven executable network/header
+  contexts and kept project-level identical-block analysis deterministic,
+  bounded, incremental-safe, and default-off until v10.3 calibration.
+- Clarified compression/NCD output as a calibrated repetition association,
+  not authorship proof; the rule advice now points to generated output,
+  schemas, fixtures, and boilerplate as alternative explanations.
+- Kept `--diff <ref>` as the Git-scoped alias and `--show-fixes-diff` as the
+  boolean proposed-fix renderer, with the CLI contract tests aligned.
+- Let machine-readable scans finish through Node's normal stream lifecycle so
+  JSON larger than the process pipe buffer is not truncated when a policy gate
+  exits nonzero. Opted-in usage beacons no longer keep a completed CLI process
+  alive while an endpoint hangs.
+- Moved SlopBrick's meta-code self-scan exclusions out of shared defaults and
+  into the package config. Excluded files are now removed before selection and
+  score accounting, including direct targets and `--since` baseline reuse.
+  Baseline hashes include selection policy, use a versioned hash domain, and
+  validate config/Git identity before accepting a version migration.
+- Recognized inline TypeScript type imports such as
+  `import { type Adapter }` as type-only bindings, preventing
+  `dead/unused-import` false positives.
+- Kept suppressed findings out of categorical security risk, offender counts,
+  verdict totals, and drill-down suggestions. Current reports preserve an
+  authoritative empty offender list, while legacy reports retain their
+  component fallback.
+- Aligned score-band wording and terminal copy with higher-is-worse AI-slop
+  semantics, labeled shell-specific commands, and clarified that
+  `--no-telemetry` disables the local flywheel rather than all project-memory
+  writes.
 - Made non-empty `--staged` and `--changed` verification read-only and
   independent of local flywheel tuning. Repeating the same Git-scoped scan no
   longer teaches the next run, replaces whole-project memory, or changes its
@@ -15,6 +54,30 @@ research-only until the provenance and full release gates pass.
 - Reset cross-file duplication caches at every `runScan()` boundary so library
   callers can run sequential scans in one process without leaking findings
   from the previous project/run.
+- Centralized the supported runtime on Node.js 22/24 across package engines,
+  doctor output, docs, CI, and packed-consumer checks; PR review and release
+  workflows now capture exit status safely and publish only a checksum-verified
+  uploaded tarball through the OIDC-gated job.
+- Added the v10.3 `cal:materialize` command for provenance-validated,
+  checksum-pinned release archives, exact root/file verification, mixed Git
+  base-map merging, stable path-free errors, and no-overwrite local checkout
+  maps. Corpus admission remains a separate gated step.
+- Hardened v10.3 resolver/run binding for exact Git or release-archive identity,
+  raw manifest hash routing, path-free artifacts, and packed Node 22/24
+  materialize/select/verify evidence. This is unreleased prerequisite evidence;
+  corpus admission and publication remain gated.
+- Aligned Markdown and HTML finding buckets with each issue's `aiSpecific`
+  polarity so calibrated non-AI security/performance findings are shown under
+  Engineering Hygiene instead of AI Findings; added renderer regressions.
+- Made `db` and `docs` fail closed for partial canonical scans and emit
+  explicit score-free `not-applicable` results when their own domain has no
+  files; intentional no-op behavior for empty Git-scoped scans is preserved.
+- Kept JSON threshold metadata authoritative by projecting the same
+  `failedThresholds` list used by the CLI policy gate, with a regression for
+  the self-scan `meanSlop` failure path.
+- Extended Core codegen freshness checks to staged and untracked schema/type
+  peers, made Website `dev` regenerate product facts before Astro starts, and
+  aligned CI jobs with the repository's pinned package-manager version.
 
 The historical draft entries below are retained for audit context only; their
 local corpus paths, measurements, and future-version statements are not public

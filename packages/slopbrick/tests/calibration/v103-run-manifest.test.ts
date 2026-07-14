@@ -20,4 +20,23 @@ describe('v10.3 run-manifest integration', () => {
     expect(verifyV103RunInputs(run, checkoutMap)).toEqual({ ok: true });
     expect(verifyV103RunInputs(run, { ...checkoutMap, entries: [{ ...checkoutMap.entries[0]!, checkoutPath: '/different/checkout' }, checkoutMap.entries[1]!] })).toMatchObject({ ok: false });
   });
+
+  it('freezes release materialization bindings through the complete checkout-map hash', () => {
+    const checkoutMap = { version: 'v10.3' as const, runId: 'release-run', entries: [
+      {
+        repositoryId: 'release-repo', commitSha: 'a'.repeat(40), checkoutPath: '/private/corpus/release-repo',
+        materialization: { kind: 'release_archive' as const, assetSha256: 'b'.repeat(64), extractionPolicy: 'safe-zip-v1' as const },
+      },
+    ] };
+    const run = createV103RunManifest({
+      runId: 'release-run', createdAt: '2026-07-10T00:00:00Z', git: { sha: 'c'.repeat(40), dirty: false }, package: { name: 'slopbrick', version: '0.44.0' }, runtime: { node: 'v22.16.0', pnpm: '10.12.1', platform: 'darwin', arch: 'arm64' }, schemaVersion: 'v10.3', methodVersion: 'v10.3.1',
+      inputHashes: { registrySha256: sha('1'), signalTableSha256: sha('2'), configSha256: sha('3'), corpusManifestSha256: sha('4'), selectionSha256: sha('5') },
+      selection: { seed: 'release-seed', policy: { eligibleLabels: ['verified_ai'], eligibleTiers: ['gold'], eligibleStrata: ['production'], maxPerStratum: 1 } },
+      expected: { fileIdsByPolarity: { verified_ai: ['sbf_a'], verified_human: ['sbf_b'] }, chunkIdsByPolarity: { verified_ai: ['chunk-ai'], verified_human: ['chunk-human'] } },
+      settings: { includeRuleIds: [], excludeRuleIds: [], maxFileBytes: 1_000_000, chunkSize: 1, chunkTimeoutMs: 1_000, retryTimeoutMs: 2_000, workerCount: 1 }, commandArgs: ['cal:scan', '--run=release-run'],
+    }, checkoutMap);
+    expect(verifyV103RunInputs(run, checkoutMap)).toEqual({ ok: true });
+    expect(verifyV103RunInputs(run, { ...checkoutMap, entries: [{ ...checkoutMap.entries[0]!, materialization: { ...checkoutMap.entries[0]!.materialization, assetSha256: 'd'.repeat(64) } }] })).toMatchObject({ ok: false });
+    expect(verifyV103RunInputs(run, { ...checkoutMap, entries: [{ ...checkoutMap.entries[0]!, materialization: { ...checkoutMap.entries[0]!.materialization, extractionPolicy: 'safe-zip-v1' } }] })).toEqual({ ok: true });
+  });
 });

@@ -1,0 +1,20 @@
+{
+  "version": "v10.3-admission-record-v1",
+  "recordId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "materialSourceId": "source-a",
+  "aggregateSourceIds": ["source-a"],
+  "sourceReviewSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "logicalUnitId": "unit-a",
+  "locator": { "kind": "git_file", "materializationId": "materialization-a", "normalizedPath": "src/a.ts" },
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "contentBytes": 1,
+  "language": "typescript",
+  "stratum": "production",
+  "proposedLabel": "quarantine",
+  "authorship": { "kind": "unproven_claim", "evidenceIds": ["evidence-a"], "declaredClaim": "unknown", "missingFields": ["generator_identity"] },
+  "claimedLineage": { "familyId": "family-a", "originRecordId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "exactClusterId": "exact-a", "nearClusterId": "near-a" },
+  "claimedAudits": { "syntax": "unsupported", "scaffoldByteShare": 0, "privacy": "review", "secrets": "review", "exactOverlap": "fail", "nearOverlap": "unsupported", "familyLeakage": "fail", "pairIntegrity": "not_applicable" },
+  "reviewerDecisionIds": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+  "declaredDisposition": "quarantine",
+  "rejectionReasons": ["authorship_unproven"]
+}

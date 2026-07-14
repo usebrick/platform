@@ -6,6 +6,7 @@ export default defineConfig({
     index: 'src/index.ts',
     'engine/worker': 'src/engine/worker.ts',
     'calibration/v103/cli': 'scripts/cal/v103.ts',
+    'calibration/v103/admission': 'scripts/cal/v103-admission.ts',
     'calibration/v103/worker-process': 'src/calibration/v103/worker-process.ts',
     'calibration/v103/worker-invoker': 'src/calibration/v103/worker-invoker.ts',
   },

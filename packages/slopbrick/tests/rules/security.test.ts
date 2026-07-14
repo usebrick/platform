@@ -160,6 +160,15 @@ describe('security/unsafe-html-render', () => {
     const issues = await runRule(src, unsafeHtmlRenderRule, makeConfig());
     expect(issues).toHaveLength(0);
   });
+
+  it('does NOT flag the documented prop shape in a comment', async () => {
+    const src = [
+      '// dangerouslySetInnerHTML={{ __html: <expression> }}',
+      'const value = userBio;',
+    ].join('\n');
+    const issues = await runRule(src, unsafeHtmlRenderRule, makeConfig());
+    expect(issues).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -200,6 +209,16 @@ describe('security/fail-open-auth', () => {
 
   it('does NOT flag legitimate environment-conditional logic that does not return true/next', async () => {
     const src = wrap(`if (process.env.NODE_ENV === "production") logger.info("live");`);
+    const issues = await runRule(src, failOpenAuthRule, makeConfig());
+    expect(issues).toHaveLength(0);
+  });
+
+  it('does NOT flag the documented bypass examples in comments', async () => {
+    const src = wrap([
+      '// if (process.env.NODE_ENV === "development") return true;',
+      '// if (process.env.NODE_ENV !== "production") return next();',
+      'return false;',
+    ].join('\n'));
     const issues = await runRule(src, failOpenAuthRule, makeConfig());
     expect(issues).toHaveLength(0);
   });
@@ -266,6 +285,29 @@ describe('security/dangerous-cors', () => {
     const issues = await runRule(src, dangerousCorsRule, makeConfig());
     expect(issues).toHaveLength(1);
     expect(issues[0].message).toContain('Reflective');
+    expect(issues[0].message).not.toContain('CSRF');
+  });
+
+  it('flags static header objects', async () => {
+    const issues = await runRule(
+      `const headers = new Headers({ 'Access-Control-Allow-Origin': '*' });`,
+      dangerousCorsRule,
+      makeConfig(),
+    );
+    expect(issues).toHaveLength(1);
+  });
+
+  it('abstains from dynamic, false, and null origins', async () => {
+    const issues = await runRule(
+      `
+        app.use(cors({ origin: configuredOrigin }));
+        app.use(cors({ origin: false }));
+        app.use(cors({ origin: null }));
+      `,
+      dangerousCorsRule,
+      makeConfig(),
+    );
+    expect(issues).toHaveLength(0);
   });
 
   it('does NOT flag an explicit allowlist', async () => {

@@ -143,6 +143,43 @@ describe('handleImportDeclaration (v2.0.1)', () => {
     expect(ctx.facts.imports[0].importedNames).toEqual(['useState']);
   });
 
+  it('marks inline type-only specifiers independently in a mixed import', () => {
+    const ctx = vctx();
+    const node = {
+      type: 'ImportDeclaration',
+      typeOnly: false,
+      source: { type: 'StringLiteral', value: './adapter' },
+      specifiers: [
+        {
+          type: 'ImportSpecifier',
+          isTypeOnly: false,
+          imported: { type: 'Identifier', value: 'run' },
+          local: { type: 'Identifier', value: 'run' },
+        },
+        {
+          type: 'ImportSpecifier',
+          isTypeOnly: true,
+          imported: { type: 'Identifier', value: 'Adapter' },
+          local: { type: 'Identifier', value: 'Adapter' },
+        },
+        {
+          type: 'ImportSpecifier',
+          isTypeOnly: true,
+          imported: { type: 'Identifier', value: 'Result' },
+          local: { type: 'Identifier', value: 'R' },
+        },
+      ],
+    };
+
+    handleImportDeclaration(node, null, [], ctx);
+
+    expect(ctx.facts.deadCode.bindings).toEqual([
+      expect.objectContaining({ name: 'run', isTypeOnly: false }),
+      expect.objectContaining({ name: 'Adapter', isTypeOnly: true }),
+      expect.objectContaining({ name: 'R', isTypeOnly: true }),
+    ]);
+  });
+
   it('collects namespace specifiers', () => {
     const ctx = vctx();
     const node = {

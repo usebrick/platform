@@ -1,0 +1,39 @@
+{
+  "version": "v10.3-admission-overlap-generation-v1",
+  "generation": 0,
+  "inputGenerationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "universeSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "overlapPolicySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "artifactSetSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "artifacts": [
+    {
+      "pathBase": "generation_local",
+      "relativePath": "postings/0001.jsonl",
+      "kind": "shard",
+      "bytes": 1,
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "toolAuthoritySnapshot": {
+    "version": "v10.3-admission-tool-authority-snapshot-v1",
+    "indexGenerationSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "profileIds": [
+      "admission-acquisition-publication-v1",
+      "admission-acquisition-round-v1",
+      "admission-census-v1",
+      "admission-context-v1",
+      "admission-core-contract-v1",
+      "admission-evidence-acquire-v1",
+      "admission-git-acquire-v1",
+      "admission-manifest-v1",
+      "admission-release-acquire-v1",
+      "admission-source-node-v1",
+      "admission-source-parquet-v1",
+      "admission-static-ledgers-v1"
+    ],
+    "invocationIntentIds": [],
+    "receiptIds": [],
+    "snapshotSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "generationSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+}

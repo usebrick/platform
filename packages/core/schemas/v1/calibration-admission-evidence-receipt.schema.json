@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-receipt.schema.json",
+  "title": "CalibrationAdmissionEvidenceReceiptV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "evidenceId", "evidenceIndexSha256", "payloadId", "payloadSetSha256", "verificationMethod", "observedBytes", "observedSha256", "toolReceiptSha256", "status"],
+  "properties": {
+    "version": { "const": "v10.3-admission-evidence-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "evidenceIndexSha256": { "$ref": "#/$defs/sha256" },
+    "payloadId": { "$ref": "#/$defs/id" },
+    "payloadSetSha256": { "$ref": "#/$defs/sha256" },
+    "verificationMethod": { "enum": ["offline-materialization-file-v1", "offline-evidence-cas-v1", "offline-local-unpublished-reference-v1"] },
+    "observedBytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "observedSha256": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "status": { "enum": ["verified", "mismatch", "unavailable"] }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" }
+  }
+}

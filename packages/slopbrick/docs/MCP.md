@@ -17,7 +17,7 @@ This table is generated from `TOOL_DEFINITIONS`; it currently exposes 7 canonica
 
 | Tool | Inputs | Runtime description |
 | --- | --- | --- |
-| `slop_scan_file` | path (required), framework | Scan a single supported source file for configured slop rules. Language support is scoped by the language support matrix: discovery and scanning do not imply a complete language AST or calibrated AI-authorship signal. Returns issues (ruleId, category, severity, line, column, message, advice, and bounded whyItFired facts), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
+| `slop_scan_file` | path (required), framework | Scan a single supported source file for configured slop rules. Language support is scoped by the language support matrix: discovery and scanning do not imply a complete language AST or calibrated AI-authorship signal. Returns issues (ruleId, category, severity, aiSpecific, line, column, message, advice, bounded per-rule calibration metadata, bounded whyItFired facts, and optional bounded `whyItFired.evidence` with an exact matched source span and typed matched facts when available; historical calibration estimates explicitly have no admitted v10.3 source/cohort, while unknown rules report calibration as unavailable; unsafe paths, sensitive text, oversized values, source-like text, and details that exceed the deterministic safety budget are omitted with status and omission metadata — this is not a parser dump or authorship/provenance claim), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
 | `slop_explain_rule` | ruleId (required) | Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and static configuration policy. The policy is not a claim about direct-file scan runtime behavior. |
 | `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual \| logic \| wcag \| security \| perf \| typo \| layout \| component \| arch). |
 | `slop_suggest` | maxFiles | **Primary entry point for AI agents.** Returns the project's existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path. |
@@ -101,22 +101,64 @@ Scan a single file, return issues + per-category scores.
   "compositeScore": { "probability": 0.12, "confidenceTier": "low" },
   "issues": [
     {
-      "ruleId": "ai/compression-profile",
-      "category": "ai",
-      "severity": "high",
-      "line": 12,
-      "column": 5,
-      "message": "repetitive token pattern",
-      "advice": "Review the specific pattern before changing code.",
+      "ruleId": "typo/placeholder-text",
+      "category": "typo",
+      "severity": "low",
+      "aiSpecific": false,
+      "line": 1,
+      "column": 8,
+      "message": "Placeholder text \"TODO\" is a development placeholder.",
+      "advice": "Replace with specific, user-facing copy.",
+      "calibration": {
+        "status": "historical-point-estimate-only",
+        "lastCalibratedAt": "2026-07-04T00:00:00Z",
+        "recall": 0.0014,
+        "falsePositiveRate": 0.0023,
+        "precision": 0.4155,
+        "lift": 178.13,
+        "confidenceLimits": null,
+        "provenance": {
+          "status": "historical-only",
+          "source": null,
+          "cohort": null,
+          "reason": "The shipped estimate predates v10.3 admission; no validated cohort/source is available."
+        }
+      },
       "whyItFired": {
-        "summary": "repetitive token pattern",
-        "location": { "line": 12, "column": 5 },
-        "facts": null
+        "summary": "Placeholder text \"TODO\" is a development placeholder.",
+        "location": { "line": 1, "column": 8 },
+        "facts": null,
+        "evidence": {
+          "kind": "matched-source-span",
+          "status": "exact",
+          "snippet": "placeholder=\"TODO\"",
+          "location": {
+            "start": { "line": 1, "column": 8 },
+            "end": { "line": 1, "column": 25 }
+          },
+          "matched": { "field": "placeholder", "key": "placeholder", "value": "TODO" }
+        }
       }
     }
   ]
 }
 ```
+
+The optional `whyItFired.evidence` block is bounded matched-span context. If
+the producer or MCP safety policy cannot return the source span unchanged, the
+wire status is `"omitted"` with a deterministic marker and typed omission
+metadata (for example `reason: "unsafe-path"`, `"sensitive"`,
+`"source-like"`, `"oversized"`, or `"details-dropped"`). Details that
+cannot fit the deterministic safety budget are omitted as a whole. `status:
+"exact"` is reserved for a snippet and details returned unchanged. This is
+not a parser dump and makes no authorship or provenance claim.
+
+Each finding also carries `aiSpecific` and a bounded top-level `calibration`
+projection. Historical point estimates include the validated date and scalar
+recall/FPR/precision/lift values, but `provenance.source` and
+`provenance.cohort` remain `null` until a v10.3 cohort is admitted. Rules with
+no shipped estimate return `calibration.status: "unavailable"`; neither form
+is authorship proof or a release-calibration claim.
 
 **When to use:** before the agent writes a file in a project with
 slopbrick configured, to check what patterns are in use.

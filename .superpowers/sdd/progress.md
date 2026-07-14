@@ -25,19 +25,357 @@
 | 4 — Dart rule contracts | `dart_contract_implementer` | APPROVE after metadata correction | `158ee8011`, `ea9c7c1d1` | completed |
 | 5 — self-scan/evidence/plan reconciliation | `evidence_reconciler` | docs/evidence pass recorded; broader gates remain open | `v0.45.0-execution-evidence.md` | completed |
 
-### Current verified blockers
+### Immutable release-asset materialization tranche
 
-- Full-suite verification is not green: the rerun exposed structural-clone
-  performance at 2,748.9 ms against a 2,000 ms budget, calibration-db corpus
-  discovery at 0 against more than 50 expected files, category-separation
-  timeout at 60 seconds, and parser-kotlin setup blocked by the local native
-  addon/install environment.
-- Kotlin/parser setup remains an environment/store mismatch pending a frozen
-  reinstall with the repo-pinned pnpm 9; no source defect is asserted yet.
-- Both fresh self-scans are complete but exit 1 because `meanSlop` is 25 > 15;
-  this is recorded evidence, not a release pass.
-- Gate 0 cleanup, remaining score/CLI/MCP/core/engine contracts, v10.3 calibration/provenance,
-  and site/operations/release gates remain open.
+| Task | Implementer | Review | Commit | Status |
+| --- | --- | --- | --- | --- |
+| 5 — manifest-aware release source materialization | `v103_materialize_sources` | APPROVE after path-normalization and adversarial-test fixes | unstaged worktree (`task-5-report.md`, `task-5-review.md`) | completed |
+| 6 — resolver/run binding and packed consumer | `v103_resolver_binding` | APPROVE after clean-install/schema/receipt fix wave; final bounded gates green on dirty bytes | unstaged worktree (`task-6-report.md`, `task-6-review.md`, receipts); clean commit-bound rerun pending | bounded-complete |
+
+### Current verification and historical blockers
+
+**Current verification override — 2026-07-13:** the final bounded SlopBrick
+suite passes 285 files (5 skipped), 3,316 tests (9 skipped) with one worker
+and a 2 GiB heap cap. Core/Engine/Website tests pass 127/127, 59/59, and
+37/37; recursive typechecks pass with zero errors; Core schema fixtures
+validate; and the fresh SlopBrick build passes. The recursive build remains
+blocked by Core codegen freshness detecting uncommitted generated
+`packages/core/src/generated/calibration-observation.ts` and
+`packages/core/src/generated/health.ts` changes. The final same-tarball Task 6
+pair passes 9/9 on Node 22.22.3 and 9/9 on Node 24.15.0 strict offline, bound to tarball SHA
+`61d3b9e9c3a8d8d01b19425431f3dca56d395e30b719461f1c0e34ad9c398846`, dirty
+status hash `0142d40f2cca9afa8f713d7e5bf4ed9fc1f9e5e6895f73771fa2764e2574fe6f`,
+and 179 status entries. The latest locally available built-CLI self-scan
+receipts are complete/valid with zero failures/skips and no failed thresholds:
+package `.` 208/208 (119 active, 274 suppressed; AI Slop 4.6849; Repository
+Health 98.1111) and platform root `../..` 439/439 (212 active, 550 suppressed;
+AI Slop 4.3307; Repository Health 94.8741). These dirty-byte diagnostic
+receipts are not release evidence; diagnostic usefulness is closed.
+Those receipts remain bound to the 179-entry snapshot; the current worktree is
+613 status entries with status SHA
+`f5b4404c0a72c4b81766767ad93d06687d35a81b45f0538aeb9473cd72e051df` after
+the score-contract, provenance, CLI regression, workflow, website accessibility,
+v10.3 run-artifact, and current verification slices. The affected score/provenance suite is green at
+12 files/234 tests, the whole-project CLI/MCP golden test passes 1/1, and the
+strict website Playwright/axe suite passes 13/13 with no serious or critical
+violations. Continuation progress is
+96/178 checked; admission progress is 2/76 task items checked (the
+instructional checkbox example is excluded).
+
+**Task 1B temporal/adjudicator authority checkpoint — 2026-07-13:** Core now
+rejects orphan/malformed temporal receipts, maps temporal attestations to
+explicit source IDs, and validates dedicated disagreement assignment,
+adjudicator decision, and receipt artifacts while preserving the exact-two
+blind peer receipt. Optional adjudicator JSONL/hash/ID sections are consumed
+by SlopBrick's per-source ledger; prior IDs are normalized from hash order to
+canonical peer order. After the reduction refactor Core is green at 19 files/
+172 tests, and the bounded SlopBrick admission-review/source-census/temporal
+matrix is 30/30 with one
+worker. This closes only the named contract slice: the graph remains
+diagnostic/fail-closed (`ready=false`, `eligibleUnits=0`), and reduction,
+reconciliation, overlap/privacy/witness authorities, corpus admission, and
+release gates remain open. After rebuilding Core and SlopBrick from the final
+source boundary, the RAM-bounded serial SlopBrick suite is green at 293 files/
+3,406 tests with 5 skipped files and 9 skipped tests; the earlier stale Core
+source-map failure was an artifact freshness race. The current dirty snapshot
+is 624 status entries with SHA-256
+`8aeaff54a6612c3ddad819bc52e1c0b8a61cc45ad4edd6480741bcc644ba6c0a`.
+
+**Reduction/reconciliation checkpoint — 2026-07-13:** the dirty-boundary
+reduction pass is complete. Seven admission validators now share one pure Core
+primitive module (48 repeated guards reduced to seven shared primitives plus
+11 specialized wrappers), with four regression tests. Core passes 19 files/
+172 tests; schema validation, SlopBrick typecheck, and diff-check pass. The
+artifact classification and superseded-section labels are recorded in the
+package calibration docs. No files were deleted, moved, or acquired. The
+reduction snapshot was 627 status entries with SHA-256
+`a0b7502b5dd57367216ba6bfb75c66f4f6b56056b68c5ebe0877bb31b77a0e48`. Task 2A
+has since started at a bounded Core contract boundary; its runtime and
+recursive gates remain open.
+
+**Task 2A Core overlap-contract checkpoint — 2026-07-14:** the independent
+review in `.superpowers/sdd/task-2-contracts-review-final.md` approves the
+first four-contract Core slice. The normalizer registry, overlap-universe row
+and summary, and frozen overlap-policy schemas have generated peers, index
+entries, fixtures, semantic validators, exact rational Jaccard/size helpers,
+and canonical stream checks. Review fixes reject registered-unassigned labels,
+locator control bytes, omitted/substituted normalizer registries, and the
+wrong heap bound; malformed unknown rows now return `ok=false` instead of
+throwing. One-worker bounded gates pass: focused 1/6, full Core 20/178,
+typecheck, schema validation, and diff-check. This does not implement the
+SlopBrick normalizers/universe reader, disk-bounded overlap ledger, resource
+receipt, persistence/recovery, CLI, or real-corpus acceptance; no corpus or
+remote release state changed.
+
+**Task 2A exact-similarity fixture checkpoint — 2026-07-14:** the independent
+review in `.superpowers/sdd/task-2-similarity-review-final.md` approves the
+pure fixture slice only. Same-language prefix candidates, global exact-hash
+duplicates, integer size filters, exact inclusive rational 0.80 confirmation,
+both polarity bindings/sides, explicit AI↔human cross-side derivation, and
+duplicate-shingle cardinality are covered by 1 file/8 tests; the Core overlap
+contract remains 1 file/6 and SlopBrick typecheck passes. The required
+incremental reader, external sort/shards, adjacency/clusters, resource
+receipts, persistence/recovery, CLI, and 452,382-unit acceptance remain open;
+no corpus or remote release state changed.
+
+**Task 2A external-sort/shard fixture checkpoint — 2026-07-14:** the
+independent review in `.superpowers/sdd/task-2-external-sort-review-final.md`
+approves the fixture/diagnostic writer only. Canonical duplicate-preserving
+JSONL sorting, contained no-clobber `generation_local` shard paths, lowered
+shard/open-file/work budget enforcement, incomplete receipts, and unknown-file
+preservation pass 1 file/6 tests; SlopBrick typecheck and diff-check pass.
+This is not the production spill/merge path: incremental stream verification,
+heap/RSS/unit/wall telemetry, Core shard/resource schemas, adjacency/clusters,
+checkpoint/recovery, CLI, and 452,382-unit acceptance remain open; no corpus or
+remote release state changed.
+
+**Task 2A artifact-contract/runtime checkpoint — 2026-07-14:** the independent
+review in `.superpowers/sdd/task-2-artifact-runtime-review-final.md` approves
+the nine overlap artifact schemas, generated peers, nine valid/nine invalid
+fixtures, and pure semantic validators. Core passes 21 files/181 tests;
+focused artifact tests pass 3/3; typecheck, schema validation, and diff-check
+pass under one worker and a 2 GiB heap cap. Production incremental overlap,
+telemetry, persistence/recovery, publication, CLI, and real-corpus acceptance
+remain open; no corpus or remote release state changed.
+
+**Task 2A incremental stream checkpoint — 2026-07-14:** the independent review
+in `.superpowers/sdd/task-2-incremental-reader-review-final.md` approves the
+single-consumer SlopBrick `AsyncIterable` reader. It incrementally decodes
+strict UTF-8, hashes exact bytes, retains only the current line and scalar
+counters, requires canonical JSONL/final newline, enforces the 32 MiB
+unit/content bound, validates Core row/registry/order/count/status/unresolved/
+hash contracts, and fails closed on early consumer termination. A registered-
+language `unreadable` row is permitted after the review fix; contradictory
+`unsupported` bindings remain rejected. Focused overlap-universe/stream tests
+pass 2 files/9 tests, plus SlopBrick typecheck and diff-check. Production
+spill/merge, shards, telemetry, persistence/recovery, CLI, and real-corpus
+acceptance remain open; no corpus or remote release state changed.
+
+**Task 2A bounded overlap computation checkpoint — 2026-07-14:** the
+independent review in `.superpowers/sdd/task-2-overlap-builder-review-final.md`
+approves the computation-only builder. Canonical stream hashing and
+normalizer/status binding, bounded multi-pass postings/pair merges,
+deduplicated candidate pairs, exact/inclusive-near edges, generation-local
+edge/adjacency/cluster shards, resource accounting, and output
+rehash/schema-checks are covered by 5 files/25 focused tests; SlopBrick
+typecheck and diff-check pass. Checkpoint/resume, publication/recovery, CLI,
+cross-artifact range/relationship verification, and the real 452,382-row gate
+remain open; no corpus or remote release state changed.
+
+**Task 2A SlopBrick normalizer/universe fixture checkpoint — 2026-07-14:**
+the independent review in
+`.superpowers/sdd/task-2-normalizers-universe-review-final.md` approves the
+bounded diagnostic slice only. Strict UTF-8 normalization, explicit
+covered/unsupported/unreadable outcomes, runtime implementation/fixture-hash
+allow-listing, deterministic full SHA-256 five-token shingles, and canonical
+chunked JSONL validation are covered by 2 files/10 tests; SlopBrick typecheck
+and diff-check pass. The reader is intentionally in-memory fixture tooling,
+not the 452,382-unit production path. Incremental verification, resource
+limits, malformed-language fixtures, collision evidence, external sort,
+shards, persistence/CLI, and real-corpus acceptance remain open; no corpus or
+remote release state changed.
+
+**Task 2A overlap authority publication/CLI checkpoint — 2026-07-14:** the
+bounded local authority slice is independently approved. Core's four overlap
+authority contracts now have generated peers, semantic validators,
+and self-hash helpers; Core is green at 22 files/183 tests. SlopBrick's bounded
+local authority stages descriptor and primary leaves before transaction intent,
+fsyncs journal/output boundaries, publishes immutable generation trees and the
+current pointer with no-clobber/unknown-file checks, and recovers only when
+lock/transaction bindings, generation-number chains, complete trees, and the
+current pointer prove the same generation. `authority:overlap`,
+`authority:overlap:recover`, and `authority:overlap:verify` are wired; the
+publication/CLI focus was initially 2 files/14 tests; the follow-on status and
+fault evidence is recorded below, with typecheck and diff-check green under
+one worker and a 2 GiB heap cap. This remains a bounded fixture/local
+authority slice: real 452,382-row acceptance, external tool receipt authority,
+full fault/two-writer coverage, checkpoint/resume, cross-artifact relationship
+verification, corpus admission, clean recursive gates, commit-bound evidence,
+and release remain open. No corpus or remote state changed.
+
+**Task 2A fault/CAS and CLI-E2E update — 2026-07-14:** publication now covers
+six recoverable durable hooks (including `cleanup-fsynced`), a
+post-completion `lock-unlinked` boundary, and a deterministic two-writer
+stale-parent race; the publication test is **20/20** and repeated race checks
+remained stable. Contention and post-completion status are explicit. The CLI
+test is **5/5** for read-only and contention boundaries plus child-process
+publish→verify and library-created pending transaction→CLI recover→verify.
+The combined publication/CLI focus is **25/25** and the seven-file overlap
+focus is **51/51** under one worker and a 2 GiB heap cap. The post-hardening
+full SlopBrick gate is **301 files / 3,462 tests** (5 skipped files / 9 skipped
+tests); recursive typecheck is green with zero errors. Recursive build still
+stops at the known Core codegen-freshness guard for uncommitted generated
+observation/health peers. Real corpus, external tool authority,
+checkpoint/resume, admission, clean receipts, and release remain open.
+
+**Task 1A current-source checkpoint — 2026-07-13:** deterministic CAS and
+authority recovery hardening now passes SlopBrick typecheck plus four focused
+files at `54/54` tests under one worker and a bounded heap, with `git diff
+--check` green. The fresh independent re-review approves this bounded Task 1A
+slice. Journal-temporary byte checking and materialization-only authority
+replay remain lower-priority plan follow-ups; the ledger remains `96/178` and
+`2/76`, and Gate 4 remains quarantine-only (`verified_ai=0`, `verified_human=0`)
+with no admission manifest/census/run or remote repository acquisition.
+
+**Task 1B bounded register/review/census checkpoint — 2026-07-13:** the
+independent superseding review in `.superpowers/sdd/task-1B-review.md` approves
+the bounded slice. Core validates the 329-entry generation-0 register and
+exact review set, canonical row hashes, aggregate ownership, and explicit
+`materialPartition` conservation of `58,089` baseline plus `394,293`
+repository units. SlopBrick's non-persisting `source:census` requires the
+branded evidence context, emits no source counts/rows for unbranded or invalid
+inputs, keeps candidate claims quarantined, and reports final `eligibleUnits=0`.
+The CLI's realpath containment rejects symlink escapes, and aggregate rows are
+marked non-additive so the 329-row projection cannot double-count the corpus.
+Focused Core schema/typecheck/review checks and SlopBrick census/path tests
+(`5/5`) pass under bounded resources. Remaining Task 1B authority contracts,
+the real corpus census, Gate 4/5, and release gates remain open; the ledger
+stays `96/178` and `2/76`.
+
+**Task 1B register-generation authority slice — 2026-07-13:** the fix wave is
+independently approved in `.superpowers/sdd/task-1B-register-authority-rereview.md`.
+The Core graph now binds delta source-generation hashes to the transaction and
+receipt, requires a completed receipt-bearing phase with matching metadata,
+synchronizes the schema-contract expected list, and enforces source/register
+path roles plus transaction-wide collision checks. Focused authority/review
+tests pass `9/9`; the full Core suite passes `138/138`; schema validation,
+typecheck, codegen, and diff-check pass. This approves the Core contract only;
+runtime publication/recovery and the remaining Task 1B authorities are still
+open. The ledger stays `96/178` and `2/76`; Gate 4/5 and release gates remain
+open.
+
+**Task 1B register-publication runtime slice — 2026-07-13:** the independent
+re-review in `.superpowers/sdd/task-1B-register-publication-rereview.md`
+approves the bounded local runtime; the evidence report is
+`.superpowers/sdd/task-1B-register-publication-report.md`. The focused
+register suite passes `12/12`, the combined acquisition/register/path suite
+passes `34/34`, Core passes `138/138`, and SlopBrick typecheck plus diff-check
+pass. The runtime journals all durable source/register/receipt boundaries,
+revalidates symlink/path and byte/hash/tool bindings, supports lock-only
+recovery, exposes the two register CLI commands, and preserves unknown
+transaction files. The check-then-rename multi-writer race remains a
+documented P2 follow-up under the transaction lock. This is not corpus
+admission or release approval: source proposal/approval, blind/temporal,
+record/decision, overlap/privacy/lineage, real Gate 4/5, calibration, and
+release gates remain open; the ledger remains `96/178` and `2/76`.
+
+**Task 1B Core authority + bounded SlopBrick diagnostic checkpoint —
+2026-07-13:** the independent bounded approval is recorded in
+`.superpowers/sdd/task-1B-core-authority-rereview.md` with evidence in
+`.superpowers/sdd/task-1B-core-authority-report.md`. Strict Core validation
+now covers source-generation joins,
+independent blind source-review roles and rights evidence, temporal receipt
+bindings, record/decision/sample/ledger joins, canonical materialization IDs,
+artifact bytes, timestamps/URLs, and SHA-256 reviewer decision references;
+generated fixed tuples are concrete. SlopBrick's pure review/census boundary
+requires branded verified context, rejects malformed runtime values without
+throwing, delegates Core register/review validation, and keeps candidates and
+structured inputs quarantined with `eligibleUnits=0`. Codegen/schema validation
+and the six Core authority files pass `29/29`; SlopBrick review/census pass
+`9/9`; the previously approved register runtime remains `34/34`. The valid
+source-register schema fixture is shape-only while exact 329-entry semantic
+proof remains in-memory; census representation fields are diagnostic, not
+admitted-record counts. Full Task 1B authority, real corpus census, Gate 4/5,
+and release remain open; ledger stays `96/178` and `2/76`.
+
+The bullets below preserve the earlier blocker chronology and are historical
+snapshots; where their counts, build state, or “pending rerun” wording differ,
+the 2026-07-13 override above is authoritative.
+
+**Current-source refresh — 2026-07-13:** the typed finding-evidence/MCP slice is
+independently approved. Its final focused run passes 95 tests; the projection
+slice adds 44 focused tests plus 28 selected score-explanation/partial tests,
+and the per-rule calibration-evidence slice adds 31 SlopBrick tests plus 3
+Core contract tests. SlopBrick typecheck, MCP documentation generation, and
+diff-check pass. The rebuilt serial SlopBrick suite passes 285 files (5
+skipped), 3,316 tests (9 skipped)
+under one worker and a 2 GiB heap cap. Fresh built-CLI self-scans are complete
+and valid at package 208/208 (119 active, 274 suppressed; AI Slop 4.6849) and
+root 439/439 (212 active, 550 suppressed; AI Slop 4.3307); these receipts are
+diagnostic-only. The evidence contract does not admit a v10.3 cohort/source.
+
+The explicit `scan --resume` boundary and status-only `cal:report` receipts
+are now focused-tested and fail closed. Scanner/feature-schema hash binding
+remains intentionally open because no canonical runtime scanner artifact or
+v10.3 feature-schema byte set exists; hashing the current source/dist fallback
+would create false provenance.
+
+The bounded pure v10.3 metrics reducer is now present and focused-tested 11/11:
+it requires explicit eligible AI/human file IDs and a complete rule catalog,
+deduplicates file-level fires, and emits deterministic point estimates plus
+Wilson 95% intervals. It also emits deterministic equal-weight family-cluster
+and language macro point estimates with pooled audit counts, diagnostic F1, and
+seeded family-cluster bootstrap percentile intervals for LR+, balanced PPV, and
+F1. Admission-backed report wiring remains open.
+
+The Gate 3 deterministic smoke extension now compares two complete 100/100
+metric runs byte-equivalently; the focused smoke/metrics/edge matrix passes
+21/21 and covers unequal arms, zero-cell behavior, and paths containing
+spaces. A follow-on 8/8 slice validates persisted observation/failure/coverage
+bytes through AJV and Core runtime validators, snapshots telemetry/flywheel/
+baseline/`AGENTS.md` sidecars, and runs the bundled worker through the checkout
+boundary with `SLOP_AUDIT_CACHE=0`. The full cross-command slice passes 1/1;
+broader worker/checkout production parity remains open.
+
+- The last full recursive gate before the latest renderer/resource edits was
+  green at Core 116, engine 59, website 37, and SlopBrick 3,151 tests. A later
+  bounded serial SlopBrick rerun after the default-off renderer fix passed 265
+  files (5 skipped) and 3,157 tests (9 skipped); the pretty-detail/resource-
+  budget edits have focused green tests. Task 6 hardening and a fresh full
+  rerun after all current edits remain pending.
+- The Task 6 receipts are intentionally marked `dirty: true` because no clean
+  builder commit was created. A user-authorized clean commit and commit-bound
+  receipt rerun remain required before admission Task 1A or a release claim.
+- The historical self-scan snapshot was complete and parseable with
+  `scoreValidity=valid` and no failed thresholds (package 204/204; root
+  435/435). The current override supersedes it with 208/208 and 439/439.
+  Both remain diagnostic rather than release evidence. The stratified manual
+  correctness/usefulness review is now closed for diagnostic triage; the
+  compression cohort is explicitly not a release/calibration signal, and the
+  broader Gate 2/release gates remain open.
+- The historical dependency snapshot was green on the then-current dirty bytes
+  after the bounded migration: both production and full `pnpm audit
+  --audit-level moderate --json` commands returned zero advisories, and the
+  website plus recursive typecheck/test/build gates passed at that snapshot.
+  The migration, lockfile, and
+  Vitest temp-fixture configuration still need independent review and a clean
+  commit. The original 17/20 counts remain preserved as historical baseline in
+  `.superpowers/sdd/dependency-gate-audit.md`.
+- v10.3 corpus provenance/admission, calibration, and site/operations/release
+  gates remain open. Self-scan output is now approved for diagnostic triage
+  only; its scores remain non-release evidence.
+- The external v10.3 review validator passes, but the register remains draft,
+  all legacy inventory rows remain intake-only, HumanEval and EvalPlus have
+  zero eligible pairs, and no admission manifest/selection/run exists. Do not
+  start admission or acquire more sources until the clean Task 6 commit-bound
+  receipt gate is authorized and closed.
+- Manual self-scan UX review is recorded in
+  `.superpowers/sdd/self-scan-ux-audit.md` and the stratified decision in
+  `.superpowers/sdd/self-scan-stratified-review-2026-07-13.md`: current JSONs
+  are complete/valid, grouped/contextualized output is truthful, and the
+  compression/self-hosting caveats are explicit. This closes diagnostic
+  usefulness, not release-signal or calibration approval.
+- A bounded Markdown renderer fix now uses issue polarity for the AI versus
+  Engineering Hygiene buckets while preserving suppressed verdicts. Focused
+  renderer suites pass 31/31 and SlopBrick typecheck/build pass; compression
+  grouping, self-referential examples, and the remaining Gate 2 UX contract
+  are still open.
+- A follow-on pretty-renderer TDD slice now separates active findings into
+  explicit `AI-specific signals` and `Engineering findings` lanes, hides
+  `severity: off`, and explains empty lanes. The new test was red 3/3 before
+  implementation; lane tests are green 3/3, the full report suite is green
+  160/160, and independent review approved the slice. This closes only the
+  wording/grouping presentation sub-item; manual compression/context review
+  remains open.
+- Dependency remediation also fixed the Vitest 3/Vite 6 temp-file SSR boundary
+  in the engine and SlopBrick test configurations without changing production
+  loaders; the focused affected suites pass 115/115. This is test-harness
+  compatibility evidence, not release authorization.
+- A read-only portability audit is recorded in
+  `.superpowers/sdd/path-portability-audit.md`: the v10.3 control-plane entry
+  is portable, while historical calibration scripts still have local clone or
+  binary fallbacks. Gate 3 remains open for those scripts; no corpus authority
+  uses them.
 
 ### Subsequent gate work (2026-07-09)
 
@@ -296,3 +634,49 @@
   policy/partial=1, usage/config=2, and unexpected=3. Commander, typed scan
   inputs, and bin fault handlers use the same mapping without shipping an
   environment-triggered test seam; independent review approved 12/12 tests.
+
+### Task 1B acquisition-round contract checkpoint — 2026-07-13
+
+The bounded offline Core acquisition-round contract is independently approved
+in `.superpowers/sdd/task-1B-acquisition-round-rereview.md`. Core covers the
+one/two-source authorization, approved acquisition, source/round receipts,
+lock, and recoverable transaction; explicit authorization order, distinct
+tool-receipt ID/hash fields, orchestrator projections, URL/IP/peer/cap/nonce,
+and staged-state joins are validated. Core passed 17 files/163 tests plus
+schema/typecheck/diff-check. This did not perform network acquisition or alter
+the corpus; the ledger remains 96/178 and 2/76.
+
+### Historical Task 1B structured record/decision consumption checkpoint — superseded 2026-07-13
+
+> Historical snapshot only. The superseding temporal/adjudicator checkpoint in
+> the continuation plan is the current execution state.
+
+The bounded offline structured slice is independently approved in
+`.superpowers/sdd/task-1B-structured-records-rereview.md`. SlopBrick consumes
+records, samples, blind assignments, decisions, receipts, and source ledgers
+as one fail-closed graph. Representation is record-derived, with explicit
+unrepresented inventory; orphan bytes, partial/alias-conflicting graphs,
+duplicate/cross-source/unledgered objects, missing decision joins, missing
+source-rights evidence, and non-canonical decision JSONL rejected. Focused
+SlopBrick review/census is 22/22; Core focused authority is 13/13; full Core
+is 17 files/165 tests; both typechecks, schema validation, and diff-check pass.
+The slice remains non-authoritative (`eligibleUnits=0`). The exact-two receipt
+contract rejects a one-decision third-adjudicator bundle until a dedicated
+contract exists; evidence-ID resolution against the verified index and
+temporal-attestation consumption are deferred. Gate 4 remains quarantine-only.
+The current worktree snapshot is 613 status entries with SHA-256
+`f5b4404c0a72c4b81766767ad93d06687d35a81b45f0538aeb9473cd72e051df`.
+
+## Latest bounded Task 2A checkpoint — 2026-07-14
+
+The overlap publication boundary now has a cross-envelope relation verifier
+for the index, resource receipt, ledger, and generation artifact receipts.
+It is exercised by publication, recovery, and read-only verification. The
+focused publication/CLI evidence is **29/29** (publication 24/24, CLI 5/5),
+the seven-file overlap focus is **55/55**, and the RAM-bounded full SlopBrick
+suite is **301 files / 3,466 tests** (5 skipped files / 9 skipped tests).
+Core is **22 files / 183 tests**, schema validation and recursive typecheck
+pass, and the package build succeeds. The recursive build still stops at the
+intentional Core codegen-freshness guard for uncommitted observation/health
+peers. This does not advance the real corpus, external tool authority,
+admission, clean-builder, release, or deployment gates.

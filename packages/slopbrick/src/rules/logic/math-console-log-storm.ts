@@ -63,7 +63,7 @@ export const mathConsoleLogStormRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `${maxCount} console.log calls clustered in a ${WINDOW_SIZE}-line window ending at line ${maxEndLine}. ` +
-          `AI debug-sprays logs in a single function; humans use one strategic log.`,
+          `Review whether debug output is bounded and actionable; consolidate noisy logs when they obscure useful diagnostics.`,
         line: firstIdx >= 0 ? lines[firstIdx]! : 1,
         column: firstIdx >= 0 ? columns[firstIdx]! : 1,
         advice:

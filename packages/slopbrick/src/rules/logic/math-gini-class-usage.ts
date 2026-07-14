@@ -70,7 +70,7 @@ export const mathGiniClassUsageRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Class usage shows high inequality (Gini=${g.toFixed(2)}, vocab=${counts.size}). ` +
-        `Top: ${topStr}. AI defaults to a tiny vocabulary; humans use classes more uniformly.`,
+        `Top: ${topStr}. Review dominant tokens against the design system and component intent; repetition can be intentional.`,
       line: anchor.line,
       column: anchor.column,
       advice:

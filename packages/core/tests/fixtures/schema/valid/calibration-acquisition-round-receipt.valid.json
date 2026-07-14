@@ -1,0 +1,25 @@
+{
+  "version": "v10.3-acquisition-round-receipt-v1",
+  "receiptId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "roundId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "parentCensusSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "sourceReceiptSha256s": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+  "sourceInvocationIntentIds": ["eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"],
+  "sourceProfileSha256s": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+  "sourceToolReceiptSha256s": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+  "orchestratorInvocationIntentId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "orchestratorToolReceiptId": "9999999999999999999999999999999999999999999999999999999999999999",
+  "orchestratorToolReceiptSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "toolAuthoritySnapshot": {
+    "version": "v10.3-admission-tool-authority-snapshot-v1",
+    "indexGenerationSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "profileIds": ["admission-acquisition-round-v1"],
+    "invocationIntentIds": ["eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"],
+    "receiptIds": ["1111111111111111111111111111111111111111111111111111111111111111"],
+    "snapshotSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "acquiredSourceCount": 1,
+  "totalMaterializedBytes": 10,
+  "withinAuthorizedCountAndBytes": true,
+  "receiptSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+}

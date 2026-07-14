@@ -92,8 +92,7 @@ export const cppRawNewDeleteRule = createRule<CppRawNewDeleteContext>({
         'on scope exit, never leak on early return / exception, never ' +
         'double-free on copy. The C++ Core Guidelines R.20-R.23 call out ' +
         'raw `new` / `delete` as something to avoid in application code. ' +
-        'AI agents reach for `new` / `delete` because their training data ' +
-        'was written for pre-C++11 idioms. Reference: cpp/raw-new-delete v0.24.',
+        'Reference: cpp/raw-new-delete v0.24.',
     });
 
     return issues;

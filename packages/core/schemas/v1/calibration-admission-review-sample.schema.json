@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-review-sample.schema.json",
+  "title": "CalibrationAdmissionReviewSampleV1",
+  "description": "Deterministic, hash-bound blind-review sample selection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sampleId", "sourceId", "seed", "populationSha256", "populationCount", "strata", "selected", "selectionSha256", "presentationOrderSha256", "toolReceiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-review-sample-v1" },
+    "sampleId": { "$ref": "#/$defs/id" },
+    "sourceId": { "$ref": "#/$defs/id" },
+    "seed": { "const": "slopbrick-v10.3-admission-review-v1" },
+    "populationSha256": { "$ref": "#/$defs/sha256" },
+    "populationCount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "strata": { "type": "array", "items": { "$ref": "#/$defs/stratum" } },
+    "selected": { "type": "array", "items": { "$ref": "#/$defs/selected" } },
+    "selectionSha256": { "$ref": "#/$defs/sha256" },
+    "presentationOrderSha256": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "stratum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stratumId", "populationCount", "requestedCount"],
+      "properties": {
+        "stratumId": { "type": "string", "minLength": 1 },
+        "populationCount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "requestedCount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+      }
+    },
+    "selected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logicalUnitId", "stratumId", "selectionKey", "presentationKey"],
+      "properties": {
+        "logicalUnitId": { "$ref": "#/$defs/id" },
+        "stratumId": { "type": "string", "minLength": 1 },
+        "selectionKey": { "$ref": "#/$defs/sha256" },
+        "presentationKey": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

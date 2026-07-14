@@ -1,13 +1,78 @@
 # Calibration
 
-> **Current execution guide:** [`v0.45.0-continuation-plan.md`](./v0.45.0-continuation-plan.md). The absolute-path corpus/file-list commands below describe the historical v10.2 workflow and must not be used for release decisions. v10.3 will replace them with a provenance-backed manifest, complete file accounting, and denominator-aware metrics.
+> **Current execution guide:** [`v0.45.0-continuation-plan.md`](./v0.45.0-continuation-plan.md). The absolute-path corpus/file-list commands below describe the historical v10.2 workflow and must not be used for release decisions. v10.3 replaces them with a provenance-backed manifest, complete file accounting, and denominator-aware metrics; admission and calibration remain gated.
 
-Per-rule precision, recall, FPR, and lift calibration against
-the positive (AI-generated) and negative (real human) corpora.
+The v10.3 release-source boundary is available through the manifest-aware
+`cal:materialize` command. It only emits a local checkout map after validating
+the manifest, checksum-pinned archive, root prefix, and every declared file:
+
+```bash
+slopbrick cal:materialize \
+  --manifest <corpus-manifest.json> \
+  --expected-manifest-sha256 <64-lowercase-hex> \
+  --run-id <id> \
+  --cache <absolute-directory> \
+  --out <new-checkout-map.json> \
+  --network deny
+```
+
+This command does not admit corpus files, train a model, or publish a release.
+
+For a legacy v10.3.0/v10.3.1 manifest, the next local control-plane steps
+are selection, no-clobber run initialization, scanning, and verification. Every
+input is checksum-pinned; admission-backed v10.3.2 sources remain reserved
+until the provenance authority is complete:
+
+```bash
+slopbrick cal:select \
+  --manifest <corpus-manifest.json> \
+  --expected-manifest-sha256 <64-lowercase-hex> \
+  --seed <frozen-seed> --out <new-run-directory>
+slopbrick cal:init \
+  --run <run-directory> --draft <run-manifest-draft.json> \
+  --checkout-map <checkout-map.json> \
+  --registry <registry.json> --signal-table <signal-table.json> \
+  --config <calibration-config.json>
+slopbrick cal:scan --run <run-directory> --checkout-map <checkout-map.json> \
+  --registry <registry.json> --signal-table <signal-table.json> \
+  --config <calibration-config.json>
+slopbrick cal:verify --run <run-directory> --checkout-map <checkout-map.json> \
+  --registry <registry.json> --signal-table <signal-table.json> \
+  --config <calibration-config.json>
+slopbrick cal:report --run <run-directory> --checkout-map <checkout-map.json> \
+  --registry <registry.json> --signal-table <signal-table.json> \
+  --config <calibration-config.json>
+```
+
+`cal:init` writes a path-free `run-manifest.json` and refuses to overwrite an
+existing run. `cal:verify` validates the frozen selection, checkout binding,
+observations, failures, coverage, and hashes. It does not produce rule metrics
+or admit corpus labels. `cal:report` repeats that scan verification before
+writing deterministic, path-free `rule-metrics.json`, `language-metrics.json`,
+`report.md`, and `logs/report.jsonl` status artifacts. Until an
+admission-backed eligible cohort and denominator-aware metrics producer exist,
+all four are marked `status: unavailable` with an explicit reason; no numeric
+metric or corpus-eligibility claim is fabricated. It exits 1 for this
+diagnostic-only result and refuses to overwrite any existing derived artifact.
+
+The historical `calibration-empirical.json` merger is not a v10.3 authority
+artifact: it remains diagnostic-only until its inputs are bound to the v10.3
+manifest, coverage gates, and versioned metric schema.
+
+Per-rule precision, recall, FPR, and lift calibration against the positive
+(AI-generated) and negative (real human) corpora remains planned; the current
+`cal:report` command writes unavailable status receipts until those authority
+inputs and the versioned metrics producer exist.
 
 ## Calibration corpus
 
-The calibration corpus lives in two places:
+> **Historical v10.2 layout — not current v10.3 authority.** The paths and
+> counts below are retained for reproducibility of the archived workflow only.
+> Current v10.3 review covers 317 pinned checkouts and 452,382 selected units,
+> all still quarantine-only (`verified_ai=0`, `verified_human=0`); the declared
+> AI-positive/human-negative polarity is not yet admitted truth.
+
+The historical calibration corpus lived in two places:
 
 1. **`$SLOPBRICK_CORPUS_ROOT/`** — 91 positive + 39 negative
    project subdirectories. ~1.13M files total.
@@ -69,7 +134,12 @@ slopbrick calibrate \
   --output /tmp/cal-results/smoke.md
 ```
 
-## v10.2 plan
+## Historical v10.2 diagnostic context
 
-See **`v10.2-plan.md`** (this directory) for the full plan,
-including the corpus-gap discovery and the revised phases.
+The commands above are retained only to reproduce historical diagnostics. Do
+not use their 18%-coverage output for a release decision, rule calibration, or
+label admission. The current source of truth is the v10.3 admission plan and
+the v0.45 continuation plan.
+
+See **`v10.2-plan.md`** (this directory) for the archived plan and its corpus-
+gap discovery. It is superseded by the current gated plans.

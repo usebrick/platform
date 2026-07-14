@@ -2,14 +2,15 @@
 // CTASection — the last brick. The largest brick in the page.
 // "Lay the next brick" is the implicit ask. The user is being
 // invited to add usebrick to their codebase.
+import productFacts from '../data/product-facts.json';
 ---
 
 <section class="cta" id="install">
   <div class="brick brick--cta brick--accent">
-    <span class="cta__label">v0.43.0 · the next brick</span>
+    <span class="cta__label">v{productFacts.published.version} published · the next brick</span>
     <h2 class="cta__title">
       One <code class="cta__code">slopbrick.config.mjs</code>.<br />
-      Four <em class="cta__em">scores</em>. Twenty-two <em class="cta__em">categories</em>.
+      Four <em class="cta__em">scores</em>. {productFacts.published.categoryCount} <em class="cta__em">categories</em>.
     </h2>
     <p class="cta__body">
       <code class="cta__code">npm install -g slopbrick</code> &nbsp;·&nbsp;

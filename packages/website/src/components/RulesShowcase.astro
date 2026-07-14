@@ -3,11 +3,9 @@
 // as a 2-column wall of "rule cards". Each card shows the rule's
 // id, severity, a one-line rule shape (what it catches), and the
 // per-rule P/R/FPR from the calibration corpus. The intent is to
-// show the "moat" — that 103 rules with measured precision/recall
-// is a different class of product from "Linter that fires every
-// commit on the same stale rules".
+// show the evidence-backed registry rather than a marketing-only count.
 
-import BrickLayout from './BrickLayout.astro';
+import productFacts from '../data/product-facts.json';
 
 interface Rule {
   id: string;
@@ -17,6 +15,8 @@ interface Rule {
   precision: number;
   recall: number;
   fpr: number;
+  defaultOff?: boolean;
+  verdict?: string;
   aiOnly: boolean;
   /** v0.43.0 anti-AI: custom inline SVG icon name (no emojis).
    * Icons are monoline 1.5px stroke, 24x24 viewBox, currentColor. */
@@ -42,8 +42,8 @@ const rules: Rule[] = [
     id: 'ai/comment-ratio',
     category: 'ai',
     severity: 'medium',
-    shape: 'Comment-line ratio deviates from corpus mean ± 2σ',
-    precision: 0.85, recall: 0.78, fpr: 0.04,
+    shape: 'Parser-backed comment-line ratio outside a calibrated band',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: true,
     icon: 'comment',
   },
@@ -51,17 +51,17 @@ const rules: Rule[] = [
     id: 'ai/compression-profile',
     category: 'ai',
     severity: 'low',
-    shape: 'Gzip ratio > 0.50 + low line-to-line NCD variation',
-    precision: 0.91, recall: 0.62, fpr: 0.02,
+    shape: 'Gzip savings > 0.60 + low line-to-line NCD variation',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: true,
     icon: 'compress',
   },
   {
     id: 'security/dangerous-cors',
     category: 'security',
-    severity: 'high',
-    shape: 'cors({ origin: true }) or origin: "*" with credentials',
-    precision: 0.99, recall: 0.96, fpr: 0.01,
+    severity: 'medium',
+    shape: 'AST-proven wildcard or reflective CORS configuration',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: false,
     icon: 'shield-x',
   },
@@ -69,8 +69,8 @@ const rules: Rule[] = [
     id: 'visual/spacing-scale-violation',
     category: 'visual',
     severity: 'medium',
-    shape: 'Tailwind spacing value not in declared 4px-base scale',
-    precision: 0.94, recall: 0.83, fpr: 0.03,
+    shape: 'Tailwind spacing value outside the declared scale',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: false,
     icon: 'grid',
   },
@@ -78,8 +78,8 @@ const rules: Rule[] = [
     id: 'test/weak-assertion',
     category: 'test',
     severity: 'medium',
-    shape: 'Assertion has no equality / no matcher / tautology',
-    precision: 0.88, recall: 0.71, fpr: 0.05,
+    shape: 'Assertion has no equality, matcher, or meaningful check',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: false,
     icon: 'check-q',
   },
@@ -87,8 +87,8 @@ const rules: Rule[] = [
     id: 'ai/console-debug-storm',
     category: 'ai',
     severity: 'low',
-    shape: '≥10 console.log + debugger statements, no logger',
-    precision: 0.92, recall: 0.74, fpr: 0.04,
+    shape: '≥10 debug statements without a structured logger',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: true,
     icon: 'terminal',
   },
@@ -96,8 +96,8 @@ const rules: Rule[] = [
     id: 'dup/identical-block',
     category: 'dup',
     severity: 'medium',
-    shape: '20+ identical lines appear in ≥2 files',
-    precision: 0.97, recall: 0.86, fpr: 0.02,
+    shape: '20 normalized code lines repeat across project files',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: false,
     icon: 'duplicate',
   },
@@ -105,12 +105,17 @@ const rules: Rule[] = [
     id: 'docs/stale-package-reference',
     category: 'docs',
     severity: 'medium',
-    shape: 'Doc references a package not in package.json',
-    precision: 0.99, recall: 0.95, fpr: 0.01,
+    shape: 'Documentation references a package absent from package.json',
+    precision: 0, recall: 0, fpr: 0,
     aiOnly: false,
     icon: 'book-x',
   },
 ];
+
+for (const rule of rules) {
+  const measured = productFacts.showcaseRules[rule.id as keyof typeof productFacts.showcaseRules];
+  Object.assign(rule, measured ?? { defaultOff: false, verdict: 'unmeasured' });
+}
 
 function fmtPct(n: number): string { return (n * 100).toFixed(0) + '%'; }
 function fmtFpr(n: number): string { return n < 0.01 ? '<1%' : fmtPct(n); }
@@ -122,19 +127,20 @@ function severityClass(s: Rule['severity']): string {
 
 <section class="section rules-showcase" id="rules">
   <header class="rules-showcase__head">
-    <span class="rules-showcase__label">103 rules, per-rule P/R</span>
+    <span class="rules-showcase__label">{productFacts.ruleCount} rules, per-rule evidence</span>
     <h2 class="rules-showcase__title">
-      <span class="rules-showcase__count">103</span> rules,
-      <span class="rules-showcase__count">22</span> categories,
-      <span class="rules-showcase__accent">measured precision &amp; recall</span>.
+      <span class="rules-showcase__count">{productFacts.ruleCount}</span> rules,
+      <span class="rules-showcase__count">{productFacts.categoryCount}</span> categories,
+      <span class="rules-showcase__accent">measured evidence</span>.
     </h2>
     <p class="rules-showcase__body">
-      Every rule below ships with a per-rule P/R/FPR measured
-      against the v10 corpus. Default-off rules are auto-suppressed
-      from your score until they earn their way on. No "100% coverage"
-      with a <code>floor(0.5)</code> rounding bug — numbers come
-      from real v4–v10 corpus math (NPMI, Fisher's exact, single-linkage
-      clustering), not aspirational marketing.
+      These cards show per-rule precision, recall, and false-positive rate
+      from the {productFacts.corpusLabel} evidence snapshot. It covers
+      {productFacts.measuredRuleCount} of the {productFacts.ruleCount} candidate
+      rules; the remaining {productFacts.unmeasuredRuleCount} are unmeasured
+      language rules. Default-off rules are labeled and do not affect scores
+      until recalibrated or explicitly enabled. Metrics describe corpus
+      association, not authorship proof.
     </p>
   </header>
 
@@ -164,6 +170,7 @@ function severityClass(s: Rule['severity']): string {
         <span class={`rules-showcase__pill ${severityClass(r.severity)}`}>
           {r.severity}
         </span>
+        {r.defaultOff && <span class="rules-showcase__pill rules-showcase__pill--off">default-off</span>}
       </article>
     ))}
   </div>

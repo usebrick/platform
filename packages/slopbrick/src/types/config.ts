@@ -28,19 +28,10 @@ export interface RuleContext {
 }
 
 /**
- * v0.25.0: self-scan excludes. When `selfScan.excludePaths` is set, the
- * scan worker skips files whose workspace-relative path matches any of
- * the glob patterns. This is for *self-scanning* the slopbrick repo
- * itself, where rule definitions (`src/rules/**`) and test fixtures
- * (`tests/fixtures/**`, `tests/rules/**`) are meta-code — the rules
- * contain examples of the patterns they detect (self-fire), and test
- * fixtures contain intentional bad code that the rules must fire on
- * to be useful. Both are false positives in the self-scan context.
- *
- * Default excludes (in `config/defaults.ts`) cover exactly these three
- * paths. Users who scan a *different* repo can leave `selfScan` unset
- * (or set `excludePaths: []`) to opt out. Empty array disables; absent
- * field uses defaults.
+ * Repository-owned self-scan exclusions. `runScan` removes matching files
+ * before scan accounting and scoring, including explicit file arguments.
+ * `scanFile` retains the same match as a low-level defensive guard. Unset or
+ * empty means no exclusions.
  */
 export interface ScanSelfScanConfig {
   /** Glob patterns (minimatch) to exclude from the scan. Matched against
@@ -246,16 +237,11 @@ export interface ResolvedConfig {
     [key: string]: boolean | undefined;
   };
   /**
-   * v0.25.0: self-scan exclude paths. Applied at scan time (in
-   * `engine/worker.ts`) so files matching any glob in `excludePaths`
-   * short-circuit with empty issues. Defaults (in `config/defaults.ts`)
-   * cover the three "always false positive in self-scan" paths:
-   * rule definitions (`src/rules/**`), test fixtures
-   * (`tests/fixtures/**`), and rule test files (`tests/rules/**`).
-   *
-   * Empty array `excludePaths: []` disables exclusion entirely
-   * (legacy behavior — every file is scanned). Unset field uses
-   * defaults.
+   * Repository-specific self-scan exclusion paths. All runScan candidates are
+   * matched relative to the selected workspace and removed before git scope,
+   * incremental partitioning, and requested-file accounting. `scanFile`
+   * retains the match as a low-level defensive guard. Empty or unset means
+   * every selected file is scanned.
    */
   selfScan?: ScanSelfScanConfig;
 }

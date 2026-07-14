@@ -24,4 +24,21 @@ describe('RULE_HINTS coverage', () => {
     const keys = Object.keys(RULE_HINTS);
     expect(new Set(keys).size).toBe(keys.length);
   });
+
+  it('keeps hints technical and rejects detector-evasion or authorship instructions', () => {
+    const prohibited: ReadonlyArray<[RegExp, string]> = [
+      [/\bhuman files\b/iu, 'human-file distribution claims'],
+      [/\bAI tends to\b/iu, 'AI-vs-human balancing advice'],
+      [/\bverify authorship\b/iu, 'authorship verification instruction'],
+      [/\bLLM[- ]style\b/iu, 'LLM-style authorship language'],
+      [/\bLLM training-data default\b/iu, 'training-data authorship language'],
+      [/\bVary grid-cols-N\b/iu, 'detector-evasion layout variation'],
+    ];
+
+    for (const [ruleId, hint] of Object.entries(RULE_HINTS)) {
+      for (const [pattern, label] of prohibited) {
+        expect(hint, `${ruleId}: ${label}`).not.toMatch(pattern);
+      }
+    }
+  });
 });

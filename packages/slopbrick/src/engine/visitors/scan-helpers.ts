@@ -16,6 +16,7 @@
 import type {
   DisabledLintRuleFact,
   OptimisticUpdateFact,
+  StateBinding,
 } from '../../types';
 import type { JsxElementRecord, UnreachableStatementRecord } from '../types';
 import { positionFromCharOffset } from './templates.js';
@@ -165,13 +166,18 @@ export function findMatchingBrace(source: string, openBraceIndex: number): numbe
  * does NOT include a matching setter call (i.e. no rollback). The
  * logic/optimistic-no-rollback rule fires on these.
  */
-export function extractOptimisticUpdates(source: string): OptimisticUpdateFact[] {
+export function extractOptimisticUpdates(
+  source: string,
+  stateBindings: readonly StateBinding[],
+): OptimisticUpdateFact[] {
   const results: OptimisticUpdateFact[] = [];
+  const stateSetterNames = new Set(
+    stateBindings.flatMap((binding) => binding.setterName ? [binding.setterName] : []),
+  );
   const setterRegex = /\b(set[A-Z]\w*)\s*\(/g;
   const awaitRegex = /\bawait\b/;
   const catchSetterRegex = /\bset[A-Z]\w*\s*\(/;
   const tryRegex = /try\s*\{/g;
-  const NON_SETTERS = new Set(['setTimeout', 'setInterval']);
 
   let match: RegExpExecArray | null;
   while ((match = tryRegex.exec(source)) !== null) {
@@ -187,7 +193,8 @@ export function extractOptimisticUpdates(source: string): OptimisticUpdateFact[]
     // Pick the first setter that appears before an await.
     const awaitIndex = tryBody.search(awaitRegex);
     const firstSetter = setterMatches.find(
-      (m: RegExpExecArray) => m.index !== undefined && m.index < awaitIndex && !NON_SETTERS.has(m[1]!),
+      (m: RegExpExecArray) =>
+        m.index !== undefined && m.index < awaitIndex && stateSetterNames.has(m[1]!),
     );
     if (!firstSetter || firstSetter.index === undefined) continue;
 
@@ -405,18 +412,28 @@ import { positionFrom } from './react.js';
  * v0.9.3: lifted from `src/engine/visitor.ts` to break the
  * visitor.ts ⇄ dispatch.ts circular dependency. Returns true when
  * the given VariableDeclarator node's initializer is a `useState(...)`
- * call. Used by the VariableDeclarator dispatch handler to detect
- * useState destructuring and emit a StateBinding.
+ * call, either as `useState(...)` or `React.useState(...)`. Used by the
+ * VariableDeclarator dispatch handler to detect useState destructuring and
+ * emit a StateBinding.
  */
 export function isUseStateDeclarator(node: Record<string, unknown>): boolean {
   const init = node.init as AnyNode;
   if (!isObject(init) || init.type !== 'CallExpression') return false;
   const callee = init.callee as AnyNode;
+  if (!isObject(callee)) return false;
+  if (callee.type === 'Identifier') {
+    return callee.value === 'useState';
+  }
+  if (callee.type !== 'MemberExpression') return false;
+  const object = callee.object as AnyNode;
+  const property = callee.property as AnyNode;
   return (
-    isObject(callee) &&
-    callee.type === 'Identifier' &&
-    typeof callee.value === 'string' &&
-    callee.value === 'useState'
+    isObject(object) &&
+    object.type === 'Identifier' &&
+    object.value === 'React' &&
+    isObject(property) &&
+    property.type === 'Identifier' &&
+    property.value === 'useState'
   );
 }
 

@@ -30,7 +30,22 @@ export function createV103WorkerInvoker(runner: ChildRunner = defaultRunner): Sc
     const directory = await mkdtemp(join(tmpdir(), 'slopbrick-v103-'));
     const resultPath = join(directory, 'result.json');
     try {
-      const processResult = await runner({ filePath: input.filePath, resultPath, timeoutMs: input.timeoutMs, env: { ...process.env, SLOP_RESULT_PATH: resultPath, SLOP_INCLUDE_RULES: JSON.stringify(input.includeRules), SLOP_EXCLUDE_RULES: JSON.stringify(input.excludeRules) } });
+      const processResult = await runner({
+        filePath: input.filePath,
+        resultPath,
+        timeoutMs: input.timeoutMs,
+        // Calibration workers are an evidence-producing read-only boundary.
+        // Never inherit a caller's parser-cache opt-in: a calibration scan
+        // must not mutate the checkout (or the invoking workspace) as a
+        // hidden side effect of parsing one file.
+        env: {
+          ...process.env,
+          SLOP_AUDIT_CACHE: '0',
+          SLOP_RESULT_PATH: resultPath,
+          SLOP_INCLUDE_RULES: JSON.stringify(input.includeRules),
+          SLOP_EXCLUDE_RULES: JSON.stringify(input.excludeRules),
+        },
+      });
       let json: unknown;
       try { json = JSON.parse(await readFile(resultPath, 'utf8')); } catch { json = undefined; }
       return { exitCode: processResult.exitCode, json };

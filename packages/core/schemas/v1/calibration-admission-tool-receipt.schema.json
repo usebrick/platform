@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-tool-receipt.schema.json",
+  "title": "CalibrationAdmissionToolReceiptV1",
+  "description": "Post-execution receipt binding the pre-execution intent, profile, observed resource usage, exit status, and primary output hash.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "invocationIntentId", "profileId", "profileSha256", "action", "canonicalArgvSha256", "inputSetSha256", "executableBehaviorSha256", "observedResourceUsage", "exitCode", "outputSetSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-tool-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "profileId": { "$ref": "#/$defs/profileId" },
+    "profileSha256": { "$ref": "#/$defs/sha256" },
+    "action": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,127}$" },
+    "canonicalArgvSha256": { "$ref": "#/$defs/sha256" },
+    "inputSetSha256": { "$ref": "#/$defs/sha256" },
+    "executableBehaviorSha256": { "$ref": "#/$defs/sha256" },
+    "networkAuthorizationSha256": { "$ref": "#/$defs/sha256" },
+    "observedResourceUsage": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } },
+    "exitCode": { "type": "integer", "minimum": 0, "maximum": 255 },
+    "outputSetSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "profileId": { "enum": ["admission-core-contract-v1", "admission-context-v1", "admission-static-ledgers-v1", "admission-census-v1", "admission-manifest-v1", "admission-acquisition-publication-v1", "admission-source-node-v1", "admission-source-parquet-v1", "admission-acquisition-round-v1", "admission-git-acquire-v1", "admission-release-acquire-v1", "admission-evidence-acquire-v1"] }
+  }
+}

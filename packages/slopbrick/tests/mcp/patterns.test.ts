@@ -73,6 +73,50 @@ describe('extractImports', () => {
 });
 
 describe('MCP evidence contract', () => {
+  it('exposes per-finding calibration estimates while withholding unverified provenance', () => {
+    const historical = toMcpFinding({
+      ruleId: 'logic/heaps-deviation', category: 'logic', severity: 'medium', aiSpecific: false,
+      message: 'Heaps deviation', line: 4, column: 2,
+    });
+
+    expect(historical).toMatchObject({
+      aiSpecific: false,
+      calibration: {
+        status: 'historical-point-estimate-only',
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+        recall: expect.any(Number),
+        falsePositiveRate: expect.any(Number),
+        precision: expect.any(Number),
+        lift: expect.any(Number),
+        confidenceLimits: null,
+        provenance: {
+          status: 'historical-only',
+          source: null,
+          cohort: null,
+        },
+      },
+    });
+    expect(historical.calibration.provenance.reason).toMatch(/v10\.3 admission/i);
+
+    const unavailable = toMcpFinding({
+      ruleId: 'visual/unknown-rule', category: 'visual', severity: 'low', aiSpecific: true,
+      message: 'Unknown rule', line: 1, column: 1,
+    });
+    expect(unavailable).toMatchObject({
+      aiSpecific: true,
+      calibration: {
+        status: 'unavailable',
+        confidenceLimits: null,
+        provenance: {
+          status: 'unavailable',
+          source: null,
+          cohort: null,
+        },
+      },
+    });
+    expect(unavailable.calibration.provenance.reason).toMatch(/no validated calibration entry/i);
+  });
+
   it('returns a rule explanation with honest calibration and configuration policy state', async () => {
     const result = await handleToolCall(
       'slop_explain_rule',
@@ -130,6 +174,496 @@ describe('MCP evidence contract', () => {
     });
     expect(JSON.stringify(finding)).not.toContain('/tmp/mcp-evidence');
     expect(finding).not.toHaveProperty('facts');
+  });
+
+  it('projects typed matched evidence under why-it-fired without leaking paths', () => {
+    const finding = toMcpFinding({
+      ruleId: 'typo/placeholder-text', category: 'typo', severity: 'low', aiSpecific: false,
+      message: 'Placeholder text "TODO" is unfinished.', line: 1, column: 8,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'placeholder="TODO"',
+        location: {
+          start: { line: 1, column: 8 },
+          end: { line: 1, column: 25 },
+        },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+      },
+    }, '/tmp/mcp-evidence-workspace');
+
+    expect(finding.whyItFired.evidence).toEqual({
+      kind: 'matched-source-span',
+      status: 'exact',
+      snippet: 'placeholder="TODO"',
+      location: {
+        start: { line: 1, column: 8 },
+        end: { line: 1, column: 25 },
+      },
+      matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+    });
+    expect(JSON.stringify(finding)).not.toContain('/tmp/mcp-evidence-workspace');
+  });
+
+  it('redacts embedded POSIX/Windows paths and secret-like evidence text', () => {
+    const finding = toMcpFinding({
+      ruleId: 'typo/placeholder-text', category: 'typo', severity: 'low', aiSpecific: false,
+      message: 'Placeholder text', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'placeholder="/Users/cheng/private.ts"; token="super-secret-value"; C:\\Users\\cheng\\private.ts',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 90 } },
+        matched: { field: 'apiKey', key: 'password', value: 'super-secret-value' },
+      },
+    });
+
+    const serialized = JSON.stringify(finding);
+    expect(serialized).not.toContain('/Users/cheng/private.ts');
+    expect(serialized).not.toContain('C:\\Users\\cheng\\private.ts');
+    expect(serialized).not.toContain('super-secret-value');
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'unsafe-path' },
+      snippet: '[omitted unsafe evidence]',
+      matched: {
+        field: expect.stringContaining('[redacted'),
+        key: expect.stringContaining('[redacted'),
+        value: expect.stringContaining('[redacted'),
+      },
+    });
+  });
+
+  it.each([
+    ['one-segment POSIX path', 'prefix /tmp', 'unsafe-path'],
+    ['colon-embedded POSIX path', 'prefix:/tmp', 'unsafe-path'],
+    ['drive path with spaces', String.raw`prefix C:\Program Files\private.ts`, 'unsafe-path'],
+    ['UNC path', String.raw`prefix \\server\share\private.ts`, 'unsafe-path'],
+  ] as const)('omits %s even when embedded in evidence', (_label, snippet, reason) => {
+    const finding = toMcpFinding({
+      ruleId: 'typo/placeholder-text', category: 'typo', severity: 'low', aiSpecific: false,
+      message: 'Placeholder text', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet,
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: snippet.length } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+      },
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[omitted unsafe evidence]',
+      omission: { source: 'mcp-projection', reason },
+    });
+    expect(JSON.stringify(finding)).not.toContain(snippet);
+  });
+
+  it('omits camelCase-sensitive key/value evidence and reports a typed reason', () => {
+    const snippet = 'accessToken="super-secret"; refreshToken="refresh-secret"; databasePassword="db-secret"; secretKey="signing-secret"';
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Sensitive finding', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet,
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: snippet.length } },
+        matched: { field: 'accessToken', key: 'secretKey', value: 'super-secret' },
+      },
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[redacted sensitive text]',
+      omission: { source: 'mcp-projection', reason: 'sensitive' },
+      matched: {
+        field: '[redacted sensitive text]',
+        key: '[redacted sensitive text]',
+        value: '[redacted sensitive text]',
+      },
+    });
+    expect(JSON.stringify(finding)).not.toContain('super-secret');
+    expect(JSON.stringify(finding)).not.toContain('secretKey');
+  });
+
+  it('sanitizes evidence details with the same path and camelCase policy', () => {
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Sensitive finding', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+        details: {
+          accessToken: 'do-not-forward',
+          nested: { path: 'prefix /tmp', databasePassword: 'db-secret' },
+          safe: 'kept',
+        },
+      } as never,
+    });
+
+    const serialized = JSON.stringify(finding);
+    expect(serialized).not.toContain('/tmp');
+    expect(serialized).not.toContain('do-not-forward');
+    expect(serialized).not.toContain('db-secret');
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'sensitive' },
+      details: { nested: { path: '[omitted unsafe evidence]' }, safe: 'kept' },
+    });
+  });
+
+  it('sanitizes issue messages and why-it-fired summaries at the MCP boundary', () => {
+    const pathMessage = toMcpFinding({
+      ruleId: 'typo/placeholder-text', category: 'typo', severity: 'low', aiSpecific: false,
+      message: 'Placeholder text "prefix /tmp" is unsafe.', line: 1, column: 1,
+    });
+    expect(pathMessage.message).not.toContain('/tmp');
+    expect(pathMessage.whyItFired.summary).toBe(pathMessage.message);
+
+    const secretMessage = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Found accessToken="do-not-forward" in source.', line: 1, column: 1,
+    });
+    expect(secretMessage.message).not.toContain('accessToken');
+    expect(secretMessage.message).not.toContain('do-not-forward');
+    expect(secretMessage.whyItFired.summary).toBe(secretMessage.message);
+
+    const mixedMessage = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Found accessToken="/tmp/private-token" in source.', line: 1, column: 1,
+    });
+    expect(mixedMessage.message).not.toContain('accessToken');
+    expect(mixedMessage.message).not.toContain('/tmp/private-token');
+  });
+
+  it('bounds messages and advice after unsafe text redaction', () => {
+    const hugeUnsafeText = `prefix /tmp/private.ts; ${'x'.repeat(3000)}`;
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: hugeUnsafeText, advice: hugeUnsafeText, line: 1, column: 1,
+    });
+
+    expect(finding.message).toBe('[omitted oversized message]');
+    expect(finding.advice).toBe('[omitted oversized message]');
+    expect(finding.whyItFired.summary).toBe('[omitted oversized message]');
+    expect(finding.message.length).toBeLessThanOrEqual(64);
+    expect(finding.advice?.length).toBeLessThanOrEqual(64);
+    expect(JSON.stringify(finding)).not.toContain('/tmp/private.ts');
+  });
+
+  it.each([
+    'token', 'super-secret-value', 'password-hunter', 'tokenValue',
+    'accessTokenValue', 'refreshTokenValue', 'databasePassword',
+    'passwordHash', 'secretValue', 'authorizationHeader', 'cookieValue',
+  ])('omits sensitive bare, hyphenated, and suffix text: %s', (sensitiveText) => {
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Sensitive finding', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: sensitiveText,
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: sensitiveText.length } },
+        matched: { field: 'placeholder', key: 'placeholder', value: sensitiveText },
+      },
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[redacted sensitive text]',
+      omission: { source: 'mcp-projection', reason: 'sensitive' },
+    });
+    expect(JSON.stringify(finding)).not.toContain(sensitiveText);
+  });
+
+  it('keeps safe scalar evidence details exact', () => {
+    const finding = toMcpFinding({
+      ruleId: 'typo/placeholder-text', category: 'typo', severity: 'low', aiSpecific: false,
+      message: 'Placeholder text', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+        details: { field: 'placeholder', count: 1 },
+      },
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'exact',
+      snippet: 'placeholder="TODO"',
+      details: { field: 'placeholder', count: 1 },
+    });
+  });
+
+  it('marks wide evidence details as omitted with deterministic metadata', () => {
+    const details = Object.fromEntries(
+      Array.from({ length: 40 }, (_, index) => [`field-${String(index).padStart(2, '0')}`, index]),
+    );
+    const issue = {
+      ruleId: 'security/test', category: 'security' as const, severity: 'high' as const,
+      aiSpecific: false, message: 'Details', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span' as const, status: 'exact' as const, snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' }, details,
+      },
+    } as never;
+
+    const first = toMcpFinding(issue);
+    const second = toMcpFinding(issue);
+    expect(first.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[omitted evidence details]',
+      omission: {
+        source: 'mcp-projection', reason: 'details-dropped', detailsDropped: true, detailReason: 'key-limit',
+      },
+    });
+    expect((first.whyItFired.evidence as { details: Record<string, unknown> }).details).not.toHaveProperty('field-39');
+    expect(second.whyItFired.evidence).toEqual(first.whyItFired.evidence);
+
+    const combined = toMcpFinding({
+      ...issue,
+      evidence: { ...issue.evidence, snippet: 'prefix /tmp/private.ts' },
+    });
+    expect(combined.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: {
+        source: 'mcp-projection', reason: 'unsafe-path', detailsDropped: true, detailReason: 'key-limit',
+      },
+    });
+  });
+
+  it('marks deep and budget-exhausted evidence details as omitted', () => {
+    const deep = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Details', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+        details: { a: { b: { c: { d: { value: 'hidden' } } } } },
+      } as never,
+    });
+    expect(deep.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'details-dropped', detailReason: 'depth' },
+    });
+    expect(JSON.stringify(deep)).not.toContain('hidden');
+
+    const budgetDetails = Object.fromEntries(
+      Array.from({ length: 32 }, (_, index) => [`field-${index}`, 'safe-value-'.repeat(20)]),
+    );
+    const budget = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Details', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' }, details: budgetDetails,
+      } as never,
+    });
+    expect(budget.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'details-dropped', detailReason: 'budget' },
+    });
+  });
+
+  it.each([
+    ['nonfinite', { value: Number.NaN }, 'nonfinite'],
+    ['nonplain', { value: new Date('2026-01-01T00:00:00.000Z') }, 'unsupported'],
+  ] as const)('signals %s evidence detail drops', (_label, details, detailReason) => {
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Details', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' }, details,
+      } as never,
+    });
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'details-dropped', detailReason },
+    });
+  });
+
+  it('signals an invalid scalar or array evidence-details root instead of claiming exact', () => {
+    for (const details of ['scalar detail', ['array detail']] as const) {
+      const finding = toMcpFinding({
+        ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+        message: 'Details', line: 1, column: 1,
+        evidence: {
+          kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+          location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+          matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' }, details,
+        } as never,
+      });
+      expect(finding.whyItFired.evidence).toMatchObject({
+        status: 'omitted',
+        omission: { source: 'mcp-projection', reason: 'details-dropped', detailReason: 'unsupported' },
+      });
+    }
+  });
+
+  it('signals symbol-keyed detail drops instead of silently claiming exact', () => {
+    const symbol = Symbol('hidden-detail');
+    const details = { safe: 'kept', [symbol]: 'must-drop' };
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Details', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 18 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' }, details,
+      } as never,
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      omission: { source: 'mcp-projection', reason: 'details-dropped', detailReason: 'property' },
+      details: { safe: 'kept' },
+    });
+    expect(JSON.stringify(finding)).not.toContain('must-drop');
+  });
+
+  it('round-trips placeholder evidence through the slop_scan_file MCP boundary', async () => {
+    const dir = freshDir();
+    try {
+      writeFile(dir, 'src/Input.tsx', '<input placeholder="TODO" />');
+      const result = await handleToolCall(
+        'slop_scan_file',
+        { path: 'src/Input.tsx' },
+        {
+          cwd: dir,
+          rules: [],
+          config: { ...DEFAULT_CONFIG, include: ['src/**/*.tsx'], exclude: [], telemetry: false },
+        },
+      );
+
+      expect(result.isError).toBeFalsy();
+      const payload = JSON.parse(result.content[0]!.text) as {
+        issues: Array<{ ruleId: string; whyItFired?: Record<string, unknown> }>;
+      };
+      const issue = payload.issues.find((candidate) => candidate.ruleId === 'typo/placeholder-text');
+      expect(issue?.whyItFired).toMatchObject({
+        evidence: {
+          kind: 'matched-source-span',
+          status: 'exact',
+          snippet: 'placeholder="TODO"',
+          matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+        },
+      });
+      expect(JSON.stringify(issue)).not.toContain(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('uses deterministic fallback snippets for oversized or source-like evidence', () => {
+    const baseIssue = {
+      ruleId: 'typo/placeholder-text', category: 'typo' as const, severity: 'low' as const,
+      aiSpecific: false, message: 'Placeholder text', line: 1, column: 1,
+    };
+    const evidenceBase = {
+      location: {
+        start: { line: 1, column: 1 },
+        end: { line: 1, column: 10 },
+      },
+      matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+    };
+    const oversized = toMcpFinding({
+      ...baseIssue,
+      evidence: { kind: 'matched-source-span', status: 'exact', snippet: 'x'.repeat(513), ...evidenceBase },
+    });
+    const sourceLike = toMcpFinding({
+      ...baseIssue,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'const value = "secret";\nexport function leaked() {}',
+        ...evidenceBase,
+      },
+    });
+
+    expect(oversized.whyItFired.evidence).toMatchObject({
+      snippet: '[omitted oversized snippet]',
+    });
+    expect(sourceLike.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[omitted source-like snippet]',
+      omission: { source: 'mcp-projection', reason: 'source-like' },
+    });
+    const producerOmitted = toMcpFinding({
+      ...baseIssue,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'omitted',
+        ...evidenceBase,
+        omission: {
+          reason: 'oversized',
+          snippetChars: 600,
+          snippetBytes: 600,
+          valueChars: 580,
+          valueBytes: 580,
+        },
+      },
+    });
+    expect(producerOmitted.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[omitted oversized snippet]',
+      omission: { reason: 'oversized', snippetChars: 600, valueChars: 580 },
+    });
+    expect(oversized.whyItFired.evidence).toEqual(
+      toMcpFinding({
+        ...baseIssue,
+        evidence: { kind: 'matched-source-span', status: 'exact', snippet: 'x'.repeat(513), ...evidenceBase },
+      }).whyItFired.evidence,
+    );
+  });
+
+  it.each([
+    ['Python', 'def greet():\n    return "hello"'],
+    ['Rust', 'fn main() { println!("hello"); }'],
+    ['SQL', 'SELECT * FROM users;'],
+    ['shell', 'echo "hello"'],
+    ['C preprocessor', '#include <stdio.h>'],
+  ])('omits source-like evidence from %s syntax', (_language, snippet) => {
+    const finding = toMcpFinding({
+      ruleId: 'security/test', category: 'security', severity: 'high', aiSpecific: false,
+      message: 'Source-like evidence', line: 1, column: 1,
+      evidence: {
+        kind: 'matched-source-span', status: 'exact', snippet,
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: snippet.length } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+      },
+    });
+
+    expect(finding.whyItFired.evidence).toMatchObject({
+      status: 'omitted',
+      snippet: '[omitted source-like snippet]',
+      omission: { source: 'mcp-projection', reason: 'source-like' },
+    });
+    expect(JSON.stringify(finding)).not.toContain(snippet);
+  });
+
+  it('keeps the existing why-it-fired shape when an issue has no evidence', () => {
+    const finding = toMcpFinding({
+      ruleId: 'docs/broken-link', category: 'docs', severity: 'medium', aiSpecific: false,
+      message: 'Broken link', line: 3, column: 4,
+    });
+
+    expect(finding).toMatchObject({
+      ruleId: 'docs/broken-link',
+      category: 'docs',
+      severity: 'medium',
+      aiSpecific: false,
+      line: 3,
+      column: 4,
+      message: 'Broken link',
+      advice: undefined,
+    });
+    expect(finding.whyItFired).toEqual({
+      summary: 'Broken link',
+      location: { line: 3, column: 4 },
+      facts: null,
+    });
   });
 
   it('drops source-like, deeply nested, and oversized extras from MCP findings', () => {
@@ -398,6 +932,28 @@ describe('buildPatternInventory', () => {
       }
       const inv = await buildPatternInventory(dir, TEST_CONFIG, 2);
       expect(inv.scannedFiles).toBe(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('uses an exact deterministic candidate list without rediscovering excluded files', async () => {
+    const dir = freshDir();
+    try {
+      const selected = writeFile(dir, 'src/components/Button.tsx', '');
+      const laterSelected = writeFile(dir, 'src/components/ZDialog.tsx', '');
+      writeFile(dir, 'src/excluded/Dialog.tsx', '');
+
+      const inv = await buildPatternInventory(
+        dir,
+        TEST_CONFIG,
+        1,
+        [laterSelected, selected, selected],
+      );
+
+      expect(inv.scannedFiles).toBe(1);
+      expect(inv.patterns.button.map((pattern) => pattern.name)).toEqual(['Button']);
+      expect(inv.patterns.modal).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

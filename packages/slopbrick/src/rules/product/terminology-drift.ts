@@ -138,8 +138,8 @@ export const terminologyDriftRule = createRule<RuleContext>({
           message:
             `Component "${drifter.name}" looks like a variant of the canonical "${canonical.name}" ` +
             `(shared stem "${group.stem}"). ${group.variants.size} distinct surface forms across ` +
-            `the codebase — pick one and standardize. AI agents pick slightly different words each ` +
-            `invocation; product copy drifts as a result.`,
+            `the codebase — pick one and standardize. Consistent product vocabulary reduces ` +
+            `copy drift and keeps search, navigation, and user mental models coherent.`,
           filePath: drifter.file,
           line: drifter.line,
           column: 1,

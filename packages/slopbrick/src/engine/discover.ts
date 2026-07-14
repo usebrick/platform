@@ -8,6 +8,9 @@ import {
   frontendSourceExtensions,
   supportedExtensions,
 } from './language-support.js';
+import { sniffSourceExtension } from './source-sniff.js';
+
+export { sniffSourceExtension } from './source-sniff.js';
 
 export const SOURCE_EXTENSIONS = new Set(frontendSourceExtensions());
 
@@ -57,6 +60,22 @@ export interface DiscoveryResult {
 }
 
 /**
+ * Returns whether an absolute candidate path is excluded by the repository's
+ * self-scan policy. Kept at the selection boundary so every scanner can apply
+ * the same workspace-relative, dot-aware glob semantics without importing the
+ * worker runtime.
+ */
+export function isExcludedBySelfScan(
+  filePath: string,
+  cwd: string,
+  excludePaths: readonly string[] | undefined,
+): boolean {
+  if (!excludePaths || excludePaths.length === 0) return false;
+  const rel = relative(cwd, filePath).split(sep).join('/');
+  return excludePaths.some((pattern) => minimatch(rel, pattern, { dot: true }));
+}
+
+/**
  * Sniff the first 512 bytes of a file to guess its source-extension-less type.
  * Returns a synthetic extension (e.g. ".tsx") if the file looks like a known
  * source format, otherwise null. Used to scan files like the slopbrick
@@ -65,37 +84,13 @@ export interface DiscoveryResult {
  * Detection order is most-specific to least-specific.
  */
 export function sniffExtension(filePath: string): string | null {
-  let head: string;
+  let source: Buffer;
   try {
-    const buf = readFileSync(filePath);
-    head = buf.subarray(0, 512).toString('utf8').replace(/^\uFEFF/, '');
+    source = readFileSync(filePath);
   } catch {
     return null;
   }
-
-  // Vue SFC: <template> or <script setup>
-  if (/<template[\s>]/i.test(head) && /<script[\s>]/i.test(head)) return '.vue';
-  if (/^<script\s+setup/i.test(head)) return '.vue';
-
-  // Svelte: <script> ... </script> at top with svelte-specific syntax
-  if (/<script[\s>]/i.test(head) && /let\s+\w+\s*:\s*\w+/i.test(head)) return '.svelte';
-
-  // Astro: ---
-  if (/^---\s*$/m.test(head) && /<[A-Z][\w]*[\s>]/m.test(head)) return '.astro';
-
-  // HTML: starts with <!DOCTYPE or <html
-  if (/^<!doctype\s+html/i.test(head) || /^<html[\s>]/i.test(head)) return '.html';
-
-  // JSX/TSX: contains <Component or <Component.Props>
-  if (/<[A-Z][\w.]*[\s/>]/.test(head) && /\bimport\s+/.test(head)) return '.tsx';
-
-  // TS: type annotations like `: string`, `interface Foo`, `type Bar =`
-  if (/\b(interface\s+\w+|type\s+\w+\s*=)\b/.test(head)) return '.ts';
-
-  // JS: import or export statements
-  if (/^(import|export)\s+/m.test(head) || /\b(const|let|var)\s+\w+\s*=/.test(head)) return '.js';
-
-  return null;
+  return sniffSourceExtension(source);
 }
 
 /**

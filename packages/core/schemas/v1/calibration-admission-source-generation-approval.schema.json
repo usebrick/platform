@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-source-generation-approval.schema.json",
+  "title": "CalibrationAdmissionSourceGenerationApprovalV1",
+  "description": "Post-proposal approval bound to a pre-existing blind assignment, two decisions, and a post-decision blind receipt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "approvalId", "proposalId", "proposalSha256", "blindAssignmentId", "reviewerDecisionIds", "blindReviewReceiptId", "approvalSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-source-generation-approval-v1" },
+    "approvalId": { "$ref": "#/$defs/id" },
+    "proposalId": { "$ref": "#/$defs/id" },
+    "proposalSha256": { "$ref": "#/$defs/sha256" },
+    "blindAssignmentId": { "$ref": "#/$defs/sha256" },
+    "reviewerDecisionIds": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "blindReviewReceiptId": { "$ref": "#/$defs/sha256" },
+    "approvalSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

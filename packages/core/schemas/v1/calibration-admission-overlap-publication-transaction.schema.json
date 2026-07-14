@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-publication-transaction.schema.json",
+  "title": "AdmissionOverlapPublicationTransactionV1",
+  "description": "Recoverable state machine for publishing one immutable global overlap generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "invocationIntentId", "inputGenerationSha256", "universeSha256", "normalizerRegistrySha256", "overlapPolicySha256", "operation", "expectedCurrentState", "recoveryNonce", "generationStagingRelativePath", "currentGenerationTemporaryRelativePath", "currentGenerationFinalRelativePath", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-overlap-publication-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "inputGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "universeSha256": { "$ref": "#/$defs/sha256" },
+    "normalizerRegistrySha256": { "$ref": "#/$defs/sha256" },
+    "overlapPolicySha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "generationStagingRelativePath": { "$ref": "#/$defs/relativePath" },
+    "currentGenerationTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "currentGenerationFinalRelativePath": { "const": "review/admission/global/overlap/current-generation.json" },
+    "state": {
+      "oneOf": [
+        { "$ref": "#/$defs/basicState" },
+        { "$ref": "#/$defs/primaryOutputState" },
+        { "$ref": "#/$defs/toolReceiptState" },
+        { "$ref": "#/$defs/publishedState" }
+      ]
+    },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "generationSha256"], "properties": { "kind": { "const": "existing" }, "generationSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "primaryArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generationLocalRelativePath", "stagedRelativePath", "bytes", "sha256"],
+      "properties": {
+        "generationLocalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "stagedRelativePath": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stagedRelativePath", "finalRelativePath", "bytes", "sha256"],
+      "properties": {
+        "stagedRelativePath": { "$ref": "#/$defs/relativePath" },
+        "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "priorGenerationRelativePath": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "basicState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase"],
+      "properties": {
+        "phase": { "const": "intent_fsynced" }
+      }
+    },
+    "primaryOutputState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "primaryOutputSetSha256", "primaryArtifacts"],
+      "properties": {
+        "phase": { "const": "primary_outputs_staged_fsynced" },
+        "primaryOutputSetSha256": { "$ref": "#/$defs/sha256" },
+        "primaryArtifacts": { "type": "array", "maxItems": 65536, "items": { "$ref": "#/$defs/primaryArtifact" } }
+      }
+    },
+    "toolReceiptState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "primaryOutputSetSha256", "toolReceiptId", "toolReceiptSha256", "toolAuthorityIndexSha256"],
+      "properties": {
+        "phase": { "const": "tool_receipt_indexed" },
+        "primaryOutputSetSha256": { "$ref": "#/$defs/sha256" },
+        "toolReceiptId": { "$ref": "#/$defs/id" },
+        "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "publishedState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "primaryOutputSetSha256", "toolReceiptId", "toolReceiptSha256", "toolAuthorityIndexSha256", "nextGenerationSha256", "generationDirectoryFinalRelativePath", "artifactSetSha256", "generationArtifacts", "currentOutputProjections"],
+      "properties": {
+        "phase": { "enum": ["generation_directory_staged_fsynced", "generation_directory_promoted", "generations_parent_fsynced", "current_output_projections_staged_fsynced", "current_output_projections_promoted", "current_generation_promoted", "output_directories_fsynced", "complete"] },
+        "primaryOutputSetSha256": { "$ref": "#/$defs/sha256" },
+        "toolReceiptId": { "$ref": "#/$defs/id" },
+        "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" },
+        "nextGenerationSha256": { "$ref": "#/$defs/sha256" },
+        "generationDirectoryFinalRelativePath": { "$ref": "#/$defs/relativePath" },
+        "artifactSetSha256": { "$ref": "#/$defs/sha256" },
+        "generationArtifacts": { "type": "array", "maxItems": 65536, "items": { "$ref": "#/$defs/primaryArtifact" } },
+        "currentOutputProjections": { "type": "array", "maxItems": 65536, "items": { "$ref": "#/$defs/projection" } }
+      }
+    }
+  }
+}

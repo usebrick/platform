@@ -37,7 +37,7 @@ export const sqlConcatRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           'Template-literal SQL query with `${...}` interpolation — string ' +
-          'concatenation is a SQL injection vector and a common AI-generated smell.',
+          'concatenation is a SQL injection vector.',
         line: lineOfSource(source, m.index),
         column: 1,
         advice:

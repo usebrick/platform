@@ -11,6 +11,11 @@ describe('v10.3 synthetic bisection', () => {
     expect(outcomes).toEqual([{ fileId: 'a', status: 'success_zero' }, { fileId: 'b', status: 'success_findings', findingsCount: 2 }, { fileId: 'c', status: 'parse_failure' }]);
   });
 
+  it('records an explicit exclusion reason as a terminal outcome', async () => {
+    const outcomes = await executeSyntheticBisection(['a'], { chunkSize: 1, timeoutMs: 10, retryTimeoutMs: 20 }, async () => ({ a: { kind: 'excluded', exclusionReason: 'max_file_bytes' } }));
+    expect(outcomes).toEqual([{ fileId: 'a', status: 'excluded', exclusionReason: 'max_file_bytes' }]);
+  });
+
   it('bisects unstable chunks and retries a singleton once with a longer timeout', async () => {
     const calls: Array<{ ids: string[]; timeout: number }> = [];
     const outcomes = await executeSyntheticBisection(['a', 'b', 'c'], { chunkSize: 3, timeoutMs: 10, retryTimeoutMs: 20 }, async (ids, timeout) => {

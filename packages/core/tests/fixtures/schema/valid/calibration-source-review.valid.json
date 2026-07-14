@@ -1,0 +1,36 @@
+{
+  "version": "v10.3-source-review-v1",
+  "sourceId": "fixture-source",
+  "sourceKind": "material_source",
+  "contributesToAdditiveCounts": true,
+  "sourceRegisterEntrySha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "originEvidenceId": "origin-evidence",
+  "origin": {
+    "kind": "https",
+    "url": "https://example.test/fixture.git"
+  },
+  "materialization": {
+    "kind": "git",
+    "materializationId": "sbm_a601e832ffe58ab93f00a28156777d3edb56978f65fca4adf5e2cba68f2359ac",
+    "repositoryId": "repository-fixture",
+    "commitSha": "0000000000000000000000000000000000000000"
+  },
+  "sourceRights": {
+    "status": "reviewed",
+    "scope": "code",
+    "analysisUse": "approved",
+    "redistribution": "approved",
+    "thirdPartyChain": "complete",
+    "evidenceIds": ["origin-evidence"]
+  },
+  "inventory": {
+    "physicalMemberCount": 1,
+    "candidateCodeUnitCount": 1,
+    "inventorySha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "closedWorld": true
+  },
+  "reviewerDecisionIds": [],
+  "reviewedAt": "2026-07-13T00:00:00.000Z",
+  "decision": "source_quarantine",
+  "reasons": ["review_incomplete"]
+}

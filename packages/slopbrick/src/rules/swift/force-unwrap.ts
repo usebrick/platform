@@ -99,8 +99,7 @@ export const swiftForceUnwrapRule = createRule<SwiftForceUnwrapContext>({
           'or `guard let x = optional else { return }` instead of `x!`. ' +
           'A force-unwrap converts "the value might be nil" into "the program ' +
           'crashes if the value is nil" — in production that is a customer-facing ' +
-          'crash log. AI agents reach for `!` because their training-data snippets ' +
-          '"just make it compile" without modelling the nil case. Apple SwiftLint ' +
+          'crash log. Model the nil case explicitly. Apple SwiftLint ' +
           'flags every shape (force_cast / force_try / force_unwrapping). ' +
           'Reference: swift/force-unwrap v0.34.10 (refined: exclude ' +
           '`!` in `!==`/`!=` operators via negative lookbehind).',

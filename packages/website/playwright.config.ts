@@ -20,7 +20,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    // Astro 7 detects the Codex/agent environment and daemonizes `astro dev`.
+    // Playwright needs the server process attached for startup/teardown.
+    command: 'ASTRO_DEV_BACKGROUND=false pnpm dev',
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

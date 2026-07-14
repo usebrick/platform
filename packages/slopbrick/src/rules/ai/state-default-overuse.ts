@@ -88,15 +88,14 @@ export const aiStateDefaultOveruseRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `${useStateCount} \`useState\` calls, 0 \`useReducer\`, no state library ` +
-          `(Zustand/Jotai/Valtio/Recoil/Redux). ` +
-          `Sascha 2025: LLMs produce 2022-era patterns — \`useState\` is the ` +
-          `default even for state that should be \`useReducer\` or external.`,
+          `(Zustand/Jotai/Valtio/Recoil/Redux). Review state ownership, lifecycle, ` +
+          `and transition complexity before choosing a different primitive.`,
         line: 1,
         column: 1,
         advice:
-          'Consider whether the state should be a `useReducer` (multiple sub-values, complex transitions) ' +
-          'or an external state library (Zustand, Jotai, Valtio) when state is shared across components. ' +
-          `5+ \`useState\` in one component is a strong "AI didn't think about state architecture" signal.`,
+          'Use `useReducer` for multiple sub-values or complex transitions, or an external state library ' +
+          '(Zustand, Jotai, Valtio) when state is shared across components. Keep several `useState` calls ' +
+          'when local ownership and simple transitions make that clearer.',
       },
     ];
   },

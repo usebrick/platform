@@ -94,12 +94,12 @@ export const aiTextLikeRatioRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `Prose-like lines account for ${(ratio * 100).toFixed(0)}% of non-comment lines ` +
-          `(${proseLike}/${total}). Yotkova 2026: AI code embeds natural-language explanations ` +
-          `as part of the source file at a much higher rate than human code.`,
+          `(${proseLike}/${total}). This source-text statistic can also reflect ` +
+          `documentation examples or embedded content; it is not authorship proof.`,
         line: 1,
         column: 1,
         advice:
-          'Move natural-language explanations to README files or doc comments. Inline prose in source code is hard to maintain and suggests AI-generated boilerplate.',
+          'Separate explanatory prose from executable logic when appropriate; use documentation or content/i18n modules for text that belongs there. Keep user-facing strings where the product needs them.',
       },
     ];
   },

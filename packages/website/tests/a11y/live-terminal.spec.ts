@@ -23,7 +23,7 @@ test('LiveTerminal: help command prints the command list', async ({ page }) => {
   await type(page, 'help');
   await page.keyboard.press('Enter');
   await expect(term).toHaveAttribute('data-command-complete', 'help', { timeout: 20_000 });
-  await expect(term.locator('text=available commands (v0.43.0; latest published)')).toBeVisible();
+  await expect(term.locator('text=available commands (v0.44.0 workspace build)')).toBeVisible();
   await expect(term.locator('text=slopbrick scan')).toBeVisible();
 });
 

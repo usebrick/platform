@@ -1,9 +1,20 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { hashContent, loadCached, saveCached, clearCache, cacheStats } from '../../src/engine/cache';
-import type { ScanFacts } from '../../src/types';
+import {
+  cacheStats,
+  clearCache,
+  hashConfig,
+  hashContent,
+  loadCached,
+  saveCached,
+  validateBaseline,
+} from '../../src/engine/cache';
+import { DEFAULT_CONFIG } from '../../src/config/defaults';
+import { VERSION } from '../../src/types';
+import type { BaselineCache, ResolvedConfig, ScanFacts } from '../../src/types';
 
 const fakeFacts: ScanFacts = {
   filePath: '/foo/bar.tsx',
@@ -28,6 +39,26 @@ const fakeFacts: ScanFacts = {
     templateClassNames: [],
   },
 };
+
+function baseline(overrides: Partial<BaselineCache> = {}): BaselineCache {
+  return {
+    version: VERSION,
+    config_hash: 'config-a',
+    git_head: 'head-a',
+    baseline_created: '2026-07-12T00:00:00.000Z',
+    baseline_revision: 1,
+    totalComponentCount: 0,
+    scores: {},
+    ...overrides,
+  };
+}
+
+const [currentMajor = 0, currentMinor = 0, currentPatch = 0] = VERSION
+  .split('.')
+  .map((part) => Number.parseInt(part, 10));
+const minorMismatchVersion = `${currentMajor}.${currentMinor + 1}.${currentPatch}`;
+const patchMismatchVersion = `${currentMajor}.${currentMinor}.${currentPatch + 1}`;
+const majorMismatchVersion = `${currentMajor + 1}.${currentMinor}.${currentPatch}`;
 
 describe('engine/cache', () => {
   let dir: string;
@@ -96,5 +127,106 @@ describe('engine/cache', () => {
     const corruptedPath = join(cacheRoot, `${hashContent('bad')}.json`);
     writeFileSync(corruptedPath, 'this is not json {{{');
     expect(loadCached(dir, 'bad')).toBeNull();
+  });
+});
+
+describe('baseline config identity', () => {
+  it('invalidates the legacy unsalted default hash before minor-version migration', () => {
+    // Legacy hashConfig omitted selection fields and salted nothing. With all
+    // other defaults stripped, its canonical default payload was exactly `{}`.
+    const legacyUnsaltedDefaultHash = createHash('sha256')
+      .update(JSON.stringify({}))
+      .digest('hex');
+    const currentDefaultHash = hashConfig(DEFAULT_CONFIG);
+
+    expect(currentDefaultHash).not.toBe(legacyUnsaltedDefaultHash);
+    expect(validateBaseline(
+      baseline({
+        version: minorMismatchVersion,
+        config_hash: legacyUnsaltedDefaultHash,
+      }),
+      currentDefaultHash,
+      'head-a',
+    )).toEqual({ valid: false, reason: 'config_hash mismatch' });
+  });
+
+  it('changes when include, exclude, or selfScan selection policy changes', () => {
+    const restricted: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      include: ['src/**/*.ts'],
+      exclude: ['src/generated/**'],
+      selfScan: { excludePaths: ['src/meta/**'] },
+    };
+    const restrictedHash = hashConfig(restricted);
+    const changedPolicies: ResolvedConfig[] = [
+      { ...restricted, include: [...restricted.include, 'tests/**/*.ts'] },
+      { ...restricted, exclude: [] },
+      { ...restricted, selfScan: { excludePaths: [] } },
+    ];
+
+    for (const changed of changedPolicies) {
+      expect(hashConfig(changed)).not.toBe(restrictedHash);
+    }
+  });
+
+  it('keeps default stripping and deterministic hashing intact', () => {
+    const explicitDefaults: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      include: [...DEFAULT_CONFIG.include],
+      exclude: [...DEFAULT_CONFIG.exclude],
+      selfScan: undefined,
+    };
+
+    expect(hashConfig(explicitDefaults)).toBe(hashConfig(DEFAULT_CONFIG));
+    expect(hashConfig(explicitDefaults)).toBe(hashConfig(explicitDefaults));
+  });
+});
+
+describe('baseline validation ordering', () => {
+  it.each([minorMismatchVersion, patchMismatchVersion])(
+    'does not let version migration for %s bypass config identity',
+    (version) => {
+      expect(validateBaseline(
+        baseline({ version }),
+        'config-b',
+        'head-a',
+      )).toEqual({ valid: false, reason: 'config_hash mismatch' });
+    },
+  );
+
+  it.each([minorMismatchVersion, patchMismatchVersion])(
+    'does not let version migration for %s bypass Git identity',
+    (version) => {
+      expect(validateBaseline(
+        baseline({ version }),
+        'config-a',
+        'head-b',
+      )).toEqual({ valid: false, reason: 'git_head mismatch' });
+    },
+  );
+
+  it.each([minorMismatchVersion, patchMismatchVersion])(
+    'accepts matching config and Git identity for %s with a migration warning',
+    (version) => {
+      expect(validateBaseline(
+        baseline({ version }),
+        'config-a',
+        'head-a',
+      )).toEqual({
+        valid: true,
+        warning: `baseline minor/patch version mismatch (${version} vs ${VERSION}); migrating`,
+      });
+    },
+  );
+
+  it('keeps a major version mismatch invalid', () => {
+    expect(validateBaseline(
+      baseline({ version: majorMismatchVersion }),
+      'config-a',
+      'head-a',
+    )).toEqual({
+      valid: false,
+      reason: `baseline major version mismatch (${majorMismatchVersion} vs ${VERSION})`,
+    });
   });
 });

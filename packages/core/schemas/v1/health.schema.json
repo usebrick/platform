@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/v1/health.schema.json",
   "title": "Repository Structure \u2014 Health",
-  "description": "Repository health snapshot from a single slopbrick scan. v5 (v0.21.0) FLIPS the aiSlopScore semantics: it now stores the raw amount of AI slop (0 = no AI slop, 100 = max AI slop, higher = worse), matching the natural reading of the name. The v0.15\u20130.20.1 inversion (100 = good) was confusing \u2014 users read 'AI Slop Score: 100' as '100% slop'. aiQuality (v0.15\u20130.20.0 alias) removed because semantics are now MEANINGFULLY DIFFERENT (old aiQuality: 70 = 70 cleaner, new aiSlopScore: 70 = 70% slop). engineeringHygiene, security, repositoryHealth unchanged (still 'higher = better'; the composite inverts aiSlopScore at the call site).",
+  "description": "Repository health snapshot from a completed or partial slopbrick scan. The canonical four fields are aiSlopScore (0\u2013100, lower is better), engineeringHygiene (0\u2013100, higher is better), security (0\u2013100, higher is better), and repositoryHealth (0\u2013100, higher is better). Repository Health is 0.4 \u00d7 (100 \u2212 aiSlopScore) + 0.3 \u00d7 engineeringHygiene + 0.2 \u00d7 security + 0.1 \u00d7 testQuality. Scores are rounded to nearest integer in this health snapshot; JSON/SARIF retain full precision and human renderers show one decimal. An empty or not-applicable scan is represented by the score-free scan-report envelope, not by this health artifact.",
   "type": "object",
   "required": [
     "version",
@@ -34,7 +34,7 @@
       "maximum": 100
     },
     "engineeringHygiene": {
-      "description": "v0.15.0: engineering hygiene score (0-100, higher is better). Code organization, naming, dead code, complexity, test coverage, type safety.",
+      "description": "Canonical engineering hygiene score (0-100, higher is better): 100 minus the mean bounded burden across effective arch, logic, layout, visual, component, and test categories.",
       "type": "integer",
       "minimum": 0,
       "maximum": 100
@@ -46,7 +46,7 @@
       "maximum": 100
     },
     "repositoryHealth": {
-      "description": "v0.15.0: repository health composite (0-100, higher is better). The v3 replacement for the headline slopIndex. Weighted blend of the three scores above.",
+      "description": "Canonical repository health composite (0-100, higher is better): 0.4 × (100 − aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality. The score is rounded to nearest integer in health.json.",
       "type": "integer",
       "minimum": 0,
       "maximum": 100

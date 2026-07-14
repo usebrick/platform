@@ -48,8 +48,10 @@ on every scan — your repository, encoded for the next agent.
 
 **Status:** v0.43.0 is the latest published release; v0.44.0 is an unreleased
 trust-restoration candidate. The published train has 103 rules in 22
-categories, 4 headline scores, and v10 calibration against 576,750 real files.
-See [CHANGELOG](./CHANGELOG.md) for the full release notes.
+categories and 4 headline scores. Its 576,750-file v10.1 result is historical
+evidence, not current v10.3 admission or release evidence; the candidate's
+provenance gates remain open. See [CHANGELOG](./CHANGELOG.md) for the full
+release notes.
 
 ---
 
@@ -103,6 +105,13 @@ is **0–9 no slop**, **10–29 low**, **30–49 medium**, **50–69 high**,
 `src/report/pretty.ts`.
 
 The same numbers live in `.slopbrick/health.json`.
+
+`assemblyHealth` (the inverse of `aiSlopScore`) and `totalScore` remain on the
+internal `ProjectReport` for compatibility with historical telemetry and
+fixtures. They are not canonical scores, never participate in gating, and
+human reports do not render an Assembly Health headline. `totalScore` is
+omitted from current JSON output; complete-report JSON retains
+`assemblyHealth` for wire compatibility.
 
 For the full math, the 4-score quadrant, and which one to focus on, see
 [`docs/scoring-explained.md`](./docs/scoring-explained.md).
@@ -177,6 +186,12 @@ and is gated by `--no-telemetry` (default ON, opt-out per-run
 or via `config.telemetry = false`). The new beacon is gated by
 `--report-usage` + `SLOPBRICK_TELEMETRY_ENDPOINT` (default OFF).
 
+`--no-telemetry` disables only the local flywheel; it does not make a
+scan read-only. Repository project-memory artifacts such as
+`.slopbrick/inventory.json`, `health.json`, and `structure.md` are still
+written. Set `projectMemory: false` in `slopbrick.config.mjs` to disable
+those project-memory writes.
+
 See [`docs/research/beacon-design.md`](./docs/research/beacon-design.md)
 for the full design doc, threat model, and OPSEC requirements
 for the receiver.
@@ -219,7 +234,7 @@ Repo is low (25/100). The biggest problem is AI patterns — worst file is packa
 | Understand the 4-score model (AI Slop Score, Engineering Hygiene, Security, Repository Health) | [`docs/scoring-explained.md`](./docs/scoring-explained.md) |
 | Connect Claude Code / Cursor / Copilot | [`docs/MCP.md`](./docs/MCP.md) |
 | See the 4 `.slopbrick/` artifacts (structure, inventory, ...) | [`docs/repository-structure.md`](./docs/repository-structure.md) |
-| See the 103 rules (per-rule descriptions + citations) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
+| See the current 119-rule workspace catalog (published v0.43.0: 103) | [`docs/rule-catalog.md`](./docs/rule-catalog.md) |
 | See language discovery, parsing, rules, and calibration scope | [`docs/language-support-matrix.md`](./docs/language-support-matrix.md) |
 | See how the engine works (parser → facts → rules) | [`docs/architecture.md`](./docs/architecture.md) |
 | See which frameworks are supported | [`docs/framework-parity-matrix.md`](./docs/framework-parity-matrix.md) |
@@ -240,9 +255,9 @@ The 19 subcommands are auto-generated from commander and run
 npm install -D slopbrick
 ```
 
-Requires Node 20+ (verified by `slopbrick doctor`). The package ships
+Requires Node.js 22 or 24 (verified by `slopbrick doctor`). The package ships
 ESM + CJS dual builds, TypeScript types, and is published to npm as
-`slopbrick`.
+`slopbrick`. CI verifies the packed tarball on both supported release lines.
 
 For the MCP server, add to your AI agent's config:
 

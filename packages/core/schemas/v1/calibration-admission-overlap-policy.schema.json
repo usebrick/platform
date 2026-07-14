@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-policy.schema.json",
+  "title": "AdmissionOverlapPolicyV1",
+  "description": "Frozen resource and exact-similarity policy for the v10.3 global overlap authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "method", "maxUnitBytes", "maxShardBytes", "maxOpenFiles", "maxHeapBytes", "maxRssBytes", "maxWorkBytes", "maxWallMilliseconds", "policySha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-overlap-policy-v1" },
+    "method": { "const": "prefix-filter-exact-jaccard-0.80-v1" },
+    "maxUnitBytes": { "const": 33554432 },
+    "maxShardBytes": { "const": 67108864 },
+    "maxOpenFiles": { "const": 64 },
+    "maxHeapBytes": { "const": 4294967296 },
+    "maxRssBytes": { "const": 6442450944 },
+    "maxWorkBytes": { "const": 214748364800 },
+    "maxWallMilliseconds": { "const": 86400000 },
+    "policySha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

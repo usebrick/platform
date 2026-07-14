@@ -1,0 +1,14 @@
+{
+  "version": "v10.3-admission-overlap-publication-lock-v1",
+  "lockId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "intendedTransactionId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "invocationIntentId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "inputGenerationSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "universeSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "normalizerRegistrySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "overlapPolicySha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "operation": "create",
+  "expectedCurrentState": { "kind": "absent" },
+  "recoveryNonce": "3333333333333333333333333333333333333333333333333333333333333333",
+  "lockSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+}

@@ -1,7 +1,11 @@
 # usebrick — Architecture & Functional Reference
 
 **Date**: 2026-06-26
-**Status**: v0.20.0 shipped (v0.15 rebrand + v0.16 4-score completion + v0.17 quality/coverage + v0.18–v0.20 rule expansion + R-INVERTED)
+**Status**: Historical architecture reference. The latest verified public release is
+`slopbrick@0.43.0`; the workspace contains an unreleased `0.44.0` candidate
+(119 rules across 27 categories). The v10.3 corpus/admission and release gates
+remain open; use [`packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md`](../packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md)
+for current execution truth.
 **Author**: dystx (with Kimi Code CLI)
 **Source of truth for future changes**: `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` + `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md`
 
@@ -22,7 +26,7 @@ usebrick is **not** an LLM-memory product. It does not embed code, does not chat
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | shipped as `slopbrick@0.38.0` on npm (103 rules, v10-calibrated against 576,750 files) |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | latest verified public release `slopbrick@0.43.0` (103 rules); the workspace `0.44.0` candidate has 119 rules across 27 categories |
 | **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
 
@@ -59,7 +63,7 @@ platform/
 │   ├── core/                  @usebrick/core (private, workspace-only)
 │   ├── slopbrick/             slopbrick (published as `slopbrick`)
 │   ├── engine/                @usebrick/engine (private, workspace-only, NEW in v0.15.0)
-│   └── website/               @usebrick/website (private, deployed to Cloudflare Pages)
+│   └── website/               @usebrick/website (private, prepared for Cloudflare Pages; live ownership unverified)
 ├── docs/
 │   ├── architecture.md         this file
 │   ├── update-summary.md       v0.14.5 → v0.17.0 changelog (v0.15 + v0.16 + v0.17)
@@ -127,13 +131,14 @@ The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick
 - `slopbrick calibrate` — (research) run the calibration pipeline against the corpus
 - `slopbrick migrate` — migrate v1 (`.slop-audit/`) projects to v2 (`.slopbrick/`)
 
-**Source layout** (v0.15.0):
+**Source layout** (v0.15.0 historical snapshot; current registry counts and
+MCP tools are maintained in the package docs):
 - `src/cli/` — 19 command modules, plus `program.ts` (Commander wiring) and `scan.ts` (451 lines after the v0.15.0 extraction)
 - `packages/engine/src/` — the 30+ pure-function modules (parser, structure.ts, lr-combiner, scoring, visitors). Extracted from `slopbrick/src/engine/` in v0.15.0; now a workspace-only package, no I/O, no `console.log`, reusable from CLI / MCP / future web IDEs.
-- `src/rules/` — 103 rules in 24 categories (v0.38.0+; v0.37.0 had 140, v0.38.0 deleted 37 v10-DORMANT rules)
+- `src/rules/` — current workspace registry: 119 rules in 27 categories; the published v0.43.0 train remains 103 rules in 22 categories, while the older v0.38.0 snapshot had 103 in 24
 - `src/rules/builtins.ts` — auto-generated registry of all rules (rebuilt by `pnpm generate:rules`)
-- `src/rules/signal-strength.json` — the v8.5 + v10 calibration data (v0.36.0+; v10 added 576,750-file paired Wilcoxon verdicts)
-- `src/mcp/` — MCP server exposing `slop_suggest`, `slop_suggest_with_structure` (was `slop_suggest_with_memory` pre-v0.15.0), `slop_check_constitution`, `slop_find_similar`
+- `src/rules/signal-strength.json` — historical v8.5/v10 calibration metadata; the v10.1 576,750-file result is not current v10.3 admission evidence
+- `src/mcp/` — current MCP server exposing the seven canonical tools documented in [`packages/slopbrick/docs/MCP.md`](../packages/slopbrick/docs/MCP.md)
 - `src/types.ts` — public types
 - `src/config/` — config validation, defaults
 - `src/research/` — the calibration flywheel (candidates, generator, prompts, provider) — kept in `slopbrick` because it's I/O-bound and CLI-tied, not the pure engine
@@ -158,15 +163,20 @@ already have source text. No engine path calls `console.log` or `process.exit`.
 
 **v0.15.0 build dependency**: `slopbrick` imports `@usebrick/engine` (instead of `src/engine/`).
 
-### 4.4 `@usebrick/website` (workspace-only, deployed to GitHub Pages)
+### 4.4 `@usebrick/website` (workspace-only, prepared for Cloudflare Pages)
 
 The [usebrick.dev](https://usebrick.dev) marketing site. Lives at `packages/website/`.
+The repository contains a static build and deployment configuration, but the
+currently reachable site is not treated as release evidence until its owner
+and deployed commit SHA are independently verified.
 
-**Stack** (per AGENTS.md "library-first" principle): Astro 4.16 (static, no framework) + Lenis smooth scroll + GSAP 3.12 (per-tool-card shake) + @tabler/icons-webfont + custom WebGL fragment shader for the hero.
+**Current stack**: Astro 7 (static, no framework) + `@tabler/icons-webfont` +
+native browser APIs (Web Animations API and `IntersectionObserver`). The current
+source intentionally does not claim Lenis, GSAP, or a WebGL hero.
 
 **Sections** (all static HTML, no React/Vue/Svelte):
 - **Nav** — fixed translucent bar, 4 anchor links
-- **Hero** — full-bleed WebGL brick wall, terracotta prompt, copy-to-clipboard install command
+- **Hero** — static brick surface, terracotta prompt, copy-to-clipboard install command
 - **Tools** — 4 tool cards (pickbrick, mendbrick, slopbrick, core), click-to-break animation on click
 - **Compare** — usebrick vs everything else, terminal preview
 - **Calibration** — 4 stats that count up on reveal
@@ -178,7 +188,9 @@ The [usebrick.dev](https://usebrick.dev) marketing site. Lives at `packages/webs
 - Terracotta `#dc4a26` (accent — the brick color)
 - Running-bond brick pattern overlays on hero, calibration, CTA
 
-**v0.15.0 shipped**: update copy to "Repository Structure Platform" (Hero, Compare, CTA, Footer, tagline, title, meta). Add skip-to-content link, button role on tool cards, axe-core in CI. WebGL context cleanup. LowPowerDetector.
+The historical v0.15.0 design notes above are retained for context. Current
+accessibility behavior is covered by the Website unit and Playwright/axe
+suites; deployment and live-commit verification remain separate gates.
 
 ---
 
@@ -324,9 +336,13 @@ A single combined Slop Score would hide that distinction. Two numbers + a compos
 
 ---
 
-## 9. The MCP server
+## 9. The MCP server (historical migration notes)
 
-The slopbrick CLI also ships an MCP server (Model Context Protocol — for AI editor integration). 4 tools:
+The slopbrick CLI also ships an MCP server (Model Context Protocol — for AI
+editor integration). The current registry exposes **7 canonical tools**;
+the four-tool table below is retained only as the v0.15.0 migration snapshot.
+See [`packages/slopbrick/docs/MCP.md`](../packages/slopbrick/docs/MCP.md) for
+the normative current names and contracts.
 
 | Tool (current) | Tool (v0.15.0) | Purpose |
 |----------------|---------------|---------|
@@ -371,7 +387,7 @@ The corpus is referenced (but not vendored) by `signal-strength.json` via rule I
 - `slopbrick` — published on npm. Bumps patch for fixes, minor for new scores/rules, **major for breaking scan output or schema changes** (v0.15.0 = major).
 - `@usebrick/core` — workspace-only. No published version.
 - `@usebrick/engine` — workspace-only. New in v0.15.0. Tracks slopbrick version in lock-step.
-- `@usebrick/website` — workspace-only. Deployed to GitHub Pages on `main` when `packages/website/**` changes.
+- `@usebrick/website` — workspace-only. Prepared for Cloudflare Pages; a live deployment is not release evidence until the deployed commit SHA and owner are verified.
 
 ### v0.15.0 release plan
 

@@ -1,0 +1,14 @@
+{
+  "version": "v10.3-admission-normalizers-v1",
+  "entries": [
+    {
+      "language": "TypeScript",
+      "normalizerId": "normalizer-typescript-v1",
+      "implementationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "fixturesSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "utf8Policy": "strict",
+      "shingleSize": 5
+    }
+  ],
+  "registrySha256": "e1cd74f8d037d9a89cb1808c55f78c4bd65e862508f5b37c70ad0e5575e61141"
+}

@@ -66,7 +66,7 @@ Defined in `global.css` as `--space-1` through `--space-20`. Use the token, neve
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | Default (CSS + GSAP) |
+| `--ease-out` | `cubic-bezier(0.16, 1, 0.3, 1)` | Default CSS easing |
 | `--ease-in-out` | `cubic-bezier(0.4, 0, 0.2, 1)` | Symmetric motion |
 
 ### Shadows (warm-tinted to fit the brick palette)
@@ -93,7 +93,7 @@ CSS custom properties:
 ## Component Patterns
 
 - **Nav** — fixed translucent bar at top, `backdrop-filter: blur(8px)`, terracotta border on the brand `/`
-- **Hero** — full-bleed WebGL canvas + content above. The terracotta `t-prompt` ($) is the visual anchor.
+- **Hero** — CSS brick surface + content above. The terracotta `t-prompt` ($) is the visual anchor.
 - **Tool cards** — `.tool-card` with click-to-break animation. Button role, keyboard accessible.
 - **Terminal** — `.terminal` with 3 dots + monospace body. The terracotta `$` prompt is the brand.
 - **Compare** — 2-column grid. Yay column has terracotta border + faint gradient. Nay column has strikethrough text.
@@ -102,19 +102,19 @@ CSS custom properties:
 
 The components live in `packages/website/src/components/`:
 
-- `Nav.astro`, `Hero.astro`, `ToolCard.astro`, `Tools.astro`
+- `Nav.astro`, `Hero.astro`, `Tools.astro`, `LiveTerminal.astro`
 - `Compare.astro`, `Calibration.astro`, `CTASection.astro`
-- `Terminal.astro`, `Footer.astro`, `BrickShader.astro` (the WebGL background)
+- `Footer.astro`, `StructureDemo.astro`, `TrustStrip.astro`
 
 ## Interaction Scripts
 
 All client-side scripts in `packages/website/src/scripts/`:
 
-- `lenis.ts` — Lenis smooth-scroll provider
-- `brick-shader.ts` — WebGL canvas (the running-bond brick background)
 - `break-on-hover.ts` — click-to-break animation on tool cards
 - `counter.ts` — counting animation for calibration stats
-- `reveal.ts` — IntersectionObserver reveal-on-scroll
+- `scroll-reveal.ts` — IntersectionObserver reveal-on-scroll
+- `structure-demo.ts` — IntersectionObserver structure demo
+- `live-terminal.ts` — deterministic terminal animation
 - `copy-install.ts` — copy-to-clipboard for the install command
 
 ## Accessibility

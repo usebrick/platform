@@ -73,8 +73,8 @@ export const aiAnyDensityRule = createRule<RuleContext>({
         message:
           `\`any\` density is ${(ratio * 100).toFixed(0)}% of declarations ` +
           `(${anyCount} \`any\` / ${declCount} declarations). ` +
-          `Lee, Hassan, Hindle (MSR 2026): AI agents introduce \`any\` at 9× ` +
-          `human rate as a type-safety escape hatch.`,
+          `High \`any\` density is a type-safety escape hatch; review whether each ` +
+          `annotation has a precise type and a documented reason.`,
         line: 1,
         column: 1,
         advice:

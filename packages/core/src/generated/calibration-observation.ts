@@ -18,6 +18,29 @@ export type HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson = {
   findingsCount?: number;
   exclusionReason?: string;
   failureCode?: string;
+  ruleEvidence?: {
+    ruleId: string;
+    category:
+      | "visual"
+      | "typo"
+      | "wcag"
+      | "layout"
+      | "component"
+      | "logic"
+      | "arch"
+      | "perf"
+      | "security"
+      | "test"
+      | "docs"
+      | "db"
+      | "ai"
+      | "context"
+      | "product"
+      | "i18n";
+    aiSpecific: boolean;
+    severity: "low" | "medium" | "high";
+    count: number;
+  }[];
 } & (
   | {
       status: "success_findings";
@@ -36,11 +59,13 @@ export type HttpsUsebrickDevSchemasV1CalibrationObservationSchemaJson = {
       findingsCount?: never;
       exclusionReason: string;
       failureCode?: never;
+      ruleEvidence?: never;
     }
   | {
       status: "parse_failure" | "timeout" | "scanner_failure";
       findingsCount?: never;
       exclusionReason?: never;
       failureCode: string;
+      ruleEvidence?: never;
     }
 );

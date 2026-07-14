@@ -6,6 +6,7 @@ import type { CliGlobalOptions } from '../scan.js';
 import { runBusinessLogicScan, formatBusinessLogicScan, businessLogicExitCode } from '../business-logic';
 import type { BusinessLogicFormat } from '../business-logic';
 import { parseCount } from '../options.js';
+import { renderInvalidScan } from './_shared.js';
 
 /**
  * v0.18.x (R-H1): business-logic subcommand extracted from cli/program.ts.
@@ -37,7 +38,17 @@ export function registerBusinessLogic(program: Command): void {
               : 'text';
 
           const cwd = resolve(options.workspace ?? process.cwd());
-          const { config } = await runScan({ ...options, workspace: cwd });
+          const { config, report } = await runScan({ ...options, workspace: cwd });
+          const invalidExitCode = renderInvalidScan(
+            report,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (invalidExitCode !== undefined) {
+            process.exit(invalidExitCode);
+            return;
+          }
           const result = await runBusinessLogicScan(cwd, config, {
             maxFiles: cmdOptions.maxFiles,
           });

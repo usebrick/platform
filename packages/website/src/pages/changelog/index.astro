@@ -1,0 +1,54 @@
+---
+import Base from '../../layouts/Base.astro';
+import Footer from '../../components/Footer.astro';
+import productFacts from '../../data/product-facts.json';
+---
+
+<Base title="Changelog — usebrick.dev" description="Release history and candidate status for SlopBrick.">
+  <main id="top" class="changelog-page">
+    <article class="changelog-page__content">
+      <a class="changelog-page__back" href="/">← usebrick.dev</a>
+      <p class="changelog-page__eyebrow">release history</p>
+      <h1>Candidate facts, published separately.</h1>
+      <p>
+        The workspace candidate is <strong>v{productFacts.candidate.version}</strong>;
+        the latest verified npm release is <strong>v{productFacts.published.version}</strong>.
+        Read the canonical changelog for the exact files, tests, and release gates.
+      </p>
+      <a class="btn btn--primary" href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/CHANGELOG.md" rel="noopener noreferrer">Open the canonical changelog</a>
+    </article>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .changelog-page {
+    min-height: calc(100vh - 12rem);
+    padding: clamp(4rem, 10vw, 9rem) max(1.25rem, 6vw);
+  }
+  .changelog-page__content {
+    max-width: 52rem;
+    margin: 0 auto;
+  }
+  .changelog-page__back,
+  .changelog-page__eyebrow {
+    color: var(--text-accent);
+  }
+  .changelog-page__eyebrow {
+    margin-top: var(--space-12);
+    font: 600 0.8rem/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .changelog-page h1 {
+    max-width: 14ch;
+    margin: var(--space-4) 0 var(--space-6);
+    font: 600 clamp(2.4rem, 7vw, 5rem)/1.03 var(--font-display);
+  }
+  .changelog-page p {
+    max-width: 58ch;
+    margin-bottom: var(--space-8);
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+  }
+</style>

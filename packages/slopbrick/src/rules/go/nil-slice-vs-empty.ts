@@ -84,8 +84,8 @@ export const goNilSliceVsEmptyRule = createRule<GoNilSliceVsEmptyContext>({
         column: 1,
         advice:
           'Either declare as `var ' + name + ' = []int{}` or assign ' +
-          'with `make([]int, 0)`. The nil/empty inconsistency is an ' +
-          'AI signal — real code picks one form and sticks with it. ' +
+          'with `make([]int, 0)`. Choose nil/empty semantics from the ' +
+          'API contract and use one consistent convention within the package. ' +
           'Reference: go/nil-slice-vs-empty v0.19.',
       });
     }

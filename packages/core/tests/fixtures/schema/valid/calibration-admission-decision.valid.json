@@ -1,0 +1,12 @@
+{
+  "version": "v10.3-admission-decision-v1",
+  "decisionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "target": { "kind": "source", "sourceId": "source-a" },
+  "reviewerId": "reviewer-a",
+  "reviewerRoles": ["authorship", "rights"],
+  "evidenceIds": ["evidence-a"],
+  "blindAssignmentId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "result": { "kind": "admission", "proposedLabel": "quarantine", "humanEditStatus": "unknown", "disposition": "quarantine" },
+  "reasons": [],
+  "decidedAt": "2026-07-13T00:00:00.000Z"
+}

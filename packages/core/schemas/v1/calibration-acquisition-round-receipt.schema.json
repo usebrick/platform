@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-round-receipt.schema.json",
+  "title": "CalibrationAcquisitionRoundReceiptV1",
+  "description": "Post-acquisition round receipt proving the exact one- or two-source set, orchestrator authority, and cumulative byte cap.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "roundId", "parentCensusSha256", "sourceReceiptSha256s", "sourceInvocationIntentIds", "sourceProfileSha256s", "sourceToolReceiptSha256s", "orchestratorInvocationIntentId", "orchestratorToolReceiptId", "orchestratorToolReceiptSha256", "toolAuthoritySnapshot", "acquiredSourceCount", "totalMaterializedBytes", "withinAuthorizedCountAndBytes", "receiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-round-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "roundId": { "$ref": "#/$defs/sha256" },
+    "parentCensusSha256": { "$ref": "#/$defs/sha256" },
+    "sourceReceiptSha256s": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "sourceInvocationIntentIds": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "sourceProfileSha256s": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" } },
+    "sourceToolReceiptSha256s": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "orchestratorInvocationIntentId": { "$ref": "#/$defs/sha256" },
+    "orchestratorToolReceiptId": { "$ref": "#/$defs/sha256" },
+    "orchestratorToolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "toolAuthoritySnapshot": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-authority-snapshot.schema.json" },
+    "acquiredSourceCount": { "enum": [1, 2] },
+    "totalMaterializedBytes": { "type": "integer", "minimum": 0, "maximum": 5368709120 },
+    "withinAuthorizedCountAndBytes": { "const": true },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

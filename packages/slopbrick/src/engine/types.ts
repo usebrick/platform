@@ -236,9 +236,30 @@ export interface ScanFactsV2 {
    * non-Rust files. Powers the four `rust/*` rules (unused-pub-fn,
    * unwrap-in-production, todo-macro, stringly-typed). */
   rustFile?: RustFileRecord;
+  /**
+   * Definite wildcard CORS configurations proven by the full SWC AST.
+   * Absent for blank framework modules and unsupported source dialects.
+   * The dangerous-cors rule intentionally consumes this typed evidence
+   * instead of inspecting `_source` so prose, comments, and display data
+   * cannot become findings.
+   */
+  dangerousCors?: DangerousCorsFact[];
+  /**
+   * Exact JS-family comment-line count derived from the complete SWC AST.
+   * Undefined when parsing used a framework extraction, blank placeholder,
+   * or another dialect whose lexical structure SWC did not prove.
+   */
+  commentLineCount?: number;
   /** Optional source text (cached for `unified-diff`, `formatAdvice`,
    *  and `--suggest` output). Not all rules need this. */
   _source?: string;
+}
+
+/** One AST-proven wildcard CORS configuration. */
+export interface DangerousCorsFact {
+  kind: 'set-header' | 'header-object' | 'cors-origin-wildcard' | 'cors-origin-reflective';
+  line: number;
+  column: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -383,7 +404,8 @@ export type BindingKind =
  *  intentional re-exports which are handled separately).
  *
  *  `isTypeOnly` (v0.21.0) is set to true when the binding came from
- *  an `import type { X }` declaration. The dead/unused-import rule
+ *  an `import type { X }` declaration or an inline
+ *  `import { type X }` specifier. The dead/unused-import rule
  *  skips these unconditionally — a type-only import is always
  *  "referenced" if the type is used (TypeScript guarantees it), and
  *  TypeScript itself elides the import at build time, so the unused-
@@ -393,8 +415,8 @@ export interface BindingRecord {
    *  `setFoo` for a parameter, etc.). */
   name: string;
   kind: BindingKind;
-  /** v0.21.0: true when this binding came from `import type { X }`. The
-   *  dead/unused-import rule skips these. */
+  /** v0.21.0: true for `import type { X }` and inline
+   *  `import { type X }` bindings. The dead/unused-import rule skips these. */
   isTypeOnly?: boolean;
   /** v0.21.0: lexical scope of the binding. `'module'` for top-level
    *  declarations outside any function; `'function'` for bindings

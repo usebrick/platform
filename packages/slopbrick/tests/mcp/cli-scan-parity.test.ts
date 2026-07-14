@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { loadConfig } from '../../src/config';
 import { runScan } from '../../src/cli/scan';
 import { handleToolCall } from '../../src/mcp/tools';
+import { buildRuleCalibrationEvidence } from '../../src/rules/explanation';
+import { getSignalStrength } from '../../src/rules/signal-strength';
 
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), 'slopbrick-cli-mcp-parity-'));
@@ -77,6 +79,8 @@ describe('CLI and MCP single-file scan parity', () => {
         ruleId: issue.ruleId,
         category: issue.category,
         severity: issue.severity,
+        aiSpecific: issue.aiSpecific,
+        calibration: buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId)),
         line: issue.line,
         column: issue.column,
         message: issue.message,

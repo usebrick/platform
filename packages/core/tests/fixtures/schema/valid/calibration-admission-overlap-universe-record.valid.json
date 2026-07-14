@@ -1,0 +1,25 @@
+{
+  "version": "v10.3-overlap-universe-record-v1",
+  "candidateUnitId": "unit-a",
+  "materialSourceId": "source-a",
+  "aggregateSourceIds": ["source-a"],
+  "locator": {
+    "kind": "local_inventory_file",
+    "localSourceId": "source-a",
+    "normalizedPath": "src/a.ts"
+  },
+  "polarity": {
+    "intake": "declared_ai",
+    "overlapSide": "ai_side",
+    "bindingAuthority": "legacy-selected-inventory",
+    "bindingSha256": "e397930fa6953f87baca2fbfde11bfd6706752a1f8e8c62493a40007a6b454bb"
+  },
+  "contentSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "contentBytes": 10,
+  "language": "TypeScript",
+  "normalizerId": "normalizer-typescript-v1",
+  "normalizationStatus": "covered",
+  "shingleSetSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "shingleCount": 4,
+  "recordSha256": "b053e1df8b0fdd5f81e9b8171da7e6f1d0ecf29ff2d7cbb1daf4049fdf101647"
+}

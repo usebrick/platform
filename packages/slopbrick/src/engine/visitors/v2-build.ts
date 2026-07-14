@@ -67,6 +67,8 @@ import type { RustFileStructure } from './rust.js';
 export interface InternalFacts {
   filePath: string;
   components: ComponentFacts[];
+  /** File-wide useState bindings, including custom hooks and non-JSX functions. */
+  stateBindings?: StateBinding[];
   staticClassNames: ClassNameFact[];
   allElements: ElementFact[];
   imports: Array<{ source: string; line: number; column: number; importedNames?: string[] }>;

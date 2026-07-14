@@ -1,0 +1,15 @@
+{
+  "version": "v10.3-admission-evidence-payload-v1",
+  "payloadId": "a0daa1fd19d33c54c146c83d0d1a9ffa48b7397bd23144cc5aa6ffec5adb81e2",
+  "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+  "bytes": 3,
+  "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+  "mediaType": "text/plain",
+  "sourceLocatorSha256": "d7e9320d15095830b573c1ca43b57c69093130b6edb8861e135455be7a4837bf",
+  "storage": {
+    "kind": "evidence_cas",
+    "casAlgorithm": "sha256",
+    "casRelativePath": "evidence-cas/sha256/dc/dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+    "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1"
+  }
+}

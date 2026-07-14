@@ -8,7 +8,6 @@ import type {
   FetchCallFact,
   OptimisticUpdateFact,
   LogicalExpressionFact,
-  StateBinding,
   StylePropFact,
   AstroComponentFact,
   KeyPropFact,
@@ -85,6 +84,8 @@ import {
 // Pure function of InternalFacts + source + ext + framework + config.
 import { buildV2Facts, splitFilePath, envelopeScanFacts } from './visitors/v2-build.js';
 import type { InternalFacts } from './visitors/v2-build.js';
+import { countSwcCommentLines, hasFullSourceSwcCommentAst } from './js-comment-lines.js';
+import { extractDangerousCorsFacts } from './dangerous-cors-facts.js';
 const isObject = visitorsIsObject;
 const spanStart = visitorsSpanStart;
 const spanEnd = visitorsSpanEnd;
@@ -227,6 +228,7 @@ export function extractFacts(
   const facts: InternalFacts & { _source?: string } = {
     filePath,
     components: [],
+    stateBindings: [],
     staticClassNames: [],
     allElements: [],
     imports: [],
@@ -510,7 +512,7 @@ export function extractFacts(
 
   visit(ast);
 
-  facts.optimisticUpdates = extractOptimisticUpdates(source);
+  facts.optimisticUpdates = extractOptimisticUpdates(source, facts.stateBindings ?? []);
 
   if (filePath.toLowerCase().endsWith('.astro')) {
     facts.astroComponents = extractAstroComponents(source);
@@ -550,6 +552,10 @@ export function extractFacts(
   // ./visitors/v2-build.ts. The walker no longer needs to know about
   // FileMeta / JsxElementRecord / ScanFactsV2 shape internals.
   const v2 = buildV2Facts(facts, source, ext, framework, config, templateClassNames);
+  v2.dangerousCors = extractDangerousCorsFacts(ast, lineOffsets);
+  if (hasFullSourceSwcCommentAst(filePath, ast, source)) {
+    v2.commentLineCount = countSwcCommentLines(ast, source);
+  }
 
   // is discarded — its data is now reachable only via `facts.v2.*`.
   return envelopeScanFacts(filePath, v2);

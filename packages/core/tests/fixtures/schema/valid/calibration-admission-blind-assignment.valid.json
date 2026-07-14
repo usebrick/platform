@@ -1,0 +1,9 @@
+{
+  "version": "v10.3-admission-blind-assignment-v1",
+  "assignmentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "target": { "kind": "source", "sourceId": "source-a" },
+  "evidenceSetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "protocolEvidenceId": "protocol-a",
+  "reviewerIds": ["reviewer-a", "reviewer-b"],
+  "peerMaterialHiddenUntilBothSealed": true
+}

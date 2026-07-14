@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-adjacency-row.schema.json",
+  "title": "AdmissionOverlapAdjacencyRowV1",
+  "description": "One endpoint row in the symmetric overlap adjacency stream.",
+  "type": "object", "additionalProperties": false,
+  "required": ["candidateUnitId", "neighborCandidateUnitId", "edgeRowSha256", "kind"],
+  "properties": { "candidateUnitId": { "$ref": "#/$defs/id" }, "neighborCandidateUnitId": { "$ref": "#/$defs/id" }, "edgeRowSha256": { "$ref": "#/$defs/sha256" }, "kind": { "enum": ["exact", "near"] } },
+  "$defs": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

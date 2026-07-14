@@ -59,11 +59,10 @@ export const unusedImportRule = createRule<UnusedImportContext>({
       ) {
         continue;
       }
-      // Skip `import type { X }` style imports — TypeScript elides
-      // them at build time, and the identifier walk doesn't
-      // traverse type annotations consistently. The v0.21.0
-      // visitor sets `isTypeOnly: true` on bindings from
-      // `import type` declarations (see dispatch.ts:handleImportDeclaration).
+      // Skip whole `import type { X }` declarations and inline
+      // `import { type X }` specifiers — TypeScript elides them at
+      // build time, and the identifier walk doesn't traverse type
+      // annotations consistently. The visitor records both forms.
       // v0.20.0 and earlier: this comment explained the visitor
       // limitation; the rule fired false positives on ~30% of
       // type-only imports.
@@ -73,17 +72,6 @@ export const unusedImportRule = createRule<UnusedImportContext>({
       // Skip side-effect-only imports (`import './foo'`). These
       // intentionally have no specifiers.
       if (!binding.name) continue;
-      // Skip type-only and re-export bindings. The visitor doesn't
-      // tag `export type { X } from '...'` (those flow through
-      // ExportNamedDeclaration, not ImportDeclaration) so the only
-      // way we see them here is if they are *also* imported, which
-      // would mean they are referenced. In practice the visitor
-      // misses the `import type` syntax because the parser treats
-      // the whole `import type { X }` as a type-only statement and
-      // the binding name still appears as an Identifier later when
-      // the file uses X as a type. Since the deadCode builder only
-      // reports isReferenced = false, the type-only case is rare.
-      // We just emit the issue and let the user ignore it.
       const source = binding.source ? ` from '${binding.source}'` : '';
       issues.push({
         ruleId: 'dead/unused-import',

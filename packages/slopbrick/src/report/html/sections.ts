@@ -22,14 +22,17 @@ import {
   thresholdStatusClass,
   renderSignalBadge,
 } from './utils.js';
-import { bucketForVerdict, bucketDistribution } from '../buckets.js';
+import { bucketForRule, isDefaultOffIssue, summarizeDefaultOffIssues } from '../buckets.js';
+import type { Bucket } from '../buckets.js';
+import { getSignalStrength } from '../../rules/signal-strength.js';
 import { SCORE_BRIEFS, formatHeadlineScore } from '../score-contract.js';
-import { formatScanValidityNotice } from '../scan-validity.js';
+import { formatScanAccountingSummary, formatScanValidityNotice } from '../scan-validity.js';
+import { formatFindingContext } from '../finding-context.js';
 
 function renderHeader(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
-  const roundedHealth = Math.round(report.assemblyHealth);
   const validityNotice = formatScanValidityNotice(report);
+  const accountingSummary = formatScanAccountingSummary(report);
 
   // v0.15.0+: 4 named scores replace the single `slopIndex`.
   // `repositoryHealth` is the only one already on `ProjectReport` — the
@@ -45,7 +48,8 @@ function renderHeader(report: ProjectReport): string {
       <h1>slopbrick report</h1>
       <p class="meta">Version ${escapeHtml(report.version)} · Generated at ${escapeHtml(report.generatedAt)}</p>
       ${validityNotice ? `<p class="meta"><strong>${escapeHtml(validityNotice)}</strong></p>` : ''}
-      ${report.scoreBasis ? `<p class="meta">Scores use ${report.scoreBasis.denominator} analysed file${report.scoreBasis.denominator === 1 ? '' : 's'} and the effective issue set; effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed; ${report.scoreBasis.parseErrorCount} parse errors).</p>` : ''}
+      ${report.scoreBasis ? `<p class="meta">Coverage: ${report.scoreBasis.denominator} successfully analysed file${report.scoreBasis.denominator === 1 ? '' : 's'}; per-file AI burdens are additive and are not diluted by this count; effective findings only; ${report.scoreBasis.suppressedIssueCount} suppressed finding instances are audit-only; ${report.scoreBasis.parseErrorCount} parse errors.</p>` : ''}
+      ${accountingSummary ? `<p class="meta">${escapeHtml(accountingSummary)}</p>` : ''}
     </div>
     <div class="score-cards">
       <div class="score-card coherence">
@@ -73,11 +77,6 @@ function renderHeader(report: ProjectReport): string {
         <span class="score-label">Security</span>
         <span class="score-brief">${SCORE_BRIEFS.security}</span>
       </div>
-      <div class="score-card health">
-        <span class="score-value">${roundedHealth}</span>
-        <span class="score-label">Assembly Health</span>
-        <span class="score-brief"></span>
-      </div>
     </div>
     <div class="severity-counts">
       ${severityOrder
@@ -91,6 +90,23 @@ function renderHeader(report: ProjectReport): string {
         .join('')}
     </div>
   </header>`;
+}
+
+/** Render bounded rule-authored evidence without turning HTML into a source
+ * dump. Exact spans remain useful to a human reviewer; producer omissions are
+ * shown as omissions with their reason instead of an empty/misleading code
+ * fragment. */
+function renderIssueEvidence(issue: Issue): string {
+  const evidence = issue.evidence;
+  if (!evidence) return '';
+  const start = evidence.location.start;
+  const end = evidence.location.end;
+  const location = `${start.line}:${start.column}-${end.line}:${end.column}`;
+  if (evidence.status === 'omitted') {
+    return `<div class="issue-evidence"><strong>Evidence omitted:</strong> ${escapeHtml(evidence.omission.reason)} <span class="evidence-location">(${location})</span></div>`;
+  }
+  const snippet = evidence.snippet.replace(/[\r\n]+/g, ' ');
+  return `<div class="issue-evidence"><strong>Evidence:</strong> <code>${escapeHtml(snippet)}</code> <span class="evidence-location">(${location})</span></div>`;
 }
 
 interface NamedScores {
@@ -178,19 +194,24 @@ function renderThresholds(report: ProjectReport): string {
 
 /**
  * v0.15.0+: Render the 3-bucket taxonomy (AI Findings / Engineering
- * Hygiene / Suppressed). Rules are grouped via `bucketForVerdict()`
- * and counts come from `bucketDistribution()`. The `verdicts` field
- * is new on `ProjectReport` and lands in U.5; until then we cast
- * through `unknown`.
+ * Hygiene / Suppressed). Rules are grouped via `bucketForRule()`, which
+ * combines calibrated verdict with the issue's authorship polarity. Saved
+ * reports without the optional U.5 ruleVerdicts projection are derived from
+ * ordinary issues so HTML remains consistent with Markdown.
  */
-function renderBuckets(report: ProjectReport): string {
-  const verdicts = extractVerdicts(report);
-  const distribution = bucketDistribution(verdicts);
+function renderBuckets(
+  report: ProjectReport,
+  defaultOff = summarizeDefaultOffIssues(report.issues),
+): string {
   const rules = extractRuleVerdicts(report);
+  const distribution: Record<Bucket, number> = { ai: 0, hygiene: 0, suppressed: 0 };
+  for (const rule of rules) {
+    distribution[bucketForRule(rule.verdict, rule.aiSpecific ?? true)]++;
+  }
 
-  const aiRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'ai');
-  const hygieneRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'hygiene');
-  const suppressedRules = rules.filter((r) => bucketForVerdict(r.verdict) === 'suppressed');
+  const aiRules = rules.filter((r) => bucketForRule(r.verdict, r.aiSpecific ?? true) === 'ai');
+  const hygieneRules = rules.filter((r) => bucketForRule(r.verdict, r.aiSpecific ?? true) === 'hygiene');
+  const suppressedRules = rules.filter((r) => bucketForRule(r.verdict, r.aiSpecific ?? true) === 'suppressed');
 
   const aiCounts = countVerdicts(aiRules.map((r) => r.verdict));
   const hygieneCounts = countVerdicts(hygieneRules.map((r) => r.verdict));
@@ -199,6 +220,7 @@ function renderBuckets(report: ProjectReport): string {
   return `
   <section class="buckets-section">
     <h2>Findings by bucket</h2>
+    ${defaultOff.instances > 0 ? `<p class="bucket-note">Default-off audit: ${defaultOff.instances} suppressed finding instance${defaultOff.instances === 1 ? '' : 's'} across ${defaultOff.ruleCount} rule${defaultOff.ruleCount === 1 ? '' : 's'}; excluded from actionable buckets.</p>` : ''}
     <div class="bucket-grid">
       <section class="ai-findings">
         <h3>AI Findings <span class="bucket-count">${distribution.ai}</span></h3>
@@ -222,17 +244,11 @@ function renderBuckets(report: ProjectReport): string {
 interface RuleVerdict {
   ruleId: string;
   verdict: Verdict;
+  aiSpecific?: boolean;
   confidence?: string;
   message?: string;
-}
-
-/**
- * Pull the per-rule verdict list off the report. The new field lands
- * in U.5; until then we accept the empty array (buckets show 0/0/0).
- */
-function extractVerdicts(report: ProjectReport): Verdict[] {
-  const r = report as unknown as { verdicts?: Verdict[] };
-  return Array.isArray(r.verdicts) ? r.verdicts : [];
+  count?: number;
+  contexts?: string[];
 }
 
 /**
@@ -242,7 +258,34 @@ function extractVerdicts(report: ProjectReport): Verdict[] {
  */
 function extractRuleVerdicts(report: ProjectReport): RuleVerdict[] {
   const r = report as unknown as { ruleVerdicts?: RuleVerdict[] };
-  return Array.isArray(r.ruleVerdicts) ? r.ruleVerdicts : [];
+  if (Array.isArray(r.ruleVerdicts)) return r.ruleVerdicts;
+
+  // Saved JSON reports currently carry ordinary issues but not the optional
+  // U.5 ruleVerdicts projection. Derive the same one-entry-per-rule view used
+  // by Markdown so HTML and Markdown do not disagree on bucket counts.
+  const byRule = new Map<string, RuleVerdict>();
+  for (const issue of report.issues) {
+    if (isDefaultOffIssue(issue)) continue;
+    const existing = byRule.get(issue.ruleId);
+    if (existing) {
+      existing.count = (existing.count ?? 1) + 1;
+      const context = formatFindingContext(issue.filePath);
+      existing.contexts ??= [];
+      if (!existing.contexts.includes(context)) existing.contexts.push(context);
+      continue;
+    }
+    const strength = getSignalStrength(issue.ruleId);
+    byRule.set(issue.ruleId, {
+      ruleId: issue.ruleId,
+      verdict: (strength?.verdict ?? 'OK') as Verdict,
+      aiSpecific: typeof issue.aiSpecific === 'boolean'
+        ? issue.aiSpecific
+        : strength?.aiSpecific ?? true,
+      count: 1,
+      contexts: [formatFindingContext(issue.filePath)],
+    });
+  }
+  return Array.from(byRule.values());
 }
 
 function countVerdicts(verdicts: Verdict[]): Record<Verdict, number> {
@@ -291,6 +334,8 @@ function renderBucketList(rules: RuleVerdict[]): string {
       <li>
         <span class="rule-id">${escapeHtml(r.ruleId)}</span>
         <span class="rule-verdict verdict-${escapeHtml(r.verdict.toLowerCase())}">${escapeHtml(r.verdict)}</span>
+        ${r.count ? `<span class="rule-confidence">${r.count} instance${r.count === 1 ? '' : 's'}</span>` : ''}
+        ${r.contexts?.length ? `<span class="rule-confidence">context: ${escapeHtml(r.contexts.join(', '))}</span>` : ''}
         ${r.confidence ? `<span class="rule-confidence">Confidence: ${escapeHtml(r.confidence)}</span>` : ''}
         ${r.message ? `<span class="rule-message">${escapeHtml(r.message)}</span>` : ''}
       </li>`,
@@ -309,6 +354,8 @@ function renderSuppressedList(rules: RuleVerdict[]): string {
       <li>
         <span class="rule-id">${escapeHtml(r.ruleId)}</span>
         <span class="rule-verdict verdict-${escapeHtml(r.verdict.toLowerCase())}">${escapeHtml(r.verdict)}</span>
+        ${r.count ? `<span class="rule-confidence">${r.count} instance${r.count === 1 ? '' : 's'}</span>` : ''}
+        ${r.contexts?.length ? `<span class="rule-confidence">context: ${escapeHtml(r.contexts.join(', '))}</span>` : ''}
         ${r.message ? `<span class="rule-message">${escapeHtml(r.message)}</span>` : ''}
       </li>`,
     )
@@ -416,7 +463,7 @@ function renderFiles(report: ProjectReport): string {
           <td>${escapeHtml(categoryLabels[issue.category])}</td>
           <td>${escapeHtml(issue.ruleId)}</td>
           <td>${issue.line}:${issue.column}</td>
-          <td>${escapeHtml(issue.message)}</td>
+          <td>${escapeHtml(issue.message)}${renderIssueEvidence(issue)}</td>
         </tr>
       `,
         )
@@ -521,6 +568,7 @@ function renderIssues(report: ProjectReport): string {
         <td data-sort="number">${issue.line}</td>
         <td class="expand-advice ${issue.advice ? 'has-advice' : ''}" data-advice="${issue.advice ? index : ''}">
           ${escapeHtml(issue.message)}
+          ${renderIssueEvidence(issue)}
           ${issue.advice ? '<span class="advice-hint"> (click for advice)</span>' : ''}
         </td>
       </tr>

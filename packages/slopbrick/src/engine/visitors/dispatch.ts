@@ -206,15 +206,16 @@ export function handleImportDeclaration(
   if (source) {
     const { line, column } = positionFrom(node, vctx.lineOffsets);
     const importedNames: string[] = [];
-    // v0.21.0: `import type { X } from '...'` declarations should not
-    // be flagged by dead/unused-import (TypeScript elides them at
-    // build time). swc exposes this via the `typeOnly` field on
-    // ImportDeclaration.
+    // Type-only declarations and inline `type` named specifiers should not
+    // be flagged by dead/unused-import (TypeScript elides them at build time).
+    // SWC exposes these separately on ImportDeclaration.typeOnly and
+    // ImportSpecifier.isTypeOnly.
     const isTypeOnly = node.typeOnly === true;
     const specifiers = node.specifiers as AnyNode[];
     if (Array.isArray(specifiers)) {
       for (const specifier of specifiers) {
         if (!isObject(specifier)) continue;
+        const bindingIsTypeOnly = isTypeOnly || specifier.isTypeOnly === true;
         if (
           specifier.type === 'ImportDefaultSpecifier' ||
           specifier.type === 'ImportNamespaceSpecifier'
@@ -240,7 +241,7 @@ export function handleImportDeclaration(
               column,
               source,
               isReferenced: false,
-              isTypeOnly,
+              isTypeOnly: bindingIsTypeOnly,
             });
           }
         } else if (specifier.type === 'ImportSpecifier') {
@@ -273,7 +274,7 @@ export function handleImportDeclaration(
               column,
               source,
               isReferenced: false,
-              isTypeOnly,
+              isTypeOnly: bindingIsTypeOnly,
             });
           }
         }
@@ -811,6 +812,7 @@ export function handleVariableDeclarator(
   if (isUseStateDeclarator(node as Record<string, unknown>)) {
     const binding = extractStateBinding(node as Record<string, unknown>, vctx.lineOffsets);
     if (binding) {
+      (vctx.facts.stateBindings ??= []).push(binding);
       const component = nearestComponent(vctx);
       if (component) {
         component.stateBindings.push(binding);

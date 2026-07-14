@@ -14,15 +14,15 @@ The home of every `usebrick.dev` tool:
 |---------|--------|-------|
 | `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure Platform spec (types + loaders + JSON Schemas). The moat. |
 | `packages/engine/` | **private** — workspace-only | The pure scanning engine. 4-score model, Bayesian LR combiner, parser, scoring. No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
-| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. 4 scores, 103 rules in 24 categories, MCP server. The flagship. v10-calibrated against 576,750 real files; v0.38.0 trimmed from 140 to 103 by deleting 37 v10-DORMANT rules. |
-| `packages/website/` | **private** — workspace-only, deployed to Cloudflare Pages | The usebrick.dev marketing site. Astro + Lenis + GSAP, WebGL brick shader hero. |
+| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. Latest verified npm release v0.43.0: 103 rules in 22 categories. The workspace is an unreleased v0.44.0 candidate with 119 rules in 27 categories; historical v10.1 evidence covers 576,750 analyzed files from 581,550 sampled paths and is not current v10.3 admission evidence. |
+| `packages/website/` | **private** — workspace-only, prepared for Cloudflare Pages | The usebrick.dev marketing site. Astro + native browser APIs + CSS brick surface; live deployment still requires owner/SHA verification. |
 
 Future packages (`stackpick`, `gir`, `cli`) join here as they're built. (The MCP server already ships inside `slopbrick`; a standalone `@usebrick/mcp` package is a future extraction.)
 
 ## What this monorepo is NOT
 
 - **Not a place for one-off experiments.** Tools land here when they're real, named, versioned, and tested.
-- **Not a polyglot monorepo.** All packages are TypeScript + Node 20+. If a tool needs Rust or Python, it lives in its own repo and consumes `@usebrick/core` from npm.
+- **Not a polyglot monorepo.** All packages are TypeScript + Node.js 22 or 24 (`^22.0.0 || ^24.0.0`). If a tool needs Rust or Python, it lives in its own repo and consumes `@usebrick/core` from npm.
 - **Not synchronized with per-package npm releases.** Each package has its own version, but they evolve in lock-step (slopbrick's `package.json` bumps `@usebrick/core` workspace dep version on every schema change).
 
 ## The contract — `@usebrick/core` schemas
@@ -70,7 +70,7 @@ CI runs the same commands on every PR + push to main. Publishing the `slopbrick`
 
 ### Pre-push hook (the "local tests pass, CI fails" trap)
 
-The `slopbrick` test suite is 2116+ tests. Running a scoped subset (e.g. `pnpm vitest run tests/rules/kotlin/`) is fast and useful during development, but it can miss full-suite failures like `tests/engine/signal-strength-guardrails.test.ts` (v0.24.0 lesson: a pre-existing DORMANT-vs-`defaultOff` invariant violation was caught by CI but missed by my scoped local run). The v0.24.0 publish run failed at this exact test.
+The `slopbrick` test suite is currently 3,540 tests (5 skipped files / 9 skipped tests). Running a scoped subset (e.g. `pnpm vitest run tests/rules/kotlin/`) is fast and useful during development, but it can miss full-suite failures like `tests/engine/signal-strength-guardrails.test.ts` (v0.24.0 lesson: a pre-existing DORMANT-vs-`defaultOff` invariant violation was caught by CI but missed by my scoped local run). The v0.24.0 publish run failed at this exact test; refresh this count when the suite changes.
 
 `packages/slopbrick/scripts/pre-push` is a git hook that runs the **same gates as `publish.yml`** (typecheck + full `pnpm test` + build) before allowing a push to `main`. Install it once:
 
@@ -88,7 +88,7 @@ The hook only enforces on publish branches (`main`); feature branches skip the f
 1. Bump `packages/slopbrick/package.json#version` and the v0.X.Y tag in your release commit
 2. Update `packages/slopbrick/CHANGELOG.md` (the `## [version]` header at the top)
 3. Run the full gate locally: `pnpm -r typecheck && pnpm -r test && pnpm -r build`
-4. Self-scan: `pnpm --filter slopbrick exec -- slopbrick scan --workspace packages/slopbrick/src` — record the scores in the release commit body
+4. Self-scan: `corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan --workspace . --threads 1 --no-telemetry` — invoke the package-local bin explicitly so a stale packed `node_modules/slopbrick` from consumer tests cannot substitute an older build; `pnpm --filter ... exec` still runs from `packages/slopbrick`, so `.` preserves package-relative include and self-scan exclusion semantics; record the scores in the release commit body
 5. Commit + push to `main` (the pre-push hook enforces #3 automatically)
 6. `git tag v0.X.Y && git push origin v0.X.Y` — pushes the tag, but **does not** publish
 7. `gh release create v0.X.Y --notes-file <CHANGELOG excerpt>` — this is what triggers `publish.yml`

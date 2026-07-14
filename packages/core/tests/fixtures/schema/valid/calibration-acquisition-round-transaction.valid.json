@@ -1,0 +1,32 @@
+{
+  "version": "v10.3-acquisition-round-transaction-v1",
+  "transactionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "lockSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "roundId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "orchestratorInvocationIntentId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "sourceInvocations": [{
+    "authorizationId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "invocationIntentId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "profileId": "admission-git-acquire-v1",
+    "profileSha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  }],
+  "maxTotalMaterializedBytes": 100,
+  "reservedMaterializedBytes": 100,
+  "recoveryNonce": "2222222222222222222222222222222222222222222222222222222222222222",
+  "sources": [{
+    "authorizationId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "temporaryRelativePath": "sources/.tmp/repo-a",
+    "finalRelativePath": "sources/repo-a",
+    "expectedIdentitySha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "maxMaterializedBytes": 100,
+    "networkObservationRelativePath": "observations/repo-a.json",
+    "sourceReceiptTemporaryRelativePath": "receipts/.tmp/repo-a.json",
+    "sourceReceiptFinalRelativePath": "receipts/repo-a.json",
+    "materializationReceiptTemporaryRelativePath": "materializations/.tmp/repo-a.json",
+    "materializationReceiptFinalRelativePath": "materializations/repo-a.json",
+    "toolReceiptTemporaryRelativePath": "receipts/.tmp/tool-repo-a.json",
+    "state": { "phase": "not_started" }
+  }],
+  "state": { "phase": "intent_fsynced" },
+  "transactionSha256": "4444444444444444444444444444444444444444444444444444444444444444"
+}

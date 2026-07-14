@@ -167,6 +167,61 @@ describe('--diff <ref> flag (v0.10.1 VibeDrift-compatible PR filter)', () => {
     }
   });
 
+  it('excludes cache-only duplicate evidence from the incremental --diff score', async () => {
+    const dir = freshDir();
+    try {
+      const shared = Array.from({ length: 20 }, (_, index) => `void shared${index};`).join('\n');
+      setupDiffFixture(
+        dir,
+        { 'src/base.ts': 'export const base = true;\n' },
+        {
+          'src/a.ts': `${shared}\n`,
+          'src/b.ts': `${shared}\n`,
+        },
+      );
+      writeFile(
+        dir,
+        'slopbrick.config.mjs',
+        "export default { rules: { 'dup/identical-block': 'medium' } };\n",
+      );
+      const cachePath = join(dir, 'incremental-cache.json');
+      const seeded = await runScan({
+        ...configWith(),
+        workspace: dir,
+        incremental: true,
+        cachePath,
+        quiet: true,
+        telemetry: false,
+      });
+      expect(seeded.report.issues.filter((issue) => issue.ruleId === 'dup/identical-block'))
+        .toHaveLength(2);
+
+      // Both changed files are cache hits in this diff-scoped invocation.
+      // The duplicate post-pass hydrates them as broad audit evidence, but no
+      // file was successfully analyzed and no project rule ran. The PR score
+      // must therefore remain zero instead of charging the cache-only clones.
+      const incremental = await runScan({
+        ...configWith(),
+        workspace: dir,
+        diffRef: 'main',
+        incremental: true,
+        cachePath,
+        quiet: true,
+        telemetry: false,
+      });
+      expect(incremental.report.scanAccounting).toMatchObject({
+        selected: 2,
+        analyzed: 0,
+        incrementalCached: 2,
+      });
+      expect(incremental.report.issues.filter((issue) => issue.ruleId === 'dup/identical-block'))
+        .toHaveLength(2);
+      expect(incremental.report.prSlopScore).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('high severity issues weight 10x, medium 5x, low 1x in the score', async () => {
     // Regression guard for PR_SLOP_WEIGHTS = { high: 10, medium: 5, low: 1 }.
     // If anyone changes these weights, the multiplier ratios below catch it.

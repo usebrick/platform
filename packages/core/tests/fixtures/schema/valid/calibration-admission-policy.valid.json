@@ -1,0 +1,49 @@
+{
+  "version": "v10.3-admission-policy-v1",
+  "policyId": "v10.3-admission-v1",
+  "initialRegisterEntryCount": 329,
+  "selectedCoverage": 452382,
+  "baselineMaterialUnits": 58089,
+  "repositoryMaterialUnits": 394293,
+  "labels": {
+    "positive": "verified_ai",
+    "negative": "verified_human"
+  },
+  "evidenceCasPolicy": "sha256-wx-fsync-v1",
+  "overlapPolicy": "prefix-filter-exact-jaccard-0.80-v1",
+  "reasonVocabularySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "toolProfileSha256s": [
+    "057d426de2fbae154fa2beb784c312bc6e7fe50ac81eb335048b0daed785463e",
+    "0c677a2e268f8acedcec473011d3dc997592e004ff521e7807fec3acfbc26e45",
+    "315ae0462556f6511e9bf55f230d9d9bc5b70e5c97ae37df401983082733304a",
+    "3f40789027f055c2be41331bbfea1ce2a50cfccea044a04320c9da13259a68db",
+    "6b4393aadcf007ebd078b59d261c484f0a2ae7417ad356fd288377fb3ae9d2c0",
+    "7fe74f8e6fb68de47cafe72449d3ed21773d0f52ac5c343b2a348a89d327347d",
+    "9b5082b2c842c1e5f5902d8afe49dcb5ea6f5d3ad8bf2ee1b67b8e398606d80c",
+    "a0da93f62664ede95a88bafb81b78b20c93371d3863e8d93063ef047ebd77ea6",
+    "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867",
+    "bb931a56f9413b9230f566847bfb40ef0bc3afa2b229fe9bedd56653eb6199b0",
+    "c3f5dc0527757f3e8418f29173cea819e3c0d78519404d298fc74b854679cd3b",
+    "defb6e5d5c4082a76c376dd948f19163934741143f92a2fc12fa19322c73271d"
+  ],
+  "smoke": {
+    "unitsPerPolarity": 100,
+    "maxSourceOrFamilyUnitsPerPolarity": 50,
+    "minimumSourcesPerPolarity": 2,
+    "minimumFamiliesPerPolarity": 3,
+    "minimumLanguages": 2,
+    "minimumUnitsPerRepresentedLanguagePerPolarity": 20
+  },
+  "canary": {
+    "unitsPerPolarity": 5000,
+    "maxSourceUnitsPerPolarity": 500,
+    "maxFamilyUnitsPerPolarity": 1000,
+    "minimumSourcesPerPolarity": 10,
+    "minimumFamiliesPerPolarity": 5,
+    "minimumLanguages": 3,
+    "minimumUnitsPerLanguagePerPolarity": 250,
+    "minimumFamiliesPerLanguagePerPolarity": 3,
+    "minimumAiGeneratorFamilies": 3
+  },
+  "policySha256": "45bf2014007e1ce2315481ca503809fd977e2ae1c960b066706eec9532a5f205"
+}

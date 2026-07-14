@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-approved-acquisition.schema.json",
+  "title": "CalibrationApprovedAcquisitionV1",
+  "description": "Owner-approved immutable source acquisition authorization. It contains no filesystem path and permits only one exact transport identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "authorizationId", "approvedBy", "approvedAt", "sourceId", "repositoryId", "materializationId", "originUrl", "transport", "maxMaterializedBytes", "licenseEvidenceId", "licensePath", "licenseSha256", "authorizationSha256"],
+  "properties": {
+    "version": { "const": "v10.3-approved-acquisition-v1" },
+    "authorizationId": { "$ref": "#/$defs/sha256" },
+    "approvedBy": { "$ref": "#/$defs/nonEmptyString" },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "sourceId": { "$ref": "#/$defs/slug" },
+    "repositoryId": { "$ref": "#/$defs/slug" },
+    "materializationId": { "$ref": "#/$defs/materializationId" },
+    "originUrl": { "$ref": "#/$defs/httpsUrl" },
+    "transport": { "$ref": "#/$defs/transport" },
+    "maxMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+    "licenseEvidenceId": { "$ref": "#/$defs/id" },
+    "licensePath": { "$ref": "#/$defs/relativePath" },
+    "licenseSha256": { "$ref": "#/$defs/sha256" },
+    "authorizationSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "materializationId": { "type": "string", "pattern": "^sbm_[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "httpsUrl": { "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 4096 },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[A-Za-z0-9._@+%=-]+(?:/[A-Za-z0-9._@+%=-]+)*$" },
+    "releaseMaterialization": { "$ref": "https://usebrick.dev/schemas/v1/calibration-corpus-manifest.schema.json#/$defs/releaseArchiveMaterialization" },
+    "transport": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "commitSha", "transportByteLimit", "ownerAcknowledgedUnboundedTransport"],
+          "properties": {
+            "kind": { "const": "git_https" },
+            "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+            "transportByteLimit": { "const": "not_enforceable_by_stock_git" },
+            "ownerAcknowledgedUnboundedTransport": { "const": true }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "materialization", "maxTransferBytes", "approvedRedirectUrls"],
+          "properties": {
+            "kind": { "const": "release_https" },
+            "materialization": { "$ref": "#/$defs/releaseMaterialization" },
+            "maxTransferBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+            "approvedRedirectUrls": { "type": "array", "items": { "$ref": "#/$defs/httpsUrl" }, "uniqueItems": true }
+          }
+        }
+      ]
+    }
+  }
+}

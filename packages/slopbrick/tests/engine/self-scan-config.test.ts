@@ -2,21 +2,22 @@
 //
 // Two coupled fixes for the systemic FP noise problem:
 //
-//   1. `selfScan.excludePaths` config option. Defaults cover
-//      `src/rules/**`, `tests/fixtures/**`, `tests/rules/**` — the
-//      three paths that are always false positives when scanning
-//      the slopbrick repo itself.
+//   1. `selfScan.excludePaths` config option. The SlopBrick repository
+//      owns its product-specific meta-code exclusions; shared defaults
+//      do not suppress ordinary users' rules or tests.
 //
 //   2. Graded security score cap in `coherence.ts`. Replaces the
 //      categorical "0 if any" cliff with `Math.max(0, 100 / (1 +
 //      issueCount / 5))` (hyperbolic decay). A repo with 1 issue
 //      scores 83; 5 issues scores 50; 100+ scores ≤5.
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
 import { scanFile } from '../../src/engine/worker';
 import { computeDomainScores } from '../../src/engine/coherence';
 import { DEFAULT_CONFIG } from '../../src/config/defaults';
+import { loadConfig } from '../../src/config/load';
+import { validateConfig } from '../../src/config/validation';
 import type { ResolvedConfig, Issue } from '../../src/types';
 
 // Slopbrick package dir, used as the `cwd` for scanFile calls. We
@@ -24,20 +25,70 @@ import type { ResolvedConfig, Issue } from '../../src/types';
 // vitest's cwd isn't guaranteed to be the slopbrick dir when this
 // test runs (depends on how the runner is invoked).
 const SLOPBRICK_DIR = resolve(__dirname, '..', '..');
+const SLOPBRICK_SELF_SCAN_EXCLUDES = [
+  '**/src/rules/**',
+  '**/snippet/**',
+  '**/tests/**',
+  '**/src/engine/visitors/**',
+];
+
+let slopbrickConfig: ResolvedConfig;
+beforeAll(async () => {
+  slopbrickConfig = await loadConfig(SLOPBRICK_DIR);
+});
 
 describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
-  describe('defaults', () => {
-    it('DEFAULT_CONFIG.selfScan excludes **/src/rules/**, **/snippet/**, **/tests/**, **/src/engine/visitors/**', () => {
-      expect(DEFAULT_CONFIG.selfScan).toBeDefined();
-      expect(DEFAULT_CONFIG.selfScan?.excludePaths).toEqual([
-        '**/src/rules/**',
-        '**/snippet/**',
-        '**/tests/**',
-        '**/src/engine/visitors/**',
-      ]);
+  describe('repository-owned policy', () => {
+    it('keeps SlopBrick-specific self-scan paths out of DEFAULT_CONFIG', () => {
+      expect(DEFAULT_CONFIG.selfScan).toBeUndefined();
     });
 
-    it('isExcludedBySelfScan returns true for files under **/src/rules/**', async () => {
+    it('declares the four SlopBrick-specific paths in the package config', async () => {
+      const module = await import('../../slopbrick.config.mjs') as {
+        default: { selfScan?: { excludePaths?: string[] } };
+      };
+      expect(module.default.selfScan?.excludePaths).toEqual(SLOPBRICK_SELF_SCAN_EXCLUDES);
+    });
+
+    it('recognizes selfScan as a known top-level config key', () => {
+      expect(validateConfig({
+        selfScan: { excludePaths: SLOPBRICK_SELF_SCAN_EXCLUDES },
+      })).toEqual({ valid: true, errors: [], warnings: [] });
+    });
+
+    it.each([
+      ['a boolean', true],
+      ['an object without excludePaths', {}],
+      ['a non-array excludePaths', { excludePaths: 'src/**' }],
+      ['a non-string excludePaths member', { excludePaths: ['src/**', 42] }],
+    ])('rejects selfScan configured as %s', (_label, selfScan) => {
+      expect(validateConfig({ selfScan })).toMatchObject({
+        valid: false,
+        errors: expect.arrayContaining([
+          expect.stringMatching(/^selfScan(?:\.excludePaths)?: /),
+        ]),
+      });
+    });
+
+    it('accepts an empty selfScan.excludePaths array', () => {
+      expect(validateConfig({ selfScan: { excludePaths: [] } })).toEqual({
+        valid: true,
+        errors: [],
+        warnings: [],
+      });
+    });
+
+    it('warns about unknown nested selfScan keys', () => {
+      expect(validateConfig({
+        selfScan: { excludePaths: [], mystery: true },
+      })).toEqual({
+        valid: true,
+        errors: [],
+        warnings: ['selfScan: Unknown self-scan key "mystery".'],
+      });
+    });
+
+    it('the low-level guard excludes files under **/src/rules/** for the SlopBrick config', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
         'src',
@@ -47,7 +98,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       );
       const result = await scanFile(
         filePath,
-        DEFAULT_CONFIG,
+        slopbrickConfig,
         undefined,
         SLOPBRICK_DIR,
       );
@@ -58,7 +109,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       expect(result.componentCount).toBe(0);
     });
 
-    it('isExcludedBySelfScan returns true for files under **/snippet/** (RULE_HINTS example SQL)', async () => {
+    it('the low-level guard excludes files under **/snippet/** for the SlopBrick config', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
         'src',
@@ -67,7 +118,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       );
       const result = await scanFile(
         filePath,
-        DEFAULT_CONFIG,
+        slopbrickConfig,
         undefined,
         SLOPBRICK_DIR,
       );
@@ -75,7 +126,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       expect(result.parseError).toBeUndefined();
     });
 
-    it('isExcludedBySelfScan returns true for any file under **/tests/** (unit, integration, engine, cli)', async () => {
+    it('the low-level guard excludes files under **/tests/** for the SlopBrick config', async () => {
       const filePath = resolve(
         SLOPBRICK_DIR,
         'tests',
@@ -84,7 +135,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       );
       const result = await scanFile(
         filePath,
-        DEFAULT_CONFIG,
+        slopbrickConfig,
         undefined,
         SLOPBRICK_DIR,
       );
@@ -96,11 +147,11 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       const filePath = resolve(SLOPBRICK_DIR, 'src', 'cli', 'program.ts');
       const result = await scanFile(
         filePath,
-        DEFAULT_CONFIG,
+        slopbrickConfig,
         undefined,
         SLOPBRICK_DIR,
       );
-      // src/cli/program.ts is NOT in the default excludes; the scan
+      // src/cli/program.ts is NOT in the repository excludes; the scan
       // runs normally. The short-circuit path doesn't set the
       // `facts` field; a real scan does. That's the cleanest proof
       // the file wasn't excluded.
@@ -178,10 +229,10 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
       expect(result.facts).toBeDefined();
     });
 
-    it('excludePaths: [] makes isExcludedBySelfScan a no-op (rule file fires its own rule)', async () => {
-      // Use a rule file whose own source code will fire the rule
-      // (proves the scan ran and parsed, not just that it returned
-      // a clean empty result).
+    it('excludePaths: [] makes isExcludedBySelfScan a no-op (real scan remains observable)', async () => {
+      // Scan a real source file and assert the normal scan contract. The
+      // opt-out only disables exclusion; it must not require documentation
+      // or regex examples in the rule implementation to produce findings.
       const config: ResolvedConfig = {
         ...DEFAULT_CONFIG,
         selfScan: {
@@ -201,16 +252,10 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
         undefined,
         SLOPBRICK_DIR,
       );
-      // The rule file's own source has SQL-concat example patterns
-      // (in the comments and in the regex literals), so a real
-      // scan produces ≥1 `security/sql-construction` issue. The
-      // short-circuit would produce 0 issues AND no `facts` field.
       expect(result.filePath).toBe(filePath);
       expect(result.facts).toBeDefined();
-      const sqlIssues = result.issues.filter(
-        (i) => i.ruleId === 'security/sql-construction',
-      );
-      expect(sqlIssues.length).toBeGreaterThan(0);
+      expect(result.parseError).toBeUndefined();
+      expect(result.issues).toEqual(expect.any(Array));
     });
   });
 
@@ -299,7 +344,7 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
   });
 
   describe('absent selfScan field', () => {
-    it('omitting selfScan entirely behaves like empty excludePaths (no exclusion)', async () => {
+    it('omitting selfScan entirely performs a real scan (no exclusion)', async () => {
       const config: ResolvedConfig = {
         ...DEFAULT_CONFIG,
         selfScan: undefined,
@@ -317,14 +362,10 @@ describe('selfScan.excludePaths (v0.25.0; broadened in v0.25.1)', () => {
         undefined,
         SLOPBRICK_DIR,
       );
-      // Real scan ran → `facts` is set AND the rule fires on the
-      // file's own example SQL.
       expect(result.filePath).toBe(filePath);
       expect(result.facts).toBeDefined();
-      const sqlIssues = result.issues.filter(
-        (i) => i.ruleId === 'security/sql-construction',
-      );
-      expect(sqlIssues.length).toBeGreaterThan(0);
+      expect(result.parseError).toBeUndefined();
+      expect(result.issues).toEqual(expect.any(Array));
     });
   });
 });
@@ -467,8 +508,8 @@ describe('selfScan + graded cap interaction (v0.25.0)', () => {
   it('v9 plan "security ≥ 80" criterion is achievable with <2 real issues', () => {
     // The v9 plan's pass criterion is "security ≥ 80". With the
     // graded cap, this requires issueCount < ~2.5 (since 100/(1+x/5)
-    // = 80 means x = 2.5). The selfScan default excludes ~70 FPs,
-    // so even a repo with 20-25 real issues can pass.
+    // = 80 means x = 1.25). The repository selfScan policy removes known
+    // meta-code before this calculation; it does not excuse real findings.
     //
     // Walk the boundary: with N issues, what's the security score?
     //   N=0   → 100  ✅ ≥80

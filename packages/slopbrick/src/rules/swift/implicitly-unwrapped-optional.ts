@@ -87,9 +87,8 @@ export const swiftImplicitlyUnwrappedOptionalRule = createRule<SwiftImplicitlyUn
         advice:
           'Declare as `var name: Type?` and unwrap with `guard let name else { ... }` ' +
           '(or `if let`). IUOs exist for a real reason (Obj-C bridging, IBOutlets, ' +
-          'two-phase init), but using them everywhere is an AI signal — agents emit ' +
-          '`var x: Type!` because the syntax survives the moment when the agent can\'t ' +
-          'decide whether the value is nil. The type system silently says "non-optional" ' +
+          'two-phase init), but repeated use outside those cases is a safety smell. ' +
+          'The type system silently says "non-optional" ' +
           'while the runtime says "may be nil". Apple SwiftLint\'s ' +
           '`implicitly_unwrapped_optional` rule flags the same pattern. ' +
           'Reference: swift/implicitly-unwrapped-optional v0.24.',

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-edge-row.schema.json",
+  "title": "AdmissionOverlapEdgeRowV1",
+  "description": "One deterministic exact or near overlap edge.",
+  "type": "object", "additionalProperties": false,
+  "required": ["leftCandidateUnitId", "rightCandidateUnitId", "leftPolarityBindingSha256", "rightPolarityBindingSha256", "leftOverlapSide", "rightOverlapSide", "kind", "intersection", "union", "crossSide"],
+  "properties": {
+    "leftCandidateUnitId": { "$ref": "#/$defs/id" }, "rightCandidateUnitId": { "$ref": "#/$defs/id" },
+    "leftPolarityBindingSha256": { "$ref": "#/$defs/sha256" }, "rightPolarityBindingSha256": { "$ref": "#/$defs/sha256" },
+    "leftOverlapSide": { "$ref": "#/$defs/side" }, "rightOverlapSide": { "$ref": "#/$defs/side" },
+    "kind": { "enum": ["exact", "near"] }, "intersection": { "$ref": "#/$defs/nonNegativeInteger" }, "union": { "$ref": "#/$defs/nonNegativeInteger" }, "crossSide": { "type": "boolean" }
+  },
+  "$defs": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "side": { "enum": ["ai_side", "human_side", "unassigned"] }, "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 } }
+}

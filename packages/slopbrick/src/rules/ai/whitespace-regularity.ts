@@ -127,12 +127,12 @@ export const aiWhitespaceRegularityRule = createRule<RuleContext>({
         message:
           `Inter-token whitespace distribution is suspiciously uniform ` +
           `(CV=${cv.toFixed(2)}, H=${h.toFixed(2)}, n=${spaceRuns.length} runs, mean=${mean.toFixed(2)} spaces). ` +
-          `DetectCodeGPT 2024: whitespace has the highest naturalness deviation ` +
-          `between AI and human code among all token categories.`,
+          `Formatter settings, language conventions, and project style can explain this ` +
+          `distribution; treat it as a formatting statistic rather than an authorship signal.`,
         line: 1,
         column: 1,
         advice:
-          'Do not manually vary formatting to satisfy this heuristic. Keep formatter output, review whether the statistical signal is relevant here, and disable or configure the rule if the style is intentional.',
+          'Do not manually vary formatting to satisfy this heuristic. Keep formatter output and document intentional style in project policy when the signal is not relevant.',
       },
     ];
     return issues;

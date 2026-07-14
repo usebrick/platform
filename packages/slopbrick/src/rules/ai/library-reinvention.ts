@@ -176,10 +176,8 @@ export const aiLibraryReinventionRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `File reinvents ${matched.length} common patterns without canonical library: ` +
-          `${matched.join(', ')}. ` +
-          `GitClear 2025: AI code has 4× higher churn rate (typically replaced when ` +
-          `the team realizes the library exists). Cui et al. 2025: 30.1% of new code ` +
-          `is AI-generated, making this pattern increasingly common.`,
+          `${matched.join(', ')}. Review whether a maintained dependency already covers ` +
+          `the pattern and whether a custom implementation is justified for this codebase.`,
         line: 1,
         column: 1,
         advice:

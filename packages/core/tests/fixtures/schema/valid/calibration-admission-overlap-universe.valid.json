@@ -1,0 +1,15 @@
+{
+  "version": "v10.3-admission-overlap-universe-v1",
+  "registerSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "recordsJsonlSha256": "c594b09e1cd48e97c12a1607ad5389e19bacce03ec17f87c2009947837afe7e4",
+  "selectedAggregateCoverage": 1,
+  "baselineMaterialUnits": 1,
+  "repositoryMaterialUnits": 0,
+  "newCandidateUnits": 0,
+  "covered": 1,
+  "unsupported": 0,
+  "unreadable": 0,
+  "unresolvedCandidateUnitIds": [],
+  "normalizerRegistrySha256": "e1cd74f8d037d9a89cb1808c55f78c4bd65e862508f5b37c70ad0e5575e61141",
+  "universeSha256": "051931485c408920eb4f4720251e350271a9d7b2cca231309963d23caecdd852"
+}

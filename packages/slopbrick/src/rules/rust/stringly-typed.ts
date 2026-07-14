@@ -98,8 +98,7 @@ export const rustStringlyTypedRule = createRule<RustStringlyTypedContext>({
         advice:
           `Replace the String/&str parameter with the typed enum. Stringly-typed APIs lose ` +
           `type information at the boundary; a typo ('Click' vs 'click') only fails at runtime. ` +
-          `AI agents introduce these during exploratory scaffolding, then never replace them with ` +
-          `the existing enum.`,
+          `Use the existing enum when the domain already defines one.`,
       });
     }
 

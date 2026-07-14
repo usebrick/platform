@@ -1,16 +1,37 @@
+import { isV103RuleEvidenceList, type V103RuleEvidence } from './rule-evidence';
+
 export type SyntheticScanResult =
-  | { readonly kind: 'success'; readonly findingsCount: number }
+  | { readonly kind: 'success'; readonly findingsCount: number; readonly ruleEvidence?: readonly V103RuleEvidence[] }
+  | { readonly kind: 'excluded'; readonly exclusionReason: string }
   | { readonly kind: 'parse_failure' }
   | { readonly kind: 'timeout' }
   | { readonly kind: 'crash' };
 
 export interface TerminalSyntheticOutcome {
   readonly fileId: string;
-  readonly status: 'success_zero' | 'success_findings' | 'parse_failure' | 'timeout' | 'scanner_failure';
+  readonly status: 'success_zero' | 'success_findings' | 'excluded' | 'parse_failure' | 'timeout' | 'scanner_failure';
   readonly findingsCount?: number;
+  readonly exclusionReason?: string;
+  readonly ruleEvidence?: readonly V103RuleEvidence[];
 }
 
 export type SyntheticChunkAdapter = (fileIds: readonly string[], timeoutMs: number) => Promise<Readonly<Record<string, SyntheticScanResult>>>;
+
+/**
+ * A durable-attempt artifact was present but could not be trusted for resume.
+ *
+ * Scanner failures are intentionally converted into terminal crash outcomes by
+ * the bisection runner. Resume-artifact failures are different: retrying the
+ * scanner would hide stale/corrupt input and could mutate a run that should
+ * have failed closed. Durable adapters throw this marker so the runner can
+ * preserve that distinction without changing generic adapter crash recovery.
+ */
+export class SyntheticResumeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SyntheticResumeError';
+  }
+}
 
 export function planV103Chunks(fileIds: readonly string[], chunkSize: number): readonly (readonly string[])[] {
   if (!Number.isSafeInteger(chunkSize) || chunkSize < 1) throw new Error('chunkSize must be a positive safe integer');
@@ -22,8 +43,9 @@ export function planV103Chunks(fileIds: readonly string[], chunkSize: number): r
 
 function terminal(fileId: string, result: SyntheticScanResult): TerminalSyntheticOutcome | undefined {
   if (result.kind === 'success') return result.findingsCount === 0
-    ? { fileId, status: 'success_zero' }
-    : { fileId, status: 'success_findings', findingsCount: result.findingsCount };
+    ? { fileId, status: 'success_zero', ...(result.ruleEvidence === undefined ? {} : { ruleEvidence: result.ruleEvidence }) }
+    : { fileId, status: 'success_findings', findingsCount: result.findingsCount, ...(result.ruleEvidence === undefined ? {} : { ruleEvidence: result.ruleEvidence }) };
+  if (result.kind === 'excluded') return { fileId, status: 'excluded', exclusionReason: result.exclusionReason };
   if (result.kind === 'parse_failure') return { fileId, status: 'parse_failure' };
   return undefined;
 }
@@ -31,7 +53,8 @@ function terminal(fileId: string, result: SyntheticScanResult): TerminalSyntheti
 function validResult(value: unknown): value is SyntheticScanResult {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const result = value as Record<string, unknown>;
-  if (result.kind === 'success') return Object.keys(result).length === 2 && Number.isSafeInteger(result.findingsCount) && (result.findingsCount as number) >= 0;
+  if (result.kind === 'success') return (Object.keys(result).length === 2 || Object.keys(result).length === 3) && Number.isSafeInteger(result.findingsCount) && (result.findingsCount as number) >= 0 && (result.ruleEvidence === undefined || isV103RuleEvidenceList(result.ruleEvidence));
+  if (result.kind === 'excluded') return Object.keys(result).length === 2 && typeof result.exclusionReason === 'string' && result.exclusionReason.length > 0;
   return (result.kind === 'parse_failure' || result.kind === 'timeout' || result.kind === 'crash') && Object.keys(result).length === 1;
 }
 
@@ -55,7 +78,12 @@ export async function executeSyntheticBisection(
   };
   const run = async (ids: readonly string[], timeoutMs: number, singletonRetry: boolean): Promise<void> => {
     let result: Readonly<Record<string, SyntheticScanResult>>;
-    try { result = await adapter(ids, timeoutMs); } catch { result = Object.fromEntries(ids.map((id) => [id, { kind: 'crash' as const }])); }
+    try {
+      result = await adapter(ids, timeoutMs);
+    } catch (error) {
+      if (error instanceof SyntheticResumeError) throw error;
+      result = Object.fromEntries(ids.map((id) => [id, { kind: 'crash' as const }]));
+    }
     if (!validChunkResponse(result, ids)) result = Object.fromEntries(ids.map((id) => [id, { kind: 'crash' as const }]));
     const unstable: string[] = [];
     for (const id of ids) {

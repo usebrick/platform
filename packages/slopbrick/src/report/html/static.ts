@@ -81,7 +81,6 @@ function renderStyles(): string {
     .ai-quality .score-value { color: var(--accent); }
     .engineering-hygiene .score-value { color: var(--medium); }
     .security-score .score-value { color: var(--pass); }
-    .health .score-value { color: var(--pass); }
 
     .score-brief {
   display: block;
@@ -262,15 +261,30 @@ function renderStyles(): string {
       font-size: 0.75rem;
     }
 
-    .advice-box {
-      background: rgba(56, 189, 248, 0.08);
-      border-left: 3px solid var(--accent);
-      padding: 0.75rem;
-      border-radius: 0 0.25rem 0.25rem 0;
-      margin: 0 0 0 1rem;
-    }
+     .advice-box {
+       background: rgba(56, 189, 248, 0.08);
+       border-left: 3px solid var(--accent);
+       padding: 0.75rem;
+       border-radius: 0 0.25rem 0.25rem 0;
+       margin: 0 0 0 1rem;
+     }
 
-    .parse-errors-section td { color: var(--high); }
+     .issue-evidence {
+       display: block;
+       margin-top: 0.35rem;
+       color: var(--muted);
+       font-size: 0.8rem;
+     }
+
+     .issue-evidence code {
+       color: var(--text);
+       white-space: pre-wrap;
+       overflow-wrap: anywhere;
+     }
+
+     .evidence-location { white-space: nowrap; }
+
+     .parse-errors-section td { color: var(--high); }
 
     /* v0.15.0+ — 3-bucket taxonomy (AI Findings / Engineering Hygiene /
        Suppressed). Grouped via bucketForVerdict(); counts come from

@@ -71,7 +71,7 @@ export const inlineStyleDominanceRule = createRule<RuleContext>({
         category: 'visual',
         severity: 'medium',
         aiSpecific: true,
-        message: `File uses inline styles for ${distinctPairs.size} distinct (property, value) pairs. AI tends to inline style props instead of using Tailwind/CSS class names.`,
+        message: `File uses inline styles for ${distinctPairs.size} distinct (property, value) pairs. Review whether shared tokens or classes would make the styles easier to maintain.`,
         line: firstLine,
         column: firstColumn,
         advice: 'Replace inline `style={{...}}` with className utilities (e.g. Tailwind `p-4 m-2 gap-3`) or a CSS module class.',

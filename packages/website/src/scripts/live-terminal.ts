@@ -3,6 +3,11 @@
    Pure DOM + setTimeout. No frameworks. No external deps.
    ============================================================ */
 
+import version from '../data/version.json';
+import productFacts from '../data/product-facts.json';
+
+const RELEASE_LABEL = `v${version.slopbrick}`;
+
 type LineKind = 'echo' | 'output' | 'success' | 'accent' | 'muted' | 'err';
 
 interface Line {
@@ -38,13 +43,13 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'help',
     run: () => [
-      { kind: 'accent', text: 'available commands (v0.43.0; latest published)' },
+      { kind: 'accent', text: `available commands (${RELEASE_LABEL} workspace build)` },
       { kind: 'output', text: '  help                              show this list' },
       { kind: 'output', text: '  npm install -g slopbrick          install the CLI' },
       { kind: 'output', text: '  slopbrick init                    write a slopbrick.config.mjs' },
       { kind: 'output', text: '  slopbrick scan                    score + write .slopbrick/ artifacts' },
       { kind: 'output', text: '  slopbrick --brief                 one-line brief with per-score descriptions' },
-      { kind: 'output', text: '  slopbrick rules                   list 103 rules in 22 categories' },
+      { kind: 'output', text: `  slopbrick rules                   list ${productFacts.ruleCount} rules in ${productFacts.categoryCount} categories` },
       { kind: 'output', text: '  slopbrick explain <ruleId>        rationale + remediation for a rule' },
       { kind: 'output', text: '  slopbrick doctor                  check setup, config, environment' },
       { kind: 'output', text: '  slopbrick mcp                     start the MCP server (JSON-RPC 2.0 over stdio)' },
@@ -56,7 +61,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'npm install -g slopbrick',
     run: () => [
-      { kind: 'muted',  text: 'fetching slopbrick@latest (v0.43.0; latest published)...' },
+      { kind: 'muted',  text: `fetching slopbrick@latest (workspace build ${RELEASE_LABEL})...` },
       { kind: 'success', text: 'added 1 package in 3s' },
       { kind: 'output', text: '/usr/local/bin/slopbrick' },
       { kind: 'muted',  text: 'next: `slopbrick init` to write slopbrick.config.mjs, then `slopbrick scan`.' },
@@ -65,7 +70,8 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick scan',
     run: () => [
-      { kind: 'muted',  text: '[v0.43.0] auto-suppressed 0 INVERTED/NOISY issue(s) from 18 default-off rule(s).' },
+      { kind: 'muted',  text: 'demo output — illustrative local example; no remote scan is running' },
+      { kind: 'muted',  text: `[${RELEASE_LABEL}] auto-suppressed 0 INVERTED/NOISY issue(s) from ${productFacts.defaultOffCount} default-off rule(s).` },
       { kind: 'muted',  text: 'Memory persisted to .slopbrick/structure.md (0 patterns, 0 components, 537 bytes).' },
       { kind: 'output', text: '' },
       { kind: 'output', text: 'Repo is low (13/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts.' },
@@ -100,7 +106,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '22 categories · 103 rules (v0.43.0; v10-calibrated against 576,750 files)' },
+      { kind: 'accent', text: '27 categories · 119 rules (v0.44.0; v10.1 evidence from 576,750 files)' },
       { kind: 'output', text: '  ai           15   compression-profile, comment-ratio, segment-surprisal-cv, ...' },
       { kind: 'output', text: '  logic        12   ghost-defensive, zipf-slope-anomaly, dead-state, ...' },
       { kind: 'output', text: '  security     11   sql-construction, dangerous-cors, public-admin-route, ...' },
@@ -108,7 +114,7 @@ const COMMANDS: CommandSpec[] = [
       { kind: 'output', text: '  dead          5   dead-branch, unused-import, unused-local, ...' },
       { kind: 'output', text: '  swift         5   print-debug, fatal-error-thrown, ...' },
       { kind: 'output', text: '  ... and 16 more (layout, rust, ts, java, cpp, component, docs, dup, test, wcag, go, perf, product, typo, context, db)' },
-      { kind: 'muted',  text: '18 default-off rules (INVERTED/NOISY; auto-suppressed). Per-rule precision/recall in src/rules/signal-strength.json.' },
+      { kind: 'muted',  text: '36 default-off rules (INVERTED/NOISY; auto-suppressed). Per-rule evidence lives in src/rules/signal-strength.json.' },
     ],
   },
   {
@@ -260,7 +266,7 @@ export function initLiveTerminal(): () => void {
 
   const seedBanner = (): void => {
     body.dataset.commandComplete = 'seed';
-    appendLine('muted', 'slopbrick v0.43.0 · 4 scores · 103 rules · 22 categories · v10-calibrated · offline');
+    appendLine('muted', `${RELEASE_LABEL} candidate · 4 scores · ${productFacts.ruleCount} rules · ${productFacts.categoryCount} categories · ${productFacts.measuredRuleCount} measured in ${productFacts.corpusLabel} · offline`);
     appendLine('muted', "type `help` to list commands. the CLI itself runs without telemetry.");
     renderInputLine();
   };

@@ -1,0 +1,12 @@
+{
+  "version": "v10.3-admission-source-generation-v1",
+  "sourceId": "source-fixture",
+  "generation": 0,
+  "proposalId": "proposal-fixture",
+  "proposalSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "approval": { "kind": "genesis_quarantine", "reason": "review_incomplete" },
+  "sourceReviewSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "artifacts": [{ "pathBase": "admission_root_content_addressed", "relativePath": "evidence-cas/sha256/cc/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "kind": "current_pointer", "bytes": 1, "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }],
+  "artifactSetSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "generationSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+}

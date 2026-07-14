@@ -7,7 +7,8 @@ import type {
   TopOffender,
 } from '../types';
 import { HEADLINE_SCORES, REPOSITORY_HEALTH_FORMULA, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
-import { formatScanValidityNotice } from './scan-validity.js';
+import { formatScanAccountingSummary, formatScanValidityNotice, isIncompleteScan, isNotApplicableScan } from './scan-validity.js';
+import { formatFindingContext } from './finding-context.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -52,7 +53,7 @@ function pluralize(count: number, word: string): string {
 function formatScoreBasis(report: ProjectReport): string | null {
   if (!report.scoreBasis) return null;
   const { denominator, suppressedIssueCount, parseErrorCount } = report.scoreBasis;
-  return `Scores use ${pluralize(denominator, 'analysed file')}; effective findings only (${suppressedIssueCount} suppressed, ${parseErrorCount} parse errors).`;
+  return `Coverage: ${pluralize(denominator, 'successfully analysed file')}; per-file AI burdens are additive (the count does not dilute them); effective findings only (${suppressedIssueCount} suppressed finding instances are audit-only, ${parseErrorCount} parse errors).`;
 }
 
 function formatSummary(report: ProjectReport): string {
@@ -92,6 +93,30 @@ function formatSelectionAccounting(report: ProjectReport): string | null {
   return `Selection: ${accounting.observedCandidates} observed; ${accounting.selected} selected; ${excludedTotal} excluded (${reasons.join(', ')}).`;
 }
 
+/** Summarize repeated active findings before printing the detailed feed. */
+function formatFindingSummary(report: ProjectReport): string | null {
+  const active = report.issues.filter((issue) => (issue.severity as string) !== 'off');
+  if (active.length < 2) return null;
+  const groups = new Map<string, { count: number; contexts: string[] }>();
+  for (const issue of active) {
+    const group = groups.get(issue.ruleId) ?? { count: 0, contexts: [] };
+    group.count++;
+    const context = formatFindingContext(issue.filePath);
+    if (!group.contexts.includes(context)) group.contexts.push(context);
+    groups.set(issue.ruleId, group);
+  }
+  const entries = [...groups.entries()].sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]));
+  const visible = entries.slice(0, 8);
+  const lines = ['Finding summary (active instances; detailed findings follow):'];
+  for (const [ruleId, group] of visible) {
+    lines.push(`  ${group.count} × ${ruleId} — context: ${group.contexts.join(', ')}`);
+  }
+  if (entries.length > visible.length) {
+    lines.push(`  … ${entries.length - visible.length} additional rules; use JSON output for the complete machine-readable feed.`);
+  }
+  return lines.join('\n');
+}
+
 /**
  * v0.14.5i — Trust-signal section: surfaces the count of issues
  * auto-suppressed because their rule was marked `defaultOff: true` in
@@ -104,8 +129,8 @@ function formatDefaultOffSuppression(report: ProjectReport): string | null {
   const total = report.defaultOffRuleCount ?? 0;
   if (suppressed === 0) return null;
   return chalk.green(
-    `✓ ${suppressed} INVERTED/NOISY issue(s) correctly suppressed ` +
-      `from ${total} default-off rule(s). ` +
+    `✓ ${suppressed} INVERTED/NOISY/DORMANT default-off rule finding(s) are audit-only (` +
+      `${total} default-off rules configured; suppressed from scores). ` +
       `The top offenses below are the ones that matter — re-enable per-rule via ` +
       `\`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
   );
@@ -144,6 +169,24 @@ function slopScoreBand(score: number): { label: string; color: (s: string) => st
   if (score >= 30) return { label: 'medium', color: chalk.yellow };
   if (score >= 10) return { label: 'low', color: chalk.green };
   return { label: 'no slop', color: chalk.green };
+}
+
+function hasActiveAiSpecificFinding(report: ProjectReport): boolean {
+  return report.issues.some(
+    (issue) => (issue.severity as string) !== 'off' && issue.aiSpecific === true,
+  );
+}
+
+/**
+ * A score below 10 is normally the absolute "no slop" band. Keep that
+ * wording only when the active report has no AI-specific findings; a low
+ * score plus an active signal needs a qualified, non-contradictory label.
+ */
+function slopScoreBandForReport(report: ProjectReport): ReturnType<typeof slopScoreBand> {
+  const band = slopScoreBand(report.aiSlopScore);
+  return band.label === 'no slop' && hasActiveAiSpecificFinding(report)
+    ? { ...band, label: 'low' }
+    : band;
 }
 
 /**
@@ -185,10 +228,9 @@ function formatDeltaSuffix(report: ProjectReport): string {
  *
  * Replaces the bare "25 [FAIL]" with something a non-technical
  * reader can act on. Adapts to the report's actual data:
- * - If score is high: short reassurance
- * - If score is failing: identify the dominant category, the
- *   dominant rule, and the dominant file
- * - If no issues: explicit "all clean" verdict
+ * - If active findings remain: identify their count, dominant category,
+ *   dominant rule, and dominant file
+ * - If no active findings remain: explicit "all clean" verdict
  */
 function formatVerdict(report: ProjectReport): string {
   // v0.42.0 (user-review fix): the verdict used to be derived from
@@ -201,39 +243,53 @@ function formatVerdict(report: ProjectReport): string {
   // but score 25 is well below the 30 threshold and is in fact "low
   // slop" - the verdict should reflect "this is OK" not "this is bad".
   const score = report.aiSlopScore;
-  const band = slopScoreBand(score);
+  const band = slopScoreBandForReport(report);
+  const activeIssues = report.issues.filter(
+    (issue) => (issue.severity as string) !== 'off',
+  );
 
   // Build context: dominant category + rule + file
-  const ranked = rankByImpact(report.issues);
+  const ranked = rankByImpact(activeIssues);
   const topRule = ranked[0];
-  const topFile = report.topOffenders?.[0];
+  const activeFilePaths = new Set(
+    activeIssues
+      .map((issue) => issue.filePath)
+      .filter((filePath): filePath is string => Boolean(filePath)),
+  );
+  const topFile = report.topOffenders?.find(
+    (offender) => offender.issueCount > 0 && activeFilePaths.has(offender.filePath),
+  );
 
-  if (report.issues.length === 0) {
+  if (activeIssues.length === 0) {
+    const suppressedIssueCount = report.issues.length;
+    if (suppressedIssueCount > 0) {
+      const findingWord = suppressedIssueCount === 1 ? 'finding' : 'findings';
+      return chalk.bold.green(
+        `✓ Clean. No active findings. ${suppressedIssueCount} audit-only suppressed ${findingWord} ` +
+        `remain${suppressedIssueCount === 1 ? 's' : ''} in the report.`,
+      );
+    }
     return chalk.bold.green(
       `✓ Clean. No AI slop signatures or anti-patterns found. The repo is ` +
       `coherent with the patterns it was written in.`,
     );
   }
 
-  if (score >= 70) {
-    return band.color(
-      `Repo is ${band.label} (${score}/100). ${report.issues.length} ` +
-      `minor issue${report.issues.length === 1 ? '' : 's'} — none of ` +
-      `them are doing real damage.`,
-    );
-  }
-
-  // Failing — find the dominant category so we can name it
+  // Active findings remain — find the dominant category so we can name it.
   const dominantCat = topRule ? topRule[0].category : 'mixed';
   const catGloss = CATEGORY_GLOSSARY[dominantCat as keyof typeof CATEGORY_GLOSSARY];
   // v0.14.5j: avoid "AI patterns patterns" — `catGloss.short` already
   // includes the noun (e.g. "AI patterns", "visual style") so we
   // don't append "patterns" again.
   const catLabel = catGloss?.short ?? dominantCat;
-  const fileHint = topFile ? ` — worst file is ${topFile.filePath}` : '';
+  const topFilePath = topFile?.filePath ?? topRule?.[0].filePath;
+  const fileHint = topFilePath ? ` — worst file is ${topFilePath}` : '';
+  const issueWord = activeIssues.length === 1 ? 'issue' : 'issues';
+  const lead = dominantCat === 'ai' ? 'The dominant signal is ' : 'The biggest problem is ';
 
   return band.color(
-    `Repo is ${band.label} (${score}/100). The biggest problem is ` +
+    `Repo's AI-slop score is ${band.label} (${formatHeadlineScore(score)}/100) with ${activeIssues.length} active ${issueWord}. ` +
+    lead +
     `${catLabel}${fileHint}. Run \`slopbrick scan --why-failing\` ` +
     `for the top 5 rules, or \`slopbrick scan --suggest\` for fixes.`,
   );
@@ -338,12 +394,14 @@ function formatNextStep(report: ProjectReport): string {
   lines.push(chalk.bold('Next step:'));
 
   // Compute the dominant impact driver by looking at the top offending
-  // file. The user can target that specifically with --rule.
+  // file. Pass it after `--` so a leading dash cannot be parsed as an
+  // option, then single-quote it for safe POSIX-shell copy/paste.
   const top = report.topOffenders?.[0];
   if (top) {
     const issueWord = top.issueCount === 1 ? 'issue' : 'issues';
+    const fileArgument = `'${top.filePath.replace(/'/g, `'"'"'`)}'`;
     lines.push(
-      chalk.cyan(`  → \`slopbrick scan --rule ${top.filePath}\` to drill into the worst file (${top.issueCount} ${issueWord})`),
+      chalk.cyan(`  → POSIX shell only: \`slopbrick scan -- ${fileArgument}\` to drill into the worst file (${top.issueCount} ${issueWord})`),
     );
   }
 
@@ -459,7 +517,7 @@ function severityBadge(severity: Severity): string {
  * repo-focused ("Repo has...", not "Score is...") so the output
  * reads as a status report, not a dashboard.
  *
- * Thresholds match the band labels in `scoreBand`:
+ * Higher-is-better scores match the band labels in `scoreBand`:
  *   ≥90 = excellent / no / clean / healthy
  *   ≥70 = passing / low / minor
  *   ≥50 = needs work / medium / moderate
@@ -471,10 +529,10 @@ const SCORE_MESSAGES: Record<string, ReadonlyArray<readonly [number, string]>> =
   // amount of slop. 0 = no AI slop, 100 = max AI slop. The tier
   // thresholds are flipped vs the v0.20.1 inverted reading.)
   slop: [
-    [90, 'Repo is saturated with AI slop'],
-    [70, 'Repo has a high amount of AI slop'],
-    [50, 'Repo has a medium amount of AI slop'],
-    [30, 'Repo has a low amount of AI slop'],
+    [70, 'Repo is saturated with AI slop'],
+    [50, 'Repo has a high amount of AI slop'],
+    [30, 'Repo has a medium amount of AI slop'],
+    [10, 'Repo has a low amount of AI slop'],
     [0,  'Repo has no detectable AI slop'],
   ],
   // Engineering Hygiene (higher = better = fewer arch/logic/layout issues)
@@ -572,6 +630,14 @@ function scoreToMessage(score: number, type: keyof typeof SCORE_MESSAGES): strin
   return last ? last[1] : 'Score unavailable';
 }
 
+function slopScoreMessageForReport(report: ProjectReport): string {
+  const band = slopScoreBand(report.aiSlopScore);
+  if (band.label === 'no slop' && hasActiveAiSpecificFinding(report)) {
+    return 'Repo has a low amount of AI slop';
+  }
+  return scoreToMessage(report.aiSlopScore, 'slop');
+}
+
 /**
  * v0.9.1 — Repository Coherence is the new headline metric.
  * v0.9.1 — Repository Coherence was the new headline metric.
@@ -607,7 +673,7 @@ function formatCompositeScore(report: ProjectReport): string {
   // the run log.
   const slop = report.aiSlopScore;
   const slopValue = formatHeadlineScore(slop);
-  const band = slopScoreBand(slop);
+  const band = slopScoreBandForReport(report);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
 
   const lines: string[] = [];
@@ -617,9 +683,9 @@ function formatCompositeScore(report: ProjectReport): string {
   );
   // v0.20.0: plain-language message (band label alone wasn't enough).
   // v0.21.0: aiSlopScore is the raw amount of slop. The 'slop' tier
-  // messages are authored in the natural reading direction (≥90
+  // messages are authored in the natural reading direction (≥70
   // saturated, <10 no slop) so the lookup is direct.
-  lines.push(`  ${chalk.dim(scoreToMessage(slop, 'slop'))}`);
+  lines.push(`  ${chalk.dim(slopScoreMessageForReport(report))}`);
   lines.push(
     chalk.dim(
       'lower = cleaner · measures AI-slop signatures (0 = no AI slop detected, 100 = max AI slop). ' +
@@ -698,11 +764,9 @@ function formatCoherenceScores(report: ProjectReport): string[] {
   // 3 secondary domain scores (Code Hygiene, Accessibility, Performance)
   // + Business Logic + Security Risk. Each gets:
   //   - a one-line explanation of what it measures
-  //   - a `higher = better` (or `inverted`) annotation
-  //   - for Security Risk: show BOTH the risk label (CRITICAL/HIGH/...)
-  //     AND the inverted numeric score, so the double-inversion
-  //     footgun (where the label says "CRITICAL" but the underlying
-  //     score is low-because-bad) is no longer confusing.
+  //   - a `higher = better` annotation for numeric domains
+  //   - for Security Risk: show the categorical label plus the finding
+  //     counts that produced it, without a misleading numeric direction.
   const domains: Array<{
     key: keyof ProjectReport;
     label: string;
@@ -764,11 +828,16 @@ function formatCoherenceScores(report: ProjectReport): string[] {
   // HIGH / CRITICAL). Previously the rendering was a double-
   // inversion footgun — the label "CRITICAL" was shown without
   // explaining that this is a risk level (worse = more risk = bad),
-  // not a score. Now the inversion is explicit in the annotation.
+  // not a score. The annotation therefore describes categorical risk and
+  // exposes its finding-count basis rather than a numeric direction.
   if (report.aiSecurityRisk) {
     const secLabel = report.aiSecurityRisk.toUpperCase();
+    const findings = report.aiSecurityFindings;
+    const findingsBasis = findings
+      ? `findings: ${findings.critical} critical, ${findings.high} high, ${findings.medium} medium, ${findings.low} low`
+      : 'finding counts unavailable';
     lines.push(
-      `${'Security Risk'.padEnd(20)} ${secLabel.padEnd(9)} (↑ higher = better · inverted from risk level · CRITICAL = worst)`,
+      `${'Security Risk'.padEnd(20)} ${secLabel.padEnd(9)} (categorical risk · CRITICAL = worst · ${findingsBasis})`,
     );
     // Security score: 100/67/33/0 for low/medium/high/critical.
     // Map categorical risk back to the inverted numeric score for
@@ -891,13 +960,14 @@ function formatThresholds(report: ProjectReport): string[] {
 }
 
 function formatTopComponents(components: ComponentScore[], topOffenders?: TopOffender[]): string {
-  if (topOffenders && topOffenders.length > 0) {
+  if (topOffenders !== undefined) {
+    if (topOffenders.length === 0) return '';
     const rows = topOffenders.map((offender) => {
       const score = offender.adjustedScore.toFixed(1).padStart(5, ' ');
       const issues = `${offender.issueCount} issue${offender.issueCount === 1 ? '' : 's'}`;
       return `  ${score}  ${issues.padEnd(12)}  ${offender.filePath}`;
     });
-    return ['Top offending components (by adjusted score)', ...rows].join('\n');
+    return ['Top offending files (by adjusted score)', ...rows].join('\n');
   }
 
   const offenders = [...components]
@@ -916,12 +986,82 @@ function formatTopComponents(components: ComponentScore[], topOffenders?: TopOff
   return ['Top offending components', ...rows].join('\n');
 }
 
+const DEFAULT_DETAIL_INSTANCES_PER_RULE = 5;
+
+function formatIssueDetails(issues: Issue[], full: boolean): string[] {
+  if (full) return issues.map(formatIssue);
+  const shownByRule = new Map<string, number>();
+  const omittedByRule = new Map<string, number>();
+  const lines: string[] = [];
+  for (const issue of issues) {
+    const shown = shownByRule.get(issue.ruleId) ?? 0;
+    if (shown < DEFAULT_DETAIL_INSTANCES_PER_RULE) {
+      lines.push(formatIssue(issue));
+      shownByRule.set(issue.ruleId, shown + 1);
+    } else {
+      omittedByRule.set(issue.ruleId, (omittedByRule.get(issue.ruleId) ?? 0) + 1);
+    }
+  }
+  for (const [ruleId, count] of omittedByRule) {
+    lines.push(chalk.dim(
+      `  … ${count} additional ${ruleId} findings omitted; use \`--full\` for the complete detail feed.`,
+    ));
+  }
+  return lines;
+}
+
+/**
+ * Keep the active human-readable feed honest about what each finding means.
+ * `aiSpecific` is the rule's explicit polarity; severity `off` is excluded
+ * before lane assignment so audit-only findings cannot look actionable.
+ */
+function formatFindingLanes(issues: Issue[], full: boolean): string[] {
+  const active = issues.filter((issue) => (issue.severity as string) !== 'off');
+  if (active.length === 0) return [];
+
+  const lanes = [
+    {
+      label: 'AI-specific signals',
+      empty: 'No active AI-specific signals.',
+      issues: active.filter((issue) => issue.aiSpecific === true),
+    },
+    {
+      label: 'Engineering findings',
+      empty: 'No active engineering findings.',
+      issues: active.filter((issue) => issue.aiSpecific !== true),
+    },
+  ];
+
+  return lanes.map(({ label, empty, issues: laneIssues }) => {
+    const lines = [`${label} (${laneIssues.length})`];
+    if (laneIssues.length === 0) {
+      lines.push(chalk.dim(`  ${empty}`));
+    } else {
+      lines.push(...formatIssueDetails(laneIssues, full));
+    }
+    return lines.join('\n');
+  });
+}
+
+function formatIssueEvidence(issue: Issue): string | null {
+  const evidence = issue.evidence;
+  if (!evidence) return null;
+  const start = evidence.location.start;
+  const end = evidence.location.end;
+  const location = `${start.line}:${start.column}-${end.line}:${end.column}`;
+  if (evidence.status === 'omitted') {
+    return `Evidence omitted (${evidence.omission.reason}) at ${location}`;
+  }
+  const snippet = redactSecrets(evidence.snippet.replace(/[\r\n]+/g, ' '));
+  return `Evidence: ${snippet} (${location})`;
+}
+
 function formatIssue(issue: Issue): string {
   const badge = severityBadge(issue.severity);
   const location = issue.filePath
     ? `${issue.filePath}:${issue.line}:${issue.column}`
     : `${issue.line}:${issue.column}`;
-  const header = `[${badge}] ${issue.ruleId} · ${location}`;
+  const header = `[${badge}] ${issue.ruleId} · ${location} · context: ${formatFindingContext(issue.filePath)}`;
   // v0.17.1: redact any secrets that may have leaked into the issue
   // message or advice before they reach the terminal.
   const body = `  ${chalk.dim(redactSecrets(issue.message))}`;
@@ -931,10 +1071,19 @@ function formatIssue(issue: Issue): string {
     lines.push(`  ${chalk.cyan('→')} ${redactSecrets(issue.advice)}`);
   }
 
+  const evidence = formatIssueEvidence(issue);
+  if (evidence) lines.push(`  ${chalk.dim(evidence)}`);
+
   return lines.join('\n');
 }
 
-export function formatPretty(report: ProjectReport): string {
+export function formatPretty(report: ProjectReport, options: { full?: boolean } = { full: true }): string {
+  if (isNotApplicableScan(report) || isIncompleteScan(report)) {
+    return chalk.bold.yellow(
+      formatScanValidityNotice(report) ??
+        'NO FILES ANALYSED — scores are not applicable for gating.',
+    );
+  }
   const sections: string[] = [];
   const validityNotice = formatScanValidityNotice(report);
   if (validityNotice) sections.push(chalk.bold.yellow(validityNotice));
@@ -948,8 +1097,12 @@ export function formatPretty(report: ProjectReport): string {
   // noise — the user came for the score, not the file count. Put
   // it after the verdict where it provides supporting context.
   sections.push(formatSummary(report));
+  const scanAccounting = formatScanAccountingSummary(report);
+  if (scanAccounting) sections.push(chalk.dim(scanAccounting));
   const selectionSummary = formatSelectionAccounting(report);
   if (selectionSummary) sections.push(chalk.dim(selectionSummary));
+  const findingSummary = formatFindingSummary(report);
+  if (findingSummary) sections.push(chalk.dim(findingSummary));
 
   sections.push(formatCompositeScore(report));
 
@@ -1020,11 +1173,7 @@ export function formatPretty(report: ProjectReport): string {
   // v0.43.0: filter 'off'-severity suppressed issues from the
   // full list. They show in the JSON for tooling but the report
   // shows only what the user can act on.
-  const active = report.issues.filter((i) => (i.severity as string) !== 'off');
-  if (active.length > 0) {
-    sections.push(`Issues (${active.length})`);
-    sections.push(...active.map(formatIssue));
-  }
+  sections.push(...formatFindingLanes(report.issues, options.full !== false));
 
   return sections.join('\n\n');
 }
@@ -1064,6 +1213,12 @@ function formatScoringExplainer(report: ProjectReport): string {
  * terminal.
  */
 export function formatWhyFailingReport(report: ProjectReport): string {
+  if (isNotApplicableScan(report) || isIncompleteScan(report)) {
+    return chalk.bold.yellow(
+      formatScanValidityNotice(report) ??
+        'NO FILES ANALYSED — scores are not applicable for gating.',
+    );
+  }
   const validityNotice = formatScanValidityNotice(report);
   return validityNotice
     ? `${chalk.bold.yellow(validityNotice)}\n\n${formatWhyFailing(report)}`
@@ -1077,6 +1232,12 @@ export function formatWhyFailingReport(report: ProjectReport): string {
  * in 4-5 lines on a terminal.
  */
 export function formatBriefReport(report: ProjectReport): string {
+  if (isNotApplicableScan(report) || isIncompleteScan(report)) {
+    return chalk.bold.yellow(
+      formatScanValidityNotice(report) ??
+        'NO FILES ANALYSED — scores are not applicable for gating.',
+    );
+  }
   // v0.17.0: 4-score model (aiSlopScore, engineeringHygiene, security, repositoryHealth).
   // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;
   // the 4-score model shows all 4 orthogonal axes up front.
@@ -1125,7 +1286,7 @@ export function formatBriefReport(report: ProjectReport): string {
   // metric) and the other three through scoreBand() (their direction
   // is unchanged - higher = better).
   scoreLines.forEach(({ label, field, value, brief }, idx) => {
-    const band = field === 'aiSlopScore' ? slopScoreBand(value) : scoreBand(value);
+    const band = field === 'aiSlopScore' ? slopScoreBandForReport(report) : scoreBand(value);
     const paddedLabel = label.padEnd(20, ' ');
     const valueStr = formatHeadlineScore(value);
     const delta = idx === 0 ? deltaSuffix : '';
@@ -1169,7 +1330,7 @@ export function formatBriefReport(report: ProjectReport): string {
     lines.push('');
     lines.push(
       chalk.green(
-        `  ✓ ${suppressed} INVERTED/NOISY issue(s) suppressed from ${report.defaultOffRuleCount ?? 0} default-off rule(s)`,
+        `  ✓ ${suppressed} INVERTED/NOISY/DORMANT default-off rule finding(s) are audit-only (${report.defaultOffRuleCount ?? 0} default-off rules configured; suppressed from scores)`,
       ),
     );
   }
@@ -1184,7 +1345,7 @@ export function formatBriefReport(report: ProjectReport): string {
     ),
   );
   const basis = formatScoreBasis(report);
-  if (basis) lines.push(chalk.dim(`  Score basis: ${basis.slice('Scores use '.length)}`));
+  if (basis) lines.push(chalk.dim(`  ${basis}`));
 
   return lines.join('\n');
 }

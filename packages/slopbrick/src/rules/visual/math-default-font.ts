@@ -75,11 +75,11 @@ export const mathDefaultFontRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `UI uses framework default font (font-sans/mono, ${fontClassCount} occurrences) without any custom font import. ` +
-          `AI defaults to Inter/system-ui; humans import a distinctive typeface.`,
+          `Review typography against legibility, brand, and loading constraints; the default can be intentional.`,
         line: firstFontAnchor?.line ?? 1,
         column: firstFontAnchor?.column ?? 1,
         advice:
-          'Import a distinctive font (next/font/google, @font-face, or a CSS variable) instead of relying on the framework default.',
+          'Choose typography based on legibility, brand, and loading constraints; import a custom font only when the product requires it.',
       });
 
       return issues;

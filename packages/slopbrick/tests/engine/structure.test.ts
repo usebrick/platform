@@ -684,6 +684,28 @@ describe('saveHealth / loadHealth', () => {
     }
   });
 
+  it('does not persist a project composite for an incomplete health snapshot', () => {
+    const report = makeReport(50, {
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    });
+    const health = buildHealthFromReport(report, '/work', {
+      compositeScore: {
+        mean: 0.78,
+        max: 0.92,
+        tier: 'LIKELY_AI',
+        fileCount: 1,
+      },
+    });
+
+    expect(health.scoreValidity).toBe('incomplete');
+    expect(health.compositeScore).toBeUndefined();
+  });
+
   // v0.18.2 PR-1: validator must reject malformed compositeScore.
   it('rejects a HealthFile with malformed compositeScore', () => {
     const base = {

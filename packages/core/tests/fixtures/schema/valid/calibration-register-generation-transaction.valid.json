@@ -1,0 +1,27 @@
+{
+  "version": "v10.3-register-generation-transaction-v1",
+  "transactionId": "transaction-1",
+  "lockSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "invocationIntentId": "7777777777777777777777777777777777777777777777777777777777777777",
+  "expectedCurrentRegisterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "nextRegisterSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "deltaId": "delta-1",
+  "sourceGenerations": [
+    {
+      "sourceId": "source-a",
+      "proposalId": "proposal-a",
+      "generationSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "artifactSetSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "generationStagingRelativePath": "transactions/transaction-1/source-a/staged",
+      "generationFinalRelativePath": "sources/source-a/generations/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/source-generation.json",
+      "generationsParentRelativePath": "sources/source-a/generations",
+      "priorGenerationRelativePath": "sources/source-a/generations/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/source-generation.json",
+      "currentPointerTemporaryRelativePath": "sources/source-a/current.tmp.json",
+      "currentPointerFinalRelativePath": "sources/source-a/current.json"
+    }
+  ],
+  "immutableGenerationRelativePath": "register-generations/3333333333333333333333333333333333333333333333333333333333333333/register.json",
+  "currentRegisterTemporaryRelativePath": "transactions/transaction-1/current-register.tmp.json",
+  "state": { "phase": "intent_fsynced" },
+  "transactionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-invocation-intent.schema.json",
+  "title": "CalibrationAdmissionInvocationIntentV1",
+  "description": "Pre-execution, immutable authority intent. Runtime validation binds profile/action ownership and the self-derived intent ID/hash.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "intentId", "profileId", "profileSha256", "action", "canonicalArgvSha256", "inputSetSha256", "executableBehaviorSha256", "intentSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-invocation-intent-v1" },
+    "intentId": { "$ref": "#/$defs/sha256" },
+    "profileId": { "$ref": "#/$defs/profileId" },
+    "profileSha256": { "$ref": "#/$defs/sha256" },
+    "action": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,127}$" },
+    "canonicalArgvSha256": { "$ref": "#/$defs/sha256" },
+    "inputSetSha256": { "$ref": "#/$defs/sha256" },
+    "executableBehaviorSha256": { "$ref": "#/$defs/sha256" },
+    "networkAuthorizationSha256": { "$ref": "#/$defs/sha256" },
+    "intentSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "profileId": { "enum": ["admission-core-contract-v1", "admission-context-v1", "admission-static-ledgers-v1", "admission-census-v1", "admission-manifest-v1", "admission-acquisition-publication-v1", "admission-source-node-v1", "admission-source-parquet-v1", "admission-acquisition-round-v1", "admission-git-acquire-v1", "admission-release-acquire-v1", "admission-evidence-acquire-v1"] }
+  }
+}

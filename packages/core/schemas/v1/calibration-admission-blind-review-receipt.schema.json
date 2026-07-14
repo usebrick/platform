@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-blind-review-receipt.schema.json",
+  "title": "CalibrationAdmissionBlindReviewReceiptV1",
+  "description": "Post-decision receipt proving that two assigned reviewers sealed independently while peer material was hidden.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "assignmentId", "evidenceSetSha256", "sealedDecisions", "unsealedOnlyAfterBothDecisionIdsExisted", "protocolAuditorId", "protocolAuditEvidenceIds"],
+  "properties": {
+    "version": { "const": "v10.3-admission-blind-review-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "assignmentId": { "$ref": "#/$defs/sha256" },
+    "evidenceSetSha256": { "$ref": "#/$defs/sha256" },
+    "sealedDecisions": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/sealedDecision" }, { "$ref": "#/$defs/sealedDecision" }],
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "unsealedOnlyAfterBothDecisionIdsExisted": { "const": true },
+    "protocolAuditorId": { "$ref": "#/$defs/id" },
+    "protocolAuditEvidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sealedDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewerId", "decisionId", "peerDecisionVisibleBeforeSeal"],
+      "properties": {
+        "reviewerId": { "$ref": "#/$defs/id" },
+        "decisionId": { "$ref": "#/$defs/sha256" },
+        "peerDecisionVisibleBeforeSeal": { "const": false }
+      }
+    }
+  }
+}

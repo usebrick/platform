@@ -59,7 +59,7 @@ export function BadComponent() {
     expect(issues[0].aiSpecific).toBe(true);
     expect(issues[0].severity).toBe('medium');
     expect(issues[0].message).toMatch(/distinct tokens/);
-    expect(issues[0].advice).toMatch(/Hindle 2012/);
+    expect(issues[0].advice).toMatch(/not an authorship verdict/);
   });
 
   it('does not flag a component with diverse identifier vocabulary', async () => {

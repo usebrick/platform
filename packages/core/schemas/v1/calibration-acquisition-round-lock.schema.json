@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-round-lock.schema.json",
+  "title": "CalibrationAcquisitionRoundLockV1",
+  "description": "Fixed-path lock for one bounded acquisition-round transaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "roundId", "orchestratorInvocationIntentId", "sourceInvocations", "sourceAuthorizationIds", "maxTotalMaterializedBytes", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-round-lock-v1" },
+    "lockId": { "$ref": "#/$defs/sha256" },
+    "intendedTransactionId": { "$ref": "#/$defs/sha256" },
+    "roundId": { "$ref": "#/$defs/sha256" },
+    "orchestratorInvocationIntentId": { "$ref": "#/$defs/sha256" },
+    "sourceInvocations": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sourceInvocation" } },
+    "sourceAuthorizationIds": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "maxTotalMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sourceInvocation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authorizationId", "invocationIntentId", "profileId", "profileSha256"],
+      "properties": {
+        "authorizationId": { "$ref": "#/$defs/sha256" },
+        "invocationIntentId": { "$ref": "#/$defs/sha256" },
+        "profileId": { "enum": ["admission-git-acquire-v1", "admission-release-acquire-v1"] },
+        "profileSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

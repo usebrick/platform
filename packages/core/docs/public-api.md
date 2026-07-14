@@ -19,7 +19,7 @@ The package's `index.ts` re-exports from three internal modules:
 - `InventoryFile` — the shape of `.slop-audit/inventory.json` (auto-generated from `schemas/v1/inventory.schema.json`)
 - `ConstitutionFile` — the shape of `.slop-audit/constitution.json`
 - `FileMtimeEntry` — a per-file mtime + hash entry for the cache (NOT part of the public schema — internal to the freshness check)
-- `HealthFile` — the shape of `.slopbrick/health.json` (per-scan health snapshot; the v0.15.0+ 4 headline scores `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`, plus issue counts). The legacy `slopIndex` and `categoryScores` fields are kept optional for backward compat with v0.14 readers and will be removed in v0.16.0.
+- `HealthFile` — the shape of `.slopbrick/health.json` (score-bearing per-scan health snapshot; the v5 canonical scores `aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`, plus issue counts). Empty or not-applicable scans use a score-free scan-report envelope instead of writing a `HealthFile`. The legacy `slopIndex` and `categoryScores` fields remain optional for backward compatibility with v0.14 readers.
 
 ### Runtime validators
 
@@ -55,7 +55,7 @@ Every public type has an `is<Type>(value): value is Type` runtime predicate. Mis
 
 ### Constants
 
-- `STRUCTURE_SCHEMA_VERSION` — the current schema version (`'3'`). Bump on breaking change.
+- `STRUCTURE_SCHEMA_VERSION` — the current schema version (`'5'`). Bump on breaking change.
 
 ## On-disk layout
 

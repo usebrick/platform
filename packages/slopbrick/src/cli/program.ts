@@ -30,6 +30,7 @@ import {
   buildBaselineCache,
   printFixSummary,
   renderOutput,
+  outputScanResults,
   watchProject,
 } from './scan';
 import { runInitWizard, runDoctor } from './init';
@@ -99,8 +100,6 @@ import type { GeneratedSample } from '../research';
 
 
 import { formatUnifiedDiff } from '../report/unified-diff';
-import { buildHeatmap, formatHeatmap } from '../report/heatmap';
-
 import { readRuns } from '@usebrick/engine';
 import { fsMemoryIO } from './memory-io.js';
 import { applyFixes } from '../fix';
@@ -118,6 +117,7 @@ import {
   formatScanValidityNotice,
   isGitScopedEmptySelection,
   isNotApplicableScan,
+  isReadOnlyGitSubset,
 } from '../report/scan-validity';
 import { CliUsageError, ScanExitCode } from './exit-codes';
 import { validateOutputFormat } from './report/output-format.js';
@@ -332,7 +332,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
       const cwd = resolve(options.workspace ?? process.cwd());
       const invokedByCi = command.name() === 'ci';
-      const readOnlyGitScope = options.staged === true || options.changed === true;
+      const readOnlyGitScope = isReadOnlyGitSubset(options);
 
       if (options.trend !== undefined) {
         const runs = await readRuns(cwd, fsMemoryIO);
@@ -407,7 +407,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           noIncreaseFailure: false,
         };
         if (invokedByCi) return outcome;
-        process.exit(exitCode);
+        process.exitCode = exitCode;
+        return;
       }
 
       // v0.24.0 (Workstream C): opt-in network beacon. Fires ONLY
@@ -416,9 +417,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       // this invocation is the `scan` subcommand (not `watch`/`ci` —
       // those share the scanAction closure via parameter and would
       // otherwise leak the global flag through `optsWithGlobals`).
-      // `void` deliberately — we don't await, so the beacon cannot
-      // delay `process.exit` below. The emitter is silent on every
-      // failure mode (errors caught, errors swallowed).
+      // `void` deliberately — the beacon is best-effort and its default
+      // transport does not keep the event loop alive. The emitter is silent
+      // on every failure mode (errors caught, errors swallowed).
       const beaconEnv = process.env.SLOPBRICK_TELEMETRY_ENDPOINT;
       if (options.reportUsage && beaconEnv && command.name() === 'scan') {
         const beacon = new BeaconEmitter({
@@ -496,8 +497,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       }
 
       if (options.heatmap) {
-        const entries = await buildHeatmap(report, cwd);
-        logger.info(formatHeatmap(entries, { json: options.format === 'json' }));
+        await outputScanResults(report, options, cwd);
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
@@ -573,7 +573,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       if (invokedByCi) {
         return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure };
       }
-      process.exit(exitCode);
+      process.exitCode = exitCode;
+      return;
     };
 
     // v0.18.x (R-H1): research sub-CLI (research/generate/analyze/

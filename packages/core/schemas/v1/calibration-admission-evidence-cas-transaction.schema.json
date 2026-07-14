@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-cas-transaction.schema.json",
+  "title": "CalibrationAdmissionEvidenceCasTransactionV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "authorizationId", "reservationSha256", "evidenceId", "finalRelativePath", "temporaryRelativePath", "expectedBytes", "expectedSha256", "invocationIntentId", "recoveryNonce", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-evidence-cas-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "authorizationId": { "$ref": "#/$defs/id" },
+    "reservationSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+    "temporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "expectedBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+    "expectedSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "const": "intent_fsynced" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "networkObservationRelativePath", "networkObservationSha256"], "properties": { "phase": { "enum": ["network_observation_fsynced", "temporary_fsynced", "object_promoted", "cas_directories_fsynced", "temporary_removed"] }, "networkObservationRelativePath": { "$ref": "#/$defs/relativePath" }, "networkObservationSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "networkObservationRelativePath", "networkObservationSha256", "primaryCompletionRelativePath", "primaryCompletionSha256"], "properties": { "phase": { "const": "cas_complete_waiting_metadata" }, "networkObservationRelativePath": { "$ref": "#/$defs/relativePath" }, "networkObservationSha256": { "$ref": "#/$defs/sha256" }, "primaryCompletionRelativePath": { "$ref": "#/$defs/relativePath" }, "primaryCompletionSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": "v10.3-approved-acquisition-v1",
+  "authorizationId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "approvedBy": "owner",
+  "approvedAt": "2026-07-13T00:00:00.000Z",
+  "sourceId": "repo-a",
+  "repositoryId": "repo-a",
+  "materializationId": "sbm_ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "originUrl": "https://example.test/repo.git",
+  "transport": {
+    "kind": "git_https",
+    "commitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "transportByteLimit": "not_enforceable_by_stock_git",
+    "ownerAcknowledgedUnboundedTransport": true
+  },
+  "maxMaterializedBytes": 100,
+  "licenseEvidenceId": "license-evidence",
+  "licensePath": "LICENSE",
+  "licenseSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "authorizationSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+}

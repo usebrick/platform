@@ -1,0 +1,17 @@
+{
+  "version": "v10.3-acquisition-round-lock-v1",
+  "lockId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "intendedTransactionId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "roundId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "orchestratorInvocationIntentId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "sourceInvocations": [{
+    "authorizationId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "invocationIntentId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "profileId": "admission-git-acquire-v1",
+    "profileSha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  }],
+  "sourceAuthorizationIds": ["eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"],
+  "maxTotalMaterializedBytes": 100,
+  "recoveryNonce": "2222222222222222222222222222222222222222222222222222222222222222",
+  "lockSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+}

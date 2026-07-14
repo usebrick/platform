@@ -28,9 +28,15 @@ export function initCopyInstall(): () => void {
           ta.style.opacity = '0';
           document.body.appendChild(ta);
           ta.select();
-          // @ts-ignore — execCommand is deprecated; this is the only
-          // non-clipboard-API fallback for `copy` in older browsers
-          document.execCommand('copy');
+          // The fallback is intentionally retained for non-secure/older
+          // browsers where the async Clipboard API is unavailable.
+          // Access by key so the intentional legacy fallback does not make
+          // the website typecheck depend on the deprecated DOM declaration.
+          const legacyDocument = document as unknown as Record<string, unknown>;
+          const execCommand = legacyDocument['execCommand'];
+          if (typeof execCommand === 'function') {
+            execCommand.call(document, 'copy');
+          }
           document.body.removeChild(ta);
         }
 

@@ -16,6 +16,8 @@ describe('language support contract', () => {
   it('keeps scan-file language wording neutral and points to the support contract', () => {
     expect(SCAN_FILE_TOOL_DESCRIPTION).toContain('supported source file');
     expect(SCAN_FILE_TOOL_DESCRIPTION).toContain('language support matrix');
+    expect(SCAN_FILE_TOOL_DESCRIPTION).toContain('optional bounded `whyItFired.evidence`');
+    expect(SCAN_FILE_TOOL_DESCRIPTION).not.toContain('parser fact tree');
     expect(SCAN_FILE_TOOL_DESCRIPTION).not.toContain('TypeScript/JavaScript');
   });
 

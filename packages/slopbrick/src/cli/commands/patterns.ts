@@ -9,6 +9,7 @@ import {
   patternsExitCode,
 } from '../patterns';
 import { parseCount } from '../options.js';
+import { renderInvalidScan } from './_shared.js';
 
 /**
  * v0.18.x (R-H1): patterns subcommand extracted from cli/program.ts.
@@ -37,7 +38,17 @@ export function registerPatterns(program: Command): void {
               : 'text';
 
           const cwd = resolve(options.workspace ?? process.cwd());
-          const { config } = await runScan({ ...options, workspace: cwd });
+          const { config, report } = await runScan({ ...options, workspace: cwd });
+          const invalidExitCode = renderInvalidScan(
+            report,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (invalidExitCode !== undefined) {
+            process.exit(invalidExitCode);
+            return;
+          }
           const result = await runPatternsScan(cwd, config, {
             maxFiles: cmdOptions.maxFiles,
             format: format as 'text' | 'json' | 'markdown',

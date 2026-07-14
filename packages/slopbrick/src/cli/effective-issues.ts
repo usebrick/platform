@@ -15,6 +15,7 @@ export function effectiveIssuesForScore(
   const userOverrides = new Set(Object.keys(config.rules));
   return issues.filter((issue) =>
     issue.severity !== ('off' as Issue['severity']) &&
+    config.rules[issue.ruleId] !== 'off' &&
     !(defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId)),
   );
 }

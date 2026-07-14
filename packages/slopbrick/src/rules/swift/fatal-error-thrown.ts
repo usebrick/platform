@@ -80,9 +80,8 @@ export const swiftFatalErrorThrownRule = createRule<SwiftFatalErrorThrownContext
           'throw a typed error (`enum MyError: Error { case notImplemented }; ' +
           'throw MyError.notImplemented`). Apple\'s docs contrast `fatalError` ' +
           '(survives release) with `precondition` (debug+checked only) and ' +
-          '`assert` (debug only). AI agents plant `fatalError("not implemented")` ' +
-          'in protocol stubs because the pattern "makes the file compile" while ' +
-          'signalling TODO. Survives App Store review. ' +
+          '`assert` (debug only). A protocol stub should be implemented or ' +
+          'explicitly represented as a typed error rather than shipping a runtime panic. ' +
           'Reference: swift/fatal-error-thrown v0.24.',
       });
     }

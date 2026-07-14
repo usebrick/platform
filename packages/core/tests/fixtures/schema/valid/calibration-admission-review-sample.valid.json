@@ -1,0 +1,13 @@
+{
+  "version": "v10.3-admission-review-sample-v1",
+  "sampleId": "sample-a",
+  "sourceId": "source-a",
+  "seed": "slopbrick-v10.3-admission-review-v1",
+  "populationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "populationCount": 0,
+  "strata": [],
+  "selected": [],
+  "selectionSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "presentationOrderSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "toolReceiptSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}

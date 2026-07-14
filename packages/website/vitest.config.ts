@@ -8,8 +8,8 @@
 // window, IntersectionObserver mocks, etc.) are available —
 // these are pure browser scripts, not Node code.
 //
-// passWithNoTests: true lets `pnpm test` succeed when the website
-// has no unit tests (the case after deleting the WebGL test suite).
+// passWithNoTests: true lets `pnpm test` succeed when a checkout has no
+// website unit tests; browser/a11y tests remain a separate Playwright gate.
 // When new unit tests are added, they will run automatically.
 import { defineConfig } from 'vitest/config';
 

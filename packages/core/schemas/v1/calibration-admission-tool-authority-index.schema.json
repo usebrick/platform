@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-tool-authority-index.schema.json",
+  "title": "CalibrationAdmissionToolAuthorityIndexV1",
+  "description": "Hash-linked immutable index of admission tool profiles, invocation intents, and receipts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generation", "profiles", "invocationIntents", "receipts", "indexSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-tool-authority-index-v1" },
+    "generation": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "parentIndexSha256": { "$ref": "#/$defs/sha256" },
+    "profiles": { "type": "array", "items": { "$ref": "#/$defs/profileReference" } },
+    "invocationIntents": { "type": "array", "items": { "$ref": "#/$defs/invocationIntentReference" } },
+    "receipts": { "type": "array", "items": { "$ref": "#/$defs/receiptReference" } },
+    "indexSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "profileId": { "enum": ["admission-core-contract-v1", "admission-context-v1", "admission-static-ledgers-v1", "admission-census-v1", "admission-manifest-v1", "admission-acquisition-publication-v1", "admission-source-node-v1", "admission-source-parquet-v1", "admission-acquisition-round-v1", "admission-git-acquire-v1", "admission-release-acquire-v1", "admission-evidence-acquire-v1"] },
+    "profileReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileId", "relativePath", "sha256"],
+      "properties": {
+        "profileId": { "$ref": "#/$defs/profileId" },
+        "relativePath": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "invocationIntentReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intentId", "relativePath", "sha256"],
+      "properties": {
+        "intentId": { "$ref": "#/$defs/sha256" },
+        "relativePath": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "receiptReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receiptId", "relativePath", "sha256"],
+      "properties": {
+        "receiptId": { "$ref": "#/$defs/sha256" },
+        "relativePath": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

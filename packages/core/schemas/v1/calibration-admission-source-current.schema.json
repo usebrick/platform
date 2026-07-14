@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-source-current.schema.json",
+  "title": "CalibrationAdmissionSourceCurrentV1",
+  "description": "Self-hashed source current projection; the generation path is derived from source and generation hashes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceId", "generationSha256", "generationRelativePath", "currentSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-source-current-v1" },
+    "sourceId": { "$ref": "#/$defs/id" },
+    "generationSha256": { "$ref": "#/$defs/sha256" },
+    "generationRelativePath": { "type": "string", "pattern": "^sources/[a-z0-9][a-z0-9._:-]{0,127}/generations/[a-f0-9]{64}$" },
+    "currentSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

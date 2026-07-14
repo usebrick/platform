@@ -136,8 +136,7 @@ export const cppCStyleCastRule = createRule<CppCStyleCastContext>({
           'C-style casts silently pick whichever the compiler needs — ' +
           '`static_cast`, `reinterpret_cast`, OR `const_cast` — which makes ' +
           'them impossible to grep for and impossible to review. The C++ Core ' +
-          'Guidelines (ES.49) call this out by name. AI agents reach for ' +
-          '`(int)x` because of training-data C textbooks. ' +
+          'Guidelines (ES.49) call this out by name. ' +
           'Reference: cpp/c-style-cast v0.34.3 (refined regex selectivity).',
       });
     }

@@ -177,14 +177,16 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('Next step');
     });
 
-    it('suggests the top offending file for --rule', () => {
+    it('labels the top-file command as a POSIX-shell-safe positional scan target', () => {
+      const filePath = "src/components/it's $(not-run).tsx";
       const out = formatPretty(
         makeReport({
-          topOffenders: [{ filePath: 'src/Card.tsx', adjustedScore: 87.5, issueCount: 12 }],
+          topOffenders: [{ filePath, adjustedScore: 87.5, issueCount: 12 }],
         }),
       );
-      expect(out).toContain('src/Card.tsx');
-      expect(out).toContain('--rule');
+      expect(out).toContain('POSIX shell');
+      expect(out).toContain("slopbrick scan -- 'src/components/it'\"'\"'s $(not-run).tsx'");
+      expect(out).not.toContain('slopbrick scan --rule');
     });
 
     it('always offers --suggest as a fallback', () => {
@@ -286,7 +288,7 @@ describe('v0.14.5i UX improvements', () => {
       const out = formatPretty(makeReport({ issues: [makeIssue()], aiSlopScore: 25 }));
       // First non-empty line should answer the user's actual question
       const firstLine = out.split('\n').find((l) => l.trim().length > 0) ?? '';
-      expect(firstLine).toMatch(/Repo is/i);
+      expect(firstLine).toMatch(/AI-slop score/i);
       // v0.42.0 (post-cleanup follow-up): the verdict for aiSlopScore
       // uses the slopScoreBand mapping (0=clean, 100=saturated, lower
       // is better). The matched set of valid words is therefore
@@ -300,6 +302,80 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('Clean');
     });
 
+    it('P6: treats a report with only suppressed findings as clean', () => {
+      const out = formatPretty(makeReport({
+        issues: [makeIssue({ severity: 'off' as Issue['severity'] })],
+        aiSlopScore: 0,
+      }));
+      const verdict = out.split('\n').find((line) => line.trim().length > 0) ?? '';
+      expect(verdict).toContain('Clean');
+      expect(verdict).toContain('No active findings');
+      expect(verdict).toContain('1 audit-only suppressed finding');
+      expect(verdict).not.toContain('No AI slop signatures or anti-patterns found');
+    });
+
+    it.each([
+      [50, 'high'],
+      [70, 'saturated'],
+    ])('P6: score %i reports active findings without reassuring inverted copy', (score, label) => {
+      const out = formatPretty(makeReport({
+        aiSlopScore: score,
+        issues: [
+          makeIssue({ ruleId: 'ai/active', severity: 'high' }),
+          makeIssue({ ruleId: 'ai/suppressed', severity: 'off' as Issue['severity'] }),
+        ],
+      }));
+      const verdict = out.split('\n').find((line) => line.includes('AI-slop score')) ?? '';
+      expect(verdict).toContain(label);
+      expect(verdict).toContain('1 active issue');
+      expect(verdict).not.toMatch(/minor|none of them are doing real damage/i);
+    });
+
+    it('does not call an active low-score AI signal "no slop"', () => {
+      const out = formatPretty(makeReport({
+        aiSlopScore: 4.7,
+        issues: [makeIssue({ ruleId: 'ai/compression-profile', severity: 'low', aiSpecific: true })],
+      }));
+      const verdict = out.split('\n').find((line) => line.includes('AI-slop score')) ?? '';
+      expect(verdict).toContain('AI-slop score is low');
+      expect(verdict).not.toContain("Repo's AI-slop score is no slop");
+      expect(verdict).toContain('1 active issue');
+    });
+
+    it('names the metric in the low-score verdict so the direction is unambiguous', () => {
+      const out = formatPretty(makeReport({
+        aiSlopScore: 17.2,
+        issues: [makeIssue({ ruleId: 'ai/active', severity: 'low' })],
+      }));
+      const verdict = out.split('\n').find((line) => line.includes('score')) ?? '';
+      expect(verdict).toContain("Repo's AI-slop score is low");
+      expect(verdict).not.toContain('Repo is low');
+    });
+
+    it('keeps repeated statistical findings bounded unless --full is requested', () => {
+      const issues = Array.from({ length: 7 }, (_, index) => makeIssue({
+        ruleId: 'ai/compression-profile',
+        line: index + 1,
+      }));
+      const compact = formatPretty(makeReport({ issues }), { full: false });
+      const complete = formatPretty(makeReport({ issues }), { full: true });
+      const countHeaders = (output: string) =>
+        (output.match(/\[HIGH\s*\] ai\/compression-profile/g) ?? []).length;
+
+      expect(countHeaders(compact)).toBe(5);
+      expect(compact).toContain('2 additional ai/compression-profile findings omitted');
+      expect(compact).toContain('`--full`');
+      expect(countHeaders(complete)).toBe(7);
+    });
+
+    it('calls a dominant AI category a signal rather than a code defect', () => {
+      const out = formatPretty(makeReport({
+        issues: [makeIssue({ ruleId: 'ai/compression-profile', category: 'ai' })],
+      }));
+      expect(out).toContain('The dominant signal is AI patterns');
+      expect(out).not.toContain('The biggest problem is AI patterns');
+    });
+
     it('P6: failing report names the dominant category + file', () => {
       const out = formatPretty(
         makeReport({
@@ -311,7 +387,7 @@ describe('v0.14.5i UX improvements', () => {
       // v0.42.0: with the slopScoreBand mapping, score=50 lands in
       // the 'high' band (50-69). The verdict line still includes
       // the topOffender file path.
-      const verdict = out.split('\n').find((l) => l.includes('Repo is')) ?? '';
+      const verdict = out.split('\n').find((l) => l.includes('AI-slop score')) ?? '';
       expect(verdict).toContain('src/bad.ts');
       // Should not have the "AI patterns patterns" double word
       expect(verdict).not.toContain('patterns patterns');
@@ -362,6 +438,33 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).toContain('— structural integrity');
       expect(out).toContain('— props / state / imports');
       expect(out).toContain('— CSS / a11y / layout');
+    });
+
+    it.each([
+      [0, '[NO SLOP]', 'Repo has no detectable AI slop'],
+      [9.9, '[NO SLOP]', 'Repo has no detectable AI slop'],
+      [10, '[LOW]', 'Repo has a low amount of AI slop'],
+      [29.9, '[LOW]', 'Repo has a low amount of AI slop'],
+      [30, '[MEDIUM]', 'Repo has a medium amount of AI slop'],
+      [49.9, '[MEDIUM]', 'Repo has a medium amount of AI slop'],
+      [50, '[HIGH]', 'Repo has a high amount of AI slop'],
+      [69.9, '[HIGH]', 'Repo has a high amount of AI slop'],
+      [70, '[SATURATED]', 'Repo is saturated with AI slop'],
+    ])('P8: score %s keeps the slop band and message aligned', (score, band, message) => {
+      const out = formatPretty(makeReport({ aiSlopScore: score }));
+      expect(out).toContain(band);
+      expect(out).toContain(message);
+    });
+
+    it('P8: categorical security risk shows its finding-count basis without a numeric arrow', () => {
+      const out = formatPretty(makeReport({
+        aiSecurityRisk: 'critical',
+        aiSecurityFindings: { critical: 0, high: 3, medium: 1, low: 2 },
+      }));
+      const riskLine = out.split('\n').find((line) => line.includes('Security Risk')) ?? '';
+      expect(riskLine).toContain('CRITICAL');
+      expect(riskLine).toContain('0 critical, 3 high, 1 medium, 2 low');
+      expect(riskLine).not.toMatch(/[↑↓]|higher = better|inverted from risk level/);
     });
 
     // P9: trajectory delta.
@@ -421,7 +524,7 @@ describe('v0.14.5i UX improvements', () => {
           previousSlopIndex: 25,
         }),
       );
-      expect(out).toMatch(/Repo is/i);
+      expect(out).toMatch(/AI Slop Score|AI-slop score/i);
       expect(out).toContain('aiSlopScore');
       expect(out).toContain('engineeringHygiene');
       expect(out).toContain('security');

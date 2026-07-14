@@ -1,0 +1,15 @@
+{
+  "version": "v10.3-admission-decision-ledger-v1",
+  "ledgerId": "ledger-a",
+  "sourceId": "source-a",
+  "sourceReviewSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "admissionRecordSetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "decisionJsonlSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "decisionIds": [],
+  "blindAssignmentJsonlSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "blindAssignmentIds": [],
+  "blindReviewReceiptJsonlSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "blindReviewReceiptIds": [],
+  "adjudicationDecisionIds": [],
+  "ledgerSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

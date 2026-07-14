@@ -68,6 +68,11 @@ The root compatibility API and pure subpath have independent exact export
 contracts. Package typecheck, examples, and both contracts must pass before
 changing public exports.
 
+## Runtime support
+
+The engine follows the platform runtime policy: Node.js 22 or 24
+(`^22.0.0 || ^24.0.0`). The packed-consumer matrix exercises both lines.
+
 ## License
 
 [MIT](../../LICENSE)

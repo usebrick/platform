@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-evidence-cas-primary-completion.schema.json",
+  "title": "CalibrationEvidenceCasPrimaryCompletionV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "authorizationId", "reservationSha256", "evidenceId", "invocationIntentId", "finalRelativePath", "observedBytes", "observedSha256", "networkObservation", "networkObservationSha256", "primaryCompletionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-evidence-cas-primary-completion-v1" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "authorizationId": { "$ref": "#/$defs/id" },
+    "reservationSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "finalRelativePath": { "$ref": "#/$defs/relativePath" },
+    "observedBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+    "observedSha256": { "$ref": "#/$defs/sha256" },
+    "networkObservation": { "$ref": "#/$defs/networkObservation" },
+    "networkObservationSha256": { "$ref": "#/$defs/sha256" },
+    "primaryCompletionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "https": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "networkObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestUrl", "redirectChain", "resolvedPublicAddresses", "connectedPeerAddress", "observedMediaType"],
+      "properties": {
+        "requestUrl": { "$ref": "#/$defs/https" },
+        "redirectChain": { "type": "array", "items": { "$ref": "#/$defs/https" } },
+        "resolvedPublicAddresses": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 64 } },
+        "connectedPeerAddress": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "observedMediaType": { "type": "string", "minLength": 1, "maxLength": 255 }
+      }
+    }
+  }
+}

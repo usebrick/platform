@@ -8,11 +8,17 @@ import { buildArchitectureScore } from '../engine/architecture-score.js';
 import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/business-logic.js';
 import { readStructureMarkdown } from '../engine/structure-md';
 import { SCORE_BRIEFS } from '../report/score-contract.js';
-import { buildRuleExplanation } from '../rules/explanation.js';
+import { isIncompleteScan, isNotApplicableScan } from '../report/scan-validity.js';
+import { buildRuleCalibrationEvidence, buildRuleExplanation } from '../rules/explanation.js';
+import { getSignalStrength } from '../rules/signal-strength.js';
 import { RULE_HINTS } from '../snippet/data.js';
 import { SCAN_FILE_TOOL_DESCRIPTION } from '../engine/language-support.js';
 
-import type { Issue, Rule, ResolvedConfig } from '../types';
+import {
+  ISSUE_EVIDENCE_MAX_SNIPPET_BYTES,
+  ISSUE_EVIDENCE_MAX_SNIPPET_CHARS,
+} from '../types';
+import type { Issue, IssueEvidence, Rule, ResolvedConfig } from '../types';
 
 export interface ToolContext {
   cwd: string;
@@ -248,10 +254,62 @@ const MAX_MCP_FACT_DEPTH = 3;
 const MAX_MCP_FACT_KEY_LENGTH = 128;
 const MAX_MCP_FACT_NODES = 64;
 const MAX_MCP_FACT_BYTES = 2048;
+const MAX_MCP_EVIDENCE_SNIPPET_CHARS = ISSUE_EVIDENCE_MAX_SNIPPET_CHARS;
+const MAX_MCP_EVIDENCE_SNIPPET_BYTES = ISSUE_EVIDENCE_MAX_SNIPPET_BYTES;
+const MAX_MCP_MESSAGE_CHARS = 2048;
+const MAX_MCP_MESSAGE_BYTES = 4096;
+const MCP_EVIDENCE_OVERSIZED_SNIPPET = '[omitted oversized snippet]';
+const MCP_EVIDENCE_SOURCE_LIKE_SNIPPET = '[omitted source-like snippet]';
+const MCP_EVIDENCE_UNSAFE_TEXT = '[omitted unsafe evidence]';
+const MCP_EVIDENCE_REDACTED_TEXT = '[redacted sensitive text]';
+const MCP_EVIDENCE_DETAILS_OMITTED = '[omitted evidence details]';
+const MCP_MESSAGE_OVERSIZED = '[omitted oversized message]';
+const MCP_MESSAGE_SOURCE_LIKE = '[omitted source-like message]';
 
 const SOURCE_LIKE_FACT_KEY = /(?:^|[-_])(source|code|content|body|text|raw)(?:$|[-_])/i;
 const SENSITIVE_FACT_KEY = /(?:^|[-_])(token|secret|password|credential|authorization|cookie|api[-_]?key)(?:$|[-_])/i;
 const WINDOWS_ABSOLUTE_PATH = /^[A-Za-z]:[\\/]/;
+// These patterns intentionally stop only at source/string delimiters. A
+// path embedded in prose can contain spaces (for example
+// `C:\\Program Files\\app.ts`) and a POSIX path can be only one segment
+// (`/tmp`), so token-like path regexes are not sufficient here. Over-redacting
+// the remainder of an unterminated quote is preferable to leaking a suffix.
+const EMBEDDED_POSIX_ABSOLUTE_PATH = /(?<![A-Za-z0-9_<>=])\/(?=[-A-Za-z0-9._~+])(?:[^"'`<>()[\],;{}\r\n]+?)(?=$|["'`<>()[\],;{}\r\n])/g;
+const EMBEDDED_WINDOWS_ABSOLUTE_PATH = /(?<![A-Za-z0-9_])\b[A-Za-z]:[\\/](?:[^"'`<>()[\],;{}\r\n]+?)(?=$|["'`<>()[\],;{}\r\n])/g;
+const EMBEDDED_UNC_ABSOLUTE_PATH = /(?<![A-Za-z0-9_])\\\\(?=[^"'`<>()[\],;{}\r\n])(?:[^"'`<>()[\],;{}\r\n]+?)(?=$|["'`<>()[\],;{}\r\n])/g;
+const SENSITIVE_EVIDENCE_ASSIGNMENT = /\b(?:token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|private[-_]?key|client[-_]?key|secret[-_]?key|[A-Za-z][A-Za-z0-9]*(?:token|secret|password|passwd|credential|authorization|cookie))\b\s*(?:[:=]|=>)\s*(?:"[^"]*"|'[^']*'|[^\s,;)}]+)/gi;
+const SECRET_TOKEN_VALUE = /\b(?:sk[-_](?:live|test)[-_][A-Za-z0-9_-]+|ghp_[A-Za-z0-9_-]+|github_pat_[A-Za-z0-9_-]+|xox[baprs]-[A-Za-z0-9-]+|AKIA[0-9A-Z]{16})\b/i;
+
+type McpEvidenceOmissionReason = 'unsafe-path' | 'sensitive' | 'source-like' | 'oversized' | 'details-dropped';
+type McpDetailDropReason = 'budget' | 'depth' | 'unsupported' | 'nonfinite' | 'property' | 'key-limit' | 'array-limit';
+
+const SENSITIVE_EVIDENCE_BASES = new Set([
+  'token', 'secret', 'password', 'passwd', 'credential', 'authorization', 'cookie',
+]);
+const SENSITIVE_EVIDENCE_KNOWN_KEYS = new Set([
+  'apikey', 'privatekey', 'clientkey', 'secretkey',
+]);
+
+interface McpProjectedEvidenceOmission {
+  source: 'mcp-projection';
+  reason: McpEvidenceOmissionReason;
+  snippetChars: number;
+  snippetBytes: number;
+  valueChars?: number;
+  valueBytes?: number;
+  detailsDropped?: boolean;
+  detailReason?: McpDetailDropReason;
+}
+
+interface McpProducerEvidenceOmission {
+  reason: 'oversized';
+  snippetChars: number;
+  snippetBytes: number;
+  valueChars: number;
+  valueBytes: number;
+}
+
+type McpEvidenceOmission = McpProjectedEvidenceOmission | McpProducerEvidenceOmission;
 
 type McpFact = null | boolean | number | string | McpFact[] | { [key: string]: McpFact };
 
@@ -286,6 +344,322 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function isSourceLikeString(value: string): boolean {
   return value.includes('\n') && /(?:\bimport\b|\bexport\b|\bconst\b|\bfunction\b|=>|<[A-Za-z])/.test(value);
+}
+
+function isSourceLikeEvidence(value: string): boolean {
+  return isSourceLikeString(value) ||
+    /(?:\b(?:import|export|const|let|var|function|class)\b|=>|<\/?[A-Za-z][^>]*>|\b(?:def|fn)\s+[A-Za-z_]\w*\s*\(|\b(?:struct|trait|impl|enum|interface|namespace)\s+[A-Za-z_]\w*|\b(?:pub\s+)?(?:fn|struct|trait|impl|mod|use)\s+[A-Za-z_]\w*|^\s*#\s*(?:include|define)\b|^#!\/|^\s*(?:select|insert|update|delete|create|alter|with)\b[\s\S]*(?:;|\bfrom\b|\bset\b|\bvalues\b|\btable\b)|(?:^|\n)\s*(?:echo|printf)\s+(?:["']|[A-Za-z_$])|\b(?:println|eprintln|print)!\s*\()/im.test(value);
+}
+
+function redactEmbeddedAbsolutePaths(value: string): string {
+  return value
+    .replace(EMBEDDED_WINDOWS_ABSOLUTE_PATH, MCP_EVIDENCE_UNSAFE_TEXT)
+    .replace(EMBEDDED_UNC_ABSOLUTE_PATH, MCP_EVIDENCE_UNSAFE_TEXT)
+    .replace(EMBEDDED_POSIX_ABSOLUTE_PATH, MCP_EVIDENCE_UNSAFE_TEXT);
+}
+
+function redactSensitiveEvidenceText(value: string): string {
+  const redacted = value.replace(SENSITIVE_EVIDENCE_ASSIGNMENT, MCP_EVIDENCE_REDACTED_TEXT);
+  return redacted !== value || isSensitiveEvidenceText(redacted)
+    ? (redacted !== value ? redacted : MCP_EVIDENCE_REDACTED_TEXT)
+    : value;
+}
+
+function normalizeSensitiveEvidenceKey(value: string): string {
+  return value.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+}
+
+function sensitiveEvidenceSegments(value: string): string[] {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => segment.toLowerCase());
+}
+
+function isSensitiveEvidenceKey(value: string): boolean {
+  const normalized = normalizeSensitiveEvidenceKey(value);
+  return SENSITIVE_EVIDENCE_KNOWN_KEYS.has(normalized) ||
+    sensitiveEvidenceSegments(value).some((segment) => SENSITIVE_EVIDENCE_BASES.has(segment));
+}
+
+function isSensitiveEvidenceText(value: string): boolean {
+  if (SECRET_TOKEN_VALUE.test(value)) return true;
+  return value.match(/[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*/g)
+    ?.some((token) => isSensitiveEvidenceKey(token)) ?? false;
+}
+
+function evidenceOmissionMarker(reason: McpEvidenceOmissionReason, fallback: string): string {
+  switch (reason) {
+    case 'unsafe-path': return MCP_EVIDENCE_UNSAFE_TEXT;
+    case 'sensitive': return MCP_EVIDENCE_REDACTED_TEXT;
+    case 'source-like': return MCP_EVIDENCE_SOURCE_LIKE_SNIPPET;
+    case 'oversized': return fallback;
+    case 'details-dropped': return MCP_EVIDENCE_DETAILS_OMITTED;
+  }
+}
+
+interface EvidenceTextProjection {
+  value: string;
+  reason?: McpEvidenceOmissionReason;
+  chars: number;
+  bytes: number;
+}
+
+function projectEvidenceText(value: string, fallback: string, sensitiveContext = false): EvidenceTextProjection {
+  const chars = value.length;
+  const bytes = utf8Bytes(value);
+  const embeddedPathRedaction = redactEmbeddedAbsolutePaths(value);
+  if (isAbsolute(value) || WINDOWS_ABSOLUTE_PATH.test(value) || value.startsWith('file://') || embeddedPathRedaction !== value) {
+    return { value: evidenceOmissionMarker('unsafe-path', fallback), reason: 'unsafe-path', chars, bytes };
+  }
+  if (isSourceLikeEvidence(value)) {
+    return { value: evidenceOmissionMarker('source-like', fallback), reason: 'source-like', chars, bytes };
+  }
+  if (sensitiveContext || isSensitiveEvidenceKey(value) || redactSensitiveEvidenceText(value) !== value) {
+    return { value: evidenceOmissionMarker('sensitive', fallback), reason: 'sensitive', chars, bytes };
+  }
+  if (chars > MAX_MCP_EVIDENCE_SNIPPET_CHARS || bytes > MAX_MCP_EVIDENCE_SNIPPET_BYTES) {
+    return { value: evidenceOmissionMarker('oversized', fallback), reason: 'oversized', chars, bytes };
+  }
+  return { value, chars, bytes };
+}
+
+function projectMcpMessage(value: string): string {
+  const pathsRedacted = redactEmbeddedAbsolutePaths(value);
+  const absolutePath = isAbsolute(value) || WINDOWS_ABSOLUTE_PATH.test(value) || value.startsWith('file://');
+  const sensitiveRedacted = redactSensitiveEvidenceText(pathsRedacted);
+  const isOversized = (candidate: string): boolean =>
+    candidate.length > MAX_MCP_MESSAGE_CHARS || utf8Bytes(candidate) > MAX_MCP_MESSAGE_BYTES;
+  if (absolutePath || pathsRedacted !== value) {
+    if (isOversized(sensitiveRedacted)) return MCP_MESSAGE_OVERSIZED;
+    if (isSourceLikeEvidence(sensitiveRedacted)) return MCP_MESSAGE_SOURCE_LIKE;
+    return sensitiveRedacted === pathsRedacted && pathsRedacted === value
+      ? MCP_EVIDENCE_UNSAFE_TEXT
+      : sensitiveRedacted;
+  }
+  if (isOversized(sensitiveRedacted)) return MCP_MESSAGE_OVERSIZED;
+  if (isSourceLikeEvidence(value)) return MCP_MESSAGE_SOURCE_LIKE;
+  if (sensitiveRedacted !== pathsRedacted) return sensitiveRedacted;
+  return sensitiveRedacted;
+}
+
+function projectEvidencePosition(position: IssueEvidence['location']['start']) {
+  const line = Number.isSafeInteger(position.line) && position.line > 0 ? position.line : 1;
+  const column = Number.isSafeInteger(position.column) && position.column > 0 ? position.column : 1;
+  return { line, column };
+}
+
+function omissionForProjection(
+  projection: EvidenceTextProjection,
+  value?: string,
+): McpEvidenceOmission | undefined {
+  if (!projection.reason) return undefined;
+  return {
+    source: 'mcp-projection',
+    reason: projection.reason,
+    snippetChars: projection.chars,
+    snippetBytes: projection.bytes,
+    ...(value === undefined ? {} : { valueChars: value.length, valueBytes: utf8Bytes(value) }),
+  };
+}
+
+interface EvidenceDetailsProjection {
+  value?: McpFact;
+  reason?: McpEvidenceOmissionReason;
+  detailReason?: McpDetailDropReason;
+}
+
+function droppedEvidenceDetail(detailReason: McpDetailDropReason): EvidenceDetailsProjection {
+  return { reason: 'details-dropped', detailReason };
+}
+
+function projectMcpEvidenceDetails(
+  value: unknown,
+  depth: number,
+  budget: McpFactBudget,
+): EvidenceDetailsProjection {
+  if (value === null || typeof value === 'boolean') {
+    return consumeMcpFact(budget, value) ? { value } : droppedEvidenceDetail('budget');
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return droppedEvidenceDetail('nonfinite');
+    return consumeMcpFact(budget, value) ? { value } : droppedEvidenceDetail('budget');
+  }
+  if (typeof value === 'string') {
+    const projected = projectEvidenceText(value, MCP_EVIDENCE_OVERSIZED_SNIPPET);
+    return consumeMcpFact(budget, projected.value)
+      ? { value: projected.value, reason: projected.reason }
+      : projected.reason ? { reason: projected.reason } : droppedEvidenceDetail('budget');
+  }
+  if (depth >= MAX_MCP_FACT_DEPTH) {
+    const omitted = '[omitted nested value]';
+    return consumeMcpFact(budget, omitted) ? { value: omitted, ...droppedEvidenceDetail('depth') } : droppedEvidenceDetail('depth');
+  }
+  if (Array.isArray(value)) {
+    if (value.length > MAX_MCP_FACT_ARRAY_ITEMS) {
+      const omitted = '[omitted oversized array]';
+      return consumeMcpFact(budget, omitted)
+        ? { value: omitted, ...droppedEvidenceDetail('array-limit') }
+        : droppedEvidenceDetail('budget');
+    }
+    const projected: McpFact[] = [];
+    if (!consumeMcpFact(budget, projected)) return droppedEvidenceDetail('budget');
+    let reason: McpEvidenceOmissionReason | undefined;
+    let detailReason: McpDetailDropReason | undefined;
+    for (const item of value) {
+      if (!reserveMcpFactBytes(budget, 1)) {
+        reason ??= 'details-dropped';
+        detailReason ??= 'budget';
+        break;
+      }
+      const child = projectMcpEvidenceDetails(item, depth + 1, budget);
+      if (child.reason && !reason) reason = child.reason;
+      if (child.detailReason && !detailReason) detailReason = child.detailReason;
+      if (child.value !== undefined) projected.push(child.value);
+    }
+    return { value: projected, reason, detailReason };
+  }
+  if (!isPlainObject(value)) return droppedEvidenceDetail('unsupported');
+
+  const projected: Record<string, McpFact> = {};
+  if (!consumeMcpFact(budget, projected)) return droppedEvidenceDetail('budget');
+  let reason: McpEvidenceOmissionReason | undefined;
+  let detailReason: McpDetailDropReason | undefined;
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const ownKeys = Reflect.ownKeys(value);
+  const allEntries = ownKeys
+    .filter((key): key is string => typeof key === 'string')
+    .map((key) => [key, descriptors[key]!] as const);
+  const entries = allEntries
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+    .slice(0, MAX_MCP_FACT_KEYS);
+  if (ownKeys.some((key) => typeof key !== 'string')) {
+    reason = 'details-dropped';
+    detailReason = 'property';
+  }
+  if (allEntries.length > MAX_MCP_FACT_KEYS) {
+    reason = 'details-dropped';
+    detailReason = 'key-limit';
+  }
+  for (const [key, descriptor] of entries) {
+    if (!('value' in descriptor)) {
+      reason ??= 'details-dropped';
+      detailReason ??= 'property';
+      continue;
+    }
+    if (key.length > MAX_MCP_FACT_KEY_LENGTH) {
+      reason ??= 'details-dropped';
+      detailReason ??= 'key-limit';
+      continue;
+    }
+    const projectedKey = projectEvidenceText(key, MCP_EVIDENCE_UNSAFE_TEXT);
+    if (projectedKey.reason) {
+      reason ??= projectedKey.reason;
+      continue;
+    }
+    if (!reserveMcpFactBytes(budget, utf8Bytes(JSON.stringify(projectedKey.value)) + 2)) {
+      reason ??= 'details-dropped';
+      detailReason ??= 'budget';
+      break;
+    }
+    const child = projectMcpEvidenceDetails(descriptor.value, depth + 1, budget);
+    if (child.reason && !reason) reason = child.reason;
+    if (child.detailReason && !detailReason) detailReason = child.detailReason;
+    if (child.value !== undefined) projected[projectedKey.value] = child.value;
+  }
+  return { value: projected, reason, detailReason };
+}
+
+function projectMcpEvidence(evidence: IssueEvidence | undefined): {
+  kind: 'matched-source-span';
+  status: 'exact' | 'omitted';
+  snippet: string;
+  location: {
+    start: { line: number; column: number };
+    end: { line: number; column: number };
+  };
+  matched: { field: string; key: string; value?: string };
+  omission?: McpEvidenceOmission;
+  details?: Record<string, McpFact>;
+} | undefined {
+  if (!evidence || evidence.kind !== 'matched-source-span') return undefined;
+  const location = {
+    start: projectEvidencePosition(evidence.location.start),
+    end: projectEvidencePosition(evidence.location.end),
+  };
+  const field = projectEvidenceText(evidence.matched.field, MCP_EVIDENCE_UNSAFE_TEXT);
+  const key = projectEvidenceText(evidence.matched.key, MCP_EVIDENCE_UNSAFE_TEXT);
+  const matched = { field: field.value, key: key.value };
+  if (evidence.status === 'omitted') {
+    return {
+      kind: evidence.kind,
+      status: 'omitted',
+      snippet: MCP_EVIDENCE_OVERSIZED_SNIPPET,
+      location,
+      matched,
+      omission: evidence.omission,
+    };
+  }
+  const snippet = projectEvidenceText(evidence.snippet, MCP_EVIDENCE_OVERSIZED_SNIPPET);
+  const value = projectEvidenceText(
+    evidence.matched.value,
+    MCP_EVIDENCE_UNSAFE_TEXT,
+    isSensitiveEvidenceKey(evidence.matched.field) || isSensitiveEvidenceKey(evidence.matched.key),
+  );
+  const details = evidence.details !== undefined
+    ? projectMcpEvidenceDetails(evidence.details, 0, { nodes: 0, bytes: 0 })
+    : undefined;
+  const projectedDetails = details?.value && !Array.isArray(details.value) && typeof details.value === 'object'
+    ? details.value as Record<string, McpFact>
+    : undefined;
+  const detailsRootDropped = details !== undefined &&
+    (details.value === undefined || details.value === null || Array.isArray(details.value) || typeof details.value !== 'object');
+  const detailsReason = details?.reason ?? (detailsRootDropped ? 'details-dropped' as const : undefined);
+  const detailsDetailReason = details?.detailReason ?? (detailsRootDropped ? 'unsupported' as const : undefined);
+  const primaryOmission = omissionForProjection(snippet) ??
+    omissionForProjection(field) ?? omissionForProjection(key) ?? omissionForProjection(value, evidence.matched.value) ??
+    undefined;
+  const detailsOmission = detailsReason ? {
+      source: 'mcp-projection' as const,
+      reason: detailsReason,
+      snippetChars: evidence.snippet.length,
+      snippetBytes: utf8Bytes(evidence.snippet),
+      detailsDropped: true,
+      ...(detailsDetailReason ? { detailReason: detailsDetailReason } : {}),
+    } : undefined;
+  const omission = primaryOmission && detailsReason
+    ? {
+        ...primaryOmission,
+        detailsDropped: true,
+        ...(detailsDetailReason ? { detailReason: detailsDetailReason } : {}),
+      }
+    : primaryOmission ?? detailsOmission;
+  if (omission) {
+    return {
+      kind: evidence.kind,
+      status: 'omitted',
+      snippet: evidenceOmissionMarker(omission.reason, MCP_EVIDENCE_OVERSIZED_SNIPPET),
+      location,
+      matched: {
+        ...matched,
+        value: value.value,
+      },
+      ...(projectedDetails ? { details: projectedDetails } : {}),
+      omission,
+    };
+  }
+  return {
+    kind: evidence.kind,
+    status: 'exact',
+    snippet: snippet.value,
+    location,
+    matched: {
+      ...matched,
+      value: value.value,
+    },
+    ...(projectedDetails ? { details: projectedDetails } : {}),
+  };
 }
 
 function projectMcpPath(value: string, cwd?: string): string | null {
@@ -356,18 +730,28 @@ function projectMcpFact(value: unknown, cwd: string | undefined, depth: number, 
  */
 export function toMcpFinding(issue: Issue, cwd?: string) {
   const facts = issue.extras ? projectMcpFact(issue.extras, cwd, 0, { nodes: 0, bytes: 0 }) : null;
+  const evidence = projectMcpEvidence(issue.evidence);
+  const message = projectMcpMessage(issue.message);
+  const advice = issue.advice === undefined ? undefined : projectMcpMessage(issue.advice);
   return {
     ruleId: issue.ruleId,
     category: issue.category,
     severity: issue.severity,
+    aiSpecific: issue.aiSpecific,
+    // Keep the per-finding calibration claim aligned with `slop_explain_rule`:
+    // historical estimates are useful context, but no v10.3 source/cohort is
+    // admitted yet. Unknown rules must say unavailable instead of omitting the
+    // field and making consumers guess whether metadata was lost.
+    calibration: buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId)),
     line: issue.line,
     column: issue.column,
-    message: issue.message,
-    advice: issue.advice,
+    message,
+    advice,
     whyItFired: {
-      summary: issue.message,
+      summary: message,
       location: { line: issue.line, column: issue.column },
       facts: facts && !Array.isArray(facts) && typeof facts === 'object' ? facts : null,
+      ...(evidence ? { evidence } : {}),
     },
   };
 }
@@ -514,7 +898,11 @@ export async function runSuggest(
       const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
       const health = loadHealth(ctx.cwd);
       if (health) {
-        if (health.compositeScore) payload.compositeScore = health.compositeScore;
+        // Incomplete/empty health snapshots may retain compatibility
+        // numerics for inspection, but no project-level aggregate is safe for
+        // an agent's gating or remediation decisions.
+        const scoreAggregatesValid = !isIncompleteScan(health) && !isNotApplicableScan(health);
+        if (scoreAggregatesValid && health.compositeScore) payload.compositeScore = health.compositeScore;
         payload.scoreBasis = health.scoreBasis;
         // Preserve the health snapshot's gate-safety contract so MCP clients
         // cannot treat a partial scan's numeric scores as deploy/CI evidence.
@@ -530,12 +918,14 @@ export async function runSuggest(
         // compositeScore sees the number but not what it
         // measures; the brief makes it self-explanatory.
         payload.scoreBriefs = SCORE_BRIEFS;
-        payload.scores = {
-          aiSlopScore: health.aiSlopScore,
-          engineeringHygiene: health.engineeringHygiene,
-          security: health.security,
-          repositoryHealth: health.repositoryHealth,
-        };
+        if (scoreAggregatesValid) {
+          payload.scores = {
+            aiSlopScore: health.aiSlopScore,
+            engineeringHygiene: health.engineeringHygiene,
+            security: health.security,
+            repositoryHealth: health.repositoryHealth,
+          };
+        }
       }
     } catch {
       // health.json missing or unreadable — composite is optional,

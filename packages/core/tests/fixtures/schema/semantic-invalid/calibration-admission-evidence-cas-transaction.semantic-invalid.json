@@ -1,0 +1,17 @@
+{
+  "version": "v10.3-admission-evidence-cas-transaction-v1",
+  "transactionId": "cas-txn-1",
+  "authorizationId": "auth-1",
+  "reservationSha256": "47641aca37148015e24e6b71f8386debfc19d417cf285d0d945c4b0ddd9249f1",
+  "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+  "finalRelativePath": "evidence-cas/sha256/dc/dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+  "temporaryRelativePath": "evidence-cas/transactions/cas-txn-1.tmp",
+  "expectedBytes": 3,
+  "expectedSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+  "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "recoveryNonce": "7777777777777777777777777777777777777777777777777777777777777777",
+  "state": {
+    "phase": "intent_fsynced"
+  },
+  "transactionSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

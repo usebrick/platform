@@ -6,6 +6,7 @@
 //
 // v0.43.0 added: 4 huge numbers in a horizontal strip with band
 // colors, verdicts, and a "from slopbrick scan" attribution line.
+import productFacts from '../data/product-facts.json';
 ---
 
 <section class="section scoreboard" id="scoreboard">
@@ -52,9 +53,11 @@
       </div>
 
       <p class="scoreboard__attribution">
-        From <code>slopbrick scan</code> on this site's own repo, captured 2026-07-06.
-        Every score is derived from <code>103 rules</code> across <code>22 categories</code>,
-        v10-calibrated against <code>576,750 files</code>.
+        Historical example from <code>slopbrick scan</code> on this site's own repo, captured 2026-07-06;
+        it is not current release-gate evidence. The unreleased workspace candidate contains <code>{productFacts.ruleCount} rules</code>
+        across <code>{productFacts.categoryCount} categories</code>. Historical
+        {productFacts.corpusLabel} evidence covers <code>{productFacts.measuredRuleCount} rules</code>
+        and <code>{productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files</code>.
       </p>
     </div>
   </div>

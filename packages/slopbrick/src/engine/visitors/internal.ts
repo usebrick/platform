@@ -19,6 +19,8 @@ import type { AnyNode } from './react.js';
 export interface InternalFacts {
   filePath: string;
   components: ComponentFacts[];
+  /** File-wide useState bindings, including custom hooks and non-JSX functions. */
+  stateBindings?: StateBinding[];
   staticClassNames: Array<{ value: string; line: number; column: number }>;
   allElements: any[];
   imports: any[];

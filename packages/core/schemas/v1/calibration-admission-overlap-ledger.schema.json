@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-ledger.schema.json",
+  "title": "AdmissionOverlapLedgerV1",
+  "description": "Hash-bound summary of the complete global overlap authority.",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "universeSha256", "method", "normalizerRegistrySha256", "overlapPolicySha256", "indexReceiptSha256", "coverageComplete", "unresolvedCandidateUnitIds", "edgeShards", "adjacencyShards", "clusterSummaryShards", "clusterMembershipShards", "edgeCount", "adjacencyRowCount", "exactClusterCount", "nearClusterCount", "crossSideEdgeCount", "ledgerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-overlap-v1" }, "universeSha256": { "$ref": "#/$defs/sha256" }, "method": { "const": "prefix-filter-exact-jaccard-0.80-v1" }, "normalizerRegistrySha256": { "$ref": "#/$defs/sha256" }, "overlapPolicySha256": { "$ref": "#/$defs/sha256" }, "indexReceiptSha256": { "$ref": "#/$defs/sha256" }, "coverageComplete": { "type": "boolean" }, "unresolvedCandidateUnitIds": { "type": "array", "maxItems": 452382, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "edgeShards": { "type": "array", "maxItems": 65536, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-bounded-shard-receipt.schema.json" } }, "adjacencyShards": { "type": "array", "maxItems": 65536, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-bounded-shard-receipt.schema.json" } }, "clusterSummaryShards": { "type": "array", "maxItems": 65536, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-bounded-shard-receipt.schema.json" } }, "clusterMembershipShards": { "type": "array", "maxItems": 65536, "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-bounded-shard-receipt.schema.json" } },
+    "edgeCount": { "$ref": "#/$defs/nonNegativeInteger" }, "adjacencyRowCount": { "$ref": "#/$defs/nonNegativeInteger" }, "exactClusterCount": { "$ref": "#/$defs/nonNegativeInteger" }, "nearClusterCount": { "$ref": "#/$defs/nonNegativeInteger" }, "crossSideEdgeCount": { "$ref": "#/$defs/nonNegativeInteger" }, "ledgerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 } }
+}

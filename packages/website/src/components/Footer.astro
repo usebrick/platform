@@ -3,25 +3,26 @@
 // Version is sourced from the prebuild script so it stays in sync
 // with the package.json releases.
 import version from '../data/version.json';
+import productFacts from '../data/product-facts.json';
 ---
 
 <footer class="footer">
   <div class="brick brick--footer brick--muted">
     <div class="footer__head">
-      <span class="footer__stamp">● shipped {version.slopbrick} · {version.built}</span>
+      <span class="footer__stamp">● candidate v{version.slopbrick} · published v{productFacts.published.version} · build {version.built}</span>
     </div>
     <div class="footer__row">
       <a href="https://github.com/usebrick/platform" rel="noopener">github</a>
       <a href="https://www.npmjs.com/package/slopbrick" rel="noopener">npm</a>
-      <a href="https://usebrick.dev/docs" rel="noopener">docs</a>
+      <a href="/docs">docs</a>
       <a href="https://github.com/usebrick/platform/blob/main/LICENSE" rel="noopener">MIT</a>
-      <a href="https://github.com/usebrick/platform/blob/main/CHANGELOG.md" rel="noopener">changelog</a>
+      <a href="/changelog">changelog</a>
     </div>
     <div class="footer__tag">
       <em>usebrick</em>. repository structure, one codebase at a time. built for agents that don't forget.
     </div>
     <div class="footer__version">
-      slopbrick <span>{version.slopbrick}</span> · core <span>{version.core}</span> · built {version.built}
+      candidate <span>v{version.slopbrick}</span> · published <span>v{productFacts.published.version}</span> · core <span>{version.core}</span> · build {version.built}
     </div>
   </div>
 </footer>

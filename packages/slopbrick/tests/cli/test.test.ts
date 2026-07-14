@@ -207,14 +207,15 @@ describe('testExitCode', () => {
 });
 
 describe('slopbrick test (CLI)', () => {
-  it('exits 0 and prints a clean report when no test files exist', async () => {
+  it('returns not-applicable instead of a synthetic clean score when no test files exist', async () => {
     const dir = freshDir();
     try {
       writeFile(dir, 'src/a.ts', `export const a = 1;`);
       writeFile(dir, 'slopbrick.config.mjs', `export default { include: ['src/**/*'], exclude: [] };`);
       const { exitCode, stdout } = await runBin(['test'], dir);
-      expect(exitCode).toBe(0);
-      expect(stdout).toContain('Test quality');
+      expect(exitCode).toBe(1);
+      expect(stdout).toMatch(/NO FILES ANALY[ZS]ED|scores are not applicable/i);
+      expect(stdout).not.toMatch(/Test quality.*\/100/i);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

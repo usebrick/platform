@@ -1,0 +1,80 @@
+---
+import Base from '../../layouts/Base.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Base title="Documentation — usebrick.dev" description="Canonical SlopBrick and usebrick platform documentation.">
+  <main id="top" class="docs-page">
+    <article class="docs-page__content">
+      <a class="docs-page__back" href="/">← usebrick.dev</a>
+      <p class="docs-page__eyebrow">canonical documentation</p>
+      <h1>Build with the repository contract.</h1>
+      <p class="docs-page__lede">
+        The repository is the source of truth for SlopBrick behavior. These links
+        open the versioned documentation beside the code and release evidence.
+      </p>
+      <nav aria-label="Documentation links">
+        <ul class="docs-page__links">
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/README.md" rel="noopener noreferrer">SlopBrick README <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/scoring-explained.md" rel="noopener noreferrer">Scoring explained <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/repository-structure.md" rel="noopener noreferrer">Repository structure and schemas <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/MCP.md" rel="noopener noreferrer">MCP integration <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/language-support-matrix.md" rel="noopener noreferrer">Language support matrix <span>→</span></a></li>
+        </ul>
+      </nav>
+    </article>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .docs-page {
+    min-height: calc(100vh - 12rem);
+    padding: clamp(4rem, 10vw, 9rem) max(1.25rem, 6vw);
+  }
+  .docs-page__content {
+    max-width: 52rem;
+    margin: 0 auto;
+  }
+  .docs-page__back,
+  .docs-page__links a {
+    color: var(--text-accent);
+  }
+  .docs-page__eyebrow {
+    margin-top: var(--space-12);
+    color: var(--text-accent);
+    font: 600 0.8rem/1 var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .docs-page h1 {
+    max-width: 12ch;
+    margin-top: var(--space-4);
+    font: 600 clamp(2.4rem, 7vw, 5rem)/1.03 var(--font-display);
+  }
+  .docs-page__lede {
+    max-width: 58ch;
+    margin: var(--space-6) 0 var(--space-12);
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+  }
+  .docs-page__links {
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+  .docs-page__links li {
+    border-bottom: 1px solid var(--border);
+  }
+  .docs-page__links a {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+    font: 500 1.05rem/1.4 var(--font-sans);
+    text-decoration: none;
+  }
+  .docs-page__links a:hover,
+  .docs-page__links a:focus-visible {
+    color: var(--text-primary);
+  }
+</style>

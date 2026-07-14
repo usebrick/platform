@@ -1,0 +1,16 @@
+{
+  "version": "v10.3-admission-adjudicator-receipt-v1",
+  "receiptId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "assignmentId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "priorDecisionIds": [
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  ],
+  "priorBlindReviewReceiptId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "evidenceSetSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "adjudicationDecisionId": "1111111111111111111111111111111111111111111111111111111111111111",
+  "adjudicatorId": "adjudicator-a",
+  "priorPeerReceiptObservedBeforeAdjudication": true,
+  "protocolAuditorId": "auditor-a",
+  "protocolAuditEvidenceIds": ["protocol-a"]
+}

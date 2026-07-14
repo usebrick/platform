@@ -26,6 +26,7 @@
 //   the same anti-pattern; not AI-discriminative.
 //
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { maskJsComments } from '../../engine/source-lex';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
 
@@ -75,9 +76,13 @@ export const unsafeHtmlRenderRule = createRule<RuleContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
+    // The rule documentation includes the prop shape as an example. Mask
+    // comments before applying the heuristic so that prose/JSDoc cannot be
+    // reported; newlines and offsets are preserved for issue locations.
+    const code = maskJsComments(source);
     DANGEROUS_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = DANGEROUS_RE.exec(source)) !== null) {
+    while ((m = DANGEROUS_RE.exec(code)) !== null) {
       const value = m[1];
       if (isStaticLiteral(value!)) continue;
       issues.push({

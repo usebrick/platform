@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-historical-temporal-attestation.schema.json",
+  "title": "CalibrationHistoricalTemporalAttestationV1",
+  "description": "Git-history and independently observed exact-byte evidence for a historical human-provenance route.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "attestationId", "repositoryId", "immutableCommitSha", "normalizedPath", "blobSha", "completeCommitGraphSha256", "shallowRepository", "graftsOrReplaceRefsPresent", "introducedCommitSha", "lastChangedCommitSha", "introducedAt", "lastChangedAt", "cutoff", "bulkImportOrigin", "independentExternalObservation", "toolReceiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-historical-temporal-attestation-v1" },
+    "attestationId": { "$ref": "#/$defs/sha256" },
+    "repositoryId": { "$ref": "#/$defs/id" },
+    "immutableCommitSha": { "$ref": "#/$defs/gitSha" },
+    "normalizedPath": { "$ref": "#/$defs/relativePath" },
+    "blobSha": { "$ref": "#/$defs/gitSha" },
+    "completeCommitGraphSha256": { "$ref": "#/$defs/sha256" },
+    "shallowRepository": { "const": false },
+    "graftsOrReplaceRefsPresent": { "const": false },
+    "introducedCommitSha": { "$ref": "#/$defs/gitSha" },
+    "lastChangedCommitSha": { "$ref": "#/$defs/gitSha" },
+    "introducedAt": { "type": "string", "format": "date-time" },
+    "lastChangedAt": { "type": "string", "format": "date-time" },
+    "cutoff": { "const": "2020-01-01T00:00:00.000Z" },
+    "bulkImportOrigin": { "enum": ["ruled_out", "indeterminate"] },
+    "independentExternalObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "observedAt", "exactBlobOrContentSha256", "evidenceIds", "evidenceReceiptIds"],
+      "properties": {
+        "kind": { "enum": ["timestamped_source_archive", "package_registry_artifact", "release_transparency_log", "independent_content_archive"] },
+        "observedAt": { "type": "string", "format": "date-time" },
+        "exactBlobOrContentSha256": { "$ref": "#/$defs/sha256" },
+        "evidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1, "uniqueItems": true },
+        "evidenceReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "minItems": 1, "uniqueItems": true }
+      }
+    },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "gitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$)).+$" }
+  }
+}

@@ -40,8 +40,14 @@
 //   - Cui, Z. et al. (2025), "Who is using AI to code? Global
 //     diffusion and impact of generative AI" (sets the prior at 0.30)
 
-import { isDefaultOff, type Verdict } from '@usebrick/core/verdicts';
-import type { SignalStrengthEntry } from '@usebrick/core';
+import type { SignalStrengthEntry, Verdict } from '@usebrick/core';
+
+// Keep the pure engine's runtime graph free of the root Core facade. This
+// mirrors the canonical Core verdict policy without making the published
+// SlopBrick declaration surface import the private verdicts subpath.
+function isDefaultOff(verdict: Verdict): boolean {
+  return verdict === 'NOISY' || verdict === 'INVERTED' || verdict === 'DORMANT';
+}
 
 // ---- Constants --------------------------------------------------------
 

@@ -1,0 +1,619 @@
+{
+  "version": "v10.3-admission-evidence-bundle-v1",
+  "policy": {
+    "version": "v10.3-admission-policy-v1",
+    "policyId": "v10.3-admission-v1",
+    "initialRegisterEntryCount": 329,
+    "selectedCoverage": 452382,
+    "baselineMaterialUnits": 58089,
+    "repositoryMaterialUnits": 394293,
+    "labels": {
+      "positive": "verified_ai",
+      "negative": "verified_human"
+    },
+    "evidenceCasPolicy": "sha256-wx-fsync-v1",
+    "overlapPolicy": "prefix-filter-exact-jaccard-0.80-v1",
+    "reasonVocabularySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "toolProfileSha256s": [
+      "057d426de2fbae154fa2beb784c312bc6e7fe50ac81eb335048b0daed785463e",
+      "0c677a2e268f8acedcec473011d3dc997592e004ff521e7807fec3acfbc26e45",
+      "315ae0462556f6511e9bf55f230d9d9bc5b70e5c97ae37df401983082733304a",
+      "3f40789027f055c2be41331bbfea1ce2a50cfccea044a04320c9da13259a68db",
+      "6b4393aadcf007ebd078b59d261c484f0a2ae7417ad356fd288377fb3ae9d2c0",
+      "7fe74f8e6fb68de47cafe72449d3ed21773d0f52ac5c343b2a348a89d327347d",
+      "9b5082b2c842c1e5f5902d8afe49dcb5ea6f5d3ad8bf2ee1b67b8e398606d80c",
+      "a0da93f62664ede95a88bafb81b78b20c93371d3863e8d93063ef047ebd77ea6",
+      "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867",
+      "bb931a56f9413b9230f566847bfb40ef0bc3afa2b229fe9bedd56653eb6199b0",
+      "c3f5dc0527757f3e8418f29173cea819e3c0d78519404d298fc74b854679cd3b",
+      "defb6e5d5c4082a76c376dd948f19163934741143f92a2fc12fa19322c73271d"
+    ],
+    "smoke": {
+      "unitsPerPolarity": 100,
+      "maxSourceOrFamilyUnitsPerPolarity": 50,
+      "minimumSourcesPerPolarity": 2,
+      "minimumFamiliesPerPolarity": 3,
+      "minimumLanguages": 2,
+      "minimumUnitsPerRepresentedLanguagePerPolarity": 20
+    },
+    "canary": {
+      "unitsPerPolarity": 5000,
+      "maxSourceUnitsPerPolarity": 500,
+      "maxFamilyUnitsPerPolarity": 1000,
+      "minimumSourcesPerPolarity": 10,
+      "minimumFamiliesPerPolarity": 5,
+      "minimumLanguages": 3,
+      "minimumUnitsPerLanguagePerPolarity": 250,
+      "minimumFamiliesPerLanguagePerPolarity": 3,
+      "minimumAiGeneratorFamilies": 3
+    },
+    "policySha256": "45bf2014007e1ce2315481ca503809fd977e2ae1c960b066706eec9532a5f205"
+  },
+  "witnessPolicies": [
+    {
+      "version": "v10.3-admission-witness-policy-v1",
+      "policyId": "v10.3-admission-v1",
+      "gate": "smoke",
+      "algorithm": "lexicographic-bnb-feasibility-v1",
+      "seed": "slopbrick-v10.3-admission-review-v1",
+      "maxSearchNodes": 10000000,
+      "constraints": [
+        {
+          "constraintId": "smoke.max-source-or-family-units-per-polarity",
+          "kind": "maximum",
+          "integerValue": 50
+        },
+        {
+          "constraintId": "smoke.minimum-families-per-polarity",
+          "kind": "minimum",
+          "integerValue": 3
+        },
+        {
+          "constraintId": "smoke.minimum-languages",
+          "kind": "minimum",
+          "integerValue": 2
+        },
+        {
+          "constraintId": "smoke.minimum-sources-per-polarity",
+          "kind": "minimum",
+          "integerValue": 2
+        },
+        {
+          "constraintId": "smoke.minimum-units-per-represented-language-per-polarity",
+          "kind": "minimum",
+          "integerValue": 20
+        },
+        {
+          "constraintId": "smoke.units-per-polarity",
+          "kind": "exact",
+          "integerValue": 100
+        }
+      ],
+      "constraintsSha256": "fbb6da8bca7bb5c6ca28413dfc4f1a5324ab01fe77190b9981b25c3431a4cf17",
+      "witnessPolicySha256": "834cc947a332d63a20ae48dafcb755ca7ab0ab8495cc800c64ea260c037e7817"
+    },
+    {
+      "version": "v10.3-admission-witness-policy-v1",
+      "policyId": "v10.3-admission-v1",
+      "gate": "canary",
+      "algorithm": "lexicographic-bnb-feasibility-v1",
+      "seed": "slopbrick-v10.3-admission-review-v1",
+      "maxSearchNodes": 50000000,
+      "constraints": [
+        {
+          "constraintId": "canary.max-family-units-per-polarity",
+          "kind": "maximum",
+          "integerValue": 1000
+        },
+        {
+          "constraintId": "canary.max-source-units-per-polarity",
+          "kind": "maximum",
+          "integerValue": 500
+        },
+        {
+          "constraintId": "canary.minimum-ai-generator-families",
+          "kind": "minimum",
+          "integerValue": 3
+        },
+        {
+          "constraintId": "canary.minimum-families-per-language-per-polarity",
+          "kind": "minimum",
+          "integerValue": 3
+        },
+        {
+          "constraintId": "canary.minimum-families-per-polarity",
+          "kind": "minimum",
+          "integerValue": 5
+        },
+        {
+          "constraintId": "canary.minimum-languages",
+          "kind": "minimum",
+          "integerValue": 3
+        },
+        {
+          "constraintId": "canary.minimum-sources-per-polarity",
+          "kind": "minimum",
+          "integerValue": 10
+        },
+        {
+          "constraintId": "canary.minimum-units-per-language-per-polarity",
+          "kind": "minimum",
+          "integerValue": 250
+        },
+        {
+          "constraintId": "canary.units-per-polarity",
+          "kind": "exact",
+          "integerValue": 5000
+        }
+      ],
+      "constraintsSha256": "6af4f77b0b1c669b8ec0b8219830c8c907730d78069362d55553184a6adbdd72",
+      "witnessPolicySha256": "1d1e528b071bb1868e4fdfc4a13d42facb98280e02463c07c20903dc11cab6ff"
+    }
+  ],
+  "toolProfiles": [
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-core-contract-v1",
+      "allowedExecutableIds": [
+        "corepack-pnpm",
+        "node"
+      ],
+      "allowedActions": [
+        "core:contract"
+      ],
+      "candidateByteAccess": "none",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-context-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "census:preview",
+        "context:verify",
+        "evidence:verify",
+        "lint",
+        "manifest:verify",
+        "manifest:verify-prerequisites",
+        "source:census"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "c3f5dc0527757f3e8418f29173cea819e3c0d78519404d298fc74b854679cd3b"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-static-ledgers-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "authority:overlap",
+        "authority:overlap:recover",
+        "authority:overlap:verify",
+        "authority:remaining",
+        "rebuild:pre-witness",
+        "static-authority:recover"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "057d426de2fbae154fa2beb784c312bc6e7fe50ac81eb335048b0daed785463e"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-census-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "census",
+        "census:current-hash",
+        "census:recover",
+        "census:stdout",
+        "require",
+        "verify",
+        "witness:constraint-check",
+        "witness:publish-review",
+        "witness:publish-search",
+        "witness:recover-publication",
+        "witness:regenerate",
+        "witness:search"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "6b4393aadcf007ebd078b59d261c484f0a2ae7417ad356fd288377fb3ae9d2c0"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-manifest-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "manifest:build",
+        "manifest:publish-prerequisites",
+        "manifest:recover",
+        "manifest:recover-prerequisites"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "a0da93f62664ede95a88bafb81b78b20c93371d3863e8d93063ef047ebd77ea6"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-acquisition-publication-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "acquisition:authorize",
+        "acquisition:publish",
+        "acquisition:recover-publication",
+        "evidence:recover",
+        "register:publish-round",
+        "register:recover"
+      ],
+      "candidateByteAccess": "none",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "defb6e5d5c4082a76c376dd948f19163934741143f92a2fc12fa19322c73271d"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-source-node-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "source:audit-node"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "0c677a2e268f8acedcec473011d3dc997592e004ff521e7807fec3acfbc26e45"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-source-parquet-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "source:audit-parquet"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "7fe74f8e6fb68de47cafe72449d3ed21773d0f52ac5c343b2a348a89d327347d"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-acquisition-round-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "acquire:recover",
+        "acquire:round"
+      ],
+      "candidateByteAccess": "none",
+      "network": {
+        "mode": "deny"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "9b5082b2c842c1e5f5902d8afe49dcb5ea6f5d3ad8bf2ee1b67b8e398606d80c"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-git-acquire-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "acquire:git-child"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "exact_authorized_https",
+        "transport": "git"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "bb931a56f9413b9230f566847bfb40ef0bc3afa2b229fe9bedd56653eb6199b0"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-release-acquire-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "acquire:release-child"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "exact_authorized_https",
+        "transport": "release_asset"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "315ae0462556f6511e9bf55f230d9d9bc5b70e5c97ae37df401983082733304a"
+    },
+    {
+      "version": "v10.3-admission-tool-profile-v1",
+      "profileId": "admission-evidence-acquire-v1",
+      "allowedExecutableIds": [
+        "node"
+      ],
+      "allowedActions": [
+        "evidence:acquire"
+      ],
+      "candidateByteAccess": "read_only",
+      "network": {
+        "mode": "exact_authorized_https",
+        "transport": "evidence"
+      },
+      "resourceLimits": {
+        "maxHeapMiB": 2048,
+        "maxWallSeconds": 3600
+      },
+      "profileSha256": "3f40789027f055c2be41331bbfea1ce2a50cfccea044a04320c9da13259a68db"
+    }
+  ],
+  "invocationIntents": [
+    {
+      "version": "v10.3-admission-invocation-intent-v1",
+      "profileId": "admission-core-contract-v1",
+      "profileSha256": "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867",
+      "action": "core:contract",
+      "canonicalArgvSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "inputSetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "executableBehaviorSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "intentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+      "intentSha256": "2850b14a90417bc0c1cf704afaab9490cd80a0876216c5d9e849ecd07f09a442"
+    }
+  ],
+  "toolReceipts": [
+    {
+      "receiptId": "5ce269221e67fedc9c981f60b0142c72967525edeffcbc44c674acf0040ccb27",
+      "version": "v10.3-admission-tool-receipt-v1",
+      "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+      "profileId": "admission-core-contract-v1",
+      "profileSha256": "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867",
+      "action": "core:contract",
+      "canonicalArgvSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "inputSetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "executableBehaviorSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "observedResourceUsage": {
+        "maxHeapMiB": 10,
+        "wallSeconds": 1
+      },
+      "exitCode": 0,
+      "outputSetSha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    }
+  ],
+  "toolAuthoritySnapshot": {
+    "version": "v10.3-admission-tool-authority-snapshot-v1",
+    "indexGenerationSha256": "290a4e057a39cb9c3488510cf6ce5bed02059c6c8c085f5afd8ca0ed0a4310bb",
+    "profileIds": [
+      "admission-acquisition-publication-v1",
+      "admission-acquisition-round-v1",
+      "admission-census-v1",
+      "admission-context-v1",
+      "admission-core-contract-v1",
+      "admission-evidence-acquire-v1",
+      "admission-git-acquire-v1",
+      "admission-manifest-v1",
+      "admission-release-acquire-v1",
+      "admission-source-node-v1",
+      "admission-source-parquet-v1",
+      "admission-static-ledgers-v1"
+    ],
+    "invocationIntentIds": [
+      "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35"
+    ],
+    "receiptIds": [
+      "5ce269221e67fedc9c981f60b0142c72967525edeffcbc44c674acf0040ccb27"
+    ],
+    "snapshotSha256": "8c3514f38ca06877f0beb35b0fafb2d04b11eeb94697c0c6ba6046009274bd6f"
+  },
+  "evidenceIndex": {
+    "version": "v10.3-admission-evidence-index-v1",
+    "items": [
+      {
+        "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+        "kind": "source_origin",
+        "locator": {
+          "kind": "immutable_https",
+          "url": "https://example.test/evidence/ok.txt",
+          "immutability": "content_addressed_release_asset"
+        },
+        "bytes": 3,
+        "mediaType": "text/plain",
+        "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+        "claimScopes": [
+          "source.origin"
+        ]
+      }
+    ],
+    "indexSha256": "2e15e7997108a2cb33b88cb3c233033868c0d15d632b3dea88bffc19582580ce"
+  },
+  "evidencePayloadSet": {
+    "version": "v10.3-admission-evidence-payload-set-v1",
+    "casPolicy": "sha256-wx-fsync-v1",
+    "payloads": [
+      {
+        "version": "v10.3-admission-evidence-payload-v1",
+        "payloadId": "a0daa1fd19d33c54c146c83d0d1a9ffa48b7397bd23144cc5aa6ffec5adb81e2",
+        "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+        "bytes": 3,
+        "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+        "mediaType": "text/plain",
+        "sourceLocatorSha256": "d7e9320d15095830b573c1ca43b57c69093130b6edb8861e135455be7a4837bf",
+        "storage": {
+          "kind": "evidence_cas",
+          "casAlgorithm": "sha256",
+          "casRelativePath": "evidence-cas/sha256/dc/dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+          "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1"
+        }
+      }
+    ],
+    "payloadSetSha256": "52dd4e87cb5f9c6acfc4a72ed87efdcc89db54e0d680dcf496eb4c25b9d2ed05"
+  },
+  "approvedEvidenceAcquisitions": [
+    {
+      "version": "v10.3-approved-evidence-acquisition-v1",
+      "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+      "approvedBy": "fixture-reviewer",
+      "approvedAt": "2026-07-13T00:00:00.000Z",
+      "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+      "url": "https://example.test/evidence/ok.txt",
+      "approvedRedirectUrls": [],
+      "expectedBytes": 3,
+      "expectedSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+      "expectedMediaType": "text/plain",
+      "maxTransferBytes": 3,
+      "authorizationSha256": "4b00e96e862bb044cc44fa60179c4f81e348c3d9e1cf44b7d5e0515f8394453a"
+    }
+  ],
+  "evidenceAcquisitionReceipts": [
+    {
+      "version": "v10.3-evidence-acquisition-receipt-v1",
+      "receiptId": "2c84efb086f4b5a22845d9f1126144cf55134668116ba2cd9efcca790027a20c",
+      "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+      "authorizationSha256": "4b00e96e862bb044cc44fa60179c4f81e348c3d9e1cf44b7d5e0515f8394453a",
+      "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+      "observedBytes": 3,
+      "observedSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+      "observedMediaType": "text/plain",
+      "redirectChain": [],
+      "resolvedPublicAddressesSha256": "2b260e2c98fe8637f0b6e4c7882803fcc2061b677c903dbc255f0b0c79474f7b",
+      "casTransactionId": "cas-txn-1",
+      "primaryCompletionSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+      "receiptSha256": "3f731276c9357914de8a0c04e4f937647fd8a5a026496e63ecbf72613b16a5c2"
+    }
+  ],
+  "evidenceAcquisitionEnvelopes": [
+    {
+      "version": "v10.3-evidence-acquisition-envelope-v1",
+      "envelopeId": "c0cb0619cd78e29b246065f95d5ae6119a0ce4f665bc0242784e77260ef65d6e",
+      "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+      "reservation": {
+        "version": "v10.3-evidence-acquisition-reservation-v1",
+        "reservationId": "3cfee84af298ad241fdbed683e77145c5136b22357e9885dafff09fd8ef8acbb",
+        "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+        "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+        "recoveryNonce": "7777777777777777777777777777777777777777777777777777777777777777",
+        "reservationSha256": "b9c6107b109c73a56b0f2105c287765373a63aecb3fd29f81655582bd4ee4d39"
+      },
+      "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+      "casTransactionId": "cas-txn-1",
+      "primaryCompletionRelativePath": "evidence-cas/completions/cas-txn-1.json",
+      "primaryCompletionSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "acquisitionReceiptSha256": "3f731276c9357914de8a0c04e4f937647fd8a5a026496e63ecbf72613b16a5c2",
+      "payloadId": "050a8920b03fe747de29a567334587a513f7e1a6cc5e17b650ff7e93c5dc579a",
+      "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+      "envelopeSha256": "0d259c19ec1d7977188c548d894a1098baf75cc03298b9996092fac8e0478820"
+    }
+  ],
+  "acquisitionAuthoritySnapshot": {
+    "version": "v10.3-admission-acquisition-snapshot-v1",
+    "indexGenerationSha256": "6b8cc4bc10c986f31205edd4d8f971dcaa3eb3263df6ca07145dc22ad23f271c",
+    "artifactKeys": [],
+    "snapshotSha256": "1706d8727e928b766ee1c1f80f189d6c601d04dc7c1f96f29382f7aa370b7d86"
+  },
+  "evidenceReceipts": [
+    {
+      "version": "v10.3-admission-evidence-receipt-v1",
+      "receiptId": "2c7c17fff353646ad6946ccaa00a895264c4cc1d140766997bb536e20368e833",
+      "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+      "evidenceIndexSha256": "2e15e7997108a2cb33b88cb3c233033868c0d15d632b3dea88bffc19582580ce",
+      "payloadId": "a0daa1fd19d33c54c146c83d0d1a9ffa48b7397bd23144cc5aa6ffec5adb81e2",
+      "payloadSetSha256": "52dd4e87cb5f9c6acfc4a72ed87efdcc89db54e0d680dcf496eb4c25b9d2ed05",
+      "verificationMethod": "offline-evidence-cas-v1",
+      "observedBytes": 3,
+      "observedSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+      "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+      "status": "verified"
+    }
+  ],
+  "materializationReceipts": [
+    {
+      "version": "v10.3-admission-materialization-receipt-v1",
+      "receiptId": "38cc4d8bc758136c95b39fd43fffb459b4ffdbd84a659fc4599781dcfe2d6ec6",
+      "materializationId": "materialization-1",
+      "sourceId": "source-1",
+      "repositoryId": "repository-1",
+      "acquisitionAuthorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+      "acquisitionAuthorizationSha256": "4b00e96e862bb044cc44fa60179c4f81e348c3d9e1cf44b7d5e0515f8394453a",
+      "acquisitionTransactionId": "acq-txn-1",
+      "primaryMaterializedOutputSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "childToolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+      "verifiedUnitSetSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payload": {
+        "kind": "release_archive",
+        "originUrl": "https://example.test/source/archive.tar.gz",
+        "assetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "assetBytes": 1,
+        "inventorySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    }
+  ],
+  "bundleSha256": "e4b71926aaecf18ee41c41722ca1a347df1f3efe5428d49414e83c48ad70e2d9"
+}

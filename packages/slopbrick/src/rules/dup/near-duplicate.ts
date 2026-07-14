@@ -122,7 +122,7 @@ export const nearDuplicateRule = createRule<NearDuplicateContext>({
         column: 1,
         advice:
           'Refactor to share the implementation, or rename/restructure to make the difference intentional. ' +
-          'AI agents produce near-duplicates when iterating — this is the v0.23.0 Type-2 clone detector. ' +
+          'This is the v0.23.0 Type-2 clone detector; similarity can be intentional reuse or copy-paste. ' +
           'Reference: dup/near-duplicate v0.23.',
       });
     }

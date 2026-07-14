@@ -2,15 +2,26 @@ Rule:        visual/math-default-font
 Category:    visual
 Severity:    high
 AI-specific: yes (designed to fire on AI tells)
+Rule status: configured-severity (built-in static policy)
+Evidence:    ai-signal
+Calibration: historical point estimates only
+  Calibrated: 2026-07-04T00:00:00Z
+  Recall:    0.16%
+  FPR:       0.03%
+  Precision: 86.69%
+  Lift:      3035.16×
+Calibration source/cohort: unavailable — The shipped estimate predates v10.3 admission; no validated cohort/source is available.
+Confidence limits: unavailable — No validated confidence interval is available in the shipped calibration contract.
+Matched fact/snippet: unavailable in a rule-level explanation; run `slopbrick scan` for file/line evidence.
+Note: This output does not claim runtime suppression or authorship proof.
 Source:      src/rules/visual/math-default-font.ts
 Help:        https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules/visual/math-default-font.ts
 
 Pattern:
-  Import a distinctive font (next/font/google, @font-face, or a CSS variable) instead of relying on the framework default.
+  Choose typography based on legibility, brand, and loading constraints. A framework default is valid when intentional; do not add a font solely to change a statistical signal.
 
 Remediation:
   See the rule source for the canonical before/after: src/rules/visual/math-default-font.ts
 
 Suppress / configure in slopbrick.config.mjs:
   rules: { "visual/math-default-font": "off" }  // or set to a lower severity
-

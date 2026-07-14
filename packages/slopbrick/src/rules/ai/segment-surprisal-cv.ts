@@ -79,12 +79,12 @@ export const aiSegmentSurprisalCvRule = createRule<RuleContext>({
           `Per-segment cross-entropy CV is suspiciously low: CV=${stats.cvH.toFixed(2)}, ` +
           `max slope=${stats.maxSlope.toFixed(2)}, range=${stats.rangeH.toFixed(2)}, ` +
           `mean H=${stats.meanH.toFixed(2)}, ${stats.nSegments} segments. ` +
-          `Binoculars (Hans 2024): AI text has near-constant per-window entropy; ` +
-          `real code has CV > 0.20 from register switches (docstring → hot loop).`,
+          `A low CV can reflect generated output, boilerplate, or repeated structure; ` +
+          `this context signal is not authorship proof.`,
         line: 1,
         column: 1,
         advice:
-          'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (docstring blocks, hot loops, regex literals). Verify authorship if unexpected.',
+          'The cross-entropy is unusually uniform. Check whether repeated structure, generated output, or boilerplate explains it; retain the pattern when it is intentional.',
       },
     ];
   },

@@ -1,0 +1,35 @@
+{
+  "version": "v10.3-acquisition-receipt-v1",
+  "receiptId": "3333333333333333333333333333333333333333333333333333333333333333",
+  "authorizationId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "roundId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "authorizationSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "sourceId": "repo-a",
+  "repositoryId": "repo-a",
+  "materializationId": "sbm_ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "originUrl": "https://example.test/repo.git",
+  "transport": {
+    "kind": "git_https",
+    "commitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "treeSha": "4444444444444444444444444444444444444444444444444444444444444444",
+    "observedPackBytes": 0,
+    "observedNetworkBytes": "not_observable_exactly"
+  },
+  "materializedBytes": 10,
+  "inventorySha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "licenseSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "materializationReceiptId": "materialization-receipt",
+  "materializationReceiptSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "networkObservation": {
+    "requestUrl": "https://example.test/repo.git",
+    "redirectChain": [],
+    "resolvedPublicAddresses": ["8.8.8.8"],
+    "connectedPeerAddress": "8.8.8.8"
+  },
+  "resolvedPublicAddressesSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "connectedPeerEvidenceSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "transactionId": "9999999999999999999999999999999999999999999999999999999999999999",
+  "toolReceiptId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "toolReceiptSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "receiptSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-materialization-receipt.schema.json",
+  "title": "CalibrationAdmissionMaterializationReceiptV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "materializationId", "sourceId", "repositoryId", "acquisitionAuthorizationId", "acquisitionAuthorizationSha256", "acquisitionTransactionId", "primaryMaterializedOutputSha256", "childToolReceiptSha256", "verifiedUnitSetSha256", "payload"],
+  "properties": {
+    "version": { "const": "v10.3-admission-materialization-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "materializationId": { "$ref": "#/$defs/id" },
+    "sourceId": { "$ref": "#/$defs/id" },
+    "repositoryId": { "$ref": "#/$defs/id" },
+    "acquisitionAuthorizationId": { "$ref": "#/$defs/id" },
+    "acquisitionAuthorizationSha256": { "$ref": "#/$defs/sha256" },
+    "acquisitionTransactionId": { "$ref": "#/$defs/id" },
+    "primaryMaterializedOutputSha256": { "$ref": "#/$defs/sha256" },
+    "childToolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "verifiedUnitSetSha256": { "$ref": "#/$defs/sha256" },
+    "payload": { "$ref": "#/$defs/payload" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "https": { "type": "string", "pattern": "^https://[^\\s]+$" },
+    "payload": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "originUrl", "commitSha", "treeSha", "inventorySha256"], "properties": { "kind": { "const": "git" }, "originUrl": { "$ref": "#/$defs/https" }, "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" }, "treeSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" }, "inventorySha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "originUrl", "assetSha256", "assetBytes", "inventorySha256"], "properties": { "kind": { "const": "release_archive" }, "originUrl": { "$ref": "#/$defs/https" }, "assetSha256": { "$ref": "#/$defs/sha256" }, "assetBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 }, "inventorySha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

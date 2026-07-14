@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG } from '../../src/config';
 import {
+  AI_BUCKET_SATURATION_SCALE,
   aggregateReport,
   resolveFrameworkMultiplier,
   scoreFile,
@@ -154,7 +155,13 @@ describe('aggregateReport', () => {
       aiSlopScore: { buckets: Array<{ bucket: string; rawSlopAmount: number; weight: number; weightedAmount: number }> };
       repositoryHealth: { inputs: Array<{ axis: string; value: number; weight: number; weightedAmount: number }> };
     };
-    const bucket = (points: number) => Math.log10(1 + points) / Math.log10(11) * 100;
+    const bucket = (points: number) => {
+      const perFile = Math.log10(1 + points) / Math.log10(11) * 100;
+      return Math.min(
+        100,
+        Math.log10(1 + perFile / AI_BUCKET_SATURATION_SCALE) / Math.log10(11) * 100,
+      );
+    };
     const logicWeight = config.categoryWeights!.logic ?? 1;
     const visualWeight = config.categoryWeights!.visual ?? 1;
 
@@ -498,7 +505,7 @@ describe('aggregateReport', () => {
     expect(report.categoryScores.ai).toBeGreaterThan(0);
   });
 
-  it('uses analyzed-file count, not UI component count, as slop exposure denominator', () => {
+  it('uses bounded per-file evidence, not UI component count, for slop exposure', () => {
     const issueGroup = {
       filePath: 'service.py',
       issues: [{
@@ -513,13 +520,14 @@ describe('aggregateReport', () => {
       scoreFile(fileResult({ filePath: 'other.py', componentCount: 0 }), 1, DEFAULT_CONFIG),
     ];
     const report = aggregateReport(files, [issueGroup, { filePath: 'other.py', issues: [] }], DEFAULT_CONFIG);
-    const expected = Math.log10(1 + SEVERITY_WEIGHTS.high / files.length) / Math.log10(11) * 100;
+    const perFile = Math.log10(1 + SEVERITY_WEIGHTS.high) / Math.log10(11) * 100;
+    const expected = Math.log10(1 + perFile / AI_BUCKET_SATURATION_SCALE) / Math.log10(11) * 100;
 
     expect(report.boundaryScore).toBeCloseTo(100 - expected, 8);
     expect(report.componentCount).toBe(0);
   });
 
-  it('does not let synthetic baseline rows dilute the exposure denominator', () => {
+  it('does not let synthetic baseline rows dilute effective evidence', () => {
     const issueGroup = {
       filePath: 'changed.py',
       issues: [{
@@ -538,7 +546,8 @@ describe('aggregateReport', () => {
       undefined,
       1,
     );
-    const expected = Math.log10(1 + SEVERITY_WEIGHTS.high) / Math.log10(11) * 100;
+    const perFile = Math.log10(1 + SEVERITY_WEIGHTS.high) / Math.log10(11) * 100;
+    const expected = Math.log10(1 + perFile / AI_BUCKET_SATURATION_SCALE) / Math.log10(11) * 100;
     expect(report.boundaryScore).toBeCloseTo(100 - expected, 8);
   });
 
@@ -727,7 +736,7 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     // Mixed scenario: lots of low-severity ai/* issues (no security
     // risk) and a few high-severity security/* issues. The 4 scores
     // should land in different ranges:
-    //   - aiSlopScore: high (lots of low issues → low slopIndex → high)
+    //   - aiSlopScore: elevated raw slop (lots of low AI findings; higher is worse)
     //   - engineeringHygiene: medium (mixed categories)
     //   - security: graded decay (v0.25.0, hyperbolic 100/(1+N/5))
     //   - repositoryHealth: weighted composite of the 3
@@ -857,6 +866,196 @@ describe('aggregateReport — 4-score model (v0.16.0)', () => {
     expect(report.security).toBe(100);
     // repositoryHealth = 0.4*(100-0) + 0.3*100 + 0.2*100 + 0.1*100 = 100
     expect(report.repositoryHealth).toBe(100);
+  });
+
+  it('does not improve Repository Health when lower-density harmful evidence is added to another file', () => {
+    const harmful = (line: number): Issue => ({
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      message: 'harmful evidence',
+      line,
+      column: 1,
+    });
+    const aggregate = (groups: Array<{ filePath: string; issues: Issue[] }>) =>
+      aggregateReport(
+        groups.map((group) =>
+          scoreFile(
+            fileResult({ filePath: group.filePath, issues: group.issues }),
+            1,
+            DEFAULT_CONFIG,
+          ),
+        ),
+        groups,
+        DEFAULT_CONFIG,
+        undefined,
+        groups.length,
+      );
+
+    const dense = aggregate([
+      { filePath: 'dense.ts', issues: [harmful(1), harmful(2)] },
+    ]);
+    const withLowerDensity = aggregate([
+      { filePath: 'dense.ts', issues: [harmful(1), harmful(2)] },
+      { filePath: 'sparse.ts', issues: [harmful(3)] },
+    ]);
+
+    expect(withLowerDensity.repositoryHealth).toBeLessThanOrEqual(dense.repositoryHealth);
+  });
+
+  it('does not let clean files dilute existing AI evidence', () => {
+    const harmful: Issue = {
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      message: 'harmful evidence',
+      line: 1,
+      column: 1,
+    };
+    const aggregate = (groups: Array<{ filePath: string; issues: Issue[] }>) =>
+      aggregateReport(
+        groups.map((group) =>
+          scoreFile(
+            fileResult({ filePath: group.filePath, issues: group.issues }),
+            1,
+            DEFAULT_CONFIG,
+          ),
+        ),
+        groups,
+        DEFAULT_CONFIG,
+        undefined,
+        groups.length,
+      );
+
+    const dense = aggregate([
+      { filePath: 'dense.ts', issues: [harmful, { ...harmful, line: 2 }] },
+    ]);
+    const withCleanFile = aggregate([
+      { filePath: 'dense.ts', issues: [harmful, { ...harmful, line: 2 }] },
+      { filePath: 'clean.ts', issues: [] },
+    ]);
+
+    expect(withCleanFile.aiSlopScore).toBeCloseTo(dense.aiSlopScore, 10);
+    expect(withCleanFile.repositoryHealth).toBeCloseTo(dense.repositoryHealth, 10);
+  });
+
+  it('adds per-file bucket burdens before the bounded AI composite', () => {
+    const boundary: Issue = {
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      message: 'boundary evidence',
+      line: 1,
+      column: 1,
+    };
+    const context: Issue = {
+      ruleId: 'logic/key-prop-missing',
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: true,
+      message: 'context evidence',
+      line: 1,
+      column: 1,
+    };
+    const visual: Issue = {
+      ruleId: 'visual/inline-style-dominance',
+      category: 'visual',
+      severity: 'low',
+      aiSpecific: true,
+      message: 'visual evidence',
+      line: 1,
+      column: 1,
+    };
+    const result = aggregateReport(
+      [
+        { filePath: 'a.ts', rawScore: 5, componentScore: 5, adjustedScore: 5, componentCount: 1 },
+        { filePath: 'b.ts', rawScore: 4, componentScore: 4, adjustedScore: 4, componentCount: 1 },
+      ],
+      [
+        { filePath: 'a.ts', issues: [boundary, context] },
+        { filePath: 'b.ts', issues: [visual] },
+      ],
+      DEFAULT_CONFIG,
+      undefined,
+      2,
+    );
+    const logicWeight = DEFAULT_CONFIG.categoryWeights!.logic ?? 1;
+    const visualWeight = DEFAULT_CONFIG.categoryWeights!.visual ?? 1;
+    const perFileBurden = (points: number) =>
+      Math.log10(1 + points) / Math.log10(11) * 100;
+    const cumulative = (burden: number) =>
+      Math.min(100, Math.log10(1 + burden / AI_BUCKET_SATURATION_SCALE) / Math.log10(11) * 100);
+    const expectedBoundary = cumulative(perFileBurden(SEVERITY_WEIGHTS.high * logicWeight));
+    const expectedContext = cumulative(perFileBurden(SEVERITY_WEIGHTS.medium * logicWeight));
+    const expectedVisual = cumulative(perFileBurden(SEVERITY_WEIGHTS.low * visualWeight));
+    const expectedAi =
+      0.4 * expectedBoundary + 0.35 * expectedContext + 0.25 * expectedVisual;
+
+    expect(result.aiSlopScore).toBeCloseTo(expectedAi, 10);
+  });
+
+  it('keeps bounded per-file AI bucket aggregation input-order invariant', () => {
+    const issue = (ruleId: string, category: Category, severity: Issue['severity']): Issue => ({
+      ruleId,
+      category,
+      severity,
+      aiSpecific: true,
+      message: 'evidence',
+      line: 1,
+      column: 1,
+    });
+    const groups = [
+      { filePath: 'a.ts', issues: [issue('logic/boundary-violation', 'logic', 'high')] },
+      { filePath: 'b.ts', issues: [issue('logic/key-prop-missing', 'logic', 'medium')] },
+      { filePath: 'c.ts', issues: [issue('visual/inline-style-dominance', 'visual', 'low')] },
+    ];
+    const scores = groups.map((group) =>
+      scoreFile(fileResult({ filePath: group.filePath, issues: group.issues }), 1, DEFAULT_CONFIG),
+    );
+    const forward = aggregateReport(scores, groups, DEFAULT_CONFIG, undefined, groups.length);
+    const reverse = aggregateReport(
+      [...scores].reverse(),
+      [...groups].reverse(),
+      DEFAULT_CONFIG,
+      undefined,
+      groups.length,
+    );
+
+    expect(reverse.aiSlopScore).toBe(forward.aiSlopScore);
+    expect(reverse.repositoryHealth).toBe(forward.repositoryHealth);
+  });
+
+  it('keeps per-file AI bucket aggregation bounded at 100', () => {
+    const issue: Issue = {
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      message: 'harmful evidence',
+      line: 1,
+      column: 1,
+    };
+    const groups = Array.from({ length: 100 }, (_, index) => ({
+      filePath: `file-${index}.ts`,
+      issues: Array.from({ length: 10 }, () => ({ ...issue })),
+    }));
+    const result = aggregateReport(
+      groups.map((group) =>
+        scoreFile(fileResult({ filePath: group.filePath, issues: group.issues }), 1, DEFAULT_CONFIG),
+      ),
+      groups,
+      DEFAULT_CONFIG,
+      undefined,
+      groups.length,
+    );
+
+    expect(result.aiSlopScore).toBeGreaterThanOrEqual(0);
+    expect(result.aiSlopScore).toBeLessThanOrEqual(100);
+    expect(result.repositoryHealth).toBeGreaterThanOrEqual(0);
+    expect(result.repositoryHealth).toBeLessThanOrEqual(100);
   });
 });
 

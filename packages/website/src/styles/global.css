@@ -19,7 +19,10 @@
   --text-on-accent: #1a0e08;
 
   /* Accent — terracotta (the brick color) */
-  --text-accent:    #dc4a26;
+  /* WCAG AA text accent: 4.5:1+ on surface-1/surface-2 and on the
+     accent-brick text treatments below. Keep the darker terracotta fills
+     for non-text decoration/borders where contrast is not a text contract. */
+  --text-accent:    #ef8063;
   --fill-accent:    #c2410c;
   --fill-accent-hover: #9a3409;
 

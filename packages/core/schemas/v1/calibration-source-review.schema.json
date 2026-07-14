@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-source-review.schema.json",
+  "title": "CalibrationSourceReviewV103",
+  "description": "One source review bound to one immutable register entry. A source_quarantine review may truthfully have no reviewer decisions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceId", "sourceKind", "contributesToAdditiveCounts", "sourceRegisterEntrySha256", "originEvidenceId", "origin", "materialization", "sourceRights", "inventory", "reviewerDecisionIds", "reviewedAt", "decision", "reasons"],
+  "properties": {
+    "version": { "const": "v10.3-source-review-v1" },
+    "sourceId": { "$ref": "#/$defs/id" },
+    "sourceKind": { "enum": ["aggregate_inventory", "material_source"] },
+    "contributesToAdditiveCounts": { "type": "boolean" },
+    "sourceRegisterEntrySha256": { "$ref": "#/$defs/sha256" },
+    "originEvidenceId": { "$ref": "#/$defs/id" },
+    "origin": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "url"],
+          "properties": { "kind": { "const": "https" }, "url": { "type": "string", "format": "uri", "pattern": "^https://" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "localSourceId"],
+          "properties": { "kind": { "const": "local_unpublished" }, "localSourceId": { "$ref": "#/$defs/id" } }
+        }
+      ]
+    },
+    "materialization": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "childMaterialSourceIds"],
+          "properties": { "kind": { "const": "aggregate_only" }, "childMaterialSourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "materializationId", "repositoryId", "commitSha"],
+          "properties": { "kind": { "const": "git" }, "materializationId": { "$ref": "#/$defs/materializationId" }, "repositoryId": { "$ref": "#/$defs/id" }, "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "upstreamCommitSha", "assets"],
+          "properties": { "kind": { "const": "release_archive_set" }, "upstreamCommitSha": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" }, "assets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/releaseAsset" } } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "materializationId", "containers", "projectionPolicy"],
+          "properties": { "kind": { "const": "record_container" }, "materializationId": { "$ref": "#/$defs/materializationId" }, "containers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/container" } }, "projectionPolicy": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "bundleId", "bundleInventorySha256"],
+          "properties": { "kind": { "const": "unpublished_bundle" }, "bundleId": { "$ref": "#/$defs/id" }, "bundleInventorySha256": { "$ref": "#/$defs/sha256" } }
+        }
+      ]
+    },
+    "sourceRights": { "$ref": "#/$defs/rights" },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["physicalMemberCount", "candidateCodeUnitCount", "inventorySha256", "closedWorld"],
+      "properties": {
+        "physicalMemberCount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "candidateCodeUnitCount": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "inventorySha256": { "$ref": "#/$defs/sha256" },
+        "closedWorld": { "type": "boolean" }
+      }
+    },
+    "reviewerDecisionIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "decision": { "enum": ["candidate", "source_quarantine"] },
+    "reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "materializationId": { "type": "string", "pattern": "^sbm_[a-f0-9]{64}$" },
+    "reason": { "enum": ["source_unregistered", "source_revision_mutable", "source_bytes_unbound", "source_inventory_open", "source_inventory_mismatch", "aggregate_material_conservation_failed", "material_source_conflict", "evidence_unresolved", "evidence_receipt_stale", "record_container_projection_unsupported", "materialization_unsupported", "materialization_unverified", "materialization_receipt_stale", "license_absent", "license_scope_ambiguous", "analysis_use_unresolved", "analysis_use_denied", "redistribution_unresolved", "redistribution_denied", "third_party_rights_unresolved", "authorship_unproven", "generator_identity_missing", "generator_revision_missing", "prompt_binding_missing", "output_binding_mismatch", "human_edit_unknown", "human_edit_substantial", "human_provenance_missing", "historical_cutoff_failed", "historical_attestation_missing", "historical_graph_incomplete", "mixed_authorship", "family_unknown", "pair_incomplete", "pair_content_unsafe", "exact_cross_polarity_overlap", "near_cross_polarity_overlap", "unpaired_family_cross_polarity", "split_leakage", "lineage_ledger_incomplete", "overlap_universe_incomplete", "overlap_authority_incomplete", "privacy_ledger_incomplete", "quality_ledger_incomplete", "adapter_audit_mismatch", "privacy_high_confidence", "secret_high_confidence", "privacy_review_unresolved", "syntax_invalid", "language_normalizer_unsupported", "scaffold_dominant", "trivial_or_inert_target", "duplicate_record", "blind_review_receipt_missing", "witness_review_receipt_missing", "review_incomplete", "review_disagreement", "source_wide_quarantine"] },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "scope", "analysisUse", "redistribution", "thirdPartyChain", "evidenceIds"],
+      "properties": {
+        "status": { "enum": ["reviewed", "absent", "ambiguous"] },
+        "spdx": { "type": "string", "minLength": 1 },
+        "scope": { "enum": ["code", "dataset", "code_and_dataset", "generated_outputs"] },
+        "analysisUse": { "enum": ["approved", "denied", "unresolved"] },
+        "redistribution": { "enum": ["approved", "denied", "unresolved", "not_needed"] },
+        "thirdPartyChain": { "enum": ["complete", "incomplete", "not_applicable"] },
+        "evidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+      }
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normalizedPath", "bytes", "sha256"],
+      "properties": { "normalizedPath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$" }, "bytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "releaseAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["materializationId", "repositoryId", "materialization", "rights"],
+      "properties": {
+        "materializationId": { "$ref": "#/$defs/materializationId" },
+        "repositoryId": { "$ref": "#/$defs/id" },
+        "materialization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "assetUrl", "assetSha256", "assetBytes", "archiveFormat", "rootPrefix", "extractionPolicy"],
+          "properties": { "kind": { "const": "release_archive" }, "assetUrl": { "type": "string", "format": "uri", "pattern": "^https://" }, "assetSha256": { "$ref": "#/$defs/sha256" }, "assetBytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }, "archiveFormat": { "const": "zip" }, "rootPrefix": { "type": "string", "minLength": 1 }, "extractionPolicy": { "const": "safe-zip-v1" } }
+        },
+        "rights": { "$ref": "#/$defs/rights" }
+      }
+    }
+  }
+}

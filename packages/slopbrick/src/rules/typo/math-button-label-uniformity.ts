@@ -52,11 +52,11 @@ export const mathButtonLabelUniformityRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Button text lengths have low variance (σ=${sd.toFixed(2)}, n=${lengths.length}). ` +
-        `AI reuses a small vocabulary of marketing labels; humans mix long and short action verbs.`,
+        `Review whether labels clearly distinguish their actions; consistent lengths can be intentional.`,
       line: anchor?.line ?? 1,
       column: anchor?.column ?? 1,
       advice:
-        'Mix button lengths deliberately — pair a short "Save" with a longer "Mark as complete" — instead of repeating the same template.',
+        'Use labels that accurately describe each action; consistency is fine when the actions share semantics.',
     });
 
     return issues;

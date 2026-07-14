@@ -71,6 +71,26 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     const out = formatExplain({ error: 'Unknown rule: foo' });
     expect(out).toBe('Unknown rule: foo');
   });
+
+  it('renders honest policy/calibration status without inventing a matched snippet', () => {
+    const result = buildRuleExplanation(
+      { ...fakeRule, id: 'logic/heaps-deviation', category: 'logic', aiSpecific: false },
+      { ...DEFAULT_CONFIG, rules: { 'logic/heaps-deviation': 'off' } },
+      { 'logic/heaps-deviation': 'Inspect the calibrated source-code statistic.' },
+    );
+    const out = formatExplain(result);
+
+    expect(out).toContain('Rule status: configured-off');
+    expect(out).toContain('AI-specific: no (cross-cutting quality rule)');
+    expect(out).toContain('Evidence:    quality');
+    expect(out).toContain('Calibration: historical point estimates only');
+    expect(out).toContain('Calibrated: 2026-07-04T00:00:00Z');
+    expect(out).toContain('Calibration source/cohort: unavailable');
+    expect(out).toContain('Precision:');
+    expect(out).toContain('Matched fact/snippet: unavailable in a rule-level explanation');
+    expect(out).toContain('Confidence limits: unavailable');
+    expect(out).toContain('This output does not claim runtime suppression or authorship proof.');
+  });
 });
 
 describe('buildRuleExplanation', () => {
@@ -87,6 +107,26 @@ describe('buildRuleExplanation', () => {
     expect(result.configuration.policyState).toBe('configured-off');
     expect(result.configuration).not.toHaveProperty('effectiveActivation');
     expect(result.suppressionSnippet).toContain('visual/test-rule');
+    expect(result.evidence.calibration.provenance.status).toBe('unavailable');
+    expect(result.evidence.calibration.provenance.source).toBeNull();
+    expect(result.evidence.calibration.provenance.cohort).toBeNull();
+  });
+
+  it('exposes only the validated historical date and explicitly withholds v10.3 provenance', () => {
+    const result = buildRuleExplanation(
+      { ...fakeRule, id: 'logic/heaps-deviation', category: 'logic', aiSpecific: false },
+      DEFAULT_CONFIG,
+      { 'logic/heaps-deviation': 'Inspect the calibrated source-code statistic.' },
+    );
+    expect('error' in result).toBe(false);
+    if ('error' in result) return;
+    expect(result.evidence.calibration.lastCalibratedAt).toBe('2026-07-04T00:00:00Z');
+    expect(result.evidence.calibration.provenance).toMatchObject({
+      status: 'historical-only',
+      source: null,
+      cohort: null,
+    });
+    expect(result.evidence.calibration.provenance.reason).toMatch(/v10\.3 admission/i);
   });
 
   it('reports static default-off as configuration policy without claiming runtime suppression', () => {

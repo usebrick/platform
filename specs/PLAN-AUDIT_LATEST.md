@@ -1,13 +1,14 @@
-# Plan Audit — v10.3 corpus admission and immutable release assets
+# Plan Audit — v0.45 recovery, v10.3 corpus admission, and immutable release assets
 
-**Date:** 2026-07-11 · **Verdict:** READY TO EXECUTE
+**Date:** 2026-07-14 · **Verdict:** READY TO EXECUTE (gated)
 
 ## Frozen plans
 
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
-| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `08d30d9dca5b177764c5c631d98d570d75b2702a556438eaf8c10dadf292c26f` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices. |
-| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `233ede7262dd408318230f32ab4cc5d2103caf8b5662ae4fb228088531f70e75` | Owns provenance admission Tasks 0-11, including the v10.3.2 witness-bound manifest and final in-process consumer authority. |
+| `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
+| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `b39e6579aa5f13548c6a3a98b2273b97013b5fc7b878e5b5818cb980fe9a7d8c` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. |
+| `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `46cb5660ae38d940fd88eb9c633bdc3b9bef3000a48496c32c0d794ff0f1d4b6` | Current recovery/release gate order and evidence authority; live Task 1A and bounded Task 1B checkpoints record the approved census, register-authority Core contract, register-publication runtime, Core/SlopBrick diagnostic slice, acquisition-round contract, structured record/decision consumption, temporal/adjudicator authority, completed dirty-boundary reduction pass, the independently approved Task 2A Core overlap-contract, SlopBrick normalizer/universe, exact-similarity, external-sort fixture, artifact-contract/runtime, incremental-stream, bounded-overlap-computation, approved overlap-authority publication/CLI slice, bounded fault/CAS matrix, CLI E2E, selected-generation and envelope-relation verification, terminal checkpoint/resume and sidecar-integrity recovery validation, recursive typecheck/build boundary, scope-control and clean-boundary audit, migration-scoped website accessibility verification, score/property and valid-report accounting including unknown-count `n/a`, HTML finding-evidence parity, workspace-binary self-scan correction with threshold parity, dependency audit, DB/docs validity, website dev-data generation, workflow pnpm pinning, stronger schema/type freshness checks, the live 307-file/3,540-test package-gate correction plus repository-polarity and normalized-summary hardening, the health-wire/heatmap/doctor validity matrix, the latest disposable 227-file/531-issue self-scan refresh and brief-output UX review, the 2026-07-14 scope correction/implementation freeze, the post-gate authority-runtime consolidation target, the current-state pointer, the external corpus review-artifact refresh, the recursive build-boundary refresh, the synthetic clean-snapshot build diagnostic, the live-site/documentation truth refresh including measured-versus-unmeasured rule claim correction, the current dirty same-tarball consumer diagnostic, the current 460-file/757-entry diff census refresh, the MCP no-trailing-newline transport correction, the current corpus authority audit refresh, the read-only 329-entry genesis composition diagnostic with deterministic blocker counts and receipt, the built-CLI 45/45 partial-watch validity matrix with all-five-field stream/file assertions and explicit skip semantics, the latest synthetic clean-snapshot consumer, recursive typecheck, full JSON genesis diagnostic, live-diff census/hash correction, current AAX30H clean-snapshot packed-consumer pair, reproducible genesis/typecheck/packer evidence, corrected v3 external-packer provenance receipts, historical website demo-label corrections, the current runnable-versus-planned admission CLI boundary, the reproducible disposable Python/pyarrow bootstrap setup, the staged beacon/large-output boundary review, the independent corpus deficit/acquisition decision audit, the live package-local self-scan/dead-code cleanup review, and the row-versus-content overlap audit showing 3,522 cross-polarity hashes with a recursive-canonical diagnostic receipt. |
 
 The independent full-plan review is
 `.superpowers/sdd/v103-corpus-admission-plan-final-review.md`. During Task 3
@@ -40,12 +41,14 @@ the planning verdict does not call the workspace audit clean.
 
 ## Canonical execution order
 
-1. Implement and independently approve release-materialization Tasks 1-5.
-   This opens one coordinated, unreleased Core `0.3.0` schema tranche and
-   preserves the existing Git path.
+1. Implement and independently approve release-materialization Tasks 1-6.
+   The current bytes are bounded-complete, but the clean commit-bound receipt
+   prerequisite remains open; this opens one coordinated, unreleased Core
+   `0.3.0` schema tranche and preserves the existing Git path.
 2. Close the production/development dependency-security remediation tranche,
-   independently verify the resulting audit decisions, then implement and
-   approve release Task 6's packed prerequisite.
+   independently verify the resulting audit decisions and clean-boundary
+   evidence, then rerun the packed prerequisite from the authorized clean
+   builder.
 3. Execute admission Tasks 0-3B as reviewed vertical TDD slices: durable tool
    and evidence authority, complete register/review authority, scalable exact
    overlap, final context, exact witnesses, and transactional census.
@@ -95,8 +98,9 @@ the planning verdict does not call the workspace audit clean.
   prior syntax failures: 0.
 - Duplicate TypeScript members/declarations: 0.
 - Markdown fence parity and stale synthetic-source/flat-manifest scans: clean.
-- `git diff --check`: clean at the frozen hashes.
-- Both hashes were stable before and after the independent final reread.
+- `git diff --check`: clean at the current dirty snapshot.
+- Current plan hashes were recomputed on 2026-07-14; any subsequent plan edit
+  requires another hash refresh and targeted rereview.
 
 ## Implementation evidence still required
 
@@ -125,8 +129,10 @@ These are hard execution gates, not planning gaps:
       persisted rereview at final release SHA
       `08d30d9dca5b177764c5c631d98d570d75b2702a556438eaf8c10dadf292c26f`.
 - [x] Exact Task 4 dependency resolution and audit attribution: the ZIP delta
-      is pinned and adds no known advisory; the workspace audit remains red and
-      is not release evidence.
+      is pinned and adds no known advisory. The historical workspace audit
+      baseline was red; the latest bounded dirty-byte migration reports zero
+      moderate advisories, but independent review and a clean-bound rerun remain
+      required, so neither snapshot is release evidence.
 - [ ] Red tests and reviewed implementation for every remaining scoped task.
 - [x] Task 4A shared trusted-POSIX-cache refactor: commit `521c0e888`; explicit
       RED, 43 direct plus 184 byte-unchanged acquisition tests (227/227),
@@ -138,14 +144,21 @@ These are hard execution gates, not planning gaps:
       strict direct test compile, package typecheck/build/diff, exact dependency
       attribution, independent receipt/specification/security approvals, and
       persisted review at `.superpowers/sdd/v103-release-task4b-review.md`.
-- [ ] Task 4C adversarial extraction/publication/reuse proof.
-- [ ] Separate remediation and independent review of the 17 production and 20
-      complete-graph workspace advisories before packed Task 6 evidence.
-- [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary.
+- [x] Task 4C adversarial extraction/publication/reuse proof: commit
+      `04697806e`, focused matrix 425/425 across Node 20/22/24, with independent
+      specification, code-quality, and archive-security approval.
+- [ ] Separate remediation and independent review of the historical 17
+      production and 20 complete-graph workspace-advisory baseline, including
+      the latest zero-moderate dirty-byte result, before a clean release
+      boundary. The bounded migration rereview in
+      `.superpowers/sdd/dependency-remediation-rereview.md` is independently
+      **APPROVE** for the current dirty bytes; the clean commit-bound rerun is
+      still required before this gate can be checked.
+- [ ] Full Core schema/codegen/contract/type/test and SlopBrick lint/type/test/build gates at each planned boundary; current package gates pass, but the recursive build is stopped by the intentional uncommitted Core codegen-freshness guard.
 - [ ] Truthful 329/329 generation-0 review and byte-backed external evidence.
 - [ ] Real 452,382-row overlap/resource receipt and honest reproduced census.
 - [ ] Independently reviewed 100/100 witness; bounded acquisition only if its census proves a deficit.
-- [ ] Commit-bound Task 9A/9B approvals, exact package tarball, and clean Node 22/24 consumer receipts.
+- [ ] Commit-bound Task 9A/9B approvals, exact package tarball, and clean Node 22/24 consumer receipts. The current dirty same-tarball pair is 9/9 on each runtime and is not clean-bound evidence.
 - [ ] Admission-backed manifest round trip, two deterministic smoke runs, exact 10k canary, and post-canary full-count freeze.
 - [ ] Statistical/provenance review before any rule verdict or signal change.
 - [ ] Separate self-scan UX. Commit `efb069b90` closes staged-score drift,
@@ -155,12 +168,20 @@ These are hard execution gates, not planning gaps:
       suppressed-count separation, baseline migration, installed-hook design,
       package/release, website, deployment, and live-publication gates remain.
 
-## Verdict
+## Current execution status
 
-**READY TO EXECUTE.** Tasks 1-3 and Tasks 4A-4B are approved; continue with
-release-materialization Task 4C and proceed
-task-by-task with test-first implementation, a specification reviewer, a code-
-quality reviewer, and verification evidence before advancing. Any change to a
-frozen plan requires a new hash and targeted rereview. Any implementation
-failure that exposes a contract defect reopens planning rather than silently
-weakening provenance, security, resource, or readiness rules.
+The plan remains **READY TO EXECUTE**, but execution is not release-ready:
+release Tasks 1-6 are bounded-complete on dirty bytes, the installed-hook and
+incremental-cache policies are verified, and the current continuation ledger is
+98/178 checked. Admission is only 2/76 task items checked; the instructional
+checkbox example is excluded. The legacy corpus has now been
+centralized under `/Users/cheng/corpus-expansion`, but no admission manifest,
+selection, run, or new-source acquisition exists; the corresponding v10.3
+inventories were rebuilt with zero missing records. The next ordered action is
+an owner-authorized clean builder boundary, followed by recursive gates and
+commit-bound receipts; then admission Task 0 Step 3 and Tasks 1A-3B may
+proceed.
+
+Any implementation failure that exposes a contract defect reopens planning
+rather than silently weakening provenance, security, resource, or readiness
+rules.

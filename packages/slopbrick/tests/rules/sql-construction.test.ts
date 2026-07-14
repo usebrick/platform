@@ -130,4 +130,25 @@ describe('security/sql-construction', () => {
     );
     expect(issues).toHaveLength(0);
   });
+
+  it('does not flag SQL examples in comments or nested advice strings', async () => {
+    const source = [
+      '// const q = `SELECT * FROM users WHERE id = ${userId}`;',
+      'const advice = \'Use client.query("SELECT * FROM users WHERE id = $1", [id])\';',
+      'const q = "SELECT * FROM users WHERE id = " + userId;',
+    ].join('\n');
+    const issues = await runRule(source);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]?.line).toBe(3);
+  });
+
+  it('does not treat ordinary prose starting with a DML word as SQL', async () => {
+    const source = [
+      'const a = "Replace this value with a token";',
+      'const b = "Update every call site before merging";',
+      'const c = "Delete the old record after confirmation";',
+    ].join('\n');
+    const issues = await runRule(source);
+    expect(issues).toHaveLength(0);
+  });
 });

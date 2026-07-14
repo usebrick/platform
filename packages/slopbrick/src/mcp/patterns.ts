@@ -18,7 +18,7 @@
 // constitution violations", not a full static analysis.
 
 import { readFileSync } from 'node:fs';
-import { basename, extname } from 'node:path';
+import { basename, extname, resolve } from 'node:path';
 import { discoverFiles } from '../engine/discover.js';
 import { CONSTITUTION_SIGNALS, matchForbidden } from '../config/conventions.js';
 import type { Constitution, ResolvedConfig } from '../types';
@@ -145,14 +145,19 @@ const API_PATH_RE = /(?:^|\/)(?:lib\/api|services|api-client|clients)\//;
 
 /**
  * Build a project-wide pattern inventory. Scans up to `maxFiles`
- * source files (defaults to 200) and groups them by category.
+ * source files (defaults to 200) and groups them by category. When an exact
+ * candidate list is supplied, discovery is bypassed and the normalized,
+ * deduplicated, deterministic list is authoritative.
  */
 export async function buildPatternInventory(
   cwd: string,
   config: ResolvedConfig,
   maxFiles = 200,
+  exactCandidateFiles?: readonly string[],
 ): Promise<PatternInventory> {
-  const files = await discoverFiles(cwd, config);
+  const files = exactCandidateFiles === undefined
+    ? await discoverFiles(cwd, config)
+    : [...new Set(exactCandidateFiles.map((filePath) => resolve(cwd, filePath)))].sort();
   const limited = files.slice(0, maxFiles);
 
   const modalMap = new Map<string, PatternMatch>();

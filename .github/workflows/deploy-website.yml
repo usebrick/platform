@@ -18,10 +18,11 @@ name: deploy-website
 #   - CLOUDFLARE_PAGES_PROJECT_NAME — e.g. "usebrick-dev"
 #
 # Why this is separate from ci.yml:
-#   - CI runs on every PR (cost-bound). Deploy only runs on push to
-#     main after CI is green (cheaper, no PR deploys).
-#   - The path filter is strictly narrower (only website- and
-#     core-touching commits trigger a redeploy).
+#   - CI runs on every PR (cost-bound). This workflow runs on matching pushes
+#     to main independently; it does not declare a CI `needs` dependency, so
+#     a green CI status must not be inferred from a deploy trigger.
+#   - The path filter is strictly narrower (website/core, lockfile, or this
+#     workflow file) than the full repository push stream.
 #
 # Why we still build @usebrick/core in this workflow instead of relying
 # on the prebuilt dist committed to the repo:
@@ -68,7 +69,8 @@ jobs:
     # environment: cloudflare-pages
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # v4.3.1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
 
@@ -76,10 +78,12 @@ jobs:
         # pnpm version comes from the root package.json's
         # `packageManager` field (pnpm@9.15.0). Don't pin here — see
         # the matching note in ci.yml.
-        uses: pnpm/action-setup@v3
+        # v4.3.0 (peeled commit)
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v4
+        # v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: 'pnpm'
@@ -134,7 +138,8 @@ jobs:
         #                   build on its next request
         #   --commit-dirty  allow dirty working tree (CI checkout has
         #                   uncommitted version.json — harmless)
-        uses: cloudflare/wrangler-action@v3
+        # v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

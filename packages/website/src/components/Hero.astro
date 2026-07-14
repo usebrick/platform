@@ -16,6 +16,8 @@
 // - .hero__facts is flex-wrap: wrap with row gap so the 4
 //   short fact labels flow as pills and wrap on narrow.
 import languageSupport from '../data/language-support.json';
+import version from '../data/version.json';
+import productFacts from '../data/product-facts.json';
 ---
 
 <header class="hero" id="top">
@@ -27,7 +29,7 @@ import languageSupport from '../data/language-support.json';
       <aside class="hero__copy">
         <span class="hero__eyebrow">
           <span class="hero__eyebrow-dot" aria-hidden="true"></span>
-          v0.43.0 · 103 rules · 4 scores · 576k files
+          v{version.slopbrick} candidate · {productFacts.ruleCount} rules · 4 scores · {productFacts.corpusLabel} cohort: {productFacts.corpusFiles.toLocaleString()} files
         </span>
 
         <h1 class="hero__title">
@@ -35,9 +37,10 @@ import languageSupport from '../data/language-support.json';
         </h1>
 
         <p class="hero__subtitle">
-          103 rules. v10-calibrated against <strong>576,750 files</strong>.
-          v0.43.0 ships with the 4-score model, the MCP server, the
-          Constitution engine, and per-rule precision/recall on disk.
+          {productFacts.ruleCount}-rule workspace candidate. Historical {productFacts.corpusLabel} metrics cover
+          <strong>{productFacts.measuredRuleCount} rules</strong> across <strong>{productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files</strong>
+          ({productFacts.corpusSampleFiles.toLocaleString()} sampled). The workspace candidate includes the 4-score model,
+          the MCP server, the Constitution engine, and per-rule evidence on disk.
         </p>
 
         <div class="hero__cta-row">
@@ -77,15 +80,15 @@ import languageSupport from '../data/language-support.json';
         </div>
 
         <ul class="hero__facts">
-          <li class="hero__fact--live"><span class="hero__fact-dot" aria-hidden="true"></span><span>shipped</span> v0.43.0</li>
+          <li class="hero__fact--live"><span class="hero__fact-dot" aria-hidden="true"></span><span>workspace candidate</span> v{version.slopbrick}</li>
           <li><span>~1.1 MB</span> published tarball</li>
           <li><span>offline</span> first run</li>
           <li><span>MIT</span> license</li>
-          <li><span>Node ≥ 20</span></li>
+          <li><span>Node 22/24</span></li>
         </ul>
       </aside>
 
-      <aside class="hero__terminal" aria-label="slopbrick scan in progress" aria-hidden="true">
+      <aside class="hero__terminal" aria-label="historical slopbrick scan example" aria-hidden="true">
         <header class="hero__terminal-bar">
           <div class="hero__terminal-dots">
             <span class="hero__terminal-dot"></span>
@@ -107,12 +110,12 @@ import languageSupport from '../data/language-support.json';
           <span class="lt-line lt-line--output">  <span class="lt-k">Repository Health</span>    <span class="lt-v">57</span>  <span class="lt-b lt-b--mid">needs work</span></span>
           <span class="lt-line"></span>
           <span class="lt-line lt-line--success">  ✓ CI gate: 25 &lt;= 30 → pass</span>
-          <span class="lt-line lt-line--muted">  0 issues · 593 files · 0.4s</span>
+          <span class="lt-line lt-line--muted">  historical example · 0 issues · 593 files · 0.4s</span>
         </div>
         <footer class="hero__terminal-footer">
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">593</span><span class="hero__terminal-stat-l">files</span></span>
-          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">103</span><span class="hero__terminal-stat-l">rules</span></span>
-          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">22</span><span class="hero__terminal-stat-l">categories</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.ruleCount}</span><span class="hero__terminal-stat-l">rules</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.categoryCount}</span><span class="hero__terminal-stat-l">categories</span></span>
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{languageSupport.count}</span><span class="hero__terminal-stat-l">language families</span></span>
         </footer>
       </aside>

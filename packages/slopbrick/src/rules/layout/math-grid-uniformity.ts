@@ -61,7 +61,7 @@ export const mathGridUniformityRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `grid-cols-N tokens have low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
-        `AI repeats the same column count (often grid-cols-3); humans mix 2/3/4/6 depending on content.`,
+        `Choose column counts from content, responsive layout, and the design system; repetition is acceptable when intentional.`,
       line: anchor.line,
       column: anchor.column,
       advice:

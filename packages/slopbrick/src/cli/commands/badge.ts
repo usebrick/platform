@@ -17,6 +17,30 @@ import { formatBadge } from '../render';
 import { logger } from '../../engine/logger';
 import { runScan } from '../scan';
 import type { CliGlobalOptions } from '../scan';
+import {
+  formatGitScopedEmptySelectionNotice,
+  formatScanValidityNotice,
+  isGitScopedEmptySelection,
+  isIncompleteScan,
+  isNotApplicableScan,
+  isReadOnlyGitSubset,
+} from '../../report/scan-validity.js';
+
+function renderInvalidBadge(scan: Parameters<typeof formatScanValidityNotice>[0], options: CliGlobalOptions): boolean {
+  if (!isIncompleteScan(scan) && !isNotApplicableScan(scan)) return false;
+
+  const gitScopedNoOp = isNotApplicableScan(scan) && isGitScopedEmptySelection(scan, options);
+  logger.info(
+    gitScopedNoOp
+      ? formatGitScopedEmptySelectionNotice()
+      : formatScanValidityNotice(scan) ??
+        (isIncompleteScan(scan)
+          ? 'INCOMPLETE SCAN — scores are not valid for gating.'
+          : 'NO FILES ANALYSED — scores are not applicable for gating.'),
+  );
+  process.exit(gitScopedNoOp ? 0 : 1);
+  return true;
+}
 
 export function registerBadge(program: Command): void {
   program
@@ -31,8 +55,11 @@ export function registerBadge(program: Command): void {
       const options = command.optsWithGlobals() as CliGlobalOptions;
       const cwd = resolve(options.workspace ?? process.cwd());
       const { loadHealth } = await import('@usebrick/core') as typeof import('@usebrick/core');
-      const health = loadHealth(cwd);
+      // A Git-scoped invocation is observational and must describe the
+      // selected subset, never reuse a whole-project badge from memory.
+      const health = isReadOnlyGitSubset(options) ? null : loadHealth(cwd);
       if (health) {
+        if (renderInvalidBadge(health, options)) return;
         // v0.42.0 (user-review fix): badge was reading
         // `health.repositoryHealth` and inverting it as `slopIndex`.
         // Two bugs in one:
@@ -54,6 +81,7 @@ export function registerBadge(program: Command): void {
         process.exit(0);
       }
       const { report } = await runScan(options);
+      if (renderInvalidBadge(report, options)) return;
       logger.info(formatBadge(report));
       process.exit(0);
     });

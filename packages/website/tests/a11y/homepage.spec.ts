@@ -14,9 +14,7 @@ test('homepage has no serious a11y violations', async ({ page }) => {
   const accessibilityScanResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
-  // Allow up to 3 serious violations (some decorative SVG may trigger;
-  // investigate and fix in follow-up).
-  expect(accessibilityScanResults.violations.filter(v => v.impact === 'serious').length).toBeLessThanOrEqual(3);
+  expect(accessibilityScanResults.violations.filter(v => v.impact === 'serious')).toEqual([]);
 });
 
 test('skip-to-content link is present and focusable', async ({ page }) => {
@@ -32,4 +30,27 @@ test('tool cards are keyboard-focusable', async ({ page }) => {
   const firstCard = page.locator('.tool-card').first();
   await expect(firstCard).toHaveAttribute('role', 'button');
   await expect(firstCard).toHaveAttribute('tabindex', '0');
+});
+
+test.describe('mobile layout', () => {
+  for (const width of [320, 375, 390]) {
+    test(`does not overflow horizontally at ${width}px`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: { width, height: 800 },
+      });
+      const page = await context.newPage();
+      try {
+        await page.goto('/');
+        const dimensions = await page.evaluate(() => ({
+          viewport: window.innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+          bodyWidth: document.body.scrollWidth,
+        }));
+        expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewport);
+        expect(dimensions.bodyWidth).toBeLessThanOrEqual(dimensions.viewport);
+      } finally {
+        await context.close();
+      }
+    });
+  }
 });

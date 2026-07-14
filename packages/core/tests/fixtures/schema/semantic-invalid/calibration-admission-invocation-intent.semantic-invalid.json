@@ -1,0 +1,11 @@
+{
+  "version": "v10.3-admission-invocation-intent-v1",
+  "profileId": "admission-core-contract-v1",
+  "profileSha256": "b379d0503ea1e00cd8cb94284347df0f9f0795f81f98a3390845fe668dab9867",
+  "action": "core:contract",
+  "canonicalArgvSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "inputSetSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "executableBehaviorSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "intentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "intentSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

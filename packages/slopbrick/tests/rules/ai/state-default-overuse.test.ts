@@ -54,6 +54,7 @@ describe('ai/state-default-overuse', () => {
     expect(issues.length).toBeGreaterThanOrEqual(1);
     expect(issues[0].ruleId).toBe('ai/state-default-overuse');
     expect(issues[0].aiSpecific).toBe(true);
+    expect(`${issues[0].message}\n${issues[0].advice}`).not.toMatch(/LLM|human code|verify authorship/i);
   });
 
   it('does not flag when useReducer is present alongside useState', async () => {

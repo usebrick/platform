@@ -84,16 +84,15 @@ export const aiFetchDefaultOveruseRule = createRule<RuleContext>({
         severity: 'low',
         aiSpecific: true,
         message:
-          `${fetchCount} direct \`fetch()\` calls, no TanStack Query / SWR / axios / ky import. ` +
-          `Sascha 2025: every top LLM puts TanStack Query in the default stack, but ` +
-          `still defaults to raw \`fetch()\` when no library is in package.json. ` +
-          `Nam et al. MSR 2026: 27% of AI directives mention TanStack Query.`,
+          `${fetchCount} direct \`fetch()\` calls with no shared data-fetching layer detected. ` +
+          `Review whether this project needs shared caching, retries, invalidation, or abort handling; ` +
+          `direct \`fetch()\` can be intentional when those capabilities are unnecessary.`,
         line: 1,
         column: 1,
         advice:
-          'Consider adopting TanStack Query (or SWR / axios / ky) for client-side data fetching. ' +
-          'Benefits: automatic caching, request deduplication, background refetching, error retry, ' +
-          'request invalidation, optimistic updates. Direct fetch() requires re-implementing all of these.',
+          'If shared caching, request deduplication, retries, invalidation, or optimistic updates are needed, ' +
+          'route component requests through the project data-fetching layer (for example TanStack Query, SWR, axios, or ky). ' +
+          'Keep direct fetch() when those capabilities are intentionally unnecessary.',
       },
     ];
   },

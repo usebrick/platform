@@ -9,24 +9,6 @@
 // (`.brick` + `.brick-wall` in components.css). This keeps the
 // component trivial and lets the wall be composed in markup.
 
-interface Props {
-  /** Optional accessible label for the brick. */
-  ariaLabel?: string;
-  /** Optional CSS class added to the brick. */
-  class?: string;
-  /** Render as a different element (e.g. 'section', 'article'). */
-  as?: 'div' | 'section' | 'article' | 'aside' | 'header' | 'footer';
-  /** Span multiple columns in a `.brick-wall` grid. */
-  span?: 1 | 2 | 3;
-  /** Span multiple rows in a `.brick-wall` grid. */
-  rowSpan?: 1 | 2;
-  /** Visual treatment. */
-  tone?: 'default' | 'raised' | 'recessed' | 'accent' | 'muted' | 'cracked';
-  /** When true, the brick is interactive (hover/active states). */
-  interactive?: boolean;
-  /** When true, render an extra thick left edge to read as a "header brick". */
-  headBrick?: boolean;
-}
 const {
   ariaLabel,
   class: className = '',

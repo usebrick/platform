@@ -65,6 +65,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   'wcag',
   'constitution',
   'prScoreThreshold',
+  'selfScan',
 ]);
 
 function levenshtein(a: string, b: string): number {
@@ -207,6 +208,19 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   }
   if ('exclude' in config && config.exclude !== undefined) {
     validateStringArray('exclude', config.exclude, errors);
+  }
+
+  if ('selfScan' in config && config.selfScan !== undefined) {
+    if (!isPlainObject(config.selfScan)) {
+      errors.push('selfScan: must be an object.');
+    } else {
+      for (const key of Object.keys(config.selfScan)) {
+        if (key !== 'excludePaths') {
+          warnings.push(`selfScan: Unknown self-scan key "${key}".`);
+        }
+      }
+      validateStringArray('selfScan.excludePaths', config.selfScan.excludePaths, errors);
+    }
   }
 
   if ('prScoreThreshold' in config && config.prScoreThreshold !== undefined) {

@@ -33,6 +33,10 @@ export interface DbScanResult {
   scan: ScanRunResult;
 }
 
+export const DB_NOT_APPLICABLE_REASON = 'no-database-files-analyzed' as const;
+export const DB_NOT_APPLICABLE_MESSAGE =
+  'NO DATABASE FILES ANALYSED — database health is not applicable for this workspace.' as const;
+
 /**
  * Run the db scan. We re-use `runScan` to load config + cache, then
  * call `buildDbHealth` which does the schema analysis.
@@ -81,6 +85,36 @@ export function formatDbReport(
     return formatDbMarkdown(result);
   }
   return formatDbPretty(result);
+}
+
+/**
+ * Render the domain-specific no-denominator result without exposing the
+ * engine's neutral `100/100` placeholder as a measured health score.
+ */
+export function formatDbNotApplicable(
+  result: DbScanResult,
+  opts: { json?: boolean; markdown?: boolean } = {},
+): string {
+  const metadata = {
+    version: '0.8.0',
+    completionStatus: 'empty' as const,
+    scoreValidity: 'not-applicable' as const,
+    reason: DB_NOT_APPLICABLE_REASON,
+    message: DB_NOT_APPLICABLE_MESSAGE,
+    requested: 0,
+    analyzed: 0,
+    failed: 0,
+    skipped: 0,
+    scannedSqlFiles: result.result.scannedSqlFiles,
+    scannedTsFiles: result.result.scannedTsFiles,
+    byRule: result.result.byRule,
+    findings: result.result.findings,
+  };
+  if (opts.json) return JSON.stringify(metadata, null, 2);
+  if (opts.markdown) {
+    return `## Database Health: not-applicable\n\n${DB_NOT_APPLICABLE_MESSAGE}`;
+  }
+  return DB_NOT_APPLICABLE_MESSAGE;
 }
 
 function formatDbPretty(result: DbScanResult): string {

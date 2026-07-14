@@ -21,7 +21,10 @@ export function registerReport(program: Command): void {
         process.exit(2);
       }
       const fmt = cmdOptions.outputFormat ?? 'pretty';
-      if (fmt === 'json') {
+      if (!['pretty', 'json', 'markdown'].includes(fmt)) {
+        logger.error(`Unsupported report output format: ${fmt}. Use pretty, json, or markdown.`);
+        process.exit(2);
+      } else if (fmt === 'json') {
         logger.info(formatJson(result.report));
       } else if (fmt === 'markdown') {
         logger.info(`Re-rendered from ${reportPath}\n\n${formatMarkdown(result.report)}`);

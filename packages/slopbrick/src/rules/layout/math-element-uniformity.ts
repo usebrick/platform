@@ -54,11 +54,11 @@ export const mathElementUniformityRule = createRule<RuleContext>({
       message:
         `Interactive elements are suspiciously uniform: ` +
         `buttons=${counts.button}, inputs=${counts.input}, selects=${counts.select} ` +
-        `(max/min ratio ${ratio.toFixed(2)}). AI tends to generate balanced dashboards; humans have lopsided forms.`,
+        `(max/min ratio ${ratio.toFixed(2)}). Review whether the distribution fits the product's content and interaction needs; this statistic is not an authorship verdict.`,
       line: anchor?.line ?? 1,
       column: anchor?.column ?? 1,
       advice:
-        'Human-designed files usually have lopsided counts (e.g. 1 button + 12 inputs). The uniform pattern is a strong AI signature.',
+        'Review whether the counts fit the form or dashboard. Do not add or remove controls solely to change this distribution statistic.',
     });
 
     return issues;

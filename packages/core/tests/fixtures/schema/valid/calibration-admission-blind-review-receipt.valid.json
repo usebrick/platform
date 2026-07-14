@@ -1,0 +1,13 @@
+{
+  "version": "v10.3-admission-blind-review-receipt-v1",
+  "receiptId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "assignmentId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "evidenceSetSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "sealedDecisions": [
+    { "reviewerId": "reviewer-a", "decisionId": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "peerDecisionVisibleBeforeSeal": false },
+    { "reviewerId": "reviewer-b", "decisionId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "peerDecisionVisibleBeforeSeal": false }
+  ],
+  "unsealedOnlyAfterBothDecisionIdsExisted": true,
+  "protocolAuditorId": "auditor-a",
+  "protocolAuditEvidenceIds": ["protocol-a"]
+}

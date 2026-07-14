@@ -31,7 +31,10 @@ export function verifyV103RunInputs(run: unknown, checkoutMap: unknown): { ok: t
   if (!isCalibrationRunManifestV103(run)) return { ok: false, error: 'Run manifest does not satisfy the v10.3 contract' };
   if (!isCalibrationCheckoutMapV103(checkoutMap)) return { ok: false, error: 'Checkout map does not satisfy the v10.3 local contract' };
   if (run.runId !== checkoutMap.runId) return { ok: false, error: 'Checkout map run ID does not match run manifest' };
-  if (run.inputHashes.checkoutMapSha256 !== calibrationCheckoutMapSha256(checkoutMap)) return { ok: false, error: 'Checkout map hash does not match run manifest' };
+  // The canonical map hash covers every entry, including the normalized
+  // release-archive binding. No second run-manifest field can drift from it.
+  const actualCheckoutMapSha256 = calibrationCheckoutMapSha256(checkoutMap);
+  if (run.inputHashes.checkoutMapSha256 !== actualCheckoutMapSha256) return { ok: false, error: 'Checkout map hash does not match run manifest' };
   return { ok: true };
 }
 

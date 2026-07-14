@@ -34,6 +34,13 @@ export const COMPOSITE_WEIGHTS = {
   visual: 0.25,
 } as const;
 
+/**
+ * Fixed cumulative scale for the bounded additive per-file AI burdens.
+ * The second log scale reaches saturation at ten times this value, while
+ * ordinary multi-file scans retain useful headroom.
+ */
+export const AI_BUCKET_SATURATION_SCALE = 1000;
+
 export type SubscoreBucket = keyof typeof COMPOSITE_WEIGHTS;
 
 /**
@@ -180,12 +187,12 @@ export function aggregateReport(
   // 4 headline scores.
   compositeScores?: ReadonlyArray<CompositeScore | undefined>,
   /**
-   * Number of successfully analysed files to use as the exposure
-   * denominator.  Callers that add synthetic baseline rows (for example
-   * `--since`) must pass the real analysed count so those rows cannot
-   * silently dilute the score.
+   * Number of successfully analysed files represented by `issueGroups`.
+   * Retained for call-site compatibility and score-basis provenance. The
+   * canonical AI bucket aggregation is additive over per-file burdens, so
+   * this count is not used as an arithmetic dilution denominator.
    */
-  exposureFiles?: number,
+  _exposureFiles?: number,
 ): Pick<
   ProjectReport,
   | 'aiSlopScore'
@@ -217,18 +224,10 @@ export function aggregateReport(
 
   // Phase 2 §10: three subscores per composite formula
   //   S = 0.40 × S_boundary + 0.35 × S_context + 0.25 × S_visual
-  // v0.20.0 fix: the original formula `min(100, severityPoints /
-  // componentCount * 100)` saturated at 100 the moment severityPoints
-  // reached componentCount. The slopbrick self-scan has
-  // severityPoints >> componentCount (thousands of severity points
-  // across 38 components), so all three sub-scores pinned at 100,
-  // slopIndex was always 100, and aiSlopScore was always 0. The
-  // sub-score rendering showed 100/100/100 (technically correct)
-  // but the cap prevented distinguishing "1 issue/component" from
-  // "100 issues/component". Replaced with a log scale that maps
-  // severityPoints/componentCount = 1 → ~30, = 10 → 100 (saturates
-  // at 10x the per-component threshold). Log base 11: log(1+x) /
-  // log(11) maps x=0→0, x=1→0.29, x=10→1.0, x=100→1.83 (capped at 1.0).
+  // v0.20.0 fixed the earlier component-count denominator and moved to a
+  // log scale. The current contract keeps that log calibration per file,
+  // then adds the bounded file burdens so a lower-density harmful file
+  // cannot dilute existing evidence through a larger repository denominator.
   //
   // v0.21.0: the log scale produces the RAW amount of slop (0=clean,
   // 100=saturated). For the headline `aiSlopScore` (now raw amount
@@ -238,12 +237,23 @@ export function aggregateReport(
   // invert to cleanliness: 100 - raw. Sub-scores stay "higher = better"
   // consistent with engineeringHygiene, security, repositoryHealth.
   const categoryWeights = config.categoryWeights ?? {} as Record<Category, number>;
+  // Aggregate each file's effective AI evidence independently. A global
+  // weighted-points / file-count average can improve when a lower-density
+  // harmful file is appended: the new file increases the denominator faster
+  // than it increases the numerator. Per-file log saturation followed by a
+  // bounded additive sum is monotone under evidence addition, preserves the
+  // severity scale, and keeps clean files from diluting existing evidence.
   const bucketEvidence: Record<SubscoreBucket, number[]> = {
     boundary: [],
     context: [],
     visual: [],
   };
   for (const group of issueGroups) {
+    const fileEvidence: Record<SubscoreBucket, number[]> = {
+      boundary: [],
+      context: [],
+      visual: [],
+    };
     for (const issue of group.issues) {
       // The AI Slop Score is an AI-signal score, not a general quality
       // score. Keep non-AI findings out even when their rule happens to be
@@ -256,28 +266,33 @@ export function aggregateReport(
       const isAiSpecific = issue.aiSpecific ?? true;
       if (!isAiSpecific) continue;
       const bucket = bucketFor(issue.ruleId);
-      bucketEvidence[bucket].push(
+      fileEvidence[bucket].push(
         SEVERITY_WEIGHTS[issue.severity] * (categoryWeights[issue.category] ?? 1),
       );
     }
+    for (const bucket of Object.keys(fileEvidence) as SubscoreBucket[]) {
+      const points = canonicalSum(fileEvidence[bucket]);
+      if (points === 0) continue;
+      bucketEvidence[bucket].push(
+        Math.min(100, Math.log10(1 + points) / Math.log10(11) * 100),
+      );
+    }
   }
-  const bucketPoints: Record<SubscoreBucket, number> = {
-    boundary: canonicalSum(bucketEvidence.boundary),
-    context: canonicalSum(bucketEvidence.context),
-    visual: canonicalSum(bucketEvidence.visual),
-  };
-  // Use analyzed files as the exposure denominator. Component counts are a
-  // UI/framework-specific implementation detail and are zero for backend,
-  // CLI, and library files; using them here made those scans incomparable
-  // (and could amplify a single backend file's score). An empty scan keeps a
-  // neutral denominator so all bucket scores remain at their clean baseline.
-  const denominator = (exposureFiles ?? scores.length) || 1;
-  // Raw slop amount per bucket (0=clean, 100=saturated). Feeds the
-  // AI Slop Score headline directly. Higher = more slop detected.
+  // Raw slop amount per bucket (0=clean, 100=saturated). Each file contributes
+  // one log-saturated burden; a second fixed log scale over the additive
+  // burden keeps the score cumulative across files while retaining useful
+  // headroom before the hard 0–100 wire bound.
+  const cumulativeBucketBurden = (burdens: number[]): number =>
+    Math.min(
+      100,
+      Math.log10(1 + canonicalSum(burdens) / AI_BUCKET_SATURATION_SCALE) /
+        Math.log10(11) *
+        100,
+    );
   const slopAmount: Record<SubscoreBucket, number> = {
-    boundary: Math.min(100, Math.log10(1 + bucketPoints.boundary / denominator) / Math.log10(11) * 100),
-    context:  Math.min(100, Math.log10(1 + bucketPoints.context  / denominator) / Math.log10(11) * 100),
-    visual:   Math.min(100, Math.log10(1 + bucketPoints.visual   / denominator) / Math.log10(11) * 100),
+    boundary: cumulativeBucketBurden(bucketEvidence.boundary),
+    context:  cumulativeBucketBurden(bucketEvidence.context),
+    visual:   cumulativeBucketBurden(bucketEvidence.visual),
   };
   // Sub-score breakdown values (cleanliness, higher = better).
   // Sub-score labels in pretty.ts ("structural integrity",
@@ -305,6 +320,8 @@ export function aggregateReport(
   // INVERTED aiSlopScore (legacy v0.15.0 U.4 bridge). v0.21 reverts
   // to the v0.14 raw semantics.
   const slopIndex = aiSlopScore;
+  // Compatibility projection only. Canonical health uses repositoryHealth;
+  // assemblyHealth is retained for legacy telemetry and complete-report JSON.
   const assemblyHealth = Math.max(0, 100 - aiSlopScore);
 
   // Per-category score. v0.14.5h: when the codebase has 0 components
@@ -313,12 +330,13 @@ export function aggregateReport(
   // wrong numbers — e.g. 167 severity points × 100 = 16700, which
   // looks like the worst possible score when in reality the
   // headline `slopIndex` is fine. v0.39.0: replaced the linear
-  // normalization with log-saturation (same approach as
-  // bucketScores at line 224 and aiSlopScore). This works for
-  // both UI repos and CLI/library repos — no componentCount
-  // dependency, no division-by-zero, scores are comparable across
-  // project sizes. The saturation point (500 points = 100%)
-  // matches the empirical max we've seen in v0.36+ calibrations.
+  // normalization with one global category-points log-saturation. This
+  // works for both UI repos and CLI/library repos — no componentCount
+  // dependency, no division-by-zero, and scores are comparable across
+  // project sizes. Category diagnostics use
+  // `log10(1 + globalCategoryPoints / 500)`, intentionally distinct from
+  // the AI bucket path above, which log-scales each file then applies a
+  // fixed cumulative `/1000` transform to the additive burden.
   const categoryEvidence: Record<Category, number[]> = {
     visual: [], typo: [], wcag: [], layout: [], component: [], logic: [], arch: [], perf: [], security: [], test: [], docs: [], db: [], ai: [], context: [], product: [], i18n: [],
   };
@@ -348,11 +366,11 @@ export function aggregateReport(
     i18n: canonicalSum(categoryEvidence.i18n),
   };
   const categoryScores: Record<Category, number> = { ...categoryPoints };
-  // Log-saturation: score = log10(1 + points/500) / log10(11) * 100,
-  // capped at 100. This is the same formula used by aiSlopScore
-  // and the boundary/context/visual bucketScores. 500 points = 100%
-  // saturation (matches the empirical max from v0.36+ calibrations).
-  // No componentCount dependency, no division-by-zero.
+  // Category-only log saturation: score = log10(1 + points/500) /
+  // log10(11) * 100, capped at 100. This global category diagnostic uses a
+  // /500 scale; it is intentionally distinct from the canonical AI bucket
+  // score, which log-scales each file first and then applies the fixed /1000
+  // cumulative transform. No componentCount dependency, no division-by-zero.
   for (const category of Object.keys(categoryScores) as Category[]) {
     categoryScores[category] = Math.min(
       100,
@@ -531,7 +549,7 @@ export function aggregateReport(
   //
   //   repositoryHealth (v0.15.0)   = "is this codebase healthy?"
   //     Deterministic weighted blend of the 4 headline scores:
-  //       0.4 * aiSlopScore
+  //       0.4 * (100 - aiSlopScore)
   //     + 0.3 * engineeringHygiene
   //     + 0.2 * security
   //     + 0.1 * testQuality
@@ -591,7 +609,7 @@ export function aggregateReport(
     repositoryHealth,
     slopIndex,
     assemblyHealth,
-    totalScore: 0, // legacy field, removed in the cleanup
+    totalScore: 0, // compatibility-only; current JSON serialization omits it
     categoryScores,
     scoreExplanation,
     boundaryScore: subscore.boundary,

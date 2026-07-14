@@ -20,6 +20,67 @@ export interface FixSuggestion {
   newValue?: string;
 }
 
+/** A one-based source position in a finding's bounded evidence span. */
+export interface IssueEvidencePosition {
+  line: number;
+  column: number;
+}
+
+/** Producer-side limits shared by rules and MCP projection. */
+export const ISSUE_EVIDENCE_MAX_SNIPPET_CHARS = 256;
+export const ISSUE_EVIDENCE_MAX_SNIPPET_BYTES = 768;
+
+export interface IssueEvidenceLocation {
+  start: IssueEvidencePosition;
+  /** Inclusive end coordinate: points at the final character of `snippet`. */
+  end: IssueEvidencePosition;
+}
+
+export interface IssueEvidenceMatch {
+  field: string;
+  key: string;
+  value: string;
+}
+
+export interface IssueEvidenceOmission {
+  reason: 'oversized';
+  snippetChars: number;
+  snippetBytes: number;
+  valueChars: number;
+  valueBytes: number;
+}
+
+export interface ExactIssueEvidence {
+  kind: 'matched-source-span';
+  status: 'exact';
+  /** The exact source span selected by the rule; bounded by the constants above. */
+  snippet: string;
+  location: IssueEvidenceLocation;
+  matched: IssueEvidenceMatch;
+  details?: Readonly<Record<string, string | number | boolean>>;
+}
+
+export interface OmittedIssueEvidence {
+  kind: 'matched-source-span';
+  status: 'omitted';
+  /** Location is retained even when the source text is intentionally omitted. */
+  location: IssueEvidenceLocation;
+  matched: Pick<IssueEvidenceMatch, 'field' | 'key'>;
+  omission: IssueEvidenceOmission;
+}
+
+/**
+ * Rule-authored, finding-level evidence.
+ *
+ * Evidence is deliberately a small source span plus typed matched facts;
+ * parser trees, raw files, and unconstrained values do not belong on an
+ * Issue. The union makes producer-side omission explicit instead of
+ * truncating a span while still calling it exact. `details` leaves room for
+ * rule-specific scalar facts without widening the contract to an arbitrary
+ * JSON tree.
+ */
+export type IssueEvidence = ExactIssueEvidence | OmittedIssueEvidence;
+
 
 
 export interface Issue {
@@ -35,6 +96,8 @@ export interface Issue {
   fixHint?: string;
   fix?: FixSuggestion;
   fixes?: FixSuggestion[];
+  /** Optional bounded rule-authored span/fact evidence for this finding. */
+  evidence?: IssueEvidence;
   // Set by reporters that consume `getSignalStrength(ruleId)`. Omitted
   // when no metadata is available so JSON stays lean for known rules.
   signalStrength?: import('../rules/signal-strength').SignalStrengthEntry;

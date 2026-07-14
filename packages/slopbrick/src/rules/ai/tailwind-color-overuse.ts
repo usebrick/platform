@@ -99,13 +99,12 @@ export const aiTailwindColorOveruseRule = createRule<RuleContext>({
         message:
           `Tailwind class strings show ${matches.size} distinct defaults ` +
           `(${Array.from(matches).slice(0, 5).join(', ')}${matches.size > 5 ? ', ...' : ''}). ` +
-          `Sascha 2025: every LLM defaults to Tailwind's standard palette; ` +
-          `Douglas 2025: 4/4 random "vibe coded" products used identical Tailwind templates.`,
+          `Review the palette against the project's design tokens, contrast requirements, ` +
+          `and product intent; repeated defaults can be intentional.`,
         line: 1,
         column: 1,
         advice:
-          'Consider whether the design actually needs these defaults. AI tends to reach for `bg-blue-500`, `rounded-lg`, `shadow-md` ' +
-          'as path-of-least-resistance. Brand-specific colors and custom radii often look more intentional.',
+          'Review whether the design needs these defaults. Keep them when they fit the product; choose brand-specific colors or custom radii when the design system requires them.',
       },
     ];
   },

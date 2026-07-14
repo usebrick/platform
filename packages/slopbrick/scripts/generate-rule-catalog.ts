@@ -275,7 +275,7 @@ function render(rules: RuleMeta[]): string {
 
   md += `## See also\n\n`;
   md += `- [ai-slop-rule-catalog.md](./ai-slop-rule-catalog.md) — design rationale + scoring philosophy\n`;
-  md += `- [scoring-runbook.md](./scoring-runbook.md) — interpreting the five scores\n`;
+  md += `- [scoring-runbook.md](./scoring-runbook.md) — interpreting the four headline scores\n`;
   md += `- [../ROADMAP.md](../ROADMAP.md) — strategic positioning + 12-phase plan\n`;
 
   return md;

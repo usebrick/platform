@@ -195,46 +195,4 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
   testIntelligence: {
     // (empty after v0.38.0 — reserved for future test opt-ins)
   },
-  /**
-   * v0.25.0: self-scan exclude paths. Defaults cover the three paths
-   * that are always false positives when scanning the slopbrick repo
-   * itself:
-   *
-   *   - `src/rules/**` — rule definitions contain example patterns
-   *     the rules themselves detect (self-fire). E.g. a
-   *     `security/sql-construction` rule's source file has a SQL
-   *     concat string literal that fires its own regex.
-   *   - `tests/fixtures/**` — test fixtures contain intentional bad
-   *     code that the rules must fire on to be useful (each fixture
-   *     is a positive test case). Scanning them in a self-scan
-   *     produces ~70 false-positive "issues" that are really just
-   *     test data.
-   *   - `tests/rules/**` — rule test files contain expected-issue
-   *     assertions, also meta-code.
-   *
-   * Three patterns (broadened in v0.25.1 from the v0.25.0 narrow
-   * set, which missed `tests/engine/**`, `tests/cli/**`, and
-   * `snippet/**`), ~80 issues removed per self-scan. Combined
-   * with the v0.25.0 graded security cap, this restores the
-   * v9 plan's "security ≥ 80" criterion (unachievable in
-   * v0.24.0 due to 90 self-scan FPs collapsing the score to 0).
-   *
-   * Set `selfScan: { excludePaths: [] }` in `slopbrick.config.mjs`
-   * to opt out and scan every file (legacy behavior).
-   */
-  selfScan: {
-    excludePaths: [
-      '**/src/rules/**',     // rule definitions are meta-code
-      '**/snippet/**',       // RULE_HINTS examples are intentional bad code
-      '**/tests/**',         // all test files (fixtures + unit + integration)
-      // v0.42.0 (post-self-scan cleanup): language visitors are
-      // intentional clones — see the §3 v0.42.0 release notes for
-      // the design rationale. `dup/identical-block` fires 100+
-      // times during self-scan because each visitor shares the
-      // same service-suffix arrays and import-walking preamble.
-      // Suppress these from the self-scan noise floor; they
-      // remain on for user codebases.
-      '**/src/engine/visitors/**',
-    ],
-  },
 };

@@ -74,11 +74,11 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
       aiSpecific: false,
       message:
         `Identifier names show low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
-        `Top: ${topStr}. AI defaults to a small vocabulary of generic names (data, items, value, setData, setItems).`,
+        `Top: ${topStr}. Review whether generic names obscure domain meaning; rename only when it improves clarity and maintainability.`,
       line: anchor?.line ?? 1,
       column: anchor?.column ?? 1,
       advice:
-        'Use domain-specific identifier names (e.g. reservations, invoices, customers) instead of generic data/items/value.',
+        'Use domain-specific names when they improve clarity; keep generic names when they accurately describe the value.',
     });
 
     return issues;

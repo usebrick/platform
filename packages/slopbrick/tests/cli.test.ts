@@ -1195,8 +1195,8 @@ describe('--dry-run (round 21)', () => {
   });
 });
 
-describe('--diff (round 21)', () => {
-  it('prints a unified diff section to stdout when --diff is used', async () => {
+describe('--show-fixes-diff (round 21)', () => {
+  it('prints a unified diff section to stdout when --show-fixes-diff is used', async () => {
     const dir = createTmpDir();
     try {
       mkdirSync(join(dir, 'src'), { recursive: true });
@@ -1207,7 +1207,7 @@ describe('--diff (round 21)', () => {
       const { stdout } = await run([
         '--workspace',
         dir,
-        '--diff',
+        '--show-fixes-diff',
         '--format',
         'pretty',
       ]);
@@ -1307,5 +1307,13 @@ describe('report command (round 21)', () => {
     expect(exitCode).toBe(0);
     expect(stdout).toMatch(/^#/m); // markdown heading
     expect(stdout).toMatch(/AI Slop Score|Repository Coherence/i);
+  });
+
+  it('rejects unsupported report output formats instead of silently using pretty', async () => {
+    const reportPath = join(dir, 'report.json');
+    writeFileSync(reportPath, JSON.stringify({ version: '0.44.0', issues: [] }));
+    const { exitCode, stderr } = await run(['report', reportPath, '--output-format', 'html']);
+    expect(exitCode).toBe(2);
+    expect(stderr).toMatch(/Unsupported report output format.*html/i);
   });
 });

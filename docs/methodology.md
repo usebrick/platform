@@ -1,5 +1,13 @@
 # SlopBrick Calibration Methodology
 
+> **Historical evidence notice (2026-07-13):** The v10.1/v10.2 material in
+> this document describes exploratory or historical calibration, not an
+> admitted v10.3 evaluation corpus. The latest verified public release is
+> `slopbrick@0.43.0`; the workspace `0.44.0` candidate is not released. The
+> current provenance and admission authority is
+> [`packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md`](../packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md),
+> and no calibration-derived rule promotion is allowed until its gates pass.
+
 > **Authoritative reference for how slopbrick calibrates its 103 rules (v0.38.0+; was 140 in v0.37.0).**
 >
 > **Authors:** slopbrick project (with Kimi Code CLI) — dystx

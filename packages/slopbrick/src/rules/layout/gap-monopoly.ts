@@ -66,7 +66,7 @@ export const gapMonopolyRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Gap value gap-${dominant} dominates ${(ratio * 100).toFixed(0)}% of all gap usages (vocab=${vocab}, n=${total}). ` +
-        `AI defaults to one gap value; humans mix gap-2/4/6/8 for hierarchy.`,
+        `Review whether the dominant value matches the spacing scale and visual hierarchy; repetition can be intentional.`,
       line: firstAnchor?.line ?? 1,
       column: firstAnchor?.column ?? 1,
       advice:

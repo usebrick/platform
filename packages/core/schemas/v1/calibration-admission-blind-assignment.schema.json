@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-blind-assignment.schema.json",
+  "title": "CalibrationAdmissionBlindAssignmentV1",
+  "description": "A pre-decision, two-reviewer assignment. It deliberately contains no decision or receipt identifiers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "assignmentId", "target", "evidenceSetSha256", "protocolEvidenceId", "reviewerIds", "peerMaterialHiddenUntilBothSealed"],
+  "properties": {
+    "version": { "const": "v10.3-admission-blind-assignment-v1" },
+    "assignmentId": { "$ref": "#/$defs/sha256" },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "sourceId"],
+          "properties": { "kind": { "const": "source" }, "sourceId": { "$ref": "#/$defs/id" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "recordId"],
+          "properties": { "kind": { "const": "record" }, "recordId": { "$ref": "#/$defs/sha256" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "temporalAttestationId", "exactBlobOrContentSha256"],
+          "properties": {
+            "kind": { "const": "temporal_attestation" },
+            "temporalAttestationId": { "$ref": "#/$defs/sha256" },
+            "exactBlobOrContentSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "recordId", "providerVersioningEvidenceId"],
+          "properties": {
+            "kind": { "const": "provider_revision_exception" },
+            "recordId": { "$ref": "#/$defs/sha256" },
+            "providerVersioningEvidenceId": { "$ref": "#/$defs/id" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "witnessSha256", "eligibilitySnapshotSha256", "verifiedContextSha256"],
+          "properties": {
+            "kind": { "const": "witness" },
+            "witnessSha256": { "$ref": "#/$defs/sha256" },
+            "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+            "verifiedContextSha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      ]
+    },
+    "evidenceSetSha256": { "$ref": "#/$defs/sha256" },
+    "protocolEvidenceId": { "$ref": "#/$defs/id" },
+    "reviewerIds": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/id" }, { "$ref": "#/$defs/id" }],
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "peerMaterialHiddenUntilBothSealed": { "const": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+  }
+}

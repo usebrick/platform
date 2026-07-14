@@ -11,6 +11,25 @@ import type { Verdict } from '@usebrick/core';
  */
 export type Bucket = 'ai' | 'hygiene' | 'suppressed';
 
+/** Default-off findings are retained for audit but never actionable. */
+export function isDefaultOffIssue(issue: { severity?: string }): boolean {
+  return issue.severity === 'off';
+}
+
+/** Count default-off instances and the distinct rules that produced them. */
+export function summarizeDefaultOffIssues(
+  issues: readonly { ruleId: string; severity?: string }[],
+): { instances: number; ruleCount: number } {
+  const rules = new Set<string>();
+  let instances = 0;
+  for (const issue of issues) {
+    if (!isDefaultOffIssue(issue)) continue;
+    instances++;
+    rules.add(issue.ruleId);
+  }
+  return { instances, ruleCount: rules.size };
+}
+
 export function bucketForVerdict(verdict: Verdict): Bucket {
   switch (verdict) {
     case 'USEFUL':
@@ -23,6 +42,17 @@ export function bucketForVerdict(verdict: Verdict): Bucket {
     case 'DORMANT':
       return 'suppressed';
   }
+}
+
+/**
+ * Map a calibrated rule verdict to the human-facing bucket while preserving
+ * the rule's polarity. Calibration quality (`USEFUL`/`OK`) does not turn a
+ * security, performance, or other non-authorship rule into an AI finding.
+ * Suppressed verdicts always remain suppressed.
+ */
+export function bucketForRule(verdict: Verdict, aiSpecific = true): Bucket {
+  const bucket = bucketForVerdict(verdict);
+  return bucket === 'ai' && !aiSpecific ? 'hygiene' : bucket;
 }
 
 /** Convenience: count rules per bucket. */

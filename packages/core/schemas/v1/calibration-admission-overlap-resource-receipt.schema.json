@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-resource-receipt.schema.json",
+  "title": "AdmissionOverlapResourceReceiptV1",
+  "description": "Observed resource and coverage receipt for the overlap authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "universeSha256", "recordsJsonlSha256", "overlapPolicySha256", "realContentDistributionSha256", "recordCount", "tokenCount", "shingleCount", "configuredLimits", "observed", "coverageComplete", "withinAllLimits", "toolReceiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-overlap-resource-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "universeSha256": { "$ref": "#/$defs/sha256" },
+    "recordsJsonlSha256": { "$ref": "#/$defs/sha256" },
+    "overlapPolicySha256": { "$ref": "#/$defs/sha256" },
+    "realContentDistributionSha256": { "$ref": "#/$defs/sha256" },
+    "recordCount": { "$ref": "#/$defs/nonNegativeInteger" },
+    "tokenCount": { "$ref": "#/$defs/nonNegativeInteger" },
+    "shingleCount": { "$ref": "#/$defs/nonNegativeInteger" },
+    "configuredLimits": { "$ref": "#/$defs/configuredLimits" },
+    "observed": { "$ref": "#/$defs/observed" },
+    "coverageComplete": { "type": "boolean" },
+    "withinAllLimits": { "type": "boolean" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "configuredLimits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxUnitBytes", "maxHeapBytes", "maxRssBytes", "maxWorkBytes", "maxOpenFiles", "maxShardBytes", "maxWallMilliseconds"],
+      "properties": {
+        "maxUnitBytes": { "const": 33554432 }, "maxHeapBytes": { "const": 4294967296 }, "maxRssBytes": { "const": 6442450944 }, "maxWorkBytes": { "const": 214748364800 }, "maxOpenFiles": { "const": 64 }, "maxShardBytes": { "const": 67108864 }, "maxWallMilliseconds": { "const": 86400000 }
+      }
+    },
+    "observed": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxUnitBytes", "maxHeapBytes", "maxRssBytes", "maxWorkBytes", "maxOpenFiles", "maxShardBytes", "wallMilliseconds"],
+      "properties": {
+        "maxUnitBytes": { "$ref": "#/$defs/nonNegativeInteger" }, "maxHeapBytes": { "$ref": "#/$defs/nonNegativeInteger" }, "maxRssBytes": { "$ref": "#/$defs/nonNegativeInteger" }, "maxWorkBytes": { "$ref": "#/$defs/nonNegativeInteger" }, "maxOpenFiles": { "$ref": "#/$defs/nonNegativeInteger" }, "maxShardBytes": { "$ref": "#/$defs/nonNegativeInteger" }, "wallMilliseconds": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    }
+  }
+}

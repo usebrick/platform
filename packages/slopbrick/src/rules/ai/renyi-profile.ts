@@ -68,11 +68,12 @@ export const aiRenyiProfileRule = createRule<RuleContext>({
           `Rényi entropy profile shows AI mass concentration: H_1=${profile.h1.toFixed(2)}, ` +
           `H_2=${profile.h2.toFixed(2)} (H_2/H_1=${profile.h2H1Ratio.toFixed(2)}), ` +
           `H_∞=${profile.hInfinity.toFixed(2)} (H_∞/H_1=${profile.hInfH1Ratio.toFixed(2)}). ` +
-          `Moslonka 2025: AI text has H_2/H_1 > 0.85 + H_∞/H_1 > 0.95.`,
+          `This distribution statistic can reflect repeated or boilerplate content; ` +
+          `it is not an authorship verdict.`,
         line: 1,
         column: 1,
         advice:
-          'The token distribution is mass-concentrated on a few high-frequency tokens — characteristic of AI-generated code. Verify authorship if unexpected.',
+          'Review whether repeated structure, generated output, schemas, fixtures, or domain vocabulary explain the concentration; do not infer authorship from this statistic.',
       },
     ];
   },

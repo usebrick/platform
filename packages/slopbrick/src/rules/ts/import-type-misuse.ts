@@ -64,9 +64,8 @@ export const tsImportTypeMisuseRule = createRule<TsImportTypeMisuseContext>({
         column: match[0].indexOf('type') + 1,
         advice:
           'Use `import type { X } from "..."` instead of ' +
-          '`import { type X } from "..."`. The inline form is valid but ' +
-          'the split form is more common in real codebases and makes the ' +
-          'type-only intent unambiguous. Reference: ts/import-type-misuse v0.19.',
+          '`import { type X } from "..."` when the split form better communicates ' +
+          'type-only intent; both forms are valid. Reference: ts/import-type-misuse v0.19.',
       });
     }
     return issues;

@@ -8,7 +8,9 @@ pnpm -r test         # every package
 pnpm -r build        # builds core first (workspace dep), then slopbrick
 ```
 
-CI runs the same commands on every PR + push to main. Tag pushes additionally trigger `publish.yml` for the `slopbrick` package.
+CI runs the same commands on every PR + push to main. A published GitHub
+Release (or an explicitly supplied tag through the guarded workflow dispatch)
+triggers `publish.yml` for `slopbrick`; pushing a tag alone does not publish.
 
 For iteration on a single package, you can scope the test/typecheck run:
 
@@ -21,7 +23,7 @@ pnpm --filter @usebrick/slopbrick typecheck
 
 - `packages/core/` — `@usebrick/core` (private). The cross-language contract: JSON Schemas, types, loaders, validators, and the Verdict taxonomy. Touch sparingly.
 - `packages/slopbrick/` — `slopbrick` (published). The CLI + MCP server. Scans repos, classifies against rules, persists the structure.
-- `packages/website/` — `usebrick.dev` marketing site. Astro 4 + GSAP + Lenis.
+- `packages/website/` — `usebrick.dev` marketing site. Astro 7 + native browser APIs; no Lenis or GSAP runtime dependency.
 - `docs/` — architecture, update summaries, and the implementation plans under `docs/superpowers/plans/`.
 - `examples/` — example projects for testing slopbrick end-to-end.
 
@@ -90,103 +92,49 @@ Examples from this repo:
 
 ## Release Process
 
-We use [Changesets](https://github.com/changesets/changesets) for
-version management. Every change that affects a published package
-must add a changeset file alongside the code change.
+The supported release path is a manually reviewed GitHub Release backed by
+the checksum-bound, OIDC trusted-publishing workflow. Changeset files in this
+checkout are historical artifacts; there is no active Changesets version PR or
+`changeset publish` job. Published-package changes still require an explicit
+version bump and CHANGELOG entry in the release commit.
 
-```bash
-# After making your change, with the change staged or un-staged:
-pnpm changeset            # prompts: which package, semver bump, one-line summary
+### Pre-release checklist
 
-# This writes a markdown file under .changeset/ like:
-#   .changeset/random-words-123.md
-# Edit that file if you want a longer description, then:
-git add .changeset/*.md
-git commit -m "feat(slopbrick): ..."
-```
-
-### What happens after you push
-
-1. CI runs the normal quality gates on your PR.
-2. When your PR merges to `main`, a GitHub Action
-   (`.github/workflows/publish.yml`) sees the pending changeset
-   and opens (or updates) a **"chore: version packages"** PR.
-3. A maintainer reviews that PR — it bumps
-   `packages/slopbrick/package.json` (and any other published
-   package), writes a CHANGELOG entry from your changeset text,
-   and syncs `packages/website/src/data/version.json` to the new
-   version.
-4. Merging the version PR triggers `pnpm changeset publish`,
-   which calls `npm publish` for each bumped package. The actual
-   publish is gated by the `publish` GitHub Environment, so a
-   human approves in the UI before `npm publish` runs.
-
-### Pre-publish checklist (READ BEFORE MERGING THE VERSION PR)
-
-The version-bump PR is the last place to catch version-drift
-before `npm publish` runs. Before approving it, verify the
-following files are in sync with the bumped version:
-
-- [ ] `README.md` — the product table on line ~19 says
-  `slopbrick@X.Y.Z on npm` (X.Y.Z = the new version).
-- [ ] `README.md` — the `## The 4-score model (vX.Y.Z+)` section
-  header (line ~90) uses the new version suffix.
-- [ ] `packages/slopbrick/README.md` — the `**Status:**` line
-  (line ~49) says `vX.Y.Z (current)`.
-- [ ] `packages/slopbrick/README.md` — the section header on
-  line ~79 uses the new version suffix.
-- [ ] `docs/ARCHITECTURE.md` — the `**Status**:` line (line ~4)
-  says `vX.Y.Z shipped` and lists the right "since v0.15"
-  milestones.
-- [ ] `docs/ARCHITECTURE.md` — the product table on line ~25
-  says `slopbrick@X.Y.Z on npm`.
-- [ ] `packages/website/src/data/version.json` — `slopbrick`
-  field is the new version and `built` field is today's date
-  (this is auto-set by `pnpm version-packages`, so usually no
-  manual edit is needed — but verify).
-- [ ] `packages/slopbrick/package.json` — `version` field is
-  the new version (auto-set by `pnpm version-packages`).
-- [ ] `packages/slopbrick/CHANGELOG.md` — new entry at the top
-  with the right content (auto-generated from the changeset,
-  but verify the format is sane).
-
-This checklist existed because v0.20.0 shipped with the
-README product table still saying `slopbrick@0.17.0` — the
-drift accumulated across ~8 releases where the manual
-release flow skipped the README update. The fix for v0.20.0
-was a one-off commit; this checklist makes the fix
-permanent.
+1. Bump `packages/slopbrick/package.json#version` and add the matching
+   `## [version]` entry to `packages/slopbrick/CHANGELOG.md`.
+2. Run `corepack pnpm -r typecheck`, `corepack pnpm -r test`, and
+   `corepack pnpm -r build` from the repository root.
+3. Run the release self-scan from `packages/slopbrick` with
+   `--workspace . --threads 1 --no-telemetry` and record all four scores.
+4. Commit and push the approved release commit to `main`; the pre-push hook
+   enforces the recursive gates on that branch.
+5. Create the exact tag (`git tag vX.Y.Z && git push origin vX.Y.Z`), then
+   create the GitHub Release (`gh release create vX.Y.Z`). A tag push alone
+   does not publish.
+6. Approve the `publish` environment if requested, watch `publish.yml`, and
+   verify `npm view slopbrick@X.Y.Z` plus a clean consumer install.
+7. Update the website's published facts only after npm publication and verify
+   the deployed commit through the Cloudflare owner workflow.
 
 ### Semver rules per package
 
-- **`slopbrick` (published CLI)** — every change needs a
-  changeset. A rule addition is `minor`, a bug fix is `patch`,
-  a breaking schema or CLI contract change is `major`.
-- **`@usebrick/core`, `@usebrick/engine` (private workspace)** —
-  `private: true` in their package.json blocks accidental
-  publish. Changesets ignores them, but a CHANGELOG entry in
-  the consuming package (`slopbrick`) still tracks the
-  dependency bump.
-- **`website`** — no semver. `ignore`'d in
-  `.changeset/config.json`. Commits deploy on merge to `main`
-  via the website's own CI. A CHANGELOG for a static site is
-  noise.
-- **Future packages (`stackpick`, `gir`, `mcp`, `cli`)** — the
-  day a new package gets its own `package.json`, add it to
-  `.changeset/config.json` (`ignore` if private, otherwise
-  just start writing changesets). Costs nothing to set up
-  upfront; retrofitting later is the expensive option.
+- **`slopbrick` (published CLI)** — every release commit needs an explicit
+  package version and CHANGELOG entry. A rule addition is `minor`, a bug fix is
+  `patch`, and a breaking schema or CLI contract change is `major`.
+- **`@usebrick/core`, `@usebrick/engine` (private workspace)** — `private: true`
+  blocks accidental publication; consuming package changelogs still record
+  contract-affecting changes.
+- **`website`** — no semver; it is private and deploys only through the
+  documented Cloudflare owner flow after release facts are verified.
 
 ### Why this matters
 
-Before changesets, every release ran via
-`.github/workflows/publish.yml`'s `workflow_dispatch` trigger,
-which could fire `npm publish` with no git tag and no GitHub
-Release. The changesets flow makes the version bump a regular
-git commit, so `npm publish` is now structurally impossible
-without a corresponding commit on `main` — the version PR
-*is* the commit that bumps `package.json`. There is no path
-to `npm publish` that skips git.
+The publish workflow checks that the release tag resolves to the exact
+checked-out commit and that the package version matches the tag. It builds and
+uploads one checksum-bound tarball before requesting the `publish` environment;
+the gated job publishes that exact artifact with npm OIDC provenance. Do not
+use `pnpm publish` or `npm publish` locally, and do not treat a local tarball or
+synthetic clean snapshot as a release.
 
 ## Pull Requests
 

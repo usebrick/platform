@@ -1,0 +1,18 @@
+{
+  "version": "v10.3-nested-publication-handoff-v1",
+  "parentTransactionId": "729bc575afa8314f0fc18ce4c8e6f462552fc86990c2e863177e588e60cd3d12",
+  "childSlot": "intent-authority",
+  "expectedCurrentStateSha256": "290a4e057a39cb9c3488510cf6ce5bed02059c6c8c085f5afd8ca0ed0a4310bb",
+  "childLockId": "0107b5c3ab84a87c7042616c94f21157cca25b4dfa762622de83f99d3b46489d",
+  "childLockSha256": "538d5e361cf82f4cc7af9b20363f03a15a4915348aa8a5ab888f862a67849175",
+  "childTransactionId": "729bc575afa8314f0fc18ce4c8e6f462552fc86990c2e863177e588e60cd3d12",
+  "childTransactionIntentSha256": "87a90683bd401172957d0bb8d85b46fe48e553ed59271e5edee17f54c8a746ef",
+  "childRecoveryNonce": "6666666666666666666666666666666666666666666666666666666666666666",
+  "state": {
+    "phase": "started_fsynced"
+  },
+  "childKind": "tool_authority_infrastructure",
+  "childAction": "tool-authority:publish",
+  "toolAuthorityObjectSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "handoffSha256": "eda0b4e7533e433f14e577d8bd890b23ecd32966d35f67c21c6d943c2c5f97a2"
+}

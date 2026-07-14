@@ -3,12 +3,13 @@
 // shows through, but the brick shape is the only way to render
 // it. The user sees: nav brick, hero brick, wall continues.
 import Logo from './Logo.astro';
+import version from '../data/version.json';
 ---
 
 <nav class="nav" aria-label="Primary">
   <div class="brick brick--nav">
     <Logo size="sm" />
-    <span class="nav__version" aria-label="Latest version">v0.43.0</span>
+    <span class="nav__version" aria-label="Workspace candidate version">candidate v{version.slopbrick}</span>
     <div class="nav__links">
       <a href="#tools">platform</a>
       <a href="#compare">diff vs linters</a>

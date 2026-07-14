@@ -1,0 +1,82 @@
+{
+  "version": "v10.3-admission-tool-authority-index-v1",
+  "generation": 1,
+  "parentIndexSha256": "e0e9851779e3ec9c57638d20e57c5a4204f5d43cab206e21b76969a77c393934",
+  "profiles": [
+    {
+      "profileId": "admission-acquisition-publication-v1",
+      "relativePath": "profiles/admission-acquisition-publication-v1.json",
+      "sha256": "f4d80905afc8fbb82f04863686c29d3c9c91f687da8b56805c4876c26b262921"
+    },
+    {
+      "profileId": "admission-acquisition-round-v1",
+      "relativePath": "profiles/admission-acquisition-round-v1.json",
+      "sha256": "70499d978404bb958738ee6c7999c43f36130beb77c970bc26009b733d177aea"
+    },
+    {
+      "profileId": "admission-census-v1",
+      "relativePath": "profiles/admission-census-v1.json",
+      "sha256": "58a042bb72f02f2056a84383e49e734ab5f97ba86a2abf3806eb3dab7ac2c118"
+    },
+    {
+      "profileId": "admission-context-v1",
+      "relativePath": "profiles/admission-context-v1.json",
+      "sha256": "998eab7208fe34ec239c5a5b2d62e6ad8a42233af916c7e4e27d1abf4cb8b730"
+    },
+    {
+      "profileId": "admission-core-contract-v1",
+      "relativePath": "profiles/admission-core-contract-v1.json",
+      "sha256": "28bea80a2e16b9a89ac90538ebe758dfa02287ae8f8ae688e69fbb6f3132b04b"
+    },
+    {
+      "profileId": "admission-evidence-acquire-v1",
+      "relativePath": "profiles/admission-evidence-acquire-v1.json",
+      "sha256": "92f1ff0b00af1d1cc2ff3cc5bde9ca57e0b170f73208fff57c51e969e4135bb9"
+    },
+    {
+      "profileId": "admission-git-acquire-v1",
+      "relativePath": "profiles/admission-git-acquire-v1.json",
+      "sha256": "3179fd2f26dd4894789151f06a594b8bb53e6be6128c0e816c5d17665e424632"
+    },
+    {
+      "profileId": "admission-manifest-v1",
+      "relativePath": "profiles/admission-manifest-v1.json",
+      "sha256": "e7a38a6a3743aaf2a8c9fcc5a98f5e6fda6b7f142be81401723d781c06799615"
+    },
+    {
+      "profileId": "admission-release-acquire-v1",
+      "relativePath": "profiles/admission-release-acquire-v1.json",
+      "sha256": "5729d59f75ca02d37297bc016bee8c8d2dd2262d2c97425f7a4b1631d60189ae"
+    },
+    {
+      "profileId": "admission-source-node-v1",
+      "relativePath": "profiles/admission-source-node-v1.json",
+      "sha256": "ec0f8ad8a97cdb439062a746aede1f392f6dfeea8ff283f158949b4e196adfa9"
+    },
+    {
+      "profileId": "admission-source-parquet-v1",
+      "relativePath": "profiles/admission-source-parquet-v1.json",
+      "sha256": "63dd0351efded1a192615371ae369bb2468893bb60fe3d04c686c5c474e040e5"
+    },
+    {
+      "profileId": "admission-static-ledgers-v1",
+      "relativePath": "profiles/admission-static-ledgers-v1.json",
+      "sha256": "fc1d63f5b143453db5543c4e3cc45385b747ead1ca33ffd49dee8e3e2d7b8604"
+    }
+  ],
+  "invocationIntents": [
+    {
+      "intentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+      "relativePath": "invocation-intents/03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35.json",
+      "sha256": "066125959cb8e2868f5335e514362a6c489a9d5b946094a29f182576e2da502e"
+    }
+  ],
+  "receipts": [
+    {
+      "receiptId": "5ce269221e67fedc9c981f60b0142c72967525edeffcbc44c674acf0040ccb27",
+      "relativePath": "receipts/5ce269221e67fedc9c981f60b0142c72967525edeffcbc44c674acf0040ccb27.json",
+      "sha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e"
+    }
+  ],
+  "indexSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

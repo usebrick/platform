@@ -133,9 +133,9 @@ function scan(fileListPath: string): ScanResult {
   // macOS argv limit is ~256KB. With ~200 char paths that's ~1200 files.
   // Split into chunks to stay well under that limit.
   //
-  // Also: passing `--json <path>` writes the report to disk instead of
-  // stdout, which dodges Node's 64KB child-process pipe highWaterMark
-  // (stdout caps at 65536 bytes regardless of how much the child writes).
+  // Also: passing `--json <path>` keeps these large calibration reports off
+  // the captured stdout channel. The CLI separately regression-tests that
+  // machine-readable stdout larger than 64 KiB is fully flushed.
   const CHUNK = 600;
   const firesPerFile = new Map<string, number>();
   let totalFiles = 0;

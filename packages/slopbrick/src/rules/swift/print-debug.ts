@@ -102,9 +102,8 @@ export const swiftPrintDebugRule = createRule<SwiftPrintDebugContext>({
           '(Unified Logging System, os.log). `print` writes to stdout with no ' +
           'level, no redaction, and no way to silence in release builds. The ' +
           '`Logger` API integrates with Console.app and respects the device\'s ' +
-          'privacy settings. Multiple `print` calls in one Swift file is an AI ' +
-          'fingerprint — agents reach for `print` because of training-data ' +
-          'examples. Reference: swift/print-debug v0.34.2 (refined to skip ' +
+          'privacy settings. Multiple `print` calls in one Swift file create ' +
+          'unbounded release logging. Reference: swift/print-debug v0.34.2 (refined to skip ' +
           'test files for higher precision).',
       });
     }

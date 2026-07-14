@@ -1,0 +1,20 @@
+{
+  "version": "v10.3-admission-materialization-receipt-v1",
+  "receiptId": "38cc4d8bc758136c95b39fd43fffb459b4ffdbd84a659fc4599781dcfe2d6ec6",
+  "materializationId": "materialization-1",
+  "sourceId": "source-1",
+  "repositoryId": "repository-1",
+  "acquisitionAuthorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+  "acquisitionAuthorizationSha256": "4b00e96e862bb044cc44fa60179c4f81e348c3d9e1cf44b7d5e0515f8394453a",
+  "acquisitionTransactionId": "acq-txn-1",
+  "primaryMaterializedOutputSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+  "childToolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+  "verifiedUnitSetSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "payload": {
+    "kind": "release_archive",
+    "originUrl": "https://example.test/source/archive.tar.gz",
+    "assetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "assetBytes": 1,
+    "inventorySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  }
+}

@@ -1,6 +1,10 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import { getCorpusBaselines } from '../../engine/corpus-baselines';
+import {
+  countNonEmptyJsLines,
+  JS_COMMENT_LINE_METRIC_ID,
+} from '../../engine/js-comment-lines';
 
 /**
  * AI comment-to-code ratio.
@@ -42,63 +46,44 @@ const MIN_FILE_LINES = 20;
 const FALLBACK_LOW = 0.02;
 const FALLBACK_HIGH = 0.55;
 
-const LINE_COMMENT_RE = /^\s*(?:\/\/|#|--|;|%)/;
-const BLOCK_COMMENT_OPEN_RE = /\/\*/;
-
 export const aiCommentRatioRule = createRule<RuleContext>({
   id: 'ai/comment-ratio',
   category: 'ai',
   severity: 'medium',
   aiSpecific: true,
-  description: 'Comment-line ratio deviates from corpus baseline — reductive models skip comments, expansive models over-comment (Rahman et al. 2024, Bisztray et al. 2025)',
+  description: 'Comment-line ratio falls outside compatible calibrated or provisional parser-backed bounds — reductive models skip comments, expansive models over-comment (Rahman et al. 2024, Bisztray et al. 2025)',
   create(context) {
     return context;
   },
   analyze(_context, facts): Issue[] {
-    if (!facts.v2) return [];
+    if (!facts.v2 || facts.v2.commentLineCount === undefined) return [];
     const source = facts.v2._source ?? '';
     if (!source) return [];
 
-    const lines = source.split('\n');
-    if (lines.length < MIN_FILE_LINES) return [];
+    const total = countNonEmptyJsLines(source);
+    if (total < MIN_FILE_LINES) return [];
+    const comment = facts.v2.commentLineCount;
 
-    let total = 0;
-    let comment = 0;
-    let inBlock = false;
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed === '') continue;
-      total++;
-      if (inBlock) {
-        comment++;
-        if (trimmed.includes('*/')) inBlock = false;
-        continue;
-      }
-      if (BLOCK_COMMENT_OPEN_RE.test(trimmed) && !trimmed.includes('*/')) {
-        comment++;
-        inBlock = true;
-        continue;
-      }
-      if (LINE_COMMENT_RE.test(trimmed)) {
-        comment++;
-      }
-    }
-
-    if (total === 0) return [];
     const ratio = comment / total;
 
     const baselines = getCorpusBaselines();
-    const low = baselines?.features.commentDensity
-      ? Math.max(0.01, baselines.features.commentDensity.mean - 2 * baselines.features.commentDensity.std)
+    const compatibleCommentBaseline =
+      baselines?.extractors?.commentDensity === JS_COMMENT_LINE_METRIC_ID
+        ? baselines.features.commentDensity
+        : undefined;
+    const low = compatibleCommentBaseline
+      ? Math.max(0.01, compatibleCommentBaseline.mean - 2 * compatibleCommentBaseline.std)
       : FALLBACK_LOW;
-    const high = baselines?.features.commentDensity
-      ? baselines.features.commentDensity.mean + 2 * baselines.features.commentDensity.std
+    const high = compatibleCommentBaseline
+      ? compatibleCommentBaseline.mean + 2 * compatibleCommentBaseline.std
       : FALLBACK_HIGH;
 
     if (ratio >= low && ratio <= high) return [];
 
     const direction = ratio < low ? 'low' : 'high';
-    const mean = baselines?.features.commentDensity.mean.toFixed(2) ?? '0.06';
+    const comparison = compatibleCommentBaseline
+      ? ` vs corpus mean ${compatibleCommentBaseline.mean.toFixed(2)}`
+      : `; provisional parser-backed thresholds ${low.toFixed(2)}–${high.toFixed(2)}`;
     const issues: Issue[] = [
       {
         ruleId: 'ai/comment-ratio',
@@ -106,9 +91,9 @@ export const aiCommentRatioRule = createRule<RuleContext>({
         severity: 'medium',
         aiSpecific: true,
         message:
-          `Comment-line ratio is ${direction} (${ratio.toFixed(2)} vs corpus mean ${mean}). ` +
-          `Reductive LLMs (GPT-3.5, Claude 3 Haiku) skip comments; expansive LLMs ` +
-          `(Claude Haiku 4.5, GPT-OSS) over-comment when prompted for "well-commented code".`,
+          `Comment-line ratio is ${direction} (${ratio.toFixed(2)}${comparison}). ` +
+          `Corpus studies associate low and high ratios with different documentation ` +
+          `practices; this source statistic is not an authorship verdict.`,
         line: 1,
         column: 1,
         advice:

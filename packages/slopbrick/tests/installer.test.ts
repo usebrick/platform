@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -8,7 +9,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { installHook, uninstallHook, type HookResult } from '../src/cli/installer';
 import { getGitRoot } from '../src/cli/git';
 
@@ -22,7 +23,7 @@ const git = (cwd: string, ...args: string[]): void => {
 const hookFile = (repo: string): string =>
   join(repo, '.git', 'hooks', 'pre-commit');
 
-const sentinelBlock = `# slopbrick-hook-begin\nnpx slopbrick --staged\n# slopbrick-hook-end\n`;
+const sentinelBlock = `# slopbrick-hook-begin\n./node_modules/.bin/slopbrick --staged || exit $?\n# slopbrick-hook-end\n`;
 
 describe('installer', () => {
   let repo: string;
@@ -69,6 +70,60 @@ describe('installer', () => {
       exitCode: 0,
     });
     expect(readFileSync(hookFile(repo), 'utf8')).toBe(sentinelBlock);
+  });
+
+  it('upgrades a legacy network-enabled sentinel to offline execution', () => {
+    const root = getGitRoot(repo);
+    expect(root).toBeDefined();
+    if (root === undefined) throw new Error('Git root not found');
+    writeFileSync(
+      hookFile(repo),
+      '#!/bin/sh\n# slopbrick-hook-begin\nnpx slopbrick --staged\n# slopbrick-hook-end\n',
+    );
+
+    const result = installHook(root);
+
+    expect(result).toEqual<HookResult>({
+      ok: true,
+      message: 'Replaced pre-commit hook block',
+      exitCode: 0,
+    });
+    expect(readFileSync(hookFile(repo), 'utf8')).toBe(
+      `#!/bin/sh\n${sentinelBlock}`,
+    );
+  });
+
+  it('executes the project-local binary and never requests a global substitution', () => {
+    if (process.platform === 'win32') return;
+    const root = getGitRoot(repo);
+    expect(root).toBeDefined();
+    if (root === undefined) throw new Error('Git root not found');
+    installHook(root);
+
+    const bin = join(repo, 'node_modules', '.bin');
+    const argsLog = join(repo, 'slopbrick-args.log');
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(
+      join(bin, 'slopbrick'),
+      '#!/bin/sh\nprintf "%s\\n" "$@" > "$SLOPBRICK_ARGS"\n' +
+        '[ "$1" = "--staged" ] || exit 91\n' +
+        'exit 42\n',
+      { mode: 0o755 },
+    );
+
+    const result = spawnSync('sh', [hookFile(repo)], {
+      cwd: repo,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        SLOPBRICK_ARGS: argsLog,
+      },
+    });
+
+    expect(result.status).toBe(42);
+    expect(readFileSync(argsLog, 'utf8')).toBe(
+      '--staged\n',
+    );
   });
 
   it('uninstalls the hook while preserving other content', () => {

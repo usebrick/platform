@@ -10,7 +10,7 @@ import {
   ARCHITECTURE_SCORE_WEIGHTS,
 } from '../../src/engine/architecture-score';
 import type { PatternInventory } from '../../src/mcp/patterns';
-import type { ResolvedConfig } from '../../src/types';
+import type { FileScanResult, ResolvedConfig } from '../../src/types';
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-arch-'));
@@ -411,6 +411,88 @@ describe('buildArchitectureScore (integration)', () => {
       const driftDed = score.deductions.find((d) => d.category === 'crossFileDrift');
       expect(driftDed).toBeUndefined();
       expect(score.driftSignals).toHaveLength(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('parses selected cached files missing from results and ignores unselected files', async () => {
+    const dir = freshDir();
+    try {
+      const selected = writeFile(
+        dir,
+        'src/Selected.tsx',
+        '<div className="p-[13px] m-[13px] gap-[13px] px-[13px] py-[13px]" />;',
+      );
+      writeFile(
+        dir,
+        'src/Excluded.tsx',
+        '<div className="p-[15px] m-[15px] gap-[15px] px-[15px] py-[15px]" />;',
+      );
+      const config: ResolvedConfig = {
+        include: ['src/**/*.tsx'],
+        exclude: [],
+        rules: {},
+        frameworkMultipliers: {},
+        ruleConfig: {},
+        arbitraryValueAllowlist: [],
+        wcag: { targetSizeExemptSelectors: [] },
+        thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 },
+        spacingScale: [0, 1],
+        radiusScale: [],
+      };
+
+      const score = await buildArchitectureScore(dir, config, 100, [], [selected]);
+
+      expect(score.scannedFiles).toBe(1);
+      expect(score.deductions.find((deduction) => deduction.category === 'spacingScaleViolations'))
+        .toMatchObject({ count: 5, deduction: 1 });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back to result paths without rediscovery or reparsing failed results', async () => {
+    const dir = freshDir();
+    try {
+      const selected = writeFile(
+        dir,
+        'src/Button.tsx',
+        '<div className="p-[13px] m-[13px] gap-[13px] px-[13px] py-[13px]" />;',
+      );
+      writeFile(dir, 'src/Modal.tsx', 'export const Modal = () => null;');
+      writeFile(dir, 'src/Dialog.tsx', 'export const Dialog = () => null;');
+      const config: ResolvedConfig = {
+        include: ['src/**/*.tsx'],
+        exclude: [],
+        rules: {},
+        frameworkMultipliers: {},
+        ruleConfig: {},
+        arbitraryValueAllowlist: [],
+        wcag: { targetSizeExemptSelectors: [] },
+        thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 },
+        spacingScale: [0, 1],
+        radiusScale: [],
+      };
+      const failedResult: FileScanResult = {
+        filePath: selected,
+        componentCount: 0,
+        issues: [],
+        parseError: 'synthetic parse failure',
+      };
+
+      const score = await buildArchitectureScore(
+        dir,
+        config,
+        100,
+        [failedResult],
+      );
+
+      expect(score.scannedFiles).toBe(1);
+      expect(score.deductions.find((deduction) => deduction.category === 'modalSystems'))
+        .toBeUndefined();
+      expect(score.deductions.find((deduction) => deduction.category === 'spacingScaleViolations'))
+        .toBeUndefined();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -43,7 +43,9 @@ describe('ai/segment-surprisal-cv', () => {
     // 0.5 maxSlope thresholds.
     const source = ('function f() { return 1; }\n').repeat(100);
     const issues = await runRule(source);
-    expect(issues.some((i) => i.ruleId === 'ai/segment-surprisal-cv')).toBe(true);
+    const issue = issues.find((i) => i.ruleId === 'ai/segment-surprisal-cv');
+    expect(issue).toBeDefined();
+    expect(`${issue?.message}\n${issue?.advice}`).not.toMatch(/LLM|human code|verify authorship/i);
   });
 
   it('does not flag small files (below MIN_TOKEN_COUNT=200)', async () => {

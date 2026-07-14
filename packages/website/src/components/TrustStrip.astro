@@ -1,12 +1,13 @@
 ---
 // TrustStrip — a thin horizontal strip of "trust" signals right
 // after the scoreboard. Quick reassurance for first-time visitors:
-// shipped, fast, free, MIT, works offline, Node 20+.
+// shipped, fast, free, MIT, works offline, Node 22/24.
 //
 // v0.43.0 refinement: lives between the scoreboard (the "wow" moment)
 // and the tools section. Helps the visitor feel that the product
 // is real, not vapor.
 import languageSupport from '../data/language-support.json';
+import productFacts from '../data/product-facts.json';
 ---
 
 <section class="section trust-strip" id="trust">
@@ -68,8 +69,8 @@ import languageSupport from '../data/language-support.json';
           </svg>
         </span>
         <div>
-          <div class="trust-strip__value">576,750</div>
-          <div class="trust-strip__label">files calibrated against</div>
+          <div class="trust-strip__value">{productFacts.corpusFiles.toLocaleString()}</div>
+          <div class="trust-strip__label">v10.1 analyzed cohort</div>
         </div>
       </div>
       <div class="trust-strip__item">

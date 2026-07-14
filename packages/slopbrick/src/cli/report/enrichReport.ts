@@ -23,6 +23,7 @@ import { computeAiSecurityRisk } from '../../engine/ai-security-risk';
 import { SEVERITY_WEIGHTS } from '../../engine/metrics';
 import { aiDebtFromScore } from '../../engine/repository-health';
 import { effectiveIssuesForScore } from '../effective-issues';
+import { countSuccessfullyAnalyzed, isSuccessfullyAnalyzed } from '../scan-accounting';
 import {
   getSignalStrength,
   loadSignalStrength,
@@ -41,6 +42,16 @@ export interface EnrichmentInput {
   cwd: string;
   config: ResolvedConfig;
   results: FileScanResult[];
+  /**
+   * Project-level findings produced from the successful result set for this
+   * invocation.  Keep this separate from `allIssues`: the latter is also an
+   * audit/display envelope and may contain evidence hydrated from incremental
+   * cache entries (for example, cross-file duplicate findings) that was not
+   * part of the current score exposure.
+   */
+  projectIssues: readonly Issue[];
+  /** Exact post-filter scan selection, before incremental cache partitioning. */
+  selectedFilePaths?: readonly string[];
   aggregated: {
     /** v0.15.0 U.4+: replaces the legacy slopIndex. */
     aiSlopScore: number;
@@ -169,24 +180,41 @@ async function computeV012Stats(
 }
 
 export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentResult> {
-  const { cwd, config, results, aggregated, allIssues, options } = input;
+  const {
+    cwd,
+    config,
+    results,
+    projectIssues,
+    selectedFilePaths,
+    aggregated,
+    allIssues,
+    options,
+  } = input;
   const { quiet, machineReadableStdout } = options;
+  const analyzedFileCount = countSuccessfullyAnalyzed(results);
 
-  // Secondary diagnostics that mirror a headline aggregate must read the
-  // exact same per-file effective finding groups. `allIssues` is deliberately
-  // broader audit evidence (including project findings and default-off
-  // findings), so it is not a valid score input.
-  const effectiveAggregateIssues = results.flatMap((result) =>
-    effectiveIssuesForScore(result.issues, config),
-  );
+  // Diagnostics that mirror a headline aggregate read the exact same
+  // successful per-file effective findings plus active project-level
+  // findings. `allIssues` is deliberately broader: it is the report/audit
+  // envelope and may contain cached-only evidence that was not part of this
+  // invocation's score exposure. Project provenance is explicit at this
+  // boundary; never infer it from object identity in the broad audit envelope.
+  const effectiveAggregateFileIssues = results
+    .filter(isSuccessfullyAnalyzed)
+    .flatMap((result) => effectiveIssuesForScore(result.issues, config));
+  const effectiveProjectIssues = effectiveIssuesForScore(projectIssues, config);
+  const effectiveAggregateIssues = [
+    ...effectiveAggregateFileIssues,
+    ...effectiveProjectIssues,
+  ];
 
   // v0.12.0 Bayesian stats — independent of the side computations,
   // computed first so it's available for the report builder below.
-  const v012Stats = await computeV012Stats(allIssues, quiet);
+  const v012Stats = await computeV012Stats(effectiveAggregateIssues, quiet);
 
   // Sort defensively in case the caller didn't already sort. Enrichment
   // result is read by the report builder which doesn't sort.
-  const sortedIssues = [...allIssues].sort(
+  const sortedEffectiveIssues = [...effectiveAggregateIssues].sort(
     (a, b) => SEVERITY_WEIGHTS[b.severity] - SEVERITY_WEIGHTS[a.severity],
   );
 
@@ -199,7 +227,13 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   try {
     // Pass `results` so the scale-violation sweep reuses the pre-extracted
     // facts from the main scan instead of re-parsing every file.
-    const arch = await buildArchitectureScore(cwd, config, undefined, results);
+    const arch = await buildArchitectureScore(
+      cwd,
+      config,
+      undefined,
+      results,
+      selectedFilePaths,
+    );
     architectureConsistency = arch.score;
     architectureDeductions = arch.deductions;
     crossFileDrift = arch.driftSignals;
@@ -220,8 +254,11 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   let businessLogicCoherence: number | undefined;
   let businessLogicIssues: ProjectReport['businessLogicIssues'];
   try {
-    const blIssues = collectBusinessLogicIssues(cwd, results.map((r) => r.filePath));
-    const blReport = buildBusinessLogicReport(blIssues, results.length);
+    const blIssues = collectBusinessLogicIssues(
+      cwd,
+      results.filter(isSuccessfullyAnalyzed).map((r) => r.filePath),
+    );
+    const blReport = buildBusinessLogicReport(blIssues, analyzedFileCount);
     businessLogicCoherence = blReport.score;
     businessLogicIssues = blIssues;
   } catch (err) {
@@ -231,7 +268,9 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   }
 
   // AI Security Risk — categorical score independent of slopIndex.
-  const securityIssues = sortedIssues.filter((issue) => issue.category === 'security');
+  const securityIssues = effectiveAggregateIssues.filter(
+    (issue) => issue.category === 'security',
+  );
   const { risk: aiSecurityRisk, findings: aiSecurityFindings } =
     computeAiSecurityRisk(securityIssues);
 
@@ -240,7 +279,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   let testQuality: number;
   try {
     const { buildTestQualityScore } = await import('../../engine/test-quality');
-    testQuality = buildTestQualityScore(effectiveAggregateIssues, results.length).score;
+    testQuality = buildTestQualityScore(effectiveAggregateIssues, analyzedFileCount).score;
   } catch (err) {
     if (!quiet) {
       logger.warn(`test-quality: ${formatErrorMessage(err)}`);
@@ -262,15 +301,15 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
       (d) => d.category === 'radiusScaleViolations',
     )?.count ?? 0;
     const designTokenDrift = spacing + radius > 0 ? { spacing, radius } : undefined;
-    const aiSignalCount = sortedIssues.filter((i) => i.aiSpecific === true).length;
+    const aiSignalCount = sortedEffectiveIssues.filter((i) => i.aiSpecific === true).length;
     aiMaintenanceCost = computeAiMaintenanceCostFromReport(
       {
         aiSlopScore: aggregated.aiSlopScore ?? 0,
         architectureConsistency,
         aiSecurityRisk,
-        highSeverityIssueCount: sortedIssues.filter((i) => i.severity === 'high').length,
-        issues: sortedIssues.map((i) => ({ severity: i.severity })),
-        fileCount: results.length,
+        highSeverityIssueCount: sortedEffectiveIssues.filter((i) => i.severity === 'high').length,
+        issues: sortedEffectiveIssues.map((i) => ({ severity: i.severity })),
+        fileCount: analyzedFileCount,
       },
       {
         designTokenDrift,
@@ -306,7 +345,9 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
   let dbFindings: ProjectReport['dbFindings'];
   try {
     const { buildDbHealth } = await import('../../engine/db-health');
-    const db = await buildDbHealth(cwd, config, {});
+    const db = await buildDbHealth(cwd, config, {
+      selectedFilePaths: selectedFilePaths ?? results.map((result) => result.filePath),
+    });
     dbHealth = db.dbHealth;
     dbDrift = db.dbDrift;
     dbFindings = db.findings;
@@ -368,7 +409,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     coherenceBreakdown = coherenceResult.breakdown;
     coherenceWeights = coherenceResult.appliedWeights;
 
-    const domains = computeDomainScores(sortedIssues);
+    const domains = computeDomainScores(effectiveAggregateIssues);
     codeHygiene = domains.codeHygiene.score;
     accessibility = domains.accessibility.score;
     performance = domains.performance.score;

@@ -89,7 +89,32 @@ describe('headline score renderer contract', () => {
     expect(logged.join('\n')).not.toMatch(/ROI\s+Score/);
   });
 
-  it('marks incomplete scores as invalid for every renderer without changing their numeric values', () => {
+  it('keeps direct human renderers score-free for a not-applicable scan', () => {
+    const input = Object.assign(report(), {
+      completionStatus: 'empty' as const,
+      scoreValidity: 'not-applicable' as const,
+      reason: 'no-files-analyzed' as const,
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+      skipped: 0,
+    }) as ProjectReport;
+    const notice = 'NO FILES ANALYSED — scores are not applicable for gating.';
+
+    for (const output of [
+      formatPretty(input),
+      formatBriefReport(input),
+      formatWhyFailingReport(input),
+      formatMarkdown(input),
+    ]) {
+      expect(output).toContain(notice);
+      expect(output).not.toMatch(
+        /AI Slop Score|Engineering Hygiene|Repository Health|Threshold \(CI gate\)|Score is clean|Nothing is failing the threshold/i,
+      );
+    }
+  });
+
+  it('marks incomplete scans as invalid and suppresses machine headline scores', () => {
     const input = Object.assign(report(), {
       completionStatus: 'partial' as const,
       // Added by the scan completion contract. Keep this structural here so
@@ -99,6 +124,12 @@ describe('headline score renderer contract', () => {
       analyzed: 6,
       failed: 1,
       skipped: 0,
+      compositeScore: {
+        mean: 0.72,
+        max: 0.91,
+        tier: 'LIKELY_AI' as const,
+        fileCount: 1,
+      },
       scanAccounting: {
         selected: 7,
         analyzed: 6,
@@ -129,15 +160,17 @@ describe('headline score renderer contract', () => {
     expect(json).toMatchObject({
       scoreValidity: 'incomplete',
       completionStatus: 'partial',
-      aiSlopScore: 12.3,
     });
+    for (const field of ['aiSlopScore', 'engineeringHygiene', 'security', 'repositoryHealth']) {
+      expect(json).not.toHaveProperty(field);
+    }
     expect(sarif.runs[0].tool.driver.properties).toMatchObject({
       scoreValidity: 'incomplete',
       completionStatus: 'partial',
       scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
       selectionAccounting: { observedCandidates: 9, selected: 7, excluded: { gitScope: 1 } },
-      scores: { aiSlopScore: 12.3 },
     });
+    expect(sarif.runs[0].tool.driver.properties?.scores).toBeUndefined();
     for (const output of [
       formatPretty(input),
       formatBriefReport(input),
@@ -148,9 +181,28 @@ describe('headline score renderer contract', () => {
       expect(output).toContain('INCOMPLETE SCAN');
       expect(output).toContain('not valid for gating');
       expect(output).toContain('requested 7');
+      expect(output).not.toMatch(/AI Slop Score:|Repository Health:|Threshold \(CI gate\)|Score is clean|Nothing is failing the threshold/i);
     }
-    expect(formatPretty(input)).toContain('9 observed; 7 selected; 2 excluded');
-    expect(formatBriefReport(input)).toContain('9 observed; 7 selected; 2 excluded');
+    expect(formatPretty(input)).toContain('requested 7; analyzed 6; failed 1; skipped 0');
+    expect(formatBriefReport(input)).toContain('requested 7; analyzed 6; failed 1; skipped 0');
+    for (const output of [formatPretty(input), formatBriefReport(input), formatMarkdown(input)]) {
+      expect(output).toContain('zero findings 6');
+      expect(output).toContain('excluded 2');
+      expect(output).toContain('failures (parse 1, timeout 0, crash 0, internal 0)');
+    }
+  });
+
+  it('treats a legacy partial completion marker as incomplete in Markdown', () => {
+    const input = Object.assign(report(), {
+      // Older producers copied completionStatus but not scoreValidity.
+      completionStatus: 'partial' as const,
+    }) as ProjectReport;
+
+    const output = formatMarkdown(input);
+
+    expect(output).toContain('- **Completion status:** partial');
+    expect(output).toContain('- **Score validity:** incomplete');
+    expect(output).not.toContain('- **Score validity:** not-applicable');
   });
 
   it('preserves all four score values and score-basis provenance in every report format', () => {
@@ -179,11 +231,101 @@ describe('headline score renderer contract', () => {
       expect(output).toContain('45.6');
       expect(output).toContain('78.9');
       expect(output).toContain('63.4');
-      expect(output).toContain('7 analysed files');
+      expect(output).toContain('7 successfully analysed files');
       expect(output).toContain('effective findings only');
       expect(output).toContain('2 suppressed');
       expect(output).toContain('1 parse errors');
     }
+  });
+
+  it('shows detailed accounting in valid Markdown and HTML reports when available', () => {
+    const input = Object.assign(report(), {
+      scoreBasis: { ...scoreBasis, parseErrorCount: 0 },
+      requested: 7,
+      analyzed: 7,
+      failed: 0,
+      skipped: 0,
+      scanAccounting: {
+        selected: 7,
+        analyzed: 7,
+        zeroFinding: 5,
+        incrementalCached: 0,
+        parseFailed: 0,
+        timedOut: 0,
+        crashed: 0,
+        internalFailed: 0,
+      },
+      selectionAccounting: {
+        observedCandidates: 8,
+        selected: 7,
+        excluded: {
+          configExclude: 1,
+          unsupportedFileType: 0,
+          extensionlessDuplicate: 0,
+          outsideWorkspace: 0,
+          gitScope: 0,
+        },
+      },
+    }) as ProjectReport;
+
+    const expected = 'Accounting: requested 7; analyzed 7; zero findings 5; excluded 1; failures (parse 0, timeout 0, crash 0, internal 0); cached 0.';
+    expect(formatMarkdown(input)).toContain(expected);
+    expect(formatHtml(input)).toContain(expected);
+  });
+
+  it('does not invent zero-finding or failure counts without scan accounting', () => {
+    const input = Object.assign(report(), {
+      requested: 7,
+      analyzed: 7,
+      failed: 0,
+      skipped: 0,
+      selectionAccounting: {
+        observedCandidates: 8,
+        selected: 7,
+        excluded: {
+          configExclude: 1,
+          unsupportedFileType: 0,
+          extensionlessDuplicate: 0,
+          outsideWorkspace: 0,
+          gitScope: 0,
+        },
+      },
+    }) as ProjectReport;
+
+    for (const output of [formatMarkdown(input), formatHtml(input)]) {
+      expect(output).toContain('zero findings n/a');
+      expect(output).toContain('failures (n/a)');
+      expect(output).not.toContain('zero findings 0');
+    }
+  });
+
+  it('keeps bounded finding evidence useful across machine and human report surfaces', () => {
+    const evidenceIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'typo/placeholder-text',
+      category: 'typo',
+      message: 'Placeholder text "TODO" is unfinished.',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'placeholder="TODO"',
+        location: { start: { line: 1, column: 8 }, end: { line: 1, column: 25 } },
+        matched: { field: 'placeholder', key: 'placeholder', value: 'TODO' },
+      },
+    };
+    const input = Object.assign(report(), { issues: [evidenceIssue] }) as ProjectReport;
+    const json = JSON.parse(formatJson(input)) as { issues: Array<{ evidence?: unknown }> };
+    const sarif = JSON.parse(formatSarif(input)) as {
+      runs: Array<{ results: Array<{ properties?: { evidence?: unknown } }> }>;
+    };
+    const markdown = formatMarkdown(input);
+    const pretty = formatPretty(input);
+
+    expect(json.issues[0]?.evidence).toEqual(evidenceIssue.evidence);
+    expect(sarif.runs[0]?.results[0]?.properties?.evidence).toEqual(evidenceIssue.evidence);
+    expect(markdown).toContain('evidence: `placeholder="TODO"`');
+    expect(markdown).toContain('1:8-1:25');
+    expect(pretty).toContain('Evidence: placeholder="TODO" (1:8-1:25)');
   });
 
   it('uses one truthful score explanation and keeps disabled findings out of HTML only', () => {
@@ -204,7 +346,7 @@ describe('headline score renderer contract', () => {
     expect(sarif.runs[0].results).toEqual(expect.arrayContaining([expect.objectContaining({ ruleId: 'test/off-rule' })]));
   });
 
-  it('gives MCP suggestions the same four scores, provenance, and score briefs from persisted health', async () => {
+  it('gives MCP suggestions the same validity/accounting contract without incomplete headline scores', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'slopbrick-renderer-contract-'));
     try {
       mkdirSync(join(cwd, '.slopbrick'), { recursive: true });
@@ -216,6 +358,12 @@ describe('headline score renderer contract', () => {
         engineeringHygiene: 46,
         security: 79,
         repositoryHealth: 63,
+        compositeScore: {
+          mean: 0.72,
+          max: 0.91,
+          tier: 'LIKELY_AI',
+          fileCount: 6,
+        },
         issueCounts: { high: 0, medium: 0, low: 0 },
         scoreBasis,
         completionStatus: 'partial',
@@ -246,12 +394,8 @@ describe('headline score renderer contract', () => {
       const result = await runSuggest({}, ctx);
       const payload = JSON.parse(result.content[0]!.text) as Record<string, unknown>;
 
-      expect(payload.scores).toEqual({
-        aiSlopScore: 12,
-        engineeringHygiene: 46,
-        security: 79,
-        repositoryHealth: 63,
-      });
+      expect(payload.scores).toBeUndefined();
+      expect(payload.compositeScore).toBeUndefined();
       expect(payload).toMatchObject({
         completionStatus: 'partial',
         scoreValidity: 'incomplete',

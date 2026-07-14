@@ -11,8 +11,8 @@
 //
 // v0.21.0: aiSlopScore is raw amount of slop (lower = cleaner), not
 // the inverted cleanliness reading. The 4 numbers below are the
-// slopbrick repo's own most-recent self-scan — a real example, not
-// a cherry-picked marketing number.
+// slopbrick repo's own historical self-scan — a real example, not
+// current release-gate evidence or a cherry-picked marketing number.
 
 import StructureDemo from './StructureDemo.astro';
 
@@ -61,10 +61,12 @@ const stats = [
       The numbers that earn the name <span class="calibration__accent">usebrick</span>.
     </h2>
     <p class="calibration__subhead">
-      From <code>slopbrick scan</code> on this site&apos;s own repo.
+      Historical example from <code>slopbrick scan</code> on this site&apos;s own repo,
+      captured 2026-07-06; these values are not current release-gate evidence.
       Per-rule calibration lives in <code>src/rules/signal-strength.json</code>;
-      every score is derived from v10-corpus precision/recall against
-      576,750 files — no score is hand-picked.
+      measured rules carry historical v10.1 precision/recall evidence from
+      576,750 analyzed files; 16 workspace rules remain unmeasured and
+      default-off while v10.3 admission is pending.
     </p>
   </header>
 
@@ -85,11 +87,11 @@ const stats = [
   <StructureDemo />
 
   <blockquote class="calibration__quote">
-    Every rule ships with a recall/FP ratio. A rule that fires more
-    noise than signal goes back to <em>defaultOff</em> until it earns
-    its way on. <strong>aiSlopScore</strong> uses the natural-reading
+    Measured rules carry historical recall/FP evidence. A rule that fires more
+    noise than signal, or has no approved calibration, stays <em>defaultOff</em>
+    until it earns its way on. <strong>aiSlopScore</strong> uses the natural-reading
     direction (0 = clean, 100 = saturated) — the other three scores
-    are &quot;higher = better&quot;. v0.21.0.
+    are &quot;higher = better&quot;.
     <cite class="calibration__cite">the usebrick calibration contract</cite>
   </blockquote>
 </section>

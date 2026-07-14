@@ -1,0 +1,14 @@
+{
+  "version": "v10.3-acquisition-publication-lock-v1",
+  "lockId": "e16212cdefa3056531f8883a9434c112b090414aee7d81f711bafcfb2dccb7fa",
+  "intendedTransactionId": "70518abbdd6caf28c5b4715603fc5c75aa362d89c03854de11b216757780810a",
+  "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "operation": "create",
+  "expectedCurrentState": {
+    "kind": "absent"
+  },
+  "nextIndexSha256": "6b8cc4bc10c986f31205edd4d8f971dcaa3eb3263df6ca07145dc22ad23f271c",
+  "artifactSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "recoveryNonce": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "lockSha256": "b8d9b6e84a0c3d12e21a4529187d50335cebc3da48820f6d5d98b46db20a4c5c"
+}

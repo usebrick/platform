@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-register-generation-lock.schema.json",
+  "title": "CalibrationRegisterGenerationLockV1",
+  "description": "Fixed-path register-generation lock bound to a recovery transaction and nonce.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "expectedCurrentRegisterSha256", "nextRegisterSha256", "deltaId", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-register-generation-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "expectedCurrentRegisterSha256": { "$ref": "#/$defs/sha256" },
+    "nextRegisterSha256": { "$ref": "#/$defs/sha256" },
+    "deltaId": { "$ref": "#/$defs/id" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" }
+  }
+}

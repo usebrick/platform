@@ -7,15 +7,17 @@
 // the visual metaphor.
 
 import BrickLayout from './BrickLayout.astro';
+import productFacts from '../data/product-facts.json';
+import version from '../data/version.json';
 
 // "What slopbrick does" — 5 concrete capabilities you can verify
 // in the docs and the CLI output.
 const yay = [
-  'v0.43.0, 103 rules, 22 categories, the 4-score model',
+  `v${version.slopbrick}, ${productFacts.ruleCount} rules, ${productFacts.categoryCount} categories, the 4-score model`,
   'Writes .slopbrick/{inventory,constitution,structure,health}.json — every agent reads the same shape',
   'MCP server: Claude Code, Cursor, Copilot all consume the structure',
   'Constitution engine — declare your stack once, drift exits 1',
-  'v10-calibrated against 576,750 real files, per-rule precision/recall on disk',
+  `Historical ${productFacts.corpusLabel} evidence: ${productFacts.measuredRuleCount} measured rules across ${productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files`,
 ];
 
 // "What the alternative looks like" — the situation slopbrick replaces.
@@ -35,7 +37,8 @@ const nay = [
       Four scores, one Constitution, every <span class="compare-section__accent">writeable artifact</span>.
     </h2>
     <p class="compare-section__body">
-      576,750 files of v10 calibration. 103 rules across 22 categories. The 4-score
+      Workspace candidate: {productFacts.ruleCount} rules across {productFacts.categoryCount} categories. Historical
+      {productFacts.corpusLabel} evidence covers {productFacts.measuredRuleCount} rules and {productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files. The 4-score
       model (AI Slop Score, Engineering Hygiene, Security, Repository Health). A Constitution engine
       you declare. usebrick.dev writes <code>.slopbrick/</code> artifacts that agents read
       instead of re-parsing the AST.

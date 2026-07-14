@@ -109,7 +109,7 @@ export const mathColorClusterRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `${hues.length} hex colors span only ${maxSpread.toFixed(0)}° of hue space. ` +
-        `AI defaults to a tight palette (often violet-fuchsia only); humans use varied hues.`,
+        `Review the palette against design tokens, contrast, and product intent; clustered hues can be intentional.`,
       line: firstAnchor?.line ?? 1,
       column: firstAnchor?.column ?? 1,
       advice:

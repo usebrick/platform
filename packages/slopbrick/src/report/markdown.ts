@@ -1,9 +1,15 @@
-import type { ProjectReport } from '../types';
+import type { Issue, ProjectReport } from '../types';
 import { HEADLINE_SCORES, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
-import { bucketForVerdict, bucketDistribution } from './buckets';
+import { bucketForRule, isDefaultOffIssue, summarizeDefaultOffIssues } from './buckets';
 import type { Bucket } from './buckets';
 import { getSignalStrength } from '../rules/signal-strength.js';
-import { formatScanValidityNotice } from './scan-validity.js';
+import {
+  formatScanAccountingSummary,
+  formatScanValidityNotice,
+  isIncompleteScan,
+  isNotApplicableScan,
+} from './scan-validity.js';
+import { formatFindingContext } from './finding-context.js';
 import type { Verdict } from '@usebrick/core';
 
 /**
@@ -33,6 +39,22 @@ function confidenceLabel(precision: number): string {
   return 'Low';
 }
 
+/** Render the bounded finding-evidence contract without exposing unbounded
+ * source. Markdown is a local human report, so exact snippets remain useful;
+ * producer-omitted spans stay explicitly omitted rather than becoming a
+ * misleading empty code fragment. */
+function formatIssueEvidence(evidence: Issue['evidence']): string | null {
+  if (!evidence) return null;
+  const start = evidence.location.start;
+  const end = evidence.location.end;
+  const location = `${start.line}:${start.column}-${end.line}:${end.column}`;
+  if (evidence.status === 'omitted') {
+    return `evidence omitted (${evidence.omission.reason}) at ${location}`;
+  }
+  const snippet = evidence.snippet.replaceAll('`', '\\`').replace(/[\r\n]+/g, ' ');
+  return `evidence: \`${snippet}\` (${location})`;
+}
+
 /** Title-case a verdict enum (`NOISY` → `Noisy`). */
 function verdictLabel(verdict: Verdict): string {
   return verdict.charAt(0).toUpperCase() + verdict.slice(1).toLowerCase();
@@ -42,6 +64,10 @@ interface RuleBucketEntry {
   ruleId: string;
   verdict: Verdict;
   precision: number;
+  bucket: Bucket;
+  count: number;
+  contexts: string[];
+  evidence: string[];
 }
 
 function bucketEntriesForIssues(issues: ProjectReport['issues']): {
@@ -52,31 +78,73 @@ function bucketEntriesForIssues(issues: ProjectReport['issues']): {
   // not one entry per firing.
   const byRule = new Map<string, RuleBucketEntry>();
   for (const issue of issues) {
-    if (byRule.has(issue.ruleId)) continue;
+    const existing = byRule.get(issue.ruleId);
+    if (existing) {
+      existing.count++;
+      const context = formatFindingContext(issue.filePath);
+      if (!existing.contexts.includes(context)) existing.contexts.push(context);
+      const evidence = formatIssueEvidence(issue.evidence);
+      if (evidence && !existing.evidence.includes(evidence) && existing.evidence.length < 3) {
+        existing.evidence.push(evidence);
+      }
+      continue;
+    }
     const strength = getSignalStrength(issue.ruleId);
+    const verdict = (strength?.verdict ?? 'OK') as Verdict;
+    // The issue's explicit aiSpecific flag is authoritative for the
+    // human-facing taxonomy. Calibration verdicts describe signal quality,
+    // not whether a rule is an authorship signal: a USEFUL security or
+    // performance rule must not be presented as an AI finding. Keep noisy and
+    // dormant verdicts suppressed regardless of polarity.
+    const aiSpecific = typeof issue.aiSpecific === 'boolean'
+      ? issue.aiSpecific
+      : strength?.aiSpecific ?? true;
+    const evidence = formatIssueEvidence(issue.evidence);
     byRule.set(issue.ruleId, {
       ruleId: issue.ruleId,
-      // Unknown rules default to OK (lands in `ai` bucket) — matches the
-      // "show everything until the user opts out" stance.
-      verdict: (strength?.verdict ?? 'OK') as Verdict,
+      verdict,
       precision: strength?.precision ?? 0,
+      bucket: bucketForRule(verdict, aiSpecific),
+      count: 1,
+      contexts: [formatFindingContext(issue.filePath)],
+      evidence: evidence ? [evidence] : [],
     });
   }
   const entries = Array.from(byRule.values());
 
-  const dist = bucketDistribution(entries.map((e) => e.verdict));
+  const dist: Record<Bucket, number> = { ai: 0, hygiene: 0, suppressed: 0 };
   const grouped: Record<Bucket, RuleBucketEntry[]> = {
     ai: [],
     hygiene: [],
     suppressed: [],
   };
   for (const entry of entries) {
-    grouped[bucketForVerdict(entry.verdict)].push(entry);
+    grouped[entry.bucket].push(entry);
+    dist[entry.bucket]++;
   }
   return { grouped, dist };
 }
 
 export function formatMarkdown(report: ProjectReport): string {
+  if (isNotApplicableScan(report) || isIncompleteScan(report)) {
+    const notice = formatScanValidityNotice(report) ??
+      'NO FILES ANALYSED — scores are not applicable for gating.';
+    const completionStatus = report.completionStatus ?? (isIncompleteScan(report) ? 'partial' : 'empty');
+    const scoreValidity = report.scoreValidity ?? (isIncompleteScan(report) ? 'incomplete' : 'not-applicable');
+    const lines = [
+      '# Slop Audit Report',
+      '',
+      `> **${notice}**`,
+      '',
+      `- **Completion status:** ${completionStatus}`,
+      `- **Score validity:** ${scoreValidity}`,
+      `- **Requested files:** ${report.requested ?? 0}`,
+      `- **Analysed files:** ${report.analyzed ?? 0}`,
+      `- **Failed files:** ${report.failed ?? 0}`,
+      `- **Skipped files:** ${report.skipped ?? 0}`,
+    ];
+    return `${lines.join('\n')}\n`;
+  }
   const lines: string[] = [];
   lines.push(`# Slop Audit Report`);
   lines.push('');
@@ -104,13 +172,19 @@ export function formatMarkdown(report: ProjectReport): string {
   lines.push(`- **Components:** ${report.componentCount}`);
   lines.push(`- **Files:** ${report.fileCount}`);
   if (report.scoreBasis) {
-    lines.push(`- **Score basis:** ${report.scoreBasis.denominator} analysed files; effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed, ${report.scoreBasis.parseErrorCount} parse errors)`);
+    lines.push(`- **Score coverage:** ${report.scoreBasis.denominator} successfully analysed files; per-file AI burdens are additive (the count does not dilute them); effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed finding instances are audit-only, ${report.scoreBasis.parseErrorCount} parse errors)`);
+  }
+  const accountingSummary = formatScanAccountingSummary(report);
+  if (accountingSummary) lines.push(`- ${accountingSummary}`);
+  const defaultOff = summarizeDefaultOffIssues(report.issues);
+  if (defaultOff.instances > 0) {
+    lines.push(`- **Default-off audit:** ${defaultOff.instances} suppressed finding instance${defaultOff.instances === 1 ? '' : 's'} across ${defaultOff.ruleCount} rule${defaultOff.ruleCount === 1 ? '' : 's'}; excluded from actionable buckets`);
   }
   lines.push(`- **Generated:** ${report.generatedAt}`);
   lines.push('');
 
   // ----- 3-bucket grouping via bucketForVerdict() + bucketDistribution() -----
-  const { grouped, dist } = bucketEntriesForIssues(report.issues);
+  const { grouped, dist } = bucketEntriesForIssues(report.issues.filter((issue) => !isDefaultOffIssue(issue)));
 
   // AI Findings (USEFUL + OK → ai bucket)
   lines.push(`## AI Findings (${dist.ai})`);
@@ -120,7 +194,8 @@ export function formatMarkdown(report: ProjectReport): string {
     lines.push('');
   } else {
     for (const r of grouped.ai) {
-      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (Confidence: ${confidenceLabel(r.precision)})`);
+      const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}; Confidence: ${confidenceLabel(r.precision)}${evidence})`);
     }
     lines.push('');
   }
@@ -133,7 +208,8 @@ export function formatMarkdown(report: ProjectReport): string {
     lines.push('');
   } else {
     for (const r of grouped.hygiene) {
-      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)}`);
+      const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}${evidence})`);
     }
     lines.push('');
   }
@@ -157,7 +233,8 @@ export function formatMarkdown(report: ProjectReport): string {
       lines.push(`<details><summary>${entries.length} ${verdictLabel(verdict)}</summary>`);
       lines.push('');
       for (const r of entries) {
-        lines.push(`- ${ruleDisplayName(r.ruleId)}`);
+        const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+        lines.push(`- ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}${evidence})`);
       }
       lines.push('');
       lines.push(`</details>`);

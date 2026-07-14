@@ -36,6 +36,12 @@ export interface ScanAccounting {
   crashed: number;
   /** Scan failures after parsing, e.g. fact extraction or scoring. */
   internalFailed: number;
+  /** Optional project-level Type-1 clone coordinator accounting. */
+  identicalBlockCandidateWindows?: number;
+  identicalBlockCandidateWindowLimit?: number;
+  identicalBlockInputSkips?: number;
+  /** True when the bounded candidate budget made clone evidence incomplete. */
+  identicalBlockTruncated?: boolean;
 }
 
 /**
@@ -101,9 +107,10 @@ export interface ScoreExplanation {
 
 export interface ProjectReport {
   /**
-   * Denominator and issue-set provenance for the headline scores.  Scores
-   * are computed over successfully analysed files and effective findings;
-   * suppressed/default-off findings remain auditable but do not contribute.
+   * Coverage and issue-set provenance for the headline scores. The analyzed
+   * file count records the successful scan population; AI bucket burdens are
+   * aggregated per effective file and do not divide by this count. Suppressed
+   * and default-off findings remain auditable but do not contribute.
    */
   scoreBasis?: {
     denominator: number;
@@ -144,7 +151,16 @@ export interface ProjectReport {
   engineeringHygiene: number;
   security: number;
   repositoryHealth: number;
+  /**
+   * @deprecated Compatibility-only inverse of `aiSlopScore`. This is not a
+   * canonical headline score and must not be used for gating or human report
+   * headings.
+   */
   assemblyHealth: number;
+  /**
+   * @deprecated Compatibility-only legacy field. Current JSON serialization
+   * omits it; use the canonical score fields instead.
+   */
   totalScore: number;
   /**
    * v0.43.0 (user-review parity with --brief and useubrick.dev): a

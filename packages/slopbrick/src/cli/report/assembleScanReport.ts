@@ -9,8 +9,9 @@
 // side effects. The caller decides whether to write the report to
 // disk / stdout / memory.
 //
-// Also computes the v0.10.1 PR Slop Score (--diff <ref> alias) since
-// it's a pure function of `allIssues` + `diffRef`.
+// Also computes the v0.10.1 PR Slop Score (--diff <ref> alias) from the
+// explicit effective score projection + `diffRef`. `allIssues` remains the
+// broad display/audit envelope and may include cached-only evidence.
 
 import type {
   Issue,
@@ -21,6 +22,7 @@ import type {
 } from '../../types';
 import type { EnrichmentResult } from './enrichReport';
 import { failedThresholds } from '../threshold';
+import { countSuccessfullyAnalyzed } from '../scan-accounting';
 import { VERSION } from '../../types';
 
 export interface AssembleScanReportInput {
@@ -47,6 +49,13 @@ export interface AssembleScanReportInput {
     | 'components'
   >;
   allIssues: Issue[];
+  /**
+   * Canonical score exposure for this invocation: effective findings from
+   * successfully analyzed files plus effective project findings. This is
+   * intentionally narrower than `allIssues`, which also retains audit-only
+   * and cache-hydrated evidence for display.
+   */
+  effectiveIssues: readonly Issue[];
   parseErrors: Array<{ filePath: string; error: string }>;
   topOffenders: NonNullable<ProjectReport['topOffenders']>;
   config: ResolvedConfig;
@@ -62,10 +71,10 @@ const PR_SLOP_WEIGHTS = { high: 10, medium: 5, low: 1 } as const;
 
 function computePrSlopScore(
   diffRef: string | undefined,
-  allIssues: Issue[],
+  effectiveIssues: readonly Issue[],
 ): number | undefined {
   if (diffRef === undefined) return undefined;
-  return allIssues.reduce(
+  return effectiveIssues.reduce(
     (sum, issue) =>
       sum + (PR_SLOP_WEIGHTS[issue.severity as keyof typeof PR_SLOP_WEIGHTS] ?? 0),
     0,
@@ -79,6 +88,7 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     results,
     aggregated,
     allIssues,
+    effectiveIssues,
     parseErrors,
     topOffenders,
     config,
@@ -90,7 +100,11 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     enrichment,
   } = input;
 
-  const prSlopScore = computePrSlopScore(diffRef, allIssues);
+  const prSlopScore = computePrSlopScore(diffRef, effectiveIssues);
+  const analyzedFiles = countSuccessfullyAnalyzed(results);
+  const suppressedIssueCount = allIssues.filter(
+    (issue) => issue.severity === ('off' as Issue['severity']),
+  ).length;
 
   // v0.42.0 (user-review fix): compute which thresholds tripped so the
   // JSON output exposes them. The full `failedThresholds()` function
@@ -98,6 +112,12 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
   // relevant fields. Inline-equivalent: check each threshold's condition
   // using the aggregated scores already on the report.
   const thresholdReport = {
+    // This projection is used only for threshold reporting, but the shared
+    // helper deliberately refuses to evaluate missing/invalid score validity.
+    // Mark the aggregate projection as valid here; incomplete/empty scans are
+    // finalized through the validity-aware report path and never reach this
+    // complete-score threshold calculation.
+    scoreValidity: 'valid' as const,
     aiSlopScore: aggregated.aiSlopScore,
     p90Score: aggregated.p90Score,
     peakScore: aggregated.peakScore,
@@ -109,21 +129,24 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
   );
 
   return {
+    // `denominator` records the successful scan population for coverage and
+    // provenance. AI bucket burdens are aggregated per effective file and do
+    // not divide by this count.
     scoreBasis: {
-      denominator: results.filter((result) => !result.parseError).length,
-      analyzedFiles: results.filter((result) => !result.parseError).length,
+      denominator: analyzedFiles,
+      analyzedFiles,
       issueSet: 'effective',
-      suppressedIssueCount: allIssues.filter((issue) => issue.severity === ('off' as Issue['severity'])).length,
+      suppressedIssueCount,
       parseErrorCount: parseErrors.length,
     },
     scoreExplanation: aggregated.scoreExplanation
       ? {
           ...aggregated.scoreExplanation,
           scoreBasis: {
-            denominator: results.filter((result) => !result.parseError).length,
-            analyzedFiles: results.filter((result) => !result.parseError).length,
+            denominator: analyzedFiles,
+            analyzedFiles,
             issueSet: 'effective',
-            suppressedIssueCount: allIssues.filter((issue) => issue.severity === ('off' as Issue['severity'])).length,
+            suppressedIssueCount,
             parseErrorCount: parseErrors.length,
           },
         }
@@ -134,9 +157,10 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     aiSlopScore: aggregated.aiSlopScore,
     engineeringHygiene: aggregated.engineeringHygiene,
     security: aggregated.security,
-    // repositoryHealth is set later from `enrichment.repositoryHealth`
-    // (the computed composite); the `aggregated` value is just the
-    // default seed that enrichment may override.
+    // `repositoryHealth` is the canonical four-axis aggregate. Enrichment
+    // may add secondary diagnostics and a breakdown, but it must not be able
+    // to overwrite the score formula with a competing composite.
+    repositoryHealth: aggregated.repositoryHealth,
     assemblyHealth: aggregated.assemblyHealth,
     totalScore: aggregated.totalScore,
     categoryScores: aggregated.categoryScores,
@@ -158,7 +182,6 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     dbHealth: enrichment.dbHealth,
     dbDrift: enrichment.dbDrift,
     dbFindings: enrichment.dbFindings,
-    repositoryHealth: enrichment.repositoryHealth,
     prSlopScore,
     diffRef,
     v012Stats: enrichment.v012Stats,
@@ -196,7 +219,10 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     // Optional field: absent when no thresholds tripped. Computed from
     // the report's own scores so the JSON is self-describing.
     failedThresholds: failedThresholds_,
-    topOffenders: topOffenders.length > 0 ? topOffenders : undefined,
+    // An explicit empty list means this current scan computed offender data
+    // and found no active offenders. `undefined` remains reserved for legacy
+    // reports that predate the field and need the renderer's component fallback.
+    topOffenders,
     coherence: enrichment.coherence,
     coherenceBreakdown: enrichment.coherenceBreakdown,
     coherenceWeights: enrichment.coherenceWeights,

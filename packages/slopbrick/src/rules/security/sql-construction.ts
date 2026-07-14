@@ -25,22 +25,20 @@
 // tutorial mode reaches for template literals).
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { scanJsStringTokens } from '../../engine/source-lex';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
 
-// Match a SQL keyword at the start of a query string. We require a
-// keyword at the start (or after leading whitespace / comment) so
-// that we don't false-positive on JS variables that happen to
-// contain "FROM" somewhere.
-const SQL_KEYWORD_RE =
-  /['"`]\s*(?:--[^\n]*\n\s*)*\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|MERGE)\b/i;
+// Match an actual SQL query prefix, rather than merely a DML word. Requiring
+// the table/column boundary keeps normal prose such as "Replace the value"
+// and "Update every call site" out of the detector. String tokens are
+// extracted lexically below, so comments and nested advice strings cannot
+// become findings.
+const SQL_QUERY_START_RE =
+  /^\s*(?:--[^\n]*\n\s*)*(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b|REPLACE\s+INTO\b|TRUNCATE(?:\s+TABLE)?\s+\S+\b|MERGE\s+INTO\b)/i;
 
 // Match template-literal interpolation `${...}` inside a string.
-const TEMPLATE_INTERPOLATION_RE = /\$\{[^}]+\}/;
-
-// Match string concatenation: 'SELECT...' + var or `${...}`.
-const CONCAT_RE =
-  /['"`]\s*(?:--[^\n]*\n\s*)*\s*(?:SELECT|INSERT|UPDATE|DELETE|REPLACE|TRUNCATE|MERGE)\b[^'"`]*['"`]\s*\+/i;
+const TEMPLATE_INTERPOLATION_RE = /\$\{[\s\S]*\}/;
 
 
 export const sqlConstructionRule = createRule<RuleContext>({
@@ -58,36 +56,34 @@ export const sqlConstructionRule = createRule<RuleContext>({
     const source = facts.v2?._source;
     if (!source) return issues;
 
-    // 1. Template-literal SQL with interpolation.
-    let m: RegExpExecArray | null;
-    const templateRe = new RegExp(
-      SQL_KEYWORD_RE.source + '[\\s\\S]*?[`]',
-      'gi',
-    );
-    while ((m = templateRe.exec(source)) !== null) {
-      const candidate = m[0];
-      if (!TEMPLATE_INTERPOLATION_RE.test(candidate)) continue;
-      issues.push({
-        ruleId: 'security/sql-construction',
-        category: 'security',
-        severity: 'high',
-        aiSpecific: true,
-        message:
-          'SQL query built with template-literal interpolation. Use parameterized queries instead.',
-        line: lineOfSource(source, m.index),
-        column: 1,
-        advice:
-          'Replace the template-literal SQL with a parameterized query: \n' +
-          '  - node-postgres / pg:  client.query("SELECT ... WHERE id = $1", [userId])\n' +
-          '  - mysql2:               connection.execute("SELECT ... WHERE id = ?", [userId])\n' +
-          '  - Prisma / Drizzle / Knex query builder: define the query declaratively.\n' +
-          'Never concatenate user input into a SQL string — even if you sanitize it today, the next change will break.',
-      });
-    }
+    for (const token of scanJsStringTokens(source)) {
+      if (!SQL_QUERY_START_RE.test(token.content)) continue;
 
-    // 2. String-concat SQL with `+`.
-    const concatRe = new RegExp(CONCAT_RE.source, 'gi');
-    while ((m = concatRe.exec(source)) !== null) {
+      // 1. Template-literal SQL with interpolation.
+      if (token.quote === '`' && TEMPLATE_INTERPOLATION_RE.test(token.content)) {
+        issues.push({
+          ruleId: 'security/sql-construction',
+          category: 'security',
+          severity: 'high',
+          aiSpecific: true,
+          message:
+            'SQL query built with template-literal interpolation. Use parameterized queries instead.',
+          line: lineOfSource(source, token.start),
+          column: 1,
+          advice:
+            'Replace the template-literal SQL with a parameterized query: \n' +
+            '  - node-postgres / pg:  client.query("SELECT ... WHERE id = $1", [userId])\n' +
+            '  - mysql2:               connection.execute("SELECT ... WHERE id = ?", [userId])\n' +
+            '  - Prisma / Drizzle / Knex query builder: define the query declaratively.\n' +
+            'Never concatenate user input into a SQL string — even if you sanitize it today, the next change will break.',
+        });
+        continue;
+      }
+
+      // 2. String-concat SQL with `+`. A token is top-level, so a SQL
+      // example nested inside a documentation/advice string cannot match.
+      if (token.quote === '`') continue;
+      if (!/^\s*\+/u.test(source.slice(token.end))) continue;
       issues.push({
         ruleId: 'security/sql-construction',
         category: 'security',
@@ -95,7 +91,7 @@ export const sqlConstructionRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           'SQL query built with string concatenation (+). Use parameterized queries instead.',
-        line: lineOfSource(source, m.index),
+        line: lineOfSource(source, token.start),
         column: 1,
         advice:
           'Build the query with placeholders and pass the values separately. ' +

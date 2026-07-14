@@ -4,6 +4,7 @@ import { logger } from '../../engine/logger';
 import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
 import { runTestScan, formatTestReport, testExitCode } from '../test';
+import { renderInvalidScan } from './_shared.js';
 
 /**
  * v0.18.x (R-H1): test subcommand extracted from cli/program.ts.
@@ -31,8 +32,32 @@ export function registerTest(program: Command): void {
             rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
 
           const cwd = resolve(options.workspace ?? process.cwd());
-          const { config } = await runScan({ ...options, workspace: cwd });
-          const { result } = await runTestScan(cwd, config, { strict: options.strict });
+          const { config, report: bootstrapReport } = await runScan({ ...options, workspace: cwd });
+          const bootstrapInvalidExitCode = renderInvalidScan(
+            bootstrapReport,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (bootstrapInvalidExitCode !== undefined) {
+            process.exit(bootstrapInvalidExitCode);
+            return;
+          }
+          const { result, scan } = await runTestScan(cwd, config, { strict: options.strict });
+          // The test command intentionally narrows discovery to test files;
+          // a project may have valid production code but no test population.
+          // Apply the same boundary to that narrowed scan rather than
+          // publishing a synthetic Test Quality 100/100 result.
+          const testInvalidExitCode = renderInvalidScan(
+            scan.report,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (testInvalidExitCode !== undefined) {
+            process.exit(testInvalidExitCode);
+            return;
+          }
           logger.info(formatTestReport(result, { json: format === 'json' }));
           process.exit(testExitCode(result));
         } catch (err) {

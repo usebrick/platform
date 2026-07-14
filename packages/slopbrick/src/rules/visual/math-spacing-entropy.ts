@@ -59,7 +59,7 @@ export const mathSpacingEntropyRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Spacing tokens have low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
-        `AI tends to repeat the same 2–3 spacing values; humans mix 6+ distinct sizes.`,
+        `Review spacing against the design scale and content hierarchy; repeated values are valid when intentional.`,
       line: anchor.line,
       column: anchor.column,
       advice:

@@ -55,6 +55,11 @@ describe('visitors/react', () => {
       expect(lineOffsets).toEqual([0, 6, 12]);
     });
 
+    it('counts astral Unicode and ECMAScript line terminators in bytes', () => {
+      const offsets = buildLineOffsets('😀x\u2028y\u2029z\r\nw');
+      expect(offsets).toEqual([0, 8, 12, 15]);
+    });
+
     it('positionFromOffset converts byte offset to line/column', () => {
       // SWC byte offsets are 1-based; offset 7 → byteOffset 6 (start of line 2)
       expect(positionFromOffset(7, lineOffsets)).toEqual({ line: 2, column: 1 });

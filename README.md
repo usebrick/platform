@@ -16,7 +16,7 @@ usebrick is a four-product platform for the **Repository Structure Platform** (R
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the Constitution) | planned |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | **latest published** as `slopbrick@0.43.0` on npm (103 rules, v10-calibrated against 576,750 files); v0.44.0 trust-restoration work is unreleased |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | **latest published** as `slopbrick@0.43.0` on npm (103 rules; its 576,750-file v10.1 result is historical); v0.44.0 trust-restoration work is unreleased and v10.3 admission is open |
 | **MendBrick** | Repairs the structure (the migrator) | planned |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned |
 
@@ -58,6 +58,13 @@ That's it. The next time an AI agent writes a file in your repo, it reads
 `.slopbrick/structure.md` instead of re-parsing the AST. The cached artifact
 avoids repeated parsing; measure the improvement on your own repository rather
 than relying on a fixed speed-up claim.
+
+### Runtime support
+
+The workspace and published CLI support the maintained Node.js LTS lines
+**22 and 24** (`^22.0.0 || ^24.0.0`). CI and the packed-package consumer
+matrix exercise both lines. Node 20 and odd-numbered release lines are not
+supported; run `nvm install 22` (or use Node 24) before installing.
 
 **This isn't CLAUDE.md.** CLAUDE.md is a static file the agent reads once per session. `.slopbrick/structure.md` is a generated artifact that updates on every scan — your repository, encoded for the next agent.
 
@@ -129,7 +136,7 @@ v0.15.0 is a **hard-break release** that ships the full v0.15.0 plan:
 - **Multi-score model**: The single `slopIndex` is replaced by 4 independent scores: `aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth` (composite). (Originally `aiQuality` in v0.15.0; renamed in v0.21.0 when the field was flipped to the natural-reading "raw amount of slop" direction.)
 - **Engine/UI taxonomy seam**: The engine's 6 verdict taxonomy (USEFUL/OK/NOISY/INVERTED/HYGIENE/DORMANT) is decoupled from the user-facing 3-bucket taxonomy (AI Findings / Engineering Hygiene / Suppressed) via `bucketForVerdict()`.
 - **Schema codegen**: JSON Schemas are now the single source of truth; TypeScript types are codegen'd from them. CI fails if schemas and types drift.
-- **Website hardening**: Skip-to-content link, keyboard-accessible tool cards, axe-core a11y in CI, `LowPowerDetector` to skip WebGL on low-power devices, LCP-swap for WebGL initialization.
+- **Website hardening**: Skip-to-content link, keyboard-accessible tool cards, axe-core a11y in CI, native reduced-motion handling, and deterministic static build facts.
 - **slopbrick CLI slimmed** from 1469 to 451 lines (69% reduction) by extracting report generation into `packages/engine/`.
 
 See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for full release notes.
@@ -140,10 +147,10 @@ See [`packages/slopbrick/CHANGELOG.md`](./packages/slopbrick/CHANGELOG.md) for f
 
 | Package | Status | Purpose |
 |---------|--------|---------|
-| `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. Published v0.43.0 exposes the 4-score model, 103 rules, MCP server, and calibrate subcommand; v10-calibrated against 576,750 files. |
+| `slopbrick` | **published** | The flagship CLI. `npx slopbrick scan`, `npx slopbrick drift`, `npx slopbrick security`, `npx slopbrick calibration`. Published v0.43.0 exposes the 4-score model, 103 rules, MCP server, and calibrate subcommand; its 576,750-file v10.1 result is historical and does not close current v10.3 admission. |
 | `@usebrick/core` | `private: true` — workspace-only | Types + JSON Schemas + readers/writers + verdict taxonomy for the Repository Structure Platform. **Not published to npm** until the schema stabilizes (need at least 2 consumers writing/reading the schemas in production). |
 | `@usebrick/engine` | `private: true` — workspace-only (new in v0.15.0) | Pure scanning APIs at `@usebrick/engine/pure`; the root retains explicit Node adapters for CLI compatibility. |
-| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + native browser animation APIs, full-bleed WebGL brick shader hero, click-to-break tool cards, axe-core a11y in CI. Built to `dist/` and deployed to Cloudflare Pages. |
+| `@usebrick/website` | `private: true` — workspace-only | The [usebrick.dev](https://usebrick.dev) marketing site. Astro + native browser animation APIs, CSS brick surface, click-to-break tool cards, and axe-core a11y in CI. Built to `dist/` for Cloudflare Pages; live deployment still requires owner/SHA verification. |
 | `@usebrick/mcp` | (future) | Standalone MCP server exposing all the slopbrick tools as a library. |
 | `@usebrick/sdk` | (future) | Programmatic SDK for embedding usebrick.dev tools in other pipelines. |
 
@@ -274,13 +281,13 @@ platform/
 │       │   ├── components/         Nav, Hero, Tools, Compare, Calibration, CTA, Footer
 │       │   ├── layouts/            Base.astro (global scripts + native browser APIs)
 │       │   ├── pages/              index.astro (single-page site)
-│       │   ├── scripts/            brick-shader, reveal, counter, break-on-hover, copy-install, lenis, low-power
+│       │   ├── scripts/            native reveals, counters, structure demo, live terminal, copy feedback
 │       │   ├── styles/             global.css (tokens), theme.css, components.css
-│       │   └── data/               version.json (sourced from sibling packages at build time)
+│       │   └── data/               version.json + product-facts.json (generated from sibling packages at build time)
 │       ├── public/                 favicon, logo-mark, brick-pattern SVGs
 │       ├── scripts/                prebuild.ts (version substitution)
 │       ├── astro.config.mjs
-│       └── .github/workflows/      (deployed to Cloudflare Pages via the workflow at /github/workflows/deploy-website.yml)
+│       └── .github/workflows/      (Cloudflare Pages deployment target via /github/workflows/deploy-website.yml)
 ├── .github/workflows/
 │   ├── ci.yml                      typecheck + test on every PR/push to main
 │   ├── publish.yml                 release:published → build → npm publish slopbrick (two human gates)
@@ -314,7 +321,7 @@ Two extractions are tracked but **not done yet**:
 - **`slopbrick`** — published on npm. Bumps the patch version for fixes, minor for new scores/rules, major for breaking scan output changes.
 - **`@usebrick/core`** — private for now. When published, every slopbrick release that depends on a schema bump will release a matching `@usebrick/core` major version bump.
 - **`@usebrick/engine`** — workspace-only. Tracks slopbrick version in lock-step.
-- **`@usebrick/website`** — workspace-only. Deployed to GitHub Pages on `main` when `packages/website/**` changes.
+- **`@usebrick/website`** — workspace-only. Prepared for Cloudflare Pages; a live deployment claim requires verified owner/SHA evidence.
 
 ## License
 

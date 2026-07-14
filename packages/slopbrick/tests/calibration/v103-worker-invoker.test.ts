@@ -10,6 +10,7 @@ describe('v10.3 worker invoker', () => {
     const result = await invokeV103Scanner(invoker, { filePath: '/private/file.ts', resultPath: '/ignored/result.json', timeoutMs: 10, includeRules: ['ai/a'], excludeRules: ['ai/b'] });
     expect(env?.SLOP_INCLUDE_RULES).toBe('["ai/a"]');
     expect(env?.SLOP_EXCLUDE_RULES).toBe('["ai/b"]');
+    expect(env?.SLOP_AUDIT_CACHE).toBe('0');
     expect(result).toEqual({ kind: 'success', findingsCount: 0 });
   });
 

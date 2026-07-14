@@ -9,7 +9,14 @@ import { dirname, join } from 'node:path';
 
 const BEGIN_SENTINEL = '# slopbrick-hook-begin';
 const END_SENTINEL = '# slopbrick-hook-end';
-const SENTINEL_BLOCK = `${BEGIN_SENTINEL}\nnpx slopbrick --staged\n${END_SENTINEL}\n`;
+// Keep hook execution offline and bound to the project's installed package.
+// Calling the local bin directly prevents a global npm installation from
+// silently substituting a different SlopBrick version when this dependency is
+// missing from the project.
+// Preserve the command's failure status even though the end sentinel is a
+// comment. Without the explicit exit, a missing local binary could be
+// followed by the comment and make Git treat the hook as successful.
+const SENTINEL_BLOCK = `${BEGIN_SENTINEL}\n./node_modules/.bin/slopbrick --staged || exit $?\n${END_SENTINEL}\n`;
 
 export type HookResult = {
   ok: boolean;

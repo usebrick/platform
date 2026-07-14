@@ -1,0 +1,17 @@
+{
+  "version": "v10.3-tool-authority-publication-transaction-v1",
+  "transactionId": "729bc575afa8314f0fc18ce4c8e6f462552fc86990c2e863177e588e60cd3d12",
+  "lockSha256": "538d5e361cf82f4cc7af9b20363f03a15a4915348aa8a5ab888f862a67849175",
+  "operation": "create",
+  "expectedCurrentState": {
+    "kind": "absent"
+  },
+  "nextIndexSha256": "290a4e057a39cb9c3488510cf6ce5bed02059c6c8c085f5afd8ca0ed0a4310bb",
+  "artifacts": [],
+  "immutableIndexGenerationRelativePath": "index-generations/290a4e057a39cb9c3488510cf6ce5bed02059c6c8c085f5afd8ca0ed0a4310bb.json",
+  "nextIndexTemporaryRelativePath": "transactions/729bc575afa8314f0fc18ce4c8e6f462552fc86990c2e863177e588e60cd3d12/current-index.json",
+  "state": {
+    "phase": "intent_fsynced"
+  },
+  "transactionSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

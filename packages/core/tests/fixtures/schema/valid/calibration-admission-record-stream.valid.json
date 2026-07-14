@@ -1,0 +1,9 @@
+{
+  "version": "v10.3-admission-record-stream-v1",
+  "relativePath": "review/admission/admission-records.jsonl",
+  "recordsJsonlSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "recordCount": 0,
+  "recordIdSetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "canonicalRecordHashesSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "streamSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}

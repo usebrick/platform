@@ -1,4 +1,10 @@
-# SlopBrick Rule Catalog (103 Rules)
+# SlopBrick Historical Rule Catalog (103 Rules)
+
+> **Current-state notice (2026-07-13):** This catalog records the historical
+> published 103-rule surface. The workspace candidate currently contains 119
+> executable rules across 27 categories; generated registry/catalog checks are
+> the source of truth for current code. The historical v10 evidence below is
+> not a v10.3 admission or release signal.
 
 > **Authoritative reference for all 103 built-in rules.**
 >

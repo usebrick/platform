@@ -19,7 +19,10 @@ export function registerScan(
   program
     .command('scan [paths...]', { isDefault: true })
     .description('scan files for slop')
-    .option('--no-telemetry', 'disable telemetry collection for this run')
+    .option(
+      '--no-telemetry',
+      'disable local flywheel telemetry; project-memory artifacts still write unless projectMemory: false',
+    )
     // v0.10.2 (Phase 10): multi-value rule filters. `--rule` (single)
     // remains for backwards compat; the calibrator uses these new
     // flags to scan a chunk twice with different rule sets.

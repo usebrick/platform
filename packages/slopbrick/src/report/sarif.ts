@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
-import type { Category, Issue, ProjectReport, Severity } from '../types';
-import { isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
+import type { Category, Issue, IssueEvidence, ProjectReport, Severity } from '../types';
+import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 interface SarifArtifactLocation {
   uri: string;
@@ -53,6 +53,12 @@ interface SarifResultProperties {
   aiSpecific: boolean;
   category: Category;
   severity: Severity;
+  /**
+   * SARIF result properties are an extensible JSON object. Preserve the
+   * bounded Issue evidence contract here so machine consumers receive the
+   * same exact/omitted span semantics as JSON without parsing prose.
+   */
+  evidence?: IssueEvidence;
 }
 
 interface SarifPartialFingerprints {
@@ -94,9 +100,9 @@ interface SarifToolDriver {
    * project-level Bayesian composite aggregate (tier, mean, max,
    * fileCount) so SARIF consumers (GitHub code scanning, IDE
    * security panels) can display the "is this codebase AI?"
-   * probability alongside the per-result findings. The four deterministic
-   * headline scores are always present; optional metadata is added when the
-   * report carries it.
+   * probability alongside the per-result findings. Complete reports carry
+   * the score aggregates; incomplete reports carry validity/accounting only
+   * so consumers cannot treat partial values as project measurements.
    */
   properties?: {
     compositeScore?: {
@@ -325,6 +331,7 @@ function buildResultFromIssue(
     aiSpecific: issue.aiSpecific,
     category: issue.category,
     severity: issue.severity,
+    ...(issue.evidence ? { evidence: issue.evidence } : {}),
   };
 
   return {
@@ -372,24 +379,27 @@ export function formatSarif(
   );
 
   // Valid reports retain the established score-bearing SARIF metadata.
-  // Empty reports use a discriminated, accounting-only projection so loose
-  // consumers cannot mistake internal 0/100 placeholders for measurements.
+  // Empty and incomplete reports use a discriminated, accounting-only score
+  // projection so consumers cannot mistake partial values for measurements.
+  const incomplete = isIncompleteScan(report);
   const driverProperties: NonNullable<SarifToolDriver['properties']> =
     notApplicable
       ? projectNotApplicableScan(report)
       : {
-          ...(report.compositeScore ? { compositeScore: report.compositeScore } : {}),
+          ...(!incomplete && report.compositeScore ? { compositeScore: report.compositeScore } : {}),
           ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
           ...(report.completionStatus !== undefined ? { completionStatus: report.completionStatus } : {}),
           ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
           ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
           ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
-          scores: {
-            aiSlopScore: report.aiSlopScore,
-            engineeringHygiene: report.engineeringHygiene,
-            security: report.security,
-            repositoryHealth: report.repositoryHealth,
-          },
+          ...(!incomplete ? {
+            scores: {
+              aiSlopScore: report.aiSlopScore,
+              engineeringHygiene: report.engineeringHygiene,
+              security: report.security,
+              repositoryHealth: report.repositoryHealth,
+            },
+          } : {}),
         };
 
   const log: SarifLog = {

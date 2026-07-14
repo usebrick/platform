@@ -1,0 +1,12 @@
+{
+  "version": "v10.3-acquisition-round-authorization-v1",
+  "roundId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "approvedBy": "owner",
+  "approvedAt": "2026-07-13T00:00:00.000Z",
+  "parentCensusSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "measuredDeficitsSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "sourceAuthorizationIds": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+  "maxSources": 2,
+  "maxTotalMaterializedBytes": 100,
+  "authorizationSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+}

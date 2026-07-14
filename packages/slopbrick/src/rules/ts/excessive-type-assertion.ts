@@ -72,7 +72,7 @@ export const tsExcessiveTypeAssertionRule = createRule<TsExcessiveTypeAssertionC
         category: 'typo',
         severity: 'medium',
         aiSpecific: true,
-        message: `'as unknown as' is an AI code smell — fix the type, don't bypass it`,
+        message: `'as unknown as' bypasses type checking — fix the type instead of bypassing it`,
         line,
         column: dcMatch.index + 1,
         advice:
@@ -120,7 +120,7 @@ export const tsExcessiveTypeAssertionRule = createRule<TsExcessiveTypeAssertionC
           severity: 'low',
           aiSpecific: true,
           message:
-            `Function has ${asCount} 'as' assertions (max ${context.maxAssertionsPerFunction}) — likely AI fighting the type system`,
+            `Function has ${asCount} 'as' assertions (max ${context.maxAssertionsPerFunction}); review whether the type definition or a type guard is missing`,
           line,
           column: 1,
           advice:

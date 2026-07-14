@@ -33,6 +33,11 @@ import {
   isRegistryFresh,
   BUNDLED_REGISTRY_VERSION,
 } from '../rules/registry-loader';
+import {
+  isSupportedNodeMajor,
+  NODE_RUNTIME_LABEL,
+  parseNodeMajor,
+} from '../runtime-policy.js';
 
 export function isInteractive(): boolean {
   return process.stdin.isTTY === true && process.stdout.isTTY === true && !process.env.CI;
@@ -270,9 +275,12 @@ export async function runDoctor(cwd: string): Promise<number> {
   lines.push('Checking your setup:\n');
 
   // 1. Node + slopbrick versions
-  const nodeMajor = parseInt(process.versions.node.split('.')[0] ?? '0', 10);
-  if (nodeMajor >= 20) ok(`Node ${process.versions.node}, slopbrick ${VERSION}`);
-  else fail(`Node ${process.versions.node} — slopbrick needs Node 20 or newer. Run: nvm install 20`);
+  const nodeMajor = parseNodeMajor(process.versions.node);
+  if (isSupportedNodeMajor(nodeMajor)) {
+    ok(`Node ${process.versions.node}, slopbrick ${VERSION} (${NODE_RUNTIME_LABEL} supported)`);
+  } else {
+    fail(`Node ${process.versions.node} — slopbrick supports ${NODE_RUNTIME_LABEL}. Run: nvm install 22`);
+  }
 
   lines.push(`\n  Working in: ${cwd}`);
 
@@ -401,7 +409,27 @@ export async function runDoctor(cwd: string): Promise<number> {
 
   const health = loadHealth(cwd);
   if (health) {
-    ok(`.slopbrick/health.json present (repositoryHealth=${health.repositoryHealth}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
+    // A persisted partial/empty snapshot is diagnostic evidence only. Do not
+    // present its compatibility numeric fields as the current repository
+    // health: doctor is commonly used as a pre-flight gate and its one-line
+    // summary is easy to copy into CI logs or agent context. Older snapshots
+    // omit the validity discriminator and remain compatible with the prior
+    // score-bearing contract, so only explicit partial/empty markers take the
+    // fail-closed path here.
+    if (health.scoreValidity === 'incomplete' || health.completionStatus === 'partial') {
+      warn(
+        `.slopbrick/health.json present (scoreValidity=incomplete; scores are not valid for gating; ` +
+        `requested ${health.requested ?? 'n/a'}, analyzed ${health.analyzed ?? 'n/a'}, ` +
+        `failed ${health.failed ?? 'n/a'}). Run slopbrick scan to obtain a complete snapshot.`,
+      );
+    } else if (health.scoreValidity === 'not-applicable' || health.completionStatus === 'empty') {
+      warn(
+        '.slopbrick/health.json present (scoreValidity=not-applicable; scores are not applicable for gating). ' +
+        'Run `slopbrick scan` after selecting at least one source file.',
+      );
+    } else {
+      ok(`.slopbrick/health.json present (repositoryHealth=${health.repositoryHealth}, ${health.issueCounts.high}H / ${health.issueCounts.medium}M / ${health.issueCounts.low}L).`);
+    }
   } else if (exists(pjoin(cwd, '.slopbrick', 'health.json'))) {
     warn('.slopbrick/health.json exists but failed schema validation. Run `slopbrick scan` to refresh.');
   } else {

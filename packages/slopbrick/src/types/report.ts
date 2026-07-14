@@ -139,9 +139,9 @@ export interface MaintenanceAxisHealth {
 
 /** Inputs to the pure `computeAiMaintenanceCost` function. Every axis is optional. */
 export interface MaintenanceAxes {
-  /** v0.15.0 U.4+: 0-100, higher = better. The new headline score
-   *  that replaces slopIndex. Tests and callers should pass this
-   *  going forward. */
+  /** v0.21.0+: 0-100, lower = cleaner (raw amount of slop). The
+   *  headline score that replaces slopIndex. Tests and callers should
+   *  pass this going forward. */
   aiSlopScore?: number;
   /** v0.15.0 U.4+: 0-100, higher = better. */
   engineeringHygiene?: number;

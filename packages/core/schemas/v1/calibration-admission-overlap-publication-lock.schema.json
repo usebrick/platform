@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-publication-lock.schema.json",
+  "title": "AdmissionOverlapPublicationLockV1",
+  "description": "Fixed-path lock for a create or replace overlap-generation publication transaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "inputGenerationSha256", "universeSha256", "normalizerRegistrySha256", "overlapPolicySha256", "operation", "expectedCurrentState", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-overlap-publication-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "inputGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "universeSha256": { "$ref": "#/$defs/sha256" },
+    "normalizerRegistrySha256": { "$ref": "#/$defs/sha256" },
+    "overlapPolicySha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "generationSha256"], "properties": { "kind": { "const": "existing" }, "generationSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

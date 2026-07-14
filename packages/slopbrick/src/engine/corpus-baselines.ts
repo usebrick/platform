@@ -19,6 +19,10 @@ export interface CorpusBaselines {
   generatedAt: string;
   corpusWorkspace: string;
   sampleSize: number;
+  /** Extractor identities required before a consumer reuses feature bounds. */
+  extractors?: {
+    commentDensity?: string;
+  };
   features: {
     lineLengths: PerFeatureStats;
     identifierLengths: PerFeatureStats;

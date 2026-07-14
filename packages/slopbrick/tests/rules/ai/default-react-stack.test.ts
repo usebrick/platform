@@ -47,7 +47,9 @@ describe('ai/default-react-stack', () => {
       `export const X = () => null;`,
     ].join('\n');
     const issues = await runRule(source);
-    expect(issues.some(i => i.ruleId === 'ai/default-react-stack')).toBe(true);
+    const issue = issues.find(i => i.ruleId === 'ai/default-react-stack');
+    expect(issue).toBeDefined();
+    expect(`${issue?.message}\n${issue?.advice}`).not.toMatch(/LLM|human code|verify authorship/i);
   });
 
   it('does not flag TSX file with only React/non-stack imports', async () => {

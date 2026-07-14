@@ -1,27 +1,6 @@
-# v0.42.0 (Sprint 3, §3c.3): slopbrick PR review action.
-#
-# On `pull_request opened` (and re-opened, synchronize), produce a
-# single comment summarizing the slop cost of the PR via
-# `slopbrick pr --diff <(git diff base...head)`. The comment is
-# idempotent — we delete any prior slopbrick comment on the PR
-# before posting the fresh result, so re-runs don't pile up.
-#
-# Permissions: pull-requests: write so we can post + delete
-# comments. actions: read so we can checkout the diff. No
-# contents: read is needed because checkout with default permissions
-# grants that anyway; we re-declare narrowly so the access tokens
-# stay minimal.
-#
-# Design choices:
-#   - Uses `--diff <file>` (Sprint 3 §3c.1) so the action doesn't
-#     need to be on the same branch as the head. Works on shallow
-#     clones and forks.
-#   - Threshold comes from `slopbrick.config.mjs#prScoreThreshold`
-#     when present, otherwise from the CLI default (20).
-#   - Output is markdown (the same `formatPrMarkdown` the human-side
-#     PR review uses) so the comment renders inline in the GitHub UI.
-#   - Does NOT block the PR — informational only. A high slop score
-#     surfaces in the comment; merge gating is the user's call.
+# SlopBrick PR review. The action is informational by default: exit 1 means
+# the configured slop threshold was exceeded, while exit 2+ is a real usage or
+# runtime failure and always fails the workflow.
 
 name: slopbrick-review
 
@@ -29,33 +8,68 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review (required for manual runs)'
+        required: true
+        type: string
+      base_ref:
+        description: 'Base branch/ref of the PR, for example main'
+        required: true
+        default: main
+        type: string
+      head_sha:
+        description: 'Exact head commit SHA to review'
+        required: true
+        type: string
+      threshold:
+        description: 'Slop threshold passed to slopbrick pr'
+        required: false
+        default: '20'
+        type: string
+      fail_on_breach:
+        description: 'Fail the workflow when slopbrick exits 1 for a threshold breach'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  pull-requests: write   # post + delete comments
-  contents: read        # checkout the PR head
+  pull-requests: write
+  contents: read
   actions: read
 
 jobs:
   review:
     name: slop cost summary
     runs-on: ubuntu-latest
-    # Single human gate (Dystx); the PR author can also self-approve.
+    # Keep the review environment gate explicit. It applies to both PR events
+    # and manual reruns; no unreviewed comment-writing token is granted.
     environment: review
+    env:
+      PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+      BASE_REF: ${{ inputs.base_ref || github.event.pull_request.base.ref }}
+      HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}
+      THRESHOLD: ${{ inputs.threshold || '20' }}
+      FAIL_ON_BREACH: ${{ inputs.fail_on_breach || 'false' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout reviewed head
+        # v4.3.1 — pin the reviewed action commit; repository SHA policy is
+        # still a remote setting and must be enabled separately.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
+          ref: ${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # v4.3.0 (peeled commit)
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        # Read the exact version from the repository packageManager field.
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js 24
+        # v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install workspace deps
@@ -66,79 +80,116 @@ jobs:
 
       - name: Build the diff
         id: diff
-        # `git diff base...head` (three-dot) = the merge-base view of
-        # the PR. Generated as a file so `slopbrick pr --diff <file>`
-        # can consume it without process-substitution gymnastics.
         run: |
           set -euo pipefail
-          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1 || true
-          git diff \
-            "origin/${{ github.event.pull_request.base.ref }}...${{ github.event.pull_request.head.sha }}" \
-            > /tmp/pr.diff
-          echo "diff_bytes=$(wc -c < /tmp/pr.diff)" >> "$GITHUB_OUTPUT"
+          : "${PR_NUMBER:?workflow_dispatch requires pr_number}"
+          : "${BASE_REF:?workflow_dispatch requires base_ref}"
+          : "${HEAD_SHA:?workflow_dispatch requires head_sha}"
+          if ! git check-ref-format --branch "$BASE_REF" >/dev/null 2>&1; then
+            echo "::error::Invalid base branch/ref: $BASE_REF"
+            exit 2
+          fi
+          if [[ ! "$HEAD_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
+            echo "::error::HEAD_SHA must be a 40- or 64-character commit SHA"
+            exit 2
+          fi
+          git fetch origin "$BASE_REF" --depth=1
+          if ! git rev-parse --verify "$HEAD_SHA^{commit}" >/dev/null 2>&1; then
+            git fetch origin "$HEAD_SHA" --depth=1
+          fi
+          git diff "origin/$BASE_REF...$HEAD_SHA" > /tmp/pr.diff
+          {
+            echo "diff_bytes=$(wc -c < /tmp/pr.diff | tr -d ' ')"
+            echo "pr_number=$PR_NUMBER"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run slopbrick pr --diff
         id: scan
         run: |
-          set -euo pipefail
-          cd "${{ github.workspace }}"
-          # --format markdown matches formatPrMarkdown; the result is
-          # the comment body. We redirect to a file because the body
-          # may exceed 64 KiB (the GITHUB_OUTPUT cap).
+          set +e
           node packages/slopbrick/bin/slopbrick.js pr \
             --diff /tmp/pr.diff \
             --format markdown \
-            --threshold "${INPUT_THRESHOLD:-20}" \
+            --threshold "$THRESHOLD" \
             > /tmp/pr-summary.md \
-            2>/tmp/pr-stderr.log || true
-          # Capture the exit code separately; nonzero on threshold breach
-          # is informational, not a workflow failure.
+            2> /tmp/pr-stderr.log
           EXITCODE=$?
-          echo "exitcode=$EXITCODE" >> "$GITHUB_OUTPUT"
-          cat /tmp/pr-summary.md >> "$GITHUB_OUTPUT"
+          set -e
+
+          # Exit 1 is the documented threshold result and is informational by
+          # default. Usage/configuration/runtime failures (2+) are never
+          # swallowed, so a broken review cannot look green.
+          if [ "$EXITCODE" -ge 2 ]; then
+            cat /tmp/pr-stderr.log >&2
+            exit "$EXITCODE"
+          fi
+
+          # Use the GitHub Actions multiline-output protocol. The comment
+          # itself is read from the file below, avoiding shell interpolation or
+          # truncation of markdown containing '%'/'$'/newlines.
+          {
+            echo "exitcode=$EXITCODE"
+            echo "summary<<SLOPBRICK_SUMMARY"
+            cat /tmp/pr-summary.md
+            echo "SLOPBRICK_SUMMARY"
+          } >> "$GITHUB_OUTPUT"
+          if [ -s /tmp/pr-stderr.log ]; then
+            cat /tmp/pr-stderr.log >&2
+          fi
           echo "Scanned PR with --diff mode; exit=$EXITCODE"
 
       - name: Replace prior slopbrick comment (if any)
-        uses: actions/github-script@v7
+        # v7.1.0
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        env:
+          PR_NUMBER: ${{ steps.diff.outputs.pr_number }}
         with:
           script: |
-            const { execSync } = require('child_process');
+            const issueNumber = Number(process.env.PR_NUMBER);
+            if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+              core.setFailed('A valid PR number is required to post a review comment.');
+              return;
+            }
             const marker = '<!-- slopbrick-review -->';
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: issueNumber,
               per_page: 100,
             });
-            for (const c of comments.data) {
-              if (c.body && c.body.includes(marker)) {
+            for (const comment of comments.data) {
+              if (comment.body?.includes(marker)) {
                 await github.rest.issues.deleteComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  comment_id: c.id,
+                  comment_id: comment.id,
                 });
               }
             }
 
       - name: Post slopbrick summary comment
-        uses: actions/github-script@v7
+        # v7.1.0
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        env:
+          PR_NUMBER: ${{ steps.diff.outputs.pr_number }}
         with:
           script: |
             const fs = require('fs');
-            const body = '<!-- slopbrick-review -->\n\n' + fs.readFileSync('/tmp/pr-summary.md', 'utf-8');
+            const issueNumber = Number(process.env.PR_NUMBER);
+            if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+              core.setFailed('A valid PR number is required to post a review comment.');
+              return;
+            }
+            const body = '<!-- slopbrick-review -->\n\n' + fs.readFileSync('/tmp/pr-summary.md', 'utf8');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: issueNumber,
               body,
             });
 
       - name: Fail the run on threshold breach (optional)
-        # The user sets `INPUT_FAIL_ON_BREACH=1` if they want the PR
-        # status to block on threshold breach. Default is informational
-        # only — slop cost is surfaced in the comment, gating is the
-        # human's call.
-        if: ${{ steps.scan.outputs.exitcode != '0' && inputs.fail-on-breach == '1' }}
+        if: ${{ steps.scan.outputs.exitcode == '1' && env.FAIL_ON_BREACH == 'true' }}
         run: |
           echo "slopbrick threshold breach — exitcode=${{ steps.scan.outputs.exitcode }}"
           exit 1

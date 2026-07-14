@@ -139,9 +139,8 @@ export const cppMagicNumbersRule = createRule<CppMagicNumbersContext>({
             '`constexpr int MAX_SIZE = 1024;` (or `static constexpr`). ' +
             'The named constant lives next to its value, can be searched, ' +
             'and forces the reader to mean what they say. Magic numbers in ' +
-            'comparisons hide intent ("7" against what?). AI agents produce ' +
-            'magic-number-heavy code because their training-data examples ' +
-            'rarely bother to name the constant. ' +
+            'comparisons hide intent ("7" against what?). Prefer a named ' +
+            'constant whenever the literal has domain meaning. ' +
             'Reference: cpp/magic-numbers v0.34.4 (expanded allowSet + string/comment exclusion).',
         });
       }

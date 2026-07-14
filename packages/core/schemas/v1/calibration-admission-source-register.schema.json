@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-source-register.schema.json",
+  "title": "CalibrationAdmissionSourceRegisterV1",
+  "description": "Hash-bound v10.3 source register. Aggregate rows describe coverage; material rows own candidate bytes exactly once.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generation", "initialSourceIdsSha256", "appliedDeltaIds", "rawDiscoveryPopulation", "selectedCoverage", "entries", "registerSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-source-register-v1" },
+    "generation": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "initialSourceIdsSha256": { "$ref": "#/$defs/sha256" },
+    "parentRegisterSha256": { "$ref": "#/$defs/sha256" },
+    "appliedDeltaIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "rawDiscoveryPopulation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaredAi", "declaredHuman", "closedWorld"],
+      "properties": {
+        "declaredAi": { "const": 635830 },
+        "declaredHuman": { "const": 842520 },
+        "closedWorld": { "const": false }
+      }
+    },
+    "selectedCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "baselineMaterialUnits", "repositoryMaterialUnits"],
+      "properties": {
+        "total": { "const": 452382 },
+        "baselineMaterialUnits": { "const": 58089 },
+        "repositoryMaterialUnits": { "const": 394293 }
+      }
+    },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "registerSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "kind", "materialPartition", "contributesToAdditiveCounts", "childMaterialSourceIds", "registerEvidenceIds", "inventoryCandidateUnits"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["aggregate_inventory", "material_source"] },
+        "materialPartition": { "enum": ["aggregate", "baseline", "repository", "non_selected"] },
+        "contributesToAdditiveCounts": { "type": "boolean" },
+        "childMaterialSourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "registerEvidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "inventoryCandidateUnits": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "acquisitionProvenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["roundId", "sourceAuthorizationId", "sourceAcquisitionReceiptId", "materializationReceiptId"],
+          "properties": {
+            "roundId": { "$ref": "#/$defs/id" },
+            "sourceAuthorizationId": { "$ref": "#/$defs/id" },
+            "sourceAcquisitionReceiptId": { "$ref": "#/$defs/id" },
+            "materializationReceiptId": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    }
+  }
+}

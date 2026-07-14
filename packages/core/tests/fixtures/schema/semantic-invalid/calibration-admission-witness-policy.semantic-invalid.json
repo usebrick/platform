@@ -1,0 +1,42 @@
+{
+  "version": "v10.3-admission-witness-policy-v1",
+  "policyId": "v10.3-admission-v1",
+  "gate": "smoke",
+  "algorithm": "lexicographic-bnb-feasibility-v1",
+  "seed": "slopbrick-v10.3-admission-review-v1",
+  "maxSearchNodes": 10000000,
+  "constraints": [
+    {
+      "constraintId": "smoke.max-source-or-family-units-per-polarity",
+      "kind": "maximum",
+      "integerValue": 50
+    },
+    {
+      "constraintId": "smoke.minimum-families-per-polarity",
+      "kind": "minimum",
+      "integerValue": 3
+    },
+    {
+      "constraintId": "smoke.minimum-languages",
+      "kind": "minimum",
+      "integerValue": 2
+    },
+    {
+      "constraintId": "smoke.minimum-sources-per-polarity",
+      "kind": "minimum",
+      "integerValue": 2
+    },
+    {
+      "constraintId": "smoke.minimum-units-per-represented-language-per-polarity",
+      "kind": "minimum",
+      "integerValue": 20
+    },
+    {
+      "constraintId": "smoke.units-per-polarity",
+      "kind": "exact",
+      "integerValue": 100
+    }
+  ],
+  "constraintsSha256": "fbb6da8bca7bb5c6ca28413dfc4f1a5324ab01fe77190b9981b25c3431a4cf17",
+  "witnessPolicySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

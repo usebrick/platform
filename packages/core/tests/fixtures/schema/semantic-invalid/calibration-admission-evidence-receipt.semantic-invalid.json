@@ -1,0 +1,13 @@
+{
+  "version": "v10.3-admission-evidence-receipt-v1",
+  "receiptId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "evidenceId": "22904e4bbb1b6ba9b07641782f714e822dfd3f5bddd1306edf5277160091d9c6",
+  "evidenceIndexSha256": "2e15e7997108a2cb33b88cb3c233033868c0d15d632b3dea88bffc19582580ce",
+  "payloadId": "050a8920b03fe747de29a567334587a513f7e1a6cc5e17b650ff7e93c5dc579a",
+  "payloadSetSha256": "85d79b686c9330dfee85be73135a7f029152df7eeb54a831e787b8c020339663",
+  "verificationMethod": "offline-evidence-cas-v1",
+  "observedBytes": 3,
+  "observedSha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22",
+  "toolReceiptSha256": "57c3eaa4ba4b9c800490245421e3bb47762b19e2f639adbe0a892403108ece7e",
+  "status": "verified"
+}

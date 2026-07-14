@@ -8,7 +8,7 @@ pkgdesc="Repository Coherence Engine for AI-generated code — 4 scores, 103 rul
 arch=('any')
 url="https://github.com/usebrick/slopbrick"
 license=('MIT')
-depends=('nodejs>=18' 'npm')
+depends=('nodejs>=22' 'npm')
 makedepends=('npm')
 options=('!strip')
 source=("https://registry.npmjs.org/$pkgname/-/$pkgname-$pkgver.tgz")

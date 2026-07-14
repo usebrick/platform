@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-publication-lock.schema.json",
+  "title": "CalibrationAcquisitionPublicationLockV1",
+  "description": "Fixed-path lock for an acquisition index create or replace transaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "operation", "expectedCurrentState", "nextIndexSha256", "artifactSetSha256", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-publication-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/id" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "nextIndexSha256": { "$ref": "#/$defs/sha256" },
+    "artifactSetSha256": { "$ref": "#/$defs/sha256" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "indexSha256"], "properties": { "kind": { "const": "existing" }, "indexSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

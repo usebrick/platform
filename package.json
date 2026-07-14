@@ -15,10 +15,18 @@
     "version-packages": "changeset version && node scripts/sync-website-version.js"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": "^22.0.0 || ^24.0.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "vitest>vite": "6.4.3",
+      "vite-node>vite": "6.4.3",
+      "yaml-language-server>yaml": "2.8.3",
+      "tsup>esbuild": "0.28.1"
+    }
+  },
   "devDependencies": {
     "@changesets/cli": "^2.27.0"
   }

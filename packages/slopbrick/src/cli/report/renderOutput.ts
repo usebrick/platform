@@ -23,6 +23,7 @@ import { formatUnifiedDiff } from '../../report/unified-diff';
 import {
   formatGitScopedEmptySelectionNotice,
   formatScanValidityNotice,
+  isIncompleteScan,
   isGitScopedEmptySelection,
   isNotApplicableScan,
 } from '../../report/scan-validity.js';
@@ -68,7 +69,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   // placeholders are not measurements. Keep machine formats parseable with
   // their explicit incomplete discriminator; suppress every human score,
   // clean/pass, advice, and threshold view behind the validity notice.
-  if (report.scoreValidity === 'incomplete') {
+  if (isIncompleteScan(report)) {
     if (!machineReportRequested) {
       if (!options.quiet) {
         logger.info(
@@ -181,7 +182,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   }
 
   if (!options.quiet) {
-    logger.info(formatPretty(report));
+    logger.info(formatPretty(report, { full: options.full === true }));
   }
 }
 
@@ -195,15 +196,21 @@ export async function outputScanResults(
   options: CliGlobalOptions,
   cwd: string,
 ): Promise<void> {
-  if (isNotApplicableScan(report) || report.scoreValidity === 'incomplete') {
+  if (isNotApplicableScan(report) || isIncompleteScan(report)) {
     renderOutput(report, options, cwd);
     return;
   }
   if (options.heatmap) {
     const { buildHeatmap, formatHeatmap } = await import('../../report/heatmap');
     const entries = await buildHeatmap(report, cwd);
-    if (!options.quiet) {
-      logger.info(formatHeatmap(entries, { json: options.format === 'json' }));
+    const json = formatHeatmap(entries, {
+      json: options.format === 'json' || options.json !== undefined,
+    });
+    if (typeof options.json === 'string') {
+      writeFileSync(resolve(options.json), json);
+      if (!options.quiet) logger.info(`Wrote JSON report to ${options.json}`);
+    } else if (!options.quiet) {
+      logger.info(json);
     }
     return;
   }

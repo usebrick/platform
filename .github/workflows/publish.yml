@@ -1,42 +1,8 @@
 name: publish
 
-# Publishes `slopbrick` to npm when a GitHub Release is published.
-#
-# Monorepo note: only `packages/slopbrick` is published. `packages/core`
-# is private until the schema stabilizes (see packages/core/README.md).
-# `packages/{stackpick,gir,mcp}` (future) will get their own publish
-# workflows as they ship.
-#
-# Auth: OIDC trusted publishing with provenance attestation (npm 2024+
-# best practice). To configure: npmjs.com → package settings →
-# Trusted publishing → add GitHub Actions publisher for repo
-# `usebrick/platform`, workflow `.github/workflows/publish.yml`,
-# environment `publish`.
-#
-# Safety gate: this workflow has TWO human gates per release:
-#   (1) publishing the GitHub Release in the UI (the `release:
-#       types: [published]` trigger below — no-op without an
-#       explicit "Publish release" click), AND
-#   (2) approving the deployment in the `publish` environment
-#       (the `environment: publish` declaration on the `publish`
-#       job — requires `Dystx`'s review; configured in
-#       https://github.com/usebrick/platform/settings/environments).
-#
-# Together: a maintainer publishes a release after reviewing the
-# version bump + CHANGELOG, then approves the actual npm publish
-# from the GitHub Actions run summary. Two distinct humans can
-# each cancel the release (release-undo OR env-approval-deny)
-# without the OIDC token having to leak.
-#
-# Note: the OIDC trusted publisher on npmjs.com (configured to
-# accept this workflow for the `publish` environment) is what
-# proves the artifacts came from this exact GHA run. There is
-# no `NPM_TOKEN` secret stored in the repo, so a compromised
-# tag or crafted workflow file alone cannot leak it.
-#
-# If you want to add a stricter gate (e.g. require 2 reviewers,
-# or wait-timer), edit the `publish` environment in repo
-# Settings → Environments; the workflow picks it up automatically.
+# A release event (or an explicitly supplied tag) first creates and verifies
+# one immutable package artifact. Only the second job is environment-gated and
+# it publishes that uploaded artifact; it never rebuilds from the checkout.
 
 on:
   release:
@@ -44,129 +10,233 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g. v0.11.1) — leave empty to use the published release tag'
-        required: false
+        description: 'Exact release tag to verify and publish (for example v0.44.0)'
+        required: true
+        type: string
 
 concurrency:
-  group: publish-${{ github.event.release.tag_name || github.ref }}
+  group: publish-${{ inputs.tag || github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write   # for softprops/action-gh-release
-  id-token: write   # for npm OIDC trusted publishing (provenance)
+  contents: read
 
 jobs:
-  publish:
+  verify:
+    name: verify and upload release artifact
     runs-on: ubuntu-latest
-    # The `publish` environment is the second human gate. Configured
-    # in https://github.com/usebrick/platform/settings/environments with
-    # `required_reviewers: [Dystx]` and `prevent_self_review: false`.
-    # Once a release is published in the GH UI, this workflow starts
-    # and pauses here waiting for an environment approval; the
-    # `Publish slopbrick to npm` step below only runs after Dystx
-    # clicks "Approve and deploy" on the run summary. Until that
-    # approval lands, the build/test/pack steps still run (so a
-    # reviewer can see the dry-run artifact), but no artifact moves.
-    # The OIDC `id-token: write` permission above is what the
-    # `npm publish --provenance` step uses to authenticate against
-    # npmjs.com — trusted-publishing is configured on the npm side
-    # to accept this exact workflow + environment.
-    environment: publish
+    outputs:
+      tag: ${{ steps.identity.outputs.tag }}
+      version: ${{ steps.identity.outputs.version }}
+      artifact_name: ${{ steps.pack.outputs.artifact_name }}
+      publish_required: ${{ steps.registry.outputs.publish_required }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout exact release tag
+        # v4.3.1 — pin the reviewed action commit; repository SHA policy is
+        # still a remote setting and must be enabled separately.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          fetch-depth: 0   # full history for provenance + release notes
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
 
       - name: Install pnpm
-        # pnpm version comes from the root package.json's
-        # `packageManager` field (pnpm@9.15.0). Don't pin a version
-        # here — pnpm/action-setup@v4 errors on the duplicate, and v3
-        # silently picks one of the two values.
-        uses: pnpm/action-setup@v3
+        # v4.3.0 (peeled commit)
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        # Read the exact version from the repository packageManager field.
 
-      - name: Use Node.js 24
-        uses: actions/setup-node@v4
+      - name: Set up Node.js 24
+        # v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
-          cache: 'pnpm'
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Resolve release identity
+        id: identity
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          TAG="${RELEASE_TAG:-}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a semver tag like v0.44.0, got '$TAG'"
+            exit 2
+          fi
+          TAG_COMMIT="$(git rev-parse --verify "refs/tags/$TAG^{commit}" 2>/dev/null || true)"
+          HEAD_COMMIT="$(git rev-parse HEAD)"
+          if [ -z "$TAG_COMMIT" ] || [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+            echo "::error::Checkout is not the exact commit targeted by tag $TAG"
+            echo "::error::tag_commit=${TAG_COMMIT:-unresolved} head_commit=$HEAD_COMMIT"
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          PKG_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('packages/slopbrick/package.json','utf8')).version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Release tag $TAG does not match packages/slopbrick version $PKG_VERSION"
+            exit 1
+          fi
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify release tag matches packages/slopbrick version
-        # Resolve the release tag from whichever event triggered
-        # the run. `release: published` provides
-        # `github.event.release.tag_name`; `workflow_dispatch`
-        # provides `github.event.inputs.tag` (and `GITHUB_REF`
-        # when the dispatch was started from a tag context).
-        # Falling back in that order keeps both trigger paths
-        # working without duplicating the version-mismatch check.
+      - name: Run release quality gates
         run: |
-          if [ -n "${{ github.event.release.tag_name }}" ]; then
-            RELEASE_TAG="${{ github.event.release.tag_name }}"
-          elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            RELEASE_TAG="${{ github.event.inputs.tag }}"
-          elif [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
-            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
-          else
-            echo "::error::Could not derive version from release tag (no release event, no inputs.tag, no refs/tags/v*)"
-            echo "::error::Trigger via 'gh release create' (preferred) or pass --input tag=vX.Y.Z to workflow_dispatch."
-            exit 1
-          fi
-          PKG_VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "::error::Could not derive version from release tag"
-            exit 1
-          fi
-          if [ "$RELEASE_TAG" != "v$PKG_VERSION" ]; then
-            # Check if this version is already published to npm.
-            # If it is, this is a re-trigger of an existing release
-            # (e.g. retry after a transient network failure) and
-            # skipping is safe — npm publish is idempotent for the
-            # same version. Otherwise, we have a real version mismatch.
-            PUBLISHED_VERSION="$(npm view slopbrick version 2>/dev/null || echo '')"
-            if [ "v$PUBLISHED_VERSION" = "$RELEASE_TAG" ]; then
-              echo "::notice::Release tag $RELEASE_TAG is already published to npm (v$PUBLISHED_VERSION). Skipping — re-trigger detected."
-              echo "::notice::If you intended to publish a NEW version, bump packages/slopbrick/package.json to $RELEASE_TAG and re-create the release."
-              echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
-            else
-              echo "::error::Release tag $RELEASE_TAG does not match packages/slopbrick version $PKG_VERSION (npm has v${PUBLISHED_VERSION:-none})"
-              echo "::error::Bump packages/slopbrick/package.json to $RELEASE_TAG and re-create the release."
-              exit 1
+          corepack pnpm --workspace-concurrency=1 -r typecheck
+          corepack pnpm --workspace-concurrency=1 -r test
+          corepack pnpm --workspace-concurrency=1 -r build
+          corepack pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
+          corepack pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
+
+      - name: Determine whether publication is required
+        id: registry
+        env:
+          VERSION: ${{ steps.identity.outputs.version }}
+        run: |
+          set +e
+          NPM_VERSION="$(npm view "slopbrick@$VERSION" version 2>"$RUNNER_TEMP/npm-view.err")"
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ]; then
+            if [ "$NPM_VERSION" = "$VERSION" ]; then
+              echo "::notice::slopbrick@$VERSION is already published; reruns will verify the artifact and skip npm publish."
+              echo "publish_required=false" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
-          fi
-          echo "Releasing slopbrick v$PKG_VERSION"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
-
-      - name: Verify version is not already published
-        run: |
-          VERSION="$(node -p "require('./packages/slopbrick/package.json').version")"
-          if npm view "slopbrick@$VERSION" version >/dev/null 2>&1; then
-            echo "::error::Version $VERSION is already on the npm registry. Re-publishing is not allowed."
+            echo "::error::npm returned an unexpected version '$NPM_VERSION' for slopbrick@$VERSION"
             exit 1
           fi
+          if ! grep -q 'E404\|E404 Not Found' "$RUNNER_TEMP/npm-view.err"; then
+            cat "$RUNNER_TEMP/npm-view.err" >&2
+            echo "::error::Could not safely determine whether the version is already published"
+            exit 1
+          fi
+          echo "publish_required=true" >> "$GITHUB_OUTPUT"
 
-      - name: Build core (workspace dep must be built before engine)
-        run: pnpm --filter '@usebrick/core' build
-
-      - name: Build engine (workspace dep must be built before slopbrick)
-        run: pnpm --filter '@usebrick/engine' build
-
-      - name: Build slopbrick
-        run: pnpm --filter slopbrick build
-
-      - name: Run slopbrick quality gates
+      - name: Pack exact release tarball
+        id: pack
         working-directory: packages/slopbrick
+        env:
+          VERSION: ${{ steps.identity.outputs.version }}
         run: |
-          pnpm typecheck
-          pnpm test
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/slopbrick-release"
+          mkdir -p "$OUT"
+          npm pack --pack-destination "$OUT"
+          TARBALL="$(find "$OUT" -maxdepth 1 -type f -name 'slopbrick-*.tgz' -print -quit)"
+          [ -n "$TARBALL" ] || { echo '::error::npm pack produced no tarball'; exit 1; }
+          TARBALL_NAME="$(basename "$TARBALL")"
+          SHA256="$(sha256sum "$TARBALL" | awk '{print $1}')"
+          BYTES="$(wc -c < "$TARBALL" | tr -d ' ')"
+          SOURCE_COMMIT="$(git rev-parse HEAD)"
+          tar -xOf "$TARBALL" package/package.json > "$OUT/package.json"
+          node -e 'const p=require(process.argv[1]); if(p.name!=="slopbrick"||p.version!==process.env.VERSION) process.exit(1)' "$OUT/package.json"
+          TARBALL_NAME="$TARBALL_NAME" SHA256="$SHA256" BYTES="$BYTES" SOURCE_COMMIT="$SOURCE_COMMIT" node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const out = process.env.RUNNER_TEMP + '/slopbrick-release/release-receipt.json';
+          const receipt = {
+            schemaVersion: 1,
+            package: 'slopbrick',
+            version: process.env.VERSION,
+            tag: 'v' + process.env.VERSION,
+            filename: process.env.TARBALL_NAME,
+            sha256: process.env.SHA256,
+            bytes: Number(process.env.BYTES),
+            sourceCommit: process.env.SOURCE_COMMIT,
+          };
+          fs.writeFileSync(out, JSON.stringify(receipt, null, 2) + '\n');
+          NODE
+          TARBALL_NAME="$TARBALL_NAME" SHA256="$SHA256" BYTES="$BYTES" node -e 'if(!/^[a-f0-9]{64}$/.test(process.env.SHA256)||Number(process.env.BYTES)<=0) process.exit(1)'
+          {
+            echo "artifact_name=slopbrick-release-$VERSION"
+            echo "tarball_name=$TARBALL_NAME"
+            echo "sha256=$SHA256"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Pack (dry-run) — sanity check the published artifact
-        working-directory: packages/slopbrick
-        run: npm pack --dry-run
+      - name: Upload checksum-bound release artifact
+        # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.pack.outputs.artifact_name }}
+          path: |
+            ${{ runner.temp }}/slopbrick-release/${{ steps.pack.outputs.tarball_name }}
+            ${{ runner.temp }}/slopbrick-release/release-receipt.json
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Publish slopbrick to npm
-        if: env.SKIP_PUBLISH != 'true'
-        working-directory: packages/slopbrick
-        run: npm publish --provenance --access public
+  publish:
+    name: publish verified artifact
+    needs: verify
+    if: ${{ needs.verify.outputs.publish_required == 'true' }}
+    runs-on: ubuntu-latest
+    # This is the only environment gate. Verification and artifact creation
+    # above remain visible to reviewers before approval is requested.
+    environment: publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download exact verified artifact
+        # v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.verify.outputs.artifact_name }}
+          path: ${{ runner.temp }}/slopbrick-release
+
+      - name: Set up Node.js 24 for npm trusted publishing
+        # v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify artifact receipt and checksum
+        env:
+          EXPECTED_TAG: ${{ needs.verify.outputs.tag }}
+          EXPECTED_VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/slopbrick-release"
+          RECEIPT="$ROOT/release-receipt.json"
+          [ -f "$RECEIPT" ] || { echo '::error::Release receipt missing from uploaded artifact'; exit 1; }
+          TARBALL_NAME="$(node -e 'const r=require(process.argv[1]); process.stdout.write(r.filename)' "$RECEIPT")"
+          EXPECTED_SHA="$(node -e 'const r=require(process.argv[1]); process.stdout.write(r.sha256)' "$RECEIPT")"
+          EXPECTED_BYTES="$(node -e 'const r=require(process.argv[1]); process.stdout.write(String(r.bytes))' "$RECEIPT")"
+          TARBALL="$ROOT/$TARBALL_NAME"
+          [ -f "$TARBALL" ] || { echo "::error::Expected tarball $TARBALL_NAME missing"; exit 1; }
+          ACTUAL_SHA="$(sha256sum "$TARBALL" | awk '{print $1}')"
+          [ "$ACTUAL_SHA" = "$EXPECTED_SHA" ] || { echo "::error::Uploaded tarball checksum mismatch"; exit 1; }
+          ACTUAL_BYTES="$(wc -c < "$TARBALL" | tr -d ' ')"
+          [ "$ACTUAL_BYTES" = "$EXPECTED_BYTES" ] || { echo "::error::Uploaded tarball size mismatch"; exit 1; }
+          node -e 'const r=require(process.argv[1]); if(r.tag!==process.env.EXPECTED_TAG||r.version!==process.env.EXPECTED_VERSION||r.package!=="slopbrick") process.exit(1)' "$RECEIPT"
+          tar -xOf "$TARBALL" package/package.json > "$ROOT/package.json"
+          node -e 'const p=require(process.argv[1]); if(p.name!=="slopbrick"||p.version!==process.env.EXPECTED_VERSION) process.exit(1)' "$ROOT/package.json"
+          echo "Verified $TARBALL_NAME ($ACTUAL_SHA) for $EXPECTED_TAG"
+
+      - name: Recheck registry for idempotent reruns
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set +e
+          NPM_VERSION="$(npm view "slopbrick@$VERSION" version 2>"$RUNNER_TEMP/npm-view.err")"
+          STATUS=$?
+          set -e
+          if [ "$STATUS" -eq 0 ] && [ "$NPM_VERSION" = "$VERSION" ]; then
+            echo "::notice::slopbrick@$VERSION became published while waiting for approval; skipping duplicate publish."
+            exit 0
+          fi
+          if [ "$STATUS" -ne 0 ] && ! grep -q 'E404\|E404 Not Found' "$RUNNER_TEMP/npm-view.err"; then
+            cat "$RUNNER_TEMP/npm-view.err" >&2
+            exit 1
+          fi
+          echo "slopbrick@$VERSION is not published; approval may proceed."
+
+      - name: Publish the verified tarball to npm
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: npm publish "$RUNNER_TEMP/slopbrick-release/slopbrick-$VERSION.tgz" --provenance --access public

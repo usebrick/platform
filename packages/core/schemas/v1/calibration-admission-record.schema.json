@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-record.schema.json",
+  "title": "CalibrationAdmissionRecordV103",
+  "description": "One immutable code unit in the v10.3 admission record set.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "recordId", "materialSourceId", "aggregateSourceIds", "sourceReviewSha256", "logicalUnitId", "locator", "contentSha256", "contentBytes", "language", "stratum", "proposedLabel", "authorship", "claimedLineage", "claimedAudits", "reviewerDecisionIds", "declaredDisposition", "rejectionReasons"],
+  "properties": {
+    "version": { "const": "v10.3-admission-record-v1" },
+    "recordId": { "$ref": "#/$defs/sha256" },
+    "materialSourceId": { "$ref": "#/$defs/id" },
+    "aggregateSourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "sourceReviewSha256": { "$ref": "#/$defs/sha256" },
+    "logicalUnitId": { "$ref": "#/$defs/id" },
+    "locator": { "oneOf": [
+      { "type": "object", "additionalProperties": false, "required": ["kind", "materializationId", "normalizedPath"], "properties": { "kind": { "const": "git_file" }, "materializationId": { "$ref": "#/$defs/id" }, "normalizedPath": { "$ref": "#/$defs/relativePath" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "materializationId", "normalizedPath"], "properties": { "kind": { "const": "release_archive_file" }, "materializationId": { "$ref": "#/$defs/id" }, "normalizedPath": { "$ref": "#/$defs/relativePath" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "materializationId", "containerSha256", "rowKey", "field"], "properties": { "kind": { "const": "record_container" }, "materializationId": { "$ref": "#/$defs/id" }, "containerSha256": { "$ref": "#/$defs/sha256" }, "rowKey": { "type": "string", "minLength": 1 }, "field": { "type": "string", "minLength": 1 } } }
+    ] },
+    "contentSha256": { "$ref": "#/$defs/sha256" },
+    "contentBytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "language": { "type": "string", "minLength": 1 },
+    "stratum": { "enum": ["production", "test", "generated", "vendor", "minified", "example", "other"] },
+    "proposedLabel": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
+    "authorship": { "oneOf": [
+      { "$ref": "#/$defs/generatorRecordAuthorship" },
+      { "$ref": "#/$defs/benchmarkAuthorship" },
+      { "$ref": "#/$defs/repositoryAuthorship" },
+      { "$ref": "#/$defs/historicalAuthorship" },
+      { "$ref": "#/$defs/unprovenAuthorship" }
+    ] },
+    "claimedLineage": { "$ref": "#/$defs/claimedLineage" },
+    "claimedAudits": { "$ref": "#/$defs/claimedAudits" },
+    "reviewerDecisionIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "declaredDisposition": { "enum": ["eligible_gold", "eligible_sensitivity", "mixed_evaluation", "quarantine"] },
+    "rejectionReasons": { "type": "array", "items": { "enum": ["source_unregistered", "source_revision_mutable", "source_bytes_unbound", "source_inventory_open", "source_inventory_mismatch", "aggregate_material_conservation_failed", "material_source_conflict", "evidence_unresolved", "evidence_receipt_stale", "record_container_projection_unsupported", "materialization_unsupported", "materialization_unverified", "materialization_receipt_stale", "license_absent", "license_scope_ambiguous", "analysis_use_unresolved", "analysis_use_denied", "redistribution_unresolved", "redistribution_denied", "third_party_rights_unresolved", "authorship_unproven", "generator_identity_missing", "generator_revision_missing", "prompt_binding_missing", "output_binding_mismatch", "human_edit_unknown", "human_edit_substantial", "human_provenance_missing", "historical_cutoff_failed", "historical_attestation_missing", "historical_graph_incomplete", "mixed_authorship", "family_unknown", "pair_incomplete", "pair_content_unsafe", "exact_cross_polarity_overlap", "near_cross_polarity_overlap", "unpaired_family_cross_polarity", "split_leakage", "lineage_ledger_incomplete", "overlap_universe_incomplete", "overlap_authority_incomplete", "privacy_ledger_incomplete", "quality_ledger_incomplete", "adapter_audit_mismatch", "privacy_high_confidence", "secret_high_confidence", "privacy_review_unresolved", "syntax_invalid", "language_normalizer_unsupported", "scaffold_dominant", "trivial_or_inert_target", "duplicate_record", "blind_review_receipt_missing", "witness_review_receipt_missing", "review_incomplete", "review_disagreement", "source_wide_quarantine"] }, "uniqueItems": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//).+$" },
+    "evidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true, "minItems": 1 },
+    "modelRevision": { "oneOf": [
+      { "type": "object", "additionalProperties": false, "required": ["status", "value"], "properties": { "status": { "const": "pinned" }, "value": { "type": "string", "minLength": 1 } } },
+      { "type": "object", "additionalProperties": false, "required": ["status", "hostedServiceProductId", "provider", "modelAlias", "generationDate", "providerVersioningEvidenceId", "acceptingReviewerDecisionIds"], "properties": { "status": { "const": "provider_not_exposed" }, "hostedServiceProductId": { "type": "string", "minLength": 1 }, "provider": { "type": "string", "minLength": 1 }, "modelAlias": { "type": "string", "minLength": 1 }, "generationDate": { "type": "string", "format": "date-time" }, "providerVersioningEvidenceId": { "$ref": "#/$defs/id" }, "acceptingReviewerDecisionIds": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }], "minItems": 2, "maxItems": 2, "uniqueItems": true } } }
+    ] },
+    "generatorEvidence": { "type": "object", "additionalProperties": false, "required": ["generatorProvider", "model", "modelRevision", "promptTaskId", "promptSha256", "outputSha256", "generatedAt"], "properties": { "generatorProvider": { "type": "string", "minLength": 1 }, "model": { "type": "string", "minLength": 1 }, "modelRevision": { "$ref": "#/$defs/modelRevision" }, "promptTaskId": { "type": "string", "minLength": 1 }, "promptSha256": { "$ref": "#/$defs/sha256" }, "outputSha256": { "$ref": "#/$defs/sha256" }, "generatedAt": { "type": "string", "format": "date-time" } } },
+    "humanEditStatus": { "enum": ["none", "light", "substantial", "unknown"] },
+    "generatorRecordAuthorship": { "type": "object", "additionalProperties": false, "required": ["kind", "evidenceIds", "generatorProvider", "model", "modelRevision", "generatorSource", "promptTaskId", "promptSha256", "outputSha256", "generatedAt", "humanEditStatus"], "properties": { "kind": { "const": "generator_record" }, "evidenceIds": { "$ref": "#/$defs/evidenceIds" }, "generatorProvider": { "type": "string", "minLength": 1 }, "model": { "type": "string", "minLength": 1 }, "modelRevision": { "$ref": "#/$defs/modelRevision" }, "generatorSource": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind", "commitSha"], "properties": { "kind": { "const": "source_commit" }, "commitSha": { "$ref": "#/$defs/sha256" } } }, { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "hosted_service" } } }] }, "promptTaskId": { "type": "string", "minLength": 1 }, "promptSha256": { "$ref": "#/$defs/sha256" }, "outputSha256": { "$ref": "#/$defs/sha256" }, "generatedAt": { "type": "string", "format": "date-time" }, "humanEditStatus": { "$ref": "#/$defs/humanEditStatus" } } },
+    "benchmarkAuthorship": { "type": "object", "additionalProperties": false, "required": ["kind", "evidenceIds", "benchmarkId", "benchmarkVersion", "exactUnitBinding", "attestedAuthorship", "humanEditStatus"], "properties": { "kind": { "const": "benchmark_attestation" }, "evidenceIds": { "$ref": "#/$defs/evidenceIds" }, "benchmarkId": { "type": "string", "minLength": 1 }, "benchmarkVersion": { "type": "string", "minLength": 1 }, "exactUnitBinding": { "type": "string", "minLength": 1 }, "attestedAuthorship": { "enum": ["ai_generated", "human_written"] }, "generator": { "$ref": "#/$defs/generatorEvidence" }, "humanEditStatus": { "enum": ["none", "light", "substantial", "unknown", "not_applicable"] } } },
+    "repositoryAuthorship": { "type": "object", "additionalProperties": false, "required": ["kind", "evidenceIds", "scope", "generatorFamily", "humanEditStatus"], "properties": { "kind": { "const": "repository_attestation" }, "evidenceIds": { "$ref": "#/$defs/evidenceIds" }, "scope": { "enum": ["file", "directory", "repository"] }, "generatorFamily": { "type": "string", "minLength": 1 }, "humanEditStatus": { "$ref": "#/$defs/humanEditStatus" } } },
+    "historicalAuthorship": { "type": "object", "additionalProperties": false, "required": ["kind", "evidenceIds", "blobSha", "introducedAt", "lastChangedAt", "cutoff"], "properties": { "kind": { "const": "historical_inference" }, "evidenceIds": { "$ref": "#/$defs/evidenceIds" }, "blobSha": { "$ref": "#/$defs/sha256" }, "introducedAt": { "type": "string", "format": "date-time" }, "lastChangedAt": { "type": "string", "format": "date-time" }, "cutoff": { "const": "2020-01-01T00:00:00.000Z" }, "temporalAttestationId": { "$ref": "#/$defs/id" } } },
+    "unprovenAuthorship": { "type": "object", "additionalProperties": false, "required": ["kind", "evidenceIds", "declaredClaim", "missingFields"], "properties": { "kind": { "const": "unproven_claim" }, "evidenceIds": { "$ref": "#/$defs/evidenceIds" }, "declaredClaim": { "enum": ["ai", "human", "mixed", "unknown"] }, "missingFields": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 } } },
+    "claimedLineage": { "type": "object", "additionalProperties": false, "required": ["familyId", "originRecordId", "exactClusterId", "nearClusterId"], "properties": { "familyId": { "$ref": "#/$defs/id" }, "pairGroupId": { "$ref": "#/$defs/id" }, "originRecordId": { "$ref": "#/$defs/sha256" }, "exactClusterId": { "$ref": "#/$defs/id" }, "nearClusterId": { "$ref": "#/$defs/id" } } },
+    "claimedAudits": { "type": "object", "additionalProperties": false, "required": ["syntax", "scaffoldByteShare", "privacy", "secrets", "exactOverlap", "nearOverlap", "familyLeakage", "pairIntegrity"], "properties": { "syntax": { "enum": ["pass", "fail", "unsupported"] }, "scaffoldByteShare": { "type": "number", "minimum": 0, "maximum": 1 }, "privacy": { "enum": ["pass", "review", "fail"] }, "secrets": { "enum": ["pass", "review", "fail"] }, "exactOverlap": { "enum": ["pass", "fail"] }, "nearOverlap": { "enum": ["pass", "fail", "unsupported"] }, "familyLeakage": { "enum": ["pass", "fail"] }, "pairIntegrity": { "enum": ["pass", "fail", "not_applicable"] } } }
+  }
+}

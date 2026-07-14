@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-nested-publication-handoff.schema.json",
+  "title": "CalibrationNestedPublicationHandoffV1",
+  "description": "Transient parent-to-child publication handoff, including recursion-breaking tool-authority companions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "parentTransactionId", "childSlot", "expectedCurrentStateSha256", "childLockId", "childLockSha256", "childTransactionId", "childTransactionIntentSha256", "childRecoveryNonce", "state", "childKind", "childAction", "handoffSha256"],
+  "properties": {
+    "version": { "const": "v10.3-nested-publication-handoff-v1" },
+    "parentTransactionId": { "$ref": "#/$defs/sha256" },
+    "childSlot": { "$ref": "#/$defs/action" },
+    "expectedCurrentStateSha256": { "$ref": "#/$defs/sha256" },
+    "childLockId": { "$ref": "#/$defs/sha256" },
+    "childLockSha256": { "$ref": "#/$defs/sha256" },
+    "childTransactionId": { "$ref": "#/$defs/sha256" },
+    "childTransactionIntentSha256": { "$ref": "#/$defs/sha256" },
+    "childRecoveryNonce": { "$ref": "#/$defs/sha256" },
+    "state": { "$ref": "#/$defs/state" },
+    "childKind": { "enum": ["tool_authority_infrastructure", "profiled_publication"] },
+    "childAction": { "$ref": "#/$defs/action" },
+    "toolAuthorityObjectSetSha256": { "$ref": "#/$defs/sha256" },
+    "childProfileId": { "$ref": "#/$defs/profileId" },
+    "childInvocationIntentId": { "$ref": "#/$defs/sha256" },
+    "childInvocationIntentRelativePath": { "$ref": "#/$defs/relativePath" },
+    "childInvocationIntentSha256": { "$ref": "#/$defs/sha256" },
+    "childInvocationIntentAuthorityHandoffSha256": { "$ref": "#/$defs/sha256" },
+    "childInvocationIntentAuthorityIndexSha256": { "$ref": "#/$defs/sha256" },
+    "handoffSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "action": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,127}$" },
+    "profileId": { "enum": ["admission-core-contract-v1", "admission-context-v1", "admission-static-ledgers-v1", "admission-census-v1", "admission-manifest-v1", "admission-acquisition-publication-v1", "admission-source-node-v1", "admission-source-parquet-v1", "admission-acquisition-round-v1", "admission-git-acquire-v1", "admission-release-acquire-v1", "admission-evidence-acquire-v1"] },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "childReceipt": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "none_infrastructure" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "receiptId", "receiptSha256"], "properties": { "kind": { "const": "profiled" }, "receiptId": { "$ref": "#/$defs/sha256" }, "receiptSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "const": "started_fsynced" } } },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["phase", "namedPrimaryOutputProjectionSha256", "nextAuthoritySha256", "childAuthoritySha256", "childReceipt"],
+          "properties": {
+            "phase": { "const": "completed_fsynced" },
+            "namedPrimaryOutputProjectionSha256": { "$ref": "#/$defs/sha256" },
+            "nextAuthoritySha256": { "$ref": "#/$defs/sha256" },
+            "childAuthoritySha256": { "$ref": "#/$defs/sha256" },
+            "childReceipt": { "$ref": "#/$defs/childReceipt" }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "required": ["childKind", "childAction", "toolAuthorityObjectSetSha256"],
+      "properties": {
+        "childKind": { "const": "tool_authority_infrastructure" },
+        "childAction": { "const": "tool-authority:publish" },
+        "toolAuthorityObjectSetSha256": { "$ref": "#/$defs/sha256" },
+        "childProfileId": {},
+        "childInvocationIntentId": {},
+        "childInvocationIntentRelativePath": {},
+        "childInvocationIntentSha256": {},
+        "childInvocationIntentAuthorityHandoffSha256": {},
+        "childInvocationIntentAuthorityIndexSha256": {}
+      },
+      "not": { "anyOf": [
+        { "required": ["childProfileId"], "properties": { "childProfileId": {} } },
+        { "required": ["childInvocationIntentId"], "properties": { "childInvocationIntentId": {} } },
+        { "required": ["childInvocationIntentRelativePath"], "properties": { "childInvocationIntentRelativePath": {} } },
+        { "required": ["childInvocationIntentSha256"], "properties": { "childInvocationIntentSha256": {} } },
+        { "required": ["childInvocationIntentAuthorityHandoffSha256"], "properties": { "childInvocationIntentAuthorityHandoffSha256": {} } },
+        { "required": ["childInvocationIntentAuthorityIndexSha256"], "properties": { "childInvocationIntentAuthorityIndexSha256": {} } }
+      ] }
+    },
+    {
+      "required": ["childKind", "childAction", "childProfileId", "childInvocationIntentId", "childInvocationIntentRelativePath", "childInvocationIntentSha256", "childInvocationIntentAuthorityHandoffSha256", "childInvocationIntentAuthorityIndexSha256"],
+      "properties": {
+        "childKind": { "const": "profiled_publication" },
+        "childAction": { "$ref": "#/$defs/action" },
+        "childProfileId": { "$ref": "#/$defs/profileId" },
+        "childInvocationIntentId": { "$ref": "#/$defs/sha256" },
+        "childInvocationIntentRelativePath": { "$ref": "#/$defs/relativePath" },
+        "childInvocationIntentSha256": { "$ref": "#/$defs/sha256" },
+        "childInvocationIntentAuthorityHandoffSha256": { "$ref": "#/$defs/sha256" },
+        "childInvocationIntentAuthorityIndexSha256": { "$ref": "#/$defs/sha256" },
+        "toolAuthorityObjectSetSha256": {}
+      },
+      "not": { "required": ["toolAuthorityObjectSetSha256"], "properties": { "toolAuthorityObjectSetSha256": {} } }
+    }
+  ]
+}

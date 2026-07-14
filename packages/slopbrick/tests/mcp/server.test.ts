@@ -25,6 +25,22 @@ function collectOutput(): { output: Writable; lines: () => Record<string, unknow
 }
 
 describe('MCP server configuration', () => {
+  it('flushes a final JSON-RPC request that has no trailing newline', async () => {
+    const dir = tempWorkspace();
+    try {
+      const { output, lines } = collectOutput();
+      const request = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });
+
+      await runMcpServer(Readable.from([request]), output, dir);
+
+      expect(lines()).toEqual([
+        { jsonrpc: '2.0', id: 1, result: {} },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('flushes asynchronous tool responses before the input stream completes', async () => {
     const dir = tempWorkspace();
     try {

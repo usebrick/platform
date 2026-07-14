@@ -44,6 +44,60 @@ import type { Command } from 'commander';
 import { CommanderError } from 'commander';
 import { logger } from '../../engine/logger';
 import { ScanExitCode } from '../exit-codes';
+import {
+  isGitScopedEmptySelection,
+  isIncompleteScan,
+  isNotApplicableScan,
+  type GitSelectionOptions,
+} from '../../report/scan-validity.js';
+import type { ProjectReport } from '../../types';
+import { renderOutput } from '../report/renderOutput.js';
+
+/**
+ * Return the command exit code for a canonical scan that cannot support a
+ * score.  Noncanonical score commands (architecture, security, test, etc.)
+ * often run a second formatter after bootstrapping through `runScan`; this
+ * helper keeps those actions from turning the internal placeholder numbers
+ * into a successful result.  `undefined` means the scan is valid and the
+ * command may continue with its domain-specific report.
+ */
+export function invalidScanExitCode(
+  report: Pick<ProjectReport, 'requested' | 'analyzed' | 'failed' | 'skipped' | 'scanAccounting' | 'selectionAccounting'> &
+    Partial<Pick<ProjectReport, 'completionStatus' | 'scoreValidity'>>,
+  options: GitSelectionOptions,
+): 0 | 1 | undefined {
+  if (!isIncompleteScan(report) && !isNotApplicableScan(report)) return undefined;
+  return isNotApplicableScan(report) && isGitScopedEmptySelection(report, options) ? 0 : 1;
+}
+
+/**
+ * Render the shared invalid envelope/notice and return its exit code.  The
+ * optional machine format is used by subcommands whose local `--format json`
+ * option is not necessarily the program-level `--format` value.
+ */
+export function renderInvalidScan(
+  report: Parameters<typeof renderOutput>[0],
+  options: Parameters<typeof renderOutput>[1] & GitSelectionOptions,
+  cwd: string,
+  machineFormat?: 'json' | 'sarif' | 'html',
+  omittedFields: readonly (keyof ProjectReport)[] = [],
+): 0 | 1 | undefined {
+  const exitCode = invalidScanExitCode(report, options);
+  if (exitCode === undefined) return undefined;
+  const projectedReport = omittedFields.length > 0
+    ? (() => {
+      const copy = { ...report } as ProjectReport;
+      for (const field of omittedFields) delete copy[field];
+      return copy;
+    })()
+    : report;
+  renderOutput(
+    projectedReport,
+    machineFormat ? { ...options, format: machineFormat } : options,
+    cwd,
+  );
+  return exitCode;
+}
 
 /**
  * Install Commander's `exitOverride()` on the program so that errors

@@ -1,0 +1,8 @@
+{
+  "version": "v10.3-evidence-acquisition-reservation-v1",
+  "reservationId": "3cfee84af298ad241fdbed683e77145c5136b22357e9885dafff09fd8ef8acbb",
+  "authorizationId": "55f549657130a0baaaf87fd206ca081d1f7f54aff776f26b667b3c42320458e1",
+  "invocationIntentId": "03afe6a6107fbe79b174d689d2b578df1ed9cfd544c065838f50cea3c4607f35",
+  "recoveryNonce": "7777777777777777777777777777777777777777777777777777777777777777",
+  "reservationSha256": "b9c6107b109c73a56b0f2105c287765373a63aecb3fd29f81655582bd4ee4d39"
+}

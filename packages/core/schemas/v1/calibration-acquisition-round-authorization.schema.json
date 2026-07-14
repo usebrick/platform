@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-acquisition-round-authorization.schema.json",
+  "title": "CalibrationAcquisitionRoundAuthorizationV1",
+  "description": "Owner-approved, deficit-bound authorization for one bounded one- or two-source acquisition round.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "roundId", "approvedBy", "approvedAt", "parentCensusSha256", "measuredDeficitsSha256", "sourceAuthorizationIds", "maxSources", "maxTotalMaterializedBytes", "authorizationSha256"],
+  "properties": {
+    "version": { "const": "v10.3-acquisition-round-authorization-v1" },
+    "roundId": { "$ref": "#/$defs/sha256" },
+    "approvedBy": { "$ref": "#/$defs/nonEmptyString" },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "parentCensusSha256": { "$ref": "#/$defs/sha256" },
+    "measuredDeficitsSha256": { "$ref": "#/$defs/sha256" },
+    "sourceAuthorizationIds": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "maxSources": { "const": 2 },
+    "maxTotalMaterializedBytes": { "type": "integer", "minimum": 1, "maximum": 5368709120 },
+    "authorizationSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1, "maxLength": 256 }
+  }
+}

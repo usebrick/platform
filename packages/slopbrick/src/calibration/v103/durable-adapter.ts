@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readCompletedAttempt, writeAttempt } from './attempt-store';
-import type { SyntheticChunkAdapter, SyntheticScanResult } from './bisection';
+import { SyntheticResumeError, type SyntheticChunkAdapter, type SyntheticScanResult } from './bisection';
+import { isV103RuleEvidenceList } from './rule-evidence';
 
 function chunkId(ids: readonly string[]): string {
   return createHash('sha256').update(JSON.stringify(ids), 'utf8').digest('hex');
@@ -9,7 +10,8 @@ function chunkId(ids: readonly string[]): string {
 function validResult(value: unknown): value is SyntheticScanResult {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const result = value as Record<string, unknown>;
-  if (result.kind === 'success') return Object.keys(result).length === 2 && Number.isSafeInteger(result.findingsCount) && (result.findingsCount as number) >= 0;
+  if (result.kind === 'success') return (Object.keys(result).length === 2 || Object.keys(result).length === 3) && Number.isSafeInteger(result.findingsCount) && (result.findingsCount as number) >= 0 && (result.ruleEvidence === undefined || isV103RuleEvidenceList(result.ruleEvidence));
+  if (result.kind === 'excluded') return Object.keys(result).length === 2 && typeof result.exclusionReason === 'string' && result.exclusionReason.length > 0;
   return (result.kind === 'parse_failure' || result.kind === 'timeout' || result.kind === 'crash') && Object.keys(result).length === 1;
 }
 
@@ -36,12 +38,23 @@ export function durableSyntheticAdapter(options: {
 }): SyntheticChunkAdapter {
   return async (ids, timeoutMs) => {
     const key = { runId: options.runId, chunkId: chunkId(ids), attempt: timeoutMs === options.initialTimeoutMs ? 1 : 2, inputHash: options.inputHash };
-    try { return decode(ids, (await readCompletedAttempt(options.directory, key)).records); }
-    catch (error) {
-      if (!(error instanceof Error) || error.message !== 'Completed attempt missing') throw error;
+    try {
+      return decode(ids, (await readCompletedAttempt(options.directory, key)).records);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Completed attempt missing') {
+        // A missing attempt is the only read failure that permits fresh work.
+      } else {
+        const message = error instanceof Error ? error.message : 'Completed attempt unreadable';
+        throw new SyntheticResumeError(message);
+      }
     }
     const result = await options.adapter(ids, timeoutMs);
-    await writeAttempt(options.directory, { ...key, records: ids.map((fileId) => ({ fileId, result: result[fileId] })) });
+    try {
+      await writeAttempt(options.directory, { ...key, records: ids.map((fileId) => ({ fileId, result: result[fileId] })) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to persist completed attempt';
+      throw new SyntheticResumeError(message);
+    }
     return result;
   };
 }

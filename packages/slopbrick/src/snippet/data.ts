@@ -95,29 +95,29 @@ const RULE_HINTS: Record<string, string> = {
   'context/import-path-mismatch':
     'Use only the canonical import paths declared in brick.config.json (e.g. @/components/ui/, @/lib/).',
   'layout/gap-monopoly':
-    'Mix gap-2 / gap-4 / gap-6 / gap-12 deliberately. Don\'t repeat the same gap value across the whole project.',
+    'Review repeated gap values against the spacing system and visual hierarchy. Repetition is correct when intentional; do not vary gaps solely to change a statistical signal.',
   'layout/math-element-uniformity':
-    'Human files have lopsided interactive counts (1 button + 12 inputs). AI tends to balance them. Build forms with many inputs and few buttons.',
+    'Review whether the distribution of interactive elements follows the product requirements. Do not add or remove controls solely to change a statistical signal; this is not an authorship verdict.',
   'layout/math-grid-uniformity':
-    'Vary grid-cols-N (grid-cols-2, grid-cols-3, grid-cols-4, grid-cols-6) across sections instead of repeating grid-cols-3.',
+    'Choose grid column counts from the layout and content needs. Do not vary grid-cols values solely to change a detector signal; consistency is correct when the design calls for it.',
   'layout/spacing-grid':
     'Use the configured spacing scale (4px or 8px grid). Avoid arbitrary values like p-[13px] that aren\'t on the scale.',
   'logic/ghost-defensive':
     'Use optional chaining (?.) or early returns instead of deep && guards. If a defensive chain runs 3+ levels deep, refactor.',
   'logic/heaps-deviation':
-    "Inspect for LLM-style vocabulary patterns: this file's vocabulary grows faster (high Heaps λ) or slower (low λ) than typical source code. Verify authorship if unexpected. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
+    'Review identifier vocabulary and source-code structure against the baseline; check domain naming; generated/fixture/schema/boilerplate context. This hygiene signal is not an authorship verdict or proof. (Christ et al. EMNLP Findings 2025.)',
   'logic/ks-distribution-shift':
-    'Inspect the shifted features. KS detects both AI anomalies and production-rot anomalies (it is symmetric); combine with Heaps/Zipf for AI-specific signal. (v0.12.0 — arXiv:2510.15996, Oct 2025.)',
+    'Inspect the shifted features. KS detects both AI-associated anomalies and production-rot anomalies because it is symmetric; combine with Heaps/Zipf only as context, never as authorship proof. (v0.12.0 — arXiv:2510.15996, Oct 2025.)',
   'logic/zipf-slope-anomaly':
-    "Inspect for LLM-style frequency distribution: this file's identifier usage is more peaked or flatter than typical human code. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
+    "Review whether identifier frequency reflects the domain vocabulary, generated output, or boilerplate. This symmetric statistical signal is not an authorship verdict. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
   'logic/math-any-density':
     'Replace `: any` with proper types. Start with the parameter/return types of the most-used functions.',
   'logic/math-console-log-storm':
     'Replace debug logs with a proper debugger or logger.debug(). Remove all console.log before shipping.',
   'logic/math-gini-class-usage':
-    'Spread usage across more class tokens instead of repeating the same handful (p-4, p-8, rounded-lg, etc.).',
+    'Review repeated utility tokens for design-system consistency and maintainability. Repetition is fine when intentional; do not spread tokens solely to change a statistical signal.',
   'logic/math-variable-name-entropy':
-    'Use domain-specific identifier names (reservations, invoices, customers) instead of generic data/items/value.',
+    'Use domain-specific identifier names (reservations, invoices, customers) for clarity. Do not rename symbols solely to change a statistical signal.',
   'logic/optimistic-no-rollback':
     'In optimistic updates, revert state in the catch block: `setX(prev => prev)`. Never leave stale UI on error.',
   'logic/reactive-hook-soup':
@@ -125,35 +125,35 @@ const RULE_HINTS: Record<string, string> = {
   'logic/zombie-state':
     'Remove unused useState or wire it into the component. Don\'t leave declared-but-never-read state bindings.',
   'dead/unused-import':
-    'Remove the import or use the symbol somewhere. Unused imports are the most common AI-iteration signature — the model added it for a feature, then rewrote the function without cleaning up.',
+    'Remove the import or use the symbol somewhere. Unused imports commonly survive refactors and can hide the real dependency surface.',
   'dead/unused-local':
-    'Remove the declaration or use the variable. AI-iteration signature: the model declared a binding for a feature, then rewrote the function without cleaning up.',
+    'Remove the declaration or use the variable. Unused locals obscure intent and can hide incomplete refactors.',
   'dead/unused-parameter':
-    'Remove the parameter (and update every call site) or use it in the function body. AI-iteration signature: the model added a parameter for a feature, then rewrote the function without removing parameters the new code does not need.',
+    'Remove the parameter and update every call site, or use it in the function body. Unused parameters make the API misleading and complicate future refactors.',
   'dead/dead-branch':
-    'Replace the literal boolean with a real condition, or remove the dead branch. AI-iteration signature: a feature flag toggled to a constant, or a wrapper from a previous refactor that was never cleaned up.',
+    'Replace the literal boolean with a real condition, or remove the dead branch. Constant branches hide unreachable behavior and stale feature-flag paths.',
   'dead/unreachable':
-    'Remove this statement — code after a return/throw/break/continue is unreachable. AI-iteration signature: the model added an early return for a new error path, then forgot the rest of the function body was still sitting below it.',
+    'Remove this statement: code after a return/throw/break/continue is unreachable. Dead code misleads readers and can conceal missing error-path tests.',
   'perf/cls-image':
     'Add width/height attributes or an aspect-ratio utility to prevent layout shift.',
   'perf/css-bloat':
     'Extract to a CSS variable (`--surface-card`) or a component prop when a class string repeats 5+ times.',
   'typo/math-button-label-uniformity':
-    'Mix button lengths deliberately — pair a short "Save" with a longer "Mark as complete" — instead of repeating the same template.',
+    'Use labels that accurately describe each action and follow the product vocabulary. Consistent labels are correct; do not vary wording solely to change a statistical signal.',
   'visual/inline-style-dominance':
     'Replace inline `style={{...}}` with className utilities (e.g. Tailwind `p-4 m-2 gap-3`) or a CSS module class.',
   'visual/math-default-font':
-    'Import a distinctive font (next/font/google, @font-face, or a CSS variable) instead of relying on the framework default.',
+    'Choose typography based on legibility, brand, and loading constraints. A framework default is valid when intentional; do not add a font solely to change a statistical signal.',
   'visual/math-font-entropy':
-    'Use a wider range of text sizes (text-xs, text-sm, text-lg, text-xl, text-2xl, text-3xl) for a more deliberate type scale.',
+    'Review text sizes against the type scale and hierarchy. Reuse a size when it communicates the same role; do not add sizes solely to change a statistical signal.',
   'visual/math-rounded-entropy':
-    'Use a wider range of border-radius values (sm, md, 2xl, 3xl) instead of repeating the same lg/xl/full pattern.',
+    'Review border radii against the component and design system. Reuse a radius when it communicates the same role; do not vary radii solely to change a statistical signal.',
   'visual/math-spacing-entropy':
-    'Mix more spacing values from the design scale (e.g. 3, 5, 7, 10, 14, 20, 28) instead of repeating the same 4/8 pattern.',
+    'Review spacing against the design scale and content hierarchy. Reuse a value when it is intentional; do not vary spacing solely to change a statistical signal.',
   'visual/naturalness-anomaly':
-    'Use domain-specific identifier names so the identifier stream reflects the actual problem domain. Hindle 2012 §4.3: LLM-generated code reuses a narrow band of training-data identifiers, dropping distinct-token ratio below 30%.',
+    'Use domain-specific identifier names for clarity and maintainability; do not rename symbols solely to change a detector statistic. This signal is not authorship proof. (Hindle 2012 §4.3.)',
   'visual/math-color-cluster':
-    'Use at least 3 distinct hue families (e.g. blue + amber + green) instead of clustering every color in the violet/fuchsia band.',
+    'Use the declared palette and meet contrast requirements. A clustered hue family can be intentional; do not add colors solely to change a statistical signal.',
   'wcag/focus-appearance':
     'Add a focus-visible:ring-* class, or remove outline-none. Keyboard users need a visible focus indicator.',
   'wcag/focus-obscured':
@@ -165,42 +165,42 @@ const RULE_HINTS: Record<string, string> = {
   'test/fake-placeholder':
     'Use domain-specific fixture values (`alice@acme-corp.com`, `Order#48231`) or a factory like @faker-js/faker. Avoid textbook placeholders (`John Doe`, `test@test.com`, `id: 1`).',
   'product/terminology-drift':
-    'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. AI agents pick slightly different words each invocation; product copy drifts.',
+    'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. Canonical vocabulary prevents product-copy drift.',
   'product/ux-pattern-fragmentation':
     'Keep the per-category count tight: modal ≤3, toast ≤2, button ≤4, input ≤3, card ≤3. Pick the canonical one and alias the rest. `slopbrick patterns` reports the per-category count.',
   // v0.13.0 — AI-specific rules (peer-reviewed signals).
   'ai/markdown-leakage':
     'Delete stray `\\`\\`\\`<lang>\\`\\`\\`` markers; they are Markdown fences, not valid syntax in standalone source files (Yotkova et al. SemEval-2026).',
   'ai/comment-ratio':
-    'AI tools either skip comments (reductive models) or over-comment (expansive models). Match the corpus mean ± 2σ (Rahman et al. 2024, Bisztray et al. 2025).',
+    'Review whether comments explain invariants or behavior. Do not add or remove comments to match a corpus statistic; keep documentation proportional to maintenance needs. (Rahman et al. 2024; Bisztray et al. 2025.)',
   'ai/whitespace-regularity':
-    'Do not manually vary formatting to satisfy this heuristic. Keep formatter output; review whether the statistical signal is relevant, and disable or configure the rule if the style is intentional (Shi et al. DetectCodeGPT 2024).',
+    'Do not manually vary formatting to satisfy this heuristic. Keep formatter output; document intentional style in project policy and scope/configure the rule accordingly. (Shi et al. DetectCodeGPT 2024.)',
   'ai/text-like-ratio':
-    'Move natural-language explanations to README files or doc comments. Inline prose in source code is hard to maintain (Yotkova 2026).',
+    'Separate explanatory prose from executable logic when appropriate; use documentation or content/i18n modules for text that belongs there. Keep user-facing strings where the product needs them. (Yotkova 2026.)',
   'ai/errors-near-eof':
-    'Check whether the file was truncated by a token limit. Unbalanced delimiters near EOF suggest the model ran out of output budget (Yotkova 2026).',
+    'Check whether the file was truncated by a tool, merge, or token limit. Unbalanced delimiters near EOF are an integrity issue, not authorship proof. (Yotkova 2026.)',
   'ai/any-density':
     'Replace `any` with `unknown`, `Record<string, unknown>`, or a domain type. The `: any` annotation propagates type-errors and defeats TS safety (Lee, Hassan, Hindle MSR 2026).',
   'ai/renyi-profile':
-    'The token distribution is mass-concentrated on a few high-frequency tokens. Verify authorship if unexpected (Rényi 1961, Moslonka 2025).',
+    'The token distribution is mass-concentrated on a few high-frequency tokens. Check whether domain vocabulary, generated output, or boilerplate explains it; this profile is not authorship proof. (Rényi 1961, Moslonka 2025).',
   'ai/segment-surprisal-cv':
-    'The cross-entropy is suspiciously uniform across the file. Real codebases have varied registers (Binoculars, Hans 2024).',
+    'The cross-entropy is unusually uniform. Check generated output, boilerplate, or repeated structure before interpreting this context signal; it is not authorship proof. (Binoculars, Hans 2024.)',
   'ai/compression-profile':
-    'The file compresses unusually well and lines are highly repetitive — characteristic of AI-generated boilerplate (Cilibrasi 2005, Mahoney 1999).',
+    'The file compresses unusually well and lines are highly repetitive. Check generated output, schemas, fixtures, or boilerplate before interpreting this association; compression is not authorship proof (Cilibrasi 2005, Mahoney 1999).',
   // v0.14.5b — 6 new AI tendency detection rules (DORMANT in v0.14.5b;
   // reclassified post-v7 calibration in v0.14.5d)
   'ai/tailwind-color-overuse':
-    "If most utility classes are bg-violet-500, text-violet-600, ring-violet-400 — the project is on the AI-default palette. Audit and replace with the project's design tokens.",
+    "Use the project's declared design tokens and palette consistently. Replace a color only when it violates the design system or contrast requirements, not to change a detector score.",
   'ai/default-react-stack':
-    "Every new file is a Vite + React + Tailwind + Zustand + React Hook Form clone. Verify the project actually needs each piece before adding it.",
+    "Confirm each dependency and abstraction solves a product need; remove unused layers and document intentional choices. This is architecture guidance, not authorship proof.",
   'ai/library-reinvention':
-    "Re-implementing zustand, react-hook-form, or date-fns inline (custom event emitters, useState reducers, manual date math) is a sign of LLM completion-mode code. Use the libraries the project already depends on.",
+    "Prefer an existing dependency when it meets the requirement, or extract a shared utility when duplication harms maintenance. This is a maintainability signal, not authorship proof.",
   'ai/state-default-overuse':
-    "Wrapping every component in useState + useEffect for transient UI state is the React tutorial default. Real production code uses refs, uncontrolled inputs, or the project's state lib.",
+    "Choose state primitives based on ownership, lifecycle, and accessibility. Use refs, uncontrolled inputs, or the project state library when they fit; do not replace patterns solely to change a statistical signal.",
   'ai/fetch-default-overuse':
-    "Calling fetch() inline in components instead of going through the project's data-fetching layer (react-query, swr, or your own client) bypasses the cache, error boundary, and abort handling.",
+    "If the project needs shared caching, retries, error boundaries, or abort handling, route component requests through its data-fetching layer. Direct fetch() is fine when those capabilities are intentionally unnecessary.",
   'ai/console-debug-storm':
-    "5+ console.log calls in a single file is debug-by-print-statement, the LLM training-data default. Remove before commit; use the project's logger or a real debugger.",
+    "Five or more console.log calls in a single file create unbounded debug noise. Remove them before commit and use the project's logger or a real debugger; this is an engineering hygiene issue, not authorship proof.",
   // v0.17.0 — db/* rules (Postgres static analysis via pgsql-parser)
   'db/sql-concat':
     'Never build SQL with template-literal interpolation — `db.query(\`SELECT … WHERE id = ${id}\`)` is a SQL injection vector. Use parameterized queries (`db.query("… WHERE id = $1", [id])`) or your ORM query builder.',
@@ -213,7 +213,7 @@ const RULE_HINTS: Record<string, string> = {
     'Create the file or fix the link target. On a public docs site, broken links erode trust more than stale copy.',
   // v0.18.9 — Rust-specific rules (tree-sitter-backed)
   'rust/unused-pub-fn':
-    "Remove the function or call it. Rust's compiler doesn't warn on `pub fn` references unless `#![warn(dead_code)]` is set at the crate root. AI agents leave these behind during iterative refactors.",
+    "Remove the function or call it. Rust's compiler does not warn on `pub fn` references unless `#![warn(dead_code)]` is set at the crate root; stale public functions obscure the API surface.",
   'rust/unwrap-in-production':
     "Replace `.unwrap()` / `.expect()` with `?` (early-return on Err), `.map_err(...)` for error conversion, or an explicit `match`. They panic in production; reserve them for `#[cfg(test)]` or `#[test]` scopes.",
   'rust/todo-macro':
@@ -231,18 +231,18 @@ const RULE_HINTS: Record<string, string> = {
     "More than 3 `as` assertions in one function is a strong signal that the type is wrong, not the code. Fix the type definition (or use a type guard) instead of bypassing the type system.",
   // v0.19.0 — Go-specific rules
   'go/struct-tag-inconsistency':
-    "Pick one tag style per struct. If most fields are `json:\"foo\"`, this field should be too. Real Go code maintains consistency within a struct (or within a package).",
+    "Pick one tag style per struct. If most fields are `json:\"foo\"`, this field should be too; consistent Go codebases keep tags uniform within a struct or package.",
   'go/nil-slice-vs-empty':
-    "Either declare as `var x = []int{}` or assign with `make([]int, 0)`. The nil/empty inconsistency is an AI signal — real code picks one form and sticks with it.",
+    "Choose nil/empty semantics based on the API contract and use one consistent convention within the package. This is a correctness/style issue, not authorship proof.",
   // v0.19.0 — Duplication detector
   'dup/identical-block':
-    "Refactor to a shared helper. This is a Type-1 clone (byte-for-byte identical after normalization). Common in AI-generated code that copy-pastes from training data.",
+    "Consider extracting this repeated normalized code region into a shared helper or module. This is maintainability evidence (an exact Type-1 clone after comment/whitespace normalization); it does not establish authorship or AI generation.",
   // v0.23.0 — Type-2 near-duplicate detector (MinHash + LSH)
   'dup/near-duplicate':
-    "Refactor to a shared helper. Type-2 near-duplicate: same identifiers + structure, different whitespace/comments. AI-iterated code regenerates the same function with cosmetic edits. (v0.23.0 — MinHash + LSH, k=5, thr 0.7.)",
+    "Refactor to a shared helper when the repeated behavior should evolve together. Type-2 similarity can be intentional reuse or copy-paste and is not authorship proof. (v0.23.0 — MinHash + LSH, k=5, thr 0.7.)",
   // v0.24.0 — Type-3 structural clone detector (two-stage MinHash)
   'dup/structural-clone':
-    "Refactor to a shared helper. Type-3 clone: same shape as another file after identifier canonicalization, with renames and/or added/removed statements. AI agents and copy-paste both produce this. Extract the shared part. (v0.24.0.)",
+    "Refactor to a shared helper when the repeated behavior should evolve together. Type-3 similarity may be intentional reuse or copy-paste and is not authorship proof. (v0.24.0.)",
   // v0.24.0 — Kotlin rules (DORMANT until v9 Kotlin corpus calibration)
   // v0.29.0 — non-AI Kotlin rules (DORMANT until larger pos arm)
   // v0.30.0 — non-AI Java rules (Option C applied to v9 Java corpus, 92k files)
@@ -264,7 +264,7 @@ const RULE_HINTS: Record<string, string> = {
   'swift/fatal-error-thrown':
     "Replace with `return` of a typed default (e.g. `nil`, `[]()`) or throw a typed `enum MyError: Error`. `fatalError` survives release builds. (v0.24.0 — DORMANT.)",
   'swift/implicitly-unwrapped-optional':
-    "Declare as `var name: Type?` and unwrap with `guard let`. IUOs exist for Obj-C bridging / IBOutlets but using them everywhere is an AI signal. (v0.24.0 — DORMANT.)",
+    "Declare as `var name: Type?` and unwrap with `guard let`. IUOs are appropriate for Obj-C bridging / IBOutlets; repeated use elsewhere is a safety smell, not authorship proof. (v0.24.0 — DORMANT.)",
   'swift/strong-self-capture':
     "Capture with `[weak self]` (or `[unowned self]` if guaranteed non-nil): `[weak self] in self?.foo = bar`. Strong self capture creates a retain cycle. (v0.24.0 — DORMANT.)",
   // v0.24.0 — C++ rules (DORMANT until v9 C++ corpus calibration)

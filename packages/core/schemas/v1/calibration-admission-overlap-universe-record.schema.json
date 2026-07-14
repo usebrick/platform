@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-overlap-universe-record.schema.json",
+  "title": "AdmissionOverlapUniverseRecordV1",
+  "description": "One canonical candidate row in the v10.3 global overlap universe stream.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "candidateUnitId", "materialSourceId", "aggregateSourceIds", "locator", "polarity", "contentSha256", "contentBytes", "language", "normalizerId", "normalizationStatus", "recordSha256"],
+  "properties": {
+    "version": { "const": "v10.3-overlap-universe-record-v1" },
+    "candidateUnitId": { "$ref": "#/$defs/id" },
+    "materialSourceId": { "$ref": "#/$defs/id" },
+    "aggregateSourceIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+    "admissionRecordId": { "$ref": "#/$defs/sha256" },
+    "locator": { "$ref": "#/$defs/locator" },
+    "polarity": { "$ref": "#/$defs/polarity" },
+    "contentSha256": { "$ref": "#/$defs/sha256" },
+    "contentBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+    "language": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "normalizerId": { "$ref": "#/$defs/id" },
+    "normalizationStatus": { "enum": ["covered", "unsupported", "unreadable"] },
+    "shingleSetSha256": { "$ref": "#/$defs/sha256" },
+    "shingleCount": { "$ref": "#/$defs/nonNegativeInteger" },
+    "recordSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "relativePath": { "type": "string", "pattern": "^(?=[ -~]+$)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//).+$" },
+    "locator": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "materializationId", "normalizedPath"],
+          "properties": {
+            "kind": { "const": "materialized_file" },
+            "materializationId": { "$ref": "#/$defs/id" },
+            "normalizedPath": { "$ref": "#/$defs/relativePath" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "materializationId", "containerSha256", "rowKey", "field"],
+          "properties": {
+            "kind": { "const": "record_container" },
+            "materializationId": { "$ref": "#/$defs/id" },
+            "containerSha256": { "$ref": "#/$defs/sha256" },
+            "rowKey": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[ -~]+$" },
+            "field": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[ -~]+$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "localSourceId", "normalizedPath"],
+          "properties": {
+            "kind": { "const": "local_inventory_file" },
+            "localSourceId": { "$ref": "#/$defs/id" },
+            "normalizedPath": { "$ref": "#/$defs/relativePath" }
+          }
+        }
+      ]
+    },
+    "polarity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intake", "overlapSide", "bindingAuthority", "bindingSha256"],
+      "properties": {
+        "intake": { "enum": ["declared_ai", "declared_human", "unassigned"] },
+        "proposedLabel": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
+        "overlapSide": { "enum": ["ai_side", "human_side", "unassigned"] },
+        "bindingAuthority": { "enum": ["legacy-selected-inventory", "admission-record", "registered-unassigned-candidate"] },
+        "bindingSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

@@ -95,14 +95,13 @@ export const aiConsoleDebugStormRule = createRule<RuleContext>({
         message:
           `${totalDebug} debug statements (${consoleCount} console.* + ${debuggerCount} debugger), ` +
           `no structured logger import. ` +
-          `GitClear 2025: AI-generated code has 4× higher code churn rate; ` +
-          `console.log statements are a major contributor (often left in by AI "thinking out loud").`,
+          `Review whether debug output is bounded, actionable, and appropriate for the ` +
+          `target environment before committing.`,
         line: 1,
         column: 1,
         advice:
           'Replace console.log with a structured logger (winston, pino, debug, consola). ' +
-          'Remove the debugger statements. AI often emits console.log to "explain" its reasoning ' +
-          'but leaves them in committed code — review and remove.',
+          'Remove debugger statements and review any remaining output before committing.',
       },
     ];
   },

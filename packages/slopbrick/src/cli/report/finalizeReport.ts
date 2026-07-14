@@ -44,6 +44,8 @@ export interface FinalizeReportInput {
   config: ResolvedConfig;
   options: ScanRunOptions;
   results: FileScanResult[];
+  /** Exact post-filter scan selection, before incremental cache partitioning. */
+  selectedFilePaths?: readonly string[];
   aggregated: Pick<
     ProjectReport,
     | 'aiSlopScore'
@@ -65,6 +67,10 @@ export interface FinalizeReportInput {
     | 'components'
   >;
   allIssues: Issue[];
+  /** Project findings from the successful results in this scan. */
+  projectIssues: readonly Issue[];
+  /** Canonical effective score exposure for this invocation. */
+  effectiveIssues: readonly Issue[];
   baseline: BaselineCache | undefined;
   baselineMeta: BaselineMeta | undefined;
   defaultOffApplied: number;
@@ -92,8 +98,11 @@ export async function finalizeReport(
     config,
     options,
     results,
+    selectedFilePaths,
     aggregated,
     allIssues,
+    projectIssues,
+    effectiveIssues,
     baseline,
     baselineMeta,
     defaultOffApplied,
@@ -137,18 +146,19 @@ export async function finalizeReport(
   for (const result of results) {
     let count = 0;
     for (const issue of result.issues) {
-      if (issue.filePath) count += 1;
+      if (issue.filePath && (issue.severity as string) !== 'off') count += 1;
     }
     if (count > 0) issueCountByFile.set(result.filePath, count);
   }
   const topOffenders = [...aggregated.components]
+    .map((component) => ({
+      filePath: component.filePath,
+      issueCount: issueCountByFile.get(component.filePath) ?? 0,
+      adjustedScore: component.adjustedScore,
+    }))
+    .filter((offender) => offender.issueCount > 0)
     .sort((a, b) => b.adjustedScore - a.adjustedScore)
-    .slice(0, 5)
-    .map((c) => ({
-      filePath: c.filePath,
-      issueCount: issueCountByFile.get(c.filePath) ?? 0,
-      adjustedScore: c.adjustedScore,
-    }));
+    .slice(0, 5);
 
   // Enrichment: compute all the secondary scores (architecture, BL,
   // security, test quality, maintenance cost, doc freshness, DB health,
@@ -158,6 +168,8 @@ export async function finalizeReport(
     cwd,
     config,
     results,
+    projectIssues,
+    selectedFilePaths,
     aggregated: {
       aiSlopScore: aggregated.aiSlopScore,
       engineeringHygiene: aggregated.engineeringHygiene,
@@ -178,6 +190,7 @@ export async function finalizeReport(
     results,
     aggregated,
     allIssues,
+    effectiveIssues,
     parseErrors,
     topOffenders,
     config,
@@ -240,6 +253,7 @@ export async function finalizeReport(
     options,
     report,
     results,
+    selectedFilePaths,
     startTime,
     registry,
     incrementalSummary,

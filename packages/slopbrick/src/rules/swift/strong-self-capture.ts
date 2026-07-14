@@ -144,8 +144,8 @@ export const swiftStrongSelfCaptureRule = createRule<SwiftStrongSelfCaptureConte
           'creates a retain cycle — the closure keeps self alive, self keeps the ' +
           'closure alive, and the cycle is only broken when the runtime gives up ' +
           'and prints a leak. Apple\'s Swift docs use UIKit / UIViewController ' +
-          'closures as the canonical example. AI agents write `loadData { self.foo = bar }` ' +
-          'because it "just compiles"; the leak is invisible without profiling. ' +
+          'closures as the canonical example. Profile long-lived closures when ownership ' +
+          'is unclear so retain cycles are visible. ' +
           'Reference: swift/strong-self-capture v0.24.',
       });
     }

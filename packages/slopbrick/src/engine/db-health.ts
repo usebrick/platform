@@ -14,9 +14,9 @@
 // can re-use it without adding a new dep.
 
 import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
-import { globby } from 'globby';
+import { extname, relative, resolve } from 'node:path';
 import type { ResolvedConfig, DbFinding, Issue } from '../types';
+import { discoverFiles, isExcludedBySelfScan } from './discover.js';
 import { sqlConcatRule } from '../rules/db/sql-concat';
 
 // ---------------------------------------------------------------------------
@@ -33,12 +33,16 @@ export const DB_FRESHNESS_THRESHOLDS = {
   high: 40,
 } as const;
 
+const DB_TS_EXTENSIONS = new Set(['.ts', '.tsx']);
+
 // ---------------------------------------------------------------------------
 // Top-level entry point
 // ---------------------------------------------------------------------------
 
 export interface BuildDbHealthOptions {
   maxFiles?: number;
+  /** Exact main-scan selection. When present, DB health must not rediscover files. */
+  selectedFilePaths?: readonly string[];
 }
 
 export interface BuildDbHealthResult {
@@ -57,30 +61,32 @@ export interface BuildDbHealthResult {
  */
 export async function buildDbHealth(
   cwd: string,
-  _config: ResolvedConfig,
-  _options: BuildDbHealthOptions = {},
+  config: ResolvedConfig,
+  options: BuildDbHealthOptions = {},
 ): Promise<BuildDbHealthResult> {
-  const maxFiles = _options.maxFiles ?? 500;
-  // TS files (for SQL concat detection)
-  const tsFiles = await globby(
-    ['src/**/*.ts', 'src/**/*.tsx', 'lib/**/*.ts', 'app/**/*.ts'],
-    {
-      cwd,
-      ignore: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/*.test.ts'],
-      absolute: true,
-    },
-  );
+  const maxFiles = options.maxFiles ?? 500;
+  const discovered = options.selectedFilePaths === undefined
+    ? (await discoverFiles(cwd, config)).filter((filePath) =>
+      !isExcludedBySelfScan(filePath, cwd, config.selfScan?.excludePaths),
+    )
+    : options.selectedFilePaths.map((filePath) => resolve(cwd, filePath));
+  const tsFiles = [...new Set(discovered)]
+    .filter((filePath) => DB_TS_EXTENSIONS.has(extname(filePath).toLowerCase()))
+    .sort()
+    .slice(0, maxFiles);
 
   const findings: DbFinding[] = [];
-  for (const abs of tsFiles.slice(0, maxFiles)) {
+  let scannedTsFiles = 0;
+  for (const abs of tsFiles) {
     let source: string;
     try {
       source = readFileSync(abs, 'utf-8');
     } catch {
       continue;
     }
+    scannedTsFiles += 1;
     const relPath = relative(cwd, abs);
-    const context = { config: _config, filePath: relPath, cwd };
+    const context = { config, filePath: relPath, cwd };
     const facts = { filePath: relPath, v2: { _source: source } as any };
     const ruleContext = sqlConcatRule.create(context);
     const issues: Issue[] = sqlConcatRule.analyze(ruleContext, facts);
@@ -106,7 +112,7 @@ export async function buildDbHealth(
     byRule[f.ruleId] = (byRule[f.ruleId] ?? 0) + 1;
     weight += DB_RULE_WEIGHTS[f.ruleId];
   }
-  const totalScanned = tsFiles.length;
+  const totalScanned = scannedTsFiles;
   // Normalize: ~5 points deducted per finding per 100 scanned files.
   const penalty = totalScanned > 0 ? (weight / totalScanned) * 5 : 0;
   const dbHealth = Math.max(0, Math.min(100, Math.round(100 - penalty)));
@@ -119,7 +125,7 @@ export async function buildDbHealth(
     dbHealth,
     dbDrift,
     scannedSqlFiles: 0,
-    scannedTsFiles: tsFiles.length,
+    scannedTsFiles,
     findings,
     byRule,
   };

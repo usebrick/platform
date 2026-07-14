@@ -19,8 +19,7 @@ import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { logger } from '../../engine/logger';
-import { loadCache, saveCache, computeFileHash, emptyCache } from '../../engine/cache-incremental.js';
-import type { ScanCache } from '../../engine/cache-incremental.js';
+import { computeFileHash } from '../../engine/cache-incremental.js';
 import {
   computeFlywheelOutput,
   hashFile,
@@ -46,7 +45,10 @@ import { evaluateThresholdGate } from '../threshold';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
-import { isNotApplicableScan } from '../../report/scan-validity.js';
+import {
+  isNotApplicableScan,
+  isReadOnlyGitSubset,
+} from '../../report/scan-validity.js';
 import { VERSION } from '../../types';
 import type { FileScanResult, ProjectReport, ResolvedConfig } from '../../types';
 import type { RuleRegistry } from '../../rules/registry';
@@ -58,6 +60,8 @@ export interface PersistRunInput {
   options: ScanRunOptions;
   report: ProjectReport;
   results: FileScanResult[];
+  /** Exact post-filter scan selection, before incremental cache partitioning. */
+  selectedFilePaths?: readonly string[];
   startTime: number;
   registry: RuleRegistry;
   incrementalSummary: { skipped: number; rescanned: number } | undefined;
@@ -76,6 +80,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     options,
     report,
     results,
+    selectedFilePaths,
     startTime,
     registry,
     incrementalSummary,
@@ -89,7 +94,27 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // scoped verification is also read-only: it represents only the changed
   // subset, so it must not replace whole-project memory or teach a flywheel
   // that would change the next pre-commit result for identical bytes.
-  if (isNotApplicableScan(report) || options.staged || options.changed) return;
+  const incrementalSkipped = report.scanAccounting?.incrementalCached ??
+    report.skipped ??
+    incrementalSummary?.skipped ??
+    0;
+  const hasUnhydratedIncrementalEvidence =
+    options.incremental === true && incrementalSkipped > 0;
+  if (
+    hasUnhydratedIncrementalEvidence &&
+    incrementalSummary &&
+    !options.quiet &&
+    !machineReadableStdout
+  ) {
+    logger.info(
+      `Incremental: re-scanned ${incrementalSummary.rescanned}, skipped ${incrementalSummary.skipped} (unchanged).`,
+    );
+  }
+  if (
+    isNotApplicableScan(report) ||
+    isReadOnlyGitSubset(options) ||
+    hasUnhydratedIncrementalEvidence
+  ) return;
   const validScan = report.scoreValidity === 'valid';
 
   // Build a MemoryReport-shaped projection so the engine accepts it
@@ -124,91 +149,78 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // append it as numeric threshold evidence to historical trend data.
   const thresholdGate = evaluateThresholdGate(report, config);
   if (config.projectMemory !== false && thresholdGate.status !== 'invalid') {
-    await appendRun(
-      cwd,
-      memoryReport,
-      VERSION,
-      fsMemoryIO,
-      thresholdGate.status === 'failed',
-    );
-  }
-
-  // Incremental file-hash cache. Only written when `--incremental`.
-  // Files in the old cache that we skipped are kept as-is (their hash
-  // is still valid).
-  if (options.incremental && validScan) {
-    const cachePath = options.cachePath ?? '.slopbrick-cache.json';
-    const existing = loadCache(cachePath) ?? emptyCache();
-    const next: ScanCache = { ...existing, generatedAt: new Date().toISOString() };
-    for (const result of results) {
-      try {
-        const hash = computeFileHash(result.filePath);
-        const issueCount = result.issues.length;
-        next.files[result.filePath] = {
-          hash,
-          issueCount,
-          lastScannedAt: new Date().toISOString(),
-        };
-      } catch {
-        // unreadable file — leave the cache entry as-is
-      }
-    }
-    saveCache(cachePath, next);
-    if (incrementalSummary && !options.quiet) {
-      logger.info(
-        `Incremental: re-scanned ${incrementalSummary.rescanned}, skipped ${incrementalSummary.skipped} (unchanged).`,
+    try {
+      await appendRun(
+        cwd,
+        memoryReport,
+        VERSION,
+        fsMemoryIO,
+        thresholdGate.status === 'failed',
       );
+    } catch (error) {
+      // Historical run storage is a side effect, not a reason to turn a
+      // completed scan into an internal failure. The later inventory/health
+      // phase has the same failure-isolation boundary.
+      if (!options.quiet && !machineReadableStdout) {
+        logger.warn(`memory history not saved: ${formatErrorMessage(error)}`);
+      }
     }
   }
 
   // Telemetry + flywheel. Only when telemetry is enabled.
   if (telemetryEnabled && validScan) {
-    const runs = await readRuns(cwd, fsMemoryIO);
-    const telemetryPayloads = readTelemetry(cwd);
-    const recentTopHashes = telemetryPayloads.map((payload) =>
-      [...payload.files]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10)
-        .map((file) => file.hash),
-    );
-    const currentTopFiles = [...report.components]
-      .sort((a, b) => b.adjustedScore - a.adjustedScore)
-      .slice(0, 10)
-      .map((c) => ({ filePath: c.filePath, hash: hashFile(relative(cwd, c.filePath)) }));
-    const unmatchedStringLiterals = results.flatMap((r) => r.unmatchedStringLiterals ?? []);
-    const flywheelOutput = computeFlywheelOutput(
-      runs,
-      currentTopFiles,
-      recentTopHashes,
-      unmatchedStringLiterals,
-      config,
-      registry.getRules(),
-    );
-
-    const state = loadFlywheelState(cwd);
-    state.autoTuned = flywheelOutput.autoTuned;
-    // v0.40.0 (Sprint 2.1): persist the relaxation half. Mirrors
-    // the autoTuned assignment above; both lists are written
-    // together so the on-disk state always reflects the
-    // producer's latest observations. The next scan reads both.
-    state.autoRelaxed = flywheelOutput.autoRelaxed;
-    state.research = loadResearchMetricsFromDisk(cwd);
-    state.updatedAt = new Date().toISOString();
-    saveFlywheelState(cwd, state);
-    if (state.research) {
-      report.research = state.research;
-    }
-
-    if (flywheelOutput.suggestions.length > 0) {
-      const suggestionsDir = join(cwd, '.slopbrick', 'flywheel');
-      if (!existsSync(suggestionsDir)) mkdirSync(suggestionsDir, { recursive: true });
-      writeFileSync(
-        join(suggestionsDir, 'rule-suggestions.json'),
-        JSON.stringify(flywheelOutput.suggestions, null, 2),
+    try {
+      const runs = await readRuns(cwd, fsMemoryIO);
+      const telemetryPayloads = readTelemetry(cwd);
+      const recentTopHashes = telemetryPayloads.map((payload) =>
+        [...payload.files]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10)
+          .map((file) => file.hash),
       );
-    }
+      const currentTopFiles = [...report.components]
+        .sort((a, b) => b.adjustedScore - a.adjustedScore)
+        .slice(0, 10)
+        .map((c) => ({ filePath: c.filePath, hash: hashFile(relative(cwd, c.filePath)) }));
+      const unmatchedStringLiterals = results.flatMap((r) => r.unmatchedStringLiterals ?? []);
+      const flywheelOutput = computeFlywheelOutput(
+        runs,
+        currentTopFiles,
+        recentTopHashes,
+        unmatchedStringLiterals,
+        config,
+        registry.getRules(),
+      );
 
-    report.issues.push(...flywheelOutput.hotspotIssues);
+      const state = loadFlywheelState(cwd);
+      state.autoTuned = flywheelOutput.autoTuned;
+      // v0.40.0 (Sprint 2.1): persist the relaxation half. Mirrors
+      // the autoTuned assignment above; both lists are written
+      // together so the on-disk state always reflects the
+      // producer's latest observations. The next scan reads both.
+      state.autoRelaxed = flywheelOutput.autoRelaxed;
+      state.research = loadResearchMetricsFromDisk(cwd);
+      state.updatedAt = new Date().toISOString();
+      saveFlywheelState(cwd, state);
+      if (state.research) {
+        report.research = state.research;
+      }
+
+      if (flywheelOutput.suggestions.length > 0) {
+        const suggestionsDir = join(cwd, '.slopbrick', 'flywheel');
+        if (!existsSync(suggestionsDir)) mkdirSync(suggestionsDir, { recursive: true });
+        writeFileSync(
+          join(suggestionsDir, 'rule-suggestions.json'),
+          JSON.stringify(flywheelOutput.suggestions, null, 2),
+        );
+      }
+
+      report.issues.push(...flywheelOutput.hotspotIssues);
+    } catch (error) {
+      if (!options.quiet && !machineReadableStdout) {
+        logger.warn(`telemetry/flywheel not saved: ${formatErrorMessage(error)}`);
+      }
+    }
   }
 
   // Repository Memory Platform — persist pattern inventory, declared
@@ -225,7 +237,13 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   if (config.projectMemory !== false) {
     try {
       const durationMs = Date.now() - startTime;
-      patternInventory = await buildPatternInventory(cwd, config);
+      const inventoryCandidates = selectedFilePaths ?? results.map((result) => result.filePath);
+      patternInventory = await buildPatternInventory(
+        cwd,
+        config,
+        undefined,
+        inventoryCandidates,
+      );
       const inventory = buildInventoryFromScan(
         { cwd, results },
         patternInventory,
@@ -287,7 +305,13 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // gracefully: legacy payloads return `undefined` for `inventory`
   // and the diff math treats that as "no data".
   if (validScan) {
-    recordTelemetry(cwd, report, results, config, patternInventory);
+    try {
+      recordTelemetry(cwd, report, results, config, patternInventory);
+    } catch (error) {
+      if (!options.quiet && !machineReadableStdout) {
+        logger.warn(`telemetry not saved: ${formatErrorMessage(error)}`);
+      }
+    }
   }
 
   // v0.42.0 (Sprint 3, §3a.3): post-scan snippet refresh. Opt-in via

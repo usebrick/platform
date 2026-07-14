@@ -1,4 +1,5 @@
 import { getDefaultOffRules, getSignalStrength } from './signal-strength.js';
+import type { SignalStrengthEntry } from './signal-strength.js';
 import type { ResolvedConfig, Rule, RuleSeverity } from '../types';
 
 const RULES_BASE_URL = 'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules';
@@ -54,6 +55,19 @@ export interface RuleExplanation {
     category: 'ai-signal' | 'quality';
     calibration: {
       status: 'historical-point-estimate-only' | 'unavailable';
+      /** The per-rule date is validated by the shared signal-strength schema. */
+      lastCalibratedAt?: string;
+      /**
+       * The current checkout has no admitted v10.3 cohort. Keep that absence
+       * explicit instead of turning legacy underscore metadata into a claimed
+       * source/cohort contract.
+       */
+      provenance: {
+        status: 'historical-only' | 'unavailable';
+        source: null;
+        cohort: null;
+        reason: string;
+      };
       recall?: number;
       falsePositiveRate?: number;
       precision?: number;
@@ -63,6 +77,51 @@ export interface RuleExplanation {
     };
   };
   configuration: RulePolicy;
+}
+
+/**
+ * Build the bounded calibration/provenance projection shared by rule
+ * explanations and per-finding machine surfaces.  The shipped signal table
+ * contains historical point estimates only; its legacy underscore metadata
+ * is deliberately not a validated v10.3 source/cohort contract.  Keep that
+ * absence explicit on every consumer rather than letting one renderer imply
+ * stronger provenance than another.
+ */
+export type RuleCalibrationEvidence = RuleExplanation['evidence']['calibration'];
+
+export function buildRuleCalibrationEvidence(
+  strength: SignalStrengthEntry | undefined,
+): RuleCalibrationEvidence {
+  if (!strength) {
+    return {
+      status: 'unavailable',
+      provenance: {
+        status: 'unavailable',
+        source: null,
+        cohort: null,
+        reason: 'No validated calibration entry is available for this rule.',
+      },
+      confidenceLimits: null,
+      confidenceLimitsReason: 'No validated confidence interval is available in the shipped calibration contract.',
+    };
+  }
+
+  return {
+    status: 'historical-point-estimate-only',
+    lastCalibratedAt: strength.lastCalibratedAt,
+    provenance: {
+      status: 'historical-only',
+      source: null,
+      cohort: null,
+      reason: 'The shipped estimate predates v10.3 admission; no validated cohort/source is available.',
+    },
+    recall: strength.recall,
+    falsePositiveRate: strength.fpRate,
+    precision: strength.precision,
+    lift: strength.ratio,
+    confidenceLimits: null,
+    confidenceLimitsReason: 'No validated confidence interval is available in the shipped calibration contract.',
+  };
 }
 
 export function buildRuleExplanation(
@@ -85,21 +144,7 @@ export function buildRuleExplanation(
     suppressionSnippet: `rules: { "${rule.id}": "off" }  // or set to a lower severity`,
     evidence: {
       category: rule.aiSpecific ? 'ai-signal' : 'quality',
-      calibration: strength
-        ? {
-            status: 'historical-point-estimate-only',
-            recall: strength.recall,
-            falsePositiveRate: strength.fpRate,
-            precision: strength.precision,
-            lift: strength.ratio,
-            confidenceLimits: null,
-            confidenceLimitsReason: 'No validated confidence interval is available in the shipped calibration contract.',
-          }
-        : {
-            status: 'unavailable',
-            confidenceLimits: null,
-            confidenceLimitsReason: 'No validated confidence interval is available in the shipped calibration contract.',
-          },
+      calibration: buildRuleCalibrationEvidence(strength),
     },
     configuration: describeRulePolicy(rule, config),
   };

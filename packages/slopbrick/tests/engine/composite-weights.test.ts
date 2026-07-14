@@ -26,8 +26,10 @@ describe('compositeWeights override', () => {
     {
       filePath: 'A.tsx',
       issues: [
-        // 5 visual issues (high severity) + 1 boundary + 1 context
-        ...Array.from({ length: 5 }, () => ({
+        // 3 visual issues (high severity) + 1 boundary + 1 context. Keep the
+        // fixture below the fixed cumulative bucket saturation point so this
+        // test exercises weight changes rather than a clipped score.
+        ...Array.from({ length: 3 }, () => ({
           ruleId: 'visual/math-default-font',
           category: 'visual' as const,
           severity: 'high' as const,
@@ -38,8 +40,9 @@ describe('compositeWeights override', () => {
       ],
     },
   ];
-  // Use an explicit exposure denominator so the asymmetric fixture exercises
-  // weight changes instead of saturating every bucket on a single file.
+  // Keep a compatibility exposure count; the score model uses a fixed
+  // cumulative scale, so this fixture exercises weights without denominator
+  // dilution.
   const aggregate = (config: ResolvedConfig) =>
     aggregateReport(scores, issueGroups, config, undefined, 10);
 

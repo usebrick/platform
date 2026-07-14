@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-evidence-payload.schema.json",
+  "title": "CalibrationAdmissionEvidencePayloadV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "payloadId", "evidenceId", "bytes", "sha256", "mediaType", "sourceLocatorSha256", "storage"],
+  "properties": {
+    "version": { "const": "v10.3-admission-evidence-payload-v1" },
+    "payloadId": { "$ref": "#/$defs/id" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "bytes": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "sha256": { "$ref": "#/$defs/sha256" },
+    "mediaType": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "sourceLocatorSha256": { "$ref": "#/$defs/sha256" },
+    "storage": { "$ref": "#/$defs/storage" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))[^\\x00-\\x1f]+$" },
+    "storage": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "materializationReceiptId", "materializationId", "normalizedPath"], "properties": { "kind": { "const": "materialization_reference" }, "materializationReceiptId": { "$ref": "#/$defs/id" }, "materializationId": { "$ref": "#/$defs/id" }, "normalizedPath": { "$ref": "#/$defs/relativePath" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "casAlgorithm", "casRelativePath", "authorizationId"], "properties": { "kind": { "const": "evidence_cas" }, "casAlgorithm": { "const": "sha256" }, "casRelativePath": { "$ref": "#/$defs/relativePath" }, "authorizationId": { "$ref": "#/$defs/id" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "localEvidenceId"], "properties": { "kind": { "const": "local_unpublished_reference" }, "localEvidenceId": { "$ref": "#/$defs/id" } } }
+      ]
+    }
+  }
+}

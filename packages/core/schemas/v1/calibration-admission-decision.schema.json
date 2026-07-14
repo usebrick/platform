@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-decision.schema.json",
+  "title": "CalibrationAdmissionDecisionV103",
+  "description": "One independently authored, blind-assignment-bound admission decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "decisionId", "target", "reviewerId", "reviewerRoles", "evidenceIds", "blindAssignmentId", "result", "reasons", "decidedAt"],
+  "properties": {
+    "version": { "const": "v10.3-admission-decision-v1" },
+    "decisionId": { "$ref": "#/$defs/sha256" },
+    "target": { "$ref": "#/$defs/target" },
+    "reviewerId": { "$ref": "#/$defs/id" },
+    "reviewerRoles": { "type": "array", "items": { "enum": ["authorship", "rights", "leakage_privacy", "calibration", "provenance"] }, "minItems": 1, "uniqueItems": true },
+    "evidenceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true, "minItems": 1 },
+    "blindAssignmentId": { "$ref": "#/$defs/sha256" },
+    "adjudicatesDecisionIds": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }], "minItems": 2, "maxItems": 2, "uniqueItems": true },
+    "result": { "oneOf": [
+      { "type": "object", "additionalProperties": false, "required": ["kind", "proposedLabel", "humanEditStatus", "disposition"], "properties": { "kind": { "const": "admission" }, "proposedLabel": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] }, "humanEditStatus": { "enum": ["none", "light", "substantial", "unknown", "not_applicable"] }, "disposition": { "enum": ["eligible_gold", "eligible_sensitivity", "mixed_evaluation", "quarantine"] } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "decision"], "properties": { "kind": { "const": "provider_revision_exception" }, "decision": { "enum": ["accepted", "rejected"] } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "decision"], "properties": { "kind": { "const": "temporal_attestation" }, "decision": { "enum": ["accepted", "rejected"] } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "decision"], "properties": { "kind": { "const": "witness" }, "decision": { "enum": ["approved", "rejected"] } } }
+    ] },
+    "reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" }, "uniqueItems": true },
+    "decidedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "target": { "oneOf": [
+      { "type": "object", "additionalProperties": false, "required": ["kind", "sourceId"], "properties": { "kind": { "const": "source" }, "sourceId": { "$ref": "#/$defs/id" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "recordId"], "properties": { "kind": { "const": "record" }, "recordId": { "$ref": "#/$defs/sha256" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "recordId", "providerVersioningEvidenceId"], "properties": { "kind": { "const": "provider_revision_exception" }, "recordId": { "$ref": "#/$defs/sha256" }, "providerVersioningEvidenceId": { "$ref": "#/$defs/id" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "witnessSha256", "eligibilitySnapshotSha256", "verifiedContextSha256"], "properties": { "kind": { "const": "witness" }, "witnessSha256": { "$ref": "#/$defs/sha256" }, "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" }, "verifiedContextSha256": { "$ref": "#/$defs/sha256" } } },
+      { "type": "object", "additionalProperties": false, "required": ["kind", "temporalAttestationId", "exactBlobOrContentSha256"], "properties": { "kind": { "const": "temporal_attestation" }, "temporalAttestationId": { "$ref": "#/$defs/sha256" }, "exactBlobOrContentSha256": { "$ref": "#/$defs/sha256" } } }
+    ] },
+    "reason": { "enum": ["source_unregistered", "source_revision_mutable", "source_bytes_unbound", "source_inventory_open", "source_inventory_mismatch", "aggregate_material_conservation_failed", "material_source_conflict", "evidence_unresolved", "evidence_receipt_stale", "record_container_projection_unsupported", "materialization_unsupported", "materialization_unverified", "materialization_receipt_stale", "license_absent", "license_scope_ambiguous", "analysis_use_unresolved", "analysis_use_denied", "redistribution_unresolved", "redistribution_denied", "third_party_rights_unresolved", "authorship_unproven", "generator_identity_missing", "generator_revision_missing", "prompt_binding_missing", "output_binding_mismatch", "human_edit_unknown", "human_edit_substantial", "human_provenance_missing", "historical_cutoff_failed", "historical_attestation_missing", "historical_graph_incomplete", "mixed_authorship", "family_unknown", "pair_incomplete", "pair_content_unsafe", "exact_cross_polarity_overlap", "near_cross_polarity_overlap", "unpaired_family_cross_polarity", "split_leakage", "lineage_ledger_incomplete", "overlap_universe_incomplete", "overlap_authority_incomplete", "privacy_ledger_incomplete", "quality_ledger_incomplete", "adapter_audit_mismatch", "privacy_high_confidence", "secret_high_confidence", "privacy_review_unresolved", "syntax_invalid", "language_normalizer_unsupported", "scaffold_dominant", "trivial_or_inert_target", "duplicate_record", "blind_review_receipt_missing", "witness_review_receipt_missing", "review_incomplete", "review_disagreement", "source_wide_quarantine"] }
+  }
+}

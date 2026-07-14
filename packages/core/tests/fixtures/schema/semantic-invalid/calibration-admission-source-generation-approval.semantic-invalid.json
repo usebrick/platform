@@ -1,0 +1,10 @@
+{
+  "version": "v10.3-admission-source-generation-approval-v1",
+  "approvalId": "approval-fixture",
+  "proposalId": "proposal-fixture",
+  "proposalSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "blindAssignmentId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "reviewerDecisionIds": ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"],
+  "blindReviewReceiptId": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "approvalSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

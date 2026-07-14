@@ -14,6 +14,12 @@ reports. Read this if the numbers in the CLI output don't make sense.
 > The legacy `slopIndex` field stores the same raw amount as
 > `aiSlopScore` (matching the v0.14 convention).
 
+`assemblyHealth` (the inverse of `aiSlopScore`) and `totalScore` are retained
+only as compatibility fields on the internal `ProjectReport`. They are not
+canonical scores or gating inputs; current JSON omits `totalScore`, and
+complete-report JSON keeps `assemblyHealth` for legacy wire/telemetry
+consumers. Human reports do not render an Assembly Health headline.
+
 ## The four scores
 
 ### `AI Slop Score` — the CI gate (0-100, **lower = cleaner**)
@@ -25,8 +31,12 @@ reports. Read this if the numbers in the CLI output don't make sense.
 in `.slopbrick/health.json`. **Default `meanSlop: 30` passes**
 (score must be ≤ 30). 0 is the cleanest, 100 is saturated with AI slop.
 
-**How it's computed:** weighted average of three sub-scores, each
-capped at 0-100:
+**How it's computed:** weighted sum of three AI-specific sub-scores, each
+capped at 0-100. For each effective file (and any effective project-level
+group), weighted severity points are log-scaled within that file and the
+per-file burdens are additively combined for the bucket. Only enabled
+findings in the effective issue set contribute; suppressed/default-off
+findings remain audit evidence but do not change this score:
 
 | Subscore | Weight | What it measures |
 |----------|--------|------------------|
@@ -34,30 +44,28 @@ capped at 0-100:
 | `context`  | 35% | prop correctness, imports, state management — things that affect correctness |
 | `visual`   | 25% | CSS, layout, typography, accessibility — visual style violations |
 
-For codebases WITH components, each subscore is normalized as
-`min(100, sum(severity × weight) / componentCount * 100)`. For
-codebases with **0 components** (CLI tools, pure backend,
-libraries), the raw severity totals are returned so the user sees
-honest numbers (e.g. `ai: 167`, not `ai: 16700` — the v0.14.5h fix).
+For each file and bucket, weighted effective severity points are log-scaled:
+`perFileBurden = log10(1 + weightedPointsInFile) / log10(11) * 100`. Those
+per-file burdens are summed in canonical order, then passed through a second
+fixed cumulative transform:
+`S_bucket = min(100, log10(1 + sum(perFileBurden) / 1000) / log10(11) * 100)`.
+The scale of `1000` leaves headroom for ordinary multi-file scans while the
+hard bound remains 100. Clean files contribute zero and do not dilute existing
+evidence. `scoreBasis.analyzedFiles` still records the successfully analysed
+coverage population (excluding failed outcomes and synthetic rows); it is
+provenance, not an arithmetic dilution denominator.
 
 ### `Engineering Hygiene` — the secondary view (0-100, **higher = better**)
 
-**What it measures:** internal consistency of the codebase's engineering practices.
+**What it measures:** maintainability and engineering quality across the
+effective `arch`, `logic`, `layout`, `visual`, `component`, and `test`
+category burdens.
 
-Hygiene is informational. It does NOT affect the CI gate. It uses
-a different formula because it asks a different question:
-
-> "Is this codebase internally consistent — one modal system, one
-> state library, one fetch pattern, declared allow-list, no drift?"
-
-**How it's computed:** weighted average of four axes:
-
-| Axis | Weight | What it measures |
-|------|--------|------------------|
-| Architecture Consistency | 50% | one modal/state/fetch lib, no off-scale values |
-| Pattern Fragmentation (inverted) | 30% | the same patterns across files, not a zoo |
-| Constitution Mapped | 10% | is there a declared `.slopbrick/constitution.json`? |
-| AI Debt | 10% | bucket of total AI debt detected |
+Hygiene is informational and does not affect the AI Slop CI gate. Each
+category burden is log-saturated from effective severity points; the
+published score is `100 − mean(categoryScores)` across those six
+categories. Architecture consistency, pattern fragmentation, constitution,
+and AI debt remain separate diagnostic surfaces.
 
 ## All four scores at a glance
 
@@ -106,14 +114,12 @@ the v0.14 field name semantics for telemetry consumers
 
 The 16 categories (visual, typo, wcag, layout, component, logic,
 arch, perf, security, test, docs, db, ai, context, product, i18n)
-each get a bar in the breakdown. The bar length is proportional to
-the raw severity points in that category.
-
-**For codebases with components**, the bar shows per-component × 100
-so scores are comparable across project sizes.
-
-**For codebases with 0 components** (CLI tools, libraries), the
-bar shows raw severity totals so the user sees honest numbers.
+each get a bar in the breakdown. Category bars use the category-diagnostic
+formula `min(100, log10(1 + points / 500) / log10(11) * 100)` over the
+canonical weighted severity points. This global `/500` category scale is
+distinct from the AI Slop bucket formula above (per-file log burden followed
+by fixed `/1000` cumulative scaling). Category bars never switch to a
+per-component normalization or raw totals based on repository shape.
 
 A category with 0 points is "clean" — it has no active rules firing.
 

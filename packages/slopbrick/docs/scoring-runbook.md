@@ -15,6 +15,12 @@
 
 `Repository Health` is the current four-axis headline: `0.4 × (100 - aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality`. It is computed from the effective per-file finding groups; suppressed findings remain audit evidence and do not contribute. The older optional-axis management composite (architecture/doc/DB signals) is legacy diagnostic code, not this headline.
 
+`assemblyHealth` (the inverse of `aiSlopScore`) and `totalScore` are
+compatibility-only fields on the internal `ProjectReport`. They are not
+canonical scores, do not gate a scan, and the human renderers do not show an
+Assembly Health card. Current JSON omits `totalScore` while retaining
+`assemblyHealth` in complete reports for legacy wire and telemetry consumers.
+
 `engineeringHygiene` is the inverted mean burden across the six effective
 categories `arch`, `logic`, `layout`, `visual`, `component`, and `test`.
 The numeric `security` axis is continuous: with `N` effective security
@@ -67,24 +73,35 @@ operator's local calibration log (not in the public repo).
 
 ## 1. AI Slop Score (v0.15.0+ replacement for `slopIndex`; v0.21.0 semantic flip)
 
-`aiSlopScore` aggregates per-file, per-rule, per-category issue
-densities into one number in [0, 100]. **v0.21.0: lower is cleaner
-(raw amount of slop).** The v0.15.0–v0.20.1 inversion (higher = better)
-was confusing — users read "AI Slop Score: 100" as "100% slop".
-v0.21.0 stores the raw amount (matching the v0.14 `slopIndex`
-convention and the natural reading of the name).
+`aiSlopScore` aggregates per-file, per-rule, per-category issue burdens into
+one number in [0, 100]. **v0.21.0: lower is cleaner (raw amount of slop).**
+The v0.15.0–v0.20.1 inversion (higher = better) was confusing — users read
+"AI Slop Score: 100" as "100% slop". v0.21.0 stores the raw amount
+(matching the v0.14 `slopIndex` convention and the natural reading of the
+name).
 
 ### Formula
 
-`aiSlopScore` is the raw weighted sum of sub-bucket slop amounts:
+`aiSlopScore` is the raw weighted sum of bounded per-bucket slop amounts:
 
 ```
 aiSlopScore = (0.40 × S_boundary) + (0.35 × S_context) + (0.25 × S_visual)
 ```
 
-where each `S_bucket` is the log-scaled slop amount (0=no slop, 100=saturated)
-for that bucket. The sub-scores **shown in the breakdown** are the
-cleanliness framing: `subscore = 100 - S_bucket`, with labels
+where each `S_bucket` is the bounded cumulative per-file log-scaled slop
+amount (0=no slop, 100=saturated) for that bucket. For every effective
+file/group, weighted severity points are transformed as
+`perFileBurden = log10(1 + weightedPointsInFile) / log10(11) * 100`; those
+burdens are summed in canonical order and transformed again as
+`S_bucket = min(100, log10(1 + sum(perFileBurden) / 1000) / log10(11) * 100)`.
+The fixed cumulative scale of `1000` preserves headroom for ordinary
+multi-file scans while keeping the hard 0–100 bound. Clean files contribute
+zero rather than diluting files with evidence. `scoreBasis.analyzedFiles`
+remains the successfully analysed coverage population and excludes failed
+outcomes and synthetic baseline rows; it is not divided into the weighted
+points. The
+sub-scores **shown in the breakdown** are the cleanliness framing:
+`subscore = 100 - S_bucket`, with labels
 "structural integrity" / "props / state / imports" / "CSS / a11y / layout"
 (intentionally cleanliness-framed so the breakdown is consistent
 with `engineeringHygiene` and `security`). The composite

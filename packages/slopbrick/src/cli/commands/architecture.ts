@@ -5,6 +5,7 @@ import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
 import { buildArchitectureScore, formatArchitectureScore } from '../../engine/architecture-score';
 import { parseCount } from '../options.js';
+import { renderInvalidScan } from './_shared.js';
 
 /**
  * v0.18.x (R-H1): architecture subcommand extracted from cli/program.ts.
@@ -31,7 +32,17 @@ export function registerArchitecture(program: Command): void {
             rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
 
           const cwd = resolve(options.workspace ?? process.cwd());
-          const { config } = await runScan({ ...options, workspace: cwd });
+          const { config, report } = await runScan({ ...options, workspace: cwd });
+          const invalidExitCode = renderInvalidScan(
+            report,
+            options,
+            cwd,
+            format === 'json' ? 'json' : undefined,
+          );
+          if (invalidExitCode !== undefined) {
+            process.exit(invalidExitCode);
+            return;
+          }
           const score = await buildArchitectureScore(cwd, config, cmdOptions.maxFiles);
           const out =
             format === 'json' ? JSON.stringify(score, null, 2) : formatArchitectureScore(score);

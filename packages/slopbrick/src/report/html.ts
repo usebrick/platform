@@ -22,12 +22,13 @@ import {
   renderParseErrors,
 } from './html/sections.js';
 import { renderStyles, renderScripts } from './html/static.js';
-import { formatScanValidityNotice, isNotApplicableScan } from './scan-validity.js';
+import { formatScanValidityNotice, isIncompleteScan, isNotApplicableScan } from './scan-validity.js';
+import { summarizeDefaultOffIssues } from './buckets.js';
 
 export function formatHtml(report: ProjectReport): string {
   const invalidValidity = isNotApplicableScan(report)
     ? 'not-applicable'
-    : report.scoreValidity === 'incomplete'
+    : isIncompleteScan(report)
       ? 'incomplete'
       : undefined;
   if (invalidValidity) {
@@ -65,7 +66,7 @@ export function formatHtml(report: ProjectReport): string {
 <body>
   ${renderHeader(effectiveReport)}
   ${renderThresholds(effectiveReport)}
-  ${renderBuckets(effectiveReport)}
+  ${renderBuckets(effectiveReport, summarizeDefaultOffIssues(report.issues))}
   ${renderCategoryBreakdown(effectiveReport)}
   ${renderTopOffenders(effectiveReport)}
   ${renderFiles(effectiveReport)}

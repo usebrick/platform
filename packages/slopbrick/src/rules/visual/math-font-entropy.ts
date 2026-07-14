@@ -70,7 +70,7 @@ export const mathFontEntropyRule = createRule<RuleContext>({
       aiSpecific: true,
       message:
         `Text-size tokens have low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
-        `AI tends to repeat 2–3 sizes; humans mix 4–6.`,
+        `Review the type scale and hierarchy; repeated sizes are valid when they communicate the same role.`,
       line: anchor.line,
       column: anchor.column,
       advice:

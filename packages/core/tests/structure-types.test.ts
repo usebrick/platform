@@ -162,6 +162,17 @@ describe('memory-types — validators', () => {
       expect(isHealthFile({ ...valid, generatedAt: 'not-a-date' })).toBe(false);
     });
 
+    it('rejects score-free not-applicable payloads', () => {
+      expect(isHealthFile({
+        version: STRUCTURE_SCHEMA_VERSION,
+        generatedAt: '2026-06-25T00:00:00.000Z',
+        workspace: '/tmp',
+        completionStatus: 'empty',
+        scoreValidity: 'not-applicable',
+        issueCounts: { high: 0, medium: 0, low: 0 },
+      })).toBe(false);
+    });
+
     it('accepts optional score-basis provenance', () => {
       expect(isHealthFile({
         ...valid,
