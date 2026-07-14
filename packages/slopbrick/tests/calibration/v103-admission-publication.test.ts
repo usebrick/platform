@@ -93,6 +93,19 @@ describe('offline acquisition publication', () => {
     } finally { await fixture.cleanup(); }
   });
 
+  it('allows the co-located proposal directory in an empty generation-0 tree', async () => {
+    const fixture = await setup();
+    try {
+      const proposal = proposalForCreate();
+      const proposalPath = join(fixture.root, ACQUISITIONS_RELATIVE_ROOT, 'proposals', 'genesis-empty-index.json');
+      await mkdir(join(fixture.root, ACQUISITIONS_RELATIVE_ROOT, 'proposals'), { recursive: true });
+      await writeFile(proposalPath, calibrationAdmissionCanonicalJson(proposal), { flag: 'wx' });
+      const result = await publishAcquisitionPublication({ root: fixture.root, proposal, proposalPath });
+      expect(result.complete).toBe(true);
+      expect(result.currentIndexSha256).toBe(proposal.nextIndex.indexSha256);
+    } finally { await fixture.cleanup(); }
+  });
+
   it('replaces current through a stale-parent CAS and promotes exact artifact bytes', async () => {
     const fixture = await setup();
     try {

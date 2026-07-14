@@ -866,7 +866,12 @@ async function assertAcquisitionGenesisTreeEmpty(
     readdir(layout.transactionsRoot),
     readdir(layout.publicationRoot),
   ]);
-  const unexpectedAcquisitionEntries = acquisitionEntries.filter((entry) => !['index-generations', 'transactions', 'index.json'].includes(entry));
+  // Publication proposals are immutable caller inputs, not promoted
+  // authority state.  The v10.3 layout keeps them beside the acquisition
+  // generations so the proposal remains co-located with the transaction it
+  // describes; an empty generation-0 tree must therefore tolerate this one
+  // non-authority directory while still rejecting every unknown entry.
+  const unexpectedAcquisitionEntries = acquisitionEntries.filter((entry) => !['index-generations', 'transactions', 'proposals', 'index.json'].includes(entry));
   const allowedSidecar = allowedTransactionId === undefined ? undefined : `${allowedTransactionId}.proposal.json`;
   const allowedStage = allowedTransactionId === undefined ? undefined : allowedTransactionId;
   const unexpectedTransactions = transactionEntries.filter((entry) => entry !== allowedSidecar && entry !== allowedStage);
