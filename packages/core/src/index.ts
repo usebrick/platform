@@ -361,6 +361,26 @@ export type { CalibrationAdmissionInputGenerationProposalV1 } from './generated/
 export type { CalibrationAdmissionInputGenerationV1 } from './generated/calibration-admission-input-generation';
 export type { CalibrationAdmissionStaticAuthorityGenerationV1 } from './generated/calibration-admission-static-authority-generation';
 export type { CalibrationAdmissionAuthorityCurrentV1 } from './generated/calibration-admission-authority-current';
+export type { CalibrationAdmissionAuthorityRebuildLockV1 } from './generated/calibration-admission-authority-rebuild-lock';
+export type {
+  CalibrationAdmissionAuthorityRebuildTransactionV1,
+  SourceGenerationDirectory as CalibrationAdmissionAuthorityRebuildSourceGenerationDirectoryV1,
+} from './generated/calibration-admission-authority-rebuild-transaction';
+export {
+  calibrationAdmissionAuthorityRebuildLockSha256,
+  calibrationAdmissionAuthorityRebuildTransactionSha256,
+  isCalibrationAdmissionAuthorityRebuildLockV1,
+  isCalibrationAdmissionAuthorityRebuildTransactionV1,
+  validateCalibrationAdmissionAuthorityRebuildLockV1,
+  validateCalibrationAdmissionAuthorityRebuildTransactionV1,
+  validateCalibrationAdmissionAuthorityRebuildGraph,
+  validateCalibrationAdmissionAuthorityRebuildGraphV1,
+} from './calibration-admission-authority-rebuild';
+export type {
+  CalibrationAdmissionAuthorityRebuildValidationV1,
+  CalibrationAdmissionAuthorityRebuildGraphValidationV1,
+  CalibrationAdmissionAuthorityRebuildGraphInputV1,
+} from './calibration-admission-authority-rebuild';
 
 export {
   calibrationAdmissionBlindAssignmentId,

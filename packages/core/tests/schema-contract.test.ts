@@ -89,6 +89,8 @@ describe('schema contract and package delivery', () => {
       'calibration-admission-input-generation',
       'calibration-admission-static-authority-generation',
       'calibration-admission-authority-current',
+      'calibration-admission-authority-rebuild-lock',
+      'calibration-admission-authority-rebuild-transaction',
       'calibration-admission-record',
       'calibration-admission-record-stream',
       'calibration-admission-decision',

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-authority-rebuild-lock.schema.json",
+  "title": "CalibrationAdmissionAuthorityRebuildLockV1",
+  "description": "Fixed-path lock for a create or replace static admission-authority rebuild transaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "inputGenerationProposalId", "inputGenerationProposalSha256", "operation", "expectedCurrentState", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-authority-rebuild-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "inputGenerationProposalId": { "$ref": "#/$defs/id" },
+    "inputGenerationProposalSha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "expectedCurrentState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "staticGenerationSha256"], "properties": { "kind": { "const": "existing" }, "staticGenerationSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}

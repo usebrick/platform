@@ -1,0 +1,29 @@
+{
+  "version": "v10.3-admission-authority-rebuild-transaction-v1",
+  "transactionId": "transaction-1",
+  "lockSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "invocationIntentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "inputGenerationProposalId": "proposal-1",
+  "inputGenerationProposalSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "operation": "create",
+  "expectedCurrentState": { "kind": "absent" },
+  "recoveryNonce": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "inputGenerationRelativePath": "review/admission/input/generations/input-1.json",
+  "staticGenerationStagingRelativePath": "review/admission/authority/staging/transaction-1",
+  "authorityCurrentTemporaryRelativePath": "review/admission/authority/current.transaction-1.tmp.json",
+  "authorityCurrentFinalRelativePath": "review/admission/authority/current.json",
+  "sourceGenerationDirectories": [
+    {
+      "sourceId": "source-a",
+      "generationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactSetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "generationStagingRelativePath": "review/admission/sources/source-a/staging/transaction-1",
+      "generationFinalRelativePath": "review/admission/sources/source-a/generations/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generationsParentRelativePath": "review/admission/sources/source-a/generations",
+      "currentPointerTemporaryRelativePath": "review/admission/sources/source-a/current.transaction-1.tmp.json",
+      "currentPointerFinalRelativePath": "review/admission/sources/source-a/current.json"
+    }
+  ],
+  "state": { "phase": "intent_fsynced" },
+  "transactionSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+}
