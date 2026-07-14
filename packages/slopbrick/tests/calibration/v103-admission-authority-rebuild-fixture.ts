@@ -37,6 +37,7 @@ export type PrebuiltAuthoritySourceFixture = PrebuiltAdmissionAuthoritySourceInp
 
 export type PrebuiltAuthorityGraphFixture = PrebuiltAdmissionAuthorityGraphInput & {
   readonly proposal: CalibrationAdmissionInputGenerationProposalV1;
+  readonly proposalBytes: Buffer;
   readonly inputGeneration: CalibrationAdmissionInputGenerationV1;
   readonly staticGeneration: CalibrationAdmissionStaticAuthorityGenerationV1;
   readonly current: CalibrationAdmissionAuthorityCurrentV1;
@@ -258,6 +259,7 @@ export function makePrebuiltAuthorityFixture(): PrebuiltAuthorityGraphFixture {
   };
   return {
     proposal,
+    proposalBytes: canonical(proposal),
     inputGeneration,
     staticGeneration,
     current,

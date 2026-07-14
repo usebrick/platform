@@ -54,6 +54,7 @@ export interface PrebuiltAdmissionAuthoritySourceInput {
  */
 export interface PrebuiltAdmissionAuthorityGraphInput {
   readonly proposal: unknown;
+  readonly proposalBytes: Uint8Array;
   readonly inputGeneration: unknown;
   readonly inputGenerationBytes: Uint8Array;
   readonly staticGeneration: unknown;
@@ -61,8 +62,8 @@ export interface PrebuiltAdmissionAuthorityGraphInput {
   readonly current: unknown;
   readonly currentBytes: Uint8Array;
   readonly priorCurrent?: unknown;
+  readonly priorCurrentBytes?: Uint8Array;
   readonly sources: readonly PrebuiltAdmissionAuthoritySourceInput[];
-  readonly [key: string]: unknown;
 }
 
 export interface PrebuiltAdmissionAuthorityGraphValidation {
@@ -277,6 +278,29 @@ export function validatePrebuiltAdmissionAuthorityGraph(input: unknown): Prebuil
   try {
     const errors: string[] = [];
     if (!isRecord(input)) return result(['prebuilt authority graph input is not an object']);
+    const hasPriorCurrent = input.priorCurrent !== undefined;
+    const hasPriorCurrentBytes = input.priorCurrentBytes !== undefined;
+    const expectedTopLevelKeys = [
+      'current',
+      'currentBytes',
+      'inputGeneration',
+      'inputGenerationBytes',
+      'proposal',
+      'proposalBytes',
+      'sources',
+      'staticGeneration',
+      'staticGenerationBytes',
+      ...(hasPriorCurrent ? ['priorCurrent'] : []),
+      ...(hasPriorCurrentBytes ? ['priorCurrentBytes'] : []),
+    ].sort();
+    const actualTopLevelKeys = Object.keys(input).sort();
+    if (actualTopLevelKeys.length !== expectedTopLevelKeys.length
+      || actualTopLevelKeys.some((key, index) => key !== expectedTopLevelKeys[index])) {
+      push(errors, 'prebuilt authority graph input has unexpected top-level keys');
+    }
+    if (hasPriorCurrent !== hasPriorCurrentBytes) {
+      push(errors, 'prebuilt authority prior current and prior current bytes must be supplied together');
+    }
     const proposal = isCalibrationAdmissionInputGenerationProposalV1(input.proposal) ? input.proposal : undefined;
     const inputGeneration = isCalibrationAdmissionInputGenerationV1(input.inputGeneration) ? input.inputGeneration : undefined;
     const staticGeneration = isCalibrationAdmissionStaticAuthorityGenerationV1(input.staticGeneration) ? input.staticGeneration : undefined;
@@ -290,9 +314,11 @@ export function validatePrebuiltAdmissionAuthorityGraph(input: unknown): Prebuil
     }
     if (!proposal || !inputGeneration || !staticGeneration || !current) return result(errors);
 
+    verifyCanonicalBytes(input.proposal, input.proposalBytes, 'proposal bytes', errors);
     verifyCanonicalBytes(input.inputGeneration, input.inputGenerationBytes, 'input generation bytes', errors);
     verifyCanonicalBytes(input.staticGeneration, input.staticGenerationBytes, 'static generation bytes', errors);
     verifyCanonicalBytes(input.current, input.currentBytes, 'current pointer bytes', errors);
+    if (hasPriorCurrent) verifyCanonicalBytes(input.priorCurrent, input.priorCurrentBytes, 'prior current pointer bytes', errors);
     if (inputGeneration.generationSha256 !== calibrationAdmissionInputGenerationSha256(inputGeneration)) push(errors, 'input generation self-hash does not match canonical object');
     if (staticGeneration.generationSha256 !== calibrationAdmissionStaticAuthorityGenerationSha256(staticGeneration)) push(errors, 'static generation self-hash does not match canonical object');
     if (current.currentSha256 !== calibrationAdmissionAuthorityCurrentSha256(current)) push(errors, 'current pointer self-hash does not match canonical object');

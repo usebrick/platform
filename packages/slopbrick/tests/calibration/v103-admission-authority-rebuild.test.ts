@@ -27,6 +27,34 @@ function mutate<T extends keyof PrebuiltAuthorityGraphFixture>(
 }
 
 describe('v10.3 prebuilt authority graph failures', () => {
+  it('rejects extra top-level wrapper keys', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    expect(validatePrebuiltAdmissionAuthorityGraph({ ...fixture, unexpected: true }).ok).toBe(false);
+  });
+
+  it('requires exact canonical proposal bytes', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const { proposalBytes: _proposalBytes, ...withoutProposalBytes } = fixture;
+    expect(validatePrebuiltAdmissionAuthorityGraph(withoutProposalBytes).ok).toBe(false);
+    expect(validatePrebuiltAdmissionAuthorityGraph(mutate(
+      fixture,
+      'proposalBytes',
+      Buffer.from(`${fixture.proposalBytes.toString('utf8')}\n`, 'utf8'),
+    )).ok).toBe(false);
+  });
+
+  it('requires prior-current bytes exactly when prior current is supplied', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    expect(validatePrebuiltAdmissionAuthorityGraph({
+      ...fixture,
+      priorCurrent: fixture.current,
+    }).errors).toContain('prebuilt authority prior current and prior current bytes must be supplied together');
+    expect(validatePrebuiltAdmissionAuthorityGraph({
+      ...fixture,
+      priorCurrentBytes: fixture.currentBytes,
+    }).errors).toContain('prebuilt authority prior current and prior current bytes must be supplied together');
+  });
+
   it('rejects a BOM or non-canonical top-level byte receipt', () => {
     const fixture = makePrebuiltAuthorityFixture();
     const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), fixture.inputGenerationBytes]);
