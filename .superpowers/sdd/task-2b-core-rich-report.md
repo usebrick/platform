@@ -42,6 +42,8 @@ without throwing. A regression mutation covers this path.
 
 ## Follow-up hostile-input hardening
 
+Hardening commit: `1f2f8f6a4a31368078a59e683a42321640b08df5`
+
 The public validator now wraps the complete validation path in a fail-closed
 boundary. Undefined witness constraints, malformed/undefined record streams,
 throwing root proxies, nested getter failures, and exact-key/hash access
