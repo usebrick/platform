@@ -696,3 +696,5 @@ CLI, real corpus, witness authority, and release gates remain open.
 
 - SDD ledger: Task 2B Core rich pre-witness contract: complete; commits
   `286741d15..b6c85ad8f`; review clean.
+- SDD ledger: Task 2B authority rebuild contracts: complete; commits
+  `a5d66eba3..4318d26eb`; review clean.
