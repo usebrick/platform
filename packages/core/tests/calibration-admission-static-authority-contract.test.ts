@@ -14,6 +14,7 @@ import {
   isCalibrationAdmissionInputGenerationV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
   validateCalibrationAdmissionAuthorityCurrentV1,
+  validateCalibrationAdmissionStaticAuthorityGraphV1,
   validateCalibrationAdmissionInputGenerationProposalV1,
   validateCalibrationAdmissionInputGenerationV1,
   validateCalibrationAdmissionStaticAuthorityGenerationV1,
@@ -25,6 +26,7 @@ const fixtureDir = join(root, 'tests', 'fixtures', 'schema');
 const A = 'a'.repeat(64);
 const B = 'b'.repeat(64);
 const C = 'c'.repeat(64);
+const D = 'd'.repeat(64);
 
 function artifact(kind: string, relativePath: string, sha256 = A) {
   return { pathBase: 'generation_local', relativePath, kind, bytes: 1, sha256 };
@@ -107,10 +109,10 @@ function staticGeneration(overrides: Record<string, unknown> = {}) {
     preWitnessBundleSha256: C,
     toolAuthoritySnapshot,
     artifacts: [
-      artifact('ledger', 'lineage-ledger.json', C),
-      artifact('bundle', 'pre-witness-bundle.json', A),
-      artifact('ledger', 'privacy-ledger.json', A),
-      artifact('ledger', 'quality-ledger.json', B),
+      artifact('ledger', 'lineage-ledger.json', B),
+      artifact('bundle', 'pre-witness-bundle.json', C),
+      artifact('ledger', 'privacy-ledger.json', C),
+      artifact('ledger', 'quality-ledger.json', A),
     ],
     ...overrides,
   };
@@ -199,5 +201,98 @@ describe('v10.3 static-authority graph contracts', () => {
       expect(validate!(JSON.parse(readFileSync(join(fixtureDir, 'valid', `${name}.valid.json`), 'utf8'))), name).toBe(true);
       expect(validate!(JSON.parse(readFileSync(join(fixtureDir, 'invalid', `${name}.invalid.json`), 'utf8'))), name).toBe(false);
     }
+  });
+
+  it('joins the proposal, input generation, static generation, and published current pointer', () => {
+    const input = inputGeneration();
+    const staticValue = staticGeneration({ inputGenerationSha256: input.generationSha256 });
+    const publishedCurrent = current(staticValue.generationSha256, { generation: staticValue.generation });
+    const createGraph = validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: proposal(),
+      inputGeneration: input,
+      staticGeneration: staticValue,
+      current: publishedCurrent,
+    });
+    expect(createGraph.ok).toBe(true);
+  });
+
+  it('binds replace CAS state and rejects cross-object hash or pointer substitutions', () => {
+    const priorStatic = staticGeneration();
+    const priorCurrent = current(priorStatic.generationSha256, { generation: priorStatic.generation });
+    const inputBody = {
+      ...inputGeneration(),
+      generation: 1,
+      parentInputGenerationSha256: D,
+    };
+    const input = { ...inputBody, generationSha256: calibrationAdmissionInputGenerationSha256(inputBody) };
+    const proposalBody = {
+      ...proposal(),
+      operation: 'replace' as const,
+      expectedCurrentState: { kind: 'existing' as const, staticGenerationSha256: priorStatic.generationSha256 },
+    };
+    const replacementProposal = {
+      ...proposalBody,
+      proposalSha256: calibrationAdmissionInputGenerationProposalSha256(proposalBody),
+    };
+    const staticBody = {
+      ...staticGeneration({ inputGenerationSha256: input.generationSha256 }),
+      generation: 1,
+      parentStaticGenerationSha256: priorStatic.generationSha256,
+    };
+    const replacementStatic = {
+      ...staticBody,
+      generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(staticBody),
+    };
+    const publishedCurrent = current(replacementStatic.generationSha256, { generation: 1 });
+    const replaceGraph = validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: replacementProposal,
+      inputGeneration: input,
+      staticGeneration: replacementStatic,
+      priorCurrent,
+      current: publishedCurrent,
+    });
+    expect(replaceGraph.ok).toBe(true);
+
+    expect(validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: replacementProposal,
+      inputGeneration: { ...input, evidenceBundleSha256: B, generationSha256: calibrationAdmissionInputGenerationSha256({ ...input, evidenceBundleSha256: B }) },
+      staticGeneration: replacementStatic,
+      priorCurrent,
+      current: publishedCurrent,
+    }).ok).toBe(false);
+    expect(validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: replacementProposal,
+      inputGeneration: input,
+      staticGeneration: replacementStatic,
+      priorCurrent: current(C, { generation: 0 }),
+      current: publishedCurrent,
+    }).ok).toBe(false);
+    expect(validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: replacementProposal,
+      inputGeneration: input,
+      staticGeneration: replacementStatic,
+      priorCurrent,
+      current: current(A, { generation: 1 }),
+    }).ok).toBe(false);
+  });
+
+  it('requires the exact static-ledger and pre-witness artifact anchors', () => {
+    const input = inputGeneration();
+    const staticValue = staticGeneration({ inputGenerationSha256: input.generationSha256 });
+    const publishedCurrent = current(staticValue.generationSha256, { generation: staticValue.generation });
+    const wrongArtifacts = staticValue.artifacts.map((entry) => entry.relativePath === 'privacy-ledger.json'
+      ? { ...entry, relativePath: 'other-ledger.json' }
+      : entry);
+    const mutated = {
+      ...staticValue,
+      artifacts: wrongArtifacts,
+      generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256({ ...staticValue, artifacts: wrongArtifacts }),
+    };
+    expect(validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: proposal(),
+      inputGeneration: input,
+      staticGeneration: mutated,
+      current: publishedCurrent,
+    }).ok).toBe(false);
   });
 });

@@ -339,9 +339,11 @@ export {
   validateCalibrationAdmissionInputGenerationV1,
   validateCalibrationAdmissionStaticAuthorityGenerationV1,
   validateCalibrationAdmissionAuthorityCurrentV1,
+  validateCalibrationAdmissionStaticAuthorityGraphV1,
 } from './calibration-admission-static-authority';
 export type {
   CalibrationAdmissionStaticAuthorityValidationV1,
+  CalibrationAdmissionStaticAuthorityGraphInputV1,
 } from './calibration-admission-static-authority';
 export type { CalibrationAdmissionInputGenerationProposalV1 } from './generated/calibration-admission-input-generation-proposal';
 export type { CalibrationAdmissionInputGenerationV1 } from './generated/calibration-admission-input-generation';

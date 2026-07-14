@@ -29,6 +29,20 @@ export interface CalibrationAdmissionStaticAuthorityValidationV1 {
   readonly errors: readonly string[];
 }
 
+/**
+ * Caller-supplied objects for the pure static-authority graph join. The
+ * optional `priorCurrent` is the pointer observed by a replace proposal;
+ * `current` is the pointer that should publish the supplied static generation.
+ * This contract never reads either path or artifact bytes.
+ */
+export interface CalibrationAdmissionStaticAuthorityGraphInputV1 {
+  readonly proposal: unknown;
+  readonly inputGeneration: unknown;
+  readonly staticGeneration: unknown;
+  readonly priorCurrent?: unknown;
+  readonly current: unknown;
+}
+
 const AUTHORITY_ROOT = 'review/admission/authority';
 const STATIC_GENERATIONS_ROOT = `${AUTHORITY_ROOT}/static-generations`;
 const SOURCE_GENERATIONS_ROOT = 'review/admission/sources';
@@ -114,6 +128,26 @@ function inputArtifact(value: unknown, expectedKind: string, expectedPath: strin
   return authorityArtifact(value)
     && value.kind === expectedKind
     && value.relativePath === expectedPath;
+}
+
+function sameArtifact(left: CalibrationAdmissionArtifactReceiptV1, right: CalibrationAdmissionArtifactReceiptV1): boolean {
+  return left.pathBase === right.pathBase
+    && left.relativePath === right.relativePath
+    && left.kind === right.kind
+    && left.bytes === right.bytes
+    && left.sha256 === right.sha256;
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
+function findArtifacts(
+  artifacts: readonly CalibrationAdmissionArtifactReceiptV1[],
+  kind: CalibrationAdmissionArtifactReceiptV1['kind'],
+  relativePath: string,
+): readonly CalibrationAdmissionArtifactReceiptV1[] {
+  return artifacts.filter((entry) => entry.kind === kind && entry.relativePath === relativePath);
 }
 
 function sourceGeneration(value: unknown): boolean {
@@ -237,4 +271,104 @@ export function validateCalibrationAdmissionAuthorityCurrentV1(value: unknown): 
 
 export function isCalibrationAdmissionAuthorityCurrentV1(value: unknown): value is CalibrationAdmissionAuthorityCurrentV1 {
   return validateCalibrationAdmissionAuthorityCurrentV1(value).ok;
+}
+
+/**
+ * Validate the cross-object joins that can be proven before the rich
+ * pre-witness bundle and filesystem authority exist.
+ *
+ * The graph is intentionally narrow: it binds proposal → input generation,
+ * input generation → static generation, static ledger/bundle receipt anchors,
+ * and the observed/published current-pointer CAS relation. It does not claim
+ * that any referenced hash has been read from disk or that the opaque
+ * preWitnessBundleSha256 points to a final witness-free bundle.
+ */
+export function validateCalibrationAdmissionStaticAuthorityGraphV1(
+  input: CalibrationAdmissionStaticAuthorityGraphInputV1,
+): CalibrationAdmissionStaticAuthorityValidationV1 {
+  const errors: string[] = [];
+  if (!isJsonRecord(input)) return result(['static authority graph input is not an object']);
+
+  const proposal = isCalibrationAdmissionInputGenerationProposalV1(input.proposal) ? input.proposal : undefined;
+  const inputGeneration = isCalibrationAdmissionInputGenerationV1(input.inputGeneration) ? input.inputGeneration : undefined;
+  const staticGeneration = isCalibrationAdmissionStaticAuthorityGenerationV1(input.staticGeneration) ? input.staticGeneration : undefined;
+  const current = isCalibrationAdmissionAuthorityCurrentV1(input.current) ? input.current : undefined;
+  const priorCurrent = input.priorCurrent === undefined
+    ? undefined
+    : isCalibrationAdmissionAuthorityCurrentV1(input.priorCurrent) ? input.priorCurrent : undefined;
+
+  if (!proposal) errors.push('static authority graph proposal is invalid');
+  if (!inputGeneration) errors.push('static authority graph input generation is invalid');
+  if (!staticGeneration) errors.push('static authority graph static generation is invalid');
+  if (!current) errors.push('static authority graph published current pointer is invalid');
+  if (input.priorCurrent !== undefined && !priorCurrent) errors.push('static authority graph prior current pointer is invalid');
+  if (!proposal || !inputGeneration || !staticGeneration || !current) return result(errors);
+
+  const proposalSourceIds = proposal.sourceGenerationProposals.map((entry) => String((entry as Record<string, unknown>).sourceId));
+  const inputSourceIds = inputGeneration.sourceGenerations.map((entry) => entry.sourceId);
+  if (!sameStrings(proposalSourceIds, inputSourceIds)) errors.push('proposal and input generation source IDs do not match');
+  if (proposal.evidenceBundleSha256 !== inputGeneration.evidenceBundleSha256) errors.push('proposal and input generation evidence bundle hashes do not match');
+
+  const inputArtifacts = inputGeneration.artifacts;
+  const inputRoles = [
+    ['record_stream', 'admission-records.jsonl', 'admissionRecordStreamSha256', proposal.admissionRecordStream] as const,
+    ['overlap_universe', 'overlap-universe.json', 'overlapUniverseSha256', proposal.overlapUniverse] as const,
+    ['overlap_universe_stream', 'overlap-universe-records.jsonl', 'overlapUniverseRecordsSha256', proposal.overlapUniverseRecords] as const,
+  ];
+  for (const [kind, relativePath, hashKey, proposalArtifact] of inputRoles) {
+    const matches = findArtifacts(inputArtifacts, kind, relativePath);
+    if (matches.length !== 1) {
+      errors.push(`input generation must contain exactly one ${kind} artifact`);
+      continue;
+    }
+    const inputArtifactValue = matches[0]!;
+    if (!sameArtifact(proposalArtifact, inputArtifactValue)) errors.push(`${kind} artifact is not identical between proposal and input generation`);
+    if (inputArtifactValue.sha256 !== inputGeneration[hashKey]) errors.push(`${kind} artifact hash is not bound to the input generation field`);
+  }
+
+  if (inputGenerationSha256ForGraph(inputGeneration) !== staticGeneration.inputGenerationSha256) {
+    errors.push('static generation does not bind the supplied input generation');
+  }
+
+  const staticRoles = [
+    ['ledger', 'privacy-ledger.json', 'privacyLedgerSha256'],
+    ['ledger', 'quality-ledger.json', 'qualityLedgerSha256'],
+    ['ledger', 'lineage-ledger.json', 'lineageLedgerSha256'],
+    ['bundle', 'pre-witness-bundle.json', 'preWitnessBundleSha256'],
+  ] as const;
+  for (const [kind, relativePath, hashKey] of staticRoles) {
+    const matches = findArtifacts(staticGeneration.artifacts, kind, relativePath);
+    if (matches.length !== 1) {
+      errors.push(`static generation must contain exactly one ${relativePath} artifact`);
+      continue;
+    }
+    if (matches[0]!.sha256 !== staticGeneration[hashKey]) errors.push(`${relativePath} artifact hash is not bound to the static generation field`);
+  }
+
+  if (current.staticGenerationSha256 !== staticGeneration.generationSha256 || current.generation !== staticGeneration.generation) {
+    errors.push('published current pointer does not anchor the supplied static generation');
+  }
+
+  if (proposal.operation === 'create') {
+    if (inputGeneration.generation !== 0 || inputGeneration.parentInputGenerationSha256 !== undefined) errors.push('create proposal must publish input generation zero without a parent');
+    if (staticGeneration.generation !== 0 || staticGeneration.parentStaticGenerationSha256 !== undefined) errors.push('create proposal must publish static generation zero without a parent');
+    if (priorCurrent !== undefined) errors.push('create proposal must not carry a prior current pointer');
+  } else {
+    if (inputGeneration.generation === 0 || inputGeneration.parentInputGenerationSha256 === undefined) errors.push('replace proposal must publish an input generation with a parent');
+    if (staticGeneration.generation === 0 || staticGeneration.parentStaticGenerationSha256 === undefined) errors.push('replace proposal must publish a static generation with a parent');
+    if (!priorCurrent) {
+      errors.push('replace proposal must provide the prior current pointer');
+    } else if (proposal.expectedCurrentState.kind !== 'existing'
+      || priorCurrent.staticGenerationSha256 !== proposal.expectedCurrentState.staticGenerationSha256
+      || staticGeneration.parentStaticGenerationSha256 !== priorCurrent.staticGenerationSha256
+      || staticGeneration.generation !== priorCurrent.generation + 1) {
+      errors.push('replace proposal CAS state does not match the prior current pointer');
+    }
+  }
+
+  return result(errors);
+}
+
+function inputGenerationSha256ForGraph(value: CalibrationAdmissionInputGenerationV1): string {
+  return calibrationAdmissionInputGenerationSha256(value);
 }
