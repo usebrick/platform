@@ -698,3 +698,29 @@ CLI, real corpus, witness authority, and release gates remain open.
   `286741d15..b6c85ad8f`; review clean.
 - SDD ledger: Task 2B authority rebuild contracts: complete; commits
   `a5d66eba3..4318d26eb`; review clean.
+
+### Task 2B runtime source-review authority-anchor checkpoint — 2026-07-14
+
+The bounded runtime source-review anchor is independently approved for this
+slice only. Implementation commits `762540ae5` and `b285cccb3` bind every rich
+bundle source review to the fixed
+`review/admission/sources/<sourceId>/current.json` pointer, exact hash-named
+generation, and canonical byte/hash receipt; current-to-generation hash/path
+drift and hostile mutations fail closed. Evidence/review:
+`.superpowers/sdd/task-2b-source-review-anchor-report.md`.
+
+Focused context/disposition tests pass **2 files / 14 tests** with one worker
+and `NODE_OPTIONS=--max-old-space-size=2048`; SlopBrick typecheck, build, and
+`git diff --check` pass. The canonical external admission root
+`/Users/cheng/corpus-expansion/v10.3/review/admission` has no `sources` entry
+(`test -e .../sources` is false; recursive `*/review/admission/sources*`
+search returns zero paths), so production runtime resolution remains
+fail-closed. The read-only diagnostic remains **329/329** registered/reviewed,
+**452,382** quarantined/unrepresented, zero candidate/eligible units, with
+blockers `static_authority_unavailable` and `witness_authority_unavailable`.
+
+The ledger remains `98/178` continuation and `2/76` admission items. Task 2B
+CLI `rebuild:pre-witness`, `static-authority:recover`, and `census:preview`,
+byte-backed rebuild/recovery, census/witness/resource receipts, corpus
+admission, and release gates remain open; no corpus or remote/release state
+changed.
