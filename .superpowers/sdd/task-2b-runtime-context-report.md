@@ -74,4 +74,6 @@ rebuild orchestration, CLI work, corpus writes, or release changes.
 - `git diff --check`: passed.
 
 The implementation fix is committed as `89d6f1d19` (`fix(calibration):
-tighten runtime context authority joins`).
+tighten runtime context authority joins`), with the metadata-only static role
+anchor follow-up in `da724db75` (`fix(calibration): retain static artifact role
+anchors`).
