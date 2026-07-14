@@ -67,6 +67,17 @@ function strengthenFixedTuples(file: string, generated: string): string {
       'artifacts: [{ kind: "lineage_ledger"; relativePath: "static/lineage.json"; sha256: Sha256 }, { kind: "overlap_generation"; relativePath: "static/overlap.json"; sha256: Sha256 }, { kind: "privacy_ledger"; relativePath: "static/privacy.json"; sha256: Sha256 }, { kind: "quality_ledger"; relativePath: "static/quality.json"; sha256: Sha256 }, { kind: "record_stream"; relativePath: "static/records.jsonl"; sha256: Sha256 }];',
     );
   }
+  if (file === 'calibration-admission-pre-witness-bundle.schema.json') {
+    const withTuple = generated.replace(
+      'witnessPolicies: never[];',
+      'witnessPolicies: [AdmissionWitnessPolicyV1, AdmissionWitnessPolicyV1];',
+    );
+    const withArray = withTuple.replace(
+      /  toolProfiles:[\s\S]*?;\n  \/\*\*\n   \* @maxItems 452382\n   \*\/\n  invocationIntents:/,
+      '  toolProfiles: CalibrationAdmissionToolProfileV1[];\n  /**\n   * @maxItems 452382\n   *\/\n  invocationIntents:',
+    );
+    return `import type { AdmissionWitnessPolicyV1 } from './calibration-admission-witness-policy';\n${withArray}`;
+  }
   if (file === 'calibration-admission-decision.schema.json') {
     return generated.replace('adjudicatesDecisionIds?: [unknown, unknown];', 'adjudicatesDecisionIds?: [Sha256, Sha256];');
   }

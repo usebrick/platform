@@ -304,6 +304,18 @@ export type {
   CalibrationAdmissionPreWitnessBoundaryValidationV1,
 } from './calibration-admission-pre-witness';
 
+export type { CalibrationAdmissionPreWitnessBundleV1 } from './generated/calibration-admission-pre-witness-bundle';
+export {
+  calibrationAdmissionPreWitnessBundleSha256,
+  isCalibrationAdmissionPreWitnessBundleV1,
+  validateCalibrationAdmissionPreWitnessBundleV1,
+} from './calibration-admission-pre-witness-bundle';
+export type {
+  CalibrationAdmissionPreWitnessBundleValidationV1,
+  CalibrationAdmissionPreWitnessBundleValidationFailureV1,
+  CalibrationAdmissionPreWitnessBundleValidationResultV1,
+} from './calibration-admission-pre-witness-bundle';
+
 export {
   calibrationAdmissionSourceGenerationProposalSha256,
   calibrationAdmissionSourceGenerationApprovalSha256,
