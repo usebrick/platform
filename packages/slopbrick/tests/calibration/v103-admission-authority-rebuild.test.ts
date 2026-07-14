@@ -1,7 +1,11 @@
+import { createHash } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 
 import {
+  calibrationAdmissionAuthorityCurrentSha256,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
 } from '@usebrick/core';
 
@@ -24,6 +28,10 @@ function mutate<T extends keyof PrebuiltAuthorityGraphFixture>(
   value: PrebuiltAuthorityGraphFixture[T],
 ): PrebuiltAuthorityGraphFixture {
   return { ...fixture, [key]: value } as PrebuiltAuthorityGraphFixture;
+}
+
+function sha256(value: Uint8Array): string {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 describe('v10.3 prebuilt authority graph failures', () => {
@@ -60,6 +68,105 @@ describe('v10.3 prebuilt authority graph failures', () => {
     const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), fixture.inputGenerationBytes]);
     expect(validatePrebuiltAdmissionAuthorityGraph(mutate(fixture, 'inputGenerationBytes', bom)).ok).toBe(false);
     expect(validatePrebuiltAdmissionAuthorityGraph(mutate(fixture, 'currentBytes', Buffer.from(`${fixture.currentBytes.toString('utf8')}\n`, 'utf8'))).ok).toBe(false);
+  });
+
+  it('rejects a rehashed input receipt when its raw bytes are mutated', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const mutatedBytes = Buffer.from('{"recordId":"mutated"}\n', 'utf8');
+    const inputArtifact = fixture.inputGeneration.artifacts[0]!;
+    const changedArtifact = {
+      ...inputArtifact,
+      bytes: mutatedBytes.byteLength,
+      sha256: sha256(mutatedBytes),
+    };
+    const changedInputBody = {
+      ...fixture.inputGeneration,
+      artifacts: [changedArtifact, ...fixture.inputGeneration.artifacts.slice(1)],
+    };
+    const changedInput = {
+      ...changedInputBody,
+      generationSha256: calibrationAdmissionInputGenerationSha256(changedInputBody),
+    } as typeof fixture.inputGeneration;
+    const changedStaticBody = {
+      ...fixture.staticGeneration,
+      inputGenerationSha256: changedInput.generationSha256,
+    };
+    const changedStatic = {
+      ...changedStaticBody,
+      generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(changedStaticBody),
+    } as typeof fixture.staticGeneration;
+    const changedCurrentBody = {
+      ...fixture.current,
+      staticGenerationSha256: changedStatic.generationSha256,
+      staticGenerationRelativePath: `review/admission/authority/static-generations/${changedStatic.generationSha256}`,
+    };
+    const changedCurrent = {
+      ...changedCurrentBody,
+      currentSha256: calibrationAdmissionAuthorityCurrentSha256(changedCurrentBody),
+    } as typeof fixture.current;
+    const changed = {
+      ...fixture,
+      inputGeneration: changedInput,
+      inputGenerationBytes: Buffer.from(calibrationAdmissionCanonicalJson(changedInput), 'utf8'),
+      staticGeneration: changedStatic,
+      staticGenerationBytes: Buffer.from(calibrationAdmissionCanonicalJson(changedStatic), 'utf8'),
+      current: changedCurrent,
+      currentBytes: Buffer.from(calibrationAdmissionCanonicalJson(changedCurrent), 'utf8'),
+    } as PrebuiltAuthorityGraphFixture;
+    expect(validatePrebuiltAdmissionAuthorityGraph(changed).errors).toContain('input generation artifact bytes do not match admission-records.jsonl');
+  });
+
+  it('rejects a rehashed static receipt when its raw bytes are mutated', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const mutatedBytes = Buffer.from('{"quality":"mutated"}\n', 'utf8');
+    const staticArtifact = fixture.staticGeneration.artifacts.find((artifact) => artifact.relativePath === 'quality-ledger.json')!;
+    const changedArtifact = {
+      ...staticArtifact,
+      bytes: mutatedBytes.byteLength,
+      sha256: sha256(mutatedBytes),
+    };
+    const changedStaticBody = {
+      ...fixture.staticGeneration,
+      qualityLedgerSha256: changedArtifact.sha256,
+      artifacts: fixture.staticGeneration.artifacts.map((artifact) => artifact.relativePath === changedArtifact.relativePath ? changedArtifact : artifact),
+    };
+    const changedStatic = {
+      ...changedStaticBody,
+      generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(changedStaticBody),
+    } as typeof fixture.staticGeneration;
+    const changedCurrentBody = {
+      ...fixture.current,
+      staticGenerationSha256: changedStatic.generationSha256,
+      staticGenerationRelativePath: `review/admission/authority/static-generations/${changedStatic.generationSha256}`,
+    };
+    const changedCurrent = {
+      ...changedCurrentBody,
+      currentSha256: calibrationAdmissionAuthorityCurrentSha256(changedCurrentBody),
+    } as typeof fixture.current;
+    const changed = {
+      ...fixture,
+      staticGeneration: changedStatic,
+      staticGenerationBytes: Buffer.from(calibrationAdmissionCanonicalJson(changedStatic), 'utf8'),
+      current: changedCurrent,
+      currentBytes: Buffer.from(calibrationAdmissionCanonicalJson(changedCurrent), 'utf8'),
+    } as PrebuiltAuthorityGraphFixture;
+    expect(validatePrebuiltAdmissionAuthorityGraph(changed).errors).toContain('static generation artifact bytes do not match quality-ledger.json');
+  });
+
+  it('rejects missing and extra top-level artifact byte paths', () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const { ['admission-records.jsonl']: _admissionRecords, ...missingInputArtifact } = fixture.inputGenerationArtifactBytes;
+    expect(validatePrebuiltAdmissionAuthorityGraph({
+      ...fixture,
+      inputGenerationArtifactBytes: missingInputArtifact,
+    }).errors).toContain('input generation artifact bytes do not exactly cover generation receipts');
+    expect(validatePrebuiltAdmissionAuthorityGraph({
+      ...fixture,
+      staticGenerationArtifactBytes: {
+        ...fixture.staticGenerationArtifactBytes,
+        'unexpected.json': Buffer.from('{}\n', 'utf8'),
+      },
+    }).errors).toContain('static generation artifact bytes do not exactly cover generation receipts');
   });
 
   it('rejects source current/hash/path or source artifact byte drift', () => {

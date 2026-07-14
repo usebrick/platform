@@ -261,7 +261,18 @@ export function makePrebuiltAuthorityFixture(): PrebuiltAuthorityGraphFixture {
     proposal,
     proposalBytes: canonical(proposal),
     inputGeneration,
+    inputGenerationArtifactBytes: {
+      'admission-records.jsonl': recordBytes,
+      'overlap-universe.json': overlapBytes,
+      'overlap-universe-records.jsonl': overlapRecordsBytes,
+    },
     staticGeneration,
+    staticGenerationArtifactBytes: {
+      'lineage-ledger.json': lineageBytes,
+      'pre-witness-bundle.json': preWitnessBytes,
+      'privacy-ledger.json': privacyBytes,
+      'quality-ledger.json': qualityBytes,
+    },
     current,
     inputGenerationBytes: canonical(inputGeneration),
     staticGenerationBytes: canonical(staticGeneration),

@@ -57,8 +57,12 @@ export interface PrebuiltAdmissionAuthorityGraphInput {
   readonly proposalBytes: Uint8Array;
   readonly inputGeneration: unknown;
   readonly inputGenerationBytes: Uint8Array;
+  /** Every input-generation artifact, keyed by its exact receipt path. */
+  readonly inputGenerationArtifactBytes: PrebuiltAdmissionAuthorityArtifactBytesInput;
   readonly staticGeneration: unknown;
   readonly staticGenerationBytes: Uint8Array;
+  /** Every static-generation artifact, keyed by its exact receipt path. */
+  readonly staticGenerationArtifactBytes: PrebuiltAdmissionAuthorityArtifactBytesInput;
   readonly current: unknown;
   readonly currentBytes: Uint8Array;
   readonly priorCurrent?: unknown;
@@ -153,31 +157,57 @@ function verifySerializedSourceReview(supplied: unknown, sourceId: string, error
   }
 }
 
-function artifactBytesMap(value: unknown, sourceId: string, errors: string[]): Map<string, Uint8Array> | undefined {
+function artifactBytesMap(value: unknown, label: string, errors: string[]): Map<string, Uint8Array> | undefined {
   const map = new Map<string, Uint8Array>();
   if (isRecord(value)) {
     for (const [relativePath, raw] of Object.entries(value)) {
-      if (!safeRelativePath(relativePath)) push(errors, `source ${sourceId} artifact byte path is unsafe`);
-      if (!bytes(raw)) push(errors, `source ${sourceId} artifact bytes for ${relativePath} are invalid`);
-      else if (map.has(relativePath)) push(errors, `source ${sourceId} artifact byte paths are duplicated`);
+      if (!safeRelativePath(relativePath)) push(errors, `${label} artifact byte path is unsafe`);
+      if (!bytes(raw)) push(errors, `${label} artifact bytes for ${relativePath} are invalid`);
+      else if (map.has(relativePath)) push(errors, `${label} artifact byte paths are duplicated`);
       else map.set(relativePath, raw);
     }
     return map;
   }
   if (!Array.isArray(value)) {
-    push(errors, `source ${sourceId} artifact bytes must be a path map or entries`);
+    push(errors, `${label} artifact bytes must be a path map or entries`);
     return undefined;
   }
   for (const entry of value) {
     if (!isRecord(entry) || Object.keys(entry).sort().join('\u0000') !== 'bytes\u0000relativePath'
       || !safeRelativePath(entry.relativePath) || !bytes(entry.bytes)) {
-      push(errors, `source ${sourceId} artifact byte entry is invalid`);
+      push(errors, `${label} artifact byte entry is invalid`);
       continue;
     }
-    if (map.has(entry.relativePath)) push(errors, `source ${sourceId} artifact byte paths are duplicated`);
+    if (map.has(entry.relativePath)) push(errors, `${label} artifact byte paths are duplicated`);
     else map.set(entry.relativePath, entry.bytes);
   }
   return map;
+}
+
+function verifyArtifactBytes(
+  value: unknown,
+  artifacts: readonly { readonly relativePath: string; readonly bytes: number; readonly sha256: string }[],
+  label: string,
+  errors: string[],
+): Map<string, Uint8Array> | undefined {
+  const artifactMap = artifactBytesMap(value, label, errors);
+  if (artifactMap === undefined) return undefined;
+
+  const artifactPaths = artifacts.map((artifact) => artifact.relativePath);
+  if (new Set(artifactPaths).size !== artifactPaths.length) {
+    push(errors, `${label} receipts contain duplicate paths`);
+  }
+  if (artifactMap.size !== artifactPaths.length || artifactPaths.some((path) => !artifactMap.has(path))) {
+    push(errors, `${label} artifact bytes do not exactly cover generation receipts`);
+  }
+  for (const artifact of artifacts) {
+    const raw = artifactMap.get(artifact.relativePath);
+    if (raw === undefined) continue;
+    if (raw.byteLength !== artifact.bytes || hashBytes(raw) !== artifact.sha256) {
+      push(errors, `${label} artifact bytes do not match ${artifact.relativePath}`);
+    }
+  }
+  return artifactMap;
 }
 
 function verifySource(
@@ -210,7 +240,7 @@ function verifySource(
   verifyCanonicalBytes(sourceInput.sourceGeneration, sourceInput.sourceGenerationBytes, `source ${sourceId} generation bytes`, errors);
   verifyCanonicalBytes(sourceInput.current, sourceInput.currentBytes, `source ${sourceId} current bytes`, errors);
   const reviewResult = verifySerializedSourceReview(sourceInput.sourceReviewBytes, sourceId, errors);
-  const artifactMap = artifactBytesMap(sourceInput.artifactBytes, sourceId, errors);
+  const artifactMap = verifyArtifactBytes(sourceInput.artifactBytes, sourceGeneration?.artifacts ?? [], `source ${sourceId}`, errors);
   if (!sourceGeneration || !current) return sourceId;
 
   if (sourceGeneration.sourceId !== current.sourceId) push(errors, `source ${sourceId} generation/current source IDs do not match`);
@@ -245,19 +275,6 @@ function verifySource(
   if (sourceReviewArtifacts.length !== 1) {
     push(errors, `source ${sourceId} must contain exactly one fixed source-review artifact`);
   }
-  if (artifactMap !== undefined) {
-    const artifactPaths = sourceGeneration.artifacts.map((artifact) => artifact.relativePath);
-    if (artifactMap.size !== artifactPaths.length || artifactPaths.some((path) => !artifactMap.has(path))) {
-      push(errors, `source ${sourceId} artifact bytes do not exactly cover generation receipts`);
-    }
-    for (const artifact of sourceGeneration.artifacts) {
-      const raw = artifactMap.get(artifact.relativePath);
-      if (raw === undefined) continue;
-      if (raw.byteLength !== artifact.bytes || hashBytes(raw) !== artifact.sha256) {
-        push(errors, `source ${sourceId} artifact bytes do not match ${artifact.relativePath}`);
-      }
-    }
-  }
   if (sourceReviewArtifacts.length === 1 && artifactMap !== undefined && reviewResult.bytes !== undefined) {
     const reviewArtifact = sourceReviewArtifacts[0]!;
     const raw = artifactMap.get(reviewArtifact.relativePath);
@@ -284,11 +301,13 @@ export function validatePrebuiltAdmissionAuthorityGraph(input: unknown): Prebuil
       'current',
       'currentBytes',
       'inputGeneration',
+      'inputGenerationArtifactBytes',
       'inputGenerationBytes',
       'proposal',
       'proposalBytes',
       'sources',
       'staticGeneration',
+      'staticGenerationArtifactBytes',
       'staticGenerationBytes',
       ...(hasPriorCurrent ? ['priorCurrent'] : []),
       ...(hasPriorCurrentBytes ? ['priorCurrentBytes'] : []),
@@ -316,7 +335,9 @@ export function validatePrebuiltAdmissionAuthorityGraph(input: unknown): Prebuil
 
     verifyCanonicalBytes(input.proposal, input.proposalBytes, 'proposal bytes', errors);
     verifyCanonicalBytes(input.inputGeneration, input.inputGenerationBytes, 'input generation bytes', errors);
+    verifyArtifactBytes(input.inputGenerationArtifactBytes, inputGeneration.artifacts, 'input generation', errors);
     verifyCanonicalBytes(input.staticGeneration, input.staticGenerationBytes, 'static generation bytes', errors);
+    verifyArtifactBytes(input.staticGenerationArtifactBytes, staticGeneration.artifacts, 'static generation', errors);
     verifyCanonicalBytes(input.current, input.currentBytes, 'current pointer bytes', errors);
     if (hasPriorCurrent) verifyCanonicalBytes(input.priorCurrent, input.priorCurrentBytes, 'prior current pointer bytes', errors);
     if (inputGeneration.generationSha256 !== calibrationAdmissionInputGenerationSha256(inputGeneration)) push(errors, 'input generation self-hash does not match canonical object');
