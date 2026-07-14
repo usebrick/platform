@@ -74,16 +74,32 @@ function sourceGenerationDirectory(value: unknown): boolean {
     'currentPointerTemporaryRelativePath',
     'currentPointerFinalRelativePath',
   ];
-  return exactKeys(value, keys)
-    && isAdmissionId(value.sourceId)
-    && isSha256(value.generationSha256)
-    && isSha256(value.artifactSetSha256)
-    && relativePath(value.generationStagingRelativePath)
-    && relativePath(value.generationFinalRelativePath)
-    && relativePath(value.generationsParentRelativePath)
-    && (value.priorGenerationRelativePath === undefined || relativePath(value.priorGenerationRelativePath))
-    && relativePath(value.currentPointerTemporaryRelativePath)
-    && relativePath(value.currentPointerFinalRelativePath);
+  if (!exactKeys(value, keys)
+    || !isAdmissionId(value.sourceId)
+    || !isSha256(value.generationSha256)
+    || !isSha256(value.artifactSetSha256)
+    || !relativePath(value.generationStagingRelativePath)
+    || !relativePath(value.generationFinalRelativePath)
+    || !relativePath(value.generationsParentRelativePath)
+    || (value.priorGenerationRelativePath !== undefined && !relativePath(value.priorGenerationRelativePath))
+    || !relativePath(value.currentPointerTemporaryRelativePath)
+    || !relativePath(value.currentPointerFinalRelativePath)) return false;
+
+  const pathValues = [
+    value.generationStagingRelativePath,
+    value.generationFinalRelativePath,
+    ...(value.priorGenerationRelativePath === undefined ? [] : [value.priorGenerationRelativePath]),
+    value.currentPointerTemporaryRelativePath,
+    value.currentPointerFinalRelativePath,
+  ];
+  // The generations parent is a legitimate ancestor, but it must not alias a
+  // staged/final/prior/current path.  Every materialized path within one
+  // source entry must otherwise have a distinct identity.
+  if (pathValues.some((path) => path === value.generationsParentRelativePath)
+    || new Set(pathValues).size !== pathValues.length
+    || value.generationStagingRelativePath === value.generationFinalRelativePath
+    || value.currentPointerTemporaryRelativePath === value.currentPointerFinalRelativePath) return false;
+  return true;
 }
 
 function sourceGenerationDirectories(value: unknown): value is readonly JsonObject[] {
@@ -94,6 +110,38 @@ function sourceGenerationDirectories(value: unknown): value is readonly JsonObje
     isAdmissionId,
     false,
   );
+}
+
+function transactionPathTopology(value: JsonObject): boolean {
+  if (!Array.isArray(value.sourceGenerationDirectories)) return false;
+  const nonParentPaths = [
+    value.inputGenerationRelativePath,
+    value.staticGenerationStagingRelativePath,
+    value.authorityCurrentTemporaryRelativePath,
+    value.authorityCurrentFinalRelativePath,
+  ];
+  const parentPaths: unknown[] = [];
+  for (const source of value.sourceGenerationDirectories) {
+    if (!isJsonRecord(source)) return false;
+    nonParentPaths.push(
+      source.generationStagingRelativePath,
+      source.generationFinalRelativePath,
+      ...(source.priorGenerationRelativePath === undefined ? [] : [source.priorGenerationRelativePath]),
+      source.currentPointerTemporaryRelativePath,
+      source.currentPointerFinalRelativePath,
+    );
+    parentPaths.push(source.generationsParentRelativePath);
+  }
+  if (isJsonRecord(value.state) && 'staticGenerationRelativePath' in value.state) {
+    nonParentPaths.push(value.state.staticGenerationRelativePath);
+  }
+  // Exact aliases among staged/final/temp/prior/current paths are ambiguous
+  // to recovery and are never allowed, including collisions with top-level
+  // transaction paths.  A generations parent may intentionally be shared by
+  // several source entries, so repeated parent identities are retained, but a
+  // parent may not alias any materialized path.
+  if (new Set(nonParentPaths).size !== nonParentPaths.length) return false;
+  return parentPaths.every((parent) => !nonParentPaths.includes(parent));
 }
 
 function state(value: unknown): boolean {
@@ -280,6 +328,7 @@ export function validateCalibrationAdmissionAuthorityRebuildTransactionV1(
     }
     if (value.authorityCurrentFinalRelativePath !== AUTHORITY_CURRENT_FINAL) errors.push('authority rebuild authority-current final path is invalid');
     if (!sourceGenerationDirectories(value.sourceGenerationDirectories)) errors.push('authority rebuild source-generation directories are invalid, duplicated, or unsorted');
+    else if (!transactionPathTopology(value)) errors.push('authority rebuild transaction paths contain ambiguous aliases or collisions');
     if (!state(value.state)) errors.push('authority rebuild transaction state is invalid');
     if (!isSha256(value.transactionSha256)) errors.push('authority rebuild transaction self-hash is invalid');
     try {
@@ -313,6 +362,9 @@ export function validateCalibrationAdmissionAuthorityRebuildGraphV1(
   input: CalibrationAdmissionAuthorityRebuildGraphInputV1,
 ): CalibrationAdmissionAuthorityRebuildGraphValidationV1;
 export function validateCalibrationAdmissionAuthorityRebuildGraphV1(
+  lockOrInput: unknown,
+): CalibrationAdmissionAuthorityRebuildGraphValidationV1;
+export function validateCalibrationAdmissionAuthorityRebuildGraphV1(
   lockValue: unknown,
   transactionValue: unknown,
 ): CalibrationAdmissionAuthorityRebuildGraphValidationV1;
@@ -320,39 +372,46 @@ export function validateCalibrationAdmissionAuthorityRebuildGraphV1(
   lockOrInput: unknown,
   transactionValue?: unknown,
 ): CalibrationAdmissionAuthorityRebuildGraphValidationV1 {
-  const errors: string[] = [];
-  const lockValue = transactionValue === undefined && isJsonRecord(lockOrInput) && 'lock' in lockOrInput
-    && 'transaction' in lockOrInput
-    ? lockOrInput.lock
-    : lockOrInput;
-  const resolvedTransactionValue = transactionValue === undefined && isJsonRecord(lockOrInput) && 'lock' in lockOrInput
-    && 'transaction' in lockOrInput
-    ? lockOrInput.transaction
-    : transactionValue;
-  const lock = isCalibrationAdmissionAuthorityRebuildLockV1(lockValue) ? lockValue : undefined;
-  const transaction = isCalibrationAdmissionAuthorityRebuildTransactionV1(resolvedTransactionValue) ? resolvedTransactionValue : undefined;
-  if (!lock) errors.push('authority rebuild lock is invalid');
-  if (!transaction) errors.push('authority rebuild transaction is invalid');
-  if (!lock || !transaction) return graphResult(errors);
+  try {
+    const errors: string[] = [];
+    const lockValue = transactionValue === undefined && isJsonRecord(lockOrInput) && 'lock' in lockOrInput
+      && 'transaction' in lockOrInput
+      ? lockOrInput.lock
+      : lockOrInput;
+    const resolvedTransactionValue = transactionValue === undefined && isJsonRecord(lockOrInput) && 'lock' in lockOrInput
+      && 'transaction' in lockOrInput
+      ? lockOrInput.transaction
+      : transactionValue;
+    const lock = isCalibrationAdmissionAuthorityRebuildLockV1(lockValue) ? lockValue : undefined;
+    const transaction = isCalibrationAdmissionAuthorityRebuildTransactionV1(resolvedTransactionValue) ? resolvedTransactionValue : undefined;
+    if (!lock) errors.push('authority rebuild lock is invalid');
+    if (!transaction) errors.push('authority rebuild transaction is invalid');
+    if (!lock || !transaction) return graphResult(errors);
 
-  if (transaction.lockSha256 !== lock.lockSha256) errors.push('transaction does not bind lock self-hash');
-  if (transaction.transactionId !== lock.intendedTransactionId) errors.push('transaction ID does not match lock intent');
-  if (transaction.invocationIntentId !== lock.invocationIntentId) errors.push('invocation intent identity differs between lock and transaction');
-  if (transaction.inputGenerationProposalId !== lock.inputGenerationProposalId
-    || transaction.inputGenerationProposalSha256 !== lock.inputGenerationProposalSha256) {
-    errors.push('input-generation proposal identity differs between lock and transaction');
+    if (transaction.lockSha256 !== lock.lockSha256) errors.push('transaction does not bind lock self-hash');
+    if (transaction.transactionId !== lock.intendedTransactionId) errors.push('transaction ID does not match lock intent');
+    if (transaction.invocationIntentId !== lock.invocationIntentId) errors.push('invocation intent identity differs between lock and transaction');
+    if (transaction.inputGenerationProposalId !== lock.inputGenerationProposalId
+      || transaction.inputGenerationProposalSha256 !== lock.inputGenerationProposalSha256) {
+      errors.push('input-generation proposal identity differs between lock and transaction');
+    }
+    if (transaction.operation !== lock.operation) errors.push('operation differs between lock and transaction');
+    if (!sameExpectedCurrentState(lock.expectedCurrentState, transaction.expectedCurrentState)) {
+      errors.push('expected current state differs between lock and transaction');
+    }
+    if (transaction.recoveryNonce !== lock.recoveryNonce) errors.push('recovery nonce differs between lock and transaction');
+    return graphResult(errors);
+  } catch {
+    return graphResult(['authority rebuild graph validation failed closed']);
   }
-  if (transaction.operation !== lock.operation) errors.push('operation differs between lock and transaction');
-  if (!sameExpectedCurrentState(lock.expectedCurrentState, transaction.expectedCurrentState)) {
-    errors.push('expected current state differs between lock and transaction');
-  }
-  if (transaction.recoveryNonce !== lock.recoveryNonce) errors.push('recovery nonce differs between lock and transaction');
-  return graphResult(errors);
 }
 
 /** Alias without the version suffix for callers following older Core APIs. */
 export function validateCalibrationAdmissionAuthorityRebuildGraph(
   input: CalibrationAdmissionAuthorityRebuildGraphInputV1,
+): CalibrationAdmissionAuthorityRebuildGraphValidationV1;
+export function validateCalibrationAdmissionAuthorityRebuildGraph(
+  lockOrInput: unknown,
 ): CalibrationAdmissionAuthorityRebuildGraphValidationV1;
 export function validateCalibrationAdmissionAuthorityRebuildGraph(
   lockValue: unknown,

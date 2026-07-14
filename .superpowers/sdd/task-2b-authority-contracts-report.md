@@ -35,3 +35,24 @@ extra keys, unsafe/traversal paths, sorted/unique source-directory identity,
 fixed final current path, self-hash mutation, all lock/transaction handoff
 identity joins, and strict AJV validation of both fixtures.
 
+## Review-fix wave
+
+- Wrapped the public graph validator in a fail-closed boundary and added a
+  hostile-Proxy regression; the wrapper now returns `{ ok: false }` instead of
+  escaping a `has`/`get` trap.
+- Hardened source-generation topology: staged/final and pointer-temp/final
+  aliases, per-entry duplicate paths, and transaction-wide staged/final/temp/
+  prior/current collisions are rejected. Shared generations-parent identities
+  remain allowed as the explicitly parent-role exception.
+- Added self-hashed malicious alias mutations for per-entry and transaction-
+  wide collisions.
+- Removed the extra blank EOF line; `git diff --check` remains clean.
+
+Fix-wave verification:
+
+- Focused authority rebuild test — 6/6 passed.
+- `corepack pnpm --filter @usebrick/core codegen` — passed.
+- `corepack pnpm --filter @usebrick/core typecheck` — passed.
+- `corepack pnpm --filter @usebrick/core validate:schema` — passed.
+- `NODE_OPTIONS=--max-old-space-size=4096 corepack pnpm --filter @usebrick/core test -- --maxWorkers=1 --minWorkers=1` — passed (30 files, 225 tests).
+- `git diff --check` — passed.

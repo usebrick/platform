@@ -148,6 +148,70 @@ describe('v10.3 authority rebuild Core contracts', () => {
     })).toEqual(expect.objectContaining({ ok: false }));
   });
 
+  it('rejects self-hashed path aliases and transaction-wide collisions', () => {
+    const { transaction } = graph();
+    const rehashed = (overrides: Record<string, unknown>) => {
+      const body = { ...transaction, ...overrides };
+      return { ...body, transactionSha256: calibrationAdmissionAuthorityRebuildTransactionSha256(body) };
+    };
+    const first = transaction.sourceGenerationDirectories[0]!;
+    const second = transaction.sourceGenerationDirectories[1]!;
+
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      sourceGenerationDirectories: [
+        { ...first, generationStagingRelativePath: first.generationFinalRelativePath },
+        second,
+      ],
+    }))).toBe(false);
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      sourceGenerationDirectories: [
+        { ...first, currentPointerTemporaryRelativePath: first.currentPointerFinalRelativePath },
+        second,
+      ],
+    }))).toBe(false);
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      sourceGenerationDirectories: [
+        { ...first, priorGenerationRelativePath: first.generationFinalRelativePath },
+        second,
+      ],
+    }))).toBe(false);
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      sourceGenerationDirectories: [
+        first,
+        { ...second, generationStagingRelativePath: first.generationFinalRelativePath },
+      ],
+    }))).toBe(false);
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      inputGenerationRelativePath: first.currentPointerFinalRelativePath,
+    }))).toBe(false);
+    const completeState = {
+      phase: 'complete',
+      inputGenerationSha256: A,
+      overlapGenerationSha256: B,
+      primaryOutputSetSha256: C,
+      toolReceiptId: 'receipt-1',
+      toolReceiptSha256: A,
+      toolAuthorityIndexSha256: B,
+      staticGenerationSha256: C,
+      staticGenerationRelativePath: 'review/admission/authority/static-generations/c',
+    };
+    expect(isCalibrationAdmissionAuthorityRebuildTransactionV1(rehashed({
+      state: { ...completeState, staticGenerationRelativePath: first.currentPointerFinalRelativePath },
+    }))).toBe(false);
+  });
+
+  it('fails closed when the graph wrapper is a hostile proxy', () => {
+    const hostile = new Proxy({}, {
+      has() { throw new Error('hostile has trap'); },
+      get() { throw new Error('hostile get trap'); },
+    });
+    expect(() => validateCalibrationAdmissionAuthorityRebuildGraphV1(hostile)).not.toThrow();
+    expect(validateCalibrationAdmissionAuthorityRebuildGraphV1(hostile)).toEqual({
+      ok: false,
+      errors: ['authority rebuild graph validation failed closed'],
+    });
+  });
+
   it('compiles strict schemas and validates the fixture pair', () => {
     const ajv = new Ajv({ allErrors: true, strict: true });
     const names = ['calibration-admission-authority-rebuild-lock', 'calibration-admission-authority-rebuild-transaction'] as const;
