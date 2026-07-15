@@ -106,6 +106,12 @@ export {
   calibrationAdmissionMaterializationReceiptId,
   isCalibrationAdmissionMaterializationReceiptV1,
 } from './calibration-admission-evidence';
+export {
+  calibrationAdmissionNestedPublicationChildRecoveryNonce,
+  calibrationAdmissionNestedPublicationHandoffSha256,
+  buildCalibrationNestedPublicationHandoffV1,
+} from './calibration-admission-nested-publication';
+export type { CalibrationNestedPublicationHandoffBuildInput } from './calibration-admission-nested-publication';
 export type {
   CalibrationAdmissionPolicyV1,
   AdmissionWitnessPolicyV1,

@@ -1187,6 +1187,25 @@ No real-corpus authority, label, repository, manifest, release, publish, or
 deployment state changed. The live corpus remains 0 candidate / 0 eligible
 with `static_authority_unavailable` and `witness_authority_unavailable`.
 
+### Task 2B nested publication handoff contract helper — 2026-07-15
+
+The Core contract now has a pure builder for the already-versioned nested
+publication handoff. It derives a child recovery nonce from the parent
+transaction/nonce, expected current state, child slot, and the exact
+infrastructure or profiled child selector; it computes the handoff
+self-hash; and it rejects malformed hashes or branch-invalid fields through
+the existing strict validator. Five focused tests cover both branches,
+completed state, invalid nonce input, and post-build tampering.
+
+The Core gate passes **31 test files / 231 tests**, typecheck, codegen-freshness,
+contract verification, and build. This is deliberately a contract milestone,
+not an outer publication implementation: no slot-set/orchestration,
+filesystem materializer, parent/child lock graph, privacy/quality/lineage
+builder, real-scale receipt, witness authority, corpus replay, label
+promotion, repository pull, release, publish, or deployment was added. The
+mutating CLI remains fail-closed until those byte-backed inputs and nested
+handoff records are integrated at the outer transaction boundary.
+
 ### Task 2B transaction-owned staging hardening — 2026-07-15
 
 Independent review approved the candidate-aware rebuild adapter only as a
