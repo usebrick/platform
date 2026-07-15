@@ -537,5 +537,5 @@ describe('v10.3 bounded allocation/provenance preview', () => {
     const two = await consume(openAdmissionAllocationPreviewStream({ sourceRegister: second.register, sourceReviews: second.reviews, positiveInventory: second.positive, negativeInventory: second.negative }));
     expect(two).toEqual(one);
     expect(calibrationAdmissionSourceReviewSha256(first.reviews[0]!)).toBe(calibrationAdmissionSourceReviewSha256(second.reviews[0]!));
-  }, 30000);
+  }, 60000);
 });

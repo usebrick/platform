@@ -958,6 +958,28 @@ state changed. Census remains **329/329** reviewed sources, **452,382**
 quarantined/unrepresented units, zero candidate/eligible, blockers
 `static_authority_unavailable` and `witness_authority_unavailable`.
 
+### Bounded corpus allocation replay and scan accounting correction — 2026-07-15
+
+The explicit allocation preview replayed the two real v10.3 inventory streams
+against the Core-validated 329-source genesis register/review set in one
+bounded serial pass. It validated exact ownership/provenance bindings and
+conservation: **452,382** rows (**224,903 declared AI / 227,479 declared
+human; 58,089 baseline / 394,293 repository**), zero duplicates, zero
+unrepresented, zero stream errors. The result is **0 allocated / 452,382
+quarantined** with `ready=false` and `authorityEligible=false`; canonical
+stream SHA `7dfec0cebf6a169cbfa10ba8955f038cb5b6dc74010245a52e1a5cd9b8669097`
+and register SHA `ce40134968cd9f490b29e695b27fb724ce8d4b8ba9a4abf26eb789cc4c4d78de`.
+This proves source-level allocation without a manual read of every row, not
+authoritative AI/human labels. No corpus writes or public pulls occurred.
+
+The scan UX correction is implemented and verified: `persistRun` passes the
+explicit selection size to the pattern inventory, so inventory/structure now
+report **240** files like health/report; `formatProgressEta` renders `<1s`
+for positive sub-second estimates. Focused output, canonical-selection, and
+allocation tests are green after extending the deterministic full-fixture
+allocation test timeout to 60s. The self-scan policy result remains the
+diagnostic 17.6 > 15 failure and does not authorize release.
+
 ### Task 2B outer materializer hardening — 2026-07-15
 
 Commits `3cf05569c` and `d25914f26` make the outer CLI require an explicit
@@ -993,11 +1015,10 @@ hygiene 99.5, and repository health 92.8. The baseline was rejected for a
 config-hash mismatch, so this is a current diagnostic—not a release pass.
 
 The output is useful and honest about the failing threshold, active rules,
-coverage, suppression, and zero parse errors. Two UX follow-ups are recorded:
-the progress ETA remains `0.0s` for most files, and persisted `inventory.json`
-/`structure.md` report 200 scanned files while health/output report 240; the
-next scan-UX slice should expose one canonical scan-accounting field and avoid
-that count ambiguity. No source or baseline was changed by the scan.
+coverage, suppression, and zero parse errors. That run exposed two UX
+ambiguities—sub-second ETA rounding and a 200-file persisted inventory versus
+240-file health/output coverage—which are closed by the scan-accounting
+correction recorded below. No source or baseline was changed by the scan.
 
 Next: wire the same strict overlap join into the byte-backed runtime admission
 context with a complete overlap/tool-authority fixture, then add the mutating

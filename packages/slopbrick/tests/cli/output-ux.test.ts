@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import { installBrokenPipeHandler } from '../../src/cli/output-stream.js';
-import { formatRulesList } from '../../src/cli/render.js';
+import { formatProgressEta, formatRulesList } from '../../src/cli/render.js';
 
 const execFileAsync = promisify(execFile);
 const repoRoot = join(import.meta.dirname, '..', '..');
@@ -28,6 +28,13 @@ async function runBin(args: string[], cwd: string, env: NodeJS.ProcessEnv) {
 }
 
 describe('CLI output UX', () => {
+  it('does not render a positive sub-second ETA as zero seconds', () => {
+    expect(formatProgressEta(0)).toBe('<1s');
+    expect(formatProgressEta(999)).toBe('<1s');
+    expect(formatProgressEta(1000)).toBe('1s');
+    expect(formatProgressEta(1_001)).toBe('2s');
+  });
+
   it('wraps rule descriptions within a 20-column terminal', () => {
     const originalTty = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
     const originalColumns = Object.getOwnPropertyDescriptor(process.stdout, 'columns');

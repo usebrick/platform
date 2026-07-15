@@ -241,7 +241,14 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       patternInventory = await buildPatternInventory(
         cwd,
         config,
-        undefined,
+        // The scan selection is the canonical population for this run. The
+        // pattern helper keeps a defensive 200-file cap for discovery/MCP
+        // calls, but applying that cap here silently produced memory artifacts
+        // that said 200 files while the report/health snapshot covered all
+        // selected files (for example 240/240). Pass the explicit population
+        // size so persisted inventory and structure.md share the report's
+        // coverage denominator without changing the public helper default.
+        inventoryCandidates.length,
         inventoryCandidates,
       );
       const inventory = buildInventoryFromScan(

@@ -162,6 +162,16 @@ export function renderTrend(runs: { slopIndex: number }[], count: number): strin
 /** Watch debounce — collapse bursts of file-system events into a single scan. */
 export const WATCH_DEBOUNCE_MS = 100;
 
+/** Render a non-negative ETA without claiming that a positive duration is
+ * zero seconds. Sub-second estimates are common near the end of a scan and
+ * are more truthful as `<1s` than `0s`. */
+export function formatProgressEta(etaMs: number): string {
+  if (!Number.isFinite(etaMs) || etaMs < 0) return 'unknown';
+  const seconds = etaMs / 1000;
+  if (seconds < 1) return '<1s';
+  return `${Math.ceil(seconds)}s`;
+}
+
 // v0.17.1: renderProgress now draws a real progress bar (not just
 // a spinner). Format:
 //   [████████████░░░░░░░░░░] 1234/8358 files (14.7%) | 8.3s | ETA 48s
@@ -184,7 +194,7 @@ export function renderProgress(
   if (completed > 0 && ratio < 1) {
     const totalMs = Date.now() - startMs;
     const etaMs = (totalMs / completed) * (total - completed);
-    eta = ` | ETA ${(etaMs / 1000).toFixed(0)}s`;
+    eta = ` | ETA ${formatProgressEta(etaMs)}`;
   }
   const line = `\r[${bar}] ${completed}/${total} files (${pct}%) | ${elapsedSec}s${eta}   `;
   if (process.stdout.isTTY) {

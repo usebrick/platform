@@ -7,8 +7,8 @@
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
-| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `1aac8f91d0f89c5670ddfabab35a99fe1749465c188c9c473f709f16f2827126` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, and the risk-scaled verification rule; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-15)** | `6d315b0ace2d51b1f3f0195d55e30c4ce297b5c1e1220f40adf6c377505ce568` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, and self-scan UX/accounting updates. |
+| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `f9dd8b23f7efe84fbd1ae6e7a60b42105d34c6a457372eda93203bee9c600b9c` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, the bounded real-corpus allocation replay, and the risk-scaled verification rule; it does not advance real-corpus admission. |
+| **Current continuation-plan hash override (2026-07-15)** | `1c2ae2e039bc840b04d2d5f99c6cf6673ac26a0fa4512fa45e4f931ec5351a1e` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, and bounded real-corpus allocation replay. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -670,3 +670,23 @@ cross-object atomic snapshot; and the existing publisher's proposal and
 input-generation final-path staging remains a separate hardening item. Next
 is independent review, then a CLI only after approval, followed by real
 static/witness corpus replay.
+
+### Allocation/provenance replay and scan-UX closeout — 2026-07-15
+
+The current v10.3 inventories were consumed once through the bounded
+allocation preview after Core validation of **329/329** source reviews. The
+replay conserved **452,382** rows (**224,903 declared AI / 227,479 declared
+human; 58,089 baseline / 394,293 repository**) with zero duplicates, unknown
+repositories, ownership/path/origin/commit/hash mismatches, or stream errors.
+It yielded **0 allocated / 452,382 quarantined / 0 unrepresented**. Canonical
+stream SHA is `7dfec0cebf6a169cbfa10ba8955f038cb5b6dc74010245a52e1a5cd9b8669097`
+and register SHA is `ce40134968cd9f490b29e695b27fb724ce8d4b8ba9a4abf26eb789cc4c4d78de`.
+This closes the question of manual review: provenance allocation can cover
+the full population without loading it or reading every file, but no label is
+promoted because authorship/rights/evidence/source-byte/static/witness
+authority is still missing. No new repository pull is justified.
+
+The self-scan UX follow-up is closed. Persisted inventory/structure now use
+the explicit 240-file selection (matching health/report), and positive
+sub-second ETA values render `<1s` rather than `0s`; the diagnostic score and
+release gate remain unchanged at 17.6 > 15.
