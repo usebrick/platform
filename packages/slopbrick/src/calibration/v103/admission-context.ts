@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
-import { lstat, readFile, realpath } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir, realpath, type FileHandle } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import {
   calibrationAdmissionAuthorityCurrentSha256,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionInputGenerationSha256,
+  calibrationAdmissionOverlapCurrentSha256,
   calibrationAdmissionLineageLedgerSha256,
   calibrationAdmissionPreWitnessBundleSha256,
   calibrationAdmissionPrivacyLedgerSha256,
@@ -16,6 +19,9 @@ import {
   calibrationAdmissionStaticAuthorityGenerationSha256,
   calibrationAdmissionToolReceiptSha256,
   isCalibrationAdmissionAuthorityCurrentV1,
+  isCalibrationAdmissionInputGenerationV1,
+  isCalibrationAdmissionOverlapCurrentV1,
+  isCalibrationAdmissionOverlapGenerationV1,
   isCalibrationAdmissionOverlapResourceReceiptV1,
   isCalibrationAdmissionPreWitnessBundleV1,
   isCalibrationAdmissionRecordV103,
@@ -30,22 +36,31 @@ import {
   validateCalibrationAdmissionRecordStreamV1,
   validateCalibrationAdmissionSourceRegisterReviewSet,
   type CalibrationAdmissionPreWitnessBundleV1,
+  type CalibrationAdmissionInputGenerationV1,
   type CalibrationAdmissionRecordV103,
   type CalibrationAdmissionRecordStreamV1,
   type CalibrationAdmissionSourceCurrentV1,
   type CalibrationAdmissionSourceGenerationV1,
+  type CalibrationAdmissionToolAuthoritySnapshotV1,
+  type AdmissionOverlapGenerationV1,
 } from '@usebrick/core';
 
 import {
   isVerifiedAdmissionEvidenceContext,
   type VerifiedAdmissionEvidenceContextV1,
 } from './admission-evidence-context';
+import { resolveAdmissionToolAuthorityReceipt } from './admission-publication';
+import { validatePrebuiltAdmissionAuthorityOverlapJoin } from './admission-authority-overlap-join';
 
 const CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 const SOURCES_ROOT = 'sources';
 const STATIC_ROOT = 'review/admission/authority/static-generations';
 const STREAM_RELATIVE_PATH = 'review/admission/admission-records.jsonl';
+const OVERLAP_GENERATIONS_ROOT = 'review/admission/global/overlap/generations';
 const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
+const OVERLAP_INDEX_PATH = 'index.json';
+const OVERLAP_RESOURCE_PATH = 'overlap-resource-receipt.json';
+const OVERLAP_LEDGER_PATH = 'overlap-ledger.json';
 const OVERLAP_TOOL_PROFILE_ID = 'admission-static-ledgers-v1';
 const REQUIRED_STATIC_ARTIFACTS = [
   ['ledger', 'privacy-ledger.json'],
@@ -59,6 +74,19 @@ const verifiedAdmissionContextBrand: unique symbol = Symbol('slopbrick.verified-
 export type VerifiedAdmissionContextV1 = Readonly<{
   readonly contextSha256: string;
   readonly durable: CalibrationAdmissionPreWitnessBundleV1;
+  readonly overlapAuthority: Readonly<{
+    readonly inputGenerationSha256: string;
+    readonly inputGenerationBytesSha256: string;
+    readonly sourceAuthoritySha256: string;
+    readonly generationSha256: string;
+    readonly indexReceiptSha256: string;
+    readonly resourceReceiptId: string;
+    readonly ledgerSha256: string;
+    readonly toolReceiptSha256: string;
+    readonly authorityIndexSha256: string;
+    readonly receiptSha256: string;
+    readonly proofSha256: string;
+  }>;
   readonly [verifiedAdmissionContextBrand]: true;
 }>;
 
@@ -107,15 +135,20 @@ type AdmissionRoot = Readonly<{ readonly projectRoot: string; readonly admission
 
 async function resolveAdmissionRoot(input: string): Promise<AdmissionRoot> {
   if (typeof input !== 'string' || input.length === 0) throw new Error('admission root must be a non-empty path');
-  const resolved = await realpath(resolve(input));
+  const lexical = resolve(input);
+  const inputMetadata = await lstat(lexical);
+  if (inputMetadata.isSymbolicLink()) throw new Error('admission root must not be a symlink');
+  if (!inputMetadata.isDirectory()) throw new Error('admission root must be a directory');
+  const resolved = await realpath(lexical);
   if (basename(resolved) === 'admission' && basename(dirname(resolved)) === 'review') {
+    await rejectSymlinkAncestors(dirname(dirname(resolved)), resolved);
     return { projectRoot: dirname(dirname(resolved)), admissionRoot: resolved };
   }
   const admissionRoot = join(resolved, 'review', 'admission');
+  await rejectSymlinkAncestors(resolved, admissionRoot);
   const metadata = await lstat(admissionRoot);
-  if (metadata.isSymbolicLink()) throw new Error('review/admission cannot be a symlink');
   if (!metadata.isDirectory()) throw new Error('review/admission is not a directory');
-  return { projectRoot: resolved, admissionRoot: await realpath(admissionRoot) };
+  return { projectRoot: resolved, admissionRoot };
 }
 
 function pathInside(base: string, candidate: string): boolean {
@@ -140,14 +173,26 @@ async function readContainedFile(root: AdmissionRoot, absolutePath: string): Pro
   const canonical = resolve(absolutePath);
   if (!pathInside(root.admissionRoot, canonical)) throw new Error('path escapes the contained admission root');
   await rejectSymlinkAncestors(root.admissionRoot, canonical);
-  const metadata = await lstat(canonical);
-  if (!metadata.isFile()) throw new Error('referenced artifact is not a regular file');
   const resolved = await realpath(canonical);
   if (!pathInside(root.admissionRoot, resolved)) throw new Error('referenced artifact escapes the contained admission root');
-  return readFile(canonical);
+  let handle: FileHandle | undefined;
+  try {
+    handle = await open(resolved, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const metadata = await handle.stat();
+    if (!metadata.isFile()) throw new Error('referenced artifact is not a regular file');
+    const bytes = await handle.readFile();
+    if (await realpath(canonical) !== resolved) throw new Error('referenced artifact changed during read');
+    return bytes;
+  } finally {
+    if (handle !== undefined) await handle.close().catch(() => undefined);
+  }
 }
 
 async function readCanonicalJson(root: AdmissionRoot, absolutePath: string, label: string): Promise<unknown> {
+  return (await readCanonicalJsonWithBytes(root, absolutePath, label)).value;
+}
+
+async function readCanonicalJsonWithBytes(root: AdmissionRoot, absolutePath: string, label: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> {
   const bytes = await readContainedFile(root, absolutePath);
   if (hasUtf8Bom(bytes)) throw new Error(`${label} must not contain a UTF-8 BOM`);
   let text: string;
@@ -169,7 +214,46 @@ async function readCanonicalJson(root: AdmissionRoot, absolutePath: string, labe
     throw new Error(`${label} cannot be canonicalized`);
   }
   if (text !== canonical) throw new Error(`${label} is not canonical JSON`);
-  return parsed;
+  return { value: parsed, bytes };
+}
+
+/** Verify that a selected immutable generation contains exactly its declared
+ * generation descriptor and artifact leaves. This prevents an unlisted shard,
+ * checkpoint, or projection from surviving beside otherwise valid envelopes. */
+async function readCompleteGenerationTree(
+  root: AdmissionRoot,
+  directory: string,
+  artifacts: readonly { readonly relativePath: string }[],
+  label: string,
+  descriptorName = 'generation.json',
+): Promise<Readonly<Record<string, Buffer>>> {
+  await rejectSymlinkAncestors(root.admissionRoot, directory);
+  const expected = new Set(artifacts.map((artifact) => artifact.relativePath));
+  expected.add(descriptorName);
+  const seen = new Set<string>();
+  const walk = async (current: string, relativeDirectory: string): Promise<void> => {
+    await rejectSymlinkAncestors(root.admissionRoot, current);
+    const entries = await readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const child = join(current, entry.name);
+      await rejectSymlinkAncestors(root.admissionRoot, child);
+      const childRelative = relativeDirectory === '' ? entry.name : `${relativeDirectory}/${entry.name}`;
+      if (entry.isDirectory()) {
+        await walk(child, childRelative);
+      } else if (!entry.isFile() || !expected.has(childRelative)) {
+        throw new Error(`${label} contains an orphan or non-file: ${childRelative}`);
+      } else {
+        seen.add(childRelative);
+      }
+    }
+  };
+  await walk(directory, '');
+  for (const path of expected) if (!seen.has(path)) throw new Error(`${label} is missing ${path}`);
+  const bytes: Record<string, Buffer> = {};
+  for (const artifact of artifacts) {
+    bytes[artifact.relativePath] = await readContainedFile(root, join(directory, artifact.relativePath));
+  }
+  return bytes;
 }
 
 function parseCanonicalJsonl(bytes: Uint8Array): readonly unknown[] {
@@ -269,13 +353,16 @@ function requiredStaticArtifactReceipts(staticGeneration: { readonly artifacts: 
 function verifyCanonicalArtifactBytes(
   artifact: StaticArtifactReceipt,
   expected: unknown,
-  expectedSha256: string,
+  expectedSemanticSha256: string,
   label: string,
 ): void {
   const canonical = Buffer.from(calibrationAdmissionCanonicalJson(expected), 'utf8');
-  if (artifact.sha256 !== expectedSha256 || artifact.bytes !== canonical.byteLength) {
+  if (artifact.sha256 !== hashBytes(canonical) || artifact.bytes !== canonical.byteLength) {
     throw new Error(`${label} artifact receipt does not match canonical bytes/hash`);
   }
+  // The generation fields remain semantic self-hashes; the artifact receipt
+  // is a raw-byte hash. Keep both contracts explicit at this boundary.
+  if (expectedSemanticSha256.length !== 64) throw new Error(`${label} semantic hash is invalid`);
 }
 
 function verifyStaticLedgerAnchors(bundle: CalibrationAdmissionPreWitnessBundleV1, staticGeneration: { readonly privacyLedgerSha256: string; readonly qualityLedgerSha256: string; readonly lineageLedgerSha256: string; readonly preWitnessBundleSha256: string }): void {
@@ -295,9 +382,10 @@ function verifyStaticArtifactReceipts(
     readonly preWitnessBundleSha256: string;
   },
 ): void {
-  // Static-generation artifact sha256 fields are the semantic hashes carried
-  // by the static graph; their byte counts still bind the exact canonical rich
-  // projections without reading those projections from disk.
+  // Static-generation artifact sha256 fields are raw canonical-byte hashes;
+  // the generation fields above carry the semantic self-hashes. The complete
+  // selected static tree has already been reopened, and this projection check
+  // binds each required rich object to its declared raw byte receipt.
   verifyCanonicalArtifactBytes(artifacts.privacyLedger, bundle.privacyLedger, staticGeneration.privacyLedgerSha256, 'privacy ledger');
   verifyCanonicalArtifactBytes(artifacts.qualityLedger, bundle.qualityLedger, staticGeneration.qualityLedgerSha256, 'quality ledger');
   verifyCanonicalArtifactBytes(artifacts.lineageLedger, bundle.lineageLedger, staticGeneration.lineageLedgerSha256, 'lineage ledger');
@@ -313,11 +401,13 @@ function verifyToolAuthoritySnapshotEquality(bundle: CalibrationAdmissionPreWitn
 function verifyStaticGenerationShape(staticGeneration: unknown): staticGeneration is {
   readonly generation: number;
   readonly generationSha256: string;
+  readonly inputGenerationSha256: string;
+  readonly overlapGenerationSha256: string;
   readonly preWitnessBundleSha256: string;
   readonly privacyLedgerSha256: string;
   readonly qualityLedgerSha256: string;
   readonly lineageLedgerSha256: string;
-  readonly toolAuthoritySnapshot: unknown;
+  readonly toolAuthoritySnapshot: CalibrationAdmissionToolAuthoritySnapshotV1;
   readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[];
 } {
   return isCalibrationAdmissionStaticAuthorityGenerationV1(staticGeneration);
@@ -326,17 +416,166 @@ function verifyStaticGenerationShape(staticGeneration: unknown): staticGeneratio
 function verifyStaticGeneration(staticInput: unknown, current: { readonly generation: number; readonly staticGenerationSha256: string }): {
   readonly generation: number;
   readonly generationSha256: string;
+  readonly inputGenerationSha256: string;
+  readonly overlapGenerationSha256: string;
   readonly preWitnessBundleSha256: string;
   readonly privacyLedgerSha256: string;
   readonly qualityLedgerSha256: string;
   readonly lineageLedgerSha256: string;
-  readonly toolAuthoritySnapshot: unknown;
+  readonly toolAuthoritySnapshot: CalibrationAdmissionToolAuthoritySnapshotV1;
   readonly artifacts: readonly { readonly kind: string; readonly relativePath: string; readonly bytes: number; readonly sha256: string }[];
 } {
   if (!verifyStaticGenerationShape(staticInput)) throw new Error('static authority generation failed Core validation');
   if (staticInput.generationSha256 !== calibrationAdmissionStaticAuthorityGenerationSha256(staticInput)) throw new Error('static authority generation self-hash mismatch');
   if (current.generation !== staticInput.generation || current.staticGenerationSha256 !== staticInput.generationSha256) throw new Error('authority current pointer does not bind static generation');
   return staticInput;
+}
+
+type VerifiedOverlapAuthority = VerifiedAdmissionContextV1['overlapAuthority'];
+
+/**
+ * Bind the runtime context to the exact overlap generation selected by the
+ * static authority.  The static/overlap join is deliberately repeated here
+ * instead of trusting the rich bundle's hash-only overlap receipt: this
+ * caller has the bytes, the fixed paths, and the indexed tool-authority
+ * resolver needed by the strict prebuilt proof.
+ */
+async function verifyRuntimeOverlapAuthority(
+  root: AdmissionRoot,
+  staticGeneration: ReturnType<typeof verifyStaticGeneration>,
+  staticGenerationBytes: Uint8Array,
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  inputAuthority: VerifiedInputAuthority,
+): Promise<VerifiedOverlapAuthority> {
+  const overlapGenerationPath = join(
+    root.projectRoot,
+    `${OVERLAP_GENERATIONS_ROOT}/${staticGeneration.overlapGenerationSha256}`,
+  );
+  const overlapGenerationRead = await readCanonicalJsonWithBytes(
+    root,
+    join(overlapGenerationPath, 'generation.json'),
+    'overlap authority generation',
+  );
+  if (!isCalibrationAdmissionOverlapGenerationV1(overlapGenerationRead.value)) {
+    throw new Error('overlap authority generation failed Core validation');
+  }
+  const overlapGeneration = overlapGenerationRead.value as AdmissionOverlapGenerationV1;
+  if (overlapGeneration.inputGenerationSha256 !== staticGeneration.inputGenerationSha256
+    || overlapGeneration.inputGenerationSha256 !== inputAuthority.generationSha256) {
+    throw new Error('overlap authority generation does not bind the verified input generation');
+  }
+  if (overlapGeneration.universeSha256 !== bundle.overlapUniverse.universeSha256
+    || overlapGeneration.overlapPolicySha256 !== bundle.overlapPolicy.policySha256) {
+    throw new Error('overlap authority generation is not bound to the rich bundle overlap inputs');
+  }
+  await readCompleteGenerationTree(root, overlapGenerationPath, overlapGeneration.artifacts, 'overlap authority generation');
+  const overlapCurrentRead = await readCanonicalJsonWithBytes(
+    root,
+    join(root.projectRoot, 'review', 'admission', 'global', 'overlap', 'current-generation.json'),
+    'overlap current pointer',
+  );
+  if (!isCalibrationAdmissionOverlapCurrentV1(overlapCurrentRead.value)) {
+    throw new Error('overlap current pointer failed Core validation');
+  }
+  if (overlapCurrentRead.value.currentSha256 !== calibrationAdmissionOverlapCurrentSha256(overlapCurrentRead.value)
+    || overlapCurrentRead.value.generationSha256 !== overlapGeneration.generationSha256
+    || overlapCurrentRead.value.generation !== overlapGeneration.generation
+    || overlapCurrentRead.value.generationRelativePath !== `${OVERLAP_GENERATIONS_ROOT}/${overlapGeneration.generationSha256}`) {
+    throw new Error('overlap current pointer does not bind selected generation');
+  }
+  const [indexRead, resourceRead, ledgerRead] = await Promise.all([
+    readCanonicalJsonWithBytes(root, join(overlapGenerationPath, OVERLAP_INDEX_PATH), 'overlap index receipt'),
+    readCanonicalJsonWithBytes(root, join(overlapGenerationPath, OVERLAP_RESOURCE_PATH), 'overlap resource receipt'),
+    readCanonicalJsonWithBytes(root, join(overlapGenerationPath, OVERLAP_LEDGER_PATH), 'overlap ledger'),
+  ]);
+  if (!isCalibrationAdmissionOverlapResourceReceiptV1(resourceRead.value)) {
+    throw new Error('overlap resource receipt failed Core validation');
+  }
+  const resource = resourceRead.value;
+  if (isRecord(indexRead.value)
+    && (indexRead.value.normalizerRegistrySha256 !== bundle.normalizerRegistry.registrySha256
+      || indexRead.value.overlapPolicySha256 !== bundle.overlapPolicy.policySha256)
+    || isRecord(resourceRead.value)
+      && resourceRead.value.overlapPolicySha256 !== bundle.overlapPolicy.policySha256
+    || isRecord(ledgerRead.value)
+      && ledgerRead.value.normalizerRegistrySha256 !== bundle.normalizerRegistry.registrySha256) {
+    throw new Error('overlap envelopes are not bound to the rich bundle normalizer/policy');
+  }
+
+  const bundleJoins: readonly [string, unknown, unknown][] = [
+    ['index', bundle.overlapIndexReceipt, indexRead.value],
+    ['resource', bundle.overlapResourceReceipt, resourceRead.value],
+    ['ledger', bundle.overlapLedger, ledgerRead.value],
+  ];
+  for (const [label, bundleValue, diskValue] of bundleJoins) {
+    if (calibrationAdmissionCanonicalJson(bundleValue) !== calibrationAdmissionCanonicalJson(diskValue)) {
+      throw new Error(`overlap ${label} receipt is not bound to the rich bundle`);
+    }
+  }
+
+  const overlapReceipts = bundle.toolReceipts.filter((receipt) =>
+    calibrationAdmissionToolReceiptSha256(receipt) === resource.toolReceiptSha256,
+  );
+  if (overlapReceipts.length !== 1) {
+    throw new Error('overlap resource receipt does not identify exactly one rich-bundle tool receipt');
+  }
+  const overlapReceipt = overlapReceipts[0]!;
+  const overlapIntent = bundle.invocationIntents.find((intent) => intent.intentId === overlapReceipt.invocationIntentId);
+  if (overlapIntent === undefined) throw new Error('overlap tool receipt invocation intent is missing from the rich bundle');
+
+  const toolAuthority = await resolveAdmissionToolAuthorityReceipt({
+    authorityRoot: join(root.projectRoot, 'review', 'admission', 'tool-authority'),
+    authorityIndexSha256: staticGeneration.toolAuthoritySnapshot.indexGenerationSha256,
+    receiptId: overlapReceipt.receiptId,
+    receiptSha256: calibrationAdmissionToolReceiptSha256(overlapReceipt),
+    invocationIntentId: overlapIntent.intentId,
+    profileId: OVERLAP_TOOL_PROFILE_ID,
+    action: 'authority:overlap',
+    expectedSnapshot: staticGeneration.toolAuthoritySnapshot,
+  });
+  const validation = validatePrebuiltAdmissionAuthorityOverlapJoin({
+    staticGeneration,
+    staticGenerationBytes,
+    overlapGeneration,
+    overlapGenerationBytes: overlapGenerationRead.bytes,
+    envelopes: {
+      index: { value: indexRead.value, bytes: indexRead.bytes },
+      resource: { value: resourceRead.value, bytes: resourceRead.bytes },
+      ledger: { value: ledgerRead.value, bytes: ledgerRead.bytes },
+    },
+    toolAuthority,
+  });
+  if (!validation.ok) throw new Error(`overlap static authority join failed: ${validation.errors.join(', ')}`);
+
+  const proofBody = {
+    inputGenerationSha256: inputAuthority.generationSha256,
+    inputGenerationBytesSha256: inputAuthority.generationBytesSha256,
+    sourceAuthoritySha256: inputAuthority.sourceAuthoritySha256,
+    staticGenerationSha256: staticGeneration.generationSha256,
+    staticGenerationBytesSha256: hashBytes(staticGenerationBytes),
+    overlapGenerationSha256: overlapGeneration.generationSha256,
+    overlapGenerationBytesSha256: hashBytes(overlapGenerationRead.bytes),
+    overlapCurrentBytesSha256: hashBytes(overlapCurrentRead.bytes),
+    indexBytesSha256: hashBytes(indexRead.bytes),
+    resourceBytesSha256: hashBytes(resourceRead.bytes),
+    ledgerBytesSha256: hashBytes(ledgerRead.bytes),
+    authorityIndexSha256: toolAuthority.authorityIndexSha256,
+    receiptSha256: toolAuthority.receiptSha256,
+    invocationIntentId: toolAuthority.invocationIntent.intentId,
+  };
+  return {
+    inputGenerationSha256: inputAuthority.generationSha256,
+    inputGenerationBytesSha256: inputAuthority.generationBytesSha256,
+    sourceAuthoritySha256: inputAuthority.sourceAuthoritySha256,
+    generationSha256: overlapGeneration.generationSha256,
+    indexReceiptSha256: isRecord(indexRead.value) && typeof indexRead.value.receiptSha256 === 'string' ? indexRead.value.receiptSha256 : '',
+    resourceReceiptId: resourceRead.value.receiptId,
+    ledgerSha256: isRecord(ledgerRead.value) && typeof ledgerRead.value.ledgerSha256 === 'string' ? ledgerRead.value.ledgerSha256 : '',
+    toolReceiptSha256: toolAuthority.receiptSha256,
+    authorityIndexSha256: toolAuthority.authorityIndexSha256,
+    receiptSha256: toolAuthority.receiptSha256,
+    proofSha256: calibrationAdmissionSha256(proofBody),
+  };
 }
 
 function verifyCurrentPointer(currentInput: unknown): { readonly generation: number; readonly staticGenerationSha256: string; readonly staticGenerationRelativePath: string; readonly currentSha256: string } {
@@ -361,7 +600,18 @@ function verifyBundle(bundleInput: unknown): CalibrationAdmissionPreWitnessBundl
  * generation.  The source layout is deliberately fixed: callers cannot
  * substitute a projection path or discover a different generation directory.
  */
-async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: CalibrationAdmissionPreWitnessBundleV1): Promise<void> {
+type VerifiedSourceAuthority = Readonly<{
+  readonly sourceId: string;
+  readonly generationSha256: string;
+  readonly generationRelativePath: string;
+  readonly artifactSetSha256: string;
+  readonly currentBytesSha256: string;
+  readonly generationBytesSha256: string;
+  readonly sourceReviewBytesSha256: string;
+}>;
+
+async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: CalibrationAdmissionPreWitnessBundleV1): Promise<ReadonlyMap<string, VerifiedSourceAuthority>> {
+  const authorities = new Map<string, VerifiedSourceAuthority>();
   for (const review of bundle.sourceReviews) {
     const sourceId = review.sourceId;
     const currentPath = join(root.admissionRoot, SOURCES_ROOT, sourceId, 'current.json');
@@ -399,7 +649,105 @@ async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: Calibr
       || !sourceReviewBytes.equals(expectedSourceReviewBytes)) {
       throw new Error(`source ${sourceId} source-review artifact receipt does not match canonical bytes/hash`);
     }
+    if (generation.approval.kind !== 'genesis_quarantine') {
+      throw new Error(`source ${sourceId} candidate authority requires persisted semantic source authority; runtime context is quarantine-only`);
+    }
+    await readCompleteGenerationTree(root, generationDirectory, generation.artifacts, `source ${sourceId} generation`, 'source-generation.json');
+    if (authorities.has(sourceId)) throw new Error(`source ${sourceId} appears more than once in the rich bundle`);
+    authorities.set(sourceId, {
+      sourceId,
+      generationSha256: generation.generationSha256,
+      generationRelativePath: current.generationRelativePath,
+      artifactSetSha256: generation.artifactSetSha256,
+      currentBytesSha256: hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(current), 'utf8')),
+      generationBytesSha256: hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(generation), 'utf8')),
+      sourceReviewBytesSha256: hashBytes(sourceReviewBytes),
+    });
   }
+  return authorities;
+}
+
+type VerifiedInputAuthority = Readonly<{
+  readonly generationSha256: string;
+  readonly generationBytesSha256: string;
+  readonly sourceAuthoritySha256: string;
+}>;
+
+async function verifyRuntimeInputGeneration(
+  root: AdmissionRoot,
+  staticGeneration: ReturnType<typeof verifyStaticGeneration>,
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  evidence: VerifiedAdmissionEvidenceContextV1,
+  streamBytes: Buffer,
+  sources: ReadonlyMap<string, VerifiedSourceAuthority>,
+): Promise<VerifiedInputAuthority> {
+  const generationDirectory = join(
+    root.projectRoot,
+    'review',
+    'admission',
+    'authority',
+    'input-generations',
+    staticGeneration.inputGenerationSha256,
+  );
+  const generationRead = await readCanonicalJsonWithBytes(
+    root,
+    join(generationDirectory, 'generation.json'),
+    'input authority generation',
+  );
+  if (!isCalibrationAdmissionInputGenerationV1(generationRead.value)) {
+    throw new Error('input authority generation failed Core validation');
+  }
+  const generation = generationRead.value as CalibrationAdmissionInputGenerationV1;
+  if (generation.generationSha256 !== calibrationAdmissionInputGenerationSha256(generation)) {
+    throw new Error('input authority generation self-hash mismatch');
+  }
+  if (generation.generationSha256 !== staticGeneration.inputGenerationSha256) {
+    throw new Error('static generation does not bind input authority generation');
+  }
+  const artifactBytes = await readCompleteGenerationTree(root, generationDirectory, generation.artifacts, 'input authority generation');
+  for (const artifact of generation.artifacts) {
+    const bytes = artifactBytes[artifact.relativePath];
+    if (bytes === undefined || bytes.byteLength !== artifact.bytes || hashBytes(bytes) !== artifact.sha256) {
+      throw new Error(`input authority artifact receipt does not match ${artifact.relativePath}`);
+    }
+  }
+  if (generation.evidenceBundleSha256 !== evidence.bundle.bundleSha256) {
+    throw new Error('input authority generation evidence bundle hash is not bound to the verified evidence context');
+  }
+  const recordArtifact = generation.artifacts.find((artifact) => artifact.kind === 'record_stream' && artifact.relativePath === 'admission-records.jsonl');
+  if (recordArtifact === undefined || generation.admissionRecordStreamSha256 !== recordArtifact.sha256 || recordArtifact.sha256 !== hashBytes(streamBytes)) {
+    throw new Error('input authority admission-record stream is not bound to the verified stream bytes');
+  }
+  const sourceIds = [...sources.keys()].sort();
+  const generationSourceIds = generation.sourceGenerations.map((source) => source.sourceId);
+  if (sourceIds.length !== generationSourceIds.length || sourceIds.some((sourceId, index) => sourceId !== generationSourceIds[index])) {
+    throw new Error('input authority source set does not match the rich bundle source authorities');
+  }
+  for (const source of generation.sourceGenerations) {
+    const authority = sources.get(source.sourceId);
+    if (authority === undefined
+      || source.generationSha256 !== authority.generationSha256
+      || source.artifactSetSha256 !== authority.artifactSetSha256
+      || source.relativePath !== `review/admission/${authority.generationRelativePath}`) {
+      throw new Error(`input authority source ${source.sourceId} is not bound to its persisted source generation`);
+    }
+  }
+  const sourceAuthoritySha256 = calibrationAdmissionSha256([...sources.values()]
+    .sort((left, right) => left.sourceId.localeCompare(right.sourceId))
+    .map((authority) => ({
+      sourceId: authority.sourceId,
+      generationSha256: authority.generationSha256,
+      generationRelativePath: authority.generationRelativePath,
+      artifactSetSha256: authority.artifactSetSha256,
+      currentBytesSha256: authority.currentBytesSha256,
+      generationBytesSha256: authority.generationBytesSha256,
+      sourceReviewBytesSha256: authority.sourceReviewBytesSha256,
+    })));
+  return {
+    generationSha256: generation.generationSha256,
+    generationBytesSha256: hashBytes(generationRead.bytes),
+    sourceAuthoritySha256,
+  };
 }
 
 function verifyStreamRecords(bundle: CalibrationAdmissionPreWitnessBundleV1, streamBytes: Buffer): { readonly recordIds: readonly string[]; readonly recordMap: ReadonlyMap<string, VerifiedRecord> } {
@@ -487,14 +835,15 @@ function validateRecordAuthority(
   return errors;
 }
 
-function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, staticGeneration: ReturnType<typeof verifyStaticGeneration>): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
+function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, staticGeneration: ReturnType<typeof verifyStaticGeneration>): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord>; readonly sources: ReadonlyMap<string, VerifiedSourceAuthority> }> {
   return (async () => {
     const artifacts = requiredStaticArtifactReceipts(staticGeneration);
+    await readCompleteGenerationTree(root, staticPath, staticGeneration.artifacts, 'static authority generation');
     const bundle = verifyBundle(await readCanonicalJson(root, join(staticPath, STATIC_BUNDLE_PATH), 'pre-witness bundle'));
     verifyStaticLedgerAnchors(bundle, staticGeneration);
     verifyStaticArtifactReceipts(artifacts, bundle, staticGeneration);
     verifyToolAuthoritySnapshotEquality(bundle, staticGeneration);
-    await verifySourceReviewAuthorities(root, bundle);
+    const sources = await verifySourceReviewAuthorities(root, bundle);
     const stream = bundle.admissionRecordStream as CalibrationAdmissionRecordStreamV1;
     if (stream.relativePath !== STREAM_RELATIVE_PATH) throw new Error('pre-witness bundle record stream path is not the fixed admission path');
     const streamBytes = await readContainedFile(root, join(root.projectRoot, stream.relativePath));
@@ -508,20 +857,23 @@ function verifyStaticBundleAndStream(root: AdmissionRoot, staticPath: string, st
     if (recordAuthorityErrors.length > 0) throw new Error(recordAuthorityErrors.join('; '));
     const overlapErrors = validateOverlapResourceReceipt(bundle);
     if (overlapErrors.length > 0) throw new Error(overlapErrors.join('; '));
-    return { bundle, streamBytes, records: verifiedRecords.recordMap };
+    return { bundle, streamBytes, records: verifiedRecords.recordMap, sources };
   })();
 }
 
-async function loadAndVerify(root: AdmissionRoot, evidence: VerifiedAdmissionEvidenceContextV1): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord> }> {
+async function loadAndVerify(root: AdmissionRoot, evidence: VerifiedAdmissionEvidenceContextV1): Promise<{ readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly streamBytes: Buffer; readonly records: ReadonlyMap<string, VerifiedRecord>; readonly overlapAuthority: VerifiedOverlapAuthority }> {
   const currentPath = join(root.projectRoot, CURRENT_RELATIVE_PATH);
   const current = verifyCurrentPointer(await readCanonicalJson(root, currentPath, 'authority current pointer'));
   const staticPath = join(root.projectRoot, current.staticGenerationRelativePath);
   if (!pathInside(root.admissionRoot, staticPath)) throw new Error('authority static generation escapes the contained admission root');
-  const staticGeneration = verifyStaticGeneration(await readCanonicalJson(root, join(staticPath, 'generation.json'), 'static authority generation'), current);
+  const staticGenerationRead = await readCanonicalJsonWithBytes(root, join(staticPath, 'generation.json'), 'static authority generation');
+  const staticGeneration = verifyStaticGeneration(staticGenerationRead.value, current);
   const verified = await verifyStaticBundleAndStream(root, staticPath, staticGeneration);
+  const inputAuthority = await verifyRuntimeInputGeneration(root, staticGeneration, verified.bundle, evidence, verified.streamBytes, verified.sources);
+  const overlapAuthority = await verifyRuntimeOverlapAuthority(root, staticGeneration, staticGenerationRead.bytes, verified.bundle, inputAuthority);
   // The evidence brand is checked before any evidence object property is read.
   if (!isVerifiedAdmissionEvidenceContext(evidence)) throw new Error('evidence context is not a verified SlopBrick context');
-  return verified;
+  return { ...verified, overlapAuthority };
 }
 
 /**
@@ -536,17 +888,18 @@ export async function buildVerifiedAdmissionContext(root: string, evidence: Veri
     const admissionRoot = await resolveAdmissionRoot(root);
     const verified = await loadAndVerify(admissionRoot, evidence);
     const contextBody = {
-      contextSha256: '',
       durable: structuredClone(verified.bundle),
+      overlapAuthority: structuredClone(verified.overlapAuthority),
     };
     const contextSha256 = calibrationAdmissionSha256({
       durable: contextBody.durable,
       streamBytesSha256: hashBytes(verified.streamBytes),
       evidenceContextSha256: evidence.evidenceContextSha256,
+      overlapAuthoritySha256: contextBody.overlapAuthority.proofSha256,
     });
     const context = deepFreeze({
-      ...contextBody,
       contextSha256,
+      ...contextBody,
       [verifiedAdmissionContextBrand]: true as const,
     }) as VerifiedAdmissionContextV1;
     verifiedContexts.add(context as object);

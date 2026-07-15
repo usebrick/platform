@@ -59,8 +59,43 @@ describe('v10.3 byte-backed verified admission context', () => {
     expect(Object.isFrozen(result.context)).toBe(true);
     expect(Object.isFrozen(result.context.durable)).toBe(true);
     expect(result.context.durable.preWitnessBundleSha256).toBe(fixture.bundle.preWitnessBundleSha256);
+    expect(result.context.overlapAuthority.generationSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.context.overlapAuthority.authorityIndexSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.context.overlapAuthority.proofSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(result.context.contextSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(isVerifiedAdmissionContext(structuredClone(result.context))).toBe(false);
+  });
+
+  it('requires the strict overlap generation, envelopes, and indexed tool authority', async () => {
+    const missingEnvelope = await runtimeFixture();
+    const staticCurrent = JSON.parse(await readFile(join(missingEnvelope.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const staticGeneration = JSON.parse(await readFile(join(missingEnvelope.root, staticCurrent.staticGenerationRelativePath, 'generation.json'), 'utf8')) as { readonly overlapGenerationSha256: string };
+    const overlapRoot = join(missingEnvelope.root, 'review', 'admission', 'global', 'overlap', 'generations', staticGeneration.overlapGenerationSha256);
+    await rm(join(overlapRoot, 'index.json'));
+    await expectRejected(missingEnvelope.root, missingEnvelope.evidence);
+
+    const tamperedEnvelope = await runtimeFixture();
+    const tamperedCurrent = JSON.parse(await readFile(join(tamperedEnvelope.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const tamperedStatic = JSON.parse(await readFile(join(tamperedEnvelope.root, tamperedCurrent.staticGenerationRelativePath, 'generation.json'), 'utf8')) as { readonly overlapGenerationSha256: string };
+    const tamperedOverlapRoot = join(tamperedEnvelope.root, 'review', 'admission', 'global', 'overlap', 'generations', tamperedStatic.overlapGenerationSha256);
+    const resourcePath = join(tamperedOverlapRoot, 'overlap-resource-receipt.json');
+    const resource = JSON.parse(await readFile(resourcePath, 'utf8')) as Record<string, unknown>;
+    await writeFile(resourcePath, calibrationAdmissionCanonicalJson({ ...resource, toolReceiptSha256: 'f'.repeat(64) }));
+    await expectRejected(tamperedEnvelope.root, tamperedEnvelope.evidence);
+
+    const missingAuthority = await runtimeFixture();
+    await rm(join(missingAuthority.root, 'review', 'admission', 'tool-authority', 'index.json'));
+    await expectRejected(missingAuthority.root, missingAuthority.evidence);
+
+    const orphanArtifact = await runtimeFixture();
+    const orphanCurrent = JSON.parse(await readFile(join(orphanArtifact.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const orphanStatic = JSON.parse(await readFile(join(orphanArtifact.root, orphanCurrent.staticGenerationRelativePath, 'generation.json'), 'utf8')) as { readonly overlapGenerationSha256: string };
+    await writeFile(join(orphanArtifact.root, 'review', 'admission', 'global', 'overlap', 'generations', orphanStatic.overlapGenerationSha256, 'orphan-shard.json'), '{}');
+    await expectRejected(orphanArtifact.root, orphanArtifact.evidence);
+
+    const missingOverlapCurrent = await runtimeFixture();
+    await rm(join(missingOverlapCurrent.root, 'review', 'admission', 'global', 'overlap', 'current-generation.json'));
+    await expectRejected(missingOverlapCurrent.root, missingOverlapCurrent.evidence);
   });
 
   it('rejects unbranded evidence, fake filesystem input, proxies, and malformed authority values', async () => {
@@ -93,7 +128,20 @@ describe('v10.3 byte-backed verified admission context', () => {
     const staticPath = join(fixture.root, current.staticGenerationRelativePath);
     await writeFile(join(fixture.root, 'review', 'admission', 'authority', 'current-orphan.json'), '{}');
     await rm(join(staticPath, 'privacy-ledger.json'));
-    expect((await buildVerifiedAdmissionContext(fixture.root, fixture.evidence)).ok).toBe(true);
+    await expectRejected(fixture.root, fixture.evidence);
+
+    const inputArtifact = await runtimeFixture();
+    const inputCurrent = JSON.parse(await readFile(join(inputArtifact.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const inputStatic = JSON.parse(await readFile(join(inputArtifact.root, inputCurrent.staticGenerationRelativePath, 'generation.json'), 'utf8')) as { readonly inputGenerationSha256: string };
+    const inputRoot = join(inputArtifact.root, 'review', 'admission', 'authority', 'input-generations', inputStatic.inputGenerationSha256);
+    await rm(join(inputRoot, 'overlap-universe.json'));
+    await expectRejected(inputArtifact.root, inputArtifact.evidence);
+
+    const inputOrphan = await runtimeFixture();
+    const orphanCurrent = JSON.parse(await readFile(join(inputOrphan.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
+    const orphanStatic = JSON.parse(await readFile(join(inputOrphan.root, orphanCurrent.staticGenerationRelativePath, 'generation.json'), 'utf8')) as { readonly inputGenerationSha256: string };
+    await writeFile(join(inputOrphan.root, 'review', 'admission', 'authority', 'input-generations', orphanStatic.inputGenerationSha256, 'orphan.json'), '{}');
+    await expectRejected(inputOrphan.root, inputOrphan.evidence);
 
     const missing = await runtimeFixture();
     const missingCurrent = JSON.parse(await readFile(join(missing.root, 'review', 'admission', 'authority', 'current.json'), 'utf8')) as { readonly staticGenerationRelativePath: string };
@@ -189,7 +237,7 @@ describe('v10.3 byte-backed verified admission context', () => {
         : artifact),
     }));
     await expectRejected(receiptHash.root, receiptHash.evidence);
-  });
+  }, 120_000);
 
   it('rejects a self-hashed source generation stored under a different current pointer hash', async () => {
     const fixture = await runtimeFixture();

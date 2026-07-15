@@ -993,3 +993,59 @@ complete runtime fixture and route the context adapter through this proof,
 obtain independent review, then implement the mutating adapter before replaying
 real static/witness context or measuring a corpus deficit. Do not pull
 repositories or promote labels while the census is blocked.
+
+### Task 2B runtime overlap-authority context checkpoint — 2026-07-15
+
+`buildVerifiedAdmissionContext` now consumes the strict static/overlap proof:
+it follows the static generation's selected overlap hash, reads canonical
+generation/index/resource/ledger bytes, resolves the indexed
+`admission-static-ledgers-v1` / `authority:overlap` receipt, binds every
+envelope back to the rich pre-witness bundle, and includes an immutable
+overlap-authority proof identity in the branded context and `contextSha256`.
+
+The runtime fixture publishes real core-contract and overlap authority objects
+and materializes the hash-named overlap generation/envelopes. Focused context
+and disposition coverage is **2 files / 15 tests** (13 + 2), including missing
+envelope, resource tamper, and missing authority-index rejection. SlopBrick
+typecheck and `git diff --check` pass. The evidence report is
+`.superpowers/sdd/task-2b-runtime-overlap-context-report.md`; its independent
+review result is pending before the slice is marked approved.
+
+This remains bounded: unrelated static/overlap artifact receipts are not yet
+opened by the context, check-then-open and cross-object snapshot hardening
+remain open, and the legacy prebuilt publisher remains metadata-tolerant. No
+corpus labels/bytes, manifest, repository acquisition, package, remote,
+release, publish, or deployment state changed. The census remains **329/329**
+reviewed sources, **452,382** quarantined/unrepresented units, zero
+candidate/eligible, with blockers `static_authority_unavailable` and
+`witness_authority_unavailable`.
+
+Next: finish independent review and recursive gates, then implement the
+mutating rebuild/recovery adapter before replaying the real corpus context.
+
+### Task 2B runtime authority-tree hardening checkpoint — 2026-07-15
+
+Independent review identified and the implementation addressed the raw-vs-
+semantic static receipt contract, incomplete selected-tree verification, and
+hash-only input-generation edge. Core now keeps static artifact `sha256` as a
+raw-byte receipt while semantic ledger/bundle hashes remain separate; focused
+Core/rebuild/loader suites pass **8/8 + 26/26**. Runtime reads every declared
+input/static/overlap artifact, rejects orphan/missing leaves, binds the overlap
+current pointer, joins overlap universe/policy/normalizer hashes to the rich
+bundle, and includes input/source proof hashes in the branded context.
+
+The materialized fixture now contains source authorities, input generation and
+artifacts, raw static receipts, overlap current/generation/envelopes, and real
+tool-authority intent/receipt objects. Focused context/disposition coverage is
+**2 files / 15 tests**; recursive gates are green: Core **226/226**, website
+**38/38**, engine **59/59**, and SlopBrick **3,620 passed / 9 skipped** across
+**316 passed / 5 skipped test files**. Recursive typecheck/build and
+`git diff --check` pass. Runtime is
+explicitly quarantine-only: independent-review source generations fail closed
+until the mutating adapter loads `source-semantic-authority.json`. No corpus,
+remote, release, publish, deployment, or label state changed; census remains
+**329/329**, **452,382** quarantined/unrepresented, zero candidate/eligible,
+blockers `static_authority_unavailable` and `witness_authority_unavailable`.
+
+Remaining: release review, then the mutating adapter with a coherent snapshot
+and candidate semantic-authority loading before real-corpus replay.

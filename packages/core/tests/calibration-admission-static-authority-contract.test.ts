@@ -276,7 +276,7 @@ describe('v10.3 static-authority graph contracts', () => {
     }).ok).toBe(false);
   });
 
-  it('requires the exact static-ledger and pre-witness artifact anchors', () => {
+  it('requires the exact static-ledger and pre-witness artifact roles', () => {
     const input = inputGeneration();
     const staticValue = staticGeneration({ inputGenerationSha256: input.generationSha256 });
     const publishedCurrent = current(staticValue.generationSha256, { generation: staticValue.generation });
@@ -294,5 +294,25 @@ describe('v10.3 static-authority graph contracts', () => {
       staticGeneration: mutated,
       current: publishedCurrent,
     }).ok).toBe(false);
+  });
+
+  it('keeps raw static artifact receipts independent from semantic hash slots', () => {
+    const input = inputGeneration();
+    const rawArtifacts = staticGeneration().artifacts.map((artifact) => ({
+      ...artifact,
+      sha256: D,
+    }));
+    const staticValue = staticGeneration({
+      inputGenerationSha256: input.generationSha256,
+      artifacts: rawArtifacts,
+    });
+    const publishedCurrent = current(staticValue.generationSha256, { generation: staticValue.generation });
+
+    expect(validateCalibrationAdmissionStaticAuthorityGraphV1({
+      proposal: proposal(),
+      inputGeneration: input,
+      staticGeneration: staticValue,
+      current: publishedCurrent,
+    }).ok).toBe(true);
   });
 });

@@ -11,8 +11,11 @@ import {
   calibrationAdmissionPolicySha256,
   calibrationAdmissionLineageLedgerSha256,
   calibrationAdmissionMaterializationId,
-  calibrationAdmissionInvocationIntentId,
-  calibrationAdmissionInvocationIntentSha256,
+  calibrationAdmissionOverlapGenerationArtifactSetSha256,
+  calibrationAdmissionOverlapGenerationSha256,
+  calibrationAdmissionOverlapCurrentSha256,
+  calibrationAdmissionOverlapIndexReceiptSha256,
+  calibrationAdmissionOverlapLedgerSha256,
   calibrationAdmissionOverlapResourceReceiptId,
   calibrationAdmissionPreWitnessBundleSha256,
   calibrationAdmissionPrivacyLedgerSha256,
@@ -26,7 +29,6 @@ import {
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionRecordId,
   calibrationAdmissionStaticAuthorityGenerationSha256,
-  calibrationAdmissionToolReceiptId,
   calibrationAdmissionToolReceiptSha256,
   admissionRecordStreamContentSha256,
   admissionRecordStreamSha256,
@@ -47,10 +49,18 @@ import {
 } from '@usebrick/core';
 
 import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v103/admission-evidence-context';
+import {
+  publishAdmissionToolInvocationIntent,
+  publishAdmissionToolReceipt,
+} from '../../src/calibration/v103/admission-publication';
 
 const roots: string[] = [];
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex');
+const shaBytes = (value: Uint8Array): string => createHash('sha256').update(value).digest('hex');
 const fixture = (name: string): string => join(process.cwd(), '..', 'core', 'tests', 'fixtures', 'schema', 'valid', name);
+const OVERLAP_INDEX_PATH = 'index.json';
+const OVERLAP_RESOURCE_PATH = 'overlap-resource-receipt.json';
+const OVERLAP_LEDGER_PATH = 'overlap-ledger.json';
 
 async function emptyEvidenceContext(): Promise<Awaited<ReturnType<typeof buildVerifiedAdmissionEvidenceContext>> extends { ok: true; context: infer C } ? C : never> {
   const root = await mkdtemp(join(tmpdir(), 'slopbrick-runtime-evidence-'));
@@ -190,10 +200,10 @@ async function materializeSourceReviewAuthorities(
   root: string,
   reviews: readonly unknown[],
   evidenceBundle: unknown,
-): Promise<void> {
+): Promise<readonly { readonly sourceId: string; readonly generationSha256: string; readonly relativePath: string; readonly artifactSetSha256: string }[]> {
   const admissionRoot = join(root, 'review', 'admission');
   const evidenceBundleSha256 = (evidenceBundle as { readonly bundleSha256: string }).bundleSha256;
-  await Promise.all(reviews.map(async (value) => {
+  const authorities = await Promise.all(reviews.map(async (value) => {
     const review = value as Record<string, unknown>;
     const sourceId = String(review.sourceId);
     const sourceReviewCanonical = calibrationAdmissionCanonicalJson(review);
@@ -255,7 +265,14 @@ async function materializeSourceReviewAuthorities(
     const currentDirectory = join(admissionRoot, 'sources', sourceId);
     await mkdir(currentDirectory, { recursive: true });
     await writeFile(join(currentDirectory, 'current.json'), calibrationAdmissionCanonicalJson(current));
+    return {
+      sourceId,
+      generationSha256: generation.generationSha256,
+      relativePath: `review/admission/${current.generationRelativePath}`,
+      artifactSetSha256: generation.artifactSetSha256,
+    };
   }));
+  return authorities.sort((left, right) => left.sourceId.localeCompare(right.sourceId));
 }
 
 export async function runtimeFixture(): Promise<{ readonly root: string; readonly evidence: Awaited<ReturnType<typeof emptyEvidenceContext>>; readonly bundle: CalibrationAdmissionPreWitnessBundleV1; readonly recordId: string }> {
@@ -264,47 +281,71 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   const rawBundle = JSON.parse(await readFile(fixture('calibration-admission-pre-witness-bundle.valid.json'), 'utf8')) as CalibrationAdmissionPreWitnessBundleV1;
   const overlapProfile = rawBundle.toolProfiles.find((profile) => profile.profileId === 'admission-static-ledgers-v1');
   if (!overlapProfile) throw new Error('rich fixture is missing the static-ledgers tool profile');
-  const overlapIntentBody = {
-    version: 'v10.3-admission-invocation-intent-v1' as const,
+  const toolAuthorityRoot = join(root, 'review', 'admission', 'tool-authority');
+  const coreIntent = await publishAdmissionToolInvocationIntent({
+    toolAuthorityRoot,
+    profileId: 'admission-core-contract-v1',
+    action: 'core:contract',
+    canonicalArgvSha256: '2'.repeat(64),
+    inputSetSha256: '3'.repeat(64),
+    executableBehaviorSha256: '4'.repeat(64),
+  });
+  const coreReceipt = await publishAdmissionToolReceipt({
+    toolAuthorityRoot,
+    invocationIntentId: coreIntent.intent.intentId,
+    observedResourceUsage: { maxHeapMiB: 10, wallSeconds: 1 },
+    exitCode: 0,
+    outputSetSha256: '5'.repeat(64),
+  });
+  const overlapIntent = await publishAdmissionToolInvocationIntent({
+    toolAuthorityRoot,
     profileId: overlapProfile.profileId,
-    profileSha256: overlapProfile.profileSha256,
-    action: 'authority:overlap' as const,
+    action: 'authority:overlap',
     canonicalArgvSha256: sha('overlap-argv'),
     inputSetSha256: sha('overlap-input'),
     executableBehaviorSha256: sha('overlap-executable'),
-  };
-  const overlapIntentWithId = { ...overlapIntentBody, intentId: calibrationAdmissionInvocationIntentId(overlapIntentBody) };
-  const overlapIntent = { ...overlapIntentWithId, intentSha256: calibrationAdmissionInvocationIntentSha256(overlapIntentWithId) };
-  const overlapReceiptBody = {
-    version: 'v10.3-admission-tool-receipt-v1' as const,
-    invocationIntentId: overlapIntent.intentId,
-    profileId: overlapProfile.profileId,
-    profileSha256: overlapProfile.profileSha256,
-    action: overlapIntent.action,
-    canonicalArgvSha256: overlapIntent.canonicalArgvSha256,
-    inputSetSha256: overlapIntent.inputSetSha256,
-    executableBehaviorSha256: overlapIntent.executableBehaviorSha256,
+  });
+  const overlapReceipt = await publishAdmissionToolReceipt({
+    toolAuthorityRoot,
+    invocationIntentId: overlapIntent.intent.intentId,
     observedResourceUsage: { maxHeapMiB: 64, wallSeconds: 1 },
     exitCode: 0,
     outputSetSha256: sha('overlap-output'),
+  });
+  const toolProfiles = await Promise.all(rawBundle.toolProfiles.map(async (profile) =>
+    JSON.parse(await readFile(join(toolAuthorityRoot, 'profiles', `${profile.profileId}.json`), 'utf8')) as typeof profile,
+  ));
+  const { policySha256: _priorPolicySha256, ...policyWithoutHash } = rawBundle.policy;
+  const policyBody = {
+    ...policyWithoutHash,
+    toolProfileSha256s: toolProfiles.map((profile) => profile.profileSha256).sort(),
   };
-  const overlapReceipt = { ...overlapReceiptBody, receiptId: calibrationAdmissionToolReceiptId(overlapReceiptBody) };
-  const invocationIntents = [...rawBundle.invocationIntents, overlapIntent].sort((left, right) => left.intentId.localeCompare(right.intentId));
-  const toolReceipts = [...rawBundle.toolReceipts, overlapReceipt].sort((left, right) => left.receiptId.localeCompare(right.receiptId));
-  const { snapshotSha256: _priorSnapshotSha256, ...toolAuthorityWithoutHash } = rawBundle.toolAuthoritySnapshot;
+  const policy = { ...policyBody, policySha256: calibrationAdmissionPolicySha256(policyBody) };
+  const witnessPolicies = (['smoke', 'canary'] as const).map((gate) => {
+    const prior = rawBundle.witnessPolicies.find((candidate) => candidate.gate === gate);
+    if (!prior) throw new Error(`rich fixture is missing the ${gate} witness policy`);
+    const { witnessPolicySha256: _priorWitnessPolicySha256, ...priorWithoutHash } = prior;
+    const witnessBody = {
+      ...priorWithoutHash,
+      policyId: policy.policyId,
+      constraints: expandAdmissionWitnessConstraints(policy, gate),
+      constraintsSha256: calibrationAdmissionSha256(expandAdmissionWitnessConstraints(policy, gate)),
+    };
+    return { ...witnessBody, witnessPolicySha256: calibrationAdmissionPolicySha256(witnessBody) };
+  });
+  const invocationIntents = [coreIntent.intent, overlapIntent.intent].sort((left, right) => left.intentId.localeCompare(right.intentId));
+  const toolReceipts = [coreReceipt.receipt, overlapReceipt.receipt].sort((left, right) => left.receiptId.localeCompare(right.receiptId));
   const toolAuthorityBody = {
-    ...toolAuthorityWithoutHash,
+    version: 'v10.3-admission-tool-authority-snapshot-v1' as const,
+    indexGenerationSha256: overlapReceipt.toolAuthorityIndexSha256,
+    profileIds: rawBundle.toolProfiles.map((profile) => profile.profileId).sort(),
     invocationIntentIds: invocationIntents.map((intent) => intent.intentId).sort(),
     receiptIds: toolReceipts.map((receipt) => receipt.receiptId).sort(),
   };
   const toolAuthoritySnapshot = { ...toolAuthorityBody, snapshotSha256: calibrationAdmissionSha256(toolAuthorityBody) };
-  const overlapResourceBody = {
-    ...rawBundle.overlapResourceReceipt,
-    toolReceiptSha256: calibrationAdmissionToolReceiptSha256(overlapReceipt),
-    receiptId: '',
-  };
-  const overlapResourceReceipt = { ...overlapResourceBody, receiptId: calibrationAdmissionOverlapResourceReceiptId(overlapResourceBody) };
   const reviews = sourceReviews(rawBundle.sourceRegister as unknown as Record<string, unknown>);
+  const evidence = await emptyEvidenceContext();
+  const sourceAuthorities = await materializeSourceReviewAuthorities(root, reviews, evidence.bundle);
   const review = reviews[0] as Record<string, unknown>;
   const recordBody = {
     version: 'v10.3-admission-record-v1' as const,
@@ -345,11 +386,75 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   const privacyLedger = { ...privacyBody, ledgerSha256: calibrationAdmissionPrivacyLedgerSha256(privacyBody) };
   const qualityLedger = { ...qualityBody, ledgerSha256: calibrationAdmissionQualityLedgerSha256(qualityBody) };
   const lineageLedger = { ...lineageBody, ledgerSha256: calibrationAdmissionLineageLedgerSha256(lineageBody) };
+  const overlapUniverseSha256 = rawBundle.overlapUniverse.universeSha256;
+  const overlapPolicySha256 = rawBundle.overlapPolicy.policySha256;
+  const normalizerRegistrySha256 = rawBundle.normalizerRegistry.registrySha256;
+  const overlapToolReceiptSha256 = calibrationAdmissionToolReceiptSha256(overlapReceipt.receipt);
+  const overlapIndexBody = {
+    ...rawBundle.overlapIndexReceipt,
+    universeSha256: overlapUniverseSha256,
+    normalizerRegistrySha256,
+    overlapPolicySha256,
+    postingShards: [],
+    candidatePairShards: [],
+    checkpoints: [],
+    coveredCandidateUnits: 1,
+    complete: true,
+    toolReceiptSha256: overlapToolReceiptSha256,
+    receiptSha256: '',
+  };
+  const overlapIndexReceipt = {
+    ...overlapIndexBody,
+    receiptSha256: calibrationAdmissionOverlapIndexReceiptSha256(overlapIndexBody),
+  };
+  const overlapResourceBody = {
+    ...rawBundle.overlapResourceReceipt,
+    receiptId: '',
+    universeSha256: overlapUniverseSha256,
+    recordsJsonlSha256: stream.recordsJsonlSha256,
+    overlapPolicySha256,
+    recordCount: 1,
+    coverageComplete: true,
+    withinAllLimits: true,
+    toolReceiptSha256: overlapToolReceiptSha256,
+  };
+  const overlapResourceReceipt = {
+    ...overlapResourceBody,
+    receiptId: calibrationAdmissionOverlapResourceReceiptId({ ...overlapResourceBody, receiptId: undefined }),
+  };
+  const overlapLedgerBody = {
+    ...rawBundle.overlapLedger,
+    universeSha256: overlapUniverseSha256,
+    normalizerRegistrySha256,
+    overlapPolicySha256,
+    indexReceiptSha256: overlapIndexReceipt.receiptSha256,
+    coverageComplete: true,
+    unresolvedCandidateUnitIds: [],
+    edgeShards: [],
+    adjacencyShards: [],
+    clusterSummaryShards: [],
+    clusterMembershipShards: [],
+    edgeCount: 0,
+    adjacencyRowCount: 0,
+    exactClusterCount: 0,
+    nearClusterCount: 0,
+    crossSideEdgeCount: 0,
+    ledgerSha256: '',
+  };
+  const overlapLedger = {
+    ...overlapLedgerBody,
+    ledgerSha256: calibrationAdmissionOverlapLedgerSha256(overlapLedgerBody),
+  };
   const bundleBody = {
     ...rawBundle,
+    toolProfiles,
+    policy,
+    witnessPolicies,
     invocationIntents,
     toolReceipts,
     toolAuthoritySnapshot,
+    overlapIndexReceipt,
+    overlapLedger,
     overlapResourceReceipt,
     sourceReviews: reviews,
     admissionRecordStream: stream,
@@ -363,21 +468,62 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
     const validation = validateCalibrationAdmissionPreWitnessBundleV1(bundle);
     throw new Error(`fixture bundle does not validate: ${validation.errors.join('; ')}`);
   }
+  const inputUniverseBytes = Buffer.from(calibrationAdmissionCanonicalJson(rawBundle.overlapUniverse), 'utf8');
+  const inputUniverseRecordsBytes = Buffer.from(`${calibrationAdmissionCanonicalJson({ recordId })}\n`, 'utf8');
+  const inputArtifacts = [
+    { pathBase: 'generation_local' as const, relativePath: 'admission-records.jsonl', kind: 'record_stream' as const, bytes: streamBytes.byteLength, sha256: shaBytes(streamBytes) },
+    { pathBase: 'generation_local' as const, relativePath: 'overlap-universe.json', kind: 'overlap_universe' as const, bytes: inputUniverseBytes.byteLength, sha256: shaBytes(inputUniverseBytes) },
+    { pathBase: 'generation_local' as const, relativePath: 'overlap-universe-records.jsonl', kind: 'overlap_universe_stream' as const, bytes: inputUniverseRecordsBytes.byteLength, sha256: shaBytes(inputUniverseRecordsBytes) },
+  ].sort((left, right) => `${left.relativePath}\u0000${left.kind}\u0000${left.sha256}`.localeCompare(`${right.relativePath}\u0000${right.kind}\u0000${right.sha256}`));
+  const inputGenerationBody = {
+    version: 'v10.3-admission-input-generation-v1' as const,
+    generation: 0,
+    evidenceBundleSha256: evidence.bundle.bundleSha256,
+    sourceGenerations: sourceAuthorities,
+    admissionRecordStreamSha256: shaBytes(streamBytes),
+    overlapUniverseSha256: shaBytes(inputUniverseBytes),
+    overlapUniverseRecordsSha256: shaBytes(inputUniverseRecordsBytes),
+    artifacts: inputArtifacts,
+  };
+  const inputGeneration = {
+    ...inputGenerationBody,
+    generationSha256: calibrationAdmissionSha256(inputGenerationBody),
+  };
+  const overlapEnvelopeArtifacts = [
+    { pathBase: 'generation_local' as const, relativePath: OVERLAP_INDEX_PATH, kind: 'index' as const, bytes: Buffer.byteLength(calibrationAdmissionCanonicalJson(overlapIndexReceipt)), sha256: sha(calibrationAdmissionCanonicalJson(overlapIndexReceipt)) },
+    { pathBase: 'generation_local' as const, relativePath: OVERLAP_LEDGER_PATH, kind: 'ledger' as const, bytes: Buffer.byteLength(calibrationAdmissionCanonicalJson(overlapLedger)), sha256: sha(calibrationAdmissionCanonicalJson(overlapLedger)) },
+    { pathBase: 'generation_local' as const, relativePath: OVERLAP_RESOURCE_PATH, kind: 'receipt' as const, bytes: Buffer.byteLength(calibrationAdmissionCanonicalJson(overlapResourceReceipt)), sha256: sha(calibrationAdmissionCanonicalJson(overlapResourceReceipt)) },
+  ].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+  const overlapGenerationBody = {
+    version: 'v10.3-admission-overlap-generation-v1' as const,
+    generation: 0,
+    inputGenerationSha256: inputGeneration.generationSha256,
+    universeSha256: overlapUniverseSha256,
+    overlapPolicySha256,
+    artifactSetSha256: calibrationAdmissionOverlapGenerationArtifactSetSha256(overlapEnvelopeArtifacts),
+    artifacts: overlapEnvelopeArtifacts,
+    toolAuthoritySnapshot,
+    generationSha256: '',
+  };
+  const overlapGeneration = {
+    ...overlapGenerationBody,
+    generationSha256: calibrationAdmissionOverlapGenerationSha256(overlapGenerationBody),
+  };
   const bundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(bundle));
   const privacyBytes = Buffer.from(calibrationAdmissionCanonicalJson(privacyLedger));
   const qualityBytes = Buffer.from(calibrationAdmissionCanonicalJson(qualityLedger));
   const lineageBytes = Buffer.from(calibrationAdmissionCanonicalJson(lineageLedger));
   const artifacts = [
-    { pathBase: 'generation_local' as const, relativePath: 'lineage-ledger.json', kind: 'ledger' as const, bytes: lineageBytes.byteLength, sha256: lineageLedger.ledgerSha256 },
-    { pathBase: 'generation_local' as const, relativePath: 'pre-witness-bundle.json', kind: 'bundle' as const, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 },
-    { pathBase: 'generation_local' as const, relativePath: 'privacy-ledger.json', kind: 'ledger' as const, bytes: privacyBytes.byteLength, sha256: privacyLedger.ledgerSha256 },
-    { pathBase: 'generation_local' as const, relativePath: 'quality-ledger.json', kind: 'ledger' as const, bytes: qualityBytes.byteLength, sha256: qualityLedger.ledgerSha256 },
+    { pathBase: 'generation_local' as const, relativePath: 'lineage-ledger.json', kind: 'ledger' as const, bytes: lineageBytes.byteLength, sha256: shaBytes(lineageBytes) },
+    { pathBase: 'generation_local' as const, relativePath: 'pre-witness-bundle.json', kind: 'bundle' as const, bytes: bundleBytes.byteLength, sha256: shaBytes(bundleBytes) },
+    { pathBase: 'generation_local' as const, relativePath: 'privacy-ledger.json', kind: 'ledger' as const, bytes: privacyBytes.byteLength, sha256: shaBytes(privacyBytes) },
+    { pathBase: 'generation_local' as const, relativePath: 'quality-ledger.json', kind: 'ledger' as const, bytes: qualityBytes.byteLength, sha256: shaBytes(qualityBytes) },
   ].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
   const staticBody = {
     version: 'v10.3-admission-static-authority-generation-v1' as const,
     generation: 0,
-    inputGenerationSha256: sha('input-generation'),
-    overlapGenerationSha256: sha('overlap-generation'),
+    inputGenerationSha256: inputGeneration.generationSha256,
+    overlapGenerationSha256: overlapGeneration.generationSha256,
     privacyLedgerSha256: privacyLedger.ledgerSha256,
     qualityLedgerSha256: qualityLedger.ledgerSha256,
     lineageLedgerSha256: lineageLedger.ledgerSha256,
@@ -406,8 +552,28 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   await writeFile(join(staticRoot, 'quality-ledger.json'), qualityBytes);
   await writeFile(join(staticRoot, 'lineage-ledger.json'), lineageBytes);
   await writeFile(join(root, 'review', 'admission', 'admission-records.jsonl'), streamBytes);
-  const evidence = await emptyEvidenceContext();
-  await materializeSourceReviewAuthorities(root, reviews, evidence.bundle);
+  const inputRoot = join(root, 'review', 'admission', 'authority', 'input-generations', inputGeneration.generationSha256);
+  await mkdir(inputRoot, { recursive: true });
+  await writeFile(join(inputRoot, 'generation.json'), calibrationAdmissionCanonicalJson(inputGeneration));
+  await writeFile(join(inputRoot, 'admission-records.jsonl'), streamBytes);
+  await writeFile(join(inputRoot, 'overlap-universe.json'), inputUniverseBytes);
+  await writeFile(join(inputRoot, 'overlap-universe-records.jsonl'), inputUniverseRecordsBytes);
+  const overlapRoot = join(root, 'review', 'admission', 'global', 'overlap', 'generations', overlapGeneration.generationSha256);
+  await mkdir(overlapRoot, { recursive: true });
+  await writeFile(join(overlapRoot, 'generation.json'), calibrationAdmissionCanonicalJson(overlapGeneration));
+  await writeFile(join(overlapRoot, OVERLAP_INDEX_PATH), calibrationAdmissionCanonicalJson(overlapIndexReceipt));
+  await writeFile(join(overlapRoot, OVERLAP_RESOURCE_PATH), calibrationAdmissionCanonicalJson(overlapResourceReceipt));
+  await writeFile(join(overlapRoot, OVERLAP_LEDGER_PATH), calibrationAdmissionCanonicalJson(overlapLedger));
+  const overlapCurrentBody = {
+    version: 'v10.3-admission-overlap-current-v1' as const,
+    generation: 0,
+    generationSha256: overlapGeneration.generationSha256,
+    generationRelativePath: `review/admission/global/overlap/generations/${overlapGeneration.generationSha256}`,
+  };
+  await writeFile(
+    join(root, 'review', 'admission', 'global', 'overlap', 'current-generation.json'),
+    calibrationAdmissionCanonicalJson({ ...overlapCurrentBody, currentSha256: calibrationAdmissionOverlapCurrentSha256(overlapCurrentBody) }),
+  );
   return { root, evidence, bundle, recordId };
 }
 
@@ -433,7 +599,7 @@ export async function rewriteRuntimeBundle(
   const bundle = { ...mutatedBody, preWitnessBundleSha256: calibrationAdmissionPreWitnessBundleSha256(mutatedBody) } as CalibrationAdmissionPreWitnessBundleV1;
   const bundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(bundle), 'utf8');
   const artifacts = staticGeneration.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === 'pre-witness-bundle.json'
-    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 }
+    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: shaBytes(bundleBytes) }
     : artifact);
   const staticBody = {
     ...staticGeneration,
@@ -449,7 +615,12 @@ export async function rewriteRuntimeBundle(
   const nextStaticPath = join(root, 'review', 'admission', 'authority', 'static-generations', nextStatic.generationSha256);
   await mkdir(nextStaticPath, { recursive: true });
   await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextStatic));
-  await writeFile(join(nextStaticPath, 'pre-witness-bundle.json'), bundleBytes);
+  for (const artifact of nextStatic.artifacts) {
+    const bytes = artifact.relativePath === 'pre-witness-bundle.json'
+      ? bundleBytes
+      : await readFile(join(staticPath, artifact.relativePath));
+    await writeFile(join(nextStaticPath, artifact.relativePath), bytes);
+  }
   const currentBody = {
     ...current,
     staticGenerationSha256: nextStatic.generationSha256,
@@ -493,7 +664,7 @@ export async function rewriteRuntimeRecord(
   const bundle = { ...bundleBody, preWitnessBundleSha256: calibrationAdmissionPreWitnessBundleSha256(bundleBody) } as CalibrationAdmissionPreWitnessBundleV1;
   const bundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(bundle), 'utf8');
   const artifacts = staticGeneration.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === 'pre-witness-bundle.json'
-    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: bundle.preWitnessBundleSha256 }
+    ? { ...artifact, bytes: bundleBytes.byteLength, sha256: shaBytes(bundleBytes) }
     : artifact);
   const staticBody = {
     ...staticGeneration,
@@ -506,7 +677,12 @@ export async function rewriteRuntimeRecord(
   const nextStaticPath = join(root, 'review', 'admission', 'authority', 'static-generations', nextStatic.generationSha256);
   await mkdir(nextStaticPath, { recursive: true });
   await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextStatic));
-  await writeFile(join(nextStaticPath, 'pre-witness-bundle.json'), bundleBytes);
+  for (const artifact of nextStatic.artifacts) {
+    const bytes = artifact.relativePath === 'pre-witness-bundle.json'
+      ? bundleBytes
+      : await readFile(join(staticPath, artifact.relativePath));
+    await writeFile(join(nextStaticPath, artifact.relativePath), bytes);
+  }
   await writeFile(join(root, 'review', 'admission', 'admission-records.jsonl'), streamBytes);
   const currentBody = {
     ...current,
@@ -533,13 +709,14 @@ export async function rewriteRuntimeStaticGeneration(
   };
   const staticPath = join(root, current.staticGenerationRelativePath);
   const generation = JSON.parse(await readFile(join(staticPath, 'generation.json'), 'utf8')) as CalibrationAdmissionStaticAuthorityGenerationV1;
-  const bundleBytes = await readFile(join(staticPath, 'pre-witness-bundle.json'));
   const generationBody = { ...mutate(structuredClone(generation)), generationSha256: '' };
   const nextGeneration = { ...generationBody, generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(generationBody) };
   const nextStaticPath = join(root, 'review', 'admission', 'authority', 'static-generations', nextGeneration.generationSha256);
   await mkdir(nextStaticPath, { recursive: true });
   await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextGeneration));
-  await writeFile(join(nextStaticPath, 'pre-witness-bundle.json'), bundleBytes);
+  for (const artifact of nextGeneration.artifacts) {
+    await writeFile(join(nextStaticPath, artifact.relativePath), await readFile(join(staticPath, artifact.relativePath)));
+  }
   const currentBody = {
     ...current,
     staticGenerationSha256: nextGeneration.generationSha256,

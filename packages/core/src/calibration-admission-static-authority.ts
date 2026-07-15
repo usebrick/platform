@@ -330,19 +330,21 @@ export function validateCalibrationAdmissionStaticAuthorityGraphV1(
     errors.push('static generation does not bind the supplied input generation');
   }
 
+  // Static-generation artifact receipts carry the raw bytes hash. The
+  // generation's ledger/bundle fields are semantic self-hashes and are joined
+  // to the rich bundle only after that bundle exists; they are not byte-receipt
+  // hashes and must not be compared to artifact.sha256 here.
   const staticRoles = [
-    ['ledger', 'privacy-ledger.json', 'privacyLedgerSha256'],
-    ['ledger', 'quality-ledger.json', 'qualityLedgerSha256'],
-    ['ledger', 'lineage-ledger.json', 'lineageLedgerSha256'],
-    ['bundle', 'pre-witness-bundle.json', 'preWitnessBundleSha256'],
+    ['ledger', 'privacy-ledger.json'],
+    ['ledger', 'quality-ledger.json'],
+    ['ledger', 'lineage-ledger.json'],
+    ['bundle', 'pre-witness-bundle.json'],
   ] as const;
-  for (const [kind, relativePath, hashKey] of staticRoles) {
+  for (const [kind, relativePath] of staticRoles) {
     const matches = findArtifacts(staticGeneration.artifacts, kind, relativePath);
     if (matches.length !== 1) {
       errors.push(`static generation must contain exactly one ${relativePath} artifact`);
-      continue;
     }
-    if (matches[0]!.sha256 !== staticGeneration[hashKey]) errors.push(`${relativePath} artifact hash is not bound to the static generation field`);
   }
 
   if (current.staticGenerationSha256 !== staticGeneration.generationSha256 || current.generation !== staticGeneration.generation) {
