@@ -1272,8 +1272,11 @@ publication, and computes record-set, stream, and semantic ledger hashes
 without a 452,382-row JavaScript array. The adapter is diagnostic-only and
 does not create live authority or mutate the v10.3 corpus. Its focused suite
 passes **3/3**; the combined allocation/static-ledger suite passes **30/30**;
-typecheck and build are green. The remaining integration is binding this
-receipt into the outer materializer before any real-scale authority attempt.
+typecheck and build are green. Commit `de0830832` binds optional stream
+receipts and projection paths into the outer materializer, which revalidates
+partition/semantic hashes and projection bytes and fails closed on missing or
+substituted files. This remains diagnostic-only; real-scale authority is
+deferred until source evidence and witness inputs exist.
 
 ### Task 2B nested publication handoff contract helper — 2026-07-15
 
