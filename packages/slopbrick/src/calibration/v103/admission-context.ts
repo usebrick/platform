@@ -110,6 +110,14 @@ type VerifiedRecord = Readonly<{
 }>;
 const verifiedRecordMaps = new WeakMap<object, ReadonlyMap<string, VerifiedRecord>>();
 
+/**
+ * Return the exact record projection already verified while constructing the
+ * branded context.  This is deliberately read-only and brand-gated: census
+ * and witness code may account for the verified stream without gaining a new
+ * filesystem or byte-resolution seam.
+ */
+export type VerifiedAdmissionRecordV1 = VerifiedRecord;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -1006,6 +1014,13 @@ export async function buildVerifiedAdmissionContext(root: string, evidence: Veri
 
 export function isVerifiedAdmissionContext(value: unknown): value is VerifiedAdmissionContextV1 {
   return typeof value === 'object' && value !== null && verifiedContexts.has(value);
+}
+
+export function listVerifiedAdmissionRecords(context: VerifiedAdmissionContextV1): readonly VerifiedAdmissionRecordV1[] {
+  if (!isVerifiedAdmissionContext(context)) throw new InvalidAdmissionContextError();
+  const records = verifiedRecordMaps.get(context as object);
+  if (records === undefined) throw new InvalidAdmissionContextError();
+  return Object.freeze([...records.values()].sort((left, right) => left.record.recordId.localeCompare(right.record.recordId)));
 }
 
 class InvalidAdmissionContextError extends Error {

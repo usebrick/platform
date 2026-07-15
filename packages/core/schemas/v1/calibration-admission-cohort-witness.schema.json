@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-cohort-witness.schema.json",
+  "title": "AdmissionCohortWitnessV1",
+  "description": "Deterministic, exact-size v10.3 admission cohort witness produced before search receipts or witness review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gate", "policyId", "algorithm", "seed", "eligibilitySnapshotSha256", "verifiedContextSha256", "units", "constraintProof", "witnessSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-cohort-witness-v1" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "policyId": { "const": "v10.3-admission-v1" },
+    "algorithm": { "const": "lexicographic-bnb-feasibility-v1" },
+    "seed": { "const": "slopbrick-v10.3-admission-review-v1" },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "units": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unit" },
+      "maxItems": 10000,
+      "uniqueItems": true
+    },
+    "constraintProof": { "$ref": "#/$defs/constraintProof" },
+    "witnessSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "gate": { "const": "smoke" } } },
+      "then": {
+        "properties": {
+          "units": { "type": "array", "minItems": 200, "maxItems": 200 },
+          "constraintProof": {
+            "type": "object",
+            "properties": {
+              "verifiedAi": { "const": 100 },
+              "verifiedHuman": { "const": 100 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "gate": { "const": "canary" } } },
+      "then": {
+        "properties": {
+          "units": { "type": "array", "minItems": 10000, "maxItems": 10000 },
+          "constraintProof": {
+            "type": "object",
+            "properties": {
+              "verifiedAi": { "const": 5000 },
+              "verifiedHuman": { "const": 5000 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "printable": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[\\x20-\\x7e]+$" },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recordId", "contentClusterId", "label", "language", "materialSourceId", "repositoryId", "familyId", "split", "selectionKey"],
+      "properties": {
+        "recordId": { "$ref": "#/$defs/id" },
+        "contentClusterId": { "$ref": "#/$defs/id" },
+        "label": { "enum": ["verified_ai", "verified_human"] },
+        "language": { "$ref": "#/$defs/printable" },
+        "materialSourceId": { "$ref": "#/$defs/id" },
+        "repositoryId": { "$ref": "#/$defs/id" },
+        "familyId": { "$ref": "#/$defs/id" },
+        "pairGroupId": { "$ref": "#/$defs/id" },
+        "split": { "enum": ["train", "validation", "test"] },
+        "selectionKey": { "$ref": "#/$defs/printable" }
+      }
+    },
+    "constraintProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verifiedAi", "verifiedHuman", "languageCountsSha256", "sourceCountsSha256", "familyCountsSha256", "pairSplitChecksSha256"],
+      "properties": {
+        "verifiedAi": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "verifiedHuman": { "type": "integer", "minimum": 0, "maximum": 5000 },
+        "languageCountsSha256": { "$ref": "#/$defs/sha256" },
+        "sourceCountsSha256": { "$ref": "#/$defs/sha256" },
+        "familyCountsSha256": { "$ref": "#/$defs/sha256" },
+        "pairSplitChecksSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

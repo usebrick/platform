@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-search-result-bundle.schema.json",
+  "title": "CalibrationAdmissionSearchResultBundleV1",
+  "description": "Acyclic search result bundle: invocation intents and receipts bind the already-created witness or certificate and search receipt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bundleId", "gate", "verifiedContextSha256", "eligibilitySnapshotSha256", "invocationIntents", "toolReceipts", "result", "searchReceipt", "bundleSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-search-result-bundle-v1" },
+    "bundleId": { "$ref": "#/$defs/sha256" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntents": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-invocation-intent.schema.json" }, "maxItems": 452382 },
+    "toolReceipts": { "type": "array", "items": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-receipt.schema.json" }, "maxItems": 452382 },
+    "result": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "witness"], "properties": { "kind": { "const": "witness" }, "witness": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-cohort-witness.schema.json" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "certificate"], "properties": { "kind": { "const": "infeasibility" }, "certificate": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-infeasibility.schema.json" } } }
+      ]
+    },
+    "searchReceipt": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-search-receipt.schema.json" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

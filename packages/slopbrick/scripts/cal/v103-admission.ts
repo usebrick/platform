@@ -6,6 +6,8 @@ import { dirname, join, resolve } from 'node:path';
 import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
 import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v103/admission-evidence-context';
 import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission-source-census';
+import { buildAdmissionSearchResultBundleFromCandidates, buildAdmissionCensus, computeAdmissionEligibilitySnapshotSha256 } from '../../src/calibration/v103/admission-census';
+import { projectEligibleWitnessCandidates } from '../../src/calibration/v103/admission-cohort-witness';
 import { requireContainedAdmissionPath } from '../../src/calibration/v103/admission-path';
 import {
   PrebuiltAuthorityRebuildVerificationError,
@@ -377,7 +379,7 @@ interface ParsedArguments {
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'census' && command !== 'census:stdout' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
   let inputGenerationProposalPath: string | undefined;
@@ -659,10 +661,11 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (!/^[a-f0-9]{64}$/.test(invocationIntentId) || !/^[a-f0-9]{64}$/.test(toolReceiptId) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) {
       throw new Error('tool-authority:resolve selectors must be lowercase SHA-256 values');
     }
-  } else if (command === 'evidence:verify' || command === 'source:census' || command === 'census:preview') {
+  } else if (command === 'evidence:verify' || command === 'source:census' || command === 'census:preview' || command === 'census' || command === 'census:stdout') {
     if (proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error(`Unexpected acquisition option for ${command}`);
     if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error(`${command} requires --tool-profile admission-context-v1 and --invocation-intent`);
     if ((command === 'source:census' || command === 'census:preview') && (!sourceRegisterPath || !sourceReviewsPath)) throw new Error(`${command} requires --source-register and --source-reviews`);
+    if ((command === 'census' || command === 'census:stdout') && (sourceRegisterPath || sourceReviewsPath)) throw new Error(`${command} derives source/register inputs from the verified admission context`);
     if (command === 'evidence:verify' && (sourceRegisterPath || sourceReviewsPath)) throw new Error('Unexpected source census option for evidence:verify');
     if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt || materializerOption) throw new Error(`Unexpected authority rebuild option for ${command}`);
   } else if (command === 'rebuild:pre-witness') {
@@ -1033,6 +1036,32 @@ async function main(): Promise<void> {
       const result = { ok: true, command: args.command, ...diagnostic };
       if (args.command === 'census:preview') outputCanonical(result);
       else output(result);
+      return;
+    }
+    if (args.command === 'census' || args.command === 'census:stdout') {
+      const admission = await (await import('../../src/calibration/v103/admission-context')).buildVerifiedAdmissionContext(args.root, verified.context);
+      if (!admission.ok) {
+        outputCanonical({ ok: false, command: args.command, ready: false, authorityEligible: false, diagnosticOnly: true, blockers: admission.errors });
+        process.exitCode = 2;
+        return;
+      }
+      const projection = projectEligibleWitnessCandidates(admission.context);
+      const eligibilitySnapshotSha256 = computeAdmissionEligibilitySnapshotSha256(admission.context);
+      const smokeSearch = buildAdmissionSearchResultBundleFromCandidates(admission.context, 'smoke', eligibilitySnapshotSha256, projection.candidates, {});
+      const canarySearch = buildAdmissionSearchResultBundleFromCandidates(admission.context, 'canary', eligibilitySnapshotSha256, projection.candidates, {});
+      const census = buildAdmissionCensus({
+        context: admission.context,
+        search: {
+          smoke: { bundle: smokeSearch, publicationCompletionSha256: '0'.repeat(64), publicationCompletionRelativePath: 'witnesses/smoke/search-results/diagnostic-completion.json' },
+          canary: { bundle: canarySearch, publicationCompletionSha256: '0'.repeat(64), publicationCompletionRelativePath: 'witnesses/canary/search-results/diagnostic-completion.json' },
+        },
+      });
+      if (!census.ok) {
+        outputCanonical({ ok: false, command: args.command, ready: false, authorityEligible: false, diagnosticOnly: true, blockers: census.errors });
+        process.exitCode = 2;
+        return;
+      }
+      outputCanonical({ ok: true, command: args.command, diagnosticOnly: true, authorityEligible: false, ...census.census });
       return;
     }
     output({

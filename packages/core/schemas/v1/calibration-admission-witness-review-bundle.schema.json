@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-witness-review-bundle.schema.json",
+  "title": "CalibrationAdmissionWitnessReviewBundleV1",
+  "description": "Complete acyclic witness-review authority bundle. It contains no source, record, or temporal review targets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bundleId", "gate", "verifiedContextSha256", "eligibilitySnapshotSha256", "searchResultBundle", "regenerations", "constraintCheck", "blindAssignment", "reviewerDecisions", "blindReviewReceipt", "witnessReviewReceipt", "bundleSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-witness-review-bundle-v1" },
+    "bundleId": { "$ref": "#/$defs/sha256" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "searchResultBundle": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-search-result-bundle.schema.json" },
+    "regenerations": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/regeneration" }, { "$ref": "#/$defs/regeneration" }], "minItems": 2, "maxItems": 2, "uniqueItems": true },
+    "constraintCheck": { "$ref": "#/$defs/constraintCheck" },
+    "blindAssignment": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-blind-assignment.schema.json" },
+    "reviewerDecisions": { "type": "array", "prefixItems": [{ "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-decision.schema.json" }, { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-decision.schema.json" }], "minItems": 2, "maxItems": 2, "uniqueItems": true },
+    "blindReviewReceipt": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-blind-review-receipt.schema.json" },
+    "witnessReviewReceipt": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-witness-review-receipt.schema.json" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "regeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invocationIntent", "toolReceipt", "witnessSha256"],
+      "properties": {
+        "invocationIntent": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-invocation-intent.schema.json" },
+        "toolReceipt": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-receipt.schema.json" },
+        "witnessSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "constraintCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invocationIntent", "toolReceipt", "constraintChecksSha256"],
+      "properties": {
+        "invocationIntent": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-invocation-intent.schema.json" },
+        "toolReceipt": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-tool-receipt.schema.json" },
+        "constraintChecksSha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

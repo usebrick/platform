@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-census.schema.json",
+  "title": "CalibrationAdmissionCensusV103",
+  "description": "Canonical v10.3 source and disposition census. Marginal count readiness never substitutes for a verified witness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "policyVersion", "policySha256", "smokeWitnessPolicySha256", "canaryWitnessPolicySha256", "eligibilitySnapshotSha256", "sourceRegisterSha256", "verifiedContextSha256", "evidenceIndexSha256", "evidencePayloadSetSha256", "evidenceReceiptSetSha256", "toolProfileSetSha256", "toolReceiptSetSha256", "blindReviewReceiptSetSha256", "temporalAttestationSetSha256", "materializationReceiptSetSha256", "admissionRecordsSha256", "sourceReviewSetSha256", "overlapUniverseSha256", "overlapResourceReceiptSha256", "overlapLedgerSha256", "privacyLedgerSha256", "qualityLedgerSha256", "lineageLedgerSha256", "counts", "smoke", "canary"],
+  "properties": {
+    "version": { "const": "v10.3-admission-census-v1" },
+    "policyVersion": { "const": "v10.3-admission-v1" },
+    "policySha256": { "$ref": "#/$defs/sha256" },
+    "smokeWitnessPolicySha256": { "$ref": "#/$defs/sha256" },
+    "canaryWitnessPolicySha256": { "$ref": "#/$defs/sha256" },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "sourceRegisterSha256": { "$ref": "#/$defs/sha256" },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceIndexSha256": { "$ref": "#/$defs/sha256" },
+    "evidencePayloadSetSha256": { "$ref": "#/$defs/sha256" },
+    "evidenceReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+    "toolProfileSetSha256": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+    "blindReviewReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+    "temporalAttestationSetSha256": { "$ref": "#/$defs/sha256" },
+    "materializationReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+    "admissionRecordsSha256": { "$ref": "#/$defs/sha256" },
+    "sourceReviewSetSha256": { "$ref": "#/$defs/sha256" },
+    "overlapUniverseSha256": { "$ref": "#/$defs/sha256" },
+    "overlapResourceReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "overlapLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "privacyLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "qualityLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "lineageLedgerSha256": { "$ref": "#/$defs/sha256" },
+    "counts": { "$ref": "#/$defs/counts" },
+    "smoke": { "$ref": "#/$defs/smoke" },
+    "canary": { "$ref": "#/$defs/canary" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "reason": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,127}$" },
+    "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
+    "disposition": { "enum": ["eligible_gold", "eligible_sensitivity", "mixed_evaluation", "quarantine"] },
+    "countPair": {
+      "type": "object", "additionalProperties": false, "required": ["records", "uniqueUnits"],
+      "properties": { "records": { "type": "integer", "minimum": 0 }, "uniqueUnits": { "type": "integer", "minimum": 0 } }
+    },
+    "dispositionCell": {
+      "type": "object", "additionalProperties": false, "required": ["total", "byLabel"],
+      "properties": {
+        "total": { "$ref": "#/$defs/countPair" },
+        "byLabel": {
+          "type": "object", "additionalProperties": false,
+          "required": ["verified_ai", "verified_human", "mixed", "quarantine"],
+          "properties": {
+            "verified_ai": { "$ref": "#/$defs/countPair" }, "verified_human": { "$ref": "#/$defs/countPair" },
+            "mixed": { "$ref": "#/$defs/countPair" }, "quarantine": { "$ref": "#/$defs/countPair" }
+          }
+        }
+      }
+    },
+    "dispositions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["eligible_gold", "eligible_sensitivity", "mixed_evaluation", "quarantine"],
+      "properties": {
+        "eligible_gold": { "$ref": "#/$defs/dispositionCell" }, "eligible_sensitivity": { "$ref": "#/$defs/dispositionCell" },
+        "mixed_evaluation": { "$ref": "#/$defs/dispositionCell" }, "quarantine": { "$ref": "#/$defs/dispositionCell" }
+      }
+    },
+    "sourceRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "sourceKind", "contributesToAdditiveCounts", "sourceInventoryClosed", "sourceInventoryCandidateUnits", "admissionRecords", "unrepresentedCandidateUnits", "uniqueContentUnits", "dispositions", "sourceDecision", "sourceReasons"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/id" }, "sourceKind": { "enum": ["aggregate_inventory", "material_source"] },
+        "contributesToAdditiveCounts": { "type": "boolean" }, "sourceInventoryClosed": { "type": "boolean" },
+        "sourceInventoryCandidateUnits": { "type": "integer", "minimum": 0 }, "admissionRecords": { "type": "integer", "minimum": 0 },
+        "unrepresentedCandidateUnits": { "type": "integer", "minimum": 0 }, "uniqueContentUnits": { "type": "integer", "minimum": 0 },
+        "dispositions": { "$ref": "#/$defs/dispositions" }, "sourceDecision": { "enum": ["candidate", "source_quarantine"] },
+        "sourceReasons": { "type": "array", "items": { "$ref": "#/$defs/reason" }, "uniqueItems": true }
+      }
+    },
+    "languageRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language", "eligibleGoldVerifiedAiUniqueUnits", "eligibleGoldVerifiedHumanUniqueUnits", "aiFamilyCount", "humanFamilyCount"],
+      "properties": {
+        "language": { "type": "string", "minLength": 1, "maxLength": 128 }, "eligibleGoldVerifiedAiUniqueUnits": { "type": "integer", "minimum": 0 },
+        "eligibleGoldVerifiedHumanUniqueUnits": { "type": "integer", "minimum": 0 }, "aiFamilyCount": { "type": "integer", "minimum": 0 }, "humanFamilyCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "familyRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["familyId", "materialSourceIds", "polaritySet", "pairGroupIds", "pairedCrossPolarity", "countsByLabel", "dispositions"],
+      "properties": {
+        "familyId": { "$ref": "#/$defs/id" }, "materialSourceIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "polaritySet": { "type": "array", "items": { "$ref": "#/$defs/label" }, "uniqueItems": true }, "pairGroupIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "pairedCrossPolarity": { "enum": ["not_cross_polarity", "approved_paired", "unpaired_conflict"] },
+        "countsByLabel": {
+          "type": "object", "additionalProperties": false, "required": ["verified_ai", "verified_human", "mixed", "quarantine"],
+          "properties": { "verified_ai": { "$ref": "#/$defs/countPair" }, "verified_human": { "$ref": "#/$defs/countPair" }, "mixed": { "$ref": "#/$defs/countPair" }, "quarantine": { "$ref": "#/$defs/countPair" } }
+        },
+        "dispositions": { "$ref": "#/$defs/dispositions" }
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["openSourceCount", "sourceInventoryCandidateUnits", "admissionRecords", "unrepresentedCandidateUnits", "uniqueContentUnits", "dispositions", "bySource", "byLanguage", "byFamily", "recordRejectionReasons", "sourceBlockerReasons"],
+      "properties": {
+        "openSourceCount": { "type": "integer", "minimum": 0 }, "sourceInventoryCandidateUnits": { "type": "integer", "minimum": 0 }, "admissionRecords": { "type": "integer", "minimum": 0 }, "unrepresentedCandidateUnits": { "type": "integer", "minimum": 0 }, "uniqueContentUnits": { "type": "integer", "minimum": 0 },
+        "dispositions": { "$ref": "#/$defs/dispositions" }, "bySource": { "type": "array", "items": { "$ref": "#/$defs/sourceRow" }, "maxItems": 452382 }, "byLanguage": { "type": "array", "items": { "$ref": "#/$defs/languageRow" }, "maxItems": 452382 }, "byFamily": { "type": "array", "items": { "$ref": "#/$defs/familyRow" }, "maxItems": 452382 },
+        "recordRejectionReasons": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }, "sourceBlockerReasons": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    "gateFailures": { "type": "array", "items": { "$ref": "#/$defs/reason" }, "uniqueItems": true },
+    "smoke": {
+      "type": "object", "additionalProperties": false,
+      "required": ["targetVerifiedAi", "targetVerifiedHuman", "deficitVerifiedAi", "deficitVerifiedHuman", "countReady", "searchResultBundleSha256", "searchResultBundleRelativePath", "searchResultPublicationCompletionSha256", "searchResultPublicationCompletionRelativePath", "ready", "gateFailures"],
+      "properties": {
+        "targetVerifiedAi": { "const": 100 }, "targetVerifiedHuman": { "const": 100 }, "deficitVerifiedAi": { "type": "integer", "minimum": 0 }, "deficitVerifiedHuman": { "type": "integer", "minimum": 0 },
+        "countReady": { "type": "boolean" }, "witnessSha256": { "$ref": "#/$defs/sha256" }, "searchResultBundleSha256": { "$ref": "#/$defs/sha256" }, "searchResultBundleRelativePath": { "type": "string", "minLength": 1 }, "searchResultPublicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "searchResultPublicationCompletionRelativePath": { "type": "string", "minLength": 1 }, "witnessReviewBundleSha256": { "$ref": "#/$defs/sha256" }, "witnessReviewBundleRelativePath": { "type": "string", "minLength": 1 }, "witnessReviewPublicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "witnessReviewPublicationCompletionRelativePath": { "type": "string", "minLength": 1 }, "infeasibilityCertificateSha256": { "$ref": "#/$defs/sha256" }, "ready": { "type": "boolean" }, "gateFailures": { "$ref": "#/$defs/gateFailures" }
+      }
+    },
+    "canary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["targetVerifiedAi", "targetVerifiedHuman", "deficitVerifiedAi", "deficitVerifiedHuman", "minimumSourceCheckoutsPerPolarity", "availableSourceCapacityVerifiedAi", "availableSourceCapacityVerifiedHuman", "sourceCapacityDeficitVerifiedAi", "sourceCapacityDeficitVerifiedHuman", "countReady", "searchResultBundleSha256", "searchResultBundleRelativePath", "searchResultPublicationCompletionSha256", "searchResultPublicationCompletionRelativePath", "ready", "gateFailures"],
+      "properties": {
+        "targetVerifiedAi": { "const": 5000 }, "targetVerifiedHuman": { "const": 5000 }, "deficitVerifiedAi": { "type": "integer", "minimum": 0 }, "deficitVerifiedHuman": { "type": "integer", "minimum": 0 }, "minimumSourceCheckoutsPerPolarity": { "const": 10 }, "availableSourceCapacityVerifiedAi": { "type": "integer", "minimum": 0 }, "availableSourceCapacityVerifiedHuman": { "type": "integer", "minimum": 0 }, "sourceCapacityDeficitVerifiedAi": { "type": "integer", "minimum": 0 }, "sourceCapacityDeficitVerifiedHuman": { "type": "integer", "minimum": 0 },
+        "countReady": { "type": "boolean" }, "witnessSha256": { "$ref": "#/$defs/sha256" }, "searchResultBundleSha256": { "$ref": "#/$defs/sha256" }, "searchResultBundleRelativePath": { "type": "string", "minLength": 1 }, "searchResultPublicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "searchResultPublicationCompletionRelativePath": { "type": "string", "minLength": 1 }, "witnessReviewBundleSha256": { "$ref": "#/$defs/sha256" }, "witnessReviewBundleRelativePath": { "type": "string", "minLength": 1 }, "witnessReviewPublicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "witnessReviewPublicationCompletionRelativePath": { "type": "string", "minLength": 1 }, "infeasibilityCertificateSha256": { "$ref": "#/$defs/sha256" }, "ready": { "type": "boolean" }, "gateFailures": { "$ref": "#/$defs/gateFailures" }
+      }
+    }
+  }
+}

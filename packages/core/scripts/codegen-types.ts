@@ -97,6 +97,26 @@ function strengthenFixedTuples(file: string, generated: string): string {
     || file === 'calibration-admission-adjudicator-receipt.schema.json') {
     return generated.replace('priorDecisionIds: [unknown, unknown];', 'priorDecisionIds: [Sha256, Sha256];');
   }
+  if (file === 'calibration-admission-witness-review-receipt.schema.json') {
+    return generated
+      .replace('independentlyRegeneratedWitnessSha256s: [unknown, unknown];', 'independentlyRegeneratedWitnessSha256s: [Sha256, Sha256];')
+      .replace('regenerationToolReceiptSha256s: [unknown, unknown];', 'regenerationToolReceiptSha256s: [Sha256, Sha256];')
+      .replace('reviewerDecisionIds: [unknown, unknown];', 'reviewerDecisionIds: [Sha256, Sha256];');
+  }
+  if (file === 'calibration-admission-witness-review-bundle.schema.json') {
+    const strengthened = generated
+      .replace('regenerations: [unknown, unknown];', 'regenerations: [WitnessRegeneration, WitnessRegeneration];')
+      .replace('regenerations: [Regeneration, Regeneration];', 'regenerations: [WitnessRegeneration, WitnessRegeneration];')
+      .replace('reviewerDecisions: [unknown, unknown];', 'reviewerDecisions: [CalibrationAdmissionDecisionV103, CalibrationAdmissionDecisionV103];');
+    return `import type { CalibrationAdmissionDecisionV103 } from './calibration-admission-decision';
+${strengthened}
+export interface WitnessRegeneration {
+  invocationIntent: CalibrationAdmissionInvocationIntentV1;
+  toolReceipt: CalibrationAdmissionToolReceiptV1;
+  witnessSha256: Sha256;
+}
+`;
+  }
   return generated;
 }
 

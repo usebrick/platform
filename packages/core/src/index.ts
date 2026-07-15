@@ -363,6 +363,40 @@ export type {
   CalibrationAdmissionStaticAuthorityValidationV1,
   CalibrationAdmissionStaticAuthorityGraphInputV1,
 } from './calibration-admission-static-authority';
+
+export type { AdmissionCohortWitnessV1 } from './generated/calibration-admission-cohort-witness';
+export type { AdmissionCohortInfeasibilityCertificateV1 } from './generated/calibration-admission-infeasibility';
+export {
+  calibrationAdmissionCohortWitnessSha256,
+  calibrationAdmissionInfeasibilityCertificateSha256,
+  calibrationAdmissionSearchReceiptSha256,
+  calibrationAdmissionSearchResultBundleId,
+  calibrationAdmissionSearchResultBundleSha256,
+  calibrationAdmissionWitnessReviewReceiptSha256,
+  calibrationAdmissionWitnessReviewBundleId,
+  calibrationAdmissionWitnessReviewBundleSha256,
+  calibrationAdmissionCensusSha256,
+  validateCalibrationAdmissionCohortWitnessV1,
+  isCalibrationAdmissionCohortWitnessV1,
+  validateCalibrationAdmissionInfeasibilityCertificateV1,
+  isCalibrationAdmissionInfeasibilityCertificateV1,
+  validateCalibrationAdmissionSearchReceiptV1,
+  isCalibrationAdmissionSearchReceiptV1,
+  validateCalibrationAdmissionSearchResultBundleV1,
+  isCalibrationAdmissionSearchResultBundleV1,
+  validateCalibrationAdmissionWitnessReviewReceiptV1,
+  isCalibrationAdmissionWitnessReviewReceiptV1,
+  validateCalibrationAdmissionWitnessReviewBundleV1,
+  isCalibrationAdmissionWitnessReviewBundleV1,
+  validateCalibrationAdmissionCensusV103,
+  isCalibrationAdmissionCensusV103,
+} from './calibration-admission-census';
+export type { CalibrationAdmissionCensusValidationV1 } from './calibration-admission-census';
+export type { AdmissionSearchReceiptV1 } from './generated/calibration-admission-search-receipt';
+export type { CalibrationAdmissionSearchResultBundleV1 } from './generated/calibration-admission-search-result-bundle';
+export type { CalibrationAdmissionWitnessReviewReceiptV1 } from './generated/calibration-admission-witness-review-receipt';
+export type { CalibrationAdmissionWitnessReviewBundleV1 } from './generated/calibration-admission-witness-review-bundle';
+export type { CalibrationAdmissionCensusV103 } from './generated/calibration-admission-census';
 export type { CalibrationAdmissionInputGenerationProposalV1 } from './generated/calibration-admission-input-generation-proposal';
 export type { CalibrationAdmissionInputGenerationV1 } from './generated/calibration-admission-input-generation';
 export type { CalibrationAdmissionStaticAuthorityGenerationV1 } from './generated/calibration-admission-static-authority-generation';

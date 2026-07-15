@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-witness-review-receipt.schema.json",
+  "title": "CalibrationAdmissionWitnessReviewReceiptV1",
+  "description": "Post-witness review receipt binding two independent byte-identical regenerations, constraint checks, and blinded decisions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "witnessSha256", "eligibilitySnapshotSha256", "verifiedContextSha256", "blindReviewReceiptId", "independentlyRegeneratedWitnessSha256s", "regenerationToolReceiptSha256s", "constraintChecksSha256", "constraintCheckToolReceiptSha256", "reviewerDecisionIds", "decision"],
+  "properties": {
+    "version": { "const": "v10.3-admission-witness-review-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/sha256" },
+    "witnessSha256": { "$ref": "#/$defs/sha256" },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "blindReviewReceiptId": { "$ref": "#/$defs/sha256" },
+    "independentlyRegeneratedWitnessSha256s": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }], "minItems": 2, "maxItems": 2 },
+    "regenerationToolReceiptSha256s": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }], "minItems": 2, "maxItems": 2, "uniqueItems": true },
+    "constraintChecksSha256": { "$ref": "#/$defs/sha256" },
+    "constraintCheckToolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "reviewerDecisionIds": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/sha256" }, { "$ref": "#/$defs/sha256" }], "minItems": 2, "maxItems": 2, "uniqueItems": true },
+    "decision": { "enum": ["approved", "rejected"] }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-infeasibility.schema.json",
+  "title": "AdmissionCohortInfeasibilityCertificateV1",
+  "description": "Deterministic v10.3 witness-search infeasibility certificate; search-limit certificates are explicitly non-proven.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gate", "eligibilitySnapshotSha256", "verifiedContextSha256", "algorithm", "proven", "proofKind", "violatedConstraints", "certificateSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-infeasibility-v1" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+    "algorithm": { "const": "lexicographic-bnb-feasibility-v1" },
+    "proven": { "type": "boolean" },
+    "proofKind": { "enum": ["capacity_cut", "exhaustive_search", "indeterminate_search_limit"] },
+    "violatedConstraints": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9._:-]{0,127}$" }
+    },
+    "certificateSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "proofKind": { "const": "indeterminate_search_limit" } } },
+      "then": { "properties": { "proven": { "const": false } } }
+    },
+    {
+      "if": { "properties": { "proofKind": { "enum": ["capacity_cut", "exhaustive_search"] } } },
+      "then": { "properties": { "proven": { "const": true } } }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
