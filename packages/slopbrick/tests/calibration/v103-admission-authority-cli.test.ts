@@ -198,30 +198,57 @@ afterEach(async () => {
 });
 
 describe('v10.3 outer authority CLI boundary', () => {
-  it('loads a caller-selected graph, publishes create, and emits a diagnostic completion', async () => {
+  it('rejects a partial materializer selection instead of discovering overlap inputs', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-materializer-options-'));
+    roots.push(root);
+    const backed = await authorityBackedFixture(root);
+    const paths = await materialize(root, backed);
+    const failure = await execFileAsync(tsx, [
+      'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', ...toolArgs(backed, paths),
+      '--operation', 'create', '--expect-current-absent', '--require-real-scale-receipt',
+      '--pre-witness-bundle', 'review/admission/authority/static-generations/bundle.json',
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).toContain('requires explicit graph paths');
+  });
+
+  it('accepts the complete explicit materializer selector set before opening its paths', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-materializer-wiring-'));
+    roots.push(root);
+    const backed = await authorityBackedFixture(root);
+    const paths = await materialize(root, backed);
+    const failure = await execFileAsync(tsx, [
+      'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', ...toolArgs(backed, paths),
+      '--operation', 'create', '--expect-current-absent', '--require-real-scale-receipt',
+      '--pre-witness-bundle', 'review/admission/authority/static-generations/missing/pre-witness-bundle.json',
+      '--overlap-generation', 'review/admission/global/overlap/generations/missing/generation.json',
+      '--overlap-index', 'review/admission/global/overlap/generations/missing/index.json',
+      '--overlap-resource-receipt', 'review/admission/global/overlap/generations/missing/overlap-resource-receipt.json',
+      '--overlap-ledger', 'review/admission/global/overlap/generations/missing/overlap-ledger.json',
+      '--real-scale-record-count', '1',
+      '--real-scale-universe-sha256', 'a'.repeat(64),
+      '--real-scale-records-jsonl-sha256', 'b'.repeat(64),
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).not.toContain('requires explicit graph paths');
+    expect(failure?.stderr).toMatch(/ENOENT|pre-witness bundle/i);
+  });
+
+  it('rejects the legacy adapter-only outer invocation before mutation', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-create-'));
     roots.push(root);
     const backed = await authorityBackedFixture(root);
     const paths = await materialize(root, backed);
-    const { stdout, stderr } = await execFileAsync(tsx, [
+    const failure = await execFileAsync(tsx, [
       'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', ...toolArgs(backed, paths),
       '--operation', 'create', '--expect-current-absent', '--require-real-scale-receipt',
-    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
-    expect(stderr).toBe('');
-    expect(JSON.parse(stdout)).toMatchObject({
-      ok: true,
-      command: 'rebuild:pre-witness',
-      complete: true,
-      realScaleReceiptVerified: false,
-      authorityScope: 'prebuilt-diagnostic',
-      ready: false,
-      authorityEligible: false,
-      diagnosticOnly: true,
-    });
-    await expect(stat(join(root, 'review', 'admission', 'authority', 'current.json'))).resolves.toBeTruthy();
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).toContain('requires explicit graph paths');
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'current.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
-  it('reopens a pending create transaction through static-authority recovery', async () => {
+  it('rejects recovery without the explicit materializer boundary', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-recover-'));
     roots.push(root);
     const backed = await authorityBackedFixture(root);
@@ -245,15 +272,15 @@ describe('v10.3 outer authority CLI boundary', () => {
     })).rejects.toThrow(/fixture-pending|recovery/i);
     const recoveryNonce = prepared.planned.lock.recoveryNonce;
     if (!recoveryNonce) throw new Error('fixture plan did not produce a recovery nonce');
-    const { stdout, stderr } = await execFileAsync(tsx, [
+    const failure = await execFileAsync(tsx, [
       'scripts/cal/v103-admission.ts', 'static-authority:recover', ...toolArgs(backed, paths),
       '--transaction-id', prepared.planned.transaction.transactionId, '--recovery-nonce', recoveryNonce, '--acknowledge-no-live-writer',
-    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
-    expect(stderr).toBe('');
-    expect(JSON.parse(stdout)).toMatchObject({ ok: true, command: 'static-authority:recover', complete: true, diagnosticOnly: true });
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).toContain('requires explicit graph paths');
   });
 
-  it('reports lock-only recovery without claiming a durable graph verification', async () => {
+  it('rejects lock-only recovery without the explicit materializer boundary', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-lock-only-'));
     roots.push(root);
     const backed = await authorityBackedFixture(root);
@@ -277,20 +304,12 @@ describe('v10.3 outer authority CLI boundary', () => {
     })).rejects.toThrow(/lock-only-fixture|recovery/i);
     const recoveryNonce = prepared.planned.lock.recoveryNonce;
     if (!recoveryNonce) throw new Error('fixture plan did not produce a recovery nonce');
-    const { stdout, stderr } = await execFileAsync(tsx, [
+    const failure = await execFileAsync(tsx, [
       'scripts/cal/v103-admission.ts', 'static-authority:recover', ...toolArgs(backed, paths),
       '--from-lock', '--recovery-nonce', recoveryNonce, '--acknowledge-no-live-writer',
-    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
-    expect(stderr).toBe('');
-    expect(JSON.parse(stdout)).toMatchObject({
-      ok: true,
-      command: 'static-authority:recover',
-      complete: true,
-      status: 'lock-only',
-      durableGraphVerified: false,
-      diagnosticOnly: true,
-    });
-    await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).toContain('requires explicit graph paths');
   });
 
   it('fails closed before mutation when the selected graph or receipt is wrong', async () => {

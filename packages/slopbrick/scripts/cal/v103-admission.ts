@@ -13,6 +13,7 @@ import {
   recoverPrebuiltAdmissionAuthorityWithVerification,
 } from '../../src/calibration/v103/admission-authority-rebuild-adapter';
 import { loadPrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild-loader';
+import { materializePrebuiltAdmissionAuthority } from '../../src/calibration/v103/admission-authority-materializer';
 import { PrebuiltAuthorityPublicationPendingError } from '../../src/calibration/v103/admission-authority-rebuild-publication';
 import type { PrebuiltAdmissionAuthorityGraphInput } from '../../src/calibration/v103/admission-authority-rebuild';
 import type { PrebuiltAdmissionAuthorityPublicationPlanInput } from '../../src/calibration/v103/admission-authority-publication-plan';
@@ -180,6 +181,77 @@ function outerResult(command: string, result: Awaited<ReturnType<typeof rebuildP
   };
 }
 
+async function readCanonicalOuterInput(root: string, requested: string, label: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> {
+  const bytes = await readFile(await requireContainedAdmissionPath(root, requested));
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes.toString('utf8')) as unknown;
+  } catch {
+    throw new Error(`${label} is not valid JSON`);
+  }
+  if (calibrationAdmissionCanonicalJson(value) !== bytes.toString('utf8')) {
+    throw new Error(`${label} is not exact canonical JSON`);
+  }
+  return { value, bytes };
+}
+
+async function materializeOuterAuthority(
+  args: ParsedArguments,
+  graph: PrebuiltAdmissionAuthorityGraphInput,
+): Promise<Readonly<{ readonly verificationSha256: string; readonly realScaleReceiptVerified: true }>> {
+  const selection = args;
+  const selected = [
+    ['--pre-witness-bundle', selection.preWitnessBundlePath],
+    ['--overlap-generation', selection.overlapGenerationPath],
+    ['--overlap-index', selection.overlapIndexPath],
+    ['--overlap-resource-receipt', selection.overlapResourceReceiptPath],
+    ['--overlap-ledger', selection.overlapLedgerPath],
+    ['--real-scale-record-count', selection.realScaleRecordCount],
+    ['--real-scale-universe-sha256', selection.realScaleUniverseSha256],
+    ['--real-scale-records-jsonl-sha256', selection.realScaleRecordsJsonlSha256],
+  ] as const;
+  const missing = selected.filter(([, value]) => value === undefined).map(([label]) => label);
+  if (missing.length > 0) throw new Error(`materializer inputs must be supplied together; missing ${missing.join(', ')}`);
+  const bundle = await readCanonicalOuterInput(args.root, selection.preWitnessBundlePath!, 'pre-witness bundle');
+  const overlapGeneration = await readCanonicalOuterInput(args.root, selection.overlapGenerationPath!, 'overlap generation');
+  const overlapIndex = await readCanonicalOuterInput(args.root, selection.overlapIndexPath!, 'overlap index envelope');
+  const overlapResource = await readCanonicalOuterInput(args.root, selection.overlapResourceReceiptPath!, 'overlap resource envelope');
+  const overlapLedger = await readCanonicalOuterInput(args.root, selection.overlapLedgerPath!, 'overlap ledger envelope');
+  const toolSelector = outerToolAuthority(args);
+  const staticGeneration = record(graph.staticGeneration, 'static generation');
+  const toolAuthority = await resolveAdmissionToolAuthorityReceipt({
+    authorityRoot: toolSelector.authorityRoot,
+    authorityIndexSha256: toolSelector.authorityIndexSha256,
+    receiptId: toolSelector.receiptId,
+    receiptSha256: toolSelector.receiptSha256,
+    invocationIntentId: toolSelector.invocationIntentId,
+    profileId: toolSelector.profileId,
+    action: toolSelector.action,
+    outputSetSha256: toolSelector.outputSetSha256,
+    expectedSnapshot: staticGeneration.toolAuthoritySnapshot,
+  });
+  const materialized = materializePrebuiltAdmissionAuthority({
+    graph,
+    preWitnessBundle: bundle.value,
+    preWitnessBundleBytes: bundle.bytes,
+    overlap: {
+      generation: overlapGeneration.value,
+      generationBytes: overlapGeneration.bytes,
+      index: { value: overlapIndex.value, bytes: overlapIndex.bytes },
+      resourceReceipt: { value: overlapResource.value, bytes: overlapResource.bytes },
+      ledger: { value: overlapLedger.value, bytes: overlapLedger.bytes },
+      toolAuthority,
+    },
+    realScaleExpectation: {
+      recordCount: selection.realScaleRecordCount!,
+      universeSha256: selection.realScaleUniverseSha256!,
+      recordsJsonlSha256: selection.realScaleRecordsJsonlSha256!,
+    },
+  });
+  if (!materialized.ok) throw new Error(materialized.errors.join('; '));
+  return { verificationSha256: materialized.value.verificationSha256, realScaleReceiptVerified: true };
+}
+
 async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
   const loaded = await loadPrebuiltAdmissionAuthorityGraph({
     projectRoot: args.root!,
@@ -192,6 +264,7 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
   });
   if (!loaded.ok) throw new Error(loaded.errors.join('; '));
   const graph = loaded.graph;
+  const materialized = await materializeOuterAuthority(args, graph);
   const planInput = outerPlanInput(args, graph);
   const publication = {
     root: args.root!,
@@ -202,7 +275,11 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
   const toolAuthority = outerToolAuthority(args);
   if (args.command === 'rebuild:pre-witness') {
     const result = await rebuildPrebuiltAdmissionAuthority({ publication, graphRead, sourceAuthorityMode: 'candidate-aware', toolAuthority });
-    outputCanonical(outerResult(args.command, result));
+    outputCanonical({
+      ...outerResult(args.command, result),
+      materializerVerificationSha256: materialized.verificationSha256,
+      realScaleReceiptVerified: materialized.realScaleReceiptVerified,
+    });
     return;
   }
   const result = await recoverPrebuiltAdmissionAuthorityWithVerification({
@@ -217,7 +294,11 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
     sourceAuthorityMode: 'candidate-aware',
     toolAuthority,
   });
-  outputCanonical(outerResult(args.command, result));
+  outputCanonical({
+    ...outerResult(args.command, result),
+    materializerVerificationSha256: materialized.verificationSha256,
+    realScaleReceiptVerified: materialized.realScaleReceiptVerified,
+  });
 }
 
 interface ParsedArguments {
@@ -237,6 +318,14 @@ interface ParsedArguments {
   readonly expectedCurrentStaticGenerationSha256?: string;
   readonly expectCurrentAbsent?: boolean;
   readonly requireRealScaleReceipt?: boolean;
+  readonly preWitnessBundlePath?: string;
+  readonly overlapGenerationPath?: string;
+  readonly overlapIndexPath?: string;
+  readonly overlapResourceReceiptPath?: string;
+  readonly overlapLedgerPath?: string;
+  readonly realScaleRecordCount?: number;
+  readonly realScaleUniverseSha256?: string;
+  readonly realScaleRecordsJsonlSha256?: string;
   readonly toolProfile?: string;
   readonly action?: string;
   readonly canonicalArgvSha256?: string;
@@ -288,6 +377,14 @@ function parse(argv: readonly string[]): ParsedArguments {
   let expectedCurrentStaticGenerationSha256: string | undefined;
   let expectCurrentAbsent = false;
   let requireRealScaleReceipt = false;
+  let preWitnessBundlePath: string | undefined;
+  let overlapGenerationPath: string | undefined;
+  let overlapIndexPath: string | undefined;
+  let overlapResourceReceiptPath: string | undefined;
+  let overlapLedgerPath: string | undefined;
+  let realScaleRecordCount: number | undefined;
+  let realScaleUniverseSha256: string | undefined;
+  let realScaleRecordsJsonlSha256: string | undefined;
   let toolProfile: string | undefined;
   let action: string | undefined;
   let canonicalArgvSha256: string | undefined;
@@ -351,7 +448,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--pre-witness-bundle', '--overlap-generation', '--overlap-index', '--overlap-resource-receipt', '--overlap-ledger', '--real-scale-record-count', '--real-scale-universe-sha256', '--real-scale-records-jsonl-sha256', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -373,6 +470,31 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--prior-current') {
       if (priorCurrentPath !== undefined) throw new Error('--prior-current may only be supplied once');
       priorCurrentPath = value;
+    } else if (flag === '--pre-witness-bundle') {
+      if (preWitnessBundlePath !== undefined) throw new Error('--pre-witness-bundle may only be supplied once');
+      preWitnessBundlePath = value;
+    } else if (flag === '--overlap-generation') {
+      if (overlapGenerationPath !== undefined) throw new Error('--overlap-generation may only be supplied once');
+      overlapGenerationPath = value;
+    } else if (flag === '--overlap-index') {
+      if (overlapIndexPath !== undefined) throw new Error('--overlap-index may only be supplied once');
+      overlapIndexPath = value;
+    } else if (flag === '--overlap-resource-receipt') {
+      if (overlapResourceReceiptPath !== undefined) throw new Error('--overlap-resource-receipt may only be supplied once');
+      overlapResourceReceiptPath = value;
+    } else if (flag === '--overlap-ledger') {
+      if (overlapLedgerPath !== undefined) throw new Error('--overlap-ledger may only be supplied once');
+      overlapLedgerPath = value;
+    } else if (flag === '--real-scale-record-count') {
+      if (realScaleRecordCount !== undefined || !/^\d+$/.test(value)) throw new Error('--real-scale-record-count must be a positive safe integer');
+      realScaleRecordCount = Number(value);
+      if (!Number.isSafeInteger(realScaleRecordCount) || realScaleRecordCount <= 0) throw new Error('--real-scale-record-count must be a positive safe integer');
+    } else if (flag === '--real-scale-universe-sha256') {
+      if (realScaleUniverseSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--real-scale-universe-sha256 must be a lowercase SHA-256');
+      realScaleUniverseSha256 = value;
+    } else if (flag === '--real-scale-records-jsonl-sha256') {
+      if (realScaleRecordsJsonlSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--real-scale-records-jsonl-sha256 must be a lowercase SHA-256');
+      realScaleRecordsJsonlSha256 = value;
     } else if (flag === '--operation') {
       if (operation !== undefined || (value !== 'create' && value !== 'replace')) throw new Error('--operation must be create or replace');
       operation = value;
@@ -488,8 +610,19 @@ function parse(argv: readonly string[]): ParsedArguments {
     || priorCurrentPath !== undefined
     || expectedCurrentStaticGenerationSha256 !== undefined
     || expectCurrentAbsent;
+  const materializerOption = preWitnessBundlePath !== undefined
+    || overlapGenerationPath !== undefined
+    || overlapIndexPath !== undefined
+    || overlapResourceReceiptPath !== undefined
+    || overlapLedgerPath !== undefined
+    || realScaleRecordCount !== undefined
+    || realScaleUniverseSha256 !== undefined
+    || realScaleRecordsJsonlSha256 !== undefined;
   if (authorityGraphOption && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') {
     throw new Error(`Unexpected authority rebuild option for ${command}`);
+  }
+  if (materializerOption && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') {
+    throw new Error(`Unexpected outer authority materializer option for ${command}`);
   }
   if (requireRealScaleReceipt
     && command !== 'rebuild:pre-witness'
@@ -519,13 +652,15 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error(`${command} requires --tool-profile admission-context-v1 and --invocation-intent`);
     if ((command === 'source:census' || command === 'census:preview') && (!sourceRegisterPath || !sourceReviewsPath)) throw new Error(`${command} requires --source-register and --source-reviews`);
     if (command === 'evidence:verify' && (sourceRegisterPath || sourceReviewsPath)) throw new Error('Unexpected source census option for evidence:verify');
-    if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt) throw new Error(`Unexpected authority rebuild option for ${command}`);
+    if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt || materializerOption) throw new Error(`Unexpected authority rebuild option for ${command}`);
   } else if (command === 'rebuild:pre-witness') {
     if (/(?:^|[\\/])review[\\/]admission[\\/]?$/u.test(root)) {
       throw new Error('rebuild:pre-witness requires the project root; pass the parent of review/admission, not review/admission itself');
     }
-    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt) {
-      throw new Error('rebuild:pre-witness requires --input-generation-proposal, --input-generation, --current, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
+    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt
+      || !preWitnessBundlePath || !overlapGenerationPath || !overlapIndexPath || !overlapResourceReceiptPath || !overlapLedgerPath
+      || realScaleRecordCount === undefined || !realScaleUniverseSha256 || !realScaleRecordsJsonlSha256) {
+      throw new Error('rebuild:pre-witness requires explicit graph paths, --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
     if (operation === 'create' && (!expectCurrentAbsent || expectedCurrentStaticGenerationSha256 !== undefined)) {
       throw new Error('rebuild:pre-witness create requires --expect-current-absent and forbids --expected-current-static-generation-sha256');
@@ -555,8 +690,10 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (/(?:^|[\\/])review[\\/]admission[\\/]?$/u.test(root)) {
       throw new Error('static-authority:recover requires the project root; pass the parent of review/admission, not review/admission itself');
     }
-    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) {
-      throw new Error('static-authority:recover requires --input-generation-proposal, --input-generation, --current, exactly one of --from-lock or --transaction-id, --recovery-nonce, --acknowledge-no-live-writer, and --tool-profile admission-static-ledgers-v1');
+    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter
+      || !requireRealScaleReceipt || !preWitnessBundlePath || !overlapGenerationPath || !overlapIndexPath || !overlapResourceReceiptPath || !overlapLedgerPath
+      || realScaleRecordCount === undefined || !realScaleUniverseSha256 || !realScaleRecordsJsonlSha256) {
+      throw new Error('static-authority:recover requires explicit graph paths, --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, exactly one recovery selector, --recovery-nonce, --acknowledge-no-live-writer, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce)) throw new Error('--recovery-nonce must be a lowercase SHA-256');
     for (const [label, value] of [['--invocation-intent', invocationIntentId], ['--tool-receipt-id', toolReceiptId], ['--tool-receipt-sha256', toolReceiptSha256], ['--tool-authority-index-sha256', toolAuthorityIndexSha256], ['--output-set-sha256', outputSetSha256]] as const) {
@@ -571,7 +708,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath
       || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined
       || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || exitCode !== undefined
-      || observedResourceUsage || joinStaticAuthority || requireRealScaleReceipt) {
+      || observedResourceUsage || joinStaticAuthority) {
       throw new Error('static-authority:recover accepts explicit graph paths, transaction selector, nonce/no-live-writer acknowledgement, static-ledgers profile, and indexed tool selectors; its outer action is fixed to static-authority:recover');
     }
   } else if (command === 'authority:overlap') {
@@ -610,7 +747,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
+  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, preWitnessBundlePath, overlapGenerationPath, overlapIndexPath, overlapResourceReceiptPath, overlapLedgerPath, realScaleRecordCount, realScaleUniverseSha256, realScaleRecordsJsonlSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
 }
 
 async function main(): Promise<void> {
