@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `a5afd7ceaf5e387e0df8d0a965c21f401ae1f5f399d55fd24ee65236771f7c96` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, the bounded real-corpus allocation replay, the RAM-safe static-ledger adapter, optional stream-receipt/materializer binding, the integrated authority gate/live census result, the final package-wide and recursive quality gates, the risk-scaled verification rule, and the consolidated one-gate verification path; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-15)** | `8de810baac0cc037d7e974d32d57855d941805ea4f7a0a9250d4386904077df7` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,713-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, and the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion. |
+| **Current continuation-plan hash override (2026-07-15)** | `10bd2c4fcfcf6049a1228358ea994fbbe0195a893b4588522269e3194ff79ea2` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,715-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion, and the scratch-reclamation/resource checkpoint with the 1,000-row canary. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -101,8 +101,8 @@ the planning verdict does not call the workspace audit clean.
 - Markdown fence parity and stale synthetic-source/flat-manifest scans: clean.
 - `git diff --check`: clean at the current dirty snapshot.
 - The continuation-plan hash override was recomputed on 2026-07-15 after the
-  candidate-context/preview and recursive-gate checkpoint; any subsequent plan
-  edit requires another hash refresh and targeted rereview.
+  scratch-reclamation/resource checkpoint; any subsequent plan edit requires
+  another hash refresh and targeted rereview.
 
 ### Current control-plane, CLI, and self-scan audit — 2026-07-15
 
@@ -757,7 +757,7 @@ including lock-only recovery.
 
 One focused automated gate covers the edge-case matrix: Core **9/9** contract
 tests, SlopBrick **6/6** publisher/recovery tests, and **2/2** CLI-boundary
-tests. The full RAM-capped SlopBrick gate is **329 test files / 3,713 tests
+tests. The full RAM-capped SlopBrick gate is **329 test files / 3,715 tests
 passed**, with 5 skipped files / 9 skipped tests. It includes a crash after routing promotion to prove recovery preserves
 the lock's original CAS state, plus collision, unknown-file preservation, and
 root-nonmutation checks. Core and SlopBrick typecheck and `git diff --check`
@@ -817,3 +817,20 @@ when temporary work reached about **601 MiB** (RSS about **557 MiB**) on a host
 with roughly **12 GiB** free. No authority was published. A full run must be
 sharded or use a bounded index/work strategy; parallel full-corpus execution is
 explicitly out of plan on this checkout.
+
+### Scratch-reclamation/resource checkpoint — 2026-07-15
+
+The overlap builder now deletes consumed external-sort runs and phase-local
+raw/sorted intermediates after durable outputs, using the existing symlink-safe
+containment guard. The focused builder/resume/scale gate is **14/14**, including
+a post-build assertion that all seven scratch run directories are empty. The
+1,000-row representative probe (500 positive + 500 negative legacy-baseline
+rows) completed with **1,000 covered**, **161 edges**, `coverageComplete=true`,
+and `withinAllLimits=true`; its receipt is
+`/Users/cheng/corpus-expansion/v10.3/review/overlap-materialization-resource-probe-2026-07-15-r2.json`.
+Observed retained work was **565,103,061 bytes (~539 MiB)** versus the prior
+~601 MiB probe, with zero scratch run files left. This is a bounded resource
+improvement only; it does not authorize the full 452,382-row run or publish
+authority. The next step is a sharded/join design plus measured canary, while
+edge cases stay in one automated confirmation gate rather than repeated human
+approvals.

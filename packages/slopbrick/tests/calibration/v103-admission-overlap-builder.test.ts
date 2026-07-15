@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -154,6 +154,9 @@ describe('Task 2A bounded overlap builder', () => {
       expect(new Set(adjacency.map((row) => `${row.candidateUnitId}:${row.neighborCandidateUnitId}`)).size).toBe(6);
       const summaries = (await Promise.all(result.ledger.clusterSummaryShards.map((shard) => shardRows(work, shard.relativePath)))).flat();
       expect(summaries).toHaveLength(3);
+      for (const runName of ['shingles', 'postings', 'pairs', 'content', 'edges', 'adjacency', 'memberships']) {
+        expect(await readdir(join(work, '.overlap-work-v1', 'runs', runName))).toEqual([]);
+      }
     } finally {
       await rm(work, { recursive: true, force: true });
     }

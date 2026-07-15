@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { lstat, mkdir, open, readFile } from 'node:fs/promises';
+import { lstat, mkdir, open, readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { join, relative, resolve, sep } from 'node:path';
 
@@ -272,6 +272,12 @@ async function writeNoClobber(path: string, bytes: Buffer): Promise<void> {
 async function syncDirectory(path: string): Promise<void> {
   const handle = await open(path, 'r');
   try { await handle.sync(); } finally { await handle.close(); }
+}
+
+/** Remove a consumed work artifact without ever following a symlink path. */
+async function removeWorkFile(root: string, path: string): Promise<void> {
+  await assertNoSymlinkPath(root, path);
+  await rm(path, { force: true });
 }
 
 const CHECKPOINT_PHASES = ['postings', 'candidate_pairs', 'exact_edges', 'clusters'] as const;
@@ -660,6 +666,7 @@ async function sortJsonlFile(
   };
 
   let currentRuns = runs;
+  const allRuns = new Set(runs);
   let pass = 0;
   const batchSize = Math.max(1, limits.maxOpenFiles - 1);
   while (currentRuns.length > batchSize) {
@@ -669,11 +676,17 @@ async function sortJsonlFile(
       const destination = join(runDirectory, `merge-${String(pass).padStart(4, '0')}-${String(nextRuns.length).padStart(8, '0')}.jsonl`);
       await mergeBatch(batch, destination);
       nextRuns.push(destination);
+      allRuns.add(destination);
     }
     currentRuns = nextRuns;
     pass += 1;
   }
   await mergeBatch(currentRuns, outputPath);
+  // Sort runs are scratch-only. Retaining them made every phase's temporary
+  // footprint accumulate even though the merged output was already durable.
+  // Delete them immediately after the merge; the caller owns the output and
+  // can still remove it after consumption.
+  await Promise.all([...allRuns].map((path) => removeWorkFile(containmentRoot, path)));
   return { path: outputPath, runs };
 }
 
@@ -1270,6 +1283,7 @@ export async function buildAdmissionOverlapLedger(
       runLimits,
       state,
     );
+    await removeWorkFile(root, join(tempRoot, 'raw', 'shingles.jsonl'));
     const frequencyHandle = await open(frequencyPath, 'wx', 0o600);
     state.maxOpenFiles = Math.max(state.maxOpenFiles, 1);
     let frequencyBuffer: string[] = [];
@@ -1288,6 +1302,7 @@ export async function buildAdmissionOverlapLedger(
     if (currentFrequencyKey !== '') addRawLine(frequencyBuffer, { key: currentFrequencyKey, count: frequencyCount });
     await flushRawBuffer(frequencyHandle, frequencyBuffer, state);
     await syncClose(frequencyHandle);
+    await removeWorkFile(root, sortedShinglePath);
 
     const frequency = new Map<string, number>();
     for await (const row of jsonRows(frequencyPath)) {
@@ -1295,10 +1310,12 @@ export async function buildAdmissionOverlapLedger(
       frequency.set(row.key, row.count);
       if (frequency.size * 96 > policy.maxHeapBytes) throw new ResourceLimitError('max_heap_bytes_exceeded');
     }
+    await removeWorkFile(root, frequencyPath);
     for (const key of [...frequency.keys()].sort(compare)) distribution.update(`${key}\u0000${frequency.get(key)!}\n`);
     const order = new Map<string, number>();
     [...frequency.keys()].sort((left, right) => (frequency.get(left)! - frequency.get(right)!) || compare(left, right))
       .forEach((key, index) => order.set(key, index));
+    frequency.clear();
 
     const postingsRaw = join(tempRoot, 'raw', 'postings.jsonl');
     const postingsHandle = await open(postingsRaw, 'wx', 0o600);
@@ -1316,6 +1333,7 @@ export async function buildAdmissionOverlapLedger(
 
     const sortedPostings = join(tempRoot, 'sorted-postings.jsonl');
     await sortJsonlFile(postingsRaw, sortedPostings, join(tempRoot, 'runs', 'postings'), (row) => `${String(row.key)}\u0000${String(row.candidateUnitId)}`, runLimits, state);
+    await removeWorkFile(root, postingsRaw);
     const postingWriter = new ShardWriter<Record<string, unknown>>(root, 'postings', 'posting', policy.maxShardBytes, state);
     const pairsRaw = join(tempRoot, 'raw', 'pairs.jsonl');
     const pairsHandle = await open(pairsRaw, 'wx', 0o600);
@@ -1347,10 +1365,13 @@ export async function buildAdmissionOverlapLedger(
     await flushRawBuffer(pairsHandle, pairsBuffer, state);
     await syncClose(pairsHandle);
     const postingShards = await postingWriter.close();
+    await removeWorkFile(root, sortedPostings);
+    order.clear();
     await recordCheckpoint('postings', [], postingShards.map((receipt) => receipt.sha256));
 
     const sortedPairs = join(tempRoot, 'sorted-pairs.jsonl');
     await sortJsonlFile(pairsRaw, sortedPairs, join(tempRoot, 'runs', 'pairs'), (row) => `${String(row.leftCandidateUnitId)}\u0000${String(row.rightCandidateUnitId)}`, runLimits, state);
+    await removeWorkFile(root, pairsRaw);
     const pairWriter = new ShardWriter<Record<string, unknown>>(root, 'pairs', 'pair', policy.maxShardBytes, state);
     const edgeRaw = join(tempRoot, 'raw', 'edges.jsonl');
     const edgeHandle = await open(edgeRaw, 'wx', 0o600);
@@ -1405,10 +1426,12 @@ export async function buildAdmissionOverlapLedger(
     }
     await flushPair();
     const candidatePairShards = await pairWriter.close();
+    await removeWorkFile(root, sortedPairs);
     await recordCheckpoint('candidate_pairs', postingShards.map((receipt) => receipt.sha256), candidatePairShards.map((receipt) => receipt.sha256));
 
     const contentSorted = join(tempRoot, 'sorted-content.jsonl');
     await sortJsonlFile(join(tempRoot, 'raw', 'content.jsonl'), contentSorted, join(tempRoot, 'runs', 'content'), (row) => `${String(row.key)}\u0000${String(row.candidateUnitId)}`, runLimits, state);
+    await removeWorkFile(root, join(tempRoot, 'raw', 'content.jsonl'));
     let contentKey = '';
     let contentGroup: string[] = [];
     const flushContentGroup = async (): Promise<void> => {
@@ -1430,12 +1453,14 @@ export async function buildAdmissionOverlapLedger(
       if (contentGroup.length * 64 > policy.maxHeapBytes / 2) throw new ResourceLimitError('max_heap_bytes_exceeded');
     }
     await flushContentGroup();
+    await removeWorkFile(root, contentSorted);
     await flushRawBuffer(edgeHandle, edgeBuffer, state);
     await syncClose(edgeHandle);
     await unitsReadHandle.close();
 
     const sortedEdges = join(tempRoot, 'sorted-edges.jsonl');
     await sortJsonlFile(edgeRaw, sortedEdges, join(tempRoot, 'runs', 'edges'), (row) => edgeKey(String(row.leftCandidateUnitId), String(row.rightCandidateUnitId), String(row.kind)), runLimits, state);
+    await removeWorkFile(root, edgeRaw);
     const edgeWriter = new ShardWriter<AdmissionOverlapEdgeRowV1>(root, 'edges', 'edge', policy.maxShardBytes, state);
     const adjacencyRaw = join(tempRoot, 'raw', 'adjacency.jsonl');
     const adjacencyHandle = await open(adjacencyRaw, 'wx', 0o600);
@@ -1468,6 +1493,7 @@ export async function buildAdmissionOverlapLedger(
       edgeCount += 1;
       if (edge.crossSide) crossSideEdgeCount += 1;
     }
+    await removeWorkFile(root, sortedEdges);
     await flushRawBuffer(adjacencyHandle, adjacencyBuffer, state);
     await syncClose(adjacencyHandle);
     const edgeShards = await edgeWriter.close();
@@ -1475,6 +1501,7 @@ export async function buildAdmissionOverlapLedger(
 
     const sortedAdjacency = join(tempRoot, 'sorted-adjacency.jsonl');
     await sortJsonlFile(adjacencyRaw, sortedAdjacency, join(tempRoot, 'runs', 'adjacency'), (row) => `${String(row.candidateUnitId)}\u0000${String(row.neighborCandidateUnitId)}\u0000${String(row.kind)}`, runLimits, state);
+    await removeWorkFile(root, adjacencyRaw);
     const adjacencyWriter = new ShardWriter<AdmissionOverlapAdjacencyRowV1>(root, 'adjacency', 'adjacency', policy.maxShardBytes, state);
     let adjacencyRowCount = 0;
     for await (const row of jsonRows(sortedAdjacency)) {
@@ -1482,6 +1509,7 @@ export async function buildAdmissionOverlapLedger(
       adjacencyRowCount += 1;
     }
     const adjacencyShards = await adjacencyWriter.close();
+    await removeWorkFile(root, sortedAdjacency);
 
     const membershipsRaw = join(tempRoot, 'raw', 'memberships.jsonl');
     const membershipsHandle = await open(membershipsRaw, 'wx', 0o600);
@@ -1499,6 +1527,7 @@ export async function buildAdmissionOverlapLedger(
     await syncClose(membershipsHandle);
     const sortedMemberships = join(tempRoot, 'sorted-memberships.jsonl');
     await sortJsonlFile(membershipsRaw, sortedMemberships, join(tempRoot, 'runs', 'memberships'), (row) => String(row.key), runLimits, state);
+    await removeWorkFile(root, membershipsRaw);
     const membershipWriter = new ShardWriter<AdmissionOverlapClusterMembershipRowV1>(root, 'clusters/memberships', 'membership', policy.maxShardBytes, state);
     const summaryWriter = new ShardWriter<AdmissionOverlapClusterSummaryRowV1>(root, 'clusters/summaries', 'summary', policy.maxShardBytes, state);
     let currentCluster = '';
@@ -1539,6 +1568,7 @@ export async function buildAdmissionOverlapLedger(
       currentSides.push(membership.overlapSide);
     }
     await flushCluster();
+    await removeWorkFile(root, sortedMemberships);
     const clusterMembershipShards = await membershipWriter.close();
     const clusterSummaryShards = await summaryWriter.close();
     await recordCheckpoint(
