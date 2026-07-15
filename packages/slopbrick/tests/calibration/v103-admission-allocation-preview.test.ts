@@ -153,8 +153,8 @@ function makeRow(
 }
 
 function line(row: unknown): Uint8Array {
-  // Inventory JSONL is parsed by object shape, not key order. The real v10.3
-  // files are sourceId-first, while emitted preview rows must be canonical.
+  // The real v10.3 inventory is sourceId-first and therefore not canonical by
+  // key order. The preview accepts that input and canonicalizes emitted rows.
   return Buffer.from(`${JSON.stringify(row)}\n`, 'utf8');
 }
 
@@ -164,6 +164,12 @@ function stream(rows: Iterable<unknown>, onRead?: () => void): AsyncIterable<Uin
       onRead?.();
       yield line(row);
     }
+  }());
+}
+
+function canonicalStream(rows: Iterable<unknown>): AsyncIterable<Uint8Array> {
+  return (async function* (): AsyncGenerator<Uint8Array> {
+    for (const row of rows) yield Buffer.from(`${calibrationAdmissionCanonicalJson(row)}\n`, 'utf8');
   }());
 }
 
@@ -265,6 +271,7 @@ describe('v10.3 bounded allocation/provenance preview', () => {
     const summary = await preview.complete;
     expect(rows[0]).toMatchObject({ declaredPolarity: 'declared_ai', disposition: 'unrepresented', reasonCodes: ['aggregate_owner_forbidden'] });
     expect(summary.unrepresented).toBeGreaterThan(0);
+    expect(summary.repositoryRowCount).toBe(0);
     expect(summary.reasonCodeCounts.aggregate_owner_forbidden).toBe(1);
   });
 
@@ -341,6 +348,138 @@ describe('v10.3 bounded allocation/provenance preview', () => {
     const summary = await preview.complete;
     expect(summary.ok).toBe(false);
     expect(summary.errors.some((error) => error.includes(reason))).toBe(true);
+  });
+
+  it('counts a declared-polarity mismatch exactly once', async () => {
+    const fixture = makeFixture({ includeAllRows: false, positiveFirst: { declaredPolarity: 'declared_human' } });
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: fixture.positive,
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    const summary = await preview.complete;
+    expect(summary.reasonCodeCounts.declared_polarity_mismatch).toBe(1);
+    expect(summary.errors.filter((error) => error.includes('declared_polarity_mismatch'))).toHaveLength(1);
+  });
+
+  it.each([
+    ['unknown repository', 'repo-missing', 'unknown_repository_id'],
+    ['aggregate owner', 'legacy-v5-inventory', 'aggregate_owner_forbidden'],
+  ] as const)('validates duplicate ownership before returning for a duplicate + %s row', async (_name, repositoryId, ownershipReason) => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const duplicate = stream([
+      fixture.firstPositive,
+      { ...fixture.firstPositive, repositoryId, sourceId: fixture.firstPositive.sourceId },
+    ]);
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: duplicate,
+      negativeInventory: fixture.negative,
+    });
+    const rows: AdmissionAllocationRowV1[] = [];
+    for await (const row of preview.records) rows.push(row);
+    const summary = await preview.complete;
+    expect(rows[1]?.reasonCodes).toEqual(['duplicate_inventory_row_id', ownershipReason].sort());
+    expect(summary.reasonCodeCounts.duplicate_inventory_row_id).toBe(1);
+    expect(summary.reasonCodeCounts[ownershipReason]).toBe(1);
+  });
+
+  it('fails closed with a stable 32 MiB pending-unit reason for a no-newline stream', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const oversized = new Uint8Array(32 * 1024 * 1024 + 1).fill(0x61);
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: oversized,
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    const summary = await preview.complete;
+    expect(summary.ok).toBe(false);
+    expect(summary.errors).toContain('declared_ai:inventory_jsonl_unit_limit');
+  });
+
+  it('rejects an oversized newline-terminated unit before JSON parsing', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const oversized = Buffer.concat([
+      Buffer.from('"', 'utf8'),
+      Buffer.alloc(32 * 1024 * 1024, 0x61),
+      Buffer.from('"\n', 'utf8'),
+    ]);
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: oversized,
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    const summary = await preview.complete;
+    expect(summary.errors).toContain('declared_ai:1:inventory_jsonl_unit_limit');
+  });
+
+  it('accepts noncanonical inventory JSONL bytes and canonicalizes emitted rows', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const noncanonical = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: (async function* (): AsyncGenerator<Uint8Array> {
+        yield Buffer.from(`${JSON.stringify(fixture.firstPositive)}\n`, 'utf8');
+      }()),
+      negativeInventory: fixture.negative,
+    });
+    const rows: AdmissionAllocationRowV1[] = [];
+    for await (const row of noncanonical.records) rows.push(row);
+    const noncanonicalSummary = await noncanonical.complete;
+    expect(rows[0]).toBeDefined();
+    expect(JSON.parse(calibrationAdmissionCanonicalJson(rows[0]!))).toEqual(rows[0]);
+    expect(noncanonicalSummary.errors.some((error) => error.includes('noncanonical_json'))).toBe(false);
+
+    const canonicalFixture = makeFixture({ includeAllRows: false });
+    const canonical = openAdmissionAllocationPreviewStream({
+      sourceRegister: canonicalFixture.register,
+      sourceReviews: canonicalFixture.reviews,
+      positiveInventory: canonicalStream([fixture.firstPositive]),
+      negativeInventory: canonicalFixture.negative,
+    });
+    const canonicalRows: AdmissionAllocationRowV1[] = [];
+    for await (const row of canonical.records) canonicalRows.push(row);
+    const canonicalSummary = await canonical.complete;
+    expect(canonicalRows[0]).toEqual(rows[0]);
+    expect(canonicalSummary.streamSha256).toBe(noncanonicalSummary.streamSha256);
+  });
+
+  it('reports source-specific conservation failures for missing material rows', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: fixture.positive,
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    const summary = await preview.complete;
+    expect(summary.errors).toContain('source_inventory_conservation_failed:legacy-ai-slop-baseline');
+    expect(summary.errors).toContain('source_inventory_conservation_failed:repo-a');
+    expect(summary.reasonCodeCounts['source_inventory_conservation_failed:legacy-ai-slop-baseline']).toBe(1);
+    expect(summary.reasonCodeCounts['source_inventory_conservation_failed:repo-a']).toBe(1);
+  });
+
+  it('allows only one consumer for the allocation records stream', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: fixture.positive,
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    await preview.complete;
+    await expect((async () => {
+      for await (const _row of preview.records) { /* second consumer */ }
+    })()).rejects.toThrow('allocation_preview_stream_already_consumed');
   });
 
   it('counts duplicate inventory row IDs without allocating the duplicate', async () => {

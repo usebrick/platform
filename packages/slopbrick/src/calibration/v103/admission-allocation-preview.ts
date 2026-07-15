@@ -24,6 +24,8 @@ const REGISTER_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
 const HTTPS_URL = /^https:\/\/[^\s]+$/u;
 const LOCAL_ORIGIN = /^local:[^\r\n]+$/u;
 const UNPINNED_COMMIT = /^(?:not_available_local_extract|unavailable|unbound|unknown)$/u;
+/** Hard v10.3 per-unit bound shared with materialization/overlap readers. */
+export const MAX_ALLOCATION_UNIT_BYTES = 32 * 1024 * 1024;
 
 export type AdmissionAllocationStreamChunk = Uint8Array | string;
 export type AdmissionAllocationInventoryStream =
@@ -137,6 +139,7 @@ interface MutableSummary {
   negativeRowCount: number;
   baselineRowCount: number;
   repositoryRowCount: number;
+  readonly materialSourceRowCounts: Map<string, number>;
   readonly reasonCodeCounts: Map<string, number>;
   readonly errors: string[];
 }
@@ -166,7 +169,7 @@ function validHttps(value: unknown): value is string {
 }
 
 function validOrigin(value: unknown): value is string {
-  return typeof value === 'string' && (HTTPS_URL.test(value) || LOCAL_ORIGIN.test(value));
+  return validHttps(value) || (typeof value === 'string' && LOCAL_ORIGIN.test(value));
 }
 
 function validCommit(value: unknown): value is string {
@@ -223,7 +226,20 @@ function authorityContext(request: AdmissionAllocationPreviewRequestV1): Authori
 }
 
 function reasonCodes(value: readonly string[]): readonly string[] {
-  return [...new Set(value)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(value)].sort(compareCodePoints);
+}
+
+function compareCodePoints(left: string, right: string): number {
+  if (left === right) return 0;
+  const leftPoints = Array.from(left, (value) => value.codePointAt(0)!);
+  const rightPoints = Array.from(right, (value) => value.codePointAt(0)!);
+  const length = Math.min(leftPoints.length, rightPoints.length);
+  for (let index = 0; index < length; index += 1) {
+    const leftPoint = leftPoints[index]!;
+    const rightPoint = rightPoints[index]!;
+    if (leftPoint !== rightPoint) return leftPoint < rightPoint ? -1 : 1;
+  }
+  return leftPoints.length < rightPoints.length ? -1 : 1;
 }
 
 function addReason(summary: MutableSummary, reason: string): void {
@@ -305,6 +321,26 @@ function reviewIsStructurallyBound(
   return reasons;
 }
 
+function materialSourceForRow(
+  row: AdmissionAllocationInventoryRowV1,
+  authority: AuthorityContext,
+): string | undefined {
+  const owner = row.repositoryId === null
+    ? authority.entries.get('legacy-ai-slop-baseline')
+    : authority.entries.get(row.repositoryId);
+  return owner?.kind === 'material_source' ? owner.sourceId : undefined;
+}
+
+function materialPartitionForRow(
+  row: AdmissionAllocationInventoryRowV1,
+  authority: AuthorityContext,
+): AdmissionAllocationMaterialPartition | undefined {
+  const owner = row.repositoryId === null
+    ? authority.entries.get('legacy-ai-slop-baseline')
+    : authority.entries.get(row.repositoryId);
+  return owner?.kind === 'material_source' ? owner.materialPartition : undefined;
+}
+
 function classifyRow(
   row: AdmissionAllocationInventoryRowV1,
   expectedPolarity: AdmissionAllocationInventoryRowV1['declaredPolarity'],
@@ -315,20 +351,6 @@ function classifyRow(
   if (row.declaredPolarity !== expectedPolarity) {
     throw new Error('declared_polarity_mismatch');
   }
-  if (seenSourceIds.has(row.sourceId)) {
-    summary.duplicate += 1;
-    summary.errors.push('duplicate_inventory_row_id');
-    const owner = row.repositoryId === null ? authority.entries.get('legacy-ai-slop-baseline') : authority.entries.get(row.repositoryId);
-    return outputRow(
-      row,
-      owner?.kind === 'material_source' ? owner.sourceId : null,
-      owner?.materialPartition ?? (row.repositoryId === null ? 'baseline' : 'repository'),
-      'quarantine',
-      ['duplicate_inventory_row_id'],
-    );
-  }
-  seenSourceIds.add(row.sourceId);
-
   let ownerId: string | null = null;
   let ownerEntry: CalibrationAdmissionSourceRegisterV1['entries'][number] | undefined;
   const reasons: string[] = [];
@@ -341,18 +363,29 @@ function classifyRow(
     ownerEntry = authority.entries.get(row.repositoryId);
     if (!ownerEntry) {
       summary.errors.push('unknown_repository_id');
-      return outputRow(row, null, 'repository', 'unrepresented', ['unknown_repository_id']);
-    }
-    if (ownerEntry.kind === 'aggregate_inventory') {
+      reasons.push('unknown_repository_id');
+    } else if (ownerEntry.kind === 'aggregate_inventory') {
       summary.errors.push('aggregate_owner_forbidden');
-      return outputRow(row, null, 'aggregate', 'unrepresented', ['aggregate_owner_forbidden']);
+      reasons.push('aggregate_owner_forbidden');
+    } else {
+      ownerId = ownerEntry.sourceId;
+      if (ownerEntry.materialPartition !== 'repository') reasons.push('non_selected_source');
+      if (!row.sourceId.startsWith(`${ownerEntry.sourceId}:`)) reasons.push('inventory_source_owner_mismatch');
     }
-    ownerId = ownerEntry.sourceId;
-    if (ownerEntry.materialPartition !== 'repository') reasons.push('non_selected_source');
-    if (!row.sourceId.startsWith(`${ownerEntry.sourceId}:`)) reasons.push('inventory_source_owner_mismatch');
+  }
+  const duplicate = seenSourceIds.has(row.sourceId);
+  if (duplicate) {
+    summary.duplicate += 1;
+    summary.errors.push('duplicate_inventory_row_id');
+    reasons.push('duplicate_inventory_row_id');
+  } else {
+    seenSourceIds.add(row.sourceId);
   }
   if (reasons.length > 0) {
-    return outputRow(row, ownerId, ownerEntry?.materialPartition ?? (row.repositoryId === null ? 'baseline' : 'repository'), 'unrepresented', reasons);
+    const partition = ownerEntry?.materialPartition
+      ?? (row.repositoryId === null ? 'baseline' : 'repository');
+    const disposition = duplicate && reasons.length === 1 ? 'quarantine' : 'unrepresented';
+    return outputRow(row, ownerId, partition, disposition, reasons);
   }
 
   const review = authority.reviews.get(ownerId!);
@@ -373,7 +406,7 @@ function finishSummary(
   const digest = hash.digest('hex');
   const mergedErrors = [...new Set([...summary.errors, ...errors])];
   const reasonCodeCounts = Object.fromEntries(
-    [...summary.reasonCodeCounts.entries()].sort(([left], [right]) => left.localeCompare(right)),
+    [...summary.reasonCodeCounts.entries()].sort(([left], [right]) => compareCodePoints(left, right)),
   );
   return {
     version: 'v10.3-admission-allocation-preview-v1',
@@ -409,7 +442,7 @@ export function openAdmissionAllocationPreviewStream(
   const authority = authorityContext(request);
   let resolveComplete!: (summary: AdmissionAllocationPreviewSummaryV1) => void;
   const complete = new Promise<AdmissionAllocationPreviewSummaryV1>((resolve) => { resolveComplete = resolve; });
-  const records = (async function* (): AsyncGenerator<AdmissionAllocationRowV1> {
+  const producer = (async function* (): AsyncGenerator<AdmissionAllocationRowV1> {
     const hash = createHash('sha256');
     const summary: MutableSummary = {
       rowCount: 0,
@@ -421,6 +454,7 @@ export function openAdmissionAllocationPreviewStream(
       negativeRowCount: 0,
       baselineRowCount: 0,
       repositoryRowCount: 0,
+      materialSourceRowCounts: new Map(),
       reasonCodeCounts: new Map(),
       errors: [],
     };
@@ -445,6 +479,17 @@ export function openAdmissionAllocationPreviewStream(
       if (summary.rowCount !== V103_ALLOCATION_COUNTS.selected) addError(summary, 'selected_row_count_conservation_failed');
       if (summary.baselineRowCount !== V103_ALLOCATION_COUNTS.baseline) addError(summary, 'baseline_row_count_conservation_failed');
       if (summary.repositoryRowCount !== V103_ALLOCATION_COUNTS.repository) addError(summary, 'repository_row_count_conservation_failed');
+      for (const entry of authority.register.entries) {
+        if (entry.kind !== 'material_source') continue;
+        const sourceId = entry.sourceId;
+        const represented = summary.materialSourceRowCounts.get(sourceId) ?? 0;
+        const review = authority.reviews.get(sourceId);
+        const reviewCount = review?.inventory.candidateCodeUnitCount;
+        if (represented !== entry.inventoryCandidateUnits || (reviewCount !== undefined && represented !== reviewCount)) {
+          const reason = `source_inventory_conservation_failed:${sourceId}`;
+          addError(summary, reason, reason);
+        }
+      }
       resolveComplete(finishSummary(hash, summary, authority));
     };
     const consumeArm = async function* (
@@ -471,6 +516,9 @@ export function openAdmissionAllocationPreviewStream(
             lineNumber += 1;
             sawNewline = true;
             if (line.length === 0 || line.includes('\r')) throw new Error(`${expectedPolarity}:${lineNumber}:malformed_inventory_row`);
+            if (Buffer.byteLength(line, 'utf8') + 1 > MAX_ALLOCATION_UNIT_BYTES) {
+              throw new Error(`${expectedPolarity}:${lineNumber}:inventory_jsonl_unit_limit`);
+            }
             let parsed: unknown;
             try { parsed = JSON.parse(line) as unknown; } catch { throw new Error(`${expectedPolarity}:${lineNumber}:malformed_inventory_row`); }
             let row: AdmissionAllocationInventoryRowV1;
@@ -480,21 +528,25 @@ export function openAdmissionAllocationPreviewStream(
             }
             if (expectedPolarity === 'declared_ai') summary.positiveRowCount += 1;
             else summary.negativeRowCount += 1;
-            if (row.repositoryId === null) summary.baselineRowCount += 1;
-            else summary.repositoryRowCount += 1;
-            let allocated: AdmissionAllocationRowV1;
-            try {
-              allocated = classifyRow(row, expectedPolarity, authority, seenSourceIds, summary);
-            } catch (error) {
-              const reason = error instanceof Error ? error.message : 'inventory_row_rejected';
-              addError(summary, `${expectedPolarity}:${lineNumber}:${reason}`, reason);
-              throw error;
+            const materialPartition = materialPartitionForRow(row, authority);
+            if (materialPartition === 'baseline') summary.baselineRowCount += 1;
+            else if (materialPartition === 'repository') summary.repositoryRowCount += 1;
+            const materialSourceId = materialSourceForRow(row, authority);
+            if (materialSourceId !== undefined) {
+              summary.materialSourceRowCounts.set(materialSourceId, (summary.materialSourceRowCounts.get(materialSourceId) ?? 0) + 1);
             }
+            const allocated = classifyRow(row, expectedPolarity, authority, seenSourceIds, summary);
             yield emit(allocated);
             newline = pending.indexOf('\n');
           }
         }
+        if (Buffer.byteLength(pending, 'utf8') > MAX_ALLOCATION_UNIT_BYTES) {
+          throw new Error(`${expectedPolarity}:inventory_jsonl_unit_limit`);
+        }
         try { pending += decoder.decode(); } catch { throw new Error(`${expectedPolarity}:inventory_jsonl_utf8_invalid`); }
+        if (Buffer.byteLength(pending, 'utf8') > MAX_ALLOCATION_UNIT_BYTES) {
+          throw new Error(`${expectedPolarity}:inventory_jsonl_unit_limit`);
+        }
         if (pending.length > 0 || !sawNewline) throw new Error(`${expectedPolarity}:inventory_jsonl_final_newline_required`);
         if (bytesRead === 0) throw new Error(`${expectedPolarity}:inventory_jsonl_empty`);
       } catch (error) {
@@ -517,6 +569,14 @@ export function openAdmissionAllocationPreviewStream(
       finish();
     }
   }());
+  let recordsConsumed = false;
+  const records: AsyncIterable<AdmissionAllocationRowV1> = {
+    [Symbol.asyncIterator](): AsyncIterator<AdmissionAllocationRowV1> {
+      if (recordsConsumed) throw new Error('allocation_preview_stream_already_consumed');
+      recordsConsumed = true;
+      return producer[Symbol.asyncIterator]();
+    },
+  };
   return { records, complete };
 }
 
