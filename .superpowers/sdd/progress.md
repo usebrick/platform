@@ -782,3 +782,19 @@ unrepresented units, zero candidate/eligible units, with blockers
 immutable-root/TOCTOU and cross-platform POSIX `O_NOFOLLOW` policy follow-ups,
 publication/recovery, CLI, static/witness/resource authority, corpus admission,
 and release gates remain open. No corpus or remote/release state changed.
+
+### Read-only external source-census replay — 2026-07-15
+
+The built package-local CLI was replayed against the v10.3 project root
+`/Users/cheng/corpus-expansion/v10.3`; passing the nested `review/admission`
+directory is correctly rejected because the CLI expects the project root. The
+exact replay exited 0 and wrote a **113,469-byte** receipt with SHA-256
+`de0cd1879d14365b919c09bdd21bd5760a6804a0e3626d87abf37b78ad948857` and
+evidence-context SHA-256
+`9b3f8a4adcbb82ef4d97685be51264a1feb44ebf46584697df93511dad2f3089`.
+It confirms **329/329** registered/reviewed sources, **452,382** selected and
+unrepresented/quarantined units, **0** represented/candidate/eligible units,
+and unchanged blockers `static_authority_unavailable` and
+`witness_authority_unavailable`. This is an authority-deficit measurement;
+it does not justify pulling more repositories. No corpus or remote state
+changed.
