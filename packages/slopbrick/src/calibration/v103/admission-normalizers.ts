@@ -62,12 +62,28 @@ function sha256(bytes: Uint8Array): string {
  * available to the process. New language implementations must add a reviewed
  * receipt here rather than being accepted by normalizer ID alone.
  */
+const ADMISSION_LEXICAL_IMPLEMENTATION_SHA256 = sha256(Buffer.from('usebrick-admission-normalizer:lexical-code-v1:implementation\n', 'utf8'));
+const ADMISSION_LEXICAL_FIXTURES_SHA256 = sha256(Buffer.from('usebrick-admission-normalizer:lexical-code-v1:fixtures-v1\n', 'utf8'));
+
+/**
+ * The lexer is intentionally language-agnostic: it removes the frozen
+ * C/JavaScript-style comment and literal bodies and retains identifiers and
+ * punctuation. A language may bind to the shared implementation only through
+ * one of these reviewed IDs; the registry still names every language
+ * explicitly so an authority cannot silently widen coverage.
+ */
 export const ADMISSION_LEXICAL_RUNTIME_BINDINGS = Object.freeze([
   {
     normalizerId: 'normalizer-typescript-v1',
     implementationId: ADMISSION_NORMALIZER_IMPLEMENTATION_ID,
-    implementationSha256: sha256(Buffer.from('usebrick-admission-normalizer:lexical-code-v1:implementation\n', 'utf8')),
-    fixturesSha256: sha256(Buffer.from('usebrick-admission-normalizer:lexical-code-v1:fixtures-v1\n', 'utf8')),
+    implementationSha256: ADMISSION_LEXICAL_IMPLEMENTATION_SHA256,
+    fixturesSha256: ADMISSION_LEXICAL_FIXTURES_SHA256,
+  },
+  {
+    normalizerId: 'normalizer-lexical-code-v1',
+    implementationId: ADMISSION_NORMALIZER_IMPLEMENTATION_ID,
+    implementationSha256: ADMISSION_LEXICAL_IMPLEMENTATION_SHA256,
+    fixturesSha256: ADMISSION_LEXICAL_FIXTURES_SHA256,
   },
 ] as const);
 

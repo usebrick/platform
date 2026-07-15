@@ -59,6 +59,25 @@ describe('Task 2A admission normalizers', () => {
     expect(result.shingleSetSha256).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it('allows an explicitly reviewed language to bind the shared lexical runtime', () => {
+    const source = fixture<Record<string, unknown>>('calibration-admission-normalizer-registry');
+    const entry = (source.entries as Array<Record<string, unknown>>)[0]!;
+    const runtime = ADMISSION_LEXICAL_RUNTIME_BINDINGS.find((candidate) => candidate.normalizerId === 'normalizer-lexical-code-v1')!;
+    const base = {
+      ...source,
+      entries: [{
+        ...entry,
+        language: 'Python',
+        normalizerId: runtime.normalizerId,
+        implementationSha256: runtime.implementationSha256,
+        fixturesSha256: runtime.fixturesSha256,
+      }],
+    };
+    const registry = { ...base, registrySha256: calibrationAdmissionNormalizerRegistrySha256(base) };
+    const result = normalizeAdmissionBytes('Python', Buffer.from('def answer():\n    return 42\n', 'utf8'), registry);
+    expect(result).toMatchObject({ ok: true, status: 'covered', normalizerId: 'normalizer-lexical-code-v1' });
+  });
+
   it('reports unsupported languages and invalid registries without treating them as no overlap', () => {
     const registry = boundRegistry();
     const unsupported = normalizeAdmissionBytes('Python', Buffer.from('print(1)', 'utf8'), registry);
