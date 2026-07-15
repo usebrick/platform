@@ -100,7 +100,15 @@ describe('v10.3 prebuilt admission authority publication plan', () => {
     }).ok).toBe(false);
     expect(planPrebuiltAdmissionAuthorityPublication({
       ...replace,
+      inputGeneration: { ...replace.inputGeneration, generationSha256: sha('p') },
+    }).ok).toBe(false);
+    expect(planPrebuiltAdmissionAuthorityPublication({
+      ...replace,
       staticGeneration: { generation: 1, generationSha256: sha('s') },
+    }).ok).toBe(false);
+    expect(planPrebuiltAdmissionAuthorityPublication({
+      ...replace,
+      staticGeneration: { ...replace.staticGeneration, generationSha256: sha('c') },
     }).ok).toBe(false);
   });
 

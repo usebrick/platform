@@ -287,12 +287,18 @@ function validateInput(input: unknown): { readonly errors: readonly string[]; re
       errors.push('replace publication input-generation parent does not exactly match the supplied prior input SHA');
     } else if (inputGeneration && inputGeneration.parentInputGenerationSha256 === undefined) {
       errors.push('replace publication input generation must carry the explicit prior input SHA as its parent');
+    } else if (inputGeneration && inputGeneration.parentInputGenerationSha256 === inputGeneration.generationSha256) {
+      errors.push('replace publication input generation must not alias its prior input generation');
     }
     if (isRecord(staticGeneration) && isRecord(input.expectedCurrentState)
       && input.expectedCurrentState.kind === 'existing'
       && (staticGeneration.parentStaticGenerationSha256 === undefined
         || staticGeneration.parentStaticGenerationSha256 !== input.expectedCurrentState.staticGenerationSha256)) {
       errors.push('replace publication requires static-generation parent to exactly match expected current static SHA');
+    } else if (isRecord(staticGeneration) && isRecord(input.expectedCurrentState)
+      && input.expectedCurrentState.kind === 'existing'
+      && staticGeneration.generationSha256 === input.expectedCurrentState.staticGenerationSha256) {
+      errors.push('replace publication static generation must not alias the expected current generation');
     }
     if (inputGeneration && safeInteger(inputGeneration.generation) && inputGeneration.generation === 0) errors.push('replace publication input generation must be greater than zero');
     if (staticGeneration && safeInteger(staticGeneration.generation) && staticGeneration.generation === 0) errors.push('replace publication static generation must be greater than zero');
@@ -331,8 +337,10 @@ export function planPrebuiltAdmissionAuthorityPublication(
       planDigest: planDigestValue,
       recoveryNonce,
     });
-    const transactionId = `authority-rebuild-${identityDigest.slice(0, 32)}`;
-    const lockId = `authority-rebuild-lock-${identityDigest.slice(32)}`;
+    // Keep the full SHA-256 suffix: the Core ID bound allows this length and
+    // truncating it would needlessly reduce the collision margin for paths.
+    const transactionId = `authority-rebuild-${identityDigest}`;
+    const lockId = `authority-rebuild-lock-${identityDigest}`;
     const sourceGenerationDirectories = sources.map((source) => sourceGenerationPaths(transactionId, source));
     if (sourceGenerationDirectories.length === 0) return result(['authority publication plan must contain at least one source generation']);
     const sourceGenerationDirectoryTuple = sourceGenerationDirectories as CalibrationAdmissionAuthorityRebuildTransactionV1['sourceGenerationDirectories'];
