@@ -547,8 +547,8 @@ export function openAdmissionAllocationPreviewStream(
         if (Buffer.byteLength(pending, 'utf8') > MAX_ALLOCATION_UNIT_BYTES) {
           throw new Error(`${expectedPolarity}:inventory_jsonl_unit_limit`);
         }
-        if (pending.length > 0 || !sawNewline) throw new Error(`${expectedPolarity}:inventory_jsonl_final_newline_required`);
         if (bytesRead === 0) throw new Error(`${expectedPolarity}:inventory_jsonl_empty`);
+        if (pending.length > 0 || !sawNewline) throw new Error(`${expectedPolarity}:inventory_jsonl_final_newline_required`);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const reason = message.split(':').pop()!.trim();

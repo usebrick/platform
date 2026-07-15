@@ -420,6 +420,19 @@ describe('v10.3 bounded allocation/provenance preview', () => {
     expect(summary.errors).toContain('declared_ai:1:inventory_jsonl_unit_limit');
   });
 
+  it('reports an explicit empty-inventory reason', async () => {
+    const fixture = makeFixture({ includeAllRows: false });
+    const preview = openAdmissionAllocationPreviewStream({
+      sourceRegister: fixture.register,
+      sourceReviews: fixture.reviews,
+      positiveInventory: stream([]),
+      negativeInventory: fixture.negative,
+    });
+    for await (const _row of preview.records) { /* consume */ }
+    const summary = await preview.complete;
+    expect(summary.errors).toContain('declared_ai:inventory_jsonl_empty');
+  });
+
   it('accepts noncanonical inventory JSONL bytes and canonicalizes emitted rows', async () => {
     const fixture = makeFixture({ includeAllRows: false });
     const noncanonical = openAdmissionAllocationPreviewStream({
