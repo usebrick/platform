@@ -8,6 +8,12 @@ import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v10
 import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission-source-census';
 import { buildAdmissionSearchResultBundleFromCandidates, buildAdmissionCensus, computeAdmissionEligibilitySnapshotSha256 } from '../../src/calibration/v103/admission-census';
 import { projectEligibleWitnessCandidates } from '../../src/calibration/v103/admission-cohort-witness';
+import {
+  AdmissionWitnessPublicationContendedError,
+  AdmissionWitnessPublicationPendingError,
+  publishAdmissionWitness,
+  recoverAdmissionWitnessPublication,
+} from '../../src/calibration/v103/admission-witness-publication';
 import { requireContainedAdmissionPath } from '../../src/calibration/v103/admission-path';
 import {
   PrebuiltAuthorityRebuildVerificationError,
@@ -197,6 +203,81 @@ async function readCanonicalOuterInput(root: string, requested: string, label: s
   return { value, bytes };
 }
 
+async function runWitnessSearchCommand(args: ParsedArguments): Promise<void> {
+  const verified = await buildVerifiedAdmissionEvidenceContext(args.root, {
+    expectedProfileId: args.toolProfile,
+    expectedInvocationIntentId: args.invocationIntentId,
+  });
+  if (!verified.ok) {
+    outputCanonical({ ok: false, command: args.command, diagnosticOnly: true, authorityEligible: false, blockers: verified.errors });
+    process.exitCode = 2;
+    return;
+  }
+  const admission = await (await import('../../src/calibration/v103/admission-context')).buildVerifiedAdmissionContext(args.root, verified.context);
+  if (!admission.ok) {
+    outputCanonical({ ok: false, command: args.command, diagnosticOnly: true, authorityEligible: false, blockers: admission.errors });
+    process.exitCode = 2;
+    return;
+  }
+  const projection = projectEligibleWitnessCandidates(admission.context);
+  const eligibilitySnapshotSha256 = computeAdmissionEligibilitySnapshotSha256(admission.context);
+  const bundle = buildAdmissionSearchResultBundleFromCandidates(admission.context, args.witnessGate!, eligibilitySnapshotSha256, projection.candidates, {});
+  outputCanonical({
+    ok: true,
+    command: args.command,
+    gate: args.witnessGate,
+    kind: 'search_result',
+    bundle,
+    candidateCount: projection.candidates.length,
+    diagnosticOnly: true,
+    authorityEligible: false,
+    ready: false,
+  });
+}
+
+async function runWitnessPublicationCommand(args: ParsedArguments): Promise<void> {
+  const bundleInput = await readCanonicalOuterInput(args.root, args.witnessBundlePath!, 'witness bundle');
+  const handoffInput = await readCanonicalOuterInput(args.root, args.witnessNestedHandoffPath!, 'nested publication handoff');
+  const action = args.witnessKind === 'search_result' ? 'witness:publish-search' : 'witness:publish-review';
+  const resolved = await resolveAdmissionToolAuthorityReceipt({
+    authorityRoot: toolAuthorityRootFor(args.root),
+    authorityIndexSha256: args.toolAuthorityIndexSha256!,
+    receiptId: args.toolReceiptId!,
+    receiptSha256: args.toolReceiptSha256!,
+    invocationIntentId: args.invocationIntentId!,
+    profileId: 'admission-census-v1',
+    action,
+  });
+  const request = {
+    root: args.root,
+    gate: args.witnessGate!,
+    kind: args.witnessKind!,
+    bundle: bundleInput.value,
+    invocationIntentId: args.invocationIntentId!,
+    namedPrimaryOutputProjectionSha256: args.namedPrimaryOutputProjectionSha256!,
+    publicationToolReceipt: {
+      receiptId: resolved.receipt.receiptId,
+      receiptSha256: resolved.receiptSha256,
+      authorityIndexSha256: resolved.authorityIndexSha256,
+    },
+    nestedHandoff: handoffInput.value,
+    ...(args.recoveryNonce === undefined ? {} : { recoveryNonce: args.recoveryNonce }),
+  } as const;
+  if (args.command === 'witness:recover-publication') {
+    const result = await recoverAdmissionWitnessPublication({
+      ...request,
+      recoveryNonce: args.recoveryNonce!,
+      transactionId: args.transactionId,
+      fromLock: args.fromLock,
+      acknowledgeNoLiveWriter: true,
+    });
+    outputCanonical({ ok: true, command: args.command, ...result });
+    return;
+  }
+  const result = await publishAdmissionWitness(request);
+  outputCanonical({ ok: true, command: args.command, ...result });
+}
+
 async function materializeOuterAuthority(
   args: ParsedArguments,
   graph: PrebuiltAdmissionAuthorityGraphInput,
@@ -374,12 +455,17 @@ interface ParsedArguments {
   readonly exitCode?: number;
   readonly observedResourceUsage?: string;
   readonly joinStaticAuthority?: boolean;
+  readonly witnessBundlePath?: string;
+  readonly witnessGate?: 'smoke' | 'canary';
+  readonly witnessKind?: 'search_result' | 'witness_review';
+  readonly witnessNestedHandoffPath?: string;
+  readonly namedPrimaryOutputProjectionSha256?: string;
 }
 
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'census' && command !== 'census:stdout' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'census' && command !== 'census:stdout' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover' && command !== 'witness:search' && command !== 'witness:publish-search' && command !== 'witness:publish-review' && command !== 'witness:recover-publication') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
   let inputGenerationProposalPath: string | undefined;
@@ -433,6 +519,11 @@ function parse(argv: readonly string[]): ParsedArguments {
   let exitCode: number | undefined;
   let observedResourceUsage: string | undefined;
   let joinStaticAuthority = false;
+  let witnessBundlePath: string | undefined;
+  let witnessGate: 'smoke' | 'canary' | undefined;
+  let witnessKind: 'search_result' | 'witness_review' | undefined;
+  let witnessNestedHandoffPath: string | undefined;
+  let namedPrimaryOutputProjectionSha256: string | undefined;
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
     if (flag === '--expect-current-absent' || flag === '--require-real-scale-receipt') {
@@ -452,7 +543,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       continue;
     }
     if (flag === '--from-lock' || flag === '--acknowledge-no-live-writer') {
-      if (command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:recover' && command !== 'authority:overlap:recover' && command !== 'static-authority:recover') throw new Error(`${flag} is only valid for a recovery command`);
+      if (command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:recover' && command !== 'authority:overlap:recover' && command !== 'static-authority:recover' && command !== 'witness:recover-publication') throw new Error(`${flag} is only valid for a recovery command`);
       if (flag === '--from-lock') {
         if (fromLock) throw new Error('--from-lock may only be supplied once');
         fromLock = true;
@@ -462,7 +553,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--pre-witness-bundle', '--overlap-generation', '--overlap-index', '--overlap-resource-receipt', '--overlap-ledger', '--real-scale-record-count', '--real-scale-universe-sha256', '--real-scale-records-jsonl-sha256', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--pre-witness-bundle', '--overlap-generation', '--overlap-index', '--overlap-resource-receipt', '--overlap-ledger', '--real-scale-record-count', '--real-scale-universe-sha256', '--real-scale-records-jsonl-sha256', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage', '--bundle', '--gate', '--kind', '--nested-handoff', '--named-primary-output-sha256']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -614,6 +705,21 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--observed-resource-usage') {
       if (observedResourceUsage !== undefined) throw new Error('--observed-resource-usage may only be supplied once');
       observedResourceUsage = value;
+    } else if (flag === '--bundle') {
+      if (witnessBundlePath !== undefined) throw new Error('--bundle may only be supplied once');
+      witnessBundlePath = value;
+    } else if (flag === '--gate') {
+      if (witnessGate !== undefined || (value !== 'smoke' && value !== 'canary')) throw new Error('--gate must be smoke or canary');
+      witnessGate = value;
+    } else if (flag === '--kind') {
+      if (witnessKind !== undefined || (value !== 'search_result' && value !== 'witness_review')) throw new Error('--kind must be search_result or witness_review');
+      witnessKind = value;
+    } else if (flag === '--nested-handoff') {
+      if (witnessNestedHandoffPath !== undefined) throw new Error('--nested-handoff may only be supplied once');
+      witnessNestedHandoffPath = value;
+    } else if (flag === '--named-primary-output-sha256') {
+      if (namedPrimaryOutputProjectionSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--named-primary-output-sha256 must be a lowercase SHA-256');
+      namedPrimaryOutputProjectionSha256 = value;
     }
     index += 1;
   }
@@ -746,6 +852,28 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (invocationIntentId || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256) {
       throw new Error('authority:overlap:verify tool selectors require --join-static-authority');
     }
+  } else if (command === 'witness:search' || command === 'witness:publish-search' || command === 'witness:publish-review' || command === 'witness:recover-publication') {
+    if (!witnessGate || !witnessKind || !toolProfile || toolProfile !== 'admission-census-v1' || !invocationIntentId) {
+      throw new Error(`${command} requires --gate, --kind, --tool-profile admission-census-v1, and --invocation-intent`);
+    }
+    if (command === 'witness:search') {
+      if (witnessKind !== 'search_result' || witnessBundlePath || witnessNestedHandoffPath || namedPrimaryOutputProjectionSha256 || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || recoveryNonce || transactionId || fromLock || acknowledgeNoLiveWriter || action || proposalPath || operation || expectedCurrentIndexSha256 || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256 || exitCode !== undefined || observedResourceUsage) {
+        throw new Error('witness:search accepts only --root, --gate smoke/canary, --kind search_result, --tool-profile admission-census-v1, and --invocation-intent');
+      }
+    } else {
+      const expectedKind = command === 'witness:publish-search' ? 'search_result' : command === 'witness:publish-review' ? 'witness_review' : witnessKind;
+      if (command !== 'witness:recover-publication' && witnessKind !== expectedKind) throw new Error(`${command} requires --kind ${expectedKind}`);
+      if (!witnessBundlePath || !witnessNestedHandoffPath || !namedPrimaryOutputProjectionSha256 || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || action || proposalPath || operation || expectedCurrentIndexSha256 || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256 || exitCode !== undefined || observedResourceUsage) {
+        throw new Error(`${command} requires --bundle, --nested-handoff, --named-primary-output-sha256, and indexed publication tool receipt selectors only`);
+      }
+      if (!/^[a-f0-9]{64}$/.test(toolReceiptId) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('witness publication tool selectors must be lowercase SHA-256 values');
+      if (command === 'witness:recover-publication') {
+        if (!recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) throw new Error('witness:recover-publication requires exactly one recovery selector, --recovery-nonce, and --acknowledge-no-live-writer');
+        if (!/^[a-f0-9]{64}$/.test(recoveryNonce)) throw new Error('--recovery-nonce must be a lowercase SHA-256');
+      } else if (transactionId || fromLock || acknowledgeNoLiveWriter) {
+        throw new Error(`${command} does not accept recovery selectors`);
+      }
+    }
   } else if (command === 'acquisition:publish') {
     if (!proposalPath || !operation || !toolProfile || !invocationIntentId || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error('acquisition:publish requires --publication-proposal, --operation, --tool-profile, and --invocation-intent');
     if (toolProfile !== 'admission-acquisition-publication-v1') throw new Error('--tool-profile must be admission-acquisition-publication-v1');
@@ -765,7 +893,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, preWitnessBundlePath, overlapGenerationPath, overlapIndexPath, overlapResourceReceiptPath, overlapLedgerPath, realScaleRecordCount, realScaleUniverseSha256, realScaleRecordsJsonlSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
+  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, preWitnessBundlePath, overlapGenerationPath, overlapIndexPath, overlapResourceReceiptPath, overlapLedgerPath, realScaleRecordCount, realScaleUniverseSha256, realScaleRecordsJsonlSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined, witnessBundlePath, witnessGate, witnessKind, witnessNestedHandoffPath, namedPrimaryOutputProjectionSha256 };
 }
 
 async function main(): Promise<void> {
@@ -838,6 +966,14 @@ async function main(): Promise<void> {
         outputSetSha256: resolved.receipt.outputSetSha256,
         snapshot: resolved.snapshot,
       });
+      return;
+    }
+    if (args.command === 'witness:search') {
+      await runWitnessSearchCommand(args);
+      return;
+    }
+    if (args.command === 'witness:publish-search' || args.command === 'witness:publish-review' || args.command === 'witness:recover-publication') {
+      await runWitnessPublicationCommand(args);
       return;
     }
     if (args.command === 'authority:overlap:verify') {
@@ -1073,6 +1209,16 @@ async function main(): Promise<void> {
       unavailableEvidenceIds: verified.context.unavailableEvidenceIds,
     });
   } catch (error) {
+    if (error instanceof AdmissionWitnessPublicationPendingError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_pending', ...error.result, errors: [error.message] })}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    if (error instanceof AdmissionWitnessPublicationContendedError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_contended', ...error.result, errors: [error.message] })}\n`);
+      process.exitCode = 2;
+      return;
+    }
     if (error instanceof PrebuiltAuthorityPublicationPendingError) {
       process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_pending', ...error.result, errors: [error.message] })}\n`);
       process.exitCode = 2;

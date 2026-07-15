@@ -34,10 +34,16 @@ export interface AdmissionSearchPublicationInputV1 {
   readonly publicationCompletionRelativePath: string;
 }
 
+export interface AdmissionWitnessReviewPublicationInputV1 {
+  readonly publicationCompletionSha256: string;
+  readonly publicationCompletionRelativePath: string;
+}
+
 export interface AdmissionCensusBuildInputV1 {
   readonly context: VerifiedAdmissionContextV1;
   readonly search: Readonly<{ smoke: AdmissionSearchPublicationInputV1; canary: AdmissionSearchPublicationInputV1 }>;
   readonly witnessReviews?: Readonly<{ smoke?: CalibrationAdmissionWitnessReviewBundleV1; canary?: CalibrationAdmissionWitnessReviewBundleV1 }>;
+  readonly witnessReviewPublications?: Readonly<{ smoke?: AdmissionWitnessReviewPublicationInputV1; canary?: AdmissionWitnessReviewPublicationInputV1 }>;
   readonly witnessPolicySha256s?: Readonly<{ smoke?: string; canary?: string }>;
 }
 
@@ -231,6 +237,7 @@ function gateSummary(
   candidates: readonly AdmissionWitnessCandidateV1[],
   search: AdmissionSearchPublicationInputV1,
   review: CalibrationAdmissionWitnessReviewBundleV1 | undefined,
+  reviewPublication: AdmissionWitnessReviewPublicationInputV1 | undefined,
   eligibilitySnapshotSha256: string,
   verifiedContextSha256: string,
 ): JsonObject {
@@ -257,6 +264,12 @@ function gateSummary(
   if (!reviewValid) gateFailures.push('witness_review_missing');
   else if (review.gate !== gate || review.verifiedContextSha256 !== verifiedContextSha256 || review.eligibilitySnapshotSha256 !== eligibilitySnapshotSha256 || review.searchResultBundle.bundleSha256 !== search.bundle.bundleSha256) gateFailures.push('witness_review_authority_mismatch');
   if (reviewValid && review.witnessReviewReceipt.decision !== 'approved') gateFailures.push('witness_review_not_approved');
+  const reviewPublicationComplete = review !== undefined
+    && reviewPublication !== undefined
+    && reviewPublication.publicationCompletionSha256 !== H
+    && typeof reviewPublication.publicationCompletionRelativePath === 'string'
+    && reviewPublication.publicationCompletionRelativePath.length > 0;
+  if (reviewValid && !reviewPublicationComplete) gateFailures.push('witness_review_publication_incomplete');
   if (result?.kind === 'infeasibility') gateFailures.push('infeasibility_certificate');
   const summary: JsonObject = {
     targetVerifiedAi: target,
@@ -270,7 +283,8 @@ function gateSummary(
     searchResultPublicationCompletionSha256: search.publicationCompletionSha256,
     searchResultPublicationCompletionRelativePath: search.publicationCompletionRelativePath,
     ...(review === undefined ? {} : { witnessReviewBundleSha256: review.bundleSha256, witnessReviewBundleRelativePath: `witnesses/${gate}/witness-reviews/${review.bundleSha256}.json` }),
-    ready: ai >= target && human >= target && witness !== undefined && reviewValid && review?.witnessReviewReceipt.decision === 'approved' && gateFailures.length === 0,
+    ...(reviewPublication === undefined ? {} : { witnessReviewPublicationCompletionSha256: reviewPublication.publicationCompletionSha256, witnessReviewPublicationCompletionRelativePath: reviewPublication.publicationCompletionRelativePath }),
+    ready: ai >= target && human >= target && witness !== undefined && reviewValid && review?.witnessReviewReceipt.decision === 'approved' && reviewPublicationComplete && gateFailures.length === 0,
     gateFailures: [...new Set(gateFailures)].sort(compareStrings),
   };
   if (gate === 'canary') {
@@ -351,8 +365,8 @@ export function buildAdmissionCensus(input: AdmissionCensusBuildInputV1): Admiss
         recordRejectionReasons: Object.fromEntries(Object.entries(records.flatMap((verified) => deriveAdmissionDisposition(context, verified.record.recordId).reasons).reduce<Record<string, number>>((counts, reason) => { counts[reason] = (counts[reason] ?? 0) + 1; return counts; }, {})).sort(([left], [right]) => compareStrings(left, right))),
         sourceBlockerReasons: Object.fromEntries(Object.entries(sourceRows.flatMap((row) => row.sourceReasons as string[]).reduce<Record<string, number>>((counts, reason) => { counts[reason] = (counts[reason] ?? 0) + 1; return counts; }, {})).sort(([left], [right]) => compareStrings(left, right))),
       },
-      smoke: gateSummary('smoke', projection.candidates, searchBundles.smoke, input.witnessReviews?.smoke, eligibilitySnapshotSha256, context.contextSha256),
-      canary: gateSummary('canary', projection.candidates, searchBundles.canary, input.witnessReviews?.canary, eligibilitySnapshotSha256, context.contextSha256),
+      smoke: gateSummary('smoke', projection.candidates, searchBundles.smoke, input.witnessReviews?.smoke, input.witnessReviewPublications?.smoke, eligibilitySnapshotSha256, context.contextSha256),
+      canary: gateSummary('canary', projection.candidates, searchBundles.canary, input.witnessReviews?.canary, input.witnessReviewPublications?.canary, eligibilitySnapshotSha256, context.contextSha256),
     };
     return { ok: true, census: census as unknown as CalibrationAdmissionCensusV103, eligibilitySnapshotSha256 };
   } catch (error) {
