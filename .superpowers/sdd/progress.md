@@ -1263,6 +1263,18 @@ No real-corpus authority, label, repository, manifest, release, publish, or
 deployment state changed. The live corpus remains 0 candidate / 0 eligible
 with `static_authority_unavailable` and `witness_authority_unavailable`.
 
+### Task 2B RAM-safe static-ledger stream — 2026-07-15
+
+Commit `ee4392f43` adds a one-worker disk-backed JSONL adapter for one privacy,
+quality, or lineage projection. It validates sorted record/result/unresolved
+streams against Core, writes staged projections with no-clobber directory
+publication, and computes record-set, stream, and semantic ledger hashes
+without a 452,382-row JavaScript array. The adapter is diagnostic-only and
+does not create live authority or mutate the v10.3 corpus. Its focused suite
+passes **3/3**; the combined allocation/static-ledger suite passes **30/30**;
+typecheck and build are green. The remaining integration is binding this
+receipt into the outer materializer before any real-scale authority attempt.
+
 ### Task 2B nested publication handoff contract helper — 2026-07-15
 
 The Core contract now has a pure builder for the already-versioned nested
