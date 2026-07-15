@@ -170,6 +170,8 @@ function outerResult(command: string, result: Awaited<ReturnType<typeof rebuildP
     receiptSha256: result.toolAuthority.receiptSha256,
     invocationIntentId: result.toolAuthority.invocationIntentId,
     outputSetSha256: result.toolAuthority.outputSetSha256,
+    realScaleReceiptVerified: false,
+    authorityScope: 'prebuilt-diagnostic',
     ready: false,
     authorityEligible: false,
     diagnosticOnly: true,
@@ -517,6 +519,9 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (command === 'evidence:verify' && (sourceRegisterPath || sourceReviewsPath)) throw new Error('Unexpected source census option for evidence:verify');
     if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt) throw new Error(`Unexpected authority rebuild option for ${command}`);
   } else if (command === 'rebuild:pre-witness') {
+    if (/(?:^|[\\/])review[\\/]admission[\\/]?$/u.test(root)) {
+      throw new Error('rebuild:pre-witness requires the project root; pass the parent of review/admission, not review/admission itself');
+    }
     if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt) {
       throw new Error('rebuild:pre-witness requires --input-generation-proposal, --input-generation, --current, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
@@ -545,6 +550,9 @@ function parse(argv: readonly string[]): ParsedArguments {
       throw new Error('rebuild:pre-witness accepts explicit graph paths, operation/CAS, static-ledgers profile, indexed tool selectors, and real-scale receipt requirement; its outer action is fixed to rebuild:pre-witness');
     }
   } else if (command === 'static-authority:recover') {
+    if (/(?:^|[\\/])review[\\/]admission[\\/]?$/u.test(root)) {
+      throw new Error('static-authority:recover requires the project root; pass the parent of review/admission, not review/admission itself');
+    }
     if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) {
       throw new Error('static-authority:recover requires --input-generation-proposal, --input-generation, --current, exactly one of --from-lock or --transaction-id, --recovery-nonce, --acknowledge-no-live-writer, and --tool-profile admission-static-ledgers-v1');
     }
@@ -561,7 +569,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath
       || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined
       || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || exitCode !== undefined
-      || observedResourceUsage || joinStaticAuthority) {
+      || observedResourceUsage || joinStaticAuthority || requireRealScaleReceipt) {
       throw new Error('static-authority:recover accepts explicit graph paths, transaction selector, nonce/no-live-writer acknowledgement, static-ledgers profile, and indexed tool selectors; its outer action is fixed to static-authority:recover');
     }
   } else if (command === 'authority:overlap') {

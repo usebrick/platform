@@ -212,6 +212,8 @@ describe('v10.3 outer authority CLI boundary', () => {
       ok: true,
       command: 'rebuild:pre-witness',
       complete: true,
+      realScaleReceiptVerified: false,
+      authorityScope: 'prebuilt-diagnostic',
       ready: false,
       authorityEligible: false,
       diagnosticOnly: true,
@@ -278,5 +280,16 @@ describe('v10.3 outer authority CLI boundary', () => {
     expect(wrong?.code).toBe(2);
     expect(JSON.parse(wrong?.stderr ?? '')).toMatchObject({ ok: false, command: 'rebuild:pre-witness' });
     await expect(stat(join(secondRoot, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('rejects the nested review/admission root for the outer project-root-only boundary', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-root-'));
+    roots.push(root);
+    const failure = await execFileAsync(tsx, [
+      'scripts/cal/v103-admission.ts', 'rebuild:pre-witness',
+      '--root', join(root, 'review', 'admission'),
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+    expect(failure?.code).toBe(2);
+    expect(failure?.stderr).toContain('requires the project root');
   });
 });
