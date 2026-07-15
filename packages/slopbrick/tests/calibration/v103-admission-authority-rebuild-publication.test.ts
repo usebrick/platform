@@ -19,7 +19,10 @@ import {
   recoverPrebuiltAdmissionAuthority,
 } from '../../src/calibration/v103/admission-authority-rebuild-publication';
 import { planPrebuiltAdmissionAuthorityPublication } from '../../src/calibration/v103/admission-authority-publication-plan';
-import { makePrebuiltAuthorityFixture } from './v103-admission-authority-rebuild-fixture';
+import {
+  makeIndependentApprovalAuthorityFixture,
+  makePrebuiltAuthorityFixture,
+} from './v103-admission-authority-rebuild-fixture';
 
 const roots: string[] = [];
 const hex = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -88,9 +91,32 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     expect(result.complete).toBe(true);
     expect(await stat(join(root, 'review', 'admission', 'authority', 'current.json'))).toBeTruthy();
     expect(await stat(join(root, 'review', 'admission', 'authority', 'proposals', `${fixture.proposal.proposalId}.json`))).toBeTruthy();
+    expect(await stat(join(root, 'review', 'admission', 'sources', 'source-a', 'proposals', `${fixture.sources[0]!.sourceProposal.proposalId}.json`))).toBeTruthy();
     expect(await readFile(join(root, 'review', 'admission', 'authority', 'current.json'))).toEqual(fixture.currentBytes);
     await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild-transaction.json'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('materializes and recovers an independent-review approval byte pair at its fixed source path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-approval-'));
+    roots.push(root);
+    const fixture = makeIndependentApprovalAuthorityFixture();
+    const initial = request(fixture, root, (phase) => {
+      if (phase === 'source-generation-directories-staged-fsynced') throw new Error('stop after source proposal materialization');
+    });
+    await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    const proposalPath = join(root, 'review', 'admission', 'sources', 'source-a', 'proposals', 'source-a-proposal.json');
+    const approvalPath = join(root, 'review', 'admission', 'sources', 'source-a', 'proposals', 'source-a-proposal-approval.json');
+    expect(await readFile(proposalPath)).toEqual(fixture.sources[0]!.sourceProposalBytes);
+    expect(await readFile(approvalPath)).toEqual(fixture.sources[0]!.approvalBytes);
+    const recovered = await recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    });
+    expect(recovered.complete).toBe(true);
+    expect(await readFile(proposalPath)).toEqual(fixture.sources[0]!.sourceProposalBytes);
+    expect(await readFile(approvalPath)).toEqual(fixture.sources[0]!.approvalBytes);
   });
 
   it('faults after a durable phase and resumes from the transaction journal', async () => {
@@ -101,6 +127,13 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
       if (phase === 'static-generation-staged-fsynced') throw new Error('injected publication fault');
     });
     await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    const { sourceProposal: _proposal, sourceProposalBytes: _proposalBytes, ...sourceWithoutProposal } = fixture.sources[0]!;
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      graph: { ...fixture, sources: [sourceWithoutProposal] },
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    })).rejects.toThrow(/source proposal bytes are required/i);
     const recovery = await recoverPrebuiltAdmissionAuthority({
       ...initial,
       recoveryNonce: initial.planInput.recoveryNonce,

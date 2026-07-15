@@ -1,10 +1,11 @@
 /**
  * Fixture-scale transactional publication of an already validated authority
  * graph. This module is deliberately not a corpus builder or CLI authority:
- * callers must provide every graph object and byte map explicitly. The
- * v10.3 prebuilt graph contract intentionally carries source-proposal
- * references (not source-proposal bytes) and receipt metadata (not receipt
- * objects); a successful transaction therefore proves only local byte
+ * callers must provide every graph object and byte map explicitly. Source
+ * proposal/approval bytes are optional on the prebuilt graph input; when they
+ * are present, this publisher persists and revalidates their fixed paths as
+ * part of the same transaction. Tool-receipt metadata is still not an indexed
+ * receipt object, so a successful transaction proves only local byte
  * publication/recovery, not corpus-admission readiness.
  */
 import { constants } from 'node:fs';
@@ -517,6 +518,23 @@ function assertGenerationLocalArtifacts(value: unknown, label: string): void {
   }
 }
 
+function assertSourceProposalBytesForPublication(graph: PrebuiltAdmissionAuthorityGraphInput): void {
+  for (const source of graph.sources) {
+    const sourceId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.sourceId === 'string'
+      ? source.sourceGeneration.sourceId
+      : 'unknown';
+    if (source.sourceProposal === undefined || source.sourceProposalBytes === undefined) {
+      throw new Error(`authority publication source proposal bytes are required: ${sourceId}`);
+    }
+    const sourceGeneration = isRecord(source.sourceGeneration) ? source.sourceGeneration : undefined;
+    const approval = sourceGeneration !== undefined && isRecord(sourceGeneration.approval) ? sourceGeneration.approval : undefined;
+    if (approval?.kind === 'independent_review'
+      && (source.approval === undefined || source.approvalBytes === undefined)) {
+      throw new Error(`authority publication source approval bytes are required: ${sourceId}`);
+    }
+  }
+}
+
 async function preflight(request: PrebuiltAuthorityPublicationRequest): Promise<PublicationContext> {
   const rootInput = request.root ?? request.projectRoot;
   if (request.root !== undefined && request.projectRoot !== undefined && resolve(request.root) !== resolve(request.projectRoot)) throw new Error('authority publication root aliases disagree');
@@ -525,6 +543,7 @@ async function preflight(request: PrebuiltAuthorityPublicationRequest): Promise<
   const plan = request.plan ?? (request.planInput === undefined ? undefined : planPrebuiltAdmissionAuthorityPublication(request.planInput));
   if (!plan || !plan.ok) throw new Error(plan && !plan.ok ? plan.errors.join('; ') : 'authority publication plan is required');
   validatePlanGraph(plan, request.graph, request.toolReceipt);
+  assertSourceProposalBytesForPublication(request.graph);
   assertGenerationLocalArtifacts(isRecord(request.graph.inputGeneration) ? request.graph.inputGeneration.artifacts : undefined, 'input generation');
   assertGenerationLocalArtifacts(isRecord(request.graph.staticGeneration) ? request.graph.staticGeneration.artifacts : undefined, 'static generation');
   for (const source of request.graph.sources) {
@@ -576,6 +595,36 @@ async function materializeProposal(context: PublicationContext): Promise<void> {
   const proposal = context.graph.proposal as { proposalId: string };
   const path = absoluteContained(context.layout.root, `${AUTHORITY_RELATIVE_ROOT}/proposals/${proposal.proposalId}.json`);
   await writeNoClobber(context.layout.root, path, context.graph.proposalBytes);
+  for (const source of context.graph.sources) {
+    const sourceId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.sourceId === 'string'
+      ? source.sourceGeneration.sourceId
+      : undefined;
+    if (sourceId === undefined) throw new Error('authority publication source ID is invalid');
+    if (source.sourceProposal !== undefined || source.sourceProposalBytes !== undefined) {
+      if (source.sourceProposal === undefined || source.sourceProposalBytes === undefined) {
+        throw new Error(`authority publication source proposal bytes are incomplete: ${sourceId}`);
+      }
+      const sourceProposalPath = absoluteContained(
+        context.layout.root,
+        `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${source.sourceProposal.proposalId}.json`,
+      );
+      await writeNoClobber(context.layout.root, sourceProposalPath, source.sourceProposalBytes);
+    }
+    if (source.approval !== undefined || source.approvalBytes !== undefined) {
+      if (source.approval === undefined || source.approvalBytes === undefined) {
+        throw new Error(`authority publication source approval bytes are incomplete: ${sourceId}`);
+      }
+      const proposalId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.proposalId === 'string'
+        ? source.sourceGeneration.proposalId
+        : undefined;
+      if (proposalId === undefined) throw new Error(`authority publication source proposal ID is invalid: ${sourceId}`);
+      const approvalPath = absoluteContained(
+        context.layout.root,
+        `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${proposalId}-approval.json`,
+      );
+      await writeNoClobber(context.layout.root, approvalPath, source.approvalBytes);
+    }
+  }
 }
 
 async function materializeInput(context: PublicationContext): Promise<void> {
@@ -701,6 +750,41 @@ async function verifyAuthorityCurrent(context: PublicationContext): Promise<void
   }
 }
 
+async function verifySourceProposalObjects(context: PublicationContext): Promise<void> {
+  for (const source of context.graph.sources) {
+    const sourceId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.sourceId === 'string'
+      ? source.sourceGeneration.sourceId
+      : undefined;
+    if (sourceId === undefined) throw new Error('authority publication source ID is invalid');
+    if (source.sourceProposal !== undefined || source.sourceProposalBytes !== undefined) {
+      if (source.sourceProposal === undefined || source.sourceProposalBytes === undefined) {
+        throw new Error(`authority publication source proposal bytes are incomplete: ${sourceId}`);
+      }
+      await assertBytes(
+        context.layout.root,
+        absoluteContained(context.layout.root, `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${source.sourceProposal.proposalId}.json`),
+        source.sourceProposalBytes,
+        `source ${sourceId} proposal`,
+      );
+    }
+    if (source.approval !== undefined || source.approvalBytes !== undefined) {
+      if (source.approval === undefined || source.approvalBytes === undefined) {
+        throw new Error(`authority publication source approval bytes are incomplete: ${sourceId}`);
+      }
+      const proposalId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.proposalId === 'string'
+        ? source.sourceGeneration.proposalId
+        : undefined;
+      if (proposalId === undefined) throw new Error(`authority publication source proposal ID is invalid: ${sourceId}`);
+      await assertBytes(
+        context.layout.root,
+        absoluteContained(context.layout.root, `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${proposalId}-approval.json`),
+        source.approvalBytes,
+        `source ${sourceId} approval`,
+      );
+    }
+  }
+}
+
 /**
  * Re-check every output that is durable at the transaction's current phase.
  * Recovery never trusts a phase marker alone: a caller may have crashed or a
@@ -717,6 +801,7 @@ async function verifyDurableOutputs(context: PublicationContext): Promise<void> 
     context.graph.proposalBytes,
     'input-generation proposal',
   );
+  await verifySourceProposalObjects(context);
 
   if (phase === 'source_generation_directories_staged_fsynced') {
     for (const descriptor of context.transaction.sourceGenerationDirectories) {

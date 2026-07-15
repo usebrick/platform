@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest';
 import {
   calibrationAdmissionAuthorityCurrentSha256,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
 } from '@usebrick/core';
 
 import { validatePrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild';
 import {
+  makeIndependentApprovalAuthorityFixture,
   makePrebuiltAuthorityFixture,
   type PrebuiltAuthorityGraphFixture,
 } from './v103-admission-authority-rebuild-fixture';
@@ -265,5 +267,28 @@ describe('v10.3 prebuilt authority graph failures', () => {
       ...fixture,
       sources: [{ ...source, unexpected: true }],
     }).ok).toBe(false);
+  });
+
+  it('binds an independent-review approval to the fixed input-proposal path and hash', () => {
+    const fixture = makeIndependentApprovalAuthorityFixture();
+    const proposalBody = {
+      ...fixture.proposal,
+      sourceGenerationProposals: fixture.proposal.sourceGenerationProposals.map((reference) => ({
+        ...reference,
+        approvalSha256: 'f'.repeat(64),
+      })),
+    };
+    const proposal = {
+      ...proposalBody,
+      proposalSha256: calibrationAdmissionInputGenerationProposalSha256(proposalBody),
+    };
+    const changed = {
+      ...fixture,
+      proposal,
+      proposalBytes: Buffer.from(calibrationAdmissionCanonicalJson(proposal), 'utf8'),
+    } as PrebuiltAuthorityGraphFixture;
+    const result = validatePrebuiltAdmissionAuthorityGraph(changed);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/approval path\/hash|independent-review/i);
   });
 });

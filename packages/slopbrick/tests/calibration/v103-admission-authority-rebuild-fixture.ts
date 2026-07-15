@@ -8,6 +8,8 @@ import {
   calibrationAdmissionMaterializationId,
   calibrationAdmissionSha256,
   calibrationAdmissionSourceGenerationArtifactSetSha256,
+  calibrationAdmissionSourceGenerationApprovalSha256,
+  calibrationAdmissionSourceGenerationProposalSha256,
   calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceCurrentSha256,
   calibrationAdmissionSourceReviewSha256,
@@ -17,6 +19,7 @@ import {
   type CalibrationAdmissionInputGenerationProposalV1,
   type CalibrationAdmissionInputGenerationV1,
   type CalibrationAdmissionSourceCurrentV1,
+  type CalibrationAdmissionSourceGenerationProposalV1,
   type CalibrationAdmissionSourceGenerationV1,
   type CalibrationAdmissionStaticAuthorityGenerationV1,
 } from '@usebrick/core';
@@ -33,6 +36,8 @@ export type PrebuiltAuthoritySourceFixture = PrebuiltAdmissionAuthoritySourceInp
   readonly currentBytes: Buffer;
   readonly sourceReviewBytes: Buffer;
   readonly artifactBytes: Readonly<Record<string, Buffer>>;
+  readonly sourceProposal: CalibrationAdmissionSourceGenerationProposalV1;
+  readonly sourceProposalBytes: Buffer;
 };
 
 export type PrebuiltAuthorityGraphFixture = PrebuiltAdmissionAuthorityGraphInput & {
@@ -152,12 +157,23 @@ export function makePrebuiltAuthorityFixture(): PrebuiltAuthorityGraphFixture {
     artifact('ledger', 'decision-ledger.json', ledgerBytes),
     artifact('source_review', 'source-review.json', sourceReviewBytes),
   ] as const;
+  const sourceProposalBody = {
+    version: 'v10.3-admission-source-generation-proposal-v1' as const,
+    proposalId: sourceProposalId,
+    sourceId,
+    operation: 'create' as const,
+    expectedCurrentState: { kind: 'absent' as const },
+    sourceReviewSha256,
+    materializationAuthority: { kind: 'genesis' as const, evidenceBundleSha256: sha256('evidence-bundle') },
+    artifacts: sourceArtifacts,
+  };
+  const sourceProposal = rehash(sourceProposalBody, 'proposalSha256', calibrationAdmissionSourceGenerationProposalSha256) as unknown as CalibrationAdmissionSourceGenerationProposalV1;
   const sourceGenerationBody = {
     version: 'v10.3-admission-source-generation-v1' as const,
     sourceId,
     generation: 0,
     proposalId: sourceProposalId,
-    proposalSha256: sha256('source-generation-proposal'),
+    proposalSha256: sourceProposal.proposalSha256,
     approval: { kind: 'genesis_quarantine' as const, reason: 'review_incomplete' as const },
     sourceReviewSha256,
     artifacts: sourceArtifacts,
@@ -256,6 +272,8 @@ export function makePrebuiltAuthorityFixture(): PrebuiltAuthorityGraphFixture {
       'decision-ledger.json': ledgerBytes,
       'source-review.json': sourceReviewBytes,
     },
+    sourceProposal,
+    sourceProposalBytes: canonical(sourceProposal),
   };
   return {
     proposal,
@@ -279,4 +297,112 @@ export function makePrebuiltAuthorityFixture(): PrebuiltAuthorityGraphFixture {
     currentBytes: canonical(current),
     sources: [source],
   };
+}
+
+/**
+ * Fixture-only approval branch used to prove fixed-path/canonical-byte joins.
+ * It is intentionally not a complete independent-review authority graph: the
+ * blind assignment, decisions, receipt, and candidate source-review joins are
+ * supplied by the later semantic source-review task.
+ */
+export function makeIndependentApprovalAuthorityFixture(): PrebuiltAuthorityGraphFixture {
+  const fixture = makePrebuiltAuthorityFixture();
+  const source = fixture.sources[0]!;
+  const approvalBody = {
+    version: 'v10.3-admission-source-generation-approval-v1' as const,
+    approvalId: 'source-a-approval',
+    proposalId: source.sourceProposal.proposalId,
+    proposalSha256: source.sourceProposal.proposalSha256,
+    blindAssignmentId: 'b'.repeat(64),
+    reviewerDecisionIds: ['c'.repeat(64), 'd'.repeat(64)] as [string, string],
+    blindReviewReceiptId: 'e'.repeat(64),
+  };
+  const approval = {
+    ...approvalBody,
+    approvalSha256: calibrationAdmissionSourceGenerationApprovalSha256(approvalBody),
+  };
+  const sourceGenerationBody = {
+    ...source.sourceGeneration,
+    approval: {
+      kind: 'independent_review' as const,
+      approvalId: approval.approvalId,
+      approvalSha256: approval.approvalSha256,
+    },
+  };
+  const sourceGeneration = {
+    ...sourceGenerationBody,
+    generationSha256: calibrationAdmissionSourceGenerationSha256(sourceGenerationBody),
+  };
+  const sourceCurrentBody = {
+    ...source.current,
+    generationSha256: sourceGeneration.generationSha256,
+    generationRelativePath: `sources/${sourceGeneration.sourceId}/generations/${sourceGeneration.generationSha256}`,
+  };
+  const sourceCurrent = {
+    ...sourceCurrentBody,
+    currentSha256: calibrationAdmissionSourceCurrentSha256(sourceCurrentBody),
+  };
+  const proposalBody = {
+    ...fixture.proposal,
+    sourceGenerationProposals: fixture.proposal.sourceGenerationProposals.map((reference) => ({
+      ...reference,
+      approvalRelativePath: `review/admission/sources/${sourceGeneration.sourceId}/proposals/${sourceGeneration.proposalId}-approval.json`,
+      approvalSha256: approval.approvalSha256,
+    })),
+  };
+  const proposal = {
+    ...proposalBody,
+    proposalSha256: calibrationAdmissionInputGenerationProposalSha256(proposalBody),
+  };
+  const inputGenerationBody = {
+    ...fixture.inputGeneration,
+    sourceGenerations: fixture.inputGeneration.sourceGenerations.map((reference) => ({
+      ...reference,
+      generationSha256: sourceGeneration.generationSha256,
+      artifactSetSha256: sourceGeneration.artifactSetSha256,
+      relativePath: `review/admission/${sourceCurrent.generationRelativePath}`,
+    })),
+  };
+  const inputGeneration = {
+    ...inputGenerationBody,
+    generationSha256: calibrationAdmissionInputGenerationSha256(inputGenerationBody),
+  };
+  const staticGenerationBody = {
+    ...fixture.staticGeneration,
+    inputGenerationSha256: inputGeneration.generationSha256,
+  };
+  const staticGeneration = {
+    ...staticGenerationBody,
+    generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(staticGenerationBody),
+  };
+  const currentBody = {
+    ...fixture.current,
+    staticGenerationSha256: staticGeneration.generationSha256,
+    staticGenerationRelativePath: `review/admission/authority/static-generations/${staticGeneration.generationSha256}`,
+  };
+  const current = {
+    ...currentBody,
+    currentSha256: calibrationAdmissionAuthorityCurrentSha256(currentBody),
+  };
+  const sourceWithApproval = {
+    ...source,
+    sourceGeneration,
+    sourceGenerationBytes: canonical(sourceGeneration),
+    current: sourceCurrent,
+    currentBytes: canonical(sourceCurrent),
+    approval,
+    approvalBytes: canonical(approval),
+  };
+  return {
+    ...fixture,
+    proposal,
+    proposalBytes: canonical(proposal),
+    inputGeneration,
+    inputGenerationBytes: canonical(inputGeneration),
+    staticGeneration,
+    staticGenerationBytes: canonical(staticGeneration),
+    current,
+    currentBytes: canonical(current),
+    sources: [sourceWithApproval],
+  } as PrebuiltAuthorityGraphFixture;
 }

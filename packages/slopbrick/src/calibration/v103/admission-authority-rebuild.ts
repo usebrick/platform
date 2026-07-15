@@ -10,6 +10,8 @@ import {
   isCalibrationAdmissionAuthorityCurrentV1,
   isCalibrationAdmissionInputGenerationProposalV1,
   isCalibrationAdmissionInputGenerationV1,
+  isCalibrationAdmissionSourceGenerationApprovalV1,
+  isCalibrationAdmissionSourceGenerationProposalV1,
   isCalibrationAdmissionSourceCurrentV1,
   isCalibrationAdmissionSourceGenerationV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
@@ -18,6 +20,8 @@ import {
   type CalibrationAdmissionAuthorityCurrentV1,
   type CalibrationAdmissionInputGenerationProposalV1,
   type CalibrationAdmissionInputGenerationV1,
+  type CalibrationAdmissionSourceGenerationApprovalV1,
+  type CalibrationAdmissionSourceGenerationProposalV1,
   type CalibrationAdmissionSourceCurrentV1,
   type CalibrationAdmissionSourceGenerationV1,
   type CalibrationAdmissionStaticAuthorityGenerationV1,
@@ -46,6 +50,12 @@ export interface PrebuiltAdmissionAuthoritySourceInput {
   readonly sourceReviewBytes: Uint8Array;
   /** Every generation-local artifact, keyed by its exact receipt path. */
   readonly artifactBytes: PrebuiltAdmissionAuthorityArtifactBytesInput;
+  /** Optional exact source-generation proposal object and canonical bytes. */
+  readonly sourceProposal?: CalibrationAdmissionSourceGenerationProposalV1;
+  readonly sourceProposalBytes?: Uint8Array;
+  /** Optional exact independent-review approval object and canonical bytes. */
+  readonly approval?: CalibrationAdmissionSourceGenerationApprovalV1;
+  readonly approvalBytes?: Uint8Array;
 }
 
 /**
@@ -222,7 +232,13 @@ function verifySource(
     return undefined;
   }
   const sourceKeys = Object.keys(sourceInput).sort();
-  const expectedSourceKeys = ['artifactBytes', 'current', 'currentBytes', 'sourceGeneration', 'sourceGenerationBytes', 'sourceReviewBytes'];
+  const hasProposalPair = sourceInput.sourceProposal !== undefined || sourceInput.sourceProposalBytes !== undefined;
+  const hasApprovalPair = sourceInput.approval !== undefined || sourceInput.approvalBytes !== undefined;
+  const expectedSourceKeys = [
+    'artifactBytes', 'current', 'currentBytes', 'sourceGeneration', 'sourceGenerationBytes', 'sourceReviewBytes',
+    ...(hasProposalPair ? ['sourceProposal', 'sourceProposalBytes'] : []),
+    ...(hasApprovalPair ? ['approval', 'approvalBytes'] : []),
+  ].sort();
   if (sourceKeys.length !== expectedSourceKeys.length || sourceKeys.some((key, index) => key !== expectedSourceKeys[index])) {
     push(errors, `source ${sourceIndex} authority entry has unexpected keys`);
   }
@@ -242,6 +258,58 @@ function verifySource(
   const reviewResult = verifySerializedSourceReview(sourceInput.sourceReviewBytes, sourceId, errors);
   const artifactMap = verifyArtifactBytes(sourceInput.artifactBytes, sourceGeneration?.artifacts ?? [], `source ${sourceId}`, errors);
   if (!sourceGeneration || !current) return sourceId;
+
+  const sourceProposalBytesSupplied = sourceInput.sourceProposalBytes !== undefined;
+  if (hasProposalPair && sourceProposalBytesSupplied !== (sourceInput.sourceProposal !== undefined)) {
+    push(errors, `source ${sourceId} proposal object and bytes must be supplied together`);
+  }
+  const sourceProposal = sourceInput.sourceProposal;
+  if (hasProposalPair && sourceProposalBytesSupplied && sourceProposal !== undefined) {
+    if (!isCalibrationAdmissionSourceGenerationProposalV1(sourceProposal)) {
+      push(errors, `source ${sourceId} source-generation proposal is invalid`);
+    } else {
+      verifyCanonicalBytes(sourceProposal, sourceInput.sourceProposalBytes, `source ${sourceId} source-generation proposal bytes`, errors);
+      if (sourceProposal.sourceId !== sourceId
+        || sourceProposal.proposalId !== sourceGeneration.proposalId
+        || sourceProposal.proposalSha256 !== sourceGeneration.proposalSha256
+        || sourceProposal.sourceReviewSha256 !== sourceGeneration.sourceReviewSha256) {
+        push(errors, `source ${sourceId} source-generation proposal does not bind its generation`);
+      }
+      if (calibrationAdmissionCanonicalJson(sourceProposal.artifacts) !== calibrationAdmissionCanonicalJson(sourceGeneration.artifacts)) {
+        push(errors, `source ${sourceId} source-generation proposal artifacts do not match generation`);
+      }
+      const expectedOperation = sourceGeneration.generation === 0 ? 'create' : 'replace';
+      const expectedCurrentState = sourceGeneration.generation === 0
+        ? { kind: 'absent' as const }
+        : { kind: 'existing' as const, generationSha256: sourceGeneration.parentGenerationSha256 };
+      if (sourceProposal.operation !== expectedOperation
+        || calibrationAdmissionCanonicalJson(sourceProposal.expectedCurrentState) !== calibrationAdmissionCanonicalJson(expectedCurrentState)) {
+        push(errors, `source ${sourceId} source-generation proposal operation/CAS does not match generation`);
+      }
+    }
+  }
+  const approvalBytesSupplied = sourceInput.approvalBytes !== undefined;
+  if (hasApprovalPair && approvalBytesSupplied !== (sourceInput.approval !== undefined)) {
+    push(errors, `source ${sourceId} approval object and bytes must be supplied together`);
+  }
+  if (sourceGeneration.approval.kind === 'genesis_quarantine') {
+    if (hasApprovalPair) push(errors, `source ${sourceId} genesis-quarantine generation must not carry approval bytes`);
+  } else if (!hasApprovalPair) {
+    push(errors, `source ${sourceId} independent-review generation requires approval bytes`);
+  } else if (approvalBytesSupplied && sourceInput.approval !== undefined) {
+    const approval = sourceInput.approval;
+    if (!isCalibrationAdmissionSourceGenerationApprovalV1(approval)) {
+      push(errors, `source ${sourceId} source-generation approval is invalid`);
+    } else {
+      verifyCanonicalBytes(approval, sourceInput.approvalBytes, `source ${sourceId} source-generation approval bytes`, errors);
+      if (approval.approvalId !== sourceGeneration.approval.approvalId
+        || approval.approvalSha256 !== sourceGeneration.approval.approvalSha256
+        || approval.proposalId !== sourceGeneration.proposalId
+        || approval.proposalSha256 !== sourceGeneration.proposalSha256) {
+        push(errors, `source ${sourceId} source-generation approval does not bind its generation`);
+      }
+    }
+  }
 
   if (sourceGeneration.sourceId !== current.sourceId) push(errors, `source ${sourceId} generation/current source IDs do not match`);
   if (sourceGeneration.generationSha256 !== current.generationSha256) push(errors, `source ${sourceId} generation hash does not match current pointer`);
@@ -268,6 +336,20 @@ function verifySource(
     }
     if (proposalRef.proposalRelativePath !== `${ADMISSION_ROOT}sources/${sourceId}/proposals/${sourceGeneration.proposalId}.json`) {
       push(errors, `source ${sourceId} proposal path is not contained or hash-derived`);
+    }
+    const expectedApprovalPath = `${ADMISSION_ROOT}sources/${sourceId}/proposals/${sourceGeneration.proposalId}-approval.json`;
+    const approvalRelativePath = isRecord(proposalRef) && typeof proposalRef.approvalRelativePath === 'string'
+      ? proposalRef.approvalRelativePath
+      : undefined;
+    const approvalSha256 = isRecord(proposalRef) && typeof proposalRef.approvalSha256 === 'string'
+      ? proposalRef.approvalSha256
+      : undefined;
+    if (sourceGeneration.approval.kind === 'independent_review') {
+      if (approvalRelativePath !== expectedApprovalPath || approvalSha256 !== sourceGeneration.approval.approvalSha256) {
+        push(errors, `source ${sourceId} independent-review approval path/hash is not bound to the input-generation proposal`);
+      }
+    } else if (approvalRelativePath !== undefined || approvalSha256 !== undefined) {
+      push(errors, `source ${sourceId} genesis-quarantine proposal must not carry approval path/hash`);
     }
   }
 

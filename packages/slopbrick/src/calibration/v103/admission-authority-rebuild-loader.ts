@@ -7,6 +7,8 @@ import {
   isCalibrationAdmissionAuthorityCurrentV1,
   isCalibrationAdmissionInputGenerationProposalV1,
   isCalibrationAdmissionInputGenerationV1,
+  isCalibrationAdmissionSourceGenerationApprovalV1,
+  isCalibrationAdmissionSourceGenerationProposalV1,
   isCalibrationAdmissionSourceCurrentV1,
   isCalibrationAdmissionSourceGenerationV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
@@ -14,6 +16,8 @@ import {
   type CalibrationAdmissionAuthorityCurrentV1,
   type CalibrationAdmissionInputGenerationProposalV1,
   type CalibrationAdmissionInputGenerationV1,
+  type CalibrationAdmissionSourceGenerationApprovalV1,
+  type CalibrationAdmissionSourceGenerationProposalV1,
   type CalibrationAdmissionSourceCurrentV1,
   type CalibrationAdmissionSourceGenerationV1,
   type CalibrationAdmissionStaticAuthorityGenerationV1,
@@ -36,6 +40,8 @@ export interface PrebuiltAdmissionAuthorityGraphLoadRequest {
   readonly inputGenerationPath: string;
   /** Optional exact prior-current object file for replace proposals. */
   readonly priorCurrentPath?: string;
+  /** When true, load and bind every source proposal and independent approval object. */
+  readonly requireSourceProposalBytes?: boolean;
 }
 
 export type PrebuiltAdmissionAuthorityGraphLoadResult =
@@ -299,7 +305,11 @@ function assertObject<T>(value: unknown, guard: (candidate: unknown) => candidat
 async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): Promise<PrebuiltAdmissionAuthorityGraphInput> {
   if (!isRecord(request)) throw new Error('prebuilt authority graph load request is not an object');
   const requestKeys = Object.keys(request).sort();
-  const expectedKeys = ['inputGenerationPath', 'projectRoot', 'proposalPath', ...(request.priorCurrentPath === undefined ? [] : ['priorCurrentPath'])].sort();
+  const expectedKeys = [
+    'inputGenerationPath', 'projectRoot', 'proposalPath',
+    ...(request.priorCurrentPath === undefined ? [] : ['priorCurrentPath']),
+    ...(request.requireSourceProposalBytes === undefined ? [] : ['requireSourceProposalBytes']),
+  ].sort();
   if (requestKeys.length !== expectedKeys.length || requestKeys.some((key, index) => key !== expectedKeys[index])) {
     throw new Error('prebuilt authority graph load request has unexpected keys');
   }
@@ -313,6 +323,7 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
   const proposal = assertObject(proposalRead.value, isCalibrationAdmissionInputGenerationProposalV1, 'proposal') as CalibrationAdmissionInputGenerationProposalV1;
   const inputGeneration = assertObject(inputGenerationRead.value, isCalibrationAdmissionInputGenerationV1, 'input generation') as CalibrationAdmissionInputGenerationV1;
   const current = assertObject(currentRead.value, isCalibrationAdmissionAuthorityCurrentV1, 'authority current pointer') as CalibrationAdmissionAuthorityCurrentV1;
+  const requireSourceProposalBytes = request.requireSourceProposalBytes === true;
 
   const inputGenerationDirectory = dirname(inputGenerationPath);
   const inputArtifacts = await readReceiptMap(root, inputGenerationDirectory, inputGeneration.artifacts, 'input generation');
@@ -343,6 +354,49 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
     const sourceGeneration = assertObject(sourceGenerationRead.value, isCalibrationAdmissionSourceGenerationV1, `source ${sourceId} generation`) as CalibrationAdmissionSourceGenerationV1;
     const sourceReviewBytes = await readSourceReview(root, join(sourceGenerationDirectory, 'source-review.json'), sourceId);
     const sourceArtifacts = await readReceiptMap(root, sourceGenerationDirectory, sourceGeneration.artifacts, `source ${sourceId}`);
+    let sourceProposal: CalibrationAdmissionSourceGenerationProposalV1 | undefined;
+    let sourceProposalBytes: Buffer | undefined;
+    let approval: CalibrationAdmissionSourceGenerationApprovalV1 | undefined;
+    let approvalBytes: Buffer | undefined;
+    if (requireSourceProposalBytes) {
+      const proposalReference = proposal.sourceGenerationProposals.find((entry) => entry.sourceId === sourceId);
+      if (!proposalReference) throw new Error(`source ${sourceId} proposal reference is missing from input-generation proposal`);
+      if (!isRecord(proposalReference) || typeof proposalReference.proposalRelativePath !== 'string') {
+        throw new Error(`source ${sourceId} proposal reference path is invalid`);
+      }
+      const proposalObjectRead = await readCanonicalObject(
+        root,
+        containedPath(root, proposalReference.proposalRelativePath, `source ${sourceId} proposal path`),
+        `source ${sourceId} source-generation proposal`,
+      );
+      sourceProposal = assertObject(
+        proposalObjectRead.value,
+        isCalibrationAdmissionSourceGenerationProposalV1,
+        `source ${sourceId} source-generation proposal`,
+      ) as CalibrationAdmissionSourceGenerationProposalV1;
+      sourceProposalBytes = proposalObjectRead.bytes;
+      if (sourceGeneration.approval.kind === 'independent_review') {
+        if (!isRecord(proposalReference) || typeof proposalReference.approvalRelativePath !== 'string') {
+          throw new Error(`source ${sourceId} approval reference path is missing`);
+        }
+        const approvalRelativePath = proposalReference.approvalRelativePath;
+        const expectedApprovalRelativePath = `review/admission/sources/${sourceId}/proposals/${sourceGeneration.proposalId}-approval.json`;
+        if (approvalRelativePath !== expectedApprovalRelativePath) {
+          throw new Error(`source ${sourceId} approval reference path is not fixed`);
+        }
+        const approvalRead = await readCanonicalObject(
+          root,
+          containedPath(root, approvalRelativePath, `source ${sourceId} approval path`),
+          `source ${sourceId} source-generation approval`,
+        );
+        approval = assertObject(
+          approvalRead.value,
+          isCalibrationAdmissionSourceGenerationApprovalV1,
+          `source ${sourceId} source-generation approval`,
+        ) as CalibrationAdmissionSourceGenerationApprovalV1;
+        approvalBytes = approvalRead.bytes;
+      }
+    }
     sources.push({
       sourceGeneration,
       sourceGenerationBytes: sourceGenerationRead.bytes,
@@ -350,6 +404,8 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
       currentBytes: sourceCurrentRead.bytes,
       sourceReviewBytes,
       artifactBytes: sourceArtifacts,
+      ...(sourceProposal === undefined ? {} : { sourceProposal, sourceProposalBytes }),
+      ...(approval === undefined ? {} : { approval, approvalBytes }),
     });
   }
 

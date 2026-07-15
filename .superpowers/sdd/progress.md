@@ -886,3 +886,37 @@ quarantined/unrepresented, zero candidate/eligible, blockers
 `static_authority_unavailable` and `witness_authority_unavailable`. Source
 proposal/approval bytes and resource/static/witness joins remain next; no
 corpus, remote, package, release, or deployment state changed.
+
+### Task 2B source-proposal/approval byte materialization checkpoint — 2026-07-15
+
+The bounded source-byte slice is implemented in the current worktree and
+recorded in `.superpowers/sdd/task-2b-source-proposal-byte-report.md`.
+Prebuilt graph validation now checks optional source-generation proposal and
+approval object/byte pairs, Core self-hashes, source/generation/proposal joins,
+artifact equality, create/replace CAS semantics, and the fixed independent-
+review approval path/hash. Genesis-quarantine generations reject approval
+bytes.
+
+`loadPrebuiltAdmissionAuthorityGraph` has an explicit
+`requireSourceProposalBytes` mode that reopens only the declared fixed proposal
+path and fixed approval sibling, preserving symlink-safe containment and exact
+canonical bytes. Publication/recovery requires proposal bytes for every source
+and approval bytes for independent-review branches; it persists and rechecks
+those siblings and rejects recovery when the caller omits them. Focused
+validator/loader/publication coverage is **3 files / 36 tests**; recursive
+typecheck/build and the package-wide one-worker gate pass (**315 files / 5
+skipped; 3,606 tests / 9 skipped**, 2 GiB heap cap).
+
+This is byte/path authority only. The independent-review fixture is explicitly
+shape-only: candidate source-review disposition, blind assignment, two
+reviewer decisions, blind-review receipt, and materialization authority remain
+unresolved. Static-generation overlap/resource receipt relations and the
+mutating rebuild/recovery CLI remain open. The census remains **329/329**
+registered/reviewed, **452,382** quarantined/unrepresented, zero
+candidate/eligible, with blockers `static_authority_unavailable` and
+`witness_authority_unavailable`; no corpus or remote/release state changed.
+
+Next: implement the semantic source-generation graph and reuse the existing
+`verifyOverlapArtifactRelations` proof for the static-generation resource join;
+then add the mutating CLI only after both are byte-backed and independently
+reviewed.

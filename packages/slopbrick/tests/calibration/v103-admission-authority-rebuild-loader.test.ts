@@ -17,6 +17,7 @@ import {
 
 import { loadPrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild-loader';
 import {
+  makeIndependentApprovalAuthorityFixture,
   makePrebuiltAuthorityFixture,
   type PrebuiltAuthorityGraphFixture,
 } from './v103-admission-authority-rebuild-fixture';
@@ -156,6 +157,16 @@ async function materialize(fixture: PrebuiltAuthorityGraphFixture): Promise<Mate
     await writeFile(sourceCurrentPath, source.currentBytes);
     await writeFile(join(sourceDirectory, 'source-generation.json'), source.sourceGenerationBytes);
     await writeFile(join(sourceDirectory, 'source-review.json'), source.sourceReviewBytes);
+    if (source.sourceProposal !== undefined && source.sourceProposalBytes !== undefined) {
+      const sourceProposalPath = join(admission, 'sources', source.current.sourceId, 'proposals', `${source.sourceProposal.proposalId}.json`);
+      await mkdir(join(sourceProposalPath, '..'), { recursive: true });
+      await writeFile(sourceProposalPath, source.sourceProposalBytes);
+    }
+    if (source.approval !== undefined && source.approvalBytes !== undefined) {
+      const approvalPath = join(admission, 'sources', source.current.sourceId, 'proposals', `${source.sourceGeneration.proposalId}-approval.json`);
+      await mkdir(join(approvalPath, '..'), { recursive: true });
+      await writeFile(approvalPath, source.approvalBytes);
+    }
     for (const artifact of source.sourceGeneration.artifacts) {
       const bytes = source.artifactBytes[artifact.relativePath];
       if (bytes === undefined) throw new Error(`fixture is missing ${artifact.relativePath}`);
@@ -200,6 +211,59 @@ describe('v10.3 prebuilt admission authority graph loader', () => {
       expect(result.graph.sources[0]?.current.sourceId).toBe('source-a');
     }
     expect(await readFile(materialized.unknownFile)).toEqual(before);
+  });
+
+  it('strictly reopens source-generation proposal bytes when requested', async () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const materialized = await materialize(fixture);
+    const strict = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(strict.ok).toBe(true);
+    if (strict.ok) {
+      expect(strict.graph.sources[0]?.sourceProposal?.proposalId).toBe(fixture.sources[0]?.sourceProposal.proposalId);
+      expect(strict.graph.sources[0]?.sourceProposalBytes).toEqual(fixture.sources[0]?.sourceProposalBytes);
+    }
+
+    const proposalPath = join(materialized.root, 'review', 'admission', 'sources', 'source-a', 'proposals', `${fixture.sources[0]!.sourceProposal.proposalId}.json`);
+    await writeFile(proposalPath, '{}', 'utf8');
+    const tampered = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(tampered.ok).toBe(false);
+    if (!tampered.ok) expect(tampered.errors.join('\n')).toMatch(/source-generation proposal|canonical|invalid/i);
+  });
+
+  it('strictly reopens independent-review approval bytes and rejects tampering', async () => {
+    const fixture = makeIndependentApprovalAuthorityFixture();
+    const materialized = await materialize(fixture);
+    const strict = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(strict.ok).toBe(true);
+    if (strict.ok) {
+      expect(strict.graph.sources[0]?.approval?.approvalId).toBe('source-a-approval');
+      expect(strict.graph.sources[0]?.approvalBytes).toEqual(fixture.sources[0]?.approvalBytes);
+    }
+
+    const approvalPath = join(materialized.root, 'review', 'admission', 'sources', 'source-a', 'proposals', 'source-a-proposal-approval.json');
+    await rm(approvalPath);
+    const missing = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.errors.join('\n')).toMatch(/approval|missing/i);
+    await writeFile(approvalPath, '{}', 'utf8');
+    const tampered = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(tampered.ok).toBe(false);
+    if (!tampered.ok) expect(tampered.errors.join('\n')).toMatch(/approval|canonical|invalid/i);
   });
 
   it('reopens a source-generation bundle from its admission-root CAS path', async () => {
