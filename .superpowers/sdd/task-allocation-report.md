@@ -90,3 +90,19 @@ no-clobber persist the canonical register/review/materialization inputs and
 then publish/verify the allocation ledger while retaining all rows in
 quarantine until independent provenance, rights, authorship, and overlap
 authority exist.
+
+## Source-level authority triage — 2026-07-15
+
+The live admission pair was checked independently of the row replay: the
+register and review ID sets are equal (**329/329**), all 329 reviews carry an
+origin and inventory hash, and **325/329** carry a Git materialization commit.
+However, every decision is still `source_quarantine` and all
+`reviewerDecisionIds` arrays are empty. The recurring blockers are
+`review_incomplete` (329 sources / 452,382 units), `authorship_unproven`
+(323 / 452,382), `evidence_unresolved` (327 / 394,293), and
+`family_unknown` (318 / 394,293). This confirms that origin/commit accounting
+is complete enough for deterministic ownership allocation, but it is not
+authorship or label authority. Pulling more repositories would not resolve
+this deficit; the next useful work is source-level evidence and blinded
+decision receipts for existing sources, followed by the bounded smoke/canary
+review.
