@@ -980,6 +980,12 @@ allocation tests are green after extending the deterministic full-fixture
 allocation test timeout to 60s. The self-scan policy result remains the
 diagnostic 17.6 > 15 failure and does not authorize release.
 
+The next real-authority slice has an explicit memory guard: allocation is
+streaming, but the current static-ledger library is array-based. It must not
+be fed 452,382 records in one object. Implement the disk-backed JSONL ledger
+adapter/external-sort path first, preserving canonical order and receipt
+hashes under the one-worker heap cap.
+
 ### Task 2B outer materializer hardening — 2026-07-15
 
 Commits `3cf05569c` and `d25914f26` make the outer CLI require an explicit
