@@ -110,7 +110,9 @@ review.
 ## Offline v8 materialization cross-check — 2026-07-15
 
 The centralized v8 corpus was checked as a possible existing source of
-materialization evidence; no repository was downloaded. With
+materialization evidence; no explicit acquisition or source promotion was
+performed. A preliminary default-mode probe was discarded after Git attempted
+to lazy-fetch from one promisor clone. In the final pass, with
 `GIT_NO_LAZY_FETCH=1`, six exact-commit positive checkouts matched **2,995 / 2,995**
 selected inventory rows by normalized path, byte size, and content SHA-256,
 with zero mismatches:
