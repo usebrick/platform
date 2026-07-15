@@ -2,11 +2,20 @@
 import { createReadStream } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
 import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v103/admission-evidence-context';
 import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission-source-census';
 import { requireContainedAdmissionPath } from '../../src/calibration/v103/admission-path';
+import {
+  PrebuiltAuthorityRebuildVerificationError,
+  rebuildPrebuiltAdmissionAuthority,
+  recoverPrebuiltAdmissionAuthorityWithVerification,
+} from '../../src/calibration/v103/admission-authority-rebuild-adapter';
+import { loadPrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild-loader';
+import { PrebuiltAuthorityPublicationPendingError } from '../../src/calibration/v103/admission-authority-rebuild-publication';
+import type { PrebuiltAdmissionAuthorityGraphInput } from '../../src/calibration/v103/admission-authority-rebuild';
+import type { PrebuiltAdmissionAuthorityPublicationPlanInput } from '../../src/calibration/v103/admission-authority-publication-plan';
 import {
   AcquisitionPublicationPendingError,
   publishAdmissionToolInvocationIntent,
@@ -41,38 +50,170 @@ function outputCanonical(value: unknown): void {
   process.stdout.write(`${calibrationAdmissionCanonicalJson(value)}\n`);
 }
 
-/**
- * The two planned static-authority commands are intentionally parser-visible
- * before their mutating orchestrator exists. Keeping them as an explicit
- * fail-closed boundary prevents callers from mistaking the nested
- * `authority:overlap` receipt or a fixture graph for a real static authority.
- */
-class AdmissionAuthorityCliUnavailableError extends Error {
-  readonly code = 'authority_cli_unavailable';
-
-  constructor(command: string, detail: string) {
-    super(`${command} is unavailable: ${detail}`);
-    this.name = 'AdmissionAuthorityCliUnavailableError';
-  }
-}
-
-function rejectUnavailableAuthorityCommand(command: 'rebuild:pre-witness' | 'static-authority:recover'): never {
-  if (command === 'rebuild:pre-witness') {
-    throw new AdmissionAuthorityCliUnavailableError(
-      command,
-      'the CLI has no graph materializer/orchestrator and will not infer a PrebuiltAdmissionAuthorityGraphInput from a proposal path; provide a future fully materialized, byte-backed graph boundary only after the real-corpus resource receipt and outer rebuild action are implemented',
-    );
-  }
-  throw new AdmissionAuthorityCliUnavailableError(
-    command,
-    'the CLI has no transaction-bound static-authority recovery adapter; it will not reuse authority:overlap recovery or discover/restore generations without an exact transaction envelope',
-  );
-}
-
 function toolAuthorityRootFor(root: string): string {
   return /(?:^|[\\/])review[\\/]admission[\\/]?$/.test(root)
     ? join(root, 'tool-authority')
     : join(root, 'review', 'admission', 'tool-authority');
+}
+
+function record(value: unknown, label: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`${label} is not an object`);
+  return value as Record<string, unknown>;
+}
+
+function outerPlanInput(
+  args: ParsedArguments,
+  graph: PrebuiltAdmissionAuthorityGraphInput,
+): PrebuiltAdmissionAuthorityPublicationPlanInput {
+  const proposal = record(graph.proposal, 'input-generation proposal');
+  const inputGeneration = record(graph.inputGeneration, 'input generation');
+  const staticGeneration = record(graph.staticGeneration, 'static generation');
+  const operation = args.operation ?? (proposal.operation === 'create' || proposal.operation === 'replace' ? proposal.operation : undefined);
+  if (operation === undefined) throw new Error('authority graph proposal operation is invalid');
+  if (args.operation !== undefined && proposal.operation !== args.operation) throw new Error('CLI --operation does not match input-generation proposal');
+  const proposalId = proposal.proposalId;
+  const proposalSha256 = proposal.proposalSha256;
+  if (typeof proposalId !== 'string' || typeof proposalSha256 !== 'string') throw new Error('authority graph proposal identity is invalid');
+  const generation = inputGeneration.generation;
+  const generationSha256 = inputGeneration.generationSha256;
+  const staticNumber = staticGeneration.generation;
+  const staticSha256 = staticGeneration.generationSha256;
+  if (typeof generation !== 'number' || !Number.isSafeInteger(generation) || typeof generationSha256 !== 'string'
+    || typeof staticNumber !== 'number' || !Number.isSafeInteger(staticNumber) || typeof staticSha256 !== 'string') {
+    throw new Error('authority graph generation metadata is invalid');
+  }
+  const priorCurrent = graph.priorCurrent === undefined ? undefined : record(graph.priorCurrent, 'prior current');
+  const expectedStaticSha256 = args.expectedCurrentStaticGenerationSha256
+    ?? (typeof priorCurrent?.staticGenerationSha256 === 'string' ? priorCurrent.staticGenerationSha256 : undefined)
+    ?? (typeof staticGeneration.parentStaticGenerationSha256 === 'string' ? staticGeneration.parentStaticGenerationSha256 : undefined);
+  if (operation === 'replace' && expectedStaticSha256 === undefined) throw new Error('replace authority graph requires expected current static-generation hash');
+  const parentInputSha256 = inputGeneration.parentInputGenerationSha256;
+  if (operation === 'replace' && (typeof parentInputSha256 !== 'string' || generation < 1)) {
+    throw new Error('replace authority graph requires a prior input-generation hash');
+  }
+  const sources = graph.sources.map((source) => {
+    const sourceGeneration = record(source.sourceGeneration, 'source generation');
+    if (typeof sourceGeneration.sourceId !== 'string' || typeof sourceGeneration.generationSha256 !== 'string' || typeof sourceGeneration.artifactSetSha256 !== 'string') {
+      throw new Error('authority graph source generation metadata is invalid');
+    }
+    return {
+      sourceId: sourceGeneration.sourceId,
+      generationSha256: sourceGeneration.generationSha256,
+      artifactSetSha256: sourceGeneration.artifactSetSha256,
+      ...(typeof sourceGeneration.parentGenerationSha256 === 'string' ? { priorGenerationSha256: sourceGeneration.parentGenerationSha256 } : {}),
+    };
+  });
+  const plan: PrebuiltAdmissionAuthorityPublicationPlanInput = {
+    operation,
+    invocationIntentId: args.invocationIntentId!,
+    inputGenerationProposalId: proposalId,
+    inputGenerationProposalSha256: proposalSha256,
+    expectedCurrentState: operation === 'create'
+      ? { kind: 'absent' }
+      : { kind: 'existing', staticGenerationSha256: expectedStaticSha256! },
+    inputGeneration: {
+      generation,
+      generationSha256,
+      ...(typeof parentInputSha256 === 'string' ? { parentInputGenerationSha256: parentInputSha256 } : {}),
+    },
+    staticGeneration: {
+      generation: staticNumber,
+      generationSha256: staticSha256,
+      ...(typeof staticGeneration.parentStaticGenerationSha256 === 'string' ? { parentStaticGenerationSha256: staticGeneration.parentStaticGenerationSha256 } : {}),
+    },
+    sources,
+    ...(operation === 'replace'
+      ? { priorInputGeneration: { generation: generation - 1, generationSha256: parentInputSha256! } }
+      : {}),
+    ...(args.recoveryNonce === undefined ? {} : { recoveryNonce: args.recoveryNonce }),
+  };
+  return plan;
+}
+
+function outerToolAuthority(args: ParsedArguments): {
+  readonly authorityRoot: string;
+  readonly authorityIndexSha256: string;
+  readonly receiptId: string;
+  readonly receiptSha256: string;
+  readonly invocationIntentId: string;
+  readonly profileId: 'admission-static-ledgers-v1';
+  readonly action: 'authority:overlap';
+  readonly outputSetSha256: string;
+} {
+  return {
+    authorityRoot: toolAuthorityRootFor(args.root!),
+    authorityIndexSha256: args.toolAuthorityIndexSha256!,
+    receiptId: args.toolReceiptId!,
+    receiptSha256: args.toolReceiptSha256!,
+    invocationIntentId: args.invocationIntentId!,
+    profileId: 'admission-static-ledgers-v1',
+    action: 'authority:overlap',
+    outputSetSha256: args.outputSetSha256!,
+  };
+}
+
+function outerResult(command: string, result: Awaited<ReturnType<typeof rebuildPrebuiltAdmissionAuthority>>) {
+  return {
+    ok: true,
+    command,
+    complete: result.publication.complete,
+    recoveryRequired: result.publication.recoveryRequired,
+    status: result.publication.status,
+    transactionId: result.publication.transactionId,
+    generationSha256: result.publication.generationSha256,
+    lockPath: result.publication.lockPath,
+    transactionPath: result.publication.transactionPath,
+    currentPath: result.publication.currentPath,
+    verificationSha256: result.verificationSha256,
+    authorityIndexSha256: result.toolAuthority.authorityIndexSha256,
+    receiptId: result.toolAuthority.receiptId,
+    receiptSha256: result.toolAuthority.receiptSha256,
+    invocationIntentId: result.toolAuthority.invocationIntentId,
+    outputSetSha256: result.toolAuthority.outputSetSha256,
+    ready: false,
+    authorityEligible: false,
+    diagnosticOnly: true,
+  };
+}
+
+async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
+  const loaded = await loadPrebuiltAdmissionAuthorityGraph({
+    projectRoot: args.root!,
+    proposalPath: args.inputGenerationProposalPath!,
+    inputGenerationPath: args.inputGenerationPath!,
+    currentPath: args.currentPath!,
+    ...(args.priorCurrentPath === undefined ? {} : { priorCurrentPath: args.priorCurrentPath }),
+    requireSourceProposalBytes: true,
+    requireSourceSemanticAuthorityBytes: true,
+  });
+  if (!loaded.ok) throw new Error(loaded.errors.join('; '));
+  const graph = loaded.graph;
+  const planInput = outerPlanInput(args, graph);
+  const publication = {
+    root: args.root!,
+    graph,
+    planInput,
+  };
+  const graphRead = args.priorCurrentPath === undefined ? undefined : { priorCurrentPath: args.priorCurrentPath };
+  const toolAuthority = outerToolAuthority(args);
+  if (args.command === 'rebuild:pre-witness') {
+    const result = await rebuildPrebuiltAdmissionAuthority({ publication, graphRead, sourceAuthorityMode: 'candidate-aware', toolAuthority });
+    outputCanonical(outerResult(args.command, result));
+    return;
+  }
+  const result = await recoverPrebuiltAdmissionAuthorityWithVerification({
+    publication: {
+      ...publication,
+      recoveryNonce: args.recoveryNonce!,
+      ...(args.transactionId === undefined ? {} : { transactionId: args.transactionId }),
+      ...(args.fromLock === undefined ? {} : { fromLock: args.fromLock }),
+      acknowledgeNoLiveWriter: true,
+    },
+    graphRead,
+    sourceAuthorityMode: 'candidate-aware',
+    toolAuthority,
+  });
+  outputCanonical(outerResult(args.command, result));
 }
 
 interface ParsedArguments {
@@ -81,6 +222,12 @@ interface ParsedArguments {
   readonly proposalPath?: string;
   /** Planned authority rebuild proposal input (not an acquisition proposal). */
   readonly inputGenerationProposalPath?: string;
+  /** Candidate input-generation object path used by the outer graph loader. */
+  readonly inputGenerationPath?: string;
+  /** Candidate authority-current object path used by the outer graph loader. */
+  readonly currentPath?: string;
+  /** Existing authority-current object path for replace CAS evidence. */
+  readonly priorCurrentPath?: string;
   readonly operation?: 'create' | 'replace';
   readonly expectedCurrentIndexSha256?: string;
   readonly expectedCurrentStaticGenerationSha256?: string;
@@ -129,6 +276,9 @@ function parse(argv: readonly string[]): ParsedArguments {
   let root: string | undefined;
   let proposalPath: string | undefined;
   let inputGenerationProposalPath: string | undefined;
+  let inputGenerationPath: string | undefined;
+  let currentPath: string | undefined;
+  let priorCurrentPath: string | undefined;
   let operation: 'create' | 'replace' | undefined;
   let expectedCurrentIndexSha256: string | undefined;
   let expectedCurrentStaticGenerationSha256: string | undefined;
@@ -197,7 +347,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -210,6 +360,15 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--input-generation-proposal') {
       if (inputGenerationProposalPath !== undefined) throw new Error('--input-generation-proposal may only be supplied once');
       inputGenerationProposalPath = value;
+    } else if (flag === '--input-generation') {
+      if (inputGenerationPath !== undefined) throw new Error('--input-generation may only be supplied once');
+      inputGenerationPath = value;
+    } else if (flag === '--current') {
+      if (currentPath !== undefined) throw new Error('--current may only be supplied once');
+      currentPath = value;
+    } else if (flag === '--prior-current') {
+      if (priorCurrentPath !== undefined) throw new Error('--prior-current may only be supplied once');
+      priorCurrentPath = value;
     } else if (flag === '--operation') {
       if (operation !== undefined || (value !== 'create' && value !== 'replace')) throw new Error('--operation must be create or replace');
       operation = value;
@@ -320,6 +479,9 @@ function parse(argv: readonly string[]): ParsedArguments {
   }
   if (!root) throw new Error(`${command ?? 'admission command'} requires --root <v10.3-root or review/admission>`);
   const authorityGraphOption = inputGenerationProposalPath !== undefined
+    || inputGenerationPath !== undefined
+    || currentPath !== undefined
+    || priorCurrentPath !== undefined
     || expectedCurrentStaticGenerationSha256 !== undefined
     || expectCurrentAbsent;
   if (authorityGraphOption && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') {
@@ -355,36 +517,52 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (command === 'evidence:verify' && (sourceRegisterPath || sourceReviewsPath)) throw new Error('Unexpected source census option for evidence:verify');
     if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt) throw new Error(`Unexpected authority rebuild option for ${command}`);
   } else if (command === 'rebuild:pre-witness') {
-    if (!inputGenerationProposalPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt) {
-      throw new Error('rebuild:pre-witness requires --input-generation-proposal, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
+    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt) {
+      throw new Error('rebuild:pre-witness requires --input-generation-proposal, --input-generation, --current, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
     if (operation === 'create' && (!expectCurrentAbsent || expectedCurrentStaticGenerationSha256 !== undefined)) {
       throw new Error('rebuild:pre-witness create requires --expect-current-absent and forbids --expected-current-static-generation-sha256');
     }
-    if (operation === 'replace' && (expectCurrentAbsent || expectedCurrentStaticGenerationSha256 === undefined)) {
-      throw new Error('rebuild:pre-witness replace requires --expected-current-static-generation-sha256 and forbids --expect-current-absent');
+    if (operation === 'create' && priorCurrentPath !== undefined) {
+      throw new Error('rebuild:pre-witness create forbids --prior-current');
+    }
+    if (resolve(root!, currentPath!) === resolve(root!, 'review/admission/authority/current.json')) {
+      throw new Error('rebuild:pre-witness requires a candidate --current path distinct from the published authority/current.json');
+    }
+    if (operation === 'replace' && (expectCurrentAbsent || expectedCurrentStaticGenerationSha256 === undefined || priorCurrentPath === undefined)) {
+      throw new Error('rebuild:pre-witness replace requires --expected-current-static-generation-sha256, --prior-current, and forbids --expect-current-absent');
+    }
+    for (const [label, value] of [['--invocation-intent', invocationIntentId], ['--tool-receipt-id', toolReceiptId], ['--tool-receipt-sha256', toolReceiptSha256], ['--tool-authority-index-sha256', toolAuthorityIndexSha256], ['--output-set-sha256', outputSetSha256]] as const) {
+      if (value === undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error(`${label} is required and must be a lowercase SHA-256`);
     }
     if (proposalPath || expectedCurrentIndexSha256 || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256
-      || invocationIntentId || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath
-      || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256
+      || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath
+      || registerDeltaPath || nextRegisterPath || sourceGenerationsPath
       || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot
       || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256
-      || outputSetSha256 || exitCode !== undefined || observedResourceUsage || joinStaticAuthority) {
-      throw new Error('rebuild:pre-witness accepts only its root, input-generation proposal, operation/CAS, static-ledgers profile, and real-scale receipt requirement; its outer action is fixed to rebuild:pre-witness');
+      || exitCode !== undefined || observedResourceUsage || joinStaticAuthority
+      || !invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !outputSetSha256) {
+      throw new Error('rebuild:pre-witness accepts explicit graph paths, operation/CAS, static-ledgers profile, indexed tool selectors, and real-scale receipt requirement; its outer action is fixed to rebuild:pre-witness');
     }
   } else if (command === 'static-authority:recover') {
-    if (!toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) {
-      throw new Error('static-authority:recover requires exactly one of --from-lock or --transaction-id, --recovery-nonce, --acknowledge-no-live-writer, and --tool-profile admission-static-ledgers-v1');
+    if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) {
+      throw new Error('static-authority:recover requires --input-generation-proposal, --input-generation, --current, exactly one of --from-lock or --transaction-id, --recovery-nonce, --acknowledge-no-live-writer, and --tool-profile admission-static-ledgers-v1');
     }
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce)) throw new Error('--recovery-nonce must be a lowercase SHA-256');
-    if (proposalPath || inputGenerationProposalPath || operation || expectedCurrentIndexSha256 || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent
-      || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || invocationIntentId
-      || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId
-      || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath
+    for (const [label, value] of [['--invocation-intent', invocationIntentId], ['--tool-receipt-id', toolReceiptId], ['--tool-receipt-sha256', toolReceiptSha256], ['--tool-authority-index-sha256', toolAuthorityIndexSha256], ['--output-set-sha256', outputSetSha256]] as const) {
+      if (value === undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error(`${label} is required and must be a lowercase SHA-256`);
+    }
+    if (resolve(root!, currentPath!) === resolve(root!, 'review/admission/authority/current.json')) {
+      throw new Error('static-authority:recover requires a candidate --current path distinct from the published authority/current.json');
+    }
+    if (proposalPath || operation || expectedCurrentIndexSha256 || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent
+      || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256
+      || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath
+      || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath
       || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined
-      || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256 || exitCode !== undefined
+      || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || exitCode !== undefined
       || observedResourceUsage || joinStaticAuthority) {
-      throw new Error('static-authority:recover accepts only its root, transaction selector, nonce/no-live-writer acknowledgement, and static-ledgers profile; its outer action is fixed to static-authority:recover');
+      throw new Error('static-authority:recover accepts explicit graph paths, transaction selector, nonce/no-live-writer acknowledgement, static-ledgers profile, and indexed tool selectors; its outer action is fixed to static-authority:recover');
     }
   } else if (command === 'authority:overlap') {
     if (!overlapUniversePath || !overlapRecordsPath || !overlapPolicyPath || !overlapNormalizersPath || !overlapBytesRoot || !overlapToolSnapshotPath || generation === undefined || !inputGenerationSha256 || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256) throw new Error('authority:overlap requires --universe, --records, --policy, --normalizers, --bytes-root, --tool-snapshot, --generation, --input-generation-sha256, static-ledgers profile, invocation intent, and tool receipt fields');
@@ -422,7 +600,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, inputGenerationProposalPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
+  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
 }
 
 async function main(): Promise<void> {
@@ -431,18 +609,11 @@ async function main(): Promise<void> {
     requestedCommand = process.argv[2] ?? requestedCommand;
     const args = parse(process.argv.slice(2));
     if (args.command === 'rebuild:pre-witness' || args.command === 'static-authority:recover') {
-      // Parsing is intentionally complete and strict so scripts can detect
-      // an unsupported boundary before any filesystem access. Do not wire a
-      // proposal path into the fixture-scale adapter: its nested
-      // authority:overlap receipt is not the outer rebuild authority, and a
-      // loader-only read of current/static bytes cannot create a corpus graph.
-      rejectUnavailableAuthorityCommand(args.command);
+      await runOuterAuthorityCommand(args);
+      return;
     }
     if (args.requireRealScaleReceipt && (args.command === 'authority:overlap' || args.command === 'authority:overlap:verify')) {
-      throw new AdmissionAuthorityCliUnavailableError(
-        args.command,
-        `--require-real-scale-receipt is not satisfied by the fixture-scale ${args.command} path; real-corpus resource receipt enforcement is not implemented`,
-      );
+      throw new Error(`--require-real-scale-receipt is not satisfied by the fixture-scale ${args.command} path; real-corpus resource receipt enforcement is not implemented`);
     }
     if (args.command === 'tool-authority:intent') {
       const result = await publishAdmissionToolInvocationIntent({
@@ -711,8 +882,13 @@ async function main(): Promise<void> {
       unavailableEvidenceIds: verified.context.unavailableEvidenceIds,
     });
   } catch (error) {
-    if (error instanceof AdmissionAuthorityCliUnavailableError) {
-      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: error.code, status: 'unavailable', errors: [error.message] })}\n`);
+    if (error instanceof PrebuiltAuthorityPublicationPendingError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_pending', ...error.result, errors: [error.message] })}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    if (error instanceof PrebuiltAuthorityRebuildVerificationError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'post_publication_verification_failed', ...error.publication, errors: error.errors })}\n`);
       process.exitCode = 2;
       return;
     }

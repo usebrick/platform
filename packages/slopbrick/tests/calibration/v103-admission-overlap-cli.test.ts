@@ -353,8 +353,8 @@ async function createJoinedFixture(root: string): Promise<JoinedOverlapFixture> 
 }
 
 describe('v10.3 overlap authority CLI boundary', () => {
-  it('recognizes planned authority commands but fails closed before filesystem access', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-cli-unavailable-'));
+  it('requires explicit graph bytes before touching the filesystem', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-cli-explicit-'));
     try {
       const rebuild = await execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', '--root', root,
@@ -366,10 +366,8 @@ describe('v10.3 overlap authority CLI boundary', () => {
       expect(JSON.parse(rebuild?.stderr ?? '')).toMatchObject({
         ok: false,
         command: 'rebuild:pre-witness',
-        code: 'authority_cli_unavailable',
-        status: 'unavailable',
       });
-      expect(rebuild?.stderr).toContain('fully materialized');
+      expect(rebuild?.stderr).toContain('--input-generation');
 
       const recover = await execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'static-authority:recover', '--root', root,
@@ -380,10 +378,8 @@ describe('v10.3 overlap authority CLI boundary', () => {
       expect(JSON.parse(recover?.stderr ?? '')).toMatchObject({
         ok: false,
         command: 'static-authority:recover',
-        code: 'authority_cli_unavailable',
-        status: 'unavailable',
       });
-      expect(recover?.stderr).toContain('transaction-bound static-authority recovery adapter');
+      expect(recover?.stderr).toContain('--input-generation');
       await expect(stat(join(root, 'review'))).rejects.toMatchObject({ code: 'ENOENT' });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
@@ -401,7 +397,12 @@ describe('v10.3 overlap authority CLI boundary', () => {
       const nestedAction = await execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', '--root', root,
         '--input-generation-proposal', 'review/admission/authority/proposals/genesis-input.json',
+        '--input-generation', 'review/admission/authority/input-generations/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/generation.json',
+        '--current', 'review/admission/authority/candidates/current.json',
         '--operation', 'create', '--expect-current-absent', '--tool-profile', TOOL_PROFILE,
+        '--invocation-intent', 'a'.repeat(64), '--tool-receipt-id', 'b'.repeat(64),
+        '--tool-receipt-sha256', 'c'.repeat(64), '--tool-authority-index-sha256', 'd'.repeat(64),
+        '--output-set-sha256', 'e'.repeat(64),
         '--require-real-scale-receipt', '--action', 'authority:overlap',
       ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
       expect(nestedAction?.code).toBe(2);
