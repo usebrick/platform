@@ -69,10 +69,18 @@ echo "[pre-push] 4/5: generated registry/language checks"
 "${PNPM[@]}" --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
 "${PNPM[@]}" --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
 
-# Step 5 is the successful completion message; keep the numbering explicit so
+# Step 5: dependency security audit. pnpm's legacy audit endpoint is retired,
+# so use the repository's npm bulk-advisory adapter instead of treating HTTP
+# 410 as a clean result.
+echo
+echo "[pre-push] 5/6: production dependency security audit"
+node --test scripts/audit-npm-bulk.test.mjs
+corepack pnpm security:audit
+
+# Step 6 is the successful completion message; keep the numbering explicit so
 # logs are easy to compare with publish.yml.
 echo
-echo "[pre-push] 5/5: release gate summary"
+echo "[pre-push] 6/6: release gate summary"
 
 echo
 echo "[pre-push] ✅ all recursive gates green. Pushing to $CURRENT_BRANCH."

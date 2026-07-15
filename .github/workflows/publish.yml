@@ -91,6 +91,8 @@ jobs:
           corepack pnpm --workspace-concurrency=1 -r build
           corepack pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
           corepack pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
+          node --test scripts/audit-npm-bulk.test.mjs
+          corepack pnpm security:audit
 
       - name: Determine whether publication is required
         id: registry

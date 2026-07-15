@@ -9,6 +9,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
+    "security:audit": "node scripts/audit-npm-bulk.mjs --audit-level high",
     "scan": "node packages/slopbrick/bin/slopbrick.js scan",
     "bench:scan": "pnpm --filter slopbrick bench:scan",
     "changeset": "changeset",

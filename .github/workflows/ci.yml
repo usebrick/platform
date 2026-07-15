@@ -120,3 +120,27 @@ jobs:
 
       - name: Verify the packed consumer contract
         run: pnpm --filter slopbrick exec vitest run tests/integration/pack-consumer.test.ts --maxWorkers=1 --minWorkers=1 --no-file-parallelism
+
+  security-audit:
+    name: production dependency security audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the deterministic adapter test and npm bulk advisory audit
+        run: |
+          node --test scripts/audit-npm-bulk.test.mjs
+          pnpm security:audit
