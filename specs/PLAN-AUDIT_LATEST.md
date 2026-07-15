@@ -310,7 +310,9 @@ package-local CLI, the full bounded SlopBrick gate passes **315 files / 3,602
 tests** (5 skipped files / 9 skipped tests) with one worker and a 2 GiB heap
 cap; recursive typecheck and build pass with only the existing non-fatal Zod
 declaration warnings. The existing publication/recovery, loader, graph, and
-planner suites remain green, and `git diff --check` passes. This is not the mutating
+planner suites remain green, and `git diff --check` passes. The commit-hook
+self-scan is **7.2 / 100**, under the 15 threshold, with two active
+compression/Zipf audit-only diagnostics and no security findings. This is not the mutating
 `rebuild:pre-witness` or `static-authority:recover` boundary: source
 proposal/approval bytes and real static/witness/resource joins remain open.
 The canonical ledger remains **98/178** continuation items and **2/76**

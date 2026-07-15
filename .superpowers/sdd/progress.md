@@ -877,7 +877,9 @@ package-local CLI, the full bounded SlopBrick gate passes **315 files / 3,602
 tests** (5 skipped files / 9 skipped tests) with one worker and a 2 GiB heap
 cap. Recursive typecheck and build pass, with only the existing non-fatal Zod
 declaration warnings; the existing publication/recovery, loader, graph, and
-planner suites remain green and diff-check passes. This does not implement the mutating
+planner suites remain green and diff-check passes. The commit-hook self-scan is
+**7.2 / 100**, under the 15 threshold, with two active compression/Zipf
+audit-only diagnostics and no security findings. This does not implement the mutating
 `rebuild:pre-witness` or `static-authority:recover` commands and does not
 change corpus readiness: **329/329** sources reviewed, **452,382** units
 quarantined/unrepresented, zero candidate/eligible, blockers
