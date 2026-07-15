@@ -21,8 +21,10 @@ import {
 import { planPrebuiltAdmissionAuthorityPublication } from '../../src/calibration/v103/admission-authority-publication-plan';
 import {
   makeIndependentApprovalAuthorityFixture,
+  makeSemanticIndependentAuthorityFixture,
   makePrebuiltAuthorityFixture,
 } from './v103-admission-authority-rebuild-fixture';
+import { PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME } from '../../src/calibration/v103/admission-authority-rebuild';
 
 const roots: string[] = [];
 const hex = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -83,6 +85,13 @@ afterEach(async () => {
 });
 
 describe('v10.3 prebuilt authority publication/recovery', () => {
+  it('refuses independent-review publication without persisted semantic authority', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-shape-only-'));
+    roots.push(root);
+    const fixture = makeIndependentApprovalAuthorityFixture();
+    await expect(publishPrebuiltAdmissionAuthority(request(fixture, root))).rejects.toThrow(/semantic authority/i);
+  });
+
   it('publishes explicit fixture bytes and removes only its journals', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-'));
     roots.push(root);
@@ -100,7 +109,7 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
   it('materializes and recovers an independent-review approval byte pair at its fixed source path', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-approval-'));
     roots.push(root);
-    const fixture = makeIndependentApprovalAuthorityFixture();
+    const fixture = makeSemanticIndependentAuthorityFixture();
     const initial = request(fixture, root, (phase) => {
       if (phase === 'source-generation-directories-staged-fsynced') throw new Error('stop after source proposal materialization');
     });
@@ -117,6 +126,41 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     expect(recovered.complete).toBe(true);
     expect(await readFile(proposalPath)).toEqual(fixture.sources[0]!.sourceProposalBytes);
     expect(await readFile(approvalPath)).toEqual(fixture.sources[0]!.approvalBytes);
+  });
+
+  it('materializes and recovers semantic source authority beside the generation', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-semantic-'));
+    roots.push(root);
+    const fixture = makeSemanticIndependentAuthorityFixture();
+    const initial = request(fixture, root, (phase) => {
+      if (phase === 'source-generation-directories-promoted') throw new Error('stop after semantic authority promotion');
+    });
+    await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    const semanticPath = join(
+      root,
+      'review',
+      'admission',
+      'sources',
+      'source-a',
+      'generations',
+      fixture.sources[0]!.sourceGeneration.generationSha256,
+      PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME,
+    );
+    expect(await readFile(semanticPath)).toEqual(fixture.sources[0]!.semanticAuthorityBytes);
+
+    await writeFile(semanticPath, Buffer.from('tampered', 'utf8'));
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    })).rejects.toThrow(/semantic authority|source generation|bytes/i);
+    await writeFile(semanticPath, fixture.sources[0]!.semanticAuthorityBytes!);
+    const recovered = await recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    });
+    expect(recovered.complete).toBe(true);
   });
 
   it('faults after a durable phase and resumes from the transaction journal', async () => {

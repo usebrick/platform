@@ -25,7 +25,9 @@ import {
 
 import {
   validatePrebuiltAdmissionAuthorityGraph,
+  prebuiltAdmissionAuthoritySourceSemanticAuthorityRelativePath,
   type PrebuiltAdmissionAuthorityGraphInput,
+  type PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1,
 } from './admission-authority-rebuild';
 
 const AUTHORITY_CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
@@ -42,6 +44,8 @@ export interface PrebuiltAdmissionAuthorityGraphLoadRequest {
   readonly priorCurrentPath?: string;
   /** When true, load and bind every source proposal and independent approval object. */
   readonly requireSourceProposalBytes?: boolean;
+  /** When true, reopen and bind each persisted source semantic-authority bundle. */
+  readonly requireSourceSemanticAuthorityBytes?: boolean;
 }
 
 export type PrebuiltAdmissionAuthorityGraphLoadResult =
@@ -309,6 +313,7 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
     'inputGenerationPath', 'projectRoot', 'proposalPath',
     ...(request.priorCurrentPath === undefined ? [] : ['priorCurrentPath']),
     ...(request.requireSourceProposalBytes === undefined ? [] : ['requireSourceProposalBytes']),
+    ...(request.requireSourceSemanticAuthorityBytes === undefined ? [] : ['requireSourceSemanticAuthorityBytes']),
   ].sort();
   if (requestKeys.length !== expectedKeys.length || requestKeys.some((key, index) => key !== expectedKeys[index])) {
     throw new Error('prebuilt authority graph load request has unexpected keys');
@@ -324,6 +329,7 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
   const inputGeneration = assertObject(inputGenerationRead.value, isCalibrationAdmissionInputGenerationV1, 'input generation') as CalibrationAdmissionInputGenerationV1;
   const current = assertObject(currentRead.value, isCalibrationAdmissionAuthorityCurrentV1, 'authority current pointer') as CalibrationAdmissionAuthorityCurrentV1;
   const requireSourceProposalBytes = request.requireSourceProposalBytes === true;
+  const requireSourceSemanticAuthorityBytes = request.requireSourceSemanticAuthorityBytes === true;
 
   const inputGenerationDirectory = dirname(inputGenerationPath);
   const inputArtifacts = await readReceiptMap(root, inputGenerationDirectory, inputGeneration.artifacts, 'input generation');
@@ -358,6 +364,8 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
     let sourceProposalBytes: Buffer | undefined;
     let approval: CalibrationAdmissionSourceGenerationApprovalV1 | undefined;
     let approvalBytes: Buffer | undefined;
+    let semanticAuthority: PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1 | undefined;
+    let semanticAuthorityBytes: Buffer | undefined;
     if (requireSourceProposalBytes) {
       const proposalReference = proposal.sourceGenerationProposals.find((entry) => entry.sourceId === sourceId);
       if (!proposalReference) throw new Error(`source ${sourceId} proposal reference is missing from input-generation proposal`);
@@ -397,6 +405,22 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
         approvalBytes = approvalRead.bytes;
       }
     }
+    const requireSemanticForSource = requireSourceSemanticAuthorityBytes
+      || (requireSourceProposalBytes && sourceGeneration.approval.kind === 'independent_review');
+    if (requireSemanticForSource) {
+      const semanticRead = await readCanonicalObject(
+        root,
+        containedPath(
+          root,
+          prebuiltAdmissionAuthoritySourceSemanticAuthorityRelativePath(sourceId, sourceGeneration.generationSha256),
+          `source ${sourceId} semantic authority path`,
+        ),
+        `source ${sourceId} semantic authority`,
+      );
+      if (!isRecord(semanticRead.value)) throw new Error(`source ${sourceId} semantic authority is not an object`);
+      semanticAuthority = semanticRead.value as unknown as PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1;
+      semanticAuthorityBytes = semanticRead.bytes;
+    }
     sources.push({
       sourceGeneration,
       sourceGenerationBytes: sourceGenerationRead.bytes,
@@ -406,6 +430,7 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
       artifactBytes: sourceArtifacts,
       ...(sourceProposal === undefined ? {} : { sourceProposal, sourceProposalBytes }),
       ...(approval === undefined ? {} : { approval, approvalBytes }),
+      ...(semanticAuthority === undefined ? {} : { semanticAuthority, semanticAuthorityBytes }),
     });
   }
 

@@ -16,8 +16,10 @@ import {
 } from '@usebrick/core';
 
 import { loadPrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild-loader';
+import { PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME } from '../../src/calibration/v103/admission-authority-rebuild';
 import {
   makeIndependentApprovalAuthorityFixture,
+  makeSemanticIndependentAuthorityFixture,
   makePrebuiltAuthorityFixture,
   type PrebuiltAuthorityGraphFixture,
 } from './v103-admission-authority-rebuild-fixture';
@@ -157,6 +159,9 @@ async function materialize(fixture: PrebuiltAuthorityGraphFixture): Promise<Mate
     await writeFile(sourceCurrentPath, source.currentBytes);
     await writeFile(join(sourceDirectory, 'source-generation.json'), source.sourceGenerationBytes);
     await writeFile(join(sourceDirectory, 'source-review.json'), source.sourceReviewBytes);
+    if (source.semanticAuthority !== undefined && source.semanticAuthorityBytes !== undefined) {
+      await writeFile(join(sourceDirectory, PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME), source.semanticAuthorityBytes);
+    }
     if (source.sourceProposal !== undefined && source.sourceProposalBytes !== undefined) {
       const sourceProposalPath = join(admission, 'sources', source.current.sourceId, 'proposals', `${source.sourceProposal.proposalId}.json`);
       await mkdir(join(sourceProposalPath, '..'), { recursive: true });
@@ -237,7 +242,7 @@ describe('v10.3 prebuilt admission authority graph loader', () => {
   });
 
   it('strictly reopens independent-review approval bytes and rejects tampering', async () => {
-    const fixture = makeIndependentApprovalAuthorityFixture();
+    const fixture = makeSemanticIndependentAuthorityFixture();
     const materialized = await materialize(fixture);
     const strict = await loadPrebuiltAdmissionAuthorityGraph({
       ...materialized.request,
@@ -245,7 +250,7 @@ describe('v10.3 prebuilt admission authority graph loader', () => {
     });
     expect(strict.ok).toBe(true);
     if (strict.ok) {
-      expect(strict.graph.sources[0]?.approval?.approvalId).toBe('source-a-approval');
+      expect(strict.graph.sources[0]?.approval?.approvalId).toBe(fixture.sources[0]?.approval?.approvalId);
       expect(strict.graph.sources[0]?.approvalBytes).toEqual(fixture.sources[0]?.approvalBytes);
     }
 
@@ -264,6 +269,54 @@ describe('v10.3 prebuilt admission authority graph loader', () => {
     });
     expect(tampered.ok).toBe(false);
     if (!tampered.ok) expect(tampered.errors.join('\n')).toMatch(/approval|canonical|invalid/i);
+
+    const shapeOnly = await materialize(makeIndependentApprovalAuthorityFixture());
+    const missingSemantic = await loadPrebuiltAdmissionAuthorityGraph({
+      ...shapeOnly.request,
+      requireSourceProposalBytes: true,
+    });
+    expect(missingSemantic.ok).toBe(false);
+    if (!missingSemantic.ok) expect(missingSemantic.errors.join('\n')).toMatch(/semantic authority|ENOENT|missing/i);
+  });
+
+  it('strictly reopens persisted semantic source authority and fails closed on missing or tampered bytes', async () => {
+    const fixture = makeSemanticIndependentAuthorityFixture();
+    const materialized = await materialize(fixture);
+    const semanticPath = join(
+      materialized.root,
+      'review',
+      'admission',
+      'sources',
+      'source-a',
+      'generations',
+      fixture.sources[0]!.sourceGeneration.generationSha256,
+      PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME,
+    );
+    const strict = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+      requireSourceSemanticAuthorityBytes: true,
+    });
+    expect(strict.ok).toBe(true);
+    if (strict.ok) expect(strict.graph.sources[0]?.semanticAuthorityBytes).toEqual(fixture.sources[0]?.semanticAuthorityBytes);
+
+    await rm(semanticPath);
+    const missing = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+      requireSourceSemanticAuthorityBytes: true,
+    });
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.errors.join('\n')).toMatch(/semantic authority|missing|ENOENT/i);
+
+    await writeFile(semanticPath, Buffer.from(`${calibrationAdmissionCanonicalJson(fixture.sources[0]!.semanticAuthority)}\n`, 'utf8'));
+    const noncanonical = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      requireSourceProposalBytes: true,
+      requireSourceSemanticAuthorityBytes: true,
+    });
+    expect(noncanonical.ok).toBe(false);
+    if (!noncanonical.ok) expect(noncanonical.errors.join('\n')).toMatch(/semantic authority|canonical/i);
   });
 
   it('reopens a source-generation bundle from its admission-root CAS path', async () => {

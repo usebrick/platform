@@ -13,6 +13,7 @@ import {
 import { validatePrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild';
 import {
   makeIndependentApprovalAuthorityFixture,
+  makeSemanticIndependentAuthorityFixture,
   makePrebuiltAuthorityFixture,
   type PrebuiltAuthorityGraphFixture,
 } from './v103-admission-authority-rebuild-fixture';
@@ -290,5 +291,30 @@ describe('v10.3 prebuilt authority graph failures', () => {
     const result = validatePrebuiltAdmissionAuthorityGraph(changed);
     expect(result.ok).toBe(false);
     expect(result.errors.join('\n')).toMatch(/approval path\/hash|independent-review/i);
+  });
+
+  it('accepts a byte-backed semantic independent-review source graph', () => {
+    const fixture = makeSemanticIndependentAuthorityFixture();
+    expect(validatePrebuiltAdmissionAuthorityGraph(fixture)).toEqual({ ok: true, errors: [] });
+  });
+
+  it('fails closed when a semantic decision byte changes', () => {
+    const fixture = makeSemanticIndependentAuthorityFixture();
+    const source = fixture.sources[0]!;
+    const semantic = source.semanticAuthority!;
+    const changedDecision = { ...semantic.decisions[0]!, reviewerId: 'reviewer-tampered' };
+    const changed = {
+      ...fixture,
+      sources: [{
+        ...source,
+        semanticAuthority: {
+          ...semantic,
+          decisions: [changedDecision, semantic.decisions[1]!],
+        },
+      }],
+    } as PrebuiltAuthorityGraphFixture;
+    const result = validatePrebuiltAdmissionAuthorityGraph(changed);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join('\n')).toMatch(/semantic|decision|blind/i);
   });
 });

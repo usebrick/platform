@@ -920,3 +920,36 @@ Next: implement the semantic source-generation graph and reuse the existing
 `verifyOverlapArtifactRelations` proof for the static-generation resource join;
 then add the mutating CLI only after both are byte-backed and independently
 reviewed.
+
+### Task 2B semantic source authority and overlap-join checkpoint — 2026-07-15
+
+The semantic source-generation slice is now byte-backed. A strict semantic
+authority bundle carries the candidate source-review's blind assignment, two
+reviewer decisions, blind-review receipt, and acquired or genesis
+materialization authority. The bundle is self-hashed, canonical-byte checked,
+validated through Core's source-generation graph, persisted beside the source
+generation, reopened by the strict loader, and rechecked during publication
+recovery. Independent-review publication rejects the earlier shape-only
+approval fixture.
+
+The static side now has a separate pure
+`validatePrebuiltAdmissionAuthorityOverlapJoin` gate requiring exact static and
+overlap generation bytes, all three overlap envelope object/byte pairs,
+static-to-overlap input/generation joins, and complete indexed
+`admission-static-ledgers-v1` / `authority:overlap` tool authority. It reuses
+`verifyOverlapArtifactRelations` only for complete envelopes and does not use
+opaque `primaryOutputSetSha256` metadata as resource proof.
+
+Focused coverage is **4 files / 46 tests**; recursive typecheck/build and the
+package-wide one-worker SlopBrick gate pass (**316 files / 5 skipped; 3,616
+tests / 9 skipped**, 2 GiB heap cap). Existing build warnings and expected
+fixture stderr remain non-fatal. The overlap join is intentionally standalone;
+the legacy prebuilt publisher is still metadata-only until strict integration
+and independent review are complete. No corpus, remote, release, or deployment
+state changed. Census remains **329/329** reviewed sources, **452,382**
+quarantined/unrepresented units, zero candidate/eligible, blockers
+`static_authority_unavailable` and `witness_authority_unavailable`.
+
+Next: wire the strict overlap join into the authority/context boundary and then
+the mutating CLI; only after that replay real static/witness context against the
+corpus.

@@ -2,11 +2,12 @@
  * Fixture-scale transactional publication of an already validated authority
  * graph. This module is deliberately not a corpus builder or CLI authority:
  * callers must provide every graph object and byte map explicitly. Source
- * proposal/approval bytes are optional on the prebuilt graph input; when they
- * are present, this publisher persists and revalidates their fixed paths as
- * part of the same transaction. Tool-receipt metadata is still not an indexed
- * receipt object, so a successful transaction proves only local byte
- * publication/recovery, not corpus-admission readiness.
+ * proposal/approval and semantic-authority bytes are optional on the prebuilt
+ * graph input for quarantine sources; independent-review sources must supply
+ * all three byte pairs. When present, this publisher persists and revalidates
+ * their fixed paths as part of the same transaction. Tool-receipt metadata is
+ * still not an indexed receipt object, so a successful transaction proves only
+ * local byte publication/recovery, not corpus-admission readiness.
  */
 import { constants } from 'node:fs';
 import {
@@ -41,6 +42,7 @@ import {
 } from './admission-authority-publication-plan';
 import {
   validatePrebuiltAdmissionAuthorityGraph,
+  PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME,
   type PrebuiltAdmissionAuthoritySourceInput,
   type PrebuiltAdmissionAuthorityGraphInput,
 } from './admission-authority-rebuild';
@@ -532,6 +534,13 @@ function assertSourceProposalBytesForPublication(graph: PrebuiltAdmissionAuthori
       && (source.approval === undefined || source.approvalBytes === undefined)) {
       throw new Error(`authority publication source approval bytes are required: ${sourceId}`);
     }
+    const hasSemanticPair = source.semanticAuthority !== undefined || source.semanticAuthorityBytes !== undefined;
+    if (hasSemanticPair && (source.semanticAuthority === undefined || source.semanticAuthorityBytes === undefined)) {
+      throw new Error(`authority publication source semantic authority bytes are incomplete: ${sourceId}`);
+    }
+    if (approval?.kind === 'independent_review' && !hasSemanticPair) {
+      throw new Error(`authority publication source semantic authority bytes are required: ${sourceId}`);
+    }
   }
 }
 
@@ -649,6 +658,16 @@ async function materializeSourceStage(context: PublicationContext, source: Prebu
   await ensureDirectory(context.layout.root, stage);
   await writeNoClobber(context.layout.root, join(stage, 'source-generation.json'), source.sourceGenerationBytes);
   await writeNoClobber(context.layout.root, join(stage, 'source-review.json'), source.sourceReviewBytes);
+  if (source.semanticAuthority !== undefined || source.semanticAuthorityBytes !== undefined) {
+    if (source.semanticAuthority === undefined || source.semanticAuthorityBytes === undefined) {
+      throw new Error(`authority publication source semantic authority bytes are incomplete: ${descriptor.sourceId}`);
+    }
+    await writeNoClobber(
+      context.layout.root,
+      join(stage, PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME),
+      source.semanticAuthorityBytes,
+    );
+  }
   for (const [path, bytes] of entries(source.artifactBytes, `source ${descriptor.sourceId}`)) {
     if (path === 'source-review.json') continue;
     await writeNoClobber(context.layout.root, join(stage, path), bytes);
@@ -683,6 +702,17 @@ async function verifySourceDirectory(
 ): Promise<void> {
   await assertBytes(context.layout.root, join(directory, 'source-generation.json'), source.sourceGenerationBytes, `source ${sourceId} generation`);
   await assertBytes(context.layout.root, join(directory, 'source-review.json'), source.sourceReviewBytes, `source ${sourceId} review`);
+  if (source.semanticAuthority !== undefined || source.semanticAuthorityBytes !== undefined) {
+    if (source.semanticAuthority === undefined || source.semanticAuthorityBytes === undefined) {
+      throw new Error(`authority publication source semantic authority bytes are incomplete: ${sourceId}`);
+    }
+    await assertBytes(
+      context.layout.root,
+      join(directory, PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME),
+      source.semanticAuthorityBytes,
+      `source ${sourceId} semantic authority`,
+    );
+  }
   for (const [path, bytes] of entries(source.artifactBytes, `source ${sourceId}`)) {
     await assertBytes(context.layout.root, join(directory, path), bytes, `source ${sourceId} artifact ${path}`);
   }

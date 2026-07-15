@@ -2,10 +2,14 @@ import { createHash } from 'node:crypto';
 
 import {
   calibrationAdmissionAuthorityCurrentSha256,
+  calibrationAdmissionBlindAssignmentId,
+  calibrationAdmissionBlindReviewReceiptId,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionDecisionId,
   calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionMaterializationId,
+  calibrationAdmissionMaterializationReceiptId,
   calibrationAdmissionSha256,
   calibrationAdmissionSourceGenerationArtifactSetSha256,
   calibrationAdmissionSourceGenerationApprovalSha256,
@@ -14,6 +18,7 @@ import {
   calibrationAdmissionSourceCurrentSha256,
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
+  admissionRecordJsonl,
   type CalibrationAdmissionArtifactReceiptV1,
   type CalibrationAdmissionAuthorityCurrentV1,
   type CalibrationAdmissionInputGenerationProposalV1,
@@ -28,6 +33,7 @@ import type {
   PrebuiltAdmissionAuthoritySourceInput,
   PrebuiltAdmissionAuthorityGraphInput,
 } from '../../src/calibration/v103/admission-authority-rebuild';
+import { calibrationAdmissionSourceSemanticAuthoritySha256 } from '../../src/calibration/v103/admission-authority-rebuild';
 
 export type PrebuiltAuthoritySourceFixture = PrebuiltAdmissionAuthoritySourceInput & {
   readonly sourceGeneration: CalibrationAdmissionSourceGenerationV1;
@@ -404,5 +410,242 @@ export function makeIndependentApprovalAuthorityFixture(): PrebuiltAuthorityGrap
     current,
     currentBytes: canonical(current),
     sources: [sourceWithApproval],
+  } as PrebuiltAuthorityGraphFixture;
+}
+
+/**
+ * A complete acquired-materialization semantic graph. Unlike the adjacent
+ * shape-only approval fixture, every ID is derived from its canonical object
+ * and the source review is a real candidate with independent authorship and
+ * rights decisions.
+ */
+export function makeSemanticIndependentAuthorityFixture(): PrebuiltAuthorityGraphFixture {
+  const fixture = makePrebuiltAuthorityFixture();
+  const source = fixture.sources[0]!;
+  const sourceId = source.sourceGeneration.sourceId;
+  const parsedReview = JSON.parse(source.sourceReviewBytes.toString('utf8').trim()) as Record<string, unknown>;
+  const review = {
+    ...parsedReview,
+    sourceRights: {
+      ...(parsedReview.sourceRights as Record<string, unknown>),
+      evidenceIds: ['source-a-rights'],
+    },
+    reviewerDecisionIds: [] as string[],
+    decision: 'candidate' as const,
+    reasons: [] as const,
+  };
+  const evidenceIds = ['source-a-origin', 'source-a-rights'] as const;
+  const assignmentBody = {
+    version: 'v10.3-admission-blind-assignment-v1' as const,
+    target: { kind: 'source' as const, sourceId },
+    evidenceSetSha256: calibrationAdmissionSha256(evidenceIds),
+    protocolEvidenceId: 'source-a-protocol',
+    reviewerIds: ['reviewer-authorship', 'reviewer-rights'] as [string, string],
+    peerMaterialHiddenUntilBothSealed: true as const,
+  };
+  const assignment = { ...assignmentBody, assignmentId: calibrationAdmissionBlindAssignmentId(assignmentBody) };
+  const decisionBody = (reviewerId: 'reviewer-authorship' | 'reviewer-rights', reviewerRole: 'authorship' | 'rights') => ({
+    version: 'v10.3-admission-decision-v1' as const,
+    target: { kind: 'source' as const, sourceId },
+    reviewerId,
+    reviewerRoles: [reviewerRole] as [typeof reviewerRole],
+    evidenceIds: [...evidenceIds],
+    blindAssignmentId: assignment.assignmentId,
+    result: {
+      kind: 'admission' as const,
+      proposedLabel: 'verified_ai' as const,
+      humanEditStatus: 'none' as const,
+      disposition: 'eligible_gold' as const,
+    },
+    reasons: [] as const,
+    decidedAt: '2026-07-15T00:00:00.000Z',
+  });
+  const decisionAContent = decisionBody('reviewer-authorship', 'authorship');
+  const decisionBContent = decisionBody('reviewer-rights', 'rights');
+  const decisions = [
+    { ...decisionAContent, decisionId: calibrationAdmissionDecisionId(decisionAContent) },
+    { ...decisionBContent, decisionId: calibrationAdmissionDecisionId(decisionBContent) },
+  ].sort((left, right) => left.decisionId.localeCompare(right.decisionId));
+  review.reviewerDecisionIds = decisions.map((decision) => decision.decisionId).sort();
+
+  const receiptBody = {
+    version: 'v10.3-admission-blind-review-receipt-v1' as const,
+    assignmentId: assignment.assignmentId,
+    evidenceSetSha256: assignment.evidenceSetSha256,
+    sealedDecisions: decisions.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId)).map((decision) => ({
+      reviewerId: decision.reviewerId,
+      decisionId: decision.decisionId,
+      peerDecisionVisibleBeforeSeal: false as const,
+    })) as [{ reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }, { reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }],
+    unsealedOnlyAfterBothDecisionIdsExisted: true as const,
+    protocolAuditorId: 'source-a-auditor',
+    protocolAuditEvidenceIds: ['source-a-protocol'],
+  };
+  const receipt = { ...receiptBody, receiptId: calibrationAdmissionBlindReviewReceiptId(receiptBody) };
+
+  const materialization = parsedReview.materialization as { kind: 'git'; materializationId: string; repositoryId: string; commitSha: string };
+  const origin = parsedReview.origin as { kind: 'https'; url: string };
+  const materializationReceiptBody = {
+    version: 'v10.3-admission-materialization-receipt-v1' as const,
+    materializationId: materialization.materializationId,
+    sourceId,
+    repositoryId: materialization.repositoryId,
+    acquisitionAuthorizationId: 'source-a-acquisition',
+    acquisitionAuthorizationSha256: sha256('source-a-acquisition-authorization'),
+    acquisitionTransactionId: 'source-a-acquisition-transaction',
+    primaryMaterializedOutputSha256: sha256('source-a-materialized-output'),
+    childToolReceiptSha256: sha256('source-a-child-tool-receipt'),
+    verifiedUnitSetSha256: sha256('source-a-verified-unit-set'),
+    payload: {
+      kind: 'git' as const,
+      originUrl: origin.url,
+      commitSha: materialization.commitSha,
+      treeSha: 'b'.repeat(40),
+      inventorySha256: (parsedReview.inventory as { inventorySha256: string }).inventorySha256,
+    },
+  };
+  const materializationReceipt = {
+    ...materializationReceiptBody,
+    receiptId: calibrationAdmissionMaterializationReceiptId(materializationReceiptBody),
+  };
+  const acquisitionSnapshotBody = {
+    version: 'v10.3-admission-acquisition-snapshot-v1' as const,
+    indexGenerationSha256: sha256('source-a-acquisition-index'),
+    artifactKeys: [`materialization_receipt:${materializationReceipt.receiptId}`],
+  };
+  const acquisitionSnapshot = {
+    ...acquisitionSnapshotBody,
+    snapshotSha256: calibrationAdmissionSha256(acquisitionSnapshotBody),
+  };
+  const semanticBody = {
+    version: 'v10.3-admission-source-semantic-authority-v1' as const,
+    sourceId,
+    proposalId: source.sourceGeneration.proposalId,
+    blindAssignment: assignment,
+    decisions,
+    blindReviewReceipt: receipt,
+    acquisitionSnapshot,
+    materializationReceipt,
+  };
+  const semanticAuthority = {
+    ...semanticBody,
+    authoritySha256: calibrationAdmissionSourceSemanticAuthoritySha256(semanticBody),
+  };
+  const reviewBytes = serialized(review);
+  const ledgerBytes = source.artifactBytes['decision-ledger.json']!;
+  const sourceArtifacts = [
+    artifact('ledger', 'decision-ledger.json', ledgerBytes),
+    artifact('source_review', 'source-review.json', reviewBytes),
+  ] as const;
+  const sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(review);
+  const proposalBody = {
+    ...source.sourceProposal,
+    sourceReviewSha256,
+    materializationAuthority: {
+      kind: 'acquired' as const,
+      acquisitionIndexGenerationSha256: acquisitionSnapshot.indexGenerationSha256,
+      materializationReceiptId: materializationReceipt.receiptId,
+      materializationReceiptSha256: calibrationAdmissionSha256(materializationReceipt),
+    },
+    artifacts: sourceArtifacts,
+  };
+  delete (proposalBody as { proposalSha256?: string }).proposalSha256;
+  const sourceProposal = rehash(proposalBody, 'proposalSha256', calibrationAdmissionSourceGenerationProposalSha256) as unknown as CalibrationAdmissionSourceGenerationProposalV1;
+  const approvalBody = {
+    version: 'v10.3-admission-source-generation-approval-v1' as const,
+    approvalId: 'source-a-semantic-approval',
+    proposalId: sourceProposal.proposalId,
+    proposalSha256: sourceProposal.proposalSha256,
+    blindAssignmentId: assignment.assignmentId,
+    reviewerDecisionIds: decisions.map((decision) => decision.decisionId).sort() as [string, string],
+    blindReviewReceiptId: receipt.receiptId,
+  };
+  const approval = {
+    ...approvalBody,
+    approvalSha256: calibrationAdmissionSourceGenerationApprovalSha256(approvalBody),
+  };
+  const sourceGenerationBody = {
+    ...source.sourceGeneration,
+    proposalSha256: sourceProposal.proposalSha256,
+    approval: {
+      kind: 'independent_review' as const,
+      approvalId: approval.approvalId,
+      approvalSha256: approval.approvalSha256,
+    },
+    sourceReviewSha256,
+    artifacts: sourceArtifacts,
+    artifactSetSha256: calibrationAdmissionSourceGenerationArtifactSetSha256(sourceArtifacts),
+  };
+  delete (sourceGenerationBody as { generationSha256?: string }).generationSha256;
+  const sourceGeneration = rehash(sourceGenerationBody, 'generationSha256', calibrationAdmissionSourceGenerationSha256) as unknown as CalibrationAdmissionSourceGenerationV1;
+  const sourceCurrentBody = {
+    ...source.current,
+    generationSha256: sourceGeneration.generationSha256,
+    generationRelativePath: `sources/${sourceId}/generations/${sourceGeneration.generationSha256}`,
+  };
+  delete (sourceCurrentBody as { currentSha256?: string }).currentSha256;
+  const sourceCurrent = rehash(sourceCurrentBody, 'currentSha256', calibrationAdmissionSourceCurrentSha256) as unknown as CalibrationAdmissionSourceCurrentV1;
+  const inputProposalBody = {
+    ...fixture.proposal,
+    sourceGenerationProposals: fixture.proposal.sourceGenerationProposals.map((reference) => ({
+      ...reference,
+      proposalId: sourceProposal.proposalId,
+      proposalSha256: sourceProposal.proposalSha256,
+      approvalRelativePath: `review/admission/sources/${sourceId}/proposals/${sourceProposal.proposalId}-approval.json`,
+      approvalSha256: approval.approvalSha256,
+    })),
+  };
+  delete (inputProposalBody as { proposalSha256?: string }).proposalSha256;
+  const inputProposal = rehash(inputProposalBody, 'proposalSha256', calibrationAdmissionInputGenerationProposalSha256) as unknown as CalibrationAdmissionInputGenerationProposalV1;
+  const inputGenerationBody = {
+    ...fixture.inputGeneration,
+    sourceGenerations: fixture.inputGeneration.sourceGenerations.map((reference) => ({
+      ...reference,
+      generationSha256: sourceGeneration.generationSha256,
+      artifactSetSha256: sourceGeneration.artifactSetSha256,
+      relativePath: `review/admission/${sourceCurrent.generationRelativePath}`,
+    })),
+  };
+  delete (inputGenerationBody as { generationSha256?: string }).generationSha256;
+  const inputGeneration = rehash(inputGenerationBody, 'generationSha256', calibrationAdmissionInputGenerationSha256) as unknown as CalibrationAdmissionInputGenerationV1;
+  const staticGenerationBody = { ...fixture.staticGeneration, inputGenerationSha256: inputGeneration.generationSha256 };
+  delete (staticGenerationBody as { generationSha256?: string }).generationSha256;
+  const staticGeneration = rehash(staticGenerationBody, 'generationSha256', calibrationAdmissionStaticAuthorityGenerationSha256) as unknown as CalibrationAdmissionStaticAuthorityGenerationV1;
+  const currentBody = {
+    ...fixture.current,
+    staticGenerationSha256: staticGeneration.generationSha256,
+    staticGenerationRelativePath: `review/admission/authority/static-generations/${staticGeneration.generationSha256}`,
+  };
+  delete (currentBody as { currentSha256?: string }).currentSha256;
+  const current = rehash(currentBody, 'currentSha256', calibrationAdmissionAuthorityCurrentSha256) as unknown as CalibrationAdmissionAuthorityCurrentV1;
+  const sourceWithSemantic = {
+    ...source,
+    sourceGeneration,
+    sourceGenerationBytes: canonical(sourceGeneration),
+    current: sourceCurrent,
+    currentBytes: canonical(sourceCurrent),
+    sourceReviewBytes: reviewBytes,
+    artifactBytes: {
+      'decision-ledger.json': ledgerBytes,
+      'source-review.json': reviewBytes,
+    },
+    sourceProposal,
+    sourceProposalBytes: canonical(sourceProposal),
+    approval,
+    approvalBytes: canonical(approval),
+    semanticAuthority,
+    semanticAuthorityBytes: canonical(semanticAuthority),
+  };
+  return {
+    ...fixture,
+    proposal: inputProposal,
+    proposalBytes: canonical(inputProposal),
+    inputGeneration,
+    inputGenerationBytes: canonical(inputGeneration),
+    staticGeneration,
+    staticGenerationBytes: canonical(staticGeneration),
+    current,
+    currentBytes: canonical(current),
+    sources: [sourceWithSemantic],
   } as PrebuiltAuthorityGraphFixture;
 }

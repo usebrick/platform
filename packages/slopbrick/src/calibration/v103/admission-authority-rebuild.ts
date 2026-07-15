@@ -4,6 +4,7 @@ import { TextDecoder } from 'node:util';
 import {
   calibrationAdmissionAuthorityCurrentSha256,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionSha256,
   calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
@@ -16,6 +17,7 @@ import {
   isCalibrationAdmissionSourceGenerationV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
   isCalibrationSourceReviewV103,
+  validateCalibrationAdmissionSourceGenerationGraphV1,
   validateCalibrationAdmissionStaticAuthorityGraphV1,
   type CalibrationAdmissionAuthorityCurrentV1,
   type CalibrationAdmissionInputGenerationProposalV1,
@@ -40,6 +42,30 @@ export type PrebuiltAdmissionAuthorityArtifactBytesInput =
   | Readonly<Record<string, Uint8Array>>
   | readonly PrebuiltAdmissionAuthorityArtifactBytes[];
 
+/** Byte-backed semantic source-review authority persisted beside source generation bytes. */
+export interface PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1 {
+  readonly version: 'v10.3-admission-source-semantic-authority-v1';
+  readonly sourceId: string;
+  readonly proposalId: string;
+  readonly blindAssignment: unknown;
+  readonly decisions: readonly unknown[];
+  readonly blindReviewReceipt: unknown;
+  readonly acquisitionSnapshot?: unknown;
+  readonly materializationReceipt?: unknown;
+  readonly evidenceBundle?: unknown;
+  readonly authoritySha256: string;
+}
+
+export const PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME = 'source-semantic-authority.json' as const;
+
+/** Fixed, contained path for a source generation's semantic authority bytes. */
+export function prebuiltAdmissionAuthoritySourceSemanticAuthorityRelativePath(
+  sourceId: string,
+  generationSha256: string,
+): string {
+  return `review/admission/sources/${sourceId}/generations/${generationSha256}/${PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME}`;
+}
+
 /** One immutable source-generation authority and the bytes it claims. */
 export interface PrebuiltAdmissionAuthoritySourceInput {
   readonly sourceGeneration: unknown;
@@ -56,6 +82,9 @@ export interface PrebuiltAdmissionAuthoritySourceInput {
   /** Optional exact independent-review approval object and canonical bytes. */
   readonly approval?: CalibrationAdmissionSourceGenerationApprovalV1;
   readonly approvalBytes?: Uint8Array;
+  /** Optional semantic source-review authority bundle and exact canonical bytes. */
+  readonly semanticAuthority?: PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1;
+  readonly semanticAuthorityBytes?: Uint8Array;
 }
 
 /**
@@ -220,6 +249,98 @@ function verifyArtifactBytes(
   return artifactMap;
 }
 
+const SOURCE_SEMANTIC_AUTHORITY_VERSION = 'v10.3-admission-source-semantic-authority-v1' as const;
+
+/** Recompute the self-hash carried by a semantic source authority bundle. */
+export function calibrationAdmissionSourceSemanticAuthoritySha256(value: unknown): string {
+  if (!isRecord(value)) return calibrationAdmissionSha256(value);
+  const body = { ...value };
+  delete body.authoritySha256;
+  return calibrationAdmissionSha256(body);
+}
+
+function semanticAuthorityShape(value: unknown): value is PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1 {
+  if (!isRecord(value)) return false;
+  const expectedKeys = [
+    'version', 'sourceId', 'proposalId', 'blindAssignment', 'decisions', 'blindReviewReceipt',
+    ...(Object.prototype.hasOwnProperty.call(value, 'acquisitionSnapshot') ? ['acquisitionSnapshot'] : []),
+    ...(Object.prototype.hasOwnProperty.call(value, 'materializationReceipt') ? ['materializationReceipt'] : []),
+    ...(Object.prototype.hasOwnProperty.call(value, 'evidenceBundle') ? ['evidenceBundle'] : []),
+    'authoritySha256',
+  ].sort();
+  const actualKeys = Object.keys(value).sort();
+  return actualKeys.length === expectedKeys.length
+    && actualKeys.every((key, index) => key === expectedKeys[index])
+    && value.version === SOURCE_SEMANTIC_AUTHORITY_VERSION
+    && typeof value.sourceId === 'string'
+    && typeof value.proposalId === 'string'
+    && Array.isArray(value.decisions)
+    && value.decisions.length === 2
+    && typeof value.authoritySha256 === 'string'
+    && /^[a-f0-9]{64}$/u.test(value.authoritySha256)
+    && calibrationAdmissionSourceSemanticAuthoritySha256(value) === value.authoritySha256;
+}
+
+function verifySemanticAuthority(
+  sourceInput: Record<string, unknown>,
+  sourceId: string,
+  sourceGeneration: unknown,
+  sourceProposal: unknown,
+  review: unknown,
+  errors: string[],
+): void {
+  const semantic = sourceInput.semanticAuthority;
+  const semanticBytes = sourceInput.semanticAuthorityBytes;
+  const hasSemanticPair = semantic !== undefined || semanticBytes !== undefined;
+  if (!hasSemanticPair) return;
+  if (semantic === undefined || !bytes(semanticBytes)) {
+    push(errors, `source ${sourceId} semantic authority object and bytes must be supplied together`);
+    return;
+  }
+  if (!semanticAuthorityShape(semantic)) {
+    push(errors, `source ${sourceId} semantic authority bundle is invalid`);
+    return;
+  }
+  if (!isCalibrationAdmissionSourceGenerationV1(sourceGeneration)) {
+    push(errors, `source ${sourceId} semantic authority source generation is invalid`);
+    return;
+  }
+  const typedProposal = isCalibrationAdmissionSourceGenerationProposalV1(sourceProposal) ? sourceProposal : undefined;
+  verifyCanonicalBytes(semantic, semanticBytes, `source ${sourceId} semantic authority bytes`, errors);
+  if (semantic.sourceId !== sourceId
+    || typedProposal === undefined
+    || semantic.proposalId !== typedProposal.proposalId
+    || sourceGeneration.approval.kind !== 'independent_review') {
+    push(errors, `source ${sourceId} semantic authority does not bind an independent-review proposal`);
+  }
+  const materializationAuthority = typedProposal?.materializationAuthority;
+  const hasAcquired = Object.prototype.hasOwnProperty.call(semantic, 'acquisitionSnapshot')
+    || Object.prototype.hasOwnProperty.call(semantic, 'materializationReceipt');
+  const hasGenesis = Object.prototype.hasOwnProperty.call(semantic, 'evidenceBundle');
+  if (materializationAuthority?.kind === 'acquired' && (!hasAcquired || hasGenesis)) {
+    push(errors, `source ${sourceId} acquired semantic authority requires snapshot and materialization receipt only`);
+  } else if (materializationAuthority?.kind === 'genesis' && (!hasGenesis || hasAcquired)) {
+    push(errors, `source ${sourceId} genesis semantic authority requires an evidence bundle only`);
+  }
+  if (!isCalibrationSourceReviewV103(review)) {
+    push(errors, `source ${sourceId} semantic authority source review is invalid`);
+    return;
+  }
+  const graph = validateCalibrationAdmissionSourceGenerationGraphV1({
+    proposal: typedProposal,
+    sourceReview: review,
+    generation: sourceGeneration,
+    approval: sourceInput.approval,
+    blindAssignment: semantic.blindAssignment,
+    decisions: semantic.decisions,
+    blindReviewReceipt: semantic.blindReviewReceipt,
+    ...(semantic.evidenceBundle === undefined ? {} : { evidenceBundle: semantic.evidenceBundle }),
+    ...(semantic.acquisitionSnapshot === undefined ? {} : { acquisitionSnapshot: semantic.acquisitionSnapshot }),
+    ...(semantic.materializationReceipt === undefined ? {} : { materializationReceipt: semantic.materializationReceipt }),
+  });
+  if (!graph.ok) for (const error of graph.errors) push(errors, `source ${sourceId} semantic authority: ${error}`);
+}
+
 function verifySource(
   sourceInput: unknown,
   sourceIndex: number,
@@ -234,10 +355,12 @@ function verifySource(
   const sourceKeys = Object.keys(sourceInput).sort();
   const hasProposalPair = sourceInput.sourceProposal !== undefined || sourceInput.sourceProposalBytes !== undefined;
   const hasApprovalPair = sourceInput.approval !== undefined || sourceInput.approvalBytes !== undefined;
+  const hasSemanticPair = sourceInput.semanticAuthority !== undefined || sourceInput.semanticAuthorityBytes !== undefined;
   const expectedSourceKeys = [
     'artifactBytes', 'current', 'currentBytes', 'sourceGeneration', 'sourceGenerationBytes', 'sourceReviewBytes',
     ...(hasProposalPair ? ['sourceProposal', 'sourceProposalBytes'] : []),
     ...(hasApprovalPair ? ['approval', 'approvalBytes'] : []),
+    ...(hasSemanticPair ? ['semanticAuthority', 'semanticAuthorityBytes'] : []),
   ].sort();
   if (sourceKeys.length !== expectedSourceKeys.length || sourceKeys.some((key, index) => key !== expectedSourceKeys[index])) {
     push(errors, `source ${sourceIndex} authority entry has unexpected keys`);
@@ -369,6 +492,7 @@ function verifySource(
     && sourceGeneration.sourceReviewSha256 !== calibrationAdmissionSourceReviewSha256(reviewResult.review)) {
     push(errors, `source ${sourceId} generation source-review hash is not bound to canonical review bytes`);
   }
+  if (hasSemanticPair) verifySemanticAuthority(sourceInput, sourceId, sourceGeneration, sourceProposal, reviewResult.review, errors);
   return sourceId;
 }
 
