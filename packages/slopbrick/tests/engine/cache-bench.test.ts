@@ -39,7 +39,10 @@ describe('AST cache (round 25)', () => {
       // First parse: cold (no cache).
       const firstStart = Date.now();
       const first = await parseFile(filePath, { cache });
-      const firstElapsed = Date.now() - firstStart;
+      // Date.now() can report zero for a fast parse on a quiet machine. Keep
+      // the benchmark diagnostic without letting clock granularity turn it
+      // into a false failure.
+      const firstElapsed = Math.max(Date.now() - firstStart, 1);
       expect(first.ast.type).toBe('Module');
 
       // Second parse: should hit the cache.

@@ -154,7 +154,10 @@ async function waitForPartialHealth(
       health.requested === requested &&
       health.analyzed === analyzed &&
       health.failed === failed;
-  }, 8_000);
+  // The recursive workspace gate runs this opt-in subprocess suite alongside
+  // the other packages. Allow the child scan a little more wall time under
+  // that load while keeping the assertion bounded.
+  }, 15_000);
 }
 
 function watchNoticeCount(output: string): number {
@@ -429,7 +432,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
           rmSync(dir, { recursive: true, force: true });
         }
-      }, 20_000);
+      }, 35_000);
     }
   }
 

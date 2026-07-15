@@ -669,10 +669,13 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (/(?:^|[\\/])review[\\/]admission[\\/]?$/u.test(root)) {
       throw new Error('rebuild:pre-witness requires the project root; pass the parent of review/admission, not review/admission itself');
     }
+    if (action !== undefined) {
+      throw new Error('rebuild:pre-witness accepts explicit graph paths, operation/CAS, static-ledgers profile, indexed tool selectors, and real-scale receipt requirement; its outer action is fixed to rebuild:pre-witness');
+    }
     if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt
       || !preWitnessBundlePath || !overlapGenerationPath || !overlapIndexPath || !overlapResourceReceiptPath || !overlapLedgerPath
       || realScaleRecordCount === undefined || !realScaleUniverseSha256 || !realScaleRecordsJsonlSha256) {
-      throw new Error('rebuild:pre-witness requires explicit graph paths, --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
+      throw new Error('rebuild:pre-witness requires explicit graph paths (--input-generation-proposal, --input-generation, --current), --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
     if (operation === 'create' && (!expectCurrentAbsent || expectedCurrentStaticGenerationSha256 !== undefined)) {
       throw new Error('rebuild:pre-witness create requires --expect-current-absent and forbids --expected-current-static-generation-sha256');
@@ -705,7 +708,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (!inputGenerationProposalPath || !inputGenerationPath || !currentPath || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter
       || !requireRealScaleReceipt || !preWitnessBundlePath || !overlapGenerationPath || !overlapIndexPath || !overlapResourceReceiptPath || !overlapLedgerPath
       || realScaleRecordCount === undefined || !realScaleUniverseSha256 || !realScaleRecordsJsonlSha256) {
-      throw new Error('static-authority:recover requires explicit graph paths, --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, exactly one recovery selector, --recovery-nonce, --acknowledge-no-live-writer, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
+      throw new Error('static-authority:recover requires explicit graph paths (--input-generation-proposal, --input-generation, --current), --pre-witness-bundle, all overlap generation/envelope paths, positive real-scale selectors, exactly one recovery selector, --recovery-nonce, --acknowledge-no-live-writer, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
     }
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce)) throw new Error('--recovery-nonce must be a lowercase SHA-256');
     for (const [label, value] of [['--invocation-intent', invocationIntentId], ['--tool-receipt-id', toolReceiptId], ['--tool-receipt-sha256', toolReceiptSha256], ['--tool-authority-index-sha256', toolAuthorityIndexSha256], ['--output-set-sha256', outputSetSha256]] as const) {

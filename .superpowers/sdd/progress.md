@@ -1288,6 +1288,26 @@ and allocation preview. The live read-only `census:preview` still reports
 units. The smoke/canary witnesses remain deferred until those authority inputs
 exist; no labels or corpus files were changed.
 
+### Task 2B final package-wide quality gate — 2026-07-15
+
+The one integrated full-suite rerun found two CLI message-order regressions and
+one zero-millisecond cache-benchmark flake. The parser now retains the stable
+`requires explicit graph paths` wording while naming the missing selectors,
+rejects a nested outer action before completeness validation, and the benchmark
+clamps a zero-millisecond cold sample to one millisecond. The checked-in `dist`
+source maps were rebuilt. The affected suites pass **20/20** and the final
+serial SlopBrick gate passes **325 test files / 3,697 tests**, with **5 skipped
+files / 9 skipped tests**. Typecheck and build pass with only the existing
+non-fatal Zod declaration warnings. This closes the code/test gate for the
+slice; it does not create authority or change the live corpus, which remains
+**0 candidate / 0 eligible** and **452,382** quarantined/unrepresented units.
+
+The required recursive workspace gates are green after one timing-only watch
+failure was corrected: Core **231/231**, engine **59/59**, website **38/38**,
+and SlopBrick **3,697 passed / 9 skipped**; recursive typecheck and build also
+pass. The watch suite is **45/45** with a 15s bounded partial-health wait for
+loaded recursive runs.
+
 ### Task 2B nested publication handoff contract helper — 2026-07-15
 
 The Core contract now has a pure builder for the already-versioned nested
