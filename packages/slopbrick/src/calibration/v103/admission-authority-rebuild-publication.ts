@@ -557,6 +557,15 @@ function validatePlanGraph(plan: PrebuiltAdmissionAuthorityPublicationPlanSucces
   validateToolReceipt(tool);
 }
 
+/**
+ * The fixture publisher only owns immutable generation-local directories.  A
+ * source graph may legitimately declare an admission-root CAS bundle (the
+ * Core validator and read-only loader verify that boundary), but this
+ * publisher has no CAS reservation/reuse transaction.  Rejecting such a
+ * graph before the lock is created is intentional: otherwise the generic
+ * artifact loop below would copy a root-CAS path into a generation directory
+ * and silently change its ownership/topology.
+ */
 function assertGenerationLocalArtifacts(value: unknown, label: string): void {
   if (!Array.isArray(value)) return;
   for (const artifact of value) {

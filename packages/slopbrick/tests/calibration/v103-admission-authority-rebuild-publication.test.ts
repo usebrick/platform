@@ -8,8 +8,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   calibrationAdmissionAuthorityCurrentSha256,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionSha256,
+  calibrationAdmissionSourceGenerationArtifactSetSha256,
+  calibrationAdmissionSourceGenerationProposalSha256,
+  calibrationAdmissionSourceGenerationSha256,
+  calibrationAdmissionSourceCurrentSha256,
   calibrationAdmissionStaticAuthorityGenerationSha256,
 } from '@usebrick/core';
 
@@ -29,6 +34,110 @@ import { PREBUILT_ADMISSION_SOURCE_SEMANTIC_AUTHORITY_FILENAME } from '../../src
 const roots: string[] = [];
 const hex = (value: string) => createHash('sha256').update(value).digest('hex');
 const bytes = (value: unknown) => Buffer.from(calibrationAdmissionCanonicalJson(value), 'utf8');
+
+/** Build a graph that is valid for the Core/loader CAS boundary. */
+function makeCasSourceAuthorityFixture() {
+  const fixture = makePrebuiltAuthorityFixture();
+  const source = fixture.sources[0]!;
+  const casBytes = Buffer.from('content-addressed bundle\n', 'utf8');
+  const casSha256 = hex(casBytes);
+  const casPath = `evidence-cas/sha256/${casSha256.slice(0, 2)}/${casSha256}`;
+  const sourceReviewArtifact = source.sourceGeneration.artifacts.find((artifact) => artifact.kind === 'source_review')!;
+  const casArtifact = {
+    pathBase: 'admission_root_content_addressed' as const,
+    relativePath: casPath,
+    kind: 'bundle' as const,
+    bytes: casBytes.byteLength,
+    sha256: casSha256,
+  };
+  const sourceArtifacts = [casArtifact, sourceReviewArtifact] as const;
+  const sourceProposalBody = { ...source.sourceProposal, artifacts: sourceArtifacts };
+  const sourceProposal = {
+    ...sourceProposalBody,
+    proposalSha256: calibrationAdmissionSourceGenerationProposalSha256(sourceProposalBody),
+  };
+  const sourceGenerationBody = {
+    ...source.sourceGeneration,
+    proposalSha256: sourceProposal.proposalSha256,
+    artifacts: sourceArtifacts,
+    artifactSetSha256: calibrationAdmissionSourceGenerationArtifactSetSha256(sourceArtifacts),
+  };
+  const sourceGeneration = {
+    ...sourceGenerationBody,
+    generationSha256: calibrationAdmissionSourceGenerationSha256(sourceGenerationBody),
+  };
+  const sourceCurrentBody = {
+    ...source.current,
+    generationSha256: sourceGeneration.generationSha256,
+    generationRelativePath: `sources/${source.sourceGeneration.sourceId}/generations/${sourceGeneration.generationSha256}`,
+  };
+  const sourceCurrent = {
+    ...sourceCurrentBody,
+    currentSha256: calibrationAdmissionSourceCurrentSha256(sourceCurrentBody),
+  };
+  const proposalBody = {
+    ...fixture.proposal,
+    sourceGenerationProposals: fixture.proposal.sourceGenerationProposals.map((reference) => ({
+      ...reference,
+      proposalSha256: sourceProposal.proposalSha256,
+    })),
+  };
+  const proposal = {
+    ...proposalBody,
+    proposalSha256: calibrationAdmissionInputGenerationProposalSha256(proposalBody),
+  };
+  const inputGenerationBody = {
+    ...fixture.inputGeneration,
+    sourceGenerations: fixture.inputGeneration.sourceGenerations.map((reference) => ({
+      ...reference,
+      generationSha256: sourceGeneration.generationSha256,
+      artifactSetSha256: sourceGeneration.artifactSetSha256,
+      relativePath: `review/admission/${sourceCurrent.generationRelativePath}`,
+    })),
+  };
+  const inputGeneration = {
+    ...inputGenerationBody,
+    generationSha256: calibrationAdmissionInputGenerationSha256(inputGenerationBody),
+  };
+  const staticGenerationBody = { ...fixture.staticGeneration, inputGenerationSha256: inputGeneration.generationSha256 };
+  const staticGeneration = {
+    ...staticGenerationBody,
+    generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(staticGenerationBody),
+  };
+  const currentBody = {
+    ...fixture.current,
+    staticGenerationSha256: staticGeneration.generationSha256,
+    staticGenerationRelativePath: `review/admission/authority/static-generations/${staticGeneration.generationSha256}`,
+  };
+  const current = {
+    ...currentBody,
+    currentSha256: calibrationAdmissionAuthorityCurrentSha256(currentBody),
+  };
+  return {
+    ...fixture,
+    proposal,
+    proposalBytes: bytes(proposal),
+    inputGeneration,
+    inputGenerationBytes: bytes(inputGeneration),
+    staticGeneration,
+    staticGenerationBytes: bytes(staticGeneration),
+    current,
+    currentBytes: bytes(current),
+    sources: [{
+      ...source,
+      sourceGeneration,
+      sourceGenerationBytes: bytes(sourceGeneration),
+      current: sourceCurrent,
+      currentBytes: bytes(sourceCurrent),
+      sourceProposal,
+      sourceProposalBytes: bytes(sourceProposal),
+      artifactBytes: {
+        'source-review.json': source.artifactBytes['source-review.json']!,
+        [casPath]: casBytes,
+      },
+    }],
+  };
+}
 
 function request(fixture: ReturnType<typeof makePrebuiltAuthorityFixture>, root: string, phaseHook?: (phase: string) => void): {
   readonly root: string;
@@ -90,6 +199,15 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     roots.push(root);
     const fixture = makeIndependentApprovalAuthorityFixture();
     await expect(publishPrebuiltAdmissionAuthority(request(fixture, root))).rejects.toThrow(/semantic authority/i);
+  });
+
+  it('fails closed before mutation for a valid source CAS artifact', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-cas-'));
+    roots.push(root);
+    const fixture = makeCasSourceAuthorityFixture();
+    await expect(publishPrebuiltAdmissionAuthority(request(fixture, root))).rejects.toThrow(/generation-local|CAS/i);
+    await expect(stat(join(root, 'review', 'admission', 'authority'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('publishes explicit fixture bytes and removes only its journals', async () => {
