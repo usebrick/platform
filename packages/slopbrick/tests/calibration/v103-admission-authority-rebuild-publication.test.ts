@@ -89,7 +89,7 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     expect(await stat(join(root, 'review', 'admission', 'authority', 'current.json'))).toBeTruthy();
     expect(await stat(join(root, 'review', 'admission', 'authority', 'proposals', `${fixture.proposal.proposalId}.json`))).toBeTruthy();
     expect(await readFile(join(root, 'review', 'admission', 'authority', 'current.json'))).toEqual(fixture.currentBytes);
-    await expect(stat(join(root, 'review', 'admission', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild-transaction.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
@@ -155,6 +155,73 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     })).rejects.toThrow(/bytes changed|static generation/i);
   });
 
+  it('rejects a promoted source-generation mutation during recovery', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-source-tamper-'));
+    roots.push(root);
+    const fixture = makePrebuiltAuthorityFixture();
+    const initial = request(fixture, root);
+    const planned = planPrebuiltAdmissionAuthorityPublication(initial.planInput);
+    if (!planned.ok) throw new Error(planned.errors.join('; '));
+    await expect(publishPrebuiltAdmissionAuthority({
+      ...initial,
+      phaseHook: async (phase) => {
+        if (phase === 'source-generation-directories-promoted') {
+          const descriptor = planned.paths.sourceGenerationDirectories[0]!;
+          await writeFile(join(root, descriptor.generationFinalRelativePath, 'source-generation.json'), 'tampered');
+          throw new Error('stop after source promotion');
+        }
+      },
+    })).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    })).rejects.toThrow(/bytes changed|source/i);
+  });
+
+  it('rejects a current-pointer mutation after the complete journal phase', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-complete-tamper-'));
+    roots.push(root);
+    const fixture = makePrebuiltAuthorityFixture();
+    const initial = request(fixture, root);
+    await expect(publishPrebuiltAdmissionAuthority({
+      ...initial,
+      phaseHook: async (phase) => {
+        if (phase === 'complete') {
+          await writeFile(join(root, 'review', 'admission', 'authority', 'current.json'), 'tampered');
+          throw new Error('stop after complete journal');
+        }
+      },
+    })).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    })).rejects.toThrow(/bytes changed|current/i);
+  });
+
+  it('fails closed when a caller-supplied plan leaves the fixed authority topology', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-plan-path-'));
+    roots.push(root);
+    const fixture = makePrebuiltAuthorityFixture();
+    const initial = request(fixture, root);
+    const planned = planPrebuiltAdmissionAuthorityPublication(initial.planInput);
+    if (!planned.ok) throw new Error(planned.errors.join('; '));
+    const tamperedPlan = {
+      ...planned,
+      paths: {
+        ...planned.paths,
+        staticGenerationStagingRelativePath: `tmp/${planned.transaction.transactionId}`,
+      },
+    };
+    await expect(publishPrebuiltAdmissionAuthority({
+      ...initial,
+      plan: tamperedPlan,
+      planInput: undefined,
+    })).rejects.toThrow(/topology|paths|transaction/i);
+    await expect(stat(join(root, 'review', 'admission', 'authority'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('rejects a stale create current before creating a lock or mutating authority', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-stale-'));
     roots.push(root);
@@ -177,7 +244,7 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     await expect(stat(join(root, 'review', 'admission', 'authority'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
-  it('keeps lock-only recovery read-only and explicit', async () => {
+  it('validates and cleans a lock-only recovery explicitly', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-lock-'));
     roots.push(root);
     const fixture = makePrebuiltAuthorityFixture();
@@ -185,6 +252,29 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toThrow(/stop after lock/);
     const result = await recoverPrebuiltAdmissionAuthority({ ...initial, fromLock: true, acknowledgeNoLiveWriter: true, recoveryNonce: initial.planInput.recoveryNonce });
     expect(result.status).toBe('lock-only');
+    expect(result.complete).toBe(true);
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('rejects lock-only recovery with a wrong nonce before cleanup', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-lock-binding-'));
+    roots.push(root);
+    const fixture = makePrebuiltAuthorityFixture();
+    const initial = request(fixture, root, (phase) => { if (phase === 'lock-fsynced') throw new Error('stop after lock'); });
+    await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toThrow(/stop after lock/);
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      fromLock: true,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: hex('wrong-recovery'),
+    })).rejects.toThrow(/binding|nonce/i);
+    await expect(recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      fromLock: true,
+      transactionId: 'wrong-transaction-selector',
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    })).rejects.toThrow(/only explicit|selector/i);
     expect(await stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).toBeTruthy();
   });
 });

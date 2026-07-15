@@ -1,7 +1,11 @@
 /**
  * Fixture-scale transactional publication of an already validated authority
  * graph. This module is deliberately not a corpus builder or CLI authority:
- * callers must provide every graph object and byte map explicitly.
+ * callers must provide every graph object and byte map explicitly. The
+ * v10.3 prebuilt graph contract intentionally carries source-proposal
+ * references (not source-proposal bytes) and receipt metadata (not receipt
+ * objects); a successful transaction therefore proves only local byte
+ * publication/recovery, not corpus-admission readiness.
  */
 import { constants } from 'node:fs';
 import {
@@ -48,6 +52,14 @@ const AUTHORITY_CURRENT_RELATIVE_PATH = `${AUTHORITY_RELATIVE_ROOT}/current.json
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
 
+function canonicalInputGenerationPath(generationSha256: string): string {
+  return `${AUTHORITY_RELATIVE_ROOT}/input-generations/${generationSha256}/generation.json`;
+}
+
+function canonicalStaticGenerationPath(generationSha256: string): string {
+  return `${AUTHORITY_RELATIVE_ROOT}/static-generations/${generationSha256}`;
+}
+
 export type PrebuiltAuthorityPublicationPhase =
   | 'lock-fsynced'
   | 'transaction-fsynced'
@@ -66,6 +78,7 @@ export type PrebuiltAuthorityPublicationPhase =
   | 'complete';
 
 export interface PrebuiltAuthorityPublicationToolReceipt {
+  /** Metadata supplied by the caller; snapshot membership is a later authority-context gate. */
   readonly receiptId: string;
   readonly receiptSha256: string;
   readonly authorityIndexSha256: string;
@@ -91,7 +104,7 @@ export interface PrebuiltAuthorityPublicationRecoveryRequest extends PrebuiltAut
   readonly fromLock?: boolean;
 }
 
-export type PrebuiltAuthorityPublicationStatus = 'complete' | 'recovery-required' | 'lock-only' | 'contended';
+export type PrebuiltAuthorityPublicationStatus = 'complete' | 'recovery-required' | 'lock-only';
 
 export interface PrebuiltAuthorityPublicationResult {
   readonly complete: boolean;
@@ -130,6 +143,8 @@ type PublicationContext = {
   readonly phaseHook?: (phase: PrebuiltAuthorityPublicationPhase) => void | Promise<void>;
   transaction: CalibrationAdmissionAuthorityRebuildTransactionV1;
 };
+
+type PublicationTransactionPhase = CalibrationAdmissionAuthorityRebuildTransactionV1['state']['phase'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -335,6 +350,60 @@ function result(context: PublicationContext, status: PrebuiltAuthorityPublicatio
   };
 }
 
+function assertTransactionStateBindings(context: PublicationContext): void {
+  const phase = context.transaction.state.phase as PublicationTransactionPhase;
+  if (phase === 'overlap_generation_verified') {
+    throw new Error('authority publication does not accept the overlap-generation intermediate phase');
+  }
+  if (phase === 'intent_fsynced') return;
+  const state = context.transaction.state as unknown as Record<string, unknown>;
+  const inputGeneration = context.graph.inputGeneration as { generationSha256: string };
+  const staticGeneration = context.graph.staticGeneration as { generationSha256: string; overlapGenerationSha256: string };
+  if (state.inputGenerationSha256 !== inputGeneration.generationSha256) {
+    throw new Error('authority publication transaction input-generation binding mismatch');
+  }
+  if (phase === 'primary_static_outputs_fsynced'
+    || phase === 'tool_receipt_indexed'
+    || phase === 'static_generation_staged_fsynced'
+    || phase === 'static_generation_promoted'
+    || phase === 'static_generations_parent_fsynced'
+    || phase === 'source_current_pointers_promoted'
+    || phase === 'authority_current_promoted'
+    || phase === 'output_directories_fsynced'
+    || phase === 'complete') {
+    if (state.overlapGenerationSha256 !== staticGeneration.overlapGenerationSha256
+      || state.primaryOutputSetSha256 !== context.toolReceipt.primaryOutputSetSha256) {
+      throw new Error('authority publication transaction primary-output binding mismatch');
+    }
+  }
+  if (phase === 'tool_receipt_indexed'
+    || phase === 'static_generation_staged_fsynced'
+    || phase === 'static_generation_promoted'
+    || phase === 'static_generations_parent_fsynced'
+    || phase === 'source_current_pointers_promoted'
+    || phase === 'authority_current_promoted'
+    || phase === 'output_directories_fsynced'
+    || phase === 'complete') {
+    if (state.toolReceiptId !== context.toolReceipt.receiptId
+      || state.toolReceiptSha256 !== context.toolReceipt.receiptSha256
+      || state.toolAuthorityIndexSha256 !== context.toolReceipt.authorityIndexSha256) {
+      throw new Error('authority publication transaction tool-receipt binding mismatch');
+    }
+  }
+  if (phase === 'static_generation_staged_fsynced'
+    || phase === 'static_generation_promoted'
+    || phase === 'static_generations_parent_fsynced'
+    || phase === 'source_current_pointers_promoted'
+    || phase === 'authority_current_promoted'
+    || phase === 'output_directories_fsynced'
+    || phase === 'complete') {
+    if (state.staticGenerationSha256 !== staticGeneration.generationSha256
+      || state.staticGenerationRelativePath !== context.plan.paths.staticGenerationFinalRelativePath) {
+      throw new Error('authority publication transaction static-generation binding mismatch');
+    }
+  }
+}
+
 function validateToolReceipt(tool: PrebuiltAuthorityPublicationToolReceipt): void {
   if (!id(tool.receiptId) || !sha(tool.receiptSha256) || !sha(tool.authorityIndexSha256) || !sha(tool.primaryOutputSetSha256)) {
     throw new Error('authority publication tool receipt metadata is invalid');
@@ -353,11 +422,91 @@ function validatePlanGraph(plan: PrebuiltAdmissionAuthorityPublicationPlanSucces
     || !isCalibrationAdmissionInputGenerationV1(graph.inputGeneration)
     || !isCalibrationAdmissionStaticAuthorityGenerationV1(graph.staticGeneration)
     || !isCalibrationAdmissionAuthorityCurrentV1(graph.current)) throw new Error('authority publication graph types are invalid');
+  if (graph.proposal.operation !== plan.lock.operation
+    || calibrationAdmissionCanonicalJson(graph.proposal.expectedCurrentState)
+      !== calibrationAdmissionCanonicalJson(plan.lock.expectedCurrentState)) {
+    throw new Error('authority publication graph operation/CAS state does not match plan');
+  }
+  if (plan.lock.operation === 'create') {
+    if (graph.inputGeneration.generation !== 0
+      || graph.inputGeneration.parentInputGenerationSha256 !== undefined
+      || graph.staticGeneration.generation !== 0
+      || graph.staticGeneration.parentStaticGenerationSha256 !== undefined
+      || graph.priorCurrent !== undefined) {
+      throw new Error('authority publication create graph ancestry does not match plan');
+    }
+  } else {
+    const priorInputHash = plan.paths.priorInputGenerationRelativePath?.split('/').at(-2);
+    if (graph.inputGeneration.generation === 0
+      || graph.inputGeneration.parentInputGenerationSha256 === undefined
+      || graph.inputGeneration.parentInputGenerationSha256 !== priorInputHash
+      || plan.lock.expectedCurrentState.kind !== 'existing'
+      || graph.staticGeneration.generation === 0
+      || graph.staticGeneration.parentStaticGenerationSha256 !== plan.lock.expectedCurrentState.staticGenerationSha256
+      || !isCalibrationAdmissionAuthorityCurrentV1(graph.priorCurrent)
+      || graph.priorCurrent.staticGenerationSha256 !== plan.lock.expectedCurrentState.staticGenerationSha256) {
+      throw new Error('authority publication replace graph ancestry does not match plan');
+    }
+  }
   if (graph.proposal.proposalId !== plan.lock.inputGenerationProposalId
     || graph.proposal.proposalSha256 !== plan.lock.inputGenerationProposalSha256) throw new Error('authority publication proposal does not match plan');
+  if (plan.paths.lockRelativePath !== LOCK_RELATIVE_PATH
+    || plan.paths.transactionRelativePath !== TRANSACTION_RELATIVE_PATH
+    || plan.paths.authorityCurrentFinalRelativePath !== AUTHORITY_CURRENT_RELATIVE_PATH
+    || plan.paths.inputGenerationRelativePath !== plan.transaction.inputGenerationRelativePath
+    || plan.paths.authorityCurrentTemporaryRelativePath !== plan.transaction.authorityCurrentTemporaryRelativePath
+    || plan.paths.authorityCurrentFinalRelativePath !== plan.transaction.authorityCurrentFinalRelativePath
+    || plan.paths.staticGenerationStagingRelativePath !== plan.transaction.staticGenerationStagingRelativePath
+    || calibrationAdmissionCanonicalJson(plan.paths.sourceGenerationDirectories)
+      !== calibrationAdmissionCanonicalJson(plan.transaction.sourceGenerationDirectories)) {
+    throw new Error('authority publication plan paths do not match its transaction');
+  }
+  if (plan.paths.inputGenerationRelativePath !== canonicalInputGenerationPath(graph.inputGeneration.generationSha256)
+    || plan.paths.staticGenerationFinalRelativePath !== canonicalStaticGenerationPath(graph.staticGeneration.generationSha256)
+    || plan.paths.staticGenerationStagingRelativePath !== `${AUTHORITY_RELATIVE_ROOT}/staging/${plan.transaction.transactionId}`
+    || plan.paths.authorityCurrentTemporaryRelativePath !== `${AUTHORITY_RELATIVE_ROOT}/current.${plan.transaction.transactionId}.tmp.json`
+    || (plan.lock.operation === 'create' && plan.paths.priorInputGenerationRelativePath !== undefined)
+    || (plan.lock.operation === 'replace'
+      && plan.paths.priorInputGenerationRelativePath !== canonicalInputGenerationPath(plan.paths.priorInputGenerationRelativePath?.split('/').at(-2) ?? ''))) {
+    throw new Error('authority publication plan paths are not fixed-topology');
+  }
   if (graph.inputGeneration.generationSha256 !== plan.paths.inputGenerationRelativePath.split('/').at(-2)) throw new Error('authority publication input generation does not match plan');
   if (graph.staticGeneration.generationSha256 !== plan.paths.staticGenerationFinalRelativePath.split('/').at(-1)) throw new Error('authority publication static generation does not match plan');
   if (graph.current.staticGenerationSha256 !== graph.staticGeneration.generationSha256) throw new Error('authority publication current does not match static generation');
+  if (graph.current.staticGenerationRelativePath !== plan.paths.staticGenerationFinalRelativePath) throw new Error('authority publication current path does not match plan');
+  if (plan.transaction.state.phase !== 'intent_fsynced') {
+    if (plan.transaction.state.phase === 'overlap_generation_verified') {
+      throw new Error('authority publication plan uses unsupported overlap-generation intermediate phase');
+    }
+    const state = plan.transaction.state;
+    if (!('staticGenerationSha256' in state)
+      || state.staticGenerationSha256 !== graph.staticGeneration.generationSha256
+      || state.staticGenerationRelativePath !== plan.paths.staticGenerationFinalRelativePath) {
+      throw new Error('authority publication transaction state does not match static generation');
+    }
+  }
+  const sourceDescriptors = plan.transaction.sourceGenerationDirectories;
+  if (sourceDescriptors.length !== graph.sources.length) throw new Error('authority publication source descriptor count does not match graph');
+  for (const descriptor of sourceDescriptors) {
+    const source = sourceFor(graph, descriptor.sourceId);
+    if (!isRecord(source.sourceGeneration)
+      || source.sourceGeneration.sourceId !== descriptor.sourceId
+      || source.sourceGeneration.generationSha256 !== descriptor.generationSha256
+      || source.sourceGeneration.artifactSetSha256 !== descriptor.artifactSetSha256) {
+      throw new Error(`authority publication source descriptor does not match graph: ${descriptor.sourceId}`);
+    }
+    const sourceRoot = `review/admission/sources/${descriptor.sourceId}`;
+    if (descriptor.generationsParentRelativePath !== `${sourceRoot}/generations`
+      || descriptor.generationFinalRelativePath !== `${sourceRoot}/generations/${descriptor.generationSha256}`
+      || descriptor.generationStagingRelativePath !== `${sourceRoot}/staging/${plan.transaction.transactionId}`
+      || descriptor.currentPointerTemporaryRelativePath !== `${sourceRoot}/current.${plan.transaction.transactionId}.tmp.json`
+      || descriptor.currentPointerFinalRelativePath !== `${sourceRoot}/current.json`
+      || (source.sourceGeneration.parentGenerationSha256 === undefined
+        ? descriptor.priorGenerationRelativePath !== undefined
+        : descriptor.priorGenerationRelativePath !== `${sourceRoot}/generations/${source.sourceGeneration.parentGenerationSha256}`)) {
+      throw new Error(`authority publication source descriptor path is not canonical: ${descriptor.sourceId}`);
+    }
+  }
   validateToolReceipt(tool);
 }
 
@@ -391,6 +540,24 @@ async function preflight(request: PrebuiltAuthorityPublicationRequest): Promise<
   };
 }
 
+async function assertReplacePriorCurrent(context: PublicationContext, existing: unknown): Promise<void> {
+  if (!context.graph.priorCurrentBytes || !isCalibrationAdmissionAuthorityCurrentV1(context.graph.priorCurrent)) {
+    throw new Error('authority publication replace prior current evidence is required');
+  }
+  const existingBytes = await readOptional(context.layout.root, context.layout.current);
+  if (existingBytes === undefined || !Buffer.from(existingBytes).equals(Buffer.from(context.graph.priorCurrentBytes))) {
+    throw new Error('authority publication replace prior current bytes do not match disk');
+  }
+  const prior = context.graph.priorCurrent;
+  if (!isCalibrationAdmissionAuthorityCurrentV1(existing)
+    || existing.currentSha256 !== prior.currentSha256
+    || existing.generation !== prior.generation
+    || existing.staticGenerationSha256 !== prior.staticGenerationSha256
+    || existing.staticGenerationRelativePath !== prior.staticGenerationRelativePath) {
+    throw new Error('authority publication replace prior current pointer does not match disk');
+  }
+}
+
 async function assertExpectedCurrentBeforeMutation(context: PublicationContext): Promise<void> {
   const existing = await readCanonical(context.layout.root, context.layout.current);
   if (context.plan.lock.operation === 'create') {
@@ -402,6 +569,7 @@ async function assertExpectedCurrentBeforeMutation(context: PublicationContext):
     || existing.staticGenerationSha256 !== context.plan.lock.expectedCurrentState.staticGenerationSha256) {
     throw new Error('authority publication replace current CAS mismatch');
   }
+  await assertReplacePriorCurrent(context, existing);
 }
 
 async function materializeProposal(context: PublicationContext): Promise<void> {
@@ -411,13 +579,11 @@ async function materializeProposal(context: PublicationContext): Promise<void> {
 }
 
 async function materializeInput(context: PublicationContext): Promise<void> {
-  const input = context.graph.inputGeneration as Record<string, unknown>;
   const dir = absoluteContained(context.layout.root, dirname(context.plan.paths.inputGenerationRelativePath));
   await ensureDirectory(context.layout.root, dir);
   await writeNoClobber(context.layout.root, absoluteContained(context.layout.root, context.plan.paths.inputGenerationRelativePath), context.graph.inputGenerationBytes);
   const artifactMap = entries(context.graph.inputGenerationArtifactBytes, 'input generation');
   for (const [path, bytes] of artifactMap) await writeNoClobber(context.layout.root, join(dir, path), bytes);
-  void input;
   await syncDirectory(dir);
 }
 
@@ -508,8 +674,141 @@ async function verifyStaticDirectory(context: PublicationContext, directory: str
   }
 }
 
+async function verifySourceCurrents(context: PublicationContext): Promise<void> {
+  for (const descriptor of context.transaction.sourceGenerationDirectories) {
+    const source = sourceFor(context.graph, descriptor.sourceId);
+    const path = absoluteContained(context.layout.root, descriptor.currentPointerFinalRelativePath);
+    await assertBytes(context.layout.root, path, source.currentBytes, `source ${descriptor.sourceId} current`);
+    const parsed = await readCanonical(context.layout.root, path);
+    if (!isCalibrationAdmissionSourceCurrentV1(parsed)
+      || parsed.sourceId !== descriptor.sourceId
+      || parsed.generationSha256 !== descriptor.generationSha256) {
+      throw new Error(`authority publication source current does not match generation: ${descriptor.sourceId}`);
+    }
+  }
+}
+
+async function verifyAuthorityCurrent(context: PublicationContext): Promise<void> {
+  const current = context.graph.current as { currentSha256: string };
+  const staticGeneration = context.graph.staticGeneration as { generationSha256: string };
+  await assertBytes(context.layout.root, context.layout.current, context.graph.currentBytes, 'authority current');
+  const parsed = await readCanonical(context.layout.root, context.layout.current);
+  if (!isCalibrationAdmissionAuthorityCurrentV1(parsed)
+    || parsed.currentSha256 !== current.currentSha256
+    || parsed.staticGenerationSha256 !== staticGeneration.generationSha256
+    || parsed.staticGenerationRelativePath !== context.plan.paths.staticGenerationFinalRelativePath) {
+    throw new Error('authority publication current does not match static generation');
+  }
+}
+
+/**
+ * Re-check every output that is durable at the transaction's current phase.
+ * Recovery never trusts a phase marker alone: a caller may have crashed or a
+ * fault hook may have changed bytes after the marker was fsynced.
+ */
+async function verifyDurableOutputs(context: PublicationContext): Promise<void> {
+  const phase = context.transaction.state.phase as PublicationTransactionPhase;
+  if (phase === 'intent_fsynced') return;
+
+  const proposal = context.graph.proposal as { proposalId: string };
+  await assertBytes(
+    context.layout.root,
+    absoluteContained(context.layout.root, `${AUTHORITY_RELATIVE_ROOT}/proposals/${proposal.proposalId}.json`),
+    context.graph.proposalBytes,
+    'input-generation proposal',
+  );
+
+  if (phase === 'source_generation_directories_staged_fsynced') {
+    for (const descriptor of context.transaction.sourceGenerationDirectories) {
+      await verifySourceDirectory(
+        context,
+        absoluteContained(context.layout.root, descriptor.generationStagingRelativePath),
+        sourceFor(context.graph, descriptor.sourceId),
+        descriptor.sourceId,
+      );
+    }
+    return;
+  }
+
+  const sourceFinalPhases = new Set<PublicationTransactionPhase>([
+    'source_generation_directories_promoted',
+    'source_generation_parents_fsynced',
+    'input_generation_fsynced',
+    'primary_static_outputs_fsynced',
+    'tool_receipt_indexed',
+    'static_generation_staged_fsynced',
+    'static_generation_promoted',
+    'static_generations_parent_fsynced',
+    'source_current_pointers_promoted',
+    'authority_current_promoted',
+    'output_directories_fsynced',
+    'complete',
+  ]);
+  if (sourceFinalPhases.has(phase)) {
+    for (const descriptor of context.transaction.sourceGenerationDirectories) {
+      await verifySourceDirectory(
+        context,
+        absoluteContained(context.layout.root, descriptor.generationFinalRelativePath),
+        sourceFor(context.graph, descriptor.sourceId),
+        descriptor.sourceId,
+      );
+    }
+  }
+
+  const inputPhases = new Set<PublicationTransactionPhase>([
+    'input_generation_fsynced',
+    'primary_static_outputs_fsynced',
+    'tool_receipt_indexed',
+    'static_generation_staged_fsynced',
+    'static_generation_promoted',
+    'static_generations_parent_fsynced',
+    'source_current_pointers_promoted',
+    'authority_current_promoted',
+    'output_directories_fsynced',
+    'complete',
+  ]);
+  if (inputPhases.has(phase)) await verifyInput(context);
+
+  if (phase === 'static_generation_staged_fsynced') {
+    await verifyStaticDirectory(
+      context,
+      absoluteContained(context.layout.root, context.plan.paths.staticGenerationStagingRelativePath),
+    );
+    return;
+  }
+
+  const staticFinalPhases = new Set<PublicationTransactionPhase>([
+    'static_generation_promoted',
+    'static_generations_parent_fsynced',
+    'source_current_pointers_promoted',
+    'authority_current_promoted',
+    'output_directories_fsynced',
+    'complete',
+  ]);
+  if (staticFinalPhases.has(phase)) {
+    await verifyStaticDirectory(
+      context,
+      absoluteContained(context.layout.root, context.plan.paths.staticGenerationFinalRelativePath),
+    );
+  }
+
+  const sourceCurrentPhases = new Set<PublicationTransactionPhase>([
+    'source_current_pointers_promoted',
+    'authority_current_promoted',
+    'output_directories_fsynced',
+    'complete',
+  ]);
+  if (sourceCurrentPhases.has(phase)) await verifySourceCurrents(context);
+
+  const authorityCurrentPhases = new Set<PublicationTransactionPhase>([
+    'authority_current_promoted',
+    'output_directories_fsynced',
+    'complete',
+  ]);
+  if (authorityCurrentPhases.has(phase)) await verifyAuthorityCurrent(context);
+}
+
 async function materializeSourceCurrents(context: PublicationContext): Promise<void> {
-  const graphSources = context.graph.sources;
   for (const descriptor of context.transaction.sourceGenerationDirectories) {
     const source = sourceFor(context.graph, descriptor.sourceId);
     const path = absoluteContained(context.layout.root, descriptor.currentPointerFinalRelativePath);
@@ -528,10 +827,15 @@ async function materializeSourceCurrents(context: PublicationContext): Promise<v
         throw new Error(`authority publication source current bytes changed: ${descriptor.sourceId}`);
       }
     }
+    const beforeRename = await readOptional(context.layout.root, path);
+    if (existing === undefined) {
+      if (beforeRename !== undefined) throw new Error(`authority publication source current appeared before promotion: ${descriptor.sourceId}`);
+    } else if (beforeRename === undefined || !Buffer.from(beforeRename).equals(Buffer.from(existing))) {
+      throw new Error(`authority publication source current changed before promotion: ${descriptor.sourceId}`);
+    }
     await rename(temporary, path);
     await syncDirectory(dirname(path));
   }
-  void graphSources;
 }
 
 async function materializeAuthorityCurrent(context: PublicationContext): Promise<void> {
@@ -541,11 +845,26 @@ async function materializeAuthorityCurrent(context: PublicationContext): Promise
   } else {
     const expected = context.plan.lock.expectedCurrentState;
     if (expected.kind !== 'existing') throw new Error('authority publication replace expected state is invalid');
-    if (!isCalibrationAdmissionAuthorityCurrentV1(existing)
-      || existing.staticGenerationSha256 !== expected.staticGenerationSha256) {
+    if (isCalibrationAdmissionAuthorityCurrentV1(existing)
+      && existing.currentSha256 === (context.graph.current as { currentSha256?: string }).currentSha256) {
+      await assertBytes(context.layout.root, context.layout.current, context.graph.currentBytes, 'authority current');
+    } else {
       if (!isCalibrationAdmissionAuthorityCurrentV1(existing)
-        || existing.currentSha256 !== (context.graph.current as { currentSha256?: string }).currentSha256) throw new Error('authority publication replace current CAS mismatch');
+        || existing.staticGenerationSha256 !== expected.staticGenerationSha256) throw new Error('authority publication replace current CAS mismatch');
+      await assertReplacePriorCurrent(context, existing);
     }
+  }
+  // Re-read the current pointer immediately before the no-clobber rename so a
+  // concurrent writer cannot slip between the earlier CAS check and commit.
+  const beforeRename = await readCanonical(context.layout.root, context.layout.current);
+  if (context.plan.lock.operation === 'create') {
+    if (beforeRename !== undefined) throw new Error('authority publication create current changed before promotion');
+  } else if (isCalibrationAdmissionAuthorityCurrentV1(context.graph.current)
+    && isCalibrationAdmissionAuthorityCurrentV1(beforeRename)
+    && beforeRename.currentSha256 === context.graph.current.currentSha256) {
+    await assertBytes(context.layout.root, context.layout.current, context.graph.currentBytes, 'authority current');
+  } else {
+    await assertReplacePriorCurrent(context, beforeRename);
   }
   await writeReplace(context.layout.root, context.layout.current, context.graph.currentBytes, context.transaction.transactionId);
 }
@@ -562,9 +881,21 @@ async function cleanupJournals(context: PublicationContext): Promise<void> {
   await syncDirectory(dirname(context.layout.transaction));
 }
 
+async function cleanupLockOnly(context: PublicationContext): Promise<PrebuiltAuthorityPublicationResult> {
+  await assertNoSymlinkPath(context.layout.root, context.layout.lock);
+  await unlink(context.layout.lock).catch((error: unknown) => {
+    if (!(isRecord(error) && error.code === 'ENOENT')) throw error;
+  });
+  await syncDirectory(dirname(context.layout.lock));
+  return result(context, 'lock-only', true);
+}
+
 async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublicationResult> {
+  assertTransactionStateBindings(context);
   const state = context.transaction.state.phase;
   if (state === 'complete') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const completed = result(context, 'complete', true);
     await cleanupJournals(context);
     return completed;
@@ -576,21 +907,29 @@ async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublic
     await boundary(context, 'source-generation-directories-staged-fsynced');
   }
   if (context.transaction.state.phase === 'source_generation_directories_staged_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     for (const descriptor of context.transaction.sourceGenerationDirectories) await promoteSourceDirectory(context, descriptor, sourceFor(context.graph, descriptor.sourceId));
     await persistState(context, { phase: 'source_generation_directories_promoted', inputGenerationSha256: String((context.graph.inputGeneration as { generationSha256: string }).generationSha256) });
     await boundary(context, 'source-generation-directories-promoted');
   }
   if (context.transaction.state.phase === 'source_generation_directories_promoted') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     for (const descriptor of context.transaction.sourceGenerationDirectories) await syncDirectory(dirname(absoluteContained(context.layout.root, descriptor.generationFinalRelativePath)));
     await persistState(context, { phase: 'source_generation_parents_fsynced', inputGenerationSha256: String((context.graph.inputGeneration as { generationSha256: string }).generationSha256) });
     await boundary(context, 'source-generation-parents-fsynced');
   }
   if (context.transaction.state.phase === 'source_generation_parents_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     await materializeInput(context);
     await persistState(context, { phase: 'input_generation_fsynced', inputGenerationSha256: String((context.graph.inputGeneration as { generationSha256: string }).generationSha256) });
     await boundary(context, 'input-generation-fsynced');
   }
   if (context.transaction.state.phase === 'input_generation_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     await verifyInput(context);
     const staticGeneration = context.graph.staticGeneration as { overlapGenerationSha256: string };
     await persistState(context, {
@@ -602,6 +941,8 @@ async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublic
     await boundary(context, 'primary-static-outputs-fsynced');
   }
   if (context.transaction.state.phase === 'primary_static_outputs_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const current = context.transaction.state;
     await persistState(context, {
       phase: 'tool_receipt_indexed',
@@ -615,6 +956,8 @@ async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublic
     await boundary(context, 'tool-receipt-indexed');
   }
   if (context.transaction.state.phase === 'tool_receipt_indexed') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const current = context.transaction.state;
     await materializeStaticStage(context);
     await persistState(context, {
@@ -631,38 +974,52 @@ async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublic
     await boundary(context, 'static-generation-staged-fsynced');
   }
   if (context.transaction.state.phase === 'static_generation_staged_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     await promoteStaticDirectory(context);
     const current = context.transaction.state;
     await persistState(context, { ...current, phase: 'static_generation_promoted' });
     await boundary(context, 'static-generation-promoted');
   }
   if (context.transaction.state.phase === 'static_generation_promoted') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const current = context.transaction.state;
     await syncDirectory(dirname(absoluteContained(context.layout.root, context.plan.paths.staticGenerationFinalRelativePath)));
     await persistState(context, { ...current, phase: 'static_generations_parent_fsynced' });
     await boundary(context, 'static-generations-parent-fsynced');
   }
   if (context.transaction.state.phase === 'static_generations_parent_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     await materializeSourceCurrents(context);
     const current = context.transaction.state;
     await persistState(context, { ...current, phase: 'source_current_pointers_promoted' });
     await boundary(context, 'source-current-pointers-promoted');
   }
   if (context.transaction.state.phase === 'source_current_pointers_promoted') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     await materializeAuthorityCurrent(context);
     const current = context.transaction.state;
     await persistState(context, { ...current, phase: 'authority_current_promoted' });
     await boundary(context, 'authority-current-promoted');
   }
   if (context.transaction.state.phase === 'authority_current_promoted') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const current = context.transaction.state;
     await persistState(context, { ...current, phase: 'output_directories_fsynced' });
     await boundary(context, 'output-directories-fsynced');
   }
   if (context.transaction.state.phase === 'output_directories_fsynced') {
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const current = context.transaction.state;
     await persistState(context, { ...current, phase: 'complete' });
     await boundary(context, 'complete');
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const completed = result(context, 'complete', true);
     await cleanupJournals(context);
     return completed;
@@ -699,8 +1056,35 @@ export async function recoverPrebuiltAdmissionAuthority(request: PrebuiltAuthori
   const lockBytes = await readOptional(context.layout.root, context.layout.lock);
   const transactionBytes = await readOptional(context.layout.root, context.layout.transaction);
   if (lockBytes === undefined && transactionBytes === undefined) throw new Error('authority recovery has no fixed journal');
-  if (transactionBytes === undefined) return result(context, 'lock-only', false);
-  if (lockBytes === undefined) throw new Error('authority recovery lock is missing');
+  if (lockBytes === undefined) {
+    if (transactionBytes === undefined) throw new Error('authority recovery has no fixed journal');
+    const orphanTransaction = await readCanonical(context.layout.root, context.layout.transaction);
+    if (!validateCalibrationAdmissionAuthorityRebuildTransactionV1(orphanTransaction).ok
+      || !isRecord(orphanTransaction)
+      || orphanTransaction.transactionId !== context.plan.transaction.transactionId
+      || orphanTransaction.recoveryNonce !== request.recoveryNonce
+      || (request.transactionId !== undefined && request.transactionId !== orphanTransaction.transactionId)
+      || !isRecord(orphanTransaction.state)
+      || orphanTransaction.state.phase !== 'complete') {
+      throw new Error('authority recovery transaction is orphaned before complete');
+    }
+    const withoutState = (value: Record<string, unknown>): Record<string, unknown> => {
+      const copy = { ...value };
+      delete copy.state;
+      delete copy.transactionSha256;
+      return copy;
+    };
+    if (calibrationAdmissionCanonicalJson(withoutState(orphanTransaction))
+      !== calibrationAdmissionCanonicalJson(withoutState(context.plan.transaction as unknown as Record<string, unknown>))) {
+      throw new Error('authority recovery orphan transaction plan mismatch');
+    }
+    context.transaction = orphanTransaction as unknown as CalibrationAdmissionAuthorityRebuildTransactionV1;
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
+    await unlink(context.layout.transaction);
+    await syncDirectory(dirname(context.layout.transaction));
+    return result(context, 'complete', true);
+  }
   const lockValue = await readCanonical(context.layout.root, context.layout.lock);
   if (!validateCalibrationAdmissionAuthorityRebuildLockV1(lockValue).ok
     || !isRecord(lockValue)
@@ -709,6 +1093,13 @@ export async function recoverPrebuiltAdmissionAuthority(request: PrebuiltAuthori
     || lockValue.recoveryNonce !== request.recoveryNonce) {
     throw new Error('authority recovery lock binding mismatch');
   }
+  if (transactionBytes === undefined) {
+    if (request.fromLock !== true || request.transactionId !== undefined) {
+      throw new Error('authority recovery lock-only journal requires only explicit fromLock acknowledgement');
+    }
+    return cleanupLockOnly(context);
+  }
+  if (request.fromLock === true) throw new Error('authority recovery transaction journal cannot use fromLock selector');
   const transactionValue = await readCanonical(context.layout.root, context.layout.transaction);
   if (!validateCalibrationAdmissionAuthorityRebuildTransactionV1(transactionValue).ok) throw new Error('authority recovery transaction is invalid');
   if (!isRecord(transactionValue) || transactionValue.transactionId !== context.plan.transaction.transactionId
