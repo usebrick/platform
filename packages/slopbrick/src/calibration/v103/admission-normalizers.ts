@@ -83,6 +83,10 @@ const ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS = Object.freeze({
   java: 'class Main { public static void main(String[] a) {} }',
   javascript: 'const value = 1; console.log(value);',
   kotlin: 'fun main() { println(1) }',
+  // The legacy inventory's 16 `other` rows are all Objective-C `.m` files;
+  // keep the observed bucket name immutable while binding it explicitly to
+  // the Objective-C-compatible lexical fixture.
+  other: '@interface Example : NSObject\n@end',
   php: '<?php echo 1; ?>',
   python: 'def main():\n    return 0',
   ruby: 'def main\n  0\nend',
@@ -100,7 +104,9 @@ function languageFixtureSha256(language: AdmissionLexicalLanguage): string {
 }
 
 function languageNormalizerId(language: AdmissionLexicalLanguage): string {
-  return language === 'typescript' ? 'normalizer-typescript-v1' : `normalizer-${language}-v1`;
+  if (language === 'typescript') return 'normalizer-typescript-v1';
+  if (language === 'other') return 'normalizer-objective-c-v1';
+  return `normalizer-${language}-v1`;
 }
 
 /**
@@ -141,10 +147,12 @@ const ADMISSION_RUNTIME_BY_LANGUAGE = new Map<string, (typeof ADMISSION_LEXICAL_
 ]);
 
 /**
- * Build the explicit registry for a measured language census.  Unknown
- * buckets (currently only `other`) are intentionally omitted, which makes
- * them unsupported rather than silently assigning a generic lexer.  The
- * caller can persist the returned self-hashed object as the authority input.
+ * Build the explicit registry for a measured language census.  A language
+ * bucket is never silently widened: the legacy `other` bucket is bound to an
+ * explicit Objective-C fixture because its measured members are all `.m`
+ * files.  Any genuinely unknown bucket remains unsupported and is omitted.
+ * The caller can persist the returned self-hashed object as the authority
+ * input.
  */
 export function buildAdmissionNormalizerRegistry(
   languages: readonly string[],

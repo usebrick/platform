@@ -83,9 +83,10 @@ describe('Task 2A admission normalizers', () => {
     const registry = buildAdmissionNormalizerRegistry([
       'typescript', 'python', 'svelte', 'astro', 'other', 'python',
     ]);
-    expect(registry.entries.map((entry) => entry.language)).toEqual(['astro', 'python', 'svelte', 'typescript']);
+    expect(registry.entries.map((entry) => entry.language)).toEqual(['astro', 'other', 'python', 'svelte', 'typescript']);
     expect(registry.entries.map((entry) => entry.normalizerId)).toEqual([
       'normalizer-astro-v1',
+      'normalizer-objective-c-v1',
       'normalizer-python-v1',
       'normalizer-svelte-v1',
       'normalizer-typescript-v1',
@@ -95,10 +96,10 @@ describe('Task 2A admission normalizers', () => {
       ok: true,
       normalizerId: 'normalizer-svelte-v1',
     });
-    expect(normalizeAdmissionBytes('other', Buffer.from('opaque', 'utf8'), registry)).toMatchObject({
-      ok: false,
-      status: 'unsupported',
-      normalizerId: 'normalizer-unsupported-v1',
+    expect(normalizeAdmissionBytes('other', Buffer.from('@interface Example {}', 'utf8'), registry)).toMatchObject({
+      ok: true,
+      status: 'covered',
+      normalizerId: 'normalizer-objective-c-v1',
     });
   });
 
