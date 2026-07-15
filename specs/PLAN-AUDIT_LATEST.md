@@ -695,3 +695,22 @@ The next authority slice must also preserve the RAM boundary: allocation is
 streaming, but the current static-ledger helper is array-based. A
 disk-backed JSONL ledger adapter/external-sort path is required before
 452,382-row live static authority is attempted.
+
+## Current verification checkpoint — 2026-07-15
+
+One fresh, RAM-capped package gate passed **325 test files / 3,697 tests**
+(**5 skipped files / 9 skipped tests**). A fresh recursive typecheck and build
+passed for Core, Engine, Website, and SlopBrick; the only build diagnostics
+are the known non-fatal Zod declaration warnings. `git diff --check` is clean.
+This checkpoint intentionally replaces repeated independent confirmation of
+the same edge cases; the focused recovery/publication tests remain the
+appropriate coverage for those paths.
+
+The live diagnostic census is unchanged: **329/329** sources reviewed,
+**452,382** additive units, **0** candidate/eligible units, and all
+**452,382** units quarantined or unrepresented. The blockers remain
+`static_authority_unavailable` and `witness_authority_unavailable`. No
+corpus, label, manifest, remote, package, release, publish, or deployment
+state changed. The remaining work is real authority materialization and the
+downstream 100+100 smoke / 5,000+5,000 canary, not another corpus-wide
+confirmation.
