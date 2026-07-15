@@ -11,7 +11,6 @@ import {
   calibrationAdmissionCanonicalJson,
   calibrationAdmissionDecisionId,
   calibrationAdmissionSearchResultBundleSha256,
-  calibrationAdmissionSha256,
   calibrationAdmissionToolReceiptSha256,
   calibrationAdmissionWitnessReviewBundleId,
   calibrationAdmissionWitnessReviewBundleSha256,
