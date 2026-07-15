@@ -110,6 +110,22 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     expect(await readFile(join(root, 'review', 'admission', 'authority', 'current.json'))).toEqual(fixture.currentBytes);
   });
 
+  it('wraps a transaction-boundary fault as recoverable publication state', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-transaction-fault-'));
+    roots.push(root);
+    const fixture = makePrebuiltAuthorityFixture();
+    const initial = request(fixture, root, (phase) => {
+      if (phase === 'transaction-fsynced') throw new Error('stop after transaction');
+    });
+    await expect(publishPrebuiltAdmissionAuthority(initial)).rejects.toBeInstanceOf(PrebuiltAuthorityPublicationPendingError);
+    const recovery = await recoverPrebuiltAdmissionAuthority({
+      ...initial,
+      acknowledgeNoLiveWriter: true,
+      recoveryNonce: initial.planInput.recoveryNonce,
+    });
+    expect(recovery.complete).toBe(true);
+  });
+
   it('preserves an unknown file inside a transaction-promoted generation', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-publication-unknown-'));
     roots.push(root);

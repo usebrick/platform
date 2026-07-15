@@ -1034,9 +1034,17 @@ async function createContext(request: PrebuiltAuthorityPublicationRequest): Prom
   if (existingLock !== undefined) throw new Error('authority publication is contended');
   await ensureDirectory(context.layout.root, dirname(context.layout.lock));
   await writeExclusive(context.layout.root, context.layout.lock, canonical(context.plan.lock));
-  await boundary(context, 'lock-fsynced');
+  try {
+    await boundary(context, 'lock-fsynced');
+  } catch (error) {
+    throw new PrebuiltAuthorityPublicationPendingError(result(context, 'recovery-required', false), error instanceof Error ? error.message : String(error));
+  }
   await writeExclusive(context.layout.root, context.layout.transaction, canonical(context.transaction));
-  await boundary(context, 'transaction-fsynced');
+  try {
+    await boundary(context, 'transaction-fsynced');
+  } catch (error) {
+    throw new PrebuiltAuthorityPublicationPendingError(result(context, 'recovery-required', false), error instanceof Error ? error.message : String(error));
+  }
   return context;
 }
 
