@@ -136,4 +136,16 @@ describe('v10.3 prebuilt admission authority publication plan', () => {
     expect(result.transaction.transactionSha256).toBe(calibrationAdmissionAuthorityRebuildTransactionSha256(result.transaction));
     expect(validateCalibrationAdmissionAuthorityRebuildGraphV1(result.lock, result.transaction)).toEqual({ ok: true, errors: [] });
   });
+
+  it('binds caller-selected recovery nonces to transaction identity and staging paths', () => {
+    const first = planPrebuiltAdmissionAuthorityPublication({ ...input(), recoveryNonce: sha('1') });
+    const second = planPrebuiltAdmissionAuthorityPublication({ ...input(), recoveryNonce: sha('2') });
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.transaction.transactionId).not.toBe(first.transaction.transactionId);
+    expect(second.paths.staticGenerationStagingRelativePath).not.toBe(first.paths.staticGenerationStagingRelativePath);
+    expect(second.paths.authorityCurrentTemporaryRelativePath).not.toBe(first.paths.authorityCurrentTemporaryRelativePath);
+    expect(second.lock.lockSha256).not.toBe(first.lock.lockSha256);
+  });
 });

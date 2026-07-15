@@ -317,14 +317,22 @@ export function planPrebuiltAdmissionAuthorityPublication(
     const sources = validated.sources;
     const inputGenerationSha256 = value.inputGeneration.generationSha256;
     const staticGenerationSha256 = value.staticGeneration.generationSha256;
-    const digest = planDigest(value, sources);
-    const transactionId = `authority-rebuild-${digest.slice(0, 32)}`;
-    const lockId = `authority-rebuild-lock-${digest.slice(32)}`;
+    const planDigestValue = planDigest(value, sources);
     const recoveryNonce = value.recoveryNonce ?? calibrationAdmissionSha256({
       version: 'v10.3-admission-authority-rebuild-recovery-v1',
-      transactionId,
+      planDigest: planDigestValue,
       expectedCurrentState: value.expectedCurrentState,
     });
+    // The recovery nonce is part of the transaction identity. Without this
+    // binding, two caller-selected nonces could share staging paths while
+    // carrying different lock bytes, making recovery ambiguous.
+    const identityDigest = calibrationAdmissionSha256({
+      version: 'v10.3-admission-authority-rebuild-transaction-id-v1',
+      planDigest: planDigestValue,
+      recoveryNonce,
+    });
+    const transactionId = `authority-rebuild-${identityDigest.slice(0, 32)}`;
+    const lockId = `authority-rebuild-lock-${identityDigest.slice(32)}`;
     const sourceGenerationDirectories = sources.map((source) => sourceGenerationPaths(transactionId, source));
     if (sourceGenerationDirectories.length === 0) return result(['authority publication plan must contain at least one source generation']);
     const sourceGenerationDirectoryTuple = sourceGenerationDirectories as CalibrationAdmissionAuthorityRebuildTransactionV1['sourceGenerationDirectories'];
