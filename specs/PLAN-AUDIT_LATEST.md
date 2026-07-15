@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `a5afd7ceaf5e387e0df8d0a965c21f401ae1f5f399d55fd24ee65236771f7c96` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, the bounded real-corpus allocation replay, the RAM-safe static-ledger adapter, optional stream-receipt/materializer binding, the integrated authority gate/live census result, the final package-wide and recursive quality gates, the risk-scaled verification rule, and the consolidated one-gate verification path; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-15)** | `bd084840f0bfb9deca5889ed2aae968ce346f4809328f0f89754de133b1dc734` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, and the Task 3B pure witness-review graph checkpoint. |
+| **Current continuation-plan hash override (2026-07-15)** | `d5b1eef15f6e15586b770baf002335c32145069a702c821516dd361d3f841342` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, and the single CLI-boundary edge-case gate. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -744,3 +744,28 @@ coverage owns the wrong-action, output mismatch, disagreement, and
 non-witness-target cases; they no longer require separate human confirmations.
 Filesystem publication, completion/routing contracts, and real static/witness
 authority remain open, so the live census and release boundary are unchanged.
+
+### Task 3B transactional witness-publication checkpoint — 2026-07-15
+
+The review graph now has one transactional publication owner. Core commit
+`d065c191e` adds strict routing-reference, completion, lock, and transaction
+schemas plus semantic self-hash and lock/transaction validators. SlopBrick
+commit `fc9859a72` (cleanup `d2e04c0e4`) adds the fixed-topology publisher,
+durable phase journal, nested handoff/receipt binding, no-clobber publication,
+symlink containment, idempotent replay, and nonce/no-live-writer recovery,
+including lock-only recovery.
+
+One focused automated gate covers the edge-case matrix: Core **9/9** contract
+tests, SlopBrick **6/6** publisher/recovery tests, and **2/2** CLI-boundary
+tests. It includes a crash after routing promotion to prove recovery preserves
+the lock's original CAS state, plus collision, unknown-file preservation, and
+root-nonmutation checks. Core and SlopBrick typecheck and `git diff --check`
+pass. No second or third human confirmation is required for these cases.
+
+The slice remains diagnostic-only. The real static/witness authority is not
+materialized; the live census is unchanged at 329/329 sources, 452,382
+additive units, 0 candidate/eligible, all quarantined, with
+`static_authority_unavailable` and `witness_authority_unavailable` as the only
+blockers. No corpus, label, manifest, remote, package, release, publish, or
+deployment state changed. Next is authority materialization followed by the
+bounded smoke/canary gates.
