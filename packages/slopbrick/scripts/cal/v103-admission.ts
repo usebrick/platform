@@ -278,7 +278,8 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
     outputCanonical({
       ...outerResult(args.command, result),
       materializerVerificationSha256: materialized.verificationSha256,
-      realScaleReceiptVerified: materialized.realScaleReceiptVerified,
+      realScaleReceiptVerified: false,
+      materializerExpectationVerified: materialized.realScaleReceiptVerified,
     });
     return;
   }
@@ -297,7 +298,8 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
   outputCanonical({
     ...outerResult(args.command, result),
     materializerVerificationSha256: materialized.verificationSha256,
-    realScaleReceiptVerified: materialized.realScaleReceiptVerified,
+    realScaleReceiptVerified: false,
+    materializerExpectationVerified: materialized.realScaleReceiptVerified,
   });
 }
 
