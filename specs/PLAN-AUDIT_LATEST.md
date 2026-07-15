@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `d62fdd77747fc25e67fc21404e795922cc3d0849be169a4a1b5522ee93141ad4` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The 2026-07-15 checkpoint records the bounded candidate-context/preview slice and stable recursive gates; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-15)** | `21130805322e5dd2ff58641c0b74b6ca2f5f18714098013f84f8283f6880e8cd` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, and policy-status UX update. |
+| **Current continuation-plan hash override (2026-07-15)** | `cb7af526f6d31c0ba91a78682ae43eabb887d5769664699a4920249b04b92726` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, and live census-preview update. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -654,6 +654,15 @@ diagnostics, and security 100/100 with zero security findings. The prior
 baseline was rejected for a config-hash mismatch and no new baseline was
 accepted. A refactor or calibrated-policy review is still required before a
 passing release self-scan can be claimed.
+
+The live `census:preview` was independently rerun against
+`/Users/cheng/corpus-expansion/v10.3` with the indexed context invocation. Its
+canonical stdout was non-mutating and returned `ready=false`, 329/329
+registered/reviewed sources, 452,382 additive unrepresented units, and the
+unchanged `static_authority_unavailable` / `witness_authority_unavailable`
+blockers (113,470 bytes; output SHA-256
+`95ed5b57a4ccab0bd3eb21aef150088a34632b60f843f0200c204dc65e50ffda`). This is
+live diagnostic evidence only; it is not an admission or release receipt.
 
 The adapter is deliberately bounded: runtime context still owns the complete
 overlap-generation/envelope join; reopens are sequential rather than one

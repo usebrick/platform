@@ -1157,6 +1157,12 @@ sidecar-free and candidate bytes contribute to the source-authority proof.
 `census:preview` is implemented as canonical stdout-only, non-persisting
 preview and has a 329-source fixture proving canonical output, strict selector
 requirements, unknown-option rejection, and no root mutation (**3/3**).
+The same command was run against the live `/Users/cheng/corpus-expansion/v10.3`
+root with the indexed context intent: it returned canonical JSON without
+mutation, `ready=false`, 329/329 registered/reviewed sources, 452,382 additive
+unrepresented units, and blockers `static_authority_unavailable` and
+`witness_authority_unavailable` (113,470 bytes; output SHA-256
+`95ed5b57a4ccab0bd3eb21aef150088a34632b60f843f0200c204dc65e50ffda`).
 `rebuild:pre-witness` and `static-authority:recover` remain explicit parser
 boundaries only: they reject nested/option-leaking invocations and return
 structured `authority_cli_unavailable` before filesystem access. The outer
