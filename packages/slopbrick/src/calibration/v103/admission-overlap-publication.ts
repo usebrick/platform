@@ -20,11 +20,12 @@ import {
   stat,
   unlink,
 } from 'node:fs/promises';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import {
   calibrationAdmissionCanonicalJson,
   calibrationAdmissionSha256,
+  isCalibrationAdmissionAuthorityCurrentV1,
   isCalibrationAdmissionNormalizerRegistryV1,
   isCalibrationAdmissionOverlapCurrentV1,
   isCalibrationAdmissionOverlapGenerationV1,
@@ -34,6 +35,7 @@ import {
   validateCalibrationAdmissionOverlapPublicationTransactionV1,
   isCalibrationAdmissionOverlapUniverseV1,
   isCalibrationAdmissionToolAuthoritySnapshotV1,
+  isCalibrationAdmissionStaticAuthorityGenerationV1,
   validateCalibrationAdmissionOverlapIndexReceiptV1,
   validateCalibrationAdmissionOverlapLedgerV1,
   validateCalibrationAdmissionOverlapResourceReceiptV1,
@@ -51,6 +53,8 @@ import {
   type CalibrationAdmissionToolAuthoritySnapshotV1,
 } from '@usebrick/core';
 import type { AdmissionOverlapBuildResult } from './admission-overlap';
+import { resolveAdmissionToolAuthorityReceipt } from './admission-publication';
+import { validatePrebuiltAdmissionAuthorityOverlapJoin } from './admission-authority-overlap-join';
 
 type AdmissionArtifactReceiptV1 = CalibrationAdmissionArtifactReceiptV1;
 
@@ -63,6 +67,7 @@ export const OVERLAP_STAGING_RELATIVE_ROOT = `${OVERLAP_RELATIVE_ROOT}/staging-g
 export const OVERLAP_LOCK_RELATIVE_PATH = `${OVERLAP_RELATIVE_ROOT}/publication.lock`;
 export const OVERLAP_TRANSACTION_RELATIVE_PATH = `${OVERLAP_RELATIVE_ROOT}/publication-transaction.json`;
 export const OVERLAP_CURRENT_RELATIVE_PATH = `${OVERLAP_RELATIVE_ROOT}/current-generation.json`;
+const STATIC_AUTHORITY_CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 
 export type OverlapPublicationPhase =
   | 'lock-fsynced'
@@ -137,6 +142,17 @@ export interface OverlapVerificationResult {
   readonly errors: readonly string[];
   readonly generationSha256?: string;
   readonly artifactCount: number;
+}
+
+export interface OverlapAuthorityJoinVerificationOptions {
+  readonly receiptId: string;
+  readonly receiptSha256: string;
+  readonly authorityIndexSha256: string;
+  readonly invocationIntentId: string;
+}
+
+export interface OverlapVerificationOptions {
+  readonly staticAuthorityJoin?: OverlapAuthorityJoinVerificationOptions;
 }
 
 export interface OverlapArtifactRelationInput {
@@ -261,6 +277,12 @@ function rootRelative(layout: Layout, path: string): string {
   return absolute;
 }
 
+function normalizeProjectRoot(resolved: string): string {
+  return basename(resolved) === 'admission' && basename(dirname(resolved)) === 'review'
+    ? resolve(resolved, '..', '..')
+    : resolved;
+}
+
 function overlapRelative(layout: Layout, path: string): string {
   return rootRelative(layout, path.startsWith(`${OVERLAP_RELATIVE_ROOT}/`) || path === OVERLAP_RELATIVE_ROOT
     ? path
@@ -270,7 +292,7 @@ function overlapRelative(layout: Layout, path: string): string {
 async function ensureLayout(rootInput: string): Promise<Layout> {
   const requested = resolve(rootInput);
   await mkdir(requested, { recursive: true });
-  const root = await realpath(requested);
+  const root = normalizeProjectRoot(await realpath(requested));
   const overlap = rootRelative({ root } as Layout, OVERLAP_RELATIVE_ROOT);
   const generations = rootRelative({ root } as Layout, OVERLAP_GENERATIONS_RELATIVE_ROOT);
   const staging = rootRelative({ root } as Layout, OVERLAP_STAGING_RELATIVE_ROOT);
@@ -292,7 +314,7 @@ async function ensureLayout(rootInput: string): Promise<Layout> {
 
 /** Construct the fixed layout without creating any directory. */
 async function readLayout(rootInput: string): Promise<Layout> {
-  const root = await realpath(resolve(rootInput));
+  const root = normalizeProjectRoot(await realpath(resolve(rootInput)));
   const layout = {
     root,
     overlap: rootRelative({ root } as Layout, OVERLAP_RELATIVE_ROOT),
@@ -346,6 +368,15 @@ async function readJson(root: string, path: string): Promise<unknown> {
   try { value = JSON.parse(bytes.toString('utf8')) as unknown; } catch { throw new Error('overlap_authority_json_invalid'); }
   if (!Buffer.from(bytes).equals(canonical(value))) throw new Error('overlap_authority_noncanonical_json');
   return value;
+}
+
+async function readCanonicalBytes(root: string, path: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> {
+  await assertNoSymlinkPath(root, path);
+  const bytes = await readFile(path);
+  let value: unknown;
+  try { value = JSON.parse(bytes.toString('utf8')) as unknown; } catch { throw new Error('overlap_authority_json_invalid'); }
+  if (!Buffer.from(bytes).equals(canonical(value))) throw new Error('overlap_authority_noncanonical_json');
+  return { value, bytes };
 }
 
 async function assertBytes(root: string, path: string, expected: Uint8Array): Promise<void> {
@@ -1417,9 +1448,90 @@ export async function recoverAdmissionOverlap(request: OverlapPublicationRecover
   }
 }
 
+async function verifyStaticAuthorityJoin(
+  layout: Layout,
+  generationSha256: string,
+  options: OverlapAuthorityJoinVerificationOptions,
+): Promise<readonly string[]> {
+  const errors: string[] = [];
+  const add = (message: string): void => {
+    const prefixed = `overlap_static_authority_join:${message}`;
+    if (!errors.includes(prefixed)) errors.push(prefixed);
+  };
+  try {
+    const staticCurrentRead = await readCanonicalBytes(
+      layout.root,
+      rootRelative(layout, STATIC_AUTHORITY_CURRENT_RELATIVE_PATH),
+    );
+    if (!isCalibrationAdmissionAuthorityCurrentV1(staticCurrentRead.value)) {
+      add('static_current_invalid');
+      return errors;
+    }
+    const staticCurrent = staticCurrentRead.value;
+    const staticGenerationRead = await readCanonicalBytes(
+      layout.root,
+      rootRelative(layout, `${staticCurrent.staticGenerationRelativePath}/generation.json`),
+    );
+    if (!isCalibrationAdmissionStaticAuthorityGenerationV1(staticGenerationRead.value)) {
+      add('static_generation_invalid');
+      return errors;
+    }
+    if (staticGenerationRead.value.generationSha256 !== staticCurrent.staticGenerationSha256) {
+      add('static_generation_current_hash_mismatch');
+    }
+    if (staticGenerationRead.value.generation !== staticCurrent.generation) {
+      add('static_generation_current_number_mismatch');
+    }
+    const overlapGenerationRead = await readCanonicalBytes(
+      layout.root,
+      rootRelative(layout, `${generationDirectoryRelative(generationSha256)}/generation.json`),
+    );
+    const envelope = async (relativePath: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> => readCanonicalBytes(
+      layout.root,
+      rootRelative(layout, `${generationDirectoryRelative(generationSha256)}/${relativePath}`),
+    );
+    const [index, resource, ledger] = await Promise.all([
+      envelope('index.json'),
+      envelope('overlap-resource-receipt.json'),
+      envelope('overlap-ledger.json'),
+    ]);
+    const staticGeneration = staticGenerationRead.value;
+    const toolAuthority = await resolveAdmissionToolAuthorityReceipt({
+      authorityRoot: layout.root,
+      authorityIndexSha256: options.authorityIndexSha256,
+      receiptId: options.receiptId,
+      receiptSha256: options.receiptSha256,
+      invocationIntentId: options.invocationIntentId,
+      profileId: 'admission-static-ledgers-v1',
+      action: 'authority:overlap',
+      expectedSnapshot: staticGeneration.toolAuthoritySnapshot,
+    });
+    const validation = validatePrebuiltAdmissionAuthorityOverlapJoin({
+      staticGeneration,
+      staticGenerationBytes: staticGenerationRead.bytes,
+      overlapGeneration: overlapGenerationRead.value,
+      overlapGenerationBytes: overlapGenerationRead.bytes,
+      envelopes: {
+        index: { value: index.value, bytes: index.bytes },
+        resource: { value: resource.value, bytes: resource.bytes },
+        ledger: { value: ledger.value, bytes: ledger.bytes },
+      },
+      toolAuthority,
+    });
+    for (const error of validation.errors) add(error);
+  } catch (error) {
+    add(error instanceof Error ? error.message : String(error));
+  }
+  return errors;
+}
+
 /** Verify only the immutable, explicitly selected generation and its current
  * pointer. This never discovers another generation and never mutates output. */
-export async function verifyAdmissionOverlap(rootInput: string, selectedGenerationSha256?: string): Promise<OverlapVerificationResult> {
+export async function verifyAdmissionOverlap(
+  rootInput: string,
+  selectedGenerationSha256?: string,
+  options?: OverlapVerificationOptions,
+): Promise<OverlapVerificationResult> {
   const errors: string[] = [];
   let layout: Layout;
   try { layout = await readLayout(rootInput); } catch (error) {
@@ -1478,6 +1590,9 @@ export async function verifyAdmissionOverlap(rootInput: string, selectedGenerati
         readEnvelope('overlap-ledger.json'),
       ]);
       errors.push(...verifyOverlapArtifactRelations({ generation: value, index, resource, ledger }).errors);
+    }
+    if (options?.staticAuthorityJoin !== undefined) {
+      errors.push(...await verifyStaticAuthorityJoin(layout, generationSha, options.staticAuthorityJoin));
     }
     return { ok: errors.length === 0, errors, generationSha256: generationSha, artifactCount: isCalibrationAdmissionOverlapGenerationV1(value) ? value.artifacts.length : 0 };
   } catch (error) {

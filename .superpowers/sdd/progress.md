@@ -950,6 +950,46 @@ state changed. Census remains **329/329** reviewed sources, **452,382**
 quarantined/unrepresented units, zero candidate/eligible, blockers
 `static_authority_unavailable` and `witness_authority_unavailable`.
 
-Next: wire the strict overlap join into the authority/context boundary and then
-the mutating CLI; only after that replay real static/witness context against the
-corpus.
+Next: wire the same strict overlap join into the byte-backed runtime admission
+context with a complete overlap/tool-authority fixture, then add the mutating
+CLI only after independent review; only after that replay real static/witness
+context against the corpus.
+
+### Task 2B strict static-overlap join and read-only CLI checkpoint — 2026-07-15
+
+The strict static-overlap/resource join is now integrated at the read-only
+`authority:overlap:verify` boundary behind the explicit
+`--join-static-authority` flag. The default overlap verification path remains
+unchanged and read-only; both a project root and its `review/admission` alias
+are accepted. The opt-in requires the fixed
+`admission-static-ledgers-v1` profile plus invocation-intent, receipt ID/hash,
+and authority-index SHA-256 selectors. It reopens canonical static current,
+static-generation, overlap-generation, and all three overlap-envelope bytes;
+resolves indexed tool authority against the static snapshot, binds the static
+generation hash and generation number to the current pointer, and invokes
+`validatePrebuiltAdmissionAuthorityOverlapJoin`. Static/overlap generation,
+snapshot, envelope, resource, byte, or selector drift fails closed with the
+`overlap_static_authority_join:` prefix. Join selectors without the opt-in are
+rejected, preventing an apparently successful default verification from being
+mistaken for a full authority proof.
+
+Focused strict CLI/overlap coverage is **2 files / 13 tests**. After rebuilding
+the package-local CLI, the package-wide one-worker SlopBrick gate passes
+**316 files / 5 skipped; 3,619 tests passed / 9 skipped** under a 2 GiB heap
+cap. SlopBrick typecheck/build and `git diff --check` pass; only the existing
+non-fatal Zod declaration warnings and expected worker-fixture stderr remain.
+No corpus, label, manifest, remote, package, release, publish, or deployment
+state changed. Census/readiness remains **329/329** reviewed sources,
+**452,382** quarantined/unrepresented units, zero candidate/eligible units,
+blockers `static_authority_unavailable` and `witness_authority_unavailable`.
+
+This closes only the read-only CLI boundary. The legacy prebuilt publisher is
+still metadata-only, and the proof is value/edge-level: declared static
+artifact receipts are not opened, hashed, or existence-checked. The runtime
+admission context does not yet have a complete materialized overlap/tool-authority fixture, and no mutating rebuild/recovery command is enabled. The
+current read helper rejects symlink components, but check-then-open race
+hardening and an atomic cross-object snapshot remain open. Next: build that
+complete runtime fixture and route the context adapter through this proof,
+obtain independent review, then implement the mutating adapter before replaying
+real static/witness context or measuring a corpus deficit. Do not pull
+repositories or promote labels while the census is blocked.

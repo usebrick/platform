@@ -81,6 +81,7 @@ interface ParsedArguments {
   readonly outputSetSha256?: string;
   readonly exitCode?: number;
   readonly observedResourceUsage?: string;
+  readonly joinStaticAuthority?: boolean;
 }
 
 function parse(argv: readonly string[]): ParsedArguments {
@@ -124,8 +125,15 @@ function parse(argv: readonly string[]): ParsedArguments {
   let outputSetSha256: string | undefined;
   let exitCode: number | undefined;
   let observedResourceUsage: string | undefined;
+  let joinStaticAuthority = false;
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
+    if (flag === '--join-static-authority') {
+      if (command !== 'authority:overlap:verify') throw new Error('--join-static-authority is only valid for authority:overlap:verify');
+      if (joinStaticAuthority) throw new Error('--join-static-authority may only be supplied once');
+      joinStaticAuthority = true;
+      continue;
+    }
     if (flag === '--from-lock' || flag === '--acknowledge-no-live-writer') {
       if (command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:recover' && command !== 'authority:overlap:recover') throw new Error(`${flag} is only valid for a recovery command`);
       if (flag === '--from-lock') {
@@ -284,7 +292,13 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || operation || expectedCurrentIndexSha256 || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || toolAuthorityTransactionId || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) throw new Error('authority:overlap:recover requires a selector, static-ledgers tool profile, recovery nonce, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Overlap recovery hashes/nonces must be lowercase SHA-256');
   } else if (command === 'authority:overlap:verify') {
-    if (proposalPath || operation || expectedCurrentIndexSha256 || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || !toolProfile || toolProfile !== 'admission-static-ledgers-v1') throw new Error('authority:overlap:verify requires --tool-profile admission-static-ledgers-v1 and no publication options');
+    if (proposalPath || operation || expectedCurrentIndexSha256 || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolAuthorityTransactionId || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || outputSetSha256 || exitCode !== undefined || observedResourceUsage !== undefined || !toolProfile || toolProfile !== 'admission-static-ledgers-v1') throw new Error('authority:overlap:verify requires --tool-profile admission-static-ledgers-v1 and no publication options');
+    if (joinStaticAuthority) {
+      if (!invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256) throw new Error('authority:overlap:verify --join-static-authority requires invocation intent and indexed tool receipt selectors');
+      if (!/^[a-f0-9]{64}$/.test(toolReceiptId) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('authority:overlap:verify join selectors must be lowercase SHA-256');
+    } else if (invocationIntentId || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256) {
+      throw new Error('authority:overlap:verify tool selectors require --join-static-authority');
+    }
   } else if (command === 'acquisition:publish') {
     if (!proposalPath || !operation || !toolProfile || !invocationIntentId || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error('acquisition:publish requires --publication-proposal, --operation, --tool-profile, and --invocation-intent');
     if (toolProfile !== 'admission-acquisition-publication-v1') throw new Error('--tool-profile must be admission-acquisition-publication-v1');
@@ -304,7 +318,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, operation, expectedCurrentIndexSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage };
+  return { command, root, proposalPath, operation, expectedCurrentIndexSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
 }
 
 async function main(): Promise<void> {
@@ -373,7 +387,20 @@ async function main(): Promise<void> {
       return;
     }
     if (args.command === 'authority:overlap:verify') {
-      const result = await verifyAdmissionOverlap(args.root, args.selectedGenerationSha256);
+      const result = await verifyAdmissionOverlap(
+        args.root,
+        args.selectedGenerationSha256,
+        args.joinStaticAuthority
+          ? {
+            staticAuthorityJoin: {
+              receiptId: args.toolReceiptId!,
+              receiptSha256: args.toolReceiptSha256!,
+              authorityIndexSha256: args.toolAuthorityIndexSha256!,
+              invocationIntentId: args.invocationIntentId!,
+            },
+          }
+          : undefined,
+      );
       output({ ok: result.ok, command: args.command, ...result });
       if (!result.ok) process.exitCode = 2;
       return;
