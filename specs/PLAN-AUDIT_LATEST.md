@@ -291,6 +291,35 @@ and blockers `static_authority_unavailable` and
 `witness_authority_unavailable`. No corpus, remote, package-version, or release
 state changed.
 
+## Latest bounded Task 2B indexed tool-authority resolver and CLI checkpoint — 2026-07-15
+
+The post-publication authority boundary is now implemented as a read-only
+resolver plus a strict CLI diagnostic. `resolveAdmissionToolAuthorityReceipt`
+reopens the fixed current tool-authority index, verifies its immutable parent
+chain and every referenced profile/intent/receipt, binds the requested receipt
+ID/hash and operation selectors to those exact bytes, and derives a Core-valid
+snapshot from current membership. A caller-supplied snapshot is accepted only
+when it exactly equals that derived projection; hash-only receipt metadata is
+not proof. `tool-authority:resolve` exposes the same boundary with one JSON
+result, contained canonical snapshot input, strict SHA-256 selectors, no
+mutation, and exit-2 fail-closed errors for stale, forged, mixed, or unsafe
+inputs.
+
+The focused resolver/CLI gate is **2 files / 6 tests**. After rebuilding the
+package-local CLI, the full bounded SlopBrick gate passes **315 files / 3,602
+tests** (5 skipped files / 9 skipped tests) with one worker and a 2 GiB heap
+cap; recursive typecheck and build pass with only the existing non-fatal Zod
+declaration warnings. The existing publication/recovery, loader, graph, and
+planner suites remain green, and `git diff --check` passes. This is not the mutating
+`rebuild:pre-witness` or `static-authority:recover` boundary: source
+proposal/approval bytes and real static/witness/resource joins remain open.
+The canonical ledger remains **98/178** continuation items and **2/76**
+admission items; the read-only census remains **329/329** sources reviewed,
+**452,382** units quarantined/unrepresented, zero candidate/eligible units,
+and blockers `static_authority_unavailable` and
+`witness_authority_unavailable`. No corpus, remote, package, release, or
+deployment state changed.
+
 ## Current execution status
 
 The plan remains **READY TO EXECUTE**, but execution is not release-ready:

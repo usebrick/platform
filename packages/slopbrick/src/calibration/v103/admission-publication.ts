@@ -30,9 +30,11 @@ import {
   calibrationAdmissionInvocationIntentSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionToolReceiptId,
+  calibrationAdmissionToolReceiptSha256,
   isCalibrationAdmissionEvidenceBundleV1,
   isCalibrationAdmissionInvocationIntentV1,
   isCalibrationAdmissionToolAuthorityIndexV1,
+  isCalibrationAdmissionToolAuthoritySnapshotV1,
   isCalibrationAdmissionToolProfileV1,
   isCalibrationAdmissionToolReceiptV1,
   isCalibrationToolAuthorityPublicationLockV1,
@@ -41,6 +43,7 @@ import {
 import type {
   CalibrationAdmissionAcquisitionIndexV1,
   CalibrationAdmissionInvocationIntentV1,
+  CalibrationAdmissionToolAuthoritySnapshotV1,
   CalibrationToolAuthorityPublicationLockV1,
   CalibrationToolAuthorityPublicationTransactionV1,
   CalibrationAcquisitionPublicationLockV1,
@@ -1745,7 +1748,7 @@ function authorityShaWithout(value: Record<string, unknown>, key: string): strin
   return calibrationAdmissionSha256(copy);
 }
 
-interface AuthorityIndex {
+export interface AuthorityIndex {
   readonly version: 'v10.3-admission-tool-authority-index-v1';
   readonly generation: number;
   readonly parentIndexSha256?: string;
@@ -1753,6 +1756,31 @@ interface AuthorityIndex {
   readonly invocationIntents: readonly { readonly intentId: string; readonly relativePath: string; readonly sha256: string }[];
   readonly receipts: readonly { readonly receiptId: string; readonly relativePath: string; readonly sha256: string }[];
   readonly indexSha256: string;
+}
+
+export interface AdmissionToolAuthorityReceiptResolutionRequest {
+  /** The v10.3 project root, review/admission root, or tool-authority root. */
+  readonly authorityRoot: string;
+  /** The exact current indexed authority generation required by the caller. */
+  readonly authorityIndexSha256: string;
+  readonly receiptId: string;
+  readonly receiptSha256: string;
+  readonly invocationIntentId?: string;
+  readonly profileId?: string;
+  readonly action?: string;
+  readonly outputSetSha256?: string;
+  /** Optional static-generation snapshot that must equal current membership. */
+  readonly expectedSnapshot?: unknown;
+}
+
+export interface AdmissionToolAuthorityReceiptResolution {
+  readonly authorityIndex: AuthorityIndex;
+  readonly profile: CalibrationAdmissionToolProfileV1;
+  readonly invocationIntent: CalibrationAdmissionInvocationIntentV1;
+  readonly receipt: CalibrationAdmissionToolReceiptV1;
+  readonly snapshot: CalibrationAdmissionToolAuthoritySnapshotV1;
+  readonly authorityIndexSha256: string;
+  readonly receiptSha256: string;
 }
 
 function validateAuthorityIndex(value: unknown): value is AuthorityIndex {
@@ -2389,6 +2417,111 @@ async function validateAuthorityGenerationObjects(authorityRoot: string, index: 
     const intent = isRecord(receipt) ? intents.get(String(receipt.invocationIntentId)) : undefined;
     if (!profile || !intent || !isCalibrationAdmissionToolReceiptV1(receipt, profile, intent) || receipt.receiptId !== ref.receiptId) throw new Error(`Tool-authority receipt reference is invalid: ${ref.receiptId}`);
   }
+}
+
+/**
+ * Resolve one complete, indexed tool-authority chain without accepting
+ * caller-supplied hash-only metadata. The returned snapshot is a projection
+ * of the exact current index membership and can therefore be compared with a
+ * static-generation snapshot before a publication mutates any bytes.
+ */
+export async function resolveAdmissionToolAuthorityReceipt(
+  request: AdmissionToolAuthorityReceiptResolutionRequest,
+): Promise<AdmissionToolAuthorityReceiptResolution> {
+  if (!LOWER_ID.test(request.authorityIndexSha256)
+    || !LOWER_ID.test(request.receiptId)
+    || !SHA256.test(request.receiptSha256)) {
+    throw new Error('Tool-authority receipt resolution requires lowercase SHA-256 selectors');
+  }
+  for (const [label, value] of [
+    ['invocation intent', request.invocationIntentId],
+    ['profile', request.profileId],
+  ] as const) {
+    if (value !== undefined && (typeof value !== 'string' || value.length === 0)) {
+      throw new Error(`Tool-authority ${label} selector is invalid`);
+    }
+  }
+  if (request.action !== undefined && (typeof request.action !== 'string' || request.action.length === 0)) {
+    throw new Error('Tool-authority action selector is invalid');
+  }
+  if (request.outputSetSha256 !== undefined && !SHA256.test(request.outputSetSha256)) {
+    throw new Error('Tool-authority output-set selector must be a lowercase SHA-256');
+  }
+
+  const authorityRoot = await resolveToolAuthorityRoot(request.authorityRoot);
+  const authorityIndex = await authorityCurrentIndex(authorityRoot);
+  if (authorityIndex.indexSha256 !== request.authorityIndexSha256) {
+    throw new Error('Tool-authority current index does not match the requested generation');
+  }
+  await validateAuthorityGenerationObjects(authorityRoot, authorityIndex);
+
+  const receiptRef = authorityIndex.receipts.find((candidate) => candidate.receiptId === request.receiptId);
+  if (!receiptRef || receiptRef.sha256 !== request.receiptSha256) {
+    throw new Error('Tool-authority receipt is not indexed at the requested hash');
+  }
+  const receiptValue = await readAuthorityReferencedJson(authorityRoot, receiptRef.relativePath, receiptRef.sha256);
+  if (!isRecord(receiptValue) || typeof receiptValue.profileId !== 'string' || typeof receiptValue.invocationIntentId !== 'string') {
+    throw new Error('Indexed tool-authority receipt metadata is invalid');
+  }
+  if (request.invocationIntentId !== undefined && receiptValue.invocationIntentId !== request.invocationIntentId) {
+    throw new Error('Tool-authority receipt invocation selector does not match the indexed receipt');
+  }
+  if (request.profileId !== undefined && receiptValue.profileId !== request.profileId) {
+    throw new Error('Tool-authority receipt profile selector does not match the indexed receipt');
+  }
+  const profileRef = authorityIndex.profiles.find((candidate) => candidate.profileId === receiptValue.profileId);
+  if (!profileRef) throw new Error('Tool-authority receipt profile is not indexed');
+  const profileValue = await readAuthorityReferencedJson(authorityRoot, profileRef.relativePath, profileRef.sha256);
+  if (!isCalibrationAdmissionToolProfileV1(profileValue) || profileValue.profileId !== profileRef.profileId) {
+    throw new Error('Indexed tool-authority receipt profile is invalid');
+  }
+  const intentRef = authorityIndex.invocationIntents.find((candidate) => candidate.intentId === receiptValue.invocationIntentId);
+  if (!intentRef) throw new Error('Tool-authority receipt invocation intent is not indexed');
+  const intentValue = await readAuthorityReferencedJson(authorityRoot, intentRef.relativePath, intentRef.sha256);
+  if (!isCalibrationAdmissionInvocationIntentV1(intentValue, profileValue) || intentValue.intentId !== intentRef.intentId) {
+    throw new Error('Indexed tool-authority receipt invocation intent is invalid');
+  }
+  if (!isCalibrationAdmissionToolReceiptV1(receiptValue, profileValue, intentValue)
+    || receiptValue.receiptId !== receiptRef.receiptId
+    || calibrationAdmissionToolReceiptSha256(receiptValue) !== receiptRef.sha256) {
+    throw new Error('Indexed tool-authority receipt is invalid');
+  }
+  if (request.action !== undefined && receiptValue.action !== request.action) {
+    throw new Error('Tool-authority receipt action selector does not match the indexed receipt');
+  }
+  if (request.outputSetSha256 !== undefined && receiptValue.outputSetSha256 !== request.outputSetSha256) {
+    throw new Error('Tool-authority receipt output-set selector does not match the indexed receipt');
+  }
+
+  const snapshotBody = {
+    version: 'v10.3-admission-tool-authority-snapshot-v1' as const,
+    indexGenerationSha256: authorityIndex.indexSha256,
+    profileIds: authorityIndex.profiles.map((entry) => entry.profileId).sort(),
+    invocationIntentIds: authorityIndex.invocationIntents.map((entry) => entry.intentId).sort(),
+    receiptIds: authorityIndex.receipts.map((entry) => entry.receiptId).sort(),
+  };
+  const snapshot = {
+    ...snapshotBody,
+    snapshotSha256: calibrationAdmissionSha256(snapshotBody),
+  } as CalibrationAdmissionToolAuthoritySnapshotV1;
+  if (!isCalibrationAdmissionToolAuthoritySnapshotV1(snapshot)) {
+    throw new Error('Derived tool-authority snapshot is invalid');
+  }
+  if (request.expectedSnapshot !== undefined) {
+    if (!isCalibrationAdmissionToolAuthoritySnapshotV1(request.expectedSnapshot)
+      || calibrationAdmissionCanonicalJson(request.expectedSnapshot) !== calibrationAdmissionCanonicalJson(snapshot)) {
+      throw new Error('Tool-authority snapshot does not match current indexed membership');
+    }
+  }
+  return {
+    authorityIndex,
+    profile: profileValue,
+    invocationIntent: intentValue,
+    receipt: receiptValue,
+    snapshot,
+    authorityIndexSha256: authorityIndex.indexSha256,
+    receiptSha256: receiptRef.sha256,
+  };
 }
 
 async function authorityGeneration(authorityRoot: string, relativePath: string, expectedSha256: string, expectedCurrentState?: { readonly kind: 'absent' } | { readonly kind: 'existing'; readonly indexSha256: string }): Promise<AuthorityIndex> {

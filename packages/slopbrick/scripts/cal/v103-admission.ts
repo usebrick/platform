@@ -3,6 +3,7 @@ import { createReadStream } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
+import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
 import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v103/admission-evidence-context';
 import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission-source-census';
 import { requireContainedAdmissionPath } from '../../src/calibration/v103/admission-path';
@@ -13,6 +14,7 @@ import {
   publishAcquisitionPublication,
   recoverAcquisitionPublication,
   recoverToolAuthorityPublication,
+  resolveAdmissionToolAuthorityReceipt,
 } from '../../src/calibration/v103/admission-publication';
 import {
   RegisterPublicationPendingError,
@@ -84,7 +86,7 @@ interface ParsedArguments {
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
   let operation: 'create' | 'replace' | undefined;
@@ -255,6 +257,18 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (!toolProfile || !action || !canonicalArgvSha256 || !inputSetSha256 || !executableBehaviorSha256 || invocationIntentId || outputSetSha256 || exitCode !== undefined || observedResourceUsage !== undefined || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:intent requires --tool-profile, --action, and the three input hashes only');
   } else if (command === 'tool-authority:receipt') {
     if (!invocationIntentId || !outputSetSha256 || exitCode === undefined || !observedResourceUsage || toolProfile || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:receipt requires --invocation-intent, --output-set-sha256, --exit-code, and --observed-resource-usage only');
+  } else if (command === 'tool-authority:resolve') {
+    if (!toolProfile || !action || !invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256
+      || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter
+      || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256
+      || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath
+      || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot
+      || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256 || exitCode !== undefined || observedResourceUsage) {
+      throw new Error('tool-authority:resolve requires profile, action, invocation intent, receipt ID/hash, and authority-index hash only (plus optional --tool-snapshot)');
+    }
+    if (!/^[a-f0-9]{64}$/.test(invocationIntentId) || !/^[a-f0-9]{64}$/.test(toolReceiptId) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) {
+      throw new Error('tool-authority:resolve selectors must be lowercase SHA-256 values');
+    }
   } else if (command === 'evidence:verify' || command === 'source:census') {
     if (proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error(`Unexpected acquisition option for ${command}`);
     if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error('evidence:verify requires --tool-profile admission-context-v1 and --invocation-intent');
@@ -323,6 +337,39 @@ async function main(): Promise<void> {
         outputSetSha256: args.outputSetSha256!,
       });
       output({ ok: true, command: args.command, ...result });
+      return;
+    }
+    if (args.command === 'tool-authority:resolve') {
+      let expectedSnapshot: unknown;
+      if (args.overlapToolSnapshotPath !== undefined) {
+        const snapshotPath = await requireContainedAdmissionPath(args.root, args.overlapToolSnapshotPath);
+        const snapshotBytes = await readFile(snapshotPath);
+        try { expectedSnapshot = JSON.parse(snapshotBytes.toString('utf8')) as unknown; } catch { throw new Error('--tool-snapshot is not valid JSON'); }
+        if (calibrationAdmissionCanonicalJson(expectedSnapshot) !== snapshotBytes.toString('utf8')) throw new Error('--tool-snapshot is not canonical JSON');
+      }
+      const resolved = await resolveAdmissionToolAuthorityReceipt({
+        authorityRoot: args.root,
+        authorityIndexSha256: args.toolAuthorityIndexSha256!,
+        receiptId: args.toolReceiptId!,
+        receiptSha256: args.toolReceiptSha256!,
+        invocationIntentId: args.invocationIntentId!,
+        profileId: args.toolProfile!,
+        action: args.action!,
+        expectedSnapshot,
+      });
+      output({
+        ok: true,
+        command: args.command,
+        authorityIndexSha256: resolved.authorityIndexSha256,
+        receiptId: resolved.receipt.receiptId,
+        receiptSha256: resolved.receiptSha256,
+        invocationIntentId: resolved.invocationIntent.intentId,
+        profileId: resolved.profile.profileId,
+        action: resolved.receipt.action,
+        exitCode: resolved.receipt.exitCode,
+        outputSetSha256: resolved.receipt.outputSetSha256,
+        snapshot: resolved.snapshot,
+      });
       return;
     }
     if (args.command === 'authority:overlap:verify') {

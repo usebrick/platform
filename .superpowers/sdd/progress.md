@@ -855,3 +855,32 @@ eligible, with `static_authority_unavailable` and
 tool-receipt authority, operation-aware CLI/resource authority, real
 static/witness context, then corpus admission/calibration. No corpus or
 remote/release state changed.
+
+### Task 2B indexed tool-authority resolver and read-only CLI checkpoint — 2026-07-15
+
+The bounded next slice adds `resolveAdmissionToolAuthorityReceipt` to the
+existing offline publication module and a strict `tool-authority:resolve`
+command to `scripts/cal/v103-admission.ts`. The resolver reads the fixed
+tool-authority root, current index, immutable parent chain, and every indexed
+profile/intent/receipt object. It verifies canonical bytes, reference hashes,
+Core profile/action/intent/receipt joins, exact receipt selectors, and derives
+the current membership snapshot. An optional supplied snapshot is accepted
+only when it is Core-valid and byte-for-byte equal to that derived projection;
+hash-only metadata is not accepted as proof.
+
+The CLI is read-only and operation-aware: it requires profile/action/intent,
+receipt ID/hash, and authority-index SHA-256 selectors, permits only an
+optional contained canonical snapshot path, emits one JSON proof, and returns
+exit 2 for stale/mutated/forged selectors or mixed publication/recovery flags.
+Focused resolver/CLI coverage is **2 files / 6 tests**; after rebuilding the
+package-local CLI, the full bounded SlopBrick gate passes **315 files / 3,602
+tests** (5 skipped files / 9 skipped tests) with one worker and a 2 GiB heap
+cap. Recursive typecheck and build pass, with only the existing non-fatal Zod
+declaration warnings; the existing publication/recovery, loader, graph, and
+planner suites remain green and diff-check passes. This does not implement the mutating
+`rebuild:pre-witness` or `static-authority:recover` commands and does not
+change corpus readiness: **329/329** sources reviewed, **452,382** units
+quarantined/unrepresented, zero candidate/eligible, blockers
+`static_authority_unavailable` and `witness_authority_unavailable`. Source
+proposal/approval bytes and resource/static/witness joins remain next; no
+corpus, remote, package, release, or deployment state changed.
