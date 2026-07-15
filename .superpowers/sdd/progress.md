@@ -1278,6 +1278,16 @@ partition/semantic hashes and projection bytes and fails closed on missing or
 substituted files. This remains diagnostic-only; real-scale authority is
 deferred until source evidence and witness inputs exist.
 
+### Task 2B integrated authority gate — 2026-07-15
+
+The consolidated serial gate passes **6 files / 52 tests** across the stream
+adapter, ledger contracts, outer materializer, CLI boundary, rebuild adapter,
+and allocation preview. The live read-only `census:preview` still reports
+`ready=false`, `authorityEligible=false`, 329/329 registered/reviewed sources,
+452,382 additive unrepresented/quarantine units, and zero candidate/eligible
+units. The smoke/canary witnesses remain deferred until those authority inputs
+exist; no labels or corpus files were changed.
+
 ### Task 2B nested publication handoff contract helper — 2026-07-15
 
 The Core contract now has a pure builder for the already-versioned nested
