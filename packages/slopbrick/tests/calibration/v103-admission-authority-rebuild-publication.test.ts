@@ -102,6 +102,7 @@ describe('v10.3 prebuilt authority publication/recovery', () => {
     expect(await stat(join(root, 'review', 'admission', 'authority', 'proposals', `${fixture.proposal.proposalId}.json`))).toBeTruthy();
     expect(await stat(join(root, 'review', 'admission', 'sources', 'source-a', 'proposals', `${fixture.sources[0]!.sourceProposal.proposalId}.json`))).toBeTruthy();
     expect(await readFile(join(root, 'review', 'admission', 'authority', 'current.json'))).toEqual(fixture.currentBytes);
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'staging-aux'))).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild-transaction.json'))).rejects.toMatchObject({ code: 'ENOENT' });
   });

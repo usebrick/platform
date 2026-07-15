@@ -1186,3 +1186,26 @@ stderr remains non-fatal.
 No real-corpus authority, label, repository, manifest, release, publish, or
 deployment state changed. The live corpus remains 0 candidate / 0 eligible
 with `static_authority_unavailable` and `witness_authority_unavailable`.
+
+### Task 2B transaction-owned staging hardening — 2026-07-15
+
+Independent review approved the candidate-aware rebuild adapter only as a
+fixture-scale library boundary and identified one concrete publication gap:
+proposal, source-proposal/approval, and input-generation bytes were written
+directly to final paths before later transaction stages. The publisher now
+stages those bytes under the transaction-owned
+`review/admission/authority/staging-aux/<transactionId>` subtree, verifies
+the staged bytes, promotes with no-clobber renames, accepts exact replayed
+finals, and removes only that transaction's auxiliary staging after complete
+or explicit lock-only cleanup. Input-generation artifacts are promoted as a
+verified directory; immutable source/static generations and unknown files
+inside them remain untouched.
+
+The focused publication/recovery suite passes **15/15**, the adapter and
+loader suites pass **17/17**, SlopBrick typecheck and `git diff --check` pass.
+The outer mutating CLI remains deliberately unavailable: no real graph
+materializer, nested publication handoff, privacy/quality/lineage builder,
+real-scale resource receipt, or witness authority exists yet. The live corpus
+state is unchanged at **329/329** reviewed sources, **452,382**
+quarantined/unrepresented units, zero candidate/eligible, with blockers
+`static_authority_unavailable` and `witness_authority_unavailable`.

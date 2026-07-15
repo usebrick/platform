@@ -14,6 +14,8 @@ import {
   lstat,
   mkdir,
   open,
+  rm,
+  rmdir,
   readFile,
   realpath,
   rename,
@@ -52,6 +54,9 @@ const AUTHORITY_RELATIVE_ROOT = `${ADMISSION_RELATIVE_ROOT}/authority`;
 const LOCK_RELATIVE_PATH = `${AUTHORITY_RELATIVE_ROOT}/rebuild.lock`;
 const TRANSACTION_RELATIVE_PATH = `${AUTHORITY_RELATIVE_ROOT}/rebuild-transaction.json`;
 const AUTHORITY_CURRENT_RELATIVE_PATH = `${AUTHORITY_RELATIVE_ROOT}/current.json`;
+/** Auxiliary transaction staging is kept separate from the static-generation
+ * staging directory, which is itself renamed into the immutable generation. */
+const AUX_STAGING_RELATIVE_ROOT = `${AUTHORITY_RELATIVE_ROOT}/staging-aux`;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/u;
 
@@ -249,6 +254,41 @@ async function writeNoClobber(root: string, path: string, bytes: Uint8Array): Pr
   if (!Buffer.from(existing).equals(Buffer.from(bytes))) throw new Error(`authority publication byte collision: ${path}`);
 }
 
+/** Publish one transaction-owned staged file without replacing an unrelated
+ * final file. Replays accept the exact already-promoted bytes and clean only
+ * the transaction's own staging copy. */
+async function promoteStagedFile(
+  root: string,
+  stagingPath: string,
+  finalPath: string,
+  bytes: Uint8Array,
+  label: string,
+): Promise<void> {
+  await writeNoClobber(root, stagingPath, bytes);
+  await assertBytes(root, stagingPath, bytes, `${label} staging`);
+  const existing = await readOptional(root, finalPath);
+  if (existing !== undefined) {
+    if (!Buffer.from(existing).equals(Buffer.from(bytes))) throw new Error(`${label} final bytes changed`);
+    await assertNoSymlinkPath(root, stagingPath);
+    await unlink(stagingPath);
+    await syncDirectory(dirname(stagingPath));
+    return;
+  }
+  await ensureDirectory(root, dirname(finalPath));
+  const beforeRename = await readOptional(root, finalPath);
+  if (beforeRename !== undefined) {
+    if (!Buffer.from(beforeRename).equals(Buffer.from(bytes))) throw new Error(`${label} final appeared with different bytes`);
+    await assertNoSymlinkPath(root, stagingPath);
+    await unlink(stagingPath);
+    await syncDirectory(dirname(stagingPath));
+    return;
+  }
+  await assertNoSymlinkPath(root, stagingPath);
+  await assertNoSymlinkPath(root, finalPath);
+  await rename(stagingPath, finalPath);
+  await syncDirectory(dirname(finalPath));
+}
+
 async function writeReplace(root: string, path: string, bytes: Uint8Array, transactionId: string): Promise<void> {
   const temporary = `${path}.${transactionId}.tmp`;
   await writeNoClobber(root, temporary, bytes);
@@ -285,6 +325,10 @@ async function assertBytes(root: string, path: string, expected: Uint8Array, lab
 }
 
 function canonical(value: unknown): Buffer { return Buffer.from(calibrationAdmissionCanonicalJson(value), 'utf8'); }
+
+function auxiliaryStagingRelativeRoot(transactionId: string): string {
+  return `${AUX_STAGING_RELATIVE_ROOT}/${transactionId}`;
+}
 
 function entries(value: unknown, label: string): ReadonlyMap<string, Uint8Array> {
   const map = new Map<string, Uint8Array>();
@@ -602,8 +646,15 @@ async function assertExpectedCurrentBeforeMutation(context: PublicationContext):
 
 async function materializeProposal(context: PublicationContext): Promise<void> {
   const proposal = context.graph.proposal as { proposalId: string };
-  const path = absoluteContained(context.layout.root, `${AUTHORITY_RELATIVE_ROOT}/proposals/${proposal.proposalId}.json`);
-  await writeNoClobber(context.layout.root, path, context.graph.proposalBytes);
+  const auxiliaryRoot = auxiliaryStagingRelativeRoot(context.transaction.transactionId);
+  const proposalPath = `${AUTHORITY_RELATIVE_ROOT}/proposals/${proposal.proposalId}.json`;
+  await promoteStagedFile(
+    context.layout.root,
+    absoluteContained(context.layout.root, `${auxiliaryRoot}/input-generation-proposal.json`),
+    absoluteContained(context.layout.root, proposalPath),
+    context.graph.proposalBytes,
+    'input-generation proposal',
+  );
   for (const source of context.graph.sources) {
     const sourceId = isRecord(source.sourceGeneration) && typeof source.sourceGeneration.sourceId === 'string'
       ? source.sourceGeneration.sourceId
@@ -613,11 +664,19 @@ async function materializeProposal(context: PublicationContext): Promise<void> {
       if (source.sourceProposal === undefined || source.sourceProposalBytes === undefined) {
         throw new Error(`authority publication source proposal bytes are incomplete: ${sourceId}`);
       }
-      const sourceProposalPath = absoluteContained(
+      await promoteStagedFile(
         context.layout.root,
-        `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${source.sourceProposal.proposalId}.json`,
+        absoluteContained(
+          context.layout.root,
+          `${auxiliaryRoot}/source-proposals/${sourceId}/${source.sourceProposal.proposalId}.json`,
+        ),
+        absoluteContained(
+          context.layout.root,
+          `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${source.sourceProposal.proposalId}.json`,
+        ),
+        source.sourceProposalBytes,
+        `source ${sourceId} proposal`,
       );
-      await writeNoClobber(context.layout.root, sourceProposalPath, source.sourceProposalBytes);
     }
     if (source.approval !== undefined || source.approvalBytes !== undefined) {
       if (source.approval === undefined || source.approvalBytes === undefined) {
@@ -627,30 +686,61 @@ async function materializeProposal(context: PublicationContext): Promise<void> {
         ? source.sourceGeneration.proposalId
         : undefined;
       if (proposalId === undefined) throw new Error(`authority publication source proposal ID is invalid: ${sourceId}`);
-      const approvalPath = absoluteContained(
+      await promoteStagedFile(
         context.layout.root,
-        `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${proposalId}-approval.json`,
+        absoluteContained(
+          context.layout.root,
+          `${auxiliaryRoot}/source-proposals/${sourceId}/${proposalId}-approval.json`,
+        ),
+        absoluteContained(
+          context.layout.root,
+          `${ADMISSION_RELATIVE_ROOT}/sources/${sourceId}/proposals/${proposalId}-approval.json`,
+        ),
+        source.approvalBytes,
+        `source ${sourceId} approval`,
       );
-      await writeNoClobber(context.layout.root, approvalPath, source.approvalBytes);
     }
   }
 }
 
 async function materializeInput(context: PublicationContext): Promise<void> {
-  const dir = absoluteContained(context.layout.root, dirname(context.plan.paths.inputGenerationRelativePath));
-  await ensureDirectory(context.layout.root, dir);
-  await writeNoClobber(context.layout.root, absoluteContained(context.layout.root, context.plan.paths.inputGenerationRelativePath), context.graph.inputGenerationBytes);
+  const finalDirectory = absoluteContained(context.layout.root, dirname(context.plan.paths.inputGenerationRelativePath));
+  const auxiliaryDirectory = absoluteContained(
+    context.layout.root,
+    `${auxiliaryStagingRelativeRoot(context.transaction.transactionId)}/input-generation`,
+  );
+  await ensureDirectory(context.layout.root, auxiliaryDirectory);
+  await writeNoClobber(context.layout.root, join(auxiliaryDirectory, 'generation.json'), context.graph.inputGenerationBytes);
   const artifactMap = entries(context.graph.inputGenerationArtifactBytes, 'input generation');
-  for (const [path, bytes] of artifactMap) await writeNoClobber(context.layout.root, join(dir, path), bytes);
-  await syncDirectory(dir);
+  for (const [path, bytes] of artifactMap) await writeNoClobber(context.layout.root, join(auxiliaryDirectory, path), bytes);
+  await syncDirectory(auxiliaryDirectory);
+  const finalMetadata = await lstat(finalDirectory).then((value) => value).catch((error: unknown) => {
+    if (isRecord(error) && error.code === 'ENOENT') return undefined;
+    throw error;
+  });
+  if (finalMetadata !== undefined) {
+    if (!finalMetadata.isDirectory() || finalMetadata.isSymbolicLink()) throw new Error('authority publication input generation final is not a directory');
+    await verifyInput(context);
+    return;
+  }
+  await verifyInputDirectory(context, auxiliaryDirectory);
+  await ensureDirectory(context.layout.root, dirname(finalDirectory));
+  await assertNoSymlinkPath(context.layout.root, auxiliaryDirectory);
+  await assertNoSymlinkPath(context.layout.root, finalDirectory);
+  await rename(auxiliaryDirectory, finalDirectory);
+  await syncDirectory(dirname(finalDirectory));
+}
+
+async function verifyInputDirectory(context: PublicationContext, dir: string): Promise<void> {
+  await assertBytes(context.layout.root, join(dir, 'generation.json'), context.graph.inputGenerationBytes, 'input generation');
+  for (const [path, bytes] of entries(context.graph.inputGenerationArtifactBytes, 'input generation')) {
+    await assertBytes(context.layout.root, join(dir, path), bytes, `input artifact ${path}`);
+  }
 }
 
 async function verifyInput(context: PublicationContext): Promise<void> {
   const dir = absoluteContained(context.layout.root, dirname(context.plan.paths.inputGenerationRelativePath));
-  await assertBytes(context.layout.root, absoluteContained(context.layout.root, context.plan.paths.inputGenerationRelativePath), context.graph.inputGenerationBytes, 'input generation');
-  for (const [path, bytes] of entries(context.graph.inputGenerationArtifactBytes, 'input generation')) {
-    await assertBytes(context.layout.root, join(dir, path), bytes, `input artifact ${path}`);
-  }
+  await verifyInputDirectory(context, dir);
 }
 
 async function materializeSourceStage(context: PublicationContext, source: PrebuiltAdmissionAuthoritySourceInput, descriptor: CalibrationAdmissionAuthorityRebuildTransactionV1['sourceGenerationDirectories'][number]): Promise<void> {
@@ -984,11 +1074,35 @@ async function materializeAuthorityCurrent(context: PublicationContext): Promise
   await writeReplace(context.layout.root, context.layout.current, context.graph.currentBytes, context.transaction.transactionId);
 }
 
+/** Remove only the auxiliary staging subtree owned by this transaction. The
+ * immutable source/static generations are never part of this cleanup path. */
+async function cleanupAuxiliaryStaging(context: PublicationContext): Promise<void> {
+  const path = absoluteContained(
+    context.layout.root,
+    auxiliaryStagingRelativeRoot(context.transaction.transactionId),
+  );
+  let metadata;
+  try {
+    metadata = await lstat(path);
+  } catch (error) {
+    if (isRecord(error) && error.code === 'ENOENT') return;
+    throw error;
+  }
+  if (metadata.isSymbolicLink() || !metadata.isDirectory()) throw new Error('authority publication auxiliary staging is not an owned directory');
+  await assertNoSymlinkPath(context.layout.root, path);
+  await rm(path, { recursive: true, force: true });
+  await syncDirectory(dirname(path));
+  await rmdir(dirname(path)).catch((error: unknown) => {
+    if (!isRecord(error) || (error.code !== 'ENOENT' && error.code !== 'ENOTEMPTY' && error.code !== 'EEXIST')) throw error;
+  });
+}
+
 async function cleanupJournals(context: PublicationContext): Promise<void> {
   const tx = await readOptional(context.layout.root, context.layout.transaction);
   if (tx !== undefined && !Buffer.from(tx).equals(canonical(context.transaction))) throw new Error('authority publication transaction changed during cleanup');
   const lock = await readOptional(context.layout.root, context.layout.lock);
   if (lock !== undefined && !Buffer.from(lock).equals(canonical(context.plan.lock))) throw new Error('authority publication lock changed during cleanup');
+  await cleanupAuxiliaryStaging(context);
   await assertNoSymlinkPath(context.layout.root, context.layout.transaction);
   await assertNoSymlinkPath(context.layout.root, context.layout.lock);
   await unlink(context.layout.transaction).catch((error: unknown) => { if (!(isRecord(error) && error.code === 'ENOENT')) throw error; });
@@ -997,6 +1111,7 @@ async function cleanupJournals(context: PublicationContext): Promise<void> {
 }
 
 async function cleanupLockOnly(context: PublicationContext): Promise<PrebuiltAuthorityPublicationResult> {
+  await cleanupAuxiliaryStaging(context);
   await assertNoSymlinkPath(context.layout.root, context.layout.lock);
   await unlink(context.layout.lock).catch((error: unknown) => {
     if (!(isRecord(error) && error.code === 'ENOENT')) throw error;
