@@ -352,6 +352,22 @@ describe('v0.14.5i UX improvements', () => {
       expect(verdict).not.toContain('Repo is low');
     });
 
+    it('shows policy status beside the absolute slop band', () => {
+      const failing = formatPretty(makeReport({
+        aiSlopScore: 17.3,
+        thresholds: { meanSlop: 15, p90Slop: 30, individualSlopThreshold: 60 },
+      }));
+      expect(failing).toContain('[LOW]');
+      expect(failing).toContain('[POLICY FAIL]');
+
+      const passing = formatPretty(makeReport({
+        aiSlopScore: 12.3,
+        thresholds: { meanSlop: 15, p90Slop: 30, individualSlopThreshold: 60 },
+      }));
+      expect(passing).toContain('[LOW]');
+      expect(passing).toContain('[POLICY PASS]');
+    });
+
     it('keeps repeated statistical findings bounded unless --full is requested', () => {
       const issues = Array.from({ length: 7 }, (_, index) => makeIssue({
         ruleId: 'ai/compression-profile',

@@ -704,11 +704,19 @@ function formatCompositeScore(report: ProjectReport): string {
   const slopValue = formatHeadlineScore(slop);
   const band = slopScoreBandForReport(report);
   const status = chalk.bold(`[${band.label.toUpperCase()}]`);
+  // The absolute slop band and the configured CI threshold answer different
+  // questions. Keep both visible at the headline so a green `LOW` band cannot
+  // be mistaken for a passing repository policy check.
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  const policyPassed = slop <= meanSlop;
+  const policyStatus = policyPassed
+    ? chalk.green('[POLICY PASS]')
+    : chalk.red('[POLICY FAIL]');
 
   const lines: string[] = [];
   const deltaSuffix = formatDeltaSuffix(report);
   lines.push(
-    chalk.bold(`AI Slop Score: ${slopValue} / 100 ${band.color(status)}${deltaSuffix}`),
+    chalk.bold(`AI Slop Score: ${slopValue} / 100 ${band.color(status)} ${policyStatus}${deltaSuffix}`),
   );
   // v0.20.0: plain-language message (band label alone wasn't enough).
   // v0.21.0: aiSlopScore is the raw amount of slop. The 'slop' tier

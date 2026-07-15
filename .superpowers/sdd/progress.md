@@ -1165,7 +1165,11 @@ mutating graph materializer and recovery transaction are still open.
 Report JSON/HTML/heatmap files now publish through a unique sibling temp file
 and rename; watch filtering treats those temps as scanner-owned. Brief output
 separates incomplete runtime failure from policy-threshold failure and shows a
-bounded active-rule breakdown. Focused renderer/heatmap contracts pass 25/25,
+bounded active-rule breakdown. The full pretty headline now also shows an
+explicit `[POLICY PASS]` or `[POLICY FAIL]` marker beside the absolute slop
+band, so a green `LOW` band cannot be mistaken for a passing configured gate.
+Renderer UX/contract tests pass 71/71 in the focused pair (the broader
+renderer/heatmap slice remains 25/25),
 watch-mode passes 45/45 serially, SlopBrick typecheck/build pass with only the
 existing non-fatal Zod declaration warnings, and `git diff --check` passes.
 The stable recursive workspace gate also passes: Core 226/226, engine 59/59,
