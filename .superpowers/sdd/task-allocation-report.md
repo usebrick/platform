@@ -106,3 +106,23 @@ authorship or label authority. Pulling more repositories would not resolve
 this deficit; the next useful work is source-level evidence and blinded
 decision receipts for existing sources, followed by the bounded smoke/canary
 review.
+
+## Offline v8 materialization cross-check — 2026-07-15
+
+The centralized v8 corpus was checked as a possible existing source of
+materialization evidence; no repository was downloaded. With
+`GIT_NO_LAZY_FETCH=1`, six exact-commit positive checkouts matched **2,995 / 2,995**
+selected inventory rows by normalized path, byte size, and content SHA-256,
+with zero mismatches:
+`positive-go-ai--langchaingo`, `positive-roo-code`,
+`positive-vibe-coded--browser-use`, `positive-vibe-coded--claude-task-master`,
+`positive-vibe-coded--fragments`, and `positive-vibe-coded--get-shit-done`.
+
+A bounded negative slice checked **11,372** rows offline: **11,145** matched
+exactly and **227** paths were absent from the old checkout trees; there were
+zero size or content-hash mismatches. Two partial/promisor trees
+(`negative-celery`, 386 rows, and `negative-python--fastapi`, 526 rows) were
+left unavailable rather than fetched. The absent/unavailable rows remain
+quarantine evidence. These matches establish local byte/materialization
+provenance only; they do not prove authorship, rights, family independence, or
+AI/human label authority, so no disposition or census count changed.
