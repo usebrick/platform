@@ -280,6 +280,12 @@ async function removeWorkFile(root: string, path: string): Promise<void> {
   await rm(path, { force: true });
 }
 
+/** Remove a consumed scratch directory without following a symlink path. */
+async function removeWorkDirectory(root: string, path: string): Promise<void> {
+  await assertNoSymlinkPath(root, path);
+  await rm(path, { recursive: true, force: true });
+}
+
 const CHECKPOINT_PHASES = ['postings', 'candidate_pairs', 'exact_edges', 'clusters'] as const;
 type AdmissionOverlapCheckpointPhase = (typeof CHECKPOINT_PHASES)[number];
 const CHECKPOINT_VERSION = 'v10.3-admission-overlap-checkpoint-v1' as const;
@@ -920,6 +926,15 @@ function referenceFor(
   };
 }
 
+/**
+ * Language names are data, not path components.  Use a full digest as the
+ * deterministic scratch-directory slot so names such as `C++` and `C#` can
+ * never collide or introduce a separator while the partition is on disk.
+ */
+function languageSlot(language: string): string {
+  return `language-${sha256(language)}`;
+}
+
 function addRawLine(buffer: string[], row: unknown): number {
   const value = canonicalJson(row);
   buffer.push(`${value}\n`);
@@ -978,7 +993,7 @@ class DisjointSet {
 function makeToolReceipt(policy: AdmissionOverlapPolicyV1): string {
   return calibrationAdmissionSha256({
     version: 'v10.3-admission-overlap-builder-v1',
-    implementation: 'disk-bounded-postings-prefix-filter-v1',
+    implementation: 'disk-bounded-language-sharded-postings-prefix-filter-v1',
     policySha256: policy.policySha256,
   });
 }
@@ -1092,6 +1107,9 @@ export async function buildAdmissionOverlapLedger(
   const distribution = createHash('sha256');
   const recordStreamHash = createHash('sha256');
   const registryByLanguage = new Map(registry.entries.map((entry) => [entry.language, entry]));
+  const languageSlots = new Map(
+    [...registryByLanguage.keys()].sort(compare).map((language) => [language, languageSlot(language)] as const),
+  );
   let recordCount = 0;
   let covered = 0;
   let unsupported = 0;
@@ -1099,10 +1117,12 @@ export async function buildAdmissionOverlapLedger(
   let tokenCount = 0;
   let shingleCount = 0;
   let previousId = '';
-  let unitsHandle: Awaited<ReturnType<typeof open>> | undefined;
   let contentHandle: Awaited<ReturnType<typeof open>> | undefined;
-  let shingleHandle: Awaited<ReturnType<typeof open>> | undefined;
-  let unitOffset = 0;
+  const languageUnitHandles = new Map<string, Awaited<ReturnType<typeof open>>>();
+  const languageShingleHandles = new Map<string, Awaited<ReturnType<typeof open>>>();
+  const languageUnitPaths = new Map<string, string>();
+  const languageUnitOffsets = new Map<string, number>();
+  const languageReadHandles = new Map<string, Awaited<ReturnType<typeof open>>>();
 
   try {
     await mkdir(root, { recursive: true });
@@ -1110,14 +1130,41 @@ export async function buildAdmissionOverlapLedger(
     await mkdir(join(tempRoot, 'raw'), { recursive: true });
     await assertNoSymlinkPath(root, tempRoot);
     await assertNoSymlinkPath(root, join(tempRoot, 'raw'));
-    unitsHandle = await open(join(tempRoot, 'units.jsonl'), 'wx', 0o600);
     contentHandle = await open(join(tempRoot, 'raw', 'content.jsonl'), 'wx', 0o600);
-    shingleHandle = await open(join(tempRoot, 'raw', 'shingles.jsonl'), 'wx', 0o600);
-    state.maxOpenFiles = Math.max(state.maxOpenFiles, 3);
+    state.maxOpenFiles = Math.max(state.maxOpenFiles, 1);
     const contentBuffer: string[] = [];
-    const shingleBuffer: string[] = [];
+    const languageBuffers = new Map<string, { readonly shingles: string[]; shingleBytes: number }>();
     let contentBufferBytes = 0;
-    let shingleBufferBytes = 0;
+    const ensureLanguageFiles = async (language: string): Promise<{
+      readonly unitHandle: Awaited<ReturnType<typeof open>>;
+      readonly shingleHandle: Awaited<ReturnType<typeof open>>;
+      readonly buffers: { readonly shingles: string[]; shingleBytes: number };
+    }> => {
+      const existing = languageUnitHandles.get(language);
+      const existingShingle = languageShingleHandles.get(language);
+      const existingBuffers = languageBuffers.get(language);
+      if (existing !== undefined && existingShingle !== undefined && existingBuffers !== undefined) {
+        return { unitHandle: existing, shingleHandle: existingShingle, buffers: existingBuffers };
+      }
+      const slot = languageSlots.get(language);
+      if (slot === undefined) throw new Error(`normalizer_registry_language_slot_missing:${language}`);
+      const unitPath = join(tempRoot, 'units', `${slot}.jsonl`);
+      const shinglePath = join(tempRoot, 'raw', `${slot}-shingles.jsonl`);
+      await mkdir(join(tempRoot, 'units'), { recursive: true });
+      await assertNoSymlinkPath(root, join(tempRoot, 'units'));
+      await assertNoSymlinkPath(root, unitPath);
+      await assertNoSymlinkPath(root, shinglePath);
+      const unitHandle = await open(unitPath, 'wx', 0o600);
+      const shingleHandle = await open(shinglePath, 'wx', 0o600);
+      const buffers = { shingles: [], shingleBytes: 0 };
+      languageUnitHandles.set(language, unitHandle);
+      languageShingleHandles.set(language, shingleHandle);
+      languageUnitPaths.set(language, unitPath);
+      languageBuffers.set(language, buffers);
+      state.maxOpenFiles = Math.max(state.maxOpenFiles, languageUnitHandles.size + languageShingleHandles.size + 2);
+      if (state.maxOpenFiles > policy.maxOpenFiles) throw new ResourceLimitError('max_open_files_exceeded');
+      return { unitHandle, shingleHandle, buffers };
+    };
 
     for await (const record of universeRecords) {
       recordCount += 1;
@@ -1191,22 +1238,24 @@ export async function buildAdmissionOverlapLedger(
       const unit = toUnit(record, normalized);
       const line = lineBytes(unit);
       ensureWithin(line.byteLength, policy.maxUnitBytes, 'normalized_unit_bytes');
-      await unitsHandle.write(line, 0, line.byteLength, unitOffset);
+      const languageFile = await ensureLanguageFiles(unit.language);
+      const languageOffset = languageUnitOffsets.get(unit.language) ?? 0;
+      await languageFile.unitHandle.write(line, 0, line.byteLength, languageOffset);
       addWork(state, line.byteLength);
-      references.set(unit.candidateUnitId, referenceFor(unit, unitOffset, line.byteLength));
+      languageUnitOffsets.set(unit.language, languageOffset + line.byteLength);
+      references.set(unit.candidateUnitId, referenceFor(unit, languageOffset, line.byteLength));
       if (references.size * 320 > policy.maxHeapBytes / 2) throw new ResourceLimitError('max_heap_bytes_exceeded');
-      unitOffset += line.byteLength;
       contentBufferBytes += addRawLine(contentBuffer, { key: unit.contentSha256, candidateUnitId: unit.candidateUnitId });
       for (const shingle of unit.shingles) {
-        shingleBufferBytes += addRawLine(shingleBuffer, { key: `${unit.language}\u0000${shingle}`, candidateUnitId: unit.candidateUnitId });
+        languageFile.buffers.shingleBytes += addRawLine(languageFile.buffers.shingles, { key: shingle, candidateUnitId: unit.candidateUnitId });
       }
       if (contentBufferBytes >= 1_048_576) {
         await flushRawBuffer(contentHandle, contentBuffer, state);
         contentBufferBytes = 0;
       }
-      if (shingleBufferBytes >= 1_048_576) {
-        await flushRawBuffer(shingleHandle, shingleBuffer, state);
-        shingleBufferBytes = 0;
+      if (languageFile.buffers.shingleBytes >= 1_048_576) {
+        await flushRawBuffer(languageFile.shingleHandle, languageFile.buffers.shingles, state);
+        languageFile.buffers.shingleBytes = 0;
       }
       covered += 1;
       tokenCount += unit.tokens.length;
@@ -1215,13 +1264,16 @@ export async function buildAdmissionOverlapLedger(
       updateResource(state);
     }
     await flushRawBuffer(contentHandle, contentBuffer, state);
-    await flushRawBuffer(shingleHandle, shingleBuffer, state);
-    await syncClose(unitsHandle);
+    for (const [language, handle] of languageShingleHandles) {
+      const buffers = languageBuffers.get(language)!;
+      await flushRawBuffer(handle, buffers.shingles, state);
+    }
     await syncClose(contentHandle);
-    await syncClose(shingleHandle);
-    unitsHandle = undefined;
+    for (const handle of languageUnitHandles.values()) await syncClose(handle);
+    for (const handle of languageShingleHandles.values()) await syncClose(handle);
     contentHandle = undefined;
-    shingleHandle = undefined;
+    languageUnitHandles.clear();
+    languageShingleHandles.clear();
 
     const completion = (universeRecords as unknown as {
       readonly complete?: Promise<{ readonly ok: boolean; readonly errors?: readonly string[] }>;
@@ -1271,69 +1323,11 @@ export async function buildAdmissionOverlapLedger(
       };
     }
 
-    // The remaining phases are implemented below using the disk index and
-    // externally sorted relation files. Keep the open handle count explicit.
-    const frequencyPath = join(tempRoot, 'frequency.jsonl');
-    const sortedShinglePath = join(tempRoot, 'sorted-shingles.jsonl');
-    await sortJsonlFile(
-      join(tempRoot, 'raw', 'shingles.jsonl'),
-      sortedShinglePath,
-      join(tempRoot, 'runs', 'shingles'),
-      (row) => typeof row.key === 'string' ? row.key : '',
-      runLimits,
-      state,
-    );
-    await removeWorkFile(root, join(tempRoot, 'raw', 'shingles.jsonl'));
-    const frequencyHandle = await open(frequencyPath, 'wx', 0o600);
-    state.maxOpenFiles = Math.max(state.maxOpenFiles, 1);
-    let frequencyBuffer: string[] = [];
-    let currentFrequencyKey = '';
-    let frequencyCount = 0;
-    for await (const row of jsonRows(sortedShinglePath)) {
-      const key = typeof row.key === 'string' ? row.key : '';
-      if (key !== currentFrequencyKey && currentFrequencyKey !== '') {
-        addRawLine(frequencyBuffer, { key: currentFrequencyKey, count: frequencyCount });
-        if (frequencyBuffer.join('').length >= 1_048_576) await flushRawBuffer(frequencyHandle, frequencyBuffer, state);
-        frequencyCount = 0;
-      }
-      if (key !== currentFrequencyKey) currentFrequencyKey = key;
-      frequencyCount += 1;
-    }
-    if (currentFrequencyKey !== '') addRawLine(frequencyBuffer, { key: currentFrequencyKey, count: frequencyCount });
-    await flushRawBuffer(frequencyHandle, frequencyBuffer, state);
-    await syncClose(frequencyHandle);
-    await removeWorkFile(root, sortedShinglePath);
-
-    const frequency = new Map<string, number>();
-    for await (const row of jsonRows(frequencyPath)) {
-      if (typeof row.key !== 'string' || typeof row.count !== 'number') throw new Error('frequency_row_invalid');
-      frequency.set(row.key, row.count);
-      if (frequency.size * 96 > policy.maxHeapBytes) throw new ResourceLimitError('max_heap_bytes_exceeded');
-    }
-    await removeWorkFile(root, frequencyPath);
-    for (const key of [...frequency.keys()].sort(compare)) distribution.update(`${key}\u0000${frequency.get(key)!}\n`);
-    const order = new Map<string, number>();
-    [...frequency.keys()].sort((left, right) => (frequency.get(left)! - frequency.get(right)!) || compare(left, right))
-      .forEach((key, index) => order.set(key, index));
-    frequency.clear();
-
-    const postingsRaw = join(tempRoot, 'raw', 'postings.jsonl');
-    const postingsHandle = await open(postingsRaw, 'wx', 0o600);
-    const postingsBuffer: string[] = [];
-    for await (const row of jsonRows(join(tempRoot, 'units.jsonl'))) {
-      const unit = row as unknown as NormalizedUnit;
-      const ordered = [...unit.shingles].sort((left, right) => (order.get(`${unit.language}\u0000${left}`)! - order.get(`${unit.language}\u0000${right}`)!) || compare(left, right));
-      for (const shingle of ordered.slice(0, prefixLength(ordered.length))) {
-        addRawLine(postingsBuffer, { key: `${unit.language}\u0000${shingle}`, candidateUnitId: unit.candidateUnitId });
-        if (postingsBuffer.length >= 1024) await flushRawBuffer(postingsHandle, postingsBuffer, state);
-      }
-    }
-    await flushRawBuffer(postingsHandle, postingsBuffer, state);
-    await syncClose(postingsHandle);
-
-    const sortedPostings = join(tempRoot, 'sorted-postings.jsonl');
-    await sortJsonlFile(postingsRaw, sortedPostings, join(tempRoot, 'runs', 'postings'), (row) => `${String(row.key)}\u0000${String(row.candidateUnitId)}`, runLimits, state);
-    await removeWorkFile(root, postingsRaw);
+    // The remaining phases use a language-partitioned postings join.  Shingle
+    // postings are language-scoped by contract, so processing one language at
+    // a time bounds the frequency/order map and avoids retaining the entire
+    // 452k-row vocabulary.  Exact byte duplicates are still discovered in the
+    // global content pass below, preserving cross-language exact edges.
     const postingWriter = new ShardWriter<Record<string, unknown>>(root, 'postings', 'posting', policy.maxShardBytes, state);
     const pairsRaw = join(tempRoot, 'raw', 'pairs.jsonl');
     const pairsHandle = await open(pairsRaw, 'wx', 0o600);
@@ -1352,21 +1346,90 @@ export async function buildAdmissionOverlapLedger(
       }
       postingGroup = [];
     };
-    for await (const row of jsonRows(sortedPostings)) {
-      const key = typeof row.key === 'string' ? row.key : '';
-      const id = typeof row.candidateUnitId === 'string' ? row.candidateUnitId : '';
-      if (key !== postingGroupKey && postingGroupKey !== '') await flushPostingGroup();
-      if (key !== postingGroupKey) postingGroupKey = key;
-      if (id !== '') postingGroup.push(id);
-      if (postingGroup.length * 64 > policy.maxHeapBytes / 2) throw new ResourceLimitError('max_heap_bytes_exceeded');
-      await postingWriter.write(row, `${key}\u0000${id}`);
+
+    for (const language of [...languageSlots.keys()].sort(compare)) {
+      const slot = languageSlots.get(language)!;
+      const rawShinglePath = join(tempRoot, 'raw', `${slot}-shingles.jsonl`);
+      try {
+        await lstat(rawShinglePath);
+      } catch (error) {
+        if ((error as { code?: string }).code === 'ENOENT') continue;
+        throw error;
+      }
+      const sortedShinglePath = join(tempRoot, 'runs', 'shingles', `${slot}-sorted.jsonl`);
+      const frequencyPath = join(tempRoot, `frequency-${slot}.jsonl`);
+      const shingleRuns = join(tempRoot, 'runs', 'shingles', slot);
+      await sortJsonlFile(rawShinglePath, sortedShinglePath, shingleRuns, (row) => typeof row.key === 'string' ? row.key : '', runLimits, state);
+      await removeWorkFile(root, rawShinglePath);
+      const frequencyHandle = await open(frequencyPath, 'wx', 0o600);
+      state.maxOpenFiles = Math.max(state.maxOpenFiles, 1);
+      let frequencyBuffer: string[] = [];
+      let currentFrequencyKey = '';
+      let frequencyCount = 0;
+      for await (const row of jsonRows(sortedShinglePath)) {
+        const key = typeof row.key === 'string' ? row.key : '';
+        if (key !== currentFrequencyKey && currentFrequencyKey !== '') {
+          addRawLine(frequencyBuffer, { key: currentFrequencyKey, count: frequencyCount });
+          if (frequencyBuffer.join('').length >= 1_048_576) await flushRawBuffer(frequencyHandle, frequencyBuffer, state);
+          frequencyCount = 0;
+        }
+        if (key !== currentFrequencyKey) currentFrequencyKey = key;
+        frequencyCount += 1;
+      }
+      if (currentFrequencyKey !== '') addRawLine(frequencyBuffer, { key: currentFrequencyKey, count: frequencyCount });
+      await flushRawBuffer(frequencyHandle, frequencyBuffer, state);
+      await syncClose(frequencyHandle);
+      await removeWorkFile(root, sortedShinglePath);
+      await removeWorkDirectory(root, shingleRuns);
+
+      const frequency = new Map<string, number>();
+      for await (const row of jsonRows(frequencyPath)) {
+        if (typeof row.key !== 'string' || typeof row.count !== 'number') throw new Error('frequency_row_invalid');
+        frequency.set(row.key, row.count);
+        if (frequency.size * 96 > policy.maxHeapBytes) throw new ResourceLimitError('max_heap_bytes_exceeded');
+      }
+      await removeWorkFile(root, frequencyPath);
+      for (const key of [...frequency.keys()].sort(compare)) distribution.update(`${language}\u0000${key}\u0000${frequency.get(key)!}\n`);
+      const order = new Map<string, number>();
+      [...frequency.keys()].sort((left, right) => (frequency.get(left)! - frequency.get(right)!) || compare(left, right))
+        .forEach((key, index) => order.set(key, index));
+      frequency.clear();
+
+      const postingsRaw = join(tempRoot, 'raw', `${slot}-postings.jsonl`);
+      const postingsHandle = await open(postingsRaw, 'wx', 0o600);
+      const postingsBuffer: string[] = [];
+      for await (const row of jsonRows(join(tempRoot, 'units', `${slot}.jsonl`))) {
+        const unit = row as unknown as NormalizedUnit;
+        const ordered = [...unit.shingles].sort((left, right) => (order.get(left)! - order.get(right)!) || compare(left, right));
+        for (const shingle of ordered.slice(0, prefixLength(ordered.length))) {
+          addRawLine(postingsBuffer, { key: `${language}\u0000${shingle}`, candidateUnitId: unit.candidateUnitId });
+          if (postingsBuffer.length >= 1024) await flushRawBuffer(postingsHandle, postingsBuffer, state);
+        }
+      }
+      await flushRawBuffer(postingsHandle, postingsBuffer, state);
+      await syncClose(postingsHandle);
+
+      const sortedPostings = join(tempRoot, 'runs', 'postings', `${slot}-sorted.jsonl`);
+      const postingRuns = join(tempRoot, 'runs', 'postings', slot);
+      await sortJsonlFile(postingsRaw, sortedPostings, postingRuns, (row) => `${String(row.key)}\u0000${String(row.candidateUnitId)}`, runLimits, state);
+      await removeWorkFile(root, postingsRaw);
+      for await (const row of jsonRows(sortedPostings)) {
+        const key = typeof row.key === 'string' ? row.key : '';
+        const id = typeof row.candidateUnitId === 'string' ? row.candidateUnitId : '';
+        if (key !== postingGroupKey && postingGroupKey !== '') await flushPostingGroup();
+        if (key !== postingGroupKey) postingGroupKey = key;
+        if (id !== '') postingGroup.push(id);
+        if (postingGroup.length * 64 > policy.maxHeapBytes / 2) throw new ResourceLimitError('max_heap_bytes_exceeded');
+        await postingWriter.write(row, `${key}\u0000${id}`);
+      }
+      await flushPostingGroup();
+      await removeWorkFile(root, sortedPostings);
+      await removeWorkDirectory(root, postingRuns);
+      order.clear();
     }
-    await flushPostingGroup();
     await flushRawBuffer(pairsHandle, pairsBuffer, state);
     await syncClose(pairsHandle);
     const postingShards = await postingWriter.close();
-    await removeWorkFile(root, sortedPostings);
-    order.clear();
     await recordCheckpoint('postings', [], postingShards.map((receipt) => receipt.sha256));
 
     const sortedPairs = join(tempRoot, 'sorted-pairs.jsonl');
@@ -1376,12 +1439,18 @@ export async function buildAdmissionOverlapLedger(
     const edgeRaw = join(tempRoot, 'raw', 'edges.jsonl');
     const edgeHandle = await open(edgeRaw, 'wx', 0o600);
     const edgeBuffer: string[] = [];
-    const unitsReadHandle = await open(join(tempRoot, 'units.jsonl'), 'r');
-    state.maxOpenFiles = Math.max(state.maxOpenFiles, 2);
+    for (const [language, path] of languageUnitPaths) {
+      await assertNoSymlinkPath(root, path);
+      languageReadHandles.set(language, await open(path, 'r'));
+    }
+    state.maxOpenFiles = Math.max(state.maxOpenFiles, languageReadHandles.size + 2);
+    if (state.maxOpenFiles > policy.maxOpenFiles) throw new ResourceLimitError('max_open_files_exceeded');
     const getUnit = async (id: string): Promise<NormalizedUnit> => {
       const reference = references.get(id);
       if (reference === undefined) throw new Error('unknown_candidate_unit');
-      return readUnitAt(unitsReadHandle, reference);
+      const handle = languageReadHandles.get(reference.language);
+      if (handle === undefined) throw new Error('language_unit_reference_missing');
+      return readUnitAt(handle, reference);
     };
     const writeEdge = async (edge: AdmissionOverlapEdgeRowV1): Promise<void> => {
       addRawLine(edgeBuffer, edge);
@@ -1456,7 +1525,9 @@ export async function buildAdmissionOverlapLedger(
     await removeWorkFile(root, contentSorted);
     await flushRawBuffer(edgeHandle, edgeBuffer, state);
     await syncClose(edgeHandle);
-    await unitsReadHandle.close();
+    for (const handle of languageReadHandles.values()) await handle.close();
+    languageReadHandles.clear();
+    for (const path of languageUnitPaths.values()) await removeWorkFile(root, path);
 
     const sortedEdges = join(tempRoot, 'sorted-edges.jsonl');
     await sortJsonlFile(edgeRaw, sortedEdges, join(tempRoot, 'runs', 'edges'), (row) => edgeKey(String(row.leftCandidateUnitId), String(row.rightCandidateUnitId), String(row.kind)), runLimits, state);
@@ -1683,7 +1754,7 @@ export async function buildAdmissionOverlapLedger(
     state.failed = true;
     return empty();
   } finally {
-    for (const handle of [unitsHandle, contentHandle, shingleHandle]) {
+    for (const handle of [contentHandle, ...languageUnitHandles.values(), ...languageShingleHandles.values(), ...languageReadHandles.values()]) {
       if (handle !== undefined) {
         try { await handle.close(); } catch { /* best effort close after a failed run */ }
       }

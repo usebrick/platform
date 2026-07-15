@@ -22,6 +22,7 @@ import {
 
 import {
   ADMISSION_LEXICAL_RUNTIME_BINDINGS,
+  buildAdmissionNormalizerRegistry,
   normalizeAdmissionBytes,
 } from '../../src/calibration/v103/admission-normalizers';
 import { buildAdmissionOverlapLedger } from '../../src/calibration/v103/admission-overlap';
@@ -180,6 +181,30 @@ describe('Task 2A bounded overlap builder', () => {
       expect(result.ledger.coverageComplete).toBe(false);
       expect(result.ledger.unresolvedCandidateUnitIds).toEqual(['unit-a', 'unit-b']);
       expect(result.errors).toEqual([]);
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps near joins language-scoped while retaining exact cross-language byte edges', async () => {
+    const registry = buildAdmissionNormalizerRegistry(['typescript', 'javascript']);
+    const shared = Buffer.from('const value = 1; console.log(value);', 'utf8');
+    const records = [
+      record('unit-a', shared, 'ai_side', registry, 'typescript'),
+      record('unit-b', shared, 'human_side', registry, 'javascript'),
+    ];
+    const summary = universe(records, registry);
+    const work = await mkdtemp(join(tmpdir(), 'slopbrick-overlap-cross-language-'));
+    try {
+      const result = await buildAdmissionOverlapLedger(summary, recordsStream(records), async (entry) => shared, work, policy, registry);
+      expect(result.errors).toEqual([]);
+      expect(result.ledger.edgeCount).toBe(1);
+      const edges = (await Promise.all(result.ledger.edgeShards.map((shard) => shardRows(work, shard.relativePath)))).flat();
+      expect(edges).toHaveLength(1);
+      expect(edges[0]?.kind).toBe('exact');
+      expect(edges[0]?.crossSide).toBe(true);
+      expect(await readdir(join(work, '.overlap-work-v1', 'runs', 'shingles'))).toEqual([]);
+      expect(await readdir(join(work, '.overlap-work-v1', 'runs', 'postings'))).toEqual([]);
     } finally {
       await rm(work, { recursive: true, force: true });
     }

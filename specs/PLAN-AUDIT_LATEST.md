@@ -1,6 +1,6 @@
 # Plan Audit — v0.45 recovery, v10.3 corpus admission, and immutable release assets
 
-**Date:** 2026-07-15 · **Verdict:** READY TO EXECUTE (gated)
+**Date:** 2026-07-16 · **Verdict:** READY TO EXECUTE (gated)
 
 ## Frozen plans
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `a5afd7ceaf5e387e0df8d0a965c21f401ae1f5f399d55fd24ee65236771f7c96` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, the bounded real-corpus allocation replay, the RAM-safe static-ledger adapter, optional stream-receipt/materializer binding, the integrated authority gate/live census result, the final package-wide and recursive quality gates, the risk-scaled verification rule, and the consolidated one-gate verification path; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-15)** | `10bd2c4fcfcf6049a1228358ea994fbbe0195a893b4588522269e3194ff79ea2` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,715-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion, and the scratch-reclamation/resource checkpoint with the 1,000-row canary. |
+| **Current continuation-plan hash override (2026-07-16)** | `b0b0ff28638a3f0689025686b825f506c57ec3c454d49931849693e736bef2df` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,715-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion, the scratch-reclamation/resource checkpoint with the 1,000-row canary, and the 2026-07-16 language-sharded overlap implementation/probe. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -834,3 +834,27 @@ improvement only; it does not authorize the full 452,382-row run or publish
 authority. The next step is a sharded/join design plus measured canary, while
 edge cases stay in one automated confirmation gate rather than repeated human
 approvals.
+
+### Language-sharded overlap checkpoint — 2026-07-16
+
+The overlap materializer now processes the shingle/postings join sequentially
+per registered language, using full-digest scratch slots and byte-bound unit
+offsets. The exact-content pass remains global, preserving exact edges when
+identical bytes occur under different language labels. The builder tool
+receipt binds `disk-bounded-language-sharded-postings-prefix-filter-v1`, and
+language scratch runs/unit streams are removed only after durable output under
+the existing symlink guard.
+
+The focused overlap matrix is **66/66 tests** across eight files, including a
+cross-language exact-edge regression; SlopBrick typecheck and `git diff --check`
+pass. A 1,000-row representative probe (500 declared-AI + 500
+declared-human) is recorded at
+`/Users/cheng/corpus-expansion/v10.3/review/overlap-materialization-resource-probe-2026-07-16-sharded.json`
+with file SHA-256
+`cff4f40cc19b43455db00fcdcb8245bfa5486ae52560cffe8838cedb26fee4a9`.
+It completed **1,000/1,000 covered**, **161 edges**, `coverageComplete=true`,
+and `withinAllLimits=true`; maximum heap was **783,413,768 bytes**, RSS
+**986,513,408 bytes**, retained work **776,960,449 bytes**, and wall time
+**35,205 ms**. This is bounded resource/implementation evidence only. Static
+and witness authority remain absent, so the live census and label state are
+unchanged; no new human confirmation or public-repository pull is required.
