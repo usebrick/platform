@@ -798,3 +798,21 @@ and unchanged blockers `static_authority_unavailable` and
 `witness_authority_unavailable`. This is an authority-deficit measurement;
 it does not justify pulling more repositories. No corpus or remote state
 changed.
+
+### Task 2B pure authority-publication planner checkpoint — 2026-07-15
+
+The fixture-scale pure planner is implemented at commits `3fadffe56`,
+`b27ab684f`, and `5feb27aff`. It emits a Core-valid self-hashed lock,
+transaction, and fixed `review/admission` path topology from explicit caller
+metadata only; it performs no filesystem, discovery, mutation, CLI, corpus, or
+release I/O. Replace planning requires an explicit prior input-generation
+descriptor and exact parent SHA plus a static parent matching expected current;
+create planning requires generation zero without a parent. Full SHA-256
+transaction identities include caller-selected recovery nonces, and self-alias
+ancestry is rejected. Focused tests pass **6/6**, independent review found no
+P0/P1 issues, recursive typecheck passes, and the package-wide SlopBrick run
+passes **312 files / 5 skipped; 3,584 tests / 9 skipped** in 284.26 seconds
+with one worker and a 2 GiB heap cap. Build passes with the existing non-fatal
+Zod declaration warnings. This is a planner-only checkpoint; filesystem
+publication/recovery, CLI, authority generation, corpus admission, and release
+remain open. No corpus or remote state changed.
