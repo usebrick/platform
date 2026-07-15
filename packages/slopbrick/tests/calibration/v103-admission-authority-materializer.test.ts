@@ -14,6 +14,7 @@ import {
 
 import { resolveAdmissionToolAuthorityReceipt } from '../../src/calibration/v103/admission-publication';
 import { materializePrebuiltAdmissionAuthority } from '../../src/calibration/v103/admission-authority-materializer';
+import type { AdmissionStaticLedgerKind, AdmissionStaticLedgerStreamReceiptV1 } from '../../src/calibration/v103/admission-static-ledger-stream';
 import type { PrebuiltAdmissionAuthorityGraphInput } from '../../src/calibration/v103/admission-authority-rebuild';
 import { cleanupRuntimeFixtures, runtimeFixture } from './v103-admission-context-fixture';
 
@@ -241,5 +242,49 @@ describe('v10.3 pure outer admission authority materializer', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors).toContain('real-scale record count selector does not match the bound admission stream');
+  });
+
+  it('fails closed when a diagnostic stream receipt has no matching generation projections', async () => {
+    const input = await materializerFixture();
+    const makeReceipt = (kind: AdmissionStaticLedgerKind, ledgerSha256: string): AdmissionStaticLedgerStreamReceiptV1 => ({
+      version: 'v10.3-admission-static-ledger-stream-receipt-v1',
+      kind,
+      ledgerVersion: `v10.3-admission-${kind}-ledger-v1`,
+      recordCount: input.preWitnessBundle.admissionRecordStream.recordCount,
+      coveredCount: input.preWitnessBundle.admissionRecordStream.recordCount,
+      unresolvedCount: 0,
+      recordSetSha256: input.preWitnessBundle.admissionRecordStream.recordIdSetSha256,
+      recordsInputSha256: 'a'.repeat(64),
+      resultsInputSha256: 'b'.repeat(64),
+      unresolvedInputSha256: 'c'.repeat(64),
+      resultsJsonlSha256: 'd'.repeat(64),
+      coveredRecordIdsSha256: 'e'.repeat(64),
+      unresolvedRecordIdsSha256: 'f'.repeat(64),
+      ledgerSha256,
+      outputBytes: 3,
+      resultBytes: 1,
+      coveredRecordIdsBytes: 1,
+      unresolvedRecordIdsBytes: 1,
+      outputDirectory: null,
+      resultRelativePath: `${kind}-ledger-v1/${kind}-ledger.jsonl`,
+      coveredRelativePath: `${kind}-ledger-v1/${kind}-covered-ledger.jsonl`,
+      unresolvedRelativePath: `${kind}-ledger-v1/${kind}-unresolved-ledger.jsonl`,
+      maxRecords: 452382,
+      maxOutputBytes: 5368709120,
+      workerCount: 1,
+      complete: true,
+      diagnosticOnly: true,
+      authorityEligible: false,
+      errors: [],
+    });
+    const receipts = {
+      privacy: makeReceipt('privacy', input.preWitnessBundle.privacyLedger.ledgerSha256),
+      quality: makeReceipt('quality', input.preWitnessBundle.qualityLedger.ledgerSha256),
+      lineage: makeReceipt('lineage', input.preWitnessBundle.lineageLedger.ledgerSha256),
+    };
+    const result = materializePrebuiltAdmissionAuthority({ ...input, staticLedgerStreams: receipts });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.includes('stream projection') || error.includes('must contain exactly one'))).toBe(true);
   });
 });

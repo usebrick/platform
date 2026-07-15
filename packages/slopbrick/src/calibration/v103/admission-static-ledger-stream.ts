@@ -93,6 +93,13 @@ export type AdmissionStaticLedgerStreamResultV1 =
   | Readonly<{ readonly ok: true; readonly receipt: AdmissionStaticLedgerStreamReceiptV1 }>
   | Readonly<{ readonly ok: false; readonly receipt: AdmissionStaticLedgerStreamReceiptV1 }>;
 
+export interface AdmissionStaticLedgerStreamBindingExpectationV1 {
+  readonly kind: AdmissionStaticLedgerKind;
+  readonly recordCount: number;
+  readonly recordSetSha256: string;
+  readonly ledgerSha256: string;
+}
+
 interface ParsedLine {
   readonly value: unknown;
   readonly canonicalLine: string;
@@ -206,6 +213,44 @@ function inputHash(): Hash {
 
 function validId(value: unknown): value is string {
   return typeof value === 'string' && ID_PATTERN.test(value);
+}
+
+function validSha256(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/u.test(value);
+}
+
+/** Validate the small receipt that binds a stream projection to a static graph. */
+export function validateAdmissionStaticLedgerStreamReceipt(
+  receipt: unknown,
+  expected: AdmissionStaticLedgerStreamBindingExpectationV1,
+): readonly string[] {
+  const errors: string[] = [];
+  if (typeof receipt !== 'object' || receipt === null || Array.isArray(receipt)) return ['stream_receipt_shape_invalid'];
+  const value = receipt as Record<string, unknown>;
+  if (value.version !== 'v10.3-admission-static-ledger-stream-receipt-v1') errors.push('stream_receipt_version_invalid');
+  if (value.kind !== expected.kind) errors.push('stream_receipt_kind_mismatch');
+  if (value.complete !== true) errors.push('stream_receipt_incomplete');
+  if (value.diagnosticOnly !== true || value.authorityEligible !== false) errors.push('stream_receipt_authority_flags_invalid');
+  if (value.errors !== undefined && (!Array.isArray(value.errors) || value.errors.length > 0)) errors.push('stream_receipt_errors_present');
+  for (const field of ['recordCount', 'coveredCount', 'unresolvedCount', 'outputBytes', 'resultBytes', 'coveredRecordIdsBytes', 'unresolvedRecordIdsBytes', 'maxRecords', 'maxOutputBytes'] as const) {
+    if (typeof value[field] !== 'number' || !Number.isSafeInteger(value[field]) || value[field] < 0) errors.push(`stream_receipt_${field}_invalid`);
+  }
+  if (value.recordCount !== expected.recordCount) errors.push('stream_receipt_record_count_mismatch');
+  const coveredCount = typeof value.coveredCount === 'number' ? value.coveredCount : -1;
+  const unresolvedCount = typeof value.unresolvedCount === 'number' ? value.unresolvedCount : -1;
+  const recordCount = typeof value.recordCount === 'number' ? value.recordCount : -1;
+  if (coveredCount + unresolvedCount !== recordCount) errors.push('stream_receipt_partition_mismatch');
+  if (value.recordSetSha256 !== expected.recordSetSha256) errors.push('stream_receipt_record_set_mismatch');
+  if (value.ledgerSha256 !== expected.ledgerSha256) errors.push('stream_receipt_ledger_hash_mismatch');
+  for (const field of ['recordsInputSha256', 'resultsInputSha256', 'unresolvedInputSha256', 'resultsJsonlSha256', 'coveredRecordIdsSha256', 'unresolvedRecordIdsSha256'] as const) {
+    if (!validSha256(value[field])) errors.push(`stream_receipt_${field}_invalid`);
+  }
+  for (const field of ['resultRelativePath', 'coveredRelativePath', 'unresolvedRelativePath'] as const) {
+    if (typeof value[field] !== 'string' || value[field].length === 0 || value[field].includes('..') || value[field].includes('\\')) {
+      errors.push(`stream_receipt_${field}_invalid`);
+    }
+  }
+  return uniqueErrors(errors);
 }
 
 function validationError(label: string, errors: readonly string[]): Error {
@@ -407,9 +452,9 @@ export async function materializeAdmissionStaticLedgerStream(
     await mkdir(stage, { recursive: true });
     stageCreated = true;
     recordsFile = await openOutput(join(stage, 'records.jsonl'));
-    resultsFile = await openOutput(join(stage, 'results.jsonl'));
-    coveredFile = await openOutput(join(stage, 'covered-record-ids.jsonl'));
-    unresolvedFile = await openOutput(join(stage, 'unresolved-record-ids.jsonl'));
+    resultsFile = await openOutput(join(stage, `${request.kind}-ledger.jsonl`));
+    coveredFile = await openOutput(join(stage, `${request.kind}-covered-ledger.jsonl`));
+    unresolvedFile = await openOutput(join(stage, `${request.kind}-unresolved-ledger.jsonl`));
 
     const recordsIterator = jsonLines(request.records, 'records')[Symbol.asyncIterator]();
     const resultsIterator = jsonLines(request.results, 'results', true)[Symbol.asyncIterator]();
@@ -485,17 +530,17 @@ export async function materializeAdmissionStaticLedgerStream(
     coveredFile = undefined;
     unresolvedFile = undefined;
 
-    const resultPath = join(stage, 'results.jsonl');
-    const coveredPath = join(stage, 'covered-record-ids.jsonl');
-    const unresolvedPath = join(stage, 'unresolved-record-ids.jsonl');
+    const resultPath = join(stage, `${request.kind}-ledger.jsonl`);
+    const coveredPath = join(stage, `${request.kind}-covered-ledger.jsonl`);
+    const unresolvedPath = join(stage, `${request.kind}-unresolved-ledger.jsonl`);
     const coveredHash = await hashArrayFile(coveredPath, idHash());
     const unresolvedHash = await hashArrayFile(unresolvedPath, idHash());
     const ledgerSha256 = await semanticLedgerHash(request.kind, recordSetSha256, coveredPath, resultPath, unresolvedPath);
     await publishDirectory(stage, finalDirectory);
     stageCreated = false;
-    resultRelativePath = `${basename(finalDirectory)}/results.jsonl`;
-    coveredRelativePath = `${basename(finalDirectory)}/covered-record-ids.jsonl`;
-    unresolvedRelativePath = `${basename(finalDirectory)}/unresolved-record-ids.jsonl`;
+    resultRelativePath = `${basename(finalDirectory)}/${request.kind}-ledger.jsonl`;
+    coveredRelativePath = `${basename(finalDirectory)}/${request.kind}-covered-ledger.jsonl`;
+    unresolvedRelativePath = `${basename(finalDirectory)}/${request.kind}-unresolved-ledger.jsonl`;
     const receipt: AdmissionStaticLedgerStreamReceiptV1 = {
       version: 'v10.3-admission-static-ledger-stream-receipt-v1',
       kind: request.kind,

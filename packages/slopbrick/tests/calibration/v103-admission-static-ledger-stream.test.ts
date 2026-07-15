@@ -115,8 +115,8 @@ describe('v10.3 static ledger disk-backed stream adapter', () => {
       expect(result.receipt.unresolvedCount).toBe(0);
       if (expected.ok) expect(result.receipt.ledgerSha256).toBe(expected.ledger.ledgerSha256);
       expect(result.receipt.authorityEligible).toBe(false);
-      expect(result.receipt.resultRelativePath).toBe('privacy-ledger-v1/results.jsonl');
-      const output = await readFile(join(root, 'privacy-ledger-v1', 'results.jsonl'), 'utf8');
+      expect(result.receipt.resultRelativePath).toBe('privacy-ledger-v1/privacy-ledger.jsonl');
+      const output = await readFile(join(root, 'privacy-ledger-v1', 'privacy-ledger.jsonl'), 'utf8');
       expect(output).toBe(jsonl(resultValues));
     } finally {
       await rm(root, { recursive: true, force: true });

@@ -42,6 +42,11 @@ import {
   type RealScaleOverlapResourceExpectation,
 } from './admission-real-scale-receipt';
 import type { AdmissionToolAuthorityReceiptResolution } from './admission-publication';
+import {
+  validateAdmissionStaticLedgerStreamReceipt,
+  type AdmissionStaticLedgerKind,
+  type AdmissionStaticLedgerStreamReceiptV1,
+} from './admission-static-ledger-stream';
 
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
 export type PrebuiltAdmissionAuthorityMaterializerInput = Readonly<{
@@ -67,6 +72,8 @@ export type PrebuiltAdmissionAuthorityMaterializerInput = Readonly<{
    * expectation for production; it is never inferred from the fixture bundle.
    */
   readonly realScaleExpectation: RealScaleOverlapResourceExpectation;
+  /** Optional disk-backed static-ledger projections from the bounded adapter. */
+  readonly staticLedgerStreams?: Readonly<Partial<Record<AdmissionStaticLedgerKind, AdmissionStaticLedgerStreamReceiptV1>>>;
 }>;
 
 export type PrebuiltAdmissionAuthorityMaterializedGraph = Readonly<{
@@ -416,6 +423,7 @@ function staticArtifactRelations(
   graph: PrebuiltAdmissionAuthorityGraphInput,
   bundle: CalibrationAdmissionPreWitnessBundleV1,
   bundleBytes: Uint8Array,
+  streamReceipts: PrebuiltAdmissionAuthorityMaterializerInput['staticLedgerStreams'],
   errors: string[],
 ): void {
   if (!isCalibrationAdmissionStaticAuthorityGenerationV1(graph.staticGeneration)) return;
@@ -425,23 +433,57 @@ function staticArtifactRelations(
   if (bundleArtifact !== undefined && !Buffer.from(bundleArtifact).equals(Buffer.from(bundleBytes))) {
     push(errors, 'static pre-witness bundle artifact bytes differ from supplied bundle bytes');
   }
-  const ledgerChecks: readonly [string, unknown, string][] = [
-    ['privacy-ledger.json', bundle.privacyLedger, bundle.privacyLedger.ledgerSha256],
-    ['quality-ledger.json', bundle.qualityLedger, bundle.qualityLedger.ledgerSha256],
-    ['lineage-ledger.json', bundle.lineageLedger, bundle.lineageLedger.ledgerSha256],
-  ];
-  for (const [path, ledger, semanticHash] of ledgerChecks) {
-    const raw = exactArtifact(artifacts, staticGeneration.artifacts, path, 'static generation', errors);
-    if (raw !== undefined && !Buffer.from(raw).equals(Buffer.from(calibrationAdmissionCanonicalJson(ledger), 'utf8'))) {
-      push(errors, `static ${path} bytes differ from supplied bundle ledger`);
+  if (streamReceipts !== undefined) {
+    const streamExpectations: readonly [AdmissionStaticLedgerKind, string, string][] = [
+      ['privacy', bundle.privacyLedger.ledgerSha256, staticGeneration.privacyLedgerSha256],
+      ['quality', bundle.qualityLedger.ledgerSha256, staticGeneration.qualityLedgerSha256],
+      ['lineage', bundle.lineageLedger.ledgerSha256, staticGeneration.lineageLedgerSha256],
+    ];
+    for (const [kind, bundleHash, generationHash] of streamExpectations) {
+      const receipt = streamReceipts[kind];
+      if (receipt === undefined) {
+        push(errors, `static ${kind} stream receipt is missing`);
+        continue;
+      }
+      for (const error of validateAdmissionStaticLedgerStreamReceipt(receipt, {
+        kind,
+        recordCount: bundle.admissionRecordStream.recordCount,
+        recordSetSha256: bundle.admissionRecordStream.recordIdSetSha256,
+        ledgerSha256: bundleHash,
+      })) push(errors, `static ${kind} stream: ${error}`);
+      if (generationHash !== bundleHash) push(errors, `static ${kind} ledger semantic hash does not match bundle`);
+      if (typeof receipt.resultRelativePath !== 'string' || typeof receipt.coveredRelativePath !== 'string' || typeof receipt.unresolvedRelativePath !== 'string') continue;
+      const projections: readonly [string, string, number][] = [
+        [receipt.resultRelativePath, receipt.resultsJsonlSha256, receipt.resultBytes],
+        [receipt.coveredRelativePath, receipt.coveredRecordIdsSha256, receipt.coveredRecordIdsBytes],
+        [receipt.unresolvedRelativePath, receipt.unresolvedRecordIdsSha256, receipt.unresolvedRecordIdsBytes],
+      ];
+      for (const [path, expectedHash, expectedBytes] of projections) {
+        const raw = exactArtifact(artifacts, staticGeneration.artifacts, path, 'static generation', errors);
+        if (raw !== undefined && (raw.byteLength !== expectedBytes || hashBytes(raw) !== expectedHash)) {
+          push(errors, `static ${kind} stream projection bytes do not match ${path}`);
+        }
+      }
     }
-    const receipt = staticGeneration.artifacts.find((artifact) => artifact.relativePath === path);
-    if (receipt !== undefined && receipt.sha256 !== hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(ledger), 'utf8'))) {
-      push(errors, `static ${path} receipt hash does not match supplied bundle ledger bytes`);
+  } else {
+    const ledgerChecks: readonly [string, unknown, string][] = [
+      ['privacy-ledger.json', bundle.privacyLedger, bundle.privacyLedger.ledgerSha256],
+      ['quality-ledger.json', bundle.qualityLedger, bundle.qualityLedger.ledgerSha256],
+      ['lineage-ledger.json', bundle.lineageLedger, bundle.lineageLedger.ledgerSha256],
+    ];
+    for (const [path, ledger, semanticHash] of ledgerChecks) {
+      const raw = exactArtifact(artifacts, staticGeneration.artifacts, path, 'static generation', errors);
+      if (raw !== undefined && !Buffer.from(raw).equals(Buffer.from(calibrationAdmissionCanonicalJson(ledger), 'utf8'))) {
+        push(errors, `static ${path} bytes differ from supplied bundle ledger`);
+      }
+      const receipt = staticGeneration.artifacts.find((artifact) => artifact.relativePath === path);
+      if (receipt !== undefined && receipt.sha256 !== hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(ledger), 'utf8'))) {
+        push(errors, `static ${path} receipt hash does not match supplied bundle ledger bytes`);
+      }
+      if (path === 'privacy-ledger.json' && staticGeneration.privacyLedgerSha256 !== semanticHash) push(errors, 'static privacy ledger semantic hash does not match bundle');
+      if (path === 'quality-ledger.json' && staticGeneration.qualityLedgerSha256 !== semanticHash) push(errors, 'static quality ledger semantic hash does not match bundle');
+      if (path === 'lineage-ledger.json' && staticGeneration.lineageLedgerSha256 !== semanticHash) push(errors, 'static lineage ledger semantic hash does not match bundle');
     }
-    if (path === 'privacy-ledger.json' && staticGeneration.privacyLedgerSha256 !== semanticHash) push(errors, 'static privacy ledger semantic hash does not match bundle');
-    if (path === 'quality-ledger.json' && staticGeneration.qualityLedgerSha256 !== semanticHash) push(errors, 'static quality ledger semantic hash does not match bundle');
-    if (path === 'lineage-ledger.json' && staticGeneration.lineageLedgerSha256 !== semanticHash) push(errors, 'static lineage ledger semantic hash does not match bundle');
   }
   if (staticGeneration.preWitnessBundleSha256 !== bundle.preWitnessBundleSha256) push(errors, 'static generation does not bind supplied pre-witness bundle');
   if (!sameCanonical(staticGeneration.toolAuthoritySnapshot, bundle.toolAuthoritySnapshot)) push(errors, 'static generation tool snapshot does not match bundle');
@@ -512,6 +554,11 @@ function proof(input: PrebuiltAdmissionAuthorityMaterializerInput, bundle: Calib
       ledger: hashBytes(input.overlap.ledger.bytes),
       toolReceipt: calibrationAdmissionToolReceiptSha256(input.overlap.toolAuthority.receipt),
     },
+    ...(input.staticLedgerStreams === undefined ? {} : {
+      staticLedgerStreams: Object.entries(input.staticLedgerStreams)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([kind, receipt]) => ({ kind, receipt })),
+    }),
     realScaleExpectation: {
       recordCount: bundle.admissionRecordStream.recordCount,
       universeSha256: bundle.overlapUniverse.universeSha256,
@@ -546,7 +593,7 @@ function materializePrebuiltAdmissionAuthorityUnchecked(
   }
 
   if (bundle !== undefined) {
-    staticArtifactRelations(input.graph, bundle, input.preWitnessBundleBytes, errors);
+    staticArtifactRelations(input.graph, bundle, input.preWitnessBundleBytes, input.staticLedgerStreams, errors);
     const recordIds = streamRelations(input.graph, bundle, errors);
     ledgerRecordRelations(bundle, recordIds, errors);
     sourceRelations(input.graph, bundle, errors);
