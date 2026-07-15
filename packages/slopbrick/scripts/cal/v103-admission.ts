@@ -2,7 +2,7 @@
 import { createReadStream } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
 import { buildVerifiedAdmissionEvidenceContext } from '../../src/calibration/v103/admission-evidence-context';
 import { buildAdmissionSourceCensus } from '../../src/calibration/v103/admission-source-census';
@@ -198,7 +198,7 @@ async function readCanonicalOuterInput(root: string, requested: string, label: s
 async function materializeOuterAuthority(
   args: ParsedArguments,
   graph: PrebuiltAdmissionAuthorityGraphInput,
-): Promise<Readonly<{ readonly verificationSha256: string; readonly realScaleReceiptVerified: true }>> {
+): Promise<Readonly<{ readonly verificationSha256: string; readonly materializerExpectationVerified: true }>> {
   const selection = args;
   const selected = [
     ['--pre-witness-bundle', selection.preWitnessBundlePath],
@@ -217,6 +217,15 @@ async function materializeOuterAuthority(
   const overlapIndex = await readCanonicalOuterInput(args.root, selection.overlapIndexPath!, 'overlap index envelope');
   const overlapResource = await readCanonicalOuterInput(args.root, selection.overlapResourceReceiptPath!, 'overlap resource envelope');
   const overlapLedger = await readCanonicalOuterInput(args.root, selection.overlapLedgerPath!, 'overlap ledger envelope');
+  const overlapGenerationObject = record(overlapGeneration.value, 'overlap generation');
+  if (!Array.isArray(overlapGenerationObject.artifacts)) throw new Error('overlap generation artifacts are missing');
+  const overlapArtifactBytes: Record<string, Buffer> = {};
+  for (const candidate of overlapGenerationObject.artifacts) {
+    const artifact = record(candidate, 'overlap generation artifact');
+    if (typeof artifact.relativePath !== 'string') throw new Error('overlap generation artifact path is invalid');
+    const requestedArtifact = join(dirname(selection.overlapGenerationPath!), artifact.relativePath);
+    overlapArtifactBytes[artifact.relativePath] = await readFile(await requireContainedAdmissionPath(args.root, requestedArtifact));
+  }
   const toolSelector = outerToolAuthority(args);
   const staticGeneration = record(graph.staticGeneration, 'static generation');
   const toolAuthority = await resolveAdmissionToolAuthorityReceipt({
@@ -237,6 +246,7 @@ async function materializeOuterAuthority(
     overlap: {
       generation: overlapGeneration.value,
       generationBytes: overlapGeneration.bytes,
+      artifactBytes: overlapArtifactBytes,
       index: { value: overlapIndex.value, bytes: overlapIndex.bytes },
       resourceReceipt: { value: overlapResource.value, bytes: overlapResource.bytes },
       ledger: { value: overlapLedger.value, bytes: overlapLedger.bytes },
@@ -249,7 +259,7 @@ async function materializeOuterAuthority(
     },
   });
   if (!materialized.ok) throw new Error(materialized.errors.join('; '));
-  return { verificationSha256: materialized.value.verificationSha256, realScaleReceiptVerified: true };
+  return { verificationSha256: materialized.value.verificationSha256, materializerExpectationVerified: true };
 }
 
 async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
@@ -279,7 +289,7 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
       ...outerResult(args.command, result),
       materializerVerificationSha256: materialized.verificationSha256,
       realScaleReceiptVerified: false,
-      materializerExpectationVerified: materialized.realScaleReceiptVerified,
+      materializerExpectationVerified: materialized.materializerExpectationVerified,
     });
     return;
   }
@@ -299,7 +309,7 @@ async function runOuterAuthorityCommand(args: ParsedArguments): Promise<void> {
     ...outerResult(args.command, result),
     materializerVerificationSha256: materialized.verificationSha256,
     realScaleReceiptVerified: false,
-    materializerExpectationVerified: materialized.realScaleReceiptVerified,
+    materializerExpectationVerified: materialized.materializerExpectationVerified,
   });
 }
 

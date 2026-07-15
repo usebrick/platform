@@ -18,6 +18,7 @@ import {
   calibrationAdmissionOverlapGenerationArtifactSetSha256,
   calibrationAdmissionOverlapGenerationSha256,
   calibrationAdmissionOverlapCurrentSha256,
+  calibrationAdmissionOverlapUniverseSha256,
   calibrationAdmissionOverlapIndexReceiptSha256,
   calibrationAdmissionOverlapLedgerSha256,
   calibrationAdmissionOverlapResourceReceiptId,
@@ -394,7 +395,46 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
   const privacyLedger = { ...privacyBody, ledgerSha256: calibrationAdmissionPrivacyLedgerSha256(privacyBody) };
   const qualityLedger = { ...qualityBody, ledgerSha256: calibrationAdmissionQualityLedgerSha256(qualityBody) };
   const lineageLedger = { ...lineageBody, ledgerSha256: calibrationAdmissionLineageLedgerSha256(lineageBody) };
-  const overlapUniverseSha256 = rawBundle.overlapUniverse.universeSha256;
+  const overlapPolarityBody = {
+    intake: 'unassigned' as const,
+    overlapSide: 'unassigned' as const,
+    bindingAuthority: 'admission-record' as const,
+    proposedLabel: 'quarantine' as const,
+  };
+  const overlapRecordBody = {
+    version: 'v10.3-overlap-universe-record-v1' as const,
+    candidateUnitId: recordId,
+    materialSourceId: record.materialSourceId,
+    aggregateSourceIds: [record.materialSourceId],
+    locator: { kind: 'materialized_file' as const, materializationId: 'materialization-runtime', normalizedPath: 'src/runtime.ts' },
+    polarity: { ...overlapPolarityBody, bindingSha256: calibrationAdmissionSha256(overlapPolarityBody) },
+    contentSha256: record.contentSha256,
+    contentBytes: record.contentBytes,
+    language: 'TypeScript',
+    normalizerId: rawBundle.normalizerRegistry.entries[0]!.normalizerId,
+    normalizationStatus: 'covered' as const,
+    shingleSetSha256: sha('runtime-shingles'),
+    shingleCount: 1,
+    admissionRecordId: recordId,
+  };
+  const overlapUniverseRecord = { ...overlapRecordBody, recordSha256: calibrationAdmissionSha256(overlapRecordBody) };
+  const overlapUniverseRecordBytes = Buffer.from(`${calibrationAdmissionCanonicalJson(overlapUniverseRecord)}\n`, 'utf8');
+  const overlapUniverseBody = {
+    ...rawBundle.overlapUniverse,
+    recordsJsonlSha256: shaBytes(overlapUniverseRecordBytes),
+    selectedAggregateCoverage: 1,
+    baselineMaterialUnits: 1,
+    repositoryMaterialUnits: 0,
+    newCandidateUnits: 0,
+    covered: 1,
+    unsupported: 0,
+    unreadable: 0,
+    unresolvedCandidateUnitIds: [],
+    normalizerRegistrySha256: rawBundle.normalizerRegistry.registrySha256,
+    universeSha256: '',
+  };
+  const overlapUniverse = { ...overlapUniverseBody, universeSha256: calibrationAdmissionOverlapUniverseSha256(overlapUniverseBody) };
+  const overlapUniverseSha256 = overlapUniverse.universeSha256;
   const overlapPolicySha256 = rawBundle.overlapPolicy.policySha256;
   const normalizerRegistrySha256 = rawBundle.normalizerRegistry.registrySha256;
   const overlapToolReceiptSha256 = calibrationAdmissionToolReceiptSha256(overlapReceipt.receipt);
@@ -461,6 +501,7 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
     invocationIntents,
     toolReceipts,
     toolAuthoritySnapshot,
+    overlapUniverse,
     overlapIndexReceipt,
     overlapLedger,
     overlapResourceReceipt,
@@ -476,8 +517,8 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
     const validation = validateCalibrationAdmissionPreWitnessBundleV1(bundle);
     throw new Error(`fixture bundle does not validate: ${validation.errors.join('; ')}`);
   }
-  const inputUniverseBytes = Buffer.from(calibrationAdmissionCanonicalJson(rawBundle.overlapUniverse), 'utf8');
-  const inputUniverseRecordsBytes = Buffer.from(`${calibrationAdmissionCanonicalJson({ recordId })}\n`, 'utf8');
+  const inputUniverseBytes = Buffer.from(calibrationAdmissionCanonicalJson(overlapUniverse), 'utf8');
+  const inputUniverseRecordsBytes = overlapUniverseRecordBytes;
   const inputArtifacts = [
     { pathBase: 'generation_local' as const, relativePath: 'admission-records.jsonl', kind: 'record_stream' as const, bytes: streamBytes.byteLength, sha256: shaBytes(streamBytes) },
     { pathBase: 'generation_local' as const, relativePath: 'overlap-universe.json', kind: 'overlap_universe' as const, bytes: inputUniverseBytes.byteLength, sha256: shaBytes(inputUniverseBytes) },

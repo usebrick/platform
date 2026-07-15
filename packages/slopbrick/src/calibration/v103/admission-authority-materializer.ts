@@ -16,11 +16,15 @@ import {
   calibrationAdmissionPreWitnessBundleSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionToolReceiptSha256,
+  isCalibrationAdmissionOverlapUniverseRecordV1,
+  isCalibrationAdmissionRecordV103,
   isCalibrationAdmissionInputGenerationV1,
   isCalibrationAdmissionPreWitnessBundleV1,
   isCalibrationAdmissionStaticAuthorityGenerationV1,
+  validateCalibrationAdmissionLineageLedgerV1,
+  validateCalibrationAdmissionPrivacyLedgerV1,
+  validateCalibrationAdmissionQualityLedgerV1,
   validateCalibrationAdmissionPreWitnessBundleV1,
-  validateCalibrationAdmissionRecordStreamV1,
   type CalibrationAdmissionPreWitnessBundleV1,
 } from '@usebrick/core';
 
@@ -50,6 +54,8 @@ export type PrebuiltAdmissionAuthorityMaterializerInput = Readonly<{
   readonly overlap: Readonly<{
     readonly generation: unknown;
     readonly generationBytes: Uint8Array;
+    /** Every generation-local overlap artifact, including all shards. */
+    readonly artifactBytes: PrebuiltAdmissionAuthorityArtifactBytesInput;
     readonly index: PrebuiltAdmissionAuthorityEnvelopeBytes;
     readonly resourceReceipt: PrebuiltAdmissionAuthorityEnvelopeBytes;
     readonly ledger: PrebuiltAdmissionAuthorityEnvelopeBytes;
@@ -78,7 +84,10 @@ export type PrebuiltAdmissionAuthorityMaterializedGraph = Readonly<{
   /** A deterministic proof over every object/byte boundary in this result. */
   readonly verificationSha256: string;
   readonly realScaleExpectation: RealScaleOverlapResourceExpectation;
-  readonly realScaleReceiptVerified: true;
+  /** The caller-supplied expectation was bound to the selected receipt. */
+  readonly materializerExpectationVerified: true;
+  /** Full-scale authority remains unverified until witness/shard admission. */
+  readonly realScaleReceiptVerified: false;
   /** This assembler cannot establish real-scale or witness authority. */
   readonly ready: false;
   readonly authorityEligible: false;
@@ -215,6 +224,194 @@ function sourceReviewObjects(graph: PrebuiltAdmissionAuthorityGraphInput, errors
   return reviews;
 }
 
+/** Visit canonical JSONL rows without retaining the corpus in memory. */
+function visitCanonicalJsonl(
+  rawBytes: Uint8Array,
+  label: string,
+  visitor: (value: unknown, lineNumber: number) => void,
+  errors: string[],
+): boolean {
+  if (!bytes(rawBytes)) {
+    push(errors, `${label} bytes are not supplied`);
+    return false;
+  }
+  if (rawBytes.byteLength === 0 || rawBytes[rawBytes.byteLength - 1] !== 0x0a) {
+    push(errors, `${label} must end with one LF`);
+    return false;
+  }
+  let start = 0;
+  let lineNumber = 0;
+  let ok = true;
+  for (let index = 0; index < rawBytes.byteLength; index += 1) {
+    if (rawBytes[index] !== 0x0a) continue;
+    lineNumber += 1;
+    const lineBytes = rawBytes.subarray(start, index);
+    start = index + 1;
+    let line: string;
+    try {
+      line = UTF8_DECODER.decode(lineBytes);
+    } catch {
+      push(errors, `${label} line ${lineNumber} is not valid UTF-8`);
+      ok = false;
+      continue;
+    }
+    if (line.length === 0 || line.includes('\r')) {
+      push(errors, `${label} line ${lineNumber} is blank or non-canonical`);
+      ok = false;
+      continue;
+    }
+    let value: unknown;
+    try {
+      value = JSON.parse(line) as unknown;
+      if (calibrationAdmissionCanonicalJson(value) !== line) {
+        push(errors, `${label} line ${lineNumber} is not canonical JSON`);
+        ok = false;
+        continue;
+      }
+    } catch {
+      push(errors, `${label} line ${lineNumber} is not valid canonical JSON`);
+      ok = false;
+      continue;
+    }
+    visitor(value, lineNumber);
+  }
+  if (start !== rawBytes.byteLength) {
+    push(errors, `${label} has an unterminated final line`);
+    ok = false;
+  }
+  return ok;
+}
+
+function admissionRecordStreamRelations(
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  raw: Uint8Array | undefined,
+  errors: string[],
+): readonly string[] | undefined {
+  if (raw === undefined) return undefined;
+  const recordIds: string[] = [];
+  const recordHashes: string[] = [];
+  let previousId = '';
+  visitCanonicalJsonl(raw, 'admission-records.jsonl', (value, lineNumber) => {
+    if (!isCalibrationAdmissionRecordV103(value)) {
+      push(errors, `admission-records.jsonl line ${lineNumber} is not a valid admission record`);
+      return;
+    }
+    const record = value as { readonly recordId: string };
+    if (record.recordId <= previousId) push(errors, 'admission records are not strictly ordered by recordId');
+    previousId = record.recordId;
+    recordIds.push(record.recordId);
+    recordHashes.push(calibrationAdmissionSha256(value));
+  }, errors);
+  const stream = bundle.admissionRecordStream;
+  if (hashBytes(raw) !== stream.recordsJsonlSha256) push(errors, 'admission record stream content hash does not match bundle');
+  if (recordIds.length !== stream.recordCount) push(errors, 'admission record stream count does not match JSONL');
+  if (calibrationAdmissionSha256(recordIds) !== stream.recordIdSetSha256) push(errors, 'admission record stream ID-set hash does not match JSONL');
+  if (calibrationAdmissionSha256([...recordHashes].sort()) !== stream.canonicalRecordHashesSha256) push(errors, 'admission record stream canonical-hash set does not match JSONL');
+  return recordIds;
+}
+
+function overlapUniverseStreamRelations(
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  raw: Uint8Array | undefined,
+  errors: string[],
+): void {
+  if (raw === undefined) return;
+  const summary = bundle.overlapUniverse;
+  const normalizers = new Map(bundle.normalizerRegistry.entries.map((entry) => [entry.language, entry.normalizerId]));
+  let recordCount = 0;
+  let covered = 0;
+  let unsupported = 0;
+  let unreadable = 0;
+  let previousId = '';
+  const unresolved: string[] = [];
+  visitCanonicalJsonl(raw, 'overlap-universe-records.jsonl', (value, lineNumber) => {
+    if (!isCalibrationAdmissionOverlapUniverseRecordV1(value)) {
+      push(errors, `overlap universe line ${lineNumber} is not a valid universe record`);
+      return;
+    }
+    const row = value as {
+      readonly candidateUnitId: string;
+      readonly language: string;
+      readonly normalizerId: string;
+      readonly normalizationStatus: 'covered' | 'unsupported' | 'unreadable';
+    };
+    if (row.candidateUnitId <= previousId) push(errors, 'overlap universe rows are not strictly ordered by candidateUnitId');
+    previousId = row.candidateUnitId;
+    const expectedNormalizer = normalizers.get(row.language);
+    if (row.normalizationStatus === 'covered' && expectedNormalizer !== row.normalizerId) push(errors, `overlap universe row ${row.candidateUnitId} is not bound to its normalizer`);
+    if (row.normalizationStatus === 'unsupported' && expectedNormalizer === row.normalizerId) push(errors, `overlap universe row ${row.candidateUnitId} names a covered normalizer while unsupported`);
+    recordCount += 1;
+    if (row.normalizationStatus === 'covered') covered += 1;
+    if (row.normalizationStatus === 'unsupported') { unsupported += 1; unresolved.push(row.candidateUnitId); }
+    if (row.normalizationStatus === 'unreadable') { unreadable += 1; unresolved.push(row.candidateUnitId); }
+  }, errors);
+  if (hashBytes(raw) !== summary.recordsJsonlSha256) push(errors, 'overlap universe summary recordsJsonlSha256 does not match JSONL');
+  if (recordCount !== summary.selectedAggregateCoverage + summary.newCandidateUnits) push(errors, 'overlap universe row count does not match summary');
+  if (covered !== summary.covered || unsupported !== summary.unsupported || unreadable !== summary.unreadable) push(errors, 'overlap universe status counts do not match summary');
+  if (calibrationAdmissionCanonicalJson([...unresolved].sort()) !== calibrationAdmissionCanonicalJson(summary.unresolvedCandidateUnitIds)) push(errors, 'overlap universe unresolved IDs do not match summary');
+}
+
+function ledgerRecordRelations(
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  recordIds: readonly string[] | undefined,
+  errors: string[],
+): void {
+  if (recordIds === undefined) return;
+  const checks: readonly [string, unknown, (value: unknown, ids: readonly string[]) => { readonly ok: boolean; readonly errors: readonly string[] }][] = [
+    ['privacy', bundle.privacyLedger, validateCalibrationAdmissionPrivacyLedgerV1],
+    ['quality', bundle.qualityLedger, validateCalibrationAdmissionQualityLedgerV1],
+    ['lineage', bundle.lineageLedger, validateCalibrationAdmissionLineageLedgerV1],
+  ];
+  for (const [label, value, validate] of checks) {
+    const validation = validate(value, recordIds);
+    if (!validation.ok) for (const error of validation.errors) push(errors, `${label} ledger record join: ${error}`);
+    if (isRecord(value) && value.admissionRecordSetSha256 !== bundle.admissionRecordStream.recordIdSetSha256) {
+      push(errors, `${label} ledger record-set hash does not match admission stream`);
+    }
+  }
+}
+
+function overlapArtifactRelations(
+  generation: unknown,
+  supplied: PrebuiltAdmissionAuthorityArtifactBytesInput,
+  envelopes: Readonly<{ index: PrebuiltAdmissionAuthorityEnvelopeBytes; resource: PrebuiltAdmissionAuthorityEnvelopeBytes; ledger: PrebuiltAdmissionAuthorityEnvelopeBytes }>,
+  errors: string[],
+): void {
+  if (!isRecord(generation) || !Array.isArray(generation.artifacts)) return;
+  const artifacts = generation.artifacts as readonly { readonly relativePath: string; readonly bytes: number; readonly sha256: string }[];
+  const map = artifactMap(supplied, 'overlap generation', errors);
+  if (map.size !== artifacts.length || artifacts.some((artifact) => !map.has(artifact.relativePath))) push(errors, 'overlap generation artifact bytes do not exactly cover generation receipts');
+  for (const artifact of artifacts) {
+    const raw = map.get(artifact.relativePath);
+    if (raw === undefined) continue;
+    if (raw.byteLength !== artifact.bytes || hashBytes(raw) !== artifact.sha256) push(errors, `overlap generation artifact bytes do not match ${artifact.relativePath}`);
+  }
+  const envelopeBytes = new Map([
+    ['index.json', envelopes.index.bytes],
+    ['overlap-resource-receipt.json', envelopes.resource.bytes],
+    ['overlap-ledger.json', envelopes.ledger.bytes],
+  ]);
+  for (const [path, expected] of envelopeBytes) {
+    const raw = map.get(path);
+    if (raw !== undefined && !Buffer.from(raw).equals(Buffer.from(expected))) push(errors, `overlap generation ${path} bytes differ from selected envelope bytes`);
+  }
+}
+
+function realScaleExpectationRelations(
+  bundle: CalibrationAdmissionPreWitnessBundleV1,
+  selected: RealScaleOverlapResourceExpectation,
+  errors: string[],
+): void {
+  const derived: RealScaleOverlapResourceExpectation = {
+    recordCount: bundle.admissionRecordStream.recordCount,
+    universeSha256: bundle.overlapUniverse.universeSha256,
+    recordsJsonlSha256: bundle.admissionRecordStream.recordsJsonlSha256,
+  };
+  if (selected.recordCount !== derived.recordCount) push(errors, 'real-scale record count selector does not match the bound admission stream');
+  if (selected.universeSha256 !== derived.universeSha256) push(errors, 'real-scale universe selector does not match the bound overlap universe');
+  if (selected.recordsJsonlSha256 !== derived.recordsJsonlSha256) push(errors, 'real-scale records selector does not match the bound admission stream');
+}
+
 function staticArtifactRelations(
   graph: PrebuiltAdmissionAuthorityGraphInput,
   bundle: CalibrationAdmissionPreWitnessBundleV1,
@@ -250,16 +447,16 @@ function staticArtifactRelations(
   if (!sameCanonical(staticGeneration.toolAuthoritySnapshot, bundle.toolAuthoritySnapshot)) push(errors, 'static generation tool snapshot does not match bundle');
 }
 
-function streamRelations(graph: PrebuiltAdmissionAuthorityGraphInput, bundle: CalibrationAdmissionPreWitnessBundleV1, errors: string[]): void {
-  if (!isCalibrationAdmissionInputGenerationV1(graph.inputGeneration)) return;
+function streamRelations(graph: PrebuiltAdmissionAuthorityGraphInput, bundle: CalibrationAdmissionPreWitnessBundleV1, errors: string[]): readonly string[] | undefined {
+  if (!isCalibrationAdmissionInputGenerationV1(graph.inputGeneration)) return undefined;
   const generation = graph.inputGeneration;
   const artifacts = artifactMap(graph.inputGenerationArtifactBytes, 'input generation', errors);
   const recordStream = exactArtifact(artifacts, generation.artifacts, 'admission-records.jsonl', 'input generation', errors);
   const overlapUniverse = exactArtifact(artifacts, generation.artifacts, 'overlap-universe.json', 'input generation', errors);
   const overlapUniverseRecords = exactArtifact(artifacts, generation.artifacts, 'overlap-universe-records.jsonl', 'input generation', errors);
+  let recordIds: readonly string[] | undefined;
   if (recordStream !== undefined) {
-    const validation = validateCalibrationAdmissionRecordStreamV1(bundle.admissionRecordStream, recordStream);
-    if (!validation.ok) for (const error of validation.errors) push(errors, `admission record stream: ${error}`);
+    recordIds = admissionRecordStreamRelations(bundle, recordStream, errors);
     if (generation.admissionRecordStreamSha256 !== hashBytes(recordStream)) push(errors, 'input-generation record-stream hash does not match bytes');
   }
   if (overlapUniverse !== undefined) {
@@ -273,10 +470,9 @@ function streamRelations(graph: PrebuiltAdmissionAuthorityGraphInput, bundle: Ca
   }
   if (overlapUniverseRecords !== undefined) {
     if (generation.overlapUniverseRecordsSha256 !== hashBytes(overlapUniverseRecords)) push(errors, 'input-generation overlap-universe-records hash does not match bytes');
-    // Row-level universe/stream identity is owned by the overlap generation
-    // relation verifier.  The outer assembler still requires the exact
-    // input-generation receipt hash and never discovers a substitute stream.
+    overlapUniverseStreamRelations(bundle, overlapUniverseRecords, errors);
   }
+  return recordIds;
 }
 
 function sourceRelations(graph: PrebuiltAdmissionAuthorityGraphInput, bundle: CalibrationAdmissionPreWitnessBundleV1, errors: string[]): void {
@@ -316,6 +512,11 @@ function proof(input: PrebuiltAdmissionAuthorityMaterializerInput, bundle: Calib
       ledger: hashBytes(input.overlap.ledger.bytes),
       toolReceipt: calibrationAdmissionToolReceiptSha256(input.overlap.toolAuthority.receipt),
     },
+    realScaleExpectation: {
+      recordCount: bundle.admissionRecordStream.recordCount,
+      universeSha256: bundle.overlapUniverse.universeSha256,
+      recordsJsonlSha256: bundle.admissionRecordStream.recordsJsonlSha256,
+    },
   });
 }
 
@@ -346,8 +547,14 @@ function materializePrebuiltAdmissionAuthorityUnchecked(
 
   if (bundle !== undefined) {
     staticArtifactRelations(input.graph, bundle, input.preWitnessBundleBytes, errors);
-    streamRelations(input.graph, bundle, errors);
+    const recordIds = streamRelations(input.graph, bundle, errors);
+    ledgerRecordRelations(bundle, recordIds, errors);
     sourceRelations(input.graph, bundle, errors);
+    overlapArtifactRelations(input.overlap.generation, input.overlap.artifactBytes, {
+      index: input.overlap.index,
+      resource: input.overlap.resourceReceipt,
+      ledger: input.overlap.ledger,
+    }, errors);
     const overlapJoin = validatePrebuiltAdmissionAuthorityOverlapJoin({
       staticGeneration: input.graph.staticGeneration,
       staticGenerationBytes: input.graph.staticGenerationBytes,
@@ -361,9 +568,15 @@ function materializePrebuiltAdmissionAuthorityUnchecked(
       toolAuthority: input.overlap.toolAuthority,
     });
     if (!overlapJoin.ok) errors.push(...overlapJoin.errors.map((error) => `overlap: ${error}`));
+    realScaleExpectationRelations(bundle, input.realScaleExpectation, errors);
+    const boundRealScaleExpectation: RealScaleOverlapResourceExpectation = {
+      recordCount: bundle.admissionRecordStream.recordCount,
+      universeSha256: bundle.overlapUniverse.universeSha256,
+      recordsJsonlSha256: bundle.admissionRecordStream.recordsJsonlSha256,
+    };
     const resourceValidation = validateRealScaleOverlapResourceReceipt(
       input.overlap.resourceReceipt.value,
-      input.realScaleExpectation,
+      boundRealScaleExpectation,
     );
     if (!resourceValidation.ok) errors.push(...resourceValidation.errors.map((error) => `real-scale: ${error}`));
     for (const [label, envelope, expected] of [
@@ -390,7 +603,8 @@ function materializePrebuiltAdmissionAuthorityUnchecked(
       ledger: { value: input.overlap.ledger.value, bytes: new Uint8Array(input.overlap.ledger.bytes) },
     },
     realScaleExpectation: input.realScaleExpectation,
-    realScaleReceiptVerified: true,
+    materializerExpectationVerified: true,
+    realScaleReceiptVerified: false,
     verificationSha256: proof(input, bundle, input.preWitnessBundleBytes),
     ready: false,
     authorityEligible: false,

@@ -107,6 +107,10 @@ async function materializerFixture() {
 
   const overlapRoot = join(admissionRoot, 'global', 'overlap', 'generations', staticGeneration.overlapGenerationSha256);
   const overlapGeneration = await readJson(join(overlapRoot, 'generation.json'));
+  const overlapArtifactBytes: Record<string, Buffer> = {};
+  for (const artifact of (overlapGeneration as { readonly artifacts: readonly { readonly relativePath: string }[] }).artifacts) {
+    overlapArtifactBytes[artifact.relativePath] = await readFile(join(overlapRoot, artifact.relativePath));
+  }
   const toolReceipt = fixture.bundle.toolReceipts.find((receipt) => receipt.action === 'authority:overlap');
   if (!toolReceipt) throw new Error('fixture missing overlap tool receipt');
   const toolAuthority = await resolveAdmissionToolAuthorityReceipt({
@@ -127,6 +131,7 @@ async function materializerFixture() {
     overlap: {
       generation: overlapGeneration,
       generationBytes: jsonBytes(overlapGeneration),
+      artifactBytes: overlapArtifactBytes,
       index: { value: await readJson(join(overlapRoot, 'index.json')), bytes: await readFile(join(overlapRoot, 'index.json')) },
       resourceReceipt: { value: await readJson(join(overlapRoot, 'overlap-resource-receipt.json')), bytes: await readFile(join(overlapRoot, 'overlap-resource-receipt.json')) },
       ledger: { value: await readJson(join(overlapRoot, 'overlap-ledger.json')), bytes: await readFile(join(overlapRoot, 'overlap-ledger.json')) },
@@ -193,5 +198,48 @@ describe('v10.3 pure outer admission authority materializer', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.some((error) => error.includes('record-stream') || error.includes('admission record stream'))).toBe(true);
+  });
+
+  it('rehashes every declared overlap artifact instead of trusting envelope metadata', async () => {
+    const input = await materializerFixture();
+    const path = Object.keys(input.overlap.artifactBytes)[0]!;
+    const original = input.overlap.artifactBytes[path]!;
+    const artifactBytes = { ...input.overlap.artifactBytes, [path]: Buffer.from(`${Buffer.from(original).toString('utf8')}\n`, 'utf8') };
+    const result = materializePrebuiltAdmissionAuthority({
+      ...input,
+      overlap: { ...input.overlap, artifactBytes },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.includes('overlap generation artifact bytes'))).toBe(true);
+  });
+
+  it('parses and binds the overlap-universe JSONL rows to the summary and normalizer registry', async () => {
+    const input = await materializerFixture();
+    const artifacts = input.graph.inputGenerationArtifactBytes as Record<string, Uint8Array>;
+    const result = materializePrebuiltAdmissionAuthority({
+      ...input,
+      graph: {
+        ...input.graph,
+        inputGenerationArtifactBytes: {
+          ...artifacts,
+          'overlap-universe-records.jsonl': Buffer.from('{"recordId":"fixture-only"}\n', 'utf8'),
+        },
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.some((error) => error.includes('overlap universe'))).toBe(true);
+  });
+
+  it('does not accept a caller-selected real-scale count that differs from the bound stream', async () => {
+    const input = await materializerFixture();
+    const result = materializePrebuiltAdmissionAuthority({
+      ...input,
+      realScaleExpectation: { ...input.realScaleExpectation, recordCount: 452382 },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors).toContain('real-scale record count selector does not match the bound admission stream');
   });
 });
