@@ -40,6 +40,13 @@ export interface PrebuiltAdmissionAuthorityGraphLoadRequest {
   readonly proposalPath: string;
   /** Exact input-generation object file. Its parent is the generation root. */
   readonly inputGenerationPath: string;
+  /**
+   * Exact caller-selected authority-current object file. When omitted, the
+   * immutable published pointer at review/admission/authority/current.json is
+   * read for backwards compatibility. Create-mode callers may point this at
+   * a staged candidate while the final pointer is still absent.
+   */
+  readonly currentPath?: string;
   /** Optional exact prior-current object file for replace proposals. */
   readonly priorCurrentPath?: string;
   /** When true, load and bind every source proposal and independent approval object. */
@@ -311,6 +318,7 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
   const requestKeys = Object.keys(request).sort();
   const expectedKeys = [
     'inputGenerationPath', 'projectRoot', 'proposalPath',
+    ...(request.currentPath === undefined ? [] : ['currentPath']),
     ...(request.priorCurrentPath === undefined ? [] : ['priorCurrentPath']),
     ...(request.requireSourceProposalBytes === undefined ? [] : ['requireSourceProposalBytes']),
     ...(request.requireSourceSemanticAuthorityBytes === undefined ? [] : ['requireSourceSemanticAuthorityBytes']),
@@ -321,7 +329,9 @@ async function loadGraph(request: PrebuiltAdmissionAuthorityGraphLoadRequest): P
   const root = await resolveAdmissionRoot(request.projectRoot);
   const proposalPath = containedPath(root, request.proposalPath, 'proposal path');
   const inputGenerationPath = containedPath(root, request.inputGenerationPath, 'input generation path');
-  const currentPath = join(root.projectRoot, AUTHORITY_CURRENT_RELATIVE_PATH);
+  const currentPath = request.currentPath === undefined
+    ? join(root.projectRoot, AUTHORITY_CURRENT_RELATIVE_PATH)
+    : containedPath(root, request.currentPath, 'authority current path');
   const proposalRead = await readCanonicalObject(root, proposalPath, 'proposal');
   const inputGenerationRead = await readCanonicalObject(root, inputGenerationPath, 'input generation');
   const currentRead = await readCanonicalObject(root, currentPath, 'authority current pointer');

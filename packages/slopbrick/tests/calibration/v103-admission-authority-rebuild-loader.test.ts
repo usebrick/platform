@@ -218,6 +218,60 @@ describe('v10.3 prebuilt admission authority graph loader', () => {
     expect(await readFile(materialized.unknownFile)).toEqual(before);
   });
 
+  it('loads an explicit candidate current pointer while the published pointer is absent', async () => {
+    const fixture = makePrebuiltAuthorityFixture();
+    const materialized = await materialize(fixture);
+    const finalCurrent = join(materialized.root, 'review', 'admission', 'authority', 'current.json');
+    const candidateCurrent = join(materialized.root, 'review', 'admission', 'authority', 'candidates', 'current.json');
+    await mkdir(join(candidateCurrent, '..'), { recursive: true });
+    await writeFile(candidateCurrent, fixture.currentBytes);
+    await rm(finalCurrent);
+
+    const result = await loadPrebuiltAdmissionAuthorityGraph({
+      ...materialized.request,
+      currentPath: 'review/admission/authority/candidates/current.json',
+    });
+    expect(result.ok).toBe(true);
+    await expect(readFile(finalCurrent)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('rejects candidate current traversal, symlink aliases, and noncanonical bytes', async () => {
+    const traversal = await materialize(makePrebuiltAuthorityFixture());
+    const traversalResult = await loadPrebuiltAdmissionAuthorityGraph({
+      ...traversal.request,
+      currentPath: 'review/admission/authority/candidates/../current.json',
+    });
+    expect(traversalResult.ok).toBe(false);
+    if (!traversalResult.ok) expect(traversalResult.errors.join('\n')).toMatch(/traversal|contained/i);
+
+    const alias = await materialize(makePrebuiltAuthorityFixture());
+    const aliasPath = join(alias.root, 'review', 'admission', 'authority', 'candidates', 'current.json');
+    await mkdir(join(aliasPath, '..'), { recursive: true });
+    const canSymlink = await symlink(join(alias.root, 'review', 'admission', 'authority', 'current.json'), aliasPath)
+      .then(() => true)
+      .catch(() => false);
+    if (canSymlink) {
+      const aliasResult = await loadPrebuiltAdmissionAuthorityGraph({
+        ...alias.request,
+        currentPath: 'review/admission/authority/candidates/current.json',
+      });
+      expect(aliasResult.ok).toBe(false);
+      if (!aliasResult.ok) expect(aliasResult.errors.join('\n')).toMatch(/symlink|alias/i);
+    }
+
+    const invalid = await materialize(makePrebuiltAuthorityFixture());
+    const candidatePath = join(invalid.root, 'review', 'admission', 'authority', 'candidates', 'current.json');
+    await mkdir(join(candidatePath, '..'), { recursive: true });
+    await writeFile(candidatePath, Buffer.concat([await readFile(join(invalid.root, 'review', 'admission', 'authority', 'current.json')), Buffer.from('\n', 'utf8')]));
+    await rm(join(invalid.root, 'review', 'admission', 'authority', 'current.json'));
+    const invalidResult = await loadPrebuiltAdmissionAuthorityGraph({
+      ...invalid.request,
+      currentPath: 'review/admission/authority/candidates/current.json',
+    });
+    expect(invalidResult.ok).toBe(false);
+    if (!invalidResult.ok) expect(invalidResult.errors.join('\n')).toMatch(/canonical|current pointer/i);
+  });
+
   it('strictly reopens source-generation proposal bytes when requested', async () => {
     const fixture = makePrebuiltAuthorityFixture();
     const materialized = await materialize(fixture);
