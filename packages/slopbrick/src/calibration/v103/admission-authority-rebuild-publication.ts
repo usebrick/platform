@@ -119,6 +119,8 @@ export interface PrebuiltAuthorityPublicationResult {
   readonly recoveryRequired: boolean;
   readonly status: PrebuiltAuthorityPublicationStatus;
   readonly transactionId: string;
+  /** Nonce required to resume a pending transaction or clean a lock-only journal. */
+  readonly recoveryNonce: string;
   readonly generationSha256: string;
   readonly lockPath: string;
   readonly transactionPath: string;
@@ -388,6 +390,7 @@ function result(context: PublicationContext, status: PrebuiltAuthorityPublicatio
     recoveryRequired: !complete,
     status,
     transactionId: context.transaction.transactionId,
+    recoveryNonce: context.transaction.recoveryNonce,
     generationSha256: context.graph.staticGeneration && isRecord(context.graph.staticGeneration)
       ? String(context.graph.staticGeneration.generationSha256)
       : '',

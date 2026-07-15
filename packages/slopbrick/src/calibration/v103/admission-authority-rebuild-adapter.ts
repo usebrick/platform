@@ -73,6 +73,8 @@ export type PrebuiltAdmissionAuthorityRebuildAdapterResult = Readonly<{
   readonly graph: PrebuiltAdmissionAuthorityGraphInput;
   /** Full raw-byte commitment to the reopened graph, not just semantic IDs. */
   readonly verificationSha256: string;
+  /** False for a valid lock-only cleanup where no graph was published. */
+  readonly durableGraphVerified: boolean;
   readonly toolAuthority: Readonly<{
     readonly authorityIndexSha256: string;
     readonly receiptId: string;
@@ -384,6 +386,7 @@ function result(
   return {
     publication,
     ...reopened,
+    durableGraphVerified: true,
     toolAuthority: {
       authorityIndexSha256: resolution.authorityIndexSha256,
       receiptId: resolution.receipt.receiptId,
@@ -417,6 +420,25 @@ export async function recoverPrebuiltAdmissionAuthorityWithVerification(
   const prepared = await prepare(request);
   const publication = await recoverPrebuiltAdmissionAuthority(prepared.publication as PrebuiltAuthorityPublicationRecoveryRequest);
   if (!publication.complete) throw new Error('prebuilt authority recovery did not complete');
+  if (publication.status === 'lock-only') {
+    // A lock-only journal means the writer stopped before creating the
+    // transaction. Recovery intentionally removes only that owned lock; no
+    // durable graph exists to reopen, so report the cleanup as diagnostic
+    // rather than manufacturing a persisted-graph verification claim.
+    return {
+      publication,
+      graph: request.publication.graph,
+      verificationSha256: graphProof(request.publication.graph),
+      durableGraphVerified: false,
+      toolAuthority: {
+        authorityIndexSha256: prepared.resolution.authorityIndexSha256,
+        receiptId: prepared.resolution.receipt.receiptId,
+        receiptSha256: prepared.resolution.receiptSha256,
+        invocationIntentId: prepared.resolution.invocationIntent.intentId,
+        outputSetSha256: prepared.resolution.receipt.outputSetSha256,
+      },
+    };
+  }
   try {
     return result(publication, await reopenCommittedGraph(prepared.publication, request.publication.graph, prepared.graphRead), prepared.resolution);
   } catch (error) {

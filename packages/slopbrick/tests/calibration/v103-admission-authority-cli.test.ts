@@ -253,6 +253,46 @@ describe('v10.3 outer authority CLI boundary', () => {
     expect(JSON.parse(stdout)).toMatchObject({ ok: true, command: 'static-authority:recover', complete: true, diagnosticOnly: true });
   });
 
+  it('reports lock-only recovery without claiming a durable graph verification', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-lock-only-'));
+    roots.push(root);
+    const backed = await authorityBackedFixture(root);
+    const paths = await materialize(root, backed);
+    const prepared = planInput(backed);
+    if (!prepared.planned.ok) throw new Error(prepared.planned.errors.join('; '));
+    const toolAuthority = {
+      authorityRoot: join(root, 'review', 'admission', 'tool-authority'),
+      authorityIndexSha256: backed.authorityIndexSha256,
+      receiptId: backed.receiptId,
+      receiptSha256: backed.receiptSha256,
+      invocationIntentId: backed.invocationIntentId,
+      profileId: TOOL_PROFILE,
+      action: 'authority:overlap' as const,
+      outputSetSha256: backed.outputSetSha256,
+    };
+    await expect(rebuildPrebuiltAdmissionAuthority({
+      publication: { root, graph: backed.fixture, planInput: prepared.input, phaseHook: async (phase) => { if (phase === 'lock-fsynced') throw new Error('lock-only-fixture'); } },
+      sourceAuthorityMode: 'candidate-aware',
+      toolAuthority,
+    })).rejects.toThrow(/lock-only-fixture|recovery/i);
+    const recoveryNonce = prepared.planned.lock.recoveryNonce;
+    if (!recoveryNonce) throw new Error('fixture plan did not produce a recovery nonce');
+    const { stdout, stderr } = await execFileAsync(tsx, [
+      'scripts/cal/v103-admission.ts', 'static-authority:recover', ...toolArgs(backed, paths),
+      '--from-lock', '--recovery-nonce', recoveryNonce, '--acknowledge-no-live-writer',
+    ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
+    expect(stderr).toBe('');
+    expect(JSON.parse(stdout)).toMatchObject({
+      ok: true,
+      command: 'static-authority:recover',
+      complete: true,
+      status: 'lock-only',
+      durableGraphVerified: false,
+      diagnosticOnly: true,
+    });
+    await expect(stat(join(root, 'review', 'admission', 'authority', 'rebuild.lock'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('fails closed before mutation when the selected graph or receipt is wrong', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-outer-authority-cli-invalid-'));
     roots.push(root);
