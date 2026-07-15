@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   admissionShingleSetSha256,
   ADMISSION_LEXICAL_RUNTIME_BINDINGS,
+  buildAdmissionNormalizerRegistry,
   computeAdmissionShingles,
   normalizeAdmissionBytes,
   tokenizeAdmissionSource,
@@ -76,6 +77,29 @@ describe('Task 2A admission normalizers', () => {
     const registry = { ...base, registrySha256: calibrationAdmissionNormalizerRegistrySha256(base) };
     const result = normalizeAdmissionBytes('Python', Buffer.from('def answer():\n    return 42\n', 'utf8'), registry);
     expect(result).toMatchObject({ ok: true, status: 'covered', normalizerId: 'normalizer-lexical-code-v1' });
+  });
+
+  it('builds explicit bindings for the measured language census and leaves unknown buckets unsupported', () => {
+    const registry = buildAdmissionNormalizerRegistry([
+      'typescript', 'python', 'svelte', 'astro', 'other', 'python',
+    ]);
+    expect(registry.entries.map((entry) => entry.language)).toEqual(['astro', 'python', 'svelte', 'typescript']);
+    expect(registry.entries.map((entry) => entry.normalizerId)).toEqual([
+      'normalizer-astro-v1',
+      'normalizer-python-v1',
+      'normalizer-svelte-v1',
+      'normalizer-typescript-v1',
+    ]);
+    expect(registry.registrySha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(normalizeAdmissionBytes('svelte', Buffer.from('<script>let x = 1;</script><p>{x}</p>', 'utf8'), registry)).toMatchObject({
+      ok: true,
+      normalizerId: 'normalizer-svelte-v1',
+    });
+    expect(normalizeAdmissionBytes('other', Buffer.from('opaque', 'utf8'), registry)).toMatchObject({
+      ok: false,
+      status: 'unsupported',
+      normalizerId: 'normalizer-unsupported-v1',
+    });
   });
 
   it('reports unsupported languages and invalid registries without treating them as no overlap', () => {

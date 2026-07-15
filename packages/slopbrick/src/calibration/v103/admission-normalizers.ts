@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import {
+  calibrationAdmissionNormalizerRegistrySha256,
   isCalibrationAdmissionNormalizerRegistryV1,
   type AdmissionNormalizerRegistryV1,
 } from '@usebrick/core';
@@ -66,6 +67,43 @@ const ADMISSION_LEXICAL_IMPLEMENTATION_SHA256 = sha256(Buffer.from('usebrick-adm
 const ADMISSION_LEXICAL_FIXTURES_SHA256 = sha256(Buffer.from('usebrick-admission-normalizer:lexical-code-v1:fixtures-v1\n', 'utf8'));
 
 /**
+ * Language-specific fixture seeds for the shared lexer.  The implementation
+ * is deliberately shared, but every language gets a distinct registry
+ * binding so adding a language cannot silently widen an existing entry.  The
+ * seeds are not candidate corpus bytes; they are tiny, reviewed contract
+ * fixtures used only to bind the normalizer receipt.
+ */
+const ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS = Object.freeze({
+  astro: '<Component value={1} />',
+  c: 'int main(void) { return 0; }',
+  cpp: 'int main() { return 0; }',
+  csharp: 'static int Main() { return 0; }',
+  dart: 'void main() { print(1); }',
+  go: 'package main\nfunc main() {}',
+  java: 'class Main { public static void main(String[] a) {} }',
+  javascript: 'const value = 1; console.log(value);',
+  kotlin: 'fun main() { println(1) }',
+  php: '<?php echo 1; ?>',
+  python: 'def main():\n    return 0',
+  ruby: 'def main\n  0\nend',
+  rust: 'fn main() { println!("ok"); }',
+  sql: 'SELECT 1;',
+  svelte: '<script>let value = 1;</script><h1>{value}</h1>',
+  swift: 'func main() { print(1) }',
+  typescript: 'const value: number = 1;',
+} as const);
+
+type AdmissionLexicalLanguage = keyof typeof ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS;
+
+function languageFixtureSha256(language: AdmissionLexicalLanguage): string {
+  return sha256(Buffer.from(`usebrick-admission-normalizer:lexical-code-v1:fixture:${language}:${ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS[language]}\n`, 'utf8'));
+}
+
+function languageNormalizerId(language: AdmissionLexicalLanguage): string {
+  return language === 'typescript' ? 'normalizer-typescript-v1' : `normalizer-${language}-v1`;
+}
+
+/**
  * The lexer is intentionally language-agnostic: it removes the frozen
  * C/JavaScript-style comment and literal bodies and retains identifiers and
  * punctuation. A language may bind to the shared implementation only through
@@ -85,7 +123,57 @@ export const ADMISSION_LEXICAL_RUNTIME_BINDINGS = Object.freeze([
     implementationSha256: ADMISSION_LEXICAL_IMPLEMENTATION_SHA256,
     fixturesSha256: ADMISSION_LEXICAL_FIXTURES_SHA256,
   },
+  ...Object.keys(ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS)
+    .filter((language): language is AdmissionLexicalLanguage => language !== 'typescript')
+    .map((language) => ({
+      normalizerId: languageNormalizerId(language),
+      implementationId: ADMISSION_NORMALIZER_IMPLEMENTATION_ID,
+      implementationSha256: ADMISSION_LEXICAL_IMPLEMENTATION_SHA256,
+      fixturesSha256: languageFixtureSha256(language),
+    })),
 ] as const);
+
+const ADMISSION_RUNTIME_BY_LANGUAGE = new Map<string, (typeof ADMISSION_LEXICAL_RUNTIME_BINDINGS)[number]>([
+  ['typescript', ADMISSION_LEXICAL_RUNTIME_BINDINGS[0]!],
+  ...Object.keys(ADMISSION_LEXICAL_LANGUAGE_FIXTURE_SEEDS)
+    .filter((language): language is AdmissionLexicalLanguage => language !== 'typescript')
+    .map((language) => [language, ADMISSION_LEXICAL_RUNTIME_BINDINGS.find((binding) => binding.normalizerId === languageNormalizerId(language))!] as const),
+]);
+
+/**
+ * Build the explicit registry for a measured language census.  Unknown
+ * buckets (currently only `other`) are intentionally omitted, which makes
+ * them unsupported rather than silently assigning a generic lexer.  The
+ * caller can persist the returned self-hashed object as the authority input.
+ */
+export function buildAdmissionNormalizerRegistry(
+  languages: readonly string[],
+): AdmissionNormalizerRegistryV1 {
+  const unique = [...new Set(languages)];
+  if (unique.length === 0) throw new Error('normalizer registry requires at least one language');
+  if (unique.some((language) => !isAdmissionNormalizerLanguageId(language))) {
+    throw new Error('normalizer registry language ID is invalid');
+  }
+  const entries = unique
+    .sort((left, right) => left.localeCompare(right))
+    .flatMap((language) => {
+      const runtime = ADMISSION_RUNTIME_BY_LANGUAGE.get(language.toLowerCase());
+      if (runtime === undefined) return [];
+      return [{
+        language,
+        normalizerId: runtime.normalizerId,
+        implementationSha256: runtime.implementationSha256,
+        fixturesSha256: runtime.fixturesSha256,
+        utf8Policy: 'strict' as const,
+        shingleSize: ADMISSION_SHINGLE_SIZE,
+      }];
+    });
+  if (entries.length === 0) throw new Error('normalizer registry has no supported languages');
+  const base = { version: 'v10.3-admission-normalizers-v1' as const, entries };
+  const nonEmptyEntries = entries as [typeof entries[number], ...typeof entries[number][]];
+  const nonEmptyBase = { ...base, entries: nonEmptyEntries };
+  return { ...nonEmptyBase, registrySha256: calibrationAdmissionNormalizerRegistrySha256(nonEmptyBase) };
+}
 
 function lengthDelimitedTokenTuple(tokens: readonly string[]): Uint8Array {
   const parts: Buffer[] = [];
