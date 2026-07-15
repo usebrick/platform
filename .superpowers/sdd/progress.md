@@ -982,6 +982,23 @@ deployment state changed. The next gate is to materialize those explicit
 authoritative inputs, then run the bounded smoke/canary witness checks before
 any label promotion or release.
 
+### SlopBrick self-scan review — 2026-07-15
+
+The package-local self-scan was rerun with one worker and no telemetry. It
+completed all **240/240** selected files with zero parse/crash failures in
+46.6s, but failed the configured AI-slop gate: score **17.6 > 15**, with 163
+active issues (152 `ai/compression-profile`, 6 `logic/zipf-slope-anomaly`, 5
+`logic/heaps-deviation`), 415 default-off findings suppressed, security 100,
+hygiene 99.5, and repository health 92.8. The baseline was rejected for a
+config-hash mismatch, so this is a current diagnostic—not a release pass.
+
+The output is useful and honest about the failing threshold, active rules,
+coverage, suppression, and zero parse errors. Two UX follow-ups are recorded:
+the progress ETA remains `0.0s` for most files, and persisted `inventory.json`
+/`structure.md` report 200 scanned files while health/output report 240; the
+next scan-UX slice should expose one canonical scan-accounting field and avoid
+that count ambiguity. No source or baseline was changed by the scan.
+
 Next: wire the same strict overlap join into the byte-backed runtime admission
 context with a complete overlap/tool-authority fixture, then add the mutating
 CLI only after independent review; only after that replay real static/witness
