@@ -1,5 +1,13 @@
 # SDD progress — SlopBrick packaged worker runtime and self-scan recovery
 
+## v10.3 allocation/provenance preview continuation
+
+| Task | Implementer | Review | Commit | Status |
+| --- | --- | --- | --- | --- |
+| Allocation/provenance preview — explicit streamed inventory ownership | `allocation_preview_fix` | APPROVE after review/fix/re-review | `8d8b23d22`, `9a5976aa5`, `d1bf476d3` | completed |
+| Candidate-current loader boundary — explicit byte-backed current path | `outer_loader_bridge` | APPROVE | `38258d703` | completed |
+| Outer authority CLI adapter — explicit graph create/recovery, diagnostic-only | `outer_cli_implementer` | PASS after independent review + lock-only re-review | `3a427e9aa`, `c89f40bdd`, `2fbde2bf2` | completed |
+
 - Plan: `docs/superpowers/plans/2026-07-09-slopbrick-worker-runtime-and-self-scan.md`
 - Base commit: `8086c3f1bc47148a47eb2df973118b6c96911570`
 - Worktree note: existing v0.45 files are intentionally dirty and must not be staged by task agents.
@@ -949,6 +957,30 @@ and independent review are complete. No corpus, remote, release, or deployment
 state changed. Census remains **329/329** reviewed sources, **452,382**
 quarantined/unrepresented units, zero candidate/eligible, blockers
 `static_authority_unavailable` and `witness_authority_unavailable`.
+
+### Task 2B outer materializer hardening — 2026-07-15
+
+Commits `3cf05569c` and `d25914f26` make the outer CLI require an explicit
+bundle, overlap-generation/envelope paths, indexed tool selectors, and stream
+selectors; adapter-only invocations fail closed and public output keeps
+`realScaleReceiptVerified=false`. Commit `f62013fbc` extends the pure
+materializer so the caller must also supply every declared overlap artifact
+(including shards), each artifact is rehashed against its generation receipt,
+the admission-record and overlap-universe JSONL streams are parsed line by
+line and bound to their summaries/normalizer registry, and privacy/quality/
+lineage ledgers are joined to the complete admission-record ID set. The
+caller-selected expectation must equal the bound stream; a one-record fixture
+cannot be presented as the 452,382-record corpus.
+
+The bounded gate is now **27/27** focused tests (7 materializer, 8 receipt,
+6 static-ledger, 7 CLI), SlopBrick typecheck and `git diff --check` pass. The
+fixture materializer remains diagnostic-only; there is intentionally no
+successful live-corpus CLI publication test because the real authority tree,
+shard bytes, witness evidence, and full-scale resource receipt are absent.
+No corpus bytes, labels, repository pulls, manifest, release, publish, or
+deployment state changed. The next gate is to materialize those explicit
+authoritative inputs, then run the bounded smoke/canary witness checks before
+any label promotion or release.
 
 Next: wire the same strict overlap join into the byte-backed runtime admission
 context with a complete overlap/tool-authority fixture, then add the mutating
