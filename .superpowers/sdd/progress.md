@@ -747,3 +747,38 @@ This remains a bounded prebuilt validator, not full Task 2B. The ledger stays
 CLI, real receipts/corpus, witness/context authority, corpus admission, and
 release gates are deferred. No corpus labels/bytes or remote/release state
 changed.
+
+### Task 2B symlink-safe prebuilt authority-graph loader checkpoint — 2026-07-15
+
+The bounded filesystem reader is implemented and documented in
+`.superpowers/sdd/task-2b-authority-rebuild-loader-report.md` at commit
+`a13444fc3`; the review verdict is **APPROVE** in
+`.superpowers/sdd/task-2b-authority-rebuild-loader-review.md`. It accepts only
+the exact caller request (`projectRoot`, `proposalPath`, `inputGenerationPath`,
+and optional `priorCurrentPath`), reads the fixed authority current pointer,
+current-selected static generation, fixed per-source current pointers, and
+declared generation-local or admission-root CAS receipt files. It performs no
+directory discovery or mutation.
+
+The loader normalizes the project root, rejects root symlinks and unsafe path
+components, walks selected paths with `lstat`, reopens regular files using
+`O_NOFOLLOW`, and checks realpath stability after the read. Strict canonical
+UTF-8/no-BOM object bytes, exactly-one-LF source-review bytes, raw receipt maps,
+and the existing pure graph validator's hash/length/join checks are preserved.
+Focused loader tests pass **1 file / 7 tests**; SlopBrick typecheck, build, and
+`git diff --check` pass, with only the existing non-fatal Zod declaration
+warnings during build.
+
+The post-commit package-wide SlopBrick run passes with one worker and a 2 GiB
+heap cap: **311 files passed / 5 skipped; 3,578 tests passed / 9 skipped** in
+249.28 seconds. This is a package-gate refresh, not full Task 2B or release
+evidence.
+
+This remains a bounded read-only loader, not full Task 2B. The ledger remains
+`98/178` continuation and `2/76` admission; the read-only census remains
+**329/329** registered/reviewed sources and **452,382** quarantined/
+unrepresented units, zero candidate/eligible units, with blockers
+`static_authority_unavailable` and `witness_authority_unavailable`. P2
+immutable-root/TOCTOU and cross-platform POSIX `O_NOFOLLOW` policy follow-ups,
+publication/recovery, CLI, static/witness/resource authority, corpus admission,
+and release gates remain open. No corpus or remote/release state changed.
