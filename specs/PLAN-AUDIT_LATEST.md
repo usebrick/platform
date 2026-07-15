@@ -686,7 +686,7 @@ the full population without loading it or reading every file, but no label is
 promoted because authorship/rights/evidence/source-byte/static/witness
 authority is still missing. No new repository pull is justified.
 
-The self-scan UX follow-up is closed. Persisted inventory/structure now use
+The self-scan accounting/ETA follow-up is closed. Persisted inventory/structure now use
 the explicit 240-file selection (matching health/report), and positive
 sub-second ETA values render `<1s` rather than `0s`; the diagnostic score and
 release gate remain unchanged at 17.6 > 15.
