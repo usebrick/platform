@@ -190,6 +190,30 @@ describe('headline score renderer contract', () => {
       expect(output).toContain('excluded 2');
       expect(output).toContain('failures (parse 1, timeout 0, crash 0, internal 0)');
     }
+    expect(formatBriefReport(input)).toContain(
+      'SCAN STATUS: incomplete (scan/runtime failure) — policy gate not evaluated.',
+    );
+  });
+
+  it('labels threshold failures as policy outcomes and summarizes active rules in brief output', () => {
+    const activeRules = Array.from({ length: 6 }, (_, index) => ({
+      ...activeIssue,
+      ruleId: `test/rule-${index}`,
+      filePath: `src/active-${index}.ts`,
+    }));
+    const input = Object.assign(report(), {
+      aiSlopScore: 42,
+      thresholds: { meanSlop: 15, p90Slop: 30, individualSlopThreshold: 60 },
+      issues: [...activeRules, offIssue],
+    }) as ProjectReport;
+
+    const output = formatBriefReport(input);
+
+    expect(output).toContain('CI gate: AI Slop Score <= 15 -> fail (policy threshold)');
+    expect(output).toContain('Active rules (6):');
+    expect(output).toContain('test/rule-0 × 1');
+    expect(output).toContain('+ 1 more rule');
+    expect(output).not.toContain('test/off-rule');
   });
 
   it('treats a legacy partial completion marker as incomplete in Markdown', () => {

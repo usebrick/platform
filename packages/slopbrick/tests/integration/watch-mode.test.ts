@@ -110,6 +110,29 @@ function readHealth(cwd: string): Record<string, unknown> | undefined {
   }
 }
 
+async function waitForFileContent(
+  path: string,
+  predicate: (content: string) => boolean,
+): Promise<string> {
+  let latest = '';
+  await waitUntil(() => {
+    try {
+      latest = readFileSync(path, 'utf8');
+      return predicate(latest);
+    } catch {
+      return false;
+    }
+  }, 5_000);
+  return latest;
+}
+
+async function waitForOutputContent(
+  handle: WatchHandle,
+  predicate: (content: string) => boolean,
+): Promise<void> {
+  await waitUntil(() => predicate(handle.output()), 5_000);
+}
+
 async function waitForValidHealth(cwd: string, requested: number): Promise<void> {
   await waitUntil(() => {
     const health = readHealth(cwd);
@@ -358,7 +381,12 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           if (variant.kind === 'quiet') {
             expect(handle.output()).toBe('');
           } else if (variant.kind === 'json-file') {
-            const json = JSON.parse(readFileSync(join(dir, 'watch.json'), 'utf8')) as Record<string, unknown>;
+            const json = JSON.parse(
+              await waitForFileContent(
+                join(dir, 'watch.json'),
+                (content) => content.includes('"scoreValidity": "incomplete"'),
+              ),
+            ) as Record<string, unknown>;
             expect(json).toMatchObject({ completionStatus: 'partial', scoreValidity: 'incomplete' });
             expect(json).not.toHaveProperty('aiSlopScore');
             expect(json).not.toHaveProperty('engineeringHygiene');
@@ -368,21 +396,28 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
             expectNoPartialScoreLeak(handle.stdout());
             expectNoPartialScoreLeak(handle.stderr());
           } else if (variant.kind === 'html-file') {
-            const html = readFileSync(join(dir, 'watch.html'), 'utf8');
+            const html = await waitForFileContent(
+              join(dir, 'watch.html'),
+              (content) => content.includes('data-score-validity="incomplete"'),
+            );
             expect(html).toContain('data-score-validity="incomplete"');
             expect(html).not.toContain('AI Slop Score:');
             expectNoPartialScoreLeak(handle.stdout());
             expectNoPartialScoreLeak(handle.stderr());
           } else if (variant.kind === 'json') {
+            await waitForOutputContent(handle, (content) => content.includes('"scoreValidity": "incomplete"'));
             expect(handle.output()).toContain('"scoreValidity": "incomplete"');
             expectNoPartialScoreLeak(handle.output());
           } else if (variant.kind === 'html') {
+            await waitForOutputContent(handle, (content) => content.includes('data-score-validity="incomplete"'));
             expect(handle.output()).toContain('data-score-validity="incomplete"');
             expectNoPartialScoreLeak(handle.output());
           } else if (variant.kind === 'sarif') {
+            await waitForOutputContent(handle, (content) => content.includes('"scoreValidity": "incomplete"'));
             expect(handle.output()).toContain('"scoreValidity": "incomplete"');
             expect(handle.output()).not.toContain('"scores"');
           } else {
+            await waitForOutputContent(handle, (content) => content.includes('INCOMPLETE SCAN'));
             expect(handle.output()).toContain('INCOMPLETE SCAN');
           }
 

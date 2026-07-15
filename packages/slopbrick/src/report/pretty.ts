@@ -118,6 +118,35 @@ function formatFindingSummary(report: ProjectReport): string | null {
 }
 
 /**
+ * Compact rule-level accounting for `--brief` output.
+ *
+ * The full report already includes the detailed finding summary, but a
+ * threshold failure is difficult to act on from a brief-only CI log when a
+ * single rule accounts for most of the active findings. Keep this bounded and
+ * deterministic: group only active (non-default-off) instances by rule, show
+ * the five highest-volume rules, and leave the complete feed to JSON/full
+ * output.
+ */
+function formatBriefActiveRuleBreakdown(report: ProjectReport): string | null {
+  const counts = new Map<string, number>();
+  for (const issue of report.issues) {
+    if ((issue.severity as string) === 'off') continue;
+    counts.set(issue.ruleId, (counts.get(issue.ruleId) ?? 0) + 1);
+  }
+  if (counts.size === 0) return null;
+
+  const entries = [...counts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  );
+  const visible = entries.slice(0, 5);
+  const rendered = visible.map(([ruleId, count]) => `${ruleId} × ${count}`);
+  if (entries.length > visible.length) {
+    rendered.push(`+ ${entries.length - visible.length} more rule${entries.length - visible.length === 1 ? '' : 's'}`);
+  }
+  return `Active rules (${entries.length}): ${rendered.join('; ')}`;
+}
+
+/**
  * v0.14.5i — Trust-signal section: surfaces the count of issues
  * auto-suppressed because their rule was marked `defaultOff: true` in
  * signal-strength.json (INVERTED or NOISY rules that would erode
@@ -1227,16 +1256,23 @@ export function formatWhyFailingReport(report: ProjectReport): string {
 
 /**
  * v0.14.5j (P10) — `--brief` flag. Terse output for CI / scripts:
- * the verdict, the headline, the threshold, the delta. No category
- * breakdown, no top offenders, no issues dump. Designed to fit
- * in 4-5 lines on a terminal.
+ * the verdict, the headline, the threshold, the delta, and (when findings
+ * exist) a bounded active-rule summary. No category breakdown, no top
+ * offenders, no issues dump. Designed to stay compact on a terminal.
  */
 export function formatBriefReport(report: ProjectReport): string {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
-    return chalk.bold.yellow(
+    const notice =
       formatScanValidityNotice(report) ??
-        'NO FILES ANALYSED — scores are not applicable for gating.',
-    );
+      'NO FILES ANALYSED — scores are not applicable for gating.';
+    // Keep the established validity notice stable for scripts while making
+    // the reason unambiguous in terse CI logs: an incomplete scan is a
+    // scan/runtime failure, not a policy-threshold failure, so no numeric
+    // gate is evaluated.
+    const status = isIncompleteScan(report)
+      ? 'SCAN STATUS: incomplete (scan/runtime failure) — policy gate not evaluated.'
+      : 'SCAN STATUS: no files analyzed — policy gate not evaluated.';
+    return `${chalk.bold.yellow(notice)}\n${chalk.bold.yellow(status)}`;
   }
   // v0.17.0: 4-score model (aiSlopScore, engineeringHygiene, security, repositoryHealth).
   // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;
@@ -1320,9 +1356,14 @@ export function formatBriefReport(report: ProjectReport): string {
   lines.push('');
   lines.push(
     chalk.dim(
-      `  CI gate: AI Slop Score <= ${meanSlop} -> ${passed ? chalk.green('pass') : chalk.red('fail')}`,
+      `  CI gate: AI Slop Score <= ${meanSlop} -> ${passed ? chalk.green('pass') : chalk.red('fail')} (policy threshold)`,
     ),
   );
+
+  const activeRuleBreakdown = formatBriefActiveRuleBreakdown(report);
+  if (activeRuleBreakdown) {
+    lines.push(chalk.dim(`  ${activeRuleBreakdown}`));
+  }
 
   // Suppression trust signal
   const suppressed = report.defaultOffSuppressedCount ?? 0;

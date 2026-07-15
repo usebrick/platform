@@ -7,9 +7,9 @@
 | Plan | SHA-256 | Role |
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
-| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `b39e6579aa5f13548c6a3a98b2273b97013b5fc7b878e5b5818cb980fe9a7d8c` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. |
-| **Current continuation-plan hash override (2026-07-15)** | `6207ee663bf314dba25454a8ccf3008010f416064c134595b110e796afaffe67` | Supersedes the historical continuation-plan hash in the frozen row below after the candidate-aware mutating authority-rebuild adapter hardening and self-scan diagnostic update. |
-| `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Current recovery/release gate order and evidence authority; live Task 1A and bounded Task 1B checkpoints record the approved census, register-authority Core contract, register-publication runtime, Core/SlopBrick diagnostic slice, acquisition-round contract, structured record/decision consumption, temporal/adjudicator authority, completed dirty-boundary reduction pass, the independently approved Task 2A Core overlap-contract, SlopBrick normalizer/universe, exact-similarity, external-sort fixture, artifact-contract/runtime, incremental-stream, bounded-overlap-computation, approved overlap-authority publication/CLI slice, bounded fault/CAS matrix, CLI E2E, selected-generation and envelope-relation verification, terminal checkpoint/resume and sidecar-integrity recovery validation, recursive typecheck/build boundary, scope-control and clean-boundary audit, migration-scoped website accessibility verification, score/property and valid-report accounting including unknown-count `n/a`, HTML finding-evidence parity, workspace-binary self-scan correction with threshold parity, dependency audit, DB/docs validity, website dev-data generation, workflow pnpm pinning, stronger schema/type freshness checks, the live 307-file/3,544-test package-gate correction plus repository-polarity and normalized-summary hardening, the health-wire/heatmap/doctor validity matrix, the latest disposable 227-file/531-issue self-scan refresh and brief-output UX review, the 2026-07-14 scope correction/implementation freeze, the post-gate authority-runtime consolidation target, the current-state pointer, the external corpus review-artifact refresh, the recursive build-boundary refresh, the synthetic clean-snapshot build diagnostic, the live-site/documentation truth refresh including measured-versus-unmeasured rule claim correction, the current dirty same-tarball consumer diagnostic, the current 460-file/757-entry diff census refresh, the MCP no-trailing-newline transport correction, the current corpus authority audit refresh, the read-only 329-entry genesis composition diagnostic with deterministic blocker counts and receipt, the built-CLI 45/45 partial-watch validity matrix with all-five-field stream/file assertions and explicit skip semantics, the latest synthetic clean-snapshot consumer, recursive typecheck, full JSON genesis diagnostic, live-diff census/hash correction, current AAX30H clean-snapshot packed-consumer pair, reproducible genesis/typecheck/packer evidence, corrected v3 external-packer provenance receipts, historical website demo-label corrections, the current runnable-versus-planned admission CLI boundary, the reproducible disposable Python/pyarrow bootstrap setup, the staged beacon/large-output boundary review, the independent corpus deficit/acquisition decision audit, the live package-local self-scan/dead-code cleanup review, the row-versus-content overlap audit showing 3,522 cross-polarity hashes with a recursive-canonical diagnostic receipt, the owner-authorized local commit plus two-source bounded quarantine acquisition, static audits, proposals, and cumulative round receipt, the deterministic 10,000-file quarantine projection verification, the immutable acquisition generation-0/1 plus diagnostic evidence-bundle checkpoint, the reviewed two-phase evidence-verification authority plus bound source-census checkpoint, the bounded full Core/engine/website/SlopBrick verification closeout, the superseding clean Task 6 boundary plus dependency rereview rebind, the committed Task 2B privacy, quality, lineage, corrected provisional witness-free pre-witness boundary, four-contract static-authority Core, static-authority relation sub-slices, approved rich pre-witness Core contract (`286741d15`, `f828fdaf5`, `1f2f8f6a4`; report/review `.superpowers/sdd/task-2b-core-rich-report.md`), approved authority rebuild lock/transaction Core contract (`a5d66eba3`, `4318d26eb`; report/review `.superpowers/sdd/task-2b-authority-contracts-report.md`), approved runtime source-review authority anchor (`762540ae5`, `b285cccb3`; report/review `.superpowers/sdd/task-2b-source-review-anchor-report.md`), approved pure prebuilt authority graph validator (`136ad461a`, `383bf4c09`, `f115bf7e6`; report/review `.superpowers/sdd/task-2b-authority-rebuild-graph-report.md`), approved symlink-safe prebuilt authority-graph loader (`a13444fc3`; report/review `.superpowers/sdd/task-2b-authority-rebuild-loader-report.md`), and pure authority-publication planner (`3fadffe56`, `b27ab684`, `5feb27aff`; report/review `.superpowers/sdd/task-2b-authority-publication-plan-report.md` and `.superpowers/sdd/task-2b-authority-publication-plan-review.md`) plus the exact 2026-07-15 read-only source-census replay and corrected project-root invocation (`de0cd1879d14365b919c09bdd21bd5760a6804a0e3626d87abf37b78ad948857`), and the strict static-overlap join/read-only CLI boundary checkpoint (`.superpowers/sdd/task-2b-static-overlap-cli-report.md`). |
+| `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `d62fdd77747fc25e67fc21404e795922cc3d0849be169a4a1b5522ee93141ad4` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The 2026-07-15 checkpoint records the bounded candidate-context/preview slice and stable recursive gates; it does not advance real-corpus admission. |
+| **Current continuation-plan hash override (2026-07-15)** | `5d9b534c5f3460b46582a28be48c2c243b6f1028c5a361f9a99d4a56e6be02f2` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, and bounded-verification update. |
+| `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
 `.superpowers/sdd/v103-corpus-admission-plan-final-review.md`. During Task 3
@@ -101,8 +101,57 @@ the planning verdict does not call the workspace audit clean.
 - Markdown fence parity and stale synthetic-source/flat-manifest scans: clean.
 - `git diff --check`: clean at the current dirty snapshot.
 - The continuation-plan hash override was recomputed on 2026-07-15 after the
-  adapter checkpoint; any subsequent plan edit requires another hash refresh
-  and targeted rereview.
+  candidate-context/preview and recursive-gate checkpoint; any subsequent plan
+  edit requires another hash refresh and targeted rereview.
+
+### Current control-plane, CLI, and self-scan audit — 2026-07-15
+
+The latest evidence supersedes older diagnostic counts in the continuation
+plan. `/Users/cheng/corpus-expansion/v10.3` contains approximately 3.8 GiB and
+the `sources` tree contains **11,127** regular non-`.git` source-tree files. Its
+317 pinned checkout records (225 declared AI, 92 declared human) have matching paths and Git heads,
+but no verified labels. The 329-entry genesis register/review pair is complete
+as a review artifact only. The correct genesis and source-census replays leave
+**452,382** units quarantined/unrepresented, **0** candidate, and **0**
+eligible; static/witness/source-generation authority and overlap current trees
+are absent. `authority:overlap:verify` therefore exits 2 with
+`overlap_current_missing`. No source promotion or repository acquisition is
+authorized at this boundary.
+
+The required package-local self-scan is a clean runtime execution over
+**235/235** files (zero parse/timeout/crash/internal failures) but a policy
+failure at AI Slop Score **17.2869** versus meanSlop 15. It reports 157 active
+low/medium diagnostics, security 100/100 with zero security findings, hygiene
+99.5168, and repository health 92.9403. The config-mismatched baseline was
+rejected. The broad compression signal is not authorship evidence until
+authoritative v10.3 precision/FPR replay; self-scan UX should distinguish policy
+failure from runtime failure and show active-rule breakdown. `--no-telemetry`
+still permits project-memory writes when that setting is enabled.
+
+The current admission executable has no parser/dispatch for
+`rebuild:pre-witness`, `static-authority:recover`, or `census:preview`, and no
+input-generation/static-generation/real-scale receipt flags. The candidate-
+aware adapter is library-only and its nested `authority:overlap` selector is
+not the outer rebuild authority. The next executable slice must therefore be a
+fully materialized, explicitly typed outer transaction/receipt with fixture
+coverage; parser-only wiring, empty ledgers, and mislabeled nested receipts are
+rejected. Real-corpus replay, further pulls, label promotion, manifest,
+release, publish, and deploy remain downstream gates.
+
+### Bounded verification update — 2026-07-15
+
+The planned authority commands are now parser-visible but intentionally
+fail-closed: `rebuild:pre-witness` and `static-authority:recover` emit a
+structured `authority_cli_unavailable` result before filesystem access because
+the fully materialized outer transaction/graph is not implemented. Their CLI
+boundary tests pass 10/10. The brief renderer contract tests pass 12/12 and
+the SlopBrick package typecheck passes.
+
+The load-sensitive watch failure was a test synchronization race between health
+persistence and report rendering. Waiting for the expected report content makes
+the complete watch-mode file pass 45/45 serially. This does not alter admission
+status. Atomic report-file publication is recorded as a separate hardening
+item; the full recursive package gate remains a commit/release checkpoint.
 
 ## Implementation evidence still required
 

@@ -353,6 +353,63 @@ async function createJoinedFixture(root: string): Promise<JoinedOverlapFixture> 
 }
 
 describe('v10.3 overlap authority CLI boundary', () => {
+  it('recognizes planned authority commands but fails closed before filesystem access', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-cli-unavailable-'));
+    try {
+      const rebuild = await execFileAsync(tsx, [
+        'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', '--root', root,
+        '--input-generation-proposal', 'review/admission/authority/proposals/genesis-input.json',
+        '--operation', 'create', '--expect-current-absent', '--tool-profile', TOOL_PROFILE,
+        '--require-real-scale-receipt',
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+      expect(rebuild?.code).toBe(2);
+      expect(JSON.parse(rebuild?.stderr ?? '')).toMatchObject({
+        ok: false,
+        command: 'rebuild:pre-witness',
+        code: 'authority_cli_unavailable',
+        status: 'unavailable',
+      });
+      expect(rebuild?.stderr).toContain('fully materialized');
+
+      const recover = await execFileAsync(tsx, [
+        'scripts/cal/v103-admission.ts', 'static-authority:recover', '--root', root,
+        '--from-lock', '--recovery-nonce', 'a'.repeat(64), '--acknowledge-no-live-writer',
+        '--tool-profile', TOOL_PROFILE,
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+      expect(recover?.code).toBe(2);
+      expect(JSON.parse(recover?.stderr ?? '')).toMatchObject({
+        ok: false,
+        command: 'static-authority:recover',
+        code: 'authority_cli_unavailable',
+        status: 'unavailable',
+      });
+      expect(recover?.stderr).toContain('transaction-bound static-authority recovery adapter');
+      await expect(stat(join(root, 'review'))).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it('rejects authority-rebuild options and nested actions on existing CLI commands', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-authority-cli-options-'));
+    try {
+      const leakage = await execFileAsync(tsx, [
+        'scripts/cal/v103-admission.ts', 'authority:overlap:verify', '--root', root,
+        '--tool-profile', TOOL_PROFILE, '--expect-current-absent',
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stdout?: string; readonly stderr?: string });
+      expect(leakage?.code).toBe(2);
+      expect(`${leakage?.stdout ?? ''}${leakage?.stderr ?? ''}`).toContain('Unexpected authority rebuild option');
+
+      const nestedAction = await execFileAsync(tsx, [
+        'scripts/cal/v103-admission.ts', 'rebuild:pre-witness', '--root', root,
+        '--input-generation-proposal', 'review/admission/authority/proposals/genesis-input.json',
+        '--operation', 'create', '--expect-current-absent', '--tool-profile', TOOL_PROFILE,
+        '--require-real-scale-receipt', '--action', 'authority:overlap',
+      ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 }).then(() => undefined, (error: unknown) => error as { readonly code?: number; readonly stderr?: string });
+      expect(nestedAction?.code).toBe(2);
+      expect(nestedAction?.stderr).toContain('outer action is fixed to rebuild:pre-witness');
+      await expect(stat(join(root, 'review'))).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   it('runs read-only verification without creating the control-plane layout', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-overlap-cli-'));
     try {

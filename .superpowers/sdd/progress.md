@@ -1094,3 +1094,85 @@ cross-object snapshot; and the existing publisher still writes proposal and
 input-generation finals before later transaction-owned promotions. Independent
 review is the next gate, followed by a mutating CLI only after approval, then
 real-corpus replay.
+
+### Current control-plane and self-scan audit — 2026-07-15
+
+The fresh read-only audit is now the current handoff truth. The centralized
+v10.3 corpus spans about 3.8 GiB; its `sources` tree has **11,127** regular
+non-`.git` source-tree files, with **317** pinned checkout records (**225** declared AI and **92**
+declared human) whose paths and Git heads match their inventory. This proves
+checkout integrity only; no labels are verified. The 329-entry genesis register
+and 329 reviews replay deterministically, but all **452,382** selected units
+remain quarantined/unrepresented, with zero candidate/eligible units. Static
+authority, witness authority, source-generation authority, and overlap current
+trees are absent; the correct source census and genesis replay both fail closed
+with `static_authority_unavailable` and `witness_authority_unavailable`.
+
+The explicit package-local self-scan analyzed **235/235** files without runtime
+failures, but scored **17.2869** against the configured 15 policy threshold:
+157 active low/medium findings, security 100/100, hygiene 99.5168, and
+repository health 92.9403. The baseline was rejected for a config-hash
+mismatch. This is a policy diagnostic, not a passing release scan; the broad
+compression signal requires an authoritative v10.3 precision/FPR decision and
+must not drive cosmetic source refactors.
+
+The CLI audit found no `rebuild:pre-witness`, `static-authority:recover`, or
+`census:preview` parser/dispatch and no documented proposal/static-generation
+or real-scale receipt flags. The adapter remains a fixture-scale library
+boundary and its nested `authority:overlap` receipt cannot stand in for the
+outer rebuild authority. The next implementation must add an explicit,
+fully-materialized, fail-closed outer transaction/receipt with fixture tests;
+parser-only wiring and placeholder ledgers are out of scope. No corpus labels,
+repositories, manifests, package versions, remotes, releases, publishes, or
+deployments changed.
+
+### Current bounded verification update — 2026-07-15
+
+The current slice uses risk-scaled verification. The planned
+`rebuild:pre-witness` and `static-authority:recover` commands are now strict,
+parser-visible, and fail closed with structured `authority_cli_unavailable`
+before filesystem access; they do not wire a fixture overlap receipt into the
+outer real-corpus rebuild. CLI boundary tests pass **10/10**, brief-renderer
+contract tests pass **12/12**, and the SlopBrick package typecheck passes.
+
+The full-load watch failure was a test synchronization race: health persisted
+before report rendering, while the test treated health as a render-complete
+signal. The watch test now waits for the expected output content and the full
+watch-mode file passes **45/45** serially. This does not close admission.
+Atomic temp-file report publication remains a separate hardening item; it is
+not being expanded into this boundary slice. The prior full package run had
+316/321 test files passing with that race as the only remaining failure after
+the stale source-map issue was rebuilt; a stable full recursive gate remains a
+commit/release checkpoint.
+
+### Current Task 2B bounded slice — 2026-07-15
+
+Candidate-aware runtime context is now exercised with a positive
+`independent_review` source and missing/tampered semantic or approval
+sidecars (**2/2**). The context validates the canonical source proposal,
+approval, blind assignment/decisions/receipt, semantic graph, and exact
+generation-local semantic-authority bytes; genesis-quarantine sources remain
+sidecar-free and candidate bytes contribute to the source-authority proof.
+
+`census:preview` is implemented as canonical stdout-only, non-persisting
+preview and has a 329-source fixture proving canonical output, strict selector
+requirements, unknown-option rejection, and no root mutation (**3/3**).
+`rebuild:pre-witness` and `static-authority:recover` remain explicit parser
+boundaries only: they reject nested/option-leaking invocations and return
+structured `authority_cli_unavailable` before filesystem access. The outer
+mutating graph materializer and recovery transaction are still open.
+
+Report JSON/HTML/heatmap files now publish through a unique sibling temp file
+and rename; watch filtering treats those temps as scanner-owned. Brief output
+separates incomplete runtime failure from policy-threshold failure and shows a
+bounded active-rule breakdown. Focused renderer/heatmap contracts pass 25/25,
+watch-mode passes 45/45 serially, SlopBrick typecheck/build pass with only the
+existing non-fatal Zod declaration warnings, and `git diff --check` passes.
+The stable recursive workspace gate also passes: Core 226/226, engine 59/59,
+website 38/38, and SlopBrick 318 passed / 5 skipped test files with 3,635
+passed / 9 skipped tests; recursive typecheck and build are green. Fixture-only
+stderr remains non-fatal.
+
+No real-corpus authority, label, repository, manifest, release, publish, or
+deployment state changed. The live corpus remains 0 candidate / 0 eligible
+with `static_authority_unavailable` and `witness_authority_unavailable`.

@@ -4,10 +4,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   calibrationAdmissionAuthorityCurrentSha256,
+  calibrationAdmissionBlindAssignmentId,
+  calibrationAdmissionBlindReviewReceiptId,
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionDecisionId,
   calibrationAdmissionEvidenceBundleSha256,
   calibrationAdmissionEvidenceIndexSha256,
   calibrationAdmissionEvidencePayloadSetSha256,
+  calibrationAdmissionInputGenerationSha256,
   calibrationAdmissionPolicySha256,
   calibrationAdmissionLineageLedgerSha256,
   calibrationAdmissionMaterializationId,
@@ -24,6 +28,7 @@ import {
   calibrationAdmissionSourceRegisterEntrySha256,
   calibrationAdmissionSourceCurrentSha256,
   calibrationAdmissionSourceGenerationArtifactSetSha256,
+  calibrationAdmissionSourceGenerationApprovalSha256,
   calibrationAdmissionSourceGenerationProposalSha256,
   calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
@@ -53,14 +58,17 @@ import {
   publishAdmissionToolInvocationIntent,
   publishAdmissionToolReceipt,
 } from '../../src/calibration/v103/admission-publication';
+import { calibrationAdmissionSourceSemanticAuthoritySha256 } from '../../src/calibration/v103/admission-authority-rebuild';
 
 const roots: string[] = [];
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex');
 const shaBytes = (value: Uint8Array): string => createHash('sha256').update(value).digest('hex');
+const serialized = (value: unknown): Buffer => Buffer.from(`${calibrationAdmissionCanonicalJson(value)}\n`, 'utf8');
 const fixture = (name: string): string => join(process.cwd(), '..', 'core', 'tests', 'fixtures', 'schema', 'valid', name);
 const OVERLAP_INDEX_PATH = 'index.json';
 const OVERLAP_RESOURCE_PATH = 'overlap-resource-receipt.json';
 const OVERLAP_LEDGER_PATH = 'overlap-ledger.json';
+const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
 
 async function emptyEvidenceContext(): Promise<Awaited<ReturnType<typeof buildVerifiedAdmissionEvidenceContext>> extends { ok: true; context: infer C } ? C : never> {
   const root = await mkdtemp(join(tmpdir(), 'slopbrick-runtime-evidence-'));
@@ -575,6 +583,298 @@ export async function runtimeFixture(): Promise<{ readonly root: string; readonl
     calibrationAdmissionCanonicalJson({ ...overlapCurrentBody, currentSha256: calibrationAdmissionOverlapCurrentSha256(overlapCurrentBody) }),
   );
   return { root, evidence, bundle, recordId };
+}
+
+/**
+ * Promote one source in the materialized runtime fixture to a complete,
+ * acquired-independent-review graph.  The selected source deliberately has
+ * no record in the one-record stream so the focused context tests exercise
+ * source-authority joins without changing ledger/record fixtures.
+ */
+export async function runtimeCandidateFixture(): Promise<{
+  readonly root: string;
+  readonly evidence: Awaited<ReturnType<typeof emptyEvidenceContext>>;
+  readonly bundle: CalibrationAdmissionPreWitnessBundleV1;
+  readonly recordId: string;
+  readonly candidateSourceId: string;
+}> {
+  const base = await runtimeFixture();
+  const candidateReview = base.bundle.sourceReviews[1];
+  if (candidateReview === undefined) throw new Error('runtime fixture is missing a second source review');
+  const candidateSourceId = candidateReview.sourceId;
+  const admissionRoot = join(base.root, 'review', 'admission');
+  const authorityCurrentPath = join(admissionRoot, 'authority', 'current.json');
+  const authorityCurrent = JSON.parse(await readFile(authorityCurrentPath, 'utf8')) as {
+    readonly generation: number;
+    readonly staticGenerationSha256: string;
+    readonly staticGenerationRelativePath: string;
+    readonly currentSha256: string;
+  };
+  const oldStaticPath = join(base.root, authorityCurrent.staticGenerationRelativePath);
+  const oldStaticGeneration = JSON.parse(await readFile(join(oldStaticPath, 'generation.json'), 'utf8')) as CalibrationAdmissionStaticAuthorityGenerationV1;
+  const oldBundle = JSON.parse(await readFile(join(oldStaticPath, STATIC_BUNDLE_PATH), 'utf8')) as CalibrationAdmissionPreWitnessBundleV1;
+  const sourceCurrentPath = join(admissionRoot, 'sources', candidateSourceId, 'current.json');
+  const oldSourceCurrent = JSON.parse(await readFile(sourceCurrentPath, 'utf8')) as {
+    readonly generationSha256: string;
+    readonly generationRelativePath: string;
+  };
+  const oldSourceGenerationPath = join(admissionRoot, oldSourceCurrent.generationRelativePath);
+  const oldSourceGeneration = JSON.parse(await readFile(join(oldSourceGenerationPath, 'source-generation.json'), 'utf8')) as CalibrationAdmissionSourceGenerationV1;
+
+  const rightsEvidenceId = `${candidateSourceId}-rights`;
+  const evidenceIds = [candidateReview.originEvidenceId, rightsEvidenceId].sort();
+  const assignmentBody = {
+    version: 'v10.3-admission-blind-assignment-v1' as const,
+    target: { kind: 'source' as const, sourceId: candidateSourceId },
+    evidenceSetSha256: calibrationAdmissionSha256(evidenceIds),
+    protocolEvidenceId: `${candidateSourceId}-protocol`,
+    reviewerIds: ['reviewer-authorship', 'reviewer-rights'] as [string, string],
+    peerMaterialHiddenUntilBothSealed: true as const,
+  };
+  const assignment = { ...assignmentBody, assignmentId: calibrationAdmissionBlindAssignmentId(assignmentBody) };
+  const decisionBody = (reviewerId: 'reviewer-authorship' | 'reviewer-rights', reviewerRole: 'authorship' | 'rights') => ({
+    version: 'v10.3-admission-decision-v1' as const,
+    target: { kind: 'source' as const, sourceId: candidateSourceId },
+    reviewerId,
+    reviewerRoles: [reviewerRole] as [typeof reviewerRole],
+    evidenceIds,
+    blindAssignmentId: assignment.assignmentId,
+    result: {
+      kind: 'admission' as const,
+      proposedLabel: 'verified_ai' as const,
+      humanEditStatus: 'none' as const,
+      disposition: 'eligible_gold' as const,
+    },
+    reasons: [] as const,
+    decidedAt: '2026-07-15T00:00:00.000Z',
+  });
+  const decisionAContent = decisionBody('reviewer-authorship', 'authorship');
+  const decisionBContent = decisionBody('reviewer-rights', 'rights');
+  const decisions = [
+    { ...decisionAContent, decisionId: calibrationAdmissionDecisionId(decisionAContent) },
+    { ...decisionBContent, decisionId: calibrationAdmissionDecisionId(decisionBContent) },
+  ].sort((left, right) => left.decisionId.localeCompare(right.decisionId));
+  const receiptBody = {
+    version: 'v10.3-admission-blind-review-receipt-v1' as const,
+    assignmentId: assignment.assignmentId,
+    evidenceSetSha256: assignment.evidenceSetSha256,
+    sealedDecisions: decisions.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId)).map((decision) => ({
+      reviewerId: decision.reviewerId,
+      decisionId: decision.decisionId,
+      peerDecisionVisibleBeforeSeal: false as const,
+    })) as [{ reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }, { reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }],
+    unsealedOnlyAfterBothDecisionIdsExisted: true as const,
+    protocolAuditorId: `${candidateSourceId}-auditor`,
+    protocolAuditEvidenceIds: [`${candidateSourceId}-protocol`],
+  };
+  const receipt = { ...receiptBody, receiptId: calibrationAdmissionBlindReviewReceiptId(receiptBody) };
+  const reviewedSource = {
+    ...candidateReview,
+    origin: { kind: 'https' as const, url: `https://example.test/${candidateSourceId}.git` },
+    sourceRights: {
+      ...candidateReview.sourceRights,
+      status: 'reviewed' as const,
+      analysisUse: 'approved' as const,
+      redistribution: 'approved' as const,
+      thirdPartyChain: 'complete' as const,
+      evidenceIds,
+    },
+    reviewerDecisionIds: decisions.map((decision) => decision.decisionId).sort(),
+    decision: 'candidate' as const,
+    reasons: [] as const,
+  };
+  const sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(reviewedSource);
+  const sourceReviewBytes = serialized(reviewedSource);
+  const sourceArtifacts = oldSourceGeneration.artifacts.map((artifact) => artifact.kind === 'source_review' && artifact.relativePath === 'source-review.json'
+    ? { ...artifact, bytes: sourceReviewBytes.byteLength, sha256: shaBytes(sourceReviewBytes) }
+    : artifact);
+  const sourceProposalBody = {
+    version: 'v10.3-admission-source-generation-proposal-v1' as const,
+    proposalId: oldSourceGeneration.proposalId,
+    sourceId: candidateSourceId,
+    operation: 'create' as const,
+    expectedCurrentState: { kind: 'absent' as const },
+    sourceReviewSha256,
+    materializationAuthority: {
+      kind: 'genesis' as const,
+      evidenceBundleSha256: base.evidence.bundle.bundleSha256,
+    },
+    artifacts: sourceArtifacts,
+  };
+  const sourceProposal = {
+    ...sourceProposalBody,
+    proposalSha256: calibrationAdmissionSourceGenerationProposalSha256(sourceProposalBody),
+  };
+  const approvalBody = {
+    version: 'v10.3-admission-source-generation-approval-v1' as const,
+    approvalId: `${candidateSourceId}-approval`,
+    proposalId: sourceProposal.proposalId,
+    proposalSha256: sourceProposal.proposalSha256,
+    blindAssignmentId: assignment.assignmentId,
+    reviewerDecisionIds: decisions.map((decision) => decision.decisionId).sort() as [string, string],
+    blindReviewReceiptId: receipt.receiptId,
+  };
+  const approval = {
+    ...approvalBody,
+    approvalSha256: calibrationAdmissionSourceGenerationApprovalSha256(approvalBody),
+  };
+  const sourceGenerationBody = {
+    ...oldSourceGeneration,
+    proposalSha256: sourceProposal.proposalSha256,
+    approval: {
+      kind: 'independent_review' as const,
+      approvalId: approval.approvalId,
+      approvalSha256: approval.approvalSha256,
+    },
+    sourceReviewSha256,
+    artifacts: sourceArtifacts,
+    artifactSetSha256: calibrationAdmissionSourceGenerationArtifactSetSha256(sourceArtifacts),
+    generationSha256: '',
+  };
+  const sourceGeneration = {
+    ...sourceGenerationBody,
+    generationSha256: calibrationAdmissionSourceGenerationSha256(sourceGenerationBody),
+  };
+  const semanticBody = {
+    version: 'v10.3-admission-source-semantic-authority-v1' as const,
+    sourceId: candidateSourceId,
+    proposalId: sourceProposal.proposalId,
+    blindAssignment: assignment,
+    decisions,
+    blindReviewReceipt: receipt,
+    evidenceBundle: base.evidence.bundle,
+  };
+  const semanticAuthority = {
+    ...semanticBody,
+    authoritySha256: calibrationAdmissionSourceSemanticAuthoritySha256(semanticBody),
+  };
+  const sourceCurrentBody = {
+    ...oldSourceCurrent,
+    generationSha256: sourceGeneration.generationSha256,
+    generationRelativePath: `sources/${candidateSourceId}/generations/${sourceGeneration.generationSha256}`,
+    currentSha256: '',
+  };
+  const sourceCurrent = {
+    ...sourceCurrentBody,
+    currentSha256: calibrationAdmissionSourceCurrentSha256(sourceCurrentBody),
+  };
+  const newSourceGenerationPath = join(admissionRoot, sourceCurrent.generationRelativePath);
+  await mkdir(newSourceGenerationPath, { recursive: true });
+  await writeFile(join(newSourceGenerationPath, 'source-generation.json'), calibrationAdmissionCanonicalJson(sourceGeneration));
+  for (const artifact of sourceArtifacts) {
+    const bytes = artifact.relativePath === 'source-review.json'
+      ? sourceReviewBytes
+      : await readFile(join(oldSourceGenerationPath, artifact.relativePath));
+    await writeFile(join(newSourceGenerationPath, artifact.relativePath), bytes);
+  }
+  await writeFile(join(newSourceGenerationPath, 'source-semantic-authority.json'), calibrationAdmissionCanonicalJson(semanticAuthority));
+  const proposalDirectory = join(admissionRoot, 'sources', candidateSourceId, 'proposals');
+  await mkdir(proposalDirectory, { recursive: true });
+  await writeFile(join(proposalDirectory, `${sourceProposal.proposalId}.json`), calibrationAdmissionCanonicalJson(sourceProposal));
+  await writeFile(join(proposalDirectory, `${sourceProposal.proposalId}-approval.json`), calibrationAdmissionCanonicalJson(approval));
+  await writeFile(sourceCurrentPath, calibrationAdmissionCanonicalJson(sourceCurrent));
+
+  const nextBundleBody = {
+    ...oldBundle,
+    sourceReviews: oldBundle.sourceReviews.map((review) => review.sourceId === candidateSourceId ? reviewedSource : review),
+    preWitnessBundleSha256: '',
+  };
+  const nextBundle = {
+    ...nextBundleBody,
+    preWitnessBundleSha256: calibrationAdmissionPreWitnessBundleSha256(nextBundleBody),
+  } as CalibrationAdmissionPreWitnessBundleV1;
+  const nextBundleBytes = Buffer.from(calibrationAdmissionCanonicalJson(nextBundle), 'utf8');
+
+  const oldInputPath = join(base.root, 'review', 'admission', 'authority', 'input-generations', oldStaticGeneration.inputGenerationSha256);
+  const oldInputGeneration = JSON.parse(await readFile(join(oldInputPath, 'generation.json'), 'utf8')) as Record<string, unknown> & { readonly sourceGenerations: readonly Record<string, unknown>[] };
+  const nextInputBody = {
+    ...oldInputGeneration,
+    sourceGenerations: oldInputGeneration.sourceGenerations.map((source) => source.sourceId === candidateSourceId
+      ? {
+        ...source,
+        generationSha256: sourceGeneration.generationSha256,
+        artifactSetSha256: sourceGeneration.artifactSetSha256,
+        relativePath: `review/admission/${sourceCurrent.generationRelativePath}`,
+      }
+      : source),
+    generationSha256: '',
+  };
+  const nextInputGeneration = {
+    ...nextInputBody,
+    generationSha256: calibrationAdmissionInputGenerationSha256(nextInputBody),
+  };
+  const nextInputPath = join(base.root, 'review', 'admission', 'authority', 'input-generations', nextInputGeneration.generationSha256);
+  await mkdir(nextInputPath, { recursive: true });
+  await writeFile(join(nextInputPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextInputGeneration));
+  for (const artifact of (oldInputGeneration.artifacts as readonly { readonly relativePath: string }[])) {
+    await writeFile(join(nextInputPath, artifact.relativePath), await readFile(join(oldInputPath, artifact.relativePath)));
+  }
+
+  const oldOverlapPath = join(base.root, 'review', 'admission', 'global', 'overlap', 'generations', oldStaticGeneration.overlapGenerationSha256);
+  const oldOverlapGeneration = JSON.parse(await readFile(join(oldOverlapPath, 'generation.json'), 'utf8')) as Record<string, unknown>;
+  const nextOverlapBody = {
+    ...oldOverlapGeneration,
+    inputGenerationSha256: nextInputGeneration.generationSha256,
+    generationSha256: '',
+  };
+  const nextOverlapGeneration = {
+    ...nextOverlapBody,
+    generationSha256: calibrationAdmissionOverlapGenerationSha256(nextOverlapBody),
+  };
+  const nextOverlapPath = join(base.root, 'review', 'admission', 'global', 'overlap', 'generations', nextOverlapGeneration.generationSha256);
+  await mkdir(nextOverlapPath, { recursive: true });
+  await writeFile(join(nextOverlapPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextOverlapGeneration));
+  for (const filename of [OVERLAP_INDEX_PATH, OVERLAP_RESOURCE_PATH, OVERLAP_LEDGER_PATH]) {
+    await writeFile(join(nextOverlapPath, filename), await readFile(join(oldOverlapPath, filename)));
+  }
+  const oldOverlapCurrentPath = join(base.root, 'review', 'admission', 'global', 'overlap', 'current-generation.json');
+  const oldOverlapCurrent = JSON.parse(await readFile(oldOverlapCurrentPath, 'utf8')) as Record<string, unknown>;
+  const nextOverlapCurrentBody = {
+    ...oldOverlapCurrent,
+    generationSha256: nextOverlapGeneration.generationSha256,
+    generationRelativePath: `review/admission/global/overlap/generations/${nextOverlapGeneration.generationSha256}`,
+    currentSha256: '',
+  };
+  await writeFile(oldOverlapCurrentPath, calibrationAdmissionCanonicalJson({
+    ...nextOverlapCurrentBody,
+    currentSha256: calibrationAdmissionOverlapCurrentSha256(nextOverlapCurrentBody),
+  }));
+
+  const nextStaticArtifacts = oldStaticGeneration.artifacts.map((artifact) => artifact.kind === 'bundle' && artifact.relativePath === STATIC_BUNDLE_PATH
+    ? { ...artifact, bytes: nextBundleBytes.byteLength, sha256: shaBytes(nextBundleBytes) }
+    : artifact);
+  const nextStaticBody = {
+    ...oldStaticGeneration,
+    inputGenerationSha256: nextInputGeneration.generationSha256,
+    overlapGenerationSha256: nextOverlapGeneration.generationSha256,
+    preWitnessBundleSha256: nextBundle.preWitnessBundleSha256,
+    artifacts: nextStaticArtifacts,
+    generationSha256: '',
+  };
+  const nextStaticGeneration = {
+    ...nextStaticBody,
+    generationSha256: calibrationAdmissionStaticAuthorityGenerationSha256(nextStaticBody),
+  };
+  const nextStaticPath = join(base.root, 'review', 'admission', 'authority', 'static-generations', nextStaticGeneration.generationSha256);
+  await mkdir(nextStaticPath, { recursive: true });
+  await writeFile(join(nextStaticPath, 'generation.json'), calibrationAdmissionCanonicalJson(nextStaticGeneration));
+  for (const artifact of nextStaticArtifacts) {
+    const bytes = artifact.kind === 'bundle' && artifact.relativePath === STATIC_BUNDLE_PATH
+      ? nextBundleBytes
+      : await readFile(join(oldStaticPath, artifact.relativePath));
+    await writeFile(join(nextStaticPath, artifact.relativePath), bytes);
+  }
+  const nextAuthorityCurrentBody = {
+    ...authorityCurrent,
+    staticGenerationSha256: nextStaticGeneration.generationSha256,
+    staticGenerationRelativePath: `review/admission/authority/static-generations/${nextStaticGeneration.generationSha256}`,
+    currentSha256: '',
+  };
+  await writeFile(authorityCurrentPath, calibrationAdmissionCanonicalJson({
+    ...nextAuthorityCurrentBody,
+    currentSha256: calibrationAdmissionAuthorityCurrentSha256(nextAuthorityCurrentBody),
+  }));
+  return { ...base, bundle: nextBundle, candidateSourceId };
 }
 
 /** Rewrite the exact authority graph after a focused bundle mutation. */

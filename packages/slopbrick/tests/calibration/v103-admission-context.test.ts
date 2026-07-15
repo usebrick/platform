@@ -22,6 +22,7 @@ import {
   rewriteRuntimeRecord,
   rewriteRuntimeSourceGeneration,
   rewriteRuntimeStaticGeneration,
+  runtimeCandidateFixture,
   runtimeFixture,
 } from './v103-admission-context-fixture';
 import {
@@ -238,6 +239,38 @@ describe('v10.3 byte-backed verified admission context', () => {
     }));
     await expectRejected(receiptHash.root, receiptHash.evidence);
   }, 120_000);
+
+  it('accepts an independent-review source only with its complete semantic authority graph', async () => {
+    const fixture = await runtimeCandidateFixture();
+    const result = await buildVerifiedAdmissionContext(fixture.root, fixture.evidence);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.context.overlapAuthority.sourceAuthoritySha256).toMatch(/^[a-f0-9]{64}$/);
+  }, 120_000);
+
+  it('rejects candidate sources when semantic or approval sidecars are missing or tampered', async () => {
+    const missingSemantic = await runtimeCandidateFixture();
+    const currentPath = join(missingSemantic.root, 'review', 'admission', 'sources', missingSemantic.candidateSourceId, 'current.json');
+    const current = JSON.parse(await readFile(currentPath, 'utf8')) as { readonly generationRelativePath: string };
+    const generationPath = join(missingSemantic.root, 'review', 'admission', current.generationRelativePath);
+    await rm(join(generationPath, 'source-semantic-authority.json'));
+    await expectRejected(missingSemantic.root, missingSemantic.evidence);
+
+    const tamperedSemantic = await runtimeCandidateFixture();
+    const tamperedCurrentPath = join(tamperedSemantic.root, 'review', 'admission', 'sources', tamperedSemantic.candidateSourceId, 'current.json');
+    const tamperedCurrent = JSON.parse(await readFile(tamperedCurrentPath, 'utf8')) as { readonly generationRelativePath: string };
+    const tamperedSemanticPath = join(tamperedSemantic.root, 'review', 'admission', tamperedCurrent.generationRelativePath, 'source-semantic-authority.json');
+    const semantic = JSON.parse(await readFile(tamperedSemanticPath, 'utf8')) as Record<string, unknown>;
+    await writeFile(tamperedSemanticPath, calibrationAdmissionCanonicalJson({ ...semantic, authoritySha256: 'f'.repeat(64) }));
+    await expectRejected(tamperedSemantic.root, tamperedSemantic.evidence);
+
+    const missingApproval = await runtimeCandidateFixture();
+    const approvalCurrentPath = join(missingApproval.root, 'review', 'admission', 'sources', missingApproval.candidateSourceId, 'current.json');
+    const approvalCurrent = JSON.parse(await readFile(approvalCurrentPath, 'utf8')) as { readonly generationRelativePath: string };
+    const approvalGeneration = JSON.parse(await readFile(join(missingApproval.root, 'review', 'admission', approvalCurrent.generationRelativePath, 'source-generation.json'), 'utf8')) as { readonly proposalId: string };
+    await rm(join(missingApproval.root, 'review', 'admission', 'sources', missingApproval.candidateSourceId, 'proposals', `${approvalGeneration.proposalId}-approval.json`));
+    await expectRejected(missingApproval.root, missingApproval.evidence);
+  }, 240_000);
 
   it('rejects a self-hashed source generation stored under a different current pointer hash', async () => {
     const fixture = await runtimeFixture();

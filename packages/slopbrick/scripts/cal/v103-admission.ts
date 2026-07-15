@@ -36,6 +36,39 @@ function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
+/** Emit a machine result with Core's deterministic JSON key ordering. */
+function outputCanonical(value: unknown): void {
+  process.stdout.write(`${calibrationAdmissionCanonicalJson(value)}\n`);
+}
+
+/**
+ * The two planned static-authority commands are intentionally parser-visible
+ * before their mutating orchestrator exists. Keeping them as an explicit
+ * fail-closed boundary prevents callers from mistaking the nested
+ * `authority:overlap` receipt or a fixture graph for a real static authority.
+ */
+class AdmissionAuthorityCliUnavailableError extends Error {
+  readonly code = 'authority_cli_unavailable';
+
+  constructor(command: string, detail: string) {
+    super(`${command} is unavailable: ${detail}`);
+    this.name = 'AdmissionAuthorityCliUnavailableError';
+  }
+}
+
+function rejectUnavailableAuthorityCommand(command: 'rebuild:pre-witness' | 'static-authority:recover'): never {
+  if (command === 'rebuild:pre-witness') {
+    throw new AdmissionAuthorityCliUnavailableError(
+      command,
+      'the CLI has no graph materializer/orchestrator and will not infer a PrebuiltAdmissionAuthorityGraphInput from a proposal path; provide a future fully materialized, byte-backed graph boundary only after the real-corpus resource receipt and outer rebuild action are implemented',
+    );
+  }
+  throw new AdmissionAuthorityCliUnavailableError(
+    command,
+    'the CLI has no transaction-bound static-authority recovery adapter; it will not reuse authority:overlap recovery or discover/restore generations without an exact transaction envelope',
+  );
+}
+
 function toolAuthorityRootFor(root: string): string {
   return /(?:^|[\\/])review[\\/]admission[\\/]?$/.test(root)
     ? join(root, 'tool-authority')
@@ -46,8 +79,13 @@ interface ParsedArguments {
   readonly command: string;
   readonly root: string;
   readonly proposalPath?: string;
+  /** Planned authority rebuild proposal input (not an acquisition proposal). */
+  readonly inputGenerationProposalPath?: string;
   readonly operation?: 'create' | 'replace';
   readonly expectedCurrentIndexSha256?: string;
+  readonly expectedCurrentStaticGenerationSha256?: string;
+  readonly expectCurrentAbsent?: boolean;
+  readonly requireRealScaleReceipt?: boolean;
   readonly toolProfile?: string;
   readonly action?: string;
   readonly canonicalArgvSha256?: string;
@@ -87,11 +125,15 @@ interface ParsedArguments {
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
+  let inputGenerationProposalPath: string | undefined;
   let operation: 'create' | 'replace' | undefined;
   let expectedCurrentIndexSha256: string | undefined;
+  let expectedCurrentStaticGenerationSha256: string | undefined;
+  let expectCurrentAbsent = false;
+  let requireRealScaleReceipt = false;
   let toolProfile: string | undefined;
   let action: string | undefined;
   let canonicalArgvSha256: string | undefined;
@@ -128,6 +170,16 @@ function parse(argv: readonly string[]): ParsedArguments {
   let joinStaticAuthority = false;
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
+    if (flag === '--expect-current-absent' || flag === '--require-real-scale-receipt') {
+      if (flag === '--expect-current-absent') {
+        if (expectCurrentAbsent) throw new Error('--expect-current-absent may only be supplied once');
+        expectCurrentAbsent = true;
+      } else {
+        if (requireRealScaleReceipt) throw new Error('--require-real-scale-receipt may only be supplied once');
+        requireRealScaleReceipt = true;
+      }
+      continue;
+    }
     if (flag === '--join-static-authority') {
       if (command !== 'authority:overlap:verify') throw new Error('--join-static-authority is only valid for authority:overlap:verify');
       if (joinStaticAuthority) throw new Error('--join-static-authority may only be supplied once');
@@ -135,7 +187,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       continue;
     }
     if (flag === '--from-lock' || flag === '--acknowledge-no-live-writer') {
-      if (command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:recover' && command !== 'authority:overlap:recover') throw new Error(`${flag} is only valid for a recovery command`);
+      if (command !== 'acquisition:recover-publication' && command !== 'tool-authority:recover' && command !== 'register:recover' && command !== 'authority:overlap:recover' && command !== 'static-authority:recover') throw new Error(`${flag} is only valid for a recovery command`);
       if (flag === '--from-lock') {
         if (fromLock) throw new Error('--from-lock may only be supplied once');
         fromLock = true;
@@ -145,7 +197,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--operation', '--expected-current-index-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -155,12 +207,18 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--publication-proposal') {
       if (proposalPath !== undefined) throw new Error('--publication-proposal may only be supplied once');
       proposalPath = value;
+    } else if (flag === '--input-generation-proposal') {
+      if (inputGenerationProposalPath !== undefined) throw new Error('--input-generation-proposal may only be supplied once');
+      inputGenerationProposalPath = value;
     } else if (flag === '--operation') {
       if (operation !== undefined || (value !== 'create' && value !== 'replace')) throw new Error('--operation must be create or replace');
       operation = value;
     } else if (flag === '--expected-current-index-sha256') {
       if (expectedCurrentIndexSha256 !== undefined) throw new Error('--expected-current-index-sha256 may only be supplied once');
       expectedCurrentIndexSha256 = value;
+    } else if (flag === '--expected-current-static-generation-sha256') {
+      if (expectedCurrentStaticGenerationSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--expected-current-static-generation-sha256 must be a lowercase SHA-256');
+      expectedCurrentStaticGenerationSha256 = value;
     } else if (flag === '--tool-profile') {
       if (toolProfile !== undefined) throw new Error('--tool-profile may only be supplied once');
       toolProfile = value;
@@ -261,6 +319,19 @@ function parse(argv: readonly string[]): ParsedArguments {
     index += 1;
   }
   if (!root) throw new Error(`${command ?? 'admission command'} requires --root <v10.3-root or review/admission>`);
+  const authorityGraphOption = inputGenerationProposalPath !== undefined
+    || expectedCurrentStaticGenerationSha256 !== undefined
+    || expectCurrentAbsent;
+  if (authorityGraphOption && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover') {
+    throw new Error(`Unexpected authority rebuild option for ${command}`);
+  }
+  if (requireRealScaleReceipt
+    && command !== 'rebuild:pre-witness'
+    && command !== 'static-authority:recover'
+    && command !== 'authority:overlap'
+    && command !== 'authority:overlap:verify') {
+    throw new Error(`--require-real-scale-receipt is not valid for ${command}`);
+  }
   if (command === 'tool-authority:intent') {
     if (!toolProfile || !action || !canonicalArgvSha256 || !inputSetSha256 || !executableBehaviorSha256 || invocationIntentId || outputSetSha256 || exitCode !== undefined || observedResourceUsage !== undefined || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:intent requires --tool-profile, --action, and the three input hashes only');
   } else if (command === 'tool-authority:receipt') {
@@ -277,11 +348,44 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (!/^[a-f0-9]{64}$/.test(invocationIntentId) || !/^[a-f0-9]{64}$/.test(toolReceiptId) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) {
       throw new Error('tool-authority:resolve selectors must be lowercase SHA-256 values');
     }
-  } else if (command === 'evidence:verify' || command === 'source:census') {
+  } else if (command === 'evidence:verify' || command === 'source:census' || command === 'census:preview') {
     if (proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter) throw new Error(`Unexpected acquisition option for ${command}`);
-    if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error('evidence:verify requires --tool-profile admission-context-v1 and --invocation-intent');
-    if (command === 'source:census' && (!sourceRegisterPath || !sourceReviewsPath)) throw new Error('source:census requires --source-register and --source-reviews');
+    if (toolProfile !== 'admission-context-v1' || !invocationIntentId) throw new Error(`${command} requires --tool-profile admission-context-v1 and --invocation-intent`);
+    if ((command === 'source:census' || command === 'census:preview') && (!sourceRegisterPath || !sourceReviewsPath)) throw new Error(`${command} requires --source-register and --source-reviews`);
     if (command === 'evidence:verify' && (sourceRegisterPath || sourceReviewsPath)) throw new Error('Unexpected source census option for evidence:verify');
+    if (inputGenerationProposalPath || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt) throw new Error(`Unexpected authority rebuild option for ${command}`);
+  } else if (command === 'rebuild:pre-witness') {
+    if (!inputGenerationProposalPath || !operation || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !requireRealScaleReceipt) {
+      throw new Error('rebuild:pre-witness requires --input-generation-proposal, --operation, --tool-profile admission-static-ledgers-v1, and --require-real-scale-receipt');
+    }
+    if (operation === 'create' && (!expectCurrentAbsent || expectedCurrentStaticGenerationSha256 !== undefined)) {
+      throw new Error('rebuild:pre-witness create requires --expect-current-absent and forbids --expected-current-static-generation-sha256');
+    }
+    if (operation === 'replace' && (expectCurrentAbsent || expectedCurrentStaticGenerationSha256 === undefined)) {
+      throw new Error('rebuild:pre-witness replace requires --expected-current-static-generation-sha256 and forbids --expect-current-absent');
+    }
+    if (proposalPath || expectedCurrentIndexSha256 || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256
+      || invocationIntentId || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath
+      || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256
+      || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot
+      || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256
+      || outputSetSha256 || exitCode !== undefined || observedResourceUsage || joinStaticAuthority) {
+      throw new Error('rebuild:pre-witness accepts only its root, input-generation proposal, operation/CAS, static-ledgers profile, and real-scale receipt requirement; its outer action is fixed to rebuild:pre-witness');
+    }
+  } else if (command === 'static-authority:recover') {
+    if (!toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter) {
+      throw new Error('static-authority:recover requires exactly one of --from-lock or --transaction-id, --recovery-nonce, --acknowledge-no-live-writer, and --tool-profile admission-static-ledgers-v1');
+    }
+    if (!/^[a-f0-9]{64}$/.test(recoveryNonce)) throw new Error('--recovery-nonce must be a lowercase SHA-256');
+    if (proposalPath || inputGenerationProposalPath || operation || expectedCurrentIndexSha256 || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent
+      || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || invocationIntentId
+      || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId
+      || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath
+      || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined
+      || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256 || exitCode !== undefined
+      || observedResourceUsage || joinStaticAuthority) {
+      throw new Error('static-authority:recover accepts only its root, transaction selector, nonce/no-live-writer acknowledgement, and static-ledgers profile; its outer action is fixed to static-authority:recover');
+    }
   } else if (command === 'authority:overlap') {
     if (!overlapUniversePath || !overlapRecordsPath || !overlapPolicyPath || !overlapNormalizersPath || !overlapBytesRoot || !overlapToolSnapshotPath || generation === undefined || !inputGenerationSha256 || !toolProfile || toolProfile !== 'admission-static-ledgers-v1' || !invocationIntentId || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256) throw new Error('authority:overlap requires --universe, --records, --policy, --normalizers, --bytes-root, --tool-snapshot, --generation, --input-generation-sha256, static-ledgers profile, invocation intent, and tool receipt fields');
     if (!/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Overlap tool receipt hashes must be lowercase SHA-256');
@@ -318,7 +422,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, operation, expectedCurrentIndexSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
+  return { command, root, proposalPath, inputGenerationProposalPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined };
 }
 
 async function main(): Promise<void> {
@@ -326,6 +430,20 @@ async function main(): Promise<void> {
   try {
     requestedCommand = process.argv[2] ?? requestedCommand;
     const args = parse(process.argv.slice(2));
+    if (args.command === 'rebuild:pre-witness' || args.command === 'static-authority:recover') {
+      // Parsing is intentionally complete and strict so scripts can detect
+      // an unsupported boundary before any filesystem access. Do not wire a
+      // proposal path into the fixture-scale adapter: its nested
+      // authority:overlap receipt is not the outer rebuild authority, and a
+      // loader-only read of current/static bytes cannot create a corpus graph.
+      rejectUnavailableAuthorityCommand(args.command);
+    }
+    if (args.requireRealScaleReceipt && (args.command === 'authority:overlap' || args.command === 'authority:overlap:verify')) {
+      throw new AdmissionAuthorityCliUnavailableError(
+        args.command,
+        `--require-real-scale-receipt is not satisfied by the fixture-scale ${args.command} path; real-corpus resource receipt enforcement is not implemented`,
+      );
+    }
     if (args.command === 'tool-authority:intent') {
       const result = await publishAdmissionToolInvocationIntent({
         toolAuthorityRoot: toolAuthorityRootFor(args.root),
@@ -566,7 +684,7 @@ async function main(): Promise<void> {
       process.exitCode = 2;
       return;
     }
-    if (args.command === 'source:census') {
+    if (args.command === 'source:census' || args.command === 'census:preview') {
       const registerBytes = await readFile(await requireContainedAdmissionPath(args.root, args.sourceRegisterPath!));
       const reviewBytes = await readFile(await requireContainedAdmissionPath(args.root, args.sourceReviewsPath!));
       let sourceRegister: unknown;
@@ -579,7 +697,9 @@ async function main(): Promise<void> {
       }
       if (!Array.isArray(sourceReviews)) throw new Error('source:census source reviews must be a JSON array');
       const diagnostic = buildAdmissionSourceCensus({ context: verified.context, sourceRegister, sourceReviews });
-      output({ ok: true, command: args.command, ...diagnostic });
+      const result = { ok: true, command: args.command, ...diagnostic };
+      if (args.command === 'census:preview') outputCanonical(result);
+      else output(result);
       return;
     }
     output({
@@ -591,6 +711,11 @@ async function main(): Promise<void> {
       unavailableEvidenceIds: verified.context.unavailableEvidenceIds,
     });
   } catch (error) {
+    if (error instanceof AdmissionAuthorityCliUnavailableError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: error.code, status: 'unavailable', errors: [error.message] })}\n`);
+      process.exitCode = 2;
+      return;
+    }
     if (error instanceof OverlapPublicationPostCompletionError) {
       output({ ok: true, command: requestedCommand, ...error.result, warning: error.message });
       return;
@@ -606,7 +731,7 @@ async function main(): Promise<void> {
       return;
     }
     const failure = JSON.stringify({ ok: false, command: requestedCommand, errors: [error instanceof Error ? error.message : String(error)] });
-    if (requestedCommand.startsWith('acquisition:') || requestedCommand.startsWith('register:') || requestedCommand === 'tool-authority:recover') process.stderr.write(`${failure}\n`);
+    if (requestedCommand.startsWith('acquisition:') || requestedCommand.startsWith('register:') || requestedCommand === 'tool-authority:recover' || requestedCommand === 'rebuild:pre-witness' || requestedCommand === 'static-authority:recover') process.stderr.write(`${failure}\n`);
     else output(JSON.parse(failure));
     process.exitCode = 2;
   }

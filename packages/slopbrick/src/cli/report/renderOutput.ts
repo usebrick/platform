@@ -7,10 +7,11 @@
 // advice, etc.) — this file just routes between them.
 //
 // Side effect: writes to stdout via `logger.info` and (for
-// `--html=path` / `--json=path`) to disk via `writeFileSync`.
+// `--html=path` / `--json=path`) to disk via atomic temp-file publication.
 
+import { randomUUID } from 'node:crypto';
+import { renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { writeFileSync } from 'node:fs';
 
 import { logger } from '../../engine/logger';
 import { formatJson } from '../../report/json';
@@ -30,6 +31,22 @@ import {
 import type { CliGlobalOptions } from '../scan';
 import type { ProjectReport } from '../../types';
 import { validateOutputFormat } from './output-format.js';
+
+/**
+ * Publish machine-readable reports as one visible filesystem transition.
+ * Watch consumers and CI readers can otherwise observe the target after
+ * truncation but before the renderer has finished writing it.
+ */
+function writeReportFileAtomically(path: string, content: string): void {
+  const target = resolve(path);
+  const temporary = `${target}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporary, content, { encoding: 'utf8', flag: 'wx' });
+    renameSync(temporary, target);
+  } finally {
+    try { unlinkSync(temporary); } catch { /* rename already published it */ }
+  }
+}
 
 function withoutScoreDerivedViews(options: CliGlobalOptions): CliGlobalOptions {
   return {
@@ -89,7 +106,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
     if (options.json) {
       const json = formatJson(report, { includeScoreExplanation: true });
       if (typeof options.json === 'string') {
-        writeFileSync(resolve(options.json), json);
+        writeReportFileAtomically(options.json, json);
         if (!options.quiet) logger.info(`Wrote JSON report to ${options.json}`);
       } else {
         logger.info(json);
@@ -142,7 +159,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   if (options.html) {
     const html = formatHtml(report);
     if (typeof options.html === 'string') {
-      writeFileSync(resolve(options.html), html);
+      writeReportFileAtomically(options.html, html);
       if (!options.quiet) {
         logger.info(`Wrote HTML report to ${options.html}`);
       }
@@ -155,7 +172,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   if (options.json) {
     const json = formatJson(report);
     if (typeof options.json === 'string') {
-      writeFileSync(resolve(options.json), json);
+      writeReportFileAtomically(options.json, json);
       if (!options.quiet) {
         logger.info(`Wrote JSON report to ${options.json}`);
       }
@@ -207,7 +224,7 @@ export async function outputScanResults(
       json: options.format === 'json' || options.json !== undefined,
     });
     if (typeof options.json === 'string') {
-      writeFileSync(resolve(options.json), json);
+      writeReportFileAtomically(options.json, json);
       if (!options.quiet) logger.info(`Wrote JSON report to ${options.json}`);
     } else if (!options.quiet) {
       logger.info(json);

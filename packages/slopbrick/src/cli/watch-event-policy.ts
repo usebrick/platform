@@ -74,8 +74,11 @@ export function isScannerOwnedPath(
   if (changedPath === incrementalCache || changedPath === `${incrementalCache}.tmp`) {
     return true;
   }
-  if (typeof options.json === 'string' && changedPath === resolve(options.json)) return true;
-  if (typeof options.html === 'string' && changedPath === resolve(options.html)) return true;
+  const reportOutputs = [options.json, options.html].filter((path): path is string => typeof path === 'string');
+  if (reportOutputs.some((path) => {
+    const outputPath = resolve(path);
+    return changedPath === outputPath || (changedPath.startsWith(`${outputPath}.`) && changedPath.endsWith('.tmp'));
+  })) return true;
 
   const refreshesSnippets = Boolean(options.autoRefreshSnippets) ||
     Boolean((config as { autoRefreshSnippets?: boolean } | undefined)?.autoRefreshSnippets);

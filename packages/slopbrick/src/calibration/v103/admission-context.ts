@@ -35,6 +35,9 @@ import {
   validateCalibrationAdmissionQualityLedgerV1,
   validateCalibrationAdmissionRecordStreamV1,
   validateCalibrationAdmissionSourceRegisterReviewSet,
+  isCalibrationAdmissionSourceGenerationApprovalV1,
+  isCalibrationAdmissionSourceGenerationProposalV1,
+  validateCalibrationAdmissionSourceGenerationGraphV1,
   type CalibrationAdmissionPreWitnessBundleV1,
   type CalibrationAdmissionInputGenerationV1,
   type CalibrationAdmissionRecordV103,
@@ -51,6 +54,10 @@ import {
 } from './admission-evidence-context';
 import { resolveAdmissionToolAuthorityReceipt } from './admission-publication';
 import { validatePrebuiltAdmissionAuthorityOverlapJoin } from './admission-authority-overlap-join';
+import {
+  calibrationAdmissionSourceSemanticAuthoritySha256,
+  type PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1,
+} from './admission-authority-rebuild';
 
 const CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 const SOURCES_ROOT = 'sources';
@@ -61,6 +68,7 @@ const STATIC_BUNDLE_PATH = 'pre-witness-bundle.json';
 const OVERLAP_INDEX_PATH = 'index.json';
 const OVERLAP_RESOURCE_PATH = 'overlap-resource-receipt.json';
 const OVERLAP_LEDGER_PATH = 'overlap-ledger.json';
+const SOURCE_SEMANTIC_AUTHORITY_PATH = 'source-semantic-authority.json';
 const OVERLAP_TOOL_PROFILE_ID = 'admission-static-ledgers-v1';
 const REQUIRED_STATIC_ARTIFACTS = [
   ['ledger', 'privacy-ledger.json'],
@@ -226,10 +234,12 @@ async function readCompleteGenerationTree(
   artifacts: readonly { readonly relativePath: string }[],
   label: string,
   descriptorName = 'generation.json',
+  additionalRelativePaths: readonly string[] = [],
 ): Promise<Readonly<Record<string, Buffer>>> {
   await rejectSymlinkAncestors(root.admissionRoot, directory);
   const expected = new Set(artifacts.map((artifact) => artifact.relativePath));
   expected.add(descriptorName);
+  for (const relativePath of additionalRelativePaths) expected.add(relativePath);
   const seen = new Set<string>();
   const walk = async (current: string, relativeDirectory: string): Promise<void> => {
     await rejectSymlinkAncestors(root.admissionRoot, current);
@@ -608,6 +618,34 @@ type VerifiedSourceAuthority = Readonly<{
   readonly currentBytesSha256: string;
   readonly generationBytesSha256: string;
   readonly sourceReviewBytesSha256: string;
+  /** Raw canonical hash of the candidate semantic-authority sidecar. */
+  readonly semanticAuthorityBytesSha256?: string;
+}>;
+
+function isSourceSemanticAuthorityShape(value: unknown): value is PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1 {
+  if (!isRecord(value)) return false;
+  const expectedKeys = [
+    'version', 'sourceId', 'proposalId', 'blindAssignment', 'decisions', 'blindReviewReceipt',
+    ...(Object.prototype.hasOwnProperty.call(value, 'acquisitionSnapshot') ? ['acquisitionSnapshot'] : []),
+    ...(Object.prototype.hasOwnProperty.call(value, 'materializationReceipt') ? ['materializationReceipt'] : []),
+    ...(Object.prototype.hasOwnProperty.call(value, 'evidenceBundle') ? ['evidenceBundle'] : []),
+    'authoritySha256',
+  ].sort();
+  const actualKeys = Object.keys(value).sort();
+  return actualKeys.length === expectedKeys.length
+    && actualKeys.every((key, index) => key === expectedKeys[index])
+    && value.version === 'v10.3-admission-source-semantic-authority-v1'
+    && typeof value.sourceId === 'string'
+    && typeof value.proposalId === 'string'
+    && Array.isArray(value.decisions)
+    && value.decisions.length === 2
+    && typeof value.authoritySha256 === 'string'
+    && /^[a-f0-9]{64}$/u.test(value.authoritySha256)
+    && calibrationAdmissionSourceSemanticAuthoritySha256(value) === value.authoritySha256;
+}
+
+type VerifiedCandidateSourceAuthority = Readonly<{
+  readonly semanticAuthorityBytes: Buffer;
 }>;
 
 async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: CalibrationAdmissionPreWitnessBundleV1): Promise<ReadonlyMap<string, VerifiedSourceAuthority>> {
@@ -649,10 +687,62 @@ async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: Calibr
       || !sourceReviewBytes.equals(expectedSourceReviewBytes)) {
       throw new Error(`source ${sourceId} source-review artifact receipt does not match canonical bytes/hash`);
     }
-    if (generation.approval.kind !== 'genesis_quarantine') {
-      throw new Error(`source ${sourceId} candidate authority requires persisted semantic source authority; runtime context is quarantine-only`);
+    let candidate: VerifiedCandidateSourceAuthority | undefined;
+    if (generation.approval.kind === 'independent_review') {
+      const proposalPath = join(
+        root.admissionRoot,
+        SOURCES_ROOT,
+        sourceId,
+        'proposals',
+        `${generation.proposalId}.json`,
+      );
+      const approvalPath = join(
+        root.admissionRoot,
+        SOURCES_ROOT,
+        sourceId,
+        'proposals',
+        `${generation.proposalId}-approval.json`,
+      );
+      const semanticPath = join(generationDirectory, SOURCE_SEMANTIC_AUTHORITY_PATH);
+      const [proposalRead, approvalRead, semanticRead] = await Promise.all([
+        readCanonicalJsonWithBytes(root, proposalPath, `source ${sourceId} source-generation proposal`),
+        readCanonicalJsonWithBytes(root, approvalPath, `source ${sourceId} source-generation approval`),
+        readCanonicalJsonWithBytes(root, semanticPath, `source ${sourceId} semantic authority`),
+      ]);
+      if (!isCalibrationAdmissionSourceGenerationProposalV1(proposalRead.value)) {
+        throw new Error(`source ${sourceId} source-generation proposal failed Core validation`);
+      }
+      if (!isCalibrationAdmissionSourceGenerationApprovalV1(approvalRead.value)) {
+        throw new Error(`source ${sourceId} source-generation approval failed Core validation`);
+      }
+      if (!isSourceSemanticAuthorityShape(semanticRead.value)) {
+        throw new Error(`source ${sourceId} semantic authority failed shape or self-hash validation`);
+      }
+      const graph = validateCalibrationAdmissionSourceGenerationGraphV1({
+        proposal: proposalRead.value,
+        sourceReview: review,
+        generation,
+        approval: approvalRead.value,
+        blindAssignment: semanticRead.value.blindAssignment,
+        decisions: semanticRead.value.decisions,
+        blindReviewReceipt: semanticRead.value.blindReviewReceipt,
+        ...(semanticRead.value.evidenceBundle === undefined ? {} : { evidenceBundle: semanticRead.value.evidenceBundle }),
+        ...(semanticRead.value.acquisitionSnapshot === undefined ? {} : { acquisitionSnapshot: semanticRead.value.acquisitionSnapshot }),
+        ...(semanticRead.value.materializationReceipt === undefined ? {} : { materializationReceipt: semanticRead.value.materializationReceipt }),
+      });
+      if (!graph.ok) throw new Error(`source ${sourceId} semantic authority graph is invalid: ${graph.errors.join(', ')}`);
+      candidate = {
+        semanticAuthorityBytes: semanticRead.bytes,
+      };
     }
-    await readCompleteGenerationTree(root, generationDirectory, generation.artifacts, `source ${sourceId} generation`, 'source-generation.json');
+    await readCompleteGenerationTree(
+      root,
+      generationDirectory,
+      generation.artifacts,
+      `source ${sourceId} generation`,
+      'source-generation.json',
+      candidate === undefined ? [] : [SOURCE_SEMANTIC_AUTHORITY_PATH],
+    );
     if (authorities.has(sourceId)) throw new Error(`source ${sourceId} appears more than once in the rich bundle`);
     authorities.set(sourceId, {
       sourceId,
@@ -662,6 +752,7 @@ async function verifySourceReviewAuthorities(root: AdmissionRoot, bundle: Calibr
       currentBytesSha256: hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(current), 'utf8')),
       generationBytesSha256: hashBytes(Buffer.from(calibrationAdmissionCanonicalJson(generation), 'utf8')),
       sourceReviewBytesSha256: hashBytes(sourceReviewBytes),
+      ...(candidate === undefined ? {} : { semanticAuthorityBytesSha256: hashBytes(candidate.semanticAuthorityBytes) }),
     });
   }
   return authorities;
@@ -742,6 +833,9 @@ async function verifyRuntimeInputGeneration(
       currentBytesSha256: authority.currentBytesSha256,
       generationBytesSha256: authority.generationBytesSha256,
       sourceReviewBytesSha256: authority.sourceReviewBytesSha256,
+      ...(authority.semanticAuthorityBytesSha256 === undefined
+        ? {}
+        : { semanticAuthorityBytesSha256: authority.semanticAuthorityBytesSha256 }),
     })));
   return {
     generationSha256: generation.generationSha256,
