@@ -21,7 +21,6 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 
 import {
   calibrationAdmissionCanonicalJson,
-  calibrationAdmissionSearchReceiptSha256,
   calibrationAdmissionSha256,
   calibrationAdmissionToolReceiptSha256,
   calibrationAdmissionWitnessPublicationCompletionSha256,
