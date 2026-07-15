@@ -816,3 +816,42 @@ with one worker and a 2 GiB heap cap. Build passes with the existing non-fatal
 Zod declaration warnings. This is a planner-only checkpoint; filesystem
 publication/recovery, CLI, authority generation, corpus admission, and release
 remain open. No corpus or remote state changed.
+
+### Task 2B fixture-scale authority publication/recovery checkpoint — 2026-07-15
+
+The explicit-byte filesystem publication slice is implemented at `da15142fc`
+and hardened after independent adversarial review at `ec85d754c`, with
+boundary-fault normalization at `1b7b1bee1`. The
+publisher/recovery API is intentionally fixture-scale: it accepts an already
+validated graph and planner result, uses only the fixed `review/admission`
+topology, and performs no corpus discovery, network, CLI, witness, or remote
+I/O.
+
+The implementation now has no-clobber regular-file writes, fsync boundaries,
+staged-to-final renames, lock/transaction journals, expected-current CAS, and
+last-write current-pointer promotion. Recovery validates lock/transaction
+identity and selectors, planner/graph ancestry and source descriptor joins,
+state-to-graph/tool joins, exact known bytes at every durable phase, and final
+source/current pointers before cleanup. Unknown files in promoted generations
+are preserved. Symlink/path substitution, current-pointer TOCTOU, unsupported
+`overlap_generation_verified`, forged direct-plan paths, wrong nonces, and
+tampered complete/promoted outputs fail closed. Explicitly acknowledged
+lock-only journals and orphaned complete transactions are cleanable.
+
+Focused authority/loader/validator/planner tests pass **4 files / 38 tests**;
+SlopBrick TypeScript and diff-check pass. The latest package-wide one-worker
+run is **313 files / 5 skipped; 3,596 tests / 9 skipped** in 245.32 seconds
+with a 2 GiB heap cap. The package self-scan remains 7.2 AI Slop Score against
+the 15 threshold; the three compression/Zipf/Heaps findings are default-off
+audit diagnostics.
+
+This does not close Task 2B. Source-proposal bytes and indexed tool-receipt
+objects/snapshot-membership are intentionally outside this prebuilt graph
+contract, so `complete` proves local publication only. The ledger remains
+`98/178` continuation and `2/76` admission; the census remains 329/329
+registered/reviewed, 452,382 quarantined/unrepresented, zero candidate/
+eligible, with `static_authority_unavailable` and
+`witness_authority_unavailable`. Next: source-proposal/approval and indexed
+tool-receipt authority, operation-aware CLI/resource authority, real
+static/witness context, then corpus admission/calibration. No corpus or
+remote/release state changed.
