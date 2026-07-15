@@ -1049,3 +1049,48 @@ blockers `static_authority_unavailable` and `witness_authority_unavailable`.
 
 Remaining: release review, then the mutating adapter with a coherent snapshot
 and candidate semantic-authority loading before real-corpus replay.
+
+### Latest Task 2B candidate-aware mutating authority-rebuild adapter checkpoint — 2026-07-15
+
+The fixture-scale library adapter is implemented in
+`packages/slopbrick/src/calibration/v103/admission-authority-rebuild-adapter.ts`
+and evidenced by `.superpowers/sdd/task-2b-runtime-adapter-report.md`. It
+preflights the indexed `admission-static-ledgers-v1` /
+`authority:overlap` tool chain against the static-generation snapshot before
+mutation, then wraps publication/recovery with strict complete-boundary and
+post-success graph reopens. Every reopened object and raw declared artifact
+byte is compared to the supplied graph. Candidate `independent_review`
+sources require their persisted semantic-authority sidecar; genesis-quarantine
+sources remain sidecar-free. A recovery fault fixture and a mismatched indexed
+receipt fixture prove the adapter's recovery/preflight boundaries.
+
+The adapter also runtime-validates the fixed selector shape/values, the
+in-memory graph self-hashes/byte pairs, and replace prior-current evidence
+before the publisher can create a lock. The only caller-selected read path is
+an admission-root-contained prior-current evidence path. Recovery of a journal
+already at `complete` now invokes the adapter's strict hook before cleanup.
+
+Focused coverage is **5 files / 53 tests**. SlopBrick typecheck/build and the
+package-wide one-worker gate pass **317 files / 5 skipped; 3,627 tests passed /
+9 skipped** under a 2 GiB heap cap. Existing Zod declaration warnings and
+expected fixture stderr remain non-fatal. This is still a library-only
+boundary: no CLI, corpus replay, repository acquisition, label promotion,
+package/version, remote, release, publish, or deployment changed. The census
+remains **329/329** reviewed sources, **452,382** quarantined/unrepresented
+units, zero candidate/eligible, with blockers
+`static_authority_unavailable` and `witness_authority_unavailable`.
+
+The required explicit package-local self-scan was rerun as a diagnostic. It
+analyzed 235 files with zero parse/timeout/crash/internal failures, but scored
+AI Slop **17.3** against the configured 15 threshold (157 active low/medium
+diagnostics, security 100/100 with zero security findings). Its previous
+baseline was rejected for a config-hash mismatch; no new baseline was
+accepted. This is a follow-up refactor/calibration-policy item, not a passing
+release self-scan.
+
+Limits remain explicit: the runtime context still owns the complete overlap
+generation/envelope join; reopens are sequential rather than one atomic
+cross-object snapshot; and the existing publisher still writes proposal and
+input-generation finals before later transaction-owned promotions. Independent
+review is the next gate, followed by a mutating CLI only after approval, then
+real-corpus replay.

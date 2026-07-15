@@ -1011,6 +1011,13 @@ async function run(context: PublicationContext): Promise<PrebuiltAuthorityPublic
   if (state === 'complete') {
     assertTransactionStateBindings(context);
     await verifyDurableOutputs(context);
+    // Recovery of an already-complete journal must still run the caller's
+    // strict verification hook before deleting the journals. Publication's
+    // normal path invokes this boundary immediately after persisting the
+    // complete phase; recovery must preserve the same pre-cleanup proof.
+    await boundary(context, 'complete');
+    assertTransactionStateBindings(context);
+    await verifyDurableOutputs(context);
     const completed = result(context, 'complete', true);
     await cleanupJournals(context);
     return completed;
