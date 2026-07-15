@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-witness-routing-reference.schema.json",
+  "title": "CalibrationAdmissionWitnessRoutingReferenceV1",
+  "description": "Hash-bound routing reference for one immutable witness bundle and its publication completion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gate", "kind", "bundleRelativePath", "bundleSha256", "publicationCompletionRelativePath", "publicationCompletionSha256", "referenceSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-witness-routing-reference-v1" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "kind": { "enum": ["search_result", "witness_review"] },
+    "bundleRelativePath": { "$ref": "#/$defs/relativePath" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "publicationCompletionRelativePath": { "$ref": "#/$defs/relativePath" },
+    "publicationCompletionSha256": { "$ref": "#/$defs/sha256" },
+    "referenceSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

@@ -397,6 +397,30 @@ export type { CalibrationAdmissionSearchResultBundleV1 } from './generated/calib
 export type { CalibrationAdmissionWitnessReviewReceiptV1 } from './generated/calibration-admission-witness-review-receipt';
 export type { CalibrationAdmissionWitnessReviewBundleV1 } from './generated/calibration-admission-witness-review-bundle';
 export type { CalibrationAdmissionCensusV103 } from './generated/calibration-admission-census';
+export type { CalibrationAdmissionWitnessRoutingReferenceV1 } from './generated/calibration-admission-witness-routing-reference';
+export type { CalibrationAdmissionWitnessPublicationCompletionV1 } from './generated/calibration-admission-witness-publication-completion';
+export type { CalibrationAdmissionWitnessPublicationLockV1 } from './generated/calibration-admission-witness-publication-lock';
+export type { CalibrationAdmissionWitnessPublicationTransactionV1 } from './generated/calibration-admission-witness-publication-transaction';
+export {
+  calibrationAdmissionWitnessRoutingReferenceSha256,
+  calibrationAdmissionWitnessPublicationCompletionSha256,
+  calibrationAdmissionWitnessPublicationLockSha256,
+  calibrationAdmissionWitnessPublicationTransactionSha256,
+  validateCalibrationAdmissionWitnessRoutingReferenceV1,
+  isCalibrationAdmissionWitnessRoutingReferenceV1,
+  validateCalibrationAdmissionWitnessPublicationCompletionV1,
+  isCalibrationAdmissionWitnessPublicationCompletionV1,
+  validateCalibrationAdmissionWitnessPublicationLockV1,
+  isCalibrationAdmissionWitnessPublicationLockV1,
+  validateCalibrationAdmissionWitnessPublicationTransactionV1,
+  isCalibrationAdmissionWitnessPublicationTransactionV1,
+  validateCalibrationAdmissionWitnessPublicationGraph,
+  validateCalibrationAdmissionWitnessPublicationGraphV1,
+} from './calibration-admission-witness-publication';
+export type {
+  CalibrationAdmissionWitnessPublicationValidationV1,
+  CalibrationAdmissionWitnessPublicationGraphInputV1,
+} from './calibration-admission-witness-publication';
 export type { CalibrationAdmissionInputGenerationProposalV1 } from './generated/calibration-admission-input-generation-proposal';
 export type { CalibrationAdmissionInputGenerationV1 } from './generated/calibration-admission-input-generation';
 export type { CalibrationAdmissionStaticAuthorityGenerationV1 } from './generated/calibration-admission-static-authority-generation';

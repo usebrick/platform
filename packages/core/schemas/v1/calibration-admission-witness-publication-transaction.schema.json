@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-witness-publication-transaction.schema.json",
+  "title": "CalibrationAdmissionWitnessPublicationTransactionV1",
+  "description": "Crash-recovery journal for one hash-addressed witness bundle publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "operation", "gate", "invocationIntentId", "bundleSha256", "bundleBytes", "expectedRoutingReferenceState", "bundleTemporaryRelativePath", "bundleFinalRelativePath", "completionTemporaryRelativePath", "routingReferenceTemporaryRelativePath", "routingReferenceFinalRelativePath", "recoveryNonce", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-witness-publication-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["search_result", "witness_review"] },
+    "gate": { "enum": ["smoke", "canary"] },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "bundleBytes": { "type": "integer", "minimum": 1 },
+    "expectedRoutingReferenceState": { "$ref": "#/$defs/referenceState" },
+    "bundleTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "bundleFinalRelativePath": { "$ref": "#/$defs/relativePath" },
+    "completionTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "routingReferenceTemporaryRelativePath": { "$ref": "#/$defs/relativePath" },
+    "routingReferenceFinalRelativePath": { "$ref": "#/$defs/relativePath" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "referenceState": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "referenceSha256"], "properties": { "kind": { "const": "existing" }, "referenceSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "toolReceiptFields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256"],
+      "properties": {
+        "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+        "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+        "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "receiptSummary": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "searchToolReceiptId", "searchToolReceiptSha256", "publicationToolReceiptId", "publicationToolReceiptSha256"], "properties": {
+          "kind": { "const": "search_result" }, "searchToolReceiptId": { "$ref": "#/$defs/sha256" }, "searchToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptId": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" }
+        } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "publicationToolReceiptId", "publicationToolReceiptSha256"], "properties": {
+          "kind": { "const": "witness_review" }, "publicationToolReceiptId": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" }
+        } }
+      ]
+    },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "const": "intent_fsynced" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256"], "properties": { "phase": { "const": "required_tool_receipts_indexed" }, "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256"], "properties": { "phase": { "enum": ["bundle_staged_fsynced", "bundle_promoted", "output_directory_fsynced"] }, "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce"], "properties": { "phase": { "const": "publication_tool_receipt_started" }, "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/sha256" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256", "publicationToolReceiptId", "publicationToolReceiptSha256", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce", "publicationCompletionSha256", "publicationCompletionFinalRelativePath", "nextRoutingReferenceSha256"], "properties": { "phase": { "enum": ["publication_tool_receipt_indexed", "completion_staged_fsynced", "completion_promoted", "completion_directory_fsynced", "routing_reference_staged_fsynced", "routing_reference_promoted", "projections_directory_fsynced"] }, "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptId": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/sha256" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" }, "publicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "publicationCompletionFinalRelativePath": { "$ref": "#/$defs/relativePath" }, "nextRoutingReferenceSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "toolAuthorityIndexSha256", "publicationToolReceiptId", "publicationToolReceiptSha256", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce", "publicationCompletionSha256", "publicationCompletionFinalRelativePath", "nextRoutingReferenceSha256", "completion"], "properties": { "phase": { "const": "complete" }, "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" } }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptId": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/sha256" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" }, "publicationCompletionSha256": { "$ref": "#/$defs/sha256" }, "publicationCompletionFinalRelativePath": { "$ref": "#/$defs/relativePath" }, "nextRoutingReferenceSha256": { "$ref": "#/$defs/sha256" }, "completion": { "$ref": "#/$defs/receiptSummary" } } }
+      ]
+    }
+  }
+}

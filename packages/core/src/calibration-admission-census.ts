@@ -486,7 +486,7 @@ function validateCensusGate(value: unknown, gate: 'smoke' | 'canary', errors: st
     else if (!isSha256(value[key])) errors.push(`${gate}/${key} is invalid`);
   }
   if (!Array.isArray(value.gateFailures) || !sortedUniqueByPredicate(value.gateFailures, (entry) => typeof entry === 'string' && CONSTRAINT_ID.test(entry), true)) errors.push(`${gate} gateFailures must be sorted and valid`);
-  if (value.ready && (!isSha256(value.witnessSha256) || !isSha256(value.witnessReviewBundleSha256) || Object.prototype.hasOwnProperty.call(value, 'infeasibilityCertificateSha256'))) errors.push(`${gate} cannot be ready without an approved witness review and without infeasibility`);
+  if (value.ready && (!isSha256(value.witnessSha256) || !isSha256(value.witnessReviewBundleSha256) || !isSha256(value.witnessReviewPublicationCompletionSha256) || typeof value.witnessReviewPublicationCompletionRelativePath !== 'string' || Object.prototype.hasOwnProperty.call(value, 'infeasibilityCertificateSha256'))) errors.push(`${gate} cannot be ready without an approved witness review publication and without infeasibility`);
   if (value.countReady && (value.deficitVerifiedAi !== 0 || value.deficitVerifiedHuman !== 0)) errors.push(`${gate} countReady requires zero polarity deficits`);
 }
 

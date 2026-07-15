@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-witness-publication-completion.schema.json",
+  "title": "CalibrationAdmissionWitnessPublicationCompletionV1",
+  "description": "Durable, self-hashed completion marker for a witness bundle publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gate", "kind", "parentTransactionId", "invocationIntentId", "bundleRelativePath", "bundleSha256", "namedPrimaryOutputProjectionSha256", "requiredToolReceiptIds", "requiredToolReceiptSha256s", "publicationToolReceiptId", "publicationToolReceiptSha256", "toolAuthorityIndexSha256", "nestedHandoff", "completionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-witness-publication-completion-v1" },
+    "gate": { "enum": ["smoke", "canary"] },
+    "kind": { "enum": ["search_result", "witness_review"] },
+    "parentTransactionId": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "bundleRelativePath": { "$ref": "#/$defs/relativePath" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "namedPrimaryOutputProjectionSha256": { "$ref": "#/$defs/sha256" },
+    "requiredToolReceiptIds": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "requiredToolReceiptSha256s": { "type": "array", "items": { "$ref": "#/$defs/sha256" }, "uniqueItems": true },
+    "publicationToolReceiptId": { "$ref": "#/$defs/sha256" },
+    "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" },
+    "nestedHandoff": { "$ref": "https://usebrick.dev/schemas/v1/calibration-nested-publication-handoff.schema.json" },
+    "completionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*(?:^|/)\\.(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}
