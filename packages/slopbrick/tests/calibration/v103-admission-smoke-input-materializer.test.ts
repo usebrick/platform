@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -236,6 +236,21 @@ describe('v10.3 smoke input materializer', () => {
       await expect(readFile(join(result.value.finalDirectory, 'receipt.json'), 'utf8')).resolves.toContain('diagnosticOnly');
       const replay = await materializeAdmissionSmokeInputGeneration(request(root));
       expect(replay.ok).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not delete a pre-existing staging directory owned by another transaction', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    const staging = join(root, '.staging-smoke-transaction');
+    const sentinel = join(staging, 'owned-by-other-transaction');
+    try {
+      await mkdir(staging);
+      await writeFile(sentinel, 'keep-me', 'utf8');
+      const result = await materializeAdmissionSmokeInputGeneration(request(root));
+      expect(result.ok).toBe(false);
+      await expect(readFile(sentinel, 'utf8')).resolves.toBe('keep-me');
     } finally {
       await rm(root, { recursive: true, force: true });
     }

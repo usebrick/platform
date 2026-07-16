@@ -457,8 +457,14 @@ export async function materializeAdmissionSmokeInputGeneration(
     diagnosticOnly: true,
     authorityEligible: false,
   };
+  // Only remove a staging directory after this invocation has successfully
+  // created it.  A transaction id is caller-supplied, so an EEXIST from a
+  // concurrent/replayed invocation must never give us ownership of (or
+  // permission to delete) another transaction's staging bytes.
+  let stagingOwned = false;
   try {
     await mkdir(stagingDirectory, { recursive: false });
+    stagingOwned = true;
     await writeFile(join(stagingDirectory, 'proposal.json'), canonicalObjectBytes(proposal));
     await writeFile(join(stagingDirectory, 'generation.json'), canonicalObjectBytes(inputGeneration));
     await writeFile(join(stagingDirectory, 'admission-records.jsonl'), recordBytes);
@@ -476,7 +482,7 @@ export async function materializeAdmissionSmokeInputGeneration(
     await writeFile(join(stagingDirectory, 'receipt.json'), canonicalObjectBytes(receipt));
     await rename(stagingDirectory, finalDirectory);
   } catch (error) {
-    await rm(stagingDirectory, { recursive: true, force: true }).catch(() => undefined);
+    if (stagingOwned) await rm(stagingDirectory, { recursive: true, force: true }).catch(() => undefined);
     return { ok: false, errors: [`materialization_write_failed:${error instanceof Error ? error.message : String(error)}`] };
   }
   return { ok: true, value: { proposal, inputGeneration, receipt, finalDirectory } };
