@@ -16,4 +16,8 @@ describe('Vitest resource budget', () => {
     expect(resolveTestWorkers(16, '99')).toBe(4);
     expect(resolveTestWorkers(16, 'not-a-number')).toBe(4);
   });
+
+  it('keeps the Node-only host preflight contract out of Vitest discovery', () => {
+    expect(config.test?.exclude).toContain('scripts/test-capabilities.test.mjs');
+  });
 });

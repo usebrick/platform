@@ -46,6 +46,9 @@ export default defineConfig({
     exclude: [
       'node_modules',
       'dist',
+      // This is a Node built-in test contract, not a Vitest suite. It is
+      // invoked explicitly by CI and the release hook before the full run.
+      'scripts/test-capabilities.test.mjs',
       'tests/perf/**/*',
       'tests/fixtures/**/*',
       '.worktrees/**',
