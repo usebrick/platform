@@ -536,6 +536,9 @@ export function validateCalibrationAdmissionOverlapUniverseStream(
   const registryByLanguage = registryValidation.ok && registry
     ? new Map(registry.entries.map((entry) => [entry.language, entry.normalizerId]))
     : undefined;
+  const registryNormalizerIds = registryValidation.ok && registry
+    ? new Set(registry.entries.map((entry) => entry.normalizerId))
+    : undefined;
   if (registryValidation.ok && registryValidation.canonicalSha256 !== summary.normalizerRegistrySha256) {
     errors.push('universe normalizerRegistrySha256 does not match registry');
   }
@@ -558,7 +561,7 @@ export function validateCalibrationAdmissionOverlapUniverseStream(
     if (registryByLanguage) {
       const registryNormalizerId = registryByLanguage.get(record.language);
       if (record.normalizationStatus === 'covered' && registryNormalizerId !== record.normalizerId) errors.push(`record ${record.candidateUnitId}: covered row is not bound to the registry language/normalizer`);
-      if (record.normalizationStatus === 'unsupported' && registryNormalizerId === record.normalizerId) errors.push(`record ${record.candidateUnitId}: unsupported row names a covered registry normalizer`);
+      if (record.normalizationStatus === 'unsupported' && registryNormalizerIds?.has(record.normalizerId)) errors.push(`record ${record.candidateUnitId}: unsupported row names a covered registry normalizer`);
     }
   }
   const uniqueIds = new Set(candidateUnitIds);

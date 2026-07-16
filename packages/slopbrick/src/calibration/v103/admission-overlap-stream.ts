@@ -147,6 +147,8 @@ export function openAdmissionOverlapUniverseStream(
       if (isCalibrationAdmissionNormalizerRegistryV1(normalizerRegistry) && normalizerRegistry.registrySha256 !== universe.normalizerRegistrySha256) errors.push('normalizer_registry_hash_mismatch');
       const registryByLanguage = isCalibrationAdmissionNormalizerRegistryV1(normalizerRegistry)
         ? new Map(normalizerRegistry.entries.map((entry) => [entry.language, entry.normalizerId])) : undefined;
+      const registryNormalizerIds = isCalibrationAdmissionNormalizerRegistryV1(normalizerRegistry)
+        ? new Set(normalizerRegistry.entries.map((entry) => entry.normalizerId)) : undefined;
       if (errors.length > 0) { finish(); return; }
 
       const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -172,7 +174,7 @@ export function openAdmissionOverlapUniverseStream(
           // row (for example strict UTF-8 decoding may fail after language
           // dispatch). Only an unsupported language is contradictory when it
           // carries a registered normalizer binding.
-          if (record.normalizationStatus === 'unsupported' && expected === record.normalizerId) { errors.push(`line ${lineNumber}: unresolved_normalizer_binding`); return; }
+          if (record.normalizationStatus === 'unsupported' && registryNormalizerIds?.has(record.normalizerId)) { errors.push(`line ${lineNumber}: unresolved_normalizer_binding`); return; }
         }
         recordCount += 1;
         if (record.normalizationStatus === 'covered') covered += 1;

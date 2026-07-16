@@ -1107,6 +1107,7 @@ export async function buildAdmissionOverlapLedger(
   const distribution = createHash('sha256');
   const recordStreamHash = createHash('sha256');
   const registryByLanguage = new Map(registry.entries.map((entry) => [entry.language, entry]));
+  const registeredNormalizerIds = new Set(registry.entries.map((entry) => entry.normalizerId));
   const languageSlots = new Map(
     [...registryByLanguage.keys()].sort(compare).map((language) => [language, languageSlot(language)] as const),
   );
@@ -1189,7 +1190,7 @@ export async function buildAdmissionOverlapLedger(
         unresolved.add(record.candidateUnitId);
         continue;
       }
-      if (record.normalizationStatus === 'unsupported' && registered?.normalizerId === record.normalizerId) {
+      if (record.normalizationStatus === 'unsupported' && registeredNormalizerIds.has(record.normalizerId)) {
         errors.push(`record ${record.candidateUnitId}: unsupported_normalizer_binding`);
         unresolved.add(record.candidateUnitId);
         continue;

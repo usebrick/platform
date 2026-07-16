@@ -325,6 +325,7 @@ function overlapUniverseStreamRelations(
   if (raw === undefined) return;
   const summary = bundle.overlapUniverse;
   const normalizers = new Map(bundle.normalizerRegistry.entries.map((entry) => [entry.language, entry.normalizerId]));
+  const normalizerIds = new Set(bundle.normalizerRegistry.entries.map((entry) => entry.normalizerId));
   let recordCount = 0;
   let covered = 0;
   let unsupported = 0;
@@ -346,7 +347,7 @@ function overlapUniverseStreamRelations(
     previousId = row.candidateUnitId;
     const expectedNormalizer = normalizers.get(row.language);
     if (row.normalizationStatus === 'covered' && expectedNormalizer !== row.normalizerId) push(errors, `overlap universe row ${row.candidateUnitId} is not bound to its normalizer`);
-    if (row.normalizationStatus === 'unsupported' && expectedNormalizer === row.normalizerId) push(errors, `overlap universe row ${row.candidateUnitId} names a covered normalizer while unsupported`);
+    if (row.normalizationStatus === 'unsupported' && normalizerIds.has(row.normalizerId)) push(errors, `overlap universe row ${row.candidateUnitId} names a covered normalizer while unsupported`);
     recordCount += 1;
     if (row.normalizationStatus === 'covered') covered += 1;
     if (row.normalizationStatus === 'unsupported') { unsupported += 1; unresolved.push(row.candidateUnitId); }

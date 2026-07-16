@@ -103,4 +103,36 @@ describe('bounded incremental overlap-universe stream', () => {
     expect(stats.unreadable).toBe(1);
     expect(stats.unresolvedCandidateUnitIds).toEqual([unreadableRecord.candidateUnitId]);
   });
+
+  it('rejects an unsupported row that reuses a normalizer registered for another language', async () => {
+    const { record, universe, registry } = inputs();
+    const unsupportedBase: Record<string, unknown> = {
+      ...record,
+      language: 'Unknown',
+      normalizationStatus: 'unsupported',
+    };
+    delete unsupportedBase.shingleSetSha256;
+    delete unsupportedBase.shingleCount;
+    const unsupportedRecord = {
+      ...unsupportedBase,
+      recordSha256: calibrationAdmissionOverlapUniverseRecordSha256(unsupportedBase),
+    } as AdmissionOverlapUniverseRecordV1;
+    const bytes = Buffer.from(`${calibrationAdmissionCanonicalJson(unsupportedRecord)}\n`, 'utf8');
+    const universeBase = {
+      ...universe,
+      recordsJsonlSha256: sha256(bytes),
+      covered: 0,
+      unsupported: 1,
+      unresolvedCandidateUnitIds: [unsupportedRecord.candidateUnitId],
+    };
+    const unsupportedUniverse = {
+      ...universeBase,
+      universeSha256: calibrationAdmissionOverlapUniverseSha256(universeBase),
+    } as AdmissionOverlapUniverseV1;
+    const stream = openAdmissionOverlapUniverseStream(bytes, unsupportedUniverse, registry);
+    for await (const _value of stream.records) { /* consume */ }
+    const stats = await stream.complete;
+    expect(stats.ok).toBe(false);
+    expect(stats.errors).toContain('line 1: unresolved_normalizer_binding');
+  });
 });

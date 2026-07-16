@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -20,11 +21,13 @@ import {
   validateCalibrationAdmissionOverlapUniverseRecords,
   validateCalibrationAdmissionOverlapUniverseStream,
 } from '../src/calibration-admission-overlap';
+import { calibrationAdmissionCanonicalJson } from '../src/calibration-admission-evidence';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const schemaDir = join(root, 'schemas', 'v1');
 const fixtureDir = join(root, 'tests', 'fixtures', 'schema');
 const sha = (character: string) => character.repeat(64);
+const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 
 function fixture<T>(name: string): T {
   return JSON.parse(readFileSync(join(fixtureDir, 'valid', `${name}.valid.json`), 'utf8')) as T;
@@ -155,6 +158,42 @@ describe('v10.3 Task 2A Core overlap contracts', () => {
     };
     substitutedRegistry.registrySha256 = calibrationAdmissionNormalizerRegistrySha256(substitutedRegistry);
     expect(validateCalibrationAdmissionOverlapUniverseStream(universe, [record], substitutedRegistry).ok).toBe(false);
+  });
+
+  it('rejects an unsupported row that reuses a normalizer registered for another language', () => {
+    const registry = fixture<Record<string, unknown>>('calibration-admission-normalizer-registry');
+    const record = fixture<Record<string, unknown>>('calibration-admission-overlap-universe-record');
+    const universe = fixture<Record<string, unknown>>('calibration-admission-overlap-universe');
+    const unsupportedBase: Record<string, unknown> = {
+      ...record,
+      language: 'Unknown',
+      normalizationStatus: 'unsupported',
+    };
+    delete unsupportedBase.shingleSetSha256;
+    delete unsupportedBase.shingleCount;
+    const unsupported = {
+      ...unsupportedBase,
+      recordSha256: calibrationAdmissionOverlapUniverseRecordSha256(unsupportedBase),
+    };
+    const canonicalJsonl = Buffer.from(`${calibrationAdmissionCanonicalJson(unsupported)}\n`, 'utf8');
+    const unsupportedUniverseBase = {
+      ...universe,
+      recordsJsonlSha256: digest(canonicalJsonl),
+      covered: 0,
+      unsupported: 1,
+      unresolvedCandidateUnitIds: ['unit-a'],
+    };
+    const unsupportedUniverse = {
+      ...unsupportedUniverseBase,
+      universeSha256: calibrationAdmissionOverlapUniverseSha256(unsupportedUniverseBase),
+    };
+    const validation = validateCalibrationAdmissionOverlapUniverseStream(
+      unsupportedUniverse,
+      [unsupported],
+      registry,
+    );
+    expect(validation.ok).toBe(false);
+    expect(validation.errors).toContain('record unit-a: unsupported row names a covered registry normalizer');
   });
 
   it('fails closed when malformed rows cannot be canonicalized', () => {
