@@ -17,6 +17,7 @@ import {
   isCalibrationAdmissionSourceGenerationProposalV1,
   isCalibrationAdmissionSourceGenerationV1,
   isCalibrationSourceReviewV103,
+  validateCalibrationAdmissionSourceGenerationGraphV1,
   validateCalibrationAdmissionInputGenerationV1,
   validateCalibrationAdmissionInputGenerationProposalV1,
   type CalibrationAdmissionInputGenerationProposalV1,
@@ -213,6 +214,7 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
   if (!isCalibrationAdmissionSourceGenerationApprovalV1(input.approval)) errors.push(`source:${input.sourceId}:approval_invalid`);
   isCanonicalJsonBytes(input.approval, input.approvalBytes, `source:${input.sourceId}:approval`, errors, false);
   let sourceReviewSha256: string | undefined;
+  let sourceReview: unknown;
   if (!(input.sourceReviewBytes instanceof Uint8Array)) {
     errors.push(`source:${input.sourceId}:review_bytes_missing`);
   } else {
@@ -222,6 +224,7 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
       const review = JSON.parse(text.slice(0, -1)) as unknown;
       if (!isCalibrationSourceReviewV103(review) || review.sourceId !== input.sourceId) errors.push(`source:${input.sourceId}:review_invalid`);
       else {
+        sourceReview = review;
         const expectedReviewBytes = Buffer.from(`${calibrationAdmissionCanonicalJson(review)}\n`, 'utf8');
         if (!Buffer.from(input.sourceReviewBytes).equals(expectedReviewBytes)) errors.push(`source:${input.sourceId}:review_bytes_not_canonical`);
         sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(review);
@@ -263,6 +266,35 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
   const sourceArtifacts = (generation as { artifacts?: readonly { relativePath?: unknown; bytes?: unknown; sha256?: unknown }[] }).artifacts;
   const sourceReviewArtifact = sourceArtifacts?.find((entry) => entry.relativePath === 'source-review.json');
   if (sourceReviewArtifact === undefined || sourceReviewArtifact.bytes !== input.sourceReviewBytes.byteLength || sourceReviewArtifact.sha256 !== sha256Bytes(input.sourceReviewBytes)) errors.push(`source:${input.sourceId}:review_artifact_unbound`);
+
+  // Shape and self-hash checks above are not sufficient for candidate source
+  // authority. Route every complete sidecar through Core's cross-object graph
+  // validator so approval, blind review, materialization authority, and the
+  // source review all have to agree. Missing or partial semantic sidecars are
+  // deliberately passed through as undefined and therefore fail closed; this
+  // boundary never fabricates evidence to make a smoke input eligible.
+  if (isRecord(input.semanticAuthority)
+      && sourceReview !== undefined
+      && isCalibrationAdmissionSourceGenerationProposalV1(input.sourceProposal)
+      && isCalibrationAdmissionSourceGenerationV1(input.sourceGeneration)
+      && isCalibrationAdmissionSourceGenerationApprovalV1(input.approval)) {
+    const authority = input.semanticAuthority;
+    const graph = validateCalibrationAdmissionSourceGenerationGraphV1({
+      proposal: input.sourceProposal,
+      sourceReview,
+      generation: input.sourceGeneration,
+      approval: input.approval,
+      blindAssignment: authority.blindAssignment,
+      decisions: Array.isArray(authority.decisions) ? authority.decisions : undefined,
+      blindReviewReceipt: authority.blindReviewReceipt,
+      ...(authority.evidenceBundle === undefined ? {} : { evidenceBundle: authority.evidenceBundle }),
+      ...(authority.acquisitionSnapshot === undefined ? {} : { acquisitionSnapshot: authority.acquisitionSnapshot }),
+      ...(authority.materializationReceipt === undefined ? {} : { materializationReceipt: authority.materializationReceipt }),
+    });
+    if (!graph.ok) {
+      for (const error of graph.errors) errors.push(`source:${input.sourceId}:semantic_authority_graph:${error}`);
+    }
+  }
 }
 
 function labelOf(value: CalibrationAdmissionRecordV103): 'positive' | 'negative' | undefined {
@@ -465,11 +497,14 @@ async function materializeAdmissionSmokeInputGenerationUnchecked(
 
   const sourceGenerationProposals = request.sources.map((source) => {
     const proposal = source.sourceProposal as CalibrationAdmissionSourceGenerationProposalV1;
+    const approval = source.approval as { readonly approvalSha256: string };
     return {
       sourceId: source.sourceId,
       proposalId: proposal.proposalId,
       proposalRelativePath: `review/admission/sources/${source.sourceId}/proposals/${proposal.proposalId}.json`,
       proposalSha256: proposal.proposalSha256,
+      approvalRelativePath: `review/admission/sources/${source.sourceId}/proposals/${proposal.proposalId}-approval.json`,
+      approvalSha256: approval.approvalSha256,
     };
   }).sort((left, right) => left.sourceId.localeCompare(right.sourceId));
   const inputArtifacts = sortedArtifacts([

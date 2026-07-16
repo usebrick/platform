@@ -6,12 +6,16 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionBlindAssignmentId,
+  calibrationAdmissionBlindReviewReceiptId,
+  calibrationAdmissionDecisionId,
   calibrationAdmissionNormalizerRegistrySha256,
   calibrationAdmissionOverlapPolarityBindingSha256,
   calibrationAdmissionOverlapUniverseRecordSha256,
   calibrationAdmissionOverlapUniverseSha256,
   calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionMaterializationId,
+  calibrationAdmissionMaterializationReceiptId,
   calibrationAdmissionRecordId,
   calibrationAdmissionRegisterDeltaSha256,
   calibrationAdmissionSha256,
@@ -59,18 +63,90 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
       evidenceIds: [`${sourceId}-rights`],
     },
     inventory: { physicalMemberCount: 100, candidateCodeUnitCount: 100, inventorySha256: sha(`${sourceId}:inventory`), closedWorld: true as const },
-    reviewerDecisionIds: [sha(`${sourceId}:reviewer-a`), sha(`${sourceId}:reviewer-b`)].sort(),
+    reviewerDecisionIds: [] as string[],
     reviewedAt: '2026-07-16T00:00:00.000Z',
     decision: 'candidate' as const,
     reasons: [] as const,
   };
+  const materialization = {
+    ...reviewBase.materialization,
+    materializationId: calibrationAdmissionMaterializationId(sourceId, reviewBase.materialization.repositoryId, reviewBase.materialization),
+  };
+  const evidenceIds = [`${sourceId}-origin`, `${sourceId}-rights`];
+  const assignmentBody = {
+    version: 'v10.3-admission-blind-assignment-v1' as const,
+    target: { kind: 'source' as const, sourceId },
+    evidenceSetSha256: calibrationAdmissionSha256(evidenceIds),
+    protocolEvidenceId: `${sourceId}-protocol`,
+    reviewerIds: ['reviewer-authorship', 'reviewer-rights'] as [string, string],
+    peerMaterialHiddenUntilBothSealed: true as const,
+  };
+  const assignment = { ...assignmentBody, assignmentId: calibrationAdmissionBlindAssignmentId(assignmentBody) };
+  const decisionBody = (reviewerId: 'reviewer-authorship' | 'reviewer-rights', reviewerRole: 'authorship' | 'rights') => ({
+    version: 'v10.3-admission-decision-v1' as const,
+    target: { kind: 'source' as const, sourceId },
+    reviewerId,
+    reviewerRoles: [reviewerRole] as [typeof reviewerRole],
+    evidenceIds: [...evidenceIds],
+    blindAssignmentId: assignment.assignmentId,
+    result: {
+      kind: 'admission' as const,
+      proposedLabel: 'verified_ai' as const,
+      humanEditStatus: 'none' as const,
+      disposition: 'eligible_gold' as const,
+    },
+    reasons: [] as const,
+    decidedAt: '2026-07-16T00:00:00.000Z',
+  });
+  const decisions = [
+    { ...decisionBody('reviewer-authorship', 'authorship'), decisionId: '' },
+    { ...decisionBody('reviewer-rights', 'rights'), decisionId: '' },
+  ].map((decision) => ({ ...decision, decisionId: calibrationAdmissionDecisionId(decision) })).sort((left, right) => left.decisionId.localeCompare(right.decisionId));
   const review = {
     ...reviewBase,
-    materialization: {
-      ...reviewBase.materialization,
-      materializationId: calibrationAdmissionMaterializationId(sourceId, reviewBase.materialization.repositoryId, reviewBase.materialization),
+    materialization,
+    reviewerDecisionIds: decisions.map((decision) => decision.decisionId).sort(),
+  };
+  const receiptBody = {
+    version: 'v10.3-admission-blind-review-receipt-v1' as const,
+    assignmentId: assignment.assignmentId,
+    evidenceSetSha256: assignment.evidenceSetSha256,
+    sealedDecisions: decisions.slice().sort((left, right) => left.reviewerId.localeCompare(right.reviewerId)).map((decision) => ({
+      reviewerId: decision.reviewerId,
+      decisionId: decision.decisionId,
+      peerDecisionVisibleBeforeSeal: false as const,
+    })) as [{ reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }, { reviewerId: string; decisionId: string; peerDecisionVisibleBeforeSeal: false }],
+    unsealedOnlyAfterBothDecisionIdsExisted: true as const,
+    protocolAuditorId: `${sourceId}-auditor`,
+    protocolAuditEvidenceIds: [`${sourceId}-protocol`],
+  };
+  const blindReviewReceipt = { ...receiptBody, receiptId: calibrationAdmissionBlindReviewReceiptId(receiptBody) };
+  const materializationReceiptBody = {
+    version: 'v10.3-admission-materialization-receipt-v1' as const,
+    materializationId: materialization.materializationId,
+    sourceId,
+    repositoryId: materialization.repositoryId,
+    acquisitionAuthorizationId: `${sourceId}-acquisition`,
+    acquisitionAuthorizationSha256: sha(`${sourceId}:acquisition-authorization`),
+    acquisitionTransactionId: `${sourceId}-acquisition-transaction`,
+    primaryMaterializedOutputSha256: sha(`${sourceId}:materialized-output`),
+    childToolReceiptSha256: sha(`${sourceId}:child-tool-receipt`),
+    verifiedUnitSetSha256: sha(`${sourceId}:verified-unit-set`),
+    payload: {
+      kind: 'git' as const,
+      originUrl: review.origin.url,
+      commitSha: materialization.commitSha,
+      treeSha: 'b'.repeat(40),
+      inventorySha256: review.inventory.inventorySha256,
     },
   };
+  const materializationReceipt = { ...materializationReceiptBody, receiptId: calibrationAdmissionMaterializationReceiptId(materializationReceiptBody) };
+  const acquisitionSnapshotBody = {
+    version: 'v10.3-admission-acquisition-snapshot-v1' as const,
+    indexGenerationSha256: sha(`${sourceId}:acquisition-index`),
+    artifactKeys: [`materialization_receipt:${materializationReceipt.receiptId}`],
+  };
+  const acquisitionSnapshot = { ...acquisitionSnapshotBody, snapshotSha256: calibrationAdmissionSha256(acquisitionSnapshotBody) };
   const reviewBytes = Buffer.from(`${calibrationAdmissionCanonicalJson(review)}\n`, 'utf8');
   const reviewSha = calibrationAdmissionSourceReviewSha256(review);
   const ledgerBytes = Buffer.from('{}\n', 'utf8');
@@ -85,7 +161,12 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
     operation: 'create' as const,
     expectedCurrentState: { kind: 'absent' as const },
     sourceReviewSha256: reviewSha,
-    materializationAuthority: { kind: 'genesis' as const, evidenceBundleSha256: sha('evidence-bundle') },
+    materializationAuthority: {
+      kind: 'acquired' as const,
+      acquisitionIndexGenerationSha256: acquisitionSnapshot.indexGenerationSha256,
+      materializationReceiptId: materializationReceipt.receiptId,
+      materializationReceiptSha256: calibrationAdmissionSha256(materializationReceipt),
+    },
     artifacts: sourceArtifacts,
   };
   const proposal = { ...proposalBody, proposalSha256: calibrationAdmissionSourceGenerationProposalSha256(proposalBody) };
@@ -94,9 +175,9 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
     approvalId: `${sourceId}-approval`,
     proposalId: proposal.proposalId,
     proposalSha256: proposal.proposalSha256,
-    blindAssignmentId: sha(`${sourceId}:assignment`),
-    reviewerDecisionIds: [sha(`${sourceId}:decision-a`), sha(`${sourceId}:decision-b`)].sort() as [string, string],
-    blindReviewReceiptId: sha(`${sourceId}:blind-receipt`),
+    blindAssignmentId: assignment.assignmentId,
+    reviewerDecisionIds: decisions.map((decision) => decision.decisionId).sort() as [string, string],
+    blindReviewReceiptId: blindReviewReceipt.receiptId,
   };
   const approval = { ...approvalBody, approvalSha256: calibrationAdmissionSourceGenerationApprovalSha256(approvalBody) };
   const generationBody = {
@@ -115,9 +196,11 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
     version: 'v10.3-admission-source-semantic-authority-v1' as const,
     sourceId,
     proposalId: proposal.proposalId,
-    blindAssignment: { assignmentId: approval.blindAssignmentId },
-    decisions: [{ decisionId: approval.reviewerDecisionIds[0] }, { decisionId: approval.reviewerDecisionIds[1] }],
-    blindReviewReceipt: { receiptId: approval.blindReviewReceiptId },
+    blindAssignment: assignment,
+    decisions,
+    blindReviewReceipt,
+    acquisitionSnapshot,
+    materializationReceipt,
   };
   const semanticAuthority = { ...semanticBody, authoritySha256: calibrationAdmissionSourceSemanticAuthoritySha256(semanticBody) };
   return {
@@ -347,6 +430,30 @@ describe('v10.3 smoke input materializer', () => {
     }
   });
 
+  it('rejects ID-only semantic sidecars that do not contain the complete Core graph', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const source = input.sources[0]!;
+      const authority = source.semanticAuthority as Record<string, unknown>;
+      const placeholder = {
+        ...authority,
+        blindAssignment: { assignmentId: (authority.blindAssignment as { assignmentId: string }).assignmentId },
+        decisions: (authority.decisions as readonly { decisionId: string }[]).map((decision) => ({ decisionId: decision.decisionId })),
+        blindReviewReceipt: { receiptId: (authority.blindReviewReceipt as { receiptId: string }).receiptId },
+      };
+      const result = await materializeAdmissionSmokeInputGeneration({
+        ...input,
+        sources: [{ ...source, semanticAuthority: placeholder, semanticAuthorityBytes: json(placeholder) }, input.sources[1]!],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors.some((error) => error.includes('semantic_authority_graph:approval blind assignment'))).toBe(true);
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('requires canonical independent-review approval bytes bound to the generation', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
     try {
@@ -381,6 +488,13 @@ describe('v10.3 smoke input materializer', () => {
         diagnosticOnly: true,
         authorityEligible: false,
       });
+      expect(result.value.proposal.sourceGenerationProposals).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          sourceId: 'source-a',
+          approvalRelativePath: 'review/admission/sources/source-a/proposals/source-a-proposal-approval.json',
+          approvalSha256: (input.sources[0]!.approval as { approvalSha256: string }).approvalSha256,
+        }),
+      ]));
       await expect(readFile(join(result.value.finalDirectory, 'generation.json'), 'utf8')).resolves.toContain(result.value.inputGeneration.generationSha256);
       await expect(readFile(join(result.value.finalDirectory, 'receipt.json'), 'utf8')).resolves.toContain('diagnosticOnly');
       const approval = input.sources[0]!.approval as { proposalId: string };

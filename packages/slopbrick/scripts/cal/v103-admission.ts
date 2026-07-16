@@ -49,6 +49,10 @@ import {
   recoverAdmissionOverlap,
   verifyAdmissionOverlap,
 } from '../../src/calibration/v103/admission-overlap-publication';
+import {
+  materializeAdmissionSmokeInputGeneration,
+  type AdmissionSmokeInputMaterializerRequestV1,
+} from '../../src/calibration/v103/admission-smoke-input-materializer';
 
 function output(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value)}\n`);
@@ -203,6 +207,134 @@ async function readCanonicalOuterInput(root: string, requested: string, label: s
   return { value, bytes };
 }
 
+/**
+ * The smoke-input CLI is intentionally a path loader, not a discovery tool.
+ * Every path comes from one caller-supplied, canonical manifest and is
+ * resolved through the same root-contained/symlink-aware guard used by the
+ * other admission commands.  The manifest carries no authority by itself;
+ * the materializer always returns a diagnostic-only generation.
+ */
+interface AdmissionSmokeInputManifestV1 {
+  readonly version: 'v10.3-admission-smoke-input-manifest-v1';
+  readonly outputDirectory: string;
+  readonly transactionId: string;
+  readonly proposalId: string;
+  readonly evidenceBundleSha256: string;
+  readonly registerDeltaPath: string;
+  readonly recordsPath: string;
+  readonly overlapUniversePath: string;
+  readonly normalizerRegistryPath: string;
+  readonly overlapUniverseRecordsPath: string;
+  readonly sources: readonly {
+    readonly sourceId: string;
+    readonly sourceGenerationPath: string;
+    readonly sourceProposalPath: string;
+    readonly approvalPath: string;
+    readonly sourceReviewPath: string;
+    readonly semanticAuthorityPath: string;
+  }[];
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function manifestPath(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.length === 0 || value.startsWith('/') || value.includes('\\')) {
+    throw new Error(`${label} must be a non-empty root-relative path`);
+  }
+  return value;
+}
+
+function manifestString(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.length === 0) throw new Error(`${label} is invalid`);
+  return value;
+}
+
+function smokeManifest(value: unknown): AdmissionSmokeInputManifestV1 {
+  if (!isObject(value) || value.version !== 'v10.3-admission-smoke-input-manifest-v1') {
+    throw new Error('smoke input manifest version is invalid');
+  }
+  if (!Array.isArray(value.sources) || value.sources.length !== 2) {
+    throw new Error('smoke input manifest requires exactly two sources');
+  }
+  const sources = value.sources.map((candidate, index) => {
+    if (!isObject(candidate)) throw new Error(`smoke input manifest source ${index} is invalid`);
+    return {
+      sourceId: manifestString(candidate.sourceId, `smoke input manifest source ${index} id`),
+      sourceGenerationPath: manifestPath(candidate.sourceGenerationPath, `source ${index} generation`),
+      sourceProposalPath: manifestPath(candidate.sourceProposalPath, `source ${index} proposal`),
+      approvalPath: manifestPath(candidate.approvalPath, `source ${index} approval`),
+      sourceReviewPath: manifestPath(candidate.sourceReviewPath, `source ${index} review`),
+      semanticAuthorityPath: manifestPath(candidate.semanticAuthorityPath, `source ${index} semantic authority`),
+    };
+  });
+  return {
+    version: value.version,
+    outputDirectory: manifestPath(value.outputDirectory, 'output directory'),
+    transactionId: manifestString(value.transactionId, 'smoke input manifest transaction id'),
+    proposalId: manifestString(value.proposalId, 'smoke input manifest proposal id'),
+    evidenceBundleSha256: manifestString(value.evidenceBundleSha256, 'smoke input manifest evidence bundle hash'),
+    registerDeltaPath: manifestPath(value.registerDeltaPath, 'register delta'),
+    recordsPath: manifestPath(value.recordsPath, 'admission records'),
+    overlapUniversePath: manifestPath(value.overlapUniversePath, 'overlap universe'),
+    normalizerRegistryPath: manifestPath(value.normalizerRegistryPath, 'normalizer registry'),
+    overlapUniverseRecordsPath: manifestPath(value.overlapUniverseRecordsPath, 'overlap universe records'),
+    sources,
+  };
+}
+
+async function readRawContained(root: string, requested: string, label: string): Promise<Buffer> {
+  return readFile(await requireContainedAdmissionPath(root, requested)).catch((error: unknown) => {
+    throw new Error(`${label} cannot be read: ${error instanceof Error ? error.message : String(error)}`);
+  });
+}
+
+async function loadSmokeInputManifest(root: string, requested: string): Promise<AdmissionSmokeInputMaterializerRequestV1> {
+  const manifestInput = await readCanonicalOuterInput(root, requested, 'smoke input manifest');
+  const manifest = smokeManifest(manifestInput.value);
+  const readObject = async (path: string, label: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> => {
+    return readCanonicalOuterInput(root, path, label);
+  };
+  const registerDelta = await readObject(manifest.registerDeltaPath, 'register delta');
+  const overlapUniverse = await readObject(manifest.overlapUniversePath, 'overlap universe');
+  const normalizerRegistry = await readObject(manifest.normalizerRegistryPath, 'normalizer registry');
+  const records = await readRawContained(root, manifest.recordsPath, 'admission records');
+  const overlapUniverseRecords = await readRawContained(root, manifest.overlapUniverseRecordsPath, 'overlap universe records');
+  const sources = await Promise.all(manifest.sources.map(async (source) => {
+    const generation = await readObject(source.sourceGenerationPath, `source ${source.sourceId} generation`);
+    const proposal = await readObject(source.sourceProposalPath, `source ${source.sourceId} proposal`);
+    const approval = await readObject(source.approvalPath, `source ${source.sourceId} approval`);
+    const sourceReviewBytes = await readRawContained(root, source.sourceReviewPath, `source ${source.sourceId} review`);
+    const semanticAuthority = await readObject(source.semanticAuthorityPath, `source ${source.sourceId} semantic authority`);
+    return {
+      sourceId: source.sourceId,
+      sourceGeneration: generation.value,
+      sourceGenerationBytes: generation.bytes,
+      sourceProposal: proposal.value,
+      sourceProposalBytes: proposal.bytes,
+      approval: approval.value,
+      approvalBytes: approval.bytes,
+      sourceReviewBytes,
+      semanticAuthority: semanticAuthority.value,
+      semanticAuthorityBytes: semanticAuthority.bytes,
+    };
+  }));
+  return {
+    outputDirectory: await requireContainedAdmissionPath(root, manifest.outputDirectory),
+    transactionId: manifest.transactionId,
+    proposalId: manifest.proposalId,
+    evidenceBundleSha256: manifest.evidenceBundleSha256,
+    registerDelta: registerDelta.value,
+    registerDeltaBytes: registerDelta.bytes,
+    sources,
+    records,
+    overlapUniverse: overlapUniverse.value,
+    normalizerRegistry: normalizerRegistry.value,
+    overlapUniverseRecords,
+  };
+}
+
 async function runWitnessSearchCommand(args: ParsedArguments): Promise<void> {
   const verified = await buildVerifiedAdmissionEvidenceContext(args.root, {
     expectedProfileId: args.toolProfile,
@@ -276,6 +408,46 @@ async function runWitnessPublicationCommand(args: ParsedArguments): Promise<void
   }
   const result = await publishAdmissionWitness(request);
   outputCanonical({ ok: true, command: args.command, ...result });
+}
+
+async function runSmokeInputMaterializationCommand(args: ParsedArguments): Promise<void> {
+  try {
+    const request = await loadSmokeInputManifest(args.root, args.smokeInputManifestPath!);
+    const result = await materializeAdmissionSmokeInputGeneration(request);
+    if (!result.ok) {
+      outputCanonical({
+        ok: false,
+        command: args.command,
+        diagnosticOnly: true,
+        authorityEligible: false,
+        ready: false,
+        errors: result.errors,
+      });
+      process.exitCode = 2;
+      return;
+    }
+    outputCanonical({
+      ok: true,
+      command: args.command,
+      diagnosticOnly: true,
+      authorityEligible: false,
+      ready: false,
+      proposalSha256: result.value.proposal.proposalSha256,
+      generationSha256: result.value.inputGeneration.generationSha256,
+      finalDirectory: result.value.finalDirectory,
+      receipt: result.value.receipt,
+    });
+  } catch (error) {
+    outputCanonical({
+      ok: false,
+      command: args.command,
+      diagnosticOnly: true,
+      authorityEligible: false,
+      ready: false,
+      errors: [error instanceof Error ? error.message : String(error)],
+    });
+    process.exitCode = 2;
+  }
 }
 
 async function materializeOuterAuthority(
@@ -460,12 +632,14 @@ interface ParsedArguments {
   readonly witnessKind?: 'search_result' | 'witness_review';
   readonly witnessNestedHandoffPath?: string;
   readonly namedPrimaryOutputProjectionSha256?: string;
+  /** Explicit root-relative smoke-input manifest; no discovery is performed. */
+  readonly smokeInputManifestPath?: string;
 }
 
 function parse(argv: readonly string[]): ParsedArguments {
   const forwarded = argv[0] === '--' ? argv.slice(1) : argv;
   const [command, ...rest] = forwarded;
-  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'census' && command !== 'census:stdout' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover' && command !== 'witness:search' && command !== 'witness:publish-search' && command !== 'witness:publish-review' && command !== 'witness:recover-publication') throw new Error('Unknown admission command');
+  if (command !== 'evidence:verify' && command !== 'source:census' && command !== 'census:preview' && command !== 'census' && command !== 'census:stdout' && command !== 'acquisition:publish' && command !== 'acquisition:recover-publication' && command !== 'tool-authority:intent' && command !== 'tool-authority:receipt' && command !== 'tool-authority:resolve' && command !== 'tool-authority:recover' && command !== 'register:publish-round' && command !== 'register:recover' && command !== 'authority:overlap' && command !== 'authority:overlap:recover' && command !== 'authority:overlap:verify' && command !== 'rebuild:pre-witness' && command !== 'static-authority:recover' && command !== 'witness:search' && command !== 'witness:publish-search' && command !== 'witness:publish-review' && command !== 'witness:recover-publication' && command !== 'admission:smoke-input') throw new Error('Unknown admission command');
   let root: string | undefined;
   let proposalPath: string | undefined;
   let inputGenerationProposalPath: string | undefined;
@@ -524,6 +698,7 @@ function parse(argv: readonly string[]): ParsedArguments {
   let witnessKind: 'search_result' | 'witness_review' | undefined;
   let witnessNestedHandoffPath: string | undefined;
   let namedPrimaryOutputProjectionSha256: string | undefined;
+  let smokeInputManifestPath: string | undefined;
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
     if (flag === '--expect-current-absent' || flag === '--require-real-scale-receipt') {
@@ -553,7 +728,7 @@ function parse(argv: readonly string[]): ParsedArguments {
       }
       continue;
     }
-    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--pre-witness-bundle', '--overlap-generation', '--overlap-index', '--overlap-resource-receipt', '--overlap-ledger', '--real-scale-record-count', '--real-scale-universe-sha256', '--real-scale-records-jsonl-sha256', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage', '--bundle', '--gate', '--kind', '--nested-handoff', '--named-primary-output-sha256']);
+    const takesValue = new Set(['--root', '--publication-proposal', '--input-generation-proposal', '--input-generation', '--current', '--prior-current', '--pre-witness-bundle', '--overlap-generation', '--overlap-index', '--overlap-resource-receipt', '--overlap-ledger', '--real-scale-record-count', '--real-scale-universe-sha256', '--real-scale-records-jsonl-sha256', '--operation', '--expected-current-index-sha256', '--expected-current-static-generation-sha256', '--tool-profile', '--action', '--canonical-argv-sha256', '--input-set-sha256', '--executable-behavior-sha256', '--network-authorization-sha256', '--invocation-intent', '--transaction-id', '--recovery-nonce', '--source-register', '--source-reviews', '--register-delta', '--next-register', '--source-generations', '--tool-receipt-id', '--tool-receipt-sha256', '--tool-authority-index-sha256', '--tool-authority-transaction-id', '--universe', '--records', '--policy', '--normalizers', '--bytes-root', '--tool-snapshot', '--generation', '--input-generation-sha256', '--expected-current-generation-sha256', '--generation-sha256', '--output-set-sha256', '--exit-code', '--observed-resource-usage', '--bundle', '--gate', '--kind', '--nested-handoff', '--named-primary-output-sha256', '--manifest']);
     if (!flag || !takesValue.has(flag)) throw new Error(`Unexpected option for ${command}`);
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
@@ -720,10 +895,14 @@ function parse(argv: readonly string[]): ParsedArguments {
     } else if (flag === '--named-primary-output-sha256') {
       if (namedPrimaryOutputProjectionSha256 !== undefined || !/^[a-f0-9]{64}$/.test(value)) throw new Error('--named-primary-output-sha256 must be a lowercase SHA-256');
       namedPrimaryOutputProjectionSha256 = value;
+    } else if (flag === '--manifest') {
+      if (smokeInputManifestPath !== undefined) throw new Error('--manifest may only be supplied once');
+      smokeInputManifestPath = value;
     }
     index += 1;
   }
   if (!root) throw new Error(`${command ?? 'admission command'} requires --root <v10.3-root or review/admission>`);
+  if (smokeInputManifestPath !== undefined && command !== 'admission:smoke-input') throw new Error('--manifest is only valid for admission:smoke-input');
   const authorityGraphOption = inputGenerationProposalPath !== undefined
     || inputGenerationPath !== undefined
     || currentPath !== undefined
@@ -751,7 +930,23 @@ function parse(argv: readonly string[]): ParsedArguments {
     && command !== 'authority:overlap:verify') {
     throw new Error(`--require-real-scale-receipt is not valid for ${command}`);
   }
-  if (command === 'tool-authority:intent') {
+  if (command === 'admission:smoke-input') {
+    if (!smokeInputManifestPath
+      || proposalPath || inputGenerationProposalPath || inputGenerationPath || currentPath || priorCurrentPath || operation
+      || expectedCurrentIndexSha256 || expectedCurrentStaticGenerationSha256 || expectCurrentAbsent || requireRealScaleReceipt
+      || preWitnessBundlePath || overlapGenerationPath || overlapIndexPath || overlapResourceReceiptPath || overlapLedgerPath
+      || realScaleRecordCount !== undefined || realScaleUniverseSha256 || realScaleRecordsJsonlSha256
+      || toolProfile || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256
+      || invocationIntentId || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter
+      || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath
+      || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId
+      || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath
+      || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256 || outputSetSha256
+      || exitCode !== undefined || observedResourceUsage || joinStaticAuthority || witnessBundlePath || witnessGate || witnessKind
+      || witnessNestedHandoffPath || namedPrimaryOutputProjectionSha256) {
+      throw new Error('admission:smoke-input requires only --root and --manifest');
+    }
+  } else if (command === 'tool-authority:intent') {
     if (!toolProfile || !action || !canonicalArgvSha256 || !inputSetSha256 || !executableBehaviorSha256 || invocationIntentId || outputSetSha256 || exitCode !== undefined || observedResourceUsage !== undefined || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:intent requires --tool-profile, --action, and the three input hashes only');
   } else if (command === 'tool-authority:receipt') {
     if (!invocationIntentId || !outputSetSha256 || exitCode === undefined || !observedResourceUsage || toolProfile || action || canonicalArgvSha256 || inputSetSha256 || executableBehaviorSha256 || networkAuthorizationSha256 || proposalPath || operation || expectedCurrentIndexSha256 || transactionId || fromLock || recoveryNonce || acknowledgeNoLiveWriter || sourceRegisterPath || sourceReviewsPath || registerDeltaPath || nextRegisterPath || sourceGenerationsPath || toolReceiptId || toolReceiptSha256 || toolAuthorityIndexSha256 || toolAuthorityTransactionId || overlapUniversePath || overlapRecordsPath || overlapPolicyPath || overlapNormalizersPath || overlapBytesRoot || overlapToolSnapshotPath || generation !== undefined || inputGenerationSha256 || expectedCurrentGenerationSha256 || selectedGenerationSha256) throw new Error('tool-authority:receipt requires --invocation-intent, --output-set-sha256, --exit-code, and --observed-resource-usage only');
@@ -893,7 +1088,7 @@ function parse(argv: readonly string[]): ParsedArguments {
     if (proposalPath || operation || expectedCurrentIndexSha256 || !toolProfile || toolProfile !== 'admission-acquisition-publication-v1' || !recoveryNonce || (!transactionId && !fromLock) || (transactionId && fromLock) || !acknowledgeNoLiveWriter || !toolReceiptId || !toolReceiptSha256 || !toolAuthorityIndexSha256 || !toolAuthorityTransactionId) throw new Error('register:recover requires --from-lock, recovery nonce, profile, tool receipt fields, and --acknowledge-no-live-writer');
     if (!/^[a-f0-9]{64}$/.test(recoveryNonce) || !/^[a-f0-9]{64}$/.test(toolReceiptSha256) || !/^[a-f0-9]{64}$/.test(toolAuthorityIndexSha256)) throw new Error('Register recovery hashes/nonces must be lowercase SHA-256');
   }
-  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, preWitnessBundlePath, overlapGenerationPath, overlapIndexPath, overlapResourceReceiptPath, overlapLedgerPath, realScaleRecordCount, realScaleUniverseSha256, realScaleRecordsJsonlSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined, witnessBundlePath, witnessGate, witnessKind, witnessNestedHandoffPath, namedPrimaryOutputProjectionSha256 };
+  return { command, root, proposalPath, inputGenerationProposalPath, inputGenerationPath, currentPath, priorCurrentPath, operation, expectedCurrentIndexSha256, expectedCurrentStaticGenerationSha256, expectCurrentAbsent: expectCurrentAbsent || undefined, requireRealScaleReceipt: requireRealScaleReceipt || undefined, preWitnessBundlePath, overlapGenerationPath, overlapIndexPath, overlapResourceReceiptPath, overlapLedgerPath, realScaleRecordCount, realScaleUniverseSha256, realScaleRecordsJsonlSha256, toolProfile, action, canonicalArgvSha256, inputSetSha256, executableBehaviorSha256, networkAuthorizationSha256, invocationIntentId, transactionId, fromLock: fromLock || undefined, recoveryNonce, acknowledgeNoLiveWriter: acknowledgeNoLiveWriter || undefined, sourceRegisterPath, sourceReviewsPath, registerDeltaPath, nextRegisterPath, sourceGenerationsPath, toolReceiptId, toolReceiptSha256, toolAuthorityIndexSha256, toolAuthorityTransactionId, overlapUniversePath, overlapRecordsPath, overlapPolicyPath, overlapNormalizersPath, overlapBytesRoot, overlapToolSnapshotPath, generation, inputGenerationSha256, expectedCurrentGenerationSha256, selectedGenerationSha256, outputSetSha256, exitCode, observedResourceUsage, joinStaticAuthority: joinStaticAuthority || undefined, witnessBundlePath, witnessGate, witnessKind, witnessNestedHandoffPath, namedPrimaryOutputProjectionSha256, smokeInputManifestPath };
 }
 
 async function main(): Promise<void> {
@@ -901,6 +1096,10 @@ async function main(): Promise<void> {
   try {
     requestedCommand = process.argv[2] ?? requestedCommand;
     const args = parse(process.argv.slice(2));
+    if (args.command === 'admission:smoke-input') {
+      await runSmokeInputMaterializationCommand(args);
+      return;
+    }
     if (args.command === 'rebuild:pre-witness' || args.command === 'static-authority:recover') {
       await runOuterAuthorityCommand(args);
       return;
