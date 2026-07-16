@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md` | `2b79466ed466ddb2edbb4251505b0a0b9fddbaa17e64310831c0ab92fdadc87d` | Owns the additive Core release-archive/materialization contract and implementation Tasks 1-6; Tasks 7-8 are downstream consumers. Task 4 is split into independently reviewed 4A/4B/4C slices; its old 2026-07-13 override is explicitly historical and points to the authoritative continuation-plan evidence. |
 | `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md` | `a5afd7ceaf5e387e0df8d0a965c21f401ae1f5f399d55fd24ee65236771f7c96` | Owns provenance admission Tasks 0-11, including the explicit material-partition contract, acquisition-round ID/hash fields, and the v10.3.2 witness-bound manifest. The latest checkpoint records transaction-owned staging, the Core nested-handoff helper, explicit-input preflight, the CAS boundary audit, allocation-before-row-review, the deterministic allocation preview, the explicit diagnostic-only outer CLI/materializer boundary, the bounded stream/ledger/shard joins, the self-scan output review, the bounded real-corpus allocation replay, the RAM-safe static-ledger adapter, optional stream-receipt/materializer binding, the integrated authority gate/live census result, the final package-wide and recursive quality gates, the risk-scaled verification rule, and the consolidated one-gate verification path; it does not advance real-corpus admission. |
-| **Current continuation-plan hash override (2026-07-16)** | `2682f87f057a7a483bb78b6e05ef059669d6aa99c2681bd0384cbead60c64efc` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,716-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion, the scratch-reclamation/resource checkpoint with the 1,000-row canary, the 2026-07-16 language-sharded overlap implementation/probe, and the 2026-07-16 owner-led execution-control rule. |
+| **Current continuation-plan hash override (2026-07-16)** | `2d9ef19ef99bf5ea546a0ad6cdc6203136726fa71e06fe8badc7dc246e09a724` | Supersedes the historical continuation-plan hash in the frozen row below after the current corpus/control-plane, CLI-boundary, candidate-context/preview, report-publication, recursive-gate, self-scan, bounded-verification, policy-status UX, live census-preview, adapter review, transaction-owned staging, Core nested-handoff helper, explicit-input preflight, CAS boundary audit, allocation-before-row-review, allocation-preview implementation, diagnostic outer CLI, lock-only recovery, risk-scaled verification, outer materializer stream/shard/ledger binding, self-scan UX/accounting correction, bounded real-corpus allocation replay, RAM-safe static-ledger adapter, stream-receipt/materializer binding, integrated authority gate/live census result, consolidated one-gate verification path, final package-wide quality gate, recursive gate/watch timing closeout, Task 3A deterministic witness/census contract slice, pure witness-review graph, transactional witness publication/recovery, the single CLI-boundary edge-case gate, the final 329-file/3,716-test package gate, current-state documentation reconciliation, the explicit single-gate confirmation policy, the dependency-security adapter correction, the 2026-07-15 source-byte binding checkpoint, the configured normalizer boundary, the reviewed generic lexical runtime binding, the bounded overlap resource probe, the explicit language registry/452,364-row coverage checkpoint, its Objective-C alias/452,380-row delta, the source allocation/provenance receipt that reconciles all 452,382 rows by registered source without label promotion, the scratch-reclamation/resource checkpoint with the 1,000-row canary, the 2026-07-16 language-sharded overlap implementation/probe, the 2026-07-16 owner-led execution-control rule, and the bounded FormAI-v1 source intake. |
 | `packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md` | `aa6244fa87b6904e7b60a099ede68df0b41ef8901801c45a5cdcb9c183491b0d` | Historical frozen continuation-plan bytes; the current contents are superseded by the explicit override row immediately above. |
 
 The independent full-plan review is
@@ -101,7 +101,7 @@ the planning verdict does not call the workspace audit clean.
 - Markdown fence parity and stale synthetic-source/flat-manifest scans: clean.
 - `git diff --check`: clean at the current dirty snapshot.
 - The continuation-plan hash override was recomputed on 2026-07-16 after the
-  owner-led execution-control rule; any subsequent plan edit requires
+  bounded FormAI-v1 source intake; any subsequent plan edit requires
   another hash refresh and targeted rereview.
 
 ### Current control-plane, CLI, and self-scan audit — 2026-07-15
@@ -867,3 +867,22 @@ reconfirmed by parallel agents. A second reviewer is warranted only for a
 distinct high-risk authority, rights, release, or security decision and must
 answer a different evidence question. The current static/witness-authority
 slice has no duplicate confirmation queue.
+
+### FormAI-v1 bounded source intake — 2026-07-16
+
+The measured positive-cohort deficit justified one bounded source intake, not a
+full corpus rereview. The official FormAI-Dataset repository is pinned at
+`0056a748b8a087e533be94a3ad2b2135065b0102`; its FormAI-v1 archive, LICENSE,
+and README hashes are respectively
+`fc458020ad0e9b0999882d4bfdd27edfdee2f0ff5de22848e11352d64230ca47`,
+`633eadfd5d8bff94251c18bde927d76d712b063e621a67c592c825895d31561b`, and
+`07ab29ef7627aabe6eed3e4fc1522ca84f6712b7e39b2778b2d770ea295c5d62`.
+Exactly 100 archive-order C files (220,368 bytes) were extracted for
+diagnostic use. The complete audit is
+`/Users/cheng/corpus-expansion/v10.3/review/formai-v1-gpt35-smoke-provenance-audit-2026-07-16.json`
+with SHA-256
+`deba3c3fd85458adac5fe4ac9bd70e33266e8b2ed17a28662b7863480111f6ec`.
+It remains `source_quarantine`; no register, label, manifest, authority, or
+smoke state changed. Record-level authorship/edit/lineage review and the
+required independent decisions remain the only source-admission gap for this
+bounded intake.
