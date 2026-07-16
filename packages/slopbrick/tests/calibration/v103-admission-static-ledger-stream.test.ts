@@ -105,6 +105,15 @@ describe('v10.3 static ledger disk-backed stream adapter', () => {
     expect(result.receipt.errors).toContain('kind_invalid');
   });
 
+  it('returns a typed fallback receipt when a hostile request getter throws', async () => {
+    const hostile = {} as Record<string, unknown>;
+    Object.defineProperty(hostile, 'kind', { get: () => { throw new Error('getter exploded'); } });
+    const result = await materializeAdmissionStaticLedgerStream(hostile as never);
+    expect(result.ok).toBe(false);
+    expect(result.receipt.kind).toBe('privacy');
+    expect(result.receipt.errors).toContain('static_ledger_stream_failed_closed');
+  });
+
   it('streams a sorted partition and matches the Core semantic ledger hash', async () => {
     const first = record('first');
     const second = record('second');
@@ -253,6 +262,14 @@ describe('v10.3 static ledger disk-backed stream adapter', () => {
         ...materialized.receipt,
         coveredRelativePath: '/tmp/escape.jsonl',
       }, expected)).toContain('stream_receipt_covered_path_invalid');
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        ledgerVersion: 'v10.3-admission-quality-ledger-v1',
+      }, expected)).toContain('stream_receipt_ledger_version_invalid');
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        workerCount: 2,
+      }, expected)).toContain('stream_receipt_worker_count_invalid');
     } finally {
       await rm(root, { recursive: true, force: true });
     }

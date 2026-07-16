@@ -233,8 +233,10 @@ export function validateAdmissionStaticLedgerStreamReceipt(
   const value = receipt as Record<string, unknown>;
   if (value.version !== 'v10.3-admission-static-ledger-stream-receipt-v1') errors.push('stream_receipt_version_invalid');
   if (value.kind !== expected.kind) errors.push('stream_receipt_kind_mismatch');
+  if (value.ledgerVersion !== VERSION_BY_KIND[expected.kind]) errors.push('stream_receipt_ledger_version_invalid');
   if (value.complete !== true) errors.push('stream_receipt_incomplete');
   if (value.diagnosticOnly !== true || value.authorityEligible !== false) errors.push('stream_receipt_authority_flags_invalid');
+  if (value.workerCount !== 1) errors.push('stream_receipt_worker_count_invalid');
   if (!Array.isArray(value.errors) || value.errors.length > 0) errors.push('stream_receipt_errors_invalid');
   for (const field of ['recordCount', 'coveredCount', 'unresolvedCount', 'outputBytes', 'resultBytes', 'coveredRecordIdsBytes', 'unresolvedRecordIdsBytes', 'maxRecords', 'maxOutputBytes'] as const) {
     if (typeof value[field] !== 'number' || !Number.isSafeInteger(value[field]) || value[field] < 0) errors.push(`stream_receipt_${field}_invalid`);
@@ -608,10 +610,17 @@ async function materializeAdmissionStaticLedgerStreamUnchecked(
   };
 }
 
+function safeRequestKind(value: unknown): AdmissionStaticLedgerKind {
+  try {
+    return isRecord(value) && isKind(value.kind) ? value.kind : 'privacy';
+  } catch {
+    return 'privacy';
+  }
+}
+
 function receiptRequest(value: unknown): AdmissionStaticLedgerStreamRequestV1 {
-  const object = isRecord(value) ? value : {};
   return {
-    kind: isKind(object.kind) ? object.kind : 'privacy',
+    kind: safeRequestKind(value),
     records: '',
     results: '',
     unresolvedRecordIds: '',
