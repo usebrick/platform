@@ -54,8 +54,10 @@ const {
       import { initStructureDemo } from '../scripts/structure-demo';
       import { initScrollReveal } from '../scripts/scroll-reveal';
       import { initLiveTerminal } from '../scripts/live-terminal';
+      import { initPerformanceMode } from '../scripts/performance-mode';
 
       const start = () => {
+        initPerformanceMode();
         initCounters();
         initCopyInstall();
         initBreakOnHover();

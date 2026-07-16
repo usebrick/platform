@@ -174,6 +174,9 @@
   padding-top: var(--space-24);
   padding-bottom: var(--space-24);
 }
+html[data-performance-mode='low'] .live-terminal-section {
+  background: var(--surface-0);
+}
 .live-terminal-section::before {
   content: "";
   position: absolute;
@@ -200,6 +203,9 @@
   background-size: 48px 48px;
   pointer-events: none;
   mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+}
+html[data-performance-mode='low'] .rules-showcase::before {
+  display: none;
 }
 
 /* compare: keep flat so the green/red columns stand out */
@@ -255,6 +261,10 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-color: var(--border);
+}
+html[data-performance-mode='low'] .nav .brick {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* v0.43.0: small "v0.43.0" tag next to the logo, like a real

@@ -199,3 +199,18 @@ pre,
     scroll-behavior: auto !important;
   }
 }
+
+/* Data/battery-aware fallback. This is set by performance-mode.ts when the
+   browser exposes Save-Data, a reduced-data preference, or a slow connection.
+   Content and interaction stay available; only decorative work is reduced. */
+html[data-performance-mode='low'] body::before {
+  display: none;
+}
+
+html[data-performance-mode='low'] *,
+html[data-performance-mode='low'] *::before,
+html[data-performance-mode='low'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

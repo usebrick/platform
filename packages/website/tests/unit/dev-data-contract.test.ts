@@ -8,7 +8,7 @@ describe('website development data contract', () => {
       readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'),
     ) as { scripts?: { dev?: string; prebuild?: string } };
 
-    expect(packageJson.scripts?.prebuild).toBe('tsx scripts/prebuild.ts');
+    expect(packageJson.scripts?.prebuild).toBe('node --import tsx scripts/prebuild.ts');
     expect(packageJson.scripts?.dev).toMatch(/pnpm prebuild/);
   });
 });
