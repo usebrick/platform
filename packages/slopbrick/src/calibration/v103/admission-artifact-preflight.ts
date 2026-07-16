@@ -13,6 +13,8 @@ import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
 
+import { requireAdmissionPathSecurity } from './admission-path-security';
+
 const ADMISSION_RELATIVE_ROOT = 'review/admission';
 const SHA256 = /^[a-f0-9]{64}$/u;
 const KIND = /^[a-z][a-z0-9._:-]{0,127}$/u;
@@ -133,7 +135,7 @@ async function readExactFile(root: string, candidate: string): Promise<Buffer> {
   if (!containedPath(root, relative(root, canonicalCandidate)) || canonicalCandidate !== candidate) {
     throw new Error('artifact path changed during preflight');
   }
-  const handle = await open(canonicalCandidate, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const handle = await open(canonicalCandidate, constants.O_RDONLY | requireAdmissionPathSecurity());
   try {
     const metadata = await handle.stat();
     if (!metadata.isFile()) throw new Error('artifact is not a regular file');

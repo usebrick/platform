@@ -29,6 +29,7 @@ import {
   type PrebuiltAdmissionAuthorityGraphInput,
   type PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1,
 } from './admission-authority-rebuild';
+import { requireAdmissionPathSecurity } from './admission-path-security';
 
 const AUTHORITY_CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
@@ -190,7 +191,7 @@ async function readContainedFile(root: AdmissionRoot, target: string, label: str
     // Reopen the canonical target with O_NOFOLLOW. The preflight rejects
     // symlink ancestors; this final no-follow open also prevents a leaf from
     // being swapped to a symlink between the preflight and the read.
-    handle = await open(canonicalTarget, constants.O_RDONLY | constants.O_NOFOLLOW);
+    handle = await open(canonicalTarget, constants.O_RDONLY | requireAdmissionPathSecurity());
     const metadata = await handle.stat();
     if (!metadata.isFile()) throw new Error(`${label} must be a regular file`);
     const bytes = await handle.readFile();
