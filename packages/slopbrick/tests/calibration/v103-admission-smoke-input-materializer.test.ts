@@ -170,6 +170,28 @@ function record(index: number): CalibrationAdmissionRecordV103 {
   return { ...body, recordId, claimedLineage: { ...body.claimedLineage, originRecordId: recordId } };
 }
 
+function recordWithSource(recordIndex: number, materialSourceId: 'source-a' | 'source-b', familyCount = 3): CalibrationAdmissionRecordV103 {
+  const original = record(recordIndex);
+  const source = sourceInput(materialSourceId);
+  const body = {
+    ...original,
+    materialSourceId,
+    aggregateSourceIds: [materialSourceId],
+    sourceReviewSha256: source.reviewSha,
+    locator: { ...original.locator, materializationId: `${materialSourceId}-materialization` },
+    claimedLineage: { ...original.claimedLineage, familyId: `family-${recordIndex % familyCount}` },
+  };
+  const recordId = calibrationAdmissionRecordId({
+    materialSourceId: body.materialSourceId,
+    logicalUnitId: body.logicalUnitId,
+    locator: body.locator,
+    contentSha256: body.contentSha256,
+    contentBytes: body.contentBytes,
+    language: body.language,
+  });
+  return { ...body, recordId, claimedLineage: { ...body.claimedLineage, originRecordId: recordId } };
+}
+
 function request(outputDirectory: string) {
   const sources = [sourceInput('source-a'), sourceInput('source-b')];
   const addedSources = sources.map((source) => ({
@@ -251,6 +273,19 @@ describe('v10.3 smoke input materializer', () => {
       const result = await materializeAdmissionSmokeInputGeneration(request(root));
       expect(result.ok).toBe(false);
       await expect(readFile(sentinel, 'utf8')).resolves.toBe('keep-me');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a cohort that declares a source but contributes no records', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const records = Array.from({ length: 200 }, (_, index) => recordWithSource(index, 'source-a', 5));
+      const result = await materializeAdmissionSmokeInputGeneration({ ...input, records: jsonl(records) });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors).toContain('cohort:source_unrepresented:source-b');
     } finally {
       await rm(root, { recursive: true, force: true });
     }

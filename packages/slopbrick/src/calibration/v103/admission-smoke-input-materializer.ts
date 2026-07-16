@@ -257,6 +257,7 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
   const contentByLabel = new Map<string, string>();
   const pairGroups = new Map<string, CalibrationAdmissionRecordV103[]>();
   const sourceFamily = new Map<string, number>();
+  const observedSourceIds = new Set<string>();
   const languageByLabel = new Map<'positive' | 'negative', Map<string, number>>([
     ['positive', new Map()], ['negative', new Map()],
   ]);
@@ -275,6 +276,7 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
       continue;
     }
     if (!sourceIds.has(record.materialSourceId)) errors.push(`cohort:record_${index}_source_unprovided`);
+    else observedSourceIds.add(record.materialSourceId);
     const expectedReview = sourceReviewById.get(record.materialSourceId);
     if (expectedReview !== undefined && record.sourceReviewSha256 !== expectedReview) errors.push(`cohort:record_${index}_source_review_unbound`);
     if (record.claimedLineage.pairGroupId === undefined) errors.push(`cohort:record_${index}_pair_group_missing`);
@@ -298,6 +300,9 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
   }
   if (positive !== ARM_SIZE) errors.push('cohort:positive_count_must_be_100');
   if (negative !== ARM_SIZE) errors.push('cohort:negative_count_must_be_100');
+  for (const sourceIdValue of sourceIds) {
+    if (!observedSourceIds.has(sourceIdValue)) errors.push(`cohort:source_unrepresented:${sourceIdValue}`);
+  }
   if (families.size < 3) errors.push('cohort:at_least_3_families_required');
   for (const label of ['positive', 'negative'] as const) {
     const languages = languageByLabel.get(label)!;
