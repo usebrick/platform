@@ -87,6 +87,16 @@ describe('discoverFiles', () => {
     ]);
   });
 
+  it('discovers C/C++ sources through the default include policy', async () => {
+    writeFileSync(join(dir, 'main.c'), 'int main(void) { return 0; }\n');
+    writeFileSync(join(dir, 'widget.hpp'), '#pragma once\n');
+
+    await expect(discoverFiles(dir, DEFAULT_CONFIG)).resolves.toEqual([
+      join(dir, 'main.c'),
+      join(dir, 'widget.hpp'),
+    ]);
+  });
+
   it('does not return files that do not exist', async () => {
     const files = await discoverFiles(dir, makeConfig({ include: ['missing/**/*.ts'] }));
     expect(files).toEqual([]);

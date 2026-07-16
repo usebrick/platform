@@ -8,6 +8,8 @@ research-only until the provenance and full release gates pass.
 
 ### Fixed
 
+- Included supported C/C++ source extensions in the default discovery policy so
+  the documented hygiene rules run without a separate `--include` override.
 - Versioned the public score contract as **v2** for the per-file log-burden
   and fixed-scale additive AI bucket arithmetic. Consumers must use the
   advertised `scoreContract` metadata rather than reconstructing the retired

@@ -76,17 +76,19 @@ export const DEFAULT_RULE_CONFIG: Record<string, unknown> = {
 export const DEFAULT_CONFIG: ResolvedConfig = {
   include: [
     // v0.9.2 — Repository Coherence is language-agnostic. Default include
-    // covers frontend (TS/JS/Vue/Svelte/Astro) AND backend (Python/Go/C#).
+    // covers frontend (TS/JS/Vue/Svelte/Astro) AND backend
+    // (Python/Go/C#/C/C++).
     // Projects that only have one of these can opt out via config.
-    'app/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
-    'src/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
-    'components/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
-    'pages/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs}',
+    'app/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs,c,h,cc,cpp,cxx,hpp,hxx}',
+    'src/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs,c,h,cc,cpp,cxx,hpp,hxx}',
+    'components/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs,c,h,cc,cpp,cxx,hpp,hxx}',
+    'pages/**/*.{ts,tsx,js,jsx,vue,svelte,astro,py,go,cs,c,h,cc,cpp,cxx,hpp,hxx}',
     // Backend-only fallbacks: Python, Go, and C# repos often have files at
     // the root or under a single package directory, not under src/.
     '**/*.py',
     '**/*.go',
     '**/*.cs',
+    '**/*.{c,h,cc,cpp,cxx,hpp,hxx}',
   ],
   exclude: ['**/node_modules/**', '**/.next/**', '**/dist/**'],
   projectMemory: true,
