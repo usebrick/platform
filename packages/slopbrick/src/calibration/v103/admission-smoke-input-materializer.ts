@@ -322,6 +322,51 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
   return records.length === values.length && errors.length === 0;
 }
 
+function sameStringArray(left: readonly unknown[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+/** Require every diagnostic overlap row to bind exactly one smoke admission record. */
+function validateOverlapAdmissionRecordJoin(
+  admissionValues: readonly unknown[],
+  overlapValues: readonly unknown[],
+  errors: string[],
+): void {
+  const admissions = admissionValues.filter(isCalibrationAdmissionRecordV103);
+  const byId = new Map(admissions.map((entry) => [entry.recordId, entry]));
+  const seen = new Set<string>();
+  if (overlapValues.length !== admissions.length) errors.push('overlap:admission_record_join_count_mismatch');
+  for (const [index, raw] of overlapValues.entries()) {
+    if (!isRecord(raw)) continue;
+    const admissionRecordId = raw.admissionRecordId;
+    if (typeof admissionRecordId !== 'string') {
+      errors.push(`overlap:row_${index}_admission_record_binding_missing`);
+      continue;
+    }
+    const admission = byId.get(admissionRecordId);
+    if (admission === undefined) {
+      errors.push(`overlap:row_${index}_admission_record_unknown`);
+      continue;
+    }
+    if (seen.has(admissionRecordId)) errors.push(`overlap:duplicate_admission_record_binding:${admissionRecordId}`);
+    seen.add(admissionRecordId);
+    if (raw.polarity && isRecord(raw.polarity) && raw.polarity.bindingAuthority !== 'admission-record') {
+      errors.push(`overlap:row_${index}_binding_authority_mismatch`);
+    }
+    if (raw.materialSourceId !== admission.materialSourceId) errors.push(`overlap:row_${index}_source_mismatch`);
+    if (raw.contentSha256 !== admission.contentSha256) errors.push(`overlap:row_${index}_content_hash_mismatch`);
+    if (raw.contentBytes !== admission.contentBytes) errors.push(`overlap:row_${index}_content_bytes_mismatch`);
+    if (raw.language !== admission.language) errors.push(`overlap:row_${index}_language_mismatch`);
+    if (!isRecord(raw.polarity) || raw.polarity.proposedLabel !== admission.proposedLabel) {
+      errors.push(`overlap:row_${index}_polarity_mismatch`);
+    }
+    if (!Array.isArray(raw.aggregateSourceIds) || !sameStringArray(raw.aggregateSourceIds, admission.aggregateSourceIds)) {
+      errors.push(`overlap:row_${index}_aggregate_sources_mismatch`);
+    }
+  }
+  if (seen.size !== admissions.length) errors.push('overlap:admission_record_join_incomplete');
+}
+
 function artifact(path: string, kind: 'record_stream' | 'overlap_universe' | 'overlap_universe_stream', bytes: Uint8Array): { readonly pathBase: 'generation_local'; readonly relativePath: string; readonly kind: typeof kind; readonly bytes: number; readonly sha256: string } {
   return { pathBase: 'generation_local', relativePath: path, kind, bytes: bytes.byteLength, sha256: sha256Bytes(bytes) };
 }
@@ -397,6 +442,7 @@ async function materializeAdmissionSmokeInputGenerationUnchecked(
       overlapRecordBytes,
     );
     if (!overlapValidation.ok) errors.push(...overlapValidation.errors.map((error) => `overlap:${error}`));
+    else validateOverlapAdmissionRecordJoin(records, overlapRecords, errors);
   }
   if (records.length > 0 && recordBytes.byteLength === 0) errors.push('records_bytes_missing');
   if (errors.length > 0) return { ok: false, errors: unique(errors) };
