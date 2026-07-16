@@ -23,6 +23,7 @@ import {
 import { loadPrebuiltAdmissionAuthorityGraph } from '../../src/calibration/v103/admission-authority-rebuild-loader';
 import { materializePrebuiltAdmissionAuthority } from '../../src/calibration/v103/admission-authority-materializer';
 import { PrebuiltAuthorityPublicationPendingError } from '../../src/calibration/v103/admission-authority-rebuild-publication';
+import { admissionPublicationFailureJson } from '../../src/calibration/v103/admission-cli-output';
 import type { PrebuiltAdmissionAuthorityGraphInput } from '../../src/calibration/v103/admission-authority-rebuild';
 import type { PrebuiltAdmissionAuthorityPublicationPlanInput } from '../../src/calibration/v103/admission-authority-publication-plan';
 import {
@@ -1424,17 +1425,17 @@ async function main(): Promise<void> {
     });
   } catch (error) {
     if (error instanceof AdmissionWitnessPublicationPendingError) {
-      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_pending', ...error.result, errors: [error.message] })}\n`);
+      process.stderr.write(`${admissionPublicationFailureJson(requestedCommand, 'publication_pending', error.result, error.message)}\n`);
       process.exitCode = 2;
       return;
     }
     if (error instanceof AdmissionWitnessPublicationContendedError) {
-      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_contended', ...error.result, errors: [error.message] })}\n`);
+      process.stderr.write(`${admissionPublicationFailureJson(requestedCommand, 'publication_contended', error.result, error.message)}\n`);
       process.exitCode = 2;
       return;
     }
     if (error instanceof PrebuiltAuthorityPublicationPendingError) {
-      process.stderr.write(`${JSON.stringify({ ok: false, command: requestedCommand, code: 'publication_pending', ...error.result, errors: [error.message] })}\n`);
+      process.stderr.write(`${admissionPublicationFailureJson(requestedCommand, 'publication_pending', error.result, error.message)}\n`);
       process.exitCode = 2;
       return;
     }
