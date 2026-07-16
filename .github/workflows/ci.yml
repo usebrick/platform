@@ -77,6 +77,13 @@ jobs:
       - name: Typecheck all packages
         run: pnpm --workspace-concurrency=1 -r typecheck
 
+      - name: Verify test-host capabilities
+        # Do not silently turn socket/file-mode limitations into a green test
+        # result. The probe is intentionally before the long recursive suite.
+        run: |
+          node --test packages/slopbrick/scripts/test-capabilities.test.mjs
+          node packages/slopbrick/scripts/test-capabilities.mjs --require-ready
+
       - name: Test all packages
         # Vitest itself uses the SlopBrick worker budget below; serializing
         # workspace packages prevents four package graphs from co-residing.

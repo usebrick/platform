@@ -87,6 +87,8 @@ jobs:
       - name: Run release quality gates
         run: |
           corepack pnpm --workspace-concurrency=1 -r typecheck
+          node --test packages/slopbrick/scripts/test-capabilities.test.mjs
+          node packages/slopbrick/scripts/test-capabilities.mjs --require-ready
           corepack pnpm --workspace-concurrency=1 -r test
           corepack pnpm --workspace-concurrency=1 -r build
           corepack pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check

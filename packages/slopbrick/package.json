@@ -37,6 +37,7 @@
     "prebuild": "pnpm --filter @usebrick/engine build",
     "build": "pnpm --filter @usebrick/engine build && pnpm generate:rules && tsup",
     "test": "pnpm generate:rules && tsup && vitest run",
+    "test:capabilities": "node scripts/test-capabilities.mjs",
     "test:watch": "vitest",
     "test:coverage": "pnpm generate:rules && vitest run --coverage",
     "test:perf": "node --import tsx tests/perf/large-codebase.ts",

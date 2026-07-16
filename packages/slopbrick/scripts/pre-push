@@ -40,47 +40,56 @@ echo
 # RAM-sensitive step, and the publish workflow uses the same bound.
 PNPM=(corepack pnpm --workspace-concurrency=1)
 
-# Step 1: every workspace typecheck (fast — fails before spending minutes on
+# Step 1/7: every workspace typecheck (fast — fails before spending minutes on
 # tests/builds).
 echo "[pre-push] 1/5: recursive typecheck"
 "${PNPM[@]}" -r typecheck
 
-# Step 2: full test suite (matches what publish.yml runs).
+# Step 2: verify the host can produce an interpretable full-suite result.
+# This does not skip tests: it fails early with an explicit
+# environment-inconclusive result when loopback, descriptor headroom, or
+# required filesystem mode support is unavailable.
+echo
+echo "[pre-push] 2/7: test-host capability preflight"
+"${PNPM[@]}" --filter slopbrick exec node --test scripts/test-capabilities.test.mjs
+"${PNPM[@]}" --filter slopbrick exec node scripts/test-capabilities.mjs --require-ready
+
+# Step 3: full test suite (matches what publish.yml runs).
 # This is the step that catches what scoped local runs miss.
 # Bypassed only if SKIP_PRE_PUSH_TESTS=1 (e.g. for an emergency docs
 # commit that is not in any publish path).
 if [[ "${SKIP_PRE_PUSH_TESTS:-}" != "1" ]]; then
   echo
-  echo "[pre-push] 2/5: recursive test (serialized; SlopBrick worker budget = 1)"
+  echo "[pre-push] 3/7: recursive test (serialized; SlopBrick worker budget = 1)"
   SLOPBRICK_VITEST_WORKERS=1 "${PNPM[@]}" -r test
 else
-  echo "[pre-push] 2/5: SKIPPED (SKIP_PRE_PUSH_TESTS=1)"
+  echo "[pre-push] 3/7: SKIPPED (SKIP_PRE_PUSH_TESTS=1)"
 fi
 
-# Step 3: every workspace build (the codegen freshness guard is intentionally
+# Step 4: every workspace build (the codegen freshness guard is intentionally
 # part of this gate).
 echo
-echo "[pre-push] 3/5: recursive build"
+echo "[pre-push] 4/7: recursive build"
 "${PNPM[@]}" -r build
 
-# Step 4: generated registry and language support drift checks.
+# Step 5: generated registry and language support drift checks.
 echo
-echo "[pre-push] 4/5: generated registry/language checks"
+echo "[pre-push] 5/7: generated registry/language checks"
 "${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
 "${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
 
-# Step 5: dependency security audit. pnpm's legacy audit endpoint is retired,
+# Step 6: dependency security audit. pnpm's legacy audit endpoint is retired,
 # so use the repository's npm bulk-advisory adapter instead of treating HTTP
 # 410 as a clean result.
 echo
-echo "[pre-push] 5/6: production dependency security audit"
+echo "[pre-push] 6/7: production dependency security audit"
 node --test scripts/audit-npm-bulk.test.mjs
 corepack pnpm security:audit
 
-# Step 6 is the successful completion message; keep the numbering explicit so
+# Step 7 is the successful completion message; keep the numbering explicit so
 # logs are easy to compare with publish.yml.
 echo
-echo "[pre-push] 6/6: release gate summary"
+echo "[pre-push] 7/7: release gate summary"
 
 echo
 echo "[pre-push] ✅ all recursive gates green. Pushing to $CURRENT_BRANCH."
