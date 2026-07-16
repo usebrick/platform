@@ -57,6 +57,19 @@ export {
 export { installBrokenPipeHandler } from './cli/output-stream';
 export { installProcessFaultHandlers } from './cli/process-fault';
 
+// v0.45 calibration: explicit-input diagnostic smoke materialization. This is
+// intentionally exported as a library boundary; the mutating admission CLI
+// remains fail-closed until real source/witness authority is available.
+export {
+  materializeAdmissionSmokeInputGeneration,
+  type AdmissionSmokeInputMaterialization,
+  type AdmissionSmokeInputMaterializationReceiptV1,
+  type AdmissionSmokeInputMaterializerRequestV1,
+  type AdmissionSmokeInputMaterializationResult,
+  type AdmissionSmokeSourceInputV1,
+  type SmokeJsonlInput,
+} from './calibration/v103/admission-smoke-input-materializer';
+
 // --- Symbiotic-project surface (v0.10.1+) ---------------------------------
 //
 // These primitives are the **stable** public surface for sibling tools
