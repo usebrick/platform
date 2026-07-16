@@ -6,6 +6,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   calibrationAdmissionCanonicalJson,
+  calibrationAdmissionNormalizerRegistrySha256,
+  calibrationAdmissionOverlapPolarityBindingSha256,
+  calibrationAdmissionOverlapUniverseRecordSha256,
+  calibrationAdmissionOverlapUniverseSha256,
   calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionMaterializationId,
   calibrationAdmissionRecordId,
@@ -16,6 +20,11 @@ import {
   calibrationAdmissionSourceGenerationProposalSha256,
   calibrationAdmissionSourceGenerationSha256,
   calibrationAdmissionSourceReviewSha256,
+  isCalibrationAdmissionInputGenerationV1,
+  isCalibrationAdmissionInputGenerationProposalV1,
+  type AdmissionNormalizerRegistryV1,
+  type AdmissionOverlapUniverseRecordV1,
+  type AdmissionOverlapUniverseV1,
   type CalibrationAdmissionRecordV103,
 } from '@usebrick/core';
 
@@ -127,6 +136,82 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
 
 function sha256(value: Uint8Array): string { return createHash('sha256').update(value).digest('hex'); }
 
+function normalizerRegistry(): AdmissionNormalizerRegistryV1 {
+  const body = {
+    version: 'v10.3-admission-normalizers-v1' as const,
+    entries: [{
+      language: 'TypeScript',
+      normalizerId: 'normalizer-typescript-v1',
+      implementationSha256: sha('normalizer-implementation'),
+      fixturesSha256: sha('normalizer-fixtures'),
+      utf8Policy: 'strict' as const,
+      shingleSize: 5 as const,
+    }],
+  };
+  return { ...body, registrySha256: calibrationAdmissionNormalizerRegistrySha256(body) };
+}
+
+function overlapInputs(records: readonly CalibrationAdmissionRecordV103[]): {
+  normalizerRegistry: AdmissionNormalizerRegistryV1;
+  overlapUniverse: AdmissionOverlapUniverseV1;
+  overlapUniverseRecords: Buffer;
+} {
+  const registry = normalizerRegistry();
+  const rows: AdmissionOverlapUniverseRecordV1[] = records.map((admission, index) => {
+    const intake = index < 100 ? 'declared_ai' as const : 'declared_human' as const;
+    const overlapSide = index < 100 ? 'ai_side' as const : 'human_side' as const;
+    const polarityBody = {
+      intake,
+      overlapSide,
+      bindingAuthority: 'legacy-selected-inventory' as const,
+    };
+    const polarity = {
+      ...polarityBody,
+      bindingSha256: calibrationAdmissionOverlapPolarityBindingSha256(polarityBody),
+    };
+    const body = {
+      version: 'v10.3-overlap-universe-record-v1' as const,
+      candidateUnitId: `candidate-${String(index).padStart(3, '0')}`,
+      materialSourceId: admission.materialSourceId,
+      aggregateSourceIds: [admission.materialSourceId],
+      locator: {
+        kind: 'local_inventory_file' as const,
+        localSourceId: admission.materialSourceId,
+        normalizedPath: `src/${String(index).padStart(3, '0')}.ts`,
+      },
+      polarity,
+      contentSha256: admission.contentSha256,
+      contentBytes: admission.contentBytes,
+      language: 'TypeScript',
+      normalizerId: 'normalizer-typescript-v1',
+      normalizationStatus: 'covered' as const,
+      shingleSetSha256: sha(`shingles-${index}`),
+      shingleCount: 1,
+    };
+    return { ...body, recordSha256: calibrationAdmissionOverlapUniverseRecordSha256(body) };
+  });
+  const overlapUniverseRecords = jsonl(rows);
+  const universeBody = {
+    version: 'v10.3-admission-overlap-universe-v1' as const,
+    registerSha256: sha('overlap-register'),
+    recordsJsonlSha256: sha256(overlapUniverseRecords),
+    selectedAggregateCoverage: rows.length,
+    baselineMaterialUnits: rows.length,
+    repositoryMaterialUnits: 0,
+    newCandidateUnits: 0,
+    covered: rows.length,
+    unsupported: 0,
+    unreadable: 0,
+    unresolvedCandidateUnitIds: [],
+    normalizerRegistrySha256: registry.registrySha256,
+  };
+  return {
+    normalizerRegistry: registry,
+    overlapUniverse: { ...universeBody, universeSha256: calibrationAdmissionOverlapUniverseSha256(universeBody) },
+    overlapUniverseRecords,
+  };
+}
+
 function record(index: number): CalibrationAdmissionRecordV103 {
   const positive = index < 100;
   const pair = index % 100;
@@ -216,6 +301,7 @@ function request(outputDirectory: string) {
   };
   const registerDelta = { ...deltaBody, deltaSha256: calibrationAdmissionRegisterDeltaSha256(deltaBody) };
   const records = Array.from({ length: 200 }, (_, index) => record(index));
+  const overlap = overlapInputs(records);
   return {
     outputDirectory,
     transactionId: 'smoke-transaction',
@@ -225,8 +311,7 @@ function request(outputDirectory: string) {
     registerDeltaBytes: json(registerDelta),
     sources,
     records: jsonl(records),
-    overlapUniverse: { version: 'v10.3-admission-overlap-universe-v1', recordCount: 200, recordIds: records.map((entry) => entry.recordId).sort(), universeSha256: sha('universe') },
-    overlapUniverseRecords: jsonl(records.map((entry) => ({ recordId: entry.recordId, contentSha256: entry.contentSha256 }))),
+    ...overlap,
   };
 }
 
@@ -250,10 +335,20 @@ describe('v10.3 smoke input materializer', () => {
   it('materializes one atomic diagnostic generation after all authority and cohort checks pass', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
     try {
-      const result = await materializeAdmissionSmokeInputGeneration(request(root));
+      const input = request(root);
+      const result = await materializeAdmissionSmokeInputGeneration(input);
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.value.receipt).toMatchObject({ recordCount: 200, positiveCount: 100, negativeCount: 100, diagnosticOnly: true, authorityEligible: false });
+      expect(isCalibrationAdmissionInputGenerationProposalV1(result.value.proposal)).toBe(true);
+      expect(isCalibrationAdmissionInputGenerationV1(result.value.inputGeneration)).toBe(true);
+      expect(result.value.receipt).toMatchObject({
+        recordCount: 200,
+        positiveCount: 100,
+        negativeCount: 100,
+        normalizerRegistrySha256: input.normalizerRegistry.registrySha256,
+        diagnosticOnly: true,
+        authorityEligible: false,
+      });
       await expect(readFile(join(result.value.finalDirectory, 'generation.json'), 'utf8')).resolves.toContain(result.value.inputGeneration.generationSha256);
       await expect(readFile(join(result.value.finalDirectory, 'receipt.json'), 'utf8')).resolves.toContain('diagnosticOnly');
       const replay = await materializeAdmissionSmokeInputGeneration(request(root));
@@ -286,6 +381,65 @@ describe('v10.3 smoke input materializer', () => {
       const result = await materializeAdmissionSmokeInputGeneration({ ...input, records: jsonl(records) });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.errors).toContain('cohort:source_unrepresented:source-b');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('fails closed when the overlap registry or canonical stream binding is substituted', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const badRegistry = { ...input.normalizerRegistry, registrySha256: sha('substituted-registry') };
+      const registryResult = await materializeAdmissionSmokeInputGeneration({ ...input, normalizerRegistry: badRegistry });
+      expect(registryResult.ok).toBe(false);
+      if (!registryResult.ok) expect(registryResult.errors.some((error) => error.startsWith('overlap:registry:'))).toBe(true);
+      const reversed = Buffer.from(input.overlapUniverseRecords).toString('utf8').trimEnd().split('\n').reverse().join('\n') + '\n';
+      const streamResult = await materializeAdmissionSmokeInputGeneration({ ...input, overlapUniverseRecords: reversed });
+      expect(streamResult.ok).toBe(false);
+      if (!streamResult.ok) expect(streamResult.errors.some((error) => error.startsWith('overlap:'))).toBe(true);
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('returns a fail-closed diagnostic for hostile runtime shapes without writing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const base = request(root);
+      const malformed = [
+        null,
+        { ...base, sources: [null, null] },
+        { ...base, sources: [{ ...base.sources[0], sourceGeneration: null }, base.sources[1]] },
+        { ...base, registerDelta: null },
+        { ...base, outputDirectory: null },
+      ];
+      for (const value of malformed) {
+        const result = await materializeAdmissionSmokeInputGeneration(value as never);
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.errors.length).toBeGreaterThan(0);
+      }
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
+      await expect(access(join(root, 'generation-smoke'))).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a non-canonical source-review byte stream before staging', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const source = input.sources[0]!;
+      const reviewWithExtraSpace = Buffer.from(`${source.sourceReviewBytes.toString('utf8').trimEnd()} \n`, 'utf8');
+      const result = await materializeAdmissionSmokeInputGeneration({
+        ...input,
+        sources: [{ ...source, sourceReviewBytes: reviewWithExtraSpace }, input.sources[1]!],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors).toContain('source:source-a:review_bytes_not_canonical');
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
     } finally {
       await rm(root, { recursive: true, force: true });
     }

@@ -6,6 +6,7 @@ import {
   calibrationAdmissionCanonicalJson,
   calibrationAdmissionInputGenerationProposalSha256,
   calibrationAdmissionInputGenerationSha256,
+  validateCalibrationAdmissionOverlapUniverseStream,
   calibrationAdmissionRegisterDeltaSha256,
   calibrationAdmissionSourceReviewSha256,
   isCalibrationAdmissionInputGenerationProposalV1,
@@ -67,6 +68,8 @@ export interface AdmissionSmokeInputMaterializerRequestV1 {
   /** Canonical admission records, one JSON object per LF-terminated line. */
   readonly records: SmokeJsonlInput;
   readonly overlapUniverse: unknown;
+  /** Core-validated registry bound to the supplied overlap universe. */
+  readonly normalizerRegistry: unknown;
   /** Canonical overlap-universe records, one JSON object per LF-terminated line. */
   readonly overlapUniverseRecords: SmokeJsonlInput;
 }
@@ -83,6 +86,7 @@ export interface AdmissionSmokeInputMaterializationReceiptV1 {
   readonly recordStreamSha256: string;
   readonly overlapUniverseSha256: string;
   readonly overlapUniverseRecordsSha256: string;
+  readonly normalizerRegistrySha256: string;
   readonly registerDeltaSha256: string;
   readonly sourceIds: readonly string[];
   readonly finalRelativePath: string;
@@ -212,6 +216,8 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
       const review = JSON.parse(text.slice(0, -1)) as unknown;
       if (!isCalibrationSourceReviewV103(review) || review.sourceId !== input.sourceId) errors.push(`source:${input.sourceId}:review_invalid`);
       else {
+        const expectedReviewBytes = Buffer.from(`${calibrationAdmissionCanonicalJson(review)}\n`, 'utf8');
+        if (!Buffer.from(input.sourceReviewBytes).equals(expectedReviewBytes)) errors.push(`source:${input.sourceId}:review_bytes_not_canonical`);
         sourceReviewSha256 = calibrationAdmissionSourceReviewSha256(review);
         if (sourceReviewSha256 !== (input.sourceGeneration as { sourceReviewSha256?: string }).sourceReviewSha256) errors.push(`source:${input.sourceId}:review_hash_unbound`);
       }
@@ -330,7 +336,7 @@ function containment(root: string, candidate: string): boolean {
 }
 
 /** Materialize a strict, diagnostic-only 100+100 input bundle. */
-export async function materializeAdmissionSmokeInputGeneration(
+async function materializeAdmissionSmokeInputGenerationUnchecked(
   request: AdmissionSmokeInputMaterializerRequestV1,
 ): Promise<AdmissionSmokeInputMaterializationResult> {
   const errors: string[] = [];
@@ -364,6 +370,7 @@ export async function materializeAdmissionSmokeInputGeneration(
   }
   let records: readonly unknown[] = [];
   let recordBytes: Uint8Array = new Uint8Array();
+  let overlapRecords: readonly unknown[] = [];
   let overlapRecordBytes: Uint8Array = new Uint8Array();
   try {
     const parsed = await readJsonl(request.records, 'records');
@@ -372,6 +379,7 @@ export async function materializeAdmissionSmokeInputGeneration(
   } catch (error) { errors.push(error instanceof Error ? error.message : String(error)); }
   try {
     const parsed = await readJsonl(request.overlapUniverseRecords, 'overlap_universe_records');
+    overlapRecords = parsed.values;
     overlapRecordBytes = parsed.bytes;
   } catch (error) { errors.push(error instanceof Error ? error.message : String(error)); }
   validateCohort(records, sourceIds, sourceReviewById, errors);
@@ -381,8 +389,18 @@ export async function materializeAdmissionSmokeInputGeneration(
     try { overlapUniverseBytes = canonicalFile(request.overlapUniverse); }
     catch { errors.push('overlap_universe_invalid'); }
   }
+  if (request.overlapUniverse !== undefined) {
+    const overlapValidation = validateCalibrationAdmissionOverlapUniverseStream(
+      request.overlapUniverse,
+      overlapRecords,
+      request.normalizerRegistry,
+      overlapRecordBytes,
+    );
+    if (!overlapValidation.ok) errors.push(...overlapValidation.errors.map((error) => `overlap:${error}`));
+  }
   if (records.length > 0 && recordBytes.byteLength === 0) errors.push('records_bytes_missing');
   if (errors.length > 0) return { ok: false, errors: unique(errors) };
+  const normalizerRegistrySha256 = (request.normalizerRegistry as { registrySha256: string }).registrySha256;
 
   const sourceGenerationProposals = request.sources.map((source) => {
     const proposal = source.sourceProposal as CalibrationAdmissionSourceGenerationProposalV1;
@@ -456,6 +474,7 @@ export async function materializeAdmissionSmokeInputGeneration(
     recordStreamSha256: sha256Bytes(recordBytes),
     overlapUniverseSha256: sha256Bytes(overlapUniverseBytes),
     overlapUniverseRecordsSha256: sha256Bytes(overlapRecordBytes),
+    normalizerRegistrySha256,
     registerDeltaSha256: (request.registerDelta as { deltaSha256: string }).deltaSha256,
     sourceIds: [...sourceIds].sort(),
     finalRelativePath: relativeFinalPath,
@@ -491,4 +510,20 @@ export async function materializeAdmissionSmokeInputGeneration(
     return { ok: false, errors: [`materialization_write_failed:${error instanceof Error ? error.message : String(error)}`] };
   }
   return { ok: true, value: { proposal, inputGeneration, receipt, finalDirectory } };
+}
+
+/**
+ * Public boundary: malformed JavaScript callers must receive a deterministic
+ * diagnostic failure rather than an uncaught exception. The unchecked body
+ * still performs all semantic and filesystem cleanup checks; this wrapper is
+ * only for hostile runtime shapes that TypeScript callers cannot express.
+ */
+export async function materializeAdmissionSmokeInputGeneration(
+  request: AdmissionSmokeInputMaterializerRequestV1,
+): Promise<AdmissionSmokeInputMaterializationResult> {
+  try {
+    return await materializeAdmissionSmokeInputGenerationUnchecked(request);
+  } catch {
+    return { ok: false, errors: ['smoke_input_materializer_failed_closed'] };
+  }
 }
