@@ -9,10 +9,10 @@ import { describe, expect, it } from 'vitest';
 import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
 
 const execFileAsync = promisify(execFile);
-// Run the emitted admission binary so this boundary test does not create a
-// tsx IPC server per child (which is both unnecessary and costly under the
-// RAM-capped release gate). `pnpm test` builds this artifact first.
-const admissionBinary = join(process.cwd(), 'dist/calibration/v103/admission.cjs');
+// Use tsx's ESM loader directly instead of spawning the tsx CLI IPC server per
+// child. This keeps the boundary test source-fresh and avoids unnecessary
+// process/socket overhead under the RAM-capped release gate.
+const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex');
 
 async function files(root: string): Promise<ReadonlyMap<string, string>> {
@@ -30,7 +30,7 @@ async function files(root: string): Promise<ReadonlyMap<string, string>> {
 }
 
 function command(root: string, manifest = 'manifest.json'): string[] {
-  return [admissionBinary, 'admission:smoke-input', '--root', root, '--manifest', manifest];
+  return ['--import', 'tsx/esm', script, 'admission:smoke-input', '--root', root, '--manifest', manifest];
 }
 
 async function run(root: string, manifest = 'manifest.json'): Promise<{ readonly code: number; readonly stdout: string }> {
@@ -102,7 +102,7 @@ describe('admission:smoke-input CLI boundary', () => {
   it('rejects the manifest option on unrelated admission commands', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-input-cli-'));
     try {
-      const result = await execFileAsync(process.execPath, [admissionBinary, 'evidence:verify', '--root', root, '--manifest', 'manifest.json'], { cwd: process.cwd(), maxBuffer: 4 * 1024 * 1024 }).catch((error: unknown) => error as { readonly code: number; readonly stdout: string });
+      const result = await execFileAsync(process.execPath, ['--import', 'tsx/esm', script, 'evidence:verify', '--root', root, '--manifest', 'manifest.json'], { cwd: process.cwd(), maxBuffer: 4 * 1024 * 1024 }).catch((error: unknown) => error as { readonly code: number; readonly stdout: string });
       expect(result.code).toBe(2);
       expect(JSON.parse(result.stdout.trim())).toMatchObject({ ok: false, command: 'evidence:verify' });
     } finally {
