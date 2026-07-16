@@ -9,11 +9,14 @@ import '../styles/components.css';
 interface Props {
   title?: string;
   description?: string;
+  canonicalPath?: string;
 }
 const {
   title = 'usebrick.dev — repository structure for your code',
   description = 'A four-tool platform that continuously models and governs your repository\'s structure. Detect, classify, ship with confidence.',
+  canonicalPath = '/',
 } = Astro.props;
+const canonicalUrl = new URL(canonicalPath, 'https://usebrick.dev').toString();
 ---
 
 <!doctype html>
@@ -22,13 +25,14 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalUrl} />
     <title>{title}</title>
     <meta name="description" content={description} />
 
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://usebrick.dev" />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content="https://usebrick.dev/og-image.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
