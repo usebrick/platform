@@ -29,7 +29,7 @@ import {
   type PrebuiltAdmissionAuthorityGraphInput,
   type PrebuiltAdmissionAuthoritySourceSemanticAuthorityV1,
 } from './admission-authority-rebuild';
-import { requireAdmissionPathSecurity } from './admission-path-security';
+import { requireAdmissionPathSecurity, sameAdmissionFileIdentity } from './admission-path-security';
 
 const AUTHORITY_CURRENT_RELATIVE_PATH = 'review/admission/authority/current.json';
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });
@@ -179,6 +179,8 @@ async function resolveAdmissionRoot(projectRootInput: string): Promise<Admission
 
 async function readContainedFile(root: AdmissionRoot, target: string, label: string): Promise<Buffer> {
   await assertNoSymlinkPath(root.admissionRoot, target, label);
+  const pathBeforeOpen = await lstat(target, { bigint: true });
+  if (!pathBeforeOpen.isFile()) throw new Error(`${label} must be a regular file`);
   let canonicalTarget: string;
   try {
     canonicalTarget = await realpath(target);
@@ -192,13 +194,18 @@ async function readContainedFile(root: AdmissionRoot, target: string, label: str
     // symlink ancestors; this final no-follow open also prevents a leaf from
     // being swapped to a symlink between the preflight and the read.
     handle = await open(canonicalTarget, constants.O_RDONLY | requireAdmissionPathSecurity());
-    const metadata = await handle.stat();
-    if (!metadata.isFile()) throw new Error(`${label} must be a regular file`);
+    const metadata = await handle.stat({ bigint: true });
+    if (!metadata.isFile() || !sameAdmissionFileIdentity(pathBeforeOpen, metadata)) {
+      throw new Error(`${label} changed before read`);
+    }
     const bytes = await handle.readFile();
     // Detect an ancestor/rename race before returning bytes. A changed
     // canonical path is rejected rather than being accepted as the requested
     // authority artifact.
-    if (await realpath(target) !== canonicalTarget) throw new Error(`${label} changed during read`);
+    const pathAfterRead = await lstat(target, { bigint: true });
+    if (!sameAdmissionFileIdentity(pathBeforeOpen, pathAfterRead) || await realpath(target) !== canonicalTarget) {
+      throw new Error(`${label} changed during read`);
+    }
     return bytes;
   } catch (error) {
     throw new Error(`${label} cannot be read: ${errorMessage(error)}`);

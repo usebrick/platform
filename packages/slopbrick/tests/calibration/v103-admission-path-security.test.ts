@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   inspectAdmissionPathSecurity,
   requireAdmissionPathSecurity,
+  sameAdmissionFileIdentity,
 } from '../../src/calibration/v103/admission-path-security';
 
 describe('admission pathname security capability contract', () => {
@@ -39,5 +40,12 @@ describe('admission pathname security capability contract', () => {
     } else {
       expect(() => requireAdmissionPathSecurity()).toThrow(/unsupported|unavailable/i);
     }
+  });
+
+  it('rejects a pathname replacement even when the replacement remains a regular file', () => {
+    const original = { dev: 1n, ino: 2n };
+    expect(sameAdmissionFileIdentity(original, { dev: 1n, ino: 2n })).toBe(true);
+    expect(sameAdmissionFileIdentity(original, { dev: 1n, ino: 3n })).toBe(false);
+    expect(sameAdmissionFileIdentity(original, { dev: 2n, ino: 2n })).toBe(false);
   });
 });

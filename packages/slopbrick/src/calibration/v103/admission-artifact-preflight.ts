@@ -13,7 +13,7 @@ import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import { join, relative, resolve, sep } from 'node:path';
 
-import { requireAdmissionPathSecurity } from './admission-path-security';
+import { requireAdmissionPathSecurity, sameAdmissionFileIdentity } from './admission-path-security';
 
 const ADMISSION_RELATIVE_ROOT = 'review/admission';
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -131,19 +131,26 @@ async function assertNoSymlinkPath(root: string, candidate: string): Promise<voi
 
 async function readExactFile(root: string, candidate: string): Promise<Buffer> {
   await assertNoSymlinkPath(root, candidate);
+  const pathBeforeOpen = await lstat(candidate, { bigint: true });
+  if (!pathBeforeOpen.isFile()) throw new Error('artifact is not a regular file');
   const canonicalCandidate = await realpath(candidate);
   if (!containedPath(root, relative(root, canonicalCandidate)) || canonicalCandidate !== candidate) {
     throw new Error('artifact path changed during preflight');
   }
   const handle = await open(canonicalCandidate, constants.O_RDONLY | requireAdmissionPathSecurity());
   try {
-    const metadata = await handle.stat();
-    if (!metadata.isFile()) throw new Error('artifact is not a regular file');
+    const metadata = await handle.stat({ bigint: true });
+    if (!metadata.isFile() || !sameAdmissionFileIdentity(pathBeforeOpen, metadata)) {
+      throw new Error('artifact path changed before read');
+    }
     const bytes = await handle.readFile();
     // The initial component walk and O_NOFOLLOW protect the normal path. A
     // final realpath check also rejects an ancestor swap observed during the
     // read instead of silently accepting a different target.
-    if (await realpath(candidate) !== canonicalCandidate) throw new Error('artifact path changed during read');
+    const pathAfterRead = await lstat(candidate, { bigint: true });
+    if (!sameAdmissionFileIdentity(pathBeforeOpen, pathAfterRead) || await realpath(candidate) !== canonicalCandidate) {
+      throw new Error('artifact path changed during read');
+    }
     return bytes;
   } finally {
     await handle.close();

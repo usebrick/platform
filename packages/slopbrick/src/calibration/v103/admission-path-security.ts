@@ -17,6 +17,19 @@ export interface AdmissionPathSecurityStatus {
   readonly reason?: 'unsupported_platform' | 'missing_o_nofollow';
 }
 
+export interface AdmissionFileIdentity {
+  readonly dev: bigint;
+  readonly ino: bigint;
+}
+
+/** Compare the identity of a pathname observation and an opened descriptor. */
+export function sameAdmissionFileIdentity(
+  left: AdmissionFileIdentity,
+  right: AdmissionFileIdentity,
+): boolean {
+  return left.dev === right.dev && left.ino === right.ino;
+}
+
 export function inspectAdmissionPathSecurity(
   capabilities: AdmissionPathSecurityCapabilities = {
     platform: process.platform,
