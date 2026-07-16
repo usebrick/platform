@@ -150,7 +150,9 @@ const productFacts = {
   defaultOffCount: Object.entries(signal)
     .filter(([id, entry]) => !id.startsWith('_') && (entry as any)?.defaultOff === true).length,
   corpusFiles: analyzedFiles,
-  corpusLabel: 'v10.1 historical',
+  // Keep the version label machine-readable; callers add the historical
+  // status explicitly so copy never renders "historical v10.1 historical".
+  corpusLabel: 'v10.1',
   corpusAnalyzedFiles: analyzedFiles,
   corpusSampleFiles: sampleFiles,
   measuredRuleCount: Object.values(signal).filter((entry: any) => entry && !entry._v10_1Meta && entry._v10_1Precision !== undefined).length,

@@ -268,7 +268,7 @@ export function initLiveTerminal(): () => void {
 
   const seedBanner = (): void => {
     body.dataset.commandComplete = 'seed';
-    appendLine('muted', `${RELEASE_LABEL} candidate · 4 scores · ${productFacts.ruleCount} rules · ${productFacts.categoryCount} categories · ${productFacts.measuredRuleCount} measured in ${productFacts.corpusLabel} · offline`);
+    appendLine('muted', `${RELEASE_LABEL} candidate · 4 scores · ${productFacts.ruleCount} rules · ${productFacts.categoryCount} categories · ${productFacts.measuredRuleCount} measured in historical ${productFacts.corpusLabel} · offline`);
     appendLine('muted', "type `help` to list commands. the CLI itself runs without telemetry.");
     renderInputLine();
   };

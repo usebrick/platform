@@ -974,7 +974,8 @@ NOISY". */
   /* v0.43.0 refinement: drop the italic (muddied at 5rem) and add a
      gradient text fill so the accent word has real visual weight. */
   position: relative;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
   font-weight: 600;
   background: linear-gradient(180deg, var(--text-accent) 0%, #f0653a 100%);
   -webkit-background-clip: text;
