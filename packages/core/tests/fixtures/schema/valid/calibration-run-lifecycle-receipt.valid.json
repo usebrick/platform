@@ -1,0 +1,11 @@
+{
+  "version": "v10.3-run-lifecycle-receipt-v1",
+  "receiptId": "run-lifecycle-run_init",
+  "kind": "run_init",
+  "approvedCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "behaviorSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verificationEvidenceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "reviewerIds": ["reviewer-a", "reviewer-b"],
+  "decision": "approved",
+  "receiptSha256": "5c5e73b30ba757d34bb5f1062b584847d2b7da1c49f7333f69099cb4f07ff74c"
+}

@@ -1,0 +1,16 @@
+{
+  "version": "v10.3-packed-runtime-receipt-v1",
+  "receiptId": "packed-runtime-node-22",
+  "approvedCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "nodeMajor": 22,
+  "packageVersion": "0.45.0",
+  "tarballSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "manifestBuilderBehaviorSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "installCommandSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verificationCommandSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "outputSetSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "reviewerIds": ["reviewer-a", "reviewer-b"],
+  "decision": "approved",
+  "exitCode": 0,
+  "receiptSha256": "78dce24759184899eb104db618af28959ba50981ab2323c71f8620386a66594a"
+}

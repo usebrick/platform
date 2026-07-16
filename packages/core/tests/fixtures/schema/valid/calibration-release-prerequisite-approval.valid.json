@@ -1,0 +1,10 @@
+{
+  "version": "v10.3-release-prerequisite-approval-v1",
+  "receiptId": "release-approval-1",
+  "planSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "approvedCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "taskEvidenceSummarySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "reviewerIds": ["reviewer-a", "reviewer-b"],
+  "decision": "approved",
+  "receiptSha256": "33a0777ee10f3d3d6f5e1856374b6dd573e937ff31a23f84acaac6971a7a338e"
+}

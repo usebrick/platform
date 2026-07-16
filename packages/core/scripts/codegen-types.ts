@@ -84,6 +84,12 @@ function strengthenFixedTuples(file: string, generated: string): string {
   if (file === 'calibration-admission-blind-assignment.schema.json') {
     return generated.replace('reviewerIds: [unknown, unknown];', 'reviewerIds: [Id, Id];');
   }
+  if (file === 'calibration-release-prerequisite-approval.schema.json'
+    || file === 'calibration-score-wire-closure-receipt.schema.json'
+    || file === 'calibration-run-lifecycle-receipt.schema.json'
+    || file === 'calibration-packed-runtime-receipt.schema.json') {
+    return generated.replace('export type ReviewerIds = never[];', 'export type ReviewerIds = [Id, Id];');
+  }
   if (file === 'calibration-admission-record.schema.json') {
     return generated.replace('acceptingReviewerDecisionIds: [unknown, unknown];', 'acceptingReviewerDecisionIds: [Sha256, Sha256];');
   }

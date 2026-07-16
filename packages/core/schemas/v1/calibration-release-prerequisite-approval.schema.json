@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-release-prerequisite-approval.schema.json",
+  "title": "CalibrationReleasePrerequisiteApprovalV1",
+  "description": "Independently reviewed approval of the release-plan prerequisite commit and evidence summary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "planSha256", "approvedCommitSha", "taskEvidenceSummarySha256", "reviewerIds", "decision", "receiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-release-prerequisite-approval-v1" },
+    "receiptId": { "$ref": "#/$defs/id" },
+    "planSha256": { "$ref": "#/$defs/sha256" },
+    "approvedCommitSha": { "$ref": "#/$defs/commitSha" },
+    "taskEvidenceSummarySha256": { "$ref": "#/$defs/sha256" },
+    "reviewerIds": { "$ref": "#/$defs/reviewerIds" },
+    "decision": { "const": "approved" },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "reviewerIds": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/id" }, { "$ref": "#/$defs/id" }],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    }
+  }
+}

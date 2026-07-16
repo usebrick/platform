@@ -236,6 +236,12 @@ export type { CalibrationAdmissionRegisterDeltaV1, AddedSource as CalibrationAdm
 export type { CalibrationRegisterGenerationReceiptV1 } from './generated/calibration-register-generation-receipt';
 export type { CalibrationRegisterGenerationLockV1 } from './generated/calibration-register-generation-lock';
 export type { CalibrationRegisterGenerationTransactionV1, SourceGeneration as CalibrationRegisterSourceGenerationV1 } from './generated/calibration-register-generation-transaction';
+export type {
+  CalibrationReleasePrerequisiteApprovalV1,
+  CalibrationScoreWireClosureReceiptV1,
+  CalibrationRunLifecycleReceiptV1,
+  CalibrationPackedRuntimeReceiptV1,
+} from './calibration-manifest-dependency-receipts';
 export {
   calibrationAdmissionRegisterDeltaSha256,
   calibrationRegisterGenerationReceiptSha256,
@@ -248,6 +254,18 @@ export {
   validateCalibrationRegisterGenerationGraph,
 } from './calibration-admission-register-authority';
 export type { CalibrationRegisterGenerationGraphValidationV1 } from './calibration-admission-register-authority';
+export {
+  calibrationReleasePrerequisiteApprovalSha256,
+  calibrationScoreWireClosureReceiptSha256,
+  calibrationRunLifecycleReceiptSha256,
+  calibrationPackedRuntimeReceiptSha256,
+  isCalibrationReleasePrerequisiteApprovalV1,
+  isCalibrationScoreWireClosureReceiptV1,
+  isCalibrationRunLifecycleReceiptV1,
+  isCalibrationPackedRuntimeReceiptV1,
+  isCalibrationManifestDependencyReceiptV1,
+} from './calibration-manifest-dependency-receipts';
+export type { CalibrationManifestDependencyReceiptV1 } from './calibration-manifest-dependency-receipts';
 
 export type { CalibrationAdmissionArtifactReceiptV1 } from './generated/calibration-admission-artifact-receipt';
 export type { CalibrationAdmissionSourceGenerationProposalV1 } from './generated/calibration-admission-source-generation-proposal';

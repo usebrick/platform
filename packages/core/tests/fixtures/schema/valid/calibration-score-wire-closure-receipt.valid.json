@@ -1,0 +1,10 @@
+{
+  "version": "v10.3-score-wire-closure-receipt-v1",
+  "receiptId": "score-wire-closure-1",
+  "approvedCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "scoreContractSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "verificationEvidenceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "reviewerIds": ["reviewer-a", "reviewer-b"],
+  "decision": "approved",
+  "receiptSha256": "08ddb6e60d9787608e7a7fef4311b1a693dbf0ba8c85d77f9441a1560507522e"
+}

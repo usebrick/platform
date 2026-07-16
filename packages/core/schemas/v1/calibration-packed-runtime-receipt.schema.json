@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-packed-runtime-receipt.schema.json",
+  "title": "CalibrationPackedRuntimeReceiptV1",
+  "description": "Independently reviewed Node 22 or Node 24 packed-runtime verification receipt for the v0.45.0 package.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "approvedCommitSha", "nodeMajor", "packageVersion", "tarballSha256", "manifestBuilderBehaviorSha256", "installCommandSha256", "verificationCommandSha256", "outputSetSha256", "reviewerIds", "decision", "exitCode", "receiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-packed-runtime-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/id" },
+    "approvedCommitSha": { "$ref": "#/$defs/commitSha" },
+    "nodeMajor": { "enum": [22, 24] },
+    "packageVersion": { "const": "0.45.0" },
+    "tarballSha256": { "$ref": "#/$defs/sha256" },
+    "manifestBuilderBehaviorSha256": { "$ref": "#/$defs/sha256" },
+    "installCommandSha256": { "$ref": "#/$defs/sha256" },
+    "verificationCommandSha256": { "$ref": "#/$defs/sha256" },
+    "outputSetSha256": { "$ref": "#/$defs/sha256" },
+    "reviewerIds": { "$ref": "#/$defs/reviewerIds" },
+    "decision": { "const": "approved" },
+    "exitCode": { "const": 0 },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "reviewerIds": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/id" }, { "$ref": "#/$defs/id" }],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    }
+  }
+}
