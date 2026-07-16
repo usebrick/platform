@@ -2,7 +2,7 @@ import { createHash, type Hash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, mkdir, open, rename, rm, type FileHandle } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
-import { basename, join, relative, resolve, sep } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { TextDecoder } from 'node:util';
 
 import {
@@ -122,6 +122,10 @@ function isKind(value: unknown): value is AdmissionStaticLedgerKind {
   return value === 'privacy' || value === 'quality' || value === 'lineage';
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function asChunks(input: AdmissionStaticLedgerJsonlInput): AsyncIterable<Uint8Array> {
   if (typeof input === 'string') {
     const bytes = Buffer.from(input, 'utf8');
@@ -231,7 +235,7 @@ export function validateAdmissionStaticLedgerStreamReceipt(
   if (value.kind !== expected.kind) errors.push('stream_receipt_kind_mismatch');
   if (value.complete !== true) errors.push('stream_receipt_incomplete');
   if (value.diagnosticOnly !== true || value.authorityEligible !== false) errors.push('stream_receipt_authority_flags_invalid');
-  if (value.errors !== undefined && (!Array.isArray(value.errors) || value.errors.length > 0)) errors.push('stream_receipt_errors_present');
+  if (!Array.isArray(value.errors) || value.errors.length > 0) errors.push('stream_receipt_errors_invalid');
   for (const field of ['recordCount', 'coveredCount', 'unresolvedCount', 'outputBytes', 'resultBytes', 'coveredRecordIdsBytes', 'unresolvedRecordIdsBytes', 'maxRecords', 'maxOutputBytes'] as const) {
     if (typeof value[field] !== 'number' || !Number.isSafeInteger(value[field]) || value[field] < 0) errors.push(`stream_receipt_${field}_invalid`);
   }
@@ -245,9 +249,17 @@ export function validateAdmissionStaticLedgerStreamReceipt(
   for (const field of ['recordsInputSha256', 'resultsInputSha256', 'unresolvedInputSha256', 'resultsJsonlSha256', 'coveredRecordIdsSha256', 'unresolvedRecordIdsSha256'] as const) {
     if (!validSha256(value[field])) errors.push(`stream_receipt_${field}_invalid`);
   }
+  if (typeof value.outputDirectory !== 'string' || value.outputDirectory.length === 0 || !isAbsolute(value.outputDirectory) || value.outputDirectory.includes('\u0000')) {
+    errors.push('stream_receipt_output_directory_invalid');
+  }
+  const expectedPaths: Readonly<Record<'resultRelativePath' | 'coveredRelativePath' | 'unresolvedRelativePath', string>> = {
+    resultRelativePath: `${expected.kind}-ledger-v1/${expected.kind}-ledger.jsonl`,
+    coveredRelativePath: `${expected.kind}-ledger-v1/${expected.kind}-covered-ledger.jsonl`,
+    unresolvedRelativePath: `${expected.kind}-ledger-v1/${expected.kind}-unresolved-ledger.jsonl`,
+  };
   for (const field of ['resultRelativePath', 'coveredRelativePath', 'unresolvedRelativePath'] as const) {
-    if (typeof value[field] !== 'string' || value[field].length === 0 || value[field].includes('..') || value[field].includes('\\')) {
-      errors.push(`stream_receipt_${field}_invalid`);
+    if (value[field] !== expectedPaths[field] || isAbsolute(String(value[field] ?? '')) || String(value[field] ?? '').includes('\\') || String(value[field] ?? '').includes('\u0000')) {
+      errors.push(`stream_receipt_${field.replace('RelativePath', '_path')}_invalid`);
     }
   }
   return uniqueErrors(errors);
@@ -373,10 +385,11 @@ function emptyReceipt(
   errors: readonly string[],
   counters?: Partial<Pick<AdmissionStaticLedgerStreamReceiptV1, 'recordCount' | 'coveredCount' | 'unresolvedCount' | 'outputBytes' | 'resultBytes' | 'coveredRecordIdsBytes' | 'unresolvedRecordIdsBytes'>>,
 ): AdmissionStaticLedgerStreamReceiptV1 {
+  const kind = isKind(request.kind) ? request.kind : 'privacy';
   return {
     version: 'v10.3-admission-static-ledger-stream-receipt-v1',
-    kind: request.kind,
-    ledgerVersion: VERSION_BY_KIND[request.kind],
+    kind,
+    ledgerVersion: VERSION_BY_KIND[kind],
     recordCount: counters?.recordCount ?? 0,
     coveredCount: counters?.coveredCount ?? 0,
     unresolvedCount: counters?.unresolvedCount ?? 0,
@@ -407,7 +420,7 @@ function emptyReceipt(
 }
 
 /** Stream, validate, and persist one static-ledger projection without a row-sized array. */
-export async function materializeAdmissionStaticLedgerStream(
+async function materializeAdmissionStaticLedgerStreamUnchecked(
   request: AdmissionStaticLedgerStreamRequestV1,
 ): Promise<AdmissionStaticLedgerStreamResultV1> {
   const maxRecords = request.maxRecords ?? MAX_STATIC_LEDGER_RECORDS;
@@ -593,6 +606,41 @@ export async function materializeAdmissionStaticLedgerStream(
       unresolvedRecordIdsBytes: unresolvedFile?.bytes ?? 0,
     }),
   };
+}
+
+function receiptRequest(value: unknown): AdmissionStaticLedgerStreamRequestV1 {
+  const object = isRecord(value) ? value : {};
+  return {
+    kind: isKind(object.kind) ? object.kind : 'privacy',
+    records: '',
+    results: '',
+    unresolvedRecordIds: '',
+    outputDirectory: '',
+  };
+}
+
+/**
+ * Public runtime boundary. JavaScript callers can bypass the TypeScript
+ * request shape, so malformed values must return a stable diagnostic receipt
+ * instead of throwing before the inner transaction has a chance to clean up.
+ */
+export async function materializeAdmissionStaticLedgerStream(
+  request: AdmissionStaticLedgerStreamRequestV1,
+): Promise<AdmissionStaticLedgerStreamResultV1> {
+  try {
+    if (!isRecord(request)) {
+      return {
+        ok: false,
+        receipt: emptyReceipt(receiptRequest(request), MAX_STATIC_LEDGER_RECORDS, DEFAULT_STATIC_LEDGER_OUTPUT_BYTES, ['request_invalid']),
+      };
+    }
+    return await materializeAdmissionStaticLedgerStreamUnchecked(request);
+  } catch {
+    return {
+      ok: false,
+      receipt: emptyReceipt(receiptRequest(request), MAX_STATIC_LEDGER_RECORDS, DEFAULT_STATIC_LEDGER_OUTPUT_BYTES, ['static_ledger_stream_failed_closed']),
+    };
+  }
 }
 
 export const streamAdmissionStaticLedger = materializeAdmissionStaticLedgerStream;

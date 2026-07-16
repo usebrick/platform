@@ -14,6 +14,7 @@ import {
 import {
   materializeAdmissionStaticLedgerStream,
   MAX_STATIC_LEDGER_RECORDS,
+  validateAdmissionStaticLedgerStreamReceipt,
 } from '../../src/calibration/v103/admission-static-ledger-stream';
 import { buildAdmissionPrivacyLedger, type AdmissionVerifiedRecordInputV1 } from '../../src/calibration/v103/admission-static-ledgers';
 import { canonicalJson } from '../../src/calibration/v103/canonical';
@@ -85,6 +86,25 @@ function jsonl(values: readonly unknown[]): string {
 }
 
 describe('v10.3 static ledger disk-backed stream adapter', () => {
+  it('returns a diagnostic failure instead of throwing for a hostile null request', async () => {
+    const result = await materializeAdmissionStaticLedgerStream(null as never);
+    expect(result.ok).toBe(false);
+    expect(result.receipt).toMatchObject({
+      kind: 'privacy',
+      complete: false,
+      diagnosticOnly: true,
+      authorityEligible: false,
+    });
+    expect(result.receipt.errors).toContain('request_invalid');
+  });
+
+  it('returns a typed fallback receipt for an invalid ledger kind', async () => {
+    const result = await materializeAdmissionStaticLedgerStream({ kind: 'bogus' } as never);
+    expect(result.ok).toBe(false);
+    expect(result.receipt.kind).toBe('privacy');
+    expect(result.receipt.errors).toContain('kind_invalid');
+  });
+
   it('streams a sorted partition and matches the Core semantic ledger hash', async () => {
     const first = record('first');
     const second = record('second');
@@ -192,6 +212,47 @@ describe('v10.3 static ledger disk-backed stream adapter', () => {
       });
       expect(bounded.ok).toBe(false);
       expect(bounded.receipt.errors).toContain('max_records_invalid');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects successful receipts with missing metadata or non-local projection paths', async () => {
+    const first = record('first');
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-static-stream-'));
+    try {
+      const resultValues = [privacyResult(first)];
+      const materialized = await materializeAdmissionStaticLedgerStream({
+        kind: 'privacy',
+        records: jsonl([first.record]),
+        results: jsonl(resultValues),
+        unresolvedRecordIds: '',
+        outputDirectory: root,
+      });
+      expect(materialized.ok).toBe(true);
+      if (!materialized.ok) return;
+      const expected = {
+        kind: 'privacy' as const,
+        recordCount: materialized.receipt.recordCount,
+        recordSetSha256: materialized.receipt.recordSetSha256,
+        ledgerSha256: materialized.receipt.ledgerSha256!,
+      };
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        errors: undefined,
+      }, expected)).toContain('stream_receipt_errors_invalid');
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        outputDirectory: null,
+      }, expected)).toContain('stream_receipt_output_directory_invalid');
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        resultRelativePath: '../escape.jsonl',
+      }, expected)).toContain('stream_receipt_result_path_invalid');
+      expect(validateAdmissionStaticLedgerStreamReceipt({
+        ...materialized.receipt,
+        coveredRelativePath: '/tmp/escape.jsonl',
+      }, expected)).toContain('stream_receipt_covered_path_invalid');
     } finally {
       await rm(root, { recursive: true, force: true });
     }
