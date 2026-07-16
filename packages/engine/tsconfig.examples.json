@@ -1,7 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@usebrick/engine": ["src/index.ts"],
+      "@usebrick/engine/pure": ["src/pure.ts"]
+    }
   },
   "include": ["src/**/*", "examples/**/*"]
 }
