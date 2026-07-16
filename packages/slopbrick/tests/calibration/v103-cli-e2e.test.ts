@@ -17,7 +17,7 @@ const execFileAsync = promisify(execFile);
 const tempDirs: string[] = [];
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
 const script = join(packageRoot, 'scripts', 'cal', 'v103.ts');
-const tsx = join(packageRoot, 'node_modules', '.bin', 'tsx');
+const tsx = join(packageRoot, 'tests', 'helpers', 'tsx-runner.cjs');
 
 afterEach(() => {
   while (tempDirs.length > 0) rmSync(tempDirs.pop()!, { recursive: true, force: true });

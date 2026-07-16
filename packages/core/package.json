@@ -29,9 +29,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "codegen": "tsx scripts/codegen-types.ts",
-    "test:contract": "tsx scripts/verify-codegen-fresh.ts",
-    "validate:schema": "tsx scripts/validate-schemas.ts"
+    "codegen": "node --import tsx scripts/codegen-types.ts",
+    "test:contract": "node --import tsx scripts/verify-codegen-fresh.ts",
+    "validate:schema": "node --import tsx scripts/validate-schemas.ts"
   },
   "keywords": [
     "usebrick",

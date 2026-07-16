@@ -26,7 +26,7 @@ import {
 } from './v103-admission-authority-rebuild-fixture';
 
 const execFileAsync = promisify(execFile);
-const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
 const roots: string[] = [];
 const TOOL_PROFILE = 'admission-static-ledgers-v1' as const;
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex');

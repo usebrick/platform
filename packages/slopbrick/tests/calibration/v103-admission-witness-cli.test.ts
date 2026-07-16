@@ -18,7 +18,7 @@ describe('v10.3 witness CLI boundary', () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-witness-cli-'));
     roots.push(root);
     const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
-    const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+    const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
     const before = await readdir(root);
     const result = await execFileAsync(tsx, [
       script,
@@ -48,7 +48,7 @@ describe('v10.3 witness CLI boundary', () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-witness-cli-recovery-'));
     roots.push(root);
     const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
-    const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+    const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
     const result = await execFileAsync(tsx, [
       script,
       'witness:recover-publication',

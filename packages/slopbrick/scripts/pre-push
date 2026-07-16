@@ -66,8 +66,8 @@ echo "[pre-push] 3/5: recursive build"
 # Step 4: generated registry and language support drift checks.
 echo
 echo "[pre-push] 4/5: generated registry/language checks"
-"${PNPM[@]}" --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
-"${PNPM[@]}" --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
+"${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
+"${PNPM[@]}" --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
 
 # Step 5: dependency security audit. pnpm's legacy audit endpoint is retired,
 # so use the repository's npm bulk-advisory adapter instead of treating HTTP

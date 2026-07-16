@@ -98,7 +98,7 @@ describe('v10.3 run initialization and artifact verification', () => {
       commandArgs: ['cal:scan', '--run', 'init-run'],
     }));
     const script = join(process.cwd(), 'scripts', 'cal', 'v103.ts');
-    const tsx = join(process.cwd(), 'node_modules', '.bin', 'tsx');
+    const tsx = join(process.cwd(), 'tests', 'helpers', 'tsx-runner.cjs');
     await execFileAsync(tsx, [script, 'select', '--manifest', manifestPath, '--expected-manifest-sha256', sha256(manifestPath), '--seed', 'init-seed', '--out', runDirectory]);
     const inputFlags = ['--registry', registryPath, '--signal-table', signalTablePath, '--config', configPath];
     const init = await execFileAsync(tsx, [script, 'run:init', '--run', runDirectory, '--draft', draftPath, '--checkout-map', checkoutMapPath, ...inputFlags]);

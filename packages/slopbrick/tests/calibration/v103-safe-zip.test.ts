@@ -1394,8 +1394,8 @@ const ABRUPT_CRASH_TEMP_TOKEN = Buffer.alloc(16, 0xa2).toString('hex');
 const ABRUPT_CRASH_WORKER = fileURLToPath(
   new URL('../helpers/v103-safe-zip-crash-worker.ts', import.meta.url),
 );
-const PACKAGE_LOCAL_TSX = fileURLToPath(
-  new URL('../../node_modules/tsx/dist/cli.mjs', import.meta.url),
+const PACKAGE_LOCAL_TSX_RUNNER = fileURLToPath(
+  new URL('../helpers/tsx-runner.cjs', import.meta.url),
 );
 const SLOPBRICK_PACKAGE_DIRECTORY = fileURLToPath(new URL('../../', import.meta.url));
 const SUPPORTS_LOCAL_POSIX_ABRUPT_CRASH = (
@@ -1416,7 +1416,7 @@ async function runAbruptCrashWorker(input: {
   readonly timing: 'before' | 'after';
 }): Promise<AbruptCrashWorkerResult> {
   const child = spawn(process.execPath, [
-    PACKAGE_LOCAL_TSX,
+    PACKAGE_LOCAL_TSX_RUNNER,
     ABRUPT_CRASH_WORKER,
     JSON.stringify({
       ...input,

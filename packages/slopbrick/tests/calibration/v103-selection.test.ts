@@ -283,7 +283,7 @@ describe('v10.3 selection entrypoint', () => {
     const badManifest = join(dir, 'bad-manifest.json');
     writeFileSync(badManifest, JSON.stringify({ version: 'v10.3' }));
     const script = join(process.cwd(), 'scripts', 'cal', 'v103.ts');
-    const tsx = join(process.cwd(), 'node_modules', '.bin', 'tsx');
+    const tsx = join(process.cwd(), 'tests', 'helpers', 'tsx-runner.cjs');
 
     await expect(execFileAsync(tsx, [script, 'corpus:validate', '--manifest', badManifest, '--expected-manifest-sha256', fileSha256(badManifest)])).rejects.toMatchObject({ code: 2 });
 

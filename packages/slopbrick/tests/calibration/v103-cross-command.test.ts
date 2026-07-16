@@ -18,7 +18,7 @@ import { isCalibrationRunManifestV103 } from '@usebrick/core';
 const execFileAsync = promisify(execFile);
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
 const script = join(packageRoot, 'scripts', 'cal', 'v103.ts');
-const tsx = join(packageRoot, 'node_modules', '.bin', 'tsx');
+const tsx = join(packageRoot, 'tests', 'helpers', 'tsx-runner.cjs');
 const tempDirs: string[] = [];
 
 afterEach(() => {

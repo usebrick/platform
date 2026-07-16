@@ -46,7 +46,7 @@ describe('v10.3 tool-authority resolver CLI', () => {
       outputSetSha256: sha('output'),
     });
     const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
-    const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+    const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
     const before = await readFile(join(authorityRoot, 'index.json'));
     const run = await execFileAsync(tsx, [
       script,
@@ -95,7 +95,7 @@ describe('v10.3 tool-authority resolver CLI', () => {
       '--tool-receipt-sha256', receipt.receiptSha256,
       '--tool-authority-index-sha256', receipt.toolAuthorityIndexSha256,
     ];
-    const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+    const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
     const first = await execFileAsync(tsx, resolveArgs, { cwd: process.cwd(), maxBuffer: 1024 * 1024 });
     const snapshot = (JSON.parse(first.stdout) as { snapshot: unknown }).snapshot;
     const snapshotPath = join(root, 'snapshot.json');

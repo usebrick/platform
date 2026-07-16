@@ -160,7 +160,7 @@ describe('offline acquisition publication', () => {
     const fixture = await setup();
     try {
       const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
-      const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+      const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
       const intentRun = await execFileAsync(tsx, [
         script,
         'tool-authority:intent',
@@ -812,7 +812,7 @@ describe('offline acquisition publication', () => {
       await mkdir(join(authorityRoot, 'completions'), { recursive: true });
       await writeFile(join(authorityRoot, 'completions', `${transactionId}.json`), calibrationAdmissionCanonicalJson(completion), { flag: 'wx' });
 
-      const { stdout } = await execFileAsync(join(process.cwd(), 'node_modules/.bin/tsx'), [
+      const { stdout } = await execFileAsync(join(process.cwd(), 'tests/helpers/tsx-runner.cjs'), [
         'scripts/cal/v103-admission.ts',
         'tool-authority:recover',
         '--root', fixture.root,

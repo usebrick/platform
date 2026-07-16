@@ -32,3 +32,30 @@ The tracked worktree is clean; the status-list SHA is
 the three preserved unrelated untracked paths (`.astro/`, `TODO.md`, `src/`).
 Independent dependency/release approval, corpus authority, and remote release
 operations remain open.
+
+## Launcher portability correction — 2026-07-16
+
+The current branch also replaces supported `tsx` binary script launchers with
+`node --import tsx` in Core, SlopBrick, Website, and the SlopBrick pre-push
+generation checks. This is a script-execution change only: dependency ranges,
+engines, overrides, and `pnpm-lock.yaml` remain unchanged. It removes the
+one-shot tsx IPC socket that this host denies (`listen EPERM`). After the
+change, `pnpm -r typecheck` and `pnpm -r build` both pass; build output retains
+only the existing non-fatal Zod declaration warnings.
+
+Current hashes for the affected manifests are:
+
+| File | Current SHA-256 |
+|---|---|
+| `packages/core/package.json` | `2de8b28ffeb97e1e50687baf5d0ff2881dafb2ef0001544d9eb21ecf47a0a702` |
+| `packages/slopbrick/package.json` | `5c242c046fe909554ed771b5322df93228dc21e798579ee42fa7831ba176b433` |
+| `packages/website/package.json` | `d08053e31fc8bd9b79c45a0c97fe2848999bba1ab69a856f9588d2804e33a29d` |
+| `packages/slopbrick/scripts/pre-push` | `df1a94409a50faf476f872f40c373e669950c3de11dd0eb599e9311090f2cc89` |
+
+The current status-list SHA is
+`ae88aee9ffe708b5d8fa7983fecf6afdf43937f45deaacaefb78dfc8119193b7`, which
+includes the intended implementation/docs edits and the three preserved
+unrelated untracked paths. This remains mechanical evidence, not independent
+release approval; no corpus, authority, remote, publish, or deployment state
+changed. The launcher correction is committed on the recovery branch as
+`b19c57309763ae0a42976ebec05b39ef76b0ae44`.

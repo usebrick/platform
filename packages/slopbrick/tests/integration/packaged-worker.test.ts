@@ -10,7 +10,7 @@ const binPath = resolve(__dirname, '..', '..', 'bin', 'slopbrick.js');
 const packagePath = resolve(__dirname, '..', '..', 'package.json');
 const packageRoot = resolve(__dirname, '..', '..');
 const sourcePath = resolve(packageRoot, 'src', 'index.ts');
-const tsxPath = resolve(packageRoot, 'node_modules', '.bin', 'tsx');
+const tsxPath = resolve(packageRoot, 'tests', 'helpers', 'tsx-runner.cjs');
 const tempDirs: string[] = [];
 
 interface PackageManifest {

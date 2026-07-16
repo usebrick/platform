@@ -8,7 +8,7 @@
     "dev": "pnpm prebuild && astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "prebuild": "tsx scripts/prebuild.ts",
+    "prebuild": "node --import tsx scripts/prebuild.ts",
     "astro": "astro",
     "typecheck": "astro check",
     "test": "vitest run",

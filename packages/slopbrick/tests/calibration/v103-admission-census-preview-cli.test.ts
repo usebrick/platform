@@ -28,7 +28,7 @@ import {
 } from '../../src/calibration/v103/admission-publication';
 
 const execFileAsync = promisify(execFile);
-const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
 const script = join(process.cwd(), 'scripts/cal/v103-admission.ts');
 const coreFixture = join(process.cwd(), '..', 'core', 'tests', 'fixtures', 'schema', 'valid');
 const sha = (value: string): string => createHash('sha256').update(value).digest('hex');

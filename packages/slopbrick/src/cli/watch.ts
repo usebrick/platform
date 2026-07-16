@@ -6,9 +6,9 @@
 // self-scan loop. Relevant events are now classified before debounce and full
 // scans are serialized with at most one queued follow-up.
 
-import { statSync, watch } from 'node:fs';
+import { readdirSync, statSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 import { resolveConfigPath as findConfigPath } from '../config';
 import { baselinePath } from '../engine/cache';
@@ -29,6 +29,107 @@ import {
   isScannerOwnedPath,
   resolveExplicitWatchScope,
 } from './watch-event-policy';
+
+type WatchHandle = Pick<FSWatcher, 'close'>;
+
+const POLL_IGNORED_DIRECTORIES = new Set([
+  '.git',
+  '.slopbrick',
+  'node_modules',
+  'coverage',
+]);
+
+function snapshotWorkspace(root: string, trackedPaths: readonly string[] = []): Map<string, string> {
+  const snapshot = new Map<string, string>();
+
+  const visit = (directory: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(directory, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory() && POLL_IGNORED_DIRECTORIES.has(entry.name)) continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        visit(path);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      try {
+        const metadata = statSync(path);
+        snapshot.set(path, `${metadata.mtimeMs}:${metadata.size}`);
+      } catch {
+        // The file may disappear between readdir and stat. The next poll
+        // observes the stable state and emits a deletion if needed.
+      }
+    }
+  };
+
+  visit(root);
+  for (const path of trackedPaths) {
+    snapshot.set(path, fileSignature(path));
+  }
+  return snapshot;
+}
+
+function pollingIntervalMs(): number {
+  const requested = Number(process.env.SLOPBRICK_WATCH_POLL_MS ?? 250);
+  if (!Number.isFinite(requested)) return 250;
+  return Math.min(5_000, Math.max(50, Math.floor(requested)));
+}
+
+function createPollingWatcher(
+  root: string,
+  onChange: (changedPath: string) => void,
+  trackedPaths: readonly string[] = [],
+): WatchHandle {
+  let previous = snapshotWorkspace(root, trackedPaths);
+  const timer = setInterval(() => {
+    const next = snapshotWorkspace(root, trackedPaths);
+    const changed = new Set<string>();
+    for (const path of previous.keys()) {
+      if (!next.has(path) || next.get(path) !== previous.get(path)) changed.add(path);
+    }
+    for (const path of next.keys()) {
+      if (!previous.has(path)) changed.add(path);
+    }
+    previous = next;
+    for (const path of changed) onChange(path);
+  }, pollingIntervalMs());
+
+  return {
+    close: () => clearInterval(timer),
+  };
+}
+
+function fileSignature(path: string): string {
+  try {
+    const metadata = statSync(path);
+    return `${metadata.mtimeMs}:${metadata.size}`;
+  } catch {
+    return 'missing';
+  }
+}
+
+function createFilePollingWatcher(
+  path: string,
+  onChange: () => void,
+): WatchHandle {
+  let previous = fileSignature(path);
+  const timer = setInterval(() => {
+    const next = fileSignature(path);
+    if (next === previous) return;
+    previous = next;
+    onChange();
+  }, pollingIntervalMs());
+
+  return {
+    close: () => clearInterval(timer),
+  };
+}
 
 /**
  * Normalize an incremental watch result exactly as the full scan pipeline
@@ -57,8 +158,8 @@ export async function watchProject(
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
   let debounceConfigChanged = false;
   let closed = false;
-  let watcher: FSWatcher | undefined;
-  let gitIndexWatcher: FSWatcher | undefined;
+  let watcher: WatchHandle | undefined;
+  let gitIndexWatcher: WatchHandle | undefined;
   let currentConfig: ResolvedConfig | undefined;
   const currentFiles = new Set<string>();
   const explicitScope = resolveExplicitWatchScope(cwd, paths);
@@ -181,41 +282,62 @@ export async function watchProject(
     }, WATCH_DEBOUNCE_MS);
   }
 
+  function handleWorkspaceEvent(filename: string | Buffer): void {
+    if (closed || !filename) return;
+
+    const changedPath = resolve(cwd, filename.toString());
+    const configChanged = isConfigTrigger(cwd, changedPath, configPath);
+    const baselineChanged = changedPath === baselinePath(cwd);
+    const gitChanged = isGitTrigger(changedPath);
+
+    if (configChanged || baselineChanged || gitChanged) {
+      scheduleFullScan(configChanged);
+      return;
+    }
+
+    // Classify generated/noisy events before touching the debounce timer so
+    // a scan's own writes cannot postpone or queue another scan.
+    if (isScannerOwnedPath(cwd, changedPath, options, currentConfig)) return;
+    if (!isRelevantSourceEvent({
+      cwd,
+      changedPath,
+      currentFiles,
+      explicitScope,
+      config: currentConfig,
+    })) return;
+
+    scheduleFullScan(false);
+  }
+
+  function installPollingFallback(reason: unknown): void {
+    if (closed) return;
+    watcher?.close();
+    watcher = createPollingWatcher(
+      cwd,
+      (changedPath) => handleWorkspaceEvent(relative(cwd, changedPath)),
+      gitIndexPath ? [gitIndexPath] : [],
+    );
+    if (!options.quiet) {
+      logger.warn(
+        `Recursive file watch unavailable (${formatErrorMessage(reason)}); using polling fallback every ${pollingIntervalMs()}ms.`,
+      );
+    }
+  }
+
   baselineMtime = getBaselineMtime();
   await requestFullScan(false);
 
   if (closed) return;
 
-  watcher = watch(
-    cwd,
-    { recursive: true },
-    (_eventType, filename) => {
-      if (closed || !filename) return;
-
-      const changedPath = resolve(cwd, filename.toString());
-      const configChanged = isConfigTrigger(cwd, changedPath, configPath);
-      const baselineChanged = changedPath === baselinePath(cwd);
-      const gitChanged = isGitTrigger(changedPath);
-
-      if (configChanged || baselineChanged || gitChanged) {
-        scheduleFullScan(configChanged);
-        return;
-      }
-
-      // Classify generated/noisy events before touching the debounce timer so
-      // a scan's own writes cannot postpone or queue another scan.
-      if (isScannerOwnedPath(cwd, changedPath, options, currentConfig)) return;
-      if (!isRelevantSourceEvent({
-        cwd,
-        changedPath,
-        currentFiles,
-        explicitScope,
-        config: currentConfig,
-      })) return;
-
-      scheduleFullScan(false);
-    },
-  );
+  try {
+    const nativeWatcher = watch(cwd, { recursive: true }, (_eventType, filename) => {
+      handleWorkspaceEvent(filename ?? '');
+    });
+    watcher = nativeWatcher;
+    nativeWatcher.on('error', installPollingFallback);
+  } catch (error) {
+    installPollingFallback(error);
+  }
 
   // In linked worktrees, submodules, and subdirectory workspaces, Git's index
   // can live outside the recursively watched workspace. Watch its containing
@@ -223,15 +345,24 @@ export async function watchProject(
   if (gitIndexPath && !isPathInside(cwd, gitIndexPath)) {
     const gitIndexDirectory = dirname(gitIndexPath);
     try {
-      gitIndexWatcher = watch(gitIndexDirectory, (_eventType, filename) => {
+      const nativeGitIndexWatcher = watch(gitIndexDirectory, (_eventType, filename) => {
         if (closed || !filename) return;
         if (resolve(gitIndexDirectory, filename.toString()) === gitIndexPath) {
           scheduleFullScan(false);
         }
       });
+      gitIndexWatcher = nativeGitIndexWatcher;
+      nativeGitIndexWatcher.on('error', (err) => {
+        nativeGitIndexWatcher.close();
+        gitIndexWatcher = createFilePollingWatcher(gitIndexPath, () => scheduleFullScan(false));
+        if (!options.quiet) {
+          logger.warn(`Git index watch unavailable (${formatErrorMessage(err)}); using polling fallback.`);
+        }
+      });
     } catch (err) {
+      gitIndexWatcher = createFilePollingWatcher(gitIndexPath, () => scheduleFullScan(false));
       if (!options.quiet) {
-        logger.warn(`Git index watch unavailable: ${formatErrorMessage(err)}`);
+        logger.warn(`Git index watch unavailable (${formatErrorMessage(err)}); using polling fallback.`);
       }
     }
   }

@@ -41,7 +41,7 @@ import {
 
 const execFileAsync = promisify(execFile);
 const fixtureRoot = fileURLToPath(new URL('../../../core/tests/fixtures/schema/valid', import.meta.url));
-const tsx = join(process.cwd(), 'node_modules/.bin/tsx');
+const tsx = join(process.cwd(), 'tests/helpers/tsx-runner.cjs');
 const TOOL_PROFILE = 'admission-static-ledgers-v1';
 
 function fixture<T>(name: string): T {
@@ -414,7 +414,7 @@ describe('v10.3 overlap authority CLI boundary', () => {
   it('runs read-only verification without creating the control-plane layout', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-overlap-cli-'));
     try {
-      await expect(execFileAsync(join(process.cwd(), 'node_modules/.bin/tsx'), [
+      await expect(execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'authority:overlap:verify', '--root', root,
         '--tool-profile', 'admission-static-ledgers-v1',
       ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 })).rejects.toMatchObject({ code: 2 });
@@ -426,12 +426,12 @@ describe('v10.3 overlap authority CLI boundary', () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-overlap-cli-options-'));
     try {
       const hash = 'a'.repeat(64);
-      await expect(execFileAsync(join(process.cwd(), 'node_modules/.bin/tsx'), [
+      await expect(execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'authority:overlap:verify', '--root', root,
         '--tool-profile', 'admission-static-ledgers-v1', '--tool-receipt-id', hash,
         '--tool-receipt-sha256', hash, '--tool-authority-index-sha256', hash,
       ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 })).rejects.toMatchObject({ code: 2 });
-      await expect(execFileAsync(join(process.cwd(), 'node_modules/.bin/tsx'), [
+      await expect(execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'authority:overlap:verify', '--root', root,
         '--tool-profile', 'admission-static-ledgers-v1', '--action', 'authority:overlap',
       ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 })).rejects.toMatchObject({ code: 2 });
@@ -442,7 +442,7 @@ describe('v10.3 overlap authority CLI boundary', () => {
   it('requires explicit indexed tool selectors for the opt-in static-authority join', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-overlap-cli-join-options-'));
     try {
-      await expect(execFileAsync(join(process.cwd(), 'node_modules/.bin/tsx'), [
+      await expect(execFileAsync(tsx, [
         'scripts/cal/v103-admission.ts', 'authority:overlap:verify', '--root', root,
         '--tool-profile', TOOL_PROFILE, '--join-static-authority',
       ], { cwd: process.cwd(), maxBuffer: 1024 * 1024 })).rejects.toMatchObject({ code: 2 });
