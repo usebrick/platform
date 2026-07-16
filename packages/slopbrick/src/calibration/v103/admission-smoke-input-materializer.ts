@@ -315,6 +315,8 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
     ['positive', new Map()], ['negative', new Map()],
   ]);
   const families = new Set<string>();
+  let previousRecordId: string | undefined;
+  let recordsOrderedByRecordId = true;
   let positive = 0;
   let negative = 0;
   for (const [index, raw] of values.entries()) {
@@ -334,6 +336,8 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
     if (expectedReview !== undefined && record.sourceReviewSha256 !== expectedReview) errors.push(`cohort:record_${index}_source_review_unbound`);
     if (record.claimedLineage.pairGroupId === undefined) errors.push(`cohort:record_${index}_pair_group_missing`);
     if (recordIds.has(record.recordId)) errors.push(`cohort:duplicate_record_id:${record.recordId}`);
+    if (previousRecordId !== undefined && record.recordId <= previousRecordId) recordsOrderedByRecordId = false;
+    previousRecordId = record.recordId;
     recordIds.add(record.recordId);
     records.push(record);
     if (label === 'positive') positive += 1; else negative += 1;
@@ -353,6 +357,11 @@ function validateCohort(values: readonly unknown[], sourceIds: ReadonlySet<strin
   }
   if (positive !== ARM_SIZE) errors.push('cohort:positive_count_must_be_100');
   if (negative !== ARM_SIZE) errors.push('cohort:negative_count_must_be_100');
+  // The downstream authority materializer joins this exact byte stream to
+  // record-set hashes and requires strict recordId order. Rejecting an
+  // unsorted stream here prevents a diagnostic bundle from appearing valid
+  // only to fail later at the static-authority boundary.
+  if (!recordsOrderedByRecordId) errors.push('cohort:records_not_ordered_by_record_id');
   for (const sourceIdValue of sourceIds) {
     if (!observedSourceIds.has(sourceIdValue)) errors.push(`cohort:source_unrepresented:${sourceIdValue}`);
   }

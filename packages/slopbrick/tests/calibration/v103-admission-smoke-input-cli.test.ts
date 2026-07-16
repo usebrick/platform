@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { promisify } from 'node:util';
@@ -74,6 +74,96 @@ describe('admission:smoke-input CLI boundary', () => {
       const result = await run(root, '../outside-manifest.json');
       expect(result.code).toBe(2);
       expect(JSON.parse(result.stdout.trim())).toMatchObject({ ok: false, command: 'admission:smoke-input' });
+      expect(await files(root)).toEqual(before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a noncanonical manifest selector before reading or writing', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-input-cli-'));
+    try {
+      // The selector is rejected lexically, so the manifest body need not be
+      // a usable smoke input. Keeping a file here proves no alias is read.
+      await writeFile(join(root, 'manifest.json'), '{}', 'utf8');
+      const before = await files(root);
+      const result = await run(root, './manifest.json');
+      expect(result.code).toBe(2);
+      const parsed = JSON.parse(result.stdout.trim()) as { errors?: readonly string[] };
+      expect(parsed.errors?.some((error) => error.includes('canonical root-relative path'))).toBe(true);
+      expect(await files(root)).toEqual(before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects noncanonical paths inside the manifest before resolving inputs', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-input-cli-'));
+    try {
+      const source = {
+        sourceId: 'source-a',
+        sourceGenerationPath: 'sources/a-generation.json',
+        sourceProposalPath: 'sources/a-proposal.json',
+        approvalPath: 'sources/a-approval.json',
+        sourceReviewPath: 'sources/a-review.json',
+        semanticAuthorityPath: 'sources/a-semantic.json',
+      };
+      const manifest = {
+        version: 'v10.3-admission-smoke-input-manifest-v1',
+        outputDirectory: '.',
+        transactionId: 'smoke-cli',
+        proposalId: 'smoke-cli-proposal',
+        evidenceBundleSha256: sha('bundle'),
+        registerDeltaPath: 'inputs//register-delta.json',
+        recordsPath: 'records.jsonl',
+        overlapUniversePath: 'overlap-universe.json',
+        normalizerRegistryPath: 'normalizers.json',
+        overlapUniverseRecordsPath: 'overlap-universe-records.jsonl',
+        sources: [source, { ...source, sourceId: 'source-b' }],
+      };
+      await writeFile(join(root, 'manifest.json'), calibrationAdmissionCanonicalJson(manifest), 'utf8');
+      const before = await files(root);
+      const result = await run(root);
+      expect(result.code).toBe(2);
+      const parsed = JSON.parse(result.stdout.trim()) as { errors?: readonly string[] };
+      expect(parsed.errors?.some((error) => error.includes('canonical root-relative path'))).toBe(true);
+      expect(await files(root)).toEqual(before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a directory supplied where a manifest input file is required', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-input-cli-'));
+    try {
+      const source = {
+        sourceId: 'source-a',
+        sourceGenerationPath: 'sources/a-generation.json',
+        sourceProposalPath: 'sources/a-proposal.json',
+        approvalPath: 'sources/a-approval.json',
+        sourceReviewPath: 'sources/a-review.json',
+        semanticAuthorityPath: 'sources/a-semantic.json',
+      };
+      const manifest = {
+        version: 'v10.3-admission-smoke-input-manifest-v1',
+        outputDirectory: '.',
+        transactionId: 'smoke-cli',
+        proposalId: 'smoke-cli-proposal',
+        evidenceBundleSha256: sha('bundle'),
+        registerDeltaPath: 'register-directory',
+        recordsPath: 'records.jsonl',
+        overlapUniversePath: 'overlap-universe.json',
+        normalizerRegistryPath: 'normalizers.json',
+        overlapUniverseRecordsPath: 'overlap-universe-records.jsonl',
+        sources: [source, { ...source, sourceId: 'source-b' }],
+      };
+      await mkdir(join(root, 'register-directory'));
+      await writeFile(join(root, 'manifest.json'), calibrationAdmissionCanonicalJson(manifest), 'utf8');
+      const before = await files(root);
+      const result = await run(root);
+      expect(result.code).toBe(2);
+      const parsed = JSON.parse(result.stdout.trim()) as { errors?: readonly string[] };
+      expect(parsed.errors?.some((error) => error.includes('register delta') && error.includes('regular file'))).toBe(true);
       expect(await files(root)).toEqual(before);
     } finally {
       await rm(root, { recursive: true, force: true });

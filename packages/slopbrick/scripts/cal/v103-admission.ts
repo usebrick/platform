@@ -1,6 +1,6 @@
 /** Offline-only v10.3 admission commands. */
 import { createReadStream } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { lstat, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { dirname, join, resolve } from 'node:path';
 import { calibrationAdmissionCanonicalJson } from '@usebrick/core';
@@ -194,7 +194,10 @@ function outerResult(command: string, result: Awaited<ReturnType<typeof rebuildP
 }
 
 async function readCanonicalOuterInput(root: string, requested: string, label: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> {
-  const bytes = await readFile(await requireContainedAdmissionPath(root, requested));
+  const containedPath = await requireContainedAdmissionPath(root, requested);
+  const metadata = await lstat(containedPath);
+  if (!metadata.isFile() || metadata.isSymbolicLink()) throw new Error(`${label} must be a regular file`);
+  const bytes = await readFile(containedPath);
   let value: unknown;
   try {
     value = JSON.parse(bytes.toString('utf8')) as unknown;
@@ -239,9 +242,14 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function manifestPath(value: unknown, label: string): string {
-  if (typeof value !== 'string' || value.length === 0 || value.startsWith('/') || value.includes('\\')) {
+function manifestPath(value: unknown, label: string, allowCurrentDirectory = false): string {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || value.startsWith('/') || value.includes('\\')
+    || /[\u0000-\u001f\u007f]/u.test(value)) {
     throw new Error(`${label} must be a non-empty root-relative path`);
+  }
+  const parts = value.split('/');
+  if (parts.some((part) => part.length === 0 || part === '..' || (part === '.' && !(allowCurrentDirectory && value === '.')))) {
+    throw new Error(`${label} must be a canonical root-relative path`);
   }
   return value;
 }
@@ -271,7 +279,9 @@ function smokeManifest(value: unknown): AdmissionSmokeInputManifestV1 {
   });
   return {
     version: value.version,
-    outputDirectory: manifestPath(value.outputDirectory, 'output directory'),
+    // `.` is the canonical spelling for the explicit root itself; all other
+    // manifest paths must contain no dot/empty segments or control bytes.
+    outputDirectory: manifestPath(value.outputDirectory, 'output directory', true),
     transactionId: manifestString(value.transactionId, 'smoke input manifest transaction id'),
     proposalId: manifestString(value.proposalId, 'smoke input manifest proposal id'),
     evidenceBundleSha256: manifestString(value.evidenceBundleSha256, 'smoke input manifest evidence bundle hash'),
@@ -285,13 +295,18 @@ function smokeManifest(value: unknown): AdmissionSmokeInputManifestV1 {
 }
 
 async function readRawContained(root: string, requested: string, label: string): Promise<Buffer> {
-  return readFile(await requireContainedAdmissionPath(root, requested)).catch((error: unknown) => {
+  try {
+    const containedPath = await requireContainedAdmissionPath(root, requested);
+    const metadata = await lstat(containedPath);
+    if (!metadata.isFile() || metadata.isSymbolicLink()) throw new Error(`${label} must be a regular file`);
+    return await readFile(containedPath);
+  } catch (error: unknown) {
     throw new Error(`${label} cannot be read: ${error instanceof Error ? error.message : String(error)}`);
-  });
+  }
 }
 
 async function loadSmokeInputManifest(root: string, requested: string): Promise<AdmissionSmokeInputMaterializerRequestV1> {
-  const manifestInput = await readCanonicalOuterInput(root, requested, 'smoke input manifest');
+  const manifestInput = await readCanonicalOuterInput(root, manifestPath(requested, 'smoke input manifest'), 'smoke input manifest');
   const manifest = smokeManifest(manifestInput.value);
   const readObject = async (path: string, label: string): Promise<{ readonly value: unknown; readonly bytes: Buffer }> => {
     return readCanonicalOuterInput(root, path, label);

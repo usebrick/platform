@@ -253,9 +253,10 @@ function overlapInputs(records: readonly CalibrationAdmissionRecordV103[]): {
 } {
   const registry = normalizerRegistry();
   const rows: AdmissionOverlapUniverseRecordV1[] = records.map((admission, index) => {
-    const intake = index < 100 ? 'declared_ai' as const : 'declared_human' as const;
-    const overlapSide = index < 100 ? 'ai_side' as const : 'human_side' as const;
-    const proposedLabel = index < 100 ? 'verified_ai' as const : 'verified_human' as const;
+    const positive = admission.proposedLabel === 'verified_ai';
+    const intake = positive ? 'declared_ai' as const : 'declared_human' as const;
+    const overlapSide = positive ? 'ai_side' as const : 'human_side' as const;
+    const proposedLabel = admission.proposedLabel;
     const polarityBody = {
       intake,
       overlapSide,
@@ -398,7 +399,10 @@ function request(outputDirectory: string) {
     addedSources,
   };
   const registerDelta = { ...deltaBody, deltaSha256: calibrationAdmissionRegisterDeltaSha256(deltaBody) };
-  const records = Array.from({ length: 200 }, (_, index) => record(index));
+  // The downstream input-generation/authority stream contract is ordered by
+  // immutable recordId. Keep the fixture realistic so the success path does
+  // not accidentally depend on construction order.
+  const records = Array.from({ length: 200 }, (_, index) => record(index)).sort((left, right) => left.recordId.localeCompare(right.recordId));
   const overlap = overlapInputs(records);
   return {
     outputDirectory,
@@ -529,6 +533,25 @@ describe('v10.3 smoke input materializer', () => {
       const result = await materializeAdmissionSmokeInputGeneration({ ...input, records: jsonl(records) });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.errors).toContain('cohort:source_unrepresented:source-b');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an admission stream that is not ordered by recordId', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const records = Array.from({ length: 200 }, (_, index) => record(index));
+      const result = await materializeAdmissionSmokeInputGeneration({
+        ...input,
+        // Preserve every record and its overlap binding, changing only the
+        // byte-stream order that the downstream authority contract requires.
+        records: jsonl([...records].reverse()),
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors).toContain('cohort:records_not_ordered_by_record_id');
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
