@@ -245,13 +245,15 @@ export function initLiveTerminal(): () => void {
           resolve();
           return;
         }
-        // Per-char jitter keeps it from feeling mechanical without making
-        // command completion depend on a long wall-clock timeout.
-        const base = 6;
-        const jitter = (text.charCodeAt(i) % 7) * 2;
+        // Per-char jitter keeps it from feeling mechanical while keeping the
+        // complete command response inside a short, testable interaction
+        // window. Completion is still driven by the promise, never by a
+        // consumer-side animation-duration guess.
+        const base = 2;
+        const jitter = text.charCodeAt(i) % 3;
         window.setTimeout(tick, base + jitter);
       };
-      window.setTimeout(tick, 6);
+      window.setTimeout(tick, 4);
     });
   };
 

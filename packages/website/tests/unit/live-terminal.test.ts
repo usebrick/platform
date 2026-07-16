@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initLiveTerminal } from '../../src/scripts/live-terminal';
 import { stubMatchMedia } from './_helpers';
 
@@ -53,5 +53,25 @@ describe('initLiveTerminal completion state', () => {
     expect(body.dataset.commandComplete).toBe('seed');
     expect(body.textContent).toContain('type `help` to list commands');
     cleanup();
+  });
+
+  it('publishes completion after normal-motion output finishes', async () => {
+    stubMatchMedia(false);
+    vi.useFakeTimers();
+    try {
+      const cleanup = initLiveTerminal();
+      const body = document.querySelector<HTMLElement>('[data-live-terminal-body]')!;
+      body.focus();
+
+      type(body, 'help');
+      press(body, 'Enter');
+      await vi.runAllTimersAsync();
+
+      expect(body.dataset.commandComplete).toBe('help');
+      expect(body.textContent).toContain('available commands');
+      cleanup();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
