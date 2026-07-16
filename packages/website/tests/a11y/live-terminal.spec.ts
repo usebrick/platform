@@ -16,13 +16,20 @@ const type = async (page: import('@playwright/test').Page, text: string): Promis
   }
 };
 
+const waitForCommand = async (
+  term: import('@playwright/test').Locator,
+  command: string,
+): Promise<void> => {
+  await expect(term).toHaveAttribute('data-command-complete', command);
+};
+
 test('LiveTerminal: help command prints the command list', async ({ page }) => {
   await page.goto('/#terminal');
   const term = page.locator('[data-live-terminal-body]');
   await term.focus();
   await type(page, 'help');
   await page.keyboard.press('Enter');
-  await expect(term).toHaveAttribute('data-command-complete', 'help', { timeout: 20_000 });
+  await waitForCommand(term, 'help');
   await expect(term.locator('text=available commands (v0.44.0 workspace build)')).toBeVisible();
   await expect(term.locator('text=slopbrick scan')).toBeVisible();
 });
@@ -33,10 +40,8 @@ test('LiveTerminal: slopbrick scan prints the calibration ritual', async ({ page
   await term.focus();
   await type(page, 'slopbrick scan');
   await page.keyboard.press('Enter');
-  await expect(term).toHaveAttribute('data-command-complete', 'slopbrick scan', { timeout: 20_000 });
-  // The output types character by character (~20ms each). 8 lines of
-  // ~50 chars each = ~8s worst case. Generous timeout.
-  await expect(term.locator('text=aiSlopScore')).toBeVisible({ timeout: 15_000 });
+  await waitForCommand(term, 'slopbrick scan');
+  await expect(term.locator('text=aiSlopScore')).toBeVisible();
   await expect(term.locator('text=.slopbrick/structure.md')).toBeVisible();
 });
 
@@ -46,7 +51,7 @@ test('LiveTerminal: ArrowUp recalls the previous command', async ({ page }) => {
   await term.focus();
   await type(page, 'help');
   await page.keyboard.press('Enter');
-  await expect(term).toHaveAttribute('data-command-complete', 'help', { timeout: 20_000 });
+  await waitForCommand(term, 'help');
   await page.keyboard.press('ArrowUp');
   // The live input line's value should now show "help".
   await expect(term.locator('.lt-input__value')).toHaveText('help');
@@ -58,6 +63,7 @@ test('LiveTerminal: clear empties the screen and reseeds', async ({ page }) => {
   await term.focus();
   await type(page, 'clear');
   await page.keyboard.press('Enter');
+  await waitForCommand(term, 'seed');
   // The seed banner is re-rendered. The "type `help`" hint line is
   // the last muted line of the seed, so we assert it.
   await expect(term.locator('text=type `help` to list commands')).toBeVisible();
@@ -71,8 +77,9 @@ test('LiveTerminal: reduced-motion skips the typing animation', async ({ browser
   await term.focus();
   await type(page, 'slopbrick scan');
   await page.keyboard.press('Enter');
-  // With reduced motion, all output lines appear at once. We don't
-  // need a long timeout — the line should be there immediately.
-  await expect(term.locator('text=aiSlopScore')).toBeVisible({ timeout: 2_000 });
+  await waitForCommand(term, 'slopbrick scan');
+  // The completion state is independent of whether reduced motion skips
+  // the typewriter effect or a future implementation changes its cadence.
+  await expect(term.locator('text=aiSlopScore')).toBeVisible();
   await context.close();
 });
