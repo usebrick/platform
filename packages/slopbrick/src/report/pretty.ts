@@ -273,6 +273,11 @@ function formatVerdict(report: ProjectReport): string {
   // slop" - the verdict should reflect "this is OK" not "this is bad".
   const score = report.aiSlopScore;
   const band = slopScoreBandForReport(report);
+  const meanSlop = report.thresholds?.meanSlop ?? 30;
+  const policyPassed = score <= meanSlop;
+  const policyText = policyPassed
+    ? `Policy gate passes (AI Slop Score ${formatHeadlineScore(score)} ≤ ${meanSlop}).`
+    : `Policy gate fails (AI Slop Score ${formatHeadlineScore(score)} > ${meanSlop}).`;
   const activeIssues = report.issues.filter(
     (issue) => (issue.severity as string) !== 'off',
   );
@@ -293,15 +298,17 @@ function formatVerdict(report: ProjectReport): string {
     const suppressedIssueCount = report.issues.length;
     if (suppressedIssueCount > 0) {
       const findingWord = suppressedIssueCount === 1 ? 'finding' : 'findings';
-      return chalk.bold.green(
+      const color = policyPassed ? chalk.green : chalk.red;
+      return chalk.bold(color(
         `✓ Clean. No active findings. ${suppressedIssueCount} audit-only suppressed ${findingWord} ` +
-        `remain${suppressedIssueCount === 1 ? 's' : ''} in the report.`,
-      );
+        `remain${suppressedIssueCount === 1 ? 's' : ''} in the report. ${policyText}`,
+      ));
     }
-    return chalk.bold.green(
+    const color = policyPassed ? chalk.green : chalk.red;
+    return chalk.bold(color(
       `✓ Clean. No AI slop signatures or anti-patterns found. The repo is ` +
-      `coherent with the patterns it was written in.`,
-    );
+      `coherent with the patterns it was written in. ${policyText}`,
+    ));
   }
 
   // Active findings remain — find the dominant category so we can name it.
@@ -318,6 +325,7 @@ function formatVerdict(report: ProjectReport): string {
 
   return band.color(
     `Repo's AI-slop score is ${band.label} (${formatHeadlineScore(score)}/100) with ${activeIssues.length} active ${issueWord}. ` +
+    `${policyText} ` +
     lead +
     `${catLabel}${fileHint}. Run \`slopbrick scan --why-failing\` ` +
     `for the top 5 rules, or \`slopbrick scan --suggest\` for fixes.`,
