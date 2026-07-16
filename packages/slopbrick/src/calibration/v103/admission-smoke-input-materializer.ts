@@ -13,6 +13,7 @@ import {
   isCalibrationAdmissionInputGenerationV1,
   isCalibrationAdmissionRecordV103,
   isCalibrationAdmissionRegisterDeltaV1,
+  isCalibrationAdmissionSourceGenerationApprovalV1,
   isCalibrationAdmissionSourceGenerationProposalV1,
   isCalibrationAdmissionSourceGenerationV1,
   isCalibrationSourceReviewV103,
@@ -49,6 +50,9 @@ export interface AdmissionSmokeSourceInputV1 {
   readonly sourceGenerationBytes: Uint8Array;
   readonly sourceProposal: unknown;
   readonly sourceProposalBytes: Uint8Array;
+  /** Canonical independent-review approval object and bytes. */
+  readonly approval: unknown;
+  readonly approvalBytes: Uint8Array;
   /** Canonical source-review JSON followed by exactly one LF. */
   readonly sourceReviewBytes: Uint8Array;
   readonly semanticAuthority: unknown;
@@ -206,6 +210,8 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
       && input.sourceProposal.sourceId !== input.sourceId) errors.push(`source:${input.sourceId}:proposal_id_mismatch`);
   isCanonicalJsonBytes(input.sourceGeneration, input.sourceGenerationBytes, `source:${input.sourceId}:generation`, errors, false);
   isCanonicalJsonBytes(input.sourceProposal, input.sourceProposalBytes, `source:${input.sourceId}:proposal`, errors, false);
+  if (!isCalibrationAdmissionSourceGenerationApprovalV1(input.approval)) errors.push(`source:${input.sourceId}:approval_invalid`);
+  isCanonicalJsonBytes(input.approval, input.approvalBytes, `source:${input.sourceId}:approval`, errors, false);
   let sourceReviewSha256: string | undefined;
   if (!(input.sourceReviewBytes instanceof Uint8Array)) {
     errors.push(`source:${input.sourceId}:review_bytes_missing`);
@@ -239,11 +245,20 @@ function validateSource(input: AdmissionSmokeSourceInputV1, errors: string[]): v
       errors.push(`source:${input.sourceId}:semantic_authority_invalid`);
     }
   }
-  const generation = input.sourceGeneration as { approval?: { kind?: unknown }; generationSha256?: unknown };
+  const generation = input.sourceGeneration as { approval?: { kind?: unknown; approvalId?: unknown; approvalSha256?: unknown }; generationSha256?: unknown };
   if (generation.approval?.kind !== 'independent_review') errors.push(`source:${input.sourceId}:independent_review_required`);
   if (!sha(generation.generationSha256)) errors.push(`source:${input.sourceId}:generation_hash_invalid`);
   const proposal = input.sourceProposal as { proposalId?: unknown; proposalSha256?: unknown; sourceReviewSha256?: unknown };
   if (proposal.proposalId !== (generation as { proposalId?: unknown }).proposalId || proposal.proposalSha256 !== (generation as { proposalSha256?: unknown }).proposalSha256) errors.push(`source:${input.sourceId}:generation_proposal_unbound`);
+  if (isCalibrationAdmissionSourceGenerationApprovalV1(input.approval)) {
+    if (input.approval.proposalId !== proposal.proposalId
+      || input.approval.proposalSha256 !== proposal.proposalSha256
+      || generation.approval?.kind !== 'independent_review'
+      || input.approval.approvalId !== generation.approval.approvalId
+      || input.approval.approvalSha256 !== generation.approval.approvalSha256) {
+      errors.push(`source:${input.sourceId}:approval_generation_unbound`);
+    }
+  }
   if (sourceReviewSha256 !== undefined && proposal.sourceReviewSha256 !== sourceReviewSha256) errors.push(`source:${input.sourceId}:proposal_review_unbound`);
   const sourceArtifacts = (generation as { artifacts?: readonly { relativePath?: unknown; bytes?: unknown; sha256?: unknown }[] }).artifacts;
   const sourceReviewArtifact = sourceArtifacts?.find((entry) => entry.relativePath === 'source-review.json');
@@ -546,6 +561,10 @@ async function materializeAdmissionSmokeInputGenerationUnchecked(
       await mkdir(sourceRoot, { recursive: true });
       await writeFile(join(sourceRoot, 'source-generation.json'), source.sourceGenerationBytes);
       await writeFile(join(sourceRoot, 'source-generation-proposal.json'), source.sourceProposalBytes);
+      const proposalDirectory = join(sourceRoot, 'proposals');
+      await mkdir(proposalDirectory, { recursive: true });
+      const proposal = source.sourceProposal as { proposalId: string };
+      await writeFile(join(proposalDirectory, `${proposal.proposalId}-approval.json`), source.approvalBytes);
       await writeFile(join(sourceRoot, 'source-review.json'), source.sourceReviewBytes);
       await writeFile(join(sourceRoot, 'source-semantic-authority.json'), source.semanticAuthorityBytes);
     }

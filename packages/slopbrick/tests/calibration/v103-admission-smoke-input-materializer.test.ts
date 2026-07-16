@@ -126,6 +126,8 @@ function sourceInput(sourceId: 'source-a' | 'source-b') {
     sourceGenerationBytes: json(generation),
     sourceProposal: proposal,
     sourceProposalBytes: json(proposal),
+    approval,
+    approvalBytes: json(approval),
     sourceReviewBytes: reviewBytes,
     semanticAuthority,
     semanticAuthorityBytes: json(semanticAuthority),
@@ -345,6 +347,23 @@ describe('v10.3 smoke input materializer', () => {
     }
   });
 
+  it('requires canonical independent-review approval bytes bound to the generation', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
+    try {
+      const input = request(root);
+      const source = input.sources[0]!;
+      const result = await materializeAdmissionSmokeInputGeneration({
+        ...input,
+        sources: [{ ...source, approvalBytes: Buffer.from(`${source.approvalBytes.toString('utf8')} `, 'utf8') }, input.sources[1]!],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.errors).toContain('source:source-a:approval:bytes_not_canonical');
+      await expect(access(join(root, '.staging-smoke-transaction'))).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('materializes one atomic diagnostic generation after all authority and cohort checks pass', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-materializer-'));
     try {
@@ -364,6 +383,8 @@ describe('v10.3 smoke input materializer', () => {
       });
       await expect(readFile(join(result.value.finalDirectory, 'generation.json'), 'utf8')).resolves.toContain(result.value.inputGeneration.generationSha256);
       await expect(readFile(join(result.value.finalDirectory, 'receipt.json'), 'utf8')).resolves.toContain('diagnosticOnly');
+      const approval = input.sources[0]!.approval as { proposalId: string };
+      await expect(readFile(join(result.value.finalDirectory, 'sources', 'source-a', 'proposals', `${approval.proposalId}-approval.json`), 'utf8')).resolves.toContain(approval.proposalId);
       const replay = await materializeAdmissionSmokeInputGeneration(request(root));
       expect(replay.ok).toBe(false);
     } finally {
