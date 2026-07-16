@@ -37,6 +37,8 @@ stdout/stderr (`console.log`) remain in the slopbrick CLI and MCP server.
 - `computeLikelihoodRatios(ruleIds, signalData, corpus?)` and
   `bayesianPosterior(firedRuleIds, likelihoodRatios, prior?)`
 - pure graph, distribution, novelty, scoring, and statistical helpers
+  (the two-sample KS helper uses the exact pooled-label distribution for
+  integer samples with combined size ≤ 40 and an asymptotic fallback above it)
 
 The exact runtime export contract is enforced by
 [`tests/pure-api.test.ts`](./tests/pure-api.test.ts). These runnable, compiled

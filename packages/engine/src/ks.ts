@@ -53,6 +53,41 @@
  */
 
 const SQRT_2_TIMES_LN_2 = Math.sqrt(2 * Math.LN2);
+const EXACT_KS_COMBINED_SAMPLE_LIMIT = 40;
+
+/** Count pooled label orderings whose empirical CDF gap stays below a bound. */
+function pooledLabelPathCount(n: number, m: number, boundary: number): number {
+  const pathsBelow = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
+  pathsBelow[0]![0] = 1;
+  for (let i = 0; i <= n; i++) {
+    for (let j = 0; j <= m; j++) {
+      if (i === 0 && j === 0) continue;
+      if (Math.abs(i / n - j / m) >= boundary) continue;
+      pathsBelow[i]![j] = (i > 0 ? pathsBelow[i - 1]![j]! : 0)
+        + (j > 0 ? pathsBelow[i]![j - 1]! : 0);
+    }
+  }
+  return pathsBelow[n]![m]!;
+}
+
+function binomialCoefficient(n: number, k: number): number {
+  const smaller = Math.min(k, n - k);
+  let totalPaths = 1;
+  for (let i = 1; i <= smaller; i++) {
+    totalPaths *= (n - smaller + i) / i;
+  }
+  return totalPaths;
+}
+
+/** Exact two-sided pooled-label probability for bounded finite samples. */
+function exactKsPValue(statistic: number, n: number, m: number): number {
+  if (statistic <= 0) return 1;
+  // A tiny tolerance makes a statistic produced by floating-point CDF
+  // arithmetic behave as the exact lattice value at the boundary.
+  const pathsBelow = pooledLabelPathCount(n, m, statistic - 1e-12);
+  const pValue = 1 - pathsBelow / binomialCoefficient(n + m, n);
+  return Math.max(0, Math.min(1, pValue));
+}
 
 /**
  * Empirical CDF evaluated at a sorted sample.
@@ -103,14 +138,24 @@ export function ksStatistic(sampleA: readonly number[], sampleB: readonly number
  *
  *   Q_KS(λ) = 2 · Σ_{j=1}^∞ (−1)^(j−1) · e^(−2j²λ²)
  *
- * Truncated at J terms where the next term is < 1e-15. Accurate for
- * n, m ≥ 20; for smaller samples, use the exact two-sample table or
- * a permutation test (not implemented here).
+ * For integer n and m with n+m ≤ 40, ksPValue uses the exact pooled-label
+ * distribution instead. This asymptotic branch is accurate for n, m ≥ 20;
+ * it is the fallback for larger samples.
  */
 export function ksPValue(statistic: number, n: number, m: number): number {
   if (n === 0 || m === 0) return 1;
   if (statistic < 0) return 1;
   if (statistic > 1) return 0;
+  if (
+    Number.isInteger(n)
+    && Number.isInteger(m)
+    && Number.isFinite(statistic)
+    && n > 0
+    && m > 0
+    && n + m <= EXACT_KS_COMBINED_SAMPLE_LIMIT
+  ) {
+    return exactKsPValue(statistic, n, m);
+  }
   const lambda = Math.sqrt((n * m) / (n + m)) * statistic;
   // For λ > ~3.6, the first term alone gives p < 1e-15.
   if (lambda > 3.6) return 0;

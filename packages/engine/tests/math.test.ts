@@ -229,6 +229,17 @@ describe('ksStatistic / ksPValue', () => {
     expect(ksPValue(0, 0, 0)).toBe(1); // empty → p = 1
   });
 
+  it('uses the exact finite-sample distribution for small samples', () => {
+    // For n=m=5 and D=0.6, the exact two-sided probability is
+    // 90 / C(10, 5) = 0.35714285714285715. The asymptotic Hodges
+    // approximation is 0.329104789..., which is materially different at
+    // this sample size.
+    expect(ksPValue(0.6, 5, 5)).toBeCloseTo(90 / 252, 12);
+    // For completely separated n=m=5 samples, two of the 252 pooled label
+    // orderings attain D=1.
+    expect(ksPValue(1, 5, 5)).toBeCloseTo(2 / 252, 12);
+  });
+
   it('ksTest reports significance for clearly different samples', () => {
     const a = Array.from({ length: 50 }, (_, i) => i); // 0..49
     const b = Array.from({ length: 50 }, (_, i) => i + 100); // 100..149

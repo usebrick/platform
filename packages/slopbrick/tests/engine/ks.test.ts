@@ -86,13 +86,12 @@ describe('ksPValue', () => {
     }
   });
 
-  it('matches Hodges 1958 Table 1 reference values (within tolerance)', () => {
-    // For n = m = 10, observed D = 0.6 → reported p ≈ 0.037 (Hodges Table 1).
-    // Our asymptotic formula gives a slightly different number; this is the
-    // documented limitation for n = m < 20.
-    const p = ksPValue(0.6, 10, 10);
-    expect(p).toBeGreaterThan(0);
-    expect(p).toBeLessThan(0.5);
+  it('matches the exact finite-sample pooled-label distribution', () => {
+    // For n = m = 5 and D = 0.6, the exact two-sided probability is
+    // 90 / C(10, 5) = 0.35714285714285715. Larger samples use the
+    // documented asymptotic Hodges approximation.
+    expect(ksPValue(0.6, 5, 5)).toBeCloseTo(90 / 252, 12);
+    expect(ksPValue(1, 5, 5)).toBeCloseTo(2 / 252, 12);
   });
 
   it('returns 1 for empty samples', () => {
