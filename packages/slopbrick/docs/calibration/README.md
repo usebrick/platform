@@ -103,9 +103,10 @@ inputs and the versioned metrics producer exist.
 
 > **Historical v10.2 layout — not current v10.3 authority.** The paths and
 > counts below are retained for reproducibility of the archived workflow only.
-> Current v10.3 review covers 317 pinned checkouts and 452,382 selected units,
-> all still quarantine-only (`verified_ai=0`, `verified_human=0`); the declared
-> AI-positive/human-negative polarity is not yet admitted truth.
+> Current v10.3 review has 329 source-register entries (317 repository leaves)
+> and 452,382 registered/quarantined units, with 0 represented or eligible
+> units; all remain quarantine-only (`verified_ai=0`, `verified_human=0`). The
+> declared AI-positive/human-negative polarity is not yet admitted truth.
 
 The historical calibration corpus lived in two places:
 
