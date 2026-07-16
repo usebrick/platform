@@ -51,6 +51,7 @@
     "cal:scan": "node dist/calibration/v103/cli.cjs scan",
     "cal:report": "node dist/calibration/v103/cli.cjs cal:report",
     "cal:admission": "node dist/calibration/v103/admission.cjs",
+    "cal:admission:smoke-input": "node dist/calibration/v103/admission.cjs admission:smoke-input",
     "cal:admission:genesis": "tsx scripts/cal/build-v103-genesis.ts",
     "cal:evidence": "node dist/calibration/v103/admission.cjs",
     "typecheck": "tsc --noEmit",

@@ -18,6 +18,41 @@ slopbrick cal:materialize \
 
 This command does not admit corpus files, train a model, or publish a release.
 
+### Bounded smoke-input diagnostic
+
+When the owner-supplied v10.3 authority bundle is available, the bounded
+100-positive/100-negative smoke input can be materialized through the explicit
+manifest boundary. The command reads only the canonical, root-relative paths
+named by the manifest; it does not discover repositories, infer labels, pull
+network data, or promote authority:
+
+```bash
+corepack pnpm --filter slopbrick run cal:admission:smoke-input \
+  --root <project-root> \
+  --manifest <root-relative-smoke-input-manifest.json>
+```
+
+The package-local alias runs the built admission entrypoint; use it after the
+package has been built. The generic entrypoint is equivalent when the command
+name must be explicit:
+
+```bash
+corepack pnpm --filter slopbrick run cal:admission \
+  admission:smoke-input \
+  --root <project-root> \
+  --manifest <root-relative-smoke-input-manifest.json>
+```
+
+The output is always diagnostic-only (`diagnosticOnly=true`,
+`authorityEligible=false`, `ready=false`). A successful result is therefore an
+input-generation bundle for review and downstream gates, not an admission
+manifest or calibration/release authorization. Missing, non-canonical,
+root-escaping, incomplete, or graph-inconsistent inputs exit with code `2`
+before the output directory is changed. The manifest must contain exactly two
+source entries, the canonical admission record/overlap streams, the normalizer
+registry, and complete source-generation semantic graphs including independent
+review approval bytes.
+
 For a legacy v10.3.0/v10.3.1 manifest, the next local control-plane steps
 are selection, no-clobber run initialization, scanning, and verification. Every
 input is checksum-pinned; admission-backed v10.3.2 sources remain reserved

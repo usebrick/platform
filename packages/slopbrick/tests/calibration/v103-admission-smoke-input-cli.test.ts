@@ -44,6 +44,15 @@ async function run(root: string, manifest = 'manifest.json'): Promise<{ readonly
 }
 
 describe('admission:smoke-input CLI boundary', () => {
+  it('exposes a package-local script alias for the built diagnostic command', async () => {
+    const packageJson = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as {
+      readonly scripts?: Readonly<Record<string, string>>;
+    };
+    expect(packageJson.scripts?.['cal:admission:smoke-input']).toBe(
+      'node dist/calibration/v103/admission.cjs admission:smoke-input',
+    );
+  });
+
   it('rejects a missing manifest without changing the root', async () => {
     const root = await mkdtemp(join(tmpdir(), 'slopbrick-smoke-input-cli-'));
     try {
