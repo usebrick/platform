@@ -498,8 +498,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           logger.info('--dry-run: skipping apply step. Run without --dry-run to apply.');
           process.exit(gateDecision.exitCode);
         }
-        // Round 20: pass the actual scanned file paths (not the input
-        // CLI globs) so visual codemods run on every .tsx file scanned.
+        // Fixes are finding-bound at this release gate. Keep the scanned-file
+        // list for the compatibility-shaped applyFixes API, but do not run a
+        // scan-wide visual codemod pass.
         const scannedFiles = results.map((r: FileScanResult) => r.filePath);
         const fixResults = await applyFixes(report, config, scannedFiles);
         const { hasErrors } = printFixSummary(fixResults, options.quiet ?? false);
