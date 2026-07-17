@@ -8,7 +8,7 @@ release notes remain in package changelogs.
 ### Changed
 
 - Completed the SB-045 trust-release implementation checkpoint at
-  `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`: one typed gate decision now
+  `aa2bb36328da0434a6fea7a1fba24552de9c78af`: one typed gate decision now
   drives report projections and scan exit, incomplete scans fail closed, and
   fix/dry-run/heatmap paths cannot bypass the decision.
 - Bound automated fixes to finding identity and source/target snapshots, with

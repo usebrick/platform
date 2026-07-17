@@ -2,7 +2,7 @@
 
 **Snapshot:** 2026-07-17
 **Candidate:** `slopbrick@0.45.0` (unreleased)
-**Implementation checkpoint:** `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`
+**Implementation checkpoint:** `aa2bb36328da0434a6fea7a1fba24552de9c78af`
 **Decision:** **NO-GO for release/publish**
 
 The implementation and runtime qualification gates are green. The candidate
@@ -34,7 +34,7 @@ calibration claim was changed to make the result pass.
 
 ```text
 corepack pnpm --filter slopbrick exec node scripts/test-packed-runtime-matrix.mjs \
-  --expected-commit-sha 3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5 \
+  --expected-commit-sha aa2bb36328da0434a6fea7a1fba24552de9c78af \
   --manifest-builder-behavior-sha256 1a70c53dc0f950594a7c5c283423be58a233af3e93c5bb3052c94510f1c54a96 \
   --diagnostic-only
 ```

@@ -15,7 +15,7 @@ and release claims agree.
 ## Current truth
 
 The workspace is an unreleased 0.45.0 candidate with 119 rules in 27
-categories. Implementation checkpoint `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`
+categories. Implementation checkpoint `aa2bb36328da0434a6fea7a1fba24552de9c78af`
 passes the recursive typecheck, test, and build gates, the RAM-safe package
 suite, and the packed Node 22/24 diagnostic. The package-local self-scan also
 completes all 263 selected files with no runtime failures, but its exact score

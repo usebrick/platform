@@ -1,7 +1,7 @@
 # SB-045 — Gate decision and remediation safety receipt
 
 **Snapshot:** 2026-07-17
-**Implementation checkpoint:** `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`
+**Implementation checkpoint:** `aa2bb36328da0434a6fea7a1fba24552de9c78af`
 **Status:** implementation contract green; release decision remains open
 
 This receipt records the bounded trust-release implementation. It is not a

@@ -21,7 +21,7 @@ does not block product work.
 - The workspace contains an **unreleased** `slopbrick@0.45.0` candidate with
   **119 rules in 27 categories**.
 - The current implementation checkpoint is
-  `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`. Recursive typecheck, recursive
+  `aa2bb36328da0434a6fea7a1fba24552de9c78af`. Recursive typecheck, recursive
   tests, recursive build, the RAM-safe package suite, and the packed Node 22/24
   diagnostic are green for that candidate. They do not authorize publication
   or deployment.
