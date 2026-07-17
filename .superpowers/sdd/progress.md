@@ -960,7 +960,7 @@ quarantined/unrepresented units, zero candidate/eligible, blockers
 
 ### CORPUS-001 bounded source inventory — 2026-07-17
 
-Task 1: complete (commits `19ab7181d..c7fe20752`, spec pass and quality
+Task 1: complete (implementation commit `d569d35f8`, spec pass and quality
 approved after manifest-claim boundary fix). The pinned local Mendeley source
 inventory reconciles 10,000 rows/files at 5,000 publisher-declared AI
 positives and 5,000 publisher-declared Human negatives. It remains
