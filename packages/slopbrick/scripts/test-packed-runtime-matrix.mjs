@@ -45,14 +45,18 @@ function usage() {
   --manifest-builder-behavior-sha256 <64-hex> \\
   --output-dir <directory> \\
   --reviewer-id <id> --reviewer-id <id> \\
-  [--tarball <path>] [--builder-member ${BUILDER_MEMBER}]`);
+  [--tarball <path>] [--builder-member ${BUILDER_MEMBER}] [--diagnostic-only]`);
 }
 
 function parseArgs(argv) {
-  const values = { reviewers: [], builderMember: BUILDER_MEMBER };
+  const values = { reviewers: [], builderMember: BUILDER_MEMBER, diagnosticOnly: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--') continue;
+    if (arg === '--diagnostic-only') {
+      values.diagnosticOnly = true;
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       usage();
       process.exit(0);
@@ -70,10 +74,12 @@ function parseArgs(argv) {
   }
   if (!COMMIT.test(values.expectedCommitSha ?? '')) fail('--expected-commit-sha must be a lowercase 40-hex commit');
   if (!SHA256.test(values.behaviorSha256 ?? '')) fail('--manifest-builder-behavior-sha256 must be lowercase 64-hex');
-  if (typeof values.outputDir !== 'string' || values.outputDir.length === 0) fail('--output-dir is required');
-  if (values.reviewers.length !== 2 || !values.reviewers.every((value) => REVIEWER.test(value))
-    || values.reviewers[0] >= values.reviewers[1]) {
-    fail('--reviewer-id must be supplied twice as two distinct, sorted lowercase IDs');
+  if (!values.diagnosticOnly) {
+    if (typeof values.outputDir !== 'string' || values.outputDir.length === 0) fail('--output-dir is required');
+    if (values.reviewers.length !== 2 || !values.reviewers.every((value) => REVIEWER.test(value))
+      || values.reviewers[0] >= values.reviewers[1]) {
+      fail('--reviewer-id must be supplied twice as two distinct, sorted lowercase IDs');
+    }
   }
   if (typeof values.builderMember !== 'string' || !values.builderMember.startsWith('package/')) fail('--builder-member must be a package-relative tar member');
   return values;
@@ -335,6 +341,17 @@ function assertPair(receipts) {
   if (node22.receipt.receiptId === node24.receipt.receiptId) fail('Node receipts must have distinct IDs');
 }
 
+function assertDiagnosticPair(values) {
+  if (values.length !== 2 || values[0].major !== 22 || values[1].major !== 24) fail('diagnostic matrix requires Node 22 then Node 24');
+  const first = values[0].legacy;
+  for (const value of values) {
+    if (value.legacy.result !== 'pass' || value.legacy.tarballSha256 !== first.tarballSha256
+      || value.legacy.package?.version !== PACKAGE_VERSION || value.legacy.builder?.commitSha !== first.builder?.commitSha) {
+      fail('diagnostic consumer pair is not bound to one passing release identity');
+    }
+  }
+}
+
 function writeReceipts(outputDir, values) {
   const targets = values.map(({ receipt }) => join(outputDir, `node-${receipt.nodeMajor}`, 'receipt.json'));
   if (targets.some((target) => existsSync(target))) fail('refusing to overwrite an existing runtime receipt');
@@ -350,7 +367,27 @@ function main() {
   const store = pnpmStorePath();
   const values = [];
   // Deliberately serial: this gate is a memory-sensitive release boundary.
-  for (const major of [22, 24]) values.push(receiptFor(major, artifact, runConsumer(major, artifact, input.expectedCommitSha, store), input.expectedCommitSha, input.reviewers, input.builderMember));
+  for (const major of [22, 24]) {
+    const result = runConsumer(major, artifact, input.expectedCommitSha, store);
+    values.push(input.diagnosticOnly
+      ? { major, ...result }
+      : receiptFor(major, artifact, result, input.expectedCommitSha, input.reviewers, input.builderMember));
+  }
+  if (input.diagnosticOnly) {
+    assertDiagnosticPair(values);
+    console.log(JSON.stringify({
+      ok: true,
+      diagnosticOnly: true,
+      packageVersion: PACKAGE_VERSION,
+      tarballSha256: artifact.tarballSha256,
+      manifestBuilderBehaviorSha256: artifact.behaviorSha256,
+      nodeMajors: values.map((value) => value.major),
+      runtimes: values.map((value) => value.diagnostic),
+      receiptsWritten: false,
+    }));
+    if (artifact.owned) rmSync(artifact.root, { recursive: true, force: true });
+    return;
+  }
   assertPair(values);
   const outputDir = resolve(input.outputDir);
   const paths = writeReceipts(outputDir, values);
