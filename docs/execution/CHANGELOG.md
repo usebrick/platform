@@ -3,6 +3,28 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 13 — 2026-07-17
+
+### Changed
+
+- Created and froze the `CAL-001-v1` leakage-safe calibration protocol at
+  `docs/execution/evidence/CAL-001-protocol.md`.
+- Bound the protocol to the verified Corpus v1 candidate, source-binding,
+  family-safe split, eligible projection, and non-admitting smoke receipts.
+- Registered the required train/validation/test boundary, per-rule metrics,
+  confound and leakage report, separate origin/usefulness tables, and the
+  admission-matrix contract before any calibration run.
+- Moved CAL-001 from `draft` to `ready`; no calibration smoke, heldout
+  evaluation, rule activation, admission decision, publish, deployment, or
+  remote mutation occurred.
+
+### Evidence
+
+- `docs/execution/evidence/CAL-001-protocol.md`
+- `docs/execution/plans/CAL-001-heldout-calibration.md`
+- `docs/execution/index.json`
+- No calibration result or new admission claim was created.
+
 ## Revision 12 — 2026-07-17
 
 ### Changed
