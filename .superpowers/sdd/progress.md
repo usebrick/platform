@@ -968,6 +968,18 @@ positives and 5,000 publisher-declared Human negatives. It remains
 normalized collision checks, splits, smoke receipts, admission, calibration,
 and all remote mutations remain open.
 
+### CORPUS-001 deterministic candidate manifest — 2026-07-17
+
+Task 2: complete (implementation commit `c0b99e680`, spec pass and quality
+approved after same-stream/one-handle integrity fixes). All 10,000 pinned units
+rehash cleanly into 5,000 publisher-declared AI positives and 5,000
+publisher-declared Human negatives with zero local integrity quarantines. Two
+real-source projections produced manifest SHA-256
+`c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac`.
+Rows remain candidate-only with `split: unassigned`; cross-row collision
+quarantine, family splits, raw CSV row binding, smoke, admission, calibration,
+and remote mutations remain open.
+
 ### Bounded corpus allocation replay and scan accounting correction — 2026-07-15
 
 The explicit allocation preview replayed the two real v10.3 inventory streams
