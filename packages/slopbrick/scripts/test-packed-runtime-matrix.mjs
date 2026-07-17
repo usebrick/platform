@@ -181,7 +181,11 @@ function uniqueTarMember(entries, memberPath) {
 
 function packOnce() {
   const root = mkdtempSync(join(tmpdir(), 'slopbrick-packed-runtime-pack-'));
-  const result = run('npm', ['pack', '--offline', '--pack-destination', root, '--json'], { cwd: packageRoot, timeout: 180_000 });
+  const result = run('npm', ['pack', '--offline', '--pack-destination', root, '--json'], {
+    cwd: packageRoot,
+    timeout: 180_000,
+    env: { ...process.env, npm_config_cache: join(root, 'npm-cache'), npm_config_offline: 'true' },
+  });
   const jsonStart = result.stdout.indexOf('[');
   if (jsonStart < 0) fail('npm pack did not emit JSON metadata');
   let metadata;
