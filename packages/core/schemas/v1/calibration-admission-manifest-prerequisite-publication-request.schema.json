@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-request.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisitePublicationRequestV1",
+  "description": "No-clobber request to publish one prerequisite bundle and its source artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "requestId", "operation", "expectedCurrentState", "sourceArtifacts", "stagingSet", "bundle", "requestSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisite-publication-request-v1" },
+    "requestId": { "$ref": "#/$defs/id" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "sourceArtifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sourceArtifact" } },
+    "stagingSet": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-staging-set.schema.json" },
+    "bundle": { "$ref": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisites.schema.json" },
+    "requestSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "bundleSha256", "currentSha256"], "properties": { "kind": { "const": "existing" }, "bundleSha256": { "$ref": "#/$defs/sha256" }, "currentSha256": { "$ref": "#/$defs/sha256" } } }] },
+    "source": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["sourceRoot", "normalizedRelativePath", "approvedCommitSha"], "properties": { "sourceRoot": { "const": "platform_commit" }, "normalizedRelativePath": { "$ref": "#/$defs/path" }, "approvedCommitSha": { "$ref": "#/$defs/commitSha" } } }, { "type": "object", "additionalProperties": false, "required": ["sourceRoot", "normalizedRelativePath", "stagingSetSha256"], "properties": { "sourceRoot": { "const": "prerequisite_staging" }, "normalizedRelativePath": { "$ref": "#/$defs/path" }, "stagingSetSha256": { "$ref": "#/$defs/sha256" } } }] },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId", "relativePath", "bytes", "sha256", "kind", "owner", "mediaType", "schemaId", "source"],
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/id" },
+        "relativePath": { "$ref": "#/$defs/path" },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "kind": { "enum": ["release_plan", "release_plan_approval", "score_wire_closure_receipt", "run_init_receipt", "post_scan_receipt", "packed_runtime_receipt", "package_tarball", "manifest_builder"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "mediaType": { "enum": ["text/markdown", "application/json", "application/gzip", "application/javascript"] },
+        "schemaId": { "anyOf": [{ "type": "null" }, { "type": "string", "pattern": "^https://" }] },
+        "packageTarballArtifactId": { "$ref": "#/$defs/id" },
+        "packageMemberRelativePath": { "$ref": "#/$defs/path" },
+        "source": { "$ref": "#/$defs/source" }
+      },
+      "oneOf": [
+        { "properties": { "kind": { "const": "release_plan" }, "owner": { "const": "release_asset_plan" }, "mediaType": { "const": "text/markdown" }, "schemaId": { "const": null } } },
+        { "properties": { "kind": { "const": "release_plan_approval" }, "owner": { "const": "release_asset_plan" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-release-prerequisite-approval.schema.json" } } },
+        { "properties": { "kind": { "const": "score_wire_closure_receipt" }, "owner": { "const": "score_wire_gate" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-score-wire-closure-receipt.schema.json" } } },
+        { "properties": { "kind": { "enum": ["run_init_receipt", "post_scan_receipt"] }, "owner": { "const": "run_lifecycle_gate" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-run-lifecycle-receipt.schema.json" } } },
+        { "properties": { "kind": { "const": "packed_runtime_receipt" }, "owner": { "const": "packed_runtime_matrix" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-packed-runtime-receipt.schema.json" } } },
+        { "properties": { "kind": { "const": "package_tarball" }, "owner": { "const": "packed_runtime_matrix" }, "mediaType": { "const": "application/gzip" }, "schemaId": { "const": null } } },
+        { "required": ["packageTarballArtifactId", "packageMemberRelativePath"], "properties": { "kind": { "const": "manifest_builder" }, "owner": { "const": "admission_manifest_builder" }, "mediaType": { "const": "application/javascript" }, "schemaId": { "const": null }, "packageTarballArtifactId": { "$ref": "#/$defs/id" }, "packageMemberRelativePath": { "$ref": "#/$defs/path" } } }
+      ]
+    }
+  }
+}

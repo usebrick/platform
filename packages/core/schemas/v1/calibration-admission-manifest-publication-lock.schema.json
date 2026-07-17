@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-publication-lock.schema.json",
+  "title": "CalibrationAdmissionManifestPublicationLockV1",
+  "description": "CAS lock for one smoke or canary manifest publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "manifestId", "operation", "expectedCurrentState", "manifestSha256", "prerequisiteBundleSha256", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-publication-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "manifestId": { "$ref": "#/$defs/manifestId" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "manifestSha256": { "$ref": "#/$defs/sha256" },
+    "prerequisiteBundleSha256": { "$ref": "#/$defs/sha256" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "manifestId": { "enum": ["v10.3-admission-smoke", "v10.3-admission-canary"] },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "generationSha256"], "properties": { "kind": { "const": "existing" }, "generationSha256": { "$ref": "#/$defs/sha256" } } }] }
+  }
+}

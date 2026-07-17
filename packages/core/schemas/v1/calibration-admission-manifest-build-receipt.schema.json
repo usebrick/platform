@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-build-receipt.schema.json",
+  "title": "CalibrationAdmissionManifestBuildReceiptV1",
+  "description": "Build receipt binding one witness-bound admission manifest to its prerequisite and tool evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "receiptId", "manifestId", "manifestSha256", "manifestRelativePath", "prerequisiteBundleSha256", "prerequisiteBundleRelativePath", "prerequisitePublicationCompletionSha256", "prerequisitePublicationCompletionRelativePath", "prerequisitePublicationRequestSha256", "prerequisitePublicationRequestRelativePath", "manifestBuilderBehaviorSha256", "packedRuntimeReceiptSetSha256", "readyCensusSha256", "witnessReviewBundleSha256", "invocationIntentId", "toolReceiptSha256", "nestedHandoff", "expectedCurrentState", "transactionId", "receiptSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-build-receipt-v1" },
+    "receiptId": { "$ref": "#/$defs/id" },
+    "manifestId": { "$ref": "#/$defs/manifestId" },
+    "manifestSha256": { "$ref": "#/$defs/sha256" },
+    "manifestRelativePath": { "const": "manifest.json" },
+    "prerequisiteBundleSha256": { "$ref": "#/$defs/sha256" },
+    "prerequisiteBundleRelativePath": { "$ref": "#/$defs/path" },
+    "prerequisitePublicationCompletionSha256": { "$ref": "#/$defs/sha256" },
+    "prerequisitePublicationCompletionRelativePath": { "$ref": "#/$defs/path" },
+    "prerequisitePublicationRequestSha256": { "$ref": "#/$defs/sha256" },
+    "prerequisitePublicationRequestRelativePath": { "$ref": "#/$defs/path" },
+    "manifestBuilderBehaviorSha256": { "$ref": "#/$defs/sha256" },
+    "packedRuntimeReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+    "readyCensusSha256": { "$ref": "#/$defs/sha256" },
+    "witnessReviewBundleSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "toolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "nestedHandoff": { "$ref": "https://usebrick.dev/schemas/v1/calibration-nested-publication-handoff.schema.json" },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "receiptSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "manifestId": { "enum": ["v10.3-admission-smoke", "v10.3-admission-canary"] },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "generationSha256"], "properties": { "kind": { "const": "existing" }, "generationSha256": { "$ref": "#/$defs/sha256" } } }] }
+  }
+}

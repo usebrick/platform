@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-completion.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisitePublicationCompletionV1",
+  "description": "Self-hashed completion marker for prerequisite publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "requestId", "requestSha256", "requestRelativePath", "transactionId", "invocationIntentId", "bundleRelativePath", "bundleSha256", "artifactSetSha256", "namedPrimaryOutputProjectionSha256", "publicationToolReceiptId", "publicationToolReceiptSha256", "toolAuthorityIndexSha256", "nestedHandoff", "completionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisite-publication-completion-v1" },
+    "requestId": { "$ref": "#/$defs/id" },
+    "requestSha256": { "$ref": "#/$defs/sha256" },
+    "requestRelativePath": { "$ref": "#/$defs/path" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "bundleRelativePath": { "$ref": "#/$defs/path" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "artifactSetSha256": { "$ref": "#/$defs/sha256" },
+    "namedPrimaryOutputProjectionSha256": { "$ref": "#/$defs/sha256" },
+    "publicationToolReceiptId": { "$ref": "#/$defs/id" },
+    "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" },
+    "nestedHandoff": { "$ref": "https://usebrick.dev/schemas/v1/calibration-nested-publication-handoff.schema.json" },
+    "completionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

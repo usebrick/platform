@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-current.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisitePublicationCurrentV1",
+  "description": "Self-hashed current pointer for the published prerequisite bundle.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bundleRelativePath", "bundleSha256", "completionRelativePath", "completionSha256", "currentSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisite-publication-current-v1" },
+    "bundleRelativePath": { "$ref": "#/$defs/path" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "completionRelativePath": { "$ref": "#/$defs/path" },
+    "completionSha256": { "$ref": "#/$defs/sha256" },
+    "currentSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" }
+  }
+}

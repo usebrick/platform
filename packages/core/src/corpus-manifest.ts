@@ -9,9 +9,11 @@
  */
 
 import type {
+  AdmissionBinding,
   ReleaseArchiveMaterialization,
   SlopbrickCalibrationCorpusManifestV103,
 } from './generated/calibration-corpus-manifest';
+import { calibrationAdmissionSha256 } from './calibration-admission-evidence';
 
 type ManifestLabel = 'verified_ai' | 'verified_human' | 'mixed' | 'quarantine';
 type ManifestSplit = 'train' | 'validation' | 'test' | 'mixed_evaluation' | 'excluded';
@@ -27,6 +29,14 @@ const LABELS = new Set<ManifestLabel>(['verified_ai', 'verified_human', 'mixed',
 const TIERS = new Set(['gold', 'silver', 'quarantine']);
 const SPLITS = new Set<ManifestSplit>(['train', 'validation', 'test', 'mixed_evaluation', 'excluded']);
 const STRATA = new Set(['production', 'test', 'generated', 'vendor', 'minified', 'example', 'other']);
+const ADMISSION_BINDING_KEYS = [
+  'version', 'verifiedContextSha256', 'eligibilitySnapshotSha256', 'censusSha256', 'admissionRecordsSha256',
+  'sourceReviewSetSha256', 'witnessSha256', 'searchResultBundleSha256', 'searchResultPublicationCompletionSha256',
+  'witnessReviewBundleSha256', 'witnessReviewPublicationCompletionSha256', 'witnessReviewReceiptSetSha256',
+  'evidenceIndexSha256', 'evidencePayloadSetSha256', 'evidenceReceiptSetSha256', 'toolProfileSetSha256',
+  'toolReceiptSetSha256', 'blindReviewReceiptSetSha256', 'temporalAttestationSetSha256', 'materializationReceiptSetSha256',
+  'prerequisiteBundleSha256', 'manifestBuilderBehaviorSha256', 'packedRuntimeReceiptSetSha256', 'bindingSha256',
+] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -63,6 +73,26 @@ function isStringArray(value: unknown): value is string[] {
 
 function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   return Object.keys(value).every((key) => keys.includes(key));
+}
+
+function isAdmissionBinding(value: unknown): value is AdmissionBinding {
+  if (!isRecord(value) || !hasOnlyKeys(value, ADMISSION_BINDING_KEYS) || Object.keys(value).length !== ADMISSION_BINDING_KEYS.length) return false;
+  if (value.version !== 'v10.3-admission-manifest-binding-v1') return false;
+  if (!ADMISSION_BINDING_KEYS.slice(1).every((key) => typeof value[key] === 'string' && SHA256.test(value[key] as string))) return false;
+  try {
+    const withoutSelf = { ...value };
+    delete withoutSelf.bindingSha256;
+    return calibrationAdmissionBindingSha256(withoutSelf) === value.bindingSha256;
+  } catch {
+    return false;
+  }
+}
+
+export function calibrationAdmissionBindingSha256(value: unknown): string {
+  if (!isRecord(value)) throw new TypeError('admission binding must be an object');
+  const withoutSelf = { ...value };
+  delete withoutSelf.bindingSha256;
+  return calibrationAdmissionSha256(withoutSelf);
 }
 
 function isEvidence(value: unknown): boolean {
@@ -128,7 +158,7 @@ export function calibrationCorpusSourceId(
  * source revisions have been externally reviewed.
  */
 export function isCalibrationCorpusManifestV103(value: unknown): value is SlopbrickCalibrationCorpusManifestV103 {
-  if (!isRecord(value) || !hasOnlyKeys(value, ['version', 'generatedAt', 'methodVersion', 'leakageReview', 'repositories', 'files']) ||
+  if (!isRecord(value) || !hasOnlyKeys(value, ['version', 'generatedAt', 'methodVersion', 'admissionBinding', 'leakageReview', 'repositories', 'files']) ||
     value.version !== 'v10.3' || !isIsoDateTime(value.generatedAt) ||
     typeof value.methodVersion !== 'string' || !METHOD_VERSION.test(value.methodVersion)) {
     return false;
@@ -141,6 +171,12 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
     return false;
   }
   if (!Array.isArray(value.repositories) || value.repositories.length === 0 || !Array.isArray(value.files) || value.files.length === 0) {
+    return false;
+  }
+  const admissionMethod = value.methodVersion === 'v10.3.2';
+  if (admissionMethod) {
+    if (!isAdmissionBinding(value.admissionBinding)) return false;
+  } else if (value.admissionBinding !== undefined && value.admissionBinding !== null) {
     return false;
   }
 
@@ -174,7 +210,7 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
   const clusterSplits = new Map<string, Set<string>>();
   const pairGroupSplits = new Map<string, Set<string>>();
   for (const file of value.files) {
-    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'pairGroupId', 'label', 'tier', 'split', 'exclusionReason', 'evidence']) ||
+    if (!isRecord(file) || !hasOnlyKeys(file, ['sourceId', 'repositoryId', 'familyId', 'normalizedPath', 'contentSha256', 'language', 'stratum', 'clusterId', 'pairGroupId', 'label', 'tier', 'split', 'exclusionReason', 'admissionRecordId', 'materializationId', 'evidence']) ||
       !isNonEmptyString(file.sourceId) || file.sourceId.length > MAX_SOURCE_ID_LENGTH || sourceIds.has(file.sourceId) ||
       !IDENTIFIER.test(file.repositoryId as string) || !IDENTIFIER.test(file.familyId as string) ||
       repositories.get(file.repositoryId as string)?.familyId !== file.familyId || !NORMALIZED_PATH.test(file.normalizedPath as string) ||
@@ -182,6 +218,12 @@ export function isCalibrationCorpusManifestV103(value: unknown): value is Slopbr
       !IDENTIFIER.test(file.clusterId as string) || (file.pairGroupId !== undefined && !IDENTIFIER.test(file.pairGroupId as string)) ||
       !LABELS.has(file.label as ManifestLabel) || !TIERS.has(file.tier as string) ||
       !SPLITS.has(file.split as ManifestSplit) || !isEvidence(file.evidence)) {
+      return false;
+    }
+    if (admissionMethod) {
+      if (!isNonEmptyString(file.admissionRecordId) || !IDENTIFIER.test(file.admissionRecordId)
+        || !isNonEmptyString(file.materializationId) || !IDENTIFIER.test(file.materializationId)) return false;
+    } else if (file.admissionRecordId !== undefined || file.materializationId !== undefined) {
       return false;
     }
     const repository = repositories.get(file.repositoryId as string);

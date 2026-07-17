@@ -1,8 +1,8 @@
 // AUTO-GENERATED from calibration-corpus-manifest.schema.json. Do not hand-edit.
 
+export type Sha256 = string;
 export type Identifier = string;
 export type HttpsUri = string;
-export type Sha256 = string;
 export type File = {
   [k: string]: unknown;
 } & {
@@ -41,6 +41,8 @@ export type File = {
    * Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort.
    */
   exclusionReason?: string;
+  admissionRecordId?: Identifier;
+  materializationId?: Identifier;
   evidence: Evidence;
 } & {
   /**
@@ -68,6 +70,8 @@ export type File = {
    * Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort.
    */
   exclusionReason?: string;
+  admissionRecordId?: Identifier;
+  materializationId?: Identifier;
   evidence: Evidence;
 };
 export type Evidence =
@@ -101,6 +105,7 @@ export interface SlopbrickCalibrationCorpusManifestV103 {
   version: "v10.3";
   generatedAt: string;
   methodVersion: string;
+  admissionBinding?: null | AdmissionBinding;
   leakageReview: {
     protocolVersion: string;
     reviewedAt: string;
@@ -118,6 +123,32 @@ export interface SlopbrickCalibrationCorpusManifestV103 {
    * @minItems 1
    */
   files: [File, ...File[]];
+}
+export interface AdmissionBinding {
+  version: "v10.3-admission-manifest-binding-v1";
+  verifiedContextSha256: Sha256;
+  eligibilitySnapshotSha256: Sha256;
+  censusSha256: Sha256;
+  admissionRecordsSha256: Sha256;
+  sourceReviewSetSha256: Sha256;
+  witnessSha256: Sha256;
+  searchResultBundleSha256: Sha256;
+  searchResultPublicationCompletionSha256: Sha256;
+  witnessReviewBundleSha256: Sha256;
+  witnessReviewPublicationCompletionSha256: Sha256;
+  witnessReviewReceiptSetSha256: Sha256;
+  evidenceIndexSha256: Sha256;
+  evidencePayloadSetSha256: Sha256;
+  evidenceReceiptSetSha256: Sha256;
+  toolProfileSetSha256: Sha256;
+  toolReceiptSetSha256: Sha256;
+  blindReviewReceiptSetSha256: Sha256;
+  temporalAttestationSetSha256: Sha256;
+  materializationReceiptSetSha256: Sha256;
+  prerequisiteBundleSha256: Sha256;
+  manifestBuilderBehaviorSha256: Sha256;
+  packedRuntimeReceiptSetSha256: Sha256;
+  bindingSha256: Sha256;
 }
 export interface Repository {
   repositoryId: Identifier;

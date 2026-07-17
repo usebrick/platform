@@ -10,6 +10,7 @@
     "version": { "const": "v10.3", "description": "Manifest contract version, separate from the Repository Structure schema version." },
     "generatedAt": { "type": "string", "format": "date-time" },
     "methodVersion": { "type": "string", "pattern": "^v10\\.3\\.[0-9]+$" },
+    "admissionBinding": { "default": null, "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/admissionBinding" }] },
     "leakageReview": {
       "type": "object",
       "additionalProperties": false,
@@ -82,6 +83,44 @@
         }
       ]
     },
+    "admissionBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version", "verifiedContextSha256", "eligibilitySnapshotSha256", "censusSha256", "admissionRecordsSha256",
+        "sourceReviewSetSha256", "witnessSha256", "searchResultBundleSha256", "searchResultPublicationCompletionSha256",
+        "witnessReviewBundleSha256", "witnessReviewPublicationCompletionSha256", "witnessReviewReceiptSetSha256",
+        "evidenceIndexSha256", "evidencePayloadSetSha256", "evidenceReceiptSetSha256", "toolProfileSetSha256",
+        "toolReceiptSetSha256", "blindReviewReceiptSetSha256", "temporalAttestationSetSha256", "materializationReceiptSetSha256",
+        "prerequisiteBundleSha256", "manifestBuilderBehaviorSha256", "packedRuntimeReceiptSetSha256", "bindingSha256"
+      ],
+      "properties": {
+        "version": { "const": "v10.3-admission-manifest-binding-v1" },
+        "verifiedContextSha256": { "$ref": "#/$defs/sha256" },
+        "eligibilitySnapshotSha256": { "$ref": "#/$defs/sha256" },
+        "censusSha256": { "$ref": "#/$defs/sha256" },
+        "admissionRecordsSha256": { "$ref": "#/$defs/sha256" },
+        "sourceReviewSetSha256": { "$ref": "#/$defs/sha256" },
+        "witnessSha256": { "$ref": "#/$defs/sha256" },
+        "searchResultBundleSha256": { "$ref": "#/$defs/sha256" },
+        "searchResultPublicationCompletionSha256": { "$ref": "#/$defs/sha256" },
+        "witnessReviewBundleSha256": { "$ref": "#/$defs/sha256" },
+        "witnessReviewPublicationCompletionSha256": { "$ref": "#/$defs/sha256" },
+        "witnessReviewReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "evidenceIndexSha256": { "$ref": "#/$defs/sha256" },
+        "evidencePayloadSetSha256": { "$ref": "#/$defs/sha256" },
+        "evidenceReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "toolProfileSetSha256": { "$ref": "#/$defs/sha256" },
+        "toolReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "blindReviewReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "temporalAttestationSetSha256": { "$ref": "#/$defs/sha256" },
+        "materializationReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "prerequisiteBundleSha256": { "$ref": "#/$defs/sha256" },
+        "manifestBuilderBehaviorSha256": { "$ref": "#/$defs/sha256" },
+        "packedRuntimeReceiptSetSha256": { "$ref": "#/$defs/sha256" },
+        "bindingSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
     "repository": {
       "type": "object",
       "additionalProperties": false,
@@ -107,6 +146,8 @@
         "clusterId": { "$ref": "#/$defs/identifier" }, "pairGroupId": { "$ref": "#/$defs/identifier", "description": "Optional reviewed human/AI benchmark pair identifier. The semantic verifier requires all non-excluded records in one pair group to use the same split." }, "label": { "enum": ["verified_ai", "verified_human", "mixed", "quarantine"] },
         "tier": { "enum": ["gold", "silver", "quarantine"] }, "split": { "enum": ["train", "validation", "test", "mixed_evaluation", "excluded"] },
         "exclusionReason": { "type": "string", "minLength": 1, "maxLength": 512, "description": "Required only when split is excluded. Retains a countable, auditable explanation without making the record an eligible data cohort." },
+        "admissionRecordId": { "$ref": "#/$defs/identifier" },
+        "materializationId": { "$ref": "#/$defs/identifier" },
         "evidence": { "$ref": "#/$defs/evidence" }
       },
       "allOf": [

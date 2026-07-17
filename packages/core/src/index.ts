@@ -50,7 +50,7 @@ export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 
 export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
 
-export { calibrationCorpusSourceId, isCalibrationCorpusManifestV103 } from './corpus-manifest';
+export { calibrationAdmissionBindingSha256, calibrationCorpusSourceId, isCalibrationCorpusManifestV103 } from './corpus-manifest';
 export {
   calibrationCheckoutMapSha256,
   isCalibrationCheckoutMapV103,
@@ -149,6 +149,7 @@ export type {
   Repository as CalibrationCorpusRepository,
   File as CalibrationCorpusFile,
   Evidence as CalibrationCorpusEvidence,
+  AdmissionBinding as CalibrationAdmissionManifestBindingV1,
   ReleaseArchiveMaterialization,
 } from './generated/calibration-corpus-manifest';
 export type {
@@ -266,6 +267,61 @@ export {
   isCalibrationManifestDependencyReceiptV1,
 } from './calibration-manifest-dependency-receipts';
 export type { CalibrationManifestDependencyReceiptV1 } from './calibration-manifest-dependency-receipts';
+
+export type {
+  CalibrationAdmissionManifestBuildReceiptV1,
+  CalibrationAdmissionManifestCurrentV1,
+  CalibrationAdmissionManifestGenerationV1,
+  CalibrationAdmissionManifestPrerequisitePublicationCompletionV1,
+  CalibrationAdmissionManifestPrerequisitePublicationCurrentV1,
+  CalibrationAdmissionManifestPrerequisitePublicationLockV1,
+  CalibrationAdmissionManifestPrerequisitePublicationRequestV1,
+  CalibrationAdmissionManifestPrerequisitePublicationTransactionV1,
+  CalibrationAdmissionManifestPrerequisiteStagingSetV1,
+  CalibrationAdmissionManifestPrerequisiteBundleV1,
+  CalibrationAdmissionManifestPublicationLockV1,
+  CalibrationAdmissionManifestPublicationTransactionV1,
+} from './calibration-admission-manifest-prerequisites';
+export {
+  calibrationAdmissionManifestBuildReceiptSha256,
+  calibrationAdmissionManifestCurrentSha256,
+  calibrationAdmissionManifestGenerationSha256,
+  calibrationAdmissionManifestPrerequisiteArtifactSetSha256,
+  calibrationAdmissionManifestPrerequisiteBundleSha256,
+  calibrationAdmissionManifestPrerequisitePublicationCompletionSha256,
+  calibrationAdmissionManifestPrerequisitePublicationCurrentSha256,
+  calibrationAdmissionManifestPrerequisitePublicationLockSha256,
+  calibrationAdmissionManifestPrerequisitePublicationRequestSha256,
+  calibrationAdmissionManifestPrerequisitePublicationTransactionSha256,
+  calibrationAdmissionManifestPrerequisiteStagingSetSha256,
+  calibrationAdmissionManifestPublicationLockSha256,
+  calibrationAdmissionManifestPublicationTransactionSha256,
+  isCalibrationAdmissionManifestBuildReceiptV1,
+  isCalibrationAdmissionManifestCurrentV1,
+  isCalibrationAdmissionManifestGenerationV1,
+  isCalibrationAdmissionManifestPrerequisiteBundleV1,
+  isCalibrationAdmissionManifestPrerequisitePublicationCompletionV1,
+  isCalibrationAdmissionManifestPrerequisitePublicationCurrentV1,
+  isCalibrationAdmissionManifestPrerequisitePublicationLockV1,
+  isCalibrationAdmissionManifestPrerequisitePublicationRequestV1,
+  isCalibrationAdmissionManifestPrerequisitePublicationTransactionV1,
+  isCalibrationAdmissionManifestPrerequisiteStagingSetV1,
+  isCalibrationAdmissionManifestPublicationLockV1,
+  isCalibrationAdmissionManifestPublicationTransactionV1,
+  validateCalibrationAdmissionManifestBuildReceiptV1,
+  validateCalibrationAdmissionManifestCurrentV1,
+  validateCalibrationAdmissionManifestGenerationV1,
+  validateCalibrationAdmissionManifestPrerequisiteBundleV1,
+  validateCalibrationAdmissionManifestPrerequisitePublicationCompletionV1,
+  validateCalibrationAdmissionManifestPrerequisitePublicationCurrentV1,
+  validateCalibrationAdmissionManifestPrerequisitePublicationLockV1,
+  validateCalibrationAdmissionManifestPrerequisitePublicationRequestV1,
+  validateCalibrationAdmissionManifestPrerequisitePublicationTransactionV1,
+  validateCalibrationAdmissionManifestPrerequisiteStagingSetV1,
+  validateCalibrationAdmissionManifestPublicationLockV1,
+  validateCalibrationAdmissionManifestPublicationTransactionV1,
+} from './calibration-admission-manifest-prerequisites';
+export type { CalibrationAdmissionManifestContractValidationV1 } from './calibration-admission-manifest-prerequisites';
 
 export type { CalibrationAdmissionArtifactReceiptV1 } from './generated/calibration-admission-artifact-receipt';
 export type { CalibrationAdmissionSourceGenerationProposalV1 } from './generated/calibration-admission-source-generation-proposal';

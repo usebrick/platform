@@ -123,6 +123,18 @@ export interface WitnessRegeneration {
 }
 `;
   }
+  if (file === 'calibration-admission-manifest-prerequisites.schema.json') {
+    return generated.replace(
+      'packedRuntimes: never[];',
+      'packedRuntimes: [{ nodeMajor: 22; tarballArtifactId: Id; receiptArtifactId: Id }, { nodeMajor: 24; tarballArtifactId: Id; receiptArtifactId: Id }];',
+    );
+  }
+  if (file === 'calibration-admission-manifest-publication-transaction.schema.json') {
+    return generated.replace(
+      'generationLeafNames: never[];',
+      'generationLeafNames: ["manifest.json", "build-receipt.json", "generation.json"];',
+    );
+  }
   return generated;
 }
 

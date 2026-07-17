@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-generation.schema.json",
+  "title": "CalibrationAdmissionManifestGenerationV1",
+  "description": "Immutable manifest generation record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "manifestId", "generation", "manifestSha256", "manifestRelativePath", "buildReceiptSha256", "buildReceiptRelativePath", "generationSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-generation-v1" },
+    "manifestId": { "$ref": "#/$defs/manifestId" },
+    "generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "parentGenerationSha256": { "$ref": "#/$defs/sha256" },
+    "manifestSha256": { "$ref": "#/$defs/sha256" },
+    "manifestRelativePath": { "const": "manifest.json" },
+    "buildReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "buildReceiptRelativePath": { "const": "build-receipt.json" },
+    "generationSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "manifestId": { "enum": ["v10.3-admission-smoke", "v10.3-admission-canary"] }
+  }
+}

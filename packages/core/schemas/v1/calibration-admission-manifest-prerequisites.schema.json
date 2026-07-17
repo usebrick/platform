@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisites.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisiteBundleV1",
+  "description": "Content-addressed prerequisite bundle for a witness-bound v10.3 admission manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bundleId", "implementationCommitSha", "manifestBuilder", "releaseMaterializationTasks1To6", "scoreWireClosure", "runLifecycleVerification", "packedRuntimes", "referencedArtifacts", "referencedArtifactSetSha256", "bundleSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisites-v1" },
+    "bundleId": { "$ref": "#/$defs/id" },
+    "implementationCommitSha": { "$ref": "#/$defs/commitSha" },
+    "manifestBuilder": { "type": "object", "additionalProperties": false, "required": ["behaviorSha256", "artifactId"], "properties": { "behaviorSha256": { "$ref": "#/$defs/sha256" }, "artifactId": { "$ref": "#/$defs/id" } } },
+    "releaseMaterializationTasks1To6": { "type": "object", "additionalProperties": false, "required": ["approvedCommitSha", "planArtifactId", "approvalReceiptArtifactId"], "properties": { "approvedCommitSha": { "$ref": "#/$defs/commitSha" }, "planArtifactId": { "$ref": "#/$defs/id" }, "approvalReceiptArtifactId": { "$ref": "#/$defs/id" } } },
+    "scoreWireClosure": { "type": "object", "additionalProperties": false, "required": ["approvedCommitSha", "closureReceiptArtifactId"], "properties": { "approvedCommitSha": { "$ref": "#/$defs/commitSha" }, "closureReceiptArtifactId": { "$ref": "#/$defs/id" } } },
+    "runLifecycleVerification": { "type": "object", "additionalProperties": false, "required": ["approvedCommitSha", "runInitReceiptArtifactId", "postScanReceiptArtifactId"], "properties": { "approvedCommitSha": { "$ref": "#/$defs/commitSha" }, "runInitReceiptArtifactId": { "$ref": "#/$defs/id" }, "postScanReceiptArtifactId": { "$ref": "#/$defs/id" } } },
+    "packedRuntimes": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/packedRuntime22" }, { "$ref": "#/$defs/packedRuntime24" }], "items": false, "minItems": 2, "maxItems": 2 },
+    "referencedArtifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/artifact" } },
+    "referencedArtifactSetSha256": { "$ref": "#/$defs/sha256" },
+    "bundleSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "relativePath": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactId", "relativePath", "bytes", "sha256", "kind", "owner", "mediaType", "schemaId"],
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/id" },
+        "relativePath": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "kind": { "enum": ["release_plan", "release_plan_approval", "score_wire_closure_receipt", "run_init_receipt", "post_scan_receipt", "packed_runtime_receipt", "package_tarball", "manifest_builder"] },
+        "owner": { "enum": ["release_asset_plan", "score_wire_gate", "run_lifecycle_gate", "packed_runtime_matrix", "admission_manifest_builder"] },
+        "mediaType": { "enum": ["text/markdown", "application/json", "application/gzip", "application/javascript"] },
+        "schemaId": { "anyOf": [{ "type": "null" }, { "type": "string", "pattern": "^https://usebrick\\.dev/schemas/v1/[a-z0-9._-]+\\.schema\\.json$" }] },
+        "packageTarballArtifactId": { "$ref": "#/$defs/id" },
+        "packageMemberRelativePath": { "$ref": "#/$defs/relativePath" }
+      },
+      "oneOf": [
+        { "properties": { "kind": { "const": "release_plan" }, "owner": { "const": "release_asset_plan" }, "mediaType": { "const": "text/markdown" }, "schemaId": { "const": null } } },
+        { "properties": { "kind": { "const": "release_plan_approval" }, "owner": { "const": "release_asset_plan" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-release-prerequisite-approval.schema.json" } } },
+        { "properties": { "kind": { "const": "score_wire_closure_receipt" }, "owner": { "const": "score_wire_gate" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-score-wire-closure-receipt.schema.json" } } },
+        { "properties": { "kind": { "enum": ["run_init_receipt", "post_scan_receipt"] }, "owner": { "const": "run_lifecycle_gate" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-run-lifecycle-receipt.schema.json" } } },
+        { "properties": { "kind": { "const": "packed_runtime_receipt" }, "owner": { "const": "packed_runtime_matrix" }, "mediaType": { "const": "application/json" }, "schemaId": { "const": "https://usebrick.dev/schemas/v1/calibration-packed-runtime-receipt.schema.json" } } },
+        { "properties": { "kind": { "const": "package_tarball" }, "owner": { "const": "packed_runtime_matrix" }, "mediaType": { "const": "application/gzip" }, "schemaId": { "const": null } } },
+        { "required": ["packageTarballArtifactId", "packageMemberRelativePath"], "properties": { "kind": { "const": "manifest_builder" }, "owner": { "const": "admission_manifest_builder" }, "mediaType": { "const": "application/javascript" }, "schemaId": { "const": null }, "packageTarballArtifactId": { "$ref": "#/$defs/id" }, "packageMemberRelativePath": { "$ref": "#/$defs/relativePath" } } }
+      ]
+    },
+    "packedRuntime22": { "type": "object", "additionalProperties": false, "required": ["nodeMajor", "tarballArtifactId", "receiptArtifactId"], "properties": { "nodeMajor": { "const": 22 }, "tarballArtifactId": { "$ref": "#/$defs/id" }, "receiptArtifactId": { "$ref": "#/$defs/id" } } },
+    "packedRuntime24": { "type": "object", "additionalProperties": false, "required": ["nodeMajor", "tarballArtifactId", "receiptArtifactId"], "properties": { "nodeMajor": { "const": 24 }, "tarballArtifactId": { "$ref": "#/$defs/id" }, "receiptArtifactId": { "$ref": "#/$defs/id" } } }
+  }
+}

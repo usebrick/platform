@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-lock.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisitePublicationLockV1",
+  "description": "CAS lock for prerequisite bundle publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "lockId", "intendedTransactionId", "invocationIntentId", "requestId", "requestSha256", "operation", "expectedCurrentState", "nextBundleSha256", "artifactSetSha256", "recoveryNonce", "lockSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisite-publication-lock-v1" },
+    "lockId": { "$ref": "#/$defs/id" },
+    "intendedTransactionId": { "$ref": "#/$defs/id" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "requestId": { "$ref": "#/$defs/id" },
+    "requestSha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "nextBundleSha256": { "$ref": "#/$defs/sha256" },
+    "artifactSetSha256": { "$ref": "#/$defs/sha256" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "lockSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "bundleSha256", "currentSha256"], "properties": { "kind": { "const": "existing" }, "bundleSha256": { "$ref": "#/$defs/sha256" }, "currentSha256": { "$ref": "#/$defs/sha256" } } }] }
+  }
+}

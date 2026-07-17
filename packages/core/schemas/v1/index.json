@@ -75,6 +75,90 @@
       "producedBy": ["slopbrick calibration control plane"],
       "consumedBy": ["slopbrick calibration verifier"]
     },
+    "calibration-admission-manifest-prerequisites": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisites.schema.json",
+      "file": "calibration-admission-manifest-prerequisites.schema.json",
+      "description": "Typed, content-addressed prerequisite graph for a witness-bound v10.3 admission manifest.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-prerequisite-staging-set": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-staging-set.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-staging-set.schema.json",
+      "description": "Hash-bound staging projection for manifest prerequisite artifacts.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-prerequisite-publication-request": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-request.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-publication-request.schema.json",
+      "description": "No-clobber request binding prerequisite source artifacts and their typed bundle.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest recovery"]
+    },
+    "calibration-admission-manifest-prerequisite-publication-lock": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-lock.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-publication-lock.schema.json",
+      "description": "CAS lock for prerequisite bundle publication.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest recovery"]
+    },
+    "calibration-admission-manifest-prerequisite-publication-transaction": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-transaction.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-publication-transaction.schema.json",
+      "description": "Recoverable prerequisite publication transaction with fixed output topology.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest recovery"]
+    },
+    "calibration-admission-manifest-prerequisite-publication-completion": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-completion.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-publication-completion.schema.json",
+      "description": "Self-hashed completion marker for prerequisite publication.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-prerequisite-publication-current": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-current.schema.json",
+      "file": "calibration-admission-manifest-prerequisite-publication-current.schema.json",
+      "description": "Self-hashed current pointer for the published prerequisite bundle.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-build-receipt": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-build-receipt.schema.json",
+      "file": "calibration-admission-manifest-build-receipt.schema.json",
+      "description": "Build receipt binding a witness-bound manifest to immutable prerequisites and tool evidence.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-generation": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-generation.schema.json",
+      "file": "calibration-admission-manifest-generation.schema.json",
+      "description": "Immutable manifest generation record.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-current": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-current.schema.json",
+      "file": "calibration-admission-manifest-current.schema.json",
+      "description": "Self-hashed current pointer for one admission manifest generation.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest verifier"]
+    },
+    "calibration-admission-manifest-publication-lock": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-publication-lock.schema.json",
+      "file": "calibration-admission-manifest-publication-lock.schema.json",
+      "description": "CAS lock for one smoke or canary manifest publication.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest recovery"]
+    },
+    "calibration-admission-manifest-publication-transaction": {
+      "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-publication-transaction.schema.json",
+      "file": "calibration-admission-manifest-publication-transaction.schema.json",
+      "description": "Recoverable smoke/canary manifest publication transaction.",
+      "producedBy": ["slopbrick admission manifest publisher"],
+      "consumedBy": ["slopbrick admission manifest recovery"]
+    },
     "calibration-checkout-map": {
       "$id": "https://usebrick.dev/schemas/v1/calibration-checkout-map.schema.json",
       "file": "calibration-checkout-map.schema.json",

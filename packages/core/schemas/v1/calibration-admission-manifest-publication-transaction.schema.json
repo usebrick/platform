@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-publication-transaction.schema.json",
+  "title": "CalibrationAdmissionManifestPublicationTransactionV1",
+  "description": "Recoverable smoke/canary manifest publication transaction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "invocationIntentId", "manifestId", "operation", "expectedCurrentState", "manifestSha256", "prerequisiteBundleSha256", "manifestStagingRelativePath", "buildReceiptStagingRelativePath", "generationLeafNames", "recoveryNonce", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-publication-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "manifestId": { "$ref": "#/$defs/manifestId" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "manifestSha256": { "$ref": "#/$defs/sha256" },
+    "prerequisiteBundleSha256": { "$ref": "#/$defs/sha256" },
+    "manifestStagingRelativePath": { "$ref": "#/$defs/path" },
+    "buildReceiptStagingRelativePath": { "$ref": "#/$defs/path" },
+    "generationLeafNames": { "type": "array", "prefixItems": [{ "const": "manifest.json" }, { "const": "build-receipt.json" }, { "const": "generation.json" }], "items": false, "minItems": 3, "maxItems": 3 },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "manifestId": { "enum": ["v10.3-admission-smoke", "v10.3-admission-canary"] },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "generationSha256"], "properties": { "kind": { "const": "existing" }, "generationSha256": { "$ref": "#/$defs/sha256" } } }] },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "enum": ["intent_fsynced", "manifest_staged_fsynced"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce"], "properties": { "phase": { "const": "tool_receipt_publication_started" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/id" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce", "toolReceiptId", "toolReceiptSha256", "toolAuthorityIndexSha256"], "properties": { "phase": { "const": "tool_receipt_indexed" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/id" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" }, "toolReceiptId": { "$ref": "#/$defs/id" }, "toolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "toolReceiptId", "toolReceiptSha256", "toolAuthorityIndexSha256", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce", "buildReceiptId", "buildReceiptSha256", "generationSha256", "generationDirectoryStagedRelativePath", "generationDirectoryFinalRelativePath", "currentTemporaryRelativePath", "currentFinalRelativePath"], "properties": { "phase": { "enum": ["build_receipt_staged_fsynced", "generation_directory_staged_fsynced", "generation_directory_promoted", "generations_parent_fsynced", "current_temporary_fsynced", "current_promoted", "output_directories_fsynced", "complete"] }, "toolReceiptId": { "$ref": "#/$defs/id" }, "toolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/id" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" }, "buildReceiptId": { "$ref": "#/$defs/id" }, "buildReceiptSha256": { "$ref": "#/$defs/sha256" }, "generationSha256": { "$ref": "#/$defs/sha256" }, "generationDirectoryStagedRelativePath": { "$ref": "#/$defs/path" }, "generationDirectoryFinalRelativePath": { "$ref": "#/$defs/path" }, "currentTemporaryRelativePath": { "$ref": "#/$defs/path" }, "currentFinalRelativePath": { "$ref": "#/$defs/path" } } }
+      ]
+    }
+  }
+}

@@ -6,6 +6,7 @@ import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import type { ReleaseArchiveMaterialization } from '../src/index';
 import {
+  calibrationAdmissionBindingSha256,
   calibrationCorpusSourceId,
   isCalibrationCorpusManifestV103,
 } from '../src/corpus-manifest';
@@ -102,6 +103,40 @@ describe('v10.3 calibration corpus manifest contract', () => {
   it.each(['v10.3.1', 'v10.3.2'])('accepts a complete release archive at method %s and derives its asset-backed source ID', (methodVersion) => {
     const manifest = releaseFixture();
     manifest.methodVersion = methodVersion;
+    if (methodVersion === 'v10.3.2') {
+      const binding: Record<string, unknown> = {
+        version: 'v10.3-admission-manifest-binding-v1',
+        verifiedContextSha256: 'a'.repeat(64),
+        eligibilitySnapshotSha256: 'a'.repeat(64),
+        censusSha256: 'a'.repeat(64),
+        admissionRecordsSha256: 'a'.repeat(64),
+        sourceReviewSetSha256: 'a'.repeat(64),
+        witnessSha256: 'a'.repeat(64),
+        searchResultBundleSha256: 'a'.repeat(64),
+        searchResultPublicationCompletionSha256: 'a'.repeat(64),
+        witnessReviewBundleSha256: 'a'.repeat(64),
+        witnessReviewPublicationCompletionSha256: 'a'.repeat(64),
+        witnessReviewReceiptSetSha256: 'a'.repeat(64),
+        evidenceIndexSha256: 'a'.repeat(64),
+        evidencePayloadSetSha256: 'a'.repeat(64),
+        evidenceReceiptSetSha256: 'a'.repeat(64),
+        toolProfileSetSha256: 'a'.repeat(64),
+        toolReceiptSetSha256: 'a'.repeat(64),
+        blindReviewReceiptSetSha256: 'a'.repeat(64),
+        temporalAttestationSetSha256: 'a'.repeat(64),
+        materializationReceiptSetSha256: 'a'.repeat(64),
+        prerequisiteBundleSha256: 'a'.repeat(64),
+        manifestBuilderBehaviorSha256: 'a'.repeat(64),
+        packedRuntimeReceiptSetSha256: 'a'.repeat(64),
+        bindingSha256: '',
+      };
+      binding.bindingSha256 = calibrationAdmissionBindingSha256(binding);
+      manifest.admissionBinding = binding;
+      for (const file of manifest.files as Array<Record<string, unknown>>) {
+        file.admissionRecordId = 'admission-record-1';
+        file.materializationId = 'materialization-1';
+      }
+    }
     const repository = releaseRepository(manifest);
     const file = (manifest.files as Array<Record<string, unknown>>)[0]!;
     const validate = manifestSchemaValidator();
@@ -122,6 +157,45 @@ describe('v10.3 calibration corpus manifest contract', () => {
     const validate = manifestSchemaValidator();
 
     expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('requires a self-hashed admission binding and per-file identities for v10.3.2', () => {
+    const manifest = releaseFixture();
+    manifest.methodVersion = 'v10.3.2';
+    const validate = manifestSchemaValidator();
+
+    expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+
+    const binding: Record<string, unknown> = {
+      version: 'v10.3-admission-manifest-binding-v1',
+      verifiedContextSha256: 'a'.repeat(64), eligibilitySnapshotSha256: 'a'.repeat(64), censusSha256: 'a'.repeat(64),
+      admissionRecordsSha256: 'a'.repeat(64), sourceReviewSetSha256: 'a'.repeat(64), witnessSha256: 'a'.repeat(64),
+      searchResultBundleSha256: 'a'.repeat(64), searchResultPublicationCompletionSha256: 'a'.repeat(64),
+      witnessReviewBundleSha256: 'a'.repeat(64), witnessReviewPublicationCompletionSha256: 'a'.repeat(64), witnessReviewReceiptSetSha256: 'a'.repeat(64),
+      evidenceIndexSha256: 'a'.repeat(64), evidencePayloadSetSha256: 'a'.repeat(64), evidenceReceiptSetSha256: 'a'.repeat(64),
+      toolProfileSetSha256: 'a'.repeat(64), toolReceiptSetSha256: 'a'.repeat(64), blindReviewReceiptSetSha256: 'a'.repeat(64),
+      temporalAttestationSetSha256: 'a'.repeat(64), materializationReceiptSetSha256: 'a'.repeat(64), prerequisiteBundleSha256: 'a'.repeat(64),
+      manifestBuilderBehaviorSha256: 'a'.repeat(64), packedRuntimeReceiptSetSha256: 'a'.repeat(64), bindingSha256: '',
+    };
+    binding.bindingSha256 = calibrationAdmissionBindingSha256(binding);
+    manifest.admissionBinding = binding;
+    for (const file of manifest.files as Array<Record<string, unknown>>) {
+      file.admissionRecordId = 'admission-record-1';
+      file.materializationId = 'materialization-1';
+    }
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+
+    (manifest.admissionBinding as Record<string, unknown>).bindingSha256 = 'b'.repeat(64);
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
+  });
+
+  it('rejects a non-null admission binding on a legacy method', () => {
+    const manifest = fixture();
+    manifest.admissionBinding = null;
+    expect(isCalibrationCorpusManifestV103(manifest)).toBe(true);
+    manifest.admissionBinding = { version: 'v10.3-admission-manifest-binding-v1' };
     expect(isCalibrationCorpusManifestV103(manifest)).toBe(false);
   });
 

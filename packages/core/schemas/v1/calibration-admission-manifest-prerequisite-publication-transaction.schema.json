@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/v1/calibration-admission-manifest-prerequisite-publication-transaction.schema.json",
+  "title": "CalibrationAdmissionManifestPrerequisitePublicationTransactionV1",
+  "description": "Recoverable prerequisite publication transaction with fixed output topology.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "transactionId", "lockSha256", "invocationIntentId", "requestId", "requestSha256", "operation", "expectedCurrentState", "nextBundleSha256", "artifactSetSha256", "requestTemporaryRelativePath", "requestFinalRelativePath", "artifacts", "bundleTemporaryRelativePath", "bundleFinalRelativePath", "projectionTemporaryRelativePath", "projectionFinalRelativePath", "completionTemporaryRelativePath", "publicationCurrentTemporaryRelativePath", "publicationCurrentFinalRelativePath", "recoveryNonce", "state", "transactionSha256"],
+  "properties": {
+    "version": { "const": "v10.3-admission-manifest-prerequisite-publication-transaction-v1" },
+    "transactionId": { "$ref": "#/$defs/id" },
+    "lockSha256": { "$ref": "#/$defs/sha256" },
+    "invocationIntentId": { "$ref": "#/$defs/sha256" },
+    "requestId": { "$ref": "#/$defs/id" },
+    "requestSha256": { "$ref": "#/$defs/sha256" },
+    "operation": { "enum": ["create", "replace"] },
+    "expectedCurrentState": { "$ref": "#/$defs/expectedCurrentState" },
+    "nextBundleSha256": { "$ref": "#/$defs/sha256" },
+    "artifactSetSha256": { "$ref": "#/$defs/sha256" },
+    "requestTemporaryRelativePath": { "$ref": "#/$defs/path" },
+    "requestFinalRelativePath": { "$ref": "#/$defs/path" },
+    "artifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/artifact" } },
+    "bundleTemporaryRelativePath": { "$ref": "#/$defs/path" },
+    "bundleFinalRelativePath": { "$ref": "#/$defs/path" },
+    "projectionTemporaryRelativePath": { "$ref": "#/$defs/path" },
+    "projectionFinalRelativePath": { "const": "review/admission/manifest-prerequisites/bundle.json" },
+    "completionTemporaryRelativePath": { "$ref": "#/$defs/path" },
+    "publicationCurrentTemporaryRelativePath": { "$ref": "#/$defs/path" },
+    "publicationCurrentFinalRelativePath": { "const": "review/admission/manifest-prerequisites/publications/current.json" },
+    "recoveryNonce": { "$ref": "#/$defs/sha256" },
+    "state": { "$ref": "#/$defs/state" },
+    "transactionSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "path": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[^\\u0000-\\u001f]+$" },
+    "expectedCurrentState": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "absent" } } }, { "type": "object", "additionalProperties": false, "required": ["kind", "bundleSha256", "currentSha256"], "properties": { "kind": { "const": "existing" }, "bundleSha256": { "$ref": "#/$defs/sha256" }, "currentSha256": { "$ref": "#/$defs/sha256" } } }] },
+    "artifact": { "type": "object", "additionalProperties": false, "required": ["artifactId", "stagedRelativePath", "finalRelativePath", "bytes", "sha256"], "properties": { "artifactId": { "$ref": "#/$defs/id" }, "stagedRelativePath": { "$ref": "#/$defs/path" }, "finalRelativePath": { "$ref": "#/$defs/path" }, "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }, "sha256": { "$ref": "#/$defs/sha256" } } },
+    "state": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["phase"], "properties": { "phase": { "enum": ["intent_fsynced", "request_staged_fsynced", "request_promoted", "request_directory_fsynced", "artifacts_staged_fsynced", "artifacts_promoted", "artifact_directories_fsynced", "bundle_staged_fsynced", "bundle_promoted", "bundle_directory_fsynced", "projection_staged_fsynced", "projection_promoted"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce"], "properties": { "phase": { "const": "publication_tool_receipt_started" }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/id" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" } } },
+        { "type": "object", "additionalProperties": false, "required": ["phase", "nestedHandoffSha256", "childTransactionId", "childRecoveryNonce", "publicationToolReceiptId", "publicationToolReceiptSha256", "toolAuthorityIndexSha256", "completionSha256", "completionFinalRelativePath", "publicationCurrentSha256"], "properties": { "phase": { "enum": ["publication_tool_receipt_indexed", "completion_staged_fsynced", "completion_promoted", "completion_directory_fsynced", "publication_current_staged_fsynced", "publication_current_promoted", "publication_current_directory_fsynced", "complete"] }, "nestedHandoffSha256": { "$ref": "#/$defs/sha256" }, "childTransactionId": { "$ref": "#/$defs/id" }, "childRecoveryNonce": { "$ref": "#/$defs/sha256" }, "publicationToolReceiptId": { "$ref": "#/$defs/id" }, "publicationToolReceiptSha256": { "$ref": "#/$defs/sha256" }, "toolAuthorityIndexSha256": { "$ref": "#/$defs/sha256" }, "completionSha256": { "$ref": "#/$defs/sha256" }, "completionFinalRelativePath": { "$ref": "#/$defs/path" }, "publicationCurrentSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    }
+  }
+}
