@@ -99,7 +99,7 @@ describe('v10.3 calibration CLI', () => {
     for (const args of cases) await expect(execFileAsync(tsx, args, { cwd: packageRoot })).rejects.toMatchObject({ code: 2 });
     const reserved = await execFileAsync(tsx, [script, 'corpus:validate', '--root', root, '--manifest-id', 'fixture', '--manifest-ref-json', '{}', '--expected-manifest-sha256', expected], { cwd: packageRoot }).catch((error: unknown) => error as { readonly code: number; readonly stdout: string });
     expect(reserved.code).toBe(2);
-    expect(reserved.stdout).toContain('Admission manifest sources are reserved until Task 9B');
+    expect(reserved.stdout).toContain('manifest consumer input is invalid');
   });
 
   it('rejects a future flat-manifest method before any materialization output', async () => {

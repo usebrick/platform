@@ -22,6 +22,11 @@ import { createV103WorkerInvoker } from '../../src/calibration/v103/worker-invok
 import { runV103Scan } from '../../src/calibration/v103/run-scan';
 import { materializeSources } from '../../src/calibration/v103/materialize-sources';
 import {
+  isVerifiedAdmissionManifest,
+  openAdmissionManifestForConsumer,
+  type VerifiedAdmissionManifestV1,
+} from '../../src/calibration/v103/admission-manifest-consumer';
+import {
   buildV103UnavailableArtifactBundle,
   hashV103UpstreamArtifacts,
   isV103UnavailableArtifact,
@@ -48,6 +53,12 @@ type AdmissionManifestSource = {
 
 /** Closed source boundary. Admission is intentionally reserved until Task 9B. */
 type ManifestSource = LegacyManifestSource | AdmissionManifestSource;
+
+type ReadManifestSource = {
+  readonly manifest: unknown;
+  /** Present only for the admission path; the brand never crosses a process boundary. */
+  readonly admission?: VerifiedAdmissionManifestV1;
+};
 
 interface Arguments {
   readonly command: Command;
@@ -246,8 +257,16 @@ function verifyFrozenInputHashes(declared: unknown, actual: FrozenInputHashes, c
   }
 }
 
-async function readManifestSource(source: ManifestSource): Promise<unknown> {
-  if (source.kind === 'admission_ref') throw new UsageError('Admission manifest sources are reserved until Task 9B');
+async function readManifestSource(source: ManifestSource): Promise<ReadManifestSource> {
+  if (source.kind === 'admission_ref') {
+    const admission = await openAdmissionManifestForConsumer({
+      root: source.root,
+      manifestId: source.manifestId,
+      manifestReference: source.manifestRefJson,
+      expectedManifestSha256: source.expectedManifestSha256,
+    });
+    return { manifest: admission.manifest, admission };
+  }
   let bytes: Buffer;
   try {
     bytes = await readFile(source.manifestPath);
@@ -268,7 +287,14 @@ async function readManifestSource(source: ManifestSource): Promise<unknown> {
   if (methodVersion !== 'v10.3.0' && methodVersion !== 'v10.3.1') {
     throw new UsageError('Flat manifest source only supports v10.3.0 and v10.3.1');
   }
-  return manifest;
+  return { manifest };
+}
+
+function requireManifestSourceForOperation(source: ReadManifestSource): unknown {
+  if (source.admission !== undefined && !isVerifiedAdmissionManifest(source.admission)) {
+    throw new UsageError('Admission manifest consumer brand is invalid');
+  }
+  return source.manifest;
 }
 
 async function ensureEmptyDirectory(path: string): Promise<void> {
@@ -491,14 +517,14 @@ function result(payload: Record<string, unknown>): void {
 
 async function run(args: Arguments): Promise<void> {
   if (args.command === 'corpus:validate') {
-    const manifest = await readManifestSource(args.manifestSource!);
+    const manifest = requireManifestSourceForOperation(await readManifestSource(args.manifestSource!));
     if (!isCalibrationCorpusManifestV103(manifest)) throw new UsageError('Manifest does not satisfy the v10.3 corpus contract');
     result({ ok: true, stage: 'corpus:validate', repositories: manifest.repositories.length, files: manifest.files.length });
     return;
   }
 
   if (args.command === 'cal:materialize') {
-    const manifest = await readManifestSource(args.manifestSource!);
+    const manifest = requireManifestSourceForOperation(await readManifestSource(args.manifestSource!));
     const baseCheckoutMap = args.baseCheckoutMap === undefined
       ? undefined
       : await readJson(args.baseCheckoutMap, 'base checkout map');
@@ -517,7 +543,7 @@ async function run(args: Arguments): Promise<void> {
   }
 
   if (args.command === 'select') {
-    const manifest = await readManifestSource(args.manifestSource!);
+    const manifest = requireManifestSourceForOperation(await readManifestSource(args.manifestSource!));
     await ensureEmptyDirectory(args.out!);
     const selection = buildSelection(manifest, { seed: args.seed! });
     // The copied manifest is a canonical, path-free input snapshot. It lets
