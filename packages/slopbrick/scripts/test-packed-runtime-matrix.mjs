@@ -113,21 +113,28 @@ function runtimeNodePath(major) {
   const configured = process.env[`SLOPBRICK_NODE_${major}`]?.trim();
   if (configured) {
     if (!existsSync(configured) || !lstatSync(configured).isFile()) fail(`SLOPBRICK_NODE_${major} is not a regular executable`);
-    return { command: configured, prefix: [], env: process.env };
+    return { command: configured, prefix: [], env: process.env, bin: dirname(configured) };
   }
-  if (!existsSync('/Users/cheng/.local/bin/mise')) {
-    fail(`Node ${major} is not configured; set SLOPBRICK_NODE_${major} to an absolute node binary`);
-  }
-  return { command: 'mise', prefix: ['exec', `node@${major}`, '--', 'node'], env: process.env };
+  const location = spawnSync('mise', ['where', `node@${major}`], { cwd: repoRoot, encoding: 'utf8', timeout: 30_000 });
+  const home = location.status === 0 ? location.stdout.trim() : '';
+  if (home.length === 0) fail(`Node ${major} is not configured; set SLOPBRICK_NODE_${major} to an absolute node binary`);
+  return {
+    command: 'mise',
+    prefix: ['exec', `node@${major}`, '--', 'node'],
+    env: process.env,
+    bin: join(home, 'bin'),
+  };
 }
 
 function runRuntime(major, args, options = {}) {
   const runtime = runtimeNodePath(major);
+  const requestedEnv = options.env ?? {};
   const env = {
     ...runtime.env,
-    ...(options.env ?? {}),
+    ...requestedEnv,
     NODE_OPTIONS: `${runtime.env.NODE_OPTIONS ?? ''} --max-old-space-size=2048`.trim(),
   };
+  env.PATH = `${runtime.bin}:${requestedEnv.PATH ?? runtime.env.PATH ?? ''}`;
   return run(runtime.command, [...runtime.prefix, ...args], { ...options, env });
 }
 
@@ -135,12 +142,13 @@ function runRuntimeTool(major, tool, args, options = {}) {
   const configured = process.env[`SLOPBRICK_NODE_${major}`]?.trim();
   if (configured && tool === 'node') return runRuntime(major, args, options);
   const runtime = runtimeNodePath(major);
+  const requestedEnv = options.env ?? {};
   const env = {
     ...runtime.env,
-    ...(options.env ?? {}),
+    ...requestedEnv,
     NODE_OPTIONS: `${runtime.env.NODE_OPTIONS ?? ''} --max-old-space-size=2048`.trim(),
   };
-  if (configured) env.PATH = `${dirname(configured)}:${env.PATH ?? ''}`;
+  env.PATH = `${runtime.bin}:${requestedEnv.PATH ?? runtime.env.PATH ?? ''}`;
   if (runtime.command === 'mise') return run(runtime.command, ['exec', `node@${major}`, '--', tool, ...args], { ...options, env });
   return run(tool, args, { ...options, env });
 }
