@@ -1371,3 +1371,16 @@ real-scale resource receipt, or witness authority exists yet. The live corpus
 state is unchanged at **329/329** reviewed sources, **452,382**
 quarantined/unrepresented units, zero candidate/eligible, with blockers
 `static_authority_unavailable` and `witness_authority_unavailable`.
+
+### CORPUS-001 leakage-safe candidate plan — 2026-07-17
+
+Task 3: complete (implementation commit `90d43cd76`, spec pass and quality
+approved with no Critical or Important findings). The pure planner found zero
+exact and zero normalized cross-label collision rows in the pinned 10,000-row
+candidate projection and kept every family/same-label duplicate group inside
+one deterministic split: 7,970 train, 991 validation, and 1,039 test. Canonical
+plan SHA-256 is
+`9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
+Rows remain `publisher_attested` / `internal_analysis` and are not admitted.
+Raw CSV row binding, the 100/100 smoke, admission, calibration, and remote
+mutations remain open.
