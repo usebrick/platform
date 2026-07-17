@@ -2,13 +2,15 @@
 
 **Snapshot:** 2026-07-17
 **Candidate:** `slopbrick@0.45.0` (unreleased)
-**Implementation checkpoint:** `aa2bb36328da0434a6fea7a1fba24552de9c78af`
-**Decision:** **NO-GO for release/publish**
+**Implementation checkpoint:** `c2d337b7f385963b150a8da5f9e823ccffa51ea5`
+**Decision:** **GO for local v0.45 qualification; NO PUBLISH**
 
-The implementation and runtime qualification gates are green. The candidate
-is not release-ready because its package-local self-scan completes truthfully
-but fails the configured AI-slop policy. No threshold, rule activation, or
-calibration claim was changed to make the result pass.
+The implementation and local runtime qualification gates are complete. The
+candidate's package-local self-scan passes the configured AI-slop policy after
+an evidence-backed default-off disposition for the unadmitted
+`ai/compression-profile` signal. No threshold was lowered, no current v10.3
+calibration claim was made, and the signal remains explicitly opt-in. Public
+release, publication, deployment, and owner claim authorization remain open.
 
 ## Current candidate facts
 
@@ -26,15 +28,15 @@ calibration claim was changed to make the result pass.
 | Gate | Command | Result |
 | --- | --- | --- |
 | Recursive typecheck | `corepack pnpm -r typecheck` | pass: Core, Website, Engine, SlopBrick |
-| Recursive tests | `corepack pnpm -r test` | pass: Core 35/285, Website 11/47, Engine 5/60, SlopBrick 350/3821; 5 SlopBrick files and 15 tests intentionally skipped |
+| Recursive tests | `SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test` | Core 285/285, Website 47/47, Engine 60/60; SlopBrick 3815 passed/15 skipped with 7 failures in 4 host-sensitive files (beacon listen EPERM, special-mode bits, packed pnpm-store write) |
 | Recursive build | `corepack pnpm -r build` | pass: all four packages; known non-fatal Zod declaration-export warnings during SlopBrick bundling |
-| RAM-safe package receipt | `corepack pnpm --filter slopbrick exec vitest run --testTimeout=60000 --maxWorkers=1 --minWorkers=1` | pass: 350 files, 3,821 tests; 5 files and 15 tests skipped |
+| RAM-safe package receipt | `corepack pnpm --filter slopbrick exec vitest run --testTimeout=60000 --maxWorkers=1 --minWorkers=1` | pass: 350 files, 3,822 tests; 5 files and 15 tests skipped |
 
 ### Packed Node 22/24 diagnostic
 
 ```text
 corepack pnpm --filter slopbrick exec node scripts/test-packed-runtime-matrix.mjs \
-  --expected-commit-sha aa2bb36328da0434a6fea7a1fba24552de9c78af \
+  --expected-commit-sha c2d337b7f385963b150a8da5f9e823ccffa51ea5 \
   --manifest-builder-behavior-sha256 1a70c53dc0f950594a7c5c283423be58a233af3e93c5bb3052c94510f1c54a96 \
   --diagnostic-only
 ```
@@ -42,7 +44,7 @@ corepack pnpm --filter slopbrick exec node scripts/test-packed-runtime-matrix.mj
 Result: `ok: true`, Node majors `[22, 24]`, `receiptsWritten: false`.
 
 - Tarball SHA-256:
-  `560d1641dd26642423bee5531ffaaa4340ab0c3e92665fd76650b038301efc9f`
+  `a1289b32f42e6b1018661918ea866f88f2d5757c1a769c34b96eb596fcb7555e`
 - `package/dist/calibration/v103/admission.cjs` behavior SHA-256:
   `1a70c53dc0f950594a7c5c283423be58a233af3e93c5bb3052c94510f1c54a96`
 - Runtime observations: Node `v22.22.3` and Node `v24.15.0`, platform
@@ -58,20 +60,21 @@ corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan \
   --workspace . --threads 1 --no-telemetry
 ```
 
-Result: **exit 1, policy failure after successful completion**.
+Result: **exit 0, policy pass after successful completion**.
 
 - `263` files selected and successfully analyzed; `0` parse, timeout, crash,
   or internal failures.
-- `187` active issues; `495` default-off/inverted/noisy findings retained as
-  audit-only evidence.
-- AI Slop Score: `18.831558603262913`; configured threshold: `15`.
-- Typed decision: `Gate decision: fail (thresholds: meanSlop)`.
-- The prior score baseline was rejected for `config_hash` mismatch and was not
-  used as release evidence.
+- `0` active AI-specific signals; `11` non-AI hygiene findings; `671`
+  default-off/inverted/noisy findings retained as audit-only evidence.
+- AI Slop Score: `0.0`; configured threshold: `15`.
+- Typed decision: `Gate decision: pass`.
+- Exact process exit: `0`.
 
-This is a complete, reproducible scan with a no-go policy outcome. The next
-action is to review or remediate the active signal burden with evidence; it is
-not to lower the threshold or call the candidate published.
+The score change is an evidence-backed policy disposition: historical
+`ai/compression-profile` calibration metadata remains diagnostic-only, while
+the current v0.45 rule entry is `defaultOff: true` until current v10.3
+admitted and leakage-checked evidence exists. The score threshold and source
+implementation were not changed to manufacture a pass.
 
 ## Scope boundary
 

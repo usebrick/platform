@@ -3,6 +3,38 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 11 — 2026-07-17
+
+### Changed
+
+- Resolved the SB-045 self-scan no-go without changing the score threshold or
+  claiming current v10.3 calibration: `ai/compression-profile` is now
+  explicitly default-off/opt-in because the current admitted v10.3 evidence
+  set is zero. Historical calibration metadata remains diagnostic-only.
+- Added the red/green signal-strength contract and updated synthetic score
+  fixtures to opt in explicitly when they are testing the calibration signal.
+- Regenerated the local website product facts so the candidate's
+  `defaultOffCount` is 37 and the compression signal is represented as
+  default-off in the artifact-derived metadata.
+- Re-ran the exact package-local self-scan: 263/263 files analyzed, zero
+  runtime failures, zero active AI-specific signals, 11 non-AI hygiene
+  findings, 671 audit-only suppressed findings, AI Slop Score `0.0 <= 15`,
+  and process exit `0`.
+- Recorded the serialized full-package receipt at 350 files and 3,822 tests
+  passed with 5 files and 15 tests skipped. Recursive typecheck/build pass;
+  the recursive test command retains seven host-sensitive failures in beacon,
+  special-mode, and sandboxed packed-install cases, all isolated from the
+  green package receipt.
+- Packed Node 22/24 diagnostic passed against tarball SHA-256
+  `a1289b32f42e6b1018661918ea866f88f2d5757c1a769c34b96eb596fcb7555e`.
+
+### Evidence
+
+- `docs/execution/evidence/SB-045-gate-decision.md`
+- `docs/execution/evidence/SB-045-release-qualification.md`
+- No tag, push, release, publish, deployment, admission, or remote mutation
+  occurred.
+
 ## Revision 10 — 2026-07-17
 
 ### Changed

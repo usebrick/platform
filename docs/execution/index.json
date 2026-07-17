@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 10,
+  "revision": 11,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -53,7 +53,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Keep the release gate open while reviewing the complete self-scan failure and candidate/public claim reconciliation; do not publish from this no-go packet.",
+        "text": "Reconcile remaining candidate/public claims and owner authorization; do not publish.",
         "verify": "test -f docs/execution/evidence/SB-045-release-qualification.md",
         "evidencePath": "docs/execution/evidence/SB-045-release-qualification.md"
       },

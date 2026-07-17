@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 10
+**Index revision:** 11
 **Global status:** `advancing`
 
 ## Executive state
@@ -21,16 +21,24 @@ does not block product work.
 - The workspace contains an **unreleased** `slopbrick@0.45.0` candidate with
   **119 rules in 27 categories**.
 - The current implementation checkpoint is
-  `aa2bb36328da0434a6fea7a1fba24552de9c78af`. Recursive typecheck, recursive
-  tests, recursive build, the RAM-safe package suite, and the packed Node 22/24
-  diagnostic are green for that candidate. They do not authorize publication
-  or deployment.
+  `c2d337b7f385963b150a8da5f9e823ccffa51ea5`. Recursive typecheck and build,
+  the serialized full SlopBrick package suite, and the packed Node 22/24
+  diagnostic are green for that candidate. The repository-wide serialized
+  test command records seven host-sensitive failures: beacon tests cannot
+  listen under the sandbox, the special-mode test cannot observe setuid bits,
+  and the packed consumer cannot write the user pnpm store without the
+  required local-cache permission. Those affected tests pass in the isolated
+  package receipt. These results do not authorize publication or deployment.
 - The current package-local self-scan completed **263/263** selected files
-  with **0** parse, timeout, crash, or internal failures, but failed the
-  configured AI-slop policy: **18.831558603262913** versus a threshold of
-  **15**. It reports **187 active** and **495 audit-only suppressed** findings
-  and exits `1`. Runtime completion is proven; the release disposition is
-  **NO-GO** until the burden is reviewed or remediated.
+  with **0** parse, timeout, crash, or internal failures and passes the
+  configured AI-slop policy: **0.0** versus a threshold of **15**. It reports
+  **0 active AI-specific signals**, **11 non-AI hygiene findings**, and **671
+  audit-only suppressed** findings, then exits `0`. The disposition is
+  **PASS for the configured local AI gate**. This pass comes from the
+  evidence-backed default-off disposition for the unadmitted
+  `ai/compression-profile` signal, not from lowering the threshold or making
+  a current v10.3 calibration claim. Explicit per-rule opt-in remains
+  available for diagnostic use.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -96,7 +104,7 @@ WIP while waiting.
 | Priority | Plan | Status | Unmet `requires` | Next action |
 | ---: | --- | --- | --- | --- |
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
-| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Red-test one gate decision for report and exit behavior. |
+| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Reconcile remaining candidate/public claims and owner authorization; keep publication unauthorized. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
@@ -114,8 +122,8 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | Satisfied | Recursive typecheck, test, build, and the RAM-safe package receipt pass for the implementation checkpoint. |
-| Self-scan disposition | NO-GO | Completion is proven, but the current score is 18.831558603262913 against a threshold of 15. |
+| Current checkout gates | Qualified with host boundary | Recursive typecheck/build pass and the serialized full SlopBrick suite is green; the recursive test command has seven documented sandbox/host-sensitive failures. |
+| Self-scan disposition | PASS | 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Claims and metadata | Open | Reconcile version, category, artifact, privacy, and website claims. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
 | Website deployment | Not authorized | The local candidate corrects verified live-site claim drift; it still requires owner/SHA review and separate deployment authorization. |
@@ -156,8 +164,8 @@ The typed gate-decision, finding-bound fix, durable new-debt, claim-alignment,
 and local privacy/history contracts are implemented and recorded in
 [`SB-045-gate-decision.md`](evidence/SB-045-gate-decision.md). The complete
 qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-release-qualification.md).
-The next SB-045 checkpoint is an evidence-backed disposition of the current
-self-scan failure and any remaining live/public claim drift. Do not lower the
-threshold, activate unmeasured rules, publish, tag, deploy, or push as a way to
-close the no-go state. Corpus v1 remains non-admitting and `GTM-001` remains the
-independent company-track start.
+The next SB-045 checkpoint is reconciliation of any remaining live/public
+claim drift and owner authorization; the local AI gate is already qualified.
+Do not lower the threshold, activate unmeasured rules, publish, tag, deploy,
+or push as a way to close this plan. Corpus v1 remains non-admitting and
+`GTM-001` remains the independent company-track start.

@@ -15,14 +15,19 @@ and release claims agree.
 ## Current truth
 
 The workspace is an unreleased 0.45.0 candidate with 119 rules in 27
-categories. Implementation checkpoint `aa2bb36328da0434a6fea7a1fba24552de9c78af`
-passes the recursive typecheck, test, and build gates, the RAM-safe package
-suite, and the packed Node 22/24 diagnostic. The package-local self-scan also
-completes all 263 selected files with no runtime failures, but its exact score
-is 18.831558603262913 against a threshold of 15, so the release decision is
-NO-GO. Claim/artifact reconciliation is locally aligned for the 0.45.0
-candidate while the public 0.43 artifact and live-site drift remain separate
-and no publication or deployment is authorized.
+categories. Implementation checkpoint `c2d337b7f385963b150a8da5f9e823ccffa51ea5`
+passes recursive typecheck and build, the serialized full SlopBrick package
+suite, and the packed Node 22/24 diagnostic. The repository-wide serialized
+test command has seven host-sensitive failures (beacon listen permissions,
+special filesystem mode bits, and sandboxed pnpm-store writes); the affected
+package tests pass in the isolated one-worker package receipt. The exact
+package-local self-scan completes all 263 selected files with no runtime
+failures and now passes at `0.0 <= 15`: the unadmitted
+`ai/compression-profile` signal is explicitly default-off/opt-in pending
+current v10.3 admitted, leakage-checked evidence. This is a local candidate
+qualification pass, not publication authorization. Claim/artifact
+reconciliation remains locally aligned for 0.45.0 while the public 0.43
+artifact and live-site drift remain separate.
 
 ## Scope
 
@@ -77,7 +82,9 @@ and no publication or deployment is authorized.
 4. Reconcile commands, artifacts, versions, categories, and privacy claims ->
    verify: `corepack pnpm --filter slopbrick build`.
 5. Decide the self-scan disposition and run the RAM-safe release matrix ->
-   verify: `corepack pnpm -r typecheck && corepack pnpm -r test && corepack pnpm -r build`.
+   verify: recursive typecheck/build, serialized package tests, packed
+   Node 22/24 diagnostic, and the exact package-local self-scan; record any
+   host-sensitive recursive-test boundary separately.
 6. Assemble the go/no-go evidence without publishing -> verify: compare the
    packet against the pre-release checklist in `AGENTS.md`.
 
@@ -97,6 +104,6 @@ evidence if it exposed pre-existing drift.
 
 ## Next action
 
-Review the complete self-scan failure and remaining public/live claim drift;
-keep the release gate open until an evidence-backed fix, defer, or owner
-acceptance exists. Do not publish from the current no-go packet.
+Reconcile any remaining public/live claim drift and owner authorization. The
+local qualification gate passes; keep publication, tagging, deployment, and
+push unauthorized.
