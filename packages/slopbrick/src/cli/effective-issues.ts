@@ -1,5 +1,6 @@
 import { getDefaultOffRules } from '../rules/signal-strength.js';
 import { filterByDisabledDirectives, filterIssues, type IssueFilterOptions } from './threshold';
+import { bindIssueFixes } from '../fix/binding';
 import type { FileScanResult, Issue, ResolvedConfig } from '../types';
 
 /**
@@ -54,6 +55,10 @@ export function normalizeFileResultForDisplayAndScore(
   filterByDisabledDirectives(result, result.facts?.v2?.disabledRules ?? []);
   for (const issue of result.issues) {
     issue.filePath ??= result.filePath;
+    const source = result.facts?.v2?._source;
+    if (typeof source === 'string' && issue.filePath) {
+      bindIssueFixes(issue, source, issue.filePath);
+    }
   }
   return markDefaultOffIssuesForAudit(result.issues, config);
 }

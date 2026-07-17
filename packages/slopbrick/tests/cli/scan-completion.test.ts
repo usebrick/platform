@@ -37,6 +37,7 @@ const NOT_APPLICABLE_JSON_KEYS = new Set([
   'scanAccounting',
   'selectionAccounting',
   'diagnostics',
+  'gateDecision',
 ]);
 
 function expectNotApplicableJsonEnvelope(value: unknown): asserts value is Record<string, unknown> {
@@ -52,6 +53,11 @@ function expectNotApplicableJsonEnvelope(value: unknown): asserts value is Recor
     analyzed: 0,
     failed: 0,
     skipped: 0,
+    gateDecision: {
+      kind: 'slopbrick-gate-decision-v1',
+      status: 'not-evaluated',
+      evaluated: false,
+    },
     scanAccounting: {
       selected: 0,
       analyzed: 0,
@@ -92,6 +98,11 @@ function expectNotApplicableSarifEnvelope(value: unknown): void {
     analyzed: 0,
     failed: 0,
     skipped: 0,
+    gateDecision: {
+      kind: 'slopbrick-gate-decision-v1',
+      status: 'not-evaluated',
+      evaluated: false,
+    },
     scanAccounting: {
       selected: 0,
       analyzed: 0,
@@ -108,6 +119,7 @@ function expectNotApplicableSarifEnvelope(value: unknown): void {
     'analyzed',
     'completionStatus',
     'failed',
+    'gateDecision',
     'message',
     'reason',
     'requested',

@@ -1,13 +1,15 @@
+import { existsSync, readFileSync } from 'node:fs';
 import type { FixSuggestion, Issue, ProjectReport, ResolvedConfig } from '../types';
 import { applyFocusRingFix } from './focus-ring';
-import { applyLayoutTokenFix } from './layout-token';
+import { applyLayoutTokenFix, countWholeClassOccurrences } from './layout-token';
 import { applyUseClientFix } from './use-client';
-import { applyVisualCodemods } from './visual-codemod';
+import { sha256Text } from './binding';
 
 export interface FixApplication {
   ruleId: string;
   description: string;
   kind: FixSuggestion['kind'];
+  reason?: string;
 }
 
 export interface FixResult {
@@ -22,17 +24,81 @@ interface GroupedFixes {
   replaces: FixSuggestion[];
   replaceApps: FixApplication[];
   cssAnchors: FixApplication[];
+  preSkipped: FixApplication[];
 }
 
 function collectAllFixes(issue: Issue): FixSuggestion[] {
   return [...(issue.fix ? [issue.fix] : []), ...(issue.fixes ?? [])];
 }
 
+function validateFixBinding(
+  issue: Issue,
+  fix: FixSuggestion,
+  config: ResolvedConfig,
+): string | undefined {
+  const binding = fix.binding;
+  if (
+    !issue.filePath ||
+    !binding ||
+    binding.kind !== 'slopbrick-fix-binding-v1' ||
+    binding.ruleId !== issue.ruleId ||
+    binding.filePath !== issue.filePath ||
+    binding.line !== issue.line ||
+    binding.column !== issue.column
+  ) {
+    return 'unbound-finding';
+  }
+
+  if (!fix.targetFile) return 'unbound-finding';
+
+  const isGlobalCssFix = fix.kind === 'css-anchor';
+  if (isGlobalCssFix) {
+    if (config.globalCssTarget !== fix.targetFile) return 'unbound-finding';
+  } else if (fix.targetFile !== issue.filePath) {
+    return 'unbound-finding';
+  }
+
+  if (!existsSync(issue.filePath)) return 'stale-finding';
+  try {
+    const findingSource = readFileSync(issue.filePath, 'utf8');
+    if (sha256Text(findingSource) !== binding.sourceSha256) return 'stale-finding';
+  } catch {
+    return 'stale-finding';
+  }
+
+  if (binding.targetSha256 !== undefined) {
+    if (!existsSync(fix.targetFile)) return 'stale-finding';
+    try {
+      if (sha256Text(readFileSync(fix.targetFile, 'utf8')) !== binding.targetSha256) {
+        return 'stale-finding';
+      }
+    } catch {
+      return 'stale-finding';
+    }
+  }
+
+  if (fix.kind === 'replace') {
+    if (fix.oldValue === undefined || fix.newValue === undefined) return 'invalid-fix';
+    try {
+      const targetSource = readFileSync(fix.targetFile, 'utf8');
+      const occurrences = countWholeClassOccurrences(targetSource, fix.oldValue);
+      if (occurrences === 0) return 'stale-finding';
+      if (occurrences > 1) return 'ambiguous-finding';
+    } catch {
+      return 'stale-finding';
+    }
+  }
+
+  return undefined;
+}
+
 export async function applyFixes(
   report: ProjectReport,
-  // v0.42.0: unused parameter preserved for API compat; rename to _ to silence dead/unused-parameter
-  _config: ResolvedConfig,
-  scannedFiles?: string[],
+  config: ResolvedConfig,
+  // v0.42.0: preserved for API compatibility. Fixes are now driven only by
+  // finding-bound suggestions; opportunistic file-wide codemods are not safe
+  // at this release gate.
+  _scannedFiles?: string[],
 ): Promise<FixResult[]> {
   const byFile = new Map<string, GroupedFixes>();
 
@@ -46,12 +112,20 @@ export async function applyFixes(
         replaces: [],
         replaceApps: [],
         cssAnchors: [],
+        preSkipped: [],
       };
       const app: FixApplication = {
         ruleId: issue.ruleId,
         description: fix.description,
         kind: fix.kind,
       };
+
+      const safetyReason = validateFixBinding(issue, fix, config);
+      if (safetyReason) {
+        group.preSkipped.push({ ...app, reason: safetyReason });
+        byFile.set(fix.targetFile, group);
+        continue;
+      }
 
       if (fix.kind === 'insert') {
         group.inserts.push(app);
@@ -66,27 +140,11 @@ export async function applyFixes(
     }
   }
 
-  // Round 20: visual-codemod pass walks ALL scanned .tsx files (passed in
-  // via scannedFiles), regardless of whether rules fired. Codemods are
-  // idempotent class-name swaps — safe to apply opportunistically.
-  const visualFiles = new Set<string>();
-  if (scannedFiles) {
-    for (const f of scannedFiles) {
-      if (/\.tsx?$/.test(f)) visualFiles.add(f);
-    }
-  }
-  // Fallback: walk report.components for callers that don't pass scannedFiles.
-  for (const comp of report.components) {
-    if (!comp.filePath) continue;
-    if (!/\.tsx?$/.test(comp.filePath)) continue;
-    visualFiles.add(comp.filePath);
-  }
-
   const results: FixResult[] = [];
 
   for (const [filePath, group] of byFile) {
     const applied: FixApplication[] = [];
-    const skipped: FixApplication[] = [];
+    const skipped: FixApplication[] = [...group.preSkipped];
     const errors: string[] = [];
 
     if (group.inserts.length > 0) {
@@ -130,55 +188,12 @@ export async function applyFixes(
       }
     }
 
-    // Round 20: visual-class codemods (arbitrary-escape, ai-vibe-purple,
-    // ai-circle-icon, ai-default-palette, ai-rounded-image-no-clip).
-    // Operates directly on the source file's class names.
-    try {
-      const codemodResult = applyVisualCodemods(filePath);
-      if (codemodResult.applied > 0) {
-        // Synthesize fix applications so they appear in the fix summary.
-        for (const change of codemodResult.changes) {
-          applied.push({
-            ruleId: 'visual-codemod/' + (change.description.split(' ')[0] ?? 'unknown'),
-            description: change.description + ': ' + change.before + ' → ' + change.after,
-            kind: 'replace',
-          });
-        }
-      }
-    } catch (err) {
-      errors.push(`visual-codemod failed for ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-
     results.push({
       filePath,
       applied,
       skipped,
       ...(errors.length > 0 ? { errors } : {}),
     });
-  }
-
-  // Round 20: visual codemods on files that have visual issues but no
-  // explicit FixSuggestions (the common case — visual rules don't emit
-  // fix hints because the fixes are class-name swaps, not line edits).
-  for (const visualFile of visualFiles) {
-    if (byFile.has(visualFile)) continue; // already processed above
-    try {
-      const codemodResult = applyVisualCodemods(visualFile);
-      if (codemodResult.applied > 0) {
-        const applied: FixApplication[] = codemodResult.changes.map((change) => ({
-          ruleId: 'visual-codemod',
-          description: change.description + ': ' + change.before + ' → ' + change.after,
-          kind: 'replace' as const,
-        }));
-        results.push({
-          filePath: visualFile,
-          applied,
-          skipped: [],
-        });
-      }
-    } catch (err) {
-      // best-effort: don't fail the whole fix loop on a single file error
-    }
   }
 
   return results;

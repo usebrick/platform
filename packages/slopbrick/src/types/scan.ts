@@ -11,6 +11,23 @@
 
 import type { Category, Severity } from './primitives';
 
+/**
+ * Immutable identity captured when a finding-produced fix is emitted.
+ *
+ * The binding is deliberately attached to the fix rather than inferred from
+ * its description. A fixer can therefore prove that it still targets the
+ * finding's file and the exact source snapshot that produced the suggestion.
+ */
+export interface FixFindingBinding {
+  kind: 'slopbrick-fix-binding-v1';
+  ruleId: string;
+  filePath: string;
+  line: number;
+  column: number;
+  sourceSha256: string;
+  targetSha256?: string;
+}
+
 export interface FixSuggestion {
   kind: 'insert' | 'replace' | 'css-anchor';
   description: string;
@@ -18,6 +35,8 @@ export interface FixSuggestion {
   anchor?: string;
   oldValue?: string;
   newValue?: string;
+  /** Runtime-populated proof that this fix belongs to its Issue. */
+  binding?: FixFindingBinding;
 }
 
 /** A one-based source position in a finding's bounded evidence span. */

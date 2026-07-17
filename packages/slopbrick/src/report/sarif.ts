@@ -120,6 +120,7 @@ interface SarifToolDriver {
     analyzed?: number;
     failed?: number;
     skipped?: number;
+    gateDecision?: ProjectReport['gateDecision'];
     scanAccounting?: NonNullable<ProjectReport['scanAccounting']>;
     selectionAccounting?: NonNullable<ProjectReport['selectionAccounting']>;
     /** Headline values carried with SARIF so integrations retain scan context. */
@@ -392,6 +393,8 @@ export function formatSarif(
           ...(report.scoreValidity !== undefined ? { scoreValidity: report.scoreValidity } : {}),
           ...(report.scanAccounting !== undefined ? { scanAccounting: report.scanAccounting } : {}),
           ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
+          ...(report.gateDecision !== undefined ? { gateDecision: report.gateDecision } : {}),
+          ...(report.newDebt !== undefined ? { newDebt: report.newDebt } : {}),
           ...(!incomplete ? {
             scores: {
               aiSlopScore: report.aiSlopScore,

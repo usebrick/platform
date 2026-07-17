@@ -28,6 +28,8 @@ import { resolveConfigPath as findConfigPath } from '../../config';
 import { enrichReport } from './enrichReport';
 import { assembleScanReport } from './assembleScanReport';
 import { persistRun } from './persistRun';
+import { evaluateNewDebt, loadDebtBaseline } from './debt-baseline';
+import { hashConfig } from '../../engine/cache';
 import type { RuleRegistry } from '../../rules/registry';
 import type {
   FileScanResult,
@@ -88,6 +90,7 @@ export interface FinalizeReportInput {
 export interface FinalizeReportResult {
   report: ProjectReport;
   noIncreaseFailure: boolean;
+  newDebtFailure: boolean;
 }
 
 export async function finalizeReport(
@@ -203,6 +206,22 @@ export async function finalizeReport(
   });
   Object.assign(report, scanMetadata);
 
+  let newDebtFailure = false;
+  if (validScan && options.ciGate?.maxNewIssues !== undefined) {
+    const newDebt = evaluateNewDebt(
+      report,
+      loadDebtBaseline(cwd),
+      cwd,
+      options.ciGate.maxNewIssues,
+      hashConfig(config),
+    );
+    report.newDebt = newDebt;
+    newDebtFailure = newDebt.failed;
+    if (newDebt.failed && !options.quiet) {
+      logger.error(newDebt.summary);
+    }
+  }
+
   // --no-increase check: fail the run if the AI Slop Score went UP.
   // v0.21.0: aiSlopScore is now the RAW amount of slop (0=clean,
   // 100=saturated, lower = better). The previous run's `slopIndex`
@@ -262,5 +281,5 @@ export async function finalizeReport(
     autoRefreshSnippets: Boolean(options.autoRefreshSnippets),
   });
 
-  return { report, noIncreaseFailure };
+  return { report, noIncreaseFailure, newDebtFailure };
 }

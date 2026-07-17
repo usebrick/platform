@@ -109,6 +109,9 @@ npx slopbrick scan --suggest
 
 # Save a reviewed baseline.
 npx slopbrick scan --baseline
+
+# Fail CI only when stable finding identities exceed the reviewed debt baseline.
+npx slopbrick ci --max-new-issues 0
 ```
 
 Use `--workspace <path>` for another project and `slopbrick --help` for the
@@ -126,6 +129,11 @@ npx slopbrick watch
 These are current SlopBrick capabilities. **LockBrick** is the planned paid
 policy/governance layer; the name should not be used to imply that a separate
 LockBrick product already ships.
+
+`scan --baseline` writes the score baseline and a separate durable finding
+baseline under `.slopbrick/cache/`. `ci --max-new-issues <n>` compares stable
+finding identities with that reviewed debt baseline; it fails closed when the
+debt baseline is missing or its config identity no longer matches.
 
 For CI and monorepo configurations, see [EXAMPLES.md](./EXAMPLES.md) and the
 [ready-to-copy examples](./examples/).

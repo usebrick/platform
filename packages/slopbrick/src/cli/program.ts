@@ -19,11 +19,10 @@ import { Command } from 'commander';
 import { parseThreads, collectGlob, parseTrend } from './options';
 import { renderTrend, configureColorPolicy } from './render';
 import {
-  evaluateThresholdGate,
-  failedThresholds,
   baselineStatusMessage,
   stagedGating,
 } from './threshold';
+import { evaluateGateDecision } from './gate-decision.js';
 import { runScan } from './scan';
 import type { CliGlobalOptions } from './scan';
 import {
@@ -104,9 +103,11 @@ import { readRuns } from '@usebrick/engine';
 import { fsMemoryIO } from './memory-io.js';
 import { applyFixes } from '../fix';
 import { saveBaseline, baselinePath, hashConfig } from '../engine/cache';
+import { buildDebtBaseline, debtBaselinePath, saveDebtBaseline } from './report/debt-baseline';
 import { VERSION } from '../types';
 import type { FileScanResult } from '../types';
 import type { ProjectReport } from '../types';
+import type { GateDecision } from '../types';
 // v0.18.4: --help clusters. See help.ts for category mapping.
 import { formatGroupedHelp } from './help';
 // v0.24.0 (Workstream C): opt-in network beacon. Fire-and-forget
@@ -132,6 +133,8 @@ export interface ScanActionOutcome {
   /** Final scan recommendation, including completion/no-increase gates. */
   exitCode: 0 | 1 | 2;
   noIncreaseFailure: boolean;
+  newDebtFailure?: boolean;
+  gateDecision?: GateDecision;
 }
 
 /** Map only the CLI's known user-correctable failures to exit status 2. */
@@ -363,18 +366,36 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         results,
         config,
         noIncreaseFailure,
+        newDebtFailure,
         baseline,
         machineReadableStdout,
         scanStats,
       } = await runScan(options, paths);
       const scanElapsed = Math.round(performance.now() - scanStart);
       const totalElapsed = Math.round(performance.now() - start);
+      const stagedGatingResult = report.scoreValidity === 'valid' && options.staged
+        ? stagedGating(scores, config, baseline, cwd)
+        : { failed: false };
+      const strictFailure = options.strict === true && report.issues.some((issue) => issue.severity === 'high');
+      const gateDecision = evaluateGateDecision({
+        report,
+        config,
+        noIncreaseFailure,
+        newDebtFailure,
+        stagedGating: stagedGatingResult,
+        strictFailure,
+        maxSlop: options.ciGate?.maxSlop,
+        strictConstitution: options.ciGate?.strictConstitution,
+        constitutionDrift: (report as typeof report & { constitutionDrift?: number }).constitutionDrift,
+        gitScopedEmptySelection: isNotApplicableScan(report) && isGitScopedEmptySelection(report, options),
+      });
+      report.gateDecision = gateDecision;
       // Validity is the first post-run decision. Nothing below this branch may
       // mutate sources/baselines or consume scores from an incomplete scan.
       if (report.scoreValidity !== 'valid') {
         const notApplicableScan = isNotApplicableScan(report);
         const gitScopedNoOp = notApplicableScan && isGitScopedEmptySelection(report, options);
-        const exitCode: 0 | 1 = gitScopedNoOp ? 0 : 1;
+        const exitCode: 0 | 1 = gateDecision.exitCode;
 
         if (report.scoreValidity === 'incomplete') {
           if (!options.quiet && !machineReadableStdout) {
@@ -405,6 +426,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           baseExitCode: 0,
           exitCode,
           noIncreaseFailure: false,
+          newDebtFailure: false,
+          gateDecision,
         };
         if (invokedByCi) return outcome;
         process.exitCode = exitCode;
@@ -441,8 +464,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
         const cache = buildBaselineCache(report, configHash, gitHead, cwd);
         saveBaseline(cwd, cache);
+        saveDebtBaseline(cwd, buildDebtBaseline(report, cwd, configHash, gitHead));
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`Saved baseline to ${baselinePath(cwd)}`);
+          logger.info(`Saved durable debt baseline to ${debtBaselinePath(cwd)}`);
         }
       }
 
@@ -471,7 +496,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         }
         if (options.dryRun) {
           logger.info('--dry-run: skipping apply step. Run without --dry-run to apply.');
-          process.exit(0);
+          process.exit(gateDecision.exitCode);
         }
         // Round 20: pass the actual scanned file paths (not the input
         // CLI globs) so visual codemods run on every .tsx file scanned.
@@ -487,7 +512,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
 
-        process.exit(hasErrors ? 1 : 0);
+        // Applying fixes cannot turn a failed source scan into a passing gate:
+        // the same typed decision still owns the process outcome. Fix errors
+        // remain an additional failure condition.
+        process.exit(gateDecision.exitCode === 0 && !hasErrors ? 0 : 1);
       }
 
       // --show-fixes-diff without --fix: just show the diff (no apply).
@@ -501,19 +529,13 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
-        process.exit(0);
+        process.exit(gateDecision.exitCode);
       }
 
-      const thresholdGate = evaluateThresholdGate(report, config);
-      const baseExitCode: 0 | 1 = thresholdGate.status === 'failed' ? 1 : 0;
-      let exitCode: 0 | 1 | 2 = baseExitCode;
+      const baseExitCode: 0 | 1 = gateDecision.failedThresholds.length > 0 ? 1 : 0;
+      const exitCode: 0 | 1 = gateDecision.exitCode;
       renderOutput(report, options, cwd);
-      const stagedGatingResult = options.staged ? stagedGating(scores, config, baseline, cwd) : { failed: false };
-      if (options.staged && stagedGatingResult.failed) {
-        exitCode = 1;
-      }
-      if (options.strict && report.issues.some((issue) => issue.severity === 'high')) {
-        exitCode = ScanExitCode.policyOrPartial;
+      if (strictFailure) {
         if (!options.quiet) {
           // v0.43.0: the previous message was "High-severity issues
           // found with --strict." — accurate but unhelpful. Users
@@ -535,15 +557,11 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           logger.error(`High-severity issues found with --strict. Top rules:\n${topList}`);
         }
       }
-      if (noIncreaseFailure) {
-        exitCode = ScanExitCode.policyOrPartial;
-      }
-
       if (exitCode === 1) {
         if (options.staged && stagedGatingResult.reason) {
           logger.error(`Gating failure: ${stagedGatingResult.reason}`);
-        } else {
-          const failedNames = failedThresholds(report, config);
+        } else if (gateDecision.failedThresholds.length > 0) {
+          const failedNames = gateDecision.failedThresholds;
           // v0.42.0 (user-review fix): previously the message was
           // "1 threshold failed. See details above." with no
           // indication of which threshold. In --brief the gate line
@@ -571,7 +589,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
       }
       if (invokedByCi) {
-        return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure };
+        return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure, newDebtFailure, gateDecision };
       }
       process.exitCode = exitCode;
       return;

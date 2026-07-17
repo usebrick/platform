@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import type { FixSuggestion, Issue, ProjectReport } from '../types';
-import { applyReplaceFixes } from '../fix/layout-token';
+import { sha256Text } from '../fix/binding';
+import { applyReplaceFixes, countWholeClassOccurrences } from '../fix/layout-token';
 
 function collectAllFixes(issue: Issue): FixSuggestion[] {
   return [...(issue.fix ? [issue.fix] : []), ...(issue.fixes ?? [])];
@@ -25,6 +26,44 @@ function applyFixesToString(original: string, fixes: FixSuggestion[]): string {
   }
 
   return content;
+}
+
+/**
+ * Keep the preview surface aligned with the gated apply path. Legacy callers
+ * may still construct unbound synthetic reports, so only fixes carrying a
+ * binding are subject to this runtime proof check.
+ */
+function isCurrentBoundFix(issue: Issue, fix: FixSuggestion): boolean {
+  const binding = fix.binding;
+  if (!binding) return true;
+  if (
+    !issue.filePath ||
+    !fix.targetFile ||
+    binding.kind !== 'slopbrick-fix-binding-v1' ||
+    binding.ruleId !== issue.ruleId ||
+    binding.filePath !== issue.filePath ||
+    binding.line !== issue.line ||
+    binding.column !== issue.column ||
+    fix.kind !== 'css-anchor' && fix.targetFile !== issue.filePath
+  ) {
+    return false;
+  }
+
+  if (!existsSync(issue.filePath) || !existsSync(fix.targetFile)) return false;
+
+  try {
+    const source = readFileSync(issue.filePath, 'utf-8');
+    const target = readFileSync(fix.targetFile, 'utf-8');
+    if (sha256Text(source) !== binding.sourceSha256) return false;
+    if (binding.targetSha256 !== undefined && sha256Text(target) !== binding.targetSha256) return false;
+    if (fix.kind === 'replace') {
+      if (fix.oldValue === undefined || fix.newValue === undefined) return false;
+      return countWholeClassOccurrences(target, fix.oldValue) === 1;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function formatHunk(original: string, patched: string): string[] {
@@ -88,6 +127,7 @@ export function formatUnifiedDiff(report: ProjectReport, cwd: string): string {
     for (const fix of collectAllFixes(issue)) {
       if (!fix.targetFile) continue;
       if (fix.kind !== 'replace' && fix.kind !== 'insert') continue;
+      if (!isCurrentBoundFix(issue, fix)) continue;
       const list = byFile.get(fix.targetFile) ?? [];
       list.push(fix);
       byFile.set(fix.targetFile, list);

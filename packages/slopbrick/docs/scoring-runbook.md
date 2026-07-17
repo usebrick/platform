@@ -84,11 +84,15 @@ presented as the repository's full score.
 ```bash
 slopbrick scan --baseline
 slopbrick scan --no-increase
+slopbrick ci --max-new-issues 0
 ```
 
 `aiSlopScore` is lower-is-better. An increase is a regression. Review the
 baseline artifact and diff before accepting a new baseline; do not re-baseline
-merely to silence a failure.
+merely to silence a failure. `scan --baseline` also writes a separate
+`.slopbrick/cache/debt-baseline.json` containing stable finding identities.
+`ci --max-new-issues <n>` compares the current effective findings against that
+reviewed debt baseline and fails closed when it is missing or config-invalid.
 
 ## Gate behavior
 
@@ -107,6 +111,8 @@ before wiring a new external gate to them.
 `--strict` additionally fails when a retained high-severity issue remains.
 `--no-increase` fails when the raw AI Slop Score rose from the reviewed
 baseline.
+`--max-new-issues` is a separate finding-identity gate; it does not treat a
+score-baseline change as proof of new debt.
 
 ### CI command
 

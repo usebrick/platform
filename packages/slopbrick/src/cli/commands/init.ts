@@ -12,6 +12,7 @@ import type { ResolvedConfig } from '../../config';
 import { serializeConfig, appendGitignore } from '../threshold';
 import { getGitHead } from '../git.js';
 import { saveBaseline, baselinePath, hashConfig } from '../../engine/cache';
+import { buildDebtBaseline, debtBaselinePath, saveDebtBaseline } from '../report/debt-baseline.js';
 import {
   SNIPPET_TARGETS,
   resolveTargetPath,
@@ -176,8 +177,10 @@ export function registerInit(program: Command): void {
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
         const cache = buildBaselineCache(report, configHash, gitHead, cwd);
         saveBaseline(cwd, cache);
+        saveDebtBaseline(cwd, buildDebtBaseline(report, cwd, configHash, gitHead));
         if (!options.quiet) {
           logger.info(`Saved baseline to ${baselinePath(cwd)}`);
+          logger.info(`Saved durable debt baseline to ${debtBaselinePath(cwd)}`);
         }
       }
       process.exit(0);

@@ -142,6 +142,7 @@ export function formatMarkdown(report: ProjectReport): string {
       `- **Analysed files:** ${report.analyzed ?? 0}`,
       `- **Failed files:** ${report.failed ?? 0}`,
       `- **Skipped files:** ${report.skipped ?? 0}`,
+      ...(report.gateDecision ? [`- **Gate decision:** ${report.gateDecision.summary}`] : []),
     ];
     return `${lines.join('\n')}\n`;
   }
@@ -174,6 +175,8 @@ export function formatMarkdown(report: ProjectReport): string {
   if (report.scoreBasis) {
     lines.push(`- **Score coverage:** ${report.scoreBasis.denominator} successfully analysed files; per-file AI burdens are additive (the count does not dilute them); effective findings only (${report.scoreBasis.suppressedIssueCount} suppressed finding instances are audit-only, ${report.scoreBasis.parseErrorCount} parse errors)`);
   }
+  if (report.gateDecision) lines.push(`- **Gate decision:** ${report.gateDecision.summary}`);
+  if (report.newDebt) lines.push(`- **New debt:** ${report.newDebt.summary}`);
   const accountingSummary = formatScanAccountingSummary(report);
   if (accountingSummary) lines.push(`- ${accountingSummary}`);
   const defaultOff = summarizeDefaultOffIssues(report.issues);

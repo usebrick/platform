@@ -35,6 +35,15 @@ export function parseCount(value: string): number {
   return n;
 }
 
+/** Parse a count used as a ceiling: zero is a valid fail-on-any-new-debt limit. */
+export function parseNonNegativeCount(value: string): number {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n) || n < 0 || !Number.isInteger(n)) {
+    throw new InvalidArgumentError('Count must be a non-negative integer');
+  }
+  return n;
+}
+
 /**
  * Parse `--threshold <n>` for the `pr` subcommand: non-negative
  * integer (zero is allowed because the pr subcommand exposes

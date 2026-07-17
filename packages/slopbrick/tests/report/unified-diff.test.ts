@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { formatUnifiedDiff } from '../../src/report/unified-diff.js';
+import { sha256Text } from '../../src/fix/binding.js';
 import type { FixSuggestion, Issue, ProjectReport } from '../../src/types.js';
 
 function makeFix(overrides: Omit<FixSuggestion, 'description'> & Partial<Pick<FixSuggestion, 'description'>>): FixSuggestion {
@@ -197,6 +198,70 @@ describe('formatUnifiedDiff', () => {
       const output = formatUnifiedDiff(makeReport([issue]), cwd);
       expect(output).toContain('-m-4 p-8');
       expect(output).toContain('+m-spacing-4 p-spacing-8');
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('omits a bound diff when the finding source is stale', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'slop-diff-'));
+    const file = join(cwd, 'Page.tsx');
+    const sourceAtScan = 'export const Page = () => <div className="p-[13px]" />;\n';
+    writeFileSync(file, 'export const Page = () => <div className="p-[14px]" />;\n', 'utf-8');
+
+    try {
+      const issue: Issue = {
+        ...makeIssue(makeFix({
+          kind: 'replace',
+          targetFile: file,
+          oldValue: 'p-[13px]',
+          newValue: 'p-3',
+        })),
+        filePath: file,
+      };
+      issue.fix!.binding = {
+        kind: 'slopbrick-fix-binding-v1',
+        ruleId: issue.ruleId,
+        filePath: file,
+        line: issue.line,
+        column: issue.column,
+        sourceSha256: sha256Text(sourceAtScan),
+        targetSha256: sha256Text(sourceAtScan),
+      };
+
+      expect(formatUnifiedDiff(makeReport([issue]), cwd)).toBe('');
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('omits a bound diff when the replacement evidence is ambiguous', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'slop-diff-'));
+    const file = join(cwd, 'Page.tsx');
+    const source = 'export const Page = () => <><div className="p-[13px]" /><div className="p-[13px]" /></>;\n';
+    writeFileSync(file, source, 'utf-8');
+
+    try {
+      const issue: Issue = {
+        ...makeIssue(makeFix({
+          kind: 'replace',
+          targetFile: file,
+          oldValue: 'p-[13px]',
+          newValue: 'p-3',
+        })),
+        filePath: file,
+      };
+      issue.fix!.binding = {
+        kind: 'slopbrick-fix-binding-v1',
+        ruleId: issue.ruleId,
+        filePath: file,
+        line: issue.line,
+        column: issue.column,
+        sourceSha256: sha256Text(source),
+        targetSha256: sha256Text(source),
+      };
+
+      expect(formatUnifiedDiff(makeReport([issue]), cwd)).toBe('');
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }

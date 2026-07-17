@@ -19,7 +19,7 @@ import type {
   DocFinding,
   TopOffender,
 } from './report';
-import type { BaselineMeta, ResearchMetrics } from './baseline';
+import type { BaselineMeta, NewDebtDecision, ResearchMetrics } from './baseline';
 
 /**
  * Accounting for every file selected by a CLI scan. Optional so historical
@@ -67,6 +67,32 @@ export interface SelectionAccounting {
  * be used for threshold/CI decisions.
  */
 export type ScoreValidity = 'valid' | 'incomplete' | 'not-applicable';
+
+/**
+ * The single scan gate result shared by report serializers and process exit.
+ * A non-evaluated scan may still use exit code 0 for an intentional empty Git
+ * selection, but it is never represented as a passing score-bearing gate.
+ */
+export interface GateDecision {
+  kind: 'slopbrick-gate-decision-v1';
+  status: 'passed' | 'failed' | 'not-evaluated';
+  exitCode: 0 | 1;
+  evaluated: boolean;
+  reasons: readonly (
+    | 'threshold'
+    | 'no-increase'
+    | 'staged'
+    | 'strict'
+    | 'max-slop'
+    | 'max-new-issues'
+    | 'constitution'
+    | 'incomplete-scan'
+    | 'no-files-analyzed'
+    | 'no-files-selected'
+  )[];
+  failedThresholds: readonly string[];
+  summary: string;
+}
 
 /** Exact deterministic inputs behind the four public headline scores.
  * This deliberately stops at aggregate components: nonlinear saturation and
@@ -125,6 +151,10 @@ export interface ProjectReport {
   completionStatus?: 'complete' | 'empty' | 'partial';
   /** Whether the headline numeric scores are safe to use for gating. */
   scoreValidity?: ScoreValidity;
+  /** One typed decision shared by every report surface and CLI exit. */
+  gateDecision?: GateDecision;
+  /** Optional finding-identity delta used by the CI max-new-issues gate. */
+  newDebt?: NewDebtDecision;
   requested?: number;
   analyzed?: number;
   failed?: number;

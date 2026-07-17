@@ -45,6 +45,36 @@ describe('ci gates the current scan outcome', () => {
     expect(result.stdout).toMatch(/repositoryHealth/);
   });
 
+  it('enforces --max-new-issues against the separate durable debt baseline', async () => {
+    const dir = workspace();
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir });
+    execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: dir });
+    execFileSync('git', ['add', 'src/value.ts'], { cwd: dir });
+    execFileSync('git', ['commit', '-m', 'base'], { cwd: dir, stdio: 'ignore' });
+
+    const baseline = await run([
+      '--workspace', dir, '--baseline', '--quiet', '--no-telemetry', '--threads', '1', '--format', 'json',
+    ]);
+    expect(baseline.exitCode).toBe(0);
+
+    writeFileSync(
+      join(dir, 'src', 'new.tsx'),
+      'export const New = () => <div className="p-[13px] m-[9px] gap-[7px]" />;\n',
+    );
+    const result = await run([
+      'ci', '--workspace', dir, '--max-new-issues', '0', '--format', 'json', '--threads', '1',
+    ]);
+
+    expect(result.exitCode).toBe(1);
+    const report = JSON.parse(result.stdout) as {
+      gateDecision?: { reasons?: string[] };
+      newDebt?: { status?: string; newFindingCount?: number; baselineAvailable?: boolean };
+    };
+    expect(report.gateDecision?.reasons).toContain('max-new-issues');
+    expect(report.newDebt).toMatchObject({ status: 'failed', baselineAvailable: true });
+    expect(report.newDebt?.newFindingCount).toBeGreaterThan(0);
+  });
+
   it('keeps an empty changed scan successful and reports completion fields', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     execFileSync('git', ['init'], { cwd: dir, stdio: 'ignore' });

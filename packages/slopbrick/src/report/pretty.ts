@@ -278,6 +278,11 @@ function formatVerdict(report: ProjectReport): string {
   const policyText = policyPassed
     ? `Policy gate passes (AI Slop Score ${formatHeadlineScore(score)} ≤ ${meanSlop}).`
     : `Policy gate fails (AI Slop Score ${formatHeadlineScore(score)} > ${meanSlop}).`;
+  const gateText = report.gateDecision
+    ? `${policyText} ${report.gateDecision.summary}`
+    : policyText;
+  const gatePassed = report.gateDecision?.status === 'passed' ||
+    (report.gateDecision === undefined && policyPassed);
   const activeIssues = report.issues.filter(
     (issue) => (issue.severity as string) !== 'off',
   );
@@ -298,16 +303,16 @@ function formatVerdict(report: ProjectReport): string {
     const suppressedIssueCount = report.issues.length;
     if (suppressedIssueCount > 0) {
       const findingWord = suppressedIssueCount === 1 ? 'finding' : 'findings';
-      const color = policyPassed ? chalk.green : chalk.red;
+      const color = gatePassed ? chalk.green : chalk.red;
       return chalk.bold(color(
         `✓ Clean. No active findings. ${suppressedIssueCount} audit-only suppressed ${findingWord} ` +
-        `remain${suppressedIssueCount === 1 ? 's' : ''} in the report. ${policyText}`,
+        `remain${suppressedIssueCount === 1 ? 's' : ''} in the report. ${gateText}`,
       ));
     }
-    const color = policyPassed ? chalk.green : chalk.red;
+    const color = gatePassed ? chalk.green : chalk.red;
     return chalk.bold(color(
       `✓ Clean. No AI slop signatures or anti-patterns found. The repo is ` +
-      `coherent with the patterns it was written in. ${policyText}`,
+      `coherent with the patterns it was written in. ${gateText}`,
     ));
   }
 
@@ -323,9 +328,9 @@ function formatVerdict(report: ProjectReport): string {
   const issueWord = activeIssues.length === 1 ? 'issue' : 'issues';
   const lead = dominantCat === 'ai' ? 'The dominant signal is ' : 'The biggest problem is ';
 
-  return band.color(
+  return (gatePassed ? chalk.green : chalk.red)(
     `Repo's AI-slop score is ${band.label} (${formatHeadlineScore(score)}/100) with ${activeIssues.length} active ${issueWord}. ` +
-    `${policyText} ` +
+    `${gateText} ` +
     lead +
     `${catLabel}${fileHint}. Run \`slopbrick scan --why-failing\` ` +
     `for the top 5 rules, or \`slopbrick scan --suggest\` for fixes.`,
@@ -996,11 +1001,14 @@ function formatThresholds(report: ProjectReport): string[] {
   // and the correct direction.
   const meanSlop = report.thresholds?.meanSlop ?? 30;
   const headline = report.aiSlopScore;
-  const passed = headline <= meanSlop;
+  const passed = report.gateDecision?.status === 'passed' ||
+    (report.gateDecision === undefined && headline <= meanSlop);
   const valueText = `${headline.toFixed(1)} ≤ ${meanSlop}`.padStart(12, ' ');
-  const status = passed ? chalk.green('pass') : chalk.red('fail');
+  const status = passed ? chalk.green('pass') : chalk.red(report.gateDecision?.status === 'not-evaluated' ? 'not evaluated' : 'fail');
 
   const result: string[] = ['Threshold (CI gate)', `  AI Slop Score  ${valueText}  ${status}`];
+  if (report.gateDecision) result.push(`  ${report.gateDecision.summary}`);
+  if (report.newDebt) result.push(`  ${report.newDebt.summary}`);
   return result;
 }
 
@@ -1124,10 +1132,9 @@ function formatIssue(issue: Issue): string {
 
 export function formatPretty(report: ProjectReport, options: { full?: boolean } = { full: true }): string {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
-    return chalk.bold.yellow(
-      formatScanValidityNotice(report) ??
-        'NO FILES ANALYSED — scores are not applicable for gating.',
-    );
+    const notice = formatScanValidityNotice(report) ??
+      'NO FILES ANALYSED — scores are not applicable for gating.';
+    return chalk.bold.yellow(report.gateDecision ? `${notice}\n${report.gateDecision.summary}` : notice);
   }
   const sections: string[] = [];
   const validityNotice = formatScanValidityNotice(report);
@@ -1259,10 +1266,9 @@ function formatScoringExplainer(report: ProjectReport): string {
  */
 export function formatWhyFailingReport(report: ProjectReport): string {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
-    return chalk.bold.yellow(
-      formatScanValidityNotice(report) ??
-        'NO FILES ANALYSED — scores are not applicable for gating.',
-    );
+    const notice = formatScanValidityNotice(report) ??
+      'NO FILES ANALYSED — scores are not applicable for gating.';
+    return chalk.bold.yellow(report.gateDecision ? `${notice}\n${report.gateDecision.summary}` : notice);
   }
   const validityNotice = formatScanValidityNotice(report);
   return validityNotice
@@ -1288,7 +1294,8 @@ export function formatBriefReport(report: ProjectReport): string {
     const status = isIncompleteScan(report)
       ? 'SCAN STATUS: incomplete (scan/runtime failure) — policy gate not evaluated.'
       : 'SCAN STATUS: no files analyzed — policy gate not evaluated.';
-    return `${chalk.bold.yellow(notice)}\n${chalk.bold.yellow(status)}`;
+    const gate = report.gateDecision ? `\n${chalk.bold.yellow(report.gateDecision.summary)}` : '';
+    return `${chalk.bold.yellow(notice)}\n${chalk.bold.yellow(status)}${gate}`;
   }
   // v0.17.0: 4-score model (aiSlopScore, engineeringHygiene, security, repositoryHealth).
   // The previous v0.15.0 "AI Slop Score + Coherence" dual-scoring was confusing;

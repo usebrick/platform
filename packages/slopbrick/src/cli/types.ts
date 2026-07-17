@@ -49,6 +49,8 @@ export interface ScanProjectOptions {
 }
 
 export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
+  /** Internal CI-only gate inputs; not a public scan flag. */
+  ciGate?: { maxSlop?: number; maxNewIssues?: number; strictConstitution?: boolean };
   workspace?: string;
   fix?: boolean;
   dryRun?: boolean;
@@ -82,6 +84,8 @@ export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
 }
 
 export interface CliGlobalOptions extends ScanRunOptions {
+  /** Internal CI-only gate inputs; never parsed from global scan flags. */
+  ciGate?: { maxSlop?: number; maxNewIssues?: number; strictConstitution?: boolean };
   // format/json/html are inherited from ScanRunOptions — no need to redeclare.
   suggest?: boolean;
   heatmap?: boolean;
@@ -135,6 +139,7 @@ export interface ScanRunResult {
   results: import('../types').FileScanResult[];
   config: import('../types').ResolvedConfig;
   noIncreaseFailure: boolean;
+  newDebtFailure: boolean;
   baseline?: import('../types').BaselineCache;
   machineReadableStdout: boolean;
   /** v0.24.0: always present; consumed by `BeaconEmitter` when

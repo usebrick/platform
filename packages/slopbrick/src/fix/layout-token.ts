@@ -11,11 +11,17 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function wholeClassPattern(className: string): RegExp {
+  const escaped = escapeRegExp(className);
+  return new RegExp(`(^|[\\s"'\`])${escaped}(?=$|[\\s"'\`])`, 'g');
+}
+
+export function countWholeClassOccurrences(content: string, className: string): number {
+  return [...content.matchAll(wholeClassPattern(className))].length;
+}
+
 export function replaceWholeClass(content: string, oldClass: string, newClass: string): string {
-  const escaped = escapeRegExp(oldClass);
-  const boundary = '(^|[\\s"\'`])';
-  const pattern = new RegExp(`${boundary}${escaped}(${boundary})`, 'g');
-  return content.replace(pattern, (_, before, after) => `${before}${newClass}${after}`);
+  return content.replace(wholeClassPattern(oldClass), (_, before) => `${before}${newClass}`);
 }
 
 export function applyReplaceFixes(

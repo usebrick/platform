@@ -16,6 +16,18 @@ and witness authority bundle passes the read-only census gate.
 - Added explicit provenance and admission-binding checks for manifest output;
   no corpus labels or manifest bytes are admitted by this release candidate.
 
+### Changed
+
+- Added one typed scan gate decision shared by human, JSON, Markdown, SARIF,
+  not-applicable output, and process exit, including fail-closed incomplete
+  scan behavior and fix/dry-run exit handling.
+- Bound automated fixes to their finding path, location, and source/target
+  snapshots; stale, ambiguous, cross-file, and unbound suggestions are now
+  skipped with an explicit reason instead of being applied opportunistically.
+- Implemented `ci --max-new-issues` against a durable, config-bound finding
+  identity baseline written by `scan --baseline`; missing or mismatched
+  baselines fail closed and suppressed findings are excluded from new debt.
+
 ## [Unreleased] — v0.44.0 trust restoration (historical carry-forward)
 
 This branch is not released. The current work restores scanner, schema, score,

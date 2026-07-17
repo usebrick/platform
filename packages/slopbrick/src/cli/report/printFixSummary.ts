@@ -36,7 +36,7 @@ export function printFixSummary(
       entries.push(`  [applied] ${app.ruleId}: ${app.description}`);
     }
     for (const app of result.skipped) {
-      entries.push(`  [skipped] ${app.ruleId}: ${app.description}`);
+      entries.push(`  [skipped] ${app.ruleId}: ${app.description}${app.reason ? ` (${app.reason})` : ''}`);
     }
     for (const err of result.errors ?? []) {
       entries.push(`  [error] ${err}`);

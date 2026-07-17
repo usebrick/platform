@@ -28,6 +28,30 @@ export interface BaselineCache {
   scores: Record<string, { baselineScore: number; componentCount: number }>;
 }
 
+/** Durable finding-identity baseline used by the CI new-debt gate. */
+export interface DebtBaseline {
+  kind: 'slopbrick-debt-baseline-v1';
+  version: string;
+  config_hash: string;
+  git_head: string;
+  baseline_created: string;
+  baseline_revision: number;
+  finding_ids: string[];
+}
+
+export interface NewDebtDecision {
+  kind: 'slopbrick-new-debt-v1';
+  status: 'passed' | 'failed' | 'not-evaluated';
+  failed: boolean;
+  baselineAvailable: boolean;
+  baselineRevision?: number;
+  baselineFindingCount?: number;
+  currentFindingCount: number;
+  newFindingCount?: number;
+  maxNewIssues: number;
+  summary: string;
+}
+
 
 
 export interface SlopAuditRun {

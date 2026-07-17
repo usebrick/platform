@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { applyFixes } from '../../src/fix';
+import { sha256Text } from '../../src/fix/binding';
 import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types';
 
 function makeConfig(overrides?: Partial<ResolvedConfig>): ResolvedConfig {
@@ -55,12 +56,29 @@ function makeReport(overrides?: Partial<ProjectReport>): ProjectReport {
 }
 
 function baseIssue(overrides: Partial<Issue> & Pick<Issue, 'ruleId' | 'category' | 'severity' | 'aiSpecific'>): Issue {
-  return {
+  const issue: Issue = {
     message: 'test issue',
     line: 1,
     column: 1,
     ...overrides,
   };
+  const fixes = [...(issue.fix ? [issue.fix] : []), ...(issue.fixes ?? [])];
+  for (const fix of fixes) {
+    const sourcePath = issue.filePath ?? fix.targetFile;
+    if (!sourcePath || !existsSync(sourcePath)) continue;
+    const source = readFileSync(sourcePath, 'utf-8');
+    fix.binding = {
+      kind: 'slopbrick-fix-binding-v1',
+      ruleId: issue.ruleId,
+      filePath: sourcePath,
+      line: issue.line,
+      column: issue.column,
+      sourceSha256: sha256Text(source),
+      targetSha256: sha256Text(source),
+    };
+    issue.filePath ??= sourcePath;
+  }
+  return issue;
 }
 
 describe('applyFixes', () => {

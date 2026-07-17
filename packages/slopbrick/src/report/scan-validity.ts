@@ -25,6 +25,7 @@ export interface NotApplicableScanMetadata {
   analyzed: number;
   failed: number;
   skipped: number;
+  gateDecision?: ProjectReport['gateDecision'];
   scanAccounting?: ProjectReport['scanAccounting'];
   selectionAccounting?: ProjectReport['selectionAccounting'];
   diagnostics?: {
@@ -73,6 +74,7 @@ export function projectNotApplicableScan(report: ProjectReport): NotApplicableSc
     analyzed: report.analyzed ?? 0,
     failed: report.failed ?? 0,
     skipped: report.skipped ?? 0,
+    ...(report.gateDecision ? { gateDecision: report.gateDecision } : {}),
     ...(report.scanAccounting ? { scanAccounting: report.scanAccounting } : {}),
     ...(report.selectionAccounting ? { selectionAccounting: report.selectionAccounting } : {}),
     ...(report.parseErrors?.length
