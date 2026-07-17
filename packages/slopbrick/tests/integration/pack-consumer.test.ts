@@ -385,7 +385,15 @@ describe('published consumer contract', () => {
       // consumer tree (no workspace package/dependency symlinks); the ZIP
       // input below is fully offline and preseeded.
       mkdirSync(project);
-      writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'slopbrick-packed-consumer', private: true }));
+      writeFileSync(join(project, 'package.json'), JSON.stringify({
+        name: 'slopbrick-packed-consumer',
+        private: true,
+        // Keep the isolated consumer on the repository's pinned package
+        // manager. Without this field Corepack falls back to its latest
+        // cached pnpm, which can change the install graph and permissions
+        // independently of the package under test.
+        packageManager: 'pnpm@9.15.0',
+      }));
       const pnpmStore = process.env.SLOPBRICK_TASK6_PNPM_STORE_DIR?.trim()
         ?? commandVersion('corepack', ['pnpm', 'store', 'path']);
       expect(pnpmStore).not.toBe('unknown');
