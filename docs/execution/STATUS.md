@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 9
+**Index revision:** 10
 **Global status:** `advancing`
 
 ## Executive state
@@ -20,12 +20,17 @@ does not block product work.
   publish rather than copied into current documentation.
 - The workspace contains an **unreleased** `slopbrick@0.45.0` candidate with
   **119 rules in 27 categories**.
-- Recorded typecheck, full-test, build, and packed Node 22/24 diagnostics are
-  green for their recorded commits. They do not prove the current dirty
-  checkout, publication, or deployment.
-- The most recent recorded self-scan completed all 254 discovered files but
-  failed the configured AI-slop policy: **18.3** versus a threshold of **15**.
-  Runtime completion is proven; the release disposition remains open.
+- The current implementation checkpoint is
+  `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`. Recursive typecheck, recursive
+  tests, recursive build, the RAM-safe package suite, and the packed Node 22/24
+  diagnostic are green for that candidate. They do not authorize publication
+  or deployment.
+- The current package-local self-scan completed **263/263** selected files
+  with **0** parse, timeout, crash, or internal failures, but failed the
+  configured AI-slop policy: **18.831558603262913** versus a threshold of
+  **15**. It reports **187 active** and **495 audit-only suppressed** findings
+  and exits `1`. Runtime completion is proven; the release disposition is
+  **NO-GO** until the burden is reviewed or remediated.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -109,8 +114,8 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | Open | Re-run bounded tests during implementation and the full release gate before a go/no-go decision. |
-| Self-scan disposition | Open | Completion is proven; score/policy treatment must be explicitly accepted or fixed. |
+| Current checkout gates | Satisfied | Recursive typecheck, test, build, and the RAM-safe package receipt pass for the implementation checkpoint. |
+| Self-scan disposition | NO-GO | Completion is proven, but the current score is 18.831558603262913 against a threshold of 15. |
 | Claims and metadata | Open | Reconcile version, category, artifact, privacy, and website claims. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
 | Website deployment | Not authorized | The local candidate corrects verified live-site claim drift; it still requires owner/SHA review and separate deployment authorization. |
@@ -147,11 +152,12 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The next product checkpoint is reached when `SB-045` proves one typed gate
-decision drives report output and process exit. The read-only inventory,
-per-unit-hashed 5,000/5,000 candidate manifest, family-safe leakage plan, raw
-publisher row binding, exact 100/100 smoke, and eligible local projection are
-verified. `CAL-001` may now define its holdout protocol without claiming
-admission or authorship proof. `GTM-001` remains the independent company-track
-start. Approved stale-path cleanup can be executed later without displacing
-the active implementation lane.
+The typed gate-decision, finding-bound fix, durable new-debt, claim-alignment,
+and local privacy/history contracts are implemented and recorded in
+[`SB-045-gate-decision.md`](evidence/SB-045-gate-decision.md). The complete
+qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-release-qualification.md).
+The next SB-045 checkpoint is an evidence-backed disposition of the current
+self-scan failure and any remaining live/public claim drift. Do not lower the
+threshold, activate unmeasured rules, publish, tag, deploy, or push as a way to
+close the no-go state. Corpus v1 remains non-admitting and `GTM-001` remains the
+independent company-track start.

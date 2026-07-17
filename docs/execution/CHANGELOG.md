@@ -3,6 +3,32 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 10 — 2026-07-17
+
+### Changed
+
+- Completed the SB-045 trust-release implementation checkpoint at
+  `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`: one typed gate decision now
+  drives report projections and scan exit, incomplete scans fail closed, and
+  fix/dry-run/heatmap paths cannot bypass the decision.
+- Bound automated fixes to finding identity and source/target snapshots, with
+  explicit stale/ambiguous/unbound skip reasons and no gated opportunistic
+  file-wide codemods.
+- Implemented the durable finding-identity debt baseline and tested
+  `ci --max-new-issues` against current-versus-new debt, including fail-closed
+  missing/config-mismatched baseline behavior.
+- Completed the current release qualification: recursive typecheck, tests,
+  build, RAM-safe package tests, and packed Node 22/24 diagnostic are green.
+  The package-local self-scan is complete but remains a no-go at
+  `18.831558603262913 > 15`.
+
+### Evidence
+
+- `docs/execution/evidence/SB-045-gate-decision.md`
+- `docs/execution/evidence/SB-045-release-qualification.md`
+- No tag, push, release, publish, deployment, admission, or remote mutation
+  occurred.
+
 ## Revision 9 — 2026-07-17
 
 ### Changed

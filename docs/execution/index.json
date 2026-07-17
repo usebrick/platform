@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
+  "revision": 10,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -53,13 +53,15 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the red contract test proving one gate decision drives report output and process exit.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/gate-decision-contract.test.ts --maxWorkers=1 --minWorkers=1",
-        "evidencePath": "docs/execution/evidence/SB-045-gate-decision.md"
+        "text": "Keep the release gate open while reviewing the complete self-scan failure and candidate/public claim reconciliation; do not publish from this no-go packet.",
+        "verify": "test -f docs/execution/evidence/SB-045-release-qualification.md",
+        "evidencePath": "docs/execution/evidence/SB-045-release-qualification.md"
       },
       "evidence": [
         "packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md",
-        "packages/slopbrick/docs/calibration/v0.45.0-execution-evidence.md"
+        "packages/slopbrick/docs/calibration/v0.45.0-execution-evidence.md",
+        "docs/execution/evidence/SB-045-gate-decision.md",
+        "docs/execution/evidence/SB-045-release-qualification.md"
       ]
     },
     {

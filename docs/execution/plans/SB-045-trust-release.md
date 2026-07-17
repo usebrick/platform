@@ -15,11 +15,14 @@ and release claims agree.
 ## Current truth
 
 The workspace is an unreleased 0.45.0 candidate with 119 rules in 27
-categories. The recorded self-scan completed but exceeded the configured
-AI-slop threshold. Prior green gates describe recorded commits, not the current
-dirty checkout or a published artifact. Claim/artifact reconciliation has
-started with generated-document contracts, public-artifact receipts, and
-website/workflow truth fixes; the shared gate-decision contract is next.
+categories. Implementation checkpoint `3cb075791e8aa8d678bdb4bf7aba7ba1d402c4f5`
+passes the recursive typecheck, test, and build gates, the RAM-safe package
+suite, and the packed Node 22/24 diagnostic. The package-local self-scan also
+completes all 263 selected files with no runtime failures, but its exact score
+is 18.831558603262913 against a threshold of 15, so the release decision is
+NO-GO. Claim/artifact reconciliation is locally aligned for the 0.45.0
+candidate while the public 0.43 artifact and live-site drift remain separate
+and no publication or deployment is authorized.
 
 ## Scope
 
@@ -94,5 +97,6 @@ evidence if it exposed pre-existing drift.
 
 ## Next action
 
-Write the red contract test proving one gate decision drives both rendered
-results and process exit.
+Review the complete self-scan failure and remaining public/live claim drift;
+keep the release gate open until an evidence-backed fix, defer, or owner
+acceptance exists. Do not publish from the current no-go packet.
