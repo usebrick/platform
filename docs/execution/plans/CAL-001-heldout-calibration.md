@@ -1,6 +1,6 @@
 # CAL-001 — Calibrate candidate signals on leakage-safe holdouts
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 5
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers
@@ -24,8 +24,10 @@ one-worker scanner smoke completed with a path-free receipt at
 one-worker holdout completed with a path-free receipt at
 `docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`; all 10,000
 eligible rows succeeded, the frozen split/leakage checks were clear, and v10.3
-still has zero admitted units. Rule decisions and usefulness review remain
-open.
+still has zero admitted units. The non-admitting 119-row decision matrix is
+recorded at `docs/execution/evidence/CAL-001-calibration-decision-matrix.md`;
+usefulness review and any default-state/admission change remain intentionally
+unevaluated follow-up work.
 
 ## Scope
 
@@ -73,8 +75,9 @@ open.
    `db9551ec4540282bf35fbc896d0e33dc31434019de52da0f2972ade2d5dc4cfe`
    reports 10,000/10,000 successful rows and zero family or normalized
    cross-label leakage.
-4. Review confounds and assign rule decisions -> verify: every candidate row
-   has a decision, evidence link, and owner.
+4. Review confounds and assign rule decisions -> complete; verify: every
+   candidate row has a decision, evidence link, owner, and `applied: false`
+   matrix boundary.
 
 ## Verification
 
@@ -83,7 +86,7 @@ configuration before widening concurrency.
 
 ## Evidence destination
 
-`docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`
+`docs/execution/evidence/CAL-001-calibration-decision-matrix.md`
 
 ## Rollback
 
@@ -92,6 +95,5 @@ failed-signal evidence.
 
 ## Next action
 
-Review the recorded language/file-size confounds and assign a bounded,
-non-admitting decision row to every candidate rule without activating any
-unproven signal.
+Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol
+revision before any usefulness, threshold, default-state, or admission change.

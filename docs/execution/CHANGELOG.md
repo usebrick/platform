@@ -3,6 +3,27 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 16 — 2026-07-17
+
+### Changed
+
+- Completed the bounded CAL-001 decision boundary with a deterministic matrix
+  covering all 119 registry rules: 72 AI-specific rows remain `default-off`
+  and 47 non-AI rows remain `quality-only`.
+- Recorded 40 AI-specific rows as `owner-review-required` because the matrix
+  does not silently change current shipped policy; the output is
+  `applied: false` and `admitted: false`.
+- Marked CAL-001 `done` for this protocol while leaving independent
+  usefulness review, threshold changes, default-state changes, and admission
+  as a new owner-reviewed follow-up boundary.
+
+### Evidence
+
+- `docs/execution/evidence/CAL-001-calibration-decision-matrix.md`
+- `docs/execution/plans/CAL-001-heldout-calibration.md`
+- `docs/execution/index.json`
+- No publish, deployment, tag, push, admission, or remote mutation occurred.
+
 ## Revision 15 — 2026-07-17
 
 ### Changed

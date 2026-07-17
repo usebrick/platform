@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 15,
+  "revision": 16,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -147,7 +147,7 @@
       "track": "implementation",
       "lane": "calibration",
       "horizon": "next",
-      "status": "in_progress",
+      "status": "done",
       "priority": 5,
       "path": "docs/execution/plans/CAL-001-heldout-calibration.md",
       "dependencies": {
@@ -161,14 +161,15 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Review the recorded language/file-size confounds and assign a bounded, non-admitting decision row to every candidate rule.",
-        "verify": "test -f docs/execution/evidence/CAL-001-calibration-holdout-receipt.md",
-        "evidencePath": "docs/execution/evidence/CAL-001-calibration-holdout-receipt.md"
+        "text": "Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol revision before any usefulness, threshold, default-state, or admission change.",
+        "verify": "test -f docs/execution/evidence/CAL-001-calibration-decision-matrix.md",
+        "evidencePath": "docs/execution/evidence/CAL-001-calibration-decision-matrix.md"
       },
       "evidence": [
         "docs/execution/evidence/CAL-001-protocol.md",
         "docs/execution/evidence/CAL-001-calibration-smoke-receipt.md",
-        "docs/execution/evidence/CAL-001-calibration-holdout-receipt.md"
+        "docs/execution/evidence/CAL-001-calibration-holdout-receipt.md",
+        "docs/execution/evidence/CAL-001-calibration-decision-matrix.md"
       ]
     },
     {

@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 15
+**Index revision:** 16
 **Global status:** `advancing`
 
 ## Executive state
@@ -11,10 +11,12 @@ source-attested Corpus v1 seed are complete. The local v0.45 trust-release
 qualification is complete and waits only for an explicit owner decision on the
 live/public claim boundary. The consent-safe vibecoder pilot protocol is ready
 but no sessions are scheduled. CAL-001 has a frozen leakage-safe calibration
-protocol, a deterministic non-admitting 100/100 scanner smoke receipt, and a
-completed diagnostic full holdout with zero leakage findings; confound,
-usefulness, and admission decisions remain open. Stale-path cleanup is
-isolated behind exact owner approval and does not block local product work.
+protocol, a deterministic non-admitting 100/100 scanner smoke receipt, a
+completed diagnostic full holdout with zero leakage findings, and a reviewed
+non-admitting decision matrix for all 119 registry rules. Usefulness review,
+default-state changes, and admission remain intentionally open follow-up
+boundaries. Stale-path cleanup is isolated behind exact owner approval and
+does not block local product work.
 
 ## Product and release truth
 
@@ -58,6 +60,12 @@ isolated behind exact owner approval and does not block local product work.
   `9d4e57ef42dfad1d65becf750690ef9991ba29c03f0181531fb4321853f1bea5`.
   This remains diagnostic-only: no threshold, rule state, usefulness result,
   admission, or release gate was changed.
+- The CAL-001 non-admitting decision matrix is checkpointed at
+  `215647e22d8b289f944cc44e047efeedb553a04d`. It assigns 72 AI-specific rows
+  `default-off` and 47 non-AI rows `quality-only`; 40 rows require owner review
+  before any policy change, and the matrix records `applied: false` and
+  `admitted: false`. Canonical matrix SHA-256 is
+  `3c170e308f8ec0be1c1c31b4a5716810388f2692f6e7f0a179b4fd48665eca1c`.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -110,7 +118,7 @@ isolated behind exact owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 1 | 2 | CAL-001 |
+| Implementation | 0 | 2 | None |
 | Company | 0 | 1 | None |
 
 `SB-045` is waiting external and does not consume an active implementation
@@ -128,7 +136,7 @@ WIP while waiting.
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit the first five vibecoder pilots using the consent-safe template before the first scan. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
-| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `in_progress` | — | Review the recorded language/file-size confounds and assign a bounded, non-admitting decision row to every candidate rule. |
+| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol revision before any usefulness, threshold, default-state, or admission change. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
@@ -194,9 +202,9 @@ qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-rele
 The next SB-045 checkpoint is the owner's explicit live/public claim
 disposition; the local AI gate is already qualified. The next GTM-001
 checkpoint is the first real scheduled pilot, using the new consent-safe
-template. The CAL-001 one-worker smoke and full frozen holdout are complete;
-the next CAL-001 checkpoint is confound review plus a bounded decision row for
-every candidate, still without test tuning, usefulness claims, or rule
-activation. Do not lower the threshold,
+template. The bounded CAL-001 one-worker smoke, full frozen holdout, leakage /
+confound summary, and non-admitting decision matrix are complete. Any
+usefulness review, threshold, default-state, or admission change requires a
+new owner-reviewed protocol revision. Do not lower the threshold,
 activate unmeasured rules, publish, tag, deploy, or push as a way to close any
 boundary. Corpus v1 remains non-admitting.
