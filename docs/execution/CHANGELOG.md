@@ -3,6 +3,29 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 5 — 2026-07-17
+
+### Changed
+
+- Rehashed all 10,000 pinned Mendeley projection units through one-file-at-a-
+  time reads and emitted deterministic candidate rows with content and
+  normalized hashes, family keys, source authority, license evidence, and
+  `internal_analysis` rights disposition.
+- Verified 5,000 positive and 5,000 negative candidate rows with zero local
+  integrity quarantines; two real-source projections produced manifest
+  SHA-256 `c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac`.
+- Kept every row at `split: unassigned` and candidate-only. Cross-label
+  collision quarantine, family-safe splits, smoke receipts, admission, raw CSV
+  row binding, and calibration remain open.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/manifest.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-manifest.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No corpus source byte, remote repository, release, publish, deployment, or
+  archive state changed.
+
 ## Revision 4 — 2026-07-17
 
 ### Changed

@@ -77,17 +77,44 @@ The real-source test compares archive, CSV, and manifest size/mtime before and
 after. The implementation uses read-only filesystem APIs. The JSONL manifest
 is streamed, and unit paths are checked one at a time with one test worker.
 
+## Candidate-manifest checkpoint
+
+The next bounded slice rehashed every materialized unit and emitted canonical
+candidate JSONL with:
+
+- actual and source-declared/materialized content SHA-256 values;
+- `corpus-v1-lexical-tokens-v1` normalized SHA-256 values;
+- publisher-attested source, label, language, and problem-family bindings;
+- portable authority and license evidence references;
+- `internal_analysis` rights disposition;
+- `split: unassigned`; and
+- stable local integrity quarantine reasons.
+
+The real source produced 10,000 candidate rows, zero local integrity
+quarantines, 5,000 positives, and 5,000 negatives. Two independent projections
+produced the same candidate-manifest SHA-256:
+
+```text
+c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac
+```
+
+Focused verification used one Vitest worker. The portable suite passed four
+tests with the real-source test skipped; the real-source suite passed all five
+tests, with the 10,000-unit rehash taking about six seconds. SlopBrick
+typecheck passed. Candidate source code was never executed.
+
 ## Explicitly still open
 
 - The raw CSV is hash-bound but is not parsed in this inventory slice.
-- Materialized unit contents are size/path checked but are not rehashed here;
-  the result exposes `unitContentVerification: path_and_size_only`, and current
-  exact-content counts are named `manifestExactContent` because they come from
-  the pinned projection manifest.
-- No normalized hashes, family-aware split, collision quarantine, 100/100
-  smoke receipt, admission output, threshold change, or calibration run exists.
+- The inventory result remains intentionally path/size-only, but the candidate
+  projector now independently rehashes unit bytes and quarantines mismatches.
+- The raw CSV remains hash-bound but is not yet row-reconciled with the
+  projection manifest.
+- No cross-row exact/normalized collision quarantine, family-aware split,
+  100/100 smoke receipt, admission output, threshold change, or calibration run
+  exists.
 - No v10.3 source byte was moved, deleted, rewritten, or admitted.
 
-The next slice must construct a deterministic candidate manifest with per-unit
-content and normalized hashes, family keys, rights disposition, and explicit
-quarantine reasons before any split or smoke calibration is attempted.
+The next slice must quarantine exact and normalized cross-label collisions and
+assign deterministic family-level splits before any smoke calibration is
+attempted.
