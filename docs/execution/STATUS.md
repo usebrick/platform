@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 13
+**Index revision:** 14
 **Global status:** `advancing`
 
 ## Executive state
@@ -10,10 +10,11 @@ The documentation control plane, Corpus v1 admission decision, and bounded
 source-attested Corpus v1 seed are complete. The local v0.45 trust-release
 qualification is complete and waits only for an explicit owner decision on the
 live/public claim boundary. The consent-safe vibecoder pilot protocol is ready
-but no sessions are scheduled. CAL-001 now has a frozen leakage-safe
-calibration protocol, but no calibration smoke or admission evaluation has
-run. Stale-path cleanup is isolated behind exact owner approval and does not
-block local product work.
+but no sessions are scheduled. CAL-001 has a frozen leakage-safe calibration
+protocol and a deterministic non-admitting 100/100 scanner smoke receipt; the
+full holdout, confound, usefulness, and admission evaluation remains open.
+Stale-path cleanup is isolated behind exact owner approval and does not block
+local product work.
 
 ## Product and release truth
 
@@ -23,7 +24,7 @@ block local product work.
   publish rather than copied into current documentation.
 - The workspace contains an **unreleased** `slopbrick@0.45.0` candidate with
   **119 rules in 27 categories**.
-- The current implementation checkpoint is
+- The SB-045 qualification checkpoint is
   `c2d337b7f385963b150a8da5f9e823ccffa51ea5`. Recursive typecheck and build,
   the serialized full SlopBrick package suite, and the packed Node 22/24
   diagnostic are green for that candidate. The repository-wide serialized
@@ -42,6 +43,11 @@ block local product work.
   `ai/compression-profile` signal, not from lowering the threshold or making
   a current v10.3 calibration claim. Explicit per-rule opt-in remains
   available for diagnostic use.
+- The CAL-001 smoke adapter and runner are checkpointed at
+  `f00c5364fc13d6452756d94071c76158cb4a05cd`. The focused calibration tests
+  and package typecheck pass; the recorded one-worker receipt scanned 200/200
+  selected source-bound files successfully and remains `admitted: false`.
+  The recursive release gates have not been rerun after this additive slice.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -94,7 +100,7 @@ block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 0 | 2 | None |
+| Implementation | 1 | 2 | CAL-001 |
 | Company | 0 | 1 | None |
 
 `SB-045` is waiting external and does not consume an active implementation
@@ -112,7 +118,7 @@ WIP while waiting.
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit the first five vibecoder pilots using the consent-safe template before the first scan. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
-| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `ready` | — | Run the one-worker end-to-end calibration smoke from the frozen protocol. |
+| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `in_progress` | — | Execute the frozen train/validation/test holdout without tuning on test or activating any rule. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
@@ -178,8 +184,8 @@ qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-rele
 The next SB-045 checkpoint is the owner's explicit live/public claim
 disposition; the local AI gate is already qualified. The next GTM-001
 checkpoint is the first real scheduled pilot, using the new consent-safe
-template. The next CAL-001 checkpoint is a one-worker smoke from the frozen
-protocol; it must not tune or activate a rule. Do not lower the threshold,
+template. The CAL-001 one-worker smoke is complete; the next CAL-001
+checkpoint is the frozen train/validation/test holdout plus confound review,
+still without test tuning or rule activation. Do not lower the threshold,
 activate unmeasured rules, publish, tag, deploy, or push as a way to close any
-boundary. Corpus v1 remains
-non-admitting.
+boundary. Corpus v1 remains non-admitting.

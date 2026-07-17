@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 13,
+  "revision": 14,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -147,7 +147,7 @@
       "track": "implementation",
       "lane": "calibration",
       "horizon": "next",
-      "status": "ready",
+      "status": "in_progress",
       "priority": 5,
       "path": "docs/execution/plans/CAL-001-heldout-calibration.md",
       "dependencies": {
@@ -161,12 +161,13 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run the small end-to-end calibration smoke from the frozen protocol with one worker before fitting or threshold selection.",
-        "verify": "test -f docs/execution/evidence/CAL-001-protocol.md",
-        "evidencePath": "docs/execution/evidence/CAL-001-protocol.md"
+        "text": "Execute the frozen train/validation/test holdout evaluation without tuning on test or activating any rule.",
+        "verify": "test -f docs/execution/evidence/CAL-001-calibration-smoke-receipt.md",
+        "evidencePath": "docs/execution/evidence/CAL-001-calibration-smoke-receipt.md"
       },
       "evidence": [
-        "docs/execution/evidence/CAL-001-protocol.md"
+        "docs/execution/evidence/CAL-001-protocol.md",
+        "docs/execution/evidence/CAL-001-calibration-smoke-receipt.md"
       ]
     },
     {

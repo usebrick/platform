@@ -3,6 +3,30 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 14 — 2026-07-17
+
+### Changed
+
+- Added the deterministic CAL-001 100-positive/100-negative one-worker smoke
+  adapter and package runner without admitting data, tuning thresholds, or
+  activating rules.
+- Recorded the source-bound scanner receipt and path-free metrics: 200/200
+  selected files succeeded, the catalog contained 119 rules, and the receipt
+  remains `admitted: false`.
+- Bound the smoke evidence to the frozen protocol, Corpus v1 manifests,
+  source-binding receipt, eligible projection, implementation commit, and
+  repeated byte-identical output hashes.
+- Moved CAL-001 to `in_progress` for the full frozen holdout evaluation while
+  keeping GTM-001 `ready` until a real pilot is scheduled.
+
+### Evidence
+
+- `docs/execution/evidence/CAL-001-calibration-smoke-receipt.md`
+- `docs/execution/plans/CAL-001-heldout-calibration.md`
+- `docs/execution/index.json`
+- No threshold, default state, admission, publish, deployment, or remote
+  mutation occurred.
+
 ## Revision 13 — 2026-07-17
 
 ### Changed

@@ -1,6 +1,6 @@
 # CAL-001 — Calibrate candidate signals on leakage-safe holdouts
 
-- **Status:** `ready`
+- **Status:** `in_progress`
 - **Priority:** 5
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers
@@ -18,9 +18,10 @@ Corpus v1 now has a verified source-attested eligible projection and
 family-aware split plan. `CAL-001-v1` freezes those input hashes, the
 train/validation/test tuning boundary, the separate origin/usefulness metrics,
 and the admission matrix at
-`docs/execution/evidence/CAL-001-protocol.md`. No calibration run has been
-performed, and v10.3 still has zero admitted units; the protocol cannot support
-a new calibration claim by itself.
+`docs/execution/evidence/CAL-001-protocol.md`. The deterministic 100/100
+one-worker scanner smoke completed with a path-free receipt at
+`docs/execution/evidence/CAL-001-calibration-smoke-receipt.md`; the full
+holdout evaluation has not run and v10.3 still has zero admitted units.
 
 ## Scope
 
@@ -61,8 +62,9 @@ a new calibration claim by itself.
 1. Freeze the protocol, metrics, and admission matrix -> complete; verify:
    `test -f docs/execution/evidence/CAL-001-protocol.md` and compare the
    recorded Corpus v1 input hashes.
-2. Run a small end-to-end calibration smoke -> verify: reproduce its report
-   hash using one worker.
+2. Run a small end-to-end calibration smoke -> complete; verify: receipt
+   `c09657e902aef3dde7cb9d1159934b8c7664db91da40bc10ac6fd138a2c4cc81`
+   reproduces with one worker and identical metrics bytes.
 3. Execute the frozen holdout evaluation -> verify: no family or normalized
    cross-label leakage is reported.
 4. Review confounds and assign rule decisions -> verify: every candidate row
@@ -84,5 +86,5 @@ failed-signal evidence.
 
 ## Next action
 
-Run the small end-to-end calibration smoke from the frozen protocol with one
-worker before any fitting or threshold selection.
+Execute the frozen train/validation/test holdout evaluation without tuning on
+test or activating any rule.
