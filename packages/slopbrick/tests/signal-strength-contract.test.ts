@@ -14,6 +14,13 @@ describe('signal-strength contract (Zod-validated)', () => {
     expect(Object.keys(data).length).toBeGreaterThan(50);
   });
 
+  it('keeps the unadmitted compression signal opt-in', () => {
+    expect(signalStrengthData['ai/compression-profile']).toMatchObject({
+      defaultOff: true,
+    });
+    expect(getDefaultOffRules()).toContain('ai/compression-profile');
+  });
+
   it('every entry has a verdict in the v7 enum', () => {
     const valid = ['USEFUL', 'OK', 'NOISY', 'INVERTED', 'HYGIENE', 'DORMANT'];
     for (const [ruleId, entry] of Object.entries(signalStrengthData)) {

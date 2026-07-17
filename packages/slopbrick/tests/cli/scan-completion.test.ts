@@ -1922,7 +1922,7 @@ describe('scan completion status', () => {
     expect(first.report.scoreValidity).toBe('valid');
     expect(first.scanStats.analyzed).toBe(1);
     expect(first.report.issues.find((issue) => issue.ruleId === 'ai/compression-profile')).toMatchObject({
-      severity: 'low',
+      severity: 'off',
     });
     expect(scoreProjection(second)).toEqual(scoreProjection(first));
     expect(existsSync(join(dir, '.slopbrick'))).toBe(false);
@@ -2013,7 +2013,7 @@ describe('scan completion status', () => {
     const staged = await runScan({ workspace: dir, staged: true, quiet: true });
     expect(staged.report.issues.find(
       (issue) => issue.ruleId === 'ai/compression-profile',
-    )).toMatchObject({ severity: 'low' });
+    )).toMatchObject({ severity: 'off' });
   });
 
   it.each(['staged', 'changed'] as const)('blocks every implicit repository-state write during non-empty packaged %s verification', async (scope) => {
