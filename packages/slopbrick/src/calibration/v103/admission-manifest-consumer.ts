@@ -298,7 +298,8 @@ function assertPrerequisiteRelations(
 ): void {
   if (buildReceipt.prerequisiteBundleSha256 !== bundle.bundleSha256
     || buildReceipt.prerequisitePublicationCompletionSha256 !== completion.completionSha256
-    || buildReceipt.prerequisitePublicationRequestSha256 !== request.requestSha256) {
+    || buildReceipt.prerequisitePublicationRequestSha256 !== request.requestSha256
+    || buildReceipt.manifestBuilderBehaviorSha256 !== bundle.manifestBuilder.behaviorSha256) {
     throw new AdmissionManifestConsumerError('build receipt is not bound to the prerequisite graph');
   }
   requireSamePath(buildReceipt.prerequisiteBundleRelativePath, completion.bundleRelativePath, 'prerequisite bundle');
