@@ -48,6 +48,7 @@
     "cal:corpus:validate": "node dist/calibration/v103/cli.cjs corpus:validate",
     "cal:corpus:v1-smoke": "node --import tsx scripts/cal/run-corpus-v1-smoke.ts",
     "cal:corpus:v1-holdout": "node --import tsx scripts/cal/run-corpus-v1-holdout.ts",
+    "cal:corpus:v1-decisions": "node --import tsx scripts/cal/run-corpus-v1-decisions.ts",
     "cal:materialize": "node dist/calibration/v103/cli.cjs cal:materialize",
     "cal:select": "node dist/calibration/v103/cli.cjs select",
     "cal:init": "node dist/calibration/v103/cli.cjs run:init",
