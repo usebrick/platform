@@ -349,6 +349,8 @@ function isPrerequisiteBundle(value: unknown): value is CalibrationAdmissionMani
     || !Array.isArray(value.packedRuntimes) || value.packedRuntimes.length !== 2
     || !value.packedRuntimes.every((entry, index) => isJsonRecord(entry) && exactKeys(entry, ['nodeMajor', 'tarballArtifactId', 'receiptArtifactId'])
       && entry.nodeMajor === (index === 0 ? 22 : 24) && isAdmissionId(entry.tarballArtifactId) && isAdmissionId(entry.receiptArtifactId))
+    || (value.packedRuntimes[0] as JsonObject).tarballArtifactId !== (value.packedRuntimes[1] as JsonObject).tarballArtifactId
+    || (value.packedRuntimes[0] as JsonObject).receiptArtifactId === (value.packedRuntimes[1] as JsonObject).receiptArtifactId
     || !artifactList(value.referencedArtifacts) || !isSha256(value.referencedArtifactSetSha256) || !isSha256(value.bundleSha256)) return false;
   try {
     return calibrationAdmissionManifestPrerequisiteArtifactSetSha256(value) === value.referencedArtifactSetSha256

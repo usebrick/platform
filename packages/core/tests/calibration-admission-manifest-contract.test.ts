@@ -94,8 +94,8 @@ function bundle(): JsonObject {
       postScanReceiptArtifactId: 'post-scan-artifact',
     },
     packedRuntimes: [
-      { nodeMajor: 22, tarballArtifactId: 'tarball-node-22', receiptArtifactId: 'runtime-node-22' },
-      { nodeMajor: 24, tarballArtifactId: 'tarball-node-24', receiptArtifactId: 'runtime-node-24' },
+      { nodeMajor: 22, tarballArtifactId: 'tarball-package', receiptArtifactId: 'runtime-node-22' },
+      { nodeMajor: 24, tarballArtifactId: 'tarball-package', receiptArtifactId: 'runtime-node-24' },
     ],
     referencedArtifacts: [artifact()],
     referencedArtifactSetSha256: '',
@@ -373,5 +373,19 @@ describe('Task 9B Core manifest contract foundation', () => {
     expect(schemaValidator('calibration-admission-manifest-generation.schema.json')(value)).toBe(false);
     expect(isCalibrationAdmissionManifestGenerationV1(value)).toBe(false);
     expect(isCalibrationAdmissionManifestPrerequisiteBundleV1(generation())).toBe(false);
+  });
+
+  it('requires Node 22 and Node 24 to share one content-addressed package tarball', () => {
+    const value = bundle();
+    const mutated = {
+      ...value,
+      packedRuntimes: [
+        ...(value.packedRuntimes as JsonObject[]).slice(0, 1),
+        { ...(value.packedRuntimes as JsonObject[])[1], tarballArtifactId: 'different-package-tarball' },
+      ],
+      bundleSha256: '',
+    } as JsonObject;
+    mutated.bundleSha256 = calibrationAdmissionManifestPrerequisiteBundleSha256(mutated);
+    expect(isCalibrationAdmissionManifestPrerequisiteBundleV1(mutated)).toBe(false);
   });
 });

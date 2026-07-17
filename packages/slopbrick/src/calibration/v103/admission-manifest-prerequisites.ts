@@ -271,9 +271,15 @@ function assertArtifactMetadata(bundle: CalibrationAdmissionManifestPrerequisite
       throw new AdmissionManifestPrerequisiteVerifierError(`source artifact ${id} metadata does not match the bundle`);
     }
   }
-  const required = new Set(requiredArtifactIds(bundle));
-  if (required.size !== requiredArtifactIds(bundle).length || [...required].some((id) => !bundleArtifacts.has(id))) {
-    throw new AdmissionManifestPrerequisiteVerifierError('required prerequisite artifact is missing');
+  if (bundle.packedRuntimes[0].tarballArtifactId !== bundle.packedRuntimes[1].tarballArtifactId) {
+    throw new AdmissionManifestPrerequisiteVerifierError('Node 22 and Node 24 receipts must use the same package tarball artifact');
+  }
+  const requiredIds = requiredArtifactIds(bundle);
+  const required = new Set(requiredIds);
+  const sharedTarballId = bundle.packedRuntimes[0].tarballArtifactId;
+  const unexpectedDuplicate = requiredIds.some((id, index) => requiredIds.indexOf(id) !== index && id !== sharedTarballId);
+  if (unexpectedDuplicate || [...required].some((id) => !bundleArtifacts.has(id))) {
+    throw new AdmissionManifestPrerequisiteVerifierError('required prerequisite artifact is missing or duplicated');
   }
   if (bundle.releaseMaterializationTasks1To6.approvedCommitSha !== bundle.implementationCommitSha
     || bundle.scoreWireClosure.approvedCommitSha !== bundle.implementationCommitSha

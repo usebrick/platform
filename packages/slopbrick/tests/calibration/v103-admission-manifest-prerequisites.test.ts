@@ -104,7 +104,6 @@ function receiptData(): {
     packageMemberRelativePath: 'package/dist/calibration/v103/admission.cjs',
   });
   const tarball22 = artifact('tarball-22', 'package_tarball', tarGzip('package/dist/calibration/v103/admission.cjs', builderBytes));
-  const tarball24 = artifact('tarball-24', 'package_tarball', tarGzip('package/dist/calibration/v103/admission.cjs', bytes('export const builder = true; node24')));
   const approvalBody = {
     version: 'v10.3-release-prerequisite-approval-v1' as const,
     receiptId: 'approval-1',
@@ -156,16 +155,18 @@ function receiptData(): {
     };
     return { ...body, receiptSha256: calibrationPackedRuntimeReceiptSha256(body) };
   };
+  // Both runtime majors must consume the exact same content-addressed package
+  // tarball. Only the Node runtime changes between the two receipt records.
   const runtime22 = artifact('runtime-22', 'packed_runtime_receipt', canonical(runtime(22, 'runtime-22', tarball22)));
-  const runtime24 = artifact('runtime-24', 'packed_runtime_receipt', canonical(runtime(24, 'runtime-24', tarball24)));
+  const runtime24 = artifact('runtime-24', 'packed_runtime_receipt', canonical(runtime(24, 'runtime-24', tarball22)));
   const approvalArtifact = artifact('approval', 'release_plan_approval', canonical(approval));
   const scoreArtifact = artifact('score', 'score_wire_closure_receipt', canonical(score));
   const initArtifact = artifact('run-init', 'run_init_receipt', canonical(run('run_init', 'run-init')));
   const scanArtifact = artifact('post-scan', 'post_scan_receipt', canonical(run('post_scan', 'post-scan')));
   return {
-    artifacts: [builder, tarball22, tarball24, runtime22, runtime24, approvalArtifact, scoreArtifact, initArtifact, scanArtifact],
+    artifacts: [builder, tarball22, runtime22, runtime24, approvalArtifact, scoreArtifact, initArtifact, scanArtifact],
     builder,
-    tarballs: [tarball22, tarball24],
+    tarballs: [tarball22],
     behaviorSha256: builder.sha256,
   };
 }
@@ -187,7 +188,7 @@ async function createFixture(): Promise<{ readonly root: string; readonly refere
     runLifecycleVerification: { approvedCommitSha: commitSha, runInitReceiptArtifactId: 'run-init', postScanReceiptArtifactId: 'post-scan' },
     packedRuntimes: [
       { nodeMajor: 22 as const, tarballArtifactId: 'tarball-22', receiptArtifactId: 'runtime-22' },
-      { nodeMajor: 24 as const, tarballArtifactId: 'tarball-24', receiptArtifactId: 'runtime-24' },
+      { nodeMajor: 24 as const, tarballArtifactId: 'tarball-22', receiptArtifactId: 'runtime-24' },
     ],
     referencedArtifacts: artifacts.map(({ data: _data, ...value }) => value),
     referencedArtifactSetSha256: artifactSetSha256,
