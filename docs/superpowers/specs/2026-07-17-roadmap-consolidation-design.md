@@ -8,8 +8,8 @@
 
 Replace the scattered, append-only planning surface with one product roadmap,
 one machine-readable execution index, bounded active plans, an append-only
-planning changelog, and a recoverable archive. An external dependency may wait,
-but it must never make the whole project wait.
+planning changelog, and a recoverable archive. A waiting dependency may delay
+one milestone, but it must never make the whole project wait.
 
 ## Problem
 
@@ -28,6 +28,22 @@ and the plan-audit hashes no longer describe the current bytes.
 
 This makes one externally waiting calibration lane look like a project-wide
 blocker and makes it difficult to identify the next executable task.
+
+### Corpus-authority correction
+
+The v10.3 source bytes are local. The missing `authority/`, static-ledger, and
+witness trees are generated metadata, not evidence that must arrive from an
+external party. Treating their absence as an external dependency was a planning
+error.
+
+The v10.3 admission protocol is retained as historical engineering evidence,
+but it is not the only legitimate definition of a calibration corpus. The
+replacement v1 corpus uses a smaller source-attested contract: publisher
+metadata, immutable input bytes, explicit label mapping, per-unit hashes,
+license and source records, family-aware splits, leakage checks, and a
+reproducible build receipt. It does not require invented reviewer identities,
+an externally published local bundle, or an authority tree whose only purpose
+is to approve artifacts produced by the same local workflow.
 
 ## Chosen approach
 
@@ -145,13 +161,26 @@ The scheduler rule is mandatory:
 
 ## Independent execution lanes
 
-### Calibration and release integrity
+### Corpus v1 reconstruction and calibration
 
-Waiting externally only at the authority-dependent milestones. The sequence is
-authority intake, ready census, 100 AI plus 100 human smoke, 5,000 plus 5,000
-canary, the full eligible cohort, canonical receipts, and explicit release
-authorization. No additional corpus acquisition occurs without an
-authority-backed measured deficit.
+Active locally. Preserve the v10.3 tree until the replacement passes, build v1
+from source-attested material already present under
+`/Users/cheng/corpus-expansion`, verify every projected byte and label, group
+related problems into one split, quarantine exact/normalized/near cross-label
+overlap, and emit a balanced manifest plus reproducible receipt. AI is positive
+and human is negative.
+
+The initial seed is Mendeley `HumanVSAI_CodeDataset` version 1: 10,000 locally
+materialized records with dataset metadata reporting 5,000 AI and 5,000 human
+examples, AI sources ChatGPT-3.5/ChatGPT-4, human source CodeNet, and CC BY 4.0
+dataset metadata. Its label authority is explicitly `source_attested`, not a
+claim of independently witnessed authorship. The v1 build decides the final
+eligible count after leakage, family, quality, and privacy checks.
+
+After v1 verification, run a deterministic 100 plus 100 smoke, a balanced main
+calibration/holdout split, and the SlopBrick calibration report. Only then may
+the old v10.3 corpus be moved to a dated archive. Release and publication still
+require their ordinary explicit authorization; corpus construction does not.
 
 ### SlopBrick product quality
 
@@ -202,7 +231,7 @@ docs/
 │   ├── CHANGELOG.md
 │   └── active/
 │       ├── PLAT-001-planning-control.md
-│       ├── CAL-103-authority-calibration.md
+│       ├── CORPUS-001-v1-rebuild.md
 │       ├── SB-045-release-candidate.md
 │       ├── SB-UX-001-scan-report-trust.md
 │       ├── MEM-001-memorybrick-m0.md
@@ -321,9 +350,9 @@ belong in `STATUS.md` and immutable evidence links.
    `git diff --check`.
 6. Record the migration in the planning changelog and commit the documentation
    control plane.
-7. Mark `PLAT-001` done and immediately begin the highest-priority `ready`
-   plan; the initial recommendation is `SB-UX-001`, with `MEM-001` and
-   `LOCK-001` remaining parallel-safe.
+7. Mark `PLAT-001` done and immediately begin `CORPUS-001`; build and verify the
+   replacement v1 corpus before archiving v10.3. `SB-UX-001`, `MEM-001`, and
+   `LOCK-001` remain parallel-safe if a corpus operation is long-running.
 
 ## Success criteria
 
@@ -333,8 +362,8 @@ belong in `STATUS.md` and immutable evidence links.
 - Frozen specifications and evidence remain recoverable and hash-verifiable.
 - Legacy high-inbound paths resolve to the current authority or an archive
   record.
-- Current documentation does not present corpus authority as a project-wide
-  blocker.
+- Current documentation describes corpus reconstruction as local executable
+  work, not an external blocker.
 - The validator reports at least one `ready` or `in_progress` plan.
 - README and architecture describe the same product hierarchy as the roadmap.
 - The planning changelog records the migration and every subsequent status
