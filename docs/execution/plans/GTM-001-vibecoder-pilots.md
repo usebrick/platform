@@ -14,8 +14,10 @@ activation.
 
 ## Current truth
 
-Vibecoders are the intended entry point, but the repository has no centralized
-five-pilot outcome record proving the scan-to-rescan loop or CI interest.
+Vibecoders are the intended entry point. The consent-safe protocol and blank
+outcome template now exist at `docs/research/vibecoder-pilots.md`; no pilot is
+scheduled or completed, so there is no behavioral evidence or CI-interest
+signal yet.
 
 ## Scope
 
@@ -52,7 +54,8 @@ five-pilot outcome record proving the scan-to-rescan loop or CI interest.
 
 ## Execution steps
 
-1. Create the pilot protocol, consent boundary, and outcome template -> verify:
+1. Create the pilot protocol, consent boundary, and outcome template ->
+   complete; verify:
    `test -f docs/research/vibecoder-pilots.md`.
 2. Recruit 10–15 candidates to complete five sessions -> verify: five scheduled
    rows exist without private repository data.
@@ -78,5 +81,5 @@ changed by this plan.
 
 ## Next action
 
-Recruit the first five pilots and establish the consent-safe outcome template
-before the first scan.
+Recruit the first five pilots using the consent-safe outcome template before
+the first scan. Do not record participant data until consent is explicit.

@@ -3,6 +3,30 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 12 — 2026-07-17
+
+### Changed
+
+- Moved `SB-045` from `in_progress` to `waiting_external` after a read-only
+  live-site check confirmed the remaining claim drift. The exact resume input
+  is now an owner decision to deploy a named reviewed SHA or to keep the live
+  v0.43 site unchanged while v0.45 remains local-only.
+- Created the consent-safe `GTM-001` pilot protocol and blank outcome table at
+  `docs/research/vibecoder-pilots.md`. It records zero sessions, forbids raw
+  source and identity collection by default, and keeps participant behavior
+  separate from calibration evidence.
+- Kept GTM-001 `ready` until the first pilot is actually scheduled; no
+  participant recruitment, external message, publish, deployment, or remote
+  mutation occurred.
+
+### Evidence
+
+- `docs/execution/plans/SB-045-trust-release.md`
+- `docs/execution/plans/GTM-001-vibecoder-pilots.md`
+- `docs/research/vibecoder-pilots.md`
+- No tag, push, release, publish, deployment, admission, or remote mutation
+  occurred.
+
 ## Revision 11 — 2026-07-17
 
 ### Changed

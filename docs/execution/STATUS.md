@@ -1,16 +1,17 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 11
+**Index revision:** 12
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, and bounded
-source-attested Corpus v1 seed are complete. The project is advancing through
-the v0.45 trust-release implementation plan. The vibecoder pilot lane is ready
-in parallel. Stale-path cleanup is isolated behind exact owner approval and
-does not block product work.
+source-attested Corpus v1 seed are complete. The local v0.45 trust-release
+qualification is complete and waits only for an explicit owner decision on the
+live/public claim boundary. The consent-safe vibecoder pilot protocol is ready
+but no sessions are scheduled. Stale-path cleanup is isolated behind exact
+owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -91,11 +92,12 @@ does not block product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 1 | 2 | `SB-045` |
+| Implementation | 0 | 2 | None |
 | Company | 0 | 1 | None |
 
-Keep `SB-045` within the two-slot implementation limit. Start `GTM-001` in the
-independent company slot when the first pilot is actually scheduled.
+`SB-045` is waiting external and does not consume an active implementation
+slot. Start `GTM-001` in the independent company slot when the first pilot is
+actually scheduled.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -104,9 +106,9 @@ WIP while waiting.
 | Priority | Plan | Status | Unmet `requires` | Next action |
 | ---: | --- | --- | --- | --- |
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
-| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Reconcile remaining candidate/public claims and owner authorization; keep publication unauthorized. |
+| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `waiting_external` | — | Obtain the owner's explicit live/public claim disposition and exact reviewed SHA if deployment is authorized. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
-| 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
+| 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit the first five vibecoder pilots using the consent-safe template before the first scan. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | — | Freeze leakage-safe splits and the admission matrix. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
@@ -130,10 +132,17 @@ WIP while waiting.
 
 ## Waiting external
 
+`SB-045` waits for the repository owner to choose either an authorized live
+website deployment at a named reviewed commit/SHA or an explicit decision to
+keep the live v0.43 site unchanged while v0.45 remains local-only. A read-only
+live-site check can verify that decision after authorization; it cannot replace
+it. GTM-001 protocol preparation is parallel-safe, but participant recruitment
+still requires real scheduling and consent.
+
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
-listed path has been moved or deleted. This is a cleanup authorization gate,
-not a project blocker: `SB-045` and `GTM-001` can advance.
+listed path has been moved or deleted. These are authorization gates, not
+project blockers for local work.
 
 Missing, invalid, or overbuilt corpus machinery is handled inside Corpus v1.
 If a source fails the rights or evidence contract, quarantine that source and
@@ -164,8 +173,9 @@ The typed gate-decision, finding-bound fix, durable new-debt, claim-alignment,
 and local privacy/history contracts are implemented and recorded in
 [`SB-045-gate-decision.md`](evidence/SB-045-gate-decision.md). The complete
 qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-release-qualification.md).
-The next SB-045 checkpoint is reconciliation of any remaining live/public
-claim drift and owner authorization; the local AI gate is already qualified.
-Do not lower the threshold, activate unmeasured rules, publish, tag, deploy,
-or push as a way to close this plan. Corpus v1 remains non-admitting and
-`GTM-001` remains the independent company-track start.
+The next SB-045 checkpoint is the owner's explicit live/public claim
+disposition; the local AI gate is already qualified. The next GTM-001
+checkpoint is the first real scheduled pilot, using the new consent-safe
+template. Do not lower the threshold, activate unmeasured rules, publish,
+tag, deploy, or push as a way to close either boundary. Corpus v1 remains
+non-admitting.

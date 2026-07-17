@@ -1,6 +1,6 @@
 # SB-045 — Qualify the SlopBrick v0.45 trust release
 
-- **Status:** `in_progress`
+- **Status:** `waiting_external`
 - **Priority:** 1
 - **Track / lane:** implementation / slopbrick
 - **Owner:** SlopBrick maintainers
@@ -27,7 +27,8 @@ failures and now passes at `0.0 <= 15`: the unadmitted
 current v10.3 admitted, leakage-checked evidence. This is a local candidate
 qualification pass, not publication authorization. Claim/artifact
 reconciliation remains locally aligned for 0.45.0 while the public 0.43
-artifact and live-site drift remain separate.
+artifact and live-site drift remain separate. The local work is complete; the
+plan now waits on an owner decision for the live/public claim boundary.
 
 ## Scope
 
@@ -97,6 +98,37 @@ gates and package-local self-scan exactly as documented in `AGENTS.md`.
 
 `docs/execution/evidence/SB-045-release-qualification.md`
 
+## Waiting external
+
+- **Exact input:** the repository owner must choose one of these explicit
+  dispositions and record it in the execution evidence:
+
+1. authorize deployment of the reviewed local website candidate at a named
+   commit/SHA after owner review; or
+2. keep the live v0.43 site unchanged and accept that the unreleased v0.45
+   candidate remains local-only until a later release decision.
+
+- **Owner:** repository owner / release maintainer.
+
+- **Last verified:** 2026-07-17, read-only `https://usebrick.dev/` check showed
+  the published v0.43 artifact and legacy absolute “no telemetry” wording.
+
+- **Evidence:** [`SB-045-release-qualification.md`](../evidence/SB-045-release-qualification.md)
+  records the local v0.45 qualification pass; the live-site check is the
+  current external-state observation.
+
+- **Resume condition:** a written decision with the selected disposition and,
+  for deployment, the exact reviewed commit/SHA. A read-only live-site check
+  may then confirm the result; it cannot substitute for authorization.
+
+- **Recheck:** after an owner decision, re-read the live site and compare its
+  version, rule count, category count, privacy wording, and deployment SHA
+  with the authorized disposition.
+
+- **Parallel safe:** GTM-001 protocol preparation and other local,
+  non-publishing work may continue. No publish, tag, push, deployment, or
+  remote mutation is implied by this wait.
+
 ## Rollback
 
 Revert each contract slice independently. Preserve any new failing fixture as
@@ -104,6 +136,6 @@ evidence if it exposed pre-existing drift.
 
 ## Next action
 
-Reconcile any remaining public/live claim drift and owner authorization. The
-local qualification gate passes; keep publication, tagging, deployment, and
-push unauthorized.
+Obtain the owner disposition above. Until then, preserve the local
+qualification packet and keep publication, tagging, deployment, and push
+unauthorized.

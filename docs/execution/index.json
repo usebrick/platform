@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 11,
+  "revision": 12,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -41,19 +41,21 @@
       "track": "implementation",
       "lane": "slopbrick",
       "horizon": "now",
-      "status": "in_progress",
+      "status": "waiting_external",
       "priority": 1,
       "path": "docs/execution/plans/SB-045-trust-release.md",
       "dependencies": {
         "requires": [],
-        "externalGates": [],
+        "externalGates": [
+          "owner-live-public-claim-disposition"
+        ],
         "benefitsFrom": [
           "CORPUS-001"
         ],
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Reconcile remaining candidate/public claims and owner authorization; do not publish.",
+        "text": "Obtain the owner's explicit live/public claim disposition and, if deploying, the exact reviewed commit/SHA; do not publish implicitly.",
         "verify": "test -f docs/execution/evidence/SB-045-release-qualification.md",
         "evidencePath": "docs/execution/evidence/SB-045-release-qualification.md"
       },
@@ -106,7 +108,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Recruit the first five vibecoder pilots and record a consent-safe baseline template before the first scan.",
+        "text": "Recruit the first five vibecoder pilots using the consent-safe template before the first scan.",
         "verify": "test -f docs/research/vibecoder-pilots.md",
         "evidencePath": "docs/research/vibecoder-pilots.md"
       },
