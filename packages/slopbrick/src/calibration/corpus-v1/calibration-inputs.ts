@@ -1,0 +1,10 @@
+export const CAL001_FROZEN_INPUT_HASHES = {
+  protocolSha256: 'd78ceb22bd2d3a2bc91676d93facd7003af6c1b8351fdf773139a138bd1f1528',
+  candidateManifestSha256: 'c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac',
+  planSha256: '9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c',
+  sourceBindingReceiptSha256: '47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac',
+  eligibleManifestSha256: '286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8',
+  eligibleReceiptSha256: '9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba',
+  smokeManifestSha256: 'bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de',
+  smokeReceiptSha256: 'ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830',
+} as const;

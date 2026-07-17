@@ -25,10 +25,9 @@ import {
   type CorpusV1EligibleProjectionResult,
 } from '../../src/calibration/corpus-v1/eligible';
 import {
-  buildCAL001SmokeReceipt,
-  CAL001_PROTOCOL_VERSION,
-  type CAL001SmokeInput,
-} from '../../src/calibration/corpus-v1/calibration-smoke';
+  buildCAL001HoldoutReceipt,
+  type CAL001HoldoutInput,
+} from '../../src/calibration/corpus-v1/calibration-holdout';
 import { CAL001_FROZEN_INPUT_HASHES } from '../../src/calibration/corpus-v1/calibration-inputs';
 import { buildCorpusV1Observation } from '../../src/calibration/corpus-v1/scan-observation';
 import {
@@ -39,6 +38,7 @@ import {
 import type { V103MetricObservation } from '../../src/calibration/v103/metrics';
 
 const SOURCE_PROJECTION_MANIFEST = 'sources/benchmarks/humanvsai-code-dataset/projection-v1/projection-manifest.jsonl';
+const COMMIT_SHA = /^[a-f0-9]{40}$/u;
 
 interface Arguments {
   readonly corpusRoot: string;
@@ -48,8 +48,6 @@ interface Arguments {
   readonly implementationCommitSha: string;
   readonly runId: string;
 }
-
-const COMMIT_SHA = /^[a-f0-9]{40}$/u;
 
 function sha256(value: Uint8Array | string): string {
   return createHash('sha256').update(value).digest('hex');
@@ -75,7 +73,7 @@ function parseArgs(argv: readonly string[]): Arguments {
   }
   if (!COMMIT_SHA.test(implementationCommitSha)) throw new Error('implementation commit SHA must be 40 lowercase hexadecimal characters');
   const protocolPath = values['--protocol'] ?? 'docs/execution/evidence/CAL-001-protocol.md';
-  const runId = values['--run-id'] ?? 'cal-001-v1-smoke';
+  const runId = values['--run-id'] ?? 'cal-001-v1-holdout';
   if (!/^[a-z0-9][a-z0-9._-]{0,127}$/u.test(runId)) throw new Error('run ID is invalid');
   if (resolve(outPath) === resolve(metricsPath)) throw new Error('--out and --metrics-out must be different files');
   return { corpusRoot, protocolPath, outPath, metricsPath, implementationCommitSha, runId };
@@ -126,6 +124,22 @@ async function run(args: Arguments): Promise<void> {
   } as const;
   assertFrozenInputHashes(actualInputHashes);
 
+  const rows = artifacts.eligible.manifest.rows.map((row) => {
+    if (row.status !== 'eligible' || row.split === 'quarantine') throw new Error('eligible projection contains a non-eligible row');
+    return {
+      unitId: row.unitId,
+      sourceRecordId: row.sourceRecordId,
+      sourceId: row.sourceId,
+      sourceVersion: row.sourceVersion,
+      label: row.label,
+      contentSha256: row.contentSha256,
+      normalizedSha256: row.normalizedSha256,
+      familyKey: row.familyKey,
+      language: row.language,
+      split: row.split,
+      byteCount: row.byteCount,
+    };
+  });
   const projectionBytes = await readFile(resolve(corpusRoot, SOURCE_PROJECTION_MANIFEST));
   const projectionIndex = parseProjectionIndex(projectionBytes);
   const projectionRoot = await corpusV1ProjectionRoot(corpusRoot);
@@ -137,11 +151,11 @@ async function run(args: Arguments): Promise<void> {
   const previousCache = process.env.SLOP_AUDIT_CACHE;
   process.env.SLOP_AUDIT_CACHE = '0';
   try {
-    for (const row of artifacts.smoke.manifest.rows) {
+    for (const row of rows) {
       const projection = projectionIndex.get(row.sourceRecordId);
-      if (projection === undefined || projection.contentSha256 !== row.contentSha256) throw new Error('smoke row is not bound to the projection index');
+      if (projection === undefined || projection.contentSha256 !== row.contentSha256) throw new Error('eligible row is not bound to the projection index');
       const unit = await readCorpusV1Unit(projectionRoot, projection);
-      if (unit.bytes.byteLength !== row.byteCount) throw new Error('smoke row byte count changed');
+      if (unit.bytes.byteLength !== row.byteCount) throw new Error(`eligible row byte count changed: ${row.unitId}`);
       const result = await scanFile(unit.path, config, registry, corpusRoot);
       observations.push(buildCorpusV1Observation(row, args.runId, result));
     }
@@ -150,32 +164,31 @@ async function run(args: Arguments): Promise<void> {
     else process.env.SLOP_AUDIT_CACHE = previousCache;
   }
 
-  const smokeInput: CAL001SmokeInput = {
-    protocolVersion: CAL001_PROTOCOL_VERSION,
+  const holdoutInput: CAL001HoldoutInput = {
+    protocolVersion: 'CAL-001-v1',
     runId: args.runId,
     implementationCommitSha: args.implementationCommitSha,
     packageVersion: packageJson.version,
     configHash,
     inputHashes: actualInputHashes,
     workerCount: 1,
+    rows,
     observations,
     ruleCatalog: registry.all().map((rule) => ({ ruleId: rule.id, aiSpecific: rule.aiSpecific })),
-    eligibleFileIdsByPolarity: {
-      verified_ai: artifacts.smoke.manifest.rows.filter((row) => row.label === 'positive').map((row) => row.unitId),
-      verified_human: artifacts.smoke.manifest.rows.filter((row) => row.label === 'negative').map((row) => row.unitId),
-    },
   };
-  const result = buildCAL001SmokeReceipt(smokeInput);
+  const result = buildCAL001HoldoutReceipt(holdoutInput);
   await writeNew(args.metricsPath, `${result.metricsJson}\n`);
   await writeNew(args.outPath, `${result.receiptJson}\n`);
   process.stdout.write(`${JSON.stringify({
     ok: true,
-    stage: 'cal-001-v1-smoke',
+    stage: 'cal-001-v1-holdout',
     receiptSha256: result.receiptSha256,
-    metricsSha256: result.receipt.metrics.metricsSha256,
-    selected: result.receipt.selected,
+    metricsSha256: result.metricsSha256,
+    population: result.receipt.population,
     coverage: result.receipt.coverage,
+    leakage: result.receipt.leakage,
     metrics: result.receipt.metrics,
+    evaluation: result.receipt.evaluation,
     admitted: result.receipt.admitted,
   })}\n`);
 }
@@ -183,7 +196,7 @@ async function run(args: Arguments): Promise<void> {
 try {
   await run(parseArgs(process.argv.slice(2)));
 } catch (error) {
-  const message = error instanceof Error ? error.message : 'CAL-001 smoke failed';
-  process.stderr.write(`CAL-001 smoke: ${message}\n`);
+  const message = error instanceof Error ? error.message : 'CAL-001 holdout failed';
+  process.stderr.write(`CAL-001 holdout: ${message}\n`);
   process.exitCode = 2;
 }
