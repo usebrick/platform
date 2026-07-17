@@ -3,6 +3,29 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 15 — 2026-07-17
+
+### Changed
+
+- Executed the frozen CAL-001 Corpus v1 holdout at
+  `45d2dd038107d3d1d7731192126bf0d48dd6f84b` with one worker across all
+  10,000 eligible source-bound rows: 7,970 train, 991 validation, and 1,039
+  test.
+- Recorded 10,000/10,000 successful scans with zero parse, timeout, scanner,
+  exact cross-label, normalized cross-label, or family-split leakage failures.
+- Kept the result diagnostic-only with binary scanner output measured as-is;
+  no threshold was fitted or selected, no rule was activated, and usefulness
+  and admission remain unevaluated.
+- Kept CAL-001 `in_progress` for the per-rule confound review and bounded
+  non-admitting decision matrix.
+
+### Evidence
+
+- `docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`
+- `docs/execution/plans/CAL-001-heldout-calibration.md`
+- `docs/execution/index.json`
+- No publish, deployment, tag, push, admission, or remote mutation occurred.
+
 ## Revision 14 — 2026-07-17
 
 ### Changed

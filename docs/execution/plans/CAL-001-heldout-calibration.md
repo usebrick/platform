@@ -20,8 +20,12 @@ train/validation/test tuning boundary, the separate origin/usefulness metrics,
 and the admission matrix at
 `docs/execution/evidence/CAL-001-protocol.md`. The deterministic 100/100
 one-worker scanner smoke completed with a path-free receipt at
-`docs/execution/evidence/CAL-001-calibration-smoke-receipt.md`; the full
-holdout evaluation has not run and v10.3 still has zero admitted units.
+`docs/execution/evidence/CAL-001-calibration-smoke-receipt.md`. The full
+one-worker holdout completed with a path-free receipt at
+`docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`; all 10,000
+eligible rows succeeded, the frozen split/leakage checks were clear, and v10.3
+still has zero admitted units. Rule decisions and usefulness review remain
+open.
 
 ## Scope
 
@@ -65,8 +69,10 @@ holdout evaluation has not run and v10.3 still has zero admitted units.
 2. Run a small end-to-end calibration smoke -> complete; verify: receipt
    `c09657e902aef3dde7cb9d1159934b8c7664db91da40bc10ac6fd138a2c4cc81`
    reproduces with one worker and identical metrics bytes.
-3. Execute the frozen holdout evaluation -> verify: no family or normalized
-   cross-label leakage is reported.
+3. Execute the frozen holdout evaluation -> complete; verify: receipt
+   `db9551ec4540282bf35fbc896d0e33dc31434019de52da0f2972ade2d5dc4cfe`
+   reports 10,000/10,000 successful rows and zero family or normalized
+   cross-label leakage.
 4. Review confounds and assign rule decisions -> verify: every candidate row
    has a decision, evidence link, and owner.
 
@@ -77,7 +83,7 @@ configuration before widening concurrency.
 
 ## Evidence destination
 
-`docs/execution/evidence/CAL-001-calibration-report.md`
+`docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`
 
 ## Rollback
 
@@ -86,5 +92,6 @@ failed-signal evidence.
 
 ## Next action
 
-Execute the frozen train/validation/test holdout evaluation without tuning on
-test or activating any rule.
+Review the recorded language/file-size confounds and assign a bounded,
+non-admitting decision row to every candidate rule without activating any
+unproven signal.
