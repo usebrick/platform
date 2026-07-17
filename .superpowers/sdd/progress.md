@@ -1384,3 +1384,20 @@ plan SHA-256 is
 Rows remain `publisher_attested` / `internal_analysis` and are not admitted.
 Raw CSV row binding, the 100/100 smoke, admission, calibration, and remote
 mutations remain open.
+
+### CORPUS-001 raw publisher row binding — 2026-07-17
+
+Task 4: complete (implementation commit `10f5b79ba`, execution-doc commit
+`2a3422bce`). Strict CSV parsing independently reconciles all 10,000 raw
+publisher rows to projection ordinal, record ID, problem, polarity, language,
+source claim, byte count, and both content hashes. Row-binding SHA-256 is
+`86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c`;
+receipt SHA-256 is
+`47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+The one-worker pinned-source suite passes 17/17; typecheck, build, execution-doc
+tests, and plan validation pass. Two available reviewer threads stalled without
+artifacts, so `.superpowers/sdd/CORPUS-001-task-4-review.md` records the exact
+controller fallback review and the closed byte/materialized-hash test gap.
+Rows remain `publisher_attested` / `internal_analysis` and non-admitted. The
+deterministic 100/100 smoke, admission, calibration, and remote mutations
+remain open.
