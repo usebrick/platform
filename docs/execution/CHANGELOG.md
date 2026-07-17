@@ -3,6 +3,57 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 9 — 2026-07-17
+
+### Changed
+
+- Completed the bounded post-smoke eligible local projection and its
+  independent cross-label leak audit.
+- The pinned source retained 5,000 positive and 5,000 negative eligible rows,
+  with 7,970 train, 991 validation, and 1,039 test rows; quarantine and
+  unresolved exact/normalized cross-label counts were zero.
+- The eligible manifest SHA-256 is
+  `286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8`; the
+  projection receipt SHA-256 is
+  `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`.
+- The receipt records one worker, 10,000 candidate rows read, 10,000 eligible
+  rows projected, 6,195,562 accounted bytes, and an 11,406-byte maximum unit.
+  Corpus v1 remains source-attested, internal-analysis, and non-admitting.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/eligible.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-eligible.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No corpus source byte, admission record, remote repository, release, publish,
+  deployment, or archive state changed.
+
+## Revision 8 — 2026-07-17
+
+### Changed
+
+- Added the non-admitting Corpus v1 smoke builder and red-first contract test.
+- The builder selects exactly 100 unique exact-content eligible units per
+  publisher-declared polarity using the versioned hash-ranked policy
+  `corpus-v1-smoke-hash-rank-v1`; same-label exact duplicates use the
+  lexicographically smallest eligible source record as the counting owner.
+- The pinned source produced a deterministic 200-row smoke with 159 train, 17
+  validation, and 24 test rows. The manifest SHA-256 is
+  `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de`; the
+  receipt SHA-256 is
+  `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`.
+- The receipt binds the source-binding receipt, candidate-manifest hash, and
+  leakage-plan hash, and explicitly remains `publisher_attested`,
+  `internal_analysis`, and `admitted: false`.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/smoke.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-smoke.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No corpus source byte, admission record, remote repository, release, publish,
+  deployment, or archive state changed.
+
 ## Revision 7 — 2026-07-17
 
 ### Changed

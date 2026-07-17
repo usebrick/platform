@@ -1,4 +1,4 @@
-# CORPUS-001 source-inventory checkpoint
+# CORPUS-001 source-attested seed receipt
 
 **Recorded:** 2026-07-17
 
@@ -165,15 +165,105 @@ frozen in the opt-in real-source test. The final one-worker focused suite
 passed 17/17, including before/after size and modification-time checks for the
 CSV and projection manifest. SlopBrick typecheck passed.
 
+## Deterministic 100/100 smoke checkpoint
+
+The smoke builder consumes only the verified source-binding result, candidate
+manifest, and leakage plan. It does not read, copy, import, execute, or admit
+candidate code. It selects `eligible` planned rows only, collapses same-label
+exact-content duplicates to the lexicographically smallest eligible
+`sourceRecordId`, then ranks the remaining units by the versioned
+`corpus-v1-smoke-hash-rank-v1` SHA-256 key. The output carries the source,
+source-binding, candidate-manifest, and plan hashes in its canonical manifest
+header and receipt; its rights disposition remains `internal_analysis`.
+
+The pinned source produced:
+
+| Measure | Result |
+| --- | ---: |
+| Eligible records / unique exact-content units | 10,000 / 10,000 |
+| Selected positive / negative / total | 100 / 100 / 200 |
+| Selected train / validation / test | 159 / 17 / 24 |
+| Candidate manifest SHA-256 | `c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac` |
+| Leakage plan SHA-256 | `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c` |
+| Source-binding receipt SHA-256 | `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac` |
+| Smoke manifest SHA-256 | `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` |
+| Smoke receipt SHA-256 | `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830` |
+
+Two builds from the same verified in-memory artifacts were byte-identical.
+The deterministic test also reverses candidate-row order and produces the
+same manifest and receipt. A 99-unique-positive fixture fails closed rather
+than treating a duplicate record as a second smoke unit. The real-source test
+compares CSV and projection-manifest size/mtime before and after the run.
+
+Verification:
+
+```text
+corepack pnpm --filter slopbrick exec vitest run \
+  tests/calibration/corpus-v1-smoke.test.ts \
+  --maxWorkers=1 --minWorkers=1
+Result: 1 file passed; 3 tests passed; 1 real-source test skipped.
+
+SLOPBRICK_CORPUS_V1_ROOT=/Users/cheng/corpus-expansion/v10.3 \
+corepack pnpm --filter slopbrick exec vitest run \
+  tests/calibration/corpus-v1-smoke.test.ts \
+  --maxWorkers=1 --minWorkers=1
+Result: 1 file passed; 4 tests passed, including the pinned real-source run.
+
+corepack pnpm --filter slopbrick typecheck
+Result: passed.
+```
+
+This is a reproducible smoke artifact, not an admission decision, quality
+label, authorship proof, redistribution grant, threshold change, or
+calibration result. No v10.3 source byte was moved, deleted, rewritten, or
+admitted.
+
+## Eligible local projection checkpoint
+
+After the smoke gate, the eligible projection retained only plan rows with
+`status: eligible`. It independently checked the eligible rows for unresolved
+exact and normalized cross-label collisions before emitting canonical metadata
+JSONL. It is still read-only and non-admitting; no candidate bytes are copied
+or executed.
+
+The pinned source produced:
+
+| Measure | Result |
+| --- | ---: |
+| Eligible positive / negative / total | 5,000 / 5,000 / 10,000 |
+| Quarantined positive / negative / total | 0 / 0 / 0 |
+| Eligible train / validation / test | 7,970 / 991 / 1,039 |
+| Unresolved exact / normalized cross-label collisions | 0 / 0 |
+| Eligible manifest SHA-256 | `286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8` |
+| Eligible projection receipt SHA-256 | `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba` |
+
+The deterministic resource receipt records one worker, 10,000 candidate rows
+read, 10,000 eligible rows projected, 6,195,562 candidate and eligible bytes
+accounted, and an 11,406-byte maximum unit. An external `/usr/bin/time -l`
+diagnostic for the real-source focused run observed approximately 4.51 seconds
+wall, 3.24 seconds user, and 1.56 seconds system time; the sandbox denied the
+kernel query needed for a max-resident-set measurement, so that unavailable
+host diagnostic is not represented as a canonical claim.
+
+Verification:
+
+```text
+SLOPBRICK_CORPUS_V1_ROOT=/Users/cheng/corpus-expansion/v10.3 \
+corepack pnpm --filter slopbrick exec vitest run \
+  tests/calibration/corpus-v1-eligible.test.ts \
+  --maxWorkers=1 --minWorkers=1
+Result: 1 file passed; 2 tests passed, including the pinned real-source run.
+```
+
 ## Explicitly still open
 
 - The inventory result remains intentionally path/size-only, but the candidate
   projector independently rehashes unit bytes and the source-binding stage
   independently reconciles raw publisher rows.
-- No 100/100 smoke receipt, admission output, threshold change, or calibration
-  run exists.
-- No v10.3 source byte was moved, deleted, rewritten, or admitted.
+- The source-attested seed remains unsuitable for claims of witnessed
+  authorship, quality labels, redistribution approval, or production use.
+- `CAL-001` must freeze its rule-by-rule admission matrix and holdout protocol
+  before any fitting, threshold change, or activation decision.
 
-The next slice must emit the exact deterministic 100-positive/100-negative
-smoke manifest and receipt twice before any admission or calibration is
-attempted.
+The verified seed is handed off to `CAL-001`; admission and calibration remain
+separate later decisions.

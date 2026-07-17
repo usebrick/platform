@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 7,
+  "revision": 9,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -116,7 +116,7 @@
       "track": "implementation",
       "lane": "corpus",
       "horizon": "now",
-      "status": "in_progress",
+      "status": "done",
       "priority": 4,
       "path": "docs/execution/plans/CORPUS-001-v1-seed.md",
       "dependencies": {
@@ -128,8 +128,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the red deterministic hash-ranked 100-positive/100-negative smoke test and bind its manifest and receipt to the verified source, candidate, and plan hashes.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-smoke.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Hand off the verified source-attested seed to CAL-001 without widening its evidence or rights claims.",
+        "verify": "test -f docs/execution/evidence/CORPUS-001-seed-receipt.md",
         "evidencePath": "docs/execution/evidence/CORPUS-001-seed-receipt.md"
       },
       "evidence": [

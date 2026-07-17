@@ -1,6 +1,6 @@
 # CORPUS-001 — Build a reproducible source-attested Corpus v1 seed
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 4
 - **Track / lane:** implementation / corpus
 - **Owner:** calibration maintainers
@@ -31,8 +31,22 @@ content hashes. The row-binding SHA-256 is
 `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c` and
 its receipt SHA-256 is
 `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
-This does not admit rows, emit a smoke receipt, or run calibration. v10.3
-remains unchanged and quarantine-only.
+The deterministic smoke selector now chooses 100 unique exact-content units
+per publisher-declared polarity from the eligible leakage plan. Its manifest
+SHA-256 is
+`bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` and its
+receipt SHA-256 is
+`ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`. The
+smoke remains a non-admitting internal-analysis artifact; it does not run
+calibration or change v10.3, which remains unchanged and quarantine-only.
+The post-smoke eligible projection then retained all 10,000 rows with zero
+quarantine rows and zero unresolved cross-label collisions. Its manifest
+SHA-256 is
+`286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8` and its
+receipt SHA-256 is
+`9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`. The
+receipt records one worker, 10,000 candidate rows read, 10,000 eligible rows
+projected, 6,195,562 accounted bytes, and an 11,406-byte maximum unit.
 
 ## Scope
 
@@ -86,10 +100,19 @@ remains unchanged and quarantine-only.
    CSV publisher label and source columns and record a row-binding receipt ->
    verify:
    `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-binding.test.ts --maxWorkers=1 --minWorkers=1`.
-5. Build the 100/100 smoke twice -> verify: compare manifest and receipt
-   SHA-256 values.
-6. Expand only to eligible local rows and record resource use -> verify: audit
+5. **Verified 2026-07-17:** build the deterministic, hash-ranked 100/100 smoke
+   twice from the source-bound candidate and leakage-plan artifacts -> verify:
+   compare manifest and receipt SHA-256 values. The pinned source produced
+   manifest `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de`
+   and receipt
+   `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`.
+6. **Verified 2026-07-17:** expand only to eligible local rows after the smoke
+   gate and record deterministic byte/worker accounting -> verify: audit
    counts against the source inventory and zero unresolved cross-label leaks.
+   The pinned source produced eligible manifest
+   `286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8` and
+   receipt
+   `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`.
 
 ## Verification
 
@@ -107,6 +130,5 @@ alter or delete the v10.3 source tree.
 
 ## Next action
 
-Write the red deterministic hash-ranked 100-positive/100-negative smoke test
-and bind its manifest and receipt to the verified source, candidate, and plan
-hashes.
+Hand off the verified source-attested seed to `CAL-001` without treating it as
+admitted authorship or a quality-labeled production corpus.

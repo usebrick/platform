@@ -1,16 +1,16 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 7
+**Index revision:** 9
 **Global status:** `advancing`
 
 ## Executive state
 
-The documentation control plane and Corpus v1 admission decision are complete.
-The project is advancing through two active implementation plans: the v0.45
-trust release and the bounded Corpus v1 seed. The vibecoder pilot lane is ready
+The documentation control plane, Corpus v1 admission decision, and bounded
+source-attested Corpus v1 seed are complete. The project is advancing through
+the v0.45 trust-release implementation plan. The vibecoder pilot lane is ready
 in parallel. Stale-path cleanup is isolated behind exact owner approval and
-does not block product or corpus work.
+does not block product work.
 
 ## Product and release truth
 
@@ -47,8 +47,20 @@ does not block product or corpus work.
   `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c`;
   receipt SHA-256 is
   `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
-  It remains an internal-analysis candidate, not an admitted, independently
-  witnessed, quality-labeled, redistribution-approved, or production corpus.
+  The deterministic non-admitting smoke now selects 100 unique exact-content
+  units per polarity. Its manifest SHA-256 is
+  `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` and its
+  receipt SHA-256 is
+  `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`.
+  The source remains an internal-analysis candidate, not an admitted,
+  independently witnessed, quality-labeled, redistribution-approved, or
+  production corpus.
+- The post-smoke eligible projection retains all 10,000 rows with zero
+  quarantine rows and zero unresolved exact/normalized cross-label collisions.
+  Its manifest SHA-256 is
+  `286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8` and its
+  receipt SHA-256 is
+  `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
 - A 2026-07-17 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
@@ -66,13 +78,13 @@ does not block product or corpus work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 2 | 2 | `SB-045`, `CORPUS-001` |
+| Implementation | 1 | 2 | `SB-045` |
 | Company | 0 | 1 | None |
 
-Keep `SB-045` and `CORPUS-001` within the two-slot implementation limit. Start
-`GTM-001` in the independent company slot when the first pilot is actually
-scheduled. `DOC-PRUNE-001` may resume only after exact path approval and does
-not consume WIP while waiting.
+Keep `SB-045` within the two-slot implementation limit. Start `GTM-001` in the
+independent company slot when the first pilot is actually scheduled.
+`DOC-PRUNE-001` may resume only after exact path approval and does not consume
+WIP while waiting.
 
 ## Plan board
 
@@ -82,8 +94,8 @@ not consume WIP while waiting.
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Red-test one gate decision for report and exit behavior. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
-| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test the deterministic hash-ranked 100-positive/100-negative smoke receipt. |
-| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | `CORPUS-001` | Freeze leakage-safe splits and the admission matrix. |
+| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
+| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | — | Freeze leakage-safe splits and the admission matrix. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
@@ -108,7 +120,7 @@ not consume WIP while waiting.
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
 listed path has been moved or deleted. This is a cleanup authorization gate,
-not a project blocker: `SB-045`, `CORPUS-001`, and `GTM-001` can advance.
+not a project blocker: `SB-045` and `GTM-001` can advance.
 
 Missing, invalid, or overbuilt corpus machinery is handled inside Corpus v1.
 If a source fails the rights or evidence contract, quarantine that source and
@@ -136,9 +148,10 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 The next product checkpoint is reached when `SB-045` proves one typed gate
-decision drives report output and process exit, and `CORPUS-001` produces the
-same exact 100/100 smoke manifest and receipt twice. The read-only inventory,
-per-unit-hashed 5,000/5,000 candidate manifest, family-safe leakage plan, and
-raw publisher row binding are verified. `GTM-001` remains the independent
-company-track start. Approved stale-path cleanup can be executed later without
-displacing either active implementation lane.
+decision drives report output and process exit. The read-only inventory,
+per-unit-hashed 5,000/5,000 candidate manifest, family-safe leakage plan, raw
+publisher row binding, exact 100/100 smoke, and eligible local projection are
+verified. `CAL-001` may now define its holdout protocol without claiming
+admission or authorship proof. `GTM-001` remains the independent company-track
+start. Approved stale-path cleanup can be executed later without displacing
+the active implementation lane.
