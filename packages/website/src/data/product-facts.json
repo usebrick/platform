@@ -131,7 +131,7 @@
   "unmeasuredRuleCount": 16,
   "workspaceStatus": "unreleased candidate",
   "candidate": {
-    "version": "0.44.0",
+    "version": "0.45.0",
     "ruleCount": 119,
     "categoryCount": 27
   },
