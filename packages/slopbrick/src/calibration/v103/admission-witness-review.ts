@@ -121,6 +121,38 @@ function validateSearchAuthority(
   return witnessSha256;
 }
 
+/**
+ * Validate the cross-object joins in a published search-result bundle without
+ * rebuilding the search. Core validates the persisted shape; this boundary
+ * additionally proves that the search intent/receipt, terminal witness and
+ * search receipt all refer to the same gate, context, snapshot, and artifact.
+ */
+export function validateAdmissionWitnessSearchResultBundle(
+  value: unknown,
+  expected: Readonly<{
+    readonly gate: 'smoke' | 'canary';
+    readonly verifiedContextSha256: string;
+    readonly eligibilitySnapshotSha256: string;
+  }>,
+): { readonly ok: boolean; readonly witnessSha256?: string; readonly errors: readonly string[] } {
+  const errors: string[] = [];
+  if (!isCalibrationAdmissionSearchResultBundleV1(value)) {
+    return { ok: false, errors: ['search result bundle is not Core-valid'] };
+  }
+  const witnessSha256 = validateSearchAuthority(
+    value,
+    expected.gate,
+    expected.verifiedContextSha256,
+    expected.eligibilitySnapshotSha256,
+    errors,
+  );
+  return {
+    ok: errors.length === 0 && witnessSha256 !== undefined,
+    ...(witnessSha256 === undefined ? {} : { witnessSha256 }),
+    errors: [...new Set(errors)],
+  };
+}
+
 function validateRegenerations(
   regenerations: readonly [WitnessRegenerationV1, WitnessRegenerationV1],
   witnessSha256: string | undefined,

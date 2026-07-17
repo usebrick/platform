@@ -7,9 +7,9 @@
  * a module-private WeakSet so a cast, clone, or deserialized JSON object can
  * never satisfy a manifest-builder boundary.
  *
- * This slice is deliberately pure.  Filesystem reopening of hash-addressed
- * witness publications belongs to the publication verifier; callers must
- * pass the already reopened, exact bundle and publication metadata here.
+ * This slice is deliberately pure. Filesystem reopening and indexed
+ * tool-authority resolution belong to the publication verifiers; callers must
+ * pass the exact reopened publications plus their private authority joins.
  */
 import {
   calibrationAdmissionCanonicalJson,
@@ -35,6 +35,10 @@ import {
   isVerifiedAdmissionWitnessPublication,
   type VerifiedAdmissionWitnessPublicationV1,
 } from './admission-witness-reopen';
+import {
+  isVerifiedAdmissionWitnessPublicationAuthority,
+  type VerifiedAdmissionWitnessPublicationAuthorityV1,
+} from './admission-witness-authority';
 
 export type AdmissionReadyCensusGateV1 = 'smoke' | 'canary';
 
@@ -46,6 +50,8 @@ export interface VerifyReadyAdmissionCensusInputV1 {
   readonly witnessReviewBundle: unknown;
   readonly searchPublication: VerifiedAdmissionWitnessPublicationV1;
   readonly witnessReviewPublication: VerifiedAdmissionWitnessPublicationV1;
+  readonly searchPublicationAuthority: VerifiedAdmissionWitnessPublicationAuthorityV1;
+  readonly witnessReviewPublicationAuthority: VerifiedAdmissionWitnessPublicationAuthorityV1;
 }
 
 declare const verifiedReadyAdmissionCensusBrand: unique symbol;
@@ -55,6 +61,8 @@ export type VerifiedReadyAdmissionCensusV1 = Readonly<{
   readonly census: CalibrationAdmissionCensusV103;
   readonly gate: AdmissionReadyCensusGateV1;
   readonly witnessReviewBundle: CalibrationAdmissionWitnessReviewBundleV1;
+  readonly searchPublicationAuthority: VerifiedAdmissionWitnessPublicationAuthorityV1;
+  readonly witnessReviewPublicationAuthority: VerifiedAdmissionWitnessPublicationAuthorityV1;
   readonly [verifiedReadyAdmissionCensusBrand]: true;
 }>;
 
@@ -213,8 +221,9 @@ export function isVerifiedReadyAdmissionCensus(value: unknown): value is Verifie
 /**
  * Rebuild and verify one ready gate.  The caller must supply both gates in
  * `buildInput.search`; the selected gate additionally needs an approved,
- * published witness-review bundle.  No persisted JSON is trusted merely for
- * being schema-valid, and no files are discovered by this function.
+ * published witness-review bundle and both private publication-authority
+ * joins. No persisted JSON is trusted merely for being schema-valid, and no
+ * files are discovered by this function.
  */
 export async function verifyReadyAdmissionCensus(
   input: VerifyReadyAdmissionCensusInputV1,
@@ -225,6 +234,16 @@ export async function verifyReadyAdmissionCensus(
   }
   if (!isVerifiedAdmissionWitnessPublication(input?.searchPublication)) errors.push('verified search publication is required');
   if (!isVerifiedAdmissionWitnessPublication(input?.witnessReviewPublication)) errors.push('verified witness review publication is required');
+  if (!isVerifiedAdmissionWitnessPublicationAuthority(input?.searchPublicationAuthority)) errors.push('verified search publication authority is required');
+  if (!isVerifiedAdmissionWitnessPublicationAuthority(input?.witnessReviewPublicationAuthority)) errors.push('verified witness review publication authority is required');
+  if (isVerifiedAdmissionWitnessPublicationAuthority(input?.searchPublicationAuthority)
+    && input.searchPublicationAuthority.publication !== input.searchPublication) {
+    errors.push('search publication authority is not bound to the reopened publication');
+  }
+  if (isVerifiedAdmissionWitnessPublicationAuthority(input?.witnessReviewPublicationAuthority)
+    && input.witnessReviewPublicationAuthority.publication !== input.witnessReviewPublication) {
+    errors.push('witness review publication authority is not bound to the reopened publication');
+  }
   if (!isObject(input.buildInput)) errors.push('ready census build inputs are required');
   if (input.buildInput?.context !== input.context) errors.push('ready census build inputs use a different admission context');
   if (input.gate !== 'smoke' && input.gate !== 'canary') errors.push('ready census gate is invalid');
@@ -285,6 +304,8 @@ export async function verifyReadyAdmissionCensus(
     census: structuredClone(rebuilt),
     gate: input.gate,
     witnessReviewBundle: structuredClone(reviewBundle),
+    searchPublicationAuthority: input.searchPublicationAuthority,
+    witnessReviewPublicationAuthority: input.witnessReviewPublicationAuthority,
   }) as VerifiedReadyAdmissionCensusV1;
   verifiedReadyAdmissionCensus.add(ready as object);
   return { ok: true, ready };

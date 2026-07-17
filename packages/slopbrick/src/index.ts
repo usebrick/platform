@@ -70,6 +70,13 @@ export {
   type SmokeJsonlInput,
 } from './calibration/v103/admission-smoke-input-materializer';
 
+// v0.45 calibration: the manifest is derived only from private, verified
+// admission brands; this export does not expose a filesystem or discovery API.
+export {
+  buildCorpusManifestFromAdmission,
+  type BuildCorpusManifestFromAdmissionInputV1,
+} from './calibration/v103/admission-manifest-builder';
+
 // --- Symbiotic-project surface (v0.10.1+) ---------------------------------
 //
 // These primitives are the **stable** public surface for sibling tools

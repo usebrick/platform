@@ -24,6 +24,10 @@ vi.mock('../../src/calibration/v103/admission-witness-reopen', () => ({
   isVerifiedAdmissionWitnessPublication: (value: unknown): boolean => typeof value === 'object' && value !== null && (value as { readonly __verified?: boolean }).__verified === true,
 }));
 
+vi.mock('../../src/calibration/v103/admission-witness-authority', () => ({
+  isVerifiedAdmissionWitnessPublicationAuthority: (value: unknown): boolean => typeof value === 'object' && value !== null && (value as { readonly __verifiedAuthority?: boolean }).__verifiedAuthority === true,
+}));
+
 import { buildAdmissionCensus } from '../../src/calibration/v103/admission-census';
 import {
   isVerifiedReadyAdmissionCensus,
@@ -117,8 +121,10 @@ function fixture() {
       publicationCompletionSha256: P,
     },
   } as never;
+  const searchPublicationAuthority = { __verifiedAuthority: true, publication: searchPublication } as never;
+  const witnessReviewPublicationAuthority = { __verifiedAuthority: true, publication: witnessReviewPublication } as never;
   vi.mocked(buildAdmissionCensus).mockReturnValue({ ok: true, census, eligibilitySnapshotSha256: H } as never);
-  return { context, census, review, buildInput, searchPublication, witnessReviewPublication };
+  return { context, census, review, buildInput, searchPublication, witnessReviewPublication, searchPublicationAuthority, witnessReviewPublicationAuthority };
 }
 
 describe('v10.3 ready census positive binding', () => {
@@ -132,6 +138,8 @@ describe('v10.3 ready census positive binding', () => {
       witnessReviewBundle: input.review,
       searchPublication: input.searchPublication,
       witnessReviewPublication: input.witnessReviewPublication,
+      searchPublicationAuthority: input.searchPublicationAuthority,
+      witnessReviewPublicationAuthority: input.witnessReviewPublicationAuthority,
     });
     expect(result.ok, JSON.stringify(result)).toBe(true);
     if (!result.ok) return;
@@ -144,8 +152,23 @@ describe('v10.3 ready census positive binding', () => {
   it('rejects a review publication that is not hash-addressed', async () => {
     const input = fixture();
     const broken = { ...input.buildInput, witnessReviewPublications: { smoke: { publicationCompletionSha256: P, publicationCompletionRelativePath: 'witnesses/smoke/review.json' } } } as never;
-    const result = await verifyReadyAdmissionCensus({ context: input.context, census: input.census, gate: 'smoke', buildInput: broken, witnessReviewBundle: input.review, searchPublication: input.searchPublication, witnessReviewPublication: input.witnessReviewPublication });
+    const result = await verifyReadyAdmissionCensus({ context: input.context, census: input.census, gate: 'smoke', buildInput: broken, witnessReviewBundle: input.review, searchPublication: input.searchPublication, witnessReviewPublication: input.witnessReviewPublication, searchPublicationAuthority: input.searchPublicationAuthority, witnessReviewPublicationAuthority: input.witnessReviewPublicationAuthority });
     expect(result.ok).toBe(false);
     expect(result.ok ? [] : result.errors.join('; ')).toContain('hash-addressed');
+  });
+
+  it('requires the indexed publication-authority joins', async () => {
+    const input = fixture();
+    const result = await verifyReadyAdmissionCensus({
+      context: input.context,
+      census: input.census,
+      gate: 'smoke',
+      buildInput: input.buildInput,
+      witnessReviewBundle: input.review,
+      searchPublication: input.searchPublication,
+      witnessReviewPublication: input.witnessReviewPublication,
+    } as never);
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.join('; ')).toContain('publication authority');
   });
 });
