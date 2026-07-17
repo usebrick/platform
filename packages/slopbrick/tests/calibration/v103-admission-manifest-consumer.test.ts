@@ -95,7 +95,6 @@ async function createFixture(): Promise<{
     artifact('runtime-node-24', 'packed_runtime_receipt', bytesFor('runtime-24')),
     artifact('score-wire-artifact', 'score_wire_closure_receipt', bytesFor('score-wire')),
     artifact('tarball-node-22', 'package_tarball', bytesFor('tarball-22')),
-    artifact('tarball-node-24', 'package_tarball', bytesFor('tarball-24')),
   ].sort((left, right) => left.artifactId.localeCompare(right.artifactId));
   const artifactSetSha256 = calibrationAdmissionSha256(artifacts.map(({ data: _data, ...value }) => value));
   const bundleBody: JsonObject = {
@@ -116,7 +115,7 @@ async function createFixture(): Promise<{
     },
     packedRuntimes: [
       { nodeMajor: 22, tarballArtifactId: 'tarball-node-22', receiptArtifactId: 'runtime-node-22' },
-      { nodeMajor: 24, tarballArtifactId: 'tarball-node-24', receiptArtifactId: 'runtime-node-24' },
+      { nodeMajor: 24, tarballArtifactId: 'tarball-node-22', receiptArtifactId: 'runtime-node-24' },
     ],
     referencedArtifacts: artifacts.map(({ data: _data, ...value }) => value),
     referencedArtifactSetSha256: artifactSetSha256,
