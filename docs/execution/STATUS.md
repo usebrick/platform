@@ -1,7 +1,7 @@
 # Usebrick execution status
 
-**Snapshot:** 2026-07-17
-**Index revision:** 17
+**Snapshot:** 2026-07-18
+**Index revision:** 18
 **Global status:** `advancing`
 
 ## Executive state
@@ -102,7 +102,7 @@ does not block local product work.
   receipt SHA-256 is
   `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
-- A 2026-07-17 read-only check of `https://usebrick.dev/` still showed the old
+- A 2026-07-18 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
   “no telemetry” claims. The local website candidate corrects those claims,
   but no live deployment has been authorized or inferred.

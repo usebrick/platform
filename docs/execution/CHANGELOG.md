@@ -3,6 +3,24 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 18 — 2026-07-18
+
+### Changed
+
+- Reran the current checkout's recursive lint, typecheck, full test, and build
+  gates; all passed with no tracked generated-file drift.
+- Rechecked the live site read-only; it remains the published v0.43.0 artifact
+  with the previously recorded rule-count and privacy-copy contradictions.
+- Refreshed the canonical snapshot and SB-045 plan so the current green run is
+  separated from the older host-sensitive qualification receipt.
+
+### Evidence
+
+- `docs/execution/STATUS.md`
+- `docs/execution/plans/SB-045-trust-release.md`
+- `docs/execution/index.json`
+- No publish, deployment, tag, push, admission, or remote mutation occurred.
+
 ## Revision 17 — 2026-07-17
 
 ### Changed

@@ -4,7 +4,7 @@
 - **Priority:** 1
 - **Track / lane:** implementation / slopbrick
 - **Owner:** SlopBrick maintainers
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -25,7 +25,10 @@ package-local self-scan completes all 263 selected files with no runtime
 failures and now passes at `0.0 <= 15`: the unadmitted
 `ai/compression-profile` signal is explicitly default-off/opt-in pending
 current v10.3 admitted, leakage-checked evidence. This is a local candidate
-qualification pass, not publication authorization. Claim/artifact
+qualification pass, not publication authorization. A current 2026-07-18 rerun
+of the four root commands (`lint`, `typecheck`, `test`, and `build`) also
+passes in this checkout; the seven host-sensitive failures belong to the older
+qualification receipt and are not present in this current run. Claim/artifact
 reconciliation remains locally aligned for 0.45.0 while the public 0.43
 artifact and live-site drift remain separate. The local work is complete; the
 plan now waits on an owner decision for the live/public claim boundary.
@@ -110,7 +113,7 @@ gates and package-local self-scan exactly as documented in `AGENTS.md`.
 
 - **Owner:** repository owner / release maintainer.
 
-- **Last verified:** 2026-07-17, read-only `https://usebrick.dev/` check showed
+- **Last verified:** 2026-07-18, read-only `https://usebrick.dev/` check showed
   the published v0.43 artifact and legacy absolute “no telemetry” wording.
 
 - **Evidence:** [`SB-045-release-qualification.md`](../evidence/SB-045-release-qualification.md)
