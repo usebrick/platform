@@ -25,7 +25,12 @@ export const CORPUS_V1_NORMALIZER_ID = 'corpus-v1-lexical-tokens-v1' as const;
 
 export type CorpusV1Label = 'positive' | 'negative';
 export type CorpusV1CandidateStatus = 'candidate' | 'quarantined';
-export type CorpusV1QuarantineReason = 'invalid_utf8' | 'source_content_hash_mismatch';
+export type CorpusV1QuarantineReason =
+  | 'cross_label_exact_collision'
+  | 'cross_label_normalized_collision'
+  | 'family_member_quarantined'
+  | 'invalid_utf8'
+  | 'source_content_hash_mismatch';
 
 export interface CorpusV1CandidateManifestRow {
   readonly corpusVersion: 'v1';

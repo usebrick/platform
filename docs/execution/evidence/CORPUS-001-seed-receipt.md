@@ -103,6 +103,36 @@ tests with the real-source test skipped; the real-source suite passed all five
 tests, with the 10,000-unit rehash taking about six seconds. SlopBrick
 typecheck passed. Candidate source code was never executed.
 
+## Leakage-safe plan checkpoint
+
+The pure Corpus v1 planner processes canonical candidate rows without writing
+or admitting them. It quarantines both sides of exact or normalized
+cross-label collisions, propagates quarantine to problem-family siblings, and
+assigns one split to each union of:
+
+- the publisher problem family;
+- same-label exact duplicates; and
+- same-label normalized duplicates.
+
+The versioned family-group hash policy assigns buckets 0-79 to train, 80-89 to
+validation, and 90-99 to test. Frozen fixture families cover all three bucket
+ranges. Shuffled input produces identical canonical JSONL and plan hashes.
+
+The pinned 10,000-row candidate source produced:
+
+| Measure | Result |
+| --- | ---: |
+| Eligible / quarantined | 10,000 / 0 |
+| Positive / negative | 5,000 / 5,000 |
+| Exact / normalized cross-label collision rows | 0 / 0 |
+| Train / validation / test | 7,970 / 991 / 1,039 |
+| Plan SHA-256 | `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c` |
+
+Focused verification used one Vitest worker. The portable suite passed seven
+tests with the real-source test skipped; after adding the frozen bucket
+contract, the real-source suite passed all eight tests. Candidate code was not
+executed, and no source or output path was mutated.
+
 ## Explicitly still open
 
 - The raw CSV is hash-bound but is not parsed in this inventory slice.
@@ -110,11 +140,9 @@ typecheck passed. Candidate source code was never executed.
   projector now independently rehashes unit bytes and quarantines mismatches.
 - The raw CSV remains hash-bound but is not yet row-reconciled with the
   projection manifest.
-- No cross-row exact/normalized collision quarantine, family-aware split,
-  100/100 smoke receipt, admission output, threshold change, or calibration run
-  exists.
+- No raw-CSV row-binding receipt, 100/100 smoke receipt, admission output,
+  threshold change, or calibration run exists.
 - No v10.3 source byte was moved, deleted, rewritten, or admitted.
 
-The next slice must quarantine exact and normalized cross-label collisions and
-assign deterministic family-level splits before any smoke calibration is
-attempted.
+The next slice must bind publisher label/source columns from the pinned raw CSV
+to every projection row before any smoke calibration is attempted.

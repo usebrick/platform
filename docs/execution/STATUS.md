@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 5
+**Index revision:** 6
 **Global status:** `advancing`
 
 ## Executive state
@@ -37,9 +37,13 @@ does not block product or corpus work.
   projection. All 10,000 unit bytes match their source-declared hashes; two
   projections produced candidate-manifest SHA-256
   `c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac`.
+  The family/duplicate-aware leakage planner found zero exact and zero
+  normalized cross-label collision rows and deterministically assigned 7,970
+  train, 991 validation, and 1,039 test rows, with plan SHA-256
+  `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
   It remains an internal-analysis candidate, not an admitted, independently
-  witnessed, quality-labeled, redistribution-approved, or leakage-safe
-  production corpus.
+  witnessed, quality-labeled, redistribution-approved, or production corpus;
+  raw CSV publisher columns still require row-level reconciliation.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
 - A 2026-07-17 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
@@ -73,7 +77,7 @@ not consume WIP while waiting.
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Red-test one gate decision for report and exit behavior. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
-| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test cross-label collision quarantine and deterministic family-level splits. |
+| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test raw CSV publisher-label/source row binding against the pinned projection. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | `CORPUS-001` | Freeze leakage-safe splits and the admission matrix. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
@@ -127,9 +131,10 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 The next product checkpoint is reached when `SB-045` proves one typed gate
-decision drives report output and process exit, and `CORPUS-001` emits a
-deterministic family-safe plan with exact and normalized cross-label collision
-quarantine. The read-only inventory and per-unit-hashed 5,000/5,000 candidate
-manifest are verified. `GTM-001` remains the independent company-track start.
-Approved stale-path cleanup can be executed later without displacing either
-active implementation lane.
+decision drives report output and process exit, and `CORPUS-001` binds every
+projection row to the pinned raw CSV publisher columns before producing the
+exact 100/100 smoke receipt. The read-only inventory, per-unit-hashed
+5,000/5,000 candidate manifest, and family-safe leakage plan are verified.
+`GTM-001` remains the independent company-track start. Approved stale-path
+cleanup can be executed later without displacing either active implementation
+lane.

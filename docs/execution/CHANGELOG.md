@@ -3,6 +3,29 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 6 — 2026-07-17
+
+### Changed
+
+- Quarantined exact and normalized cross-label collision groups before split
+  assignment and propagated quarantine to every member of an affected family.
+- Kept each family and same-label exact/normalized duplicate group inside one
+  deterministic, versioned 80/10/10 hash bucket.
+- Verified the 10,000-row candidate plan with zero exact and zero normalized
+  cross-label collision rows: 7,970 train, 991 validation, 1,039 test, and zero
+  quarantine rows. Canonical plan SHA-256:
+  `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
+- Advanced `CORPUS-001` to raw CSV row binding. Publisher label/source columns
+  must reconcile to every projection row before the 100/100 smoke.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/plan.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-plan.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No corpus source byte, admission record, remote repository, release, publish,
+  deployment, or archive state changed.
+
 ## Revision 5 — 2026-07-17
 
 ### Changed

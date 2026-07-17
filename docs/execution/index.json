@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 5,
+  "revision": 6,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -128,8 +128,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the red Corpus v1 planning test for exact/normalized cross-label collision quarantine and deterministic family-level split assignment.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-plan.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Write the red row-binding test that reconciles the pinned raw CSV publisher label/source columns to every candidate projection row.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-binding.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CORPUS-001-seed-receipt.md"
       },
       "evidence": [

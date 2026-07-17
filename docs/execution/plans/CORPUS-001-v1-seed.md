@@ -21,9 +21,13 @@ rehashes every unit, emits versioned lexical normalized hashes, binds source,
 family, authority, license, and rights fields, and reports zero local integrity
 quarantines. Two real-source projections produced candidate-manifest SHA-256
 `c15d3cbc95f251b5a0514da14b3f8a90e26124fbfb7db5ce342a873635b383ac`.
-This does not parse the raw CSV, quarantine cross-row collisions, freeze
-splits, admit rows, or run calibration. v10.3 remains unchanged and
-quarantine-only.
+The leakage planner then found zero exact and zero normalized cross-label
+collision rows and assigned every family/duplicate group to one deterministic
+split: 7,970 train, 991 validation, and 1,039 test. Its canonical plan SHA-256
+is `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
+This does not yet reconcile publisher label/source columns from the raw CSV to
+each projection row, admit rows, emit a smoke receipt, or run calibration.
+v10.3 remains unchanged and quarantine-only.
 
 ## Scope
 
@@ -70,11 +74,15 @@ quarantine-only.
    projection with per-unit content and normalized hashes, family keys, rights
    disposition, and local integrity quarantine reasons -> verify:
    `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-manifest.test.ts --maxWorkers=1 --minWorkers=1`.
-3. Freeze family-aware splits and exact/normalized cross-label collision
-   quarantine -> verify: run the dedicated split/leakage tests with one worker.
-4. Build the 100/100 smoke twice -> verify: compare manifest and receipt
+3. **Verified 2026-07-17:** freeze family-aware splits and exact/normalized
+   cross-label collision quarantine -> verify:
+   `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-plan.test.ts --maxWorkers=1 --minWorkers=1`.
+4. Reconcile every projection row to the pinned raw CSV publisher label and
+   source columns and record a row-binding receipt -> verify:
+   `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-binding.test.ts --maxWorkers=1 --minWorkers=1`.
+5. Build the 100/100 smoke twice -> verify: compare manifest and receipt
    SHA-256 values.
-5. Expand only to eligible local rows and record resource use -> verify: audit
+6. Expand only to eligible local rows and record resource use -> verify: audit
    counts against the source inventory and zero unresolved cross-label leaks.
 
 ## Verification
@@ -93,5 +101,5 @@ alter or delete the v10.3 source tree.
 
 ## Next action
 
-Write the red Corpus v1 planning test for exact/normalized cross-label
-collision quarantine and deterministic family-level split assignment.
+Write the red raw CSV row-binding test that reconciles the pinned publisher
+label and source columns to every candidate projection row.
