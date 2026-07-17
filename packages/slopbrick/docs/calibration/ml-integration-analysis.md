@@ -1,5 +1,10 @@
 # ML Model Integration Analysis for slopbrick
 
+> **Historical research, not an active implementation plan.** Current product
+> sequencing lives in the platform [roadmap](../../../../ROADMAP.md) and
+> [execution index](../../../../docs/execution/index.json). No bundled ML model
+> is approved by this document.
+
 **Date:** 2026-07-09
 **Status:** Analysis (not implemented)
 **Triggered by:** User question "wont be the package too big?"

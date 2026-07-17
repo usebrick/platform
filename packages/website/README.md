@@ -27,12 +27,14 @@ untracked data file.
 ## Architecture
 
 - **Astro 7** with `output: 'static'` for SSG
-- **Astro Islands** for the few interactive pieces:
-  - `Hero.astro` — static brick surface and install prompt
+- **Static Astro components** for the page structure and content.
+- **Native TypeScript modules** for the interactive pieces:
+  - `live-terminal.ts` — the clearly labeled terminal simulation
   - `break-on-hover.ts` — click-to-break feedback on tool cards
 - **Native browser APIs** for smooth-scroll behavior, reveals, counters, and
   click feedback; no Lenis or GSAP runtime dependency is required.
-- **Tabler Icons** for the small icon set (file, copy, etc.)
+- **Inline, decorative SVGs** for the small icon set; there is no icon-library
+  runtime dependency.
 
 ## Theme
 
@@ -72,8 +74,9 @@ GitHub Actions (`.github/workflows/ci.yml` + `publish.yml`) handle the
 **other** packages:
 - `ci.yml` — typecheck + test on every PR / push to main
 - `publish.yml` — `release: types: [published]` → build → npm publish
-  slopbrick (two human gates: the environment approval, and the
-  release itself).
+  SlopBrick. The GitHub Release is the normal human action; the declared
+  `publish` environment adds approval only when its protection rules require
+  it. A guarded `workflow_dispatch` entry exists for exact-tag recovery.
 
 The candidate version is generated from `../slopbrick/package.json` at build
 time. Published-version facts are kept separately in

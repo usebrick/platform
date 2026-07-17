@@ -139,8 +139,12 @@
     "version": "0.43.0",
     "ruleCount": 103,
     "categoryCount": 22,
-    "verifiedAt": "2026-07-12",
-    "source": "npm registry metadata and unpacked slopbrick@0.43.0 audit"
+    "verifiedAt": "2026-07-17",
+    "source": "pinned npm tarball plus the v0.43.0 tagged generated catalog",
+    "receipt": "src/data/published-release-receipt.json",
+    "npmIntegrity": "sha512-yYjtfTxrhS8VKPeOMSEortvaO/Z8706PkEObdDwgsRdtbyRKcoG6bRK9+IARK+EJx2gmVDUGv6MMqQmdauKyWQ==",
+    "registryMetadataCategoryCount": 24,
+    "registryMetadataDiscrepancy": "npm metadata says 24; the tagged v0.43.0 generated catalog and packaged README contain 22"
   },
   "showcaseRules": {
     "ai/comment-ratio": {

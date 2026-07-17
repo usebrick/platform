@@ -22,21 +22,41 @@ interface CommandSpec {
   run: () => Line[] | null;
 }
 
-const STRUCTURE_JSON = [
-  '{',
-  '  "version": "5",',
-  '  "generatedAt": "2026-07-12T04:42:14.730Z",',
-  '  "workspace": "/your-repo",',
-  '  "aiSlopScore": 13,',
-  '  "engineeringHygiene": 92,',
-  '  "security": 95,',
-  '  "repositoryHealth": 91,',
-  '  "issueCounts": {',
-  '    "high": 3,',
-  '    "medium": 12,',
-  '    "low": 47',
-  '  }',
-  '}',
+const STRUCTURE_MARKDOWN = [
+  '# slopbrick memory',
+  '',
+  'Generated: 2026-07-17T12:00:00.000Z',
+  'Workspace: /your-repo',
+  'Scanned files: 593',
+  'Scan duration: 1.8s',
+  '',
+  '## Detected patterns (canonical, use these)',
+  '',
+  '### UI library',
+  '',
+  '- **local-components** (14 files, 14 imports)',
+  '',
+  '### Styling',
+  '',
+  '- **css-variables** (12 files, 12 imports)',
+  '',
+  '## Canonical components',
+  '',
+  '- **Button** (defined in 3 files; props: variant, children)',
+  '',
+  '## Declared constitution',
+  '',
+  '- **UI library:** local-components',
+  '- **Styling:** css-variables',
+  '',
+  '## DO NOT CREATE',
+  '',
+  '- @mui/ (any package under this scope)',
+  '',
+  '## Top issues (most impactful)',
+  '',
+  '_Run `slopbrick scan` to populate cross-file drift findings. Persisted memory captures the canonical patterns, not the drift analysis._',
+  '',
 ].join('\n');
 
 const COMMANDS: CommandSpec[] = [
@@ -61,7 +81,7 @@ const COMMANDS: CommandSpec[] = [
   {
     match: 'npm install -g slopbrick',
     run: () => [
-      { kind: 'muted',  text: `fetching slopbrick@latest (workspace build ${RELEASE_LABEL})...` },
+      { kind: 'muted',  text: `fetching slopbrick@${productFacts.published.version} from npm...` },
       { kind: 'success', text: 'added 1 package in 3s' },
       { kind: 'output', text: '/usr/local/bin/slopbrick' },
       { kind: 'muted',  text: 'next: `slopbrick init` to write slopbrick.config.mjs, then `slopbrick scan`.' },
@@ -72,7 +92,7 @@ const COMMANDS: CommandSpec[] = [
     run: () => [
       { kind: 'muted',  text: 'demo output — illustrative local example; no remote scan is running' },
       { kind: 'muted',  text: `[${RELEASE_LABEL}] auto-suppressed 0 INVERTED/NOISY issue(s) from ${productFacts.defaultOffCount} default-off rule(s).` },
-      { kind: 'muted',  text: 'Memory persisted to .slopbrick/structure.md (0 patterns, 0 components, 537 bytes).' },
+      { kind: 'muted',  text: 'Memory persisted to .slopbrick/ (2 patterns, 1 components, 812 bytes of structure.md, health.json: repo=91 aiQ=13 eng=92 sec=95).' },
       { kind: 'output', text: '' },
       { kind: 'output', text: 'Repo is low (13/100). The biggest problem is AI patterns — worst file is src/cli/scan.ts.' },
       { kind: 'output', text: '' },
@@ -87,33 +107,31 @@ const COMMANDS: CommandSpec[] = [
       { kind: 'output', text: '' },
       { kind: 'success', text: '  CI gate: AI Slop Score <= 30 -> pass' },
       { kind: 'output', text: '' },
-      { kind: 'output', text: '  Scanned 593 files, 0 issues (high: 0, medium: 0, low: 0)' },
+      { kind: 'output', text: '  Scanned 593 files, 62 findings (high: 3, medium: 12, low: 47)' },
       { kind: 'muted',  text: 'Tip: pass --all for the full report, --brief for CI/scripts.' },
     ],
   },
   {
     match: 'slopbrick init',
     run: () => [
-      { kind: 'output', text: '       ▸ creating .slopbrick/ ...' },
-      { kind: 'output', text: '       ▸ writing .slopbrick/structure.md' },
-      { kind: 'output', text: '       ▸ writing .slopbrick/inventory.json' },
-      { kind: 'output', text: '       ▸ writing .slopbrick/constitution.json' },
-      { kind: 'output', text: '       ▸ writing .slopbrick/health.json' },
-      { kind: 'success', text: '✓ slopbrick initialized in 0.18s' },
-      { kind: 'muted',  text: 'next: `slopbrick scan` to populate structure.md.' },
+      { kind: 'output', text: '       ▸ detecting repository defaults' },
+      { kind: 'output', text: '       ▸ writing slopbrick.config.mjs' },
+      { kind: 'output', text: '       ▸ refreshing the local rule-registry snapshot' },
+      { kind: 'success', text: '✓ slopbrick configuration initialized' },
+      { kind: 'muted',  text: 'next: `slopbrick scan` to create the .slopbrick/ scan artifacts.' },
     ],
   },
   {
     match: 'slopbrick rules',
     run: () => [
-      { kind: 'accent', text: '27 categories · 119 rules (v0.44.0; v10.1 evidence from 576,750 files)' },
+      { kind: 'accent', text: '27 categories · 119 rules (unreleased v0.45.0 candidate; v10.1 is historical evidence)' },
       { kind: 'output', text: '  ai           15   compression-profile, comment-ratio, segment-surprisal-cv, ...' },
       { kind: 'output', text: '  logic        12   ghost-defensive, zipf-slope-anomaly, dead-state, ...' },
       { kind: 'output', text: '  security     11   sql-construction, dangerous-cors, public-admin-route, ...' },
       { kind: 'output', text: '  visual       10   spacing-scale-violation, math-color-cluster, naturalness-anomaly, ...' },
       { kind: 'output', text: '  dead          5   dead-branch, unused-import, unused-local, ...' },
       { kind: 'output', text: '  swift         5   print-debug, fatal-error-thrown, ...' },
-      { kind: 'output', text: '  ... and 16 more (layout, rust, ts, java, cpp, component, docs, dup, test, wcag, go, perf, product, typo, context, db)' },
+      { kind: 'output', text: '  ... and 21 more categories; run the real CLI for the complete generated list' },
       { kind: 'muted',  text: '36 default-off rules (INVERTED/NOISY; auto-suppressed). Per-rule evidence lives in src/rules/signal-strength.json.' },
     ],
   },
@@ -136,7 +154,7 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     match: 'cat .slopbrick/structure.md',
-    run: () => STRUCTURE_JSON.split('\n').map((text): Line => ({ kind: 'output', text })),
+    run: () => STRUCTURE_MARKDOWN.split('\n').map((text): Line => ({ kind: 'output', text })),
   },
   {
     match: 'clear',
@@ -249,8 +267,8 @@ export function initLiveTerminal(): () => void {
         // complete command response inside a short, testable interaction
         // window. Completion is still driven by the promise, never by a
         // consumer-side animation-duration guess.
-        const base = 2;
-        const jitter = text.charCodeAt(i) % 3;
+        const base = 1;
+        const jitter = text.charCodeAt(i) % 2;
         window.setTimeout(tick, base + jitter);
       };
       window.setTimeout(tick, 4);
@@ -268,8 +286,8 @@ export function initLiveTerminal(): () => void {
 
   const seedBanner = (): void => {
     body.dataset.commandComplete = 'seed';
-    appendLine('muted', `${RELEASE_LABEL} candidate · 4 scores · ${productFacts.ruleCount} rules · ${productFacts.categoryCount} categories · ${productFacts.measuredRuleCount} measured in historical ${productFacts.corpusLabel} · offline`);
-    appendLine('muted', "type `help` to list commands. the CLI itself runs without telemetry.");
+    appendLine('muted', `${RELEASE_LABEL} candidate · 4 scores · ${productFacts.ruleCount} rules · ${productFacts.categoryCount} categories · ${productFacts.measuredRuleCount} measured in historical ${productFacts.corpusLabel} · local-first`);
+    appendLine('muted', 'type `help` to list commands. outbound reporting is opt-in; local run history is enabled by default.');
     renderInputLine();
   };
 

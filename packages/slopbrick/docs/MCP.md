@@ -1,14 +1,14 @@
 # slopbrick MCP server
 
-> **For AI agents.** The MCP server is how Claude Code, Cursor,
-> Copilot, and Continue consume slopbrick. Skip this doc if you're
-> only running `slopbrick scan` from the CLI.
+> **For configured MCP clients.** The MCP server is the supported way for an
+> MCP-aware coding tool to query SlopBrick. Client support and configuration
+> change independently; do not assume that naming a client means it
+> automatically discovers SlopBrick.
 
 The slopbrick Model Context Protocol (MCP) server speaks JSON-RPC
 2.0 over stdio. Start it with `slopbrick mcp` and connect your AI
-agent to it. The server exposes **7 canonical tools** that let the agent
-query the codebase for AI-slop patterns, get remediation advice,
-and check the Constitution before writing new code.
+agent to it. The generated runtime registry below is the source of truth for
+the current tool set; do not maintain a separate hand-count in prose.
 
 <!-- slopbrick:mcp-registry:begin -->
 ## Runtime registry (generated)
@@ -19,9 +19,9 @@ This table is generated from `TOOL_DEFINITIONS`; it currently exposes 7 canonica
 | --- | --- | --- |
 | `slop_scan_file` | path (required), framework | Scan a single supported source file for configured slop rules. Language support is scoped by the language support matrix: discovery and scanning do not imply a complete language AST or calibrated AI-authorship signal. Returns issues (ruleId, category, severity, aiSpecific, line, column, message, advice, bounded per-rule calibration metadata, bounded whyItFired facts, and optional bounded `whyItFired.evidence` with an exact matched source span and typed matched facts when available; historical calibration estimates explicitly have no admitted v10.3 source/cohort, while unknown rules report calibration as unavailable; unsafe paths, sensitive text, oversized values, source-like text, and details that exceed the deterministic safety budget are omitted with status and omission metadata — this is not a parser dump or authorship/provenance claim), a composite AI-likelihood score (probability + confidenceTier), and a componentCount. The composite score is the Bayesian log-likelihood ratio of all rules that fired, NOT a per-file "Slop Index" — for project-level scores use slop_suggest. |
 | `slop_explain_rule` | ruleId (required) | Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and static configuration policy. The policy is not a claim about direct-file scan runtime behavior. |
-| `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual \| logic \| wcag \| security \| perf \| typo \| layout \| component \| arch). |
+| `slop_list_rules` | category | List all registered rules with their category, severity, and aiSpecific flag. Optionally filter by any registered category. |
 | `slop_suggest` | maxFiles | **Primary entry point for AI agents.** Returns the project's existing patterns (modals, buttons, api clients, state libs, data-fetching libs), the do-not-create list (forbidden imports + canonical patterns not to duplicate), the declared stack, and (when .slopbrick/health.json exists) a Bayesian composite AI-likelihood score. Call this BEFORE writing new code so the agent reuses existing patterns instead of duplicating them. For per-issue details or per-file hot-spots, use slop_scan_file on each candidate path. |
-| `slop_suggest_with_structure` | maxFiles | Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first. |
+| `slop_suggest_with_structure` | maxFiles | Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory and avoids repeated scanning; measure the speed-up in the target repository and client workflow. If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first. |
 | `slop_check_constitution` | path (required) | Check a single file against the project's declared constitution (stateManagement, dataFetching, uiLibrary, forms, styling, routing, plus a forbidden deny-list in slopbrick.config.mjs). Returns the file path, total import + violation counts, the parsed imports, the list of violations (each with import, category, and reason), and a conventionSource indicating whether the constitution was declared, detected, or absent. Use this on a newly-written or modified file before suggesting a PR. |
 | `slop_find_similar` | name, hooks, props, limit | Find the most similar existing function/component implementations across the codebase, ranked by Jaccard similarity over the union of (hooks ∪ props ∪ params). Use this BEFORE writing new code so the agent reuses an existing pattern instead of inventing a new one. Returns up to `limit` matches (default 10) with name, file, line, fingerprint (sha256 over signature), hooks, props, params, and similarity in [0, 1]. |
 
@@ -77,17 +77,18 @@ In `~/.continue/config.json`:
 
 ### Other MCP clients
 
-slopbrick implements [MCP 2024-11-05](https://modelcontextprotocol.io/specification/2024-11-05).
-Any MCP-aware client works. The server speaks newline-delimited
-JSON-RPC 2.0 over stdio.
+SlopBrick exposes an MCP server over stdio. Use the client's current official
+instructions for registering a command-based server; transport support is a
+client capability, not something SlopBrick can guarantee.
 
-## The 7 canonical tools
+## Tool reference
 
 ### Tier 1 — Core (call these first)
 
 #### `slop_scan_file`
 
-Scan a single file, return issues + per-category scores.
+Scan an existing source file or saved draft and return findings plus the
+informational per-file Bayesian composite.
 
 **Input:**
 - `path` (string, required) — absolute or workspace-relative path
@@ -160,8 +161,8 @@ recall/FPR/precision/lift values, but `provenance.source` and
 no shipped estimate return `calibration.status: "unavailable"`; neither form
 is authorship proof or a release-calibration claim.
 
-**When to use:** before the agent writes a file in a project with
-slopbrick configured, to check what patterns are in use.
+**When to use:** after a draft exists on disk, before presenting or committing
+it. Use `slop_suggest` for repository patterns before writing.
 
 #### `slop_explain_rule`
 
@@ -212,22 +213,9 @@ List all registered rules, with optional category filter.
 **Input:**
 - `category` (string, optional) — filter by category (for example `"ai"` or `"visual"`)
 
-**Output:**
-```json
-{
-  "count": 103,
-  "byCategory": {
-    "ai": 8,
-    "visual": 6,
-    "logic": 5,
-    "boundary": 12
-  },
-  "rules": [
-    { "id": "ai/compression-profile", "defaultOff": false },
-    { "id": "ai/segment-surprisal-cv", "defaultOff": false }
-  ]
-}
-```
+**Output:** the runtime count, category distribution, and rule metadata. Query
+the tool for current values; the public v0.43.0 catalog and unreleased workspace
+candidate have different totals.
 
 **When to use:** to discover what rules exist before scanning.
 
@@ -271,9 +259,9 @@ patterns).
 #### `slop_suggest_with_structure`
 
 Fast-path version of `slop_suggest` that reads from
-`.slopbrick/structure.md` (the pre-computed artifact, was `memory.md` in v0.14.5)
-instead of re-parsing the AST. It avoids repeated parsing on subsequent calls;
-measure the actual speed-up on the target repository.
+`.slopbrick/structure.md` (the pre-computed artifact, historically named
+`memory.md`) instead of re-parsing the AST. It avoids repeated parsing on
+subsequent calls; measure the actual speed-up on the target repository.
 
 > The canonical artifact is `.slopbrick/structure.md`; older `memory.md`
 > terminology is historical and should not be used in new integrations.
@@ -283,10 +271,8 @@ measure the actual speed-up on the target repository.
 
 **Output:** same as `slop_suggest`.
 
-**When to use:** same as `slop_suggest`. Always prefer this version
-if `.slopbrick/structure.md` exists. Run `slopbrick scan` once to
-generate it, then `slop_suggest_with_structure` works on every agent
-call.
+**When to use:** as the repository-context entry point after a successful scan.
+It falls back to `slop_suggest` if the artifact is unavailable.
 
 #### `slop_check_constitution`
 
@@ -347,32 +333,33 @@ to know "what's the closest pattern to follow?"
 ## Typical agent flow
 
 ```
-1. slop_suggest             — check the project is set up and read the declared patterns
-2. slop_suggest_with_structure  — get the doNotCreate list (always)
-3. slop_scan_file           — scan a draft before writing
-4. slop_explain_rule        — for each issue, understand why
-5. (fix the file)
-6. slop_check_constitution  — final check before saving
+1. slop_suggest_with_structure — read patterns/policy; falls back when needed
+2. (write and save a draft)
+3. slop_scan_file              — inspect the saved draft
+4. slop_explain_rule           — understand material findings
+5. (fix and test the file)
+6. slop_check_constitution     — final declared-policy check
 ```
 
 ## Troubleshooting
 
 ### "MCP server fails to start"
 
-The server requires `npx` to be in PATH. If running in a container,
-ensure Node.js is installed. The server needs read access to
-`.slopbrick/constitution.json` and `.slopbrick/structure.md` in the
-project root.
+The configured command must be available in the client's environment. If using
+`npx`, ensure Node.js and package resolution are available. The server needs
+read access to the workspace and its `.slopbrick/` artifacts when using the
+fast path.
 
 ### "Tool returns no results"
 
-- `slop_suggest` requires `.slopbrick/constitution.json` to exist.
-  Run `slopbrick init` first.
+- `slop_suggest` can inspect detected patterns without a declared constitution,
+  but `slopbrick init` is required if you want explicit project policy.
 - `slop_suggest_with_structure` requires `.slopbrick/structure.md` to
   exist. Run `slopbrick scan` first.
-- `slop_scan_file` requires the file to be parseable by slopbrick.
-  Check the file extension is supported (`.ts`, `.tsx`, `.js`,
-  `.jsx`, `.vue`, `.svelte`, `.astro`, `.html`).
+- `slop_scan_file` requires a supported path and a scan path appropriate to its
+  language. See the generated [language support
+  matrix](./language-support-matrix.md); discovery does not imply a complete
+  language AST or calibrated signal.
 
 ### "Tool returns too many false positives"
 
@@ -383,6 +370,5 @@ the default. Look at `rules: { ... }` in the config.
 
 ## References
 
-- [MCP specification](https://modelcontextprotocol.io/specification/2024-11-05)
-- [Anthropic's MCP guide for Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/mcp)
+- [MCP specification](https://modelcontextprotocol.io/specification/latest)
 - [slopbrick source](../src/mcp/server.ts)

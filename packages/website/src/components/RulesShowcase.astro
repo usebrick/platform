@@ -127,11 +127,10 @@ function severityClass(s: Rule['severity']): string {
 
 <section class="section rules-showcase" id="rules">
   <header class="rules-showcase__head">
-    <span class="rules-showcase__label">{productFacts.ruleCount} rules, per-rule evidence</span>
+    <span class="rules-showcase__label">{productFacts.measuredRuleCount} historically measured candidate rules</span>
     <h2 class="rules-showcase__title">
-      <span class="rules-showcase__count">{productFacts.ruleCount}</span> rules,{' '}
-      <span class="rules-showcase__count">{productFacts.categoryCount}</span> categories,{' '}
-      <span class="rules-showcase__accent">measured evidence</span>.
+      Evidence for <span class="rules-showcase__count">{productFacts.measuredRuleCount}</span> of{' '}
+      <span class="rules-showcase__count">{productFacts.ruleCount}</span> candidate rules.
     </h2>
     <p class="rules-showcase__body">
       These cards show per-rule precision, recall, and false-positive rate

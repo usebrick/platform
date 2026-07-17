@@ -1,6 +1,10 @@
 # v9 plan: Multi-language expansion + dedup v2/v3 + ecosystem fixes
 
-**Status:** draft, 2026-07-01
+> **Historical planning snapshot.** It is not current strategy or execution
+> authority. Use the platform [roadmap](../../../../ROADMAP.md) and [execution
+> index](../../../../docs/execution/index.json).
+
+**Historical status at authoring:** draft, 2026-07-01
 **Author:** v0.19.x review session
 **Scope:** v9 corpus (v9.5 calibration) + v0.20 / v0.21 / v0.22 releases + cross-cutting ecosystem fixes
 **Window:** ~6 months (Jul 2026 – Dec 2026), 3 releases

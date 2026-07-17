@@ -32,7 +32,9 @@ The `basic/` example ships with `sample-component.tsx`. After copying the basic 
 npx slopbrick scan examples/basic/sample-component.tsx
 ```
 
-You should see 1-2 visual issues reported (the inline `style` and the magic spacing value of `13px`). If you see zero issues, something is off — the basic config deliberately leaves visual rules at full sensitivity so this sample triggers them.
+The sample intentionally contains visual problems. Inspect the emitted rule IDs
+instead of asserting a frozen issue count: registry/default-off changes can
+alter the total while the example remains useful.
 
 ## Anatomy of a config
 
@@ -44,14 +46,17 @@ export default {
   exclude:   ['**/node_modules/**'], // files to skip
   rules:     { 'rule/id': 'low' },   // per-rule severity overrides
   thresholds: {
-    meanSlop: 25,                     // average slop across all files
-    p90Slop: 45,                      // 90th-percentile slop
+    meanSlop: 25,                     // maximum project AI Slop Score (lower is cleaner)
+    p90Slop: 45,                      // file-score percentile diagnostic/threshold
     individualSlopThreshold: 70,      // per-file ceiling
   },
 };
 ```
 
-The full schema lives at `src/config.ts` → `ResolvedConfig`. The validator at `src/config-validation.ts` will reject unknown keys with a hint.
+The current config types live in [`src/types/config.ts`](../src/types/config.ts)
+and the runtime validator in
+[`src/config/validation.ts`](../src/config/validation.ts). Treat the runtime
+help and tests as authoritative when the examples and implementation disagree.
 
 ## Validating without running a scan
 
@@ -63,5 +68,7 @@ This catches typos in rule ids (e.g. `visual/math-defualt-font`), bad threshold 
 
 ## See also
 
-- Top-level [README](../README.md) — installation, CLI reference, and 42 built-in rules
-- [`docs/`](../docs/) — design docs and architecture notes
+- Package [README](../README.md) — installation and current behavior
+- Generated [rule catalog](../docs/rule-catalog.md) — current workspace rules
+- Root [roadmap](../../../ROADMAP.md) and [execution
+  ledger](../../../docs/execution/README.md) — product direction and active work

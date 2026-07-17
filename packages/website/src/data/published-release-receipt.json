@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "package": "slopbrick",
+  "version": "0.43.0",
+  "verifiedAt": "2026-07-17",
+  "registryUrl": "https://registry.npmjs.org/slopbrick/0.43.0",
+  "tarballUrl": "https://registry.npmjs.org/slopbrick/-/slopbrick-0.43.0.tgz",
+  "npmIntegrity": "sha512-yYjtfTxrhS8VKPeOMSEortvaO/Z8706PkEObdDwgsRdtbyRKcoG6bRK9+IARK+EJx2gmVDUGv6MMqQmdauKyWQ==",
+  "npmShasum": "6ca6e9cdd1ebe82eafc3eb25f3917a86f864b8a2",
+  "tarballSha256": "c048124fef7459033b87d9ae6bd6e52d03d44b95a5887ee6306abe105689edfd",
+  "packageJsonSha256": "a454a69f0468a6b564a81bffd08949c85b4ece73910d731579a7cee3a8ace0e1",
+  "packagedReadmeSha256": "83cad705041f8fcfc9135b7d1397fba33007e01226a42c5b2e6b6e657dbf8755",
+  "taggedCatalogSha256": "9e980d6be5702da6b329e2f577f8676af40b867cbd021cac3653d73a817efc6c",
+  "facts": {
+    "ruleCount": 103,
+    "categoryCount": 22,
+    "registryMetadataCategoryCount": 24
+  },
+  "evidence": [
+    "The v0.43.0 tagged generated catalog contains 103 rules and 22 category rows.",
+    "The exact npm tarball's packaged README repeats 103 rules and 22 categories.",
+    "The exact npm tarball package.json description says 24 categories; this is the recorded metadata discrepancy."
+  ]
+}

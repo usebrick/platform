@@ -15,8 +15,8 @@
 # Concise and human-readable; avoid feature-list sprawl.
 repository:
   name: platform
-  description: "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session."
-  homepage: https://github.com/usebrick/platform#readme
+  description: "Usebrick keeps AI-built software coherent. Start with SlopBrick: a local scanner for visual, implementation, security, and repository drift."
+  homepage: https://usebrick.dev
   topics:
     # Primary positioning — what the tool is (matches npm description)
     - ai-agents

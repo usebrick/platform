@@ -4,6 +4,10 @@ The scanning engine extracted from `slopbrick`. The package root preserves
 Node compatibility adapters; pure parsing and scoring functions are available
 from the explicit `@usebrick/engine/pure` subpath.
 
+This is a private implementation package, not a separately shipped product.
+SlopBrick is the scanner and user-facing front door; the engine is reused by
+the CLI, MCP surface, and future platform layers.
+
 > **v0.15.0:** Extracted from `slopbrick/src/engine/`. The engine is now its
 > own workspace package, consumed by `slopbrick` as a workspace dep. The
 > pure-function surface is a separately testable public API. The root entry
@@ -69,6 +73,9 @@ examples are the documentation source for the three most common calls:
 The root compatibility API and pure subpath have independent exact export
 contracts. Package typecheck, examples, and both contracts must pass before
 changing public exports.
+
+Product priorities and active delivery status live in the root
+[`ROADMAP.md`](../../ROADMAP.md) and [`docs/execution/`](../../docs/execution/).
 
 ## Runtime support
 

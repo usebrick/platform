@@ -16,15 +16,21 @@ For iteration on a single package, you can scope the test/typecheck run:
 
 ```bash
 pnpm --filter @usebrick/core test -- <name>
-pnpm --filter @usebrick/slopbrick typecheck
+pnpm --filter slopbrick typecheck
 ```
 
 ## Repo Layout
 
 - `packages/core/` — `@usebrick/core` (private). The cross-language contract: JSON Schemas, types, loaders, validators, and the Verdict taxonomy. Touch sparingly.
+- `packages/engine/` — `@usebrick/engine` (private). Pure scanning, parsing,
+  scoring, and rule-combination logic, with explicit Node compatibility
+  adapters at the root entry point.
 - `packages/slopbrick/` — `slopbrick` (published). The CLI + MCP server. Scans repos, classifies against rules, persists the structure.
 - `packages/website/` — `usebrick.dev` marketing site. Astro 7 + native browser APIs; no Lenis or GSAP runtime dependency.
-- `docs/` — architecture, update summaries, and the implementation plans under `docs/superpowers/plans/`.
+- `ROADMAP.md` — canonical product direction and sequencing.
+- `docs/execution/` — live status, dependency index, and bounded execution
+  plans. Historical `docs/superpowers/` plans and specifications remain useful
+  design evidence but do not own current status.
 - `examples/` — example projects for testing slopbrick end-to-end.
 
 ## Conventions
@@ -42,7 +48,10 @@ pnpm --filter @usebrick/slopbrick typecheck
 
 1. **Reuse `facts.v2`.** Most new rules should be 5–20 line pure functions over `facts.v2`.
 2. **Add `RULE_HINTS` entry in `src/snippet/data.ts`** (the engine auto-validates hints exist).
-3. **Calibrate against the corpus.** New rules must have `recall/FP ratio ≥ 1.5×` against `tests/fixtures/frameworks/`. Without calibration, the rule is `defaultOff: true` until proven.
+3. **Calibrate against admitted evidence.** Framework fixtures prove expected
+   examples; they are not corpus-level activation evidence. Keep every new
+   rule `defaultOff: true` until it meets the current admitted-corpus criteria.
+   Historical v10.1 results do not substitute for current v10.3 admission.
 4. **Add tests in `tests/rules/<rule-name>.test.ts`.**
 
 ### For changes touching `core/`
@@ -92,11 +101,14 @@ Examples from this repo:
 
 ## Release Process
 
-The supported release path is a manually reviewed GitHub Release backed by
-the checksum-bound, OIDC trusted-publishing workflow. Changeset files in this
-checkout are historical artifacts; there is no active Changesets version PR or
-`changeset publish` job. Published-package changes still require an explicit
-version bump and CHANGELOG entry in the release commit.
+The supported publish path is the checksum-bound GitHub Actions OIDC workflow,
+normally triggered by a reviewed GitHub Release with guarded manual dispatch as
+the recovery path. The five tracked `.changeset` files describe releases
+0.39.0 through 0.43.0 that have already shipped. Their presence makes
+`pnpm changeset status` report a misleading pending bump; do **not** run
+`pnpm version-packages` against them. Current releases use an explicit reviewed
+package-version and CHANGELOG update until those stale inputs are separately
+approved for archival or deletion.
 
 ### Pre-release checklist
 
@@ -138,15 +150,21 @@ synthetic clean snapshot as a release.
 
 ## Pull Requests
 
-1. **Branch from `main`** (or the in-flight release branch, e.g. `v0.14.5d`).
+1. **Branch from `main`** or the explicitly named in-flight release branch.
 2. **Run the quality gates locally** before pushing.
-3. **PR description explains**: what changed, why, and how to verify. Link to the relevant plan task (`docs/superpowers/plans/...`).
+3. **PR description explains**: what changed, why, and how to verify. Link to
+   the relevant `docs/execution/plans/...` plan when the work belongs to an
+   indexed roadmap lane.
 4. **CI must be green** before merge.
 5. **Squash-merge** with the PR title as the commit message.
 
 ## Working on plans
 
-Multi-step plans live in `docs/superpowers/plans/`. Each task in a plan has its own checkbox + acceptance criteria. For plans that use the Superpowers subagent-driven-development flow:
+`ROADMAP.md` owns strategy, `docs/execution/index.json` owns live plan status,
+and bounded executable plans live in `docs/execution/plans/`. Design specs and
+historical evidence may be cited, but must not carry a competing status or next
+action. Each executable task includes acceptance criteria and a verification
+path. For plans that use a subagent-driven-development flow:
 
 - Each task gets a fresh implementer subagent
 - Two-stage review after each task: spec compliance first, then code quality

@@ -86,13 +86,17 @@ jobs:
 
       - name: Run release quality gates
         run: |
+          node --test --test-concurrency=1 scripts/validate-execution-docs.test.mjs
+          corepack pnpm plans:validate
+          corepack pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
+          corepack pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-catalog.ts --check
+          corepack pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
+          corepack pnpm --filter slopbrick exec node --import tsx scripts/generate-mcp-docs.ts
           corepack pnpm --workspace-concurrency=1 -r typecheck
           node --test packages/slopbrick/scripts/test-capabilities.test.mjs
           node packages/slopbrick/scripts/test-capabilities.mjs --require-ready
           corepack pnpm --workspace-concurrency=1 -r test
           corepack pnpm --workspace-concurrency=1 -r build
-          corepack pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
-          corepack pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
           node --test scripts/audit-npm-bulk.test.mjs
           corepack pnpm security:audit
 

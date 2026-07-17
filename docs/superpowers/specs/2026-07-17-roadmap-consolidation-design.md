@@ -45,6 +45,13 @@ reproducible build receipt. It does not require invented reviewer identities,
 an externally published local bundle, or an authority tree whose only purpose
 is to approve artifacts produced by the same local workflow.
 
+Recent GitHub code is not treated as a human-negative default. AI-tool exposure
+is common enough that an undisclosed 2025+ repository is a mixed/unknown sample,
+not evidence of human-only authorship. Conversely, GitHub is a useful positive
+source when a repository owner explicitly says an application was built with an
+AI coding tool. Corpus provenance therefore records evidence strength instead
+of forcing every public repository into a false binary claim.
+
 ## Chosen approach
 
 Use an archive-and-redirect migration with portfolio scheduling.
@@ -72,7 +79,7 @@ docs/execution/index.json
   Live portfolio status, priority, dependencies, next executable item
         |
         v
-docs/execution/active/*.md
+docs/execution/plans/*.md
   Bounded scope, acceptance criteria, commands, rollback, next action
         |
         +--> frozen specifications define contracts
@@ -97,6 +104,13 @@ Usebrick's canonical thesis is:
 
 > Usebrick keeps AI-generated software coherent.
 
+Vibe coders and AI-assisted builders are the entry market and main product
+door. SlopBrick must first answer their immediate question—"the app works, but
+is it actually well built?"—with a useful local scan. The deeper platform is a
+progression from individual diagnosis to repository memory, team enforcement,
+and trusted repair; it must not make first use depend on adopting the whole
+suite.
+
 The product roles are:
 
 | Product | Role | Current boundary |
@@ -111,6 +125,28 @@ The product roles are:
 MemoryBrick means repository-owned verified memory, not vendor/model memory,
 chat history, embeddings, or RAG. Existing Repository Structure schemas remain
 the deterministic substrate; no `.usebrick/` migration occurs before an ADR.
+
+### Current truth boundary
+
+- The latest verified npm release is `slopbrick@0.43.0`; its generated catalog
+  contains 103 rules in 22 categories. Registry metadata saying 24 categories
+  is known publication drift, not product truth.
+- The workspace is an unreleased `0.45.0` candidate with 119 rules in 27
+  categories.
+- The candidate is a trust and reliability release. It adds no further rules,
+  keeps unmeasured candidate signals default-off, and cannot claim current
+  calibration from historical evidence.
+- The v10.1 result covering 576,750 analyzed files is historical. Current v10.3
+  admission contains zero admitted units.
+- A valid whole-project scan with project memory enabled writes three canonical
+  JSON snapshots (`inventory.json`, `constitution.json`, and `health.json`),
+  derived `structure.md`, and a separate legacy/local `structure.json` run
+  history. The run-history file is not the Structure-schema projection.
+- Local flywheel scan history is enabled by default. Outbound reporting is off
+  by default and requires both `--report-usage` and
+  `SLOPBRICK_TELEMETRY_ENDPOINT`.
+- MemoryBrick, LockBrick, and MendBrick are roadmap layers, not shipped
+  standalone products.
 
 ## Portfolio status model
 
@@ -138,10 +174,10 @@ Dependency types:
 
 - `requires` — the dependent plan consumes an output and cannot proceed without
   it;
-- `external_gate` — evidence or approval outside local execution, attached only
+- `externalGates` — evidence or approval outside local execution, attached only
   to the affected milestone;
-- `benefits_from` — useful but not required; and
-- `conflicts_with` — work that cannot safely run concurrently.
+- `benefitsFrom` — useful but not required; and
+- `conflictsWith` — work that cannot safely run concurrently.
 
 Only `requires` affects ordinary scheduling.
 
@@ -152,7 +188,9 @@ Every `waiting_external` plan must record:
 - the most recent verification date and evidence path;
 - an objective resume condition;
 - a read-only recheck command; and
-- `parallel_safe` plan IDs that can continue immediately.
+- a prose `parallel-safe` list of plan IDs that can continue immediately. This
+  is required in the plan document when waiting; it is not currently a separate
+  `index.json` field.
 
 The scheduler rule is mandatory:
 
@@ -163,10 +201,10 @@ The scheduler rule is mandatory:
 
 ### Corpus v1 reconstruction and calibration
 
-Active locally. Preserve the v10.3 tree until the replacement passes, build v1
+This lane preserves the v10.3 tree until the replacement passes, then builds v1
 from source-attested material already present under
 `/Users/cheng/corpus-expansion`, verify every projected byte and label, group
-related problems into one split, quarantine exact/normalized/near cross-label
+related problems into one split, quarantine exact/normalized cross-label
 overlap, and emit a balanced manifest plus reproducible receipt. AI is positive
 and human is negative.
 
@@ -175,47 +213,99 @@ materialized records with dataset metadata reporting 5,000 AI and 5,000 human
 examples, AI sources ChatGPT-3.5/ChatGPT-4, human source CodeNet, and CC BY 4.0
 dataset metadata. Its label authority is explicitly `source_attested`, not a
 claim of independently witnessed authorship. The v1 build decides the final
-eligible count after leakage, family, quality, and privacy checks.
+eligible count after bounded byte, label, collision, and family-split checks.
 
-After v1 verification, run a deterministic 100 plus 100 smoke, a balanced main
-calibration/holdout split, and the SlopBrick calibration report. Only then may
-the old v10.3 corpus be moved to a dated archive. Release and publication still
-require their ordinary explicit authorization; corpus construction does not.
+The ecological GitHub tranche follows immediately and remains part of Corpus
+v1 without delaying use of the verified seed:
+
+| Cohort | Corpus label | Evidence tier | Allowed use |
+| --- | --- | --- | --- |
+| Publisher-labeled AI rows | positive | `publisher_attested` | fit, validation, and test |
+| Repository owner explicitly says the app was AI/vibe-built | positive | `repo_self_attested` | ecological validation and, after audit, fitting |
+| 2025+ repository with AI-tool/topic signals but no explicit authorship statement | none | `ai_exposed` exposure proxy | sensitivity and prevalence only; never positive ground truth |
+| Exact repository snapshot before GitHub Copilot's 2021-06-29 technical preview, without authorship evidence | none | `pre_llm_proxy` | temporal sensitivity analysis only; never human-ground-truth fitting |
+| Ordinary recent repository without disclosure | none | `unknown_recent` | unlabeled prevalence only |
+
+Topic membership, an agent configuration file, commit velocity, or a recent
+creation date alone never upgrades a repository to `repo_self_attested`.
+Positive application candidates must contain an owner-controlled README or
+repository-description statement that the application itself was built with
+AI. Tooling repositories, tutorials, awesome lists, prompt collections, and AI
+products whose own implementation provenance is unstated are excluded from the
+positive application cohort.
+
+The first GitHub target is a frontend sensitivity tranche of at least 25
+`repo_self_attested` positive repositories plus a matched set of 25 pre-LLM
+temporal-proxy snapshots whose corpus label remains `none`, capped at 200
+eligible source files per repository. This is not a balanced labeled dataset,
+and the temporal proxies never act as human-negative fitting data. Files are
+matched by language, framework, size, and application role; forks and
+upstream-related repositories share one family; and every split occurs at
+repository-family level. Each record binds repository URL, immutable commit
+SHA, commit time, license identifier and license-file hash, evidence tier,
+evidence-text hash, source path, byte count, and content SHA-256. A repository
+without redistribution permission may remain a reference record but its bytes
+cannot enter the materialized corpus.
+
+Repository age is not authorship evidence. A pre-Copilot snapshot is useful for
+temporal-confound analysis, but it cannot be promoted to the human-negative
+class without separate source-attested provenance.
+
+Origin and quality remain separate axes. AI-positive means AI-origin exposure;
+it does not assert that every positive file is bad, and human-negative does not
+assert that every negative file is good. SlopBrick rule usefulness must be
+reported separately from origin-class discrimination so the scanner does not
+learn only repository age, framework generation, or novice-project style.
+
+After seed verification, run a deterministic 100 plus 100 smoke immediately.
+The GitHub tranche can acquire in parallel and then adds repository-family
+holdouts and temporal-confound reporting. Only after the standalone seed has
+verified may the old v10.3 corpus be moved to a dated archive; that cleanup does
+not wait for the GitHub tranche. Release and publication still require their
+ordinary explicit authorization; corpus construction does not.
 
 ### SlopBrick product quality
 
-Active independently of corpus authority. Work includes scan/report trust,
+This lane can progress independently of corpus acquisition. Its scope includes scan/report trust,
 evidence tiers, visual/frontend taxonomy, baseline and new-finding UX, and
 repository-role context. No uncalibrated signal is silently activated or used
 to change a canonical verdict.
 
+The v0.45 release-candidate lane is deliberately narrower than the complete UX
+roadmap: reconcile exit decisions, prove finding-specific fixes are safe,
+preserve durable baselines/new-debt behavior, repair public metadata drift, and
+produce a truthful go/no-go packet. No new-rule expansion belongs in that
+release.
+
 ### MemoryBrick M0/M1
 
-Ready independently. Work includes the store-location ADR, threat/privacy
+This lane covers the store-location ADR, threat/privacy
 model, a read-only projection of existing artifacts, deterministic freshness,
 bounded managed agent instructions, and cross-agent evaluation.
 
 ### LockBrick delta MVP
 
-Ready independently. Productize "do not introduce new critical slop" using
+This lane productizes "do not introduce new critical slop" using
 deterministic findings and fresh approved policy. Reuse the existing CLI,
 constitution, diff, and threshold primitives before considering extraction.
 
 ### Telemetry and evaluation
 
-Ready for specification and local implementation. Define an opt-in,
+This lane defines an opt-in,
 inspectable, exportable, deletable event contract without raw source or
 proprietary repository identifiers by default. Hosted collection waits for
 privacy and adoption evidence.
 
 ### Website and adoption
 
-Ready locally. Align the public hierarchy, publish truthful benchmark methods,
-and keep live deployment behind its separate authorization gate.
+This lane aligns the public hierarchy, publishes truthful benchmark methods,
+run at least five first-scan vibe-coder pilots, and keep live deployment behind
+its separate authorization gate. Product interviews and local pilot materials
+do not require a production deployment.
 
 ### MendBrick
 
-Parked until LockBrick findings have demonstrated sufficient precision. Begin
+This lane must not start until LockBrick findings have demonstrated sufficient precision. Begin
 with deterministic, reversible transformations and verify each repair through
 the scanner and repository tests.
 
@@ -229,20 +319,25 @@ docs/
 │   ├── index.json
 │   ├── STATUS.md
 │   ├── CHANGELOG.md
-│   └── active/
+│   └── plans/
 │       ├── PLAT-001-planning-control.md
-│       ├── CORPUS-001-v1-rebuild.md
-│       ├── SB-045-release-candidate.md
-│       ├── SB-UX-001-scan-report-trust.md
-│       ├── MEM-001-memorybrick-m0.md
-│       ├── LOCK-001-delta-enforcement-mvp.md
-│       └── TEL-001-outcome-telemetry.md
+│       ├── SB-045-trust-release.md
+│       ├── CORPUS-DEC-001-admission-contract.md
+│       ├── GTM-001-vibecoder-pilots.md
+│       ├── CORPUS-001-v1-seed.md
+│       ├── CAL-001-heldout-calibration.md
+│       ├── SB-UX-001-first-scan.md
+│       ├── TEL-001-local-outcomes.md
+│       ├── MEM-001-read-only-m0.md
+│       ├── LOCK-001-new-debt-gate.md
+│       ├── MEND-001-repair-proof.md
+│       └── ENT-001-demand-gate.md
 └── archive/
     ├── README.md
     ├── MANIFEST.json
     └── plans/2026-07/
 scripts/
-└── validate-plans.mjs
+└── validate-execution-docs.mjs
 ```
 
 ## Pruning and preservation policy
@@ -280,7 +375,8 @@ recoverable historical evidence and receive no future status appendices.
 - `packages/slopbrick/docs/research/v9-plan.md`;
 - `packages/slopbrick/docs/research/v9-plan-2026-07-02-update.md`; and
 - completed `docs/superpowers/` design and plan capsules that no longer direct
-  work.
+  work (excluding this approved consolidation design while its migration is in
+  progress).
 
 High-inbound paths receive small compatibility redirects. Archive metadata
 records the original path, Git blob ID, content SHA-256, archive path,
@@ -297,7 +393,10 @@ Update these documents to point to the new authority hierarchy:
 - `packages/slopbrick/ROADMAP.md`
 - `packages/slopbrick/docs/calibration/README.md`
 - `packages/slopbrick/docs/calibration/artifact-classification.md`
-- `specs/PLAN-AUDIT_LATEST.md`
+
+`specs/PLAN-AUDIT_LATEST.md` and other checksum-bound evidence remain unchanged
+at their original paths and are cited as historical evidence, not navigation
+authority.
 
 ## Machine-readable execution index
 
@@ -308,8 +407,7 @@ Update these documents to point to the new authority hierarchy:
 - updated date;
 - ordered plan entries;
 - stable plan ID, title, path, lane, status, and priority;
-- `requires`, `external_gate`, `benefits_from`, `conflicts_with`, and
-  `parallel_safe` edges;
+- `requires`, `externalGates`, `benefitsFrom`, and `conflictsWith` edges;
 - the current next action; and
 - evidence or resume metadata where applicable.
 
@@ -318,24 +416,28 @@ belong in `STATUS.md` and immutable evidence links.
 
 ## Validation
 
-`node scripts/validate-plans.mjs` must:
+`node scripts/validate-execution-docs.mjs` must:
 
 1. reject unknown statuses, duplicate IDs, or a global `blocked` state;
 2. verify every indexed plan exists and every active plan is indexed;
 3. verify `requires` dependencies exist and are acyclic;
 4. require scope, non-goals, success criteria, commands, rollback, evidence
    destination, and next action in executable plans;
-5. require complete resume and `parallel_safe` metadata for
-   `waiting_external` plans;
+5. require an exact input, owner, resume condition, and parallel-safe next work
+   for any `waiting_external` plan;
 6. require at least one executable plan while global status is `advancing`;
-7. verify preserved specification hashes recorded in the index;
-8. verify archive manifest paths, blobs, and content hashes;
-9. ensure planning changelog revision matches the execution-index revision;
-10. reject active-navigation links to superseded plans except as explicit
-    evidence/archive citations;
-11. warn about mutable counts and absolute user paths in active plans;
-12. verify required roadmap pointers; and
-13. run cleanly alongside `git diff --check`.
+7. verify archive manifest paths, archived files, Git blob IDs, and SHA-256
+   values against the archived bytes;
+8. ensure `STATUS.md` and the planning changelog revision match the
+   execution-index revision; and
+9. verify required roadmap and execution-guide pointers.
+
+The consolidation review also checks preserved specification hashes,
+active-navigation references to superseded plans, mutable counts, unexplained
+absolute host paths, Markdown targets, and `git diff --check`. Those checks are
+currently review gates, not capabilities falsely attributed to the validator;
+they can move into a separate documentation linter when their allow-list and
+false-positive contract are specified.
 
 ## Migration sequence
 
@@ -350,9 +452,11 @@ belong in `STATUS.md` and immutable evidence links.
    `git diff --check`.
 6. Record the migration in the planning changelog and commit the documentation
    control plane.
-7. Mark `PLAT-001` done and immediately begin `CORPUS-001`; build and verify the
-   replacement v1 corpus before archiving v10.3. `SB-UX-001`, `MEM-001`, and
-   `LOCK-001` remain parallel-safe if a corpus operation is long-running.
+7. Mark `PLAT-001` done and immediately begin `CORPUS-DEC-001`, `SB-045`, and
+   `GTM-001` in separate lanes. Once the corpus contract decision is recorded,
+   replace that slot with `CORPUS-001`; build and verify the replacement v1
+   corpus before archiving v10.3. `SB-UX-001`, `MEM-001`, and `LOCK-001` remain
+   parallel-safe if a corpus operation is long-running.
 
 ## Success criteria
 

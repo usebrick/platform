@@ -1,6 +1,11 @@
 # slopbrick Master Plan — v0.45.0 and Beyond
 
-> **Superseded for execution (2026-07-09).** The current-state, corpus, ML, schedule, and release assumptions in this roadmap did not survive the repository audit. In particular, v0.44.0 is not a verified public release. Use [`v0.45.0-continuation-plan.md`](./v0.45.0-continuation-plan.md) as the authoritative gate order; retain this file as strategic/historical input only.
+> **Superseded for execution (2026-07-09).** The current-state, corpus, ML,
+> schedule, and release assumptions in this roadmap did not survive repository
+> review. In particular, v0.44.0 was not a verified public release. Use the
+> platform [roadmap](../../../../ROADMAP.md) and [execution
+> index](../../../../docs/execution/index.json); retain this file as historical
+> input only.
 
 **Date:** 2026-07-09
 **Status:** Historical roadmap; superseded for execution

@@ -1,318 +1,175 @@
 # AGENTS.md
 
-> How AI agents should work with `slopbrick`.
+> How AI agents should work with `packages/slopbrick`.
 
-Apply this file silently. Do not restate it unless the user asks for project rules.
+Apply silently. Do not restate unless the user asks for project rules.
 
----
+## Product role
 
-## What this project is
+SlopBrick is the local scanner and user-acquisition front door for usebrick. It
+finds visual, frontend, code, security, and repository-coherence problems that
+AI coding workflows amplify. It does not prove AI authorship.
 
-`slopbrick` is a **Repository Constitution Engine for AI Coding Agents**. It scans React, Vue, Svelte, Solid, Qwik, Astro, and HTML files and computes **4 headline scores** (`aiSlopScore`, `engineeringHygiene`, `security`, `repositoryHealth`). The published v0.43.0 package had 103 rules across 22 categories; the current workspace candidate has 119 rules across 27 categories and is unreleased. The moat is the **Constitution** (the `slopbrick.config.mjs` block that declares your stack), and every other score is a proof that the Constitution is being followed.
+MemoryBrick is the planned repository-memory substrate, LockBrick is the
+planned policy/governance product, and MendBrick is the later deterministic
+repair layer. Do not describe any of them as separately shipped products.
 
-**Tier 1 — Headline scores (the 4-score model, v0.18.0+; aiSlopScore direction flipped v0.21.0):**
+Current version truth:
 
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **aiSlopScore** | 0–100 (lower = cleaner, raw amount of slop since v0.21.0) | AI-slop signatures (16 `ai/*` rules). CI gate at `≤ meanSlop` (default 30). |
-| **engineeringHygiene** | 0–100 (higher = better) | Boundary / logic / layout / visual / component / test categories |
-| **security** | 0–100 (higher = better) | AI Security Risk (low/medium/high/critical → 100/75/40/10) |
-| **repositoryHealth** | 0–100 (higher = better) | Weighted composite of 8 axes (default weights in `REPOSITORY_HEALTH_WEIGHTS`). Inverts aiSlopScore internally. |
+- npm: `slopbrick@0.43.0`, generated catalog 103 rules / 22 categories
+- workspace: unreleased `0.45.0`, generated catalog 119 rules / 27 categories
+- v10.1's 576,750 analysed files are historical evidence
+- v10.3 has no admitted cohort for a release-calibration claim
 
-**Tier 2 — Heuristic (specialised subcommands):**
+Registry metadata that reports 24 categories for v0.43.0 is stale. The
+generated release artifact is authoritative at 22.
 
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **Test Quality** | 0–100 | AI test smells (weak assertions, duplicate setups, fake placeholders) |
-| **Business Logic Coherence** | 0–100 | Pricing precision, validation completeness, locale-agnostic formatting |
-| **Documentation Freshness** | 0–100 *(0.8.0)* | Stale READMEs, drift between docs and code |
-| **Database Health** | 0–100 *(0.8.0)* | Missing indexes, N+1, soft-delete inconsistencies |
+## Package boundaries
 
-**Tier 3 — Derived (dashboards, 0.9.0):**
+- `@usebrick/core` owns schemas, generated contract types, validators, and
+  repository artifact I/O.
+- `@usebrick/engine` owns reusable parsing, facts, detection, scoring, and
+  Node/pure adapters.
+- `slopbrick` owns CLI/MCP orchestration, built-in rules, configuration,
+  reporting, and release packaging.
+- Prefer pure functions and `facts.v2`; keep filesystem, process, network, and
+  stdout/stderr effects at the CLI/MCP boundaries.
+- Import shared types from the workspace packages. Do not recreate core or
+  engine contracts inside SlopBrick.
 
-| Score | Shape | Use it for |
-|-------|-------|------------|
-| **Repository Health** | 0–100 | Weighted average of the above |
-| **AI Maintenance Cost** | $/month | $ cost of fixing issues, given team velocity |
-| **AI Debt band** | A / B / C / D / F | Letter grade |
+## Public score contract
 
-**It does not detect AI authorship.** It detects code-quality patterns (arbitrary Tailwind values, inline styles, hook soup, missing accessibility, duplicated components, hardcoded secrets, off-scale spacing, constitution violations, architectural drift) that are strongly correlated with AI-generated code — AND that AI agents can fix or avoid with the right signals.
+The four headline scores are independent:
 
-**Primary user is the AI agent.** The core workflow is `slop_suggest`: agents call it before writing code, get the project's `doNotCreate` list, follow the existing patterns, never violate the Constitution. The human-facing CLI is the enforcement layer.
+| Field | Direction | Contract |
+|---|---|---|
+| `aiSlopScore` | lower is cleaner | effective AI-associated signals; not authorship proof |
+| `engineeringHygiene` | higher is better | arch, logic, layout, visual, component, and test cleanliness |
+| `security` | higher is better | score derived from retained security findings |
+| `repositoryHealth` | higher is better | `0.4 × (100 − aiSlopScore) + 0.3 × engineeringHygiene + 0.2 × security + 0.1 × testQuality` |
 
-**Industry context (2024–2026):**
+Only `scoreValidity=valid` may gate. Partial scans are diagnostic and empty or
+not-applicable scans omit canonical scores. The default mean gate passes when
+`aiSlopScore <= meanSlop`.
 
-- METR July 2025 RCT: experienced open-source devs are **19% slower with AI tools** on real repos.
-- CodeRabbit 470-PR study: AI code carries **1.7× more issues per PR** (10.83 vs 6.45).
-- GitClear 211M-line analysis: refactoring down 60% (25%→<10%), copy-paste up 48% (8.3%→12.3%) in 3 years.
-- Faros AI 2026 (22k devs): PR size +51%, bugs/PR +28%, incidents/PR +3×, code churn +10×.
-- Stack Overflow 2025: trust in AI accuracy dropped **40% → 29%**; 66% spend more time debugging AI.
-- AWS Kiro outage (Dec 2025): agentic coding tool deleted production, 13-hour outage. "Predictable given unchecked AI permissions."
-- Sonar 2025: **$306,000/yr per 1M LoC** of code-level technical debt. The calibration baseline for `slopbrick maintenance-cost` in 0.8.0.
+Do not promote legacy `slopIndex`, `assemblyHealth`, `totalScore`, the Bayesian
+`compositeScore`, or specialised subcommand diagnostics into additional
+headline scores.
 
-**Strategic positioning:** see [`ROADMAP.md`](./ROADMAP.md) for the plan. Current state: v0.43.0 (a user-review-driven bugfix release — ~25 output/wording/UX fixes landed after v0.42.0; no rule changes). v0.43.0 retains the same engine as v0.42.0 (Sprints 2+3 work — temporal drift, empirical composites, MCP server, JSON Schemas) but with consistent scoring directions, named-threshold error wording, and real (not fictional) example outputs across the public surface. v0.44+ focuses on the v0.21→repositoryHealth inversion correctness + ci --max-slop v0.21 alignment (the two remaining semantic fixes from the post-v0.42 arc). v1.0 is the far-horizon stability commitment and is not yet scheduled.
+## Persisted artifacts and privacy
 
----
-
-## Quick commands
-
-Run everything from `/Users/cheng/BRICK`.
-
-```bash
-# Main scan — runs all rules, computes all 5 scores
-node bin/slopbrick.js scan
-
-# Score-specific commands
-node bin/slopbrick.js architecture   # Architecture Consistency Score
-node bin/slopbrick.js security      # AI Security Risk
-node bin/slopbrick.js drift         # Constitution violations
-node bin/slopbrick.js trend         # AI Slop Score over time (lower = cleaner since v0.21)
-node bin/slopbrick.js pr            # PR slop score (single weighted number per PR)
-
-# MCP server (for AI agents like Claude Code / Cursor / Codex)
-node bin/slopbrick.js mcp
-# Tools exposed: slop_scan_file, slop_explain_rule, slop_list_rules,
-#                slop_suggest, slop_check_constitution, slop_architecture_score
-
-# Single-file scan with advice
-node bin/slopbrick.js scan --suggest
-
-# Output formats
-node bin/slopbrick.js scan --format pretty    # default
-node bin/slopbrick.js scan --format json      # machine-readable
-node bin/slopbrick.js scan --format sarif     # code-scanning upload
-node bin/slopbrick.js scan --format html      # self-contained HTML report
-
-# Update baselines after intentional changes
-node bin/slopbrick.js scan --baseline
-```
-
-Use `--workspace <path>` to scan a project other than the current directory.
-
----
-
-## Reading scan output
-
-A typical failing run looks like this:
+A valid scan writes three canonical JSON snapshots plus one Markdown summary
+unless `projectMemory: false` is configured:
 
 ```text
-$ npx slopbrick scan --brief
-[v0.43.0] auto-suppressed 184 INVERTED/NOISY issue(s) from 18 default-off rule(s).
-Memory persisted to .slopbrick/ (0 patterns, 0 components, 537 bytes of structure.md).
-
-Repo is low (25/100). The biggest problem is AI patterns — worst file is packages/slopbrick/src/engine/parser-rust.ts.
-
-  AI Slop Score         25   low  (aiSlopScore)
-  Engineering Hygiene  100   excellent  (engineeringHygiene)
-  Security             100   excellent  (security)
-  Repository Health     57   needs work  (repositoryHealth)
-
-  CI gate: AI Slop Score <= 15 -> fail
-
-  Scanned 593 files, 346 issues. Run with --all for the full report.
-1 threshold failed: meanSlop (score 25 > 15)
+.slopbrick/{inventory.json,constitution.json,health.json,structure.md}
 ```
 
-- **AI Slop Score** — the v0.21+ headline score (raw amount of slop; lower = cleaner since the v0.21 re-inversion). Driven by 16 `ai/*` rules. CI gate is `≤ meanSlop` (default 30).
-- **Engineering Hygiene** — per-category average across 6 axes (boundary / logic / layout / visual / component / test). Higher = better. Informational only.
-- **Security** — categorical AI Security Risk band (low/medium/high/critical → 100/75/40/10). Higher = better. Drives `slopbrick security [--strict]` (exit 1 on high/critical for CI gating).
-- **Repository Health** — composite that inverts `aiSlopScore` internally (treats it as cleanliness) and combines it with the other three. Higher = better. Informational only.
-- **scanned files / 346 issues** — total count. `Run with --all for the full report` prints the per-issue breakdown by default-off, category, and severity.
-- **1 threshold failed: meanSlop (score 25 > 15)** — the named exit-code error message added in 500c2a5a. Tells CI consumers exactly which gate tripped.
+The engine can also append a bounded legacy/local
+`.slopbrick/structure.json` run-history log. It is not a canonical snapshot and
+does not implement `structure.schema.json`; that schema defines a structured
+projection while `structure.md` is the derived agent-readable rendering.
 
----
+The project-memory run log follows `projectMemory` (default on). Rich flywheel
+history under `.slopbrick/flywheel/` is also on by default and is disabled with
+`--no-telemetry` or `telemetry: false`. Outbound usage reporting is off by
+default and requires both `--report-usage` and
+`SLOPBRICK_TELEMETRY_ENDPOINT`. Keep all three mechanisms separate.
 
-## When you change code
+## Adding or changing a rule
 
-1. Run `pnpm typecheck && pnpm build && pnpm test` before claiming work is done.
-2. Run `node bin/slopbrick.js scan` to check if your changes introduced regressions in any of the five scores.
-3. If new issues are intentional or false positives, adjust the config (`slopbrick.config.mjs`) or the rule logic — do not delete tests to pass.
-4. If you intentionally raised the score (e.g., adding detection rules), re-baseline:
-   ```bash
-   node bin/slopbrick.js scan --baseline
-   ```
+1. Reuse `facts.v2`; most rules should be small pure analyzers.
+2. Add or change `src/rules/<category>/<rule-name>.ts`.
+3. Add focused tests under `tests/rules/`.
+4. Add a `RULE_HINTS` entry in `src/snippet/data.ts`.
+5. Add/update `src/rules/signal-strength.json` metadata.
+6. Run `corepack pnpm --filter slopbrick generate:rules`; the registry and
+   catalog are generated artifacts.
+7. Calibrate against an eligible corpus. A new or unmeasured rule stays
+   `defaultOff: true` until it satisfies the active policy (including the
+   recall/false-positive ratio gate) and review.
 
-**The four headline scores are independent.** A project can have AI Slop Score 0 (no AI fingerprint) AND Security: critical (hardcoded API key). Do not let one score mask another.
+Never describe a heuristic as deterministic, a historical point estimate as
+current calibration, or a rule firing as an authorship verdict. Exact matched
+evidence, when available, must remain bounded and privacy-safe.
 
-## Calibration (v10.3 readiness, updated 2026-07-14)
+## Calibration boundary
 
-The canonical v10.3 review workspace lives at
-`/Users/cheng/corpus-expansion/v10.3/` (override the scanner's source path with
-the `SLOPBRICK_CORPUS_DIR` env var where applicable). Review artifacts are
-centralized in [`src/corpus-paths.ts`](./src/corpus-paths.ts)
-— import `POSITIVE_DIR`, `NEGATIVE_DIR`, `FILELISTS_DIR`,
-or `filelistPath(name)` rather than hardcoding
-`/Users/cheng/corpus-expansion/...`. Python scripts in
-`scripts/` mirror the same constant via
-`os.environ.get('SLOPBRICK_CORPUS_DIR', '/Users/cheng/corpus-expansion')`.
+The live calibration index is
+[`docs/calibration/README.md`](./docs/calibration/README.md). Detailed v10.3
+plans and evidence are preserved for audit, but only the central execution
+ledger decides what work is active.
 
-The current review inventories contain **224,903 declared AI** and **227,479
-declared human** rows, but all 12 sources remain pending or quarantine-only.
-The admission, manifest, selection, and run directories are empty, so the
-current project has **no verified calibration units** and must not claim that
-the rule catalog is calibrated against v10.3.
+- Do not infer labels from “recent GitHub repo,” popularity, or code quality.
+- Positive means verified AI provenance; negative means verified human
+  provenance under the approved method.
+- Schema validation alone does not admit a source.
+- Quarantined/registered files do not count as eligible calibration units.
+- Do not publish numeric v10.3 performance until provenance, overlap,
+  denominator, split, and coverage gates all pass.
 
-The counts below are historical v4.1 exploratory evidence only; they are not
-current release or calibration authority:
+## Commands
 
-- **Historical negative:** 95,467 frontend files plus 54,980 baseline files.
-- **Historical positive:** 76,981 frontend files.
-
-The older per-rule tables and cached calibration tests below remain useful for
-regression context, but they are not v10.3 admission evidence and must not be
-used to promote a rule or publish a calibration claim.
-
-Per-rule Precision/Recall/FPR is the form engineers actually trust. See:
-- [`docs/research/v4-per-rule-pr-fpr.md`](./docs/research/v4-per-rule-pr-fpr.md) — full per-rule P/R/FPR table
-- [`docs/research/calibration-report-2026.md`](./docs/research/calibration-report-2026.md) — calibration trajectory (v1 → v5)
-- [`docs/research/v0.10-implementation-plan.md`](./docs/research/v0.10-implementation-plan.md) — credibility-milestone roadmap (Phases 1–5 ship v0.10)
-
-The calibration tests are at:
-- `tests/integration/calibration-expanded.test.ts` — 27 ratio thresholds + 18 P/R/FPR thresholds
-- `tests/integration/calibration-security.test.ts` — multi-language backend rules
-- `tests/integration/calibration-db.test.ts` — db/* SQL/ORM rules
-
-All three use cached `fires.json` files under `/tmp/{v4neg-fe,v4pos-fe,corpus-v4neg,corpus-v4pos,corpus-v4db-*}-shards/` for fast (<1s) test runs. Falls back to a fresh scan if the cache is missing.
-
----
-
-## Fixing issues
-
-Use the rule ID from the issue to find the rule source and tests:
+Run from the monorepo root:
 
 ```bash
-# Example issue ruleId: visual/inline-style
-grep -R "visual/inline-style" src/rules tests/rules
+corepack pnpm --filter slopbrick typecheck
+corepack pnpm --filter slopbrick exec vitest run <focused-test-file>
+corepack pnpm --filter slopbrick build
 ```
 
-Run with `--suggest` to get concrete remediation advice. Prefer fixes that move code toward tokens, components, and semantics rather than silencing the rule.
-
----
-
-## Adding a new rule
-
-1. Create `src/rules/<category>/<rule-name>.ts`.
-2. Export a const ending in `Rule` and a default export:
-
-```ts
-import { createRule } from '../rule';
-
-export const myRule = createRule({
-  id: 'category/my-rule',
-  category: 'visual',
-  severity: 'medium',
-  aiSpecific: true,
-  create: (ctx) => ({ ... }),
-  analyze: (facts, ctx) => [...issues],
-});
-
-export default myRule;
-```
-
-3. Add tests in `tests/rules/<rule-name>.test.ts`.
-4. Add a `RULE_HINTS` entry in `src/snippet/data.ts` so the `tests/engine/rule-hints.test.ts` "every builtin has a hint" guard stays green.
-5. Regenerate the rule registry:
-   ```bash
-   pnpm generate:rules
-   ```
-   This also runs automatically before `pnpm build` and `pnpm test`.
-
----
-
-## Conventions for new features
-
-- **Reuse `facts.v2`.** The engine already extracts JSX elements, class names, fetch calls, hook usage, etc. Most new rules should be 5–20 line pure functions over `facts.v2`.
-- **Reuse the signal table.** `src/config/constitution.ts` exports `CONSTITUTION_SIGNALS` (40 entries). Don't redefine it in a new module.
-- **Reuse the duplicate-detection logic.** `src/mcp/patterns.ts` exports `buildPatternInventory`. Architectural-drift detection should compose this, not reimplement it.
-- **Add a CLI subcommand** if the feature is user-facing in CI. Tests in `tests/cli/<subcommand>.test.ts`.
-- **Add an MCP tool** if AI agents should call it. Tests in `tests/mcp/patterns.test.ts`.
-- **Surface the score in `ProjectReport`** if it should appear in `slopbrick scan` output. Tests in `tests/cli.test.ts` for round-trip JSON.
-
----
-
-## Quality gates
-
-Always run these before finishing work:
+Run the full package suite before release or a broad change:
 
 ```bash
-pnpm typecheck
-pnpm build
-pnpm test
+corepack pnpm --filter slopbrick test
 ```
 
-- TypeScript is strict. Avoid `any`; prefer `unknown` with narrowing.
-- Add explicit return types to exported functions.
-- Keep IO and business logic separate.
-- Prefer small, focused files.
-- When bumping `VERSION` in `src/types.ts`, also bump `package.json` and search fixtures for hardcoded versions. Update `tests/types.test.ts`, `tests/cli.test.ts`, `tests/cache-orphan-tmp.test.ts`, `tests/engine/structure.test.ts` to use the live `VERSION` constant. Don't hardcode `0.5.2`.
+Self-scan the package-local workspace with the package-local binary so packed
+consumer fixtures cannot substitute another version:
 
----
+```bash
+corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan \
+  --workspace . --threads 1 --no-telemetry
+```
 
-## Project structure
+Do not freeze current test, tool, subcommand, or source-file counts in prose.
+Generate or query them at runtime.
 
-Top-level `src/` contains only `index.ts` (public facade) and `types.ts` (shared TypeScript types). Everything else lives in a subfolder grouped by concern.
+## Release process
 
-| Path | Purpose |
-|------|---------|
-| `src/index.ts` | Public facade, re-exports |
-| `src/cli/` | Commander wiring + per-command action callbacks |
-| `src/cli/program.ts` | All subcommands + global options |
-| `src/cli/scan.ts` | Main scan engine (runScan, scanProject, watch, output) |
-| `src/cli/drift.ts` | `slopbrick drift` (constitution enforcement) |
-| `src/cli/pr.ts` | `slopbrick pr` (PR slop score — single weighted number per PR) |
-| `src/cli/init.ts` | `slopbrick init` + `slopbrick doctor` |
-| `src/cli/explain.ts` | `slopbrick explain <ruleId>` per-rule printer |
-| `src/cli/git.ts` | Git plumbing (head/root/staged/diff/edit-count) |
-| `src/cli/installer.ts` | Pre-commit hook install/uninstall |
-| `src/cli/tokens.ts` | `slopbrick tokens` DTCG tokens.json ingest |
-| `src/engine/` | Parser, worker pool, visitor, scoring, cache, telemetry |
-| `src/engine/architecture-score.ts` | Architecture Consistency Score |
-| `src/engine/ai-security-risk.ts` | AI Security Risk categorical score |
-| `src/engine/trend.ts` | Slop Index trend over time |
-| `src/engine/discover.ts` | File enumeration (globby + extension sniffing) |
-| `src/engine/cache-incremental.ts` | `--incremental` file-content hash cache |
-| `src/engine/flywheel.ts` | Self-tuning loop (autoTuned + hotspotIssues + suggestions) |
-| `src/rules/` | Built-in rule modules (auto-discovered) |
-| `src/rules/security/` | Tier-1 + Tier-2 security rules |
-| `src/rules/visual/spacing-scale-violation.ts` | Design-token drift rule |
-| `src/rules/visual/radius-scale-violation.ts` | Design-token drift rule |
-| `src/config/` | Config types, defaults, detect, load, init, constitution |
-| `src/config/index.ts` | Public config facade (re-exports defaults/load/detect/init/conventions) |
-| `src/config/validation.ts` | `validateConfig` + `ConfigValidationError` |
-| `src/mcp/` | MCP server (JSON-RPC 2.0 over stdio) |
-| `src/mcp/patterns.ts` | Project-wide pattern inventory (used by both MCP and Architecture Score) |
-| `src/report/` | Pretty, JSON, SARIF, HTML report generators |
-| `src/snippet/` | Agent rule-directive snippets (CLAUDE.md, AGENTS.md, etc.) |
-| `src/types.ts` | Shared TypeScript types |
-| `scripts/generate-rule-registry.ts` | Auto-discovers rule modules and writes `src/rules/builtins.ts` |
-| `tests/` | Vitest tests mirroring `src/` structure |
-| `docs/` | Historical research + per-rule documentation |
-| `examples/` | Ready-to-use starter configs (`basic/`, `strict/`, `monorepo/`, `ci/`) |
-| `corpus/baseline.json` | Default corpus baseline |
+The workspace candidate is not public merely because its local tests pass.
+Before a SlopBrick release:
 
----
+1. Bump `package.json` and update `CHANGELOG.md`.
+2. Run root typecheck, full test, and build gates.
+3. Run and record the package-local self-scan; resolve or explicitly disposition
+   any threshold failure.
+4. Push the reviewed release commit and tag.
+5. Create the GitHub Release, approve the protected publish environment, and
+   verify the OIDC publish workflow plus `npm view` result.
 
-## Config conventions
+Never run `pnpm publish` or `npm publish` locally. A tag push alone does not
+publish.
 
-- Config file: `slopbrick.config.mjs` in the project root.
-- Rules use IDs like `<category>/<name>`.
-- Severity can be `'auto'`, `'low'`, `'medium'`, `'high'`, or `'off'`.
-- `categoryWeights` multiply category scores.
-- `thresholds` define CI gates.
-- **`constitution`** (added in 0.6.2) — declares the project's stack: `stateManagement`, `dataFetching`, `uiLibrary`, `forms`, `styling`, `routing`. User declarations always win over auto-detection from `package.json`. Empty arrays mean "we deliberately don't use this category." Optional **`forbidden`** array declares an explicit deny-list of packages (or `@scope/` prefixes) that any PR introducing them must fail.
-- **`spacingScale`** + **`radiusScale`** (added in 0.6.3) — token scales for design-token drift detection. Default matches Tailwind.
-- **`prScoreThreshold`** (added in 0.7.0) — non-negative integer. `slopbrick pr` exits 1 when the PR introduces more than this many weighted slop points (sum of `SEVERITY_WEIGHTS[issue.severity]` + constitution violations) across the changed files. Default: `20`. Override per invocation with `--threshold <n>`.
+## Documentation authority
 
----
+- Platform direction: [`../../ROADMAP.md`](../../ROADMAP.md)
+- Active plans/status/changelog: [`../../docs/execution/`](../../docs/execution/)
+- Package behavior: [`README.md`](./README.md) and current generated/runtime
+  docs
+- Historical calibration/research: evidence only, never an active roadmap by
+  implication
 
-## Security
+When changing behavior, update the root roadmap/status only if the milestone
+actually moved; otherwise update the relevant package doc and execution plan.
 
-- **Never commit `.env`, keys, tokens, or credentials.** Even examples in `docs/` and test fixtures should use placeholder values (`sk-xxx`, `AKIAIOSFODNN7EXAMPLE`).
-- Do not run destructive commands (`rm -rf`, `git push --force`, etc.) without explicit user approval.
-- Sensitive files are already ignored in `.gitignore`.
-- **Git pushes require explicit user confirmation** — per the parent AGENTS.md policy. `git commit` is fine; `git push --force` is not.
+## Security and Git
 
----
+- Never commit credentials, private corpus contents, or raw proprietary source.
+- Preserve unrelated worktree changes.
+- Use `rg`/`rg --files` for search.
+- Do not perform destructive Git actions, push, tag, release, publish, or
+  deploy without the required user authorization.
 
 ## License
 

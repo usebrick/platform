@@ -1,12 +1,13 @@
 # SlopBrick Calibration Methodology
 
-> **Historical evidence notice (2026-07-13):** The v10.1/v10.2 material in
+> **Historical evidence notice (updated 2026-07-17):** The v10.1/v10.2 material in
 > this document describes exploratory or historical calibration, not an
 > admitted v10.3 evaluation corpus. The latest verified public release is
-> `slopbrick@0.43.0`; the workspace `0.44.0` candidate is not released. The
-> current provenance and admission authority is
-> [`packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md`](../packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md),
-> and no calibration-derived rule promotion is allowed until its gates pass.
+> `slopbrick@0.43.0`; the workspace `0.45.0` candidate is not released and
+> v10.3 has zero admitted units. Current strategy and scheduling live in the
+> [roadmap](../ROADMAP.md), [execution index](execution/index.json), and
+> [status](execution/STATUS.md). The frozen v10.3 protocol remains historical
+> evidence, not live execution authority.
 
 > **Authoritative reference for how slopbrick calibrates its 103 rules (v0.38.0+; was 140 in v0.37.0).**
 >

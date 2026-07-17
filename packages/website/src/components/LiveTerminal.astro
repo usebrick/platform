@@ -1,7 +1,7 @@
 ---
-// LiveTerminal — a real, typeable terminal the visitor can drive.
-// The static markup is just the chrome. The script (live-terminal.ts)
-// renders the seed banner, then takes over for typing and history.
+// LiveTerminal — a typeable simulation backed by representative command
+// fixtures. It demonstrates the interface; it does not execute repository
+// code or run the full CLI in the browser.
 ---
 
 <section class="section live-terminal-section" id="terminal" aria-label="Interactive terminal demo">
@@ -11,7 +11,8 @@
       Run it. <span class="live-terminal-section__accent">Right here.</span>
     </h2>
     <p class="live-terminal-section__body">
-      The full CLI runs in your terminal. So does this one. Click in, type a command, press Enter.
+      This interactive simulation uses representative CLI fixtures. Click in, type a supported command,
+      and press Enter; install SlopBrick to scan a real repository.
     </p>
   </header>
 

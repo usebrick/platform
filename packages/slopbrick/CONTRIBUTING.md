@@ -1,262 +1,204 @@
-# Contributing to slopbrick
+# Contributing to SlopBrick
 
-> **tl;dr** — to add a new rule: copy `src/rules/visual/naturalness-anomaly.ts`,
-> edit the `analyze()` body, add a test in `tests/rules/`, then add
-> a `defaultOff: true` entry to `src/rules/signal-strength.json`.
-> v0.14.5k's calibration will validate it on the next corpus run.
+Thanks for helping make SlopBrick more accurate, useful, and honest.
 
-Thanks for your interest in making slopbrick better. The most useful
-contributions are:
+The highest-value contributions are:
 
-1. **New rules** — patterns we don't catch yet. The current coverage gaps are tracked in the operator's local calibration log (not in the public repo).
-2. **Rule calibration data** — running `slopbrick scan` on a
-   real codebase and reporting what fires.
-3. **Bug reports** — especially: "this rule fired on something
-   that's not the pattern."
-4. **New framework parsers** — the supported-framework matrix is in the operator's local notes (not in the public repo). The currently supported set: React, Vue, Svelte, Solid, Qwik, Astro, HTML, plus Python and Go (regex-only).
+1. reproducible false-positive or false-negative reports;
+2. focused fixes with regression tests;
+3. evidence-backed improvements to existing rules;
+4. framework/language adapters with explicit support limits;
+5. documentation that matches the runtime.
 
-For anything else (docs, refactors, new commands), open an issue
-first so we can align on scope.
+The active v0.45 release plan prioritizes trust and reliability rather than a
+larger default-on rule catalog. New rules can be reviewed, but they remain
+default-off until they meet the active calibration policy.
 
----
-
-## Adding a new rule
-
-This is the most common contribution. The rule engine is designed
-to make this easy.
-
-### 1. Pick a category
-
-The 16 categories (in `src/types.ts`):
-
-| Category | What it covers |
-|---|---|
-| `ai` | AI / LLM signatures (compression-profile, segment-surprisal-cv) |
-| `context` | Props, imports, state, dependency boundaries |
-| `boundary` | Structural integrity — large files, multiple components per file |
-| `visual` | CSS, layout, typography, colors |
-| `component` | Component shape (one-per-file, default exports, prop names) |
-| `logic` | State, hooks, prop usage, business-logic patterns |
-| `arch` | Cross-file structure, file size, dependency direction |
-| `perf` | Performance (CSS size, image CLS, render cost) |
-| `security` | Secrets, XSS, injection patterns, SSRF |
-| `test` | Test coverage, naming, structure, snapshot usage |
-| `docs` | Stale references, broken links, README freshness |
-| `db` | SQL anti-patterns, schema issues, N+1 queries |
-| `wcag` | Accessibility (focus rings, target size, drag) |
-| `typo` | Typography (font weights, line heights) |
-| `layout` | Flex/grid, gaps, alignment |
-| `product` | Feature flags, dead code, churn |
-| `i18n` | Translations, locale handling |
-
-Pick the category that best describes what the rule catches. **A
-rule is in exactly one category** — if your pattern is ambiguous,
-split it into two rules.
-
-### 2. Copy the template
-
-The simplest rules are 30-60 lines. Copy the nearest neighbor:
-
-```bash
-# Pattern-mining rule (e.g. compression-profile):
-cp src/rules/visual/naturalness-anomaly.ts src/rules/<category>/<your-rule>.ts
-
-# AST-shape rule (e.g. boundary-violation):
-cp src/rules/architecture/inconsistent-structure.ts src/rules/<category>/<your-rule>.ts
-```
-
-Open the file and edit:
-- The header comment (cite the source if it's a peer-reviewed paper
-  or a well-known pattern)
-- The `id` and `category` fields
-- The `analyze()` function — this is the body
-- The `threshold` / `severity` fields
-
-### 3. Add a test
-
-Every rule needs at least one test in `tests/rules/<your-rule>.test.ts`.
-Use the existing rule tests as a template:
-
-```ts
-import { describe, it, expect } from 'vitest';
-import { analyze } from '../../src/rules/<category>/<your-rule>';
-import { parseFile } from '../../src/engine/parser';
-import { buildFacts } from '../../src/engine/facts';
-
-describe('<your-rule>', () => {
-  it('fires on the pattern', async () => {
-    const src = `
-      // sample code that should fire
-    `;
-    const { ast, source } = await parseFile('test.ts', src);
-    const facts = buildFacts(ast, source, src.split('\n'));
-    const issues = analyze(facts, defaultContext('test.ts'));
-    expect(issues.length).toBeGreaterThan(0);
-  });
-
-  it('does not fire on clean code', async () => {
-    const src = `
-      // sample code that should NOT fire
-    `;
-    const { ast, source } = await parseFile('test.ts', src);
-    const facts = buildFacts(ast, source, src.split('\n'));
-    const issues = analyze(facts, defaultContext('test.ts'));
-    expect(issues.length).toBe(0);
-  });
-});
-```
-
-### 4. Add to signal-strength.json
-
-Open `src/rules/signal-strength.json` and add an entry:
-
-```json
-{
-  "<category>/<your-rule>": {
-    "defaultOff": true,
-    "aiSpecific": false,
-    "calibration": {
-      "precision": null,
-      "recall": null,
-      "fpr": null,
-      "lift": null
-    },
-    "notes": "1-line description, what it catches"
-  }
-}
-```
-
-**`defaultOff: true` is critical for new rules.** Until v0.14.5k's
-calibration validates the rule on the v7 corpus, it should not
-appear in the user-facing score. The user can opt in via
-`rules: { '<category>/<your-rule>': 'medium' }` in their
-`slopbrick.config.mjs`.
-
-### 5. Run the test suite
-
-```bash
-cd packages/slopbrick
-pnpm test          # all 798 tests should still pass
-pnpm typecheck     # no type errors
-```
-
-### 6. Submit a PR
-
-PR title: `feat(rules): add <category>/<your-rule>`. Include:
-- 1-line description in the PR body
-- Sample input → output (paste the test case)
-- A note if the rule needs calibration (most do)
-
-The v0.14.5k calibration pipeline will auto-classify the rule as
-USEFUL / OK / NOISY / INVERTED / DORMANT / HYGIENE when the v7
-corpus scans finish. We'll update the rule's `defaultOff` flag
-based on that classification.
-
----
-
-## Reporting bugs
-
-When reporting a bug, please include:
-
-1. **The exact command** you ran (with `--workspace` if relevant)
-2. **The output** (the full scan report, ideally `--json` form)
-3. **The expected behavior** (what should the score have been?)
-4. **The file the rule fired on** (if it's a false positive) — paste
-   a 5-20 line snippet, not the whole file
-5. **Your slopbrick version** (`npx slopbrick --version`)
-
-This is the minimum info needed to reproduce. False positives are
-the most common bug type — they're also the most valuable to report
-because they feed directly into the calibration.
-
----
+Read the root [roadmap](../../ROADMAP.md) and [execution
+ledger](../../docs/execution/README.md) before proposing broad product work.
 
 ## Development setup
 
 ```bash
-git clone https://github.com/usebrick/platform
+git clone https://github.com/usebrick/platform.git
 cd platform
-pnpm install
-pnpm --filter slopbrick typecheck
-pnpm --filter slopbrick test
+corepack pnpm install
+corepack pnpm --filter slopbrick typecheck
+corepack pnpm --filter slopbrick build
 ```
 
-The package is in `packages/slopbrick/`. The shared types and
-schemas are in `packages/core/`.
+SlopBrick is in `packages/slopbrick/`. Shared contracts live in
+`packages/core/`; reusable scanning logic lives in `packages/engine/`.
 
-### Project structure
+The supported runtime lines are Node.js 22 and 24.
 
+## Reporting a finding problem
+
+Include:
+
+1. `npx slopbrick --version`;
+2. the exact command and relevant configuration;
+3. the rule ID and complete message;
+4. the smallest safe source snippet that reproduces the result;
+5. the expected behavior and why;
+6. whether the scan was complete, partial, or not applicable.
+
+Remove secrets and proprietary context. A false positive is a rule-quality
+bug, not evidence that the user should silence the scanner.
+
+## Adding or changing a rule
+
+### 1. Choose the closest current rule
+
+Use the generated [rule catalog](./docs/rule-catalog.md), then inspect the
+source and tests for the nearest behavior. Do not copy a hard-coded category
+list from prose; the generated registry is authoritative.
+
+Rules live at:
+
+```text
+src/rules/<category>/<rule-name>.ts
 ```
-packages/
-├── core/          # @usebrick/core — types, schemas, loaders (private, not on npm)
-└── slopbrick/     # the CLI (published as `slopbrick`)
-    ├── src/
-    │   ├── engine/      # parser, facts, aggregations
-    │   ├── rules/       # 80 rules across 16 categories
-    │   ├── visitors/    # AST visitors per language
-    │   ├── cli/         # commander setup, scan/init/ci/lock
-    │   ├── report/      # pretty / json / sarif / html formatters
-    │   ├── mcp/         # MCP server (slop_suggest, slop_rules, ...)
-    │   └── config/      # config loading + validation
-    ├── tests/           # 798 tests across engine/rules/report/cli
-    ├── scripts/         # corpus scan, calibration, gap analysis
-    └── docs/            # public docs (see "Documentation" below)
+
+Prefer a small pure analyzer over `facts.v2`. The current rule shape is:
+
+```ts
+import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { createRule } from '../rule';
+
+interface Context {}
+
+export const myRule = createRule<Context>({
+  id: 'category/my-rule',
+  category: 'visual',
+  severity: 'medium',
+  aiSpecific: false,
+  description: 'Describe the observable implementation problem.',
+  create(_context: RuleContext): Context {
+    return {};
+  },
+  analyze(_context: Context, facts: ScanFacts): Issue[] {
+    // Return exact, bounded findings from facts.v2.
+    return [];
+  },
+});
+
+export default myRule satisfies Rule<Context>;
 ```
 
-### Useful commands
+Use `aiSpecific: true` only when the evidence supports an AI-associated signal.
+It is still not an authorship verdict.
+
+### 2. Add behavior tests
+
+Add focused tests under `tests/rules/`. At minimum prove:
+
+- the intended pattern fires;
+- a nearby valid pattern does not fire;
+- the reported location/message/advice is useful;
+- unsupported file types or contexts do not accidentally fire;
+- any auto-fix is deterministic, safe, and idempotent.
+
+Copy a current neighboring test so parser/facts setup stays aligned with the
+engine API.
+
+Run the focused file while iterating:
 
 ```bash
-# Build the CLI
-pnpm --filter slopbrick build
-
-# Run a single test file
-pnpm --filter slopbrick exec vitest run tests/rules/your-rule.test.ts
-
-# Run the calibration on the partial v7 data (scans still running)
-python3 scripts/compute-v7-calibration-partial.py
-
-# Find rule-coverage gaps
-python3 scripts/find-rule-coverage-gaps.py
-
-# Self-scan the slopbrick codebase
-node dist/index.js scan --workspace .
+corepack pnpm --filter slopbrick exec vitest run tests/rules/<test-file>.test.ts
 ```
 
----
+### 3. Add user guidance
 
-## Code style
+Every built-in rule needs a `RULE_HINTS` entry in
+[`src/snippet/data.ts`](./src/snippet/data.ts). The full test suite verifies
+that the registry and hint map agree.
 
-- **TypeScript strict** — `tsc --noEmit` must pass
-- **ESM imports** — `.js` extension in imports (TS resolves to `.ts`)
-- **No external dependencies without discussion** — open an issue first
-- **Cite sources** — if a rule is based on a paper, link it in the file header
-- **One purpose per file** — keep rules, visitors, formatters separate
+### 4. Keep unmeasured rules default-off
 
----
+Update [`src/rules/signal-strength.json`](./src/rules/signal-strength.json)
+through the reviewed signal-strength workflow. A new rule must be schema-valid,
+`defaultOff: true`, and explicitly marked as unmeasured/DORMANT until eligible
+calibration exists. Do not invent precision, recall, FPR, lift, provenance, or
+dates to satisfy the schema.
 
-## Release process
+Promotion requires the active policy, including the required recall/false-
+positive ratio and provenance/coverage gates. Historical v10.1 point estimates
+are not v10.3 admission evidence.
 
-Versions follow semver:
-- **0.14.x** — calibration era (every minor release is a calibration update)
-- **0.15.x** — Python/Go AST support (planned)
-- **1.0.0** — stability commitment, API frozen
+### 5. Regenerate derived docs
 
-Each release is a single PR. The release commit bumps `version` in
-`package.json`, updates `CHANGELOG.md`, and tags the commit. The CI
-publishes to npm automatically on tag.
+```bash
+corepack pnpm --filter slopbrick generate:rules
+```
 
----
+This regenerates the built-in registry and rule catalog. Do not hand-maintain
+their totals.
+
+### 6. Run proportional gates
+
+During development:
+
+```bash
+corepack pnpm --filter slopbrick typecheck
+corepack pnpm --filter slopbrick exec vitest run <focused-tests>
+corepack pnpm --filter slopbrick build
+```
+
+Before a broad rule/engine change or release:
+
+```bash
+corepack pnpm --filter slopbrick test
+corepack pnpm -r typecheck
+corepack pnpm -r build
+```
+
+Test totals change. Do not copy a numeric total into a PR or document unless it
+is explicitly a dated evidence snapshot.
+
+## Code expectations
+
+- TypeScript strict; avoid `any`, narrow `unknown`.
+- Add explicit return types to exported functions.
+- Keep I/O out of detection/scoring logic where possible.
+- Reuse `@usebrick/core` and `@usebrick/engine` contracts.
+- Use `facts.v2` rather than reparsing source in individual rules.
+- Cite primary sources when a threshold or detector is research-derived.
+- Keep explanations observable and actionable.
+- Never describe code quality, a GitHub repository's age, or a rule firing as
+  proof of AI or human provenance.
+
+## Calibration contributions
+
+Start at the live [calibration index](./docs/calibration/README.md). Corpus
+records are useful only when their label, source, rights, immutable revision,
+normalization, overlap, split, and denominator evidence pass the approved
+method. Registered or quarantined files do not count as admitted units.
+
+Do not commit private corpus source, local checkout paths, credentials, or raw
+third-party evidence that the repository is not authorized to redistribute.
+
+## Release process (maintainers)
+
+SlopBrick is published only from a reviewed GitHub Release through the
+protected OIDC workflow:
+
+1. update `package.json` and `CHANGELOG.md`;
+2. run root typecheck, full test, and build gates;
+3. run and disposition the package-local self-scan;
+4. commit and push the reviewed release;
+5. tag it and create the GitHub Release;
+6. approve/watch the protected publish job;
+7. verify the public npm version.
+
+A tag push alone does not publish. Never run `pnpm publish` or `npm publish`
+locally.
 
 ## Code of conduct
 
-This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
-Be kind, be specific, be honest. We optimize for the v0.10
-credibility milestone — every PR should move us closer to per-rule
-peer-reviewed citations.
-
----
+This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md). Be kind,
+specific, and evidence-driven.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed
-under the [MIT License](LICENSE).
+Contributions are licensed under the [MIT License](./LICENSE).

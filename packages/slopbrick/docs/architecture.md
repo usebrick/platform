@@ -1,4 +1,9 @@
-# slopbrick Architecture (historical design record; current train v0.44.0 unreleased)
+# slopbrick architecture snapshot (v0.44.0 was unreleased at authoring)
+
+> **Historical design record.** The title and train references below describe
+> an earlier snapshot. Current architecture and release boundaries live in the
+> platform [architecture](../../../docs/ARCHITECTURE.md) and [execution
+> status](../../../docs/execution/STATUS.md).
 
 > **Repository Structure Scanner.** Cross-file pattern drift detection, Constitution enforcement, and MCP tools so AI coding agents follow your existing patterns instead of inventing new ones. The 4-score model (`aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`) proves the Constitution is being followed. v0.43.0 ships the calibration ritual + MCP server + JSON Schemas; v1.0 is reserved for the stability commitment after 6 months of empirical feedback.
 

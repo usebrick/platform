@@ -18,40 +18,31 @@ name: deploy-website
 #   - CLOUDFLARE_PAGES_PROJECT_NAME — e.g. "usebrick-dev"
 #
 # Why this is separate from ci.yml:
-#   - CI runs on every PR (cost-bound). This workflow runs on matching pushes
-#     to main independently; it does not declare a CI `needs` dependency, so
-#     a green CI status must not be inferred from a deploy trigger.
-#   - The path filter is strictly narrower (website/core, lockfile, or this
-#     workflow file) than the full repository push stream.
+#   - CI runs on every PR and push. Automatic production deployment starts only
+#     after the complete `ci` workflow succeeds on main, so candidate-derived
+#     facts cannot race ahead of a failing repository gate.
+#   - Manual dispatch remains available for an explicitly owner-authorized
+#     first deploy or recovery; the selected workflow ref is the deployed ref.
 #
-# Why we still build @usebrick/core in this workflow instead of relying
-# on the prebuilt dist committed to the repo:
-#   The `prebuild` script in packages/website/scripts/prebuild.ts reads
-#   packages/core/package.json#version fresh on each build to write
-#   src/data/version.json (used by the Footer). If we shipped a stale
-#   dist/, the Footer would show the old core version. Always rebuild.
+# Why Core and SlopBrick changes trigger this workflow:
+#   The website `prebuild` reads Core's package version and SlopBrick's
+#   package version, executable registry, generated catalog, and historical
+#   signal metadata directly from the checkout. It does not consume their
+#   dist/ output, but changes to those source facts must redeploy the site.
 
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [main]
-    paths:
-      # Only deploy when the site or its core-data source changes.
-      # Docs, marketing copy, and the slopbrick CLI code do not change
-      # the rendered site.
-      - 'packages/website/**'
-      - 'packages/core/**'
-      - 'pnpm-lock.yaml'
-      # The workflow file itself can change the deploy behavior.
-      - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
     # Manual re-deploy / first-time setup trigger. Required inputs are
     # the same repo secrets the schedule path uses.
 
 concurrency:
-  # One in-flight deploy per ref. cancel-in-progress=true: a second
-  # push that lands before the first deploy finishes supersedes the
-  # first — we never want two stale deploys racing.
-  group: deploy-website-${{ github.ref }}
+  # Production is one ordered lane. A newer eligible run cancels an older one
+  # so successful-CI reruns cannot race and roll the site backward.
+  group: deploy-website-production
   cancel-in-progress: true
 
 permissions:
@@ -59,6 +50,11 @@ permissions:
 
 jobs:
   deploy:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push' &&
+           github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     # The `cloudflare-pages` GitHub environment is OPTIONAL. If
     # defined in repo Settings → Environments with required reviewers,
@@ -73,6 +69,20 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify automatic deploy is the current main commit
+        if: ${{ github.event_name == 'workflow_run' }}
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [ "$EXPECTED_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Refusing stale deploy: successful CI SHA $EXPECTED_SHA is no longer main ($MAIN_SHA)"
+            exit 1
+          fi
 
       - name: Install pnpm
         # pnpm version comes from the root package.json's
@@ -97,8 +107,9 @@ jobs:
       - name: Build website
         # Astro's `prebuild` hook writes src/data/version.json from
         # the sibling packages' versions, then `astro build` reads it.
-        # We only build the website package — not the whole workspace —
-        # because the deploy doesn't depend on slopbrick/engine output.
+        # We only build the website package — not the whole workspace. Its
+        # prebuild reads SlopBrick source metadata directly but does not import
+        # SlopBrick or Engine build output.
         # The Footer reads the version string via version.json; if any
         # future direct import of @usebrick/core dist arises, add
         # `pnpm --filter @usebrick/core build` before this step.
@@ -130,6 +141,19 @@ jobs:
       #   working-directory: packages/website
       #   run: pnpm test:a11y
 
+      - name: Re-verify automatic deploy is still the current main commit
+        if: ${{ github.event_name == 'workflow_run' }}
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [ "$EXPECTED_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Refusing stale deploy: successful CI SHA $EXPECTED_SHA is no longer main ($MAIN_SHA)"
+            exit 1
+          fi
+
       - name: Deploy to Cloudflare Pages
         # wrangler-action@v3 is the supported CF Pages upload action.
         # Uses the `pages deploy` subcommand directly. Flags:
@@ -157,6 +181,6 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Project: \`${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Branch: \`main\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Result: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- usebrick.dev: https://usebrick.dev" >> "$GITHUB_STEP_SUMMARY"

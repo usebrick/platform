@@ -15,7 +15,9 @@ When the platform grows, some modules currently in `packages/core/` may deserve 
 **What it would contain:** the full Repository Structure read/write/validate surface — `loadInventory`, `saveInventory`, `loadConstitution`, `saveConstitution`, `readCache`, `writeCacheFromInventory`, `isInventoryFresh`, `invalidateFile`, all `isXFile` validators, the `STRUCTURE_SCHEMA_VERSION` constant.
 
 **Extract when ANY of these is true:**
-- A second consumer (stackpick or gir) needs the structure surface but NOT the schema types (impossible today; would signal schemas-as-spec maturing into structure-as-engine)
+- A second shipped consumer needs the structure surface but not the complete
+  schema/type package (which would show structure-as-engine has become a real
+  boundary)
 - The structure module's surface stabilizes (no new functions in 6+ months) — at that point it deserves its own versioning
 - A Python or Go consumer of the schemas wants to read `.slopbrick/inventory.json` without pulling in the full `@usebrick/core` package (split it via exports)
 
@@ -30,20 +32,25 @@ When the platform grows, some modules currently in `packages/core/` may deserve 
 **What it would contain:** all cross-language contract artifacts — JSON Schemas, generated TypeScript interfaces, MCP request/response models, future Protobuf/gRPC specs.
 
 **Extract when:**
-- A non-TypeScript consumer needs the schemas (Python stackpick analyzer, Go CI binary) — at that point, `contracts/` becomes the language-agnostic spec, `core/` becomes the TypeScript implementation
+- An approved non-TypeScript consumer needs the schemas — at that point,
+  `contracts/` can become the language-agnostic spec and `core/` the TypeScript
+  implementation
 - The schemas stop evolving at the same cadence as the implementation (they're frozen while `core/` keeps adding internal helpers)
 
 **Don't extract while:**
 - Only TypeScript consumes the schemas — keeping them in `core/` keeps the iteration loop tight
 - Schema changes are still happening in lock-step with TypeScript changes
 
-## Naming convention for future packages
+## Decision boundary for future packages
 
-When these extractions happen:
+An extraction is a possibility, not roadmap status. It requires its own ADR,
+versioning/ownership contract, at least two real consumers, and evidence that a
+package boundary reduces coupling. The root [roadmap](../ROADMAP.md) and
+[execution index](execution/index.json) decide sequencing.
 
-- Use **scoped `@usebrick/`** names: `@usebrick/structure`, `@usebrick/contracts`. The scope is for **libraries**, not the CLI.
-- The CLI stays unscoped: `slopbrick` (the flagship) + future `usebrick` (the umbrella for `scan`/`structure`/`mcp`/`doctor` subcommands).
-- The CLI binary keeps the unscoped name (`slopbrick`) but the package can be either.
+If an extraction is approved, reusable libraries use the scoped
+`@usebrick/*` namespace. `slopbrick` remains the shipped unscoped CLI. There is
+no approved umbrella CLI or independent StackPick/GIR/MCP package today.
 
 ## When NOT to extract
 
@@ -55,9 +62,11 @@ Premature splitting hurts more than it helps. Resist the urge to extract when:
 
 ## Status
 
-| Package | State | Trigger for extraction |
-|---------|-------|------------------------|
-| `@usebrick/core` | Monolithic (types + structure + JSON Schemas all in one) | Split into `core` + `structure` + `contracts` when a second language or second consumer appears |
-| `@usebrick/engine` | **New in v0.15.0** — pure scanning logic extracted from `slopbrick/src/engine/` | Already its own package; consume directly from CLI + future MCP + web IDEs |
-| `slopbrick` | CLI in monorepo | Stable; no extraction planned |
-| Future `stackpick` / `gir` / `mcp` / `cli` | Add as siblings when ready | Each becomes its own workspace package, all consuming `@usebrick/core` and `@usebrick/engine` |
+| Surface | Current state | Earliest valid extraction trigger |
+|---------|---------------|-----------------------------------|
+| `@usebrick/core` | Private workspace contract package | A public cross-language consumer and a reviewed schema/versioning ADR |
+| `@usebrick/engine` | Private pure scanning package | A second shipped runtime needs the stable pure API independently of SlopBrick |
+| `slopbrick` | Published CLI and embedded MCP server | Keep together while one release lifecycle and one owner are simpler |
+| MemoryBrick | Read-only product direction | M0 proves provenance/freshness value and two consumers need a stable API |
+| LockBrick | Planned paid workflow | Team pilots prove a separately versioned policy engine is needed |
+| Standalone MCP | Not approved | Multiple clients need an independent lifecycle and the boundary has no CLI-internal assumptions |

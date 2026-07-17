@@ -2,7 +2,7 @@
   "name": "usebrick-platform",
   "version": "0.0.0",
   "private": true,
-  "description": "Monorepo for the usebrick.dev platform — slopbrick CLI + shared @usebrick/core schema. Each package has its own release cadence; this root package is a workspace hub.",
+  "description": "Usebrick keeps AI-built software coherent: SlopBrick scans, repository-owned memory preserves context, LockBrick protects trusted policy, and MendBrick will repair verified drift.",
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
@@ -10,6 +10,7 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "security:audit": "node scripts/audit-npm-bulk.mjs --audit-level high",
+    "plans:validate": "node scripts/validate-execution-docs.mjs",
     "scan": "node packages/slopbrick/bin/slopbrick.js scan",
     "bench:scan": "pnpm --filter slopbrick bench:scan",
     "changeset": "changeset",

@@ -1,90 +1,87 @@
-# @usebrick/core — Public API
+# `@usebrick/core` public contract
 
-The `@usebrick/core` package is the **cross-language contract** for the Repository Structure Platform. Its public surface is small and stable.
+`@usebrick/core` is private to this workspace. “Public” here means exported to
+other workspace packages, not published on npm. The exact TypeScript surface is
+[`src/index.ts`](../src/index.ts); the exact cross-language schema inventory is
+[`schemas/v1/index.json`](../schemas/v1/index.json).
 
-## Exports
+## Repository artifact API
 
-The package's `index.ts` re-exports from three internal modules:
+The package exports generated types for:
 
-- `./structure-types` — TypeScript types and runtime validators
-- `./structure` — file loaders/savers and path helpers
-- `./verdicts` — the closed verdict taxonomy
-- `./signal-strength-schema` — the Zod schema for calibration data
+- `RepositoryStructureInventory`
+- `RepositoryStructureConstitution`
+- `RepositoryStructureHealth`
+- `RepositoryStructureStructuredProjection`
+- the generated `Pattern`, `Component`, and `Category` shapes
 
-### Types
+It also exports runtime validators, path helpers, loaders, and atomic savers for
+the three persisted JSON artifacts:
 
-- `StructureCategory` — the closed set of categories tracked in the inventory (`stateManagement | dataFetching | uiLibrary | styling | forms | routing | modal | button | api | service | route | ormModel`)
-- `StructurePattern` — a single detected pattern (category, canonical name, imports, fileCount)
-- `ComponentFingerprint` — a single component's fingerprint (name, files, hash, hooks, props, line range)
-- `InventoryFile` — the shape of `.slop-audit/inventory.json` (auto-generated from `schemas/v1/inventory.schema.json`)
-- `ConstitutionFile` — the shape of `.slop-audit/constitution.json`
-- `FileMtimeEntry` — a per-file mtime + hash entry for the cache (NOT part of the public schema — internal to the freshness check)
-- `HealthFile` — the shape of `.slopbrick/health.json` (score-bearing per-scan health snapshot; the v5 canonical scores `aiSlopScore` / `engineeringHygiene` / `security` / `repositoryHealth`, plus issue counts). Empty or not-applicable scans use a score-free scan-report envelope instead of writing a `HealthFile`. The legacy `slopIndex` and `categoryScores` fields remain optional for backward compatibility with v0.14 readers.
-
-### Runtime validators
-
-Every public type has an `is<Type>(value): value is Type` runtime predicate. Mismatched or malformed JSON returns `false` (loaders return `null` rather than throw, so consumers degrade gracefully):
-
-- `isStructurePattern`
-- `isComponentFingerprint`
-- `isInventoryFile`
-- `isConstitutionFile`
-- `isFileMtimeEntry`
-- `isHealthFile`
-
-### Loaders, savers, and freshness
-
-- `INVENTORY_FILENAME`, `CONSTITUTION_FILENAME`, `CACHE_FILENAME`, `HEALTH_FILENAME` — the canonical file names
-- `inventoryPath(root)`, `constitutionPath(root)`, `cachePath(root)`, `healthPath(root)` — root-anchored absolute paths
-- `loadInventory(root)`, `saveInventory(root, file)` / `loadConstitution(root)`, `saveConstitution(root, file)` / `loadHealth(root)`, `saveHealth(root, file)` — read/write each artifact; loaders return `null` on version mismatch or malformed JSON
-- `readCache(root)`, `writeCacheFromInventory(root, inventory)` — the cache file (`.slop-audit/cache.json`); NOT a public schema, internal to the freshness check
-- `isInventoryFresh(root, inventory)` — true iff every file in the inventory's component list has the same mtime + hash as the cache
-- `invalidateFile(root, file)` — drop a file from the cache (used by file-watcher integrations)
-- `writeJsonAtomic(path, data)` — write JSON safely (write-to-temp + rename)
-
-### Verdicts (v0.15.0+)
-
-- `VERDICTS` — `['USEFUL', 'OK', 'NOISY', 'INVERTED', 'HYGIENE', 'DORMANT']` as a `readonly` tuple (the closed set)
-- `Verdict` — TypeScript union type inferred from `VERDICTS`
-- `isDefaultOff(verdict)` — property test: does this verdict ship opt-out? Returns `true` for `NOISY`, `INVERTED`, `DORMANT`
-
-### Schemas (v0.15.0+)
-
-- `signalStrengthSchema` — Zod schema for `signal-strength.json` (slopbrick's calibration data). Validates recall/fpRate/precision in [0, 1], `lastCalibratedAt` is an ISO 8601 datetime, `verdict` is in `VERDICTS`, and `defaultOff` is an optional boolean override.
-- `SignalStrengthEntry` — TypeScript type inferred from the Zod schema (`z.infer<typeof signalStrengthSchema>[string]`)
-
-### Constants
-
-- `STRUCTURE_SCHEMA_VERSION` — the current schema version (`'5'`). Bump on breaking change.
-
-## On-disk layout
-
-```
-<project-root>/
-├── .slop-audit/
-│   ├── inventory.json     # machine-readable pattern + component inventory
-│   ├── constitution.json  # machine-readable declared constitution
-│   └── cache.json         # per-file mtime + hash (internal, NOT a public schema)
-└── .slopbrick/
-    └── health.json        # machine-readable per-scan health snapshot
+```text
+<project-root>/.slopbrick/
+├── inventory.json
+├── constitution.json
+├── health.json
+├── structure.md       # derived Markdown; written by SlopBrick
+└── structure.json     # bounded legacy/local run history; not a repository schema instance
 ```
 
-Note: the directory is `.slop-audit/`, not `.slopbrick/`. The `.slopbrick/` directory is reserved for the headline `health.json` snapshot (v0.15.0 — was `.slop-audit/health.json` in v0.14.x).
+`loadInventory`, `loadConstitution`, and `loadHealth` return `null` for a
+missing, malformed, or version-mismatched file. Their matching save functions
+write atomically. `STRUCTURE_SCHEMA_VERSION` is currently `'5'`.
 
-## Stability guarantees
+`.slopbrick/cache.json` is an internal mtime/hash freshness cache exposed only
+to workspace consumers through `readCache`, `writeCacheFromInventory`,
+`isInventoryFresh`, and `invalidateFile`. It is distinct from SlopBrick's
+root-level `.slopbrick-cache.json` incremental scan cache and is not a public
+schema.
 
-- **Adding a new field** to an existing schema is allowed without a version bump if the field is optional with a default. The validator and the schema file must both be updated.
-- **Removing or renaming a field** is a breaking change; bump `STRUCTURE_SCHEMA_VERSION` and the consuming package's major version.
-- **Adding a new `Verdict`** is a breaking change; extend `VERDICTS` and bump the consuming package's major version.
-- **Zod schema changes** to `signalStrengthSchema` are validated at module load time inside slopbrick; a parse failure throws a contract violation, which means the calibration JSON must be regenerated.
+The repository schemas are:
 
-## Cross-language consumers
+| Schema | Runtime artifact |
+|---|---|
+| `inventory.schema.json` | `.slopbrick/inventory.json` |
+| `constitution.schema.json` | `.slopbrick/constitution.json` |
+| `health.schema.json` | `.slopbrick/health.json` |
+| `structure.schema.json` | structured JSON projection; it does not describe the legacy/local `structure.json` run log |
 
-The JSON Schemas in `schemas/v1/*.json` are the source of truth for non-TypeScript consumers. Python (a future `stackpick` analyzer), Go (a future CI binary), or any other language should generate their types from these schemas, not from the TypeScript types.
+The user-facing `health.json` carries four headline scores:
+`aiSlopScore` (lower is cleaner), `engineeringHygiene`, `security`, and
+`repositoryHealth` (the latter three are higher-is-better). Empty or
+not-applicable scans use a score-free report envelope rather than fabricating a
+score-bearing health artifact.
 
-| Schema | Artifact | Source file |
-|--------|----------|-------------|
-| `inventory.schema.json`  | `.slop-audit/inventory.json`    | slopbrick scan |
-| `constitution.schema.json` | `.slop-audit/constitution.json` | `slopbrick init` |
-| `health.schema.json`     | `.slopbrick/health.json`        | slopbrick scan |
-| `structure.schema.json`  | structured JSON projection for the agent-readable summary; `.slopbrick/structure.md` is a derived Markdown rendering | slopbrick scan |
+## Calibration API
+
+The package also exports generated types, validators, hash/identity helpers,
+and semantic verifiers for the v10.3 calibration and admission contract family.
+The schema index is authoritative; this document intentionally does not freeze
+the changing list of calibration exports.
+
+A schema-valid artifact is not automatically admitted evidence. Callers must
+also run the matching semantic verifier where one exists, preserve the
+content-addressed bindings, and obey the release eligibility rules documented
+in the current calibration plan.
+
+## Verdict and signal-strength API
+
+- `VERDICTS`, `Verdict`, and `isDefaultOff()` define the closed calibration
+  verdict taxonomy.
+- `signalStrengthSchema` and `SignalStrengthEntry` validate the shipped signal
+  table.
+
+## Compatibility rules
+
+- Additive artifact fields must be optional and have defaults.
+- Removing or renaming a field, or changing required shape, requires a breaking
+  schema-version decision and migration.
+- Schema, generated types, runtime validators, index, and tests change in one
+  reviewed unit.
+- Do not import internal modules from another package. Import from
+  `@usebrick/core` and treat [`src/index.ts`](../src/index.ts) as the TypeScript
+  boundary.
+
+See the root [roadmap](../../../ROADMAP.md) and [execution
+ledger](../../../docs/execution/README.md) for current product and delivery
+status.

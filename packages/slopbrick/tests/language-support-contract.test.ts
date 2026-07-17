@@ -29,6 +29,18 @@ describe('language support contract', () => {
     expect(parserless).toEqual(expect.arrayContaining(['.dart', '.rb', '.php', '.cs']));
   });
 
+  it('does not present historical language cohorts as current v10.3 admission', () => {
+    for (const entry of LANGUAGE_SUPPORT) {
+      expect(entry.calibration).not.toMatch(/^Eligible\b/);
+      expect(entry.calibration).not.toContain('v10.2 cohort pending');
+    }
+
+    const matrix = readFileSync(join(__dirname, '..', 'docs', 'language-support-matrix.md'), 'utf8');
+    expect(matrix).toContain('Current v10.3 admission is zero');
+    expect(matrix).toContain('exec node --import tsx scripts/generate-language-support-matrix.ts --check');
+    expect(matrix).not.toContain('exec tsx scripts/generate-language-support-matrix.ts --check');
+  });
+
   it('publishes a static website summary generated from the manifest', () => {
     const websiteRoot = join(__dirname, '..', '..', 'website');
     const summaryPath = join(websiteRoot, 'src', 'data', 'language-support.json');

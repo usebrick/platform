@@ -125,6 +125,21 @@ describe('v0.18.4 — --help clusters', () => {
     expect(out).toContain('--help-flat');
   });
 
+  it('derives the grouped command index from registered commands', () => {
+    const out = runHelp(['--help']);
+
+    for (const command of ['calibration', 'research', 'db', 'ci']) {
+      expect(out).toMatch(new RegExp(`^  ${command}\\s`, 'm'));
+    }
+  });
+
+  it('links to the documentation route that the website actually serves', () => {
+    const out = runHelp(['--help']);
+
+    expect(out).toContain('https://usebrick.dev/docs/');
+    expect(out).not.toContain('/docs/scan-options');
+  });
+
   it('clarifies that --no-telemetry disables the local flywheel, not project memory', () => {
     const program = new Command();
     registerScan(program, async () => {});

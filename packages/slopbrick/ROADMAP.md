@@ -1,5 +1,9 @@
 # slopbrick Roadmap
 
+> **Superseded roadmap.** This is a historical product narrative, not current
+> strategy or execution authority. Use the platform
+> [roadmap](../../ROADMAP.md) and [execution index](../../docs/execution/index.json).
+
 > **v0.10 credibility milestone: reached in v0.14.5q (2026-06-28).**
 > The v7 corpus calibration is live. 65 of 80 rules are now
 > measured (31 USEFUL, 5 OK, 5 NOISY, 1 INVERTED, 23 HYGIENE).

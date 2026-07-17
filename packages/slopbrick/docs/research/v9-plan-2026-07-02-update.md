@@ -1,6 +1,10 @@
 # v9 plan — UPDATED 2026-07-02 (slower cadence)
 
-**Status:** supersedes the original v9-plan.md (2026-07-01).
+> **Historical planning snapshot.** It is not current strategy or execution
+> authority. Use the platform [roadmap](../../../../ROADMAP.md) and [execution
+> index](../../../../docs/execution/index.json).
+
+**Historical status at authoring:** superseded the original v9-plan.md (2026-07-01).
 **Reason for update:** v0.20.0 and v0.21.0/.1/.2 shipped between
 the original plan's authoring and the first calibration pass.
 

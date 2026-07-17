@@ -19,6 +19,22 @@ describe('MCP documentation registry contract', () => {
     }
   });
 
+  it('does not advertise a closed category list for slop_list_rules', () => {
+    const listRules = TOOL_DEFINITIONS.find((tool) => tool.name === 'slop_list_rules');
+
+    expect(listRules?.description).toContain('any registered category');
+    expect(listRules?.description).not.toContain('visual | logic | wcag');
+  });
+
+  it('does not publish an unmeasured fixed latency multiplier', () => {
+    const structuredSuggest = TOOL_DEFINITIONS.find(
+      (tool) => tool.name === 'slop_suggest_with_structure',
+    );
+
+    expect(structuredSuggest?.description).toContain('measure the speed-up');
+    expect(structuredSuggest?.description).not.toMatch(/\d+[–-]\d+×/);
+  });
+
   it('documents optional bounded finding evidence without parser dumps or provenance claims', () => {
     const document = readFileSync(docsPath, 'utf8');
     expect(document).toContain('optional bounded `whyItFired.evidence`');

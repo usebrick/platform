@@ -54,6 +54,20 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate execution control plane
+        run: |
+          node --test --test-concurrency=1 scripts/validate-execution-docs.test.mjs
+          pnpm plans:validate
+
+      - name: Check generated documentation and registries before build
+        # Build/test regenerate some artifacts. Check the committed bytes first
+        # so CI cannot silently repair a stale generated file and then pass.
+        run: |
+          pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-registry.ts --check
+          pnpm --filter slopbrick exec node --import tsx scripts/generate-rule-catalog.ts --check
+          pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check
+          pnpm --filter slopbrick exec node --import tsx scripts/generate-mcp-docs.ts
+
       - name: Build all packages
         # `pnpm -r build` respects workspace dep order: core first (no
         # workspace deps), then engine (depends on core), then slopbrick
@@ -64,15 +78,6 @@ jobs:
         # Keep workspace builds serialized: SlopBrick builds nested worker
         # bundles and can otherwise multiply Node RSS on small runners.
         run: pnpm --workspace-concurrency=1 -r build
-
-      - name: Check rule registry is in sync
-        # Catches the "added a rule, forgot to regenerate builtins.ts" path
-        # with a loud, fast, locally-runnable failure. Run `pnpm generate:rules`
-        # locally and commit the result if this step fails.
-        run: pnpm --filter slopbrick exec tsx scripts/generate-rule-registry.ts --check
-
-      - name: Check language support matrix is in sync
-        run: pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check
 
       - name: Typecheck all packages
         run: pnpm --workspace-concurrency=1 -r typecheck

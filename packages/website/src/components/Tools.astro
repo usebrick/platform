@@ -1,13 +1,10 @@
 ---
-// Tools — the slopbrick platform, broken into its surfaces.
-// 4 cards: CLI · MCP · JSON Schemas · Constitution. Each is a
-// real, shipped capability, not vaporware. (pickbrick/mendbrick
-// were "Planned" cards that looked unprofessional; removed in
-// v0.43.0 polish.)
+// Tools — the usebrick product ladder. Each card states whether the
+// layer is shipped, substrate, next, or later so roadmap work never
+// appears as a current product claim.
 
 import BrickLayout from './BrickLayout.astro';
 import productFacts from '../data/product-facts.json';
-import version from '../data/version.json';
 
 interface Tool {
   name: string;
@@ -21,28 +18,28 @@ interface Tool {
 
 const tools: Tool[] = [
   {
-    name: 'cli',
-    label: 'CLI',
-    desc: `Score code on 4 axes. Writes .slopbrick/ artifacts. v${version.slopbrick} workspace candidate, ${productFacts.ruleCount} rules across ${productFacts.categoryCount} categories; historical ${productFacts.corpusLabel} evidence covers ${productFacts.measuredRuleCount} rules and ${productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files.`,
+    name: 'slopbrick',
+    label: 'SCAN · SHIPPED',
+    desc: `The free front door for vibecoders: scan locally, inspect four scores, and act on file-level evidence. v${productFacts.published.version} publishes ${productFacts.published.ruleCount} rules in ${productFacts.published.categoryCount} categories.`,
     icon: 'cli',
     featured: true,
   },
   {
-    name: 'mcp',
-    label: 'MCP',
-    desc: 'Talk to Claude Code, Cursor, Copilot. 7 tools, JSON-RPC 2.0 over stdio. Agents consume the structure, not the AST.',
+    name: 'memorybrick',
+    label: 'REMEMBER · SUBSTRATE',
+    desc: 'Repository-owned observed facts, declared policy, health, and concise agent context. Existing artifacts and MCP access are the foundation; provenance and freshness are the next contract.',
     icon: 'mcp',
   },
   {
-    name: 'schemas',
-    label: 'JSON Schemas',
-    desc: '4 contracts: Inventory, Constitution, Structure, Health. The wire format every agent and dashboard agrees on. Cross-language.',
+    name: 'lockbrick',
+    label: 'PROTECT · NEXT',
+    desc: 'The first paid team layer: fail new architectural drift and stale policy in CI without requiring a repository-wide cleanup first.',
     icon: 'schemas',
   },
   {
-    name: 'constitution',
-    label: 'Constitution',
-    desc: 'Declare your stack once in slopbrick.config.mjs. The agent + linter enforce it together. Drift is an exit code.',
+    name: 'mendbrick',
+    label: 'REPAIR · LATER',
+    desc: 'Deterministic, reversible repair for findings teams already trust. Pick is folded into init and policy authoring instead of marketed as another product.',
     icon: 'constitution',
   },
 ];
@@ -52,12 +49,12 @@ const tools: Tool[] = [
   <div class="brick-wall tools__wall">
     <BrickLayout as="header" tone="raised" class="tools__head" span={2}>
       <div class="tools__head-inner">
-        <span class="tools__label">four surfaces, one product</span>
-        <h2 class="tools__title">One product. <span class="tools__title-accent">Four surfaces.</span></h2>
+        <span class="tools__label">one product, a clear adoption ladder</span>
+        <h2 class="tools__title">Scan first. <span class="tools__title-accent">Protect what works.</span></h2>
         <p class="tools__body">
-          slopbrick ships as a CLI, an MCP server, four JSON Schemas, and a Constitution engine.
-          Every surface reads and writes the same <code>.slopbrick/</code> artifacts — so
-          the agent and your CI agree on what they're seeing.
+          SlopBrick is the shipped front door. Repository-owned memory makes findings contextual.
+          LockBrick turns trusted rules into team policy. MendBrick follows only with safe repair.
+          The roadmap never turns a planned layer into a shipped claim.
         </p>
       </div>
     </BrickLayout>

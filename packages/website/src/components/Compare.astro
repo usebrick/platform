@@ -13,20 +13,20 @@ import version from '../data/version.json';
 // "What slopbrick does" — 5 concrete capabilities you can verify
 // in the docs and the CLI output.
 const yay = [
-  `v${version.slopbrick}, ${productFacts.ruleCount} rules, ${productFacts.categoryCount} categories, the 4-score model`,
-  'Writes .slopbrick/{inventory,constitution,structure,health}.json — every agent reads the same shape',
-  'MCP server: Claude Code, Cursor, Copilot all consume the structure',
-  'Constitution engine — declare your stack once, drift exits 1',
-  `Historical ${productFacts.corpusLabel} evidence: ${productFacts.measuredRuleCount} measured rules across ${productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files`,
+  `Published v${productFacts.published.version}: ${productFacts.published.ruleCount} rules in ${productFacts.published.categoryCount} categories and four headline scores`,
+  'Writes inventory.json, constitution.json, health.json, and derived structure.md; structure.json is separate local run history',
+  'Local CLI and MCP surfaces expose portable evidence without requiring a hosted account',
+  'Repository policy can turn selected, trusted findings into deterministic exit codes',
+  `Historical ${productFacts.corpusLabel} evidence covers ${productFacts.measuredRuleCount} rules and ${productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files; v10.3 admission remains separate`,
 ];
 
 // "What the alternative looks like" — the situation slopbrick replaces.
 const nay = [
-  'Linters that score every commit against the same stale rules',
-  'CI gates that ship without a Constitution to enforce',
-  'AI agents that retrain on each session — forgetting your patterns',
-  'Scan-results dashboards that nobody on the team opens',
-  'MCP servers that read but never write the structure files',
+  'Generic findings with no repository-specific evidence or baseline',
+  'Gates that require all historical debt to be fixed before adoption',
+  'Each coding agent rediscovering conventions from scratch',
+  'Opaque quality scores with no rule-level explanation',
+  'Planned features presented as if they already ship',
 ];
 ---
 
@@ -34,13 +34,13 @@ const nay = [
   <BrickLayout as="header" tone="raised" class="compare-section__head" span={2}>
     <span class="compare-section__label">usebrick vs the rest</span>
     <h2 class="compare-section__title">
-      Four scores, one Constitution, every <span class="compare-section__accent">writeable artifact</span>.
+      Find new slop before it becomes <span class="compare-section__accent">repository debt</span>.
     </h2>
     <p class="compare-section__body">
-      Workspace candidate: {productFacts.ruleCount} rules across {productFacts.categoryCount} categories. Historical {productFacts.corpusLabel} evidence covers {productFacts.measuredRuleCount} rules and {productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files. The 4-score
-      model (AI Slop Score, Engineering Hygiene, Security, Repository Health). A Constitution engine
-      you declare. usebrick.dev writes <code>.slopbrick/</code> artifacts that agents read
-      instead of re-parsing the AST.
+      Start with the published scanner and four scores: AI Slop, Engineering Hygiene, Security,
+      and Repository Health. The unreleased v{version.slopbrick} workspace candidate has
+      {productFacts.ruleCount} rules across {productFacts.categoryCount} categories. Its repository
+      artifacts make evidence reviewable; native agent adapters and paid enforcement remain roadmap work.
     </p>
   </BrickLayout>
 

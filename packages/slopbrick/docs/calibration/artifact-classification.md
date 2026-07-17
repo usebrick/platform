@@ -1,5 +1,11 @@
 # Calibration artifact classification
 
+> **Historical classification snapshot.** The counts and authority table below
+> describe the 2026-07-14 checkout and do not schedule current work. Use the
+> platform [roadmap](../../../../ROADMAP.md), [execution index](../../../../docs/execution/index.json),
+> [status](../../../../docs/execution/STATUS.md), and current [calibration
+> index](./README.md). Retain the dated details as evidence.
+
 **Snapshot:** 2026-07-14 · **Purpose:** reduction/reconciliation gate before
 new calibration features
 
@@ -7,11 +13,11 @@ This is a classification record, not a release receipt. It prevents generated
 contracts and historical evidence from being mistaken for active implementation
 or calibration data.
 
-## Active authority
+## Authority at the snapshot date
 
 | Role | Canonical file |
 | --- | --- |
-| Current execution plan | `v0.45.0-continuation-plan.md` |
+| Execution plan at the snapshot date | `v0.45.0-continuation-plan.md` |
 | Current evidence ledger | `v0.45.0-execution-evidence.md` |
 | Handoff/current override | `v0.45.0-handoff.md` |
 | Root mirror | `../../../../docs/calibration/v0.45-continuation.md` |

@@ -200,7 +200,7 @@ function renderOption(opt: GroupedOption, flagWidth: number): string {
  *   ...
  *
  *   Use `--help-flat` for the standard un-grouped list.
- *   See `https://usebrick.dev/docs/scan-options` for full docs.
+ *   See `https://usebrick.dev/docs/` for full docs.
  */
 export function formatGroupedHelp(cmd: Command): string {
   const lines: string[] = [];
@@ -249,44 +249,19 @@ export function formatGroupedHelp(cmd: Command): string {
   // without running `slopbrick --help-flat` (or stumbling onto them).
   // Append a compact subcommand index here so the grouped help is
   // also a usable index.
+  const commandWidth = Math.max(...cmd.commands.map((command) => command.name().length));
+  const commandLines = cmd.commands.map((command) => {
+    const description = command.description().replace(/\s+/g, ' ').trim();
+    return `  ${command.name().padEnd(commandWidth)}  ${description}`.trimEnd();
+  });
   lines.push(
     'Commands (run `<command> --help` for per-command details):\n' +
-      [
-        '  scan     score a workspace, with severity gating and report views',
-        '  pr       score a PR (or a unified-diff file via `--diff <file>`)',
-        '  drift    detect constitution / forbidden-package violations',
-        '  test     test quality sub-score (CI gate)',
-        '  docs     documentation freshness sub-score',
-        '  security AI security-risk sub-score',
-        '  rules    list all built-in rules with categories and severities',
-        '  explain  show rationale, pattern, and remediation for a single rule',
-        '  suggest  print per-issue remediation advice',
-        '  badge    print a shields.io slop-index badge',
-        '  doctor   check setup, config, and environment for common problems',
-        '  init     create a slopbrick config file and AGENTS.md/CLAUDE.md snippets',
-        '  flywheel  summarize aggregated scan telemetry',
-        '  composite empirical-composite rule discover / enable (Sprint 3 §3b)',
-        '  calibrate empirical precision/recall/F1 calibration from held-out corpora',
-        '  patterns  pattern-fragmentation sub-score',
-        '  business-logic  business-logic coherence sub-score',
-        '  maintenance-cost  AI maintenance-cost sub-score',
-        '  architecture architecture-consistency sub-score',
-        '  memory   show patterns detected for `slop_suggest`',
-        '  lock     install a git pre-commit hook (idempotent)',
-        '  migrate  v0.10.x slop-audit/ → v0.11.0+ .slopbrick/ migration',
-        '  validate-config  validate slopbrick.config.mjs',
-        '  tokens   merge a design-tokens.json layout values into the allowlist',
-        '  report   re-render a saved JSON report (from --json <path>)',
-        '  install / uninstall  manage the git pre-commit hook',
-        '  mcp       run the MCP server (JSON-RPC 2.0 over stdio)',
-        '  watch / --watch  re-run scan on file change',
-        '  trend     sparkline of the last n runs',
-      ].join('\n'),
+      commandLines.join('\n'),
   );
   lines.push('');
   lines.push(
     'Use `--help-flat` for the standard un-grouped list. ' +
-      'See `https://usebrick.dev/docs/scan-options` for full docs.',
+      'See `https://usebrick.dev/docs/` for full docs.',
   );
 
   return lines.join('\n');

@@ -3,7 +3,7 @@
   "version": "0.14.5",
   "private": true,
   "type": "module",
-  "description": "usebrick.dev marketing site. Brick-themed Astro site, no runtime deps beyond Astro itself.",
+  "description": "The usebrick.dev product site: SlopBrick-first onboarding, verified product facts, documentation, and roadmap navigation.",
   "scripts": {
     "dev": "pnpm prebuild && astro dev",
     "build": "astro build",

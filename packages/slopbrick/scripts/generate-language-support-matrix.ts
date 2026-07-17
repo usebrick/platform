@@ -20,7 +20,7 @@ function render(): string {
     '<!-- GENERATED FILE: pnpm generate:language-matrix. Do not edit manually. -->',
     '# Language support matrix',
     '',
-    'This matrix is the release-facing contract for file discovery, parsing, rule execution, fixtures, and calibration scope. “Supported” means a file is discovered and scanned; it does **not** imply a complete language AST or a calibrated AI-authorship signal.',
+    'This matrix is the release-facing contract for file discovery, parsing, rule execution, fixtures, and calibration scope. “Supported” means a file is discovered and scanned; it does **not** imply a complete language AST or a calibrated AI-authorship signal. Current v10.3 admission is zero; historical eligibility wording is not current release evidence.',
     '',
     '| Language | Extensions | Parser / facts path | Rules executed | Defaults | Fixtures | Calibration eligibility |',
     '|---|---|---|---|---|---|---|',
@@ -32,8 +32,9 @@ function render(): string {
     '- A default-off/DORMANT language rule is available for explicit opt-in, but must not be presented as calibrated release evidence.',
     '- Rust is the only non-JS language in this table with a tree-sitter visitor in the scan path. MCP pattern visitors are separate from scan-rule parsing.',
     '- The matrix intentionally separates discovery and execution from calibration eligibility; adding an extension must not silently expand public claims.',
+    '- Current v10.3 admission is zero. Historical cohorts remain useful research evidence but do not qualify the v0.45.0 candidate.',
     '',
-    'Regenerate and check drift with `pnpm --filter slopbrick generate:language-matrix` and `pnpm --filter slopbrick exec tsx scripts/generate-language-support-matrix.ts --check`.',
+    'Regenerate and check drift with `pnpm --filter slopbrick generate:language-matrix` and `pnpm --filter slopbrick exec node --import tsx scripts/generate-language-support-matrix.ts --check`.',
     '',
   ];
   return lines.join('\n');

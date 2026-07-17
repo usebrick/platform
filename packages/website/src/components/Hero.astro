@@ -29,18 +29,17 @@ import productFacts from '../data/product-facts.json';
       <aside class="hero__copy">
         <span class="hero__eyebrow">
           <span class="hero__eyebrow-dot" aria-hidden="true"></span>
-          v{version.slopbrick} candidate · {productFacts.ruleCount} rules · 4 scores · historical {productFacts.corpusLabel} cohort: {productFacts.corpusFiles.toLocaleString()} files
+          SlopBrick v{productFacts.published.version} published · {productFacts.published.ruleCount} rules · 4 scores
         </span>
 
         <h1 class="hero__title">
-          A <span class="hero__title-accent">repository structure</span><br class="hero__title-break" />for your code.
+          It works. Is it<br class="hero__title-break" /> <span class="hero__title-accent">actually well built?</span>
         </h1>
 
         <p class="hero__subtitle">
-          {productFacts.ruleCount}-rule workspace candidate. Historical {productFacts.corpusLabel} metrics cover
-          <strong>{productFacts.measuredRuleCount} rules</strong> across <strong>{productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files</strong>
-          ({productFacts.corpusSampleFiles.toLocaleString()} sampled). The workspace candidate includes the 4-score model,
-          the MCP server, the Constitution engine, and per-rule evidence on disk.
+          SlopBrick scans a repository locally for visual, implementation, security, and coherence problems that AI coding amplifies.
+          The published scanner has <strong>{productFacts.published.ruleCount} rules</strong> across <strong>{productFacts.published.categoryCount} categories</strong>.
+          The unreleased v{version.slopbrick} candidate has {productFacts.ruleCount} rules; its historical {productFacts.corpusLabel} metrics are evidence, not current v10.3 admission proof.
         </p>
 
         <div class="hero__cta-row">
@@ -80,11 +79,11 @@ import productFacts from '../data/product-facts.json';
         </div>
 
         <ul class="hero__facts">
-          <li class="hero__fact--live"><span class="hero__fact-dot" aria-hidden="true"></span><span>workspace candidate</span> v{version.slopbrick}</li>
-          <li><span>~1.1 MB</span> published tarball</li>
-          <li><span>offline</span> first run</li>
+          <li class="hero__fact--live"><span class="hero__fact-dot" aria-hidden="true"></span><span>published</span> v{productFacts.published.version}</li>
+          <li><span>{productFacts.published.ruleCount} rules</span> in the published catalog</li>
+          <li><span>no network</span> during scans by default</li>
           <li><span>MIT</span> license</li>
-          <li><span>Node 22/24</span></li>
+          <li><span>Node ≥20</span> for published v{productFacts.published.version}</li>
         </ul>
       </aside>
 
@@ -110,12 +109,12 @@ import productFacts from '../data/product-facts.json';
           <span class="lt-line lt-line--output">  <span class="lt-k">Repository Health</span>    <span class="lt-v">57</span>  <span class="lt-b lt-b--mid">needs work</span></span>
           <span class="lt-line"></span>
           <span class="lt-line lt-line--success">  ✓ CI gate: 25 &lt;= 30 → pass</span>
-          <span class="lt-line lt-line--muted">  historical example · 0 issues · 593 files · 0.4s</span>
+          <span class="lt-line lt-line--muted">  historical example · 593 files</span>
         </div>
         <footer class="hero__terminal-footer">
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">593</span><span class="hero__terminal-stat-l">files</span></span>
-          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.ruleCount}</span><span class="hero__terminal-stat-l">rules</span></span>
-          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.categoryCount}</span><span class="hero__terminal-stat-l">categories</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.published.ruleCount}</span><span class="hero__terminal-stat-l">published rules</span></span>
+          <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{productFacts.published.categoryCount}</span><span class="hero__terminal-stat-l">published categories</span></span>
           <span class="hero__terminal-stat"><span class="hero__terminal-stat-n">{languageSupport.count}</span><span class="hero__terminal-stat-l">language families</span></span>
         </footer>
       </aside>

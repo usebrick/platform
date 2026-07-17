@@ -1,5 +1,10 @@
 # Master Plan Validation Against Peer-Reviewed Literature
 
+> **Historical review.** This evaluates a superseded master plan and does not
+> report current roadmap or calibration status. Use the platform
+> [roadmap](../../../../ROADMAP.md), [execution index](../../../../docs/execution/index.json),
+> and current [calibration index](./README.md).
+
 **Date:** 2026-07-09
 **Reviewer:** Internet research + arXiv search
 **Verdict:** Plan is **largely correct** with **3 adjustments** needed

@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "revision": 3,
+  "updatedAt": "2026-07-17",
+  "globalStatus": "advancing",
+  "roadmap": "ROADMAP.md",
+  "status": "docs/execution/STATUS.md",
+  "changelog": "docs/execution/CHANGELOG.md",
+  "wipLimits": {
+    "implementation": 2,
+    "company": 1
+  },
+  "plans": [
+    {
+      "id": "PLAT-001",
+      "title": "Centralize roadmap and execution authority",
+      "track": "implementation",
+      "lane": "platform",
+      "horizon": "now",
+      "status": "done",
+      "priority": 0,
+      "path": "docs/execution/plans/PLAT-001-planning-control.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Keep future strategy and status changes inside the canonical roadmap and execution control plane.",
+        "verify": "corepack pnpm plans:validate",
+        "evidencePath": "docs/execution/CHANGELOG.md"
+      },
+      "evidence": [
+        "docs/superpowers/specs/2026-07-17-roadmap-consolidation-design.md"
+      ]
+    },
+    {
+      "id": "SB-045",
+      "title": "Qualify the SlopBrick v0.45 trust release",
+      "track": "implementation",
+      "lane": "slopbrick",
+      "horizon": "now",
+      "status": "in_progress",
+      "priority": 1,
+      "path": "docs/execution/plans/SB-045-trust-release.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [
+          "CORPUS-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Write the red contract test proving one gate decision drives report output and process exit.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/gate-decision-contract.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/SB-045-gate-decision.md"
+      },
+      "evidence": [
+        "packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md",
+        "packages/slopbrick/docs/calibration/v0.45.0-execution-evidence.md"
+      ]
+    },
+    {
+      "id": "CORPUS-DEC-001",
+      "title": "Approve the Corpus v1 evidence and admission contract",
+      "track": "implementation",
+      "lane": "corpus",
+      "horizon": "now",
+      "status": "done",
+      "priority": 2,
+      "path": "docs/execution/plans/CORPUS-DEC-001-admission-contract.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Apply the accepted admission contract through CORPUS-001 without widening its evidence or rights claims.",
+        "verify": "test -f docs/decisions/corpus-v1-admission.md",
+        "evidencePath": "docs/decisions/corpus-v1-admission.md"
+      },
+      "evidence": [
+        "packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md"
+      ]
+    },
+    {
+      "id": "GTM-001",
+      "title": "Validate the vibecoder scan-to-rescan loop",
+      "track": "company",
+      "lane": "adoption",
+      "horizon": "now",
+      "status": "ready",
+      "priority": 3,
+      "path": "docs/execution/plans/GTM-001-vibecoder-pilots.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [
+          "SB-045"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Recruit the first five vibecoder pilots and record a consent-safe baseline template before the first scan.",
+        "verify": "test -f docs/research/vibecoder-pilots.md",
+        "evidencePath": "docs/research/vibecoder-pilots.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "CORPUS-001",
+      "title": "Build a reproducible source-attested Corpus v1 seed",
+      "track": "implementation",
+      "lane": "corpus",
+      "horizon": "now",
+      "status": "in_progress",
+      "priority": 4,
+      "path": "docs/execution/plans/CORPUS-001-v1-seed.md",
+      "dependencies": {
+        "requires": [
+          "CORPUS-DEC-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Add the red read-only inventory test for the local 5,000/5,000 publisher-attested projection.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-inventory.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/CORPUS-001-seed-receipt.md"
+      },
+      "evidence": [
+        "packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md"
+      ]
+    },
+    {
+      "id": "CAL-001",
+      "title": "Calibrate candidate signals on leakage-safe holdouts",
+      "track": "implementation",
+      "lane": "calibration",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 5,
+      "path": "docs/execution/plans/CAL-001-heldout-calibration.md",
+      "dependencies": {
+        "requires": [
+          "CORPUS-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "TEL-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Freeze repository-family splits and a rule-by-rule admission matrix before fitting or threshold changes.",
+        "verify": "test -f docs/execution/evidence/CAL-001-protocol.md",
+        "evidencePath": "docs/execution/evidence/CAL-001-protocol.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "SB-UX-001",
+      "title": "Make the first scan evidence-led and actionable",
+      "track": "implementation",
+      "lane": "slopbrick-ux",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 6,
+      "path": "docs/execution/plans/SB-UX-001-first-scan.md",
+      "dependencies": {
+        "requires": [
+          "SB-045"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "GTM-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Turn the five-part taxonomy and evidence tiers into snapshot-tested report information architecture.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "TEL-001",
+      "title": "Define privacy-safe local outcome events",
+      "track": "implementation",
+      "lane": "telemetry",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 7,
+      "path": "docs/execution/plans/TEL-001-local-outcomes.md",
+      "dependencies": {
+        "requires": [
+          "SB-045"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "GTM-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Specify and test an opt-in local outcome event that contains no raw source or proprietary repository identifier.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "MEM-001",
+      "title": "Build MemoryBrick M0 as a read-only repository projection",
+      "track": "implementation",
+      "lane": "memory",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 8,
+      "path": "docs/execution/plans/MEM-001-read-only-m0.md",
+      "dependencies": {
+        "requires": [
+          "SB-UX-001",
+          "TEL-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "CORPUS-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Approve the storage, provenance, freshness, and threat-model ADR before adding a new canonical memory format.",
+        "verify": "test -f docs/decisions/memorybrick-m0.md",
+        "evidencePath": "docs/decisions/memorybrick-m0.md"
+      },
+      "evidence": [
+        "docs/ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "LOCK-001",
+      "title": "Pilot deterministic new-debt enforcement",
+      "track": "implementation",
+      "lane": "lock",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 9,
+      "path": "docs/execution/plans/LOCK-001-new-debt-gate.md",
+      "dependencies": {
+        "requires": [
+          "SB-UX-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "MEM-001",
+          "GTM-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Write the failing baseline-delta contract for one deterministic critical finding in the existing CLI.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/new-debt-gate.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/LOCK-001-pilot.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "MEND-001",
+      "title": "Prove the first deterministic reversible repair",
+      "track": "implementation",
+      "lane": "mend",
+      "horizon": "later",
+      "status": "parked",
+      "priority": 10,
+      "path": "docs/execution/plans/MEND-001-repair-proof.md",
+      "dependencies": {
+        "requires": [
+          "LOCK-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "CAL-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "After the LockBrick trust gate, select one deterministic finding with an idempotent fix and complete rollback coverage.",
+        "verify": "test -f docs/execution/evidence/MEND-001-repair-proof.md",
+        "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "ENT-001",
+      "title": "Validate repeated enterprise governance demand",
+      "track": "company",
+      "lane": "enterprise",
+      "horizon": "later",
+      "status": "parked",
+      "priority": 11,
+      "path": "docs/execution/plans/ENT-001-demand-gate.md",
+      "dependencies": {
+        "requires": [
+          "LOCK-001",
+          "GTM-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "MEM-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "After paid LockBrick pilots, aggregate repeated multi-repository requirements without beginning enterprise infrastructure.",
+        "verify": "test -f docs/execution/evidence/ENT-001-demand.md",
+        "evidencePath": "docs/execution/evidence/ENT-001-demand.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "DOC-PRUNE-001",
+      "title": "Archive or delete the approved stale-document inventory",
+      "track": "implementation",
+      "lane": "platform",
+      "horizon": "now",
+      "status": "waiting_external",
+      "priority": 12,
+      "path": "docs/execution/plans/DOC-PRUNE-001-approved-cleanup.md",
+      "dependencies": {
+        "requires": [
+          "PLAT-001"
+        ],
+        "externalGates": [
+          "OWNER-PATH-APPROVAL"
+        ],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "After exact path-level approval, archive or delete only the approved entries and verify the manifest and redirects.",
+        "verify": "corepack pnpm plans:validate && git diff --check",
+        "evidencePath": "docs/execution/evidence/DOC-PRUNE-001-approval.md"
+      },
+      "evidence": [
+        "docs/archive/README.md"
+      ]
+    }
+  ]
+}

@@ -8,6 +8,15 @@ tags: [lifecycle, code-quality, ai-coding, detect-fix-verify]
 
 # The four-stage code quality lifecycle
 
+> **Historical article (2026-07-01).** Version counts, product packaging, and
+> release plans below describe the v0.20 era and are not current product or
+> execution authority. Today SlopBrick is the vibecoder front door,
+> MemoryBrick is the planned repository-owned substrate, LockBrick is the first
+> planned paid team layer, MendBrick remains gated on trusted deterministic
+> repair, and Pick is folded into `usebrick init` and policy authoring. See the
+> platform [roadmap](../../../../ROADMAP.md) and [execution
+> status](../../../../docs/execution/STATUS.md).
+
 Most code quality tools stop at detection. Some go to *detect + fix*. A handful promise *detect + fix + verify*. All three are **point solutions** — they answer the question "is there a problem right now?" but not "is the codebase getting structurally healthier over time?"
 
 The difference between a point solution and a lifecycle is the difference between a smoke detector and a fire department. A smoke detector tells you there's smoke. A fire department has people, trucks, codes, and a chain of command. The smoke detector is necessary; it's just not sufficient.

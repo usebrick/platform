@@ -1,458 +1,298 @@
-# usebrick — Architecture & Functional Reference
+# usebrick architecture
 
-**Date**: 2026-06-26
-**Status**: Historical architecture reference. The latest verified public release is
-`slopbrick@0.43.0`; the workspace contains an unreleased `0.44.0` candidate
-(119 rules across 27 categories). The v10.3 corpus/admission and release gates
-remain open; use [`packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md`](../packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md)
-for current execution truth.
-**Author**: dystx (with Kimi Code CLI)
-**Source of truth for future changes**: `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` + `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md`
+**Updated:** 2026-07-17
+**Status:** Current product and package reference
 
----
+Usebrick keeps AI-generated software coherent. Vibe coders and AI-assisted
+builders enter through SlopBrick: a local scanner that answers whether a
+working application is also coherent, maintainable, accessible, and aligned
+with its repository. Teams can later reuse the same verified repository
+understanding for policy enforcement and repair.
 
-## 1. What usebrick is
+Product direction lives in [`ROADMAP.md`](../ROADMAP.md). Live implementation
+status and dependency edges live in
+[`docs/execution/index.json`](./execution/index.json), not in this reference.
 
-**usebrick.dev** is the [Repository Structure Platform](#2-the-naming-shift) — a four-tool monorepo that continuously discovers, models, and governs the structure of a code repository.
+## Product layers
 
-usebrick is **not** an LLM-memory product. It does not embed code, does not chat, does not RAG. It is **deterministic analysis** — every output is reproducible from the input source files plus a calibration dataset.
-
-### One-sentence positioning
-
-> "BRICK continuously discovers and maintains your repository's structure."
-
-### The four products
-
-| Product | Purpose | Status |
-|---------|---------|--------|
-| **PickBrick** | Defines the **intended** structure (the constitution) | planned (was part of v0.14.5 roadmap) |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | latest verified public release `slopbrick@0.43.0` (103 rules); the workspace `0.44.0` candidate has 119 rules across 27 categories |
-| **MendBrick** | Repairs the structure (the migrator) | planned (was part of v0.14.5 roadmap) |
-| **LockBrick** | Protects the structure (the enforcer, in CI) | planned (was part of v0.14.5 roadmap) |
-
-The four revolve around one noun: **structure**. The user reads the model as:
-
-```
-Repository
-  ├── Constitution (desired structure)
-  ├── Inventory (observed structure)
-  ├── Health (quality of structure)
-  ├── Drift (difference from desired)
-  └── History (how structure evolved)
+```text
+                           usebrick
+              quality and coherence for AI-built software
+                                │
+                 repository-owned understanding
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        │                       │                       │
+    SlopBrick               LockBrick              MendBrick
+  detect and explain     prevent new drift       repair trusted drift
+        │                       │                       │
+        └───────────────────────┴───────────────────────┘
+                                │
+                         MemoryBrick substrate
+                facts, intent, provenance, freshness
 ```
 
----
+| Layer | Architectural role | Delivery boundary |
+| --- | --- | --- |
+| **SlopBrick** | Deterministic local scanning, evidence, scores, repository artifacts, MCP, and CI primitives | Shipping; the main entry point |
+| **MemoryBrick** | Repository-owned model of observed facts, declared intent, rationale, evolution, provenance, and freshness; compiler for bounded agent context | Planned; starts as a read-only projection of existing artifacts before any new store or schema migration |
+| **Pick flow** | Initialisation and policy authoring | Part of onboarding, not a separate package or product surface |
+| **LockBrick** | Deterministic enforcement of approved policy and newly introduced slop | First planned paid team layer; begin inside the existing CLI |
+| **MendBrick** | Deterministic and reversible repairs for findings teams already trust | Later; no arbitrary repository-wide AI refactoring |
 
-## 2. The naming shift
+MemoryBrick is not vendor-owned chat history, a transcript archive, or an
+unbounded vector store. The repository remains the authority, memory changes
+must be reviewable, and agents may propose rather than silently author
+normative facts.
 
-usebrick was originally named "Repository Memory Platform" — the word "memory" was meant in the sense of "persistent understanding." But it consistently led users to think of LLM memory, chat history, vector databases, RAG, embeddings. None of that is what usebrick does.
+## Verified delivery state
 
-**v0.15.0** renames the platform to **Repository Structure Platform (RSP)**. The 4 product names (PickBrick, SlopBrick, MendBrick, LockBrick) are unchanged. The internal file/type/function names change from `memory*` → `structure*`. The on-disk artifact `memory.md` becomes `structure.md`. The schema version bumps from `MEMORY_SCHEMA_VERSION = '2'` to `STRUCTURE_SCHEMA_VERSION = '3'`. The single `slopIndex` score is replaced by 4 independent scores (AI Quality, Engineering Hygiene, Security, Repository Health composite).
+- Latest verified npm release: `slopbrick@0.43.0`.
+- Published generated catalog: 103 rules in 22 categories.
+- Known drift: npm registry metadata says 24 categories; that metadata is not
+  the catalog truth and must be corrected in the next publication.
+- Workspace candidate: unreleased `0.45.0`, 119 rules in 27 categories.
+- Historical calibration: v10.1 analyzed 576,750 files from 581,550 sampled
+  paths; that result is not current v10.3 admission evidence.
+- Current v10.3 admission: zero admitted units.
 
-The change is **hard break, no aliases**. There are no known external consumers of the schema (slopbrick is the only writer; the website doesn't read it). The MCP tool name `slop_suggest_memory` becomes `slop_suggest_structure` — any client calling the old name breaks. The user accepted this.
+## Monorepo boundaries
 
-**What to keep**: outcome language. "BRICK gives AI persistent understanding of your repository" stays (the outcome is understanding, the underlying asset is structure). The 4 product names stay. The `slop-audit/` directory name (legacy) stays out of scope.
-
----
-
-## 3. Repository layout
-
-```
+```text
 platform/
 ├── packages/
-│   ├── core/                  @usebrick/core (private, workspace-only)
-│   ├── slopbrick/             slopbrick (published as `slopbrick`)
-│   ├── engine/                @usebrick/engine (private, workspace-only, NEW in v0.15.0)
-│   └── website/               @usebrick/website (private, prepared for Cloudflare Pages; live ownership unverified)
+│   ├── core/        @usebrick/core, private workspace contract package
+│   ├── engine/      @usebrick/engine, private scanning package
+│   ├── slopbrick/   slopbrick, published CLI and MCP server
+│   └── website/     private Astro marketing site
 ├── docs/
-│   ├── architecture.md         this file
-│   ├── update-summary.md       v0.14.5 → v0.17.0 changelog (v0.15 + v0.16 + v0.17)
-│   ├── future-extractions.md   packages/memory + packages/contracts (future)
-│   ├── old-repo-redirect.md    (content for usebrick/slopbrick README redirect)
-│   └── superpowers/
-│       ├── specs/              design specs for v0.15.0
-│       └── plans/              implementation plans
-├── AGENTS.md                   AI agent instructions
-├── CONTRIBUTING.md             contribution guide (added v0.15.0)
-├── README.md                   project readme
-└── package.json                root (private workspace hub)
+│   ├── execution/   live portfolio status and bounded plans
+│   ├── calibration/ calibration navigation
+│   ├── archive/     recoverable superseded narratives
+│   └── superpowers/ frozen design and implementation capsules
+├── ROADMAP.md       canonical product roadmap
+├── AGENTS.md        agent operating rules
+└── CONTRIBUTING.md  contributor and release workflow
 ```
 
----
+### `@usebrick/core`
 
-## 4. Packages — what each does
+`packages/core/` owns cross-package data contracts:
 
-### 4.1 `@usebrick/core` (workspace-only, not published)
+- repository structure types, validators, readers, and writers;
+- the verdict taxonomy used by rule calibration;
+- versioned JSON Schemas under `packages/core/schemas/v1/`;
+- calibration control-plane schemas and validators.
 
-The schema contract. Defines the cross-language data model that every tool in the platform reads or writes. Lives at `packages/core/`.
+The four canonical repository-structure contracts are:
 
-**Public exports** (`packages/core/src/index.ts`):
-- Types: `InventoryFile`, `ConstitutionFile`, `StructureFile` (was `MemoryFile`), `HealthFile`
-- `MemoryCategory` (→ renamed `StructureCategory` in v0.15.0)
-- Verdict enum: `VERDICTS = ['USEFUL', 'OK', 'NOISY', 'INVERTED', 'HYGIENE', 'DORMANT']`
-- `isDefaultOff(verdict)` — property test
-- Zod schema: `signalStrengthSchema` for the calibration data
-- `STRUCTURE_SCHEMA_VERSION` (was `MEMORY_SCHEMA_VERSION` in v0.14.5)
+- `inventory.schema.json` — observed patterns and component fingerprints;
+- `constitution.schema.json` — declared allow-list, deny-list, and policy;
+- `health.schema.json` — a completed-scan health snapshot;
+- `structure.schema.json` — the structured projection used to render the
+  agent-readable Markdown summary.
 
-**Schemas** (`packages/core/schemas/v1/`):
-- `constitution.schema.json` — desired structure (what the project declares it should be)
-- `inventory.schema.json` — observed structure (what slopbrick detected)
-- `structure.schema.json` (was `memory.schema.json`) — agent-readable markdown summary
-- `health.schema.json` — health snapshot (the scores)
-- `index.json` — schema index
+Adding an optional field with a default is the normal compatible change.
+Required fields, removals, or semantic renames require explicit schema-version
+and consumer review.
 
-**Corpus reference** (`packages/core/corpus-manifest.template.json` + gitignored `.local.json`): where the calibration corpus lives, what calibration is current.
+### `@usebrick/engine`
 
-**v0.15.0 shipped**: add Zod schemas for the JSON Schemas themselves, codegen TS types from the JSON Schemas, make the generated types the public API. The verdict enum is the single source of truth for the calibration pipeline.
+`packages/engine/` owns parsing, facts, rule execution, scoring, combination,
+and repository-structure computation. Embedded hosts should use the
+`@usebrick/engine/pure` surface when they already own source bytes. The package
+root retains explicit Node compatibility adapters for filesystem-backed CLI
+consumers.
 
-### 4.2 `slopbrick` (published as `slopbrick` on npm)
+The pure boundary must not own CLI rendering, process termination, network
+reporting, or hidden filesystem discovery. Those effects belong to adapters.
 
-The flagship CLI. The only tool currently shipping. Lives at `packages/slopbrick/`.
+### `slopbrick`
 
-**One-liner** (v0.14.5 README, replaced in v0.15.0):
-> "Your codebase remembers itself. SlopBrick gives AI agents persistent repository memory so they stop reinventing your architecture every session."
+`packages/slopbrick/` owns the shipping user experience:
 
-**v0.15.0 one-liner** (shipped):
-> "Discovered, modeled, and governed repository structure — deterministic analysis, no LLM in the loop."
+- Commander-based CLI and exit-code contract;
+- repository discovery and filesystem adapters;
+- generated rule registry and hints;
+- pretty, brief, JSON, HTML, Markdown, and SARIF reporting;
+- baseline, diff, CI, and policy surfaces;
+- MCP server and its documented tools;
+- local flywheel persistence and optional outbound usage beacon;
+- calibration and admission tooling;
+- packed npm artifact and release checks.
 
-**Commands** (bin: `slopbrick`):
-- `slopbrick init` — generate a `slopbrick.config.mjs` for the project
-- `slopbrick scan` — scan source files, emit `.slopbrick/{inventory,constitution,health,structure}.json` + structure.md
-- `slopbrick scan --diff <ref>` — scan only files changed since the git ref
-- `slopbrick scan --pr` — compute PR Slop Score, exit 1 if over threshold (for CI)
-- `slopbrick drift` — show how the structure has drifted since the last scan
-- `slopbrick test` — run the per-rule test suite on the current project
-- `slopbrick explain <rule>` — show the rule's docs, calibration stats, and recent fires
-- `slopbrick doctor` — diagnose the project setup, check config validity
-- `slopbrick security` — security-focused scan (subset of rules)
-- `slopbrick docs` — generate per-rule markdown documentation
-- `slopbrick flywheel` — show the calibration flywheel (proposed rules, declining rules)
-- `slopbrick flywheel --export` — export the flywheel snapshot
-- `slopbrick calibrate` — (research) run the calibration pipeline against the corpus
-- `slopbrick migrate` — migrate v1 (`.slop-audit/`) projects to v2 (`.slopbrick/`)
+It imports the core contracts and engine instead of redefining their public
+types or scoring logic.
 
-**Source layout** (v0.15.0 historical snapshot; current registry counts and
-MCP tools are maintained in the package docs):
-- `src/cli/` — 19 command modules, plus `program.ts` (Commander wiring) and `scan.ts` (451 lines after the v0.15.0 extraction)
-- `packages/engine/src/` — the 30+ pure-function modules (parser, structure.ts, lr-combiner, scoring, visitors). Extracted from `slopbrick/src/engine/` in v0.15.0; now a workspace-only package, no I/O, no `console.log`, reusable from CLI / MCP / future web IDEs.
-- `src/rules/` — current workspace registry: 119 rules in 27 categories; the published v0.43.0 train remains 103 rules in 22 categories, while the older v0.38.0 snapshot had 103 in 24
-- `src/rules/builtins.ts` — auto-generated registry of all rules (rebuilt by `pnpm generate:rules`)
-- `src/rules/signal-strength.json` — historical v8.5/v10 calibration metadata; the v10.1 576,750-file result is not current v10.3 admission evidence
-- `src/mcp/` — current MCP server exposing the seven canonical tools documented in [`packages/slopbrick/docs/MCP.md`](../packages/slopbrick/docs/MCP.md)
-- `src/types.ts` — public types
-- `src/config/` — config validation, defaults
-- `src/research/` — the calibration flywheel (candidates, generator, prompts, provider) — kept in `slopbrick` because it's I/O-bound and CLI-tied, not the pure engine
+### Website
 
-**v0.15.0 shipped**: extracted `src/engine/` to a new `packages/engine/` package. Slimmed `src/cli/scan.ts` from 1469 lines to 451 by extracting report generation. Added the engine/UI taxonomy seam via `bucketForVerdict()`. Multi-score: replaced `slopIndex` with `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`.
+`packages/website/` is a static Astro marketing site. Its build-time product
+facts must be generated from verified package sources. A successful local
+build is not proof of a live deployment; owner and deployed-commit SHA must be
+verified separately.
 
-### 4.3 `@usebrick/engine` (workspace-only, NEW in v0.15.0)
+The website is not part of the scan data path and does not receive repository
+source through the current static product.
 
-The scoring and `parseSource(source, filePath)` APIs are pure. The compatibility
-`parseFile(filePath)` and structure/find-similar helpers are explicit I/O
-adapters for CLI consumers; embedded callers should use the pure APIs when they
-already have source text. No engine path calls `console.log` or `process.exit`.
+## Scan data flow
 
-**Public API** (`packages/engine/src/index.ts`):
-- `scanProject(options, io)` — pure scan, takes an `MemoryIO` interface for file I/O
-- `loadStructure` / `saveStructure` — structure persistence
-- `computeLikelihoodRatios(ruleIds, corpus)` — LR math
-- `bayesianPosterior(firedRuleIds, lrs)` — naive Bayes update
-- `parseSource(source, filePath)` — pure AST parsing
-- `parseFile(filePath)` — filesystem/cache compatibility adapter
-- 30+ more exports
-
-**v0.15.0 build dependency**: `slopbrick` imports `@usebrick/engine` (instead of `src/engine/`).
-
-### 4.4 `@usebrick/website` (workspace-only, prepared for Cloudflare Pages)
-
-The [usebrick.dev](https://usebrick.dev) marketing site. Lives at `packages/website/`.
-The repository contains a static build and deployment configuration, but the
-currently reachable site is not treated as release evidence until its owner
-and deployed commit SHA are independently verified.
-
-**Current stack**: Astro 7 (static, no framework) + `@tabler/icons-webfont` +
-native browser APIs (Web Animations API and `IntersectionObserver`). The current
-source intentionally does not claim Lenis, GSAP, or a WebGL hero.
-
-**Sections** (all static HTML, no React/Vue/Svelte):
-- **Nav** — fixed translucent bar, 4 anchor links
-- **Hero** — static brick surface, terracotta prompt, copy-to-clipboard install command
-- **Tools** — 4 tool cards (pickbrick, mendbrick, slopbrick, core), click-to-break animation on click
-- **Compare** — usebrick vs everything else, terminal preview
-- **Calibration** — 4 stats that count up on reveal
-- **CTA** — final install + GitHub buttons
-- **Footer** — version sourced from sibling packages
-
-**Theme** (per the design system at `packages/website/docs/design-system.md`):
-- Warm dark mortar `#1a0e08` (background)
-- Terracotta `#dc4a26` (accent — the brick color)
-- Running-bond brick pattern overlays on hero, calibration, CTA
-
-The historical v0.15.0 design notes above are retained for context. Current
-accessibility behavior is covered by the Website unit and Playwright/axe
-suites; deployment and live-commit verification remain separate gates.
-
----
-
-## 5. Data flow
-
-```
-                    ┌──────────────────────┐
-                    │  slopbrick scan      │
-                    │  (CLI)               │
-                    └──────────┬───────────┘
+```text
+source files + slopbrick.config.mjs
+                  │
+                  ▼
+        SlopBrick CLI adapters
+    discovery, selection, persistence
+                  │
+                  ▼
+       @usebrick/engine/pure
+   parse → facts → rules → scores
+                  │
+          ┌───────┴────────┐
+          │                │
+          ▼                ▼
+     reports/exit       .slopbrick/
+      decisions         inventory.json
+                        constitution.json
+                        health.json
+                        structure.md
                                │
                                ▼
-                  ┌────────────────────────────┐
-                  │   @usebrick/engine         │
-                  │   (pure functions)         │
-                  │   parser, scoring,         │
-                  │   lr-combiner, visitors    │
-                  └────────────┬───────────────┘
-                               │
-                               ▼
-                  ┌────────────────────────────┐
-                  │   .slopbrick/              │
-                  │   ├─ inventory.json        │
-                  │   ├─ constitution.json     │
-                  │   ├─ structure.md          │  (was memory.md)
-                  │   └─ health.json           │
-                  └────────────┬───────────────┘
-                               │
-                               ▼
-                  ┌────────────────────────────┐
-                  │   @usebrick/core           │  validates against
-                  │   (schemas/v1/*.json)      │  JSON Schemas
-                  └────────────┬───────────────┘
-                               │
-                               ▼
-                  ┌────────────────────────────┐
-                  │   MCP server               │  exposes structure.md
-                  │   (slopbrick/mcp/)         │  to editors + agents
-                  └────────────┬───────────────┘
-                               │
-                               ▼
-                  ┌────────────────────────────┐
-                  │   usebrick.dev website     │  marketing surface
-                  │   (packages/website/)      │  (no data ingestion)
-                  └────────────────────────────┘
+                   MCP, CI, and future adapters
 ```
 
-The website is **separate** from the data flow — it doesn't read or write any data. It's a static marketing site.
+With project memory enabled, a valid whole-project `slopbrick scan` writes
+three canonical JSON snapshots, one Markdown summary, and separate local run
+history:
 
----
+| On-disk artifact | Meaning |
+| --- | --- |
+| `.slopbrick/inventory.json` | Deterministically observed repository patterns |
+| `.slopbrick/constitution.json` | Declared repository intent and constraints |
+| `.slopbrick/health.json` | Score and issue-count snapshot for an applicable scan |
+| `.slopbrick/structure.md` | Derived human- and agent-readable summary |
+| `.slopbrick/structure.json` | Bounded legacy/local scan history; not a Structure-schema projection |
 
-## 6. The verdict taxonomy (engine, internal)
+The JSON `structure.schema.json` describes a structured projection;
+`structure.md` is its Markdown rendering. The run-history `structure.json` has
+a different legacy contract. Neither on-disk file should be fed to the
+Structure-schema validator as if it were the projection.
 
-`signal-strength.json` assigns each of 80 rules a verdict from a 6-value enum. This is the **engine's** classification; the user doesn't see these labels.
+## Score and evidence model
 
-| Verdict | Meaning | Default on? | LR (lift) | Fires on |
-|---------|---------|-------------|-----------|----------|
-| **USEFUL** | High precision + high lift | yes | ≥ 2 | AI more than human |
-| **OK** | Moderate signal | yes | 1–2 | AI slightly more than human |
-| **NOISY** | Fires on both classes | no | < 1, inconsistent | both |
-| **INVERTED** | Fires MORE on negative class | no | < 1, consistent | humans more than AI |
-| **HYGIENE** | Non-AI quality check | yes (v7) | ≈ 1 (low) | both, slightly more on human |
-| **DORMANT** | Never fires | no | undefined | never |
+The current report has four headline scores:
 
-**v7 distribution** (committed in `aed68df`): 32 USEFUL, 6 OK, 5 NOISY, 1 INVERTED, 24 HYGIENE, 12 DORMANT.
+| Score | Direction | Role |
+| --- | --- | --- |
+| `aiSlopScore` | lower is cleaner | Calibrated AI-associated signal burden |
+| `engineeringHygiene` | higher is better | General implementation-hygiene posture |
+| `security` | higher is better | Security-finding posture |
+| `repositoryHealth` | higher is better | Composite health with AI slop inverted internally |
 
-The verdict drives:
-- `defaultOff` logic: rules with `verdict ∈ {NOISY, INVERTED, DORMANT}` are off by default (HYGIENE is the exception — it's on in v7 because it's "additional layer of value rather than primary metric")
-- LR math in the Bayesian combiner: INVERTED rules have LR < 1 and invert the AI signal
-- HTML/JSON report color-coding: USEFUL/OK badges are different colors from NOISY/INVERTED
+Rules have an internal verdict (`USEFUL`, `OK`, `NOISY`, `INVERTED`,
+`HYGIENE`, or `DORMANT`) and a user-facing bucket. Candidate signals without
+adequate calibration are default-off. A broad historical corpus run cannot be
+used as evidence for a current release unless its inputs satisfy the current
+admission contract.
 
-**v0.15.0 shipped**: extract `VERDICTS` and `Verdict` to `packages/core/src/verdicts.ts` as the single source of truth. Add Zod schema for `signal-strength.json`. Replace exact-count tests with property-based assertions.
+SlopBrick's strategic report taxonomy grows toward:
 
----
+1. Visual Slop;
+2. Frontend Implementation Slop;
+3. Code and Logic Slop;
+4. Repository Coherence;
+5. Accessibility and Resilience.
 
-## 7. The report taxonomy (UI, user-facing)
+Each finding must identify its evidence quality—deterministic, calibrated, or
+advisory—so qualitative visual judgement is never represented as certain
+static-analysis fact.
 
-A **deliberate seam** between the engine's 6 verdicts and what the user sees. The user doesn't care about "USEFUL" or "OK" — they care about the rule's action. The seam is one function:
+## Persistence and network boundary
 
-```ts
-// packages/slopbrick/src/report/buckets.ts (new in v0.15.0)
-export type Bucket = 'ai' | 'hygiene' | 'suppressed';
+A normal scan is local-first but stateful:
 
-export function bucketForVerdict(verdict: Verdict): Bucket {
-  switch (verdict) {
-    case 'USEFUL': case 'OK':            return 'ai';
-    case 'HYGIENE': case 'INVERTED':    return 'hygiene';
-    case 'NOISY': case 'DORMANT':       return 'suppressed';
-  }
-}
+- repository artifacts are written under `.slopbrick/` unless their configured
+  persistence is disabled;
+- local flywheel scan history is enabled by default and can be disabled with
+  `--no-telemetry` or `telemetry: false`;
+- the incremental cache and baseline are written only when their relevant
+  options are used;
+- managed `AGENTS.md` or `CLAUDE.md` blocks are rewritten only with
+  `--refresh-snippets` or the corresponding explicit configuration.
+
+Outbound usage reporting is off by default. A scan sends the one-shot beacon
+only when both `--report-usage` and `SLOPBRICK_TELEMETRY_ENDPOINT` are present.
+`watch`, `ci`, and programmatic `scanProject` do not send that beacon through
+this path. Network failure does not change the scan exit code.
+
+These local and outbound mechanisms are separate. `--no-telemetry` disables
+the local flywheel; it is not a generic read-only mode.
+
+## Future MemoryBrick flow
+
+MemoryBrick must extend the existing deterministic model in bounded stages:
+
+```text
+code + config + approved docs and decisions
+                    │
+                    ▼
+        repository-owned memory model
+ observed facts │ declared intent │ rationale │ evolution
+                    │
+          provenance + freshness
+                    │
+          ┌─────────┴──────────┐
+          ▼                    ▼
+  native agent adapters   LockBrick policy
+  boot/scoped/on-demand   deterministic CI
 ```
 
-The user sees 3 buckets:
+The first stage is read-only projection and evaluation. A new `.usebrick/`
+store, schema migration, or instruction-file writer requires its own ADR,
+threat model, ownership rules, and compatibility plan.
 
-```
-┌─ AI Findings ────────────────┐
-│ ✓ 11 Useful                  │   ← USEFUL + OK
-│ ✓ 2 OK                       │
-└───────────────────────────────┘
-┌─ Engineering Hygiene ────────┐
-│ ✓ 6 Issues                   │   ← HYGIENE + INVERTED
-└───────────────────────────────┘
-┌─ Suppressed ─────────────────┐
-│ ✓ 1 Noisy                    │   ← NOISY (hidden by default)
-└───────────────────────────────┘
-```
+## Release and deployment boundary
 
-**The key design decision**: INVERTED and HYGIENE are in the same UI bucket because from the user's perspective they're "non-AI rules I should know about" — the engine's distinction (LR < 1 vs LR ≈ 1) is calibration detail, not action detail.
+The normal SlopBrick publish path is:
 
----
+1. review the release version and CHANGELOG;
+2. run recursive typecheck, full tests, build, packed-consumer checks, and the
+   package-local self-scan;
+3. push the reviewed release commit and exact tag;
+4. publish a GitHub Release for that tag;
+5. let `publish.yml` verify one checksum-bound tarball and publish it with npm
+   OIDC provenance after the environment gate;
+6. verify the registry and a clean consumer install.
 
-## 8. The scoring model
+A tag push alone does not publish. Local `npm publish` and `pnpm publish` are
+unsupported. The website deployment has its own owner/SHA verification and
+must not be inferred from package publication.
 
-### v0.14.5 (legacy): one number
+The guarded `workflow_dispatch` entry is a recovery path: it accepts an exact
+existing release tag and then runs the same validation and publishing
+workflow. It does not make arbitrary refs or local package publication valid.
 
-```
-Slop Score: 78/100
-```
+## Planning and evidence hierarchy
 
-Computed from rules with `verdict ∈ {USEFUL, OK}` only (HYGIENE was supposed to be opt-out but the v7 calibration made it defaultOn, which made the score unpredictable).
-
-### v0.15.0 (shipped): three numbers + composite
-
-```
-Repository Health
-├── AI Quality              81/100   (USEFUL + OK)
-├── Engineering Hygiene     94/100   (HYGIENE + INVERTED)
-└── Security               100/100  (security/* rules regardless of verdict)
-```
-
-The composite `repositoryHealth` is a weighted sum (weights are configurable; default 50/30/20 AI/Hygiene/Security).
-
-**Why this scales**: two repositories:
-
-```
-Repository A: AI 95  Hygiene 40   ← excellent AI discipline, poor engineering cleanliness
-Repository B: AI 40  Hygiene 95   ← clean engineering practices, significant AI drift
+```text
+ROADMAP.md                       product outcomes and sequencing
+    ↓
+docs/execution/index.json        live status and dependency authority
+    ↓
+docs/execution/plans/*.md        bounded executable work
+    ├── frozen specifications    technical contracts
+    └── immutable evidence       proof of completed checks
 ```
 
-A single combined Slop Score would hide that distinction. Two numbers + a composite let users see the actual problem.
+Historical plans, handoffs, release notes, and calibration receipts remain
+valuable evidence. They must retain their original scope and dates rather than
+being rewritten as current status.
 
-**Why hygiene doesn't affect AI Quality**: "My Slop Score went up because I forgot to remove a console.log." That's mixing two different concepts. The new model makes it impossible.
+## Historical references
 
----
-
-## 9. The MCP server (historical migration notes)
-
-The slopbrick CLI also ships an MCP server (Model Context Protocol — for AI
-editor integration). The current registry exposes **7 canonical tools**;
-the four-tool table below is retained only as the v0.15.0 migration snapshot.
-See [`packages/slopbrick/docs/MCP.md`](../packages/slopbrick/docs/MCP.md) for
-the normative current names and contracts.
-
-| Tool (current) | Tool (v0.15.0) | Purpose |
-|----------------|---------------|---------|
-| `slop_suggest` | unchanged | Suggest patterns from the inventory |
-| `slop_suggest_with_memory` | `slop_suggest_with_structure` | Fast-path: read `.slopbrick/structure.md` (was `memory.md`) instead of re-scanning (100-1000× faster) |
-| `slop_check_constitution` | unchanged | Check if a file violates the constitution |
-| `slop_find_similar` | unchanged | Find files similar to a given file (Louvain community detection) |
-
-The `slop_suggest_with_memory` → `slop_suggest_with_structure` rename is a **breaking change** for any MCP client. The user accepted this (no known external consumers; the tool is in early dev).
-
----
-
-## 10. The corpus
-
-usebrick's calibration is data-driven: every rule's `recall` (TP per AI file) and `fpRate` (FP per human file) are measured against a labeled corpus of ~420k files (184k negative + 239k positive, as of v7).
-
-**The corpus is not vendored** — it's too large (~43GB) and a shallow clone is faster than a checkout. The reference is in `packages/core/corpus-manifest.template.json` (committed, public format spec) and `corpus-manifest.local.json` (gitignored, your private copy with absolute path).
-
-**Structure** (live, as of v0.14.5):
-- `negative/` — 39 categories of human-written code (react, python, express, fastify, jest, koajs, lodash, etc.)
-- `positive/` — 91 directories of AI-generated / AI-assisted code (anthropic-cookbook, aider, ai-chatbot, etc.)
-- `v5/`, `v7/` — calibration outputs (older + current)
-- `filelists/` — pre-computed file lists for each source
-- `tools/baseline/` — calibration tooling (classify.py, extract_*.py, rank_*.py) — lives at `/Users/cheng/corpus-expansion/` (consolidated from the earlier `/Users/cheng/ai-slop-baseline/` layout)
-- `output/`, `labeled/` — pipeline outputs and manually labeled subsets
-
-The corpus is referenced (but not vendored) by `signal-strength.json` via rule IDs.
-
----
-
-## 11. Build & release
-
-### Build order
-
-1. `@usebrick/core` (no deps)
-2. `@usebrick/engine` (deps: `@usebrick/core`) — new in v0.15.0
-3. `slopbrick` (deps: `@usebrick/core`, `@usebrick/engine`)
-4. `@usebrick/website` (no monorepo deps; reads sibling versions at build time via `prebuild.ts`)
-
-### Release cadence
-
-- `slopbrick` — published on npm. Bumps patch for fixes, minor for new scores/rules, **major for breaking scan output or schema changes** (v0.15.0 = major).
-- `@usebrick/core` — workspace-only. No published version.
-- `@usebrick/engine` — workspace-only. New in v0.15.0. Tracks slopbrick version in lock-step.
-- `@usebrick/website` — workspace-only. Prepared for Cloudflare Pages; a live deployment is not release evidence until the deployed commit SHA and owner are verified.
-
-### v0.15.0 release plan
-
-- **Major version bump**: slopbrick 0.14.5 → 0.15.0
-- **Breaking changes**:
-  - `MEMORY_SCHEMA_VERSION` gone, `STRUCTURE_SCHEMA_VERSION = '3'` instead
-  - File `memory.md` → `structure.md`
-  - Type `MemoryFile` → `StructureFile`; same for `MemoryCategory`, `MemoryPattern`, etc.
-  - Functions `loadMemory` / `saveMemory` → `loadStructure` / `saveStructure`
-  - MCP tool `slop_suggest_with_memory` → `slop_suggest_with_structure`
-  - Score `slopIndex` replaced by `aiQuality` / `engineeringHygiene` / `security` / `repositoryHealth`
-  - `flywheelExport.memory` field gone (the file rename covers the on-disk artifact)
-- **No aliases** (Q4 user decision)
-- **6 PRs to v0.14.5d** (one per phase), then merge to `main`, then npm publish
-
----
-
-## 12. What's in `docs/superpowers/`
-
-The brainstorming, design, and planning artifacts for the v0.15.0 work:
-
-- `docs/superpowers/specs/2026-06-26-architectural-refactor-design.md` (773 lines) — the original 7-sub-project refactor
-- `docs/superpowers/specs/2026-06-26-structure-rebrand-design.md` (470 lines) — the rebrand + engine/UI split + multi-score design
-- `docs/superpowers/plans/2026-06-26-architectural-refactor.md` (2,439 lines) — the 28-task implementation plan (to be merged with the rebrand + multi-score work)
-
-The full session log is in `packages/slopbrick/CHANGELOG.md` (per-version release notes for the v0.14.5 → v0.15.0 → v0.16.0 → v0.17.0 chain).
-
----
-
-## 13. Future direction
-
-Documented in `docs/future-extractions.md` and the v0.14.5 ROADMAP:
-
-- **packages/memory/** (or `packages/structure/` after v0.15.0) — when the structure module outgrows the schema
-- **packages/contracts/** — when a non-TypeScript consumer needs the schemas (Python stackpick analyzer, Go CI binary)
-- **packages/mcp/** — extract the MCP server as a standalone library
-- **packages/sdk/** — programmatic SDK for embedding usebrick.dev tools in other pipelines
-- **stackpick**, **gir** — future CLIs (the planned 4-product expansion)
-
----
-
-## Appendix A: Glossary
-
-| Term | Meaning |
-|------|---------|
-| **AI Findings** | Rules that detect AI-induced patterns in source code (zombie state, ghost defensive, default React stack, etc.) |
-| **Constitution** | The declared/intended structure (what the project says it should be) |
-| **Drift** | The difference between constitution and inventory (what should be vs. what is) |
-| **Engine** | The pure-function scanning logic (no I/O, no console.log, no process.exit) |
-| **Health** | The per-scan quality snapshot: scores, rule fires, pattern counts |
-| **Hygiene** | Non-AI code quality (security, style, docs, test) — fires on patterns common in both human and AI code |
-| **Inventory** | The observed/actual structure (what slopbrick detected in the scan) |
-| **LR (likelihood ratio)** | `recall / fpRate` — the math used in the Bayesian combiner. LR > 1 = AI signal; LR < 1 = anti-AI signal |
-| **Slop Score** | v0.14.5: single number. v0.15.0: renamed to AI Quality |
-| **Structure** | The repository's actual layout: components, files, patterns, dependencies, conventions |
-| **Structure Score** | v0.15.0: composite of AI Quality + Engineering Hygiene + Security |
-| **Verdict** | The engine's classification of a rule (USEFUL/OK/NOISY/INVERTED/HYGIENE/DORMANT) |
-
-## Appendix B: Cross-references
-
-- v0.14.5 release notes: `packages/slopbrick/CHANGELOG.md` and the v0.14.5q launch blog at `packages/slopbrick/docs/launch-blog-post-v0.14.5d.md`
-- Agent instructions: `AGENTS.md`
-- Contributing guide (coming in v0.15.0): `CONTRIBUTING.md`
-- Public API doc (coming in v0.15.0): `packages/core/docs/public-api.md`
-- Architecture doc (this file): `docs/architecture.md`
-- Update summary: `docs/update-summary.md`
-- Future work: `docs/future-extractions.md`
-- Old repo redirect: `docs/old-repo-redirect.md`
+- [`packages/slopbrick/CHANGELOG.md`](../packages/slopbrick/CHANGELOG.md) —
+  package release history.
+- [`docs/superpowers/specs/`](./superpowers/specs/) — design contracts and
+  architecture decisions.
+- [`packages/slopbrick/docs/calibration/`](../packages/slopbrick/docs/calibration/)
+  — calibration protocols and evidence.
+- [`docs/archive/`](./archive/) — recoverable superseded narrative plans.

@@ -51,6 +51,45 @@ interface RegistryFacts {
   ruleIds: string[];
 }
 
+interface PublishedReleaseReceipt {
+  schemaVersion: number;
+  package: string;
+  version: string;
+  verifiedAt: string;
+  registryUrl: string;
+  tarballUrl: string;
+  npmIntegrity: string;
+  npmShasum: string;
+  tarballSha256: string;
+  packageJsonSha256: string;
+  packagedReadmeSha256: string;
+  taggedCatalogSha256: string;
+  facts: {
+    ruleCount: number;
+    categoryCount: number;
+    registryMetadataCategoryCount: number;
+  };
+}
+
+function readPublishedReceipt(filePath: string): PublishedReleaseReceipt {
+  const receipt = readJson<PublishedReleaseReceipt | null>(filePath, null);
+  if (
+    !receipt || receipt.schemaVersion !== 1 || receipt.package !== 'slopbrick' ||
+    !/^\d+\.\d+\.\d+$/.test(receipt.version) ||
+    !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(receipt.npmIntegrity) ||
+    !/^[a-f0-9]{40}$/.test(receipt.npmShasum) ||
+    !/^[a-f0-9]{64}$/.test(receipt.tarballSha256) ||
+    !/^[a-f0-9]{64}$/.test(receipt.packageJsonSha256) ||
+    !/^[a-f0-9]{64}$/.test(receipt.packagedReadmeSha256) ||
+    !/^[a-f0-9]{64}$/.test(receipt.taggedCatalogSha256) ||
+    !Number.isInteger(receipt.facts.ruleCount) || receipt.facts.ruleCount <= 0 ||
+    !Number.isInteger(receipt.facts.categoryCount) || receipt.facts.categoryCount <= 0
+  ) {
+    throw new Error('prebuild: published-release-receipt.json is missing required pinned artifact evidence');
+  }
+  return receipt;
+}
+
 /**
  * Read the generated executable registry and its rule modules. The website
  * must not treat a hand-edited catalog as the source of truth; the catalog is
@@ -74,6 +113,7 @@ function readRegistryFacts(builtinsPath: string, rulesRoot: string): RegistryFac
 }
 
 const signalPath = join(root, '..', 'slopbrick', 'src', 'rules', 'signal-strength.json');
+const publishedReceipt = readPublishedReceipt(join(root, 'src', 'data', 'published-release-receipt.json'));
 const signal = readJson<Record<string, any>>(signalPath, {});
 const v10Meta = signal._v10_1Meta ?? {};
 const catalogCounts = readCatalogCounts(join(root, '..', 'slopbrick', 'docs', 'rule-catalog.md'));
@@ -164,11 +204,15 @@ const productFacts = {
     categoryCount: registryFacts.categoryCount,
   },
   published: {
-    version: '0.43.0',
-    ruleCount: 103,
-    categoryCount: 22,
-    verifiedAt: '2026-07-12',
-    source: 'npm registry metadata and unpacked slopbrick@0.43.0 audit',
+    version: publishedReceipt.version,
+    ruleCount: publishedReceipt.facts.ruleCount,
+    categoryCount: publishedReceipt.facts.categoryCount,
+    verifiedAt: publishedReceipt.verifiedAt,
+    source: 'pinned npm tarball plus the v0.43.0 tagged generated catalog',
+    receipt: 'src/data/published-release-receipt.json',
+    npmIntegrity: publishedReceipt.npmIntegrity,
+    registryMetadataCategoryCount: publishedReceipt.facts.registryMetadataCategoryCount,
+    registryMetadataDiscrepancy: `npm metadata says ${publishedReceipt.facts.registryMetadataCategoryCount}; the tagged v${publishedReceipt.version} generated catalog and packaged README contain ${publishedReceipt.facts.categoryCount}`,
   },
   showcaseRules,
 };

@@ -12,29 +12,47 @@ The home of every `usebrick.dev` tool:
 
 | Package | Status | Notes |
 |---------|--------|-------|
-| `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure Platform spec (types + loaders + JSON Schemas). The moat. |
-| `packages/engine/` | **private** — workspace-only | The pure scanning engine. 4-score model, Bayesian LR combiner, parser, scoring. No I/O, no `console.log`, no `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
-| `packages/slopbrick/` | **published** as `slopbrick` | The CLI. Latest verified npm release v0.43.0: 103 rules in 22 categories. The workspace is an unreleased v0.44.0 candidate with 119 rules in 27 categories; historical v10.1 evidence covers 576,750 analyzed files from 581,550 sampled paths and is not current v10.3 admission evidence. |
+| `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure contract (types + loaders + JSON Schemas), and the deterministic starting point for future MemoryBrick work. |
+| `packages/engine/` | **private** — workspace-only | The scanning engine. `@usebrick/engine/pure` owns pure parsing/scoring APIs; the root exposes explicit Node compatibility adapters. The pure boundary has no hidden I/O, `console.log`, or `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
+| `packages/slopbrick/` | **published** as `slopbrick` | The free local scanner and main product entry point. Latest verified npm release v0.43.0: its tagged generated catalog and exact tarball README record 103 rules in 22 categories; package metadata saying 24 is known drift. The workspace is an unreleased v0.45.0 candidate with 119 rules in 27 categories; historical v10.1 evidence covers 576,750 analyzed files from 581,550 sampled paths and is not current v10.3 admission evidence. |
 | `packages/website/` | **private** — workspace-only, prepared for Cloudflare Pages | The usebrick.dev marketing site. Astro + native browser APIs + CSS brick surface; live deployment still requires owner/SHA verification. |
 
-Future packages (`stackpick`, `gir`, `cli`) join here as they're built. (The MCP server already ships inside `slopbrick`; a standalone `@usebrick/mcp` package is a future extraction.)
+The roadmap folds Pick into `init` and policy authoring. MemoryBrick is the
+repository-owned substrate/compiler, LockBrick is the first paid team layer,
+and MendBrick follows only with deterministic, reversible repairs. Do not
+create standalone packages for these names before an approved architecture
+decision. The MCP server already ships inside `slopbrick`; a standalone
+`@usebrick/mcp` package remains a possible future extraction.
+
+## Planning authority
+
+- `ROADMAP.md` owns product direction and product roles.
+- `docs/execution/index.json` owns live status, dependencies, and next actions.
+- `docs/execution/STATUS.md` owns mutable project facts.
+- Active execution plans live under `docs/execution/plans/`.
+- Historical plans and evidence may explain past decisions, but do not override
+  the current roadmap or execution index.
 
 ## What this monorepo is NOT
 
 - **Not a place for one-off experiments.** Tools land here when they're real, named, versioned, and tested.
-- **Not a polyglot monorepo.** All packages are TypeScript + Node.js 22 or 24 (`^22.0.0 || ^24.0.0`). If a tool needs Rust or Python, it lives in its own repo and consumes `@usebrick/core` from npm.
+- **Not a polyglot monorepo.** All packages are TypeScript + Node.js 22 or 24 (`^22.0.0 || ^24.0.0`). If a tool later needs Rust or Python, it lives in its own repo and consumes a deliberately published, versioned schema artifact. `@usebrick/core` is private today, so do not document an npm integration that does not exist.
 - **Not synchronized with per-package npm releases.** Each package has its own version, but they evolve in lock-step (slopbrick's `package.json` bumps `@usebrick/core` workspace dep version on every schema change).
 
 ## The contract — `@usebrick/core` schemas
 
-`packages/core/schemas/` defines the four canonical JSON Schemas:
+`packages/core/schemas/v1/` defines four canonical repository-structure JSON
+Schemas alongside the calibration control-plane schemas:
 
 - `inventory.schema.json` — detected patterns + component fingerprints
 - `constitution.schema.json` — declared allow-list + deny-list
-- `structure.schema.json` — agent-readable markdown summary
+- `structure.schema.json` — structured projection used to render the
+  agent-readable `structure.md` summary
 - `health.schema.json` — per-scan health snapshot
 
-**These schemas are the API.** Every tool in the platform reads and writes data matching them. Changing a schema field is a breaking change for every consumer. When you need to add a field:
+**These schemas are the API.** Every tool in the platform reads and writes data
+matching them. Required-field, removal, rename, or semantic changes can break
+every consumer. When you need to add a field:
 
 1. Add it as **optional** with a sensible default in the schema
 2. Bump `STRUCTURE_SCHEMA_VERSION` only if the new field is **required**
@@ -46,14 +64,18 @@ Future packages (`stackpick`, `gir`, `cli`) join here as they're built. (The MCP
 2. **Reuse `@usebrick/core` types.** Don't redefine `InventoryFile`, `ConstitutionFile`, etc. — import them from the workspace dep.
 3. **Add tests in the package's `tests/` directory.** Run via `pnpm --filter <package> test`.
 4. **Test against the JSON Schemas**, not just TypeScript types. Schemas are the cross-language contract.
-5. **Update `packages/core/schemas/index.json`** when adding a new schema.
+5. **Update `packages/core/schemas/v1/index.json`** when adding a new schema.
 6. **Update `README.md`** at the repo root + in your package's README.
 
 ## Conventions for new rules / detection logic in slopbrick
 
 1. **Reuse `facts.v2`.** Most new rules should be 5–20 line pure functions over `facts.v2`.
 2. **Add `RULE_HINTS` entry in `src/snippet/data.ts`** (the engine auto-validates hints exist).
-3. **Calibrate against the corpus.** New rules must have `recall/FP ratio ≥ 1.5×` against `tests/fixtures/frameworks/`. Without calibration, the rule is `defaultOff: true` until proven.
+3. **Calibrate against admitted evidence.** Framework fixtures are useful test
+   cases, not corpus-level release evidence. A new rule remains
+   `defaultOff: true` until its activation criteria are satisfied by an
+   admitted, leakage-checked corpus. Current v10.3 admission is zero, so do not
+   present historical v10.1 results as proof for a new activation.
 4. **Add tests in `tests/rules/<rule-name>.test.ts`.**
 
 ## Quality gates
@@ -66,11 +88,20 @@ pnpm -r test         # every package
 pnpm -r build        # builds core first (workspace dep), then slopbrick
 ```
 
-CI runs the same commands on every PR + push to main. Publishing the `slopbrick` package to npm is triggered by `release: types: [published]` (when you cut a GitHub release), not by tag pushes. The `publish.yml` workflow has two human gates: the `publish` environment approval + the release itself.
+CI runs the same recursive commands on every PR + push to main. Publishing the
+`slopbrick` package normally starts from `release: types: [published]`; a
+guarded `workflow_dispatch` with an exact tag is the recovery trigger. Tag
+pushes alone do not publish. The publish job always uses the `publish`
+environment; it pauses for human approval only when that environment has a
+protection rule requiring it.
 
 ### Pre-push hook (the "local tests pass, CI fails" trap)
 
-The `slopbrick` test suite is currently 3,540 tests (5 skipped files / 9 skipped tests). Running a scoped subset (e.g. `pnpm vitest run tests/rules/kotlin/`) is fast and useful during development, but it can miss full-suite failures like `tests/engine/signal-strength-guardrails.test.ts` (v0.24.0 lesson: a pre-existing DORMANT-vs-`defaultOff` invariant violation was caught by CI but missed by my scoped local run). The v0.24.0 publish run failed at this exact test; refresh this count when the suite changes.
+The `slopbrick` suite is large and its exact test count is mutable. Running a
+scoped subset (for example `pnpm vitest run tests/rules/kotlin/`) is fast and
+useful during development, but it can miss full-suite invariants such as
+`tests/engine/signal-strength-guardrails.test.ts`. Do not use a historical test
+count as current release evidence.
 
 `packages/slopbrick/scripts/pre-push` is a git hook that runs the **same gates as `publish.yml`** (typecheck + full `pnpm test` + build) before allowing a push to `main`. Install it once:
 
@@ -92,7 +123,7 @@ The hook only enforces on publish branches (`main`); feature branches skip the f
 5. Commit + push to `main` (the pre-push hook enforces #3 automatically)
 6. `git tag v0.X.Y && git push origin v0.X.Y` — pushes the tag, but **does not** publish
 7. `gh release create v0.X.Y --notes-file <CHANGELOG excerpt>` — this is what triggers `publish.yml`
-8. Approve the deployment in the `publish` environment (or wait for the OIDC trusted-publisher to skip the env gate)
+8. If the `publish` environment has required reviewers, approve the job; OIDC trusted publishing does not bypass environment protection
 9. Watch the `publish` workflow run; on green, `npm view slopbrick@<version>` should show the new version within ~3 minutes
 
 **Do not** use `pnpm publish` or `npm publish` locally. The OIDC trusted publishing in `publish.yml` is the only supported path; local publish will fail with 401 and the local `~/.npmrc` token is no longer used.

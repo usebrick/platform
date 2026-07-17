@@ -257,7 +257,7 @@ function render(rules: RuleMeta[]): string {
   md += `- **Default** — whether the rule runs out of the box. `;
   md += `Rules marked \`off\` are \`defaultOff: true\` in [`;
   md += `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) (typically INVERTED, NOISY, or DORMANT calibration verdict) and require explicit opt-in via \`rules: { '${'<id>'}': 'medium' }\` in \`slopbrick.config.mjs\`.\n`;
-  md += `- **AI-specific** — the rule only fires on patterns introduced (or disproportionately introduced) by AI coding agents. Rules without the ✓ may still correlate with AI authorship but the underlying pattern is not AI-unique.\n`;
+  md += `- **AI-specific** — marks the AI-associated detector lane used for reporting and calibration. It is rule metadata, not proof that AI wrote a file or that the pattern is unique to AI-generated code; calibration status and default state determine how the evidence may be used.\n`;
   md += `- **Severity** — see [scoring-runbook.md](./scoring-runbook.md) for the per-severity weight in PR Slop Score.\n\n`;
 
   md += `## Regenerating this catalog\n\n`;
@@ -274,9 +274,8 @@ function render(rules: RuleMeta[]): string {
   md += `This runs automatically before \`pnpm build\` and \`pnpm test\` via the existing \`prebuild\` / pre-` + `\`test\`` + ` chain.\n\n`;
 
   md += `## See also\n\n`;
-  md += `- [ai-slop-rule-catalog.md](./ai-slop-rule-catalog.md) — design rationale + scoring philosophy\n`;
   md += `- [scoring-runbook.md](./scoring-runbook.md) — interpreting the four headline scores\n`;
-  md += `- [../ROADMAP.md](../ROADMAP.md) — strategic positioning + 12-phase plan\n`;
+  md += `- [../../../ROADMAP.md](../../../ROADMAP.md) — canonical platform roadmap\n`;
 
   return md;
 }

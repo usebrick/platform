@@ -81,11 +81,11 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_list_rules',
     description:
-      'List all registered rules with their category, severity, and aiSpecific flag. Optional category filter (visual | logic | wcag | security | perf | typo | layout | component | arch).',
+      'List all registered rules with their category, severity, and aiSpecific flag. Optionally filter by any registered category.',
     inputSchema: {
       type: 'object',
       properties: {
-        category: { type: 'string', description: 'Optional category filter.' },
+        category: { type: 'string', description: 'Optional exact registered-category filter.' },
       },
     },
   },
@@ -106,7 +106,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_suggest_with_structure',
     description:
-      'Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory (100–1000× latency win on the agent integration). If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first.',
+      'Fast-path variant of `slop_suggest` that reads `.slopbrick/structure.md` from disk instead of re-scanning the codebase. Requires a prior `slopbrick scan` to have persisted the inventory and avoids repeated scanning; measure the speed-up in the target repository and client workflow. If `structure.md` is missing, falls back to `slop_suggest` and annotates the response with `structureHint` so the caller knows to run `slopbrick scan` first.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -824,8 +824,8 @@ export async function runSuggest(
   // block — the markdown is already an agent-readable summary,
   // rendered by `renderStructureMarkdown`. MCP clients render it
   // inline so the agent sees the patterns directly without parsing
-  // JSON. This is the 100-1000× latency win on agent integrations
-  // that call this tool frequently.
+  // JSON. This avoids repeated scanning for agent integrations that call this
+  // tool frequently; the actual latency improvement is workload-dependent.
   if (includeStructure) {
     const cached = await readStructureMarkdown(ctx.cwd);
     if (cached !== null) {

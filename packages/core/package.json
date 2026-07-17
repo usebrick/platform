@@ -2,7 +2,7 @@
   "name": "@usebrick/core",
   "version": "0.3.0",
   "private": true,
-  "description": "Shared .slop-audit/ memory artifact reader/writer + Repository Memory Platform types. The contract every usebrick.dev tool depends on. Private to the monorepo — not published to npm until the schema is stable.",
+  "description": "Private canonical repository-intelligence contracts: schemas, types, validators, provenance, and artifact readers shared by every Usebrick surface.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
