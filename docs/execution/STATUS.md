@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 16
+**Index revision:** 17
 **Global status:** `advancing`
 
 ## Executive state
@@ -49,7 +49,7 @@ does not block local product work.
   `f00c5364fc13d6452756d94071c76158cb4a05cd`. The focused calibration tests
   and package typecheck pass; the recorded one-worker receipt scanned 200/200
   selected source-bound files successfully and remains `admitted: false`.
-  The recursive release gates have not been rerun after this additive slice.
+  The recursive release gates were rerun after this additive slice and pass.
 - The CAL-001 full holdout evaluator is checkpointed at
   `45d2dd038107d3d1d7731192126bf0d48dd6f84b`. Its one-worker receipt covers
   10,000/10,000 source-bound files across 7,970 train, 991 validation, and
@@ -150,7 +150,7 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | Qualified with host boundary | Recursive typecheck/build pass and the serialized full SlopBrick suite is green; the recursive test command has seven documented sandbox/host-sensitive failures. |
+| Current checkout gates | Satisfied | Recursive lint, typecheck, full test, and build gates pass in the current checkout; the build emits only the existing zod declaration-bundling warnings. |
 | Self-scan disposition | PASS | 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Claims and metadata | Open | Reconcile version, category, artifact, privacy, and website claims. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |

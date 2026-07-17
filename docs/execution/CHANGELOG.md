@@ -3,6 +3,21 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 17 — 2026-07-17
+
+### Changed
+
+- Reran the current checkout's recursive lint, typecheck, full test, and build
+  gates after the CAL-001 holdout and decision-matrix slice; all passed.
+- Updated the canonical status snapshot so the current gate state is not
+  confused with the older SB-045 host-sensitive qualification receipt.
+
+### Evidence
+
+- `docs/execution/STATUS.md`
+- `docs/execution/index.json`
+- No publish, deployment, tag, push, admission, or remote mutation occurred.
+
 ## Revision 16 — 2026-07-17
 
 ### Changed
