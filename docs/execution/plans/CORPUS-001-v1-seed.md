@@ -25,9 +25,14 @@ The leakage planner then found zero exact and zero normalized cross-label
 collision rows and assigned every family/duplicate group to one deterministic
 split: 7,970 train, 991 validation, and 1,039 test. Its canonical plan SHA-256
 is `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
-This does not yet reconcile publisher label/source columns from the raw CSV to
-each projection row, admit rows, emit a smoke receipt, or run calibration.
-v10.3 remains unchanged and quarantine-only.
+The raw publisher CSV now reconciles all 10,000 rows to the projection's
+ordinal, record ID, problem, label, language, source claim, byte count, and two
+content hashes. The row-binding SHA-256 is
+`86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c` and
+its receipt SHA-256 is
+`47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+This does not admit rows, emit a smoke receipt, or run calibration. v10.3
+remains unchanged and quarantine-only.
 
 ## Scope
 
@@ -77,8 +82,9 @@ v10.3 remains unchanged and quarantine-only.
 3. **Verified 2026-07-17:** freeze family-aware splits and exact/normalized
    cross-label collision quarantine -> verify:
    `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-plan.test.ts --maxWorkers=1 --minWorkers=1`.
-4. Reconcile every projection row to the pinned raw CSV publisher label and
-   source columns and record a row-binding receipt -> verify:
+4. **Verified 2026-07-17:** reconcile every projection row to the pinned raw
+   CSV publisher label and source columns and record a row-binding receipt ->
+   verify:
    `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-binding.test.ts --maxWorkers=1 --minWorkers=1`.
 5. Build the 100/100 smoke twice -> verify: compare manifest and receipt
    SHA-256 values.
@@ -101,5 +107,6 @@ alter or delete the v10.3 source tree.
 
 ## Next action
 
-Write the red raw CSV row-binding test that reconciles the pinned publisher
-label and source columns to every candidate projection row.
+Write the red deterministic hash-ranked 100-positive/100-negative smoke test
+and bind its manifest and receipt to the verified source, candidate, and plan
+hashes.

@@ -3,6 +3,29 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 7 — 2026-07-17
+
+### Changed
+
+- Parsed the pinned publisher CSV directly with strict multiline/quote/UTF-8
+  handling and reconciled all 10,000 rows one-to-one with the projection.
+- Bound each publisher row's ordinal, deterministic record ID, problem, AI or
+  Human polarity, language, source claim, byte count, and both content hashes.
+- Frozen row-binding SHA-256
+  `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c`
+  and receipt SHA-256
+  `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`
+  were reproduced across independent reads.
+- Advanced `CORPUS-001` to the deterministic 100-positive/100-negative smoke.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/source-binding.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-source-binding.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No corpus source byte, admission record, remote repository, release, publish,
+  deployment, or archive state changed.
+
 ## Revision 6 — 2026-07-17
 
 ### Changed

@@ -133,16 +133,47 @@ tests with the real-source test skipped; after adding the frozen bucket
 contract, the real-source suite passed all eight tests. Candidate code was not
 executed, and no source or output path was mutated.
 
+## Raw publisher row-binding checkpoint
+
+The source-binding adapter parses the pinned five-column publisher CSV itself
+instead of inheriting label and source claims from the projection manifest. It
+binds every raw row in ordinal order to the projection's:
+
+- deterministic source record ID and publisher problem ID;
+- `AI` or `Human` polarity;
+- language and source claim;
+- exact UTF-8 sample-code byte count; and
+- declared and materialized content SHA-256 values.
+
+Both artifacts are opened as regular non-symlink files with read-only and
+no-follow flags, limited to 16 MiB each, read through size-bound handles with
+an EOF probe, and rehashed against the pinned inventory. The strict CSV parser
+supports quoted commas, multiline fields, doubled quotes, and LF/CRLF while
+rejecting invalid UTF-8, wrong headers/counts, stray or unterminated quotes,
+bare carriage returns, and partial final records.
+
+The pinned source produced:
+
+| Measure | Result |
+| --- | ---: |
+| Matched / positive / negative | 10,000 / 5,000 / 5,000 |
+| Row-binding SHA-256 | `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c` |
+| Receipt SHA-256 | `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac` |
+
+Two independent direct adapter runs produced the same hashes before they were
+frozen in the opt-in real-source test. The final one-worker focused suite
+passed 17/17, including before/after size and modification-time checks for the
+CSV and projection manifest. SlopBrick typecheck passed.
+
 ## Explicitly still open
 
-- The raw CSV is hash-bound but is not parsed in this inventory slice.
 - The inventory result remains intentionally path/size-only, but the candidate
-  projector now independently rehashes unit bytes and quarantines mismatches.
-- The raw CSV remains hash-bound but is not yet row-reconciled with the
-  projection manifest.
-- No raw-CSV row-binding receipt, 100/100 smoke receipt, admission output,
-  threshold change, or calibration run exists.
+  projector independently rehashes unit bytes and the source-binding stage
+  independently reconciles raw publisher rows.
+- No 100/100 smoke receipt, admission output, threshold change, or calibration
+  run exists.
 - No v10.3 source byte was moved, deleted, rewritten, or admitted.
 
-The next slice must bind publisher label/source columns from the pinned raw CSV
-to every projection row before any smoke calibration is attempted.
+The next slice must emit the exact deterministic 100-positive/100-negative
+smoke manifest and receipt twice before any admission or calibration is
+attempted.

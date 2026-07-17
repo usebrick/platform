@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 6
+**Index revision:** 7
 **Global status:** `advancing`
 
 ## Executive state
@@ -41,9 +41,14 @@ does not block product or corpus work.
   normalized cross-label collision rows and deterministically assigned 7,970
   train, 991 validation, and 1,039 test rows, with plan SHA-256
   `9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c`.
+  Direct raw-CSV reconciliation now binds all 10,000 publisher rows to the
+  projection's labels, sources, languages, problems, ordinals, byte counts,
+  and content hashes. Row-binding SHA-256 is
+  `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c`;
+  receipt SHA-256 is
+  `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
   It remains an internal-analysis candidate, not an admitted, independently
-  witnessed, quality-labeled, redistribution-approved, or production corpus;
-  raw CSV publisher columns still require row-level reconciliation.
+  witnessed, quality-labeled, redistribution-approved, or production corpus.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
 - A 2026-07-17 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
@@ -77,7 +82,7 @@ not consume WIP while waiting.
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Red-test one gate decision for report and exit behavior. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
-| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test raw CSV publisher-label/source row binding against the pinned projection. |
+| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test the deterministic hash-ranked 100-positive/100-negative smoke receipt. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | `CORPUS-001` | Freeze leakage-safe splits and the admission matrix. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
@@ -131,10 +136,9 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 The next product checkpoint is reached when `SB-045` proves one typed gate
-decision drives report output and process exit, and `CORPUS-001` binds every
-projection row to the pinned raw CSV publisher columns before producing the
-exact 100/100 smoke receipt. The read-only inventory, per-unit-hashed
-5,000/5,000 candidate manifest, and family-safe leakage plan are verified.
-`GTM-001` remains the independent company-track start. Approved stale-path
-cleanup can be executed later without displacing either active implementation
-lane.
+decision drives report output and process exit, and `CORPUS-001` produces the
+same exact 100/100 smoke manifest and receipt twice. The read-only inventory,
+per-unit-hashed 5,000/5,000 candidate manifest, family-safe leakage plan, and
+raw publisher row binding are verified. `GTM-001` remains the independent
+company-track start. Approved stale-path cleanup can be executed later without
+displacing either active implementation lane.
