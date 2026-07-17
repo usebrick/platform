@@ -350,7 +350,9 @@ export async function runDoctor(cwd: string): Promise<number> {
     if (validation.valid) {
       ok('Baseline cache is structurally valid and matches config/git state.');
     } else {
-      warn(`Baseline cache invalid: ${validation.reason}. Run \`slopbrick scan --baseline\` to recalibrate.`);
+      warn(
+        `Baseline cache invalid: ${validation.reason}. Review the current score before running \`slopbrick scan --baseline\` to create a new baseline.`,
+      );
     }
   } else {
     lines.push("  (No baseline cache yet — that's fine. Run `slopbrick scan --baseline` to create one.)");

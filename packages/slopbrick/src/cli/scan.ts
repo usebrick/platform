@@ -440,7 +440,7 @@ async function runScanWithScopedState(
       }
     } else if (!options.quiet) {
       logger.warn(
-        `Baseline invalid: ${validation.reason}; ignoring. Run \`slopbrick scan --baseline\` to recalibrate.`,
+        `Baseline invalid: ${validation.reason}; ignoring. Review the current score before running \`slopbrick scan --baseline\` to create a new baseline.`,
       );
     }
   }

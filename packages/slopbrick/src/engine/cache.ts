@@ -161,14 +161,14 @@ export function loadBaseline(projectPath: string): BaselineCache | undefined {
     const parsed = JSON.parse(content);
     if (!isBaselineCache(parsed)) {
       console.error(
-        `Invalid baseline cache at ${path}; ignoring. Run \`slopbrick scan --baseline\` to recalibrate.`,
+        `Invalid baseline cache at ${path}; ignoring. Review the current score before running \`slopbrick scan --baseline\` to create a new baseline.`,
       );
       return undefined;
     }
     return parsed;
   } catch (err) {
     console.error(
-      `Failed to load baseline cache at ${path}; ignoring. Run \`slopbrick scan --baseline\` to recalibrate.`,
+      `Failed to load baseline cache at ${path}; ignoring. Review the current score before running \`slopbrick scan --baseline\` to create a new baseline.`,
       err,
     );
     return undefined;
