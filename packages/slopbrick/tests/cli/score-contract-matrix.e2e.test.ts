@@ -55,21 +55,34 @@ function matrixIssues(kind: MatrixKind, includeAudit = false): Issue[] {
   return issues;
 }
 
+function matrixConfig(kind: MatrixKind) {
+  if (kind === 'ai-only' || kind === 'mixed') {
+    // The compression signal is calibration-only in v0.45 and therefore
+    // requires an explicit opt-in in synthetic score fixtures.
+    return {
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, 'ai/compression-profile': 'high' as const },
+    };
+  }
+  return DEFAULT_CONFIG;
+}
+
 function assemble(kind: MatrixKind, includeAudit = false): ProjectReport {
   const allIssues = matrixIssues(kind, includeAudit);
+  const config = matrixConfig(kind);
   const result: FileScanResult = {
     filePath: 'src/example.ts',
     componentCount: 0,
     issues: allIssues,
   };
-  const effectiveIssues = effectiveIssuesForScore(allIssues, DEFAULT_CONFIG);
+  const effectiveIssues = effectiveIssuesForScore(allIssues, config);
   const scores = [
-    scoreFile({ ...result, issues: effectiveIssues }, 1, DEFAULT_CONFIG),
+    scoreFile({ ...result, issues: effectiveIssues }, 1, config),
   ];
   const aggregated = aggregateReport(
     scores,
     [{ filePath: result.filePath, issues: effectiveIssues }],
-    DEFAULT_CONFIG,
+    config,
     undefined,
     1,
   );
@@ -82,7 +95,7 @@ function assemble(kind: MatrixKind, includeAudit = false): ProjectReport {
     effectiveIssues,
     parseErrors: [],
     topOffenders: [],
-    config: DEFAULT_CONFIG,
+    config,
     baselineMeta: undefined,
     defaultOffApplied: includeAudit ? 1 : 0,
     defaultOffRuleCount: includeAudit ? 1 : 0,
@@ -162,16 +175,17 @@ describe('Gate 1 canonical score matrix', () => {
     expect(mixed.repositoryHealth).toBeLessThanOrEqual(base.repositoryHealth);
 
     const reversed = matrixIssues('mixed').reverse();
-    const effective = effectiveIssuesForScore(reversed, DEFAULT_CONFIG);
+    const config = matrixConfig('mixed');
+    const effective = effectiveIssuesForScore(reversed, config);
     const score = scoreFile(
       { filePath: 'src/example.ts', componentCount: 0, issues: effective },
       1,
-      DEFAULT_CONFIG,
+      config,
     );
     const aggregate = aggregateReport(
       [score],
       [{ filePath: 'src/example.ts', issues: effective }],
-      DEFAULT_CONFIG,
+      config,
       undefined,
       1,
     );
