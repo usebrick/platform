@@ -16,7 +16,7 @@ usebrick is a four-product platform for the **Repository Structure Platform** (R
 | Product | Purpose | Status |
 |---------|---------|--------|
 | **PickBrick** | Defines the **intended** structure (the Constitution) | planned |
-| **SlopBrick** | Discovers the **actual** structure (the scanner) | **latest published** as `slopbrick@0.43.0` on npm (103 rules; its 576,750-file v10.1 result is historical); v0.44.0 trust-restoration work is unreleased and v10.3 admission is open |
+| **SlopBrick** | Discovers the **actual** structure (the scanner) | **latest published** as `slopbrick@0.43.0` on npm (103 rules; its 576,750-file v10.1 result is historical); v0.45.0 admission-bound work is unreleased and v10.3 admission remains gated |
 | **MendBrick** | Repairs the structure (the migrator) | planned |
 | **LockBrick** | Protects the structure (the enforcer, in CI) | planned |
 

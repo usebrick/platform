@@ -140,6 +140,7 @@ remainder (Java, C#, Rust, Swift, C++, Kotlin, Ruby, PHP) is
 
 | Version | Date | Files | Notes |
 |---------|------|-------|-------|
+| v0.45.0 (unreleased candidate) | 2026-07-17 | — | admission-bound manifest/runtime gate; v10.3 authority remains required |
 | v0.44.0 (unreleased) | 2026-07-09 | — | trust restoration; v10.3 calibration remains gated |
 | v0.10.1 | 2026-07-04 | 581k | Last full calib |
 | v8.5 | 2026-07-01 | 546k | TS/JS focused |

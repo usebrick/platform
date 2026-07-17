@@ -1,6 +1,22 @@
 # Changelog
 
-## [Unreleased] — v0.44.0 trust restoration
+## [0.45.0] — unreleased; admission-bound calibration
+
+This package version is a release candidate only. It is not published: the
+v10.3 corpus is still quarantine-only until the owner-supplied static-ledger
+and witness authority bundle passes the read-only census gate.
+
+### Added
+
+- Added the v10.3.2 witness-bound manifest builder and private prerequisite,
+  witness, and consumer trust boundaries.
+- Added the serial Node 22/24 packed-runtime gate. It uses one
+  content-addressed tarball, verifies the packed builder member, and emits
+  canonical runtime receipts only after both offline consumers agree.
+- Added explicit provenance and admission-binding checks for manifest output;
+  no corpus labels or manifest bytes are admitted by this release candidate.
+
+## [Unreleased] — v0.44.0 trust restoration (historical carry-forward)
 
 This branch is not released. The current work restores scanner, schema, score,
 MCP, and package contracts. Calibration artifacts and ML experiments remain

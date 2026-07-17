@@ -46,8 +46,8 @@ on every scan — your repository, encoded for the next agent.
   lib, modal system, API client) once. The agent and the linter
   enforce it together.
 
-**Status:** v0.43.0 is the latest published release; v0.44.0 is an unreleased
-trust-restoration candidate. The published train has 103 rules in 22
+**Status:** v0.43.0 is the latest published release; v0.45.0 is an unreleased
+admission-bound calibration candidate. The published train has 103 rules in 22
 categories and 4 headline scores. Its 576,750-file v10.1 result is historical
 evidence, not current v10.3 admission or release evidence; the candidate's
 provenance gates remain open. See [CHANGELOG](./CHANGELOG.md) for the full
