@@ -958,6 +958,16 @@ state changed. Census remains **329/329** reviewed sources, **452,382**
 quarantined/unrepresented units, zero candidate/eligible, blockers
 `static_authority_unavailable` and `witness_authority_unavailable`.
 
+### CORPUS-001 bounded source inventory — 2026-07-17
+
+Task 1: complete (commits `19ab7181d..c7fe20752`, spec pass and quality
+approved after manifest-claim boundary fix). The pinned local Mendeley source
+inventory reconciles 10,000 rows/files at 5,000 publisher-declared AI
+positives and 5,000 publisher-declared Human negatives. It remains
+`publisher_attested` / `internal_analysis`; per-unit content rehashing,
+normalized collision checks, splits, smoke receipts, admission, calibration,
+and all remote mutations remain open.
+
 ### Bounded corpus allocation replay and scan accounting correction — 2026-07-15
 
 The explicit allocation preview replayed the two real v10.3 inventory streams

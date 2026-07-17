@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-17
-**Index revision:** 3
+**Index revision:** 4
 **Global status:** `advancing`
 
 ## Executive state
@@ -32,9 +32,10 @@ does not block product or corpus work.
   units and **zero admitted units**. Its authority protocol is retained as
   historical engineering evidence, not a prerequisite for a smaller truthful
   Corpus v1.
-- The local publisher-labeled 5,000 AI / 5,000 human projection is a candidate
-  input. It is not yet an admitted, rights-audited, leakage-safe production
-  corpus.
+- The local publisher-labeled 5,000 AI / 5,000 human projection now passes the
+  pinned, read-only source inventory. It remains an internal-analysis candidate,
+  not an admitted, independently witnessed, quality-labeled, redistribution-
+  approved, or leakage-safe production corpus.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
 - A 2026-07-17 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
@@ -68,7 +69,7 @@ not consume WIP while waiting.
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `in_progress` | — | Red-test one gate decision for report and exit behavior. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit five vibecoder pilots and establish the outcome template. |
-| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test the local publisher-attested projection inventory. |
+| 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `in_progress` | — | Red-test deterministic per-unit manifest projection and quarantine reasons. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `draft` | `CORPUS-001` | Freeze leakage-safe splits and the admission matrix. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
@@ -122,7 +123,8 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 The next product checkpoint is reached when `SB-045` proves one typed gate
-decision drives report output and process exit, and `CORPUS-001` proves the
-read-only local projection inventory with one worker. `GTM-001` remains the
-independent company-track start. Approved stale-path cleanup can be executed
-later without displacing either active implementation lane.
+decision drives report output and process exit, and `CORPUS-001` emits a
+deterministic, per-unit-hashed candidate manifest with explicit quarantine
+reasons. The read-only 5,000/5,000 source inventory is verified. `GTM-001`
+remains the independent company-track start. Approved stale-path cleanup can
+be executed later without displacing either active implementation lane.

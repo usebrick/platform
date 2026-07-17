@@ -3,6 +3,28 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 4 — 2026-07-17
+
+### Changed
+
+- Verified the bounded, read-only Corpus v1 inventory against the pinned local
+  Mendeley projection: 10,000 rows and regular files, split 5,000 publisher-
+  declared AI positives and 5,000 publisher-declared Human negatives.
+- Kept the result at `publisher_attested` / `internal_analysis`: it is not
+  witnessed authorship, a quality label, redistribution approval, leakage
+  proof, or corpus admission.
+- Advanced `CORPUS-001` to the deterministic manifest-projection checkpoint;
+  per-unit rehashing, normalized collision checks, family-aware splits, smoke
+  receipts, and admission remain open.
+
+### Evidence
+
+- `packages/slopbrick/src/calibration/corpus-v1/inventory.ts`
+- `packages/slopbrick/tests/calibration/corpus-v1-inventory.test.ts`
+- `docs/execution/evidence/CORPUS-001-seed-receipt.md`
+- No source corpus bytes, remote repository, release, publish, deployment, or
+  archive state changed.
+
 ## Revision 3 — 2026-07-17
 
 ### Changed

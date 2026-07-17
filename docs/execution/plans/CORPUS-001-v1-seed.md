@@ -14,9 +14,14 @@ rights-audited, source-attested material, then emit a deterministic 100-positive
 
 ## Current truth
 
-Candidate source bytes exist locally, but no Corpus v1 manifest, admission
-output, family split, collision report, or receipt exists. v10.3 remains
-quarantine-only and must be preserved until this replacement is proven.
+The read-only source inventory now reconciles the pinned local projection at
+10,000 rows and files: 5,000 publisher-declared AI positives and 5,000
+publisher-declared Human negatives. This proves byte accessibility, source
+bindings, license metadata, declared-label mapping, family counts, and the
+absence of manifest-level exact cross-label collisions. It does not rehash
+unit contents, parse the raw CSV, create a Corpus v1 manifest, freeze splits,
+prove normalized leakage safety, admit rows, or run calibration. v10.3 remains
+unchanged and quarantine-only.
 
 ## Scope
 
@@ -57,10 +62,11 @@ quarantine-only and must be preserved until this replacement is proven.
 
 ## Execution steps
 
-1. Add a failing read-only inventory test for the approved local projection ->
-   verify: `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-inventory.test.ts --maxWorkers=1 --minWorkers=1`.
-2. Implement deterministic manifest projection and quarantine reasons ->
-   verify: rerun the focused test with one worker.
+1. **Verified 2026-07-17:** add a failing read-only inventory test for the
+   approved local projection -> verify: `corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-inventory.test.ts --maxWorkers=1 --minWorkers=1`.
+2. Implement deterministic manifest projection with per-unit content and
+   normalized hashes, family keys, rights disposition, and quarantine reasons
+   -> verify: run the dedicated projection test with one worker.
 3. Freeze family-aware splits and collision checks -> verify: run the dedicated
    split/leakage tests with one worker.
 4. Build the 100/100 smoke twice -> verify: compare manifest and receipt
@@ -84,5 +90,6 @@ alter or delete the v10.3 source tree.
 
 ## Next action
 
-Add the red read-only inventory test for the local 5,000/5,000
-publisher-attested projection, using one worker and no source-byte mutation.
+Write the red deterministic Corpus v1 manifest-projection test with per-unit
+content and normalized hashes, family keys, rights disposition, and quarantine
+reasons.

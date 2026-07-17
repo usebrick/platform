@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 3,
+  "revision": 4,
   "updatedAt": "2026-07-17",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -128,12 +128,13 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Add the red read-only inventory test for the local 5,000/5,000 publisher-attested projection.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-inventory.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Write the red deterministic Corpus v1 manifest-projection test with per-unit content and normalized hashes, family keys, rights disposition, and quarantine reasons.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-manifest.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CORPUS-001-seed-receipt.md"
       },
       "evidence": [
-        "packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md"
+        "packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md",
+        "docs/execution/evidence/CORPUS-001-seed-receipt.md"
       ]
     },
     {
