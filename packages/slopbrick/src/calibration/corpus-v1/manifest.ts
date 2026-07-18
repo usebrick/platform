@@ -12,6 +12,7 @@ import {
   type MendeleyCorpusV1Expectations,
   type MendeleyCorpusV1Inventory,
 } from './inventory';
+import { assertCorpusV1SourceUse } from './source-policy';
 
 const SOURCE_ROOT = 'sources/benchmarks/humanvsai-code-dataset';
 const PROJECTION_ROOT = `${SOURCE_ROOT}/projection-v1`;
@@ -231,6 +232,7 @@ export async function projectMendeleyCorpusV1CandidateManifest(
   input: ProjectMendeleyCorpusV1CandidateManifestInput,
 ): Promise<CorpusV1CandidateManifestResult> {
   const inventory = await inventoryMendeleyCorpusV1(input);
+  assertCorpusV1SourceUse(inventory.sourceDisposition, 'calibration_evaluation');
   const corpusRoot = await realpath(resolve(input.corpusRoot));
   const projectionRoot = await realpath(resolve(corpusRoot, PROJECTION_ROOT));
   const manifestPath = await realpath(resolve(corpusRoot, PROJECTION_MANIFEST));

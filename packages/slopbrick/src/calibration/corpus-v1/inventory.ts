@@ -3,6 +3,8 @@ import { createReadStream } from 'node:fs';
 import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
+import { corpusV1SourceDisposition } from './source-registry';
+import type { CorpusV1SourceDisposition } from './source-policy';
 
 const MAX_METADATA_BYTES = 1024 * 1024;
 const MAX_SOURCE_ARTIFACT_BYTES = 16 * 1024 * 1024;
@@ -95,6 +97,7 @@ export interface MendeleyCorpusV1Inventory {
   readonly authorityTier: 'publisher_attested';
   readonly licenseId: 'CC-BY-4.0';
   readonly rightsDisposition: 'internal_analysis';
+  readonly sourceDisposition: CorpusV1SourceDisposition;
   readonly archive: { readonly bytes: number; readonly sha256: string };
   readonly csv: { readonly bytes: number; readonly sha256: string; readonly headers: readonly string[] };
   readonly projectionManifest: { readonly bytes: number; readonly sha256: string };
@@ -282,6 +285,14 @@ export async function inventoryMendeleyCorpusV1(input: MendeleyCorpusV1Inventory
   ) {
     throw new Error('source identity does not match the explicit Corpus v1 expectations');
   }
+  const sourceDisposition = corpusV1SourceDisposition(audit.source.sourceId);
+  if (
+    sourceDisposition.authorityTier !== 'publisher_attested'
+    || sourceDisposition.integrityStatus !== 'verified'
+    || sourceDisposition.rightsDisposition !== 'internal_analysis'
+  ) {
+    throw new Error('Mendeley source disposition does not match the inventory contract');
+  }
   if (audit.source.license !== 'CC BY 4.0') throw new Error('Corpus v1 seed requires the pinned CC BY 4.0 declaration');
   const dataCite = parseMetadata<Record<string, unknown>>(await readFile(dataCiteFile.path), 'DataCite metadata');
   const dataAttributes = isRecord(dataCite.data) && isRecord(dataCite.data.attributes)
@@ -425,6 +436,7 @@ export async function inventoryMendeleyCorpusV1(input: MendeleyCorpusV1Inventory
     authorityTier: 'publisher_attested',
     licenseId: 'CC-BY-4.0',
     rightsDisposition: 'internal_analysis',
+    sourceDisposition,
     archive: { bytes: archive.bytes, sha256: archiveSha256 },
     csv: { bytes: csv.bytes, sha256: csvSha256, headers: audit.staticDatasetAudit.csvHeaders },
     projectionManifest: { bytes: manifest.bytes, sha256: manifestSha256 },

@@ -4,6 +4,7 @@ import {
   deriveCorpusV1SourceDisposition,
   type CorpusV1SourcePolicyInput,
 } from '../../src/calibration/corpus-v1/source-policy';
+import { corpusV1SourceDisposition } from '../../src/calibration/corpus-v1/source-registry';
 
 const source = (overrides: Partial<CorpusV1SourcePolicyInput> = {}): CorpusV1SourcePolicyInput => ({
   sourceId: 'fixture-source',
@@ -60,5 +61,27 @@ describe('Corpus v1 source-use policy', () => {
   it('rejects an empty source ID', () => {
     expect(() => deriveCorpusV1SourceDisposition(source({ sourceId: '' })))
       .toThrow('Corpus v1 sourceId must be a non-empty string');
+  });
+
+  it('registers the reviewed Mendeley source for internal calibration evaluation', () => {
+    expect(corpusV1SourceDisposition('humanvsai-code-dataset-mendeley-v1')).toEqual({
+      sourceId: 'humanvsai-code-dataset-mendeley-v1',
+      authorityTier: 'publisher_attested',
+      integrityStatus: 'verified',
+      rightsDisposition: 'internal_analysis',
+      permittedUses: ['calibration_evaluation', 'origin_measurement'],
+      claimCeiling: 'publisher-attested-origin',
+    });
+  });
+
+  it('keeps reviewed but incomplete sources non-executable', () => {
+    expect(corpusV1SourceDisposition('formai-v1-gpt35-smoke-v1').permittedUses).toEqual([]);
+    expect(corpusV1SourceDisposition('ossforge-humanvsaicode-hf-v1').permittedUses).toEqual([]);
+    expect(corpusV1SourceDisposition('humaneval-gpt5-smoke-v1').permittedUses).toEqual([]);
+  });
+
+  it('rejects an unregistered source', () => {
+    expect(() => corpusV1SourceDisposition('unregistered-source'))
+      .toThrow('Corpus v1 source is not registered: unregistered-source');
   });
 });

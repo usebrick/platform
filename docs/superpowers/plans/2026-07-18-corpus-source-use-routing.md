@@ -526,7 +526,7 @@ git commit -m "feat(calibration): add source-use policy"
 - Consumes: `deriveCorpusV1SourceDisposition`, `assertCorpusV1SourceUse`, and `CorpusV1SourceDisposition` from Task 2.
 - Produces: `corpusV1SourceDisposition(sourceId)` and `sourceDisposition` on `MendeleyCorpusV1Inventory`; candidate row and receipt shapes remain unchanged.
 
-- [ ] **Step 1: Add failing registry and Mendeley expectations**
+- [x] **Step 1: Add failing registry and Mendeley expectations**
 
 Extend `corpus-v1-source-policy.test.ts`:
 
@@ -558,7 +558,7 @@ it('rejects an unregistered source', () => {
 
 Extend the portable inventory expectation with the exact `sourceDisposition` object above.
 
-- [ ] **Step 2: Run focused tests and verify red**
+- [x] **Step 2: Run focused tests and verify red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts tests/calibration/corpus-v1-inventory.test.ts --maxWorkers=1 --minWorkers=1
@@ -566,7 +566,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-sou
 
 Expected: FAIL because the registry and inventory disposition do not exist.
 
-- [ ] **Step 3: Implement the closed registry**
+- [x] **Step 3: Implement the closed registry**
 
 Create `source-registry.ts`:
 
@@ -611,7 +611,7 @@ export function corpusV1SourceDisposition(sourceId: string): CorpusV1SourceDispo
 }
 ```
 
-- [ ] **Step 4: Attach and enforce the Mendeley disposition**
+- [x] **Step 4: Attach and enforce the Mendeley disposition**
 
 In `inventory.ts`, import `CorpusV1SourceDisposition` and `corpusV1SourceDisposition`, add:
 
@@ -629,7 +629,7 @@ assertCorpusV1SourceUse(inventory.sourceDisposition, 'calibration_evaluation');
 
 immediately after `inventoryMendeleyCorpusV1(input)` and before resolving or reading projected unit bytes. Do not add policy fields to candidate rows, manifest headers, or receipts.
 
-- [ ] **Step 5: Run portable and real-source hash tests**
+- [x] **Step 5: Run portable and real-source hash tests**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts tests/calibration/corpus-v1-inventory.test.ts tests/calibration/corpus-v1-manifest.test.ts tests/calibration/corpus-v1-plan.test.ts tests/calibration/corpus-v1-source-binding.test.ts tests/calibration/corpus-v1-smoke.test.ts tests/calibration/corpus-v1-eligible.test.ts --maxWorkers=1 --minWorkers=1
@@ -639,7 +639,7 @@ corepack pnpm --filter slopbrick typecheck
 
 Expected: all focused tests pass; real outputs retain the frozen hashes in `calibration-inputs.ts`; typecheck exits 0.
 
-- [ ] **Step 6: Commit the registry and Mendeley route**
+- [x] **Step 6: Commit the registry and Mendeley route**
 
 ```bash
 git add packages/slopbrick/src/calibration/corpus-v1/source-registry.ts packages/slopbrick/src/calibration/corpus-v1/inventory.ts packages/slopbrick/src/calibration/corpus-v1/manifest.ts packages/slopbrick/tests/calibration/corpus-v1-source-policy.test.ts packages/slopbrick/tests/calibration/corpus-v1-inventory.test.ts
