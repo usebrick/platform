@@ -3,6 +3,35 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 21 — 2026-07-18
+
+### Changed
+
+- Hardened the CORPUS-002 requested-use assertion so it rederives the canonical
+  disposition and rejects malformed runtime enums plus duplicated, reordered,
+  narrowed, or manually widened permitted-use arrays.
+- Expanded the pure-policy matrix to exercise every authority, integrity,
+  rights, and requested-use combination and to prove deterministic canonical
+  output.
+- Closed final current-document drift: the roadmap now treats CORPUS-002 as
+  completed; SB-045 and DOC-PRUNE-001 no longer call it parallel work; MEND-001
+  uses owner-controlled validation instead of pilot users or repositories; and
+  the future LockBrick evidence path is owner-validation named.
+
+### Evidence
+
+- The review-first policy run reproduced five failures against the original
+  assertion. After hardening, the policy file passed 22/22 tests.
+- Portable Corpus v1 verification passed 10 files and 65 tests with 6 explicit
+  real-source skips; opt-in real-source verification passed 6 files and 41
+  tests with no source mutation and unchanged frozen hashes.
+- Final recursive lint, typecheck, test, and build gates passed. The package
+  test totals were Core 285, Website 47, Engine 60, and SlopBrick 3,852 passed
+  with 15 explicit SlopBrick opt-in skips; the build emitted only the existing
+  non-fatal Zod declaration-bundling warnings.
+- No source acquisition, redistribution, participant action, rule-state
+  change, publish, deployment, tag, push, or remote mutation occurred.
+
 ## Revision 20 — 2026-07-18
 
 ### Changed

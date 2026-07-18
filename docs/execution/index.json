@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 20,
+  "revision": 21,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -281,7 +281,7 @@
       "nextAction": {
         "text": "Write the failing baseline-delta contract for one deterministic critical finding in the existing CLI.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/new-debt-gate.test.ts --maxWorkers=1 --minWorkers=1",
-        "evidencePath": "docs/execution/evidence/LOCK-001-pilot.md"
+        "evidencePath": "docs/execution/evidence/LOCK-001-owner-validation.md"
       },
       "evidence": []
     },

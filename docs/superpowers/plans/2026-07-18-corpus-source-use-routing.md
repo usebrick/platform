@@ -822,14 +822,14 @@ git status --short --untracked-files=all
 
 Expected: `execution docs valid: 15 plans, implementation 0/2, company 0/1`; only CORPUS-002 completion/evidence files are tracked changes; unrelated untracked files are untouched.
 
-- [ ] **Step 6: Commit completion**
+- [x] **Step 6: Commit completion**
 
 ```bash
 git add docs/execution/evidence/CORPUS-002-source-disposition.md docs/execution/plans/CORPUS-002-source-use-routing.md docs/execution/index.json docs/execution/STATUS.md docs/execution/CHANGELOG.md
 git commit -m "docs(execution): complete source-use routing"
 ```
 
-- [ ] **Step 7: Review the final commit range**
+- [x] **Step 7: Review the final commit range**
 
 ```bash
 git log --oneline fb9729b0c..HEAD

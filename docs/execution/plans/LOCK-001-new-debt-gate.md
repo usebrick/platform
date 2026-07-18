@@ -74,7 +74,7 @@ before enabling any blocking CI configuration.
 
 ## Evidence destination
 
-`docs/execution/evidence/LOCK-001-pilot.md`
+`docs/execution/evidence/LOCK-001-owner-validation.md`
 
 ## Rollback
 

@@ -129,9 +129,9 @@ gates and package-local self-scan exactly as documented in `AGENTS.md`.
   version, rule count, category count, privacy wording, and deployment SHA
   with the authorized disposition.
 
-- **Parallel safe:** CORPUS-002, VAL-001 preparation, and other local,
-  non-publishing work may continue. No participant recruitment, publish, tag,
-  push, deployment, or remote mutation is implied by this wait.
+- **Parallel safe:** VAL-001 preparation and other local, non-publishing work
+  may continue. No participant recruitment, publish, tag, push, deployment, or
+  remote mutation is implied by this wait.
 
 ## Rollback
 

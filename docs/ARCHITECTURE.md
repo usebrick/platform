@@ -213,8 +213,10 @@ static-analysis fact.
 
 Corpus source routing is a SlopBrick calibration concern, not a Core schema.
 `source-policy.ts` derives permitted uses from independent authority, integrity,
-and rights fields; `source-registry.ts` fails closed for unknown sources. A
-source adapter must assert the requested use before projecting candidate bytes.
+and rights fields; `source-registry.ts` fails closed for unknown sources. The
+use assertion rederives the canonical disposition so an adapter cannot widen,
+duplicate, reorder, or replace its permitted uses. A source adapter must assert
+the requested use before projecting candidate bytes.
 
 ```text
 pinned source bytes + evidence

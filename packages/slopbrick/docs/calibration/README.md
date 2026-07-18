@@ -72,8 +72,9 @@ or quarantined file is not automatically represented or eligible.
 
 The central execution plans maintain these bounded milestones:
 
-1. **CORPUS-002 source routing** — derive permitted use from authority,
-   integrity, and rights; unknown sources fail closed.
+1. **Completed CORPUS-002 source routing** — derive permitted use from
+   authority, integrity, and rights; unknown or manually widened dispositions
+   fail closed.
 2. **Artifact preservation** — reproduce candidate, leakage, source-binding,
    smoke, eligible, holdout, and decision-matrix hashes exactly.
 3. **Completed CAL-001 evaluation** — retain origin metrics and decisions with
@@ -88,7 +89,7 @@ The central execution plans maintain these bounded milestones:
 ## Current and historical technical references
 
 - [`CORPUS-002`](../../../../docs/execution/plans/CORPUS-002-source-use-routing.md)
-  — current deterministic source-use routing contract.
+  — completed deterministic source-use routing contract.
 - [`VAL-001`](../../../../docs/execution/plans/VAL-001-owner-validation.md) —
   owner-only usefulness validation contract.
 - [`v10.3-corpus-source-admission-plan.md`](./v10.3-corpus-source-admission-plan.md)

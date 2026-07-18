@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   assertCorpusV1SourceUse,
   deriveCorpusV1SourceDisposition,
+  type CorpusV1AuthorityTier,
+  type CorpusV1IntegrityStatus,
+  type CorpusV1PermittedUse,
+  type CorpusV1RightsDisposition,
+  type CorpusV1SourceDisposition,
   type CorpusV1SourcePolicyInput,
 } from '../../src/calibration/corpus-v1/source-policy';
 import { corpusV1SourceDisposition } from '../../src/calibration/corpus-v1/source-registry';
@@ -13,6 +18,28 @@ const source = (overrides: Partial<CorpusV1SourcePolicyInput> = {}): CorpusV1Sou
   rightsDisposition: 'internal_analysis',
   ...overrides,
 });
+
+const authorityTiers: readonly CorpusV1AuthorityTier[] = [
+  'witnessed',
+  'publisher_attested',
+  'repo_self_attested',
+  'exposure_proxy',
+  'unknown',
+];
+const integrityStatuses: readonly CorpusV1IntegrityStatus[] = ['verified', 'pending', 'quarantined'];
+const rightsDispositions: readonly CorpusV1RightsDisposition[] = [
+  'internal_analysis',
+  'reference_only',
+  'redistribution_approved',
+];
+const permittedUses: readonly CorpusV1PermittedUse[] = [
+  'calibration_evaluation',
+  'ecological_validation',
+  'origin_measurement',
+  'prevalence_analysis',
+  'redistribution',
+  'sensitivity_analysis',
+];
 
 describe('Corpus v1 source-use policy', () => {
   it.each([
@@ -56,6 +83,68 @@ describe('Corpus v1 source-use policy', () => {
     const disposition = deriveCorpusV1SourceDisposition(source({ authorityTier: 'unknown' }));
     expect(() => assertCorpusV1SourceUse(disposition, 'calibration_evaluation'))
       .toThrow('fixture-source does not permit calibration_evaluation');
+  });
+
+  it('checks every authority, integrity, rights, and requested-use combination', () => {
+    for (const authorityTier of authorityTiers) {
+      for (const integrityStatus of integrityStatuses) {
+        for (const rightsDisposition of rightsDispositions) {
+          const disposition = deriveCorpusV1SourceDisposition(source({
+            authorityTier,
+            integrityStatus,
+            rightsDisposition,
+          }));
+          for (const requestedUse of permittedUses) {
+            const assertion = (): void => assertCorpusV1SourceUse(disposition, requestedUse);
+            if (disposition.permittedUses.includes(requestedUse)) expect(assertion).not.toThrow();
+            else expect(assertion).toThrow(`${disposition.sourceId} does not permit ${requestedUse}`);
+          }
+        }
+      }
+    }
+  });
+
+  it.each([
+    ['authorityTier', 'unsupported-authority', 'authorityTier'],
+    ['integrityStatus', 'unsupported-integrity', 'integrityStatus'],
+    ['rightsDisposition', 'unsupported-rights', 'rightsDisposition'],
+  ] as const)('rejects an unknown runtime %s', (field, value, expectedMessage) => {
+    const malformed = { ...source(), [field]: value } as unknown as CorpusV1SourcePolicyInput;
+    expect(() => deriveCorpusV1SourceDisposition(malformed)).toThrow(expectedMessage);
+  });
+
+  it('rejects an unknown runtime requested use', () => {
+    const requestedUse = 'unsupported-use' as CorpusV1PermittedUse;
+    expect(() => assertCorpusV1SourceUse(deriveCorpusV1SourceDisposition(source()), requestedUse))
+      .toThrow('requestedUse');
+  });
+
+  it('rejects duplicate, reordered, narrowed, or manually widened dispositions', () => {
+    const canonical = deriveCorpusV1SourceDisposition(source());
+    const invalidPermittedUses: readonly (readonly CorpusV1PermittedUse[])[] = [
+      [...canonical.permittedUses, 'origin_measurement'],
+      [...canonical.permittedUses].reverse(),
+      canonical.permittedUses.slice(1),
+      [...canonical.permittedUses, 'redistribution'],
+    ];
+    for (const uses of invalidPermittedUses) {
+      const malformed = { ...canonical, permittedUses: uses } as CorpusV1SourceDisposition;
+      expect(() => assertCorpusV1SourceUse(malformed, 'origin_measurement'))
+        .toThrow('fixture-source disposition does not match derived policy');
+    }
+  });
+
+  it('rejects a manually widened claim ceiling', () => {
+    const canonical = deriveCorpusV1SourceDisposition(source({ authorityTier: 'unknown' }));
+    const malformed = { ...canonical, claimCeiling: 'witnessed-origin' } as CorpusV1SourceDisposition;
+    expect(() => assertCorpusV1SourceUse(malformed, 'prevalence_analysis'))
+      .toThrow('fixture-source disposition does not match derived policy');
+  });
+
+  it('returns byte-identical canonical output for identical inputs', () => {
+    const input = source({ rightsDisposition: 'redistribution_approved' });
+    expect(JSON.stringify(deriveCorpusV1SourceDisposition(input)))
+      .toBe(JSON.stringify(deriveCorpusV1SourceDisposition({ ...input })));
   });
 
   it('rejects an empty source ID', () => {

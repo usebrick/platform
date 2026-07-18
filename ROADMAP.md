@@ -98,9 +98,9 @@ protocol is parked with zero sessions and no recruitment authorization.
   report and exit decisions, make remediation finding-specific, harden durable
   baselines, settle the self-scan disposition, and produce a truthful go/no-go
   packet.
-- Complete CORPUS-002 source-use routing around the verified Mendeley seed and
-  reproduce every frozen Corpus v1 and CAL-001 hash without changing rule
-  state or v10.3.
+- Preserve the completed CORPUS-002 source-use routing around the verified
+  Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
+  without changing rule state or v10.3.
 - Keep VAL-001 ready for owner-selected scan-to-finding-to-fix-to-rescan
   walkthroughs. Record only real owner runs and impose no participant or
   target-count gate.
@@ -108,8 +108,9 @@ protocol is parked with zero sessions and no recruitment authorization.
 ### Exit gate
 
 Advance when the planning validator and links pass, v0.45 has green release
-gates plus an explicit self-scan decision, and CORPUS-002 proves the source
-router preserves the seed, smoke, holdout, and decision-matrix receipts.
+gates plus an explicit self-scan decision, and the completed CORPUS-002 receipt
+continues to prove the source router preserves the seed, smoke, holdout, and
+decision-matrix receipts.
 Owner validation may accumulate when the owner chooses; no participant count
 is a release or source-use gate. Publishing and deploying remain separate
 owner-authorized actions.

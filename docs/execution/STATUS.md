@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 20
+**Index revision:** 21
 **Global status:** `advancing`
 
 ## Executive state
@@ -9,8 +9,8 @@
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
 routing are complete. The deterministic router preserves every existing
-Mendeley and CAL-001 hash while failing closed for pending or reference-only
-sources. The local
+Mendeley and CAL-001 hash while failing closed for pending, reference-only,
+unregistered, malformed, or manually widened source dispositions. The local
 v0.45 trust-release qualification is complete and waits only for an explicit
 owner decision on the live/public claim boundary. The repository owner is the
 only current product tester; VAL-001 is ready with an intentionally empty

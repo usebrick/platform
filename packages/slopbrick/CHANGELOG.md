@@ -24,6 +24,9 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Changed
 
+- Hardened Corpus v1 source-use assertions to reject malformed runtime enum
+  values and any duplicated, reordered, narrowed, or manually widened
+  disposition before candidate bytes can enter a requested-use path.
 - Added one typed scan gate decision shared by human, JSON, Markdown, SARIF,
   not-applicable output, and process exit, including fail-closed incomplete
   scan behavior and fix/dry-run exit handling.
