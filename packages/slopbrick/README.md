@@ -76,6 +76,33 @@ empty or not-applicable scans omit canonical score fields.
 For the full contract, see [scoring explained](./docs/scoring-explained.md) and
 the [scoring runbook](./docs/scoring-runbook.md).
 
+### Bounded first screen
+
+The default `scan` terminal output starts with one `Repository Health`
+headline, five fixed areas—Visual Slop, Frontend Implementation, Code and
+Logic, Repository Coherence, and Accessibility and Resilience—and at most
+three recommended actions. The separately labeled AI Slop policy result
+remains the configured gate. Use `scan --full` to retain the bounded first
+screen and append every active score and finding.
+
+Each first-scan finding carries an evidence label:
+
+- `deterministic`: the rule attached an exact source span or deliberately
+  omitted an oversized span;
+- `calibrated`: measured rule behavior is attached; and
+- `advisory`: review guidance has no rule-authored span or rule metrics.
+
+Evidence labels explain finding support; none proves authorship. SlopBrick
+calls a repair safe only when a fix binding matches the current finding's rule,
+file, line, and column. Advice, fix hints, and unbound suggestions remain
+manual review and explicitly state that no safe bounded repair is available.
+
+`scan --baseline` is the explicit, reviewed checkpoint that writes the debt
+baseline. Ordinary rescans never refresh it automatically. Compatible rescans
+report `new`, `resolved`, and `unchanged` findings; missing or incompatible
+baselines claim no comparison. JSON and SARIF preserve their existing fields
+and expose the optional `firstScan` projection additively.
+
 ## Repository-owned artifacts
 
 Unless `projectMemory: false` is configured, a valid scan writes three JSON

@@ -9,6 +9,10 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Added
 
+- Added the optional `firstScan` projection to JSON and SARIF, with one
+  Repository Health headline, five exhaustive areas, evidence and repair
+  boundaries, at most three recommended actions, and compatible-baseline
+  new/resolved/unchanged state.
 - Added deterministic evidence-tiered Corpus v1 source routing and a closed
   source registry. The pinned Mendeley source is verified for internal origin
   measurement and calibration evaluation; pending/reference-only sources fail
@@ -24,6 +28,10 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Changed
 
+- Made the default pretty scan a bounded first screen and added `--full` for
+  the complete score-and-finding report. Evidence labels do not claim
+  authorship, only current finding-bound repairs are called safe, and ordinary
+  rescans never refresh the reviewed debt baseline automatically.
 - Hardened Corpus v1 source-use assertions to reject malformed runtime enum
   values and any duplicated, reordered, narrowed, or manually widened
   disposition before candidate bytes can enter a requested-use path.

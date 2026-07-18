@@ -104,6 +104,37 @@ CLI contract and current workspace-candidate status, and
 [`packages/slopbrick/EXAMPLES.md`](./packages/slopbrick/EXAMPLES.md) for CI
 examples.
 
+## First-scan contract
+
+The default `scan` terminal output starts with a bounded first screen: one
+`Repository Health` headline, these five areas, and at most three recommended
+actions:
+
+1. Visual Slop
+2. Frontend Implementation
+3. Code and Logic
+4. Repository Coherence
+5. Accessibility and Resilience
+
+Use `scan --full` when you need every active score and finding after that first
+screen. The separately labeled AI Slop policy result remains the configured
+gate; the Repository Health headline does not replace it.
+
+Evidence labels describe what supports a finding. `deterministic` means the
+rule attached an exact source span or deliberately omitted an oversized span;
+`calibrated` means measured rule behavior is attached; and `advisory` means
+review guidance has no rule-authored span or rule metrics. These labels explain
+finding confidence and are not proof of authorship. A repair is called safe
+only when it is bound to the current finding's rule, file, line, and column;
+otherwise SlopBrick presents manual review and says that no safe bounded repair
+is available.
+
+`scan --baseline` is the explicit, reviewed checkpoint that writes the debt
+baseline. Ordinary rescans never refresh it automatically. A compatible rescan
+reports `new`, `resolved`, and `unchanged` findings; missing or incompatible
+baselines claim no comparison. JSON and SARIF preserve their existing fields
+and expose `firstScan` as an additive, optional contract.
+
 ## What a scan writes
 
 With project memory enabled (the default), a valid whole-project scan writes
