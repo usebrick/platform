@@ -89,6 +89,9 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   if (isIncompleteScan(report)) {
     if (!machineReportRequested) {
       if (!options.quiet) {
+        if (report.firstScan) {
+          logger.info(formatPretty(report, { full: false, cwd }));
+        }
         logger.info(
           formatScanValidityNotice(report) ??
             'INCOMPLETE SCAN — scores are not valid for gating.',

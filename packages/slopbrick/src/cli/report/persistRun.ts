@@ -286,11 +286,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
           const compositeSuffix = health.compositeScore
             ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
             : '';
-          logger.info(
+          console.error(
             `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiSlopScore} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
           );
         } else {
-          logger.info(
+          console.error(
             `Diagnostic memory persisted to .slopbrick/ (scoreValidity=${report.scoreValidity}; numeric scores are not valid for gating).`,
           );
         }
