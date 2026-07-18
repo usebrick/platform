@@ -743,7 +743,7 @@ Expected: plan validation and whitespace checks pass; current docs and historica
 - Consumes: completed policy, registry, Mendeley route, active-doc convergence, and unchanged frozen hashes.
 - Produces: CORPUS-002 done at execution revision 20, VAL-001 ready, and a final verification receipt.
 
-- [ ] **Step 1: Run focused Corpus v1 verification**
+- [x] **Step 1: Run focused Corpus v1 verification**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts tests/calibration/corpus-v1-inventory.test.ts tests/calibration/corpus-v1-manifest.test.ts tests/calibration/corpus-v1-plan.test.ts tests/calibration/corpus-v1-source-binding.test.ts tests/calibration/corpus-v1-smoke.test.ts tests/calibration/corpus-v1-eligible.test.ts tests/calibration/corpus-v1-calibration-smoke.test.ts tests/calibration/corpus-v1-calibration-holdout.test.ts tests/calibration/corpus-v1-calibration-decisions.test.ts --maxWorkers=1 --minWorkers=1
@@ -752,7 +752,7 @@ SLOPBRICK_CORPUS_V1_ROOT=/Users/cheng/corpus-expansion/v10.3 corepack pnpm --fil
 
 Expected: all focused tests pass and the Mendeley hashes equal `CAL001_FROZEN_INPUT_HASHES`.
 
-- [ ] **Step 2: Run repository-wide gates**
+- [x] **Step 2: Run repository-wide gates**
 
 Run serially:
 
@@ -767,7 +767,7 @@ git diff --check
 
 Expected: every command exits 0; build may emit only the existing non-fatal Zod declaration-bundling warnings; no tracked generated-file drift remains.
 
-- [ ] **Step 3: Write the CORPUS-002 evidence receipt**
+- [x] **Step 3: Write the CORPUS-002 evidence receipt**
 
 Create `docs/execution/evidence/CORPUS-002-source-disposition.md` with:
 
@@ -808,11 +808,11 @@ Report the exact observed focused-test result, recursive lint/typecheck/test/bui
 
 Write only observed results in the receipt; do not copy these planning instructions into the evidence file.
 
-- [ ] **Step 4: Complete CORPUS-002 in execution authority**
+- [x] **Step 4: Complete CORPUS-002 in execution authority**
 
 Set CORPUS-002 plan status to `done`, index revision to `20`, CORPUS-002 status to `done`, and its next action to handing the completed source disposition to VAL-001 without changing rule state. Keep VAL-001 `ready`, GTM-001 `parked`, implementation WIP `0/2`, and company WIP `0/1`. Update STATUS consistently and prepend revision 20 to the execution changelog.
 
-- [ ] **Step 5: Revalidate final execution docs and staged scope**
+- [x] **Step 5: Revalidate final execution docs and staged scope**
 
 ```bash
 corepack pnpm plans:validate

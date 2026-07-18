@@ -3,6 +3,34 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 20 — 2026-07-18
+
+### Changed
+
+- Completed CORPUS-002 with a pure source-use policy, closed source registry,
+  inventory disposition, and fail-closed manifest preflight.
+- Routed the verified Mendeley source to internal origin measurement and
+  calibration evaluation while keeping FormAI, OSSForge, and controlled
+  HumanEval non-executable under their current dispositions.
+- Preserved all eight frozen Corpus v1/CAL-001 artifact hashes and kept source
+  use separate from redistribution, v10.3 admission, usefulness review, and
+  rule application.
+- Converged current roadmap, architecture, methodology, package, calibration,
+  and execution documentation on the owner-only validation path. VAL-001 stays
+  ready; GTM-001 stays parked.
+
+### Evidence
+
+- `docs/execution/evidence/CORPUS-002-source-disposition.md`
+- Portable Corpus v1 verification passed 10 files and 57 tests with 6 explicit
+  real-source skips; the opt-in real-source verification passed 6 files and 41
+  tests and reproduced all frozen hashes.
+- Recursive lint, typecheck, test, and build gates passed. The package test
+  totals were Core 285, Website 47, Engine 60, and SlopBrick 3,844 passed with
+  15 explicit SlopBrick opt-in skips.
+- No source acquisition, redistribution, participant action, rule-state
+  change, publish, deployment, tag, push, or remote mutation occurred.
+
 ## Revision 19 — 2026-07-18
 
 ### Changed

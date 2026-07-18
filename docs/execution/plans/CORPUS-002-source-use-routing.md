@@ -1,6 +1,6 @@
 # CORPUS-002 — Route Corpus v1 sources by evidence and permitted use
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 3
 - **Track / lane:** implementation / corpus
 - **Owner:** calibration maintainers
@@ -61,4 +61,4 @@ Remove the router and registry, restore direct Mendeley preflight, and retain al
 
 ## Next action
 
-Write the failing source-policy matrix test and prove the requested-use router does not yet exist.
+Hand the completed source disposition to VAL-001 without changing rule state.

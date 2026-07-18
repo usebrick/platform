@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 19,
+  "revision": 20,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -96,7 +96,7 @@
       "track": "implementation",
       "lane": "corpus",
       "horizon": "now",
-      "status": "in_progress",
+      "status": "done",
       "priority": 3,
       "path": "docs/execution/plans/CORPUS-002-source-use-routing.md",
       "dependencies": {
@@ -110,12 +110,13 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the failing source-policy matrix test and prove the requested-use router does not yet exist.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Hand the completed source disposition to VAL-001 without changing rule state.",
+        "verify": "test -f docs/execution/evidence/CORPUS-002-source-disposition.md",
         "evidencePath": "docs/execution/evidence/CORPUS-002-source-disposition.md"
       },
       "evidence": [
-        "docs/superpowers/specs/2026-07-18-corpus-source-use-routing-design.md"
+        "docs/superpowers/specs/2026-07-18-corpus-source-use-routing-design.md",
+        "docs/execution/evidence/CORPUS-002-source-disposition.md"
       ]
     },
     {

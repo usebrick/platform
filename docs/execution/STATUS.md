@@ -1,15 +1,16 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 19
+**Index revision:** 20
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
-source-attested Corpus v1 seed, and CAL-001 evaluation are complete. CORPUS-002
-is the sole active implementation plan: it is adding deterministic source-use
-routing while preserving every existing Mendeley and CAL-001 hash. The local
+source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
+routing are complete. The deterministic router preserves every existing
+Mendeley and CAL-001 hash while failing closed for pending or reference-only
+sources. The local
 v0.45 trust-release qualification is complete and waits only for an explicit
 owner decision on the live/public claim boundary. The repository owner is the
 only current product tester; VAL-001 is ready with an intentionally empty
@@ -104,6 +105,12 @@ exact owner approval and does not block local product work.
   `286134799c7f75837a7c292f0d18721d8da9263c25c041eef0ac4734801b52d8` and its
   receipt SHA-256 is
   `9f5274f57ed4adf9d1c1ef55205493e9a833abc86cb8e1ca2b332cd8c72d28ba`.
+- CORPUS-002 now records one closed source registry and deterministic
+  authority/integrity/rights router. Mendeley permits internal origin
+  measurement and calibration evaluation; FormAI, OSSForge, and controlled
+  HumanEval remain non-executable under their current dispositions. This
+  source-use result does not change redistribution, v10.3 admission,
+  usefulness-review, or rule-application state.
 - MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
 - A 2026-07-18 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
@@ -121,7 +128,7 @@ exact owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 1 | 2 | `CORPUS-002` |
+| Implementation | 0 | 2 | None |
 | Company | 0 | 1 | None |
 
 `SB-045` is waiting external and does not consume an active implementation
@@ -138,7 +145,7 @@ WIP while waiting.
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `waiting_external` | — | Obtain the owner's explicit live/public claim disposition and exact reviewed SHA if deployment is authorized. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
-| 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `in_progress` | — | Red-test the deterministic source-use policy and closed registry. |
+| 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
@@ -168,8 +175,8 @@ WIP while waiting.
 website deployment at a named reviewed commit/SHA or an explicit decision to
 keep the live v0.43 site unchanged while v0.45 remains local-only. A read-only
 live-site check can verify that decision after authorization; it cannot replace
-it. CORPUS-002 and local owner-validation preparation are parallel-safe; no
-participant recruitment is authorized.
+it. Local owner-validation preparation remains available; no participant
+recruitment is authorized.
 
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
@@ -201,13 +208,12 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The immediate checkpoint is CORPUS-002: implement and verify the pure source
-policy, closed registry, Mendeley preflight, unchanged frozen hashes, and
-current-documentation convergence. After that, VAL-001 may record a real
-owner-run scan-to-finding-to-fix-to-rescan walkthrough; it has no required
-target count and cannot establish participant, team, or market-demand evidence.
-The SB-045 checkpoint remains the owner's explicit live/public claim
-disposition. The bounded CAL-001 smoke, full frozen holdout, leakage/confound
-summary, and decision matrix are complete with `applied: false` and
-`admitted: false`. Do not lower the threshold, activate rules, recruit
-participants, publish, tag, deploy, or push to close any boundary.
+CORPUS-002 is complete. The next local checkpoint is the first real
+owner-controlled VAL-001 scan-to-finding-to-fix-to-rescan walkthrough when the
+owner chooses; it has no required target count and cannot establish
+participant, team, or market-demand evidence. The SB-045 checkpoint remains
+the owner's explicit live/public claim disposition. The bounded CAL-001 smoke,
+full frozen holdout, leakage/confound summary, and decision matrix are complete
+with `applied: false` and `admitted: false`. Do not lower the threshold,
+activate rules, recruit participants, publish, tag, deploy, or push to close
+any boundary.
