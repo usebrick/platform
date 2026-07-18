@@ -27,21 +27,7 @@ export function debtBaselinePath(projectPath: string): string {
 function normalizedSnapshotPath(issue: Issue, cwd: string): string | undefined {
   if (!issue.filePath) return undefined;
   const relativePath = repositoryRelativeFindingLocation(issue, cwd);
-  if (isAbsolute(relativePath) || win32.isAbsolute(relativePath) || relativePath.includes('\0')) {
-    return undefined;
-  }
-  const portablePath = relativePath.replaceAll('\\', '/');
-  const normalizedPath = posix.normalize(portablePath);
-  if (
-    normalizedPath === ''
-    || normalizedPath === '.'
-    || normalizedPath === '..'
-    || normalizedPath.startsWith('../')
-    || posix.isAbsolute(normalizedPath)
-  ) {
-    return undefined;
-  }
-  return normalizedPath;
+  return isPortableRelativeSnapshotPath(relativePath) ? relativePath : undefined;
 }
 
 function collectFindingSnapshots(
@@ -112,10 +98,27 @@ const CATEGORIES = new Set<Category>([
   'i18n',
 ]);
 const SEVERITIES = new Set<Severity>(['low', 'medium', 'high']);
+const SNAPSHOT_KEYS = new Set([
+  'identity',
+  'ruleId',
+  'category',
+  'severity',
+  'aiSpecific',
+  'filePath',
+  'line',
+  'column',
+]);
+const WINDOWS_DRIVE_PREFIX = /^[A-Za-z]:/;
 
-function isSnapshotPath(value: unknown): value is string {
+function isPortableRelativeSnapshotPath(value: unknown): value is string {
   if (typeof value !== 'string' || value.length === 0 || value.includes('\0')) return false;
-  if (isAbsolute(value) || win32.isAbsolute(value) || value.includes('\\')) return false;
+  if (
+    isAbsolute(value)
+    || win32.isAbsolute(value)
+    || WINDOWS_DRIVE_PREFIX.test(value)
+    || value.includes('\\')
+    || value.endsWith('/')
+  ) return false;
   const normalized = posix.normalize(value);
   return normalized === value
     && normalized !== '.'
@@ -127,7 +130,8 @@ function isFindingSnapshot(value: unknown): value is DebtBaselineFindingSnapshot
   if (!value || typeof value !== 'object') return false;
   const record = value as Record<string, unknown>;
   return (
-    typeof record.identity === 'string'
+    Object.keys(record).every((key) => SNAPSHOT_KEYS.has(key))
+    && typeof record.identity === 'string'
     && record.identity.length > 0
     && typeof record.ruleId === 'string'
     && record.ruleId.length > 0
@@ -136,7 +140,7 @@ function isFindingSnapshot(value: unknown): value is DebtBaselineFindingSnapshot
     && typeof record.severity === 'string'
     && SEVERITIES.has(record.severity as Severity)
     && typeof record.aiSpecific === 'boolean'
-    && (record.filePath === undefined || isSnapshotPath(record.filePath))
+    && (record.filePath === undefined || isPortableRelativeSnapshotPath(record.filePath))
     && typeof record.line === 'number'
     && Number.isInteger(record.line)
     && record.line >= 0
@@ -201,10 +205,43 @@ export function loadDebtBaseline(projectPath: string): DebtBaseline | undefined 
   return state.status === 'loaded' ? state.baseline : undefined;
 }
 
+function projectFindingSnapshot(
+  snapshot: DebtBaselineFindingSnapshot,
+): DebtBaselineFindingSnapshot {
+  return {
+    identity: snapshot.identity,
+    ruleId: snapshot.ruleId,
+    category: snapshot.category,
+    severity: snapshot.severity,
+    aiSpecific: snapshot.aiSpecific,
+    ...(snapshot.filePath ? { filePath: snapshot.filePath } : {}),
+    line: snapshot.line,
+    column: snapshot.column,
+  };
+}
+
+function projectDebtBaseline(baseline: DebtBaseline): DebtBaseline {
+  return {
+    kind: baseline.kind,
+    version: baseline.version,
+    config_hash: baseline.config_hash,
+    git_head: baseline.git_head,
+    baseline_created: baseline.baseline_created,
+    baseline_revision: baseline.baseline_revision,
+    finding_ids: [...baseline.finding_ids],
+    ...(baseline.finding_snapshots
+      ? { finding_snapshots: baseline.finding_snapshots.map(projectFindingSnapshot) }
+      : {}),
+  };
+}
+
 export function saveDebtBaseline(projectPath: string, baseline: DebtBaseline): void {
+  if (!isDebtBaseline(baseline)) {
+    throw new Error('Cannot save invalid debt baseline.');
+  }
   const path = debtBaselinePath(projectPath);
   mkdirSync(join(projectPath, '.slopbrick', 'cache'), { recursive: true });
-  writeFileSync(path, JSON.stringify(baseline, null, 2), 'utf8');
+  writeFileSync(path, JSON.stringify(projectDebtBaseline(baseline), null, 2), 'utf8');
 }
 
 function notEvaluated(

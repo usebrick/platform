@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   buildDebtBaseline,
@@ -74,6 +74,27 @@ describe('durable new-debt baseline', () => {
     expect(baseline.finding_snapshots?.find(({ identity }) =>
       identity === findingIdentity(outside, cwd)
     )).not.toHaveProperty('filePath');
+  });
+
+  it.each([
+    'C:outside.ts',
+    'C:/outside.ts',
+    '\\\\server\\share\\file.ts',
+    'src\\file.ts',
+  ])('omits unsafe snapshot path %s without changing finding identity', (fileName) => {
+    const unsafe = issue(fileName, 'Unsafe portable path', 4);
+    const baseline = buildDebtBaseline(report([unsafe]), cwd, 'config-a', 'commit-a');
+
+    expect(baseline.finding_ids).toEqual([findingIdentity(unsafe, cwd)]);
+    expect(baseline.finding_snapshots).toEqual([{
+      identity: findingIdentity(unsafe, cwd),
+      ruleId: unsafe.ruleId,
+      category: unsafe.category,
+      severity: unsafe.severity,
+      aiSpecific: unsafe.aiSpecific,
+      line: unsafe.line,
+      column: unsafe.column,
+    }]);
   });
 
   it('compares revision-2 findings as new, unchanged, and resolved', () => {
@@ -216,6 +237,34 @@ describe('durable new-debt baseline', () => {
         filePath: '',
       })),
     })],
+    ['drive-relative path', (baseline: DebtBaseline) => ({
+      ...baseline,
+      finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+        ...snapshot,
+        filePath: 'C:outside.ts',
+      })),
+    })],
+    ['Windows absolute path', (baseline: DebtBaseline) => ({
+      ...baseline,
+      finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+        ...snapshot,
+        filePath: 'C:/outside.ts',
+      })),
+    })],
+    ['UNC path', (baseline: DebtBaseline) => ({
+      ...baseline,
+      finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+        ...snapshot,
+        filePath: '\\\\server\\share\\file.ts',
+      })),
+    })],
+    ['backslash path', (baseline: DebtBaseline) => ({
+      ...baseline,
+      finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+        ...snapshot,
+        filePath: 'src\\file.ts',
+      })),
+    })],
     ['malformed snapshot field', (baseline: DebtBaseline) => ({
       ...baseline,
       finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
@@ -252,7 +301,88 @@ describe('durable new-debt baseline', () => {
     }
   });
 
-  it('computes a deterministic finding-identity delta', () => {
+  it.each([
+    'message',
+    'advice',
+    'evidence',
+    'sourceText',
+    'repositoryIdentity',
+    'absolutePath',
+    'secretPayload',
+  ])('rejects revision-2 snapshots with prohibited %s data', (field) => {
+    const workspace = mkdtempSync(join('/tmp', 'slopbrick-debt-extra-key-'));
+    try {
+      const baseline = buildDebtBaseline(
+        report([issue('src/A.tsx', 'Baseline finding', 4)]),
+        cwd,
+        'config-a',
+        'commit-a',
+      );
+      const snapshot = baseline.finding_snapshots?.[0];
+      if (!snapshot) throw new Error('Expected one finding snapshot');
+      Object.assign(snapshot, { [field]: 'prohibited snapshot data' });
+      mkdirSync(join(workspace, '.slopbrick', 'cache'), { recursive: true });
+      writeFileSync(debtBaselinePath(workspace), JSON.stringify(baseline));
+
+      expect(loadDebtBaselineState(workspace)).toEqual({ status: 'invalid' });
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects prohibited fields in optional revision-1 snapshots', () => {
+    const workspace = mkdtempSync(join('/tmp', 'slopbrick-debt-v1-extra-key-'));
+    try {
+      const baseline = buildDebtBaseline(
+        report([issue('src/A.tsx', 'Baseline finding', 4)]),
+        cwd,
+        'config-a',
+        'commit-a',
+      );
+      const legacyWithSnapshots = {
+        ...baseline,
+        baseline_revision: 1,
+        finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+          ...snapshot,
+          message: 'prohibited source text',
+        })),
+      };
+      mkdirSync(join(workspace, '.slopbrick', 'cache'), { recursive: true });
+      writeFileSync(debtBaselinePath(workspace), JSON.stringify(legacyWithSnapshots));
+
+      expect(loadDebtBaselineState(workspace)).toEqual({ status: 'invalid' });
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses to save runtime snapshots with prohibited fields', () => {
+    const workspace = mkdtempSync(join('/tmp', 'slopbrick-debt-unsafe-save-'));
+    try {
+      const baseline = buildDebtBaseline(
+        report([issue('src/A.tsx', 'Baseline finding', 4)]),
+        cwd,
+        'config-a',
+        'commit-a',
+      );
+      const unsafeBaseline = {
+        ...baseline,
+        finding_snapshots: baseline.finding_snapshots?.map((snapshot) => ({
+          ...snapshot,
+          message: 'prohibited source text',
+        })),
+      };
+
+      expect(() => saveDebtBaseline(workspace, unsafeBaseline)).toThrow(
+        'Cannot save invalid debt baseline.',
+      );
+      expect(existsSync(debtBaselinePath(workspace))).toBe(false);
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves exact passed, failed, missing, and incompatible gate decisions', () => {
     const baselineReport = report([
       issue('src/A.tsx', "Layout arbitrary value 'p-[13px]'", 4),
       issue('src/B.tsx', "Layout arbitrary value 'm-[9px]'", 8),
@@ -264,29 +394,47 @@ describe('durable new-debt baseline', () => {
       issue('src/C.tsx', "Layout arbitrary value 'gap-[7px]'", 12),
     ]);
 
-    expect(evaluateNewDebt(currentReport, baseline, cwd, 1)).toMatchObject({
+    expect(evaluateNewDebt(currentReport, baseline, cwd, 1)).toEqual({
+      kind: 'slopbrick-new-debt-v1',
       status: 'passed',
+      failed: false,
       baselineAvailable: true,
+      baselineRevision: 2,
       baselineFindingCount: 2,
       currentFindingCount: 3,
       newFindingCount: 1,
       maxNewIssues: 1,
-      failed: false,
+      summary: 'New-debt gate passed: 1 new finding within the max-new-issues limit of 1.',
     });
-    expect(evaluateNewDebt(currentReport, baseline, cwd, 0)).toMatchObject({
+    expect(evaluateNewDebt(currentReport, baseline, cwd, 0)).toEqual({
+      kind: 'slopbrick-new-debt-v1',
       status: 'failed',
+      failed: true,
+      baselineAvailable: true,
+      baselineRevision: 2,
+      baselineFindingCount: 2,
+      currentFindingCount: 3,
       newFindingCount: 1,
       maxNewIssues: 0,
-      failed: true,
+      summary: 'New-debt gate failed: 1 new finding exceed the max-new-issues limit of 0.',
     });
-  });
-
-  it('fails closed when a max-new-issues gate has no durable baseline', () => {
-    expect(evaluateNewDebt(report([issue('src/A.tsx', 'new finding', 1)]), undefined, cwd, 0)).toMatchObject({
+    expect(evaluateNewDebt(currentReport, undefined, cwd, 0)).toEqual({
+      kind: 'slopbrick-new-debt-v1',
       status: 'not-evaluated',
-      baselineAvailable: false,
       failed: true,
+      baselineAvailable: false,
+      currentFindingCount: 3,
       maxNewIssues: 0,
+      summary: 'New-debt gate not evaluated: durable debt baseline is missing. Run `slopbrick scan --baseline` first.',
+    });
+    expect(evaluateNewDebt(currentReport, baseline, cwd, 0, 'config-b')).toEqual({
+      kind: 'slopbrick-new-debt-v1',
+      status: 'not-evaluated',
+      failed: true,
+      baselineAvailable: false,
+      currentFindingCount: 3,
+      maxNewIssues: 0,
+      summary: 'New-debt gate not evaluated: durable debt baseline config identity does not match the current scan.',
     });
   });
 
