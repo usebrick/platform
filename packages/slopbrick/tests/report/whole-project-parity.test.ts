@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { STRUCTURE_SCHEMA_VERSION } from '@usebrick/core';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { runSuggest, type ToolContext } from '../../src/mcp/tools';
+import { projectFirstScan } from '../../src/report/first-scan.js';
 import { formatHtml } from '../../src/report/html.js';
 import { formatJson } from '../../src/report/json.js';
 import { formatMarkdown } from '../../src/report/markdown.js';
@@ -104,7 +105,13 @@ function makeReport(): ProjectReport {
 
 describe('whole-project renderer parity', () => {
   it('keeps project/file findings and suppression policy aligned across all report surfaces', async () => {
-    const report = makeReport();
+    const legacyReport = makeReport();
+    const report = Object.assign(legacyReport, {
+      firstScan: projectFirstScan(legacyReport, {
+        cwd: '/workspace',
+        configHash: 'config-a',
+      }),
+    }) as ProjectReport;
     const json = JSON.parse(formatJson(report)) as Record<string, any>;
     const sarif = JSON.parse(formatSarif(report)) as {
       runs: Array<{
@@ -114,7 +121,8 @@ describe('whole-project renderer parity', () => {
     };
     const markdown = formatMarkdown(report);
     const html = formatHtml(report);
-    const pretty = formatPretty(report);
+    const pretty = formatPretty(report, { full: true });
+    const compactPretty = formatPretty(report, { full: false });
 
     // Machine feeds retain the complete audit history, including project
     // findings and disabled findings, while preserving score precision.
@@ -160,6 +168,14 @@ describe('whole-project renderer parity', () => {
     expect(html).toMatch(/Default-off audit.*2 suppressed finding instances across 1 rule/);
     expect(markdown).toContain('12.3');
     expect(pretty).toContain('12.3 / 100');
+    expect(pretty).toContain('Full report');
+    expect(pretty).toContain('Visual Slop (1)');
+    expect(pretty).toContain('Repository Coherence (1)');
+    expect(pretty).not.toContain('AI-specific signals');
+    expect(compactPretty).toContain('Repository Health');
+    expect(compactPretty).not.toContain('Category breakdown');
+    expect(compactPretty).not.toContain('Full report');
+    expect(formatPretty(makeReport())).toContain('AI-specific signals (1)');
   });
 
   it('carries the same whole-project score provenance through MCP health advice', async () => {

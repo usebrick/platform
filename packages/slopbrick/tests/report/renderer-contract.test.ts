@@ -6,6 +6,7 @@ import { STRUCTURE_SCHEMA_VERSION } from '@usebrick/core';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { runSuggest, type ToolContext } from '../../src/mcp/tools';
 import { formatHtml } from '../../src/report/html.js';
+import { projectFirstScan } from '../../src/report/first-scan.js';
 import { formatJson } from '../../src/report/json.js';
 import { formatMarkdown } from '../../src/report/markdown.js';
 import { formatPretty, formatBriefReport, formatWhyFailingReport } from '../../src/report/pretty.js';
@@ -68,6 +69,61 @@ function report(): ProjectReport {
 }
 
 describe('headline score renderer contract', () => {
+  it('dispatches projected reports to the bounded first screen and complete five-area full feed', () => {
+    const secondIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'security/second-active-rule',
+      category: 'security',
+      severity: 'high',
+      filePath: 'src/security.ts',
+      message: 'Review the security boundary.',
+      advice: 'Inspect the boundary manually.',
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [activeIssue, secondIssue, offIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+
+    const compact = formatPretty(input, { full: false });
+    const full = formatPretty(input, { full: true });
+    const legacy = formatPretty(report(), { full: false });
+    const fullDetail = full.split('\n\nFull report\n\n')[1] ?? '';
+
+    expect(compact).toContain('Repository Health');
+    expect(compact).toContain('Recommended actions');
+    expect(compact).toContain('Use --full for every score and finding.');
+    expect(compact).not.toContain('Full report');
+    expect(compact).not.toContain('Category breakdown');
+    expect(compact).not.toContain('AI-specific signals');
+    expect(full).toContain('\n\nFull report\n\n');
+    expect(fullDetail).toContain('Category breakdown');
+    expect(fullDetail).toContain('test/active-rule');
+    expect(fullDetail).toContain('security/second-active-rule');
+    expect(fullDetail).toContain('Evidence tier: advisory');
+    expect(fullDetail).toContain('Location/context:');
+    expect(fullDetail).toContain('Why:');
+    expect(fullDetail).toContain('Change: current');
+    expect(fullDetail).toContain('Action: manual review');
+    expect(fullDetail).not.toContain('AI-specific signals');
+    expect(fullDetail).not.toContain('Engineering findings');
+    const areaOffsets = [
+      'Visual Slop (0)',
+      'Frontend Implementation (0)',
+      'Code and Logic (1)',
+      'Repository Coherence (0)',
+      'Accessibility and Resilience (1)',
+    ].map((heading) => fullDetail.indexOf(heading));
+    expect(areaOffsets.every((offset) => offset >= 0)).toBe(true);
+    expect(areaOffsets).toEqual([...areaOffsets].sort((left, right) => left - right));
+    expect(legacy).toContain('AI-specific signals (0)');
+    expect(legacy).toContain('Engineering findings (1)');
+  });
+
   it.each([
     ['not-applicable', { completionStatus: 'empty', scoreValidity: 'not-applicable', requested: 0, analyzed: 0, failed: 0, skipped: 0 }],
     ['incomplete', { completionStatus: 'partial', scoreValidity: 'incomplete', requested: 2, analyzed: 1, failed: 1, skipped: 0 }],

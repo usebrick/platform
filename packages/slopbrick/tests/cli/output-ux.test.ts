@@ -99,7 +99,12 @@ describe('CLI output UX', () => {
       );
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('AI Slop Score');
+      expect(result.stdout).toContain('Repository Health');
+      expect(result.stdout).toContain('Visual Slop');
+      expect(result.stdout).toContain('Frontend Implementation');
+      expect(result.stdout).toContain('Code and Logic');
+      expect(result.stdout).toContain('Repository Coherence');
+      expect(result.stdout).toContain('Accessibility and Resilience');
       expect(result.stdout).not.toMatch(/\u001B\[/);
     } finally {
       rmSync(cwd, { recursive: true, force: true });

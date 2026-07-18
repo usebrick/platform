@@ -4,12 +4,13 @@ import {
   FIRST_SCAN_AREA_BY_CATEGORY,
   projectFirstScan,
 } from '../../src/report/first-scan';
+import { formatFirstScanPretty } from '../../src/report/first-scan-pretty';
 import {
   findingIdentity,
   repositoryRelativeFindingLocation,
 } from '../../src/report/finding-identity';
 import type { FirstScanExperience } from '../../src/types/first-scan';
-import type { Category, Issue, ProjectReport } from '../../src/types';
+import type { Category, GateDecision, Issue, ProjectReport } from '../../src/types';
 import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
 
 const CATEGORIES: Category[] = [
@@ -112,6 +113,29 @@ function report(overrides: Partial<ProjectReport> = {}): ProjectReport {
 
 function project(input: ProjectReport): FirstScanExperience {
   return projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+}
+
+const PASSED_GATE: GateDecision = {
+  kind: 'slopbrick-gate-decision-v1',
+  status: 'passed',
+  exitCode: 0,
+  evaluated: true,
+  reasons: [],
+  failedThresholds: [],
+  summary: 'Policy gate passed.',
+};
+
+function stripAnsi(value: string): string {
+  return value.replace(/\u001B\[[0-?]*[ -\/]*[@-~]/g, '');
+}
+
+function renderedSection(output: string, heading: string): string {
+  const plain = stripAnsi(output);
+  const start = plain.indexOf(heading);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const remainder = plain.slice(start);
+  const end = remainder.indexOf('\n\n');
+  return end < 0 ? remainder : remainder.slice(0, end);
 }
 
 describe('first-scan public contract', () => {
@@ -408,5 +432,351 @@ describe('first-scan public contract', () => {
       recommendedActions: [],
       delta: { status: 'not-evaluated' },
     });
+  });
+});
+
+describe('first-scan pretty renderer contract', () => {
+  it('renders the complete owner state in semantic order and caps four candidate groups at three actions', () => {
+    const unsafe = issue('security', {
+      ruleId: 'security/unsafe-input',
+      severity: 'high',
+      filePath: '/workspace/src/input.ts',
+      message: 'Untrusted input reaches a sensitive operation.',
+      advice: 'Review input handling before release.',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'execute(userInput)',
+        location: { start: { line: 8, column: 3 }, end: { line: 8, column: 21 } },
+        matched: { field: 'call', key: 'callee', value: 'execute' },
+      },
+    });
+    const unchanged = issue('logic', {
+      ruleId: 'logic/zipf-slope-anomaly',
+      severity: 'medium',
+      filePath: '/workspace/src/domain.ts',
+      message: 'Identifier frequency differs from the measured baseline.',
+      advice: 'Review identifier vocabulary in domain context.',
+      signalStrength: {
+        recall: 0.0168,
+        fpRate: 0.0111,
+        ratio: 57.13,
+        precision: 0.6369,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+        verdict: 'USEFUL',
+      },
+    });
+    const heaps = issue('logic', {
+      ruleId: 'logic/heaps-deviation',
+      severity: 'medium',
+      filePath: '/workspace/src/vocabulary.ts',
+      message: 'Vocabulary growth differs from the measured baseline.',
+      advice: 'Review vocabulary growth in domain context.',
+      signalStrength: {
+        recall: 0.02,
+        fpRate: 0.013,
+        ratio: 40,
+        precision: 0.58,
+        lastCalibratedAt: '2026-07-05T00:00:00Z',
+        verdict: 'USEFUL',
+      },
+    });
+    const fourth = issue('docs', {
+      ruleId: 'docs/fourth-candidate',
+      severity: 'low',
+      filePath: '/workspace/docs/guide.md',
+      message: 'FOURTH ACTION MUST NOT RENDER.',
+    });
+    const resolved = issue('visual', {
+      ruleId: 'visual/resolved',
+      severity: 'medium',
+      filePath: '/workspace/src/resolved.tsx',
+      message: 'Resolved finding.',
+    });
+    const baseline = buildDebtBaseline(
+      report({ issues: [unchanged, resolved] }),
+      '/workspace',
+      'config-a',
+      'commit-a',
+    );
+    const firstScan = projectFirstScan(report({ issues: [unsafe, unchanged, heaps, fourth] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState: 'loaded',
+      baseline,
+    });
+    const fourthAction = project(report({ issues: [fourth] })).recommendedActions[0]!;
+    const output = formatFirstScanPretty({
+      ...firstScan,
+      recommendedActions: [
+        ...firstScan.recommendedActions,
+        { ...fourthAction, rank: 3 },
+      ],
+    }, {
+      columns: 120,
+      gateDecision: PASSED_GATE,
+      meanSlop: 30,
+      aiSlopScore: 8,
+    });
+    const plain = stripAnsi(output);
+
+    expect(plain).toMatchInlineSnapshot(`
+      "Repository Health
+        92.4 / 100 — higher is better
+
+      Scan status
+        complete
+
+      Policy gate
+        passed — Policy gate passed.
+
+      Dimensions
+        AI Slop cleanliness: 92 / 100; 40% weight
+        Engineering hygiene: 94 / 100; 30% weight
+        Security: 96 / 100; 20% weight
+        Test quality: 82 / 100; 10% weight
+
+      Areas
+        Visual Slop: 0 findings (high 0, medium 0, low 0)
+        Frontend Implementation: 0 findings (high 0, medium 0, low 0)
+        Code and Logic: 3 findings (high 0, medium 2, low 1)
+        Repository Coherence: 0 findings (high 0, medium 0, low 0)
+        Accessibility and Resilience: 1 finding (high 1, medium 0, low 0)
+
+      Recommended actions
+        1. Accessibility and Resilience — security/unsafe-input [high]
+          Evidence tier: deterministic; exact source span.
+          Reach: single-file; 1 finding across 1 file.
+          Change: new.
+          Why: Untrusted input reaches a sensitive operation.
+          Action: manual review — Review input handling before release. No safe bounded repair is available.
+        2. Code and Logic — logic/zipf-slope-anomaly [medium]
+          Evidence tier: calibrated; precision 63.69%; last calibrated 2026-07-04.
+          Reach: single-file; 1 finding across 1 file.
+          Change: unchanged.
+          Why: Identifier frequency differs from the measured baseline.
+          Action: manual review — Review identifier vocabulary in domain context. No safe bounded repair is available.
+        3. Code and Logic — logic/heaps-deviation [medium]
+          Evidence tier: calibrated; precision 58%; last calibrated 2026-07-05.
+          Reach: single-file; 1 finding across 1 file.
+          Change: new.
+          Why: Vocabulary growth differs from the measured baseline.
+          Action: manual review — Review vocabulary growth in domain context. No safe bounded repair is available.
+
+      Rescan comparison
+        Finding delta compared: 3 new, 1 unchanged, 1 resolved. Baseline revision 2.
+        Resolved: visual/resolved at src/resolved.tsx:1:1.
+
+      Run again after a change to compare findings. Use --full for every score and finding."
+    `);
+    const headings = [
+      'Repository Health',
+      'Scan status',
+      'Policy gate',
+      'Dimensions',
+      'Areas',
+      'Recommended actions',
+      'Rescan comparison',
+    ];
+    expect(headings.map((heading) => plain.indexOf(heading))).toEqual(
+      [...headings.map((heading) => plain.indexOf(heading))].sort((left, right) => left - right),
+    );
+    expect(plain).toContain('high');
+    expect(plain).toContain('calibrated');
+    expect(plain).toContain('manual review');
+    expect(plain).toContain('unchanged');
+    expect(plain.toLowerCase()).toContain('no safe bounded repair');
+    expect(plain).not.toContain('FOURTH ACTION MUST NOT RENDER');
+  });
+
+  it('renders missing and config-mismatched baselines without invented deltas', () => {
+    const current = issue('logic', { ruleId: 'logic/current' });
+    const missing = projectFirstScan(report({ issues: [current] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState: 'missing',
+    });
+    const baseline = buildDebtBaseline(
+      report({ issues: [current] }),
+      '/workspace',
+      'config-a',
+      'commit-a',
+    );
+    const mismatched = projectFirstScan(report({ issues: [current] }), {
+      cwd: '/workspace',
+      configHash: 'config-b',
+      baselineState: 'loaded',
+      baseline,
+    });
+
+    expect(renderedSection(formatFirstScanPretty(missing, { columns: 120 }), 'Rescan comparison'))
+      .toMatchInlineSnapshot(`
+        "Rescan comparison
+          Finding delta unavailable: durable debt baseline is missing."
+      `);
+    expect(renderedSection(formatFirstScanPretty(mismatched, { columns: 120 }), 'Rescan comparison'))
+      .toMatchInlineSnapshot(`
+        "Rescan comparison
+          Finding delta incompatible: durable debt baseline config identity does not match the current scan."
+      `);
+    for (const output of [formatFirstScanPretty(missing), formatFirstScanPretty(mismatched)]) {
+      expect(output).not.toMatch(/\b\d+ new, \d+ unchanged, \d+ resolved\b/);
+    }
+  });
+
+  it('renders an unchanged rescan without implying new or resolved work', () => {
+    const current = issue('logic', { ruleId: 'logic/unchanged' });
+    const baseline = buildDebtBaseline(
+      report({ issues: [current] }),
+      '/workspace',
+      'config-a',
+      'commit-a',
+    );
+    const unchanged = projectFirstScan(report({ issues: [current] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState: 'loaded',
+      baseline,
+    });
+
+    expect(renderedSection(formatFirstScanPretty(unchanged, { columns: 120 }), 'Rescan comparison'))
+      .toMatchInlineSnapshot(`
+        "Rescan comparison
+          Finding delta compared: 0 new, 1 unchanged, 0 resolved. Baseline revision 2."
+      `);
+  });
+
+  it('renders every area for a complete zero-finding scan', () => {
+    const clean = project(report());
+
+    expect(stripAnsi(formatFirstScanPretty(clean, {
+      columns: 120,
+      meanSlop: 30,
+      aiSlopScore: 8,
+    }))).toMatchInlineSnapshot(`
+      "Repository Health
+        92.4 / 100 — higher is better
+
+      Scan status
+        complete
+
+      Policy gate
+        passed — AI Slop Score 8 <= 30.
+
+      Dimensions
+        AI Slop cleanliness: 92 / 100; 40% weight
+        Engineering hygiene: 94 / 100; 30% weight
+        Security: 96 / 100; 20% weight
+        Test quality: 82 / 100; 10% weight
+
+      Areas
+        Visual Slop: 0 findings (high 0, medium 0, low 0)
+        Frontend Implementation: 0 findings (high 0, medium 0, low 0)
+        Code and Logic: 0 findings (high 0, medium 0, low 0)
+        Repository Coherence: 0 findings (high 0, medium 0, low 0)
+        Accessibility and Resilience: 0 findings (high 0, medium 0, low 0)
+
+      Recommended actions
+        None — no active findings.
+
+      Rescan comparison
+        Finding delta has not been evaluated.
+
+      Run again after a change to compare findings. Use --full for every score and finding."
+    `);
+  });
+
+  it('renders an incomplete scan without a score or action', () => {
+    const output = stripAnsi(formatFirstScanPretty(project(report({
+      completionStatus: 'partial',
+      scoreValidity: 'incomplete',
+      issues: [issue('logic')],
+    })), { columns: 120 }));
+
+    expect(output).toMatchInlineSnapshot(`
+      "Repository Health
+        unavailable — incomplete scan has no valid score.
+
+      Scan status
+        incomplete
+
+      Policy gate
+        not evaluated — scan status is incomplete.
+
+      Dimensions
+        unavailable — incomplete scan has no valid dimensions.
+
+      Areas
+        Visual Slop: 0 findings (high 0, medium 0, low 0)
+        Frontend Implementation: 0 findings (high 0, medium 0, low 0)
+        Code and Logic: 1 finding (high 0, medium 0, low 1)
+        Repository Coherence: 0 findings (high 0, medium 0, low 0)
+        Accessibility and Resilience: 0 findings (high 0, medium 0, low 0)
+
+      Recommended actions
+        unavailable — incomplete scans do not recommend actions.
+
+      Rescan comparison
+        Finding delta not evaluated: scan status is incomplete.
+
+      Run again after a change to compare findings. Use --full for every score and finding."
+    `);
+    expect(output).not.toMatch(/\d+(?:\.\d+)? \/ 100/);
+    expect(output).not.toContain('Action:');
+  });
+
+  it('renders a not-applicable scan without a score or action', () => {
+    const output = stripAnsi(formatFirstScanPretty(project(report({
+      completionStatus: 'empty',
+      scoreValidity: 'not-applicable',
+      issues: [issue('logic')],
+    })), { columns: 120 }));
+
+    expect(output).toMatchInlineSnapshot(`
+      "Repository Health
+        unavailable — not-applicable scan has no valid score.
+
+      Scan status
+        not-applicable
+
+      Policy gate
+        not evaluated — scan status is not-applicable.
+
+      Dimensions
+        unavailable — not-applicable scan has no valid dimensions.
+
+      Areas
+        Visual Slop: 0 findings (high 0, medium 0, low 0)
+        Frontend Implementation: 0 findings (high 0, medium 0, low 0)
+        Code and Logic: 1 finding (high 0, medium 0, low 1)
+        Repository Coherence: 0 findings (high 0, medium 0, low 0)
+        Accessibility and Resilience: 0 findings (high 0, medium 0, low 0)
+
+      Recommended actions
+        unavailable — not-applicable scans do not recommend actions.
+
+      Rescan comparison
+        Finding delta not evaluated: scan status is not-applicable.
+
+      Run again after a change to compare findings. Use --full for every score and finding."
+    `);
+    expect(output).not.toMatch(/\d+(?:\.\d+)? \/ 100/);
+    expect(output).not.toContain('Action:');
+  });
+
+  it('hard-wraps semantic text to a 40-column terminal', () => {
+    const longToken = 'x'.repeat(90);
+    const narrow = project(report({ issues: [issue('logic', {
+      ruleId: `logic/${longToken}`,
+      message: `Review ${longToken} before merging this unusually long explanation.`,
+      advice: `Inspect ${longToken} manually.`,
+    })] }));
+    const output = stripAnsi(formatFirstScanPretty(narrow, {
+      columns: 40,
+      meanSlop: 30,
+      aiSlopScore: 8,
+    }));
+
+    expect(output.split('\n').filter(Boolean).every((line) => line.length <= 40)).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import type {
   ComponentScore,
+  FirstScanFinding,
   Issue,
   ProjectReport,
   Severity,
@@ -9,6 +10,8 @@ import type {
 import { HEADLINE_SCORES, REPOSITORY_HEALTH_FORMULA, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
 import { formatScanAccountingSummary, formatScanValidityNotice, isIncompleteScan, isNotApplicableScan } from './scan-validity.js';
 import { formatFindingContext } from './finding-context.js';
+import { FIRST_SCAN_AREAS } from './first-scan.js';
+import { formatFirstScanPretty } from './first-scan-pretty.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -1130,7 +1133,63 @@ function formatIssue(issue: Issue): string {
   return lines.join('\n');
 }
 
-export function formatPretty(report: ProjectReport, options: { full?: boolean } = { full: true }): string {
+function formatProjectedEvidence(finding: FirstScanFinding): string {
+  const calibration = finding.evidence.calibration;
+  const calibrationText = calibration
+    ? ` Precision ${(calibration.precision * 100).toFixed(2).replace(/\.00$/, '')}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}.`
+    : '';
+  return `${finding.evidence.tier} — ${finding.evidence.claim}${calibrationText}`;
+}
+
+function formatProjectedAction(finding: FirstScanFinding): string {
+  const kind = finding.action.kind === 'apply-finding-bound-fix'
+    ? 'finding-bound repair'
+    : finding.action.kind === 'manual-review' ? 'manual review' : 'no action';
+  return `${kind} — ${redactSecrets(finding.action.label)}`;
+}
+
+function formatProjectedFinding(finding: FirstScanFinding, issue?: Issue): string {
+  const badge = severityBadge(finding.severity);
+  const location = finding.location.filePath
+    ? `${finding.location.filePath}:${finding.location.line}:${finding.location.column}`
+    : `project-wide:${finding.location.line}:${finding.location.column}`;
+  const lines = [
+    `[${badge}] ${finding.ruleId}`,
+    `  Evidence tier: ${formatProjectedEvidence(finding)}`,
+    `  Location/context: ${finding.location.contextLabel} — ${location}`,
+    `  Why: ${redactSecrets(finding.why)}`,
+    `  Change: ${finding.change}`,
+    `  Action: ${formatProjectedAction(finding)}`,
+  ];
+  if (issue) {
+    const exactEvidence = formatIssueEvidence(issue);
+    if (exactEvidence) lines.push(`  ${chalk.dim(exactEvidence)}`);
+  }
+  return lines.join('\n');
+}
+
+function formatFirstScanFindingAreas(report: ProjectReport): string[] {
+  const firstScan = report.firstScan;
+  if (!firstScan) return [];
+  const activeIssues = report.issues.filter((issue) => (issue.severity as string) !== 'off');
+  const projected = firstScan.findings.map((finding, index) => ({
+    finding,
+    issue: activeIssues[index],
+  }));
+
+  return FIRST_SCAN_AREAS.map((area) => {
+    const areaFindings = projected.filter(({ finding }) => finding.area === area.id);
+    const lines = [`${area.label} (${areaFindings.length})`];
+    if (areaFindings.length === 0) {
+      lines.push(chalk.dim('  No active findings in this area.'));
+    } else {
+      lines.push(...areaFindings.map(({ finding, issue }) => formatProjectedFinding(finding, issue)));
+    }
+    return lines.join('\n');
+  });
+}
+
+function formatDetailedReport(report: ProjectReport, options: { full?: boolean }): string {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
     const notice = formatScanValidityNotice(report) ??
       'NO FILES ANALYSED — scores are not applicable for gating.';
@@ -1225,9 +1284,33 @@ export function formatPretty(report: ProjectReport, options: { full?: boolean } 
   // v0.43.0: filter 'off'-severity suppressed issues from the
   // full list. They show in the JSON for tooling but the report
   // shows only what the user can act on.
-  sections.push(...formatFindingLanes(report.issues, options.full !== false));
+  if (report.firstScan) {
+    sections.push(...formatFirstScanFindingAreas(report));
+  } else {
+    sections.push(...formatFindingLanes(report.issues, options.full !== false));
+  }
 
   return sections.join('\n\n');
+}
+
+function formatLegacyDetailedReport(report: ProjectReport, options: { full?: boolean }): string {
+  return formatDetailedReport(report, options);
+}
+
+export function formatPretty(report: ProjectReport, options: { full?: boolean } = { full: true }): string {
+  if (!report.firstScan) return formatLegacyDetailedReport(report, options);
+
+  const firstScreen = formatFirstScanPretty(report.firstScan, {
+    gateDecision: report.gateDecision,
+    meanSlop: report.thresholds?.meanSlop,
+    aiSlopScore: report.aiSlopScore,
+  });
+
+  if (options.full !== true || report.firstScan.status !== 'complete') {
+    return firstScreen;
+  }
+
+  return `${firstScreen}\n\nFull report\n\n${formatDetailedReport(report, options)}`;
 }
 
 /**
