@@ -20,7 +20,8 @@ governance. Building those now would precede the scanner and team trust gates.
 
 ## Scope
 
-- After paid LockBrick pilots, collect structured governance requirements,
+- After real external LockBrick use satisfies the demand gate, collect
+  structured governance requirements,
   buyer/approver role, frequency, current workaround, risk, and willingness to
   pay.
 - Cluster repeated needs and distinguish product requirements from procurement
@@ -44,7 +45,7 @@ governance. Building those now would precede the scanner and team trust gates.
 
 ## Acceptance criteria
 
-- Several independent paying/team pilots identify the same top need and its
+- Several independent paying teams identify the same top need and its
   cost/risk, not merely a generic enterprise wishlist.
 - The evidence names the buyer, user, frequency, current workaround, and
   willingness-to-pay signal without exposing private repository data.
@@ -54,7 +55,8 @@ governance. Building those now would precede the scanner and team trust gates.
 
 ## Execution steps
 
-1. After the resume gate, add a structured demand interview to team pilots ->
+1. After the resume gate, add a structured demand interview to external team
+   use ->
    verify: every record contains the same buyer/problem/workaround/value fields.
 2. Cluster repeated requirements -> verify: each proposed capability cites
    multiple independent teams.

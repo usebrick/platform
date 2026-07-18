@@ -1,6 +1,6 @@
 # SlopBrick Calibration Methodology
 
-> **Historical evidence notice (updated 2026-07-17):** The v10.1/v10.2 material in
+> **Historical evidence notice (updated 2026-07-18):** The v10.1/v10.2 material in
 > this document describes exploratory or historical calibration, not an
 > admitted v10.3 evaluation corpus. The latest verified public release is
 > `slopbrick@0.43.0`; the workspace `0.45.0` candidate is not released and
@@ -9,13 +9,40 @@
 > [status](execution/STATUS.md). The frozen v10.3 protocol remains historical
 > evidence, not live execution authority.
 
-> **Authoritative reference for how slopbrick calibrates its 103 rules (v0.38.0+; was 140 in v0.37.0).**
+> **Historical reference for the v0.38-era 103-rule methodology (the workspace now has 119 rules; it had 140 in v0.37.0).**
 >
 > **Authors:** slopbrick project (with Kimi Code CLI) — dystx
 > **Last updated:** 2026-07-04 (v0.37.0)
 > **Source of truth:** `packages/slopbrick/docs/research/*.md` (50+ internal notes) + `CHANGELOG.md` v0.1.0–v0.37.0
 
 ---
+
+## Current Corpus v1 boundary (2026-07-18)
+
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
+
+The source-use policy evaluates three independent axes:
+
+| Axis | Current Mendeley value | Effect |
+| --- | --- | --- |
+| Authority | `publisher_attested` | Claim origin association only at the publisher-attested ceiling |
+| Integrity | `verified` | Permit the reviewed executable path |
+| Rights | `internal_analysis` | Permit local analysis; deny redistribution |
+
+Source permitted use is not v10.3 gold admission, redistribution approval,
+usefulness review, or rule application. CAL-001 measured origin association and
+recorded every rule decision with `applied: false` and `admitted: false`.
+Usefulness decisions belong to real owner-run VAL-001 walkthroughs and cannot
+upgrade source authority or activate a rule by implication.
+
+The numbered sections below are historical methodology. They explain prior
+results but do not override the current source router, execution index, or
+frozen Corpus v1/CAL-001 receipts.
 
 ## 1. The era-confound problem (v0.27.0)
 
@@ -317,3 +344,4 @@ slopbrick runs a **continuous self-scan** of its own source code as part of the 
 | v0.36.0 | v10 calibration pipeline | dystx + Kimi |
 | v0.36.1 | v10 full corpus calibration (576,750 files) | dystx + Kimi |
 | v0.37.0 | `slopbrick calibration` CLI command | dystx + Kimi |
+| Corpus v1 (2026-07-18) | Evidence-tiered source use, family-safe Mendeley evaluation, and separate owner usefulness review | usebrick calibration maintainers |

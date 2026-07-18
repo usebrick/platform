@@ -41,6 +41,7 @@ parallel roadmaps.
 | npm | `slopbrick@0.43.0` |
 | Published rule catalog | 103 rules in **22** generated categories |
 | Workspace candidate | Unreleased `0.45.0`, 119 rules in 27 categories |
+| Corpus v1 source use | Pinned Mendeley v1: 5,000 publisher-labeled AI / 5,000 publisher-labeled Human rows, verified for internal origin measurement and calibration evaluation |
 | Calibration | The 576,750-file v10.1 result is historical; it is not v10.3 admission evidence |
 | v10.3 admission | Zero units admitted for current-release calibration |
 
@@ -50,6 +51,30 @@ record 103 rules in 22 categories; the pinned public-artifact receipt lives at
 [`packages/website/src/data/published-release-receipt.json`](./packages/website/src/data/published-release-receipt.json).
 The metadata drift must be corrected in the next publication rather than
 repeated in documentation.
+
+## Corpus v1 evidence boundary
+
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
+
+The boundaries are independent:
+
+- source permitted use is not v10.3 gold admission;
+- source permitted use is not redistribution approval;
+- origin measurement is not usefulness review; and
+- a calibration decision is not a rule-state change unless `applied: true` is
+  recorded in a separately authorized change.
+
+The repository owner is the only current product tester. Near-term validation
+uses deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs
+under [`VAL-001`](./docs/execution/plans/VAL-001-owner-validation.md). No
+participant recruitment or fixed pilot gate is active; future team and market-
+demand evidence remains unproven. Source routing is owned by
+[`CORPUS-002`](./docs/execution/plans/CORPUS-002-source-use-routing.md).
 
 ## Quick start
 

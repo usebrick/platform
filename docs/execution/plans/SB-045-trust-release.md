@@ -22,9 +22,10 @@ test command has seven host-sensitive failures (beacon listen permissions,
 special filesystem mode bits, and sandboxed pnpm-store writes); the affected
 package tests pass in the isolated one-worker package receipt. The exact
 package-local self-scan completes all 263 selected files with no runtime
-failures and now passes at `0.0 <= 15`: the unadmitted
-`ai/compression-profile` signal is explicitly default-off/opt-in pending
-current v10.3 admitted, leakage-checked evidence. This is a local candidate
+failures and now passes at `0.0 <= 15`: `ai/compression-profile` is explicitly
+default-off/opt-in, and CAL-001 records its decision as unapplied pending
+separate owner usefulness and rule-state review. No v10.3 admission claim is
+needed for that current default-off disposition. This is a local candidate
 qualification pass, not publication authorization. A current 2026-07-18 rerun
 of the four root commands (`lint`, `typecheck`, `test`, and `build`) also
 passes in this checkout; the seven host-sensitive failures belong to the older
@@ -55,8 +56,8 @@ plan now waits on an owner decision for the live/public claim boundary.
 ## Dependencies
 
 - `requires`: none
-- `benefitsFrom`: `CORPUS-001`; v0.45 does not wait for it if no new
-  calibration claim is made.
+- `benefitsFrom`: `CORPUS-001`; v0.45 does not wait for a new corpus or rule
+  claim because this release adds no rules and applies no CAL-001 decision.
 
 ## Acceptance criteria
 

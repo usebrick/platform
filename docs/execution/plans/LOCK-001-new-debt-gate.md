@@ -1,4 +1,4 @@
-# LOCK-001 — Pilot deterministic new-debt enforcement
+# LOCK-001 — Validate deterministic new-debt enforcement
 
 - **Status:** `draft`
 - **Priority:** 9
@@ -50,7 +50,8 @@ yet, and those primitives have not been proven as one team enforcement loop.
 - Waivers require owner/reason/expiry and are visible in output.
 - Owner-run receipts exercise the gate on real or deterministic changes and
   report false-block and waiver burden without participant claims.
-- Package extraction is decided only after the CLI pilot, not assumed.
+- Package extraction is decided only after the owner-side CLI validation and
+  later external demand evidence; it is not assumed.
 
 ## Execution steps
 
@@ -77,8 +78,8 @@ before enabling any blocking CI configuration.
 
 ## Rollback
 
-Disable the gate or return pilots to shadow mode; preserve baseline and decision
-receipts so the failure can be reproduced.
+Disable the gate or return owner validation to shadow mode; preserve baseline
+and decision receipts so the failure can be reproduced.
 
 ## Next action
 

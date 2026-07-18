@@ -1,6 +1,6 @@
 # Usebrick roadmap
 
-**Updated:** 2026-07-17
+**Updated:** 2026-07-18
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -35,7 +35,7 @@ prerequisite.
 | **SlopBrick** | Free scanner, acquisition front door, and immediate vibecoder value | Improve trust, evidence, first-run UX, and repository-aware analysis now. |
 | **MemoryBrick** | Repository-owned intelligence substrate | Start read-only with provenance, freshness, bounded context, and agent adapters; do not market it as the first standalone product. |
 | **Pick flow** | `usebrick init` and policy authoring | Fold into onboarding and policy setup instead of launching another product. |
-| **LockBrick** | First paid team product: prevent verified new drift | Pilot a deterministic new-debt gate in the existing CLI before extracting a package. |
+| **LockBrick** | First paid team product: prevent verified new drift | Prove a deterministic new-debt gate owner-side in the existing CLI before seeking external team evidence or extracting a package. |
 | **MendBrick** | Deterministic, reversible repair | Keep parked until detection and enforcement have earned trust. |
 | **Enterprise** | Multi-repository governance, audit, and policy inheritance | Build only after several paying teams independently request the same controls. |
 
@@ -47,6 +47,17 @@ LockBrick, and MendBrick are product directions, not shipped standalone
 products. The precise dated counts, corpus state, self-scan result, release
 authorization, and working-tree state live in
 [the execution status](docs/execution/STATUS.md), not in this strategy file.
+
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
+
+The repository owner is the only current product tester. Owner-run
+scan-to-rescan walkthroughs belong to `VAL-001`; the external participant
+protocol is parked with zero sessions and no recruitment authorization.
 
 ## Operating principles
 
@@ -63,6 +74,10 @@ authorization, and working-tree state live in
   their stated admission criteria are met.
 - **Origin and quality are separate axes.** AI-positive does not mean bad, and
   human-negative does not mean good.
+- **Evidence tier controls use, not existence.** Verified publisher-attested
+  data can support bounded internal origin evaluation without becoming v10.3
+  gold evidence, redistribution-approved bytes, usefulness proof, or an
+  applied rule decision.
 - **Repairs are deterministic and reversible first.** Every MendBrick change
   must rescan, run repository checks, and roll back safely.
 - **One source of planning truth.** Strategy belongs here; live state and
@@ -83,18 +98,21 @@ authorization, and working-tree state live in
   report and exit decisions, make remediation finding-specific, harden durable
   baselines, settle the self-scan disposition, and produce a truthful go/no-go
   packet.
-- Approve a bounded Corpus v1 decision contract, then build a source-attested
-  seed and run a reproducible 100-positive/100-negative smoke. Preserve v10.3
-  until the replacement has verified evidence.
-- Complete five vibecoder scan-to-rescan pilots and identify the first useful
-  finding, time-to-value, abandonment point, and CI interest.
+- Complete CORPUS-002 source-use routing around the verified Mendeley seed and
+  reproduce every frozen Corpus v1 and CAL-001 hash without changing rule
+  state or v10.3.
+- Keep VAL-001 ready for owner-selected scan-to-finding-to-fix-to-rescan
+  walkthroughs. Record only real owner runs and impose no participant or
+  target-count gate.
 
 ### Exit gate
 
 Advance when the planning validator and links pass, v0.45 has green release
-gates plus an explicit self-scan decision, the seed smoke has a reproducible
-receipt, and five pilot outcomes are recorded. Publishing and deploying remain
-separate owner-authorized actions.
+gates plus an explicit self-scan decision, and CORPUS-002 proves the source
+router preserves the seed, smoke, holdout, and decision-matrix receipts.
+Owner validation may accumulate when the owner chooses; no participant count
+is a release or source-use gate. Publishing and deploying remain separate
+owner-authorized actions.
 
 ## Next — 31 to 90 days
 
@@ -107,25 +125,26 @@ separate owner-authorized actions.
 - Build MemoryBrick M0 as a read-only projection of observed facts, declared
   policy, provenance, and freshness; benchmark bounded native adapters across
   multiple agents.
-- Audit at least 25 owner-attested AI applications plus a matched set of 25
-  pre-LLM temporal-proxy snapshots by repository family, capped initially at
-  200 eligible files per repository. Keep proxies and ordinary recent
-  undisclosed repositories out of human/AI ground-truth fitting unless they
-  gain separate source-attested labels.
-- Pilot LockBrick's deterministic new-only gate with two teams or design-system
-  owners and publish the benchmark and corpus methods.
+- Add a source-specific adapter only when its immutable evidence, rights, and
+  requested use pass the closed source policy. Keep pending FormAI, OSSForge,
+  and HumanEval dispositions non-executable until their own bounded changes
+  close; keep proxies and ordinary recent repositories out of origin fitting.
+- Validate LockBrick's deterministic new-only gate on owner-controlled
+  repositories or fixtures. Keep team adoption and willingness-to-pay claims
+  open until external evidence exists.
 
 ### Exit gate
 
-Advance when pilots repeatedly reach a useful finding and rescan, MemoryBrick
-improves a measured cross-agent task without stale/bloated context, and
-LockBrick prevents verified new debt with an acceptable waiver burden.
+Advance when owner-run receipts repeatedly reach a useful finding and rescan,
+MemoryBrick improves a measured cross-agent task without stale/bloated context,
+and LockBrick prevents verified new debt with an acceptable waiver burden.
+These owner receipts do not satisfy future team or market-demand gates.
 
 ## Later — 3 to 12 months
 
 - Expand LockBrick only around rules teams trust and are willing to enforce.
 - Start MendBrick with a very small set of deterministic transformations whose
-  rollback and verification work on pilot repositories.
+  rollback and verification work on owner-controlled validation repositories.
 - Add hosted team history, approvals, and policy ownership only when they make
   the local workflow materially better.
 - Add enterprise SSO, audit, policy inheritance, self-hosting, and multi-repo
@@ -135,10 +154,10 @@ LockBrick prevents verified new debt with an acceptable waiver burden.
 
 | Gate | Proceed only when | If the gate fails |
 | --- | --- | --- |
-| Scanner trust | Pilots consistently reach a useful evidenced finding, fix, and rescan; deterministic checks have acceptable precision. | Keep improving SlopBrick and do not widen the suite. |
+| Scanner trust | Owner-run walkthroughs reach a useful evidenced finding, fix, and rescan; deterministic checks have acceptable precision. | Keep improving SlopBrick and do not widen the suite. |
 | Repository intelligence | MemoryBrick improves architecture/build/test outcomes across agents and at least two teams maintain the memory in Git. | Keep it read-only and experimental; do not make enforcement depend on it. |
 | Team monetization | LockBrick sees repeated weekly use, low false-block/waiver burden, and demonstrated willingness to pay. | Stay product-led and repair precision before hosted expansion. |
-| Repair | A bounded fix set applies, rescans, tests, and rolls back reliably on pilot repositories. | Keep MendBrick parked. |
+| Repair | A bounded fix set applies, rescans, tests, and rolls back reliably on owner-controlled validation repositories. | Keep MendBrick parked. |
 | Enterprise | Several paying teams independently request the same multi-repository controls. | Do not build enterprise infrastructure speculatively. |
 
 ## Success measures
@@ -146,10 +165,11 @@ LockBrick prevents verified new debt with an acceptable waiver burden.
 The north star is **repositories that fix or prevent at least one verified
 finding each week**.
 
-Supporting measures are scan activation, time to first useful finding,
-useful-finding rate, fix/rescan rate, weekly retained repositories,
-Lock-confirmed preventions, waiver rate, team-pilot conversion, and paid
-retention. Guardrails are incomplete scans, raw-source egress, uncalibrated
+Supporting owner-side measures are scan activation, time to first useful
+finding, useful-finding rate, fix/rescan rate, weekly retained repositories,
+Lock-confirmed preventions, and waiver rate. Future external measures include
+team adoption, conversion, and paid retention only after real external evidence
+exists. Guardrails are incomplete scans, raw-source egress, uncalibrated
 default-on rules, unsafe repair rollback, and claim/evidence drift.
 
 ## Non-goals

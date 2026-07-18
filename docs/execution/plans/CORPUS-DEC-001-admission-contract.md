@@ -4,7 +4,7 @@
 - **Priority:** 2
 - **Track / lane:** implementation / corpus
 - **Owner:** calibration maintainers
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -14,10 +14,12 @@ quality evaluation, redistribution rights, and release claims.
 
 ## Current truth
 
-The accepted ADR preserves the v10.3 tree as local quarantine with zero
-admitted units and admits the local publisher-labeled 5,000 AI / 5,000 human
-projection only as an internal, publisher-attested candidate seed. It does not
-claim witnessed authorship, quality, gold labels, or redistribution rights.
+The accepted ADR preserves the v10.3 tree as historical local quarantine with
+zero admitted units. The local publisher-labeled 5,000 AI / 5,000 Human
+projection is verified for publisher-attested internal origin measurement and
+calibration evaluation. That permitted use is not witnessed authorship, a
+quality label, v10.3 gold admission, redistribution approval, usefulness
+review, or rule application.
 
 ## Scope
 
@@ -84,5 +86,5 @@ this decision plan.
 
 ## Next action
 
-Apply the accepted contract through `CORPUS-001`, beginning with the red
-read-only inventory test and deterministic 100/100 smoke boundary.
+Preserve the completed ADR and CORPUS-001 receipts. Route current and future
+source uses through `CORPUS-002` without widening the accepted claim ceiling.

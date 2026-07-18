@@ -88,8 +88,8 @@ exact owner approval and does not block local product work.
   `86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c`;
   receipt SHA-256 is
   `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
-  The deterministic non-admitting smoke now selects 100 unique exact-content
-  units per polarity. Its manifest SHA-256 is
+  The deterministic diagnostic smoke (`admitted: false`) now selects 100 unique
+  exact-content units per polarity. Its manifest SHA-256 is
   `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` and its
   receipt SHA-256 is
   `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`.

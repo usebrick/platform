@@ -2,9 +2,10 @@
 
 > **Historical/research-only (superseded):** this 2026-07-09 review is based on
 > the exploratory v10.2/v5 corpus and is not a current calibration, label, or
-> release receipt. Treat all verdicts and recommendations as hypotheses until
-> they pass the v10.3 provenance/admission gates recorded in the continuation
-> plan.
+> release receipt. Treat all verdicts and recommendations as hypotheses. The
+> current Mendeley/CAL-001 origin evaluation and VAL-001 owner usefulness
+> review are separate authorities; v10.3 admission is not a prerequisite for
+> current internal Corpus v1 analysis, and this document activates no rule.
 
 **Date:** 2026-07-09
 **Total rules reviewed:** 119 (now 119 — added 4 Dart rules in v0.44.0)

@@ -1,6 +1,6 @@
 # usebrick architecture
 
-**Updated:** 2026-07-17
+**Updated:** 2026-07-18
 **Status:** Current product and package reference
 
 Usebrick keeps AI-generated software coherent. Vibe coders and AI-assisted
@@ -54,6 +54,9 @@ normative facts.
 - Workspace candidate: unreleased `0.45.0`, 119 rules in 27 categories.
 - Historical calibration: v10.1 analyzed 576,750 files from 581,550 sampled
   paths; that result is not current v10.3 admission evidence.
+- Current Corpus v1 source: pinned Mendeley v1, verified as
+  `publisher_attested` + `internal_analysis` for origin measurement and
+  calibration evaluation; its labels are not witnessed authorship or quality.
 - Current v10.3 admission: zero admitted units.
 
 ## Monorepo boundaries
@@ -205,6 +208,37 @@ SlopBrick's strategic report taxonomy grows toward:
 Each finding must identify its evidence quality—deterministic, calibrated, or
 advisory—so qualitative visual judgement is never represented as certain
 static-analysis fact.
+
+### Corpus v1 source-use boundary
+
+Corpus source routing is a SlopBrick calibration concern, not a Core schema.
+`source-policy.ts` derives permitted uses from independent authority, integrity,
+and rights fields; `source-registry.ts` fails closed for unknown sources. A
+source adapter must assert the requested use before projecting candidate bytes.
+
+```text
+pinned source bytes + evidence
+            │
+            ▼
+ source-specific verifier
+            │
+            ▼
+authority + integrity + rights
+            │
+            ▼
+  deterministic use router
+            │
+            ├── origin/calibration evaluation
+            ├── ecological validation
+            ├── sensitivity/prevalence analysis
+            └── redistribution only with separate approval
+```
+
+The current Mendeley route is `publisher_attested`, `verified`, and
+`internal_analysis`. It permits internal origin measurement and calibration
+evaluation. It does not establish v10.3 gold admission, redistribution,
+finding usefulness, or rule application. Pending, quarantined, reference-only,
+and unregistered sources cannot enter an executable corpus path.
 
 ## Persistence and network boundary
 

@@ -26,6 +26,7 @@ npx slopbrick scan
 | npm | `slopbrick@0.43.0` is the latest published release |
 | Published catalog | 103 generated rules in 22 generated categories |
 | Workspace | `0.45.0` candidate with 119 generated rules in 27 categories; unreleased |
+| Corpus v1 source use | pinned Mendeley v1, 5,000 publisher-labeled AI / 5,000 publisher-labeled Human rows, verified for internal origin measurement and calibration evaluation |
 | Calibration | the 576,750-file v10.1 result is historical; it is not v10.3 admission evidence |
 | v10.3 | no cohort is currently admitted for a release-calibration claim |
 
@@ -38,6 +39,22 @@ into documentation.
 See the root [roadmap](../../ROADMAP.md), [execution
 ledger](../../docs/execution/README.md), and [changelog](./CHANGELOG.md) for
 current delivery state.
+
+## Corpus v1 evidence boundary
+
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
+
+Source permitted use, v10.3 admission, redistribution approval, finding
+usefulness, and rule application are separate decisions. The CAL-001 matrix
+records `applied: false` and `admitted: false`; owner usefulness review belongs
+to [`VAL-001`](../../docs/execution/plans/VAL-001-owner-validation.md). The
+repository owner is the only current product tester, and no participant or
+fixed pilot gate is active.
 
 ## What a scan returns
 

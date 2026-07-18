@@ -4,7 +4,7 @@
 - **Priority:** 4
 - **Track / lane:** implementation / corpus
 - **Owner:** calibration maintainers
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -37,8 +37,9 @@ SHA-256 is
 `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` and its
 receipt SHA-256 is
 `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`. The
-smoke remains a non-admitting internal-analysis artifact; it does not run
-calibration or change v10.3, which remains unchanged and quarantine-only.
+smoke records `admitted: false`: it is not v10.3 gold evidence, a redistributed
+corpus, a usefulness decision, or an applied rule change. It remains valid
+internal source-use evidence and does not change v10.3.
 The post-smoke eligible projection then retained all 10,000 rows with zero
 quarantine rows and zero unresolved cross-label collisions. Its manifest
 SHA-256 is
@@ -130,5 +131,6 @@ alter or delete the v10.3 source tree.
 
 ## Next action
 
-Hand off the verified source-attested seed to `CAL-001` without treating it as
-admitted authorship or a quality-labeled production corpus.
+Preserve every completed seed hash and expose its reviewed Mendeley source
+disposition through `CORPUS-002`; do not reinterpret it as witnessed
+authorship, quality, redistribution, v10.3 admission, or rule application.

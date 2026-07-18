@@ -12,16 +12,29 @@ It separates current scheduling from frozen protocols and collected evidence.
   readiness facts.
 - Bounded current work lives under [`docs/execution/plans/`](../execution/plans/).
 
-The current verified truth is that the v10.3 admission set contains **zero
-admitted units**. The historical v10.1 scan of 576,750 files does not prove
-current v10.3 corpus admission or candidate-rule calibration.
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
 
-Corpus reconstruction is local executable work, not an external-authority
-blocker. The scheduled sequence first decides and records the replacement corpus
-contract, then builds a smaller source-attested v1 corpus with immutable bytes,
-label provenance, license evidence, family-aware splits, leakage checks, and a
-reproducible receipt. AI is the positive class and human is the negative class;
-origin and code quality remain separate measurements.
+The historical v10.1 scan of 576,750 files is not current v10.3 evidence, and
+the v10.3 admission set still contains **zero admitted units**. That does not
+block the reviewed Mendeley use. Keep these decisions separate:
+
+```text
+source permitted use != v10.3 gold admission
+source permitted use != redistribution approval
+source permitted use != usefulness review
+source permitted use != rule application
+```
+
+[`CORPUS-002`](../execution/plans/CORPUS-002-source-use-routing.md) owns the
+deterministic source router. [`VAL-001`](../execution/plans/VAL-001-owner-validation.md)
+owns real repository-owner usefulness walkthroughs. The owner is the only
+current product tester; no participant recruitment or fixed pilot gate is
+active.
 
 ## Frozen specifications and evidence
 

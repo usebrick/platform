@@ -655,12 +655,14 @@ git commit -m "feat(calibration): route Corpus v1 source use"
 - Modify: `docs/execution/plans/CORPUS-DEC-001-admission-contract.md`
 - Modify: `docs/execution/plans/CORPUS-001-v1-seed.md`
 - Modify: `docs/execution/plans/CAL-001-heldout-calibration.md`
+- Modify after stale-truth audit: `docs/execution/index.json`, `docs/execution/STATUS.md`, `docs/execution/plans/SB-045-trust-release.md`, `docs/execution/plans/LOCK-001-new-debt-gate.md`, and `docs/execution/plans/ENT-001-demand-gate.md`.
+- Modify historical authority banners only: `packages/slopbrick/docs/calibration/v0.45.0-handoff.md`, `packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md`, and `packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md`.
 
 **Interfaces:**
 - Consumes: CORPUS-002 policy names and source dispositions from Tasks 2-3.
 - Produces: one current source/calibration/validation narrative with historical artifacts left intact.
 
-- [ ] **Step 1: Establish the canonical current wording**
+- [x] **Step 1: Establish the canonical current wording**
 
 Use this paragraph, adapted only for surrounding grammar, in the root/package current-state docs:
 
@@ -674,7 +676,7 @@ Use this validation paragraph wherever current pilot work was previously describ
 The repository owner is the only current product tester. Near-term validation uses deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs under VAL-001. No participant recruitment or five-pilot gate is active; future team and market-demand evidence remains unproven.
 ```
 
-- [ ] **Step 2: Update roadmap and root current-state docs**
+- [x] **Step 2: Update roadmap and root current-state docs**
 
 In `ROADMAP.md`:
 
@@ -692,19 +694,19 @@ source permitted use != usefulness review
 source permitted use != rule application
 ```
 
-- [ ] **Step 3: Update the Corpus v1 ADR and completed plan summaries**
+- [x] **Step 3: Update the Corpus v1 ADR and completed plan summaries**
 
 In `docs/decisions/corpus-v1-admission.md`, add a “Source use is not rule admission” section with the four inequalities above and point to CORPUS-002. Do not change the pinned source hashes or allowed-claims block.
 
 In `CORPUS-DEC-001`, `CORPUS-001`, and `CAL-001` plan summaries, replace overloaded `non-admitting` prose with precise statements about v10.3, redistribution, usefulness, and `applied: false`. Keep statuses and completed evidence unchanged.
 
-- [ ] **Step 4: Update package docs and additive changelog**
+- [x] **Step 4: Update package docs and additive changelog**
 
 Apply the canonical source paragraph to `packages/slopbrick/README.md` and `packages/slopbrick/docs/calibration/README.md`. Add an unreleased `0.45.0` changelog bullet stating that evidence-tiered source routing was added without changing current Corpus v1/CAL hashes or rule defaults.
 
 Mark `v0.45.0-continuation-plan.md` as historical/superseded for scheduling, pointing to `docs/execution/index.json`, `STATUS.md`, CORPUS-002, and VAL-001. Update the supersession headers in `rule-quality-review.md` and `rules-literature-and-recommendations.md` so they no longer present v10.3 admission as the active prerequisite for current internal Corpus v1 analysis. Preserve all dated bodies and historical verdicts.
 
-- [ ] **Step 5: Run active-doc stale-truth searches**
+- [x] **Step 5: Run active-doc stale-truth searches**
 
 Run:
 
@@ -715,16 +717,16 @@ rg -n -i "non-admitting|v10\.3|publisher_attested|publisher-attested|participant
 
 Expected: the first command returns no active-current claim. Review every second-command hit; each must agree with current authority or be inside a clearly historical, frozen, parked, or research-only section.
 
-- [ ] **Step 6: Validate docs and commit convergence**
+- [x] **Step 6: Validate docs and commit convergence**
 
 ```bash
 corepack pnpm plans:validate
 git diff --check
-git add README.md ROADMAP.md docs/ARCHITECTURE.md docs/methodology.md docs/calibration/README.md docs/decisions/corpus-v1-admission.md docs/execution/plans/CORPUS-DEC-001-admission-contract.md docs/execution/plans/CORPUS-001-v1-seed.md docs/execution/plans/CAL-001-heldout-calibration.md packages/slopbrick/README.md packages/slopbrick/CHANGELOG.md packages/slopbrick/docs/calibration/README.md packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md packages/slopbrick/docs/calibration/rule-quality-review.md packages/slopbrick/docs/calibration/rules-literature-and-recommendations.md
+git add README.md ROADMAP.md docs/ARCHITECTURE.md docs/methodology.md docs/calibration/README.md docs/decisions/corpus-v1-admission.md docs/execution/index.json docs/execution/STATUS.md docs/execution/plans/CORPUS-DEC-001-admission-contract.md docs/execution/plans/CORPUS-001-v1-seed.md docs/execution/plans/CAL-001-heldout-calibration.md docs/execution/plans/SB-045-trust-release.md docs/execution/plans/LOCK-001-new-debt-gate.md docs/execution/plans/ENT-001-demand-gate.md packages/slopbrick/README.md packages/slopbrick/CHANGELOG.md packages/slopbrick/docs/calibration/README.md packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md packages/slopbrick/docs/calibration/v0.45.0-handoff.md packages/slopbrick/docs/calibration/v10.3-corpus-source-admission-plan.md packages/slopbrick/docs/calibration/v10.3-release-asset-materialization-plan.md packages/slopbrick/docs/calibration/rule-quality-review.md packages/slopbrick/docs/calibration/rules-literature-and-recommendations.md docs/superpowers/plans/2026-07-18-corpus-source-use-routing.md
 git commit -m "docs: converge source and validation truth"
 ```
 
-Expected: plan validation and whitespace checks pass; only current docs are committed.
+Expected: plan validation and whitespace checks pass; current docs and historical authority banners are committed, with dated historical bodies unchanged.
 
 ---
 

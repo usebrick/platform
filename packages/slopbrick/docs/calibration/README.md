@@ -1,34 +1,55 @@
 # SlopBrick calibration
 
-This directory contains the v10.3 calibration/admission implementation,
-evidence, and historical plans. It is not the platform roadmap.
+This directory contains Corpus v1, CAL-001, v10.3 calibration/admission
+implementation, evidence, and historical plans. It is not the platform
+roadmap.
 
 Current company sequencing lives in the root [roadmap](../../../../ROADMAP.md)
 and [execution ledger](../../../../docs/execution/README.md). The current
 SlopBrick release plan must link to the exact calibration decision/work item it
 depends on instead of treating every file in this directory as active.
 
-## Current truth (2026-07-17)
+## Current truth (2026-07-18)
 
-- Positive means **verified AI provenance**.
-- Negative means **verified human provenance**.
+Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
+publisher-attested internal origin analysis and calibration evaluation. Its
+5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
+family-safe splits, and collision checks; they are not witnessed authorship or
+quality labels. The source is not approved for public redistribution, and its
+use does not admit v10.3 data or activate a rule.
+
 - Code quality is a separate axis; “sloppy” does not prove AI and “good” does
   not prove human authorship.
-- Recent or popular GitHub repositories are unknown/mixed by default, not
-  labelled ground truth.
-- v10.1's 576,750 analysed files are historical evidence only.
+- Recent or popular repositories are `unknown` by default, not labeled ground
+  truth.
+- v10.1's 576,750 analyzed files are historical evidence only.
 - The local v10.3 review/register has 452,382 registered or quarantined units
   and **zero admitted units**.
-- A 10,000-unit HumanVSAI projection (5,000/5,000) is an input candidate, not
-  an admitted or rights-cleared production corpus.
-- No current v10.3 precision, recall, FPR, lift, or release-calibration claim is
-  authorized.
+- CAL-001 completed the 10,000-row evaluation and recorded all 119 decisions
+  with `applied: false` and `admitted: false`.
+- The repository owner is the only current product tester. VAL-001 is owner-
+  only; GTM-001 is parked with zero sessions and no recruitment authorization.
 
-This is a product-truth boundary, not a reason to stop work. Scanner
-reliability, UX, self-scan disposition, source-method design, seed-corpus
-construction, and vibecoder pilots can proceed in bounded parallel work.
+```text
+source permitted use != v10.3 gold admission
+source permitted use != redistribution approval
+source permitted use != usefulness review
+source permitted use != rule application
+```
+
+### Reviewed source dispositions
+
+| Source | Authority | Integrity | Rights | Current executable use |
+| --- | --- | --- | --- | --- |
+| Mendeley HumanVSAI v1 | `publisher_attested` | `verified` | `internal_analysis` | origin measurement, calibration evaluation |
+| FormAI v1 bounded projection | `repo_self_attested` | `pending` | `internal_analysis` | none |
+| OSSForge HumanVsAICode | `publisher_attested` | `pending` | `reference_only` | none |
+| Controlled HumanEval GPT-5 | `witnessed` | `pending` | `reference_only` | none |
 
 ## What counts as admission
+
+This section governs a v10.3 gold/production admission claim. It does not
+revoke a source's narrower permitted internal use.
 
 A file becomes an eligible calibration unit only after the approved process
 binds at least:
@@ -49,31 +70,32 @@ or quarantined file is not automatically represented or eligible.
 
 ## Current execution sequence
 
-The central execution plans should maintain these bounded milestones:
+The central execution plans maintain these bounded milestones:
 
-1. **Corpus method decision** — freeze label, rights, evidence, source-class,
-   overlap, split, and publication semantics.
-2. **Seed corpus** — admit and independently review a small balanced cohort
-   before scaling.
-3. **Smoke cohort** — produce a deterministic 100-positive/100-negative
-   diagnostic bundle with complete accounting.
-4. **Canary cohort** — scale only after smoke evidence passes.
-5. **Metrics run** — compute denominator-aware per-rule metrics against an
-   admitted cohort.
-6. **Release decision** — promote/default-enable rules only after the release
-   gates and human review pass.
+1. **CORPUS-002 source routing** — derive permitted use from authority,
+   integrity, and rights; unknown sources fail closed.
+2. **Artifact preservation** — reproduce candidate, leakage, source-binding,
+   smoke, eligible, holdout, and decision-matrix hashes exactly.
+3. **Completed CAL-001 evaluation** — retain origin metrics and decisions with
+   `applied: false` and `admitted: false`.
+4. **VAL-001 owner validation** — record only real owner-run usefulness,
+   fix, and rescan receipts, with no target count.
+5. **Future source adapters** — add one bounded adapter and evidence review per
+   source; pending registry rows do not authorize acquisition or execution.
+6. **Release/rule decisions** — require separate owner authorization and normal
+   gates; source labels never activate a rule by implication.
 
-Acquiring more public repositories can support discovery or an ecological
-unknown/mixed cohort, but it cannot replace label evidence.
+## Current and historical technical references
 
-## Live technical references
-
+- [`CORPUS-002`](../../../../docs/execution/plans/CORPUS-002-source-use-routing.md)
+  — current deterministic source-use routing contract.
+- [`VAL-001`](../../../../docs/execution/plans/VAL-001-owner-validation.md) —
+  owner-only usefulness validation contract.
 - [`v10.3-corpus-source-admission-plan.md`](./v10.3-corpus-source-admission-plan.md)
-  — detailed source/admission protocol.
-- [`v0.45.0-continuation-plan.md`](./v0.45.0-continuation-plan.md) — detailed
-  release continuation input; the central execution ledger decides its active
-  status.
-- [`v0.45.0-handoff.md`](./v0.45.0-handoff.md) — recent implementation handoff.
+  — historical detailed source/admission protocol, not a Corpus v1 prerequisite.
+- [`v0.45.0-continuation-plan.md`](./v0.45.0-continuation-plan.md) — superseded
+  scheduling record retained as implementation history.
+- [`v0.45.0-handoff.md`](./v0.45.0-handoff.md) — historical implementation handoff.
 - [`v0.45.0-execution-evidence.md`](./v0.45.0-execution-evidence.md) — dated
   evidence, not evergreen status.
 - [`artifact-classification.md`](./artifact-classification.md) — artifact
@@ -82,7 +104,7 @@ unknown/mixed cohort, but it cannot replace label evidence.
 Documents for v10.2 and older releases are historical reproduction context.
 Do not run their absolute-path commands for a current release decision.
 
-## Manifest-aware materialization
+## Historical v10.3 manifest-aware materialization
 
 The release-source boundary validates a manifest and checksum-pinned
 materialization before it writes a local checkout map:
@@ -101,7 +123,7 @@ This does not label, admit, train, calibrate, or publish anything. The checkout
 map is local-only; canonical artifacts bind its hash rather than publishing
 machine-specific paths.
 
-## Bounded smoke-input diagnostic
+## Historical v10.3 bounded smoke-input diagnostic
 
 After the approved owner/reviewer inputs exist, build the diagnostic smoke
 input through the explicit manifest boundary:
@@ -116,7 +138,7 @@ The output remains `diagnosticOnly=true`, `authorityEligible=false`, and
 `ready=false`. Success proves deterministic input construction, not corpus
 admission or release authorization.
 
-## Run control plane
+## Historical v10.3 run control plane
 
 For an eligible manifest generation, the local sequence is selection,
 no-clobber initialization, scan, verification, and report:
@@ -164,13 +186,15 @@ be rewritten as numeric metrics.
 
 ## Release interpretation
 
-Until an eligible cohort and metrics producer pass:
+The current Mendeley cohort and CAL-001 metrics path have passed their bounded
+internal checks. That does not activate rules or authorize release:
 
 - keep unmeasured candidate rules default-off;
 - expose historical point estimates as historical, with provenance unavailable
   where that is the truth;
 - do not claim AI authorship from a score or finding;
 - do not claim v0.45 is calibrated against v10.3;
+- keep CAL-001 decisions unapplied until explicit owner usefulness review;
 - continue shipping reliability/UX work only through the normal release gates.
 
 The goal is a smaller trustworthy corpus and rule surface before a larger one.

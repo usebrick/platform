@@ -129,7 +129,7 @@ publisher-labeled rows. Raw source size is never an admission count.
 
 Failure of one source quarantines that source and continues with another
 eligible source or a smaller honest corpus. It does not stop independent
-SlopBrick, website, MemoryBrick, or pilot work.
+SlopBrick, website, MemoryBrick, or owner-validation work.
 
 ## Allowed claims
 
@@ -142,6 +142,25 @@ It may not say "authorship proven," "human-written ground truth," "gold
 corpus," "v10.3 admitted," or imply that origin predicts code quality.
 Rule activation still requires the rule-specific acceptance criteria in the
 calibration plan; this ADR alone activates no rule or threshold.
+
+## Source use is not rule admission
+
+This ADR authorizes bounded source use at an explicit claim ceiling. It does
+not collapse later decisions:
+
+```text
+source permitted use != v10.3 gold admission
+source permitted use != redistribution approval
+source permitted use != usefulness review
+source permitted use != rule application
+```
+
+`CORPUS-002` implements this separation with a deterministic source policy and
+closed registry. The current Mendeley disposition is
+`publisher_attested` + `verified` + `internal_analysis`, which permits internal
+origin measurement and calibration evaluation. CAL-001 and owner review remain
+separate; no source disposition can set a threshold, activate a rule, or claim
+finding usefulness.
 
 ## Consequences
 

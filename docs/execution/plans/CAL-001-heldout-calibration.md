@@ -4,7 +4,7 @@
 - **Priority:** 5
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -24,10 +24,11 @@ one-worker scanner smoke completed with a path-free receipt at
 one-worker holdout completed with a path-free receipt at
 `docs/execution/evidence/CAL-001-calibration-holdout-receipt.md`; all 10,000
 eligible rows succeeded, the frozen split/leakage checks were clear, and v10.3
-still has zero admitted units. The non-admitting 119-row decision matrix is
-recorded at `docs/execution/evidence/CAL-001-calibration-decision-matrix.md`;
-usefulness review and any default-state/admission change remain intentionally
-unevaluated follow-up work.
+still has zero admitted units. The 119-row decision matrix at
+`docs/execution/evidence/CAL-001-calibration-decision-matrix.md` records
+`applied: false` and `admitted: false`; those fields do not revoke the source's
+permitted internal evaluation use. Usefulness review and any default-state or
+admission change remain separate follow-up work.
 
 ## Scope
 
@@ -95,5 +96,6 @@ failed-signal evidence.
 
 ## Next action
 
-Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol
-revision before any usefulness, threshold, default-state, or admission change.
+Keep the reviewed matrix `applied: false` and `admitted: false`. Route explicit
+repository-owner usefulness decisions through `VAL-001` before any threshold,
+default-state, or admission change.

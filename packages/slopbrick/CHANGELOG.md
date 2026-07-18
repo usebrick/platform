@@ -1,13 +1,19 @@
 # Changelog
 
-## [0.45.0] — unreleased; admission-bound calibration
+## [0.45.0] — unreleased; source-routed calibration and trust hardening
 
-This package version is a release candidate only. It is not published: the
-v10.3 corpus is still quarantine-only until the owner-supplied static-ledger
-and witness authority bundle passes the read-only census gate.
+This package version is a release candidate only. It is not published. Release
+authority remains the explicit SB-045 owner disposition plus the normal full
+gates; v10.3 still has zero admitted units but is not a prerequisite for the
+current publisher-attested internal Corpus v1 evaluation path.
 
 ### Added
 
+- Added deterministic evidence-tiered Corpus v1 source routing and a closed
+  source registry. The pinned Mendeley source is verified for internal origin
+  measurement and calibration evaluation; pending/reference-only sources fail
+  closed. Existing Corpus v1/CAL-001 hashes and every rule default remain
+  unchanged.
 - Added the v10.3.2 witness-bound manifest builder and private prerequisite,
   witness, and consumer trust boundaries.
 - Added the serial Node 22/24 packed-runtime gate. It uses one

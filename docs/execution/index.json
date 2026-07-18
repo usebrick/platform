@@ -259,7 +259,7 @@
     },
     {
       "id": "LOCK-001",
-      "title": "Pilot deterministic new-debt enforcement",
+      "title": "Validate deterministic new-debt enforcement",
       "track": "implementation",
       "lane": "lock",
       "horizon": "next",
@@ -332,7 +332,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "After paid LockBrick pilots, aggregate repeated multi-repository requirements without beginning enterprise infrastructure.",
+        "text": "After real external LockBrick use satisfies the demand gate, aggregate repeated multi-repository requirements without beginning enterprise infrastructure.",
         "verify": "test -f docs/execution/evidence/ENT-001-demand.md",
         "evidencePath": "docs/execution/evidence/ENT-001-demand.md"
       },

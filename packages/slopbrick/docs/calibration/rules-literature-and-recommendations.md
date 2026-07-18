@@ -3,9 +3,10 @@
 > **Historical/research-only (superseded):** this 2026-07-09 review describes
 > the v10.2/v5 exploratory calibration and does not establish current labels,
 > rule enablement, or release readiness. Its `DONE` statements are historical
-> implementation notes. Use the v10.3 admission plan and the v0.45
-> continuation plan for current authority; no signal change may rely on this
-> document alone.
+> implementation notes. Current authority is the execution index, CORPUS-002,
+> CAL-001, and VAL-001. v10.3 admission is not a prerequisite for current
+> internal Corpus v1 analysis; no signal change may rely on this document
+> alone.
 
 **Date:** 2026-07-09
 **Status:** Comprehensive review of all 119 slopbrick rules
