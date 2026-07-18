@@ -325,7 +325,7 @@ git commit -m "docs(execution): start source-use routing"
 - Consumes: no runtime dependencies beyond TypeScript built-ins.
 - Produces: `deriveCorpusV1SourceDisposition(input)` and `assertCorpusV1SourceUse(disposition, requestedUse)` plus exported authority, integrity, rights, use, claim-ceiling, input, and disposition types.
 
-- [ ] **Step 1: Write the failing policy test**
+- [x] **Step 1: Write the failing policy test**
 
 Create `packages/slopbrick/tests/calibration/corpus-v1-source-policy.test.ts`:
 
@@ -396,7 +396,7 @@ describe('Corpus v1 source-use policy', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify red**
+- [x] **Step 2: Run the focused test and verify red**
 
 Run:
 
@@ -406,7 +406,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-sou
 
 Expected: FAIL because `source-policy.ts` does not exist.
 
-- [ ] **Step 3: Implement the pure policy**
+- [x] **Step 3: Implement the pure policy**
 
 Create `packages/slopbrick/src/calibration/corpus-v1/source-policy.ts`:
 
@@ -495,7 +495,7 @@ export function assertCorpusV1SourceUse(
 }
 ```
 
-- [ ] **Step 4: Run focused tests and typecheck**
+- [x] **Step 4: Run focused tests and typecheck**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts --maxWorkers=1 --minWorkers=1
@@ -504,7 +504,7 @@ corepack pnpm --filter slopbrick typecheck
 
 Expected: focused test PASS; typecheck exits 0.
 
-- [ ] **Step 5: Commit the policy**
+- [x] **Step 5: Commit the policy**
 
 ```bash
 git add packages/slopbrick/src/calibration/corpus-v1/source-policy.ts packages/slopbrick/tests/calibration/corpus-v1-source-policy.test.ts
