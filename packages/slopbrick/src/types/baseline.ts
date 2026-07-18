@@ -29,6 +29,17 @@ export interface BaselineCache {
 }
 
 /** Durable finding-identity baseline used by the CI new-debt gate. */
+export interface DebtBaselineFindingSnapshot {
+  identity: string;
+  ruleId: string;
+  category: Category;
+  severity: Severity;
+  aiSpecific: boolean;
+  filePath?: string;
+  line: number;
+  column: number;
+}
+
 export interface DebtBaseline {
   kind: 'slopbrick-debt-baseline-v1';
   version: string;
@@ -37,6 +48,7 @@ export interface DebtBaseline {
   baseline_created: string;
   baseline_revision: number;
   finding_ids: string[];
+  finding_snapshots?: DebtBaselineFindingSnapshot[];
 }
 
 export interface NewDebtDecision {

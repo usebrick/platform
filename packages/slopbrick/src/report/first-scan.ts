@@ -14,6 +14,7 @@ import type {
   Severity,
 } from '../types';
 import { classifyFindingContext } from './finding-context';
+import { compareFindingBaseline } from './finding-delta';
 import { findingIdentity, repositoryRelativeFindingLocation } from './finding-identity';
 
 export const FIRST_SCAN_AREA_BY_CATEGORY: Record<Category, FirstScanAreaId> = {
@@ -300,8 +301,79 @@ export function projectFirstScan(
   options: ProjectFirstScanOptions,
 ): FirstScanExperience {
   const activeIssues = report.issues.filter((issue) => (issue.severity as string) !== 'off');
-  const findings = activeIssues.map((issue) => projectFinding(issue, options.cwd));
   const status = scanStatus(report);
+  const projectedFindings = activeIssues.map((issue) => projectFinding(issue, options.cwd));
+  const comparison = status === 'complete'
+    && options.baselineState === 'loaded'
+    && options.baseline
+    ? compareFindingBaseline(report, options.baseline, options.cwd, options.configHash)
+    : undefined;
+  const findings = comparison?.status === 'compared'
+    ? projectedFindings.map((finding) => ({
+        ...finding,
+        change: comparison.findingChanges.get(finding.identity) ?? 'current',
+      }))
+    : projectedFindings;
+  const delta: FirstScanExperience['delta'] = (() => {
+    if (status !== 'complete') {
+      return {
+        kind: 'slopbrick-finding-delta-v1',
+        status: 'not-evaluated',
+        reason: status === 'incomplete' ? 'incomplete-scan' : 'no-files-analyzed',
+        currentCount: findings.length,
+        summary: `Finding delta not evaluated: scan status is ${status}.`,
+      };
+    }
+    if (options.baselineState === 'missing' || options.baselineState === 'invalid') {
+      const reason = options.baselineState === 'missing'
+        ? 'missing-baseline' as const
+        : 'invalid-baseline' as const;
+      return {
+        kind: 'slopbrick-finding-delta-v1',
+        status: 'unavailable',
+        reason,
+        currentCount: findings.length,
+        summary: options.baselineState === 'missing'
+          ? 'Finding delta unavailable: durable debt baseline is missing.'
+          : 'Finding delta unavailable: durable debt baseline is invalid.',
+      };
+    }
+    if (options.baselineState === 'loaded' && !options.baseline) {
+      return {
+        kind: 'slopbrick-finding-delta-v1',
+        status: 'unavailable',
+        reason: 'invalid-baseline',
+        currentCount: findings.length,
+        summary: 'Finding delta unavailable: durable debt baseline is invalid.',
+      };
+    }
+    if (comparison) {
+      const { findingChanges: _changes, resolvedSnapshots, ...comparedDelta } = comparison;
+      return {
+        ...comparedDelta,
+        ...(resolvedSnapshots
+          ? {
+              resolved: resolvedSnapshots.map((snapshot) => ({
+                identity: snapshot.identity,
+                ruleId: snapshot.ruleId,
+                area: FIRST_SCAN_AREA_BY_CATEGORY[snapshot.category],
+                severity: snapshot.severity,
+                aiSpecific: snapshot.aiSpecific,
+                ...(snapshot.filePath ? { filePath: snapshot.filePath } : {}),
+                line: snapshot.line,
+                column: snapshot.column,
+              })),
+            }
+          : {}),
+      };
+    }
+    return {
+      kind: 'slopbrick-finding-delta-v1',
+      status: 'not-evaluated',
+      currentCount: findings.length,
+      summary: 'Finding delta has not been evaluated.',
+    };
+  })();
   return {
     kind: 'slopbrick-first-scan-v1',
     status,
@@ -309,15 +381,6 @@ export function projectFirstScan(
     areas: projectAreas(findings),
     findings,
     recommendedActions: status === 'complete' ? projectRecommendations(findings) : [],
-    delta: {
-      kind: 'slopbrick-finding-delta-v1',
-      status: 'not-evaluated',
-      ...(status === 'incomplete' ? { reason: 'incomplete-scan' as const } : {}),
-      ...(status === 'not-applicable' ? { reason: 'no-files-analyzed' as const } : {}),
-      currentCount: findings.length,
-      summary: status === 'complete'
-        ? 'Finding delta has not been evaluated.'
-        : `Finding delta not evaluated: scan status is ${status}.`,
-    },
+    delta,
   };
 }

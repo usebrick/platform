@@ -10,6 +10,7 @@ import {
 } from '../../src/report/finding-identity';
 import type { FirstScanExperience } from '../../src/types/first-scan';
 import type { Category, Issue, ProjectReport } from '../../src/types';
+import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
 
 const CATEGORIES: Category[] = [
   'visual',
@@ -289,6 +290,110 @@ describe('first-scan public contract', () => {
     })));
     expect(result.findings).toEqual([]);
     expect(result.recommendedActions).toEqual([]);
+  });
+
+  it.each([
+    ['missing', 'missing-baseline'],
+    ['invalid', 'invalid-baseline'],
+  ] as const)('maps a %s durable baseline to an unavailable delta', (baselineState, reason) => {
+    const result = projectFirstScan(report({ issues: [issue('logic')] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState,
+    });
+
+    expect(result.delta).toMatchObject({
+      status: 'unavailable',
+      reason,
+      currentCount: 1,
+    });
+    expect(result.findings[0]?.change).toBe('current');
+  });
+
+  it('projects new, unchanged, and resolved findings from a compatible baseline', () => {
+    const unchanged = issue('logic', {
+      ruleId: 'logic/unchanged',
+      filePath: '/workspace/src/unchanged.ts',
+      message: 'Unchanged finding.',
+    });
+    const resolved = issue('visual', {
+      ruleId: 'visual/resolved',
+      severity: 'medium',
+      aiSpecific: true,
+      filePath: '/workspace/src/resolved.tsx',
+      message: 'Resolved finding.',
+    });
+    const introduced = issue('security', {
+      ruleId: 'security/new',
+      severity: 'high',
+      filePath: '/workspace/src/new.ts',
+      message: 'New finding.',
+    });
+    const baseline = buildDebtBaseline(
+      report({ issues: [unchanged, resolved] }),
+      '/workspace',
+      'config-a',
+      'commit-a',
+    );
+
+    const result = projectFirstScan(report({ issues: [unchanged, introduced] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState: 'loaded',
+      baseline,
+    });
+    const changes = Object.fromEntries(
+      result.findings.map(({ ruleId, change }) => [ruleId, change]),
+    );
+
+    expect(changes).toEqual({
+      'logic/unchanged': 'unchanged',
+      'security/new': 'new',
+    });
+    expect(result.delta).toMatchObject({
+      status: 'compared',
+      baselineRevision: 2,
+      currentCount: 2,
+      baselineCount: 2,
+      newCount: 1,
+      unchangedCount: 1,
+      resolvedCount: 1,
+      resolvedDetails: 'available',
+      resolved: [{
+        identity: findingIdentity(resolved, '/workspace'),
+        ruleId: 'visual/resolved',
+        area: 'visual-slop',
+        severity: 'medium',
+        aiSpecific: true,
+        filePath: 'src/resolved.tsx',
+        line: 1,
+        column: 1,
+      }],
+    });
+    expect(result.recommendedActions.map(({ change }) => change)).toContain('new');
+  });
+
+  it('leaves findings current when the loaded baseline config is incompatible', () => {
+    const current = issue('logic', { ruleId: 'logic/current' });
+    const baseline = buildDebtBaseline(
+      report({ issues: [current] }),
+      '/workspace',
+      'config-a',
+      'commit-a',
+    );
+    const result = projectFirstScan(report({ issues: [current] }), {
+      cwd: '/workspace',
+      configHash: 'config-b',
+      baselineState: 'loaded',
+      baseline,
+    });
+
+    expect(result.delta).toMatchObject({
+      status: 'incompatible',
+      reason: 'config-mismatch',
+      currentCount: 1,
+    });
+    expect(result.findings[0]?.change).toBe('current');
   });
 
   it.each([
