@@ -243,15 +243,235 @@ function unitId(ruleId: string, familyId: string): string {
   return `cal002-${ruleId.replace('/', '-')}-${familyId}`;
 }
 
-function controlSourceVariants(safeSource: string): Record<(typeof CONTROL_FAMILIES)[number], string> {
-  return {
-    baseline: safeSource,
-    'alternate-syntax': `(() => {\n${safeSource}\n})();`,
-    'comment-adjacent': `/* CAL-002 source control */\n${safeSource}`,
-    'near-miss': `if (true) {\n${safeSource}\n}`,
-    'regression-safe': `try {\n${safeSource}\n} finally {\n  void 0;\n}`,
-  };
-}
+export const CAL002_ORACLE_CONTROL_SOURCES = {
+  'context/import-path-mismatch': {
+    baseline: "import { Button } from '@/components/Button';",
+    'alternate-syntax': 'import type { ButtonProps } from "@/components/Button";',
+    'comment-adjacent': "// Use the canonical component alias.\nimport { Card } from '@/components/Card';",
+    'near-miss': "import { formatDate } from './format-date';",
+    'regression-safe': "import { z } from 'zod';",
+  },
+  'cs/async-without-await': {
+    baseline: 'async Task Save() { await SaveAsync(); }',
+    'alternate-syntax': 'async ValueTask<int> CountAsync() { return await CountCoreAsync(); }',
+    'comment-adjacent': 'async Task Refresh() { // Keep the asynchronous boundary explicit.\n  await RefreshAsync();\n}',
+    'near-miss': 'Task Save() { return SaveAsync(); }',
+    'regression-safe': 'async Task Copy() { await using var stream = await OpenAsync(); await stream.FlushAsync(); }',
+  },
+  'cs/empty-catch-block': {
+    baseline: 'try { Work(); } catch (Exception error) { logger.LogError(error, "work failed"); }',
+    'alternate-syntax': 'try { Work(); } catch (Exception) { Recover(); }',
+    'comment-adjacent': 'try { Work(); } catch (IOException error) { // Preserve operational context.\n  throw new InvalidOperationException("read failed", error);\n}',
+    'near-miss': 'try { Work(); } catch (TimeoutException error) when (error.IsTransient) { Retry(); }',
+    'regression-safe': 'try { Work(); } catch (Exception error) { throw new WorkerException("work failed", error); }',
+  },
+  'cs/sql-string-interpolation': {
+    baseline: 'using var command = new SqlCommand("SELECT * FROM users WHERE id = @id", connection);\ncommand.Parameters.Add("@id", SqlDbType.Int).Value = userId;',
+    'alternate-syntax': 'var users = db.Users.FromSqlInterpolated($"SELECT * FROM users WHERE id = {userId}");',
+    'comment-adjacent': '// Bind values separately from SQL text.\ncommand.Parameters.Add(new SqlParameter("@id", userId));',
+    'near-miss': 'var message = $"Selected user {userId}";',
+    'regression-safe': 'var command = new SqlCommand("SELECT * FROM users WHERE id = @id", connection);\ncommand.Parameters.AddWithValue("@id", userId);',
+  },
+  'docs/broken-link': {
+    baseline: '[Guide](https://example.test/guide)',
+    'alternate-syntax': '[Guide][guide]\n\n[guide]: https://example.test/guide',
+    'comment-adjacent': '<!-- The guide is hosted externally. -->\n[API guide](https://example.test/api)',
+    'near-miss': '[Installation](#installation)',
+    'regression-safe': '[Support](mailto:support@example.test)',
+  },
+  'docs/stale-function-reference': {
+    baseline: 'Call `renderWidget()` to begin.',
+    'alternate-syntax': 'Invoke `renderWidget` after initialization.',
+    'comment-adjacent': '<!-- renderWidget is part of the current export surface. -->\nUse `renderWidget()` for the first render.',
+    'near-miss': 'Render the widget after initialization.',
+    'regression-safe': 'The supported renderer remains `renderWidget()`.',
+  },
+  'docs/stale-package-reference': {
+    baseline: 'Install `slopbrick` before running.',
+    'alternate-syntax': 'Run `pnpm add slopbrick` in the workspace.',
+    'comment-adjacent': '<!-- slopbrick is declared by the workspace manifest. -->\nImport from `slopbrick` in scanner examples.',
+    'near-miss': 'Use the `scan` function for local analysis.',
+    'regression-safe': 'The supported package is `slopbrick`.',
+  },
+  'dup/identical-block': {
+    baseline: 'const total = price * quantity;\nconst tax = total * rate;',
+    'alternate-syntax': 'const subtotal = items.reduce((sum, item) => sum + item.price, 0);\nconst total = subtotal + shipping;',
+    'comment-adjacent': '// Calculate each stage once.\nconst net = gross - discount;\nconst receipt = formatReceipt(net);',
+    'near-miss': 'const width = box.right - box.left;\nconst height = box.bottom - box.top;',
+    'regression-safe': 'function subtotal(items) { return items.reduce((sum, item) => sum + item.price, 0); }',
+  },
+  'java/lost-stack-trace': {
+    baseline: 'try { read(); } catch (IOException error) { throw new RuntimeException("read failed", error); }',
+    'alternate-syntax': 'try { read(); } catch (IOException error) { logger.error("read failed", error); throw error; }',
+    'comment-adjacent': 'try { read(); } catch (IOException error) { // Retain the original cause.\n  throw new UncheckedIOException(error);\n}',
+    'near-miss': 'try { read(); } catch (IOException error) { logger.warn("read failed", error); recover(); }',
+    'regression-safe': 'try { read(); } catch (IOException | SecurityException error) { throw new IllegalStateException("read failed", error); }',
+  },
+  'java/sql-string-concat': {
+    baseline: 'PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE id = ?");\nstatement.setLong(1, userId);',
+    'alternate-syntax': 'var query = entityManager.createQuery("SELECT u FROM User u WHERE u.id = :id", User.class);\nquery.setParameter("id", userId);',
+    'comment-adjacent': '// Bind the value through JDBC.\nPreparedStatement statement = connection.prepareStatement("SELECT name FROM users WHERE id = ?");',
+    'near-miss': 'String message = "Selected user " + userId;',
+    'regression-safe': 'String sql = "SELECT * FROM users WHERE id = ?";\nPreparedStatement statement = connection.prepareStatement(sql);',
+  },
+  'java/thread-sleep-in-loop': {
+    baseline: 'while (running) { processNext(); }',
+    'alternate-syntax': 'for (Task task : tasks) { executor.submit(task); }',
+    'comment-adjacent': 'while (queue.hasNext()) { // Processing is non-blocking.\n  queue.processNext();\n}',
+    'near-miss': 'Thread.sleep(backoffMillis);\nretryOnce();',
+    'regression-safe': 'scheduler.scheduleWithFixedDelay(this::poll, 0, 100, TimeUnit.MILLISECONDS);',
+  },
+  'kt/coroutine-cancellation-missing': {
+    baseline: 'scope.launch { ensureActive(); refresh() }',
+    'alternate-syntax': 'scope.launch { while (isActive) { syncOnce(); yield() } }',
+    'comment-adjacent': 'scope.launch { // Cooperate with parent cancellation.\n  currentCoroutineContext().ensureActive()\n  refresh()\n}',
+    'near-miss': 'suspend fun refresh() = withContext(Dispatchers.IO) { load() }',
+    'regression-safe': 'val result = scope.async { delay(10); load() }',
+  },
+  'kt/force-unwrap': {
+    baseline: 'val name = user?.name',
+    'alternate-syntax': 'val name = user?.name ?: "Guest"',
+    'comment-adjacent': '// Validate nullability at the boundary.\nval name = requireNotNull(user).name',
+    'near-miss': 'val name = if (user == null) "Guest" else user.name',
+    'regression-safe': 'user?.let { render(it.name) }',
+  },
+  'kt/global-coroutine-scope': {
+    baseline: 'viewModelScope.launch { ensureActive(); refresh() }',
+    'alternate-syntax': 'lifecycleScope.launch { delay(1); refresh() }',
+    'comment-adjacent': '// The injected scope is tied to this component.\nscope.launch { currentCoroutineContext().ensureActive(); refresh() }',
+    'near-miss': 'coroutineScope { launch { yield(); refresh() } }',
+    'regression-safe': 'supervisorScope { async { delay(1); refresh() }.await() }',
+  },
+  'kt/string-template-injection': {
+    baseline: 'val sql = "SELECT * FROM users WHERE id = ?"\nstatement.setLong(1, userId)',
+    'alternate-syntax': 'val user = Users.select { Users.id eq userId }.single()',
+    'comment-adjacent': '// Keep values outside SQL text.\nval query = connection.prepareStatement("SELECT name FROM users WHERE id = ?")',
+    'near-miss': 'val message = "Selected user $userId"',
+    'regression-safe': 'val query = entityManager.createQuery("SELECT u FROM User u WHERE u.id = :id")\nquery.setParameter("id", userId)',
+  },
+  'logic/key-prop-missing': {
+    baseline: 'items.map((item) => <li key={item.id}>{item.name}</li>)',
+    'alternate-syntax': 'items.map(({ id, name }) => <Row key={id} name={name} />)',
+    'comment-adjacent': 'items.map((item) => (\n  // Stable repository identifier.\n  <Card key={item.slug} item={item} />\n))',
+    'near-miss': '<ul><li>First</li><li>Second</li></ul>',
+    'regression-safe': 'items.map((item) => <Fragment key={item.id}><dt>{item.name}</dt><dd>{item.value}</dd></Fragment>)',
+  },
+  'perf/cls-image': {
+    baseline: '<img src="hero.png" alt="Hero" loading="lazy" width="800" height="600" />',
+    'alternate-syntax': '<img src="hero.png" alt="Hero" loading="lazy" className="aspect-video" />',
+    'comment-adjacent': '{/* Intrinsic dimensions reserve layout space. */}\n<img src="avatar.png" alt="Profile" loading="lazy" width="96" height="96" />',
+    'near-miss': '<img src="logo.png" alt="Company" loading="eager" />',
+    'regression-safe': '<picture><source srcSet="hero.webp" type="image/webp" /><img src="hero.png" alt="Hero" loading="lazy" width="1200" height="675" /></picture>',
+  },
+  'php/empty-catch': {
+    baseline: '<?php\ntry { work(); } catch (Throwable $error) { report($error); }',
+    'alternate-syntax': '<?php\ntry { work(); } catch (RuntimeException $error) { throw new DomainException("work failed", 0, $error); }',
+    'comment-adjacent': '<?php\ntry { work(); } catch (Throwable $error) { // Preserve failure context.\n    logger()->error("work failed", ["exception" => $error]);\n}',
+    'near-miss': '<?php\ntry { work(); } finally { cleanup(); }',
+    'regression-safe': '<?php\ntry { work(); } catch (Throwable $error) { return Result::failure($error); }',
+  },
+  'php/sql-injection': {
+    baseline: '<?php\n$statement = $pdo->prepare("SELECT * FROM users WHERE id = ?");\n$statement->execute([$userId]);',
+    'alternate-syntax': '<?php\n$statement = $pdo->prepare("SELECT * FROM users WHERE id = :id");\n$statement->bindValue(":id", $userId, PDO::PARAM_INT);',
+    'comment-adjacent': '<?php\n// Bind request data instead of concatenating it.\n$statement = $pdo->prepare("SELECT name FROM users WHERE id = ?");',
+    'near-miss': '<?php\n$message = "Selected user " . $userId;',
+    'regression-safe': '<?php\n$statement = $mysqli->prepare("SELECT * FROM users WHERE id = ?");\n$statement->bind_param("i", $userId);',
+  },
+  'rb/exception-swallowing': {
+    baseline: 'begin; work; rescue StandardError => error; raise error; end',
+    'alternate-syntax': 'begin\n  work\nrescue IOError => error; logger.error(error); retry\nend',
+    'comment-adjacent': '# Convert the failure into an explicit result.\nbegin; work; rescue StandardError => error; Result.failure(error); end',
+    'near-miss': 'begin\n  work\nensure\n  cleanup\nend',
+    'regression-safe': 'begin; work; rescue NetworkError => error; raise ServiceUnavailable, error.message; end',
+  },
+  'rb/sql-string-concat': {
+    baseline: 'User.where(id: user_id)',
+    'alternate-syntax': 'User.where("id = ?", user_id)',
+    'comment-adjacent': '# Active Record binds the value.\nUser.find_by(id: user_id)',
+    'near-miss': 'message = "Selected user #{user_id}"',
+    'regression-safe': 'User.where("email = :email", email: email)',
+  },
+  'security/eval': {
+    baseline: 'const result = parseExpression(userExpression);',
+    'alternate-syntax': 'const data = JSON.parse(payload);',
+    'comment-adjacent': '// Parse against the expression grammar.\nconst ast = expressionParser.parse(source);',
+    'near-miss': 'const evaluated = interpreter.run(program);',
+    'regression-safe': 'const worker = new Worker("expression-worker.js");',
+  },
+  'security/exposed-env-var': {
+    baseline: 'const endpoint = import.meta.env.VITE_API_URL;',
+    'alternate-syntax': 'const endpoint = process.env.NEXT_PUBLIC_API_URL;',
+    'comment-adjacent': '// This variable contains a public feature switch.\nconst enabled = import.meta.env.VITE_FEATURE_ENABLED;',
+    'near-miss': 'const secret = process.env.OPENAI_API_KEY;',
+    'regression-safe': 'const appName = import.meta.env.PUBLIC_APP_NAME;',
+  },
+  'security/localstorage-token': {
+    baseline: 'localStorage.setItem("theme", theme);',
+    'alternate-syntax': "sessionStorage.setItem('lang', locale);",
+    'comment-adjacent': '// Persist presentation state only.\nlocalStorage.setItem("sidebar", sidebarState);',
+    'near-miss': 'const accessToken = await requestAccessToken();',
+    'regression-safe': 'localStorage.setItem("settings", JSON.stringify(settings));',
+  },
+  'security/missing-auth-check': {
+    baseline: 'export async function GET() { const session = await getServerSession(); return listOrders(session.user.id); }',
+    'alternate-syntax': 'app.get("/api/orders", requireAuth, listOrders);',
+    'comment-adjacent': 'export async function POST(request) { // Authenticate before mutation.\n  const user = await requireUser(request);\n  return createOrder(user);\n}',
+    'near-miss': 'export const GET = withAuth(async (request) => listOrders(request.user));',
+    'regression-safe': 'router.get("/api/orders", async (request, response) => { await jwt.verify(request.cookies.session); response.json(await listOrders()); });',
+  },
+  'security/public-admin-route': {
+    baseline: 'app.get("/admin", requireAdmin, renderAdmin);',
+    'alternate-syntax': 'export async function GET(request) { await requireRole(request, "admin"); return listUsers(); }',
+    'comment-adjacent': 'router.post("/manage/users", async (request, response) => { // Enforce RBAC before mutation.\n  await rbac.requirePermission(request.user, "users:write");\n  response.json(await updateUser(request.body));\n});',
+    'near-miss': 'export async function GET(request) { if (!isAdmin(request.user)) return forbidden(); return dashboard(); }',
+    'regression-safe': 'app.delete("/internal/jobs/:id", requirePermission("jobs:delete"), deleteJob);',
+  },
+  'security/target-blank-no-noopener': {
+    baseline: '<a href="https://example.test" target="_blank" rel="noopener">Open</a>',
+    'alternate-syntax': "<a rel='noreferrer' target='_blank' href='https://example.test'>Open</a>",
+    'comment-adjacent': '<!-- Isolate the new browsing context. -->\n<a href="https://example.test/docs" target="_blank" rel="noopener noreferrer">Docs</a>',
+    'near-miss': '<a href="/settings">Settings</a>',
+    'regression-safe': '<a href="https://example.test" target="_self">Open here</a>',
+  },
+  'security/unsafe-html-render': {
+    baseline: '<div dangerouslySetInnerHTML={{ __html: "<strong>Safe</strong>" }} />',
+    'alternate-syntax': "<div dangerouslySetInnerHTML={{ __html: '<em>Safe</em>' }} />",
+    'comment-adjacent': '{/* Static application-owned markup. */}\n<div dangerouslySetInnerHTML={{ __html: "<span>Ready</span>" }} />',
+    'near-miss': '<div>{userHtml}</div>',
+    'regression-safe': '<section dangerouslySetInnerHTML={{ __html: `<p>Static copy</p>` }} />',
+  },
+  'typo/placeholder-text': {
+    baseline: '<input placeholder="Search products" />',
+    'alternate-syntax': "<input placeholder={'Email address'} />",
+    'comment-adjacent': '{/* Describe the expected value. */}\n<input placeholder="Order number" />',
+    'near-miss': '<label>Search<input name="query" /></label>',
+    'regression-safe': '<textarea placeholder="Describe the issue" />',
+  },
+  'wcag/focus-appearance': {
+    baseline: '<button className="focus-visible:ring-2">Save</button>',
+    'alternate-syntax': '<a href="/settings" className="outline-none focus-visible:ring-4">Settings</a>',
+    'comment-adjacent': '{/* Preserve a visible keyboard focus indicator. */}\n<button className="outline-none focus-visible:ring-2 focus-visible:ring-blue-600">Continue</button>',
+    'near-miss': '<div className="outline-none">Decorative panel</div>',
+    'regression-safe': '<input className="focus:outline-none focus-visible:ring-2" aria-label="Search" />',
+  },
+  'wcag/focus-obscured': {
+    baseline: '<header className="relative">Menu</header>',
+    'alternate-syntax': '<nav className="absolute inset-x-0 top-0">Menu</nav>',
+    'comment-adjacent': '{/* Keep navigation in normal document flow. */}\n<header className="block">Menu</header>',
+    'near-miss': '<header className="sticky-top">Menu</header>',
+    'regression-safe': '<aside className="fixed fixed-height">Filters</aside>',
+  },
+  'wcag/missing-alt': {
+    baseline: '<img src="chart.png" alt="Revenue by month" />',
+    'alternate-syntax': "<img alt='Team portrait' src='team.png' />",
+    'comment-adjacent': '{/* Concise alternative text names the content. */}\n<img src="map.png" alt="Map of service regions" />',
+    'near-miss': '<img src="divider.png" alt="" />',
+    'regression-safe': '<img src="texture.png" role="presentation" />',
+  },
+} as const satisfies Record<
+  CAL002DeterministicRuleId,
+  Record<(typeof CONTROL_FAMILIES)[number], string>
+>;
 
 export const CAL002_ORACLE_DECLARATIONS: readonly CAL002OracleDeclaration[] = RULE_FIXTURES.map((fixture) => ({
   ruleId: fixture.ruleId,
@@ -283,7 +503,7 @@ export const CAL002_ORACLE_MUTATION_CASES: readonly CAL002OracleMutationCase[] =
 
 export const CAL002_ORACLE_SOURCE_CONTROLS: readonly CAL002OracleSourceControlFixture[] = RULE_FIXTURES.flatMap((fixture) =>
   CONTROL_FAMILIES.map((familyId) => {
-    const source = controlSourceVariants(fixture.negativeSource)[familyId];
+    const source = CAL002_ORACLE_CONTROL_SOURCES[fixture.ruleId][familyId];
     return {
       ruleId: fixture.ruleId,
       unitId: unitId(fixture.ruleId, familyId),
