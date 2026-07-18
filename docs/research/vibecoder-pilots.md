@@ -1,21 +1,30 @@
 # Vibecoder pilot protocol
 
-**Status:** template only — 0 sessions scheduled, 0 completed
+**Status:** parked template — 0 sessions scheduled, 0 completed; recruitment not authorized
 **Owner:** usebrick product
 **Plan:** [`GTM-001`](../execution/plans/GTM-001-vibecoder-pilots.md)
-**Updated:** 2026-07-17
+**Updated:** 2026-07-18
 
 ## Reason for existence
 
-Provide one consent-safe, repeatable record for five AI-assisted builders to
-run the SlopBrick scan-to-rescan loop. This file is a protocol and blank
-outcome template; it is not evidence that pilots occurred and it must never
-be populated with invented sessions.
+Preserve one consent-safe protocol for a possible future, separately authorized
+external-participant study. This file is dormant reference material and a
+blank outcome template; it is not evidence that pilots occurred and must never
+be populated from owner-only, synthetic, inferred, or invented sessions.
+
+## Parked authorization boundary
+
+No participant recruitment, scheduling, consent collection, or data recording
+is authorized. The repository owner is the only current product tester, and
+owner-run scan-to-rescan evidence belongs in `VAL-001`, not this file. A future
+external study requires a new owner-approved execution revision that defines
+its purpose and scale before anyone is contacted.
 
 ## Study question
 
-Can a vibecoder install SlopBrick, understand one useful evidenced finding,
-make a change, and rescan without needing hosted access or source upload?
+If a future external study is authorized: can a vibecoder install SlopBrick,
+understand one useful evidenced finding, make a change, and rescan without
+needing hosted access or source upload?
 
 The study observes activation and trust. It does not produce AI/human labels,
 calibration data, or claims about detector precision.
@@ -37,9 +46,10 @@ calibration data, or claims about detector precision.
 - Record only bounded categories and short paraphrases. If a note contains
   source or identity, delete the note before saving this file.
 
-## Recruitment boundary
+## Dormant recruitment boundary
 
-Recruit 10–15 candidates to complete five sessions. A candidate must:
+No candidates may be recruited under the current plan. If a future revision
+authorizes recruitment, each candidate must:
 
 1. use an AI-assisted frontend or application development workflow;
 2. be able to run a local Node.js CLI on a repository they control; and
@@ -63,7 +73,7 @@ withdrawn session is not a completed pilot.
 
 ## Session procedure
 
-Use the same sequence for every participant.
+Only after a future authorization, use the same sequence for every participant.
 
 1. Confirm consent and explain that no source or identity will be recorded.
 2. Ask the participant to install or invoke the documented local package.
@@ -72,7 +82,7 @@ Use the same sequence for every participant.
 5. Ask them to make one change using their normal workflow.
 6. Ask them to rescan and describe whether the change was reflected.
 7. Ask whether they would enable a new-debt-only CI check, and why.
-8. Assign only a pseudonymous session ID (`P01`–`P05`) after consent.
+8. Assign only a pseudonymous session ID after consent.
 9. Record the bounded row fields below; do not paste terminal output.
 
 Use outcome categories rather than raw explanations:
@@ -90,16 +100,11 @@ Use outcome categories rather than raw explanations:
 
 ## Outcome template
 
-One row is created only after consent. Blank rows are placeholders, not
-participants.
+One row may be created only after future authorization and consent. The empty
+table is not a participant record.
 
 | Session | Consent | Status | Install | Scan | First finding | Trust issue | Fix | Rescan | Abandonment | CI interest | Bounded note |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P01 | — | `unscheduled` | — | — | — | — | — | — | — | — | — |
-| P02 | — | `unscheduled` | — | — | — | — | — | — | — | — | — |
-| P03 | — | `unscheduled` | — | — | — | — | — | — | — | — | — |
-| P04 | — | `unscheduled` | — | — | — | — | — | — | — | — | — |
-| P05 | — | `unscheduled` | — | — | — | — | — | — | — | — | — |
 
 `Bounded note` is limited to one sentence without source, identity, path,
 verbatim output, or unsupported inference. Examples: “Could not tell why the
@@ -119,7 +124,7 @@ finding applied” and “Asked whether the result would block a pull request.�
 
 ## Synthesis rules
 
-After five completed rows:
+If a future authorized study produces completed rows:
 
 1. Count install, scan, useful-finding, fix, rescan, abandonment, and CI
    outcomes from this table only.
@@ -141,5 +146,6 @@ test -f docs/research/vibecoder-pilots.md
 rg -n '^## (Reason for existence|Non-negotiable boundaries|Outcome template|Synthesis rules|Verification and next step)$' docs/research/vibecoder-pilots.md
 ```
 
-Next step: schedule the first pilot using the consent script. Do not mark any
-row `scheduled` or `completed` until a real participant has consented.
+Next step: preserve this parked template. Do not contact, schedule, or record a
+participant unless the repository owner first authorizes a new external-study
+execution revision; owner-only testing remains in `VAL-001`.

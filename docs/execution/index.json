@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 18,
+  "revision": 19,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -91,28 +91,32 @@
       ]
     },
     {
-      "id": "GTM-001",
-      "title": "Validate the vibecoder scan-to-rescan loop",
-      "track": "company",
-      "lane": "adoption",
+      "id": "CORPUS-002",
+      "title": "Route Corpus v1 sources by evidence and permitted use",
+      "track": "implementation",
+      "lane": "corpus",
       "horizon": "now",
-      "status": "ready",
+      "status": "in_progress",
       "priority": 3,
-      "path": "docs/execution/plans/GTM-001-vibecoder-pilots.md",
+      "path": "docs/execution/plans/CORPUS-002-source-use-routing.md",
       "dependencies": {
-        "requires": [],
+        "requires": [
+          "CORPUS-001"
+        ],
         "externalGates": [],
         "benefitsFrom": [
-          "SB-045"
+          "CAL-001"
         ],
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Recruit the first five vibecoder pilots using the consent-safe template before the first scan.",
-        "verify": "test -f docs/research/vibecoder-pilots.md",
-        "evidencePath": "docs/research/vibecoder-pilots.md"
+        "text": "Write the failing source-policy matrix test and prove the requested-use router does not yet exist.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/corpus-v1-source-policy.test.ts --maxWorkers=1 --minWorkers=1",
+        "evidencePath": "docs/execution/evidence/CORPUS-002-source-disposition.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-18-corpus-source-use-routing-design.md"
+      ]
     },
     {
       "id": "CORPUS-001",
@@ -161,7 +165,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol revision before any usefulness, threshold, default-state, or admission change.",
+        "text": "Keep the reviewed matrix applied: false and admitted: false; use VAL-001 for explicit owner usefulness review before any rule-state change.",
         "verify": "test -f docs/execution/evidence/CAL-001-calibration-decision-matrix.md",
         "evidencePath": "docs/execution/evidence/CAL-001-calibration-decision-matrix.md"
       },
@@ -187,7 +191,7 @@
         ],
         "externalGates": [],
         "benefitsFrom": [
-          "GTM-001"
+          "VAL-001"
         ],
         "conflictsWith": []
       },
@@ -213,7 +217,7 @@
         ],
         "externalGates": [],
         "benefitsFrom": [
-          "GTM-001"
+          "VAL-001"
         ],
         "conflictsWith": []
       },
@@ -269,7 +273,7 @@
         "externalGates": [],
         "benefitsFrom": [
           "MEM-001",
-          "GTM-001"
+          "VAL-001"
         ],
         "conflictsWith": []
       },
@@ -317,10 +321,11 @@
       "path": "docs/execution/plans/ENT-001-demand-gate.md",
       "dependencies": {
         "requires": [
-          "LOCK-001",
-          "GTM-001"
+          "LOCK-001"
         ],
-        "externalGates": [],
+        "externalGates": [
+          "future-external-demand-evidence"
+        ],
         "benefitsFrom": [
           "MEM-001"
         ],
@@ -360,6 +365,54 @@
       "evidence": [
         "docs/archive/README.md"
       ]
+    },
+    {
+      "id": "VAL-001",
+      "title": "Validate the scan-to-rescan loop with the repository owner",
+      "track": "implementation",
+      "lane": "validation",
+      "horizon": "next",
+      "status": "ready",
+      "priority": 13,
+      "path": "docs/execution/plans/VAL-001-owner-validation.md",
+      "dependencies": {
+        "requires": [
+          "CAL-001"
+        ],
+        "externalGates": [],
+        "benefitsFrom": [
+          "CORPUS-002"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Run the first real owner-controlled scan walkthrough and record it only after the owner performs it.",
+        "verify": "test -f docs/execution/evidence/VAL-001-owner-validation.md",
+        "evidencePath": "docs/execution/evidence/VAL-001-owner-validation.md"
+      },
+      "evidence": []
+    },
+    {
+      "id": "GTM-001",
+      "title": "Preserve the dormant vibecoder participant protocol",
+      "track": "company",
+      "lane": "adoption",
+      "horizon": "later",
+      "status": "parked",
+      "priority": 14,
+      "path": "docs/execution/plans/GTM-001-vibecoder-pilots.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Preserve the dormant consent-safe protocol; do not recruit unless the owner later authorizes external participant research.",
+        "verify": "test -f docs/research/vibecoder-pilots.md",
+        "evidencePath": "docs/research/vibecoder-pilots.md"
+      },
+      "evidence": []
     }
   ]
 }

@@ -4,7 +4,7 @@
 - **Priority:** 7
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -39,7 +39,7 @@ plan.
 ## Dependencies
 
 - `requires`: `SB-045`
-- `benefitsFrom`: `GTM-001`
+- `benefitsFrom`: `VAL-001`
 
 ## Acceptance criteria
 

@@ -118,8 +118,7 @@ No product behavior or remote state should change in this plan.
 ## Next action
 
 Present the numbered inventory to the repository owner and wait for exact
-approval while `SB-045`, `CORPUS-001`, and the independent company lane
-continue.
+approval while `SB-045`, `CORPUS-002`, and owner-only validation work continue.
 
 ## Waiting external
 
@@ -131,5 +130,5 @@ continue.
 - **Resume condition:** The evidence file records an unambiguous disposition
   for every approved numbered entry.
 - **Recheck:** `git status --short` plus a byte/hash comparison before acting.
-- **Parallel safe:** `SB-045`, `CORPUS-001`, and `GTM-001` can advance without
-  this cleanup.
+- **Parallel safe:** `SB-045`, `CORPUS-002`, and `VAL-001` can advance without
+  this cleanup. No participant recruitment is authorized.

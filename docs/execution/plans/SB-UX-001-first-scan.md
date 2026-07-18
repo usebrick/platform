@@ -4,7 +4,7 @@
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -27,7 +27,7 @@ journey are not yet one tested UX contract.
 - Three recommended actions based on severity, confidence, reach, and repair
   safety.
 - Current baseline versus newly introduced/resolved findings on rescan.
-- CLI snapshots and five real/pilot usability walkthroughs.
+- CLI snapshots and owner-selected local usability walkthroughs.
 
 ## Non-goals
 
@@ -39,7 +39,7 @@ journey are not yet one tested UX contract.
 ## Dependencies
 
 - `requires`: `SB-045`
-- `benefitsFrom`: `GTM-001`
+- `benefitsFrom`: `VAL-001`
 
 ## Acceptance criteria
 
@@ -52,8 +52,8 @@ journey are not yet one tested UX contract.
   baseline.
 - Snapshot, JSON/SARIF compatibility, narrow-terminal, colorless, and screen-
   reader-oriented output checks pass.
-- Five pilot walkthroughs can identify the first recommended action without
-  maintainer explanation.
+- Owner-run walkthroughs can identify the first recommended action without
+  relying on synthetic or participant evidence.
 
 ## Execution steps
 
@@ -65,8 +65,8 @@ journey are not yet one tested UX contract.
    snapshot deterministic complete, incomplete, and zero-finding fixtures.
 4. Add durable new/resolved/unchanged rescan output -> verify: run baseline
    integration tests with one worker.
-5. Walk five pilot fixtures/sessions and record comprehension -> verify: update
-   the pilot evidence with the same task prompts.
+5. Walk owner-selected fixtures or repositories and record comprehension ->
+   verify: add only real owner-run receipts to `VAL-001`, with no target count.
 
 ## Verification
 

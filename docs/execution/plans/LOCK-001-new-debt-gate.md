@@ -4,13 +4,13 @@
 - **Priority:** 9
 - **Track / lane:** implementation / lock
 - **Owner:** SlopBrick and usebrick platform
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
-Two pilot teams can prevent one class of verified new critical drift without
-cleaning all existing debt and without an unacceptable false-block or waiver
-burden.
+The repository owner can prove that one class of verified new critical drift
+is blocked without cleaning all existing debt. This owner-only proof does not
+establish team adoption, willingness to pay, or package demand.
 
 ## Current truth
 
@@ -24,9 +24,10 @@ yet, and those primitives have not been proven as one team enforcement loop.
 - Baseline current debt and fail only on qualifying new debt.
 - Clear changed evidence, approved policy source, waiver with reason/expiry,
   incomplete-scan failure semantics, and CI explanation.
-- Pilot in the existing CLI and CI surface.
-- Measure confirmed preventions, false blocks, waivers, time to resolution, and
-  willingness to pay.
+- Validate in the existing CLI and CI surface on owner-controlled repositories
+  or deterministic fixtures.
+- Measure confirmed preventions, false blocks, waivers, and time to resolution;
+  leave team and willingness-to-pay evidence explicitly open.
 
 ## Non-goals
 
@@ -37,7 +38,7 @@ yet, and those primitives have not been proven as one team enforcement loop.
 ## Dependencies
 
 - `requires`: `SB-UX-001`
-- `benefitsFrom`: `MEM-001`, `GTM-001`
+- `benefitsFrom`: `MEM-001`, `VAL-001`
 
 ## Acceptance criteria
 
@@ -47,8 +48,8 @@ yet, and those primitives have not been proven as one team enforcement loop.
   human-readable.
 - Incomplete scans never pass silently.
 - Waivers require owner/reason/expiry and are visible in output.
-- Two pilots run the gate on real changes and report false-block and waiver
-  burden.
+- Owner-run receipts exercise the gate on real or deterministic changes and
+  report false-block and waiver burden without participant claims.
 - Package extraction is decided only after the CLI pilot, not assumed.
 
 ## Execution steps
@@ -59,15 +60,16 @@ yet, and those primitives have not been proven as one team enforcement loop.
    debt/pass, new debt/fail, resolved debt/pass fixtures.
 3. Add waiver and incomplete-scan semantics -> verify: expired waiver and
    partial scan tests fail safely.
-4. Pilot on two repositories -> verify: capture change, decision, correction,
-   waiver, and timing receipts without raw source.
-5. Make the paid-beta/package decision -> verify: compare evidence with the
-   roadmap team-monetization gate.
+4. Validate on repositories or fixtures selected by the owner -> verify:
+   capture change, decision, correction, waiver, and timing receipts without
+   raw source or an invented target count.
+5. Keep the paid-beta/package decision open -> verify: owner evidence is not
+   presented as team adoption or market demand.
 
 ## Verification
 
-Run deterministic CLI integration tests plus pilot shadow mode before enabling
-any blocking CI configuration.
+Run deterministic CLI integration tests plus owner-controlled shadow mode
+before enabling any blocking CI configuration.
 
 ## Evidence destination
 

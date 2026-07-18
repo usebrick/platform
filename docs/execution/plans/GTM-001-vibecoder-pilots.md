@@ -1,74 +1,68 @@
-# GTM-001 — Validate the vibecoder scan-to-rescan loop
+# GTM-001 — Preserve the dormant vibecoder participant protocol
 
-- **Status:** `ready`
-- **Priority:** 3
+- **Status:** `parked`
+- **Priority:** 14
 - **Track / lane:** company / adoption
 - **Owner:** usebrick product
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
-Observe five vibecoders run the local scan, understand a useful finding, make a
-change, and rescan, then decide which trust and UX problem most limits
-activation.
+Retain a consent-safe protocol for possible future external participant
+research without placing recruitment or participant evidence on the active
+execution path.
 
 ## Current truth
 
-Vibecoders are the intended entry point. The consent-safe protocol and blank
-outcome template now exist at `docs/research/vibecoder-pilots.md`; no pilot is
-scheduled or completed, so there is no behavioral evidence or CI-interest
-signal yet.
+Vibecoders remain the product entry point and main door, but the repository
+owner is the only current product tester. The protocol at
+`docs/research/vibecoder-pilots.md` has zero scheduled or completed sessions,
+and no external recruitment is authorized. Owner-only walkthroughs are tracked
+separately by `VAL-001` and cannot be reinterpreted as participant or demand
+evidence.
 
 ## Scope
 
-- Recruit five people using AI-assisted frontend/application workflows.
-- Use a consent-safe template with no source collection by default.
-- Record time to install, completed/incomplete scan, first useful finding,
-  confusing/noisy finding, fix attempt, rescan, abandonment, and CI interest.
-- Synthesize patterns after all five sessions without turning anecdotes into
-  detector calibration labels.
+- Preserve the consent, privacy, withdrawal, and bounded-outcome template.
+- Keep the record explicitly at zero sessions while the plan is parked.
+- Require a future owner-approved execution revision before any participant
+  recruitment, scheduling, or data collection.
+- Keep any future participant observations separate from detector calibration,
+  source authority, owner validation, and market-demand evidence.
 
 ## Non-goals
 
-- A statistically representative market study, paid acquisition campaign, or
-  enterprise sales motion.
-- Uploading private source, recordings, repository identifiers, or findings
-  without explicit consent.
-- Promising roadmap features during recruitment.
+- Active recruitment, scheduling, consent collection, or participant data.
+- Treating owner walkthroughs as participant sessions.
+- A statistically representative market study, paid acquisition campaign,
+  enterprise sales motion, or calibration-label source.
 
 ## Dependencies
 
 - `requires`: none
-- `benefitsFrom`: `SB-045`
+- `benefitsFrom`: none
 
 ## Acceptance criteria
 
-- Five completed sessions use the same outcome fields.
-- Each session records whether the user reached a useful evidenced finding and
-  a fix/rescan.
-- Failures distinguish install, discovery, runtime, trust, explanation,
-  remediation, and rescan causes.
-- The synthesis identifies the top three product changes and evidence behind
-  each, plus whether anyone would enable new-debt-only CI.
-- Private code and identity are absent unless separately consented and needed.
+- The protocol is visibly parked with zero sessions and no active recruitment
+  instruction.
+- No current plan requires or benefits from GTM-001.
+- The retained template preserves consent, privacy, withdrawal, and bounded
+  outcome protections for a separately authorized future study.
+- No owner-only result is counted as participant, team, or demand evidence.
 
 ## Execution steps
 
-1. Create the pilot protocol, consent boundary, and outcome template ->
-   complete; verify:
-   `test -f docs/research/vibecoder-pilots.md`.
-2. Recruit 10–15 candidates to complete five sessions -> verify: five scheduled
-   rows exist without private repository data.
-3. Observe the scan-to-rescan loop and record structured outcomes -> verify:
-   five completed outcome rows.
-4. Synthesize the top three activation changes and CI-interest signal ->
-   verify: every recommendation cites at least two session observations or is
-   explicitly marked a hypothesis.
+1. Mark the protocol and execution plan parked with zero sessions.
+2. Remove GTM-001 from active product and implementation dependencies.
+3. Preserve the consent-safe template as dormant reference material.
+4. If the owner later authorizes external participant research, create a new
+   bounded execution revision before contacting or recording anyone.
 
 ## Verification
 
-Review the final record for five completed sessions, consistent fields, no raw
-source, and no unsupported claims.
+Verify that the protocol says parked, records zero sessions, authorizes no
+recruitment, and is absent from active dependency arrays.
 
 ## Evidence destination
 
@@ -76,10 +70,10 @@ source, and no unsupported claims.
 
 ## Rollback
 
-Withdraw or anonymize any participant record on request. Product code is not
-changed by this plan.
+No participant record exists. If future authorized research creates one, retain
+the withdrawal and anonymization protections in the dormant protocol.
 
 ## Next action
 
-Recruit the first five pilots using the consent-safe outcome template before
-the first scan. Do not record participant data until consent is explicit.
+Preserve the dormant protocol. Do not recruit, schedule, or record participants
+unless the owner later authorizes a separate external-research revision.

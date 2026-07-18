@@ -101,7 +101,7 @@
 - Consumes: accepted design `docs/superpowers/specs/2026-07-18-corpus-source-use-routing-design.md`, completed `CORPUS-001`, and completed `CAL-001`.
 - Produces: indexed `CORPUS-002` in progress, indexed `VAL-001` ready, parked `GTM-001`, and no active dependency on `GTM-001`.
 
-- [ ] **Step 1: Create the CORPUS-002 bounded plan**
+- [x] **Step 1: Create the CORPUS-002 bounded plan**
 
 Write `docs/execution/plans/CORPUS-002-source-use-routing.md` with all validator-required headings and this exact contract:
 
@@ -172,7 +172,7 @@ Remove the router and registry, restore direct Mendeley preflight, and retain al
 Write the failing source-policy matrix test and prove the requested-use router does not yet exist.
 ```
 
-- [ ] **Step 2: Create the owner-only validation plan and honest empty ledger**
+- [x] **Step 2: Create the owner-only validation plan and honest empty ledger**
 
 Write `docs/execution/plans/VAL-001-owner-validation.md` with this exact contract:
 
@@ -260,7 +260,7 @@ This ledger is intentionally empty until the repository owner performs a real lo
 No row may be added from a synthetic or inferred session.
 ```
 
-- [ ] **Step 3: Update the execution index atomically**
+- [x] **Step 3: Update the execution index atomically**
 
 Set revision `19`, keep `updatedAt` `2026-07-18`, and apply these exact transitions:
 
@@ -277,7 +277,7 @@ ENT-001 externalGates: [future-external-demand-evidence]
 
 Set CORPUS-002's next action to the focused policy test. Set VAL-001's next action to the first real owner walkthrough. Set GTM-001's next action to preserving the parked protocol unless the owner later authorizes external participant research.
 
-- [ ] **Step 4: Converge dependent execution plans and dormant pilot docs**
+- [x] **Step 4: Converge dependent execution plans and dormant pilot docs**
 
 Apply these exact semantic changes:
 
@@ -291,11 +291,11 @@ SB-045 and DOC-PRUNE-001: remove statements that GTM recruitment is parallel wor
 docs/research/vibecoder-pilots.md: mark template parked with zero sessions and no recruitment authorization.
 ```
 
-- [ ] **Step 5: Update STATUS and append revision 19**
+- [x] **Step 5: Update STATUS and append revision 19**
 
 `STATUS.md` must show implementation WIP `1/2` with `CORPUS-002`, company WIP `0/1`, GTM parked, VAL ready, and no participant recruitment next action. Add a revision 19 entry at the top of `docs/execution/CHANGELOG.md` stating that the owner approved source routing and sole-tester validation, no source bytes or completed evidence changed, and no participant or remote action occurred.
 
-- [ ] **Step 6: Run execution-doc validation**
+- [x] **Step 6: Run execution-doc validation**
 
 Run:
 
@@ -306,7 +306,7 @@ git diff --check
 
 Expected: `execution docs valid: 15 plans, implementation 1/2, company 0/1`; `git diff --check` exits 0.
 
-- [ ] **Step 7: Commit the execution transition**
+- [x] **Step 7: Commit the execution transition**
 
 ```bash
 git add docs/execution/index.json docs/execution/STATUS.md docs/execution/CHANGELOG.md docs/execution/plans/CORPUS-002-source-use-routing.md docs/execution/plans/VAL-001-owner-validation.md docs/execution/evidence/VAL-001-owner-validation.md docs/execution/plans/GTM-001-vibecoder-pilots.md docs/execution/plans/SB-UX-001-first-scan.md docs/execution/plans/TEL-001-local-outcomes.md docs/execution/plans/LOCK-001-new-debt-gate.md docs/execution/plans/ENT-001-demand-gate.md docs/execution/plans/SB-045-trust-release.md docs/execution/plans/DOC-PRUNE-001-approved-cleanup.md docs/research/vibecoder-pilots.md

@@ -1,22 +1,23 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 18
+**Index revision:** 19
 **Global status:** `advancing`
 
 ## Executive state
 
-The documentation control plane, Corpus v1 admission decision, and bounded
-source-attested Corpus v1 seed are complete. The local v0.45 trust-release
-qualification is complete and waits only for an explicit owner decision on the
-live/public claim boundary. The consent-safe vibecoder pilot protocol is ready
-but no sessions are scheduled. CAL-001 has a frozen leakage-safe calibration
-protocol, a deterministic non-admitting 100/100 scanner smoke receipt, a
-completed diagnostic full holdout with zero leakage findings, and a reviewed
-non-admitting decision matrix for all 119 registry rules. Usefulness review,
-default-state changes, and admission remain intentionally open follow-up
-boundaries. Stale-path cleanup is isolated behind exact owner approval and
-does not block local product work.
+The documentation control plane, Corpus v1 admission decision, bounded
+source-attested Corpus v1 seed, and CAL-001 evaluation are complete. CORPUS-002
+is the sole active implementation plan: it is adding deterministic source-use
+routing while preserving every existing Mendeley and CAL-001 hash. The local
+v0.45 trust-release qualification is complete and waits only for an explicit
+owner decision on the live/public claim boundary. The repository owner is the
+only current product tester; VAL-001 is ready with an intentionally empty
+owner-validation ledger, while the external-participant GTM-001 protocol is
+parked with zero sessions and no recruitment authorization. CAL-001 records
+`applied: false` and `admitted: false`; usefulness review and any rule-state
+change remain separate owner decisions. Stale-path cleanup is isolated behind
+exact owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -41,14 +42,14 @@ does not block local product work.
   **0 active AI-specific signals**, **11 non-AI hygiene findings**, and **671
   audit-only suppressed** findings, then exits `0`. The disposition is
   **PASS for the configured local AI gate**. This pass comes from the
-  evidence-backed default-off disposition for the unadmitted
+  evidence-backed default-off disposition for the
   `ai/compression-profile` signal, not from lowering the threshold or making
-  a current v10.3 calibration claim. Explicit per-rule opt-in remains
-  available for diagnostic use.
+  a current v10.3 calibration claim. No Corpus v1 measurement activates the
+  rule; explicit per-rule opt-in remains available for diagnostic use.
 - The CAL-001 smoke adapter and runner are checkpointed at
   `f00c5364fc13d6452756d94071c76158cb4a05cd`. The focused calibration tests
   and package typecheck pass; the recorded one-worker receipt scanned 200/200
-  selected source-bound files successfully and remains `admitted: false`.
+  selected source-bound files successfully and records `admitted: false`.
   The recursive release gates were rerun after this additive slice and pass.
 - The CAL-001 full holdout evaluator is checkpointed at
   `45d2dd038107d3d1d7731192126bf0d48dd6f84b`. Its one-worker receipt covers
@@ -60,7 +61,7 @@ does not block local product work.
   `9d4e57ef42dfad1d65becf750690ef9991ba29c03f0181531fb4321853f1bea5`.
   This remains diagnostic-only: no threshold, rule state, usefulness result,
   admission, or release gate was changed.
-- The CAL-001 non-admitting decision matrix is checkpointed at
+- The CAL-001 unapplied decision matrix is checkpointed at
   `215647e22d8b289f944cc44e047efeedb553a04d`. It assigns 72 AI-specific rows
   `default-off` and 47 non-AI rows `quality-only`; 40 rows require owner review
   before any policy change, and the matrix records `applied: false` and
@@ -92,8 +93,10 @@ does not block local product work.
   `bdbcd43279077fa760ae3c99da05b953c38134022fa34626b69a6b6400be00de` and its
   receipt SHA-256 is
   `ccd74f7b9db49adc802c042df0d7b732d8284d2bbfc4e6ec39e6a1c001c60830`.
-  The source remains an internal-analysis candidate, not an admitted,
-  independently witnessed, quality-labeled, redistribution-approved, or
+  The source is verified for publisher-attested internal origin analysis and
+  calibration evaluation. Its labels remain publisher claims, not witnessed
+  authorship or quality labels. This permitted use does not approve public
+  redistribution, admit v10.3 data, activate a rule, or make the source a
   production corpus.
 - The post-smoke eligible projection retains all 10,000 rows with zero
   quarantine rows and zero unresolved exact/normalized cross-label collisions.
@@ -118,12 +121,13 @@ does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 0 | 2 | None |
+| Implementation | 1 | 2 | `CORPUS-002` |
 | Company | 0 | 1 | None |
 
 `SB-045` is waiting external and does not consume an active implementation
-slot. Start `GTM-001` in the independent company slot when the first pilot is
-actually scheduled.
+slot. `VAL-001` is ready but remains outside WIP until the repository owner
+starts a real walkthrough. `GTM-001` is parked; no participant recruitment is
+planned or authorized.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -134,16 +138,18 @@ WIP while waiting.
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
 | 1 | [`SB-045`](plans/SB-045-trust-release.md) | `waiting_external` | — | Obtain the owner's explicit live/public claim disposition and exact reviewed SHA if deployment is authorized. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
-| 3 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Recruit the first five vibecoder pilots using the consent-safe template before the first scan. |
+| 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `in_progress` | — | Red-test the deterministic source-use policy and closed registry. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
-| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the reviewed matrix non-admitting; begin a new owner-reviewed protocol revision before any usefulness, threshold, default-state, or admission change. |
+| 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 9 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
 | 10 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
-| 11 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001`, `GTM-001` | Validate repeated demand after paid team pilots. |
+| 11 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 12 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
+| 13 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Run the first real owner-controlled scan-to-rescan walkthrough when the owner chooses. |
+| 14 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
 
 ## Release gates
 
@@ -162,8 +168,8 @@ WIP while waiting.
 website deployment at a named reviewed commit/SHA or an explicit decision to
 keep the live v0.43 site unchanged while v0.45 remains local-only. A read-only
 live-site check can verify that decision after authorization; it cannot replace
-it. GTM-001 protocol preparation is parallel-safe, but participant recruitment
-still requires real scheduling and consent.
+it. CORPUS-002 and local owner-validation preparation are parallel-safe; no
+participant recruitment is authorized.
 
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
@@ -195,16 +201,13 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The typed gate-decision, finding-bound fix, durable new-debt, claim-alignment,
-and local privacy/history contracts are implemented and recorded in
-[`SB-045-gate-decision.md`](evidence/SB-045-gate-decision.md). The complete
-qualification packet is [`SB-045-release-qualification.md`](evidence/SB-045-release-qualification.md).
-The next SB-045 checkpoint is the owner's explicit live/public claim
-disposition; the local AI gate is already qualified. The next GTM-001
-checkpoint is the first real scheduled pilot, using the new consent-safe
-template. The bounded CAL-001 one-worker smoke, full frozen holdout, leakage /
-confound summary, and non-admitting decision matrix are complete. Any
-usefulness review, threshold, default-state, or admission change requires a
-new owner-reviewed protocol revision. Do not lower the threshold,
-activate unmeasured rules, publish, tag, deploy, or push as a way to close any
-boundary. Corpus v1 remains non-admitting.
+The immediate checkpoint is CORPUS-002: implement and verify the pure source
+policy, closed registry, Mendeley preflight, unchanged frozen hashes, and
+current-documentation convergence. After that, VAL-001 may record a real
+owner-run scan-to-finding-to-fix-to-rescan walkthrough; it has no required
+target count and cannot establish participant, team, or market-demand evidence.
+The SB-045 checkpoint remains the owner's explicit live/public claim
+disposition. The bounded CAL-001 smoke, full frozen holdout, leakage/confound
+summary, and decision matrix are complete with `applied: false` and
+`admitted: false`. Do not lower the threshold, activate rules, recruit
+participants, publish, tag, deploy, or push to close any boundary.

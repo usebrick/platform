@@ -4,7 +4,7 @@
 - **Priority:** 11
 - **Track / lane:** company / enterprise
 - **Owner:** usebrick company
-- **Updated:** 2026-07-17
+- **Updated:** 2026-07-18
 
 ## Outcome
 
@@ -36,10 +36,11 @@ governance. Building those now would precede the scanner and team trust gates.
 
 ## Dependencies
 
-- `requires`: `LOCK-001`, `GTM-001`
+- `requires`: `LOCK-001`
 - `benefitsFrom`: `MEM-001`
-- Resume gate: several teams have used the paid/team enforcement workflow long
-  enough to report recurring organisation-level needs.
+- External gate: `future-external-demand-evidence` from several independent
+  teams that have used the paid/team enforcement workflow long enough to
+  report recurring organisation-level needs. Owner testing cannot satisfy it.
 
 ## Acceptance criteria
 
@@ -76,5 +77,6 @@ keep the plan parked.
 
 ## Next action
 
-Remain parked until paid LockBrick pilots create repeated multi-repository
-governance demand.
+Remain parked until `future-external-demand-evidence` shows repeated
+multi-repository governance demand from independent teams. Do not infer that
+demand from owner testing.

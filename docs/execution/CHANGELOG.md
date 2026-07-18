@@ -3,6 +3,30 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 19 — 2026-07-18
+
+### Changed
+
+- Started CORPUS-002 to route reviewed Corpus v1 sources by authority,
+  integrity, rights, and permitted use without changing source bytes or any
+  completed Corpus v1/CAL-001 evidence.
+- Added VAL-001 as an owner-only scan-to-rescan validation contract with an
+  intentionally empty ledger; the repository owner is the only current tester.
+- Parked GTM-001 and removed it from active implementation dependencies. Its
+  consent-safe protocol remains dormant with zero sessions and no recruitment
+  authorization.
+- Kept future team and enterprise demand explicitly unproven; owner testing
+  cannot satisfy `future-external-demand-evidence`.
+
+### Evidence
+
+- `docs/superpowers/specs/2026-07-18-corpus-source-use-routing-design.md`
+- `docs/execution/plans/CORPUS-002-source-use-routing.md`
+- `docs/execution/plans/VAL-001-owner-validation.md`
+- `docs/execution/evidence/VAL-001-owner-validation.md`
+- No source acquisition, participant action, rule-state change, publish,
+  deployment, tag, push, or remote mutation occurred.
+
 ## Revision 18 — 2026-07-18
 
 ### Changed
