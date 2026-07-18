@@ -346,7 +346,38 @@ describe('headline score renderer contract', () => {
       failed: 0,
       skipped: 0,
     }) as ProjectReport;
+    const machineInput = { ...input } as ProjectReport;
+    machineInput.firstScan = projectFirstScan(machineInput, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    const json = JSON.parse(formatJson(machineInput)) as {
+      firstScan?: { status: string; headline: unknown; recommendedActions: unknown[] };
+      repositoryHealth?: number;
+    };
+    const sarif = JSON.parse(formatSarif(machineInput)) as {
+      runs: Array<{
+        tool: {
+          driver: {
+            properties?: {
+              firstScan?: { status: string; headline: unknown; recommendationCount: number };
+              scores?: unknown;
+            };
+          };
+        };
+      }>;
+    };
     const notice = 'NO FILES ANALYSED — scores are not applicable for gating.';
+
+    expect(json.firstScan).toMatchObject({ status: 'not-applicable', headline: null });
+    expect(json.firstScan?.recommendedActions).toEqual([]);
+    expect(json).not.toHaveProperty('repositoryHealth');
+    expect(sarif.runs[0]!.tool.driver.properties?.firstScan).toMatchObject({
+      status: 'not-applicable',
+      headline: null,
+      recommendationCount: 0,
+    });
+    expect(sarif.runs[0]!.tool.driver.properties).not.toHaveProperty('scores');
 
     for (const output of [
       formatPretty(input),
@@ -399,15 +430,22 @@ describe('headline score renderer contract', () => {
         },
       },
     }) as ProjectReport;
-    const json = JSON.parse(formatJson(input)) as Record<string, unknown>;
-    const sarif = JSON.parse(formatSarif(input)) as {
+    const machineInput = { ...input } as ProjectReport;
+    machineInput.firstScan = projectFirstScan(machineInput, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    const json = JSON.parse(formatJson(machineInput)) as Record<string, unknown>;
+    const sarif = JSON.parse(formatSarif(machineInput)) as {
       runs: Array<{ tool: { driver: { properties?: Record<string, unknown> } } }>;
     };
 
     expect(json).toMatchObject({
       scoreValidity: 'incomplete',
       completionStatus: 'partial',
+      firstScan: { status: 'incomplete', headline: null },
     });
+    expect((json.firstScan as { recommendedActions: unknown[] }).recommendedActions).toEqual([]);
     for (const field of ['aiSlopScore', 'engineeringHygiene', 'security', 'repositoryHealth']) {
       expect(json).not.toHaveProperty(field);
     }
@@ -416,6 +454,7 @@ describe('headline score renderer contract', () => {
       completionStatus: 'partial',
       scanAccounting: { selected: 7, analyzed: 6, parseFailed: 1 },
       selectionAccounting: { observedCandidates: 9, selected: 7, excluded: { gitScope: 1 } },
+      firstScan: { status: 'incomplete', headline: null, recommendationCount: 0 },
     });
     expect(sarif.runs[0].tool.driver.properties?.scores).toBeUndefined();
     for (const output of [

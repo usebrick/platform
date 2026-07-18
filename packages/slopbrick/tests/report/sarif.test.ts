@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { projectFirstScan } from '../../src/report/first-scan';
 import { formatSarif } from '../../src/report/sarif';
 import { VERSION, type Issue, type ProjectReport, type Severity } from '../../src/types';
 
@@ -143,6 +144,173 @@ describe('formatSarif — result shape', () => {
       runs: Array<{ results: Array<{ helpUri: string }> }>;
     };
     expect(log.runs[0].results[0].helpUri).toContain('/visual/math-default-font.ts');
+  });
+});
+
+describe('formatSarif — additive first-scan contract', () => {
+  it('projects a bounded driver summary and active result metadata without moving the default-off cursor', () => {
+    const defaultOffIssue: Issue = {
+      ...sampleIssue,
+      ruleId: 'test/default-off',
+      category: 'test',
+      severity: 'off' as never,
+      filePath: 'src/default-off.ts',
+      line: 1,
+      column: 1,
+    };
+    const calibratedIssue: Issue = {
+      ...sampleIssue,
+      ruleId: 'ai/compression-profile',
+      category: 'ai',
+      severity: 'medium',
+      filePath: 'src/Profile.tsx',
+      line: 8,
+      column: 2,
+      signalStrength: {
+        recall: 0.1,
+        fpRate: 0.01,
+        ratio: 10,
+        precision: 0.9,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+        verdict: 'USEFUL',
+      },
+    };
+    const advisoryIssue: Issue = {
+      ...sampleIssue,
+      ruleId: 'wcag/missing-alt',
+      category: 'wcag',
+      severity: 'low',
+      filePath: 'src/Image.tsx',
+      line: 12,
+      column: 7,
+    };
+    const deterministicIssue: Issue = {
+      ...sampleIssue,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'unsafeBoundary()',
+        location: { start: { line: 5, column: 3 }, end: { line: 5, column: 19 } },
+      },
+    };
+    const input = makeReport({
+      completionStatus: 'complete',
+      scoreValidity: 'valid',
+      issues: [deterministicIssue, defaultOffIssue, calibratedIssue, advisoryIssue],
+      scoreExplanation: {
+        repositoryHealth: {
+          value: 30,
+          inputs: [
+            { axis: 'security', value: 30, weight: 0.2, weightedAmount: 6 },
+          ],
+        },
+      } as ProjectReport['scoreExplanation'],
+    });
+    input.firstScan = projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+    input.firstScan.findings[0]!.change = 'new';
+    input.firstScan.findings[1]!.change = 'unchanged';
+    input.firstScan.delta = {
+      kind: 'slopbrick-finding-delta-v1',
+      status: 'compared',
+      baselineRevision: 2,
+      currentCount: 3,
+      baselineCount: 2,
+      newCount: 1,
+      unchangedCount: 2,
+      resolvedCount: 0,
+      resolvedDetails: 'available',
+      resolved: [],
+      summary: '1 new, 0 resolved, and 2 unchanged findings.',
+    };
+
+    const log = JSON.parse(formatSarif(input)) as {
+      runs: Array<{
+        tool: {
+          driver: {
+            properties: {
+              firstScan?: {
+                kind: string;
+                status: string;
+                headline: unknown;
+                areas: unknown[];
+                recommendationCount: number;
+                delta: { status: string };
+                findings?: unknown;
+                recommendedActions?: unknown;
+              };
+            };
+          };
+        };
+        results: Array<{
+          properties: {
+            evidence?: unknown;
+            firstScan?: {
+              area: string;
+              evidenceTier: string;
+              change: string;
+              actionKind: string;
+              repairSafety: string;
+            };
+          };
+          partialFingerprints: { primaryLocationLineHash: string };
+        }>;
+      }>;
+    };
+    const driver = log.runs[0]!.tool.driver;
+    const results = log.runs[0]!.results;
+
+    expect(driver.properties.firstScan).toMatchObject({
+      kind: 'slopbrick-first-scan-v1',
+      status: 'complete',
+      headline: { label: 'Repository Health' },
+      recommendationCount: 3,
+      delta: { status: 'compared' },
+    });
+    expect(driver.properties.firstScan.areas).toEqual(input.firstScan.areas);
+    expect(driver.properties.firstScan.areas).toHaveLength(5);
+    expect(driver.properties.firstScan).not.toHaveProperty('findings');
+    expect(driver.properties.firstScan).not.toHaveProperty('recommendedActions');
+    expect(results[0]!.properties.firstScan).toEqual({
+      area: 'code-and-logic',
+      evidenceTier: 'deterministic',
+      change: 'new',
+      actionKind: 'manual-review',
+      repairSafety: 'no-safe-repair',
+    });
+    expect(results[1]!.properties).not.toHaveProperty('firstScan');
+    expect(results[2]!.properties.firstScan).toMatchObject({
+      area: 'repository-coherence',
+      evidenceTier: 'calibrated',
+      change: 'unchanged',
+    });
+    expect(results[3]!.properties.firstScan).toMatchObject({
+      area: 'accessibility-and-resilience',
+      evidenceTier: 'advisory',
+      change: 'current',
+    });
+    expect(results[0]!.properties.evidence).toEqual(deterministicIssue.evidence);
+    expect(results[0]!.partialFingerprints.primaryLocationLineHash).toBe('112c9de0992813bb');
+  });
+
+  it('omits first-scan result metadata when the ordered rule/location tuple does not match', () => {
+    const secondIssue: Issue = {
+      ...sampleIssue,
+      ruleId: 'security/second-active-rule',
+      category: 'security',
+      filePath: 'src/security.ts',
+      line: 9,
+      column: 4,
+    };
+    const input = makeReport({ issues: [sampleIssue, secondIssue] });
+    input.firstScan = projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+    input.issues = [{ ...sampleIssue, line: 6 }, secondIssue];
+
+    const log = JSON.parse(formatSarif(input)) as {
+      runs: Array<{ results: Array<{ properties: Record<string, unknown> }> }>;
+    };
+
+    expect(log.runs[0]!.results[0]!.properties).not.toHaveProperty('firstScan');
+    expect(log.runs[0]!.results[1]!.properties).toHaveProperty('firstScan');
   });
 });
 

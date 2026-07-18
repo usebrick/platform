@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { projectFirstScan } from '../../src/report/first-scan.js';
 import { formatJson } from '../../src/report/json.js';
 import { SCORE_BRIEFS, SCORE_CONTRACT } from '../../src/report/score-contract.js';
-import type { ProjectReport } from '../../src/types.js';
+import type { Issue, ProjectReport } from '../../src/types.js';
 
 function makeReport(): ProjectReport {
   return {
@@ -103,6 +104,53 @@ describe('formatJson', () => {
     expect(parsed.research?.generatedSampleCount).toBe(12);
   });
 
+  it('adds the full typed first-scan projection without changing existing JSON contracts', () => {
+    const issue: Issue = {
+      ruleId: 'logic/boundary-violation',
+      category: 'logic',
+      severity: 'high',
+      aiSpecific: true,
+      filePath: 'src/Card.tsx',
+      message: 'Test issue',
+      line: 5,
+      column: 3,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'unsafeBoundary()',
+        location: { start: { line: 5, column: 3 }, end: { line: 5, column: 19 } },
+      },
+    };
+    const input = Object.assign(makeReport(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      aiSlopScore: 12.3456789,
+      repositoryHealth: 63.456789,
+      issues: [issue],
+      scoreExplanation: {
+        repositoryHealth: {
+          value: 63.456789,
+          inputs: [
+            { axis: 'aiSlopCleanliness', value: 87.6543211, weight: 0.4, weightedAmount: 35.06172844 },
+          ],
+        },
+      } as ProjectReport['scoreExplanation'],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+
+    const parsed = JSON.parse(formatJson(input)) as ProjectReport & {
+      scoreContract: typeof SCORE_CONTRACT;
+      scoreBriefs: typeof SCORE_BRIEFS;
+    };
+
+    expect(parsed.firstScan).toEqual(input.firstScan);
+    expect(parsed.issues).toEqual([issue]);
+    expect(parsed.aiSlopScore).toBe(12.3456789);
+    expect(parsed.repositoryHealth).toBe(63.456789);
+    expect(parsed.scoreContract).toEqual(SCORE_CONTRACT);
+    expect(parsed.scoreBriefs).toEqual(SCORE_BRIEFS);
+  });
+
   it('embeds scoreBriefs in every report (v0.43.0 user-review parity)', () => {
     const output = formatJson(makeReport());
     const parsed = JSON.parse(output) as Record<string, unknown>;
@@ -172,6 +220,42 @@ describe('formatJson', () => {
     expect(emptyParsed).not.toHaveProperty('security');
     expect(emptyParsed).not.toHaveProperty('repositoryHealth');
     expect(emptyParsed).not.toHaveProperty('scoreContract');
+    expect(emptyParsed).not.toHaveProperty('firstScan');
+  });
+
+  it.each([
+    ['incomplete', {
+      completionStatus: 'partial' as const,
+      scoreValidity: 'incomplete' as const,
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    }],
+    ['not-applicable', {
+      completionStatus: 'empty' as const,
+      scoreValidity: 'not-applicable' as const,
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+      skipped: 0,
+    }],
+  ] as const)('keeps %s first-scan JSON explicit and score-free', (expectedStatus, validity) => {
+    const input = Object.assign(makeReport(), validity) as ProjectReport;
+    input.firstScan = projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+
+    const parsed = JSON.parse(formatJson(input)) as {
+      firstScan?: {
+        status: string;
+        headline: unknown;
+        recommendedActions: unknown[];
+      };
+      repositoryHealth?: number;
+    };
+
+    expect(parsed.firstScan).toMatchObject({ status: expectedStatus, headline: null });
+    expect(parsed.firstScan?.recommendedActions).toEqual([]);
+    expect(parsed).not.toHaveProperty('repositoryHealth');
   });
 
   it('suppresses headline scores for incomplete scans with an explicit invalid marker', () => {

@@ -4,6 +4,26 @@ import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { Category, Issue, IssueEvidence, ProjectReport, Severity } from '../types';
 import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
+type FirstScanExperience = NonNullable<ProjectReport['firstScan']>;
+type FirstScanFinding = FirstScanExperience['findings'][number];
+
+interface SarifFirstScanResultProperties {
+  area: FirstScanFinding['area'];
+  evidenceTier: FirstScanFinding['evidence']['tier'];
+  change: FirstScanFinding['change'];
+  actionKind: FirstScanFinding['action']['kind'];
+  repairSafety: FirstScanFinding['action']['repairSafety'];
+}
+
+interface SarifFirstScanSummary {
+  kind: FirstScanExperience['kind'];
+  status: FirstScanExperience['status'];
+  headline: FirstScanExperience['headline'];
+  areas: FirstScanExperience['areas'];
+  recommendationCount: number;
+  delta: FirstScanExperience['delta'];
+}
+
 interface SarifArtifactLocation {
   uri: string;
 }
@@ -59,6 +79,7 @@ interface SarifResultProperties {
    * same exact/omitted span semantics as JSON without parsing prose.
    */
   evidence?: IssueEvidence;
+  firstScan?: SarifFirstScanResultProperties;
 }
 
 interface SarifPartialFingerprints {
@@ -125,6 +146,7 @@ interface SarifToolDriver {
     selectionAccounting?: NonNullable<ProjectReport['selectionAccounting']>;
     /** Headline values carried with SARIF so integrations retain scan context. */
     scores?: Pick<ProjectReport, 'aiSlopScore' | 'engineeringHygiene' | 'security' | 'repositoryHealth'>;
+    firstScan?: SarifFirstScanSummary;
   };
 }
 
@@ -293,6 +315,7 @@ function buildResultFromIssue(
   issue: Issue,
   cwd: string | undefined,
   fileContentCache: Map<string, string>,
+  firstScan?: SarifFirstScanResultProperties,
 ): SarifResult {
   const artifactUri = buildArtifactUri(issue.filePath, cwd);
   const fingerprint = computeFingerprint({
@@ -333,6 +356,7 @@ function buildResultFromIssue(
     category: issue.category,
     severity: issue.severity,
     ...(issue.evidence ? { evidence: issue.evidence } : {}),
+    ...(firstScan ? { firstScan } : {}),
   };
 
   return {
@@ -359,6 +383,38 @@ function buildResultFromIssue(
   };
 }
 
+function projectFirstScanResult(
+  issue: Issue,
+  finding: FirstScanFinding | undefined,
+): SarifFirstScanResultProperties | undefined {
+  if (
+    !finding
+    || finding.ruleId !== issue.ruleId
+    || finding.location.line !== issue.line
+    || finding.location.column !== issue.column
+  ) {
+    return undefined;
+  }
+  return {
+    area: finding.area,
+    evidenceTier: finding.evidence.tier,
+    change: finding.change,
+    actionKind: finding.action.kind,
+    repairSafety: finding.action.repairSafety,
+  };
+}
+
+function projectFirstScanSummary(firstScan: FirstScanExperience): SarifFirstScanSummary {
+  return {
+    kind: firstScan.kind,
+    status: firstScan.status,
+    headline: firstScan.headline,
+    areas: firstScan.areas,
+    recommendationCount: firstScan.recommendedActions.length,
+    delta: firstScan.delta,
+  };
+}
+
 export function formatSarif(
   report: ProjectReport,
   options?: { cwd?: string },
@@ -375,9 +431,20 @@ export function formatSarif(
   const rules = Array.from(rulesById.values()).sort((a, b) => a.id.localeCompare(b.id));
   // One read per file, even when many issues share the same source.
   const fileContentCache = new Map<string, string>();
-  const results = reportableIssues.map((issue) =>
-    buildResultFromIssue(issue, options?.cwd, fileContentCache),
-  );
+  let firstScanCursor = 0;
+  const results = reportableIssues.map((issue) => {
+    let finding: FirstScanFinding | undefined;
+    if ((issue.severity as string) !== 'off' && report.firstScan) {
+      finding = report.firstScan.findings[firstScanCursor];
+      firstScanCursor += 1;
+    }
+    return buildResultFromIssue(
+      issue,
+      options?.cwd,
+      fileContentCache,
+      projectFirstScanResult(issue, finding),
+    );
+  });
 
   // Valid reports retain the established score-bearing SARIF metadata.
   // Empty and incomplete reports use a discriminated, accounting-only score
@@ -385,7 +452,12 @@ export function formatSarif(
   const incomplete = isIncompleteScan(report);
   const driverProperties: NonNullable<SarifToolDriver['properties']> =
     notApplicable
-      ? projectNotApplicableScan(report)
+      ? {
+          ...projectNotApplicableScan(report),
+          ...(report.firstScan !== undefined
+            ? { firstScan: projectFirstScanSummary(report.firstScan) }
+            : {}),
+        }
       : {
           ...(!incomplete && report.compositeScore ? { compositeScore: report.compositeScore } : {}),
           ...(report.scoreBasis ? { scoreBasis: report.scoreBasis } : {}),
@@ -395,6 +467,9 @@ export function formatSarif(
           ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
           ...(report.gateDecision !== undefined ? { gateDecision: report.gateDecision } : {}),
           ...(report.newDebt !== undefined ? { newDebt: report.newDebt } : {}),
+          ...(report.firstScan !== undefined
+            ? { firstScan: projectFirstScanSummary(report.firstScan) }
+            : {}),
           ...(!incomplete ? {
             scores: {
               aiSlopScore: report.aiSlopScore,

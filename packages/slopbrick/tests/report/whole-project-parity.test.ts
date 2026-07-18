@@ -98,7 +98,7 @@ function makeReport(): ProjectReport {
     fileCount: 2,
     thresholds: { meanSlop: 30, p90Slop: 30, individualSlopThreshold: 60 },
     components: [],
-    issues: [projectFinding, fileFinding, defaultOffFileFinding, defaultOffProjectFinding],
+    issues: [projectFinding, defaultOffFileFinding, fileFinding, defaultOffProjectFinding],
     scoreBasis,
   };
 }
@@ -116,7 +116,19 @@ describe('whole-project renderer parity', () => {
     const sarif = JSON.parse(formatSarif(report)) as {
       runs: Array<{
         tool: { driver: { properties?: Record<string, any> } };
-        results: Array<{ ruleId: string; locations: Array<{ physicalLocation: { artifactLocation: { uri: string } } }> }>;
+        results: Array<{
+          ruleId: string;
+          locations: Array<{ physicalLocation: { artifactLocation: { uri: string } } }>;
+          properties: {
+            firstScan?: {
+              area: string;
+              evidenceTier: string;
+              change: string;
+              actionKind: string;
+              repairSafety: string;
+            };
+          };
+        }>;
       }>;
     };
     const markdown = formatMarkdown(report);
@@ -128,8 +140,8 @@ describe('whole-project renderer parity', () => {
     // findings and disabled findings, while preserving score precision.
     expect(json.issues.map((issue: Issue) => issue.ruleId)).toEqual([
       'layout/gap-monopoly',
-      'ai/compression-profile',
       'dup/identical-block',
+      'ai/compression-profile',
       'dup/identical-block',
     ]);
     expect(json).toMatchObject({
@@ -139,6 +151,7 @@ describe('whole-project renderer parity', () => {
       repositoryHealth: 63.456789,
       scoreBasis,
     });
+    expect(json.firstScan).toEqual(report.firstScan);
     expect(sarif.runs[0]!.results.map((result) => result.ruleId)).toEqual(json.issues.map((issue: Issue) => issue.ruleId));
     expect(sarif.runs[0]!.results[0]!.locations[0]!.physicalLocation.artifactLocation.uri).toBe('.');
     expect(sarif.runs[0]!.tool.driver.properties).toMatchObject({
@@ -149,7 +162,27 @@ describe('whole-project renderer parity', () => {
         repositoryHealth: 63.456789,
       },
       scoreBasis,
+      firstScan: {
+        kind: 'slopbrick-first-scan-v1',
+        status: 'complete',
+        recommendationCount: 2,
+      },
     });
+    expect(sarif.runs[0]!.tool.driver.properties?.firstScan.areas).toHaveLength(5);
+    expect(sarif.runs[0]!.results[0]!.properties.firstScan).toMatchObject({
+      area: 'visual-slop',
+      evidenceTier: 'advisory',
+      change: 'current',
+      actionKind: 'manual-review',
+      repairSafety: 'no-safe-repair',
+    });
+    expect(sarif.runs[0]!.results[1]!.properties).not.toHaveProperty('firstScan');
+    expect(sarif.runs[0]!.results[2]!.properties.firstScan).toMatchObject({
+      area: 'repository-coherence',
+      evidenceTier: 'advisory',
+      change: 'current',
+    });
+    expect(sarif.runs[0]!.results[3]!.properties).not.toHaveProperty('firstScan');
 
     // Human reports intentionally use the actionable view: project and file
     // findings remain visible, while default-off findings are audit-only.

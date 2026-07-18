@@ -46,6 +46,7 @@ export function formatJson(
       version: report.version,
       generatedAt: report.generatedAt,
       ...(report.configPath ? { configPath: report.configPath } : {}),
+      ...(report.firstScan ? { firstScan: report.firstScan } : {}),
       ...projectNotApplicableScan(report),
     };
     return JSON.stringify(envelope, null, 2);
