@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 23
+**Index revision:** 24
 **Global status:** `advancing`
 
 ## Executive state
@@ -13,8 +13,11 @@ Mendeley and CAL-001 hash while failing closed for pending, reference-only,
 unregistered, malformed, or manually widened source dispositions. The local
 v0.45 trust-release qualification is complete under `SB-045`; `REL-001` now
 owns the separate npm and website decisions and consumes no WIP. `SB-UX-001`
-and `TEL-001` are ready, with the first-scan UX first by priority. The
-repository owner is the only current product tester; `VAL-001` is now active
+and `TEL-001` are ready, with the first-scan UX first by priority. The reviewed
+eight-task SB-UX TDD implementation plan, READY plan audit, and High-risk
+shared-report impact map are now prepared, but product-code execution has not
+started and the remaining implementation slot is still free. The repository
+owner is the only current product tester; `VAL-001` is now active
 with one owner-attested self-scan-to-rescan row, while `GTM-001` remains parked
 with zero sessions and no recruitment authorization. The first row judged a
 statistical hygiene recommendation useful for review, declined an immediate
@@ -166,7 +169,7 @@ WIP while waiting.
 | 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
-| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `ready` | — | Use VAL-001-RUN-001 to snapshot evidence tier, no-safe-action, and unchanged-rescan states. |
+| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `ready` | — | Enter the reviewed detailed plan into WIP, then write the red owner-state projection tests. |
 | 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 9 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -228,8 +231,9 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The next local checkpoint is the reviewed `SB-UX-001` implementation plan,
-using `VAL-001-RUN-001` as real evidence for explicit evidence tiers,
+The next local checkpoint is Task 1 of the reviewed `SB-UX-001` implementation
+plan: move it to `in_progress`, consume the second implementation WIP slot, and
+write red projection tests from `VAL-001-RUN-001` for explicit evidence tiers,
 no-safe-action outcomes, and unchanged-rescan presentation. `TEL-001` remains
 ready behind that typed finding/outcome boundary. `VAL-001` may accumulate only
 real owner-controlled receipts when the owner chooses; it has no target-count

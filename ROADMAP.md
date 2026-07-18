@@ -127,7 +127,9 @@ remain separate owner-authorized actions.
 
 - Start with `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
   current-versus-new debt, and three prioritized actions in the
-  first-scan/rescan loop.
+  first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
+  and shared-report impact map are prepared; product-code execution begins
+  only after the control plane enters it into implementation WIP.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract with export and deletion and no raw source or proprietary repository
   identifier by default.

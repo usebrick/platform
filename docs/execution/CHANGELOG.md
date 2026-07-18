@@ -3,6 +3,31 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 24 — 2026-07-18
+
+### Changed
+
+- Prepared the reviewed eight-task `SB-UX-001` TDD implementation plan around
+  one additive first-scan projection, five exhaustive areas, a single
+  Repository Health headline, no more than three rule-grouped actions, and a
+  backward-compatible new/resolved/unchanged baseline delta.
+- Locked evidence labels to finding-level deterministic evidence, measured
+  rule behavior with an explicit non-authorship claim, and advisory review.
+  Only finding-bound fixes may be described as safe; the owner-observed
+  Heaps/Zipf state must say that no safe bounded repair is available.
+- Kept `SB-UX-001` `ready` and implementation WIP at `1/2`. Product-code
+  execution starts only when Task 1 moves it to `in_progress`; `TEL-001`
+  remains ready behind the typed first-scan boundary.
+
+### Evidence
+
+- `docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`
+- `specs/PLAN-AUDIT_LATEST.md`
+- `specs/IMPACT_LATEST.md`
+- This planning checkpoint changes no product code, report bytes, baseline,
+  score, threshold, rule state, CAL-001 row, corpus state, release decision, or
+  public artifact.
+
 ## Revision 23 — 2026-07-18
 
 ### Changed

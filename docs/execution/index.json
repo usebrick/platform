@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 23,
+  "revision": 24,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -196,11 +196,15 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Use VAL-001-RUN-001 to snapshot explicit evidence tier, no-safe-action, and unchanged-rescan states in the five-part report information architecture.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Execute Task 1 of the reviewed detailed plan: enter SB-UX-001 into implementation WIP, then write the red owner-state first-scan projection tests.",
+        "verify": "test -f docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md && corepack pnpm plans:validate",
         "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md",
+        "specs/PLAN-AUDIT_LATEST.md",
+        "specs/IMPACT_LATEST.md"
+      ]
     },
     {
       "id": "TEL-001",

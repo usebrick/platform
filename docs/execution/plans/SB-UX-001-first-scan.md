@@ -22,7 +22,10 @@ qualification is complete. Public release and website deployment remain under
 real owner baseline: the first recommendation was useful for finding a
 1,388-line review target, but it had no safe bounded fix, and the unchanged
 rescan required manual comparison. Those are concrete red states for this
-plan, not participant evidence.
+plan, not participant evidence. The reviewed implementation contract is now
+[`docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`](../../superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md);
+its plan audit is `READY`, its shared-report blast radius is classified `High`,
+and product-code execution has not started yet.
 
 ## Scope
 
@@ -90,6 +93,7 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Use `VAL-001-RUN-001` to write the first report snapshots for explicit evidence
-tier, `no safe action`, and unchanged-rescan states, then complete the
-five-part information architecture.
+Execute Task 1 of the reviewed detailed plan: move `SB-UX-001` to
+`in_progress`, consume the second implementation WIP slot, and then write the
+red report snapshots for explicit evidence tier, `no safe action`, and
+unchanged-rescan states.
