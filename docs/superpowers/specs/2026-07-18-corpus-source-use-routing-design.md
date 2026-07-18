@@ -1,6 +1,6 @@
 # Corpus source-use routing and owner-validation design
 
-- **Status:** approved in conversation; pending written-spec review
+- **Status:** approved by the repository owner on 2026-07-18
 - **Date:** 2026-07-18
 - **Repository:** `usebrick/platform`
 - **Primary package:** `packages/slopbrick`
