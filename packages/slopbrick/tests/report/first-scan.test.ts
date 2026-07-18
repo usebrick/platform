@@ -129,6 +129,34 @@ function stripAnsi(value: string): string {
   return value.replace(/\u001B\[[0-?]*[ -\/]*[@-~]/g, '');
 }
 
+function terminalCellWidth(value: string): number {
+  let width = 0;
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (
+      /\p{Mark}/u.test(character)
+      || codePoint === 0x200d
+      || (codePoint >= 0xfe00 && codePoint <= 0xfe0f)
+      || (codePoint >= 0xe0100 && codePoint <= 0xe01ef)
+    ) continue;
+    const wide = codePoint >= 0x1100 && (
+      codePoint <= 0x115f
+      || codePoint === 0x2329
+      || codePoint === 0x232a
+      || (codePoint >= 0x2e80 && codePoint <= 0xa4cf && codePoint !== 0x303f)
+      || (codePoint >= 0xac00 && codePoint <= 0xd7a3)
+      || (codePoint >= 0xf900 && codePoint <= 0xfaff)
+      || (codePoint >= 0xfe10 && codePoint <= 0xfe19)
+      || (codePoint >= 0xfe30 && codePoint <= 0xfe6f)
+      || (codePoint >= 0xff01 && codePoint <= 0xff60)
+      || (codePoint >= 0xffe0 && codePoint <= 0xffe6)
+      || (codePoint >= 0x20000 && codePoint <= 0x3fffd)
+    );
+    width += wide ? 2 : 1;
+  }
+  return width;
+}
+
 function renderedSection(output: string, heading: string): string {
   const plain = stripAnsi(output);
   const start = plain.indexOf(heading);
@@ -551,13 +579,15 @@ describe('first-scan pretty renderer contract', () => {
           Why: Untrusted input reaches a sensitive operation.
           Action: manual review — Review input handling before release. No safe bounded repair is available.
         2. Code and Logic — logic/zipf-slope-anomaly [medium]
-          Evidence tier: calibrated; precision 63.69%; last calibrated 2026-07-04.
+          Evidence tier: calibrated; verdict USEFUL; precision 63.69%; last calibrated 2026-07-04. Measured rule behavior; not
+          proof of authorship. Not a quality verdict.
           Reach: single-file; 1 finding across 1 file.
           Change: unchanged.
           Why: Identifier frequency differs from the measured baseline.
           Action: manual review — Review identifier vocabulary in domain context. No safe bounded repair is available.
         3. Code and Logic — logic/heaps-deviation [medium]
-          Evidence tier: calibrated; precision 58%; last calibrated 2026-07-05.
+          Evidence tier: calibrated; verdict USEFUL; precision 58%; last calibrated 2026-07-05. Measured rule behavior; not
+          proof of authorship. Not a quality verdict.
           Reach: single-file; 1 finding across 1 file.
           Change: new.
           Why: Vocabulary growth differs from the measured baseline.
@@ -578,9 +608,9 @@ describe('first-scan pretty renderer contract', () => {
       'Recommended actions',
       'Rescan comparison',
     ];
-    expect(headings.map((heading) => plain.indexOf(heading))).toEqual(
-      [...headings.map((heading) => plain.indexOf(heading))].sort((left, right) => left - right),
-    );
+    const headingLines = plain.split('\n').filter((line) => headings.includes(line));
+    expect(headingLines).toEqual(headings);
+    expect(headingLines.filter((heading) => heading === 'Repository Health')).toHaveLength(1);
     expect(plain).toContain('high');
     expect(plain).toContain('calibrated');
     expect(plain).toContain('manual review');
@@ -778,5 +808,23 @@ describe('first-scan pretty renderer contract', () => {
     }));
 
     expect(output.split('\n').filter(Boolean).every((line) => line.length <= 40)).toBe(true);
+  });
+
+  it('wraps CJK, fullwidth, and combining graphemes by terminal cells at 40 columns', () => {
+    const wideToken = `${'界'.repeat(18)}${'Ａ'.repeat(4)}${'e\u0301'.repeat(4)}`;
+    const narrow = project(report({ issues: [issue('logic', {
+      ruleId: 'logic/wide-output',
+      message: `Review ${wideToken} before merging.`,
+      advice: `Inspect ${wideToken} manually.`,
+    })] }));
+    const output = stripAnsi(formatFirstScanPretty(narrow, {
+      columns: 40,
+      meanSlop: 30,
+      aiSlopScore: 8,
+    }));
+    const semanticLines = output.split('\n').filter(Boolean);
+
+    expect(semanticLines.every((line) => terminalCellWidth(line) <= 40)).toBe(true);
+    expect(semanticLines.every((line) => !line.trimStart().startsWith('\u0301'))).toBe(true);
   });
 });

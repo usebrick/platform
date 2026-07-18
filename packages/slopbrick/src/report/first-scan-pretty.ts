@@ -25,6 +25,83 @@ const HEADINGS = new Set([
   'Rescan comparison',
 ]);
 
+const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+const COMBINING_MARK = /\p{Mark}/u;
+
+function isZeroWidthCodePoint(character: string, codePoint: number): boolean {
+  return COMBINING_MARK.test(character)
+    || codePoint === 0x200d
+    || (codePoint >= 0xfe00 && codePoint <= 0xfe0f)
+    || (codePoint >= 0xe0100 && codePoint <= 0xe01ef)
+    || (codePoint >= 0x1f3fb && codePoint <= 0x1f3ff)
+    || (codePoint >= 0xe0020 && codePoint <= 0xe007f)
+    || codePoint <= 0x1f
+    || (codePoint >= 0x7f && codePoint <= 0x9f);
+}
+
+function isWideCodePoint(codePoint: number): boolean {
+  return codePoint >= 0x1100 && (
+    codePoint <= 0x115f
+    || codePoint === 0x2329
+    || codePoint === 0x232a
+    || (codePoint >= 0x2e80 && codePoint <= 0xa4cf && codePoint !== 0x303f)
+    || (codePoint >= 0xac00 && codePoint <= 0xd7a3)
+    || (codePoint >= 0xf900 && codePoint <= 0xfaff)
+    || (codePoint >= 0xfe10 && codePoint <= 0xfe19)
+    || (codePoint >= 0xfe30 && codePoint <= 0xfe6f)
+    || (codePoint >= 0xff01 && codePoint <= 0xff60)
+    || (codePoint >= 0xffe0 && codePoint <= 0xffe6)
+    || (codePoint >= 0x1b000 && codePoint <= 0x1b001)
+    || (codePoint >= 0x1f1e6 && codePoint <= 0x1f1ff)
+    || (codePoint >= 0x1f200 && codePoint <= 0x1f251)
+    || (codePoint >= 0x1f300 && codePoint <= 0x1faff)
+    || (codePoint >= 0x20000 && codePoint <= 0x3fffd)
+  );
+}
+
+function graphemeCellWidth(grapheme: string): number {
+  let width = 0;
+  let joined = false;
+  let emojiPresentation = false;
+  let regionalIndicators = 0;
+  for (const character of grapheme) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (codePoint === 0x200d) joined = true;
+    if (codePoint === 0xfe0f) emojiPresentation = true;
+    if (codePoint >= 0x1f1e6 && codePoint <= 0x1f1ff) regionalIndicators += 1;
+    if (isZeroWidthCodePoint(character, codePoint)) continue;
+    width += isWideCodePoint(codePoint) ? 2 : 1;
+  }
+  if (joined || emojiPresentation || regionalIndicators > 1) return width === 0 ? 0 : 2;
+  return width;
+}
+
+function terminalCellWidth(value: string): number {
+  let width = 0;
+  for (const { segment } of GRAPHEME_SEGMENTER.segment(value)) {
+    width += graphemeCellWidth(segment);
+  }
+  return width;
+}
+
+function splitByTerminalCells(value: string, width: number): string[] {
+  const chunks: string[] = [];
+  let chunk = '';
+  let chunkWidth = 0;
+  for (const { segment } of GRAPHEME_SEGMENTER.segment(value)) {
+    const segmentWidth = graphemeCellWidth(segment);
+    if (chunk && chunkWidth + segmentWidth > width) {
+      chunks.push(chunk);
+      chunk = '';
+      chunkWidth = 0;
+    }
+    chunk += segment;
+    chunkWidth += segmentWidth;
+  }
+  if (chunk) chunks.push(chunk);
+  return chunks;
+}
+
 function displayColumns(options: FirstScanPrettyOptions): number {
   const detected = options.columns
     ?? (process.stdout.isTTY ? process.stdout.columns : 100)
@@ -55,26 +132,26 @@ function wrap(text: string, columns: number, indentation = 2): string[] {
   };
 
   for (const original of words) {
-    let word = original;
-    if (word.length > width) {
+    const wordWidth = terminalCellWidth(original);
+    if (wordWidth > width) {
       flush();
-      while (word.length > width) {
-        lines.push(`${indent}${word.slice(0, width)}`);
-        word = word.slice(width);
+      const chunks = splitByTerminalCells(original, width);
+      for (const chunk of chunks.slice(0, -1)) {
+        lines.push(`${indent}${chunk}`);
       }
-      current = word;
+      current = chunks.at(-1) ?? '';
       continue;
     }
     if (current.length === 0) {
-      current = word;
+      current = original;
       continue;
     }
-    if (current.length + 1 + word.length <= width) {
-      current += ` ${word}`;
+    if (terminalCellWidth(current) + 1 + wordWidth <= width) {
+      current += ` ${original}`;
       continue;
     }
     flush();
-    current = word;
+    current = original;
   }
   flush();
   return lines;
@@ -149,7 +226,7 @@ function areasSection(firstScan: FirstScanExperience, columns: number): string {
 function evidenceSummary(action: FirstScanRecommendedAction): string {
   if (action.evidence.tier === 'calibrated' && action.evidence.calibration) {
     const calibration = action.evidence.calibration;
-    return `calibrated; precision ${formatNumber(calibration.precision * 100)}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}.`;
+    return `calibrated; verdict ${calibration.verdict}; precision ${formatNumber(calibration.precision * 100)}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}. ${action.evidence.claim} Not a quality verdict.`;
   }
   if (action.evidence.tier === 'deterministic') {
     if (action.evidence.sourceSpan === 'exact') return 'deterministic; exact source span.';

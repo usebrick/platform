@@ -14,6 +14,7 @@ import { compareFindingBaseline } from '../../src/report/finding-delta';
 import type { DebtBaseline, Issue, ProjectReport } from '../../src/types';
 import { runScan } from '../../src/cli/scan';
 import { hashConfig } from '../../src/engine/cache';
+import { formatPretty } from '../../src/report/pretty';
 
 const { loadDebtBaselineStateSpy } = vi.hoisted(() => ({
   loadDebtBaselineStateSpy: vi.fn(),
@@ -509,6 +510,65 @@ describe('durable new-debt baseline', () => {
         newCount: current.report.newDebt?.newFindingCount,
       });
       expect(loadDebtBaselineStateSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it('refreshes first-scan after a late flywheel issue without reloading or reevaluating new debt', async () => {
+    const workspace = mkdtempSync(join('/tmp', 'slopbrick-first-scan-flywheel-'));
+    try {
+      const source = 'export const A = () => <div className="p-[13px]" />;\n';
+      mkdirSync(join(workspace, 'src'), { recursive: true });
+      writeFileSync(join(workspace, 'src', 'A.tsx'), source);
+
+      const first = await runScan({
+        workspace,
+        quiet: true,
+        telemetry: true,
+        threadCount: 1,
+      });
+      saveDebtBaseline(
+        workspace,
+        buildDebtBaseline(first.report, workspace, hashConfig(first.config), 'unknown'),
+      );
+      await runScan({ workspace, quiet: true, telemetry: true, threadCount: 1 });
+
+      loadDebtBaselineStateSpy.mockClear();
+      const current = await runScan({
+        workspace,
+        quiet: true,
+        telemetry: true,
+        threadCount: 1,
+        ciGate: { maxNewIssues: 0 },
+      });
+      const hotspotRule = 'component/chronic-offender';
+      const frontendArea = current.report.firstScan?.areas.find(
+        ({ id }) => id === 'frontend-implementation',
+      );
+
+      expect(current.newDebtFailure).toBe(false);
+      expect(current.report.newDebt).toMatchObject({
+        status: 'passed',
+        newFindingCount: 0,
+        failed: false,
+      });
+      expect(current.report.issues.some(({ ruleId }) => ruleId === hotspotRule)).toBe(true);
+      expect(current.report.firstScan?.findings.some(({ ruleId }) => ruleId === hotspotRule)).toBe(true);
+      expect(current.report.firstScan?.delta).toMatchObject({
+        status: 'compared',
+        newCount: 1,
+      });
+      expect(loadDebtBaselineStateSpy).toHaveBeenCalledTimes(1);
+
+      const compact = formatPretty(current.report, { full: false, cwd: workspace });
+      const full = formatPretty(current.report, { full: true, cwd: workspace });
+      expect(compact).toContain(
+        `Frontend Implementation: ${frontendArea?.findingCount} finding`,
+      );
+      expect(compact).toContain(hotspotRule);
+      expect(full).toContain('Full report');
+      expect(full).toContain(hotspotRule);
     } finally {
       rmSync(workspace, { recursive: true, force: true });
     }

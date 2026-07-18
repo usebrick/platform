@@ -211,15 +211,16 @@ export async function finalizeReport(
   const debtBaselineState = validScan
     ? loadDebtBaselineState(cwd)
     : { status: 'missing' as const };
-
-  report.firstScan = projectFirstScan(report, {
+  const firstScanProjectionOptions = {
     cwd,
     configHash,
     baselineState: debtBaselineState.status,
     ...(debtBaselineState.status === 'loaded'
       ? { baseline: debtBaselineState.baseline }
       : {}),
-  });
+  };
+
+  report.firstScan = projectFirstScan(report, firstScanProjectionOptions);
 
   let newDebtFailure = false;
   if (validScan && options.ciGate?.maxNewIssues !== undefined) {
@@ -295,6 +296,11 @@ export async function finalizeReport(
     machineReadableStdout,
     autoRefreshSnippets: Boolean(options.autoRefreshSnippets),
   });
+
+  // Persistence may append active flywheel findings. Refresh only the
+  // presentation projection from the already-loaded baseline/config inputs;
+  // gate decisions above remain the pre-persistence scan contract.
+  report.firstScan = projectFirstScan(report, firstScanProjectionOptions);
 
   return { report, noIncreaseFailure, newDebtFailure };
 }

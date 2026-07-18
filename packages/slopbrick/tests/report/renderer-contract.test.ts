@@ -124,6 +124,197 @@ describe('headline score renderer contract', () => {
     expect(legacy).toContain('Engineering findings (1)');
   });
 
+  it('renders the complete calibrated-evidence boundary in compact recommendations and full rows', () => {
+    const calibratedIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'logic/zipf-slope-anomaly',
+      category: 'logic',
+      filePath: '/workspace/src/domain.ts',
+      message: 'Identifier frequency differs from the measured baseline.',
+      signalStrength: {
+        recall: 0.0168,
+        fpRate: 0.0111,
+        ratio: 57.13,
+        precision: 0.6369,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+        verdict: 'USEFUL',
+      },
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [calibratedIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+
+    const compact = formatPretty(input, { full: false, cwd: '/workspace' });
+    const full = formatPretty(input, { full: true, cwd: '/workspace' });
+    const fullDetail = full.split('\n\nFull report\n\n')[1] ?? '';
+    for (const output of [compact, fullDetail]) {
+      expect(output).toContain('verdict USEFUL');
+      expect(output).toContain('precision 63.69%');
+      expect(output).toContain('last calibrated 2026-07-04');
+      expect(output).toContain('Measured rule behavior; not proof of authorship.');
+      expect(output).toContain('Not a quality verdict.');
+    }
+    expect(input.firstScan.findings[0]?.evidence.claim).toBe(
+      'Measured rule behavior; not proof of authorship.',
+    );
+  });
+
+  it('matches exact evidence by stable finding identity through the CLI render path', async () => {
+    const firstIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'logic/first-evidence',
+      category: 'logic',
+      filePath: '/workspace/src/first.ts',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'FIRST_EXACT_SNIPPET',
+        location: { start: { line: 2, column: 1 }, end: { line: 2, column: 20 } },
+        matched: { field: 'fixture', key: 'first', value: 'FIRST_EXACT_SNIPPET' },
+      },
+    };
+    const secondIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'logic/second-evidence',
+      category: 'logic',
+      filePath: '/workspace/src/second.ts',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'SECOND_EXACT_SNIPPET',
+        location: { start: { line: 3, column: 1 }, end: { line: 3, column: 21 } },
+        matched: { field: 'fixture', key: 'second', value: 'SECOND_EXACT_SNIPPET' },
+      },
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [firstIssue, secondIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    input.issues = [secondIssue, firstIssue];
+    const logged: string[] = [];
+    const spy = vi.spyOn(console, 'log').mockImplementation((value) => {
+      logged.push(String(value));
+    });
+    try {
+      await outputScanResults(input, { format: 'pretty', full: true }, '/workspace');
+    } finally {
+      spy.mockRestore();
+    }
+    const output = logged.join('\n').split('\n\nFull report\n\n')[1] ?? '';
+    const firstRow = output.slice(
+      output.indexOf('[MEDIUM  ] logic/first-evidence'),
+      output.indexOf('[MEDIUM  ] logic/second-evidence'),
+    );
+    const secondRow = output.slice(output.indexOf('[MEDIUM  ] logic/second-evidence'));
+
+    expect(firstRow).toContain('FIRST_EXACT_SNIPPET');
+    expect(firstRow).not.toContain('SECOND_EXACT_SNIPPET');
+    expect(secondRow).toContain('SECOND_EXACT_SNIPPET');
+    expect(secondRow).not.toContain('FIRST_EXACT_SNIPPET');
+  });
+
+  it('uses only unique exact relative locations without cwd and omits ambiguous evidence', () => {
+    const relativeIssue = (ruleId: string, filePath: string, snippet: string): Issue => ({
+      ...activeIssue,
+      ruleId,
+      category: 'logic',
+      filePath,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet,
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 8 } },
+        matched: { field: 'fixture', key: ruleId, value: snippet },
+      },
+    });
+    const firstIssue = relativeIssue('logic/relative-first', 'src/first.ts', 'RELATIVE_FIRST');
+    const secondIssue = relativeIssue('logic/relative-second', 'src/second.ts', 'RELATIVE_SECOND');
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [firstIssue, secondIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    input.issues = [secondIssue, firstIssue];
+    const reordered = formatPretty(input, { full: true }).split('\n\nFull report\n\n')[1] ?? '';
+    const firstRow = reordered.slice(
+      reordered.indexOf('[MEDIUM  ] logic/relative-first'),
+      reordered.indexOf('[MEDIUM  ] logic/relative-second'),
+    );
+    expect(firstRow).toContain('RELATIVE_FIRST');
+    expect(firstRow).not.toContain('RELATIVE_SECOND');
+
+    const ambiguousA = relativeIssue('logic/ambiguous', 'src/same.ts', 'AMBIGUOUS_A');
+    const ambiguousB = {
+      ...relativeIssue('logic/ambiguous', 'src/same.ts', 'AMBIGUOUS_B'),
+      message: 'A second finding at the same exact location.',
+    };
+    const ambiguous = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [ambiguousA, ambiguousB],
+    }) as ProjectReport;
+    ambiguous.firstScan = projectFirstScan(ambiguous, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    ambiguous.issues = [ambiguousB, ambiguousA];
+    const ambiguousOutput = formatPretty(ambiguous, { full: true });
+
+    expect(ambiguousOutput).not.toContain('AMBIGUOUS_A');
+    expect(ambiguousOutput).not.toContain('AMBIGUOUS_B');
+  });
+
+  it('omits exact evidence when cwd identity does not match the projected finding', () => {
+    const original: Issue = {
+      ...activeIssue,
+      ruleId: 'logic/replaced-finding',
+      category: 'logic',
+      filePath: '/workspace/src/replaced.ts',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'ORIGINAL_EXACT_SNIPPET',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 8 } },
+        matched: { field: 'fixture', key: 'original', value: 'ORIGINAL_EXACT_SNIPPET' },
+      },
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [original],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    input.issues = [{
+      ...original,
+      message: 'A different finding now occupies this location.',
+      evidence: {
+        ...original.evidence!,
+        snippet: 'UNTRUSTWORTHY_REPLACEMENT',
+      },
+    }];
+
+    const output = formatPretty(input, { full: true, cwd: '/workspace' });
+    expect(output).not.toContain('UNTRUSTWORTHY_REPLACEMENT');
+  });
+
   it.each([
     ['not-applicable', { completionStatus: 'empty', scoreValidity: 'not-applicable', requested: 0, analyzed: 0, failed: 0, skipped: 0 }],
     ['incomplete', { completionStatus: 'partial', scoreValidity: 'incomplete', requested: 2, analyzed: 1, failed: 1, skipped: 0 }],

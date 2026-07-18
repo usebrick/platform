@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { isAbsolute } from 'node:path';
 import type {
   ComponentScore,
   FirstScanFinding,
@@ -12,6 +13,7 @@ import { formatScanAccountingSummary, formatScanValidityNotice, isIncompleteScan
 import { formatFindingContext } from './finding-context.js';
 import { FIRST_SCAN_AREAS } from './first-scan.js';
 import { formatFirstScanPretty } from './first-scan-pretty.js';
+import { findingIdentity } from './finding-identity.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -1136,9 +1138,11 @@ function formatIssue(issue: Issue): string {
 function formatProjectedEvidence(finding: FirstScanFinding): string {
   const calibration = finding.evidence.calibration;
   const calibrationText = calibration
-    ? ` Precision ${(calibration.precision * 100).toFixed(2).replace(/\.00$/, '')}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}.`
+    ? `verdict ${calibration.verdict}; precision ${(calibration.precision * 100).toFixed(2).replace(/\.00$/, '')}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}. ${finding.evidence.claim} Not a quality verdict.`
     : '';
-  return `${finding.evidence.tier} — ${finding.evidence.claim}${calibrationText}`;
+  return calibration
+    ? `${finding.evidence.tier} — ${calibrationText}`
+    : `${finding.evidence.tier} — ${finding.evidence.claim}`;
 }
 
 function formatProjectedAction(finding: FirstScanFinding): string {
@@ -1168,13 +1172,84 @@ function formatProjectedFinding(finding: FirstScanFinding, issue?: Issue): strin
   return lines.join('\n');
 }
 
-function formatFirstScanFindingAreas(report: ProjectReport): string[] {
+function uniqueIssueMatches(
+  findings: FirstScanFinding[],
+  issues: Issue[],
+  findingKey: (finding: FirstScanFinding) => string | undefined,
+  issueKey: (issue: Issue) => string | undefined,
+): Map<FirstScanFinding, Issue> {
+  const findingsByKey = new Map<string, FirstScanFinding[]>();
+  const issuesByKey = new Map<string, Issue[]>();
+  for (const finding of findings) {
+    const key = findingKey(finding);
+    if (key === undefined) continue;
+    const group = findingsByKey.get(key);
+    if (group) group.push(finding);
+    else findingsByKey.set(key, [finding]);
+  }
+  for (const issue of issues) {
+    const key = issueKey(issue);
+    if (key === undefined) continue;
+    const group = issuesByKey.get(key);
+    if (group) group.push(issue);
+    else issuesByKey.set(key, [issue]);
+  }
+
+  const matches = new Map<FirstScanFinding, Issue>();
+  for (const [key, matchingFindings] of findingsByKey) {
+    const matchingIssues = issuesByKey.get(key);
+    const finding = matchingFindings.length === 1 ? matchingFindings[0] : undefined;
+    const issue = matchingIssues?.length === 1 ? matchingIssues[0] : undefined;
+    if (finding && issue) matches.set(finding, issue);
+  }
+  return matches;
+}
+
+function relativeFindingKey(finding: FirstScanFinding): string | undefined {
+  const filePath = finding.location.filePath;
+  if (filePath !== undefined && isAbsolute(filePath)) return undefined;
+  return JSON.stringify([
+    finding.ruleId,
+    filePath ?? null,
+    finding.location.line,
+    finding.location.column,
+  ]);
+}
+
+function relativeIssueKey(issue: Issue): string | undefined {
+  if (issue.filePath !== undefined && isAbsolute(issue.filePath)) return undefined;
+  return JSON.stringify([
+    issue.ruleId,
+    issue.filePath ?? null,
+    issue.line,
+    issue.column,
+  ]);
+}
+
+function matchProjectedIssues(
+  findings: FirstScanFinding[],
+  issues: Issue[],
+  cwd?: string,
+): Map<FirstScanFinding, Issue> {
+  if (cwd !== undefined) {
+    return uniqueIssueMatches(
+      findings,
+      issues,
+      (finding) => finding.identity,
+      (issue) => findingIdentity(issue, cwd),
+    );
+  }
+  return uniqueIssueMatches(findings, issues, relativeFindingKey, relativeIssueKey);
+}
+
+function formatFirstScanFindingAreas(report: ProjectReport, cwd?: string): string[] {
   const firstScan = report.firstScan;
   if (!firstScan) return [];
   const activeIssues = report.issues.filter((issue) => (issue.severity as string) !== 'off');
-  const projected = firstScan.findings.map((finding, index) => ({
+  const issueMatches = matchProjectedIssues(firstScan.findings, activeIssues, cwd);
+  const projected = firstScan.findings.map((finding) => ({
     finding,
-    issue: activeIssues[index],
+    issue: issueMatches.get(finding),
   }));
 
   return FIRST_SCAN_AREAS.map((area) => {
@@ -1189,7 +1264,12 @@ function formatFirstScanFindingAreas(report: ProjectReport): string[] {
   });
 }
 
-function formatDetailedReport(report: ProjectReport, options: { full?: boolean }): string {
+export interface PrettyOptions {
+  full?: boolean;
+  cwd?: string;
+}
+
+function formatDetailedReport(report: ProjectReport, options: PrettyOptions): string {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
     const notice = formatScanValidityNotice(report) ??
       'NO FILES ANALYSED — scores are not applicable for gating.';
@@ -1285,7 +1365,7 @@ function formatDetailedReport(report: ProjectReport, options: { full?: boolean }
   // full list. They show in the JSON for tooling but the report
   // shows only what the user can act on.
   if (report.firstScan) {
-    sections.push(...formatFirstScanFindingAreas(report));
+    sections.push(...formatFirstScanFindingAreas(report, options.cwd));
   } else {
     sections.push(...formatFindingLanes(report.issues, options.full !== false));
   }
@@ -1293,11 +1373,11 @@ function formatDetailedReport(report: ProjectReport, options: { full?: boolean }
   return sections.join('\n\n');
 }
 
-function formatLegacyDetailedReport(report: ProjectReport, options: { full?: boolean }): string {
+function formatLegacyDetailedReport(report: ProjectReport, options: PrettyOptions): string {
   return formatDetailedReport(report, options);
 }
 
-export function formatPretty(report: ProjectReport, options: { full?: boolean } = { full: true }): string {
+export function formatPretty(report: ProjectReport, options: PrettyOptions = { full: true }): string {
   if (!report.firstScan) return formatLegacyDetailedReport(report, options);
 
   const firstScreen = formatFirstScanPretty(report.firstScan, {

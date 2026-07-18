@@ -199,7 +199,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   }
 
   if (!options.quiet) {
-    logger.info(formatPretty(report, { full: options.full === true }));
+    logger.info(formatPretty(report, { full: options.full === true, cwd }));
   }
 }
 
