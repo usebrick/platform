@@ -18,7 +18,11 @@ SlopBrick has broad detector coverage, but the five-part product taxonomy,
 evidence certainty, current-versus-new debt, and prioritized scan-to-rescan
 journey are not yet one tested UX contract. The required `SB-045` local
 qualification is complete. Public release and website deployment remain under
-`REL-001` and do not block this local UX plan.
+`REL-001` and do not block this local UX plan. `VAL-001-RUN-001` now provides a
+real owner baseline: the first recommendation was useful for finding a
+1,388-line review target, but it had no safe bounded fix, and the unchanged
+rescan required manual comparison. Those are concrete red states for this
+plan, not participant evidence.
 
 ## Scope
 
@@ -86,5 +90,6 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Turn the five-part taxonomy and evidence tiers into snapshot-tested report
-information architecture.
+Use `VAL-001-RUN-001` to write the first report snapshots for explicit evidence
+tier, `no safe action`, and unchanged-rescan states, then complete the
+five-part information architecture.

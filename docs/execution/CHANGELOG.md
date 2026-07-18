@@ -3,6 +3,33 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 23 — 2026-07-18
+
+### Changed
+
+- Started `VAL-001` with the first real repository-owner walkthrough and moved
+  it from `ready` to `in_progress`, consuming one of two implementation WIP
+  slots.
+- Recorded `VAL-001-RUN-001` against the package-local v0.45 candidate: both
+  full scans completed 270/270 files with zero runtime failures, 11 active
+  medium hygiene findings, 690 audit-only suppressed findings, AI Slop Score
+  `0.0`, and exit `0`.
+- Preserved the owner's explicit `useful` decision while recording that the
+  file-level Heaps/Zipf evidence exposed no safe bounded repair. No source edit
+  was made, and the repeated scan reproduced every decision-bearing outcome.
+- Routed the observed `useful + no safe action + unchanged rescan` states into
+  the ready `SB-UX-001` and `TEL-001` contracts without starting either plan.
+
+### Evidence
+
+- `docs/execution/evidence/VAL-001-owner-validation.md`
+- The target source SHA-256 remained
+  `58d6fc3f02edd1b36b4edb322672752c8438586588b9b4e21b6b91d0e648bdcc`.
+- The stale local score baseline was rejected for a config-hash mismatch and
+  was not refreshed. No CAL-001 row, threshold, default state, score formula,
+  corpus admission, participant state, release decision, or public artifact
+  changed.
+
 ## Revision 22 — 2026-07-18
 
 ### Changed

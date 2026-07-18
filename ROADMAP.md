@@ -55,9 +55,10 @@ family-safe splits, and collision checks; they are not witnessed authorship or
 quality labels. The source is not approved for public redistribution, and its
 use does not admit v10.3 data or activate a rule.
 
-The repository owner is the only current product tester. Owner-run
-scan-to-rescan walkthroughs belong to `VAL-001`; the external participant
-protocol is parked with zero sessions and no recruitment authorization.
+The repository owner is the only current product tester. `VAL-001` is active
+after its first owner-run self-scan and unchanged rescan recorded a useful
+review target with no safe bounded fix. The external participant protocol is
+parked with zero sessions and no recruitment authorization.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -105,9 +106,9 @@ Public npm release and website deployment remain separate owner decisions under
 - Preserve the completed CORPUS-002 source-use routing around the verified
   Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
   without changing rule state or v10.3.
-- Keep VAL-001 ready for owner-selected scan-to-finding-to-fix-to-rescan
-  walkthroughs. Record only real owner runs and impose no participant or
-  target-count gate.
+- Continue active VAL-001 owner-selected scan-to-finding-to-action-to-rescan
+  walkthroughs. Preserve declined/no-safe-fix outcomes as real evidence;
+  impose no participant or target-count gate.
 
 ### Exit gate
 
@@ -115,9 +116,10 @@ The local gate is satisfied: planning validation passes, v0.45 has green local
 qualification gates plus an explicit self-scan decision, and the completed
 CORPUS-002 receipt preserves the seed, smoke, holdout, and decision-matrix
 receipts. Begin the Next-horizon local work without waiting for `REL-001`.
-Owner validation may accumulate when the owner chooses; no participant count
-is a release or source-use gate. Publishing and deploying remain separate
-owner-authorized actions.
+Owner validation has begun and may accumulate only when the owner chooses;
+the first no-fix row does not satisfy the repeated fix-loop exit gate. No
+participant count is a release or source-use gate. Publishing and deploying
+remain separate owner-authorized actions.
 
 ## Next — 31 to 90 days
 

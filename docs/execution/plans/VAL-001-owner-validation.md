@@ -1,6 +1,6 @@
 # VAL-001 — Validate the scan-to-rescan loop with the repository owner
 
-- **Status:** `ready`
+- **Status:** `in_progress`
 - **Priority:** 13
 - **Track / lane:** implementation / validation
 - **Owner:** repository owner
@@ -12,7 +12,12 @@ Record deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs and
 
 ## Current truth
 
-The repository owner is the only current product tester. CAL-001 measured origin association but did not evaluate usefulness or apply rule changes. No owner walkthrough is recorded yet.
+The repository owner is the only current product tester. CAL-001 measured
+origin association but did not evaluate usefulness or apply rule changes.
+`VAL-001-RUN-001` now records the first real owner walkthrough: a complete
+package-local self-scan, a useful review signal, an owner-approved no-fix
+disposition, and an unchanged complete rescan. No participant evidence,
+rule-state change, or owner-review-required CAL-001 row follows from it.
 
 ## Scope
 
@@ -40,12 +45,18 @@ The repository owner is the only current product tester. CAL-001 measured origin
 
 ## Execution steps
 
-1. Select one owner-controlled repository or deterministic fixture.
-2. Run the documented local scan and record its receipt.
-3. Record the first finding considered useful or explicitly record that none was useful.
-4. Apply or decline one bounded fix and record the reason.
-5. Rescan and record the outcome.
-6. Repeat only when the owner chooses another fixture; do not invent a target count.
+1. Select one owner-controlled repository or deterministic fixture -> RUN-001
+   complete against the SlopBrick package itself.
+2. Run the documented local scan and record its receipt -> RUN-001 complete at
+   270/270 analyzed files with zero runtime failures.
+3. Record the first finding considered useful or explicitly record that none
+   was useful -> owner marked the first two file-level hygiene findings useful.
+4. Apply or decline one bounded fix and record the reason -> owner approved a
+   decline because the evidence identified no concrete defect or safe bounded
+   repair.
+5. Rescan and record the outcome -> unchanged normalized result reproduced.
+6. Repeat only when the owner chooses another repository or fixture; do not
+   invent a target count.
 
 ## Verification
 
@@ -61,4 +72,5 @@ Remove an invalid ledger row while retaining the underlying scan receipts; do no
 
 ## Next action
 
-Run the first real owner-controlled scan walkthrough and record it only after the owner performs it.
+Carry RUN-001's useful/no-safe-fix/unchanged states into `SB-UX-001`. Repeat
+the walkthrough only when the owner selects another repository or fixture.

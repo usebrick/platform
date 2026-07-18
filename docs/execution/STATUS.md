@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 22
+**Index revision:** 23
 **Global status:** `advancing`
 
 ## Executive state
@@ -14,12 +14,14 @@ unregistered, malformed, or manually widened source dispositions. The local
 v0.45 trust-release qualification is complete under `SB-045`; `REL-001` now
 owns the separate npm and website decisions and consumes no WIP. `SB-UX-001`
 and `TEL-001` are ready, with the first-scan UX first by priority. The
-repository owner is the only current product tester; `VAL-001` remains ready
-with an intentionally empty owner-validation ledger, while `GTM-001` remains
-parked with zero sessions and no recruitment authorization. CAL-001 records
-`applied: false` and `admitted: false`; usefulness review and any rule-state
-change remain separate owner decisions. Stale-path cleanup is isolated behind
-exact owner approval and does not block local product work.
+repository owner is the only current product tester; `VAL-001` is now active
+with one owner-attested self-scan-to-rescan row, while `GTM-001` remains parked
+with zero sessions and no recruitment authorization. The first row judged a
+statistical hygiene recommendation useful for review, declined an immediate
+fix because no safe bounded repair followed from the evidence, and reproduced
+the unchanged findings. CAL-001 remains `applied: false` and `admitted: false`;
+no rule state or owner-review-required matrix row changed. Stale-path cleanup
+is isolated behind exact owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -38,16 +40,28 @@ exact owner approval and does not block local product work.
   and the packed consumer cannot write the user pnpm store without the
   required local-cache permission. Those affected tests pass in the isolated
   package receipt. These results do not authorize publication or deployment.
-- The current package-local self-scan completed **263/263** selected files
-  with **0** parse, timeout, crash, or internal failures and passes the
-  configured AI-slop policy: **0.0** versus a threshold of **15**. It reports
-  **0 active AI-specific signals**, **11 non-AI hygiene findings**, and **671
-  audit-only suppressed** findings, then exits `0`. The disposition is
+- The current package-local owner self-scan and unchanged rescan each analyzed
+  **270/270** selected files with **0** parse, timeout, crash, or internal
+  failures and passed the configured AI-slop policy: **0.0** versus a threshold
+  of **15**. Each reported **0 active AI-specific signals**, **11 non-AI
+  hygiene findings**, and **690 audit-only suppressed** findings, then exited
+  `0`. The disposition is
   **PASS for the configured local AI gate**. This pass comes from the
   evidence-backed default-off disposition for the
   `ai/compression-profile` signal, not from lowering the threshold or making
   a current v10.3 calibration claim. No Corpus v1 measurement activates the
   rule; explicit per-rule opt-in remains available for diagnostic use.
+- `VAL-001-RUN-001` binds those scans to candidate commit
+  `e1b4717e8843d95b5a1ac4e31d9ca47a9bb81a2f`. The owner judged the first
+  two file-level vocabulary-distribution findings useful as a review signal.
+  Inspection found a 1,388-line transaction module but no concrete defect or
+  safe bounded repair, so the owner approved a no-fix disposition. The source
+  SHA-256 stayed
+  `58d6fc3f02edd1b36b4edb322672752c8438586588b9b4e21b6b91d0e648bdcc`,
+  and the rescan reproduced all normalized outcomes. The stale local baseline
+  was rejected for a config-hash mismatch and was not refreshed; this row is
+  owner usefulness evidence, not durable new-debt, calibration, or release
+  evidence.
 - The CAL-001 smoke adapter and runner are checkpointed at
   `f00c5364fc13d6452756d94071c76158cb4a05cd`. The focused calibration tests
   and package typecheck pass; the recorded one-worker receipt scanned 200/200
@@ -130,14 +144,15 @@ exact owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 0 | 2 | None |
+| Implementation | 1 | 2 | `VAL-001` |
 | Company | 0 | 1 | None |
 
-`SB-045` is done. `SB-UX-001` and `TEL-001` are ready but do not consume WIP
-until execution starts; priority selects the UX plan first. `VAL-001` remains
-outside WIP until the repository owner starts a real walkthrough. `REL-001`
-and `DOC-PRUNE-001` are waiting external and consume no WIP. `GTM-001` is
-parked; no participant recruitment is planned or authorized.
+`SB-045` is done. `VAL-001` consumes one implementation slot after the first
+real owner walkthrough. `SB-UX-001` and `TEL-001` are ready but do not consume
+WIP until execution starts; priority still selects the UX plan first and one
+implementation slot remains. `REL-001` and `DOC-PRUNE-001` are waiting
+external and consume no WIP. `GTM-001` is parked; no participant recruitment
+is planned or authorized.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -151,14 +166,14 @@ WIP while waiting.
 | 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
-| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `ready` | — | Snapshot-test the five-part report information architecture. |
-| 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | Define the privacy-safe local outcome event after the first UX contract establishes its finding/outcome boundary. |
+| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `ready` | — | Use VAL-001-RUN-001 to snapshot evidence tier, no-safe-action, and unchanged-rescan states. |
+| 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 9 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
 | 10 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
 | 11 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 12 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
-| 13 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Run the first real owner-controlled scan-to-rescan walkthrough when the owner chooses. |
+| 13 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `in_progress` | — | Carry RUN-001 into SB-UX-001 and repeat only when the owner selects another input. |
 | 14 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
 | 15 | [`REL-001`](plans/REL-001-public-release-boundary.md) | `waiting_external` | — | Await independent owner dispositions for npm release and website deployment. |
 
@@ -168,7 +183,8 @@ WIP while waiting.
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
 | Current checkout gates | Satisfied | Recursive lint, typecheck, full test, and build gates pass in the current checkout; the build emits only the existing zod declaration-bundling warnings. |
-| Self-scan disposition | PASS | 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
+| SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
+| Owner self-scan | Active | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
 | Public claims and metadata | Waiting external | The public package and live website remain unchanged until `REL-001` records exact owner dispositions. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
@@ -212,11 +228,12 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The next local checkpoint is the reviewed `SB-UX-001` implementation plan for
-snapshot-tested first-scan information architecture. `TEL-001` is ready behind
-that initial finding/outcome boundary. `VAL-001` may accumulate only real
-owner-controlled scan-to-rescan receipts when the owner chooses; it has no
-target-count gate and cannot establish participant, team, or market-demand
-evidence. `REL-001` remains the separate public-authority checkpoint. Do not
-lower thresholds, activate rules, invent owner runs, recruit participants, or
-infer publish, tag, or deployment authority from local roadmap progress.
+The next local checkpoint is the reviewed `SB-UX-001` implementation plan,
+using `VAL-001-RUN-001` as real evidence for explicit evidence tiers,
+no-safe-action outcomes, and unchanged-rescan presentation. `TEL-001` remains
+ready behind that typed finding/outcome boundary. `VAL-001` may accumulate only
+real owner-controlled receipts when the owner chooses; it has no target-count
+gate and cannot establish participant, team, or market-demand evidence.
+`REL-001` remains the separate public-authority checkpoint. Do not lower
+thresholds, activate rules, invent owner runs, recruit participants, or infer
+publish, tag, or deployment authority from local roadmap progress.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 22,
+  "revision": 23,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -196,7 +196,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Turn the five-part taxonomy and evidence tiers into snapshot-tested report information architecture.",
+        "text": "Use VAL-001-RUN-001 to snapshot explicit evidence tier, no-safe-action, and unchanged-rescan states in the five-part report information architecture.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
       },
@@ -223,7 +223,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "After the first SB-UX-001 report contract defines its finding/outcome boundary, specify and test an opt-in local outcome event with no raw source or proprietary repository identifier.",
+        "text": "After SB-UX-001 types the first finding/outcome boundary, model the owner-observed useful, declined-no-safe-fix, and unchanged-rescan states without raw source or repository identity.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
@@ -373,7 +373,7 @@
       "track": "implementation",
       "lane": "validation",
       "horizon": "next",
-      "status": "ready",
+      "status": "in_progress",
       "priority": 13,
       "path": "docs/execution/plans/VAL-001-owner-validation.md",
       "dependencies": {
@@ -387,11 +387,13 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run the first real owner-controlled scan walkthrough and record it only after the owner performs it.",
-        "verify": "test -f docs/execution/evidence/VAL-001-owner-validation.md",
+        "text": "Carry VAL-001-RUN-001 into SB-UX-001 and repeat the owner walkthrough only when the owner selects another repository or fixture.",
+        "verify": "rg -q 'VAL-001-RUN-001' docs/execution/evidence/VAL-001-owner-validation.md",
         "evidencePath": "docs/execution/evidence/VAL-001-owner-validation.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/execution/evidence/VAL-001-owner-validation.md"
+      ]
     },
     {
       "id": "GTM-001",
