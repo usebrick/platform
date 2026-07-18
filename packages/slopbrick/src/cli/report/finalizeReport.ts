@@ -28,8 +28,9 @@ import { resolveConfigPath as findConfigPath } from '../../config';
 import { enrichReport } from './enrichReport';
 import { assembleScanReport } from './assembleScanReport';
 import { persistRun } from './persistRun';
-import { evaluateNewDebt, loadDebtBaseline } from './debt-baseline';
+import { evaluateNewDebt, loadDebtBaselineState } from './debt-baseline';
 import { hashConfig } from '../../engine/cache';
+import { projectFirstScan } from '../../report/first-scan';
 import type { RuleRegistry } from '../../rules/registry';
 import type {
   FileScanResult,
@@ -206,14 +207,28 @@ export async function finalizeReport(
   });
   Object.assign(report, scanMetadata);
 
+  const configHash = hashConfig(config);
+  const debtBaselineState = validScan
+    ? loadDebtBaselineState(cwd)
+    : { status: 'missing' as const };
+
+  report.firstScan = projectFirstScan(report, {
+    cwd,
+    configHash,
+    baselineState: debtBaselineState.status,
+    ...(debtBaselineState.status === 'loaded'
+      ? { baseline: debtBaselineState.baseline }
+      : {}),
+  });
+
   let newDebtFailure = false;
   if (validScan && options.ciGate?.maxNewIssues !== undefined) {
     const newDebt = evaluateNewDebt(
       report,
-      loadDebtBaseline(cwd),
+      debtBaselineState.status === 'loaded' ? debtBaselineState.baseline : undefined,
       cwd,
       options.ciGate.maxNewIssues,
-      hashConfig(config),
+      configHash,
     );
     report.newDebt = newDebt;
     newDebtFailure = newDebt.failed;

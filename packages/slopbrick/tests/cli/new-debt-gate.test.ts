@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -14,6 +14,21 @@ import { compareFindingBaseline } from '../../src/report/finding-delta';
 import type { DebtBaseline, Issue, ProjectReport } from '../../src/types';
 import { runScan } from '../../src/cli/scan';
 import { hashConfig } from '../../src/engine/cache';
+
+const { loadDebtBaselineStateSpy } = vi.hoisted(() => ({
+  loadDebtBaselineStateSpy: vi.fn(),
+}));
+
+vi.mock('../../src/cli/report/debt-baseline', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/cli/report/debt-baseline')>();
+  return {
+    ...actual,
+    loadDebtBaselineState: (...args: Parameters<typeof actual.loadDebtBaselineState>) => {
+      loadDebtBaselineStateSpy(...args);
+      return actual.loadDebtBaselineState(...args);
+    },
+  };
+});
 
 const cwd = '/workspace';
 
@@ -458,7 +473,7 @@ describe('durable new-debt baseline', () => {
     });
   });
 
-  it('wires the durable delta through the real scan pipeline', async () => {
+  it('loads one durable baseline for the real scan gate and first-scan projection', async () => {
       const workspace = mkdtempSync(join('/tmp', 'slopbrick-new-debt-e2e-'));
     try {
       const source = 'export const A = () => <div className="p-[13px] m-[9px] gap-[7px]" />;\n';
@@ -472,6 +487,7 @@ describe('durable new-debt baseline', () => {
       );
 
       writeFileSync(join(workspace, 'src', 'B.tsx'), source.replace('A', 'B'));
+      loadDebtBaselineStateSpy.mockClear();
       const current = await runScan({
         workspace,
         quiet: true,
@@ -487,6 +503,12 @@ describe('durable new-debt baseline', () => {
         maxNewIssues: 0,
       });
       expect(current.report.newDebt?.newFindingCount).toBeGreaterThan(0);
+      expect(current.report.firstScan?.delta).toMatchObject({
+        status: 'compared',
+        baselineRevision: 2,
+        newCount: current.report.newDebt?.newFindingCount,
+      });
+      expect(loadDebtBaselineStateSpy).toHaveBeenCalledTimes(1);
     } finally {
       rmSync(workspace, { recursive: true, force: true });
     }
