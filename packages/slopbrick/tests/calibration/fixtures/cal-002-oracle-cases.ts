@@ -1,12 +1,43 @@
 import { createHash } from 'node:crypto';
-import type {
-  CAL002DeterministicRuleId,
-  CAL002OracleAuthority,
-  CAL002OracleCaseResult,
-  CAL002OracleDeclaration,
-  CAL002OracleSourceControl,
-  CAL002StandardsTransfer,
-} from '../../../src/calibration/cal-002/oracles';
+import { CAL002_DETERMINISTIC_RULE_IDS } from '../../../src/calibration/cal-002/contracts';
+
+export type CAL002DeterministicRuleId = (typeof CAL002_DETERMINISTIC_RULE_IDS)[number];
+export type CAL002OracleAuthority = 'language-contract' | 'security-contract' | 'wcag-22' | 'repository-contract';
+export type CAL002OracleObservation = 'finding' | 'no-finding';
+export type CAL002OracleExecutionMode = 'source-text' | 'path-aware' | 'multi-file' | 'allowed-imports' | 'route-context' | 'link-resolution';
+
+export interface CAL002OracleExecution {
+  readonly mode: CAL002OracleExecutionMode;
+  readonly context: string;
+}
+
+export interface CAL002OracleDeclaration {
+  readonly ruleId: CAL002DeterministicRuleId;
+  readonly authority: CAL002OracleAuthority;
+  readonly reference: string;
+  readonly execution: CAL002OracleExecution;
+  readonly positiveCaseIds: readonly string[];
+  readonly negativeCaseIds: readonly string[];
+}
+
+export interface CAL002OracleCaseResult {
+  readonly caseId: string;
+  readonly expected: CAL002OracleObservation;
+  readonly observed: CAL002OracleObservation;
+  readonly sourceSha256: string;
+}
+
+export interface CAL002OracleSourceControl {
+  readonly unitId: string;
+  readonly familyId: string;
+  readonly contentSha256: string;
+  readonly observed: CAL002OracleObservation;
+}
+
+export interface CAL002StandardsTransfer {
+  readonly ruleId: string;
+  readonly reason: 'standards-or-contract-quality-claim';
+}
 
 export interface CAL002OracleMutationCase extends CAL002OracleCaseResult {
   readonly ruleId: CAL002DeterministicRuleId;
@@ -25,6 +56,41 @@ interface RuleFixtureDefinition {
   readonly positiveSource: string;
   readonly negativeSource: string;
 }
+
+const EXECUTION_BY_RULE_ID = {
+  'context/import-path-mismatch': { mode: 'allowed-imports', context: 'Resolve imports against the repository allow-list before evaluating the path.' },
+  'cs/async-without-await': { mode: 'source-text', context: 'Inspect the async C# method body for an await expression.' },
+  'cs/empty-catch-block': { mode: 'source-text', context: 'Inspect the C# catch body for an observable handling statement.' },
+  'cs/sql-string-interpolation': { mode: 'source-text', context: 'Inspect SQL construction for C# interpolation of untrusted values.' },
+  'docs/broken-link': { mode: 'link-resolution', context: 'Resolve the Markdown destination relative to the declaring document.' },
+  'docs/stale-function-reference': { mode: 'multi-file', context: 'Compare the documented function reference with the current exported symbol surface.' },
+  'docs/stale-package-reference': { mode: 'multi-file', context: 'Compare the documented package name with workspace package manifests.' },
+  'dup/identical-block': { mode: 'source-text', context: 'Compare repeated executable blocks after structural normalization.' },
+  'java/lost-stack-trace': { mode: 'source-text', context: 'Inspect Java exception wrapping for preservation of the caught cause.' },
+  'java/sql-string-concat': { mode: 'source-text', context: 'Inspect Java SQL construction for string concatenation of values.' },
+  'java/thread-sleep-in-loop': { mode: 'source-text', context: 'Inspect Java loop bodies for Thread.sleep calls.' },
+  'kt/coroutine-cancellation-missing': { mode: 'source-text', context: 'Inspect Kotlin exception handling for cancellation propagation.' },
+  'kt/force-unwrap': { mode: 'source-text', context: 'Inspect Kotlin null assertions for the force-unwrap operator.' },
+  'kt/global-coroutine-scope': { mode: 'source-text', context: 'Inspect Kotlin coroutine launches for GlobalScope usage.' },
+  'kt/string-template-injection': { mode: 'source-text', context: 'Inspect Kotlin SQL strings for template interpolation of values.' },
+  'logic/key-prop-missing': { mode: 'source-text', context: 'Inspect JSX list rendering for a stable key prop on each item.' },
+  'perf/cls-image': { mode: 'source-text', context: 'Inspect rendered image markup for intrinsic width and height dimensions.' },
+  'php/empty-catch': { mode: 'source-text', context: 'Inspect PHP catch bodies for an observable handling statement.' },
+  'php/sql-injection': { mode: 'source-text', context: 'Inspect PHP SQL construction for concatenated values.' },
+  'rb/exception-swallowing': { mode: 'source-text', context: 'Inspect Ruby rescue blocks for propagation or explicit handling.' },
+  'rb/sql-string-concat': { mode: 'source-text', context: 'Inspect Ruby query construction for string concatenation of values.' },
+  'security/eval': { mode: 'source-text', context: 'Inspect executable source for direct eval calls.' },
+  'security/exposed-env-var': { mode: 'source-text', context: 'Inspect client-visible environment access for secret-bearing names.' },
+  'security/localstorage-token': { mode: 'source-text', context: 'Inspect browser storage writes for authentication token values.' },
+  'security/missing-auth-check': { mode: 'route-context', context: 'Inspect the protected API route middleware chain before its handler.' },
+  'security/public-admin-route': { mode: 'route-context', context: 'Inspect the admin route middleware chain before its handler.' },
+  'security/target-blank-no-noopener': { mode: 'source-text', context: 'Inspect target=_blank anchors for a noopener relationship.' },
+  'security/unsafe-html-render': { mode: 'source-text', context: 'Inspect dangerous HTML rendering for untrusted dynamic content.' },
+  'typo/placeholder-text': { mode: 'source-text', context: 'Inspect UI placeholder text for unfinished generic copy.' },
+  'wcag/focus-appearance': { mode: 'source-text', context: 'Inspect focus styling for a visible focus indicator.' },
+  'wcag/focus-obscured': { mode: 'source-text', context: 'Inspect fixed layout treatment that can obscure focusable content.' },
+  'wcag/missing-alt': { mode: 'source-text', context: 'Inspect non-decorative image markup for alternative text.' },
+} as const satisfies Record<CAL002DeterministicRuleId, CAL002OracleExecution>;
 
 const CONTROL_FAMILIES = [
   'baseline',
@@ -177,10 +243,21 @@ function unitId(ruleId: string, familyId: string): string {
   return `cal002-${ruleId.replace('/', '-')}-${familyId}`;
 }
 
+function controlSourceVariants(safeSource: string): Record<(typeof CONTROL_FAMILIES)[number], string> {
+  return {
+    baseline: safeSource,
+    'alternate-syntax': `(() => {\n${safeSource}\n})();`,
+    'comment-adjacent': `/* CAL-002 source control */\n${safeSource}`,
+    'near-miss': `if (true) {\n${safeSource}\n}`,
+    'regression-safe': `try {\n${safeSource}\n} finally {\n  void 0;\n}`,
+  };
+}
+
 export const CAL002_ORACLE_DECLARATIONS: readonly CAL002OracleDeclaration[] = RULE_FIXTURES.map((fixture) => ({
   ruleId: fixture.ruleId,
   authority: fixture.authority,
   reference: fixture.reference,
+  execution: EXECUTION_BY_RULE_ID[fixture.ruleId],
   positiveCaseIds: [caseId(fixture.ruleId, 'positive')],
   negativeCaseIds: [caseId(fixture.ruleId, 'negative')],
 }));
@@ -206,7 +283,7 @@ export const CAL002_ORACLE_MUTATION_CASES: readonly CAL002OracleMutationCase[] =
 
 export const CAL002_ORACLE_SOURCE_CONTROLS: readonly CAL002OracleSourceControlFixture[] = RULE_FIXTURES.flatMap((fixture) =>
   CONTROL_FAMILIES.map((familyId) => {
-    const source = `${fixture.negativeSource}\n// CAL-002 ${familyId} control`;
+    const source = controlSourceVariants(fixture.negativeSource)[familyId];
     return {
       ruleId: fixture.ruleId,
       unitId: unitId(fixture.ruleId, familyId),

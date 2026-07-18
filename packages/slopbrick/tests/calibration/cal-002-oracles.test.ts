@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { CAL002_DETERMINISTIC_RULE_IDS } from '../../src/calibration/cal-002/contracts';
-import type { CAL002OracleAuthority } from '../../src/calibration/cal-002/oracles';
 import {
   CAL002_ORACLE_DECLARATIONS,
   CAL002_ORACLE_MUTATION_CASES,
   CAL002_ORACLE_SOURCE_CONTROLS,
   CAL002_ORACLE_TRANSFERS,
+  type CAL002OracleAuthority,
 } from './fixtures/cal-002-oracle-cases';
 
 const AUTHORITIES = new Set<CAL002OracleAuthority>([
@@ -32,16 +32,26 @@ describe('CAL-002 deterministic oracle fixture registry', () => {
 
     for (const declaration of CAL002_ORACLE_DECLARATIONS) {
       expect(AUTHORITIES.has(declaration.authority)).toBe(true);
+      expect(declaration.execution.mode.length).toBeGreaterThan(0);
+      expect(declaration.execution.context.length).toBeGreaterThan(0);
+      expect(declaration.reference.length).toBeGreaterThan(0);
       expect(declaration.positiveCaseIds.length).toBeGreaterThan(0);
       expect(declaration.negativeCaseIds.length).toBeGreaterThan(0);
 
       const ruleCases = CAL002_ORACLE_MUTATION_CASES.filter(({ ruleId }) => ruleId === declaration.ruleId);
       expect(ruleCases.some(({ caseId, expected }) => declaration.positiveCaseIds.includes(caseId) && expected === 'finding')).toBe(true);
       expect(ruleCases.some(({ caseId, expected }) => declaration.negativeCaseIds.includes(caseId) && expected === 'no-finding')).toBe(true);
+      expect(new Set(ruleCases.map(({ source }) => source)).size).toBeGreaterThan(1);
+      const positiveCases = ruleCases.filter(({ caseId }) => declaration.positiveCaseIds.includes(caseId));
+      const negativeCases = ruleCases.filter(({ caseId }) => declaration.negativeCaseIds.includes(caseId));
+      for (const positiveCase of positiveCases) {
+        for (const negativeCase of negativeCases) expect(positiveCase.source).not.toBe(negativeCase.source);
+      }
 
       const controls = CAL002_ORACLE_SOURCE_CONTROLS.filter(({ ruleId }) => ruleId === declaration.ruleId);
       expect(controls).toHaveLength(5);
       expect(new Set(controls.map(({ familyId }) => familyId)).size).toBe(5);
+      expect(new Set(controls.map(({ source }) => source)).size).toBe(5);
       expect(controls.every(({ observed }) => observed === 'no-finding')).toBe(true);
     }
 
