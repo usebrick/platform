@@ -3,6 +3,28 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 25 — 2026-07-18
+
+### Changed
+
+- Approved execution of the reviewed `SB-UX-001` detailed implementation plan
+  and moved it from `ready` to `in_progress` in the second implementation WIP
+  slot. `VAL-001` remains `in_progress` in the first slot; `TEL-001` remains
+  ready.
+- Set the first code action to the failing first-scan projection tests for the
+  owner-observed calibrated, no-safe-repair, and unchanged-rescan states.
+- Reconciled the roadmap, status snapshot, bounded plan, and execution index at
+  revision 25. No score, rule, baseline, source, release, or public artifact
+  changed.
+
+### Evidence
+
+- `docs/execution/plans/SB-UX-001-first-scan.md`
+- `specs/PLAN-AUDIT_LATEST.md`
+- `specs/IMPACT_LATEST.md`
+- This execution transition changes documentation only; no product code or
+  TDD red/green evidence is required at this checkpoint.
+
 ## Revision 24 — 2026-07-18
 
 ### Changed

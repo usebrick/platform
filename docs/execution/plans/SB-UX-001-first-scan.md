@@ -1,6 +1,6 @@
 # SB-UX-001 — Make the first scan evidence-led and actionable
 
-- **Status:** `ready`
+- **Status:** `in_progress`
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
@@ -25,7 +25,8 @@ rescan required manual comparison. Those are concrete red states for this
 plan, not participant evidence. The reviewed implementation contract is now
 [`docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`](../../superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md);
 its plan audit is `READY`, its shared-report blast radius is classified `High`,
-and product-code execution has not started yet.
+and execution has started in the second implementation WIP slot. No score,
+rule, baseline, source, release, or public artifact changed.
 
 ## Scope
 
@@ -93,7 +94,5 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Execute Task 1 of the reviewed detailed plan: move `SB-UX-001` to
-`in_progress`, consume the second implementation WIP slot, and then write the
-red report snapshots for explicit evidence tier, `no safe action`, and
-unchanged-rescan states.
+Write the red first-scan projection tests for the owner-observed calibrated,
+no-safe-repair, and unchanged-rescan states.
