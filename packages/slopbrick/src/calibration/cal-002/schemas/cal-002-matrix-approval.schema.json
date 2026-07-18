@@ -1,14 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/cal-002-matrix-approval-v1.json",
-  "type": "object", "additionalProperties": false,
-  "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "approvalCommitSha", "reviewerId", "decision", "concerns", "admitted", "applied"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "approvalCommitSha", "reviewerAuthority", "decision", "admitted", "applied"],
   "properties": {
-    "version": { "const": "cal-002-matrix-approval-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
-    "catalogSha256": { "$ref": "#/$defs/sha256" }, "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
-    "approvalCommitSha": { "$ref": "#/$defs/commit" }, "reviewerId": { "type": "string", "minLength": 1 },
-    "decision": { "enum": ["approved", "rejected"] }, "concerns": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "admitted": { "const": false }, "applied": { "const": false }
+    "version": { "const": "cal-002-matrix-approval-v1" },
+    "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" },
+    "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+    "approvalCommitSha": { "$ref": "#/$defs/commit" },
+    "reviewerAuthority": { "const": "repository-owner" },
+    "decision": { "const": "approved" },
+    "admitted": { "const": false },
+    "applied": { "const": false }
   },
-  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" } }
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+  }
 }

@@ -1,41 +1,178 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/cal-002-final-matrix-v1.json",
-  "type": "object", "additionalProperties": false,
+  "type": "object",
+  "additionalProperties": false,
   "required": ["version", "protocolVersion", "catalogSha256", "oracleReceiptSha256", "qualityMetricsSha256", "originReceiptSha256", "reducerImplementationCommitSha", "rows", "counts", "admitted", "applied"],
   "properties": {
-    "version": { "const": "cal-002-final-matrix-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
-    "catalogSha256": { "$ref": "#/$defs/sha256" }, "oracleReceiptSha256": { "$ref": "#/$defs/sha256" },
-    "qualityMetricsSha256": { "$ref": "#/$defs/sha256" }, "originReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "version": { "const": "cal-002-final-matrix-v1" },
+    "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" },
+    "oracleReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "qualityMetricsSha256": { "$ref": "#/$defs/sha256" },
+    "originReceiptSha256": { "$ref": "#/$defs/sha256" },
     "reducerImplementationCommitSha": { "$ref": "#/$defs/commit" },
-    "rows": { "type": "array", "items": { "oneOf": [{ "$ref": "#/$defs/qualityRow" }, { "$ref": "#/$defs/originRow" }] } },
-    "counts": { "$ref": "#/$defs/counts" }, "admitted": { "const": false }, "applied": { "const": false }
+    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } },
+    "counts": { "$ref": "#/$defs/counts" },
+    "admitted": { "const": false },
+    "applied": { "const": false }
   },
   "$defs": {
-    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
-    "qualityRow": {
-      "type": "object", "additionalProperties": false, "required": ["ruleId", "lane", "evidenceClass", "outcome", "claimCeiling"],
+    "interval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lower", "upper"],
       "properties": {
-        "ruleId": { "$ref": "#/$defs/ruleId" }, "lane": { "const": "quality" },
-        "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] },
-        "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence", "retired"] },
-        "claimCeiling": { "enum": ["deterministic-defect", "quality-usefulness", "review-target-utility", "insufficient-evidence", "retired"] }
+        "lower": { "type": "number", "minimum": 0, "maximum": 1 },
+        "upper": { "type": "number", "minimum": 0, "maximum": 1 }
       }
     },
-    "originRow": {
-      "type": "object", "additionalProperties": false, "required": ["ruleId", "lane", "outcome", "claimCeiling"],
+    "uncertainty": {
+      "type": "object", "additionalProperties": false,
+      "required": ["findingUseful", "controlUseful"],
       "properties": {
-        "ruleId": { "$ref": "#/$defs/ruleId" }, "lane": { "const": "origin" }, "outcome": { "enum": ["default-off", "retired"] },
-        "claimCeiling": { "enum": ["internal-origin-association", "retired"] }
+        "findingUseful": { "$ref": "#/$defs/interval" },
+        "controlUseful": { "$ref": "#/$defs/interval" }
       }
+    },
+    "sampleCounts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["findings", "controls", "cannotDetermine"],
+      "properties": {
+        "findings": { "type": "integer", "minimum": 0 },
+        "controls": { "type": "integer", "minimum": 0 },
+        "cannotDetermine": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ruleId", "lane", "priorAiSpecific", "transferred", "measurementStatus", "claimCeiling", "authority", "sampleCounts", "usefulness", "outcome", "enabledByDefault", "scoreEligibleByDefault", "repairSafety", "evidenceSha256", "admitted"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "lane": { "enum": ["quality", "origin"] },
+        "priorAiSpecific": { "type": "boolean" },
+        "transferred": { "type": "boolean" },
+        "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] },
+        "measurementStatus": { "enum": ["measured", "oracle-verified", "unavailable"] },
+        "claimCeiling": { "enum": ["deterministic-defect", "quality-usefulness", "review-target-utility", "internal-origin-association", "insufficient-evidence", "retired"] },
+        "authority": { "enum": ["standards-contract", "repository-owner", "publisher-attested-internal"] },
+        "sampleCounts": { "$ref": "#/$defs/sampleCounts" },
+        "uncertainty": { "$ref": "#/$defs/uncertainty" },
+        "usefulness": { "enum": ["passed", "failed", "advisory", "not-applicable", "insufficient"] },
+        "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence", "retired"] },
+        "enabledByDefault": { "type": "boolean" },
+        "scoreEligibleByDefault": { "type": "boolean" },
+        "repairSafety": { "enum": ["finding-bound-only", "no-safe-repair", "not-applicable"] },
+        "evidenceSha256": { "$ref": "#/$defs/sha256" },
+        "admitted": { "const": false }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "lane": { "const": "quality" } }, "required": ["lane"] },
+          "then": { "properties": { "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] } }, "required": ["evidenceClass"] },
+          "else": {
+            "properties": {
+              "priorAiSpecific": { "const": true }, "transferred": { "const": false },
+              "authority": { "const": "publisher-attested-internal" }, "repairSafety": { "const": "not-applicable" },
+              "evidenceClass": false
+            }
+          }
+        },
+        {
+          "if": { "properties": { "transferred": { "const": true } }, "required": ["transferred"] },
+          "then": { "properties": { "lane": { "const": "quality" }, "priorAiSpecific": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "lane": { "const": "quality" }, "priorAiSpecific": { "const": true } }, "required": ["lane", "priorAiSpecific"] },
+          "then": { "properties": { "transferred": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "default-on" } }, "required": ["outcome"] },
+          "then": {
+            "properties": { "lane": { "const": "quality" }, "usefulness": { "const": "passed" }, "enabledByDefault": { "const": true }, "scoreEligibleByDefault": { "const": true } },
+            "oneOf": [
+              { "properties": { "evidenceClass": { "const": "deterministic-or-standards" }, "claimCeiling": { "const": "deterministic-defect" } } },
+              { "properties": { "evidenceClass": { "const": "contextual-quality" }, "claimCeiling": { "const": "quality-usefulness" } } }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "quality-advisory" } }, "required": ["outcome"] },
+          "then": {
+            "properties": {
+              "lane": { "const": "quality" }, "evidenceClass": { "enum": ["contextual-quality", "statistical-review-utility"] },
+              "claimCeiling": { "const": "review-target-utility" }, "usefulness": { "const": "advisory" },
+              "enabledByDefault": { "const": true }, "scoreEligibleByDefault": { "const": false }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "default-off" } }, "required": ["outcome"] },
+          "then": {
+            "properties": { "enabledByDefault": { "const": false }, "scoreEligibleByDefault": { "const": false } },
+            "oneOf": [
+              { "properties": { "lane": { "const": "origin" }, "measurementStatus": { "const": "measured" }, "claimCeiling": { "const": "internal-origin-association" }, "usefulness": { "const": "not-applicable" } } },
+              { "properties": { "lane": { "const": "quality" }, "evidenceClass": { "const": "deterministic-or-standards" }, "claimCeiling": { "const": "deterministic-defect" }, "usefulness": { "const": "failed" } } },
+              { "properties": { "lane": { "const": "quality" }, "evidenceClass": { "const": "contextual-quality" }, "claimCeiling": { "const": "quality-usefulness" }, "usefulness": { "const": "failed" } } },
+              { "properties": { "lane": { "const": "quality" }, "evidenceClass": { "const": "statistical-review-utility" }, "claimCeiling": { "const": "review-target-utility" }, "usefulness": { "const": "failed" } } }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "insufficient-evidence" } }, "required": ["outcome"] },
+          "then": {
+            "properties": {
+              "lane": { "const": "quality" }, "measurementStatus": { "const": "unavailable" },
+              "claimCeiling": { "const": "insufficient-evidence" }, "usefulness": { "const": "insufficient" },
+              "enabledByDefault": { "const": false }, "scoreEligibleByDefault": { "const": false }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "retired" } }, "required": ["outcome"] },
+          "then": {
+            "properties": {
+              "lane": { "const": "origin" }, "measurementStatus": { "const": "unavailable" },
+              "claimCeiling": { "const": "retired" }, "usefulness": { "const": "not-applicable" },
+              "enabledByDefault": { "const": false }, "scoreEligibleByDefault": { "const": false }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "evidenceClass": { "const": "deterministic-or-standards" } }, "required": ["evidenceClass"] },
+          "then": { "properties": { "measurementStatus": { "const": "oracle-verified" }, "authority": { "const": "standards-contract" } } }
+        },
+        {
+          "if": { "properties": { "evidenceClass": { "const": "statistical-review-utility" } }, "required": ["evidenceClass"] },
+          "then": {
+            "properties": { "authority": { "const": "repository-owner" }, "repairSafety": { "const": "no-safe-repair" }, "outcome": { "enum": ["default-off", "quality-advisory", "insufficient-evidence"] } },
+            "oneOf": [
+              { "properties": { "outcome": { "const": "insufficient-evidence" }, "measurementStatus": { "const": "unavailable" } } },
+              { "properties": { "outcome": { "enum": ["default-off", "quality-advisory"] }, "measurementStatus": { "const": "measured" } } }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "evidenceClass": { "const": "contextual-quality" } }, "required": ["evidenceClass"] },
+          "then": {
+            "properties": { "authority": { "const": "repository-owner" } },
+            "oneOf": [
+              { "properties": { "outcome": { "const": "insufficient-evidence" }, "measurementStatus": { "const": "unavailable" } } },
+              { "properties": { "outcome": { "enum": ["default-on", "default-off", "quality-advisory"] }, "measurementStatus": { "const": "measured" } } }
+            ]
+          }
+        }
+      ]
     },
     "counts": {
       "type": "object", "additionalProperties": false,
       "required": ["total", "defaultOn", "defaultOff", "qualityAdvisory", "insufficientEvidence", "retired"],
       "properties": {
-        "total": { "type": "integer", "minimum": 0 }, "defaultOn": { "type": "integer", "minimum": 0 }, "defaultOff": { "type": "integer", "minimum": 0 },
-        "qualityAdvisory": { "type": "integer", "minimum": 0 }, "insufficientEvidence": { "type": "integer", "minimum": 0 }, "retired": { "type": "integer", "minimum": 0 }
+        "total": { "type": "integer", "minimum": 0 }, "defaultOn": { "type": "integer", "minimum": 0 },
+        "defaultOff": { "type": "integer", "minimum": 0 }, "qualityAdvisory": { "type": "integer", "minimum": 0 },
+        "insufficientEvidence": { "type": "integer", "minimum": 0 }, "retired": { "type": "integer", "minimum": 0 }
       }
     }
   }

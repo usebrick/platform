@@ -2,7 +2,14 @@ import type { Rule } from '../../types';
 import type { CAL001DecisionRow } from '../corpus-v1/calibration-decisions';
 import {
   CAL002_CATALOG_VERSION,
+  CAL002_CONTEXTUAL_RULE_IDS,
+  CAL002_DETERMINISTIC_RULE_IDS,
+  CAL002_LOCKED_COUNTS,
+  CAL002_LOCKED_RULE_CATALOG_SHA256,
+  CAL002_LOCKED_RULE_IDS,
+  CAL002_OWNER_REVIEW_RULE_IDS,
   CAL002_PROTOCOL_VERSION,
+  CAL002_STATISTICAL_RULE_IDS,
   assertSha256,
   canonicalArtifact,
   type CAL002Catalog,
@@ -10,65 +17,22 @@ import {
   type CAL002EvidenceClass,
 } from './contracts';
 
-export const CAL002_STATISTICAL_RULE_IDS = [
-  'logic/heaps-deviation',
-  'logic/math-variable-name-entropy',
-  'logic/zipf-slope-anomaly',
-  'typo/math-button-label-uniformity',
-] as const;
-
-export const CAL002_CONTEXTUAL_RULE_IDS = [
-  'component/multiple-components-per-file',
-  'java/suspicious-implementation',
-  'layout/gap-monopoly',
-  'layout/spacing-grid',
-  'logic/boundary-violation',
-  'perf/css-bloat',
-  'product/terminology-drift',
-  'rb/n-plus-one-query',
-  'visual/inline-style-dominance',
-  'visual/radius-scale-violation',
-  'visual/spacing-scale-violation',
-] as const;
-
-export const CAL002_DETERMINISTIC_RULE_IDS = [
-  'context/import-path-mismatch',
-  'cs/async-without-await',
-  'cs/empty-catch-block',
-  'cs/sql-string-interpolation',
-  'docs/broken-link',
-  'docs/stale-function-reference',
-  'docs/stale-package-reference',
-  'dup/identical-block',
-  'java/lost-stack-trace',
-  'java/sql-string-concat',
-  'java/thread-sleep-in-loop',
-  'kt/coroutine-cancellation-missing',
-  'kt/force-unwrap',
-  'kt/global-coroutine-scope',
-  'kt/string-template-injection',
-  'logic/key-prop-missing',
-  'perf/cls-image',
-  'php/empty-catch',
-  'php/sql-injection',
-  'rb/exception-swallowing',
-  'rb/sql-string-concat',
-  'security/eval',
-  'security/exposed-env-var',
-  'security/localstorage-token',
-  'security/missing-auth-check',
-  'security/public-admin-route',
-  'security/target-blank-no-noopener',
-  'security/unsafe-html-render',
-  'typo/placeholder-text',
-  'wcag/focus-appearance',
-  'wcag/focus-obscured',
-  'wcag/missing-alt',
-] as const;
+export {
+  CAL002_CONTEXTUAL_RULE_IDS,
+  CAL002_DETERMINISTIC_RULE_IDS,
+  CAL002_LOCKED_RULE_CATALOG_SHA256,
+  CAL002_STATISTICAL_RULE_IDS,
+} from './contracts';
 
 const STATISTICAL_IDS = new Set<string>(CAL002_STATISTICAL_RULE_IDS);
 const CONTEXTUAL_IDS = new Set<string>(CAL002_CONTEXTUAL_RULE_IDS);
 const DETERMINISTIC_IDS = new Set<string>(CAL002_DETERMINISTIC_RULE_IDS);
+const LOCKED_RULE_IDS = new Set<string>(CAL002_LOCKED_RULE_IDS);
+const OWNER_REVIEW_IDS = new Set<string>(CAL002_OWNER_REVIEW_RULE_IDS);
+
+function compareCodePoints(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
 
 export interface BuildCAL002CatalogInput {
   readonly rules: readonly Pick<Rule, 'id' | 'category' | 'aiSpecific' | 'defaultOff'>[];
@@ -105,18 +69,22 @@ export function buildCAL002Catalog(input: BuildCAL002CatalogInput): CAL002Catalo
   assertSha256(input.cal001MatrixSha256, 'cal001MatrixSha256');
   const rules = uniqueById(input.rules, 'Rule registry catalog');
   const cal001 = uniqueById(input.cal001Rows, 'CAL-001 catalog');
+  if (rules.size !== CAL002_LOCKED_COUNTS.total || [...rules.keys()].some((id) => !LOCKED_RULE_IDS.has(id))) {
+    throw new TypeError(`Rule registry catalog does not match the locked ${CAL002_LOCKED_COUNTS.total}-rule CAL-002 catalog`);
+  }
   if (rules.size !== cal001.size || [...rules.keys()].some((id) => !cal001.has(id))) {
     throw new TypeError('CAL-001 catalog does not exactly match the rule registry catalog');
   }
 
   const rows = [...rules.values()]
-    .sort((left, right) => left.id.localeCompare(right.id))
+    .sort((left, right) => compareCodePoints(left.id, right.id))
     .map((rule): CAL002CatalogRow => {
       const prior = cal001.get(rule.id)!;
       if (prior.aiSpecific !== rule.aiSpecific) throw new TypeError(`CAL-001 aiSpecific metadata drift for ${rule.id}`);
       const existingDefaultOff = rule.defaultOff === true || input.effectiveDefaultOffRuleIds.has(rule.id);
       if (prior.existingDefaultOff !== existingDefaultOff) throw new TypeError(`CAL-001 existingDefaultOff metadata drift for ${rule.id}`);
       const ownerReviewRequired = prior.policyAction === 'owner-review-required';
+      if (ownerReviewRequired !== OWNER_REVIEW_IDS.has(rule.id)) throw new TypeError(`CAL-001 owner-review catalog drift for ${rule.id}`);
       if (!rule.aiSpecific) {
         if (prior.decision !== 'quality-only') throw new TypeError(`CAL-001 decision drift for quality rule ${rule.id}`);
         return {
@@ -148,6 +116,9 @@ export function buildCAL002Catalog(input: BuildCAL002CatalogInput): CAL002Catalo
     aiSpecific: row.aiSpecific,
     existingDefaultOff: row.existingDefaultOff,
   }))).sha256;
+  if (ruleCatalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
+    throw new TypeError('Rule registry catalog identity does not match the canonical locked CAL-002 catalog');
+  }
   const catalog: CAL002Catalog = {
     version: CAL002_CATALOG_VERSION,
     protocolVersion: CAL002_PROTOCOL_VERSION,
@@ -166,6 +137,9 @@ export function buildCAL002Catalog(input: BuildCAL002CatalogInput): CAL002Catalo
     admitted: false,
     applied: false,
   };
+  if (Object.entries(CAL002_LOCKED_COUNTS).some(([key, value]) => catalog.counts[key as keyof typeof catalog.counts] !== value)) {
+    throw new TypeError('CAL-001 catalog projection does not match the locked CAL-002 counts');
+  }
   const artifact = canonicalArtifact(catalog);
   return { catalog, catalogJson: artifact.json, catalogSha256: artifact.sha256 };
 }

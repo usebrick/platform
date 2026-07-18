@@ -3,6 +3,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
+import type { Rule } from '../../src/types';
+import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
+import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
 import {
   CAL002_ASSIGNMENT_VERSION,
   CAL002_CATALOG_VERSION,
@@ -23,6 +26,8 @@ import {
   validateCAL002ReviewReceipt,
   validateSlopbrickRuleEvidencePolicy,
 } from '../../src/calibration/cal-002/contracts';
+import { RuleRegistry } from '../../src/rules/registry';
+import { getDefaultOffRules } from '../../src/rules/signal-strength';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = join(HERE, '../../src/calibration/cal-002/schemas');
@@ -32,48 +37,66 @@ const HASH_C = 'c'.repeat(64);
 const HASH_D = 'd'.repeat(64);
 const COMMIT = '1'.repeat(40);
 
+function fullCatalogFixture() {
+  const registry = new RuleRegistry();
+  registry.loadBuiltins();
+  const rules = registry.getRules() as readonly Pick<Rule, 'id' | 'category' | 'aiSpecific' | 'defaultOff'>[];
+  const effectiveDefaultOffRuleIds = getDefaultOffRules();
+  const cal001Rows: CAL001DecisionRow[] = rules.map((rule) => {
+    const existingDefaultOff = rule.defaultOff === true || effectiveDefaultOffRuleIds.has(rule.id);
+    const decision = rule.aiSpecific ? 'default-off' as const : 'quality-only' as const;
+    return {
+      ruleId: rule.id,
+      aiSpecific: rule.aiSpecific,
+      existingDefaultOff,
+      decision,
+      policyAction: decision === 'quality-only' || existingDefaultOff ? 'preserve' : 'owner-review-required',
+      evidence: { holdoutReceiptSha256: HASH_B, metricsSha256: HASH_C, report: 'CAL-001-v1-origin-discrimination-diagnostic' },
+      originResult: {
+        status: rule.aiSpecific ? 'diagnostic-only' : 'not-evaluated',
+        splitStatus: { train: 'available', validation: 'available', test: 'available' },
+        ruleStatus: { train: 'ok', validation: 'ok', test: 'ok' },
+      },
+      usefulnessResult: 'not-evaluated',
+      confounds: {
+        leakage: 'clear',
+        sourceLabels: 'publisher-attested-polarity-not-authorship',
+        frameworkBuckets: 'not-available',
+        semanticBuckets: 'not-available',
+      },
+      owner: 'calibration-maintainers',
+      rationale: 'Frozen CAL-001 fixture row.',
+    };
+  });
+  return buildCAL002Catalog({ rules, effectiveDefaultOffRuleIds, cal001Rows, cal001MatrixSha256: HASH_A }).catalog;
+}
+
 const fixtures = {
-  'cal-002-catalog.schema.json': {
-    version: CAL002_CATALOG_VERSION,
-    protocolVersion: CAL002_PROTOCOL_VERSION,
-    cal001MatrixSha256: HASH_A,
-    ruleCatalogSha256: HASH_B,
-    rows: [{
-      ruleId: 'security/eval',
-      category: 'security',
-      aiSpecific: false,
-      existingDefaultOff: false,
-      cal001Decision: 'quality-only',
-      ownerReviewRequired: false,
-      lane: 'quality',
-      evidenceClass: 'deterministic-or-standards',
-    }],
-    counts: {
-      total: 1,
-      startingQuality: 1,
-      startingOrigin: 0,
-      ownerReviewRequired: 0,
-      deterministic: 1,
-      contextual: 0,
-      statistical: 0,
-    },
-    admitted: false,
-    applied: false,
-  },
+  'cal-002-catalog.schema.json': fullCatalogFixture(),
   'cal-002-assignment.schema.json': {
     version: CAL002_ASSIGNMENT_VERSION,
     protocolVersion: CAL002_PROTOCOL_VERSION,
     catalogSha256: HASH_A,
     assignmentImplementationCommitSha: COMMIT,
     assignmentId: 'assignment-001',
-    round: 1,
+    assignmentSha256: HASH_B,
+    selectionManifestSha256: HASH_C,
+    blindedBatchSha256: HASH_D,
+    round: 'initial',
+    targetPerArm: 30,
     rows: [{
-      assignmentRowId: 'assignment-row-001',
+      reviewId: 'review-001',
       ruleId: 'layout/spacing-grid',
       evidenceClass: 'contextual-quality',
-      arm: 'finding',
+      role: 'finding',
       unitId: 'unit-001',
-      blindedUnitId: 'blind-001',
+    }],
+    blindedRows: [{
+      reviewId: 'review-001',
+      ruleId: 'layout/spacing-grid',
+      evidenceClass: 'contextual-quality',
+      sourceIdentitySha256: HASH_A,
+      lineWindowLocator: 'line:10:column:2',
     }],
     admitted: false,
   },
@@ -82,11 +105,12 @@ const fixtures = {
     protocolVersion: CAL002_PROTOCOL_VERSION,
     catalogSha256: HASH_A,
     assignmentSha256: HASH_B,
+    blindedBatchSha256: HASH_C,
+    stateSha256: HASH_D,
     reviewImplementationCommitSha: COMMIT,
-    reviewerId: 'reviewer-001',
+    reviewerAuthority: 'repository-owner',
     rows: [{
-      assignmentRowId: 'assignment-row-001',
-      ruleId: 'layout/spacing-grid',
+      reviewId: 'review-001',
       label: 'actionable-defect',
     }],
     admitted: false,
@@ -113,18 +137,18 @@ const fixtures = {
     version: CAL002_ORIGIN_RECEIPT_VERSION,
     protocolVersion: CAL002_PROTOCOL_VERSION,
     catalogSha256: HASH_A,
-    cal001MatrixSha256: HASH_B,
     originImplementationCommitSha: COMMIT,
-    evidence: {
-      mode: 'reuse',
-      sourceProtocolVersion: 'CAL-001-v1',
-      sourceSha256: HASH_A,
-      splitSha256: HASH_B,
-      scannerSha256: HASH_C,
+    status: 'reused',
+    governingHashes: {
+      protocolSha256: HASH_A,
+      sourceBindingReceiptSha256: HASH_B,
+      splitPlanSha256: HASH_C,
+      scannerCommitSha: COMMIT,
       configSha256: HASH_D,
-      sourceCatalogSha256: HASH_A,
-      receiptSha256: HASH_B,
+      catalogSha256: HASH_A,
+      holdoutReceiptSha256: HASH_B,
       metricsSha256: HASH_C,
+      cal001MatrixSha256: HASH_A,
       reducerSha256: HASH_D,
     },
     rows: [{
@@ -144,9 +168,20 @@ const fixtures = {
     rows: [{
       ruleId: 'security/eval',
       lane: 'quality',
+      priorAiSpecific: false,
+      transferred: false,
       evidenceClass: 'deterministic-or-standards',
-      outcome: 'default-on',
+      measurementStatus: 'oracle-verified',
       claimCeiling: 'deterministic-defect',
+      authority: 'standards-contract',
+      sampleCounts: { findings: 5, controls: 5, cannotDetermine: 0 },
+      usefulness: 'passed',
+      outcome: 'default-on',
+      enabledByDefault: true,
+      scoreEligibleByDefault: true,
+      repairSafety: 'finding-bound-only',
+      evidenceSha256: HASH_A,
+      admitted: false,
     }],
     counts: {
       total: 1,
@@ -165,9 +200,8 @@ const fixtures = {
     catalogSha256: HASH_A,
     finalMatrixSha256: HASH_B,
     approvalCommitSha: COMMIT,
-    reviewerId: 'owner-001',
+    reviewerAuthority: 'repository-owner',
     decision: 'approved',
-    concerns: [],
     admitted: false,
     applied: false,
   },
@@ -187,7 +221,7 @@ const fixtures = {
       provenance: 'deterministic-finding-evidence',
     }],
     admitted: false,
-    applied: false,
+    applied: true,
   },
 } as const;
 
@@ -204,6 +238,18 @@ const validators = {
 
 function clone<T>(value: T): T {
   return structuredClone(value);
+}
+
+function schemaValidator(file: keyof typeof fixtures) {
+  const schema = JSON.parse(readFileSync(join(SCHEMA_DIR, file), 'utf8'));
+  return new Ajv2020({ allErrors: true, strict: true }).compile(schema);
+}
+
+function expectRejectedByBoth(file: keyof typeof fixtures, value: unknown, pattern: RegExp): void {
+  const custom = validators[file](value);
+  expect(custom.errors.join(' ')).toMatch(pattern);
+  const schema = schemaValidator(file);
+  expect(schema(value), JSON.stringify(schema.errors)).toBe(false);
 }
 
 describe('CAL-002 local artifact contracts', () => {
@@ -277,10 +323,10 @@ describe('CAL-002 local artifact contracts', () => {
 
     const transferWithoutReason = clone(fixtures['cal-002-origin-receipt.schema.json']);
     transferWithoutReason.rows[0].disposition = 'transfer-to-quality';
-    expect(validateCAL002OriginReceipt(transferWithoutReason).errors.join(' ')).toMatch(/transferReason/i);
+    expect(validateCAL002OriginReceipt(transferWithoutReason).errors.join(' ')).toMatch(/reason/i);
 
-    const rejectedWithoutConcern = { ...clone(fixtures['cal-002-matrix-approval.schema.json']), decision: 'rejected' };
-    expect(validateCAL002MatrixApproval(rejectedWithoutConcern).errors.join(' ')).toMatch(/concern/i);
+    const rejectedApproval = { ...clone(fixtures['cal-002-matrix-approval.schema.json']), decision: 'rejected' };
+    expectRejectedByBoth('cal-002-matrix-approval.schema.json', rejectedApproval, /approved|decision/i);
 
     const advisoryScored = clone(fixtures['slopbrick-rule-evidence-policy.schema.json']);
     advisoryScored.rows[0] = {
@@ -306,8 +352,151 @@ describe('CAL-002 local artifact contracts', () => {
 
   it('rejects catalog lane/evidence discriminant drift', () => {
     const catalog = clone(fixtures['cal-002-catalog.schema.json']);
-    catalog.rows[0].lane = 'origin';
-    expect(validateCAL002Catalog(catalog).ok).toBe(false);
+    (catalog.rows[0] as Record<string, unknown>).lane = 'quality';
+    expectRejectedByBoth('cal-002-catalog.schema.json', catalog, /lane|identity|locked/i);
+  });
+
+  it('binds private assignments to selection and blinded identities without exposing roles', () => {
+    const duplicateUnit = clone(fixtures['cal-002-assignment.schema.json']);
+    (duplicateUnit.rows as unknown[]).push({
+      reviewId: 'review-002',
+      ruleId: 'layout/spacing-grid',
+      evidenceClass: 'contextual-quality',
+      role: 'control',
+      unitId: 'unit-001',
+    });
+    (duplicateUnit.blindedRows as unknown[]).push({
+      reviewId: 'review-002',
+      ruleId: 'layout/spacing-grid',
+      evidenceClass: 'contextual-quality',
+      sourceIdentitySha256: HASH_B,
+      lineWindowLocator: 'line:20:column:1',
+    });
+    expect(validateCAL002Assignment(duplicateUnit).errors.join(' ')).toMatch(/ruleId.*unitId|unitId.*duplicate/i);
+
+    const exposedRole = clone(fixtures['cal-002-assignment.schema.json']);
+    (exposedRole.blindedRows[0] as Record<string, unknown>).role = 'finding';
+    expectRejectedByBoth('cal-002-assignment.schema.json', exposedRole, /role|unknown/i);
+
+    const finalRound = clone(fixtures['cal-002-assignment.schema.json']);
+    (finalRound as Record<string, unknown>).round = 'final';
+    (finalRound as Record<string, unknown>).targetPerArm = 100;
+    expect(validateCAL002Assignment(finalRound)).toEqual({ ok: true, errors: [] });
+    expect(schemaValidator('cal-002-assignment.schema.json')(finalRound)).toBe(true);
+
+    const mismatchedRound = { ...finalRound, targetPerArm: 30 };
+    expectRejectedByBoth('cal-002-assignment.schema.json', mismatchedRound, /round|targetPerArm/i);
+  });
+
+  it('requires authority-bound reviews with the four exact labels and all governing hashes', () => {
+    const wrongAuthority = { ...clone(fixtures['cal-002-review-receipt.schema.json']), reviewerAuthority: 'maintainer' };
+    expectRejectedByBoth('cal-002-review-receipt.schema.json', wrongAuthority, /reviewerAuthority|repository-owner/i);
+
+    const freeForm = clone(fixtures['cal-002-review-receipt.schema.json']);
+    (freeForm.rows[0] as Record<string, unknown>).label = 'looks-good';
+    expectRejectedByBoth('cal-002-review-receipt.schema.json', freeForm, /label|one of/i);
+
+    const missingOriginHash = clone(fixtures['cal-002-origin-receipt.schema.json']) as Record<string, unknown>;
+    delete (missingOriginHash.governingHashes as Record<string, unknown>).sourceBindingReceiptSha256;
+    expectRejectedByBoth('cal-002-origin-receipt.schema.json', missingOriginHash, /sourceBindingReceiptSha256|required/i);
+
+    const retired = clone(fixtures['cal-002-origin-receipt.schema.json']);
+    retired.rows[0] = { ruleId: 'ai/any-density', disposition: 'retire', reason: 'duplicate-or-obsolete' } as never;
+    expect(validateCAL002OriginReceipt(retired)).toEqual({ ok: true, errors: [] });
+    expect(schemaValidator('cal-002-origin-receipt.schema.json')(retired)).toBe(true);
+
+    const retiredWithoutReason = clone(retired) as Record<string, unknown>;
+    delete ((retiredWithoutReason.rows as Record<string, unknown>[])[0]!).reason;
+    expectRejectedByBoth('cal-002-origin-receipt.schema.json', retiredWithoutReason, /reason|required/i);
+  });
+
+  it('accepts the complete final-row interface and rejects cross-field drift in both validators', () => {
+    const unavailableDefaultOn = clone(fixtures['cal-002-final-matrix.schema.json']);
+    unavailableDefaultOn.rows[0] = {
+      ...unavailableDefaultOn.rows[0],
+      ruleId: 'layout/spacing-grid',
+      evidenceClass: 'contextual-quality',
+      measurementStatus: 'unavailable',
+      claimCeiling: 'quality-usefulness',
+      authority: 'repository-owner',
+    } as never;
+    expectRejectedByBoth('cal-002-final-matrix.schema.json', unavailableDefaultOn, /measurement|measured/i);
+
+    const measuredOrigin = clone(fixtures['cal-002-final-matrix.schema.json']);
+    measuredOrigin.rows[0] = {
+      ...measuredOrigin.rows[0],
+      ruleId: 'ai/any-density',
+      lane: 'origin',
+      priorAiSpecific: true,
+      transferred: false,
+      measurementStatus: 'measured',
+      claimCeiling: 'internal-origin-association',
+      authority: 'publisher-attested-internal',
+      usefulness: 'not-applicable',
+      outcome: 'default-off',
+      enabledByDefault: false,
+      scoreEligibleByDefault: false,
+      repairSafety: 'not-applicable',
+    } as never;
+    delete (measuredOrigin.rows[0] as Record<string, unknown>).evidenceClass;
+    measuredOrigin.counts = { total: 1, defaultOn: 0, defaultOff: 1, qualityAdvisory: 0, insufficientEvidence: 0, retired: 0 };
+    expect(validateCAL002FinalMatrix(measuredOrigin)).toEqual({ ok: true, errors: [] });
+    expect(schemaValidator('cal-002-final-matrix.schema.json')(measuredOrigin)).toBe(true);
+    const unavailableOrigin = clone(measuredOrigin);
+    (unavailableOrigin.rows[0] as Record<string, unknown>).measurementStatus = 'unavailable';
+    expectRejectedByBoth('cal-002-final-matrix.schema.json', unavailableOrigin, /measurement|measured/i);
+
+    const statisticalDefaultOn = clone(fixtures['cal-002-final-matrix.schema.json']);
+    statisticalDefaultOn.rows[0] = {
+      ...statisticalDefaultOn.rows[0],
+      ruleId: 'logic/heaps-deviation',
+      evidenceClass: 'statistical-review-utility',
+      measurementStatus: 'measured',
+      claimCeiling: 'quality-usefulness',
+      authority: 'repository-owner',
+      usefulness: 'passed',
+      repairSafety: 'no-safe-repair',
+    } as never;
+    expectRejectedByBoth('cal-002-final-matrix.schema.json', statisticalDefaultOn, /statistical|default-on|evidenceClass/i);
+
+    const originDefaultOn = clone(fixtures['cal-002-final-matrix.schema.json']);
+    originDefaultOn.rows[0] = {
+      ...originDefaultOn.rows[0],
+      ruleId: 'ai/any-density',
+      lane: 'origin',
+      priorAiSpecific: true,
+      transferred: false,
+      measurementStatus: 'measured',
+      claimCeiling: 'internal-origin-association',
+      authority: 'publisher-attested-internal',
+      usefulness: 'not-applicable',
+      repairSafety: 'not-applicable',
+    } as never;
+    delete (originDefaultOn.rows[0] as Record<string, unknown>).evidenceClass;
+    expectRejectedByBoth('cal-002-final-matrix.schema.json', originDefaultOn, /origin|default-on|outcome/i);
+
+    const missingRowAdmission = clone(fixtures['cal-002-final-matrix.schema.json']) as Record<string, unknown>;
+    delete ((missingRowAdmission.rows as Record<string, unknown>[])[0]!).admitted;
+    expectRejectedByBoth('cal-002-final-matrix.schema.json', missingRowAdmission, /admitted|required/i);
+  });
+
+  it('allows initial and post-approval policy states while constraining every policy discriminant', () => {
+    const initial = { ...clone(fixtures['slopbrick-rule-evidence-policy.schema.json']), applied: false };
+    for (const policy of [initial, fixtures['slopbrick-rule-evidence-policy.schema.json']]) {
+      expect(validateSlopbrickRuleEvidencePolicy(policy)).toEqual({ ok: true, errors: [] });
+      expect(schemaValidator('slopbrick-rule-evidence-policy.schema.json')(policy)).toBe(true);
+    }
+
+    const invalidDefaultOn = clone(fixtures['slopbrick-rule-evidence-policy.schema.json']);
+    invalidDefaultOn.rows[0] = {
+      ruleId: 'logic/heaps-deviation',
+      outcome: 'default-on',
+      claimCeiling: 'review-target-utility',
+      enabledByDefault: true,
+      scoreEligible: true,
+      provenance: 'advisory-review-utility',
+    } as never;
+    expectRejectedByBoth('slopbrick-rule-evidence-policy.schema.json', invalidDefaultOn, /default-on|claim|provenance|incompatible/i);
   });
 
   it('keeps outcomes requiring local opt-in score-ineligible in policy contracts', () => {

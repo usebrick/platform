@@ -4,14 +4,19 @@ import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibrat
 import {
   CAL002_CONTEXTUAL_RULE_IDS,
   CAL002_DETERMINISTIC_RULE_IDS,
+  CAL002_LOCKED_RULE_CATALOG_SHA256,
   CAL002_STATISTICAL_RULE_IDS,
   buildCAL002Catalog,
 } from '../../src/calibration/cal-002/catalog';
-import { canonicalArtifact } from '../../src/calibration/cal-002/contracts';
+import { canonicalArtifact, validateCAL002Catalog } from '../../src/calibration/cal-002/contracts';
 import { RuleRegistry } from '../../src/rules/registry';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
 
 const MATRIX_HASH = 'a'.repeat(64);
+
+function compareCodePoints(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
 
 function currentRules(): readonly Pick<Rule, 'id' | 'category' | 'aiSpecific' | 'defaultOff'>[] {
   const registry = new RuleRegistry();
@@ -86,9 +91,9 @@ describe('CAL-002 frozen 119-rule catalog', () => {
     });
     expect(new Set(result.catalog.rows.map((row) => row.ruleId)).size).toBe(119);
     expect(result.catalog.rows.map((row) => row.ruleId)).toEqual(
-      [...result.catalog.rows.map((row) => row.ruleId)].sort((left, right) => left.localeCompare(right)),
+      [...result.catalog.rows.map((row) => row.ruleId)].sort(compareCodePoints),
     );
-    expect(result.catalog.ruleCatalogSha256).toMatch(/^[a-f0-9]{64}$/u);
+    expect(result.catalog.ruleCatalogSha256).toBe(CAL002_LOCKED_RULE_CATALOG_SHA256);
     expect(result.catalogSha256).toMatch(/^[a-f0-9]{64}$/u);
     expect(result.catalogJson).toBe(canonicalArtifact(result.catalog).json);
   });
@@ -191,5 +196,41 @@ describe('CAL-002 frozen 119-rule catalog', () => {
     })).toThrow(/CAL-001.*aiSpecific/i);
     expect(() => buildCAL002Catalog({ ...current, rules: [...current.rules, current.rules[0]!] })).toThrow(/duplicate/i);
     expect(() => buildCAL002Catalog({ ...current, cal001MatrixSha256: 'ABC123' })).toThrow(/SHA-256/i);
+  });
+
+  it('rejects self-consistent partial and substituted catalog projections', () => {
+    const current = input();
+    const full = buildCAL002Catalog(current).catalog;
+    const project = (rows: typeof full.rows) => ({
+      ...full,
+      rows,
+      ruleCatalogSha256: canonicalArtifact(rows.map((row) => ({
+        ruleId: row.ruleId,
+        category: row.category,
+        aiSpecific: row.aiSpecific,
+        existingDefaultOff: row.existingDefaultOff,
+      }))).sha256,
+      counts: {
+        total: rows.length,
+        startingQuality: rows.filter((row) => row.lane === 'quality').length,
+        startingOrigin: rows.filter((row) => row.lane === 'origin').length,
+        ownerReviewRequired: rows.filter((row) => row.ownerReviewRequired).length,
+        deterministic: rows.filter((row) => row.evidenceClass === 'deterministic-or-standards').length,
+        contextual: rows.filter((row) => row.evidenceClass === 'contextual-quality').length,
+        statistical: rows.filter((row) => row.evidenceClass === 'statistical-review-utility').length,
+      },
+    });
+
+    expect(validateCAL002Catalog(project(full.rows.slice(0, 1))).ok).toBe(false);
+    expect(validateCAL002Catalog(project(full.rows.slice(1))).ok).toBe(false);
+    expect(() => buildCAL002Catalog({ ...current, rules: current.rules.slice(1), cal001Rows: current.cal001Rows.slice(1) })).toThrow(/119|locked|catalog/i);
+
+    const replacementRule = { ...current.rules.at(-1)!, id: 'visual/substituted-rule' };
+    const replacementCal001 = { ...current.cal001Rows.at(-1)!, ruleId: replacementRule.id };
+    expect(() => buildCAL002Catalog({
+      ...current,
+      rules: [...current.rules.slice(0, -1), replacementRule],
+      cal001Rows: [...current.cal001Rows.slice(0, -1), replacementCal001],
+    })).toThrow(/locked|catalog|identity/i);
   });
 });

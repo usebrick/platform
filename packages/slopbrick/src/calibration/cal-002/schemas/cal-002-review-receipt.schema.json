@@ -1,21 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/cal-002-review-receipt-v1.json",
-  "type": "object", "additionalProperties": false,
-  "required": ["version", "protocolVersion", "catalogSha256", "assignmentSha256", "reviewImplementationCommitSha", "reviewerId", "rows", "admitted"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "assignmentSha256", "blindedBatchSha256", "stateSha256", "reviewImplementationCommitSha", "reviewerAuthority", "rows", "admitted"],
   "properties": {
-    "version": { "const": "cal-002-review-receipt-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
-    "catalogSha256": { "$ref": "#/$defs/sha256" }, "assignmentSha256": { "$ref": "#/$defs/sha256" },
-    "reviewImplementationCommitSha": { "$ref": "#/$defs/commit" }, "reviewerId": { "type": "string", "minLength": 1 },
-    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } }, "admitted": { "const": false }
+    "version": { "const": "cal-002-review-receipt-v1" },
+    "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" },
+    "assignmentSha256": { "$ref": "#/$defs/sha256" },
+    "blindedBatchSha256": { "$ref": "#/$defs/sha256" },
+    "stateSha256": { "$ref": "#/$defs/sha256" },
+    "reviewImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "reviewerAuthority": { "const": "repository-owner" },
+    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } },
+    "admitted": { "const": false }
   },
   "$defs": {
-    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "row": {
-      "type": "object", "additionalProperties": false, "required": ["assignmentRowId", "ruleId", "label"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewId", "label"],
       "properties": {
-        "assignmentRowId": { "type": "string", "minLength": 1 }, "ruleId": { "$ref": "#/$defs/ruleId" },
+        "reviewId": { "type": "string", "minLength": 1 },
         "label": { "enum": ["actionable-defect", "useful-no-safe-fix", "not-useful", "cannot-determine"] }
       }
     }

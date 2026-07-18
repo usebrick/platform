@@ -1,30 +1,44 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://usebrick.dev/schemas/slopbrick-rule-evidence-policy-v1.json",
-  "type": "object", "additionalProperties": false,
+  "type": "object",
+  "additionalProperties": false,
   "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "matrixApprovalSha256", "applicationImplementationCommitSha", "rows", "admitted", "applied"],
   "properties": {
-    "version": { "const": "slopbrick-rule-evidence-policy-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
-    "catalogSha256": { "$ref": "#/$defs/sha256" }, "finalMatrixSha256": { "$ref": "#/$defs/sha256" }, "matrixApprovalSha256": { "$ref": "#/$defs/sha256" },
-    "applicationImplementationCommitSha": { "$ref": "#/$defs/commit" }, "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } },
-    "admitted": { "const": false }, "applied": { "const": false }
+    "version": { "const": "slopbrick-rule-evidence-policy-v1" },
+    "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" },
+    "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+    "matrixApprovalSha256": { "$ref": "#/$defs/sha256" },
+    "applicationImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } },
+    "admitted": { "const": false },
+    "applied": { "type": "boolean" }
   },
   "$defs": {
-    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
     "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
     "row": {
       "type": "object", "additionalProperties": false,
       "required": ["ruleId", "outcome", "claimCeiling", "enabledByDefault", "scoreEligible", "provenance"],
       "properties": {
-        "ruleId": { "$ref": "#/$defs/ruleId" }, "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence", "retired"] },
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence", "retired"] },
         "claimCeiling": { "enum": ["deterministic-defect", "quality-usefulness", "review-target-utility", "internal-origin-association", "insufficient-evidence", "retired"] },
-        "enabledByDefault": { "type": "boolean" }, "scoreEligible": { "type": "boolean" },
+        "enabledByDefault": { "type": "boolean" },
+        "scoreEligible": { "type": "boolean" },
         "provenance": { "enum": ["deterministic-finding-evidence", "current-quality-calibrated", "advisory-review-utility", "internal-origin-calibrated", "current-quality-failed-claim-bar", "insufficient-evidence", "retired-policy"] }
       },
-      "allOf": [{
-        "if": { "properties": { "outcome": { "enum": ["default-off", "insufficient-evidence"] } }, "required": ["outcome"] },
-        "then": { "properties": { "scoreEligible": { "const": false } } }
-      }]
+      "oneOf": [
+        { "properties": { "outcome": { "const": "default-on" }, "claimCeiling": { "const": "deterministic-defect" }, "enabledByDefault": { "const": true }, "scoreEligible": { "const": true }, "provenance": { "const": "deterministic-finding-evidence" } } },
+        { "properties": { "outcome": { "const": "default-on" }, "claimCeiling": { "const": "quality-usefulness" }, "enabledByDefault": { "const": true }, "scoreEligible": { "const": true }, "provenance": { "const": "current-quality-calibrated" } } },
+        { "properties": { "outcome": { "const": "default-off" }, "claimCeiling": { "const": "internal-origin-association" }, "enabledByDefault": { "const": false }, "scoreEligible": { "const": false }, "provenance": { "const": "internal-origin-calibrated" } } },
+        { "properties": { "outcome": { "const": "default-off" }, "claimCeiling": { "enum": ["quality-usefulness", "review-target-utility"] }, "enabledByDefault": { "const": false }, "scoreEligible": { "const": false }, "provenance": { "const": "current-quality-failed-claim-bar" } } },
+        { "properties": { "outcome": { "const": "quality-advisory" }, "claimCeiling": { "const": "review-target-utility" }, "enabledByDefault": { "const": true }, "scoreEligible": { "const": false }, "provenance": { "const": "advisory-review-utility" } } },
+        { "properties": { "outcome": { "const": "insufficient-evidence" }, "claimCeiling": { "const": "insufficient-evidence" }, "enabledByDefault": { "const": false }, "scoreEligible": { "const": false }, "provenance": { "const": "insufficient-evidence" } } },
+        { "properties": { "outcome": { "const": "retired" }, "claimCeiling": { "const": "retired" }, "enabledByDefault": { "const": false }, "scoreEligible": { "const": false }, "provenance": { "const": "retired-policy" } } }
+      ]
     }
   }
 }
