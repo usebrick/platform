@@ -1446,8 +1446,9 @@ describe('scan completion status', () => {
     expect(result.stdout).toContain('INCOMPLETE SCAN');
     expect(result.stdout).toContain('not valid for gating');
     expect(result.stderr).toContain('Scan partial');
+    expect(`${result.stdout}\n${result.stderr}`).not.toMatch(/Diagnostic memory persisted|Memory persisted to \.slopbrick\//);
     expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
-      /Repository Health\n\s+\d|AI Slop Score:|Threshold \(CI gate\)|✓ Clean|health\.json: repo=|codebase is clean|no detectable AI slop|passed —/i,
+      /\b\d+(?:\.\d+)?\s*\/\s*100\b|Repository Health\n\s+\d|AI Slop Score:|Threshold \(CI gate\)|✓ Clean|health\.json: repo=|codebase is clean|no detectable AI slop|passed —|^\s+(?:\d+\.\s|Action:)|finding-bound repair/im,
     );
   });
 

@@ -107,6 +107,7 @@ describe('CLI output UX', () => {
       expect(result.stdout).toContain('Repository Coherence');
       expect(result.stdout).toContain('Accessibility and Resilience');
       expect(result.stdout).not.toMatch(/\u001B\[/);
+      expect(result.stderr).not.toContain('Memory persisted to .slopbrick/');
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }

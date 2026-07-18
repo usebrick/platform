@@ -1,5 +1,14 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -9,8 +18,8 @@ import {
   debtBaselinePath,
   saveDebtBaseline,
 } from '../../src/cli/report/debt-baseline';
-import { hashConfig } from '../../src/engine/cache';
-import { assertDistBuilt, run as runPackageCli } from '../helpers/cli';
+import { baselinePath, hashConfig } from '../../src/engine/cache';
+import { assertDistBuilt, assertDistSourceFresh, run as runPackageCli } from '../helpers/cli';
 
 const workspaces: string[] = [];
 const fixture = [
@@ -22,7 +31,10 @@ const fixture = [
   '',
 ].join('\n');
 
-beforeAll(assertDistBuilt);
+beforeAll(() => {
+  assertDistBuilt();
+  assertDistSourceFresh();
+});
 
 afterEach(() => {
   for (const workspace of workspaces.splice(0)) {
@@ -54,6 +66,83 @@ function expectBaselineUnchanged(workspace: string, receipt: ReturnType<typeof b
   expect(statSync(path).mtimeMs).toBe(receipt.mtimeMs);
 }
 
+function cliBaselinePaths(workspace: string) {
+  return {
+    score: baselinePath(workspace),
+    debt: debtBaselinePath(workspace),
+  };
+}
+
+function expectCliBaselinesAbsent(workspace: string): void {
+  const paths = cliBaselinePaths(workspace);
+  expect(existsSync(paths.score)).toBe(false);
+  expect(existsSync(paths.debt)).toBe(false);
+}
+
+function cliBaselineReceipt(workspace: string) {
+  const paths = cliBaselinePaths(workspace);
+  return {
+    score: {
+      bytes: readFileSync(paths.score),
+      mtimeMs: statSync(paths.score).mtimeMs,
+    },
+    debt: {
+      bytes: readFileSync(paths.debt),
+      mtimeMs: statSync(paths.debt).mtimeMs,
+    },
+  };
+}
+
+function expectCliBaselinesUnchanged(
+  workspace: string,
+  receipt: ReturnType<typeof cliBaselineReceipt>,
+): void {
+  const paths = cliBaselinePaths(workspace);
+  expect(readFileSync(paths.score)).toEqual(receipt.score.bytes);
+  expect(statSync(paths.score).mtimeMs).toBe(receipt.score.mtimeMs);
+  expect(readFileSync(paths.debt)).toEqual(receipt.debt.bytes);
+  expect(statSync(paths.debt).mtimeMs).toBe(receipt.debt.mtimeMs);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+interface JsonFirstScanFinding {
+  ruleId: string;
+  area: string;
+  severity: 'high' | 'medium' | 'low';
+  location: {
+    filePath?: string;
+    line: number;
+    column: number;
+    contextLabel: string;
+  };
+  evidence: { tier: string; sourceSpan: string };
+  change: string;
+  action: { kind: string; repairSafety: string };
+}
+
+interface JsonFirstScanReport {
+  gateDecision: { status: string; evaluated: boolean };
+  firstScan: {
+    headline: { value: number };
+    delta: {
+      status: string;
+      newCount: number;
+      unchangedCount: number;
+      resolvedCount: number;
+      [key: string]: unknown;
+    };
+    findings: JsonFirstScanFinding[];
+    recommendedActions: Array<{
+      rank: number;
+      ruleId: string;
+      severity: string;
+    }>;
+  };
+}
+
 describe('first-scan projection in the real scan pipeline', () => {
   it('walks the package-local CLI from first scan through an unchanged rescan without mutating source or baseline', async () => {
     const workspace = createWorkspace();
@@ -64,82 +153,209 @@ describe('first-scan projection in the real scan pipeline', () => {
     ];
 
     const firstPretty = await runPackageCli(scanArgs, workspace);
+    expect(firstPretty.stdout).toMatch(/^Repository Health\n/);
+    expectCliBaselinesAbsent(workspace);
+
     const firstJsonResult = await runPackageCli([...scanArgs, '--format', 'json'], workspace);
     expect(firstPretty.exitCode).toBe(firstJsonResult.exitCode);
-    expect(firstPretty.stdout).toMatch(/^Repository Health\n/);
+    expect(firstJsonResult.stderr).toBe('');
+    expectCliBaselinesAbsent(workspace);
     expect(firstPretty.stderr).not.toMatch(/saved baseline/i);
 
-    const firstJson = JSON.parse(firstJsonResult.stdout) as {
-      gateDecision: { status: string; evaluated: boolean };
-      firstScan: {
-        findings: Array<{
-          evidence: { sourceSpan: string };
-          action: { kind: string };
-        }>;
-        recommendedActions: unknown[];
-      };
-    };
+    const quiet = await runPackageCli([...scanArgs, '--quiet'], workspace);
+    expect(quiet.exitCode).toBe(firstPretty.exitCode);
+    expect(quiet.stdout).toBe('');
+    expect(quiet.stderr).toBe('');
+    expectCliBaselinesAbsent(workspace);
+
+    const firstJson = JSON.parse(firstJsonResult.stdout) as JsonFirstScanReport;
     expect(firstJson.gateDecision).toMatchObject({ evaluated: true });
     expect(firstPretty.exitCode).toBe(firstJson.gateDecision.status === 'passed' ? 0 : 1);
     expect(firstJson.firstScan.findings.some(({ evidence }) => evidence.sourceSpan === 'exact')).toBe(true);
     expect(firstJson.firstScan.findings.some(({ action }) => action.kind === 'manual-review')).toBe(true);
     expect(firstJson.firstScan.recommendedActions.length).toBeLessThanOrEqual(3);
 
+    const headings = [
+      'Repository Health',
+      'Scan status',
+      'Policy gate',
+      'Dimensions',
+      'Areas',
+      'Recommended actions',
+      'Rescan comparison',
+    ];
+    let previousHeading = -1;
+    for (const heading of headings) {
+      const headingIndex = firstPretty.stdout.indexOf(`${heading}\n`);
+      expect(headingIndex).toBeGreaterThan(previousHeading);
+      previousHeading = headingIndex;
+    }
+    const displayedRepositoryHealth = Number(firstJson.firstScan.headline.value.toFixed(2));
+    expect(firstPretty.stdout).toContain(
+      `Repository Health\n  ${displayedRepositoryHealth} / 100`,
+    );
+    expect(firstPretty.stdout).toMatch(
+      new RegExp(`Policy gate\\n  ${escapeRegExp(firstJson.gateDecision.status)} —`),
+    );
+    const recommendationRows = firstPretty.stdout
+      .split('\n')
+      .filter((line) => /^  \d+\. /.test(line));
+    expect(recommendationRows).toHaveLength(firstJson.firstScan.recommendedActions.length);
+    expect(recommendationRows.length).toBeLessThanOrEqual(3);
+    for (const [index, action] of firstJson.firstScan.recommendedActions.entries()) {
+      expect(recommendationRows[index]).toMatch(
+        new RegExp(
+          `^  ${action.rank}\\. .+ — ${escapeRegExp(action.ruleId)} \\[${escapeRegExp(action.severity)}\\]$`,
+        ),
+      );
+    }
+    expect(firstPretty.stdout).toContain('No safe bounded repair is available.');
+    expect(firstPretty.stdout).not.toContain('Full report');
+
     const baselineRun = await runPackageCli([...scanArgs, '--baseline'], workspace);
     expect(baselineRun.exitCode).toBe(firstPretty.exitCode);
-    const receipt = baselineReceipt(workspace);
+    expect(baselineRun.stdout).toMatch(/^Repository Health\n/);
+    expect(`${baselineRun.stdout}\n${baselineRun.stderr}`).not.toMatch(/Memory persisted to \.slopbrick\//);
+    const paths = cliBaselinePaths(workspace);
+    const reportFooter = 'Run again after a change to compare findings. Use --full for every score and finding.';
+    const footerIndex = baselineRun.stdout.indexOf(reportFooter);
+    const scoreAcknowledgement = `Saved baseline to ${paths.score}`;
+    const debtAcknowledgement = `Saved durable debt baseline to ${paths.debt}`;
+    expect(footerIndex).toBeGreaterThanOrEqual(0);
+    expect(baselineRun.stdout.indexOf(scoreAcknowledgement)).toBeGreaterThan(footerIndex);
+    expect(baselineRun.stdout.indexOf(debtAcknowledgement)).toBeGreaterThan(footerIndex);
+
+    const explicitReceipt = cliBaselineReceipt(workspace);
+    const sentinel = new Date('2001-01-01T00:00:00.000Z');
+    utimesSync(paths.score, sentinel, sentinel);
+    utimesSync(paths.debt, sentinel, sentinel);
+    const receipt = cliBaselineReceipt(workspace);
+    expect(receipt.score.bytes).toEqual(explicitReceipt.score.bytes);
+    expect(receipt.debt.bytes).toEqual(explicitReceipt.debt.bytes);
+    expect(receipt.score.mtimeMs).not.toBe(explicitReceipt.score.mtimeMs);
+    expect(receipt.debt.mtimeMs).not.toBe(explicitReceipt.debt.mtimeMs);
 
     const unchangedPretty = await runPackageCli(scanArgs, workspace);
     expect(unchangedPretty.exitCode).toBe(firstPretty.exitCode);
-    expect(unchangedPretty.stdout).toContain('unchanged');
-    expect(unchangedPretty.stdout).toContain('0 new');
-    expect(unchangedPretty.stdout).toContain('0 resolved');
-    expectBaselineUnchanged(workspace, receipt);
+    expect(unchangedPretty.stdout).toMatch(/^Repository Health\n/);
+    expect(unchangedPretty.stdout).not.toContain('Baseline active since');
+    expect(`${firstPretty.stdout}\n${firstPretty.stderr}`).not.toMatch(/Memory persisted to \.slopbrick\//);
+    expect(`${unchangedPretty.stdout}\n${unchangedPretty.stderr}`).not.toMatch(/Memory persisted to \.slopbrick\//);
+    expectCliBaselinesUnchanged(workspace, receipt);
     expect(readFileSync(sourcePath, 'utf8')).toBe(sourceBefore);
+
+    const jsonResult = await runPackageCli([...scanArgs, '--format', 'json'], workspace);
+    const json = JSON.parse(jsonResult.stdout) as JsonFirstScanReport;
+    expect(jsonResult.exitCode).toBe(firstPretty.exitCode);
+    expect(jsonResult.stderr).toBe('');
+    expect(json.firstScan.delta).toMatchObject({
+      status: 'compared',
+      newCount: 0,
+      unchangedCount: json.firstScan.findings.length,
+      resolvedCount: 0,
+    });
+    expect(unchangedPretty.stdout).toContain(
+      `${json.firstScan.delta.newCount} new, ${json.firstScan.delta.unchangedCount} unchanged, ${json.firstScan.delta.resolvedCount} resolved`,
+    );
+    expectCliBaselinesUnchanged(workspace, receipt);
 
     const full = await runPackageCli([...scanArgs, '--full'], workspace);
     expect(full.exitCode).toBe(firstPretty.exitCode);
-    expect(full.stdout).toContain('Full report');
+    expect(`${full.stdout}\n${full.stderr}`).not.toMatch(/Memory persisted to \.slopbrick\//);
+    const fullParts = full.stdout.split('\n\nFull report\n\n');
+    expect(fullParts).toHaveLength(2);
+    const fullSuffix = fullParts[1]!;
     for (const label of [
       'Visual Slop',
       'Frontend Implementation',
       'Code and Logic',
       'Repository Coherence',
       'Accessibility and Resilience',
-    ]) expect(full.stdout).toContain(label);
-
-    const jsonResult = await runPackageCli([...scanArgs, '--format', 'json'], workspace);
-    const json = JSON.parse(jsonResult.stdout) as {
-      firstScan: { delta: Record<string, unknown>; findings: Array<{ ruleId: string }> };
-    };
-    expect(jsonResult.exitCode).toBe(firstPretty.exitCode);
-    expect(json.firstScan.delta).toMatchObject({
-      status: 'compared', newCount: 0, unchangedCount: json.firstScan.findings.length, resolvedCount: 0,
-    });
-    for (const { ruleId } of json.firstScan.findings) expect(full.stdout).toContain(ruleId);
+    ]) expect(fullSuffix).toMatch(new RegExp(`^${escapeRegExp(label)} \\(\\d+\\)$`, 'm'));
+    const fullLines = fullSuffix.split('\n');
+    const expectedFullBlocks = new Map<string, { ruleRow: string; locationRow: string; count: number }>();
+    for (const finding of json.firstScan.findings) {
+      const ruleRow = `[${finding.severity.toUpperCase().padEnd(8, ' ')}] ${finding.ruleId}`;
+      const location = finding.location.filePath
+        ? `${finding.location.filePath}:${finding.location.line}:${finding.location.column}`
+        : `project-wide:${finding.location.line}:${finding.location.column}`;
+      const locationRow = `  Location/context: ${finding.location.contextLabel} — ${location}`;
+      const key = `${ruleRow}\u0000${locationRow}`;
+      const expected = expectedFullBlocks.get(key);
+      if (expected) expected.count += 1;
+      else expectedFullBlocks.set(key, { ruleRow, locationRow, count: 1 });
+    }
+    for (const { ruleRow, locationRow, count } of expectedFullBlocks.values()) {
+      const exactBlocks = fullLines
+        .map((line, index) => ({ line, index }))
+        .filter(({ line, index }) =>
+          line === ruleRow && fullLines.slice(index + 1, index + 7).includes(locationRow)
+        );
+      expect(exactBlocks, `${ruleRow} with ${locationRow}`).toHaveLength(count);
+    }
+    expectCliBaselinesUnchanged(workspace, receipt);
 
     const sarifResult = await runPackageCli([...scanArgs, '--format', 'sarif'], workspace);
     const sarif = JSON.parse(sarifResult.stdout) as {
       runs: Array<{
         tool: { driver: { properties: { firstScan: { delta: Record<string, unknown> } } } };
-        results: Array<{ properties: { severity: string; firstScan?: Record<string, unknown> } }>;
+        results: Array<{
+          ruleId: string;
+          locations: Array<{
+            physicalLocation: {
+              artifactLocation: { uri: string };
+              region: { startLine: number; startColumn: number };
+            };
+          }>;
+          properties: {
+            severity: string;
+            firstScan?: {
+              area: string;
+              evidenceTier: string;
+              change: string;
+              actionKind: string;
+              repairSafety: string;
+            };
+          };
+        }>;
       }>;
     };
     expect(sarifResult.exitCode).toBe(firstPretty.exitCode);
-    expect(sarif.runs[0]?.tool.driver.properties.firstScan.delta).toMatchObject(json.firstScan.delta);
+    expect(sarifResult.stderr).toBe('');
+    expect(sarif.runs[0]?.tool.driver.properties.firstScan.delta).toEqual(json.firstScan.delta);
     const activeResults = sarif.runs[0]?.results.filter(({ properties }) => properties.severity !== 'off') ?? [];
-    expect(activeResults).not.toHaveLength(0);
+    expect(activeResults).toHaveLength(json.firstScan.findings.length);
+    const sarifByFinding = new Map<string, typeof activeResults>();
     for (const result of activeResults) {
-      expect(result.properties.firstScan).toMatchObject({
-        area: expect.any(String),
-        evidenceTier: expect.any(String),
-        change: 'unchanged',
-        actionKind: expect.any(String),
-        repairSafety: expect.any(String),
-      });
+      const physical = result.locations[0]!.physicalLocation;
+      const key = `${result.ruleId}\u0000${physical.artifactLocation.uri}\u0000${physical.region.startLine}\u0000${physical.region.startColumn}`;
+      const group = sarifByFinding.get(key);
+      if (group) group.push(result);
+      else sarifByFinding.set(key, [result]);
+    }
+    const jsonByFinding = new Map<string, JsonFirstScanFinding[]>();
+    for (const finding of json.firstScan.findings) {
+      const key = `${finding.ruleId}\u0000${finding.location.filePath ?? '.'}\u0000${finding.location.line}\u0000${finding.location.column}`;
+      const group = jsonByFinding.get(key);
+      if (group) group.push(finding);
+      else jsonByFinding.set(key, [finding]);
+    }
+    expect(sarifByFinding.size).toBe(jsonByFinding.size);
+    for (const [key, findings] of jsonByFinding) {
+      const results = sarifByFinding.get(key);
+      expect(results, key).toHaveLength(findings.length);
+      expect(results?.map(({ properties }) => properties.firstScan)).toEqual(
+        findings.map((finding) => ({
+          area: finding.area,
+          evidenceTier: finding.evidence.tier,
+          change: finding.change,
+          actionKind: finding.action.kind,
+          repairSafety: finding.action.repairSafety,
+        })),
+      );
     }
 
-    expectBaselineUnchanged(workspace, receipt);
+    expectCliBaselinesUnchanged(workspace, receipt);
     expect(readFileSync(sourcePath, 'utf8')).toBe(sourceBefore);
   }, 60_000);
 

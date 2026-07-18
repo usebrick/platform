@@ -568,7 +568,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
       );
       expect(handle.proc.exitCode).toBeNull();
       expect(handle.proc.signalCode).toBeNull();
-      expect(handle.output()).toContain('Scanned 1 file,');
+      expect(handle.output()).toContain('Repository Health');
       expect(watchNoticeCount(handle.output())).toBe(noticesAfterIndexChange);
       expect(existsSync(join(worktree, '.slopbrick'))).toBe(false);
       expect(handle.output()).not.toContain('Memory persisted to .slopbrick/');

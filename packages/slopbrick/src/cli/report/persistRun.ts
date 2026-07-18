@@ -277,7 +277,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
       // always mirrors the run's machine report.
       if (report.selectionAccounting) health.selectionAccounting = report.selectionAccounting;
       saveHealth(cwd, health);
-      if (!options.quiet && !machineReadableStdout) {
+      if ((!report.firstScan || options.watch) && !options.quiet && !machineReadableStdout) {
         if (report.scoreValidity !== 'incomplete') {
           // v0.18.2: include the Bayesian composite aggregate in the
           // log line so users can see the per-scan probability without
@@ -286,11 +286,11 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
           const compositeSuffix = health.compositeScore
             ? ` composite=${health.compositeScore.tier}@${health.compositeScore.mean.toFixed(2)}`
             : '';
-          console.error(
+          logger.info(
             `Memory persisted to .slopbrick/ (${inventory.patterns.length} patterns, ${inventory.components.length} components, ${md.length} bytes of structure.md, health.json: repo=${health.repositoryHealth} aiQ=${health.aiSlopScore} eng=${health.engineeringHygiene} sec=${health.security}${compositeSuffix}).`,
           );
         } else {
-          console.error(
+          logger.info(
             `Diagnostic memory persisted to .slopbrick/ (scoreValidity=${report.scoreValidity}; numeric scores are not valid for gating).`,
           );
         }

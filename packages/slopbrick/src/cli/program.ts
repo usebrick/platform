@@ -458,6 +458,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         });
       }
 
+      const deferredFirstScanNotices: string[] = [];
       if (options.baseline && !readOnlyGitScope) {
         const cwd = resolve(options.workspace ?? process.cwd());
         const configHash = hashConfig(config);
@@ -466,8 +467,15 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         saveBaseline(cwd, cache);
         saveDebtBaseline(cwd, buildDebtBaseline(report, cwd, configHash, gitHead));
         if (!options.quiet && !machineReadableStdout) {
-          logger.info(`Saved baseline to ${baselinePath(cwd)}`);
-          logger.info(`Saved durable debt baseline to ${debtBaselinePath(cwd)}`);
+          const acknowledgements = [
+            `Saved baseline to ${baselinePath(cwd)}`,
+            `Saved durable debt baseline to ${debtBaselinePath(cwd)}`,
+          ];
+          if (report.firstScan && !options.fix && !options.heatmap) {
+            deferredFirstScanNotices.push(...acknowledgements);
+          } else {
+            for (const acknowledgement of acknowledgements) logger.info(acknowledgement);
+          }
         }
       }
 
@@ -482,7 +490,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         logger.info(`Doctor: bootstrap ${totalElapsed - scanElapsed}ms, scan ${scanElapsed}ms`);
       }
 
-      if (report.baseline && !options.quiet && !machineReadableStdout) {
+      if (report.baseline && !report.firstScan && !options.quiet && !machineReadableStdout) {
         logger.info(baselineStatusMessage(report.baseline));
       }
 
@@ -536,6 +544,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       const baseExitCode: 0 | 1 = gateDecision.failedThresholds.length > 0 ? 1 : 0;
       const exitCode: 0 | 1 = gateDecision.exitCode;
       renderOutput(report, options, cwd);
+      for (const notice of deferredFirstScanNotices) logger.info(notice);
       if (strictFailure) {
         if (!options.quiet) {
           // v0.43.0: the previous message was "High-severity issues
