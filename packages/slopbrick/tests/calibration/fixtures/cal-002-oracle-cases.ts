@@ -6,10 +6,56 @@ export type CAL002OracleAuthority = 'language-contract' | 'security-contract' | 
 export type CAL002OracleObservation = 'finding' | 'no-finding';
 export type CAL002OracleExecutionMode = 'source-text' | 'path-aware' | 'multi-file' | 'allowed-imports' | 'route-context' | 'link-resolution';
 
-export interface CAL002OracleExecution {
-  readonly mode: CAL002OracleExecutionMode;
-  readonly context: string;
+export interface CAL002OracleVirtualFile {
+  readonly path: string;
+  readonly content: string;
 }
+
+export interface CAL002OracleVirtualTarget {
+  readonly path: string;
+  readonly anchors: readonly string[];
+}
+
+export type CAL002OracleExecution =
+  | {
+      readonly mode: 'source-text';
+      readonly context: { readonly virtualSourcePath: string };
+    }
+  | {
+      readonly mode: 'path-aware';
+      readonly context: { readonly virtualSourcePath: string };
+    }
+  | {
+      readonly mode: 'allowed-imports';
+      readonly context: {
+        readonly virtualImporterPath: string;
+        readonly allowedImports: readonly string[];
+      };
+    }
+  | {
+      readonly mode: 'link-resolution';
+      readonly context: {
+        readonly virtualDocumentPath: string;
+        readonly virtualTargets: readonly CAL002OracleVirtualTarget[];
+      };
+    }
+  | {
+      readonly mode: 'multi-file';
+      readonly context: {
+        readonly virtualDocumentPath: string;
+        readonly virtualFiles: readonly CAL002OracleVirtualFile[];
+      };
+    }
+  | {
+      readonly mode: 'route-context';
+      readonly context: {
+        readonly virtualRoutePath: string;
+        readonly middleware: readonly string[];
+        readonly authorization:
+          | { readonly kind: 'authenticated' }
+          | { readonly kind: 'role'; readonly role: string };
+      };
+    };
 
 export interface CAL002OracleDeclaration {
   readonly ruleId: CAL002DeterministicRuleId;
@@ -47,6 +93,7 @@ export interface CAL002OracleMutationCase extends CAL002OracleCaseResult {
 export interface CAL002OracleSourceControlFixture extends CAL002OracleSourceControl {
   readonly ruleId: CAL002DeterministicRuleId;
   readonly source: string;
+  readonly execution: CAL002OracleExecution;
 }
 
 interface RuleFixtureDefinition {
@@ -57,39 +104,89 @@ interface RuleFixtureDefinition {
   readonly negativeSource: string;
 }
 
+function sourceText(virtualSourcePath: string): CAL002OracleExecution {
+  return { mode: 'source-text', context: { virtualSourcePath } };
+}
+
 const EXECUTION_BY_RULE_ID = {
-  'context/import-path-mismatch': { mode: 'allowed-imports', context: 'Resolve imports against the repository allow-list before evaluating the path.' },
-  'cs/async-without-await': { mode: 'source-text', context: 'Inspect the async C# method body for an await expression.' },
-  'cs/empty-catch-block': { mode: 'source-text', context: 'Inspect the C# catch body for an observable handling statement.' },
-  'cs/sql-string-interpolation': { mode: 'source-text', context: 'Inspect SQL construction for C# interpolation of untrusted values.' },
-  'docs/broken-link': { mode: 'link-resolution', context: 'Resolve the Markdown destination relative to the declaring document.' },
-  'docs/stale-function-reference': { mode: 'multi-file', context: 'Compare the documented function reference with the current exported symbol surface.' },
-  'docs/stale-package-reference': { mode: 'multi-file', context: 'Compare the documented package name with workspace package manifests.' },
-  'dup/identical-block': { mode: 'source-text', context: 'Compare repeated executable blocks after structural normalization.' },
-  'java/lost-stack-trace': { mode: 'source-text', context: 'Inspect Java exception wrapping for preservation of the caught cause.' },
-  'java/sql-string-concat': { mode: 'source-text', context: 'Inspect Java SQL construction for string concatenation of values.' },
-  'java/thread-sleep-in-loop': { mode: 'source-text', context: 'Inspect Java loop bodies for Thread.sleep calls.' },
-  'kt/coroutine-cancellation-missing': { mode: 'source-text', context: 'Inspect Kotlin exception handling for cancellation propagation.' },
-  'kt/force-unwrap': { mode: 'source-text', context: 'Inspect Kotlin null assertions for the force-unwrap operator.' },
-  'kt/global-coroutine-scope': { mode: 'source-text', context: 'Inspect Kotlin coroutine launches for GlobalScope usage.' },
-  'kt/string-template-injection': { mode: 'source-text', context: 'Inspect Kotlin SQL strings for template interpolation of values.' },
-  'logic/key-prop-missing': { mode: 'source-text', context: 'Inspect JSX list rendering for a stable key prop on each item.' },
-  'perf/cls-image': { mode: 'source-text', context: 'Inspect rendered image markup for intrinsic width and height dimensions.' },
-  'php/empty-catch': { mode: 'source-text', context: 'Inspect PHP catch bodies for an observable handling statement.' },
-  'php/sql-injection': { mode: 'source-text', context: 'Inspect PHP SQL construction for concatenated values.' },
-  'rb/exception-swallowing': { mode: 'source-text', context: 'Inspect Ruby rescue blocks for propagation or explicit handling.' },
-  'rb/sql-string-concat': { mode: 'source-text', context: 'Inspect Ruby query construction for string concatenation of values.' },
-  'security/eval': { mode: 'source-text', context: 'Inspect executable source for direct eval calls.' },
-  'security/exposed-env-var': { mode: 'source-text', context: 'Inspect client-visible environment access for secret-bearing names.' },
-  'security/localstorage-token': { mode: 'source-text', context: 'Inspect browser storage writes for authentication token values.' },
-  'security/missing-auth-check': { mode: 'route-context', context: 'Inspect the protected API route middleware chain before its handler.' },
-  'security/public-admin-route': { mode: 'route-context', context: 'Inspect the admin route middleware chain before its handler.' },
-  'security/target-blank-no-noopener': { mode: 'source-text', context: 'Inspect target=_blank anchors for a noopener relationship.' },
-  'security/unsafe-html-render': { mode: 'source-text', context: 'Inspect dangerous HTML rendering for untrusted dynamic content.' },
-  'typo/placeholder-text': { mode: 'source-text', context: 'Inspect UI placeholder text for unfinished generic copy.' },
-  'wcag/focus-appearance': { mode: 'source-text', context: 'Inspect focus styling for a visible focus indicator.' },
-  'wcag/focus-obscured': { mode: 'source-text', context: 'Inspect fixed layout treatment that can obscure focusable content.' },
-  'wcag/missing-alt': { mode: 'source-text', context: 'Inspect non-decorative image markup for alternative text.' },
+  'context/import-path-mismatch': {
+    mode: 'allowed-imports',
+    context: {
+      virtualImporterPath: 'src/components/OracleControl.tsx',
+      allowedImports: ['@/components/'],
+    },
+  },
+  'cs/async-without-await': sourceText('src/OracleControl.cs'),
+  'cs/empty-catch-block': sourceText('src/OracleControl.cs'),
+  'cs/sql-string-interpolation': sourceText('src/OracleControl.cs'),
+  'docs/broken-link': {
+    mode: 'link-resolution',
+    context: {
+      virtualDocumentPath: 'docs/README.md',
+      virtualTargets: [
+        { path: 'docs/README.md', anchors: ['installation'] },
+        { path: 'docs/guide.md', anchors: [] },
+        { path: 'docs/api.md', anchors: [] },
+      ],
+    },
+  },
+  'docs/stale-function-reference': {
+    mode: 'multi-file',
+    context: {
+      virtualDocumentPath: 'docs/README.md',
+      virtualFiles: [
+        { path: 'src/widget.ts', content: 'export function renderWidget() { return "ready"; }' },
+      ],
+    },
+  },
+  'docs/stale-package-reference': {
+    mode: 'multi-file',
+    context: {
+      virtualDocumentPath: 'docs/README.md',
+      virtualFiles: [
+        { path: 'package.json', content: '{"name":"slopbrick","version":"0.0.0"}' },
+      ],
+    },
+  },
+  'dup/identical-block': sourceText('src/oracle-control.ts'),
+  'java/lost-stack-trace': sourceText('src/OracleControl.java'),
+  'java/sql-string-concat': sourceText('src/OracleControl.java'),
+  'java/thread-sleep-in-loop': sourceText('src/OracleControl.java'),
+  'kt/coroutine-cancellation-missing': sourceText('src/OracleControl.kt'),
+  'kt/force-unwrap': sourceText('src/OracleControl.kt'),
+  'kt/global-coroutine-scope': sourceText('src/OracleControl.kt'),
+  'kt/string-template-injection': sourceText('src/OracleControl.kt'),
+  'logic/key-prop-missing': sourceText('src/OracleControl.tsx'),
+  'perf/cls-image': sourceText('src/OracleControl.tsx'),
+  'php/empty-catch': sourceText('src/OracleControl.php'),
+  'php/sql-injection': sourceText('src/OracleControl.php'),
+  'rb/exception-swallowing': sourceText('src/oracle_control.rb'),
+  'rb/sql-string-concat': sourceText('src/oracle_control.rb'),
+  'security/eval': sourceText('src/oracle-control.ts'),
+  'security/exposed-env-var': sourceText('src/oracle-control.ts'),
+  'security/localstorage-token': sourceText('src/oracle-control.ts'),
+  'security/missing-auth-check': {
+    mode: 'route-context',
+    context: {
+      virtualRoutePath: 'app/api/orders/route.ts',
+      middleware: ['requireAuth'],
+      authorization: { kind: 'authenticated' },
+    },
+  },
+  'security/public-admin-route': {
+    mode: 'route-context',
+    context: {
+      virtualRoutePath: 'app/api/admin/users/route.ts',
+      middleware: ['requireRole'],
+      authorization: { kind: 'role', role: 'admin' },
+    },
+  },
+  'security/target-blank-no-noopener': sourceText('src/OracleControl.tsx'),
+  'security/unsafe-html-render': sourceText('src/OracleControl.tsx'),
+  'typo/placeholder-text': sourceText('src/OracleControl.tsx'),
+  'wcag/focus-appearance': sourceText('src/OracleControl.tsx'),
+  'wcag/focus-obscured': sourceText('src/OracleControl.tsx'),
+  'wcag/missing-alt': sourceText('src/OracleControl.tsx'),
 } as const satisfies Record<CAL002DeterministicRuleId, CAL002OracleExecution>;
 
 const CONTROL_FAMILIES = [
@@ -235,6 +332,22 @@ function sha256(source: string): string {
   return createHash('sha256').update(source).digest('hex');
 }
 
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`;
+  }
+  const encoded = JSON.stringify(value);
+  if (encoded === undefined) throw new TypeError('Oracle execution context must be JSON-serializable.');
+  return encoded;
+}
+
+function controlContentSha256(source: string, execution: CAL002OracleExecution): string {
+  return sha256(canonicalJson({ source, context: execution.context }));
+}
+
 function caseId(ruleId: string, polarity: 'positive' | 'negative'): string {
   return `cal002-${ruleId.replace('/', '-')}-${polarity}`;
 }
@@ -242,6 +355,15 @@ function caseId(ruleId: string, polarity: 'positive' | 'negative'): string {
 function unitId(ruleId: string, familyId: string): string {
   return `cal002-${ruleId.replace('/', '-')}-${familyId}`;
 }
+
+export const CAL002_ORACLE_CASE_IDS: readonly (readonly [string, string])[] = RULE_FIXTURES.map((fixture) => [
+  caseId(fixture.ruleId, 'positive'),
+  caseId(fixture.ruleId, 'negative'),
+]);
+
+export const CAL002_ORACLE_UNIT_IDS: readonly (readonly string[])[] = RULE_FIXTURES.map((fixture) =>
+  CONTROL_FAMILIES.map((familyId) => unitId(fixture.ruleId, familyId)),
+);
 
 export const CAL002_ORACLE_CONTROL_SOURCES = {
   'context/import-path-mismatch': {
@@ -273,9 +395,9 @@ export const CAL002_ORACLE_CONTROL_SOURCES = {
     'regression-safe': 'var command = new SqlCommand("SELECT * FROM users WHERE id = @id", connection);\ncommand.Parameters.AddWithValue("@id", userId);',
   },
   'docs/broken-link': {
-    baseline: '[Guide](https://example.test/guide)',
-    'alternate-syntax': '[Guide][guide]\n\n[guide]: https://example.test/guide',
-    'comment-adjacent': '<!-- The guide is hosted externally. -->\n[API guide](https://example.test/api)',
+    baseline: '[Guide](./guide.md)',
+    'alternate-syntax': '[Guide][guide]\n\n[guide]: ./guide.md',
+    'comment-adjacent': '<!-- The API guide is part of this documentation set. -->\n[API guide](./api.md)',
     'near-miss': '[Installation](#installation)',
     'regression-safe': '[Support](mailto:support@example.test)',
   },
@@ -459,7 +581,7 @@ export const CAL002_ORACLE_CONTROL_SOURCES = {
     'alternate-syntax': '<nav className="absolute inset-x-0 top-0">Menu</nav>',
     'comment-adjacent': '{/* Keep navigation in normal document flow. */}\n<header className="block">Menu</header>',
     'near-miss': '<header className="sticky-top">Menu</header>',
-    'regression-safe': '<aside className="fixed fixed-height">Filters</aside>',
+    'regression-safe': '<aside className="grid gap-4">Filters</aside>',
   },
   'wcag/missing-alt': {
     baseline: '<img src="chart.png" alt="Revenue by month" />',
@@ -504,13 +626,15 @@ export const CAL002_ORACLE_MUTATION_CASES: readonly CAL002OracleMutationCase[] =
 export const CAL002_ORACLE_SOURCE_CONTROLS: readonly CAL002OracleSourceControlFixture[] = RULE_FIXTURES.flatMap((fixture) =>
   CONTROL_FAMILIES.map((familyId) => {
     const source = CAL002_ORACLE_CONTROL_SOURCES[fixture.ruleId][familyId];
+    const execution = EXECUTION_BY_RULE_ID[fixture.ruleId];
     return {
       ruleId: fixture.ruleId,
       unitId: unitId(fixture.ruleId, familyId),
       familyId,
-      contentSha256: sha256(source),
+      contentSha256: controlContentSha256(source, execution),
       observed: 'no-finding',
       source,
+      execution,
     };
   }),
 );
