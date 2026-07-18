@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 25
+**Index revision:** 26
 **Global status:** `advancing`
 
 ## Executive state
@@ -11,23 +11,23 @@ source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
 routing are complete. The deterministic router preserves every existing
 Mendeley and CAL-001 hash while failing closed for pending, reference-only,
 unregistered, malformed, or manually widened source dispositions. The local
-v0.45 trust-release qualification is complete under `SB-045`; `REL-001` now
-owns the separate npm and website decisions and consumes no WIP. `SB-UX-001`
-is now `in_progress` in the second implementation WIP slot, while `TEL-001`
-remains ready. The reviewed eight-task SB-UX TDD implementation plan, READY
-plan audit, and High-risk shared-report impact map are approved, and execution
-has started in the control plane. The first code action is the
-failing projection test for the owner-observed calibrated, no-safe-repair, and
-unchanged-rescan states. No score, rule, baseline, source, release, or public
-artifact changed. The repository
-owner is the only current product tester; `VAL-001` is now active
-with one owner-attested self-scan-to-rescan row, while `GTM-001` remains parked
-with zero sessions and no recruitment authorization. The first row judged a
-statistical hygiene recommendation useful for review, declined an immediate
-fix because no safe bounded repair followed from the evidence, and reproduced
-the unchanged findings. CAL-001 remains `applied: false` and `admitted: false`;
-no rule state or owner-review-required matrix row changed. Stale-path cleanup
-is isolated behind exact owner approval and does not block local product work.
+v0.45 trust-release qualification is complete under `SB-045`; `REL-001` owns
+the separate npm and website decisions and consumes no WIP. `SB-UX-001` and
+`CAL-002` are the two active implementation plans. CAL-002 starts from the
+approved design and detailed plan to resolve separate quality and origin
+evidence lanes, apply one reviewed non-admitting 119-row policy atomically,
+and close the first-scan current-versus-legacy provenance gap. `SB-UX-001`
+remains active with CAL-002 as its evidence-provenance closeout gate; CAL-002
+does not add an unmet `requires` edge. `VAL-001` returns to ready with its one
+owner-attested self-scan-to-rescan row preserved, and `TEL-001` remains ready.
+The first CAL-002 code action is the red catalog and local-schema contract
+tests. The repository owner is the only current product tester; the recorded
+row judged a statistical hygiene recommendation useful for review, declined an
+immediate fix because no safe bounded repair followed from the evidence, and
+reproduced the unchanged findings. CAL-001 remains `applied: false` and
+`admitted: false`; no rule, score, source, baseline, admission, release,
+deployment, or public artifact changed in revision 26. Stale-path cleanup is
+isolated behind exact owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -150,15 +150,14 @@ is isolated behind exact owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 2 | 2 | `SB-UX-001`, `VAL-001` |
+| Implementation | 2 | 2 | `SB-UX-001`, `CAL-002` |
 | Company | 0 | 1 | None |
 
-`SB-045` is done. `VAL-001` consumes the first implementation slot after the
-first real owner walkthrough, and `SB-UX-001` now consumes the second slot.
-`TEL-001` remains ready behind the typed first-scan boundary. `REL-001` and
-`DOC-PRUNE-001` are waiting
-external and consume no WIP. `GTM-001` is parked; no participant recruitment
-is planned or authorized.
+`SB-045` is done. `SB-UX-001` and `CAL-002` consume the two implementation
+slots. `VAL-001` returns to ready with RUN-001 preserved, and `TEL-001` remains
+ready behind the typed first-scan boundary. `REL-001` and `DOC-PRUNE-001` are
+waiting external and consume no WIP. `GTM-001` is parked; no participant
+recruitment is planned or authorized.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -173,15 +172,16 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
-| 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
-| 9 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
-| 10 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
-| 11 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
-| 12 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
-| 13 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `in_progress` | — | Carry RUN-001 into SB-UX-001 and repeat only when the owner selects another input. |
-| 14 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
-| 15 | [`REL-001`](plans/REL-001-public-release-boundary.md) | `waiting_external` | — | Await independent owner dispositions for npm release and website deployment. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Write the red CAL-002 catalog and local-schema contract tests. |
+| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
+| 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
+| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
+| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
+| 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
+| 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
+| 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
+| 15 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
+| 16 | [`REL-001`](plans/REL-001-public-release-boundary.md) | `waiting_external` | — | Await independent owner dispositions for npm release and website deployment. |
 
 ## Release gates
 
@@ -190,7 +190,7 @@ WIP while waiting.
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
 | Current checkout gates | Satisfied | Recursive lint, typecheck, full test, and build gates pass in the current checkout; the build emits only the existing zod declaration-bundling warnings. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
-| Owner self-scan | Active | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
+| Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
 | Public claims and metadata | Waiting external | The public package and live website remain unchanged until `REL-001` records exact owner dispositions. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
@@ -234,13 +234,13 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-The reviewed `SB-UX-001` implementation plan is approved and execution has
-started in the second implementation WIP slot. The first code action is the
-failing projection test from `VAL-001-RUN-001` for the owner-observed calibrated,
-no-safe-repair, and unchanged-rescan states. `TEL-001` remains ready behind
-that typed finding/outcome boundary. `VAL-001` may accumulate only
-real owner-controlled receipts when the owner chooses; it has no target-count
-gate and cannot establish participant, team, or market-demand evidence.
-`REL-001` remains the separate public-authority checkpoint. Do not lower
-thresholds, activate rules, invent owner runs, recruit participants, or infer
-publish, tag, or deployment authority from local roadmap progress.
+`SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. The first
+CAL-002 code action is the red catalog and local-schema contract tests; its
+separate quality and origin evidence lanes are the first-scan provenance
+closeout gate for SB-UX-001. `VAL-001` and `TEL-001` remain ready. VAL-001 may
+accumulate only real owner-controlled receipts when the owner chooses; it has
+no target-count gate and cannot establish participant, team, or market-demand
+evidence. `REL-001` remains the unchanged separate public-authority checkpoint.
+Do not lower thresholds, activate rules, invent owner runs, acquire data,
+refresh a baseline, or infer publish, tag, or deployment authority from local
+roadmap progress.

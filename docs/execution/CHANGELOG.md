@@ -3,6 +3,32 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 26 — 2026-07-18
+
+### Changed
+
+- Entered `CAL-002` from the approved complete-calibration design and detailed
+  plan. It is active beside `SB-UX-001` to resolve separate quality and origin
+  evidence lanes, then apply one reviewed non-admitting 119-row policy
+  atomically and expose current-versus-legacy first-scan provenance.
+- Returned `VAL-001` to `ready` while retaining `VAL-001-RUN-001`. `SB-UX-001`
+  remains active with CAL-002 as its evidence-provenance closeout gate;
+  `TEL-001` remains ready. Implementation WIP remains exactly `2/2`:
+  `SB-UX-001` and `CAL-002`.
+- Kept `REL-001` and every public release boundary unchanged. No rule, score,
+  source, baseline, admission, release, deployment, tag, publish, push, or
+  acquired data changed in this revision.
+
+### Evidence
+
+- `docs/superpowers/specs/2026-07-18-complete-calibration-program-design.md`
+- `docs/superpowers/plans/2026-07-18-complete-calibration-program.md`
+- `docs/execution/plans/CAL-002-complete-calibration.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- This control-plane revision creates no calibration implementation, policy
+  application, or red/green test evidence; the next action is the red CAL-002
+  catalog and local-schema contract tests.
+
 ## Revision 25 — 2026-07-18
 
 ### Changed

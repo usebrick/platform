@@ -1,7 +1,7 @@
 # TEL-001 — Define privacy-safe local outcome events
 
 - **Status:** `ready`
-- **Priority:** 7
+- **Priority:** 8
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
 - **Updated:** 2026-07-18
@@ -23,6 +23,10 @@ contract. `VAL-001-RUN-001` supplies one real local outcome sequence—useful
 finding, immediate repair declined because no safe fix existed, unchanged
 rescan—but it does not authorize event implementation before `SB-UX-001`
 defines the typed finding/outcome boundary.
+
+`CAL-002` now owns the separate 119-rule policy and provenance closeout beside
+active `SB-UX-001`. This plan remains `ready`; it neither consumes WIP nor
+waits for a rule-state, admission, release, or deployment change.
 
 ## Scope
 

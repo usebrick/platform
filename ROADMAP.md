@@ -55,10 +55,11 @@ family-safe splits, and collision checks; they are not witnessed authorship or
 quality labels. The source is not approved for public redistribution, and its
 use does not admit v10.3 data or activate a rule.
 
-The repository owner is the only current product tester. `VAL-001` is active
-after its first owner-run self-scan and unchanged rescan recorded a useful
-review target with no safe bounded fix. The external participant protocol is
-parked with zero sessions and no recruitment authorization.
+The repository owner is the only current product tester. `VAL-001` preserves
+its first owner-run self-scan and unchanged rescan as recorded evidence, then
+returns to ready while active `CAL-002` completes the separate claim-matched
+calibration and provenance program. The external participant protocol is parked
+with zero sessions and no recruitment authorization.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -106,9 +107,12 @@ Public npm release and website deployment remain separate owner decisions under
 - Preserve the completed CORPUS-002 source-use routing around the verified
   Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
   without changing rule state or v10.3.
-- Continue active VAL-001 owner-selected scan-to-finding-to-action-to-rescan
-  walkthroughs. Preserve declined/no-safe-fix outcomes as real evidence;
-  impose no participant or target-count gate.
+- Start active `CAL-002` beside `SB-UX-001`: complete separate quality and
+  origin evidence lanes, then apply one reviewed non-admitting 119-row policy
+  atomically. Keep CAL-001 evidence frozen, preserve `admitted: false`, and
+  make first-scan provenance distinguish current from legacy calibration.
+- Keep `VAL-001` ready with RUN-001 preserved. Future owner walkthroughs stay
+  optional, owner-selected evidence with no participant or target-count gate.
 
 ### Exit gate
 
@@ -125,14 +129,18 @@ remain separate owner-authorized actions.
 
 ### Outcomes
 
-- Start with `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
+- Continue `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
   current-versus-new debt, and three prioritized actions in the
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
-  and shared-report impact map are approved, and execution has started in the
-  second implementation WIP slot. The first code action is the failing
-  projection test for the owner-observed calibrated, no-safe-repair, and
-  unchanged-rescan states. No score, rule, baseline, source, release, or
-  public artifact changed.
+  and shared-report impact map are approved. It remains active with `CAL-002`
+  as its evidence-provenance closeout gate; CAL-002 does not add an unmet
+  `requires` edge. No score, rule, baseline, source, admission, release,
+  deployment, or public artifact changed in revision 26.
+- Run active `CAL-002` from the approved design and detailed plan: red-test
+  the local catalog and schema contracts, resolve every rule through separate
+  quality and origin lanes, and only then consider one reviewed non-admitting
+  policy application. `VAL-001` and `TEL-001` remain ready; `REL-001` remains
+  the unchanged separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract with export and deletion and no raw source or proprietary repository
   identifier by default.

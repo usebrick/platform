@@ -28,11 +28,18 @@ its plan audit is `READY`, its shared-report blast radius is classified `High`,
 and execution has started in the second implementation WIP slot. No score,
 rule, baseline, source, release, or public artifact changed.
 
+`CAL-002` is now active beside this plan to complete the evidence and
+provenance closeout. It does not add an unmet `requires` edge: `SB-UX-001`
+remains active while CAL-002 establishes the precise current-versus-legacy
+calibration labels this first-scan contract must eventually expose.
+
 ## Scope
 
 - Five user-facing areas: Visual Slop, Frontend Implementation, Code and Logic,
   Repository Coherence, and Accessibility and Resilience.
-- Evidence labels for deterministic, calibrated, and advisory findings.
+- Evidence labels for deterministic, current quality-calibrated, internal
+  origin-calibrated, legacy-calibrated, advisory, and insufficient-evidence
+  findings.
 - One headline score with transparent dimensions and incompleteness state.
 - Three recommended actions based on severity, confidence, reach, and repair
   safety.
@@ -49,7 +56,7 @@ rule, baseline, source, release, or public artifact changed.
 ## Dependencies
 
 - `requires`: `SB-045`
-- `benefitsFrom`: `VAL-001`
+- `benefitsFrom`: `VAL-001`, `CAL-002`
 
 ## Acceptance criteria
 
@@ -64,6 +71,9 @@ rule, baseline, source, release, or public artifact changed.
   reader-oriented output checks pass.
 - Owner-run walkthroughs can identify the first recommended action without
   relying on synthetic or participant evidence.
+- Current policy provenance distinguishes current quality, internal origin,
+  legacy, advisory, and insufficient evidence without implying authorship,
+  admission, or a safe repair.
 
 ## Execution steps
 

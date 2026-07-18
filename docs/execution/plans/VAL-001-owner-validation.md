@@ -1,7 +1,7 @@
 # VAL-001 — Validate the scan-to-rescan loop with the repository owner
 
-- **Status:** `in_progress`
-- **Priority:** 13
+- **Status:** `ready`
+- **Priority:** 14
 - **Track / lane:** implementation / validation
 - **Owner:** repository owner
 - **Updated:** 2026-07-18
@@ -18,6 +18,9 @@ origin association but did not evaluate usefulness or apply rule changes.
 package-local self-scan, a useful review signal, an owner-approved no-fix
 disposition, and an unchanged complete rescan. No participant evidence,
 rule-state change, or owner-review-required CAL-001 row follows from it.
+RUN-001 remains recorded, but this plan returns to `ready` so `CAL-002` can
+own the current 119-rule calibration and provenance closeout beside active
+`SB-UX-001`; no new owner run is implied by this transition.
 
 ## Scope
 
@@ -72,5 +75,6 @@ Remove an invalid ledger row while retaining the underlying scan receipts; do no
 
 ## Next action
 
-Carry RUN-001's useful/no-safe-fix/unchanged states into `SB-UX-001`. Repeat
-the walkthrough only when the owner selects another repository or fixture.
+Carry RUN-001's useful/no-safe-fix/unchanged states into `SB-UX-001` and keep
+them available as bounded quality-review context for `CAL-002`. Repeat the
+walkthrough only when the owner selects another repository or fixture.
