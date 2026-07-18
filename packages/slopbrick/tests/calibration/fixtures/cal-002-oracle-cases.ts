@@ -402,11 +402,11 @@ export const CAL002_ORACLE_CONTROL_SOURCES = {
     'regression-safe': '[Support](mailto:support@example.test)',
   },
   'docs/stale-function-reference': {
-    baseline: 'Call `renderWidget()` to begin.',
-    'alternate-syntax': 'Invoke `renderWidget` after initialization.',
-    'comment-adjacent': '<!-- renderWidget is part of the current export surface. -->\nUse `renderWidget()` for the first render.',
-    'near-miss': 'Render the widget after initialization.',
-    'regression-safe': 'The supported renderer remains `renderWidget()`.',
+    baseline: 'Call `renderWidget`() to begin.',
+    'alternate-syntax': 'After initialization, invoke `renderWidget`().',
+    'comment-adjacent': '<!-- renderWidget is part of the current export surface. -->\nUse `renderWidget`() for the first render.',
+    'near-miss': 'When the widget is ready, call `renderWidget`().',
+    'regression-safe': 'The supported renderer remains `renderWidget`().',
   },
   'docs/stale-package-reference': {
     baseline: 'Install `slopbrick` before running.',

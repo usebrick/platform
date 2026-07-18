@@ -162,6 +162,30 @@ describe('CAL-002 deterministic oracle fixture registry', () => {
     }
   });
 
+  it('binds every stale-function control call to the matching virtual export', () => {
+    const controls = CAL002_ORACLE_SOURCE_CONTROLS.filter(
+      ({ ruleId }) => ruleId === 'docs/stale-function-reference',
+    );
+    expect(controls.map(({ familyId }) => familyId)).toEqual(CONTROL_FAMILY_IDS);
+
+    for (const control of controls) {
+      const callReference = /`([A-Za-z_$][A-Za-z0-9_$]*)`[ \t]*\(/u.exec(control.source);
+      expect(callReference).not.toBeNull();
+      if (callReference === null) continue;
+
+      const identifier = callReference[1];
+      expect(identifier).toBe('renderWidget');
+      expect(control.execution.mode).toBe('multi-file');
+      if (control.execution.mode !== 'multi-file') continue;
+
+      const exportedIdentifiers = control.execution.context.virtualFiles.flatMap(({ content }) =>
+        [...content.matchAll(/\bexport\s+function\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/gu)]
+          .map((match) => match[1]),
+      );
+      expect(exportedIdentifiers).toContain(identifier);
+    }
+  });
+
   it('uses genuine safe layout for the focus-obscured regression control', () => {
     const control = CAL002_ORACLE_CONTROL_SOURCES['wcag/focus-obscured']['regression-safe'];
     expect(control).not.toMatch(/\b(?:fixed|sticky)\b/u);
