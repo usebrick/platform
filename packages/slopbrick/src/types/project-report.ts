@@ -5,7 +5,8 @@
  * Cross-module deps: `Category` from `./primitives`, `Issue` + `ComponentScore`
  * from `./scan`, `TopOffender` + `AiMaintenanceCostResult` + `DocDriftLevel` +
  * `DocFinding` + `DbDriftLevel` + `DbFinding` + `AiDebt` from `./report`,
- * `BaselineMeta` + `ResearchMetrics` from `./baseline`.
+ * `BaselineMeta` + `ResearchMetrics` from `./baseline`, and
+ * `FirstScanExperience` from `./first-scan`.
  */
 
 import type { Category } from './primitives';
@@ -20,6 +21,7 @@ import type {
   TopOffender,
 } from './report';
 import type { BaselineMeta, NewDebtDecision, ResearchMetrics } from './baseline';
+import type { FirstScanExperience } from './first-scan';
 
 /**
  * Accounting for every file selected by a CLI scan. Optional so historical
@@ -155,6 +157,8 @@ export interface ProjectReport {
   gateDecision?: GateDecision;
   /** Optional finding-identity delta used by the CI max-new-issues gate. */
   newDebt?: NewDebtDecision;
+  /** Additive evidence-led projection for the default scan-to-rescan UX. */
+  firstScan?: FirstScanExperience;
   requested?: number;
   analyzed?: number;
   failed?: number;

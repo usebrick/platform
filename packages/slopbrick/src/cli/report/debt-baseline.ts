@@ -1,35 +1,15 @@
-import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative } from 'node:path';
+import { join } from 'node:path';
+import { findingIdentity } from '../../report/finding-identity';
 import { VERSION } from '../../types';
 import type { DebtBaseline, Issue, NewDebtDecision, ProjectReport } from '../../types';
+
+export { findingIdentity } from '../../report/finding-identity';
 
 const DEBT_BASELINE_FILE = 'debt-baseline.json';
 
 export function debtBaselinePath(projectPath: string): string {
   return join(projectPath, '.slopbrick', 'cache', DEBT_BASELINE_FILE);
-}
-
-function findingLocation(issue: Issue, cwd: string): string {
-  if (!issue.filePath) return '<project>';
-  return isAbsolute(issue.filePath) ? relative(cwd, issue.filePath) : issue.filePath;
-}
-
-/**
- * Stable identity for one effective finding. The message is included because
- * it carries the rule's matched value, while severity is intentionally not:
- * changing policy severity must not manufacture new debt.
- */
-export function findingIdentity(issue: Issue, cwd: string): string {
-  const canonical = JSON.stringify({
-    ruleId: issue.ruleId,
-    category: issue.category,
-    filePath: findingLocation(issue, cwd),
-    line: issue.line,
-    column: issue.column,
-    message: issue.message,
-  });
-  return createHash('sha256').update(canonical, 'utf8').digest('hex');
 }
 
 export function collectFindingIds(report: ProjectReport, cwd: string): string[] {

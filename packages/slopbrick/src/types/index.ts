@@ -15,3 +15,4 @@ export * from './config';
 export * from './report';
 export * from './project-report';
 export * from './baseline';
+export * from './first-scan';
