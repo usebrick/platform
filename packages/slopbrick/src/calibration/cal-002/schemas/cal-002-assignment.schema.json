@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-assignment-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "assignmentImplementationCommitSha", "assignmentId", "round", "rows", "admitted"],
+  "properties": {
+    "version": { "const": "cal-002-assignment-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" }, "assignmentImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "assignmentId": { "type": "string", "minLength": 1 }, "round": { "type": "integer", "minimum": 1 },
+    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } }, "admitted": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assignmentRowId", "ruleId", "evidenceClass", "arm", "unitId", "blindedUnitId"],
+      "properties": {
+        "assignmentRowId": { "type": "string", "minLength": 1 }, "ruleId": { "$ref": "#/$defs/ruleId" },
+        "evidenceClass": { "enum": ["contextual-quality", "statistical-review-utility"] }, "arm": { "enum": ["finding", "control"] },
+        "unitId": { "type": "string", "minLength": 1 }, "blindedUnitId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

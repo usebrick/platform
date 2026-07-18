@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-origin-receipt-v1.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "cal001MatrixSha256", "originImplementationCommitSha", "evidence", "rows", "admitted"],
+  "properties": {
+    "version": { "const": "cal-002-origin-receipt-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" }, "cal001MatrixSha256": { "$ref": "#/$defs/sha256" },
+    "originImplementationCommitSha": { "$ref": "#/$defs/commit" }, "evidence": { "$ref": "#/$defs/evidence" },
+    "rows": { "type": "array", "items": { "oneOf": [{ "$ref": "#/$defs/hold" }, { "$ref": "#/$defs/transfer" }, { "$ref": "#/$defs/retire" }] } }, "admitted": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode", "sourceProtocolVersion", "sourceSha256", "splitSha256", "scannerSha256", "configSha256", "sourceCatalogSha256", "receiptSha256", "metricsSha256", "reducerSha256"],
+      "properties": {
+        "mode": { "const": "reuse" }, "sourceProtocolVersion": { "const": "CAL-001-v1" }, "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "splitSha256": { "$ref": "#/$defs/sha256" }, "scannerSha256": { "$ref": "#/$defs/sha256" }, "configSha256": { "$ref": "#/$defs/sha256" },
+        "sourceCatalogSha256": { "$ref": "#/$defs/sha256" }, "receiptSha256": { "$ref": "#/$defs/sha256" }, "metricsSha256": { "$ref": "#/$defs/sha256" }, "reducerSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "hold": { "type": "object", "additionalProperties": false, "required": ["ruleId", "disposition"], "properties": { "ruleId": { "$ref": "#/$defs/ruleId" }, "disposition": { "const": "hold-origin-default-off" } } },
+    "transfer": { "type": "object", "additionalProperties": false, "required": ["ruleId", "disposition", "transferReason"], "properties": { "ruleId": { "$ref": "#/$defs/ruleId" }, "disposition": { "const": "transfer-to-quality" }, "transferReason": { "enum": ["standards-or-contract-quality-claim", "contextual-defect-quality-claim", "statistical-review-utility-claim"] } } },
+    "retire": { "type": "object", "additionalProperties": false, "required": ["ruleId", "disposition"], "properties": { "ruleId": { "$ref": "#/$defs/ruleId" }, "disposition": { "const": "retire" } } }
+  }
+}

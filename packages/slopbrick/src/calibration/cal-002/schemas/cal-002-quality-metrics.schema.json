@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-quality-metrics-v1.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "assignmentSha256", "reviewReceiptSha256", "reducerImplementationCommitSha", "rows", "admitted"],
+  "properties": {
+    "version": { "const": "cal-002-quality-metrics-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" }, "assignmentSha256": { "$ref": "#/$defs/sha256" }, "reviewReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "reducerImplementationCommitSha": { "$ref": "#/$defs/commit" }, "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } }, "admitted": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "labels": {
+      "type": "object", "additionalProperties": false, "required": ["actionableDefect", "usefulNoSafeFix", "notUseful", "cannotDetermine"],
+      "properties": { "actionableDefect": { "type": "integer", "minimum": 0 }, "usefulNoSafeFix": { "type": "integer", "minimum": 0 }, "notUseful": { "type": "integer", "minimum": 0 }, "cannotDetermine": { "type": "integer", "minimum": 0 } }
+    },
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ruleId", "evidenceClass", "requestedPerArm", "finding", "control", "outcome", "claimCeiling"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" }, "evidenceClass": { "enum": ["contextual-quality", "statistical-review-utility"] },
+        "requestedPerArm": { "type": "integer", "minimum": 1 }, "finding": { "$ref": "#/$defs/labels" }, "control": { "$ref": "#/$defs/labels" },
+        "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence"] },
+        "claimCeiling": { "enum": ["quality-usefulness", "review-target-utility", "insufficient-evidence"] }
+      }
+    }
+  }
+}

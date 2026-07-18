@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-catalog-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "cal001MatrixSha256", "ruleCatalogSha256", "rows", "counts", "admitted", "applied"],
+  "properties": {
+    "version": { "const": "cal-002-catalog-v1" },
+    "protocolVersion": { "const": "CAL-002-v1" },
+    "cal001MatrixSha256": { "$ref": "#/$defs/sha256" },
+    "ruleCatalogSha256": { "$ref": "#/$defs/sha256" },
+    "rows": { "type": "array", "items": { "oneOf": [{ "$ref": "#/$defs/qualityRow" }, { "$ref": "#/$defs/originRow" }] } },
+    "counts": { "$ref": "#/$defs/counts" },
+    "admitted": { "const": false },
+    "applied": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "qualityRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "category", "aiSpecific", "existingDefaultOff", "cal001Decision", "ownerReviewRequired", "lane", "evidenceClass"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" }, "category": { "type": "string", "minLength": 1 }, "aiSpecific": { "const": false },
+        "existingDefaultOff": { "type": "boolean" }, "cal001Decision": { "const": "quality-only" }, "ownerReviewRequired": { "type": "boolean" },
+        "lane": { "const": "quality" }, "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] }
+      }
+    },
+    "originRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "category", "aiSpecific", "existingDefaultOff", "cal001Decision", "ownerReviewRequired", "lane"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" }, "category": { "type": "string", "minLength": 1 }, "aiSpecific": { "const": true },
+        "existingDefaultOff": { "type": "boolean" }, "cal001Decision": { "enum": ["default-off", "recalibrate"] }, "ownerReviewRequired": { "type": "boolean" },
+        "lane": { "const": "origin" }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "startingQuality", "startingOrigin", "ownerReviewRequired", "deterministic", "contextual", "statistical"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 }, "startingQuality": { "type": "integer", "minimum": 0 }, "startingOrigin": { "type": "integer", "minimum": 0 },
+        "ownerReviewRequired": { "type": "integer", "minimum": 0 }, "deterministic": { "type": "integer", "minimum": 0 }, "contextual": { "type": "integer", "minimum": 0 }, "statistical": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

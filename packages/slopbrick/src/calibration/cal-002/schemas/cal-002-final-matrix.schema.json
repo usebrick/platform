@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-final-matrix-v1.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "oracleReceiptSha256", "qualityMetricsSha256", "originReceiptSha256", "reducerImplementationCommitSha", "rows", "counts", "admitted", "applied"],
+  "properties": {
+    "version": { "const": "cal-002-final-matrix-v1" }, "protocolVersion": { "const": "CAL-002-v1" },
+    "catalogSha256": { "$ref": "#/$defs/sha256" }, "oracleReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "qualityMetricsSha256": { "$ref": "#/$defs/sha256" }, "originReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "reducerImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "rows": { "type": "array", "items": { "oneOf": [{ "$ref": "#/$defs/qualityRow" }, { "$ref": "#/$defs/originRow" }] } },
+    "counts": { "$ref": "#/$defs/counts" }, "admitted": { "const": false }, "applied": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "qualityRow": {
+      "type": "object", "additionalProperties": false, "required": ["ruleId", "lane", "evidenceClass", "outcome", "claimCeiling"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" }, "lane": { "const": "quality" },
+        "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] },
+        "outcome": { "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence", "retired"] },
+        "claimCeiling": { "enum": ["deterministic-defect", "quality-usefulness", "review-target-utility", "insufficient-evidence", "retired"] }
+      }
+    },
+    "originRow": {
+      "type": "object", "additionalProperties": false, "required": ["ruleId", "lane", "outcome", "claimCeiling"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" }, "lane": { "const": "origin" }, "outcome": { "enum": ["default-off", "retired"] },
+        "claimCeiling": { "enum": ["internal-origin-association", "retired"] }
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["total", "defaultOn", "defaultOff", "qualityAdvisory", "insufficientEvidence", "retired"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 }, "defaultOn": { "type": "integer", "minimum": 0 }, "defaultOff": { "type": "integer", "minimum": 0 },
+        "qualityAdvisory": { "type": "integer", "minimum": 0 }, "insufficientEvidence": { "type": "integer", "minimum": 0 }, "retired": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
