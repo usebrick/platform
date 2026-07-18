@@ -40,6 +40,61 @@ const sampleIssue: Issue = {
   column: 3,
 };
 
+function makeStaleCompleteFirstScanReport(): ProjectReport {
+  const secondIssue: Issue = {
+    ...sampleIssue,
+    ruleId: 'security/stale-comparison',
+    category: 'security',
+    severity: 'medium',
+    filePath: 'src/security.ts',
+    line: 9,
+    column: 4,
+  };
+  const input = makeReport({
+    completionStatus: 'complete',
+    scoreValidity: 'valid',
+    requested: 2,
+    analyzed: 2,
+    failed: 0,
+    skipped: 0,
+    issues: [sampleIssue, secondIssue],
+    scoreExplanation: {
+      repositoryHealth: {
+        value: 73,
+        inputs: [
+          { axis: 'security', value: 70, weight: 0.2, weightedAmount: 14 },
+        ],
+      },
+    } as ProjectReport['scoreExplanation'],
+  });
+  input.firstScan = projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
+  input.firstScan.findings[0]!.change = 'new';
+  input.firstScan.findings[1]!.change = 'unchanged';
+  input.firstScan.delta = {
+    kind: 'slopbrick-finding-delta-v1',
+    status: 'compared',
+    baselineRevision: 7,
+    currentCount: 2,
+    baselineCount: 2,
+    newCount: 1,
+    unchangedCount: 1,
+    resolvedCount: 1,
+    resolvedDetails: 'available',
+    resolved: [{
+      identity: 'stale-resolved-identity',
+      ruleId: 'logic/resolved-stale-rule',
+      area: 'code-and-logic',
+      severity: 'low',
+      aiSpecific: true,
+      filePath: 'src/resolved.ts',
+      line: 3,
+      column: 2,
+    }],
+    summary: '1 new, 1 resolved, and 1 unchanged finding.',
+  };
+  return input;
+}
+
 // ---------- SARIF 2.1.0 structural shape ----------
 
 describe('formatSarif — SARIF 2.1.0 envelope', () => {
@@ -311,6 +366,70 @@ describe('formatSarif — additive first-scan contract', () => {
 
     expect(log.runs[0]!.results[0]!.properties).not.toHaveProperty('firstScan');
     expect(log.runs[0]!.results[1]!.properties).toHaveProperty('firstScan');
+  });
+
+  it.each([
+    ['incomplete', {
+      completionStatus: 'partial' as const,
+      scoreValidity: 'incomplete' as const,
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+      skipped: 0,
+    }],
+    ['not-applicable', {
+      completionStatus: 'empty' as const,
+      scoreValidity: 'not-applicable' as const,
+      requested: 0,
+      analyzed: 0,
+      failed: 0,
+      skipped: 0,
+    }],
+  ] as const)('fails closed for a stale complete first-scan inside an %s report', (expectedStatus, validity) => {
+    const input = Object.assign(makeStaleCompleteFirstScanReport(), validity) as ProjectReport;
+    expect(input.firstScan).toMatchObject({
+      status: 'complete',
+      headline: { value: 73, dimensions: [{ axis: 'security' }] },
+      delta: { status: 'compared', baselineCount: 2, resolvedCount: 1 },
+    });
+    expect(input.firstScan?.recommendedActions.length).toBeGreaterThan(0);
+
+    const log = JSON.parse(formatSarif(input)) as {
+      runs: Array<{
+        tool: { driver: { properties: { firstScan: Record<string, unknown> } } };
+        results: Array<{ properties: Record<string, unknown> }>;
+      }>;
+    };
+    const firstScan = log.runs[0]!.tool.driver.properties.firstScan as {
+      status: string;
+      headline: unknown;
+      recommendationCount: number;
+      delta: Record<string, unknown>;
+    };
+
+    expect(firstScan).toMatchObject({
+      kind: 'slopbrick-first-scan-v1',
+      status: expectedStatus,
+      headline: null,
+      recommendationCount: 0,
+      delta: {
+        kind: 'slopbrick-finding-delta-v1',
+        status: 'not-evaluated',
+        reason: expectedStatus === 'incomplete' ? 'incomplete-scan' : 'no-files-analyzed',
+        currentCount: 2,
+        summary: `Finding delta not evaluated: scan status is ${expectedStatus}.`,
+      },
+    });
+    expect(firstScan.delta).not.toHaveProperty('baselineRevision');
+    expect(firstScan.delta).not.toHaveProperty('baselineCount');
+    expect(firstScan.delta).not.toHaveProperty('newCount');
+    expect(firstScan.delta).not.toHaveProperty('unchangedCount');
+    expect(firstScan.delta).not.toHaveProperty('resolvedCount');
+    expect(firstScan.delta).not.toHaveProperty('resolvedDetails');
+    expect(firstScan.delta).not.toHaveProperty('resolved');
+    for (const result of log.runs[0]!.results) {
+      expect(result.properties).not.toHaveProperty('firstScan');
+    }
   });
 });
 

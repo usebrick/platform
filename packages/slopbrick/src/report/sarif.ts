@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { Category, Issue, IssueEvidence, ProjectReport, Severity } from '../types';
+import { normalizeFirstScanForSerialization } from './first-scan.js';
 import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 type FirstScanExperience = NonNullable<ProjectReport['firstScan']>;
@@ -420,6 +421,7 @@ export function formatSarif(
   options?: { cwd?: string },
 ): string {
   const notApplicable = isNotApplicableScan(report);
+  const firstScan = normalizeFirstScanForSerialization(report);
   const reportableIssues = notApplicable ? [] : report.issues;
   const rulesById = new Map<string, SarifRule>();
   for (const issue of reportableIssues) {
@@ -434,8 +436,8 @@ export function formatSarif(
   let firstScanCursor = 0;
   const results = reportableIssues.map((issue) => {
     let finding: FirstScanFinding | undefined;
-    if ((issue.severity as string) !== 'off' && report.firstScan) {
-      finding = report.firstScan.findings[firstScanCursor];
+    if ((issue.severity as string) !== 'off' && firstScan?.status === 'complete') {
+      finding = firstScan.findings[firstScanCursor];
       firstScanCursor += 1;
     }
     return buildResultFromIssue(
@@ -454,8 +456,8 @@ export function formatSarif(
     notApplicable
       ? {
           ...projectNotApplicableScan(report),
-          ...(report.firstScan !== undefined
-            ? { firstScan: projectFirstScanSummary(report.firstScan) }
+          ...(firstScan !== undefined
+            ? { firstScan: projectFirstScanSummary(firstScan) }
             : {}),
         }
       : {
@@ -467,8 +469,8 @@ export function formatSarif(
           ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
           ...(report.gateDecision !== undefined ? { gateDecision: report.gateDecision } : {}),
           ...(report.newDebt !== undefined ? { newDebt: report.newDebt } : {}),
-          ...(report.firstScan !== undefined
-            ? { firstScan: projectFirstScanSummary(report.firstScan) }
+          ...(firstScan !== undefined
+            ? { firstScan: projectFirstScanSummary(firstScan) }
             : {}),
           ...(!incomplete ? {
             scores: {

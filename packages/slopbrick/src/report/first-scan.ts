@@ -16,6 +16,7 @@ import type {
 import { classifyFindingContext } from './finding-context';
 import { compareFindingBaseline } from './finding-delta';
 import { findingIdentity, repositoryRelativeFindingLocation } from './finding-identity';
+import { isIncompleteScan, isNotApplicableScan } from './scan-validity';
 
 export const FIRST_SCAN_AREA_BY_CATEGORY: Record<Category, FirstScanAreaId> = {
   visual: 'visual-slop',
@@ -161,10 +162,10 @@ function projectFinding(issue: Issue, cwd: string): FirstScanFinding {
 }
 
 function scanStatus(report: ProjectReport): FirstScanExperience['status'] {
-  if (report.scoreValidity === 'not-applicable' || report.completionStatus === 'empty') {
+  if (isNotApplicableScan(report)) {
     return 'not-applicable';
   }
-  if (report.scoreValidity === 'incomplete' || report.completionStatus === 'partial') {
+  if (isIncompleteScan(report)) {
     return 'incomplete';
   }
   return 'complete';
@@ -198,6 +199,41 @@ function projectAreas(findings: FirstScanFinding[]) {
       },
     };
   });
+}
+
+/**
+ * Fail closed at machine-serialization boundaries when a stale first-scan
+ * projection disagrees with the enclosing report's authoritative validity.
+ * Valid reports retain their existing projection byte-for-byte; legacy
+ * reports without first-scan data retain omission.
+ */
+export function normalizeFirstScanForSerialization(
+  report: ProjectReport,
+): FirstScanExperience | undefined {
+  const firstScan = report.firstScan;
+  if (!firstScan) return undefined;
+
+  const status = scanStatus(report);
+  if (status === 'complete') return firstScan;
+
+  const findings = firstScan.findings.map((finding) =>
+    finding.change === 'current' ? finding : { ...finding, change: 'current' as const }
+  );
+  return {
+    ...firstScan,
+    status,
+    headline: null,
+    areas: projectAreas(findings),
+    findings,
+    recommendedActions: [],
+    delta: {
+      kind: 'slopbrick-finding-delta-v1',
+      status: 'not-evaluated',
+      reason: status === 'incomplete' ? 'incomplete-scan' : 'no-files-analyzed',
+      currentCount: findings.length,
+      summary: `Finding delta not evaluated: scan status is ${status}.`,
+    },
+  };
 }
 
 function representativeFinding(findings: FindingGroup): FirstScanFinding {

@@ -1,4 +1,5 @@
 import type { ProjectReport } from '../types';
+import { normalizeFirstScanForSerialization } from './first-scan.js';
 import { SCORE_BRIEFS, SCORE_CONTRACT } from './score-contract.js';
 import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
@@ -41,12 +42,13 @@ export function formatJson(
   report: ProjectReport,
   options: { includeScoreExplanation?: boolean } = {},
 ): string {
+  const firstScan = normalizeFirstScanForSerialization(report);
   if (isNotApplicableScan(report)) {
     const envelope = {
       version: report.version,
       generatedAt: report.generatedAt,
       ...(report.configPath ? { configPath: report.configPath } : {}),
-      ...(report.firstScan ? { firstScan: report.firstScan } : {}),
+      ...(firstScan ? { firstScan } : {}),
       ...projectNotApplicableScan(report),
     };
     return JSON.stringify(envelope, null, 2);
@@ -60,7 +62,8 @@ export function formatJson(
   // only machine-readable score contract that downstream gates may rely on
   // for that run; compatibility numerics remain diagnostic only.
   const incomplete = isIncompleteScan(report);
-  const source = incomplete ? withoutIncompleteScoreAggregates(report) : report;
+  const normalizedReport = firstScan === report.firstScan ? report : { ...report, firstScan };
+  const source = incomplete ? withoutIncompleteScoreAggregates(normalizedReport) : normalizedReport;
   const { scoreExplanation, totalScore: _legacyTotalScore, ...withoutLegacyScore } = source;
   const enriched = {
     ...withoutLegacyScore,
