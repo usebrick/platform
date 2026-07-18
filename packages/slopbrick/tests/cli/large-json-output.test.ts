@@ -23,10 +23,12 @@ describe('large JSON scan output', () => {
     const srcDir = join(dir, 'src');
     mkdirSync(srcDir);
 
-    for (let index = 0; index < 900; index += 1) {
+    const cleanFileCount = 320;
+    const pathPadding = 'x'.repeat(180);
+    for (let index = 0; index < cleanFileCount; index += 1) {
       const suffix = String(index).padStart(4, '0');
       writeFileSync(
-        join(srcDir, `clean-${suffix}.ts`),
+        join(srcDir, `clean-${suffix}-${pathPadding}.ts`),
         `export const value${suffix} = ${index};\n`,
       );
     }
@@ -60,7 +62,7 @@ describe('large JSON scan output', () => {
       scoreBriefs: Record<string, string>;
     };
     expect(report).toMatchObject({
-      fileCount: 901,
+      fileCount: cleanFileCount + 1,
       completionStatus: 'complete',
       scoreValidity: 'valid',
     });
