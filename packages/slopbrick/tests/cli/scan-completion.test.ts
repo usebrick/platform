@@ -38,6 +38,7 @@ const NOT_APPLICABLE_JSON_KEYS = new Set([
   'selectionAccounting',
   'diagnostics',
   'gateDecision',
+  'firstScan',
 ]);
 
 function expectNotApplicableJsonEnvelope(value: unknown): asserts value is Record<string, unknown> {
@@ -71,6 +72,31 @@ function expectNotApplicableJsonEnvelope(value: unknown): asserts value is Recor
   });
   expect(envelope.version).toBeTypeOf('string');
   expect(envelope.generatedAt).toBeTypeOf('string');
+  const firstScan = envelope.firstScan as {
+    delta?: Record<string, unknown>;
+  };
+  expect(firstScan).toMatchObject({
+    kind: 'slopbrick-first-scan-v1',
+    status: 'not-applicable',
+    headline: null,
+    recommendedActions: [],
+    delta: {
+      kind: 'slopbrick-finding-delta-v1',
+      status: 'not-evaluated',
+      reason: 'no-files-analyzed',
+      currentCount: 0,
+      summary: 'Finding delta not evaluated: scan status is not-applicable.',
+    },
+  });
+  expect(envelope).not.toHaveProperty('aiSlopScore');
+  expect(envelope).not.toHaveProperty('engineeringHygiene');
+  expect(envelope).not.toHaveProperty('security');
+  expect(envelope).not.toHaveProperty('repositoryHealth');
+  expect(firstScan.delta).not.toHaveProperty('baselineRevision');
+  expect(firstScan.delta).not.toHaveProperty('baselineCount');
+  expect(firstScan.delta).not.toHaveProperty('newCount');
+  expect(firstScan.delta).not.toHaveProperty('unchangedCount');
+  expect(firstScan.delta).not.toHaveProperty('resolvedCount');
   expect(Object.keys(envelope).filter((key) => !NOT_APPLICABLE_JSON_KEYS.has(key))).toEqual([]);
 }
 
@@ -115,10 +141,36 @@ function expectNotApplicableSarifEnvelope(value: unknown): void {
     },
   });
   expect(properties?.selectionAccounting).toBeTypeOf('object');
+  const firstScan = properties?.firstScan as {
+    delta?: Record<string, unknown>;
+  };
+  expect(firstScan).toMatchObject({
+    kind: 'slopbrick-first-scan-v1',
+    status: 'not-applicable',
+    headline: null,
+    recommendationCount: 0,
+    delta: {
+      kind: 'slopbrick-finding-delta-v1',
+      status: 'not-evaluated',
+      reason: 'no-files-analyzed',
+      currentCount: 0,
+      summary: 'Finding delta not evaluated: scan status is not-applicable.',
+    },
+  });
+  expect(properties).not.toHaveProperty('aiSlopScore');
+  expect(properties).not.toHaveProperty('engineeringHygiene');
+  expect(properties).not.toHaveProperty('security');
+  expect(properties).not.toHaveProperty('repositoryHealth');
+  expect(firstScan.delta).not.toHaveProperty('baselineRevision');
+  expect(firstScan.delta).not.toHaveProperty('baselineCount');
+  expect(firstScan.delta).not.toHaveProperty('newCount');
+  expect(firstScan.delta).not.toHaveProperty('unchangedCount');
+  expect(firstScan.delta).not.toHaveProperty('resolvedCount');
   expect(Object.keys(properties ?? {}).sort()).toEqual([
     'analyzed',
     'completionStatus',
     'failed',
+    'firstScan',
     'gateDecision',
     'message',
     'reason',
@@ -1383,11 +1435,19 @@ describe('scan completion status', () => {
     const result = await run(['--workspace', dir]);
 
     expect(result.exitCode).toBe(1);
+    expect(result.stdout).toMatch(/^Repository Health\n/);
+    expect(result.stdout).toMatch(/Scan status\n\s+incomplete/);
+    expect(result.stdout).toMatch(
+      /Recommended actions\n\s+unavailable — incomplete scans do not recommend actions\./,
+    );
+    expect(result.stdout).toMatch(/Dimensions\n\s+unavailable — incomplete scan has no valid dimensions\./);
+    expect(result.stdout).toContain('Accounting: requested 1; analyzed 0;');
+    expect(result.stdout).toContain('Run again after a change to compare findings.');
     expect(result.stdout).toContain('INCOMPLETE SCAN');
     expect(result.stdout).toContain('not valid for gating');
     expect(result.stderr).toContain('Scan partial');
     expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
-      /AI Slop Score:|Repository Health:|Repository Coherence:|Threshold \(CI gate\)|✓ Clean|health\.json: repo=|codebase is clean|no detectable AI slop/i,
+      /Repository Health\n\s+\d|AI Slop Score:|Threshold \(CI gate\)|✓ Clean|health\.json: repo=|codebase is clean|no detectable AI slop|passed —/i,
     );
   });
 

@@ -99,6 +99,7 @@ describe('CLI output UX', () => {
       );
 
       expect(result.exitCode).toBe(0);
+      expect(result.stdout).toMatch(/^Repository Health\n/);
       expect(result.stdout).toContain('Repository Health');
       expect(result.stdout).toContain('Visual Slop');
       expect(result.stdout).toContain('Frontend Implementation');
