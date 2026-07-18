@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
+  "revision": 22,
   "updatedAt": "2026-07-18",
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
@@ -41,21 +41,19 @@
       "track": "implementation",
       "lane": "slopbrick",
       "horizon": "now",
-      "status": "waiting_external",
+      "status": "done",
       "priority": 1,
       "path": "docs/execution/plans/SB-045-trust-release.md",
       "dependencies": {
         "requires": [],
-        "externalGates": [
-          "owner-live-public-claim-disposition"
-        ],
+        "externalGates": [],
         "benefitsFrom": [
           "CORPUS-001"
         ],
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Obtain the owner's explicit live/public claim disposition and, if deploying, the exact reviewed commit/SHA; do not publish implicitly.",
+        "text": "Preserve the completed local qualification packet, hand first-scan work to SB-UX-001, and route public decisions through REL-001.",
         "verify": "test -f docs/execution/evidence/SB-045-release-qualification.md",
         "evidencePath": "docs/execution/evidence/SB-045-release-qualification.md"
       },
@@ -63,7 +61,8 @@
         "packages/slopbrick/docs/calibration/v0.45.0-continuation-plan.md",
         "packages/slopbrick/docs/calibration/v0.45.0-execution-evidence.md",
         "docs/execution/evidence/SB-045-gate-decision.md",
-        "docs/execution/evidence/SB-045-release-qualification.md"
+        "docs/execution/evidence/SB-045-release-qualification.md",
+        "docs/superpowers/specs/2026-07-18-release-boundary-split-design.md"
       ]
     },
     {
@@ -183,7 +182,7 @@
       "track": "implementation",
       "lane": "slopbrick-ux",
       "horizon": "next",
-      "status": "draft",
+      "status": "ready",
       "priority": 6,
       "path": "docs/execution/plans/SB-UX-001-first-scan.md",
       "dependencies": {
@@ -209,7 +208,7 @@
       "track": "implementation",
       "lane": "telemetry",
       "horizon": "next",
-      "status": "draft",
+      "status": "ready",
       "priority": 7,
       "path": "docs/execution/plans/TEL-001-local-outcomes.md",
       "dependencies": {
@@ -218,12 +217,13 @@
         ],
         "externalGates": [],
         "benefitsFrom": [
+          "SB-UX-001",
           "VAL-001"
         ],
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Specify and test an opt-in local outcome event that contains no raw source or proprietary repository identifier.",
+        "text": "After the first SB-UX-001 report contract defines its finding/outcome boundary, specify and test an opt-in local outcome event with no raw source or proprietary repository identifier.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
@@ -414,6 +414,36 @@
         "evidencePath": "docs/research/vibecoder-pilots.md"
       },
       "evidence": []
+    },
+    {
+      "id": "REL-001",
+      "title": "Resolve the SlopBrick v0.45 public release boundary",
+      "track": "implementation",
+      "lane": "release",
+      "horizon": "now",
+      "status": "waiting_external",
+      "priority": 15,
+      "path": "docs/execution/plans/REL-001-public-release-boundary.md",
+      "dependencies": {
+        "requires": [
+          "SB-045"
+        ],
+        "externalGates": [
+          "owner-public-release-disposition"
+        ],
+        "benefitsFrom": [],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Await explicit, independent owner dispositions for the npm release and website deployment; infer neither from local qualification or main integration.",
+        "verify": "corepack pnpm plans:validate",
+        "evidencePath": "docs/execution/evidence/REL-001-public-claim-disposition.md"
+      },
+      "evidence": [
+        "docs/superpowers/specs/2026-07-18-release-boundary-split-design.md",
+        "docs/execution/evidence/SB-045-release-qualification.md",
+        "docs/execution/evidence/REL-001-public-claim-disposition.md"
+      ]
     }
   ]
 }

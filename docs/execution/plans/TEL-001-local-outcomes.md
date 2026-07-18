@@ -1,6 +1,6 @@
 # TEL-001 — Define privacy-safe local outcome events
 
-- **Status:** `draft`
+- **Status:** `ready`
 - **Priority:** 7
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
@@ -17,7 +17,9 @@ raw source or proprietary repository identity by default.
 Outbound usage reporting is opt-in, while local scan history is enabled by
 default. Those behaviors are currently easy to describe incorrectly as one
 telemetry policy. No hosted outcome-learning backend is authorized by this
-plan.
+plan. The required `SB-045` local qualification is complete. Public release
+and website deployment remain under `REL-001` and do not block this local
+contract.
 
 ## Scope
 
@@ -39,7 +41,7 @@ plan.
 ## Dependencies
 
 - `requires`: `SB-045`
-- `benefitsFrom`: `VAL-001`
+- `benefitsFrom`: `SB-UX-001`, `VAL-001`
 
 ## Acceptance criteria
 
@@ -80,5 +82,6 @@ delete path. Preserve schema/test evidence for review.
 
 ## Next action
 
-Specify and test the smallest opt-in local outcome event with no raw source or
-proprietary repository identifier.
+After the first `SB-UX-001` report contract defines its finding/outcome
+boundary, specify and test the smallest opt-in local outcome event with no raw
+source or proprietary repository identifier.

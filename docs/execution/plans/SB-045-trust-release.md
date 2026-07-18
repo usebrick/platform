@@ -1,6 +1,6 @@
 # SB-045 — Qualify the SlopBrick v0.45 trust release
 
-- **Status:** `waiting_external`
+- **Status:** `done`
 - **Priority:** 1
 - **Track / lane:** implementation / slopbrick
 - **Owner:** SlopBrick maintainers
@@ -31,8 +31,9 @@ of the four root commands (`lint`, `typecheck`, `test`, and `build`) also
 passes in this checkout; the seven host-sensitive failures belong to the older
 qualification receipt and are not present in this current run. Claim/artifact
 reconciliation remains locally aligned for 0.45.0 while the public 0.43
-artifact and live-site drift remain separate. The local work is complete; the
-plan now waits on an owner decision for the live/public claim boundary.
+artifact and live-site drift remain separate. The local qualification work is
+complete. `REL-001` now owns the unresolved public package and website
+decisions so they cannot block local product work.
 
 ## Scope
 
@@ -50,12 +51,13 @@ plan now waits on an owner decision for the live/public claim boundary.
 
 - Claiming v10.3 calibration, activating unmeasured rules, or changing scoring
   merely to pass self-scan.
-- Publishing, tagging, deploying, or pushing.
+- Publishing, tagging, or deploying public artifacts.
 - Building the full SlopBrick UX, MemoryBrick, or hosted telemetry.
 
 ## Dependencies
 
 - `requires`: none
+- `externalGates`: none; `REL-001` owns public release and deployment authority.
 - `benefitsFrom`: `CORPUS-001`; v0.45 does not wait for a new corpus or rule
   claim because this release adds no rules and applies no CAL-001 decision.
 
@@ -102,36 +104,11 @@ gates and package-local self-scan exactly as documented in `AGENTS.md`.
 
 `docs/execution/evidence/SB-045-release-qualification.md`
 
-## Waiting external
+## Public-boundary handoff
 
-- **Exact input:** the repository owner must choose one of these explicit
-  dispositions and record it in the execution evidence:
-
-1. authorize deployment of the reviewed local website candidate at a named
-   commit/SHA after owner review; or
-2. keep the live v0.43 site unchanged and accept that the unreleased v0.45
-   candidate remains local-only until a later release decision.
-
-- **Owner:** repository owner / release maintainer.
-
-- **Last verified:** 2026-07-18, read-only `https://usebrick.dev/` check showed
-  the published v0.43 artifact and legacy absolute “no telemetry” wording.
-
-- **Evidence:** [`SB-045-release-qualification.md`](../evidence/SB-045-release-qualification.md)
-  records the local v0.45 qualification pass; the live-site check is the
-  current external-state observation.
-
-- **Resume condition:** a written decision with the selected disposition and,
-  for deployment, the exact reviewed commit/SHA. A read-only live-site check
-  may then confirm the result; it cannot substitute for authorization.
-
-- **Recheck:** after an owner decision, re-read the live site and compare its
-  version, rule count, category count, privacy wording, and deployment SHA
-  with the authorized disposition.
-
-- **Parallel safe:** VAL-001 preparation and other local, non-publishing work
-  may continue. No participant recruitment, publish, tag, push, deployment, or
-  remote mutation is implied by this wait.
+`REL-001` records the owner's independent npm and website dispositions. Its
+external wait consumes no WIP and cannot reopen this completed local
+qualification unless the qualification evidence itself is invalidated.
 
 ## Rollback
 
@@ -140,6 +117,6 @@ evidence if it exposed pre-existing drift.
 
 ## Next action
 
-Obtain the owner disposition above. Until then, preserve the local
-qualification packet and keep publication, tagging, deployment, and push
-unauthorized.
+Preserve the completed qualification packet, hand first-scan work to
+`SB-UX-001`, and route every public release or deployment decision through
+`REL-001`.

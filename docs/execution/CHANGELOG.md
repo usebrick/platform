@@ -3,6 +3,46 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 22 — 2026-07-18
+
+### Changed
+
+- Split completed local SlopBrick qualification from public release authority:
+  `SB-045` now ends at the local go/no-go packet, while new `REL-001` owns the
+  independent npm and website dispositions.
+- Removed the false scheduler dependency on a public decision. `SB-UX-001` and
+  `TEL-001` retain their `SB-045` requirement, which is now satisfied, and move
+  to `ready`; priority keeps first-scan UX ahead of the outcome-event contract.
+- Kept `VAL-001` ready for real owner-selected runs and `GTM-001` parked with no
+  participant recruitment or target-count gate.
+- Recorded the completed recovery integration at
+  `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6`: `main` and `origin/main`
+  converged after the installed pre-push gate, without a tag, GitHub Release,
+  npm publish, or website deployment.
+- Corrected the current status risk entry for `ci --max-new-issues`; `SB-045`
+  implemented its stable-identity new-debt contract, so it is no longer an
+  advertised silent no-op.
+
+### Status transitions
+
+- `SB-045`: `waiting_external` -> `done` (local qualification complete).
+- `REL-001`: added as `waiting_external` (explicit npm and website owner
+  dispositions only; no WIP consumed).
+- `SB-UX-001`: `draft` -> `ready` (next local implementation plan).
+- `TEL-001`: `draft` -> `ready` (ordered after the first UX contract).
+
+### Evidence
+
+- `docs/superpowers/specs/2026-07-18-release-boundary-split-design.md`
+- `docs/execution/evidence/SB-045-release-qualification.md`
+- `docs/execution/evidence/REL-001-public-claim-disposition.md`
+- JSON parsing, the 16-plan control-plane validator, all 20 validator tests,
+  explicit transition/self-dependency assertions, and `git diff --check`
+  passed with implementation WIP `0/2` and company WIP `0/1`.
+- This planning revision changes no product code and authorizes no tag, GitHub
+  Release, npm publish, website deployment, participant action, or rule-state
+  change.
+
 ## Revision 21 — 2026-07-18
 
 ### Changed

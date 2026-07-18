@@ -1,6 +1,6 @@
 # SB-UX-001 — Make the first scan evidence-led and actionable
 
-- **Status:** `draft`
+- **Status:** `ready`
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
@@ -16,7 +16,9 @@ without reading a giant undifferentiated report.
 
 SlopBrick has broad detector coverage, but the five-part product taxonomy,
 evidence certainty, current-versus-new debt, and prioritized scan-to-rescan
-journey are not yet one tested UX contract.
+journey are not yet one tested UX contract. The required `SB-045` local
+qualification is complete. Public release and website deployment remain under
+`REL-001` and do not block this local UX plan.
 
 ## Scope
 

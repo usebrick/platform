@@ -1,7 +1,7 @@
 # Usebrick execution status
 
 **Snapshot:** 2026-07-18
-**Index revision:** 21
+**Index revision:** 22
 **Global status:** `advancing`
 
 ## Executive state
@@ -11,10 +11,11 @@ source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
 routing are complete. The deterministic router preserves every existing
 Mendeley and CAL-001 hash while failing closed for pending, reference-only,
 unregistered, malformed, or manually widened source dispositions. The local
-v0.45 trust-release qualification is complete and waits only for an explicit
-owner decision on the live/public claim boundary. The repository owner is the
-only current product tester; VAL-001 is ready with an intentionally empty
-owner-validation ledger, while the external-participant GTM-001 protocol is
+v0.45 trust-release qualification is complete under `SB-045`; `REL-001` now
+owns the separate npm and website decisions and consumes no WIP. `SB-UX-001`
+and `TEL-001` are ready, with the first-scan UX first by priority. The
+repository owner is the only current product tester; `VAL-001` remains ready
+with an intentionally empty owner-validation ledger, while `GTM-001` remains
 parked with zero sessions and no recruitment authorization. CAL-001 records
 `applied: false` and `admitted: false`; usefulness review and any rule-state
 change remain separate owner decisions. Stale-path cleanup is isolated behind
@@ -116,9 +117,10 @@ exact owner approval and does not block local product work.
   v0.43 marketing artifact, including contradictory rule counts and absolute
   “no telemetry” claims. The local website candidate corrects those claims,
   but no live deployment has been authorized or inferred.
-- Roadmap consolidation has not published npm, created a GitHub release,
-  deployed the website, pushed a branch, deleted the old corpus, or made any
-  other remote mutation.
+- The approved recovery branch was merged and pushed to `main` at
+  `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6` after the installed pre-push gate
+  passed. That integration did not create a tag, GitHub Release, npm publish,
+  website deployment, corpus deletion, or other public release mutation.
 - The working tree contains unrelated/user-owned changes. It must not be
   described as clean without a fresh verification.
 - Outbound usage reporting is opt-in. Local scan history is on by default; the
@@ -131,10 +133,11 @@ exact owner approval and does not block local product work.
 | Implementation | 0 | 2 | None |
 | Company | 0 | 1 | None |
 
-`SB-045` is waiting external and does not consume an active implementation
-slot. `VAL-001` is ready but remains outside WIP until the repository owner
-starts a real walkthrough. `GTM-001` is parked; no participant recruitment is
-planned or authorized.
+`SB-045` is done. `SB-UX-001` and `TEL-001` are ready but do not consume WIP
+until execution starts; priority selects the UX plan first. `VAL-001` remains
+outside WIP until the repository owner starts a real walkthrough. `REL-001`
+and `DOC-PRUNE-001` are waiting external and consume no WIP. `GTM-001` is
+parked; no participant recruitment is planned or authorized.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -143,13 +146,13 @@ WIP while waiting.
 | Priority | Plan | Status | Unmet `requires` | Next action |
 | ---: | --- | --- | --- | --- |
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
-| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `waiting_external` | — | Obtain the owner's explicit live/public claim disposition and exact reviewed SHA if deployment is authorized. |
+| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `done` | — | Preserve the local qualification packet and hand first-scan work to SB-UX-001. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
-| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `draft` | `SB-045` | Snapshot-test the five-part report information architecture. |
-| 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `draft` | `SB-045` | Define the privacy-safe local outcome event. |
+| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `ready` | — | Snapshot-test the five-part report information architecture. |
+| 7 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | Define the privacy-safe local outcome event after the first UX contract establishes its finding/outcome boundary. |
 | 8 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 9 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
 | 10 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
@@ -157,6 +160,7 @@ WIP while waiting.
 | 12 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 13 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Run the first real owner-controlled scan-to-rescan walkthrough when the owner chooses. |
 | 14 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
+| 15 | [`REL-001`](plans/REL-001-public-release-boundary.md) | `waiting_external` | — | Await independent owner dispositions for npm release and website deployment. |
 
 ## Release gates
 
@@ -165,18 +169,19 @@ WIP while waiting.
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
 | Current checkout gates | Satisfied | Recursive lint, typecheck, full test, and build gates pass in the current checkout; the build emits only the existing zod declaration-bundling warnings. |
 | Self-scan disposition | PASS | 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
-| Claims and metadata | Open | Reconcile version, category, artifact, privacy, and website claims. |
+| Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
+| Public claims and metadata | Waiting external | The public package and live website remain unchanged until `REL-001` records exact owner dispositions. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
 | Website deployment | Not authorized | The local candidate corrects verified live-site claim drift; it still requires owner/SHA review and separate deployment authorization. |
 
 ## Waiting external
 
-`SB-045` waits for the repository owner to choose either an authorized live
-website deployment at a named reviewed commit/SHA or an explicit decision to
-keep the live v0.43 site unchanged while v0.45 remains local-only. A read-only
-live-site check can verify that decision after authorization; it cannot replace
-it. Local owner-validation preparation remains available; no participant
-recruitment is authorized.
+`REL-001` waits for independent repository-owner dispositions for the npm
+package and website. Each surface must be `hold` or `authorize`; every
+authorization must name the exact reviewed commit/SHA and, for npm, the exact
+tag. A green gate, merge, push, or roadmap transition cannot replace that
+input. `SB-UX-001`, `TEL-001`, and owner-selected `VAL-001` work may continue;
+no participant recruitment is authorized.
 
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
@@ -199,21 +204,19 @@ continue with another eligible source or a smaller honest corpus.
   evidence. Start with bounded inventories and 100/100 smoke runs.
 - Memory can become stale or context-heavy. M0 remains read-only and benchmark
   gated.
-- The current `slopbrick ci --max-new-issues` option is advertised but does not
-  affect the gate and still names the retired `.slop-audit-cache.json` path.
-  `SB-045` must either implement a stable-identity new-finding contract or
-  remove/deprecate the option; it must not remain a silent no-op.
+- The stable-identity `ci --max-new-issues` contract is now implemented under
+  `SB-045`; future UX work must preserve its tested current/new-debt semantics
+  and must not reintroduce the retired `.slop-audit-cache.json` path.
 - Archive/delete candidates still require explicit path-level approval; that
   approval does not prevent additive documentation and product work.
 
 ## Next checkpoint
 
-CORPUS-002 is complete. The next local checkpoint is the first real
-owner-controlled VAL-001 scan-to-finding-to-fix-to-rescan walkthrough when the
-owner chooses; it has no required target count and cannot establish
-participant, team, or market-demand evidence. The SB-045 checkpoint remains
-the owner's explicit live/public claim disposition. The bounded CAL-001 smoke,
-full frozen holdout, leakage/confound summary, and decision matrix are complete
-with `applied: false` and `admitted: false`. Do not lower the threshold,
-activate rules, recruit participants, publish, tag, deploy, or push to close
-any boundary.
+The next local checkpoint is the reviewed `SB-UX-001` implementation plan for
+snapshot-tested first-scan information architecture. `TEL-001` is ready behind
+that initial finding/outcome boundary. `VAL-001` may accumulate only real
+owner-controlled scan-to-rescan receipts when the owner chooses; it has no
+target-count gate and cannot establish participant, team, or market-demand
+evidence. `REL-001` remains the separate public-authority checkpoint. Do not
+lower thresholds, activate rules, invent owner runs, recruit participants, or
+infer publish, tag, or deployment authority from local roadmap progress.

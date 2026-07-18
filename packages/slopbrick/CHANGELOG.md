@@ -3,7 +3,7 @@
 ## [0.45.0] — unreleased; source-routed calibration and trust hardening
 
 This package version is a release candidate only. It is not published. Release
-authority remains the explicit SB-045 owner disposition plus the normal full
+authority remains the explicit `REL-001` owner disposition plus the normal full
 gates; v10.3 still has zero admitted units but is not a prerequisite for the
 current publisher-attested internal Corpus v1 evaluation path.
 

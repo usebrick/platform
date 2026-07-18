@@ -59,6 +59,10 @@ The repository owner is the only current product tester. Owner-run
 scan-to-rescan walkthroughs belong to `VAL-001`; the external participant
 protocol is parked with zero sessions and no recruitment authorization.
 
+The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
+Public npm release and website deployment remain separate owner decisions under
+`REL-001`; neither decision blocks local first-scan or outcome-contract work.
+
 ## Operating principles
 
 - **Local-first and useful before signup.** The first scan must provide value
@@ -94,10 +98,10 @@ protocol is parked with zero sessions and no recruitment authorization.
 
 - Maintain the completed documentation control plane and execute only
   explicitly approved stale-path cleanup without slowing product work.
-- Qualify the SlopBrick v0.45 trust release without adding new rules: unify
-  report and exit decisions, make remediation finding-specific, harden durable
-  baselines, settle the self-scan disposition, and produce a truthful go/no-go
-  packet.
+- Preserve the completed SlopBrick v0.45 local qualification: unified report
+  and exit decisions, finding-specific remediation, durable baselines, an
+  explicit self-scan disposition, and a truthful local go/no-go packet. Keep
+  public release and deployment authority isolated under `REL-001`.
 - Preserve the completed CORPUS-002 source-use routing around the verified
   Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
   without changing rule state or v10.3.
@@ -107,10 +111,10 @@ protocol is parked with zero sessions and no recruitment authorization.
 
 ### Exit gate
 
-Advance when the planning validator and links pass, v0.45 has green release
-gates plus an explicit self-scan decision, and the completed CORPUS-002 receipt
-continues to prove the source router preserves the seed, smoke, holdout, and
-decision-matrix receipts.
+The local gate is satisfied: planning validation passes, v0.45 has green local
+qualification gates plus an explicit self-scan decision, and the completed
+CORPUS-002 receipt preserves the seed, smoke, holdout, and decision-matrix
+receipts. Begin the Next-horizon local work without waiting for `REL-001`.
 Owner validation may accumulate when the owner chooses; no participant count
 is a release or source-use gate. Publishing and deploying remain separate
 owner-authorized actions.
@@ -119,10 +123,12 @@ owner-authorized actions.
 
 ### Outcomes
 
-- Deliver a five-part scan taxonomy, evidence tiers, current-versus-new debt,
-  and three prioritized actions in the first-scan/rescan loop.
-- Define a local, inspectable, opt-in outcome-event contract with export and
-  deletion and no raw source or proprietary repository identifier by default.
+- Start with `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
+  current-versus-new debt, and three prioritized actions in the
+  first-scan/rescan loop.
+- Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
+  contract with export and deletion and no raw source or proprietary repository
+  identifier by default.
 - Build MemoryBrick M0 as a read-only projection of observed facts, declared
   policy, provenance, and freshness; benchmark bounded native adapters across
   multiple agents.
