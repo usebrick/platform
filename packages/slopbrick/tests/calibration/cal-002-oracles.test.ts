@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { CAL002_DETERMINISTIC_RULE_IDS } from '../../src/calibration/cal-002/contracts';
+import {
+  CAL002_DETERMINISTIC_RULE_IDS,
+  CAL002_LOCKED_RULE_CATALOG_SHA256,
+  canonicalArtifact,
+} from '../../src/calibration/cal-002/contracts';
+import {
+  buildCAL002OracleReceipt,
+  type BuildCAL002OracleReceiptInput,
+} from '../../src/calibration/cal-002/oracles';
 import * as oracleFixtureRegistry from './fixtures/cal-002-oracle-cases';
 import {
   CAL002_ORACLE_CONTROL_SOURCES,
@@ -68,6 +76,50 @@ function expectVirtualRelativePath(path: string): void {
   expect(path).not.toMatch(/^(?:[/\\]|[A-Za-z]:[/\\])/u);
   expect(path).not.toMatch(/(?:^|[/\\])(?:Users|home|tmp)(?:[/\\]|$)/u);
   expect(path).not.toContain('\\');
+}
+
+const IMPLEMENTATION_COMMIT_SHA = '0123456789abcdef0123456789abcdef01234567';
+
+function completeReceiptInput(): BuildCAL002OracleReceiptInput {
+  return {
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    implementationCommitSha: IMPLEMENTATION_COMMIT_SHA,
+    declarations: CAL002_ORACLE_DECLARATIONS.map(({
+      ruleId,
+      authority,
+      reference,
+      positiveCaseIds,
+      negativeCaseIds,
+    }) => ({ ruleId, authority, reference, positiveCaseIds, negativeCaseIds })),
+    caseResults: CAL002_ORACLE_MUTATION_CASES.map(({
+      ruleId,
+      caseId,
+      expected,
+      observed,
+      sourceSha256,
+    }) => ({ ruleId, caseId, expected, observed, sourceSha256 })),
+    sourceControls: CAL002_ORACLE_SOURCE_CONTROLS.map(({
+      ruleId,
+      unitId,
+      familyId,
+      contentSha256,
+      observed,
+    }) => ({ ruleId, unitId, familyId, contentSha256, observed })),
+  };
+}
+
+function fixtureRichReceiptInput(): BuildCAL002OracleReceiptInput {
+  return {
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    implementationCommitSha: IMPLEMENTATION_COMMIT_SHA,
+    declarations: CAL002_ORACLE_DECLARATIONS,
+    caseResults: CAL002_ORACLE_MUTATION_CASES,
+    sourceControls: CAL002_ORACLE_SOURCE_CONTROLS,
+  };
+}
+
+function compareCodePoints(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 describe('CAL-002 deterministic oracle fixture registry', () => {
@@ -265,6 +317,211 @@ describe('CAL-002 deterministic oracle fixture registry', () => {
       expect(CAL002_DETERMINISTIC_RULE_IDS).not.toContain(transfer.ruleId);
       expect(declaredIds).not.toContain(transfer.ruleId);
       expect(transfer.reason).toBe('standards-or-contract-quality-claim');
+    }
+  });
+});
+
+describe('CAL-002 deterministic oracle receipt reducer', () => {
+  it('reduces the complete registry to the exact sorted 32-rule default-on set', () => {
+    const { receipt } = buildCAL002OracleReceipt(completeReceiptInput());
+
+    expect(receipt.rows.map(({ ruleId }) => ruleId)).toEqual(
+      [...CAL002_DETERMINISTIC_RULE_IDS].sort(compareCodePoints),
+    );
+    expect(receipt.rows).toHaveLength(32);
+    expect(receipt.rows.every(({ status, outcome, transferred }) =>
+      status === 'pass' && outcome === 'default-on' && transferred === false)).toBe(true);
+  });
+
+  it('projects only durable reducer fields and keeps every admission flag false', () => {
+    const result = buildCAL002OracleReceipt(fixtureRichReceiptInput());
+    const [row] = result.receipt.rows;
+
+    expect(result.receipt.admitted).toBe(false);
+    expect(result.receipt.rows.every(({ admitted }) => admitted === false)).toBe(true);
+    expect(Object.keys(row.declaration ?? {})).toEqual([
+      'authority',
+      'reference',
+      'positiveCaseIds',
+      'negativeCaseIds',
+    ]);
+    expect(Object.keys(row.caseResults[0])).toEqual([
+      'caseId',
+      'expected',
+      'observed',
+      'sourceSha256',
+    ]);
+    expect(Object.keys(row.sourceControls[0])).toEqual([
+      'unitId',
+      'familyId',
+      'contentSha256',
+      'observed',
+    ]);
+    expect(result.receiptJson).not.toContain('"source":');
+    expect(result.receiptJson).not.toContain('"execution":');
+    expect(result.receiptJson).not.toContain('"context":');
+    expect(result.receiptJson).not.toContain(CAL002_ORACLE_MUTATION_CASES[0].source);
+    expect(result.receiptJson).not.toContain(CAL002_ORACLE_SOURCE_CONTROLS[0].source);
+    expect(result.receiptJson).not.toContain('src/components/OracleControl.tsx');
+  });
+
+  it('emits a transferred frozen origin row with missing evidence as explicit default-off', () => {
+    const { receipt } = buildCAL002OracleReceipt({
+      ...completeReceiptInput(),
+      transfers: CAL002_ORACLE_TRANSFERS,
+    });
+    const transferred = receipt.rows.find(({ ruleId }) => ruleId === 'security/hardcoded-secret');
+
+    expect(transferred).toEqual({
+      ruleId: 'security/hardcoded-secret',
+      transferred: true,
+      caseResults: [],
+      sourceControls: [],
+      status: 'fail',
+      outcome: 'default-off',
+      failures: [
+        'insufficient-control-families',
+        'insufficient-source-controls',
+        'missing-declaration',
+      ],
+      admitted: false,
+    });
+  });
+
+  it('fails only the rule with an unexpected case observation', () => {
+    const input = completeReceiptInput();
+    const target = input.caseResults[0];
+    const { receipt } = buildCAL002OracleReceipt({
+      ...input,
+      caseResults: input.caseResults.map((result) => result === target
+        ? { ...result, observed: result.expected === 'finding' ? 'no-finding' : 'finding' }
+        : result),
+    });
+    const targetRow = receipt.rows.find(({ ruleId }) => ruleId === target.ruleId);
+
+    expect(targetRow).toMatchObject({
+      status: 'fail',
+      outcome: 'default-off',
+      failures: ['unexpected-case-observation'],
+    });
+    expect(receipt.rows.filter(({ status }) => status === 'fail').map(({ ruleId }) => ruleId)).toEqual([
+      target.ruleId,
+    ]);
+  });
+
+  it('fails only the rule with a finding in its five-family controls', () => {
+    const input = completeReceiptInput();
+    const target = input.sourceControls[0];
+    const { receipt } = buildCAL002OracleReceipt({
+      ...input,
+      sourceControls: input.sourceControls.map((control) => control === target
+        ? { ...control, observed: 'finding' }
+        : control),
+    });
+    const targetRow = receipt.rows.find(({ ruleId }) => ruleId === target.ruleId);
+
+    expect(targetRow).toMatchObject({
+      status: 'fail',
+      outcome: 'default-off',
+      failures: ['unexpected-source-control-observation'],
+    });
+    expect(receipt.rows.filter(({ status }) => status === 'fail').map(({ ruleId }) => ruleId)).toEqual([
+      target.ruleId,
+    ]);
+  });
+
+  it('rejects duplicate case and source-control bindings', () => {
+    const input = completeReceiptInput();
+
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      caseResults: [...input.caseResults, input.caseResults[0]],
+    })).toThrow(/Duplicate oracle case result/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      sourceControls: [...input.sourceControls, input.sourceControls[0]],
+    })).toThrow(/Duplicate oracle source control/u);
+  });
+
+  it('rejects invalid caller hashes and malformed reducer IDs', () => {
+    const input = completeReceiptInput();
+
+    expect(() => buildCAL002OracleReceipt({ ...input, catalogSha256: 'A'.repeat(64) }))
+      .toThrow(/catalogSha256 must be a lowercase SHA-256/u);
+    expect(() => buildCAL002OracleReceipt({ ...input, implementationCommitSha: 'a'.repeat(39) }))
+      .toThrow(/implementationCommitSha must be a lowercase 40-character commit SHA/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      caseResults: [{ ...input.caseResults[0], caseId: 'Bad Case ID' }, ...input.caseResults.slice(1)],
+    })).toThrow(/caseId must be a canonical oracle ID/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      sourceControls: [{ ...input.sourceControls[0], unitId: 'Bad Unit ID' }, ...input.sourceControls.slice(1)],
+    })).toThrow(/unitId must be a canonical oracle ID/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      sourceControls: [{ ...input.sourceControls[0], familyId: 'Bad Family ID' }, ...input.sourceControls.slice(1)],
+    })).toThrow(/familyId must be a canonical oracle ID/u);
+  });
+
+  it('rejects invalid transfers and evidence outside the exact final set', () => {
+    const input = completeReceiptInput();
+
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      transfers: [{ ruleId: CAL002_DETERMINISTIC_RULE_IDS[0], reason: 'standards-or-contract-quality-claim' }],
+    })).toThrow(/duplicates a starting deterministic rule/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      transfers: [{ ruleId: 'unknown/not-frozen', reason: 'standards-or-contract-quality-claim' }],
+    })).toThrow(/is not a frozen origin row/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      transfers: [{
+        ruleId: 'security/hardcoded-secret',
+        reason: 'contextual-defect-quality-claim' as never,
+      }],
+    })).toThrow(/has an invalid reason/u);
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      declarations: [{ ...input.declarations[0], ruleId: 'ai/any-density' }, ...input.declarations.slice(1)],
+    })).toThrow(/is not in the final deterministic set/u);
+  });
+
+  it('fails malformed arrays with a deterministic boundary error', () => {
+    const input = completeReceiptInput();
+
+    expect(() => buildCAL002OracleReceipt({
+      ...input,
+      declarations: null as never,
+    })).toThrow('Oracle declarations must be an array');
+  });
+
+  it('is deterministic, code-point sorted, canonical, and hash-bound', () => {
+    const input = completeReceiptInput();
+    const forward = buildCAL002OracleReceipt(input);
+    const reversed = buildCAL002OracleReceipt({
+      ...input,
+      declarations: [...input.declarations].reverse(),
+      caseResults: [...input.caseResults].reverse(),
+      sourceControls: [...input.sourceControls].reverse(),
+    });
+    const canonical = canonicalArtifact(forward.receipt);
+
+    expect(reversed).toEqual(forward);
+    expect(forward.receiptJson).toBe(canonical.json);
+    expect(forward.receiptSha256).toBe(canonical.sha256);
+    expect(forward.receipt.rows.map(({ ruleId }) => ruleId)).toEqual(
+      [...forward.receipt.rows.map(({ ruleId }) => ruleId)].sort(compareCodePoints),
+    );
+    for (const row of forward.receipt.rows) {
+      expect(row.failures).toEqual([...row.failures].sort(compareCodePoints));
+      expect(row.caseResults.map(({ caseId }) => caseId)).toEqual(
+        [...row.caseResults.map(({ caseId }) => caseId)].sort(compareCodePoints),
+      );
+      expect(row.sourceControls.map(({ unitId }) => unitId)).toEqual(
+        [...row.sourceControls.map(({ unitId }) => unitId)].sort(compareCodePoints),
+      );
     }
   });
 });
