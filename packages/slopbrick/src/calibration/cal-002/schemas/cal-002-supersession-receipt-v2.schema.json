@@ -71,21 +71,17 @@
       "allOf": [
         {
           "if": {
-            "type": "object",
             "properties": {
               "uniqueCoverageDisposition": { "const": "split-to-new-rule" }
             },
             "required": ["uniqueCoverageDisposition"]
           },
           "then": {
-            "type": "object",
             "properties": { "splitRuleId": { "$ref": "#/$defs/ruleId" } },
             "required": ["splitRuleId"]
           },
           "else": {
-            "type": "object",
             "not": {
-              "type": "object",
               "properties": { "splitRuleId": true },
               "required": ["splitRuleId"]
             }
@@ -95,26 +91,47 @@
     },
     "sqlRow": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "db/sql-concat" },
-        "replacementRuleId": { "const": "security/sql-construction" }
+        "replacementRuleId": { "const": "security/sql-construction" },
+        "parityReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "migrationCommitSha": { "$ref": "#/$defs/commit" },
+        "uniqueCoverageDisposition": {
+          "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+        },
+        "splitRuleId": { "$ref": "#/$defs/ruleId" }
       }
     },
     "anyRow": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "logic/math-any-density" },
-        "replacementRuleId": { "const": "ai/any-density" }
+        "replacementRuleId": { "const": "ai/any-density" },
+        "parityReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "migrationCommitSha": { "$ref": "#/$defs/commit" },
+        "uniqueCoverageDisposition": {
+          "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+        },
+        "splitRuleId": { "$ref": "#/$defs/ruleId" }
       }
     },
     "consoleRow": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "logic/math-console-log-storm" },
-        "replacementRuleId": { "const": "ai/console-debug-storm" }
+        "replacementRuleId": { "const": "ai/console-debug-storm" },
+        "parityReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "migrationCommitSha": { "$ref": "#/$defs/commit" },
+        "uniqueCoverageDisposition": {
+          "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+        },
+        "splitRuleId": { "$ref": "#/$defs/ruleId" }
       }
     }
   }
