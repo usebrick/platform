@@ -81,18 +81,21 @@ Its scenarios are not measured UseBrick demand or forecasts.
 
 The frozen CAL-002 v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
-historical hold. The additive v2 authority foundation in Tasks 1–3 is now
-implementation-checkpointed and independently approved through `5f5a1c554`.
-It preserves the locked 119-rule projection—47 starting quality + 26
-transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
-research-origin rows—and adds the reviewed, immutable owner-batch path without
-running it against the protected owner state. The next bounded slice is the
-exact 32-row zero-label quality disposition and optional readiness-gated
-cohort plan. CAL-002 remains `in_progress` at implementation WIP `2/2`; the
-proposed policy remains `applied: false` and `admitted: false`. No runtime
-policy, admission, or release state changed. Local application, if later
-authorized, remains separate from push, tag, publish, deploy, and release
-authority.
+historical hold. Progressive authority Tasks 1–5 are now implementation-
+checkpointed and independently approved through `67a777c27`. They preserve
+the locked 119-rule projection—47 starting quality + 26 transferred quality +
+4 blocked quality + 3 superseded + 7 retired + 32 research-origin rows—add the
+reviewed immutable owner-batch path, close all 32 quality rows without labels,
+and freeze fixed parity and receipt contracts for the three future
+supersession migrations.
+None of those paths has been run against the protected owner state. The next
+bounded parallel-safe wave is Tasks 6–8: SQL CTE coverage, console five-in-
+thirty clustering guards, and declaration-ratio `any` density without the
+rejected line-based heuristic. CAL-002 remains `in_progress` at implementation
+WIP `2/2`; the proposed policy remains `applied: false` and `admitted: false`.
+No runtime policy, admission, or release state changed. Local application, if
+later authorized, remains separate from push, tag, publish, deploy, and
+release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -177,11 +180,12 @@ planning artifacts only, not participant action.
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
   `requires` edge. No score, rule, baseline, source, admission, release,
-  deployment, or public artifact changed in revision 28.
-- Run active `CAL-002` from the approved amendment: red-test the additive v2
-  authority taxonomy and exact 119-row projection, then resolve every rule
-  through separate quality and origin lanes. `VAL-001` and `TEL-001` remain
-  ready; `REL-001` remains the unchanged separate public-authority boundary.
+  deployment, or public artifact changed in revision 29.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–5 are
+  checkpointed through `67a777c27`; next execute the independent SQL, console,
+  and `any` parity migrations before the transfer-oracle wave. `VAL-001` and
+  `TEL-001` remain ready; `REL-001` remains the unchanged separate public-
+  authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract for useful finding, action or decline, rescan, and return outcomes,
   with export and deletion and no raw source or proprietary repository

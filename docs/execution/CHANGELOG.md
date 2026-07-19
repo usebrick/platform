@@ -3,6 +3,39 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 29 — 2026-07-19
+
+### Changed
+
+- Recorded CAL-002 progressive authority Tasks 1–5 as implementation-
+  checkpointed and independently approved through `67a777c27`.
+- Recorded Task 4's exact 32-row zero-label quality disposition and optional
+  readiness-gated private cohort planner. The disposition is non-admitting,
+  keeps every row disabled/score-neutral/gate-neutral, and does not claim a
+  safe repair.
+- Recorded Task 5's fixed SQL, console, and `any` parity cases, required fields
+  for independent future migration commits, and exact three-row non-admitting
+  supersession contract. The rule migrations remain Tasks 6–8.
+- Advanced the next bounded action to the parallel-safe Tasks 6–8 parity wave:
+  SQL CTE coverage, console five-in-thirty clustering guards, and declaration-
+  ratio `any` density without the rejected line-based heuristic.
+- Preserved active `SB-UX-001` and `CAL-002` at implementation WIP `2/2`.
+  No protected owner workflow was run and no authority proposal, private
+  cohort, quality receipt, parity receipt, supersession receipt, runtime
+  policy, application, admission, or release state was created.
+
+### Evidence
+
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/plans/CAL-002-complete-calibration.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- Task 4's final focused matrix passes 92/92 on exact Node 22.22.3 and 24.15.0
+  with typecheck on both; the integrated Task 4 + Task 5 matrix passes 101/101
+  on both runtimes with typecheck on both.
+- This implementation checkpoint changes no live owner state, runtime policy,
+  package version, rule activation, score, source, baseline, admission,
+  release, deployment, tag, publish, push, or acquired data.
+
 ## Revision 28 — 2026-07-19
 
 ### Changed

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 28,
+  "revision": 29,
   "updatedAt": "2026-07-19",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Red-test Task 4's exact 32-row zero-label quality disposition and optional readiness-gated cohort plan.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-quality-sampling.test.ts tests/calibration/cal-002-quality-metrics.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Execute Tasks 6–8 in parallel: SQL CTE, console clustering, and declaration-ratio any parity migrations.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/sql-construction.test.ts tests/rules/db/sql-concat.test.ts tests/calibration/cal-002-sql-parity.test.ts tests/rules/ai/console-debug-storm.test.ts tests/rules/math-console-log-storm.test.ts tests/calibration/cal-002-console-parity.test.ts tests/rules/ai/any-density.test.ts tests/calibration/cal-002-any-parity.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Red-test Task 4's exact 32-row zero-label quality disposition and optional readiness-gated cohort plan.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-quality-sampling.test.ts tests/calibration/cal-002-quality-metrics.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Execute Tasks 6–8 in parallel: SQL CTE, console clustering, and declaration-ratio any parity migrations.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/sql-construction.test.ts tests/rules/db/sql-concat.test.ts tests/calibration/cal-002-sql-parity.test.ts tests/rules/ai/console-debug-storm.test.ts tests/rules/math-console-log-storm.test.ts tests/calibration/cal-002-console-parity.test.ts tests/rules/ai/any-density.test.ts tests/calibration/cal-002-any-parity.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [
