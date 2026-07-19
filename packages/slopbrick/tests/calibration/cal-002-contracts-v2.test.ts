@@ -129,7 +129,7 @@ describe('CAL-002 v2 authority contracts', () => {
     const index = JSON.parse(readFileSync(join(SCHEMA_DIR, 'index.json'), 'utf8')) as {
       schemas: { file: string; version: string }[];
     };
-    expect(index.schemas.slice(-3)).toEqual([
+    expect(index.schemas.slice(8, 11)).toEqual([
       { file: 'cal-002-authority-proposal-v2.schema.json', version: CAL002_AUTHORITY_PROPOSAL_VERSION },
       { file: 'cal-002-authority-state-v2.schema.json', version: CAL002_AUTHORITY_STATE_VERSION },
       { file: 'cal-002-authority-receipt-v2.schema.json', version: CAL002_AUTHORITY_RECEIPT_VERSION },

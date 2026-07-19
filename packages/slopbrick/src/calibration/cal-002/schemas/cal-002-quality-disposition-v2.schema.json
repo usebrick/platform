@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-quality-disposition-v2.schema.json",
+  "title": "CAL-002 Quality Disposition v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "catalogSha256",
+    "authorityReceiptSha256",
+    "implementationCommitSha",
+    "selectedRuleIds",
+    "rows",
+    "admitted",
+    "applied"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-quality-disposition-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "implementationCommitSha": { "$ref": "#/$defs/commit" },
+    "selectedRuleIds": {
+      "type": "array",
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/ruleId" }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "prefixItems": [
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/any-density" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/console-debug-storm" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/fetch-default-overuse" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/state-default-overuse" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/tailwind-color-overuse" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/giant-component" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/multiple-components-per-file" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/magic-numbers" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/printf-debug" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "dead/dead-branch" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "java/suspicious-implementation" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/gap-monopoly" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/spacing-grid" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/boundary-violation" } } },
+        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/heaps-deviation" } } },
+        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/math-variable-name-entropy" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/reactive-hook-soup" } } },
+        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/zipf-slope-anomaly" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/zombie-state" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "perf/css-bloat" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "product/terminology-drift" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rb/n-plus-one-query" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/stringly-typed" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/unwrap-in-production" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/dangerous-cors" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/fail-open-auth" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "test/duplicate-setup" } } },
+        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "typo/math-button-label-uniformity" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/arbitrary-escape" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/inline-style-dominance" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/radius-scale-violation" } } },
+        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/spacing-scale-violation" } } }
+      ],
+      "items": false
+    },
+    "admitted": { "const": false },
+    "applied": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "sampleCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "controls", "cannotDetermine"],
+      "properties": {
+        "findings": { "type": "integer", "minimum": 0 },
+        "controls": { "type": "integer", "minimum": 0 },
+        "cannotDetermine": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "zeroSampleCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "controls", "cannotDetermine"],
+      "properties": {
+        "findings": { "const": 0 },
+        "controls": { "const": 0 },
+        "cannotDetermine": { "const": 0 }
+      }
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "type": "number", "minimum": 0, "maximum": 1 },
+        "upper": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingUseful", "controlUseful"],
+      "properties": {
+        "findingUseful": { "$ref": "#/$defs/interval" },
+        "controlUseful": { "$ref": "#/$defs/interval" }
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "evidenceClass",
+        "measurementStatus",
+        "sampleCounts",
+        "runtimeOutcome",
+        "enabledByDefault",
+        "scoreEligible",
+        "gateEligible",
+        "repairSafety"
+      ],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "evidenceClass": { "enum": ["contextual-quality", "statistical-review-utility"] },
+        "measurementStatus": { "enum": ["measured", "not-requested-owner-capacity"] },
+        "sampleCounts": { "$ref": "#/$defs/sampleCounts" },
+        "uncertainty": { "$ref": "#/$defs/uncertainty" },
+        "runtimeOutcome": {
+          "enum": [
+            "default-on",
+            "default-off",
+            "quality-advisory",
+            "insufficient-evidence",
+            "quality-candidate-default-off"
+          ]
+        },
+        "enabledByDefault": { "type": "boolean" },
+        "scoreEligible": { "type": "boolean" },
+        "gateEligible": { "type": "boolean" },
+        "repairSafety": { "enum": ["finding-bound-only", "no-safe-repair"] },
+        "metricsRowSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": { "measurementStatus": { "const": "not-requested-owner-capacity" } },
+            "required": ["measurementStatus"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "sampleCounts": { "$ref": "#/$defs/zeroSampleCounts" },
+              "runtimeOutcome": { "const": "quality-candidate-default-off" },
+              "enabledByDefault": { "const": false },
+              "scoreEligible": { "const": false },
+              "gateEligible": { "const": false },
+              "repairSafety": { "const": "no-safe-repair" }
+            },
+            "not": {
+              "type": "object",
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": { "uncertainty": true },
+                  "required": ["uncertainty"]
+                },
+                {
+                  "type": "object",
+                  "properties": { "metricsRowSha256": true },
+                  "required": ["metricsRowSha256"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "measurementStatus": { "const": "measured" } },
+            "required": ["measurementStatus"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["metricsRowSha256"],
+            "properties": {
+              "metricsRowSha256": { "$ref": "#/$defs/sha256" },
+              "runtimeOutcome": {
+                "enum": ["default-on", "default-off", "quality-advisory", "insufficient-evidence"]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": { "runtimeOutcome": { "const": "default-on" } },
+                  "required": ["runtimeOutcome"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "enabledByDefault": { "const": true },
+                    "scoreEligible": { "const": true },
+                    "gateEligible": { "const": true }
+                  }
+                },
+                "else": {
+                  "type": "object",
+                  "properties": {
+                    "enabledByDefault": { "const": false },
+                    "scoreEligible": { "const": false },
+                    "gateEligible": { "const": false }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": { "runtimeOutcome": { "const": "insufficient-evidence" } },
+                  "required": ["runtimeOutcome"]
+                },
+                "then": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": { "uncertainty": true },
+                    "required": ["uncertainty"]
+                  }
+                },
+                "else": {
+                  "type": "object",
+                  "required": ["uncertainty"],
+                  "properties": {
+                    "uncertainty": { "$ref": "#/$defs/uncertainty" },
+                    "sampleCounts": {
+                      "type": "object",
+                      "properties": {
+                        "findings": { "type": "integer", "minimum": 1 },
+                        "controls": { "type": "integer", "minimum": 1 }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "evidenceClass": { "const": "statistical-review-utility" } },
+            "required": ["evidenceClass"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "runtimeOutcome": {
+                "enum": [
+                  "default-off",
+                  "quality-advisory",
+                  "insufficient-evidence",
+                  "quality-candidate-default-off"
+                ]
+              },
+              "repairSafety": { "const": "no-safe-repair" }
+            }
+          }
+        }
+      ]
+    },
+    "contextualRow": {
+      "allOf": [
+        { "$ref": "#/$defs/row" },
+        {
+          "type": "object",
+          "properties": {
+            "evidenceClass": { "const": "contextual-quality" }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "measurementStatus": { "const": "measured" } },
+            "required": ["measurementStatus"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "repairSafety": { "const": "finding-bound-only" } }
+          }
+        }
+      ]
+    },
+    "statisticalRow": {
+      "allOf": [
+        { "$ref": "#/$defs/row" },
+        {
+          "type": "object",
+          "properties": {
+            "evidenceClass": { "const": "statistical-review-utility" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -15,13 +15,23 @@ import {
 import type { CAL001HoldoutMetrics } from '../../src/calibration/corpus-v1/calibration-holdout';
 import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
 import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
-import { authorityProposalSha256V2 } from '../../src/calibration/cal-002/authority';
+import {
+  CAL002_ASSOCIATION_SNAPSHOT,
+  authorityProposalSha256V2,
+  authorityRowsSha256V2,
+  canonicalAuthorityRowsV2,
+} from '../../src/calibration/cal-002/authority';
 import {
   CAL002_ASSIGNMENT_VERSION,
   CAL002_LOCKED_RULE_CATALOG_SHA256,
   CAL002_PROTOCOL_VERSION,
   canonicalArtifact,
 } from '../../src/calibration/cal-002/contracts';
+import {
+  CAL002_AUTHORITY_RECEIPT_VERSION,
+  CAL002_PROTOCOL_VERSION_V2,
+  type CAL002AuthorityReceiptV2,
+} from '../../src/calibration/cal-002/contracts-v2';
 import {
   completeCAL002Review,
   recordCAL002Review,
@@ -177,6 +187,28 @@ function priorOriginStateFixture(root: string): { readonly bytes: string; readon
   const bytes = canonicalArtifact(state).json;
   writeFileSync(join(root, 'origin-state.json'), bytes, { mode: 0o600 });
   return { bytes, sha256: sha256(bytes) };
+}
+
+function approvedAuthorityReceiptFixture(root: string): CAL002AuthorityReceiptV2 {
+  const rows = canonicalAuthorityRowsV2();
+  const receipt: CAL002AuthorityReceiptV2 = {
+    version: CAL002_AUTHORITY_RECEIPT_VERSION,
+    protocolVersion: CAL002_PROTOCOL_VERSION_V2,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    proposalSha256: 'a'.repeat(64),
+    priorStateSha256: 'b'.repeat(64),
+    revision: 2,
+    reviewerAuthority: 'repository-owner',
+    decision: 'approved',
+    associationSnapshot: CAL002_ASSOCIATION_SNAPSHOT,
+    rows,
+    authorityRowsSha256: authorityRowsSha256V2(rows),
+    associationRowsSha256: canonicalArtifact(rows).sha256,
+    admitted: false,
+    applied: false,
+  };
+  writeCanonical(join(root, 'authority-receipt.json'), receipt);
+  return receipt;
 }
 
 function cal001MatrixFixture(root: string): { readonly matrix: CAL001DecisionMatrix; readonly matrixSha256: string } {
@@ -993,5 +1025,133 @@ describe('CAL-002 authority CLI migration', () => {
     expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
     expect(existsSync(authorityStatePath(root))).toBe(false);
     expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+  });
+});
+
+describe('CAL-002 quality disposition CLI', () => {
+  it('writes an immutable 32-row zero-label closeout without admission or application', () => {
+    const root = temporaryRoot();
+    approvedAuthorityReceiptFixture(root);
+
+    const result = run([
+      script,
+      'quality-closeout',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--out', 'quality-disposition.json',
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '', root);
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      command: 'quality-closeout',
+      status: 'completed',
+      rows: 32,
+      selectedRuleIds: [],
+      admitted: false,
+      applied: false,
+    });
+    const bytes = readFileSync(join(root, 'quality-disposition.json'), 'utf8');
+    const disposition = JSON.parse(bytes) as {
+      selectedRuleIds: readonly string[];
+      rows: readonly {
+        measurementStatus: string;
+        sampleCounts: { findings: number; controls: number; cannotDetermine: number };
+        runtimeOutcome: string;
+      }[];
+      admitted: boolean;
+      applied: boolean;
+    };
+    expect(disposition.rows).toHaveLength(32);
+    expect(disposition.selectedRuleIds).toEqual([]);
+    expect(disposition.rows.every((row) =>
+      row.measurementStatus === 'not-requested-owner-capacity'
+      && row.sampleCounts.findings === 0
+      && row.sampleCounts.controls === 0
+      && row.sampleCounts.cannotDetermine === 0
+      && row.runtimeOutcome === 'quality-candidate-default-off')).toBe(true);
+    expect(disposition).toMatchObject({ admitted: false, applied: false });
+    expect(bytes).toBe(canonicalArtifact(disposition).json);
+    expect(statSync(join(root, 'quality-disposition.json')).mode & 0o777).toBe(0o600);
+
+    const replay = run([
+      script,
+      'quality-closeout',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--out', 'quality-disposition.json',
+      '--implementation-commit-sha', implementationCommitSha,
+    ], 'unused-label-input\n', root);
+    expect(replay.status).toBe(0);
+    expect(readFileSync(join(root, 'quality-disposition.json'), 'utf8')).toBe(bytes);
+  });
+
+  it('parses repeated selections into a private, deduplicated reach-qualified cohort without mutating closeout', () => {
+    const root = temporaryRoot();
+    approvedAuthorityReceiptFixture(root);
+    const closeout = run([
+      script,
+      'quality-closeout',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--out', 'quality-disposition.json',
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '', root);
+    expect(closeout.status).toBe(0);
+    const closeoutBytes = readFileSync(join(root, 'quality-disposition.json'), 'utf8');
+    writeCanonical(join(root, 'quality-reach.json'), [
+      { ruleId: 'layout/gap-monopoly', findings: 30, controls: 30, familyCount: 5 },
+      { ruleId: 'ai/any-density', findings: 35, controls: 32, familyCount: 6 },
+    ]);
+
+    const result = run([
+      script,
+      'plan-quality-cohort',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--reach', 'quality-reach.json',
+      '--select', 'layout/gap-monopoly',
+      '--select', 'ai/any-density',
+      '--out', '.slopbrick/calibration/cal-002/quality-cohort-v2.json',
+    ], '', root);
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      command: 'plan-quality-cohort',
+      status: 'planned',
+      selectedRuleIds: ['ai/any-density', 'layout/gap-monopoly'],
+      initialLabels: 120,
+      maximumLabels: 400,
+      admitted: false,
+      applied: false,
+    });
+    const cohortPath = join(root, '.slopbrick/calibration/cal-002/quality-cohort-v2.json');
+    const cohortBytes = readFileSync(cohortPath, 'utf8');
+    const cohort = JSON.parse(cohortBytes);
+    expect(cohort).toEqual({
+      initialLabels: 120,
+      maximumLabels: 400,
+      selectedRuleIds: ['ai/any-density', 'layout/gap-monopoly'],
+    });
+    expect(cohortBytes).toBe(canonicalArtifact(cohort).json);
+    expect(statSync(cohortPath).mode & 0o777).toBe(0o600);
+    expect(readFileSync(join(root, 'quality-disposition.json'), 'utf8')).toBe(closeoutBytes);
+
+    const duplicateOut = '.slopbrick/calibration/cal-002/duplicate-cohort-v2.json';
+    const duplicate = run([
+      script,
+      'plan-quality-cohort',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--reach', 'quality-reach.json',
+      '--select', 'ai/any-density',
+      '--select', 'ai/any-density',
+      '--out', duplicateOut,
+    ], '', root);
+    expect(duplicate.status).toBe(2);
+    expect(duplicate.stderr).toMatch(/unique/i);
+    expect(existsSync(join(root, duplicateOut))).toBe(false);
   });
 });

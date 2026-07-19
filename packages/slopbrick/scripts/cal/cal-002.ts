@@ -70,6 +70,15 @@ import type {
   CAL002QualityBlindedRow,
 } from '../../src/calibration/cal-002/quality-sampling';
 import {
+  assertCAL002QualityCohortPlanV2,
+  assertCAL002QualityDispositionV2,
+  buildCAL002QualityDispositionV2,
+  planCAL002QualityCohortV2,
+  type CAL002QualityCohortPlanV2,
+  type CAL002QualityDispositionV2,
+  type CAL002QualityReachRowV2,
+} from '../../src/calibration/cal-002/quality-disposition';
+import {
   assertCAL002AuthorityProposalV2,
   assertCAL002AuthorityReceiptV2,
   assertCAL002AuthorityStateV2,
@@ -135,6 +144,23 @@ interface AuthorityArguments {
   readonly receiptOut: string;
 }
 
+interface QualityCloseoutArguments {
+  readonly command: 'quality-closeout';
+  readonly root: string;
+  readonly authority: string;
+  readonly out: string;
+  readonly implementationCommitSha?: string;
+}
+
+interface PlanQualityCohortArguments {
+  readonly command: 'plan-quality-cohort';
+  readonly root: string;
+  readonly authority: string;
+  readonly reach: string;
+  readonly selectedRuleIds: readonly string[];
+  readonly out: string;
+}
+
 interface CatalogArguments {
   readonly command: 'catalog';
   readonly root: string;
@@ -175,7 +201,16 @@ interface ApplyArguments {
   readonly dryRun: boolean;
 }
 
-type Arguments = ReviewArguments | OriginArguments | AuthorityArguments | CatalogArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
+type Arguments =
+  | ReviewArguments
+  | OriginArguments
+  | AuthorityArguments
+  | QualityCloseoutArguments
+  | PlanQualityCohortArguments
+  | CatalogArguments
+  | MatrixArguments
+  | ApproveMatrixArguments
+  | ApplyArguments;
 
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
@@ -331,6 +366,45 @@ function parseCatalogArguments(tokens: readonly string[]): CatalogArguments {
   };
 }
 
+function parseQualityCloseoutArguments(tokens: readonly string[]): QualityCloseoutArguments {
+  const { values } = parseValuesAndFlags(tokens, 'quality-closeout', new Set([
+    '--root', '--authority', '--out', '--implementation-commit-sha',
+  ]), new Set());
+  return {
+    command: 'quality-closeout',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'quality-closeout'),
+    out: requiredValue(values, '--out', 'quality-closeout'),
+    implementationCommitSha: values.get('--implementation-commit-sha'),
+  };
+}
+
+function parsePlanQualityCohortArguments(tokens: readonly string[]): PlanQualityCohortArguments {
+  const values = new Map<string, string>();
+  const selectedRuleIds: string[] = [];
+  const allowed = new Set(['--root', '--authority', '--reach', '--select', '--out']);
+  for (let index = 0; index < tokens.length; index += 2) {
+    const option = tokens[index];
+    const value = tokens[index + 1];
+    if (!allowed.has(option ?? '')) throw new Error(`Unknown CAL-002 option ${option ?? '<missing>'}`);
+    if (value === undefined || value.startsWith('--')) throw new Error(`${option} requires one value`);
+    if (option === '--select') {
+      selectedRuleIds.push(value);
+      continue;
+    }
+    if (values.has(option!)) throw new Error(`Duplicate CAL-002 option ${option}`);
+    values.set(option!, value);
+  }
+  return {
+    command: 'plan-quality-cohort',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'plan-quality-cohort'),
+    reach: requiredValue(values, '--reach', 'plan-quality-cohort'),
+    selectedRuleIds,
+    out: requiredValue(values, '--out', 'plan-quality-cohort'),
+  };
+}
+
 function parseValuesAndFlags(
   tokens: readonly string[],
   command: string,
@@ -424,11 +498,13 @@ function parseArguments(argv: readonly string[]): Arguments {
   if (command === 'review-quality') return parseReviewArguments(tokens);
   if (command === 'classify-origin') return parseOriginArguments(tokens);
   if (command === 'classify-authority') return parseAuthorityArguments(tokens);
+  if (command === 'quality-closeout') return parseQualityCloseoutArguments(tokens);
+  if (command === 'plan-quality-cohort') return parsePlanQualityCohortArguments(tokens);
   if (command === 'catalog') return parseCatalogArguments(tokens);
   if (command === 'matrix') return parseMatrixArguments(tokens);
   if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
   if (command === 'apply') return parseApplyArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, catalog, matrix, approve-matrix, or apply with local artifact options');
+  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, quality-closeout, plan-quality-cohort, catalog, matrix, approve-matrix, or apply with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -1523,6 +1599,88 @@ async function classifyAuthority(args: AuthorityArguments): Promise<void> {
   }, () => classifyAuthorityLocked(args));
 }
 
+async function qualityCloseout(args: QualityCloseoutArguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.out, label: 'CAL-002 quality disposition' },
+    ],
+  });
+  const authorityReceipt = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.authority,
+    label: 'CAL-002 authority receipt',
+  }) as CAL002AuthorityReceiptV2;
+  const result = buildCAL002QualityDispositionV2({
+    authorityReceipt,
+    selectedRuleIds: [],
+    selectedMetrics: [],
+    implementationCommitSha: resolveCommitSha(args.implementationCommitSha, 'quality-closeout'),
+  });
+  await writeImmutableCanonicalReceipt<CAL002QualityDispositionV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 quality disposition',
+    value: result.disposition,
+    assertValue: assertCAL002QualityDispositionV2,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    dispositionSha256: result.dispositionSha256,
+    authorityReceiptSha256: result.disposition.authorityReceiptSha256,
+    rows: result.disposition.rows.length,
+    selectedRuleIds: result.disposition.selectedRuleIds,
+    admitted: false,
+    applied: false,
+  });
+}
+
+async function planQualityCohort(args: PlanQualityCohortArguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.reach, label: 'CAL-002 quality reach' },
+      { relativePath: args.out, label: 'CAL-002 private quality cohort' },
+    ],
+  });
+  const authorityReceipt = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.authority,
+    label: 'CAL-002 authority receipt',
+  }) as CAL002AuthorityReceiptV2;
+  const reach = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.reach,
+    label: 'CAL-002 quality reach',
+  }) as readonly CAL002QualityReachRowV2[];
+  const plan = planCAL002QualityCohortV2({
+    authorityReceipt,
+    reach,
+    selectedRuleIds: args.selectedRuleIds,
+  });
+  await writePrivateCanonicalState<CAL002QualityCohortPlanV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 private quality cohort',
+    value: plan,
+    assertValue: assertCAL002QualityCohortPlanV2,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'planned',
+    selectedRuleIds: plan.selectedRuleIds,
+    initialLabels: plan.initialLabels,
+    maximumLabels: plan.maximumLabels,
+    admitted: false,
+    applied: false,
+  });
+}
+
 async function buildCatalogCommand(args: CatalogArguments): Promise<void> {
   const matrix = await readCAL001DecisionMatrix(args.root, args.cal001Matrix);
   const registry = new RuleRegistry();
@@ -1674,6 +1832,8 @@ async function main(): Promise<void> {
     if (args.command === 'review-quality') await reviewQuality(args);
     else if (args.command === 'classify-origin') await classifyOrigin(args);
     else if (args.command === 'classify-authority') await classifyAuthority(args);
+    else if (args.command === 'quality-closeout') await qualityCloseout(args);
+    else if (args.command === 'plan-quality-cohort') await planQualityCohort(args);
     else if (args.command === 'catalog') await buildCatalogCommand(args);
     else if (args.command === 'matrix') await buildMatrixCommand(args);
     else if (args.command === 'approve-matrix') await approveMatrix(args);
