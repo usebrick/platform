@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,11 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Rule } from '../../src/types';
+import {
+  buildCAL001DecisionMatrix,
+  type CAL001DecisionMatrix,
+} from '../../src/calibration/corpus-v1/calibration-decisions';
+import type { CAL001HoldoutMetrics } from '../../src/calibration/corpus-v1/calibration-holdout';
 import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
 import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
 import {
@@ -45,6 +50,12 @@ function temporaryRoot(): string {
 
 function temporaryRepositoryRoot(): string {
   const root = mkdtempSync(join(repositoryRoot, '.cal-002-cli-'));
+  roots.push(root);
+  return root;
+}
+
+function temporaryPrivateTmpRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), 'cal-002-catalog-'));
   roots.push(root);
   return root;
 }
@@ -150,6 +161,37 @@ function originCatalogFixture(root: string): void {
     cal001MatrixSha256: 'c'.repeat(64),
   }).catalog;
   writeCanonical(join(root, 'catalog.json'), catalog);
+}
+
+function cal001MatrixFixture(root: string): { readonly matrix: CAL001DecisionMatrix; readonly matrixSha256: string } {
+  const registry = new RuleRegistry();
+  registry.loadBuiltins();
+  const rules = registry.getRules();
+  const defaultOff = getDefaultOffRules();
+  const metrics = {
+    splits: {
+      train: { base: { status: 'available', rules: [] } },
+      validation: { base: { status: 'available', rules: [] } },
+      test: { base: { status: 'available', rules: [] } },
+    },
+  } as unknown as CAL001HoldoutMetrics;
+  const result = buildCAL001DecisionMatrix({
+    protocolVersion: 'CAL-001-v1',
+    holdoutImplementationCommitSha: '0'.repeat(40),
+    decisionImplementationCommitSha: '1'.repeat(40),
+    holdoutReceiptSha256: '2'.repeat(64),
+    metricsSha256: '3'.repeat(64),
+    leakageStatus: 'clear',
+    metricsStatus: 'available',
+    ruleCatalog: rules.map((rule) => ({
+      ruleId: rule.id,
+      aiSpecific: rule.aiSpecific,
+      existingDefaultOff: rule.defaultOff === true || defaultOff.has(rule.id),
+    })),
+    metrics,
+  });
+  writeCanonical(join(root, 'cal001-matrix.json'), result.matrix);
+  return result;
 }
 
 function run(args: readonly string[], input: string, cwd = packageRoot, env: NodeJS.ProcessEnv = process.env) {
@@ -468,6 +510,152 @@ describe('CAL-002 matrix approval and application CLI', () => {
     const apply = run([script, 'apply', '--dry-run', '--root', root, '--matrix', 'final-matrix.json', '--approval', 'matrix-approval.json', '--out', 'proposed-policy.json'], '');
     expect(apply.status).toBe(2);
     expect(apply.stderr).toMatch(/apply requires --catalog|final-matrix|matrix/i);
+  });
+});
+
+describe('CAL-002 catalog CLI', () => {
+  function catalogArgs(
+    root: string,
+    cal001Matrix = 'cal001-matrix.json',
+    out = 'generated/catalog.json',
+  ): readonly string[] {
+    return [
+      script,
+      'catalog',
+      '--root', root,
+      '--cal001-matrix', cal001Matrix,
+      '--out', out,
+    ];
+  }
+
+  it('builds the locked catalog from a real /private/tmp CAL-001 matrix and replays exact bytes', () => {
+    const recordedMatrixPath = '/private/tmp/cal-001-v1-decision-matrix-2026-07-17.json';
+    let matrixPath = recordedMatrixPath;
+    let matrixSha256: string;
+    if (existsSync(recordedMatrixPath)) {
+      matrixSha256 = canonicalArtifact(JSON.parse(readFileSync(recordedMatrixPath, 'utf8'))).sha256;
+    } else {
+      const sourceRoot = temporaryPrivateTmpRoot();
+      const matrixResult = cal001MatrixFixture(sourceRoot);
+      matrixPath = join(sourceRoot, 'cal001-matrix.json');
+      writeFileSync(matrixPath, `${canonicalArtifact(matrixResult.matrix).json}\n`, { mode: 0o600 });
+      matrixSha256 = matrixResult.matrixSha256;
+    }
+    const root = temporaryPrivateTmpRoot();
+    const args = catalogArgs(root, matrixPath);
+
+    const first = run(args, '', root);
+
+    expect(first.status).toBe(0);
+    expect(first.stdout.trim().split('\n')).toHaveLength(1);
+    const output = JSON.parse(first.stdout) as {
+      readonly ok: boolean;
+      readonly command: string;
+      readonly status: string;
+      readonly catalogSha256: string;
+      readonly counts: Record<string, number>;
+      readonly admitted: boolean;
+      readonly applied: boolean;
+    };
+    expect(output).toMatchObject({
+      ok: true,
+      command: 'catalog',
+      status: 'completed',
+      counts: {
+        total: 119,
+        startingQuality: 47,
+        startingOrigin: 72,
+        ownerReviewRequired: 40,
+        deterministic: 32,
+        contextual: 11,
+        statistical: 4,
+      },
+      admitted: false,
+      applied: false,
+    });
+    const catalogPath = join(root, 'generated', 'catalog.json');
+    const catalogBytes = readFileSync(catalogPath, 'utf8');
+    const catalog = JSON.parse(catalogBytes) as {
+      readonly cal001MatrixSha256: string;
+      readonly ruleCatalogSha256: string;
+      readonly rows: readonly unknown[];
+      readonly counts: Record<string, number>;
+      readonly admitted: false;
+      readonly applied: false;
+    };
+    expect(catalogBytes).toBe(canonicalArtifact(catalog).json);
+    expect(catalogBytes).not.toContain(root);
+    expect(catalog).toMatchObject({
+      cal001MatrixSha256: matrixSha256,
+      ruleCatalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+      rows: expect.any(Array),
+      counts: output.counts,
+      admitted: false,
+      applied: false,
+    });
+    expect(catalog.rows).toHaveLength(119);
+    expect(statSync(catalogPath).mode & 0o777).toBe(0o600);
+    expect(output.catalogSha256).toBe(canonicalArtifact(catalog).sha256);
+    expect(catalog.cal001MatrixSha256).toBe(matrixSha256);
+
+    const firstBytes = catalogBytes;
+    const replay = run(args, '', root);
+
+    expect(replay.status).toBe(0);
+    expect(JSON.parse(replay.stdout)).toMatchObject({
+      ok: true,
+      command: 'catalog',
+      status: 'completed',
+      catalogSha256: output.catalogSha256,
+      counts: output.counts,
+      admitted: false,
+      applied: false,
+    });
+    expect(readFileSync(catalogPath, 'utf8')).toBe(firstBytes);
+  });
+
+  it('rejects missing, non-canonical, admitted, applied, and malformed matrices before output mutation', () => {
+    const missingRoot = temporaryPrivateTmpRoot();
+    const missing = run(catalogArgs(missingRoot), '', missingRoot);
+    expect(missing.status).toBe(2);
+    expect(missing.stderr).toMatch(/ENOENT|cal-001|matrix/i);
+    expect(() => readFileSync(join(missingRoot, 'generated', 'catalog.json'))).toThrow();
+
+    const nonCanonicalRoot = temporaryPrivateTmpRoot();
+    const nonCanonicalMatrix = cal001MatrixFixture(nonCanonicalRoot).matrix;
+    writeFileSync(join(nonCanonicalRoot, 'cal001-matrix.json'), `${JSON.stringify(nonCanonicalMatrix)}\n`, { mode: 0o600 });
+    const nonCanonical = run(catalogArgs(nonCanonicalRoot), '', nonCanonicalRoot);
+    expect(nonCanonical.status).toBe(2);
+    expect(nonCanonical.stderr).toMatch(/canonical/i);
+    expect(() => readFileSync(join(nonCanonicalRoot, 'generated', 'catalog.json'))).toThrow();
+
+    for (const [label, mutation] of [
+      ['admitted', { admitted: true }],
+      ['applied', { applied: true }],
+      ['malformed', { rows: [] }],
+    ] as const) {
+      const root = temporaryPrivateTmpRoot();
+      const fixture = cal001MatrixFixture(root).matrix;
+      writeCanonical(join(root, 'cal001-matrix.json'), { ...fixture, ...mutation });
+      const result = run(catalogArgs(root), '', root);
+      expect(result.status, label).toBe(2);
+      expect(result.stderr, label).toMatch(/CAL-001|matrix|admitted|applied|catalog/i);
+      expect(() => readFileSync(join(root, 'generated', 'catalog.json'))).toThrow();
+    }
+
+    const mismatchedEvidenceRoot = temporaryPrivateTmpRoot();
+    const evidenceFixture = cal001MatrixFixture(mismatchedEvidenceRoot).matrix;
+    const mismatchedEvidence = {
+      ...evidenceFixture,
+      rows: evidenceFixture.rows.map((row, index) => index === 0
+        ? { ...row, evidence: { ...row.evidence, metricsSha256: '4'.repeat(64) } }
+        : row),
+    };
+    writeCanonical(join(mismatchedEvidenceRoot, 'cal001-matrix.json'), mismatchedEvidence);
+    const mismatch = run(catalogArgs(mismatchedEvidenceRoot), '', mismatchedEvidenceRoot);
+    expect(mismatch.status).toBe(2);
+    expect(mismatch.stderr).toMatch(/does not match the matrix/i);
+    expect(() => readFileSync(join(mismatchedEvidenceRoot, 'generated', 'catalog.json'))).toThrow();
   });
 });
 

@@ -20,11 +20,23 @@ import {
   CAL002_LOCKED_RULE_CATALOG_SHA256,
   CAL002_PROTOCOL_VERSION,
   canonicalArtifact,
+  assertCommitSha,
+  assertSha256,
   validateCAL002Assignment,
   validateCAL002Catalog,
   type CAL002Catalog,
   type CAL002ReviewLabel,
 } from '../../src/calibration/cal-002/contracts';
+import {
+  buildCAL002Catalog,
+} from '../../src/calibration/cal-002/catalog';
+import {
+  CAL001_DECISION_MATRIX_VERSION,
+  type CAL001DecisionMatrix,
+  type CAL001DecisionRow,
+} from '../../src/calibration/corpus-v1/calibration-decisions';
+import { RuleRegistry } from '../../src/rules/registry';
+import { getDefaultOffRules } from '../../src/rules/signal-strength';
 import {
   buildCAL002ApplicationReceipt,
   buildCAL002MatrixApproval,
@@ -93,6 +105,13 @@ interface OriginArguments {
   readonly out: string;
 }
 
+interface CatalogArguments {
+  readonly command: 'catalog';
+  readonly root: string;
+  readonly cal001Matrix: string;
+  readonly out: string;
+}
+
 interface MatrixArguments {
   readonly command: 'matrix';
   readonly root: string;
@@ -126,7 +145,7 @@ interface ApplyArguments {
   readonly dryRun: boolean;
 }
 
-type Arguments = ReviewArguments | OriginArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
+type Arguments = ReviewArguments | OriginArguments | CatalogArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
 
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
@@ -244,6 +263,16 @@ function parseOriginArguments(tokens: readonly string[]): OriginArguments {
   };
 }
 
+function parseCatalogArguments(tokens: readonly string[]): CatalogArguments {
+  const { values } = parseValuesAndFlags(tokens, 'catalog', new Set(['--root', '--cal001-matrix', '--out']), new Set());
+  return {
+    command: 'catalog',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    cal001Matrix: requiredValue(values, '--cal001-matrix', 'catalog'),
+    out: requiredValue(values, '--out', 'catalog'),
+  };
+}
+
 function parseValuesAndFlags(
   tokens: readonly string[],
   command: string,
@@ -336,10 +365,11 @@ function parseArguments(argv: readonly string[]): Arguments {
   const [command, ...tokens] = argv.slice(first);
   if (command === 'review-quality') return parseReviewArguments(tokens);
   if (command === 'classify-origin') return parseOriginArguments(tokens);
+  if (command === 'catalog') return parseCatalogArguments(tokens);
   if (command === 'matrix') return parseMatrixArguments(tokens);
   if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
   if (command === 'apply') return parseApplyArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-origin, matrix, approve-matrix, or apply with local artifact options');
+  throw new Error('Usage: cal:complete review-quality, classify-origin, catalog, matrix, approve-matrix, or apply with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -371,6 +401,142 @@ function assertExactKeys(value: Record<string, unknown>, expected: readonly stri
   if (actual.length !== keys.length || actual.some((key, index) => key !== keys[index])) {
     throw new Error(`${label} has unknown or missing fields`);
   }
+}
+
+function assertNonEmptyString(value: unknown, label: string): asserts value is string {
+  if (typeof value !== 'string' || value.length === 0) throw new Error(`${label} must be a non-empty string`);
+}
+
+function assertBoolean(value: unknown, label: string): asserts value is boolean {
+  if (typeof value !== 'boolean') throw new Error(`${label} must be a boolean`);
+}
+
+function assertOneOf<T extends string>(value: unknown, values: readonly T[], label: string): asserts value is T {
+  if (typeof value !== 'string' || !values.includes(value as T)) {
+    throw new Error(`${label} must be one of ${values.join(', ')}`);
+  }
+}
+
+const CAL001_SPLITS = ['train', 'validation', 'test'] as const;
+const CAL001_DECISIONS = ['default-off', 'quality-only', 'recalibrate'] as const;
+const CAL001_POLICY_ACTIONS = ['preserve', 'owner-review-required'] as const;
+const CAL001_METRIC_STATUSES = ['available', 'unavailable'] as const;
+const CAL001_RULE_STATUSES = ['measured', 'zero-fire', 'ineligible', 'unavailable'] as const;
+
+function validateCAL001DecisionRow(value: unknown, index: number): CAL001DecisionRow {
+  const row = record(value, `CAL-001 decision matrix rows[${index}]`);
+  assertExactKeys(row, [
+    'ruleId', 'aiSpecific', 'existingDefaultOff', 'decision', 'policyAction', 'evidence',
+    'originResult', 'usefulnessResult', 'confounds', 'owner', 'rationale',
+  ], `CAL-001 decision matrix rows[${index}]`);
+  assertNonEmptyString(row.ruleId, `CAL-001 decision matrix rows[${index}].ruleId`);
+  assertBoolean(row.aiSpecific, `CAL-001 decision matrix rows[${index}].aiSpecific`);
+  assertBoolean(row.existingDefaultOff, `CAL-001 decision matrix rows[${index}].existingDefaultOff`);
+  assertOneOf(row.decision, CAL001_DECISIONS, `CAL-001 decision matrix rows[${index}].decision`);
+  assertOneOf(row.policyAction, CAL001_POLICY_ACTIONS, `CAL-001 decision matrix rows[${index}].policyAction`);
+
+  const evidence = record(row.evidence, `CAL-001 decision matrix rows[${index}].evidence`);
+  assertExactKeys(evidence, ['holdoutReceiptSha256', 'metricsSha256', 'report'], `CAL-001 decision matrix rows[${index}].evidence`);
+  assertSha256(evidence.holdoutReceiptSha256, `CAL-001 decision matrix rows[${index}].evidence.holdoutReceiptSha256`);
+  assertSha256(evidence.metricsSha256, `CAL-001 decision matrix rows[${index}].evidence.metricsSha256`);
+  if (evidence.report !== 'CAL-001-v1-origin-discrimination-diagnostic') {
+    throw new Error(`CAL-001 decision matrix rows[${index}].evidence.report is invalid`);
+  }
+
+  const originResult = record(row.originResult, `CAL-001 decision matrix rows[${index}].originResult`);
+  assertExactKeys(originResult, ['status', 'splitStatus', 'ruleStatus'], `CAL-001 decision matrix rows[${index}].originResult`);
+  assertOneOf(originResult.status, ['diagnostic-only', 'not-evaluated'] as const, `CAL-001 decision matrix rows[${index}].originResult.status`);
+  const splitStatus = record(originResult.splitStatus, `CAL-001 decision matrix rows[${index}].originResult.splitStatus`);
+  assertExactKeys(splitStatus, CAL001_SPLITS, `CAL-001 decision matrix rows[${index}].originResult.splitStatus`);
+  for (const split of CAL001_SPLITS) {
+    assertOneOf(splitStatus[split], CAL001_METRIC_STATUSES, `CAL-001 decision matrix rows[${index}].originResult.splitStatus.${split}`);
+  }
+  const ruleStatus = record(originResult.ruleStatus, `CAL-001 decision matrix rows[${index}].originResult.ruleStatus`);
+  assertExactKeys(ruleStatus, CAL001_SPLITS, `CAL-001 decision matrix rows[${index}].originResult.ruleStatus`);
+  for (const split of CAL001_SPLITS) {
+    assertOneOf(ruleStatus[split], CAL001_RULE_STATUSES, `CAL-001 decision matrix rows[${index}].originResult.ruleStatus.${split}`);
+  }
+
+  if (row.usefulnessResult !== 'not-evaluated') {
+    throw new Error(`CAL-001 decision matrix rows[${index}].usefulnessResult must be not-evaluated`);
+  }
+  const confounds = record(row.confounds, `CAL-001 decision matrix rows[${index}].confounds`);
+  assertExactKeys(confounds, ['leakage', 'sourceLabels', 'frameworkBuckets', 'semanticBuckets'], `CAL-001 decision matrix rows[${index}].confounds`);
+  assertOneOf(confounds.leakage, ['clear', 'failed'] as const, `CAL-001 decision matrix rows[${index}].confounds.leakage`);
+  if (confounds.sourceLabels !== 'publisher-attested-polarity-not-authorship') {
+    throw new Error(`CAL-001 decision matrix rows[${index}].confounds.sourceLabels is invalid`);
+  }
+  if (confounds.frameworkBuckets !== 'not-available' || confounds.semanticBuckets !== 'not-available') {
+    throw new Error(`CAL-001 decision matrix rows[${index}].confounds buckets are invalid`);
+  }
+  if (row.owner !== 'calibration-maintainers') throw new Error(`CAL-001 decision matrix rows[${index}].owner is invalid`);
+  assertNonEmptyString(row.rationale, `CAL-001 decision matrix rows[${index}].rationale`);
+  return row as unknown as CAL001DecisionRow;
+}
+
+function validateCAL001DecisionMatrix(value: unknown): CAL001DecisionMatrix {
+  const matrix = record(value, 'CAL-001 decision matrix');
+  assertExactKeys(matrix, [
+    'version', 'protocolVersion', 'holdoutImplementationCommitSha', 'decisionImplementationCommitSha',
+    'holdoutReceiptSha256', 'metricsSha256', 'ruleCatalogSha256', 'leakageStatus', 'metricsStatus',
+    'rows', 'counts', 'usefulness', 'admission', 'applied', 'admitted',
+  ], 'CAL-001 decision matrix');
+  if (matrix.version !== CAL001_DECISION_MATRIX_VERSION || matrix.protocolVersion !== 'CAL-001-v1') {
+    throw new Error('CAL-001 decision matrix version or protocol is invalid');
+  }
+  assertCommitSha(matrix.holdoutImplementationCommitSha, 'CAL-001 holdout implementation commit SHA');
+  assertCommitSha(matrix.decisionImplementationCommitSha, 'CAL-001 decision implementation commit SHA');
+  assertSha256(matrix.holdoutReceiptSha256, 'CAL-001 holdout receipt SHA-256');
+  assertSha256(matrix.metricsSha256, 'CAL-001 metrics SHA-256');
+  assertSha256(matrix.ruleCatalogSha256, 'CAL-001 rule catalog SHA-256');
+  assertOneOf(matrix.leakageStatus, ['clear', 'failed'] as const, 'CAL-001 leakageStatus');
+  assertOneOf(matrix.metricsStatus, CAL001_METRIC_STATUSES, 'CAL-001 metricsStatus');
+  if (matrix.usefulness !== 'not-evaluated' || matrix.admission !== 'not-evaluated') {
+    throw new Error('CAL-001 decision matrix usefulness or admission status is invalid');
+  }
+  if (matrix.applied !== false || matrix.admitted !== false) {
+    throw new Error('CAL-001 decision matrix must remain non-admitting and unapplied');
+  }
+  if (!Array.isArray(matrix.rows) || matrix.rows.length === 0) {
+    throw new Error('CAL-001 decision matrix rows must be a non-empty array');
+  }
+  const rows = matrix.rows.map((row, index) => validateCAL001DecisionRow(row, index));
+  for (const [index, row] of rows.entries()) {
+    if (row.evidence.holdoutReceiptSha256 !== matrix.holdoutReceiptSha256) {
+      throw new Error(`CAL-001 decision matrix rows[${index}].evidence.holdoutReceiptSha256 does not match the matrix`);
+    }
+    if (row.evidence.metricsSha256 !== matrix.metricsSha256) {
+      throw new Error(`CAL-001 decision matrix rows[${index}].evidence.metricsSha256 does not match the matrix`);
+    }
+  }
+  const sortedRows = [...rows].sort((left, right) => left.ruleId.localeCompare(right.ruleId));
+  if (canonicalArtifact(rows).json !== canonicalArtifact(sortedRows).json) {
+    throw new Error('CAL-001 decision matrix rows are not in canonical rule order');
+  }
+
+  const counts = record(matrix.counts, 'CAL-001 decision matrix counts');
+  assertExactKeys(counts, ['total', 'aiSpecific', 'defaultOff', 'recalibrate', 'qualityOnly', 'existingDefaultOff', 'ownerReviewRequired'], 'CAL-001 decision matrix counts');
+  const calculatedCounts = {
+    total: rows.length,
+    aiSpecific: rows.filter((row) => row.aiSpecific).length,
+    defaultOff: rows.filter((row) => row.decision === 'default-off').length,
+    recalibrate: rows.filter((row) => row.decision === 'recalibrate').length,
+    qualityOnly: rows.filter((row) => row.decision === 'quality-only').length,
+    existingDefaultOff: rows.filter((row) => row.existingDefaultOff).length,
+    ownerReviewRequired: rows.filter((row) => row.policyAction === 'owner-review-required').length,
+  } as const;
+  for (const [key, expected] of Object.entries(calculatedCounts)) {
+    if (counts[key] !== expected || !Number.isSafeInteger(counts[key])) {
+      throw new Error(`CAL-001 decision matrix counts.${key} does not match its rows`);
+    }
+  }
+  const ruleCatalog = rows
+    .map((row) => ({ ruleId: row.ruleId, aiSpecific: row.aiSpecific, existingDefaultOff: row.existingDefaultOff }))
+    .sort((left, right) => left.ruleId.localeCompare(right.ruleId));
+  if (canonicalArtifact(ruleCatalog).sha256 !== matrix.ruleCatalogSha256) {
+    throw new Error('CAL-001 decision matrix rule catalog hash does not match its rows');
+  }
+  return matrix as unknown as CAL001DecisionMatrix;
 }
 
 function assertSafeRelativePath(path: string, label: string): void {
@@ -426,6 +592,43 @@ async function privatePath(root: string, relativePath: string, allowMissingLeaf:
     }
   }
   return candidate;
+}
+
+async function externalCAL001SourcePath(path: string): Promise<string> {
+  if (path.length === 0 || path.includes('\0') || !isAbsolute(path)) {
+    throw new Error('CAL-001 external matrix path must be an absolute host path');
+  }
+  const candidate = resolve(path);
+  let current = candidate;
+  while (true) {
+    const metadata = await lstat(current);
+    if (metadata.isSymbolicLink()) {
+      throw new Error('CAL-001 external matrix path contains a symbolic link');
+    }
+    if (current === dirname(current)) break;
+    current = dirname(current);
+  }
+  const metadata = await lstat(candidate);
+  if (!metadata.isFile()) throw new Error('CAL-001 external matrix path must be a regular file');
+  return candidate;
+}
+
+async function readCAL001DecisionMatrix(root: string, path: string): Promise<CAL001DecisionMatrix> {
+  const sourcePath = isAbsolute(path)
+    ? await externalCAL001SourcePath(path)
+    : await privatePath(root, path, false);
+  const bytes = await readFile(sourcePath, 'utf8');
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes) as unknown;
+  } catch {
+    throw new Error('CAL-001 decision matrix is not valid JSON');
+  }
+  const canonical = canonicalArtifact(value).json;
+  if (bytes !== canonical && bytes !== `${canonical}\n`) {
+    throw new Error('CAL-001 decision matrix is not exact canonical JSON');
+  }
+  return validateCAL001DecisionMatrix(value);
 }
 
 async function privateWritePath(root: string, relativePath: string): Promise<string> {
@@ -1094,6 +1297,32 @@ async function classifyOriginLocked(
   }
 }
 
+async function buildCatalogCommand(args: CatalogArguments): Promise<void> {
+  const matrix = await readCAL001DecisionMatrix(args.root, args.cal001Matrix);
+  const registry = new RuleRegistry();
+  registry.loadBuiltins();
+  const result = buildCAL002Catalog({
+    rules: registry.getRules(),
+    effectiveDefaultOffRuleIds: getDefaultOffRules(),
+    cal001Rows: matrix.rows,
+    cal001MatrixSha256: canonicalArtifact(matrix).sha256,
+  });
+  const catalogValidation = validateCAL002Catalog(result.catalog);
+  if (!catalogValidation.ok) {
+    throw new Error(`CAL-002 catalog projection is invalid: ${catalogValidation.errors.join('; ')}`);
+  }
+  await writeImmutablePrivateCanonical(args.root, args.out, result.catalog, 'CAL-002 catalog');
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    catalogSha256: result.catalogSha256,
+    counts: result.catalog.counts,
+    admitted: false,
+    applied: false,
+  });
+}
+
 async function buildMatrixCommand(args: MatrixArguments): Promise<void> {
   const catalog = await readCanonicalArtifact({ root: args.root, relativePath: args.catalog, label: 'CAL-002 catalog' }) as CAL002Catalog;
   const laneArtifact = originDecisionArtifact(
@@ -1212,6 +1441,7 @@ async function main(): Promise<void> {
     command = args.command;
     if (args.command === 'review-quality') await reviewQuality(args);
     else if (args.command === 'classify-origin') await classifyOrigin(args);
+    else if (args.command === 'catalog') await buildCatalogCommand(args);
     else if (args.command === 'matrix') await buildMatrixCommand(args);
     else if (args.command === 'approve-matrix') await approveMatrix(args);
     else await applyPolicy(args);
