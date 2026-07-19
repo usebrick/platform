@@ -51,18 +51,36 @@
     "status": { "const": "passed" },
     "admitted": { "const": false }
   },
-  "not": {
-    "type": "object",
-    "properties": { "splitRuleId": true },
-    "required": ["splitRuleId"]
-  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "uniqueCoverageDisposition": { "const": "split-to-new-rule" }
+        },
+        "required": ["uniqueCoverageDisposition"]
+      },
+      "then": {
+        "type": "object",
+        "properties": { "splitRuleId": { "$ref": "#/$defs/ruleId" } },
+        "required": ["splitRuleId"]
+      },
+      "else": {
+        "type": "object",
+        "not": {
+          "type": "object",
+          "properties": { "splitRuleId": true },
+          "required": ["splitRuleId"]
+        }
+      }
+    }
+  ],
   "oneOf": [
     {
       "type": "object",
       "properties": {
         "ruleId": { "const": "db/sql-concat" },
         "replacementRuleId": { "const": "security/sql-construction" },
-        "uniqueCoverageDisposition": { "const": "ported" },
         "reasonCode": { "const": "with-query-coverage-ported" },
         "caseResults": { "$ref": "#/$defs/sqlCases" }
       }
@@ -72,7 +90,6 @@
       "properties": {
         "ruleId": { "const": "logic/math-any-density" },
         "replacementRuleId": { "const": "ai/any-density" },
-        "uniqueCoverageDisposition": { "const": "rejected-as-false-positive" },
         "reasonCode": { "const": "line-denominator-not-type-bearing" },
         "caseResults": { "$ref": "#/$defs/anyCases" }
       }
@@ -82,7 +99,6 @@
       "properties": {
         "ruleId": { "const": "logic/math-console-log-storm" },
         "replacementRuleId": { "const": "ai/console-debug-storm" },
-        "uniqueCoverageDisposition": { "const": "ported" },
         "reasonCode": { "const": "window-clustering-ported-with-guards" },
         "caseResults": { "$ref": "#/$defs/consoleCases" }
       }

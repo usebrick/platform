@@ -32,6 +32,10 @@
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+    },
     "row": {
       "type": "object",
       "additionalProperties": false,
@@ -61,16 +65,40 @@
         "migrationCommitSha": { "$ref": "#/$defs/commit" },
         "uniqueCoverageDisposition": {
           "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+        },
+        "splitRuleId": { "$ref": "#/$defs/ruleId" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "uniqueCoverageDisposition": { "const": "split-to-new-rule" }
+            },
+            "required": ["uniqueCoverageDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "splitRuleId": { "$ref": "#/$defs/ruleId" } },
+            "required": ["splitRuleId"]
+          },
+          "else": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": { "splitRuleId": true },
+              "required": ["splitRuleId"]
+            }
+          }
         }
-      }
+      ]
     },
     "sqlRow": {
       "type": "object",
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "db/sql-concat" },
-        "replacementRuleId": { "const": "security/sql-construction" },
-        "uniqueCoverageDisposition": { "const": "ported" }
+        "replacementRuleId": { "const": "security/sql-construction" }
       }
     },
     "anyRow": {
@@ -78,8 +106,7 @@
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "logic/math-any-density" },
-        "replacementRuleId": { "const": "ai/any-density" },
-        "uniqueCoverageDisposition": { "const": "rejected-as-false-positive" }
+        "replacementRuleId": { "const": "ai/any-density" }
       }
     },
     "consoleRow": {
@@ -87,8 +114,7 @@
       "$ref": "#/$defs/row",
       "properties": {
         "ruleId": { "const": "logic/math-console-log-storm" },
-        "replacementRuleId": { "const": "ai/console-debug-storm" },
-        "uniqueCoverageDisposition": { "const": "ported" }
+        "replacementRuleId": { "const": "ai/console-debug-storm" }
       }
     }
   }

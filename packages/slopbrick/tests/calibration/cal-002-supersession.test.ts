@@ -166,6 +166,7 @@ describe('CAL-002 v2 supersession parity', () => {
       }),
     ]);
     expect(result.receipt.rows.every((row) => /^[a-f0-9]{64}$/.test(row.parityReceiptSha256))).toBe(true);
+    expect(new Set(result.receipt.rows.map((row) => row.parityReceiptSha256)).size).toBe(3);
     expect(result.receipt.rows.every((row) => /^[a-f0-9]{40}$/.test(row.migrationCommitSha))).toBe(true);
     expect(result.receipt.rows.map((row) => row.parityReceiptSha256)).toEqual([
       canonicalArtifact(parities[0]).sha256,
@@ -218,13 +219,10 @@ describe('CAL-002 v2 supersession parity', () => {
     )).toThrow(/duplicate|missing|canonical/i);
   });
 
-  it('rejects swapped replacements and non-approved dispositions', () => {
+  it('rejects swapped replacements', () => {
     expect(() => parity('db/sql-concat', {
       replacementRuleId: 'ai/any-density',
     })).toThrow(/replacement|mapping/i);
-    expect(() => parity('db/sql-concat', {
-      uniqueCoverageDisposition: 'rejected-as-false-positive',
-    })).toThrow(/disposition|ported/i);
   });
 
   it('rejects failed, incomplete, unknown, and non-canonical parity cases', () => {
@@ -290,14 +288,60 @@ describe('CAL-002 v2 supersession parity', () => {
     )).toThrow(/authority.*hash|authorityReceiptSha256/i);
   });
 
-  it('requires splitRuleId only for split-to-new-rule parity receipts', () => {
+  it('requires splitRuleId exactly for split dispositions and preserves split rows', () => {
+    const splitRuleId = 'security/sql-construction-split';
+    const splitParity = parity('db/sql-concat', {
+      uniqueCoverageDisposition: 'split-to-new-rule',
+      splitRuleId,
+    });
+    const paritySchema = schemaValidator('cal-002-parity-receipt-v2.schema.json');
+    expect(validateCAL002ParityReceiptV2(splitParity)).toEqual({ ok: true, errors: [] });
+    expect(paritySchema(splitParity), JSON.stringify(paritySchema.errors)).toBe(true);
+
+    const supersessionReceipt = buildCAL002SupersessionReceiptV2(
+      approvedAuthorityReceipt(),
+      [splitParity, anyParity(), consoleParity()],
+    ).receipt;
+    expect(supersessionReceipt.rows[0]).toEqual(expect.objectContaining({
+      ruleId: 'db/sql-concat',
+      replacementRuleId: 'security/sql-construction',
+      uniqueCoverageDisposition: 'split-to-new-rule',
+      splitRuleId,
+      parityReceiptSha256: canonicalArtifact(splitParity).sha256,
+    }));
+    const supersessionSchema = schemaValidator('cal-002-supersession-receipt-v2.schema.json');
+    expect(validateCAL002SupersessionReceiptV2(supersessionReceipt)).toEqual({ ok: true, errors: [] });
+    expect(supersessionSchema(supersessionReceipt), JSON.stringify(supersessionSchema.errors)).toBe(true);
+
+    const missingSplitRule = structuredClone(splitParity);
+    expect(Reflect.deleteProperty(missingSplitRule, 'splitRuleId')).toBe(true);
+    expect(validateCAL002ParityReceiptV2(missingSplitRule).ok).toBe(false);
+    expect(paritySchema(missingSplitRule), JSON.stringify(paritySchema.errors)).toBe(false);
     expect(() => parity('db/sql-concat', {
       uniqueCoverageDisposition: 'split-to-new-rule',
     })).toThrow(/splitRuleId|required/i);
+
+    const nonSplitWithSplitRule = structuredClone(sqlParity());
+    Reflect.set(nonSplitWithSplitRule, 'splitRuleId', splitRuleId);
+    expect(validateCAL002ParityReceiptV2(nonSplitWithSplitRule).ok).toBe(false);
+    expect(paritySchema(nonSplitWithSplitRule), JSON.stringify(paritySchema.errors)).toBe(false);
     expect(() => parity('db/sql-concat', {
       uniqueCoverageDisposition: 'ported',
-      splitRuleId: 'security/sql-construction-split',
+      splitRuleId,
     })).toThrow(/splitRuleId|must not/i);
+
+    const invalidDisposition = structuredClone(sqlParity());
+    Reflect.set(invalidDisposition, 'uniqueCoverageDisposition', 'invalid');
+    expect(validateCAL002ParityReceiptV2(invalidDisposition).ok).toBe(false);
+    expect(paritySchema(invalidDisposition), JSON.stringify(paritySchema.errors)).toBe(false);
+    expect(() => parity('db/sql-concat', {
+      uniqueCoverageDisposition: 'invalid' as CAL002ParityReceiptV2['uniqueCoverageDisposition'],
+    })).toThrow(/uniqueCoverageDisposition|invalid/i);
+
+    const invalidSupersession = structuredClone(supersessionReceipt);
+    Reflect.set(invalidSupersession.rows[0]!, 'uniqueCoverageDisposition', 'invalid');
+    expect(validateCAL002SupersessionReceiptV2(invalidSupersession).ok).toBe(false);
+    expect(supersessionSchema(invalidSupersession), JSON.stringify(supersessionSchema.errors)).toBe(false);
   });
 
   it('registers strict schemas that agree with handwritten validators', () => {
@@ -325,6 +369,12 @@ describe('CAL-002 v2 supersession parity', () => {
     expect(validateCAL002SupersessionReceiptV2(supersessionReceipt)).toEqual({ ok: true, errors: [] });
     expect(() => assertCAL002SupersessionReceiptV2(supersessionReceipt)).not.toThrow();
 
+    // Standalone validators check shape; the builder owns cross-receipt provenance uniqueness.
+    const duplicateHashShape = structuredClone(supersessionReceipt);
+    duplicateHashShape.rows[1]!.parityReceiptSha256 = duplicateHashShape.rows[0]!.parityReceiptSha256;
+    expect(supersessionSchema(duplicateHashShape), JSON.stringify(supersessionSchema.errors)).toBe(true);
+    expect(validateCAL002SupersessionReceiptV2(duplicateHashShape)).toEqual({ ok: true, errors: [] });
+
     const failedCase = structuredClone(parityReceipt);
     failedCase.caseResults[0]!.observedReplacementObservation = 'no-finding';
     const wrongObservation = structuredClone(parityReceipt);
@@ -336,6 +386,12 @@ describe('CAL-002 v2 supersession parity', () => {
     wrongId.caseResults[0]!.caseId = 'unknown-case';
     const wrongOrder = structuredClone(parityReceipt);
     wrongOrder.caseResults.reverse();
+    const sparseCases = structuredClone(parityReceipt);
+    expect(Reflect.deleteProperty(sparseCases.caseResults, 2)).toBe(true);
+    expect(sparseCases.caseResults).toHaveLength(3);
+    expect(Object.hasOwn(sparseCases.caseResults, 2)).toBe(false);
+    expect(paritySchema(sparseCases), JSON.stringify(paritySchema.errors)).toBe(false);
+    expect(validateCAL002ParityReceiptV2(sparseCases).ok).toBe(false);
     for (const invalidReceipt of [failedCase, wrongObservation, wrongCount, wrongId, wrongOrder]) {
       expect(validateCAL002ParityReceiptV2(invalidReceipt).ok).toBe(false);
       expect(paritySchema(invalidReceipt), JSON.stringify(paritySchema.errors)).toBe(false);

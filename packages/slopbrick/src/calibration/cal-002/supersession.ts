@@ -86,7 +86,6 @@ interface FixedParityCase {
 
 interface FixedParityAuthority {
   readonly replacementRuleId: CAL002ParityReceiptV2['replacementRuleId'];
-  readonly uniqueCoverageDisposition: CAL002ParityReceiptV2['uniqueCoverageDisposition'];
   readonly reasonCode: CAL002ParityReceiptV2['reasonCode'];
   readonly cases: readonly FixedParityCase[];
 }
@@ -100,7 +99,6 @@ const CANONICAL_SUPERSEDED_RULE_IDS = [
 const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAuthority>> = {
   'db/sql-concat': {
     replacementRuleId: 'security/sql-construction',
-    uniqueCoverageDisposition: 'ported',
     reasonCode: 'with-query-coverage-ported',
     cases: [
       { caseId: 'sql-with-template-ported', observation: 'finding' },
@@ -110,7 +108,6 @@ const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAutho
   },
   'logic/math-any-density': {
     replacementRuleId: 'ai/any-density',
-    uniqueCoverageDisposition: 'rejected-as-false-positive',
     reasonCode: 'line-denominator-not-type-bearing',
     cases: [
       { caseId: 'any-line-density-rejected', observation: 'no-finding' },
@@ -120,7 +117,6 @@ const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAutho
   },
   'logic/math-console-log-storm': {
     replacementRuleId: 'ai/console-debug-storm',
-    uniqueCoverageDisposition: 'ported',
     reasonCode: 'window-clustering-ported-with-guards',
     cases: [
       { caseId: 'console-five-in-thirty-ported', observation: 'finding' },
@@ -196,11 +192,16 @@ function validateCaseResults(
   let hasFinding = false;
   let hasNoFinding = false;
 
-  value.forEach((item, index) => {
+  for (let index = 0; index < value.length; index += 1) {
     const casePath = path + '[' + index + ']';
+    if (!Object.hasOwn(value, index)) {
+      errors.push(casePath + ' must be present as an own array element');
+      continue;
+    }
+    const item = value[index];
     if (!isRecord(item)) {
       errors.push(casePath + ' must be an object');
-      return;
+      continue;
     }
     const keys = [
       'caseId',
@@ -234,7 +235,7 @@ function validateCaseResults(
       && expected !== expectedById.get(item.caseId)) {
       errors.push(casePath + ' expected observation does not match its semantic case ID');
     }
-  });
+  }
 
   if (!hasFinding) errors.push(path + ' requires at least one positive finding semantic case');
   if (!hasNoFinding) errors.push(path + ' requires at least one guarded no-finding semantic case');
@@ -291,9 +292,6 @@ export function validateCAL002ParityReceiptV2(value: unknown): CAL002ValidationR
     if (value.replacementRuleId !== fixed.replacementRuleId) {
       errors.push('artifact replacement mapping is not approved for ' + String(value.ruleId));
     }
-    if (value.uniqueCoverageDisposition !== fixed.uniqueCoverageDisposition) {
-      errors.push('artifact.uniqueCoverageDisposition must be ' + fixed.uniqueCoverageDisposition);
-    }
     if (value.reasonCode !== fixed.reasonCode) {
       errors.push('artifact.reasonCode is not approved for ' + String(value.ruleId));
     }
@@ -337,8 +335,8 @@ function validateSupersessionRow(
   if (value.replacementRuleId !== fixed.replacementRuleId) {
     errors.push(path + '.replacementRuleId does not match the approved mapping');
   }
-  if (value.uniqueCoverageDisposition !== fixed.uniqueCoverageDisposition) {
-    errors.push(path + '.uniqueCoverageDisposition does not match the approved disposition');
+  if (!DISPOSITIONS.includes(value.uniqueCoverageDisposition as CAL002ParityReceiptV2['uniqueCoverageDisposition'])) {
+    errors.push(path + '.uniqueCoverageDisposition is invalid');
   }
   if (typeof value.parityReceiptSha256 !== 'string' || !SHA256.test(value.parityReceiptSha256)) {
     errors.push(path + '.parityReceiptSha256 must be a lowercase SHA-256');
@@ -373,13 +371,6 @@ export function validateCAL002SupersessionReceiptV2(value: unknown): CAL002Valid
     validateSupersessionRow(rows[index], ruleId, index, errors);
   });
 
-  const records = rows.filter(isRecord);
-  const parityHashes = records
-    .map((row) => row.parityReceiptSha256)
-    .filter((sha): sha is string => typeof sha === 'string' && SHA256.test(sha));
-  if (new Set(parityHashes).size !== parityHashes.length) {
-    errors.push('artifact.rows must bind unique parity receipt hashes');
-  }
   return { ok: errors.length === 0, errors };
 }
 
@@ -466,6 +457,10 @@ export function buildCAL002SupersessionReceiptV2(
       ...(parityReceipt.splitRuleId === undefined ? {} : { splitRuleId: parityReceipt.splitRuleId }),
     };
   });
+  const parityReceiptHashes = rows.map((row) => row.parityReceiptSha256);
+  if (new Set(parityReceiptHashes).size !== rows.length) {
+    throw new TypeError('CAL-002 supersession parity receipt hash collision or duplicate binding');
+  }
   const receipt: CAL002SupersessionReceiptV2 = {
     version: CAL002_SUPERSESSION_RECEIPT_VERSION,
     protocolVersion: CAL002_PROTOCOL_VERSION_V2,
