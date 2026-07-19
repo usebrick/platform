@@ -87,12 +87,32 @@ interface InspectedArtifactDestination extends ArtifactDestination {
   readonly reserved: boolean;
 }
 
-const PROSPECTIVE_ALIAS_COLLATOR = new Intl.Collator('und', {
-  usage: 'search',
-  sensitivity: 'base',
-  ignorePunctuation: false,
-  numeric: false,
-});
+function buildProspectiveAliasCollator(): Intl.Collator {
+  const collator = new Intl.Collator('en-US', {
+    localeMatcher: 'lookup',
+    usage: 'search',
+    sensitivity: 'base',
+    ignorePunctuation: false,
+    numeric: false,
+  });
+  const requiredAliases = [
+    ['FILE.json', 'file.json'],
+    ['proposal-\u00df.json', 'proposal-SS.json'],
+    ['proposal-\u03a3.json', 'proposal-\u03c2.json'],
+  ] as const;
+  const requiredDistinctions = [
+    ['a-b.json', 'ab.json'],
+    ['file2.json', 'file02.json'],
+  ] as const;
+  const aliasesSatisfied = requiredAliases.every(([left, right]) => collator.compare(left, right) === 0);
+  const distinctionsSatisfied = requiredDistinctions.every(([left, right]) => collator.compare(left, right) !== 0);
+  if (!aliasesSatisfied || !distinctionsSatisfied) {
+    throw new Error('CAL-002 artifact alias comparison is unavailable on this runtime');
+  }
+  return collator;
+}
+
+const PROSPECTIVE_ALIAS_COLLATOR = buildProspectiveAliasCollator();
 
 function prospectivePathSegments(root: string, candidate: string): readonly string[] {
   return relative(root, candidate)

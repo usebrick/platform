@@ -899,6 +899,39 @@ describe('CAL-002 authority CLI migration', () => {
     }
   });
 
+  it('rejects ASCII I aliases under a Turkish process locale before lock, prompt, or mutation', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const prior = priorOriginStateFixture(root);
+    const proposalOut = 'authority-FILE.json';
+    const receiptOut = 'authority-file.json';
+    const args = [
+      script,
+      'classify-authority',
+      '--root', root,
+      '--catalog', 'catalog.json',
+      '--prior-state', 'origin-state.json',
+      '--proposal-out', proposalOut,
+      '--state-out', AUTHORITY_STATE_RELATIVE_PATH,
+      '--receipt-out', receiptOut,
+    ];
+
+    const result = run(args, '1\n', root, {
+      ...process.env,
+      LANG: 'tr_TR.UTF-8',
+      LC_ALL: 'tr_TR.UTF-8',
+    });
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/alias|collision|distinct/i);
+    expect(result.stderr).not.toContain('CAL-002 authority batch:');
+    expect(existsSync(join(root, proposalOut))).toBe(false);
+    expect(existsSync(join(root, receiptOut))).toBe(false);
+    expect(existsSync(authorityStatePath(root))).toBe(false);
+    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
+    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+  });
+
   it('rejects artifacts aliasing authority state lock destinations before mutation', () => {
     const lockAliases = [
       ['writer lock', '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock'],
