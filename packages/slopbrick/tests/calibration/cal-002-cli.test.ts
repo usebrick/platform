@@ -1217,3 +1217,55 @@ describe('CAL-002 quality disposition CLI', () => {
     expect(existsSync(join(root, QUALITY_COHORT_RELATIVE_PATH))).toBe(false);
   });
 });
+
+describe('CAL-002 research-origin v2 CLI', () => {
+  it('fails closed without complete hash or one-worker rerun evidence and writes no receipt', () => {
+    const root = temporaryRepositoryRoot();
+    approvedAuthorityReceiptFixture(root);
+    const corpusRoot = join(root, 'empty-corpus');
+    mkdirSync(corpusRoot, { recursive: true, mode: 0o700 });
+    const out = 'origin-receipt-v2.json';
+    const missingEvidenceEnvironment = {
+      ...process.env,
+      CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH: join(root, 'missing-holdout.json'),
+      CAL002_ORIGIN_METRICS_PATH: join(root, 'missing-metrics.json'),
+      CAL002_ORIGIN_MATRIX_PATH: join(root, 'missing-matrix.json'),
+    };
+
+    const result = run([
+      script,
+      'verify-origin-v2',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--corpus-root', corpusRoot,
+      '--out', out,
+    ], '', root, missingEvidenceEnvironment);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/CAL-001|governing|hash|rerun|projection/i);
+    expect(result.stderr).not.toMatch(/Usage: cal:complete/i);
+    expect(existsSync(join(root, out))).toBe(false);
+  });
+
+  it('rejects the protected v1 origin state as output before reading inputs', () => {
+    const root = temporaryRoot();
+    const protectedPath = join(root, PROTECTED_ORIGIN_STATE_RELATIVE_PATH);
+    mkdirSync(join(root, '.slopbrick/calibration/cal-002'), { recursive: true, mode: 0o700 });
+    writeCanonical(protectedPath, { version: 'cal-002-origin-state-v1', marker: 'unchanged' });
+    const before = readFileSync(protectedPath, 'utf8');
+
+    const result = run([
+      script,
+      'verify-origin-v2',
+      '--root', root,
+      '--authority', 'missing-authority.json',
+      '--corpus-root', join(root, 'missing-corpus'),
+      '--out', PROTECTED_ORIGIN_STATE_RELATIVE_PATH,
+    ], '', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/protected.*origin state|artifact destinations|same file/i);
+    expect(result.stderr).not.toMatch(/ENOENT|missing-authority|missing-corpus/i);
+    expect(readFileSync(protectedPath, 'utf8')).toBe(before);
+  });
+});

@@ -3,7 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { constants } from 'node:fs';
-import { lstat, mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, open, readFile, realpath, rename, rm, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 
 import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
@@ -59,10 +60,18 @@ import {
 } from '../../src/calibration/cal-002/application';
 import { buildCAL002FinalMatrix } from '../../src/calibration/cal-002/matrix';
 import {
+  assessCAL002CAL001Reuse,
   resolveCAL002OriginDecisions,
   type CAL002OriginDecisionRow,
+  type CAL002OriginGoverningHashes,
   type CAL002OriginReceipt,
 } from '../../src/calibration/cal-002/origin';
+import {
+  CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+  assertCAL002OriginReceiptV2,
+  buildCAL002OriginReceiptV2,
+  type CAL002OriginReceiptV2,
+} from '../../src/calibration/cal-002/origin-v2';
 import type { CAL002OracleReceipt } from '../../src/calibration/cal-002/oracles';
 import type { CAL002QualityMetrics } from '../../src/calibration/cal-002/quality-metrics';
 import type {
@@ -161,6 +170,15 @@ interface PlanQualityCohortArguments {
   readonly out: string;
 }
 
+interface VerifyOriginV2Arguments {
+  readonly command: 'verify-origin-v2';
+  readonly root: string;
+  readonly authority: string;
+  readonly corpusRoot: string;
+  readonly out: string;
+  readonly implementationCommitSha?: string;
+}
+
 interface CatalogArguments {
   readonly command: 'catalog';
   readonly root: string;
@@ -207,6 +225,7 @@ type Arguments =
   | AuthorityArguments
   | QualityCloseoutArguments
   | PlanQualityCohortArguments
+  | VerifyOriginV2Arguments
   | CatalogArguments
   | MatrixArguments
   | ApproveMatrixArguments
@@ -242,6 +261,10 @@ const AUTHORITY_MENU = [
 ].join('\n');
 const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
 const QUALITY_COHORT_RELATIVE_PATH = '.slopbrick/calibration/cal-002/quality-cohort-v2.json';
+const PROTECTED_ORIGIN_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/origin-state.json';
+const CAL001_RECORDED_HOLDOUT_RECEIPT_PATH = '/private/tmp/cal-001-v1-holdout-receipt-2026-07-17.json';
+const CAL001_RECORDED_METRICS_PATH = '/private/tmp/cal-001-v1-holdout-metrics-2026-07-17.json';
+const CAL001_RECORDED_MATRIX_PATH = '/private/tmp/cal-001-v1-decision-matrix-2026-07-17.json';
 const PRIVATE_FILE_MODE = 0o600;
 
 interface OriginState {
@@ -410,6 +433,20 @@ function parsePlanQualityCohortArguments(tokens: readonly string[]): PlanQuality
   };
 }
 
+function parseVerifyOriginV2Arguments(tokens: readonly string[]): VerifyOriginV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'verify-origin-v2', new Set([
+    '--root', '--authority', '--corpus-root', '--out', '--implementation-commit-sha',
+  ]), new Set());
+  return {
+    command: 'verify-origin-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'verify-origin-v2'),
+    corpusRoot: requiredValue(values, '--corpus-root', 'verify-origin-v2'),
+    out: requiredValue(values, '--out', 'verify-origin-v2'),
+    implementationCommitSha: values.get('--implementation-commit-sha'),
+  };
+}
+
 function parseValuesAndFlags(
   tokens: readonly string[],
   command: string,
@@ -505,11 +542,12 @@ function parseArguments(argv: readonly string[]): Arguments {
   if (command === 'classify-authority') return parseAuthorityArguments(tokens);
   if (command === 'quality-closeout') return parseQualityCloseoutArguments(tokens);
   if (command === 'plan-quality-cohort') return parsePlanQualityCohortArguments(tokens);
+  if (command === 'verify-origin-v2') return parseVerifyOriginV2Arguments(tokens);
   if (command === 'catalog') return parseCatalogArguments(tokens);
   if (command === 'matrix') return parseMatrixArguments(tokens);
   if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
   if (command === 'apply') return parseApplyArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, quality-closeout, plan-quality-cohort, catalog, matrix, approve-matrix, or apply with local artifact options');
+  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, quality-closeout, plan-quality-cohort, verify-origin-v2, catalog, matrix, approve-matrix, or apply with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -769,6 +807,163 @@ async function readCAL001DecisionMatrix(root: string, path: string): Promise<CAL
     throw new Error('CAL-001 decision matrix is not exact canonical JSON');
   }
   return validateCAL001DecisionMatrix(value);
+}
+
+async function readExternalCanonicalArtifact(path: string, label: string): Promise<unknown> {
+  const sourcePath = await externalCAL001SourcePath(path);
+  const bytes = await readFile(sourcePath, 'utf8');
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes) as unknown;
+  } catch {
+    throw new Error(`${label} is not valid JSON`);
+  }
+  const canonical = canonicalArtifact(value).json;
+  if (bytes !== canonical && bytes !== `${canonical}\n`) {
+    throw new Error(`${label} is not exact canonical JSON`);
+  }
+  return value;
+}
+
+async function deriveCAL001OriginGoverningHashes(input: {
+  readonly monorepoRoot: string;
+  readonly holdoutReceiptPath: string;
+  readonly metricsPath: string;
+  readonly matrixPath: string;
+}): Promise<CAL002OriginGoverningHashes> {
+  const [holdoutValue, metrics, matrix] = await Promise.all([
+    readExternalCanonicalArtifact(input.holdoutReceiptPath, 'CAL-001 holdout receipt'),
+    readExternalCanonicalArtifact(input.metricsPath, 'CAL-001 holdout metrics'),
+    readCAL001DecisionMatrix(input.monorepoRoot, input.matrixPath),
+  ]);
+  const holdout = record(holdoutValue, 'CAL-001 holdout receipt');
+  if (holdout.version !== 'cal-001-v1-holdout-receipt-v1'
+    || holdout.protocolVersion !== 'CAL-001-v1'
+    || holdout.workerCount !== 1
+    || holdout.evaluation !== 'diagnostic-only'
+    || holdout.admitted !== false) {
+    throw new Error('CAL-001 holdout receipt is not the frozen one-worker non-admitting evidence');
+  }
+  assertCommitSha(holdout.implementationCommitSha, 'CAL-001 holdout implementation commit SHA');
+  assertSha256(holdout.configHash, 'CAL-001 holdout config SHA-256');
+  const inputHashes = record(holdout.inputHashes, 'CAL-001 holdout input hashes');
+  assertSha256(inputHashes.protocolSha256, 'CAL-001 protocol SHA-256');
+  assertSha256(inputHashes.sourceBindingReceiptSha256, 'CAL-001 source-binding receipt SHA-256');
+  assertSha256(inputHashes.planSha256, 'CAL-001 split plan SHA-256');
+  const metricsBinding = record(holdout.metrics, 'CAL-001 holdout metrics binding');
+  assertSha256(metricsBinding.metricsSha256, 'CAL-001 holdout metrics binding SHA-256');
+
+  const holdoutReceiptSha256 = canonicalArtifact(holdoutValue).sha256;
+  const metricsSha256 = canonicalArtifact(metrics).sha256;
+  const cal001MatrixSha256 = canonicalArtifact(matrix).sha256;
+  if (metricsBinding.metricsSha256 !== metricsSha256
+    || matrix.holdoutReceiptSha256 !== holdoutReceiptSha256
+    || matrix.metricsSha256 !== metricsSha256
+    || matrix.holdoutImplementationCommitSha !== holdout.implementationCommitSha) {
+    throw new Error('CAL-001 local artifacts do not preserve their canonical evidence bindings');
+  }
+  const reducerBytes = await readFile(join(
+    input.monorepoRoot,
+    'packages/slopbrick/src/calibration/corpus-v1/calibration-decisions.ts',
+  ));
+  return {
+    protocolSha256: inputHashes.protocolSha256 as string,
+    sourceBindingReceiptSha256: inputHashes.sourceBindingReceiptSha256 as string,
+    splitPlanSha256: inputHashes.planSha256 as string,
+    scannerCommitSha: holdout.implementationCommitSha as string,
+    configSha256: holdout.configHash as string,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    holdoutReceiptSha256,
+    metricsSha256,
+    cal001MatrixSha256,
+    reducerSha256: createHash('sha256').update(reducerBytes).digest('hex'),
+  };
+}
+
+async function recordedCAL001OriginGoverningHashes(
+  monorepoRoot: string,
+): Promise<CAL002OriginGoverningHashes | undefined> {
+  try {
+    return await deriveCAL001OriginGoverningHashes({
+      monorepoRoot,
+      holdoutReceiptPath: process.env.CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH
+        ?? CAL001_RECORDED_HOLDOUT_RECEIPT_PATH,
+      metricsPath: process.env.CAL002_ORIGIN_METRICS_PATH
+        ?? CAL001_RECORDED_METRICS_PATH,
+      matrixPath: process.env.CAL002_ORIGIN_MATRIX_PATH
+        ?? CAL001_RECORDED_MATRIX_PATH,
+    });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  }
+}
+
+function childFailureMessage(error: unknown): string {
+  if (error === null || typeof error !== 'object') return String(error);
+  const childError = error as { readonly stderr?: unknown; readonly message?: unknown };
+  const stderr = childError.stderr;
+  if (typeof stderr === 'string' && stderr.trim().length > 0) return stderr.trim();
+  if (Buffer.isBuffer(stderr) && stderr.length > 0) return stderr.toString('utf8').trim();
+  return typeof childError.message === 'string'
+    ? childError.message
+    : 'unknown child-process failure';
+}
+
+async function rerunCAL001OriginEvidence(
+  monorepoRoot: string,
+  corpusRoot: string,
+): Promise<CAL002OriginGoverningHashes> {
+  const rerunImplementationCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: monorepoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  }).trim();
+  assertCommitSha(rerunImplementationCommitSha, 'CAL-001 rerun implementation commit SHA');
+  const temporaryRoot = await realpath(await mkdtemp(join(tmpdir(), 'cal-002-origin-v2-')));
+  const holdoutReceiptPath = join(temporaryRoot, 'holdout-receipt.json');
+  const metricsPath = join(temporaryRoot, 'holdout-metrics.json');
+  const matrixPath = join(temporaryRoot, 'decision-matrix.json');
+  try {
+    try {
+      execFileSync('corepack', [
+        'pnpm', '--filter', 'slopbrick', 'cal:corpus:v1-holdout', '--',
+        '--corpus-root', corpusRoot,
+        '--protocol', join(monorepoRoot, 'docs/execution/evidence/CAL-001-protocol.md'),
+        '--out', holdoutReceiptPath,
+        '--metrics-out', metricsPath,
+        '--implementation-commit-sha', rerunImplementationCommitSha,
+      ], {
+        cwd: monorepoRoot,
+        env: process.env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      execFileSync('corepack', [
+        'pnpm', '--filter', 'slopbrick', 'cal:corpus:v1-decisions', '--',
+        '--holdout-receipt', holdoutReceiptPath,
+        '--metrics', metricsPath,
+        '--out', matrixPath,
+        '--holdout-implementation-commit-sha', rerunImplementationCommitSha,
+        '--decision-implementation-commit-sha', rerunImplementationCommitSha,
+      ], {
+        cwd: monorepoRoot,
+        env: process.env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      throw new Error(`CAL-001 one-worker origin rerun failed: ${childFailureMessage(error)}`);
+    }
+    return await deriveCAL001OriginGoverningHashes({
+      monorepoRoot,
+      holdoutReceiptPath,
+      metricsPath,
+      matrixPath,
+    });
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 }
 
 async function privateWritePath(root: string, relativePath: string): Promise<string> {
@@ -1686,6 +1881,74 @@ async function planQualityCohort(args: PlanQualityCohortArguments): Promise<void
   });
 }
 
+async function verifyOriginV2(args: VerifyOriginV2Arguments): Promise<void> {
+  assertSafeRelativePath(args.authority, 'CAL-002 authority receipt path');
+  assertSafeRelativePath(args.out, 'CAL-002 v2 origin receipt path');
+  if (args.authority === PROTECTED_ORIGIN_STATE_RELATIVE_PATH
+    || args.out === PROTECTED_ORIGIN_STATE_RELATIVE_PATH) {
+    throw new Error('verify-origin-v2 must not read or write the protected CAL-002 v1 origin state');
+  }
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.out, label: 'CAL-002 v2 origin receipt' },
+    ],
+  });
+  const monorepoRoot = detectMonorepoRoot(process.cwd())
+    ?? detectMonorepoRoot(args.root);
+  if (monorepoRoot === undefined) {
+    throw new Error('verify-origin-v2 requires a CAL-002 monorepo root for frozen hash verification');
+  }
+  const authorityReceipt = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.authority,
+    label: 'CAL-002 authority receipt',
+  }) as CAL002AuthorityReceiptV2;
+  assertCAL002AuthorityReceiptV2(authorityReceipt);
+  const originImplementationCommitSha = resolveCommitSha(
+    args.implementationCommitSha,
+    'verify-origin-v2',
+  );
+  assertCommitSha(originImplementationCommitSha, 'originImplementationCommitSha');
+
+  const governingHashes = await recordedCAL001OriginGoverningHashes(monorepoRoot);
+  const assessment = assessCAL002CAL001Reuse({
+    governingHashes: governingHashes ?? {},
+    expectedGoverningHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+  });
+  let rerunEvidence;
+  if (assessment.status === 'rerun-required') {
+    rerunEvidence = {
+      workerCount: 1 as const,
+      governingHashes: await rerunCAL001OriginEvidence(monorepoRoot, args.corpusRoot),
+    };
+  }
+  const result = buildCAL002OriginReceiptV2({
+    authorityReceipt,
+    governingHashes: governingHashes ?? {},
+    expectedGoverningHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+    originImplementationCommitSha,
+    ...(rerunEvidence === undefined ? {} : { rerunEvidence }),
+  });
+  await writeImmutableCanonicalReceipt<CAL002OriginReceiptV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 v2 origin receipt',
+    value: result.receipt,
+    assertValue: assertCAL002OriginReceiptV2,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: result.receipt.status,
+    receiptSha256: result.receiptSha256,
+    authorityReceiptSha256: result.receipt.authorityReceiptSha256,
+    rows: result.receipt.rows.length,
+    admitted: false,
+  });
+}
+
 async function buildCatalogCommand(args: CatalogArguments): Promise<void> {
   const matrix = await readCAL001DecisionMatrix(args.root, args.cal001Matrix);
   const registry = new RuleRegistry();
@@ -1839,6 +2102,7 @@ async function main(): Promise<void> {
     else if (args.command === 'classify-authority') await classifyAuthority(args);
     else if (args.command === 'quality-closeout') await qualityCloseout(args);
     else if (args.command === 'plan-quality-cohort') await planQualityCohort(args);
+    else if (args.command === 'verify-origin-v2') await verifyOriginV2(args);
     else if (args.command === 'catalog') await buildCatalogCommand(args);
     else if (args.command === 'matrix') await buildMatrixCommand(args);
     else if (args.command === 'approve-matrix') await approveMatrix(args);

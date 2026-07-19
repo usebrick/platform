@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-origin-receipt-v2.schema.json",
+  "title": "CAL-002 Origin Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "authorityReceiptSha256",
+    "originImplementationCommitSha",
+    "status",
+    "governingHashes",
+    "rows",
+    "admitted"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-origin-receipt-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "originImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "status": { "enum": ["reused", "rerun-completed"] },
+    "governingHashes": { "$ref": "#/$defs/governingHashes" },
+    "rows": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "prefixItems": [
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/comment-ratio" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/compression-profile" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/default-react-stack" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/errors-near-eof" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/library-reinvention" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/markdown-leakage" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/segment-surprisal-cv" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/text-like-ratio" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ai/whitespace-regularity" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dart/dynamic-call" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dart/missing-dispose" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dart/print-debug" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dart/unwrapped-futures" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dup/near-duplicate" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "dup/structural-clone" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "go/nil-slice-vs-empty" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "go/struct-tag-inconsistency" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "layout/math-grid-uniformity" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "swift/fatal-error-thrown" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "swift/force-unwrap" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "swift/implicitly-unwrapped-optional" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "swift/print-debug" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "swift/strong-self-capture" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ts/enum-vs-as-const" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ts/excessive-type-assertion" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ts/import-type-misuse" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "ts/never-vs-unknown" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "visual/math-color-cluster" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "visual/math-default-font" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "visual/math-font-entropy" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "visual/math-rounded-entropy" } } },
+        { "type": "object", "$ref": "#/$defs/row", "properties": { "ruleId": { "const": "visual/math-spacing-entropy" } } }
+      ],
+      "items": false
+    },
+    "admitted": { "const": false }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": { "status": { "const": "reused" } },
+        "required": ["status"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": { "evidenceStatus": { "const": "reused" } },
+              "required": ["evidenceStatus"]
+            },
+            "minContains": 32,
+            "maxContains": 32
+          }
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": { "evidenceStatus": { "const": "rerun-completed" } },
+              "required": ["evidenceStatus"]
+            },
+            "minContains": 32,
+            "maxContains": 32
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+    },
+    "governingHashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolSha256",
+        "sourceBindingReceiptSha256",
+        "splitPlanSha256",
+        "scannerCommitSha",
+        "configSha256",
+        "catalogSha256",
+        "holdoutReceiptSha256",
+        "metricsSha256",
+        "cal001MatrixSha256",
+        "reducerSha256"
+      ],
+      "properties": {
+        "protocolSha256": { "$ref": "#/$defs/sha256" },
+        "sourceBindingReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "splitPlanSha256": { "$ref": "#/$defs/sha256" },
+        "scannerCommitSha": { "$ref": "#/$defs/commit" },
+        "configSha256": { "$ref": "#/$defs/sha256" },
+        "catalogSha256": {
+          "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506"
+        },
+        "holdoutReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "metricsSha256": { "$ref": "#/$defs/sha256" },
+        "cal001MatrixSha256": { "$ref": "#/$defs/sha256" },
+        "reducerSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "destination",
+        "evidenceStatus",
+        "claimCeiling",
+        "runtimeOutcome",
+        "enabledByDefault",
+        "scoreEligible",
+        "gateEligible",
+        "runnableByExplicitOptIn",
+        "evidenceSha256",
+        "admitted"
+      ],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "destination": { "const": "research-origin" },
+        "evidenceStatus": { "enum": ["reused", "rerun-completed"] },
+        "claimCeiling": { "const": "internal-origin-association" },
+        "runtimeOutcome": { "const": "default-off" },
+        "enabledByDefault": { "const": false },
+        "scoreEligible": { "const": false },
+        "gateEligible": { "const": false },
+        "runnableByExplicitOptIn": { "const": true },
+        "evidenceSha256": { "$ref": "#/$defs/sha256" },
+        "admitted": { "const": false }
+      }
+    }
+  }
+}

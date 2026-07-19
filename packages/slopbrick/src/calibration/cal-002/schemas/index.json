@@ -5,6 +5,7 @@
     { "file": "cal-002-review-receipt.schema.json", "version": "cal-002-review-receipt-v1" },
     { "file": "cal-002-quality-metrics.schema.json", "version": "cal-002-quality-metrics-v1" },
     { "file": "cal-002-origin-receipt.schema.json", "version": "cal-002-origin-receipt-v1" },
+    { "file": "cal-002-origin-receipt-v2.schema.json", "version": "cal-002-origin-receipt-v2" },
     { "file": "cal-002-final-matrix.schema.json", "version": "cal-002-final-matrix-v1" },
     { "file": "cal-002-matrix-approval.schema.json", "version": "cal-002-matrix-approval-v1" },
     { "file": "slopbrick-rule-evidence-policy.schema.json", "version": "slopbrick-rule-evidence-policy-v1" },
