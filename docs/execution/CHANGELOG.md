@@ -3,6 +3,38 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 31 — 2026-07-19
+
+### Changed
+
+- Recorded CAL-002 progressive authority Task 9 as implementation-
+  checkpointed at `33ea0d732` after controller adversarial audit. The
+  independent reviewer stalled and was closed, so no external approval is
+  claimed.
+- Added the reusable nine-ID transferred-oracle fixture contract, canonical
+  five-family control order, normalized language-path and unique-identity
+  guards, and source-free/path-free durable case projection.
+- Recorded complete positive, negative, adversarial, and five-family cases for
+  `cpp/c-style-cast`, `cpp/raw-new-delete`, and `rust/todo-macro` through real
+  parser/facts/rule execution.
+- Recorded the bounded `cpp/c-style-cast` comment-masking correction exposed by
+  the approved comment-adjacent control. It preserves source offsets and does
+  not change rule activation, default state, policy, admission, or release.
+- Advanced the next bounded action to Task 10's four dead-code and unused-
+  binding transfer fixtures and native controls.
+
+### Evidence
+
+- `33ea0d732`
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- The exact Task 9 matrix passes 53/53 on Node 22.22.3 and 24.15.0 with
+  SlopBrick typecheck on both runtimes; signal-strength guardrails also pass.
+- Protected owner state remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+- No durable transfer-oracle receipt, current-policy application, owner run,
+  admission, push, tag, publish, deploy, or release was produced.
+
 ## Revision 30 — 2026-07-19
 
 ### Changed

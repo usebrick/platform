@@ -81,17 +81,22 @@ Its scenarios are not measured UseBrick demand or forecasts.
 
 The frozen CAL-002 v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
-historical hold. Progressive authority Tasks 1–8 are now implementation-
-checkpointed and independently approved through `e8e62b779`. They preserve
+historical hold. Progressive authority Tasks 1–8 remain implementation-
+checkpointed and independently approved through `e8e62b779`; Task 9 is
+implementation-checkpointed at `33ea0d732` after controller adversarial audit,
+with no external approval claimed because the independent reviewer stalled.
+Together they preserve
 the locked 119-rule projection—47 starting quality + 26 transferred quality +
 4 blocked quality + 3 superseded + 7 retired + 32 research-origin rows—add the
 reviewed immutable owner-batch path, close all 32 quality rows without labels,
 and freeze fixed parity and receipt contracts for the three supersession
 migrations. Tasks 6–8 then implement those canonical SQL, console, and `any`
 semantics while leaving the old IDs runnable and without producing durable
-parity or supersession receipts. None of those paths has been run against the
-protected owner state. The next bounded slice is Task 9's shared transfer-
-oracle fixture contract and complete C++/Rust deterministic cases. CAL-002
+parity or supersession receipts. Task 9 adds the reusable transferred-oracle
+contract and closed C++/Rust cases, and corrects commented-out C-style casts
+without changing activation or policy. None of those paths has been run
+against the protected owner state. The next bounded slice is Task 10's four
+dead-code and unused-binding transferred-oracle cases. CAL-002
 remains `in_progress` at implementation
 WIP `2/2`; the proposed policy remains `applied: false` and `admitted: false`.
 No runtime policy, admission, or release state changed. Local application, if
@@ -181,10 +186,11 @@ planning artifacts only, not participant action.
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
   `requires` edge. No default state, score, baseline, source, admission, release,
-  deployment, or public artifact changed in revision 30.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–8 are
-  checkpointed through `e8e62b779`; next add Task 9's shared transfer-oracle
-  contract and complete C++/Rust deterministic cases. `VAL-001` and
+  deployment, or public artifact changed in revision 31.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
+  checkpointed through `e8e62b779`, and Task 9 is checkpointed at
+  `33ea0d732`; next add Task 10's four dead-code and unused-binding transfer
+  fixtures and native controls. `VAL-001` and
   `TEL-001` remain ready; `REL-001` remains the unchanged separate public-
   authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event

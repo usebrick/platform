@@ -1,14 +1,14 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-19
-**Index revision:** 30
+**Index revision:** 31
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 30 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 31 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -36,24 +36,30 @@ terminal immutable owner-batch path; Task 4 closes the exact 32 quality rows
 without labels and optionally plans a readiness-gated private cohort; Task 5
 freezes the fixed parity cases and receipt validators; Tasks 6–8 implement the
 canonical SQL, console, and `any` semantics in independent commits while the
-old IDs remain runnable. No durable parity or supersession receipt has been
-created, and none of those paths has been run against protected owner state.
+old IDs remain runnable. Task 9 is implementation-checkpointed at `33ea0d732`
+after controller adversarial audit; the independent reviewer stalled, so no
+external approval is claimed. It adds the shared transfer-oracle contract and
+closed C++/Rust evidence and masks comments for `cpp/c-style-cast` after the
+approved comment-adjacent control exposed a false positive. No durable parity,
+supersession, or transfer-oracle receipt has been created, and none of those
+paths has been run against protected owner state.
 The approved v2 projection remains 47 starting quality + 26
 transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
 research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
-code action is Task 9's shared transfer-oracle fixture contract and complete
-C++/Rust deterministic cases. The
+code action is Task 10's four dead-code and unused-binding transfer fixtures
+and native detector controls. The
 repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
 `admitted: false`; no default state, score, source, baseline, admission, release,
-  deployment, or public artifact changed in revision 30. CAL-002 remains
+  deployment, or public artifact changed in revision 31. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. No runtime policy changed;
 local application remains separate from push, tag, publish, deploy, and release.
-This strategy and execution-document revision changes no runtime code or
-policy. Stale-path cleanup is isolated behind exact owner approval and does not
+This documentation revision records the bounded Task 9 detector correction;
+it does not itself change runtime code or policy. Stale-path cleanup is
+isolated behind exact owner approval and does not
 block local product work.
 
 ## Product and release truth
@@ -121,7 +127,8 @@ block local product work.
   The four blocked quality rows remain assignment-ineligible, and the v2
   projection remains non-admitting and unapplied.
 - CAL-002 progressive authority Tasks 1–8 are implementation-checkpointed
-  through `e8e62b779`. Task 4's final focused matrix passes 92/92 on exact Node
+  through `e8e62b779`, and Task 9 is checkpointed at `33ea0d732`. Task 4's
+  final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
   Task 5 matrix passes 101/101 on both runtimes with typecheck on both. Task 4
   records an exact 32-row non-admitting zero-label quality disposition and a
@@ -132,7 +139,12 @@ block local product work.
   and passes 21 focused tests after its boundary correction. Task 8 preserves
   declaration-ratio behavior, rejects the old line denominator, and passes 17
   focused tests. The integrated Tasks 6–8 matrix passes 51/51 on exact Node
-  22.22.3 and 24.15.0 with typecheck on both. These commits qualify code paths,
+  22.22.3 and 24.15.0 with typecheck on both. Task 9 adds exact three-rule
+  transferred-oracle coverage with positive, negative, adversarial, and five-
+  family controls; its exact focused matrix passes 53/53 on both runtimes with
+  typecheck on both. The approved comment control also corrects a real C-style-
+  cast comment false positive while preserving source offsets. These commits
+  qualify code paths,
   not live owner decisions: no authority proposal, private cohort, durable
   quality/parity/supersession receipt, runtime policy application, or admission
   artifact was produced from protected owner state.
@@ -226,7 +238,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 9's shared transfer-oracle contract and complete C++/Rust deterministic cases. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 10's four dead-code transfer fixtures and native detector controls. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -296,9 +308,10 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 `SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. CAL-002
-authority Tasks 1–8 are approved through `e8e62b779`; Task 9 now establishes
-the shared transfer-oracle fixture contract and complete C++/Rust cases without
-creating owner evidence or applying policy. Its separate quality and origin
+authority Tasks 1–8 are approved through `e8e62b779`, and Task 9 is
+checkpointed at `33ea0d732` after controller audit; Task 10 now adds the four
+dead-code and unused-binding transfer fixtures without creating owner evidence
+or applying policy. Its separate quality and origin
 evidence lanes remain the
 first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may

@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-19
-- **State:** `in_progress` implementation checkpoint at revision 30
-- **Scope:** CAL-002 progressive authority Tasks 1–8; no protected owner
+- **State:** `in_progress` implementation checkpoint at revision 31
+- **Scope:** CAL-002 progressive authority Tasks 1–9; no protected owner
   workflow, runtime policy application, admission, or release is evidenced by
   this receipt.
 
@@ -79,18 +79,28 @@
   24.15.0 runtimes with package typecheck on both. Test-built parity receipts
   use synthetic valid commit SHAs; no durable actual-commit parity or
   supersession receipt was written, and all old rule IDs remain runnable.
+- Task 9 is checkpointed at `33ea0d732`. It defines the reusable nine-ID
+  transferred-oracle fixture contract, exact five-family control ordering,
+  normalized language-path and unique-identity validation, and the source-
+  free/path-free durable case projection. Complete cases for
+  `cpp/c-style-cast`, `cpp/raw-new-delete`, and `rust/todo-macro` execute
+  against real parser/facts/rule paths. The exact focused matrix passes 53/53
+  on Node 22.22.3 and 24.15.0 with package typecheck on both. Its approved
+  comment-adjacent control exposed and now guards a real commented-out C-style-
+  cast false positive; comment masking preserves offsets. The independent
+  reviewer stalled and was closed, so only the controller audit is recorded,
+  not external approval. No durable transfer-oracle receipt was written.
 - No authority proposal, private cohort, durable quality/parity/supersession
-  receipt, runtime policy, rule activation, score, source,
+  or transfer-oracle receipt, runtime policy, rule activation, score, source,
   baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 30.
+  deployment, tag, publish, push, or acquired data changed in revision 31.
   Local application remains separate from those release-boundary decisions.
 
 ## Next evidence
 
-The next implementation evidence is Task 9's shared transfer-oracle fixture
-contract and complete C++/Rust deterministic cases for `cpp/c-style-cast`,
-`cpp/raw-new-delete`, and `rust/todo-macro`. The fixture validator must reject
-source-bearing durable projections, absolute paths, duplicate identities,
-incomplete five-family controls, and language-extension drift. This remains
+The next implementation evidence is Task 10's complete dead-code and unused-
+binding transfer fixtures for `dead/unreachable`, `dead/unused-import`,
+`dead/unused-local`, and `dead/unused-parameter`, executed through their real
+parser/facts/rule paths and mirrored in native detector controls. This remains
 evidence preparation only: no detector activation, current-policy application,
-owner artifact, or admission can follow from the Task 9 test commit alone.
+owner artifact, or admission can follow from the Task 10 test commit alone.
