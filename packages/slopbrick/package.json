@@ -59,6 +59,7 @@
     "cal:admission:smoke-input": "node dist/calibration/v103/admission.cjs admission:smoke-input",
     "cal:admission:genesis": "node --import tsx scripts/cal/build-v103-genesis.ts",
     "cal:evidence": "node dist/calibration/v103/admission.cjs",
+    "cal:complete": "node --import tsx scripts/cal/cal-002.ts",
     "typecheck": "tsc --noEmit",
     "prepack": "node scripts/prepack-guard.mjs",
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build && pnpm prepack",
