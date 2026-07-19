@@ -17,6 +17,7 @@ const REVIEW_LABELS = new Set<CAL002ReviewLabel>([
   'not-useful',
   'cannot-determine',
 ]);
+const REVIEW_ID = /^[a-f0-9]{64}$/u;
 
 export interface CAL002ReviewRow {
   readonly reviewId: string;
@@ -73,7 +74,9 @@ function exactKeys(value: Record<string, unknown>, keys: readonly string[], labe
 }
 
 function assertReviewId(value: unknown, label: string): asserts value is string {
-  if (typeof value !== 'string' || value.length === 0) throw new TypeError(`${label} must be a non-empty review ID`);
+  if (typeof value !== 'string' || !REVIEW_ID.test(value)) {
+    throw new TypeError(`${label} review ID must be 64 lowercase hexadecimal characters`);
+  }
 }
 
 function assertReviewLabel(value: unknown): asserts value is CAL002ReviewLabel {
@@ -119,6 +122,15 @@ export function assertCAL002ReviewState(value: unknown): asserts value is CAL002
   }
   if (value.status === 'completed' && labeled.size !== reviewIds.size) {
     throw new TypeError('Completed CAL-002 review state has unlabeled rows');
+  }
+}
+
+export function assertCAL002ReviewReceipt(value: unknown): asserts value is CAL002ReviewReceipt {
+  const validation = validateCAL002ReviewReceipt(value);
+  if (!validation.ok) throw new TypeError(`CAL-002 review receipt is invalid: ${validation.errors.join('; ')}`);
+  const receipt = value as CAL002ReviewReceipt;
+  for (const [index, row] of receipt.rows.entries()) {
+    assertReviewId(row.reviewId, `CAL-002 review receipt rows[${index}].reviewId`);
   }
 }
 
@@ -204,8 +216,7 @@ export function completeCAL002Review(input: {
     rows: [...state.rows].sort((left, right) => compareCodePoints(left.reviewId, right.reviewId)),
     admitted: false,
   };
-  const validation = validateCAL002ReviewReceipt(receipt);
-  if (!validation.ok) throw new TypeError(`CAL-002 review receipt is invalid: ${validation.errors.join('; ')}`);
+  assertCAL002ReviewReceipt(receipt);
   const receiptArtifact = canonicalArtifact(receipt);
   return {
     state,
@@ -214,5 +225,31 @@ export function completeCAL002Review(input: {
     receipt,
     receiptJson: receiptArtifact.json,
     receiptSha256: receiptArtifact.sha256,
+  };
+}
+
+export function verifyCompletedCAL002ReviewReceipt(input: {
+  readonly state: CAL002ReviewState;
+  readonly receipt: CAL002ReviewReceipt;
+}): { readonly stateSha256: string; readonly receiptSha256: string } {
+  assertCAL002ReviewState(input.state);
+  assertCAL002ReviewReceipt(input.receipt);
+  if (input.state.status !== 'completed') throw new Error('CAL-002 review state is not completed');
+  const stateArtifact = canonicalArtifact(input.state);
+  const expectedRows = [...input.state.rows].sort((left, right) => compareCodePoints(left.reviewId, right.reviewId));
+  const receipt = input.receipt;
+  if (
+    receipt.protocolVersion !== input.state.protocolVersion
+    || receipt.catalogSha256 !== input.state.catalogSha256
+    || receipt.assignmentSha256 !== input.state.assignmentSha256
+    || receipt.blindedBatchSha256 !== input.state.blindedBatchSha256
+    || receipt.stateSha256 !== stateArtifact.sha256
+    || canonicalArtifact(receipt.rows).json !== canonicalArtifact(expectedRows).json
+  ) {
+    throw new Error('CAL-002 completed state and review receipt do not match');
+  }
+  return {
+    stateSha256: stateArtifact.sha256,
+    receiptSha256: canonicalArtifact(receipt).sha256,
   };
 }

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { chmod, lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, open, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -25,6 +25,9 @@ import {
 
 const HASH_A = 'a'.repeat(64);
 const HASH_B = 'b'.repeat(64);
+const REVIEW_A = '1'.repeat(64);
+const REVIEW_B = '2'.repeat(64);
+const REVIEW_C = '3'.repeat(64);
 const COMMIT = 'c'.repeat(40);
 const roots: string[] = [];
 
@@ -43,39 +46,60 @@ describe('CAL-002 resumable review state', () => {
     const started = startCAL002Review({
       assignmentSha256: HASH_A,
       blindedBatchSha256: HASH_B,
-      reviewIds: ['review-z', 'review-a', 'review-m'],
+      reviewIds: [REVIEW_C, REVIEW_A, REVIEW_B],
     });
     expect(started.catalogSha256).toBe(CAL002_LOCKED_RULE_CATALOG_SHA256);
-    expect(nextCAL002ReviewId(started)).toBe('review-z');
+    expect(nextCAL002ReviewId(started)).toBe(REVIEW_C);
 
-    const once = recordCAL002Review(started, 'review-z', 'not-useful');
-    const twice = recordCAL002Review(once, 'review-z', 'not-useful');
+    const once = recordCAL002Review(started, REVIEW_C, 'not-useful');
+    const twice = recordCAL002Review(once, REVIEW_C, 'not-useful');
     expect(twice).toEqual(once);
-    expect(nextCAL002ReviewId(twice)).toBe('review-a');
+    expect(nextCAL002ReviewId(twice)).toBe(REVIEW_A);
     expect(started.rows).toEqual([]);
   });
 
-  it('rejects conflicting relabels, unknown labels, and unknown review IDs', () => {
+  it('enforces lowercase 64-hex review IDs at every state-machine boundary', () => {
+    expect(() => startCAL002Review({
+      assignmentSha256: HASH_A,
+      blindedBatchSha256: HASH_B,
+      reviewIds: ['../private/source.ts'],
+    })).toThrow(/review ID.*64.*hex|64.*hex.*review ID/i);
+    expect(() => startCAL002Review({
+      assignmentSha256: HASH_A,
+      blindedBatchSha256: HASH_B,
+      reviewIds: ['A'.repeat(64)],
+    })).toThrow(/64 lowercase hexadecimal/i);
+
     const started = startCAL002Review({
       assignmentSha256: HASH_A,
       blindedBatchSha256: HASH_B,
-      reviewIds: ['review-a'],
+      reviewIds: [REVIEW_A],
     });
-    const labeled = recordCAL002Review(started, 'review-a', 'not-useful');
-    expect(() => recordCAL002Review(labeled, 'review-a', 'actionable-defect')).toThrow(/conflict/i);
-    expect(() => recordCAL002Review(started, 'missing', 'not-useful')).toThrow(/unknown.*review/i);
-    expect(() => recordCAL002Review(started, 'review-a', 'free-form' as never)).toThrow(/unknown label/i);
+    expect(() => recordCAL002Review(started, '../private/source.ts', 'not-useful')).toThrow(/review ID.*64.*hex|64.*hex.*review ID/i);
+    expect(() => nextCAL002ReviewId({ ...started, reviewIds: ['not-a-digest'] })).toThrow(/review ID.*64.*hex|64.*hex.*review ID/i);
+  });
+
+  it('rejects conflicting relabels, unknown labels, and unknown digest-shaped review IDs', () => {
+    const started = startCAL002Review({
+      assignmentSha256: HASH_A,
+      blindedBatchSha256: HASH_B,
+      reviewIds: [REVIEW_A],
+    });
+    const labeled = recordCAL002Review(started, REVIEW_A, 'not-useful');
+    expect(() => recordCAL002Review(labeled, REVIEW_A, 'actionable-defect')).toThrow(/conflict/i);
+    expect(() => recordCAL002Review(started, REVIEW_B, 'not-useful')).toThrow(/unknown.*review/i);
+    expect(() => recordCAL002Review(started, REVIEW_A, 'free-form' as never)).toThrow(/unknown label/i);
   });
 
   it('completes to a sorted, path-free, authority-bound immutable receipt', () => {
     const started = startCAL002Review({
       assignmentSha256: HASH_A,
       blindedBatchSha256: HASH_B,
-      reviewIds: ['review-z', 'review-a'],
+      reviewIds: [REVIEW_B, REVIEW_A],
     });
     const labeled = recordCAL002Review(
-      recordCAL002Review(started, 'review-z', 'useful-no-safe-fix'),
-      'review-a',
+      recordCAL002Review(started, REVIEW_B, 'useful-no-safe-fix'),
+      REVIEW_A,
       'actionable-defect',
     );
     const result = completeCAL002Review({
@@ -85,8 +109,8 @@ describe('CAL-002 resumable review state', () => {
     });
 
     expect(result.receipt.rows).toEqual([
-      { reviewId: 'review-a', label: 'actionable-defect' },
-      { reviewId: 'review-z', label: 'useful-no-safe-fix' },
+      { reviewId: REVIEW_A, label: 'actionable-defect' },
+      { reviewId: REVIEW_B, label: 'useful-no-safe-fix' },
     ]);
     expect(result.receipt).toMatchObject({
       protocolVersion: 'CAL-002-v1',
@@ -104,7 +128,7 @@ describe('CAL-002 resumable review state', () => {
     expect(JSON.stringify(result)).not.toContain('const secret');
     expect(JSON.stringify(result.receipt)).not.toMatch(/(?:source|path)/i);
     expect(result.state.status).toBe('completed');
-    expect(() => recordCAL002Review(result.state, 'review-a', 'actionable-defect')).toThrow(/completed/i);
+    expect(() => recordCAL002Review(result.state, REVIEW_A, 'actionable-defect')).toThrow(/completed/i);
     expect(() => completeCAL002Review({
       state: result.state,
       reviewerAuthority: 'repository-owner',
@@ -116,10 +140,10 @@ describe('CAL-002 resumable review state', () => {
     const started = startCAL002Review({
       assignmentSha256: HASH_A,
       blindedBatchSha256: HASH_B,
-      reviewIds: ['review-a', 'review-b'],
+      reviewIds: [REVIEW_A, REVIEW_B],
     });
     expect(() => completeCAL002Review({
-      state: recordCAL002Review(started, 'review-a', 'not-useful'),
+      state: recordCAL002Review(started, REVIEW_A, 'not-useful'),
       reviewerAuthority: 'repository-owner',
       implementationCommitSha: COMMIT,
     })).toThrow(/unlabeled|incomplete/i);
@@ -144,7 +168,7 @@ describe('CAL-002 private artifact I/O', () => {
     const state = startCAL002Review({
       assignmentSha256: HASH_A,
       blindedBatchSha256: HASH_B,
-      reviewIds: ['review-a'],
+      reviewIds: [REVIEW_A],
     });
     await writeReviewState({ root, relativePath: 'private/review-state.json', state });
     const statePath = join(root, 'private', 'review-state.json');
@@ -156,20 +180,41 @@ describe('CAL-002 private artifact I/O', () => {
     await expect(writeReviewState({
       root,
       relativePath: 'private/review-state.json',
-      state: recordCAL002Review(state, 'review-a', 'not-useful'),
+      state: recordCAL002Review(state, REVIEW_A, 'not-useful'),
     })).rejects.toThrow(/mode|0600|private/i);
   });
 
-  it('uses exclusive immutable receipt writes and rejects symlink ancestors', async () => {
+  it('rejects an overlapping state writer with a private sibling lock and preserves 0600 state', async () => {
     const root = await temporaryRoot();
-    const started = startCAL002Review({ assignmentSha256: HASH_A, blindedBatchSha256: HASH_B, reviewIds: ['review-a'] });
+    const state = startCAL002Review({ assignmentSha256: HASH_A, blindedBatchSha256: HASH_B, reviewIds: [REVIEW_A] });
+    await mkdir(join(root, 'private'));
+    const lockPath = join(root, 'private', '.review-state.json.lock');
+    const lock = await open(lockPath, 'wx', 0o600);
+    await expect(writeReviewState({ root, relativePath: 'private/review-state.json', state })).rejects.toThrow(/lock|writer|concurrent/i);
+    expect((await lstat(lockPath)).mode & 0o777).toBe(0o600);
+    await lock.close();
+    await rm(lockPath);
+
+    await writeReviewState({ root, relativePath: 'private/review-state.json', state });
+    expect((await lstat(join(root, 'private', 'review-state.json'))).mode & 0o777).toBe(0o600);
+    await expect(lstat(lockPath)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('treats an exact immutable receipt as recovered success, rejects different bytes, and rejects symlink ancestors', async () => {
+    const root = await temporaryRoot();
+    const started = startCAL002Review({ assignmentSha256: HASH_A, blindedBatchSha256: HASH_B, reviewIds: [REVIEW_A] });
     const completed = completeCAL002Review({
-      state: recordCAL002Review(started, 'review-a', 'cannot-determine'),
+      state: recordCAL002Review(started, REVIEW_A, 'cannot-determine'),
       reviewerAuthority: 'repository-owner',
       implementationCommitSha: COMMIT,
     });
     await writeImmutableReceipt({ root, relativePath: 'receipts/review.json', receipt: completed.receipt });
-    await expect(writeImmutableReceipt({ root, relativePath: 'receipts/review.json', receipt: completed.receipt })).rejects.toThrow(/exist|immutable|duplicate/i);
+    await expect(writeImmutableReceipt({ root, relativePath: 'receipts/review.json', receipt: completed.receipt })).resolves.toBeUndefined();
+    await expect(writeImmutableReceipt({
+      root,
+      relativePath: 'receipts/review.json',
+      receipt: { ...completed.receipt, reviewImplementationCommitSha: 'd'.repeat(40) },
+    })).rejects.toThrow(/different|collision|immutable/i);
 
     const outside = await temporaryRoot();
     await mkdir(join(root, 'links'));

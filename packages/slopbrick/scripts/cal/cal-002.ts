@@ -1,10 +1,13 @@
 /** Offline-only CAL-002 owner-review dispatcher. */
+import { execFileSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
 import {
   readCanonicalArtifact,
+  readReviewReceipt,
   readReviewState,
   readVerifiedSource,
+  readVerifiedSourcesByHash,
   writeImmutableReceipt,
   writeReviewState,
 } from '../../src/calibration/cal-002/artifact-io';
@@ -24,6 +27,7 @@ import {
   nextCAL002ReviewId,
   recordCAL002Review,
   startCAL002Review,
+  verifyCompletedCAL002ReviewReceipt,
   type CAL002ReviewState,
 } from '../../src/calibration/cal-002/review-session';
 
@@ -41,16 +45,19 @@ const LABEL_BY_KEY: Readonly<Record<string, CAL002ReviewLabel>> = {
   '3': 'not-useful',
   '4': 'cannot-determine',
 };
+const DISPLAY_SOURCE_BYTE_LIMIT = 16 * 1024;
+const IMPLEMENTATION_SHA_ENV = 'CAL002_REVIEW_IMPLEMENTATION_COMMIT_SHA';
 
 interface Arguments {
   readonly command: 'review-quality';
   readonly root: string;
+  readonly corpusRoot?: string;
   readonly assignment: string;
-  readonly blindedBatch: string;
-  readonly sourceMap: string;
+  readonly blindedBatch?: string;
+  readonly sourceMap?: string;
   readonly state: string;
   readonly receipt: string;
-  readonly implementationCommitSha: string;
+  readonly implementationCommitSha?: string;
 }
 
 interface SourceMap {
@@ -63,16 +70,20 @@ function machineOutput(value: unknown): void {
 }
 
 function parseArguments(argv: readonly string[]): Arguments {
-  const [command, ...tokens] = argv;
+  let first = 0;
+  while (argv[first] === '--') first += 1;
+  const [command, ...tokens] = argv.slice(first);
   if (command !== 'review-quality') throw new Error('Usage: cal:complete review-quality with the required local artifact options');
   const values = new Map<string, string>();
   const allowed = new Set([
     '--root',
+    '--corpus-root',
     '--assignment',
     '--blinded-batch',
     '--source-map',
     '--state',
     '--receipt',
+    '--out',
     '--implementation-commit-sha',
   ]);
   for (let index = 0; index < tokens.length; index += 2) {
@@ -88,16 +99,37 @@ function parseArguments(argv: readonly string[]): Arguments {
     if (value === undefined || value.length === 0) throw new Error(`review-quality requires ${option}`);
     return value;
   };
+  if (values.has('--receipt') && values.has('--out')) throw new Error('Use only one of --out or --receipt');
+  const sourceMapPath = values.get('--source-map');
+  const corpusRoot = values.get('--corpus-root');
+  if (sourceMapPath === undefined && corpusRoot === undefined) {
+    throw new Error('review-quality requires --corpus-root unless --source-map is supplied');
+  }
   return {
     command,
-    root: required('--root'),
+    root: values.get('--root') ?? process.cwd(),
+    corpusRoot,
     assignment: required('--assignment'),
-    blindedBatch: required('--blinded-batch'),
-    sourceMap: required('--source-map'),
+    blindedBatch: values.get('--blinded-batch'),
+    sourceMap: sourceMapPath,
     state: required('--state'),
-    receipt: required('--receipt'),
-    implementationCommitSha: required('--implementation-commit-sha'),
+    receipt: values.get('--out') ?? required('--receipt'),
+    implementationCommitSha: values.get('--implementation-commit-sha'),
   };
+}
+
+function resolveImplementationCommitSha(args: Arguments): string {
+  const supplied = args.implementationCommitSha ?? process.env[IMPLEMENTATION_SHA_ENV];
+  if (supplied !== undefined && supplied.length > 0) return supplied;
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    throw new Error(`review-quality requires --implementation-commit-sha, ${IMPLEMENTATION_SHA_ENV}, or a local git HEAD`);
+  }
 }
 
 function record(value: unknown, label: string): Record<string, unknown> {
@@ -181,7 +213,6 @@ async function loadState(args: Arguments, assignment: CAL002QualityAssignment, b
   if (!sameStrings(state.reviewIds, batch.map((row) => row.reviewId))) {
     throw new Error('CAL-002 review state order does not match the blinded batch');
   }
-  if (state.status === 'completed') throw new Error('CAL-002 review is completed and its receipt is immutable');
   return state;
 }
 
@@ -189,22 +220,87 @@ function progress(state: CAL002ReviewState): { readonly labeled: number; readonl
   return { labeled: state.rows.length, remaining: state.reviewIds.length - state.rows.length };
 }
 
+function safeDisplayedSource(source: string): string {
+  const bytes = Buffer.from(source, 'utf8');
+  const bounded = bytes.subarray(0, DISPLAY_SOURCE_BYTE_LIMIT).toString('utf8');
+  const neutralized = bounded.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/gu, (value) => `\\x${value.codePointAt(0)!.toString(16).padStart(2, '0')}`);
+  return bytes.byteLength > DISPLAY_SOURCE_BYTE_LIMIT
+    ? `${neutralized}${neutralized.endsWith('\n') ? '' : '\n'}[source context truncated at ${DISPLAY_SOURCE_BYTE_LIMIT} bytes]\n`
+    : `${neutralized}${neutralized.endsWith('\n') ? '' : '\n'}`;
+}
+
+function sourceReader(
+  args: Arguments,
+  assignment: CAL002QualityAssignment,
+  batch: readonly CAL002QualityBlindedRow[],
+  sources: SourceMap | undefined,
+): (observation: CAL002QualityBlindedRow) => Promise<string> {
+  if (sources !== undefined) {
+    return async (observation) => {
+      const source = sources.rows.find((row) => row.reviewId === observation.reviewId)!;
+      return readVerifiedSource({
+        root: args.root,
+        relativePath: source.sourcePath,
+        expectedSha256: observation.sourceIdentitySha256,
+      });
+    };
+  }
+  const unitIds = new Map(assignment.rows.map((row) => [row.reviewId, row.unitId]));
+  const sourceIndex = readVerifiedSourcesByHash({
+    root: args.corpusRoot!,
+    sources: batch.map((observation) => ({
+      expectedSha256: observation.sourceIdentitySha256,
+      unitId: unitIds.get(observation.reviewId),
+    })),
+  });
+  return async (observation) => {
+    const source = (await sourceIndex).get(observation.sourceIdentitySha256);
+    if (source === undefined) throw new Error('CAL-002 selected source was not present in the verified source index');
+    return source;
+  };
+}
+
+async function resumeCompletedReview(args: Arguments, state: CAL002ReviewState): Promise<void> {
+  let receipt;
+  try {
+    receipt = await readReviewReceipt({ root: args.root, relativePath: args.receipt });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('CAL-002 completed review state requires its matching receipt');
+    }
+    throw error;
+  }
+  const verified = verifyCompletedCAL002ReviewReceipt({ state, receipt });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    ...progress(state),
+    ...verified,
+  });
+}
+
 async function reviewQuality(args: Arguments): Promise<void> {
   const assignmentValue = await readCanonicalArtifact({ root: args.root, relativePath: args.assignment, label: 'CAL-002 assignment' });
   const assignment = qualityAssignment(assignmentValue);
-  const batchValue = await readCanonicalArtifact({ root: args.root, relativePath: args.blindedBatch, label: 'CAL-002 blinded batch' });
-  const batch = blindedBatch(batchValue, assignment);
-  const mapValue = await readCanonicalArtifact({ root: args.root, relativePath: args.sourceMap, label: 'CAL-002 source map' });
-  const sources = sourceMap(mapValue, batch.map((row) => row.reviewId));
+  const batch = args.blindedBatch === undefined
+    ? blindedBatch(assignment.blindedRows, assignment)
+    : blindedBatch(
+      await readCanonicalArtifact({ root: args.root, relativePath: args.blindedBatch, label: 'CAL-002 blinded batch' }),
+      assignment,
+    );
+  const sources = args.sourceMap === undefined
+    ? undefined
+    : sourceMap(
+      await readCanonicalArtifact({ root: args.root, relativePath: args.sourceMap, label: 'CAL-002 source map' }),
+      batch.map((row) => row.reviewId),
+    );
   let state = await loadState(args, assignment, batch);
-  for (const observation of batch) {
-    const source = sources.rows.find((row) => row.reviewId === observation.reviewId)!;
-    await readVerifiedSource({
-      root: args.root,
-      relativePath: source.sourcePath,
-      expectedSha256: observation.sourceIdentitySha256,
-    });
+  if (state.status === 'completed') {
+    await resumeCompletedReview(args, state);
+    return;
   }
+  const readSource = sourceReader(args, assignment, batch, sources);
   const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
   const lines = input[Symbol.asyncIterator]();
   try {
@@ -212,13 +308,15 @@ async function reviewQuality(args: Arguments): Promise<void> {
       const reviewId = nextCAL002ReviewId(state);
       if (reviewId === undefined) break;
       const observation = batch.find((row) => row.reviewId === reviewId)!;
-      const source = sources.rows.find((row) => row.reviewId === reviewId)!;
-      const sourceText = await readVerifiedSource({
-        root: args.root,
-        relativePath: source.sourcePath,
-        expectedSha256: observation.sourceIdentitySha256,
-      });
-      process.stderr.write(`Review ${reviewId}\n${sourceText}${sourceText.endsWith('\n') ? '' : '\n'}`);
+      const sourceText = await readSource(observation);
+      process.stderr.write([
+        `Review ${reviewId}`,
+        `ruleId: ${observation.ruleId}`,
+        `evidenceClass: ${observation.evidenceClass}`,
+        `lineWindowLocator: ${observation.lineWindowLocator}`,
+        `Source context (SHA-256 verified; maximum ${DISPLAY_SOURCE_BYTE_LIMIT} bytes):`,
+        safeDisplayedSource(sourceText),
+      ].join('\n'));
 
       while (true) {
         process.stderr.write(`${MENU}\n`);
@@ -248,7 +346,7 @@ async function reviewQuality(args: Arguments): Promise<void> {
     const completed = completeCAL002Review({
       state,
       reviewerAuthority: 'repository-owner',
-      implementationCommitSha: args.implementationCommitSha,
+      implementationCommitSha: resolveImplementationCommitSha(args),
     });
     await writeImmutableReceipt({ root: args.root, relativePath: args.receipt, receipt: completed.receipt });
     await writeReviewState({ root: args.root, relativePath: args.state, state: completed.state });
