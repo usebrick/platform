@@ -77,6 +77,7 @@ export interface CAL002QualityAssignment {
 export interface CAL002QualityShortage {
   readonly ruleId: string;
   readonly role: CAL002QualityRole;
+  readonly reason: 'count' | 'family-reach' | 'matched-strata';
   readonly requested: number;
   readonly selected: number;
   readonly missing: number;
@@ -135,6 +136,7 @@ const QUALITY_REVIEW_CLASSES: ReadonlySet<unknown> = new Set([
 const OBSERVATION_KEYS = ['unitId', 'familyId', 'language', 'byteCount', 'contentSha256', 'findings'] as const;
 const FINDING_KEYS = ['ruleId', 'line', 'column', 'messageSha256'] as const;
 const LANE_DECISION_KEYS = ['ruleId', 'lane', 'evidenceClass'] as const;
+const FAMILY_REACH_TARGET = 5;
 
 function compareCodePoints(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -154,6 +156,20 @@ function reviewId(selectionManifestSha256: string, ruleId: string, unitId: strin
 
 function presentationKey(selectionManifestSha256: string, id: string): string {
   return hashParts(CAL002_PROTOCOL_VERSION, 'presentation', selectionManifestSha256, id);
+}
+
+function lineWindowLocator(
+  selectionManifestSha256: string,
+  id: string,
+  sourceIdentitySha256: string,
+): string {
+  return `window:${hashParts(
+    CAL002_PROTOCOL_VERSION,
+    'window',
+    selectionManifestSha256,
+    id,
+    sourceIdentitySha256,
+  )}`;
 }
 
 function byteBucket(byteCount: number): number {
@@ -285,9 +301,10 @@ function selectFindings(
   candidates: readonly CAL002QualityObservation[],
   requested: number,
   usedUnits: Set<string>,
+  priorFamilies: ReadonlySet<string>,
 ): CAL002QualityObservation[] {
   const selected: CAL002QualityObservation[] = [];
-  const selectedFamilies = new Set<string>();
+  const selectedFamilies = new Set(priorFamilies);
   while (selected.length < requested) {
     const next = bestAvailableCandidate(candidates, usedUnits, (left, right) =>
         Number(selectedFamilies.has(left.familyId)) - Number(selectedFamilies.has(right.familyId))
@@ -300,38 +317,35 @@ function selectFindings(
   return selected;
 }
 
+interface ControlSelection {
+  readonly selected: readonly CAL002QualityObservation[];
+  readonly requiredMatches: number;
+}
+
 function selectControls(
   ruleId: string,
   candidates: readonly CAL002QualityObservation[],
   requested: number,
   matchedFindings: readonly CAL002QualityObservation[],
   usedUnits: Set<string>,
-): CAL002QualityObservation[] {
+  priorFamilies: ReadonlySet<string>,
+): ControlSelection {
   const selected: CAL002QualityObservation[] = [];
-  const selectedFamilies = new Set<string>();
-  while (selected.length < requested) {
-    const match = matchedFindings.length === 0
-      ? undefined
-      : matchedFindings[selected.length % matchedFindings.length];
-    const next = bestAvailableCandidate(candidates, usedUnits, (left, right) => {
-        const language = match === undefined
-          ? 0
-          : Number(left.language !== match.language) - Number(right.language !== match.language);
-        const size = match === undefined
-          ? 0
-          : Math.abs(byteBucket(left.byteCount) - byteBucket(match.byteCount))
-            - Math.abs(byteBucket(right.byteCount) - byteBucket(match.byteCount));
-        return language
-          || size
-          || Number(selectedFamilies.has(left.familyId)) - Number(selectedFamilies.has(right.familyId))
-          || compareCodePoints(selectionKey(ruleId, 'control', left.unitId), selectionKey(ruleId, 'control', right.unitId));
-      });
-    if (next === undefined) break;
+  const selectedFamilies = new Set(priorFamilies);
+  const requiredMatches = matchedFindings.slice(0, requested);
+  for (const match of requiredMatches) {
+    const eligible = candidates.filter((candidate) =>
+      candidate.language === match.language
+      && byteBucket(candidate.byteCount) === byteBucket(match.byteCount));
+    const next = bestAvailableCandidate(eligible, usedUnits, (left, right) =>
+      Number(selectedFamilies.has(left.familyId)) - Number(selectedFamilies.has(right.familyId))
+      || compareCodePoints(selectionKey(ruleId, 'control', left.unitId), selectionKey(ruleId, 'control', right.unitId)));
+    if (next === undefined) continue;
     selected.push(next);
     selectedFamilies.add(next.familyId);
     usedUnits.add(next.unitId);
   }
-  return selected;
+  return { selected, requiredMatches: requiredMatches.length };
 }
 
 function priorCounts(
@@ -346,36 +360,170 @@ function priorCounts(
   return counts;
 }
 
+function priorRowsForRule(
+  prior: CAL002QualityAssignment | undefined,
+  ruleId: string,
+): readonly CAL002QualityAssignmentRow[] {
+  return prior?.rows.filter((row) => row.ruleId === ruleId) ?? [];
+}
+
+function familiesForRole(
+  rows: readonly Pick<CAL002QualityAssignmentRow, 'role' | 'unitId'>[],
+  role: CAL002QualityRole,
+  observationsByUnit: ReadonlyMap<string, CAL002QualityObservation>,
+): Set<string> {
+  const families = new Set<string>();
+  for (const row of rows) {
+    if (row.role !== role) continue;
+    const observation = observationsByUnit.get(row.unitId);
+    if (observation !== undefined) families.add(observation.familyId);
+  }
+  return families;
+}
+
+function unmatchedPriorFindings(
+  priorRows: readonly CAL002QualityAssignmentRow[],
+  observationsByUnit: ReadonlyMap<string, CAL002QualityObservation>,
+): CAL002QualityObservation[] {
+  const controlsByStratum = new Map<string, number>();
+  for (const row of priorRows) {
+    if (row.role !== 'control') continue;
+    const observation = observationsByUnit.get(row.unitId);
+    if (observation === undefined) continue;
+    const stratum = `${observation.language}\0${byteBucket(observation.byteCount)}`;
+    controlsByStratum.set(stratum, (controlsByStratum.get(stratum) ?? 0) + 1);
+  }
+  const unmatched: CAL002QualityObservation[] = [];
+  for (const row of priorRows) {
+    if (row.role !== 'finding') continue;
+    const observation = observationsByUnit.get(row.unitId);
+    if (observation === undefined) continue;
+    const stratum = `${observation.language}\0${byteBucket(observation.byteCount)}`;
+    const remainingControls = controlsByStratum.get(stratum) ?? 0;
+    if (remainingControls > 0) {
+      controlsByStratum.set(stratum, remainingControls - 1);
+    } else {
+      unmatched.push(observation);
+    }
+  }
+  return unmatched;
+}
+
+interface RuleSelection {
+  readonly rows: readonly SelectedRow[];
+  readonly matchedStrataRequested: number;
+  readonly matchedStrataSelected: number;
+}
+
 function selectedRowsForRule(
   decision: CAL002QualityLaneDecision,
   observations: readonly CAL002QualityObservation[],
+  observationsByUnit: ReadonlyMap<string, CAL002QualityObservation>,
+  priorRows: readonly CAL002QualityAssignmentRow[],
   requestedByRole: Readonly<Record<CAL002QualityRole, number>>,
   usedUnits: Set<string>,
-): readonly SelectedRow[] {
+): RuleSelection {
   const findings = observations.filter((observation) => relevantFinding(observation, decision.ruleId) !== undefined);
   const controls = observations.filter((observation) => relevantFinding(observation, decision.ruleId) === undefined);
-  const selectedFindings = selectFindings(decision.ruleId, findings, requestedByRole.finding, usedUnits);
-  const selectedControls = selectControls(
+  const selectedFindings = selectFindings(
+    decision.ruleId,
+    findings,
+    requestedByRole.finding,
+    usedUnits,
+    familiesForRole(priorRows, 'finding', observationsByUnit),
+  );
+  const controlSelection = selectControls(
     decision.ruleId,
     controls,
     requestedByRole.control,
-    selectedFindings,
+    [...unmatchedPriorFindings(priorRows, observationsByUnit), ...selectedFindings],
     usedUnits,
+    familiesForRole(priorRows, 'control', observationsByUnit),
   );
-  return [
+  const rows = [
     ...selectedFindings.map((observation): SelectedRow => ({
       ruleId: decision.ruleId,
       evidenceClass: decision.evidenceClass,
       role: 'finding',
       unitId: observation.unitId,
     })),
-    ...selectedControls.map((observation): SelectedRow => ({
+    ...controlSelection.selected.map((observation): SelectedRow => ({
       ruleId: decision.ruleId,
       evidenceClass: decision.evidenceClass,
       role: 'control',
       unitId: observation.unitId,
     })),
   ];
+  return {
+    rows,
+    matchedStrataRequested: controlSelection.requiredMatches,
+    matchedStrataSelected: controlSelection.selected.length,
+  };
+}
+
+function validatePriorAssignmentIntegrity(
+  prior: CAL002QualityAssignment,
+  catalogSha256: string,
+): void {
+  const priorValidation = validateCAL002Assignment(prior);
+  if (!priorValidation.ok) {
+    throw new TypeError(`Final quality prior assignment is invalid: ${priorValidation.errors.join('; ')}`);
+  }
+  if (prior.round !== 'initial' || prior.targetPerArm !== 30) {
+    throw new TypeError('Final quality prior assignment must be an initial 30-per-arm assignment');
+  }
+  if (prior.catalogSha256 !== catalogSha256) {
+    throw new TypeError('Final quality prior assignment catalog hash does not match');
+  }
+
+  const selectedWithoutReviewIds = prior.rows.map(({ reviewId: _reviewId, ...row }) => row);
+  const expectedSelectionManifestSha256 = canonicalArtifact(selectedWithoutReviewIds).sha256;
+  if (prior.selectionManifestSha256 !== expectedSelectionManifestSha256) {
+    throw new TypeError('Final quality prior selection manifest hash does not match its rows');
+  }
+
+  const seenRuleUnits = new Set<string>();
+  const counts = new Map<string, number>();
+  for (const row of prior.rows) {
+    const ruleUnit = `${row.ruleId}\0${row.unitId}`;
+    if (seenRuleUnits.has(ruleUnit)) {
+      throw new TypeError(`Final quality prior assignment has duplicate rule/unit ${row.ruleId} ${row.unitId}`);
+    }
+    seenRuleUnits.add(ruleUnit);
+    const expectedReviewId = reviewId(expectedSelectionManifestSha256, row.ruleId, row.unitId);
+    if (row.reviewId !== expectedReviewId) {
+      throw new TypeError(`Final quality prior review ID does not match ${row.ruleId} ${row.unitId}`);
+    }
+    const arm = `${row.ruleId}\0${row.role}`;
+    const count = (counts.get(arm) ?? 0) + 1;
+    if (count > 30) {
+      throw new TypeError(`Final quality prior assignment exceeds the initial 30-per-arm ceiling for ${row.ruleId}`);
+    }
+    counts.set(arm, count);
+  }
+
+  const blindedByReviewId = new Map(prior.blindedRows.map((row) => [row.reviewId, row]));
+  if (blindedByReviewId.size !== prior.rows.length || prior.blindedRows.length !== prior.rows.length) {
+    throw new TypeError('Final quality prior blinded rows do not correspond one-to-one with assignment rows');
+  }
+  for (const row of prior.rows) {
+    const blinded = blindedByReviewId.get(row.reviewId);
+    if (
+      blinded === undefined
+      || blinded.ruleId !== row.ruleId
+      || blinded.evidenceClass !== row.evidenceClass
+    ) {
+      throw new TypeError(`Final quality prior blinded row does not match review ID ${row.reviewId}`);
+    }
+  }
+
+  if (prior.blindedBatchSha256 !== canonicalArtifact(prior.blindedRows).sha256) {
+    throw new TypeError('Final quality prior blinded batch hash does not match its rows');
+  }
+  const { assignmentSha256: _assignmentSha256, ...withoutSelfHash } = prior;
+  if (prior.assignmentSha256 !== canonicalArtifact(withoutSelfHash).sha256) {
+    throw new TypeError('Final quality prior assignment hash does not match its artifact');
+  }
 }
 
 function finalRuleIds(
@@ -389,14 +537,7 @@ function finalRuleIds(
     return [...decisions.keys()].sort(compareCodePoints);
   }
   if (input.priorAssignment === undefined) throw new TypeError('Final quality assignment requires a prior assignment');
-  const priorValidation = validateCAL002Assignment(input.priorAssignment);
-  if (!priorValidation.ok) {
-    throw new TypeError(`Final quality prior assignment is invalid: ${priorValidation.errors.join('; ')}`);
-  }
-  if (input.priorAssignment.round !== 'initial') throw new TypeError('Final quality prior assignment must be initial');
-  if (input.priorAssignment.catalogSha256 !== input.catalogSha256) {
-    throw new TypeError('Final quality prior assignment catalog hash does not match');
-  }
+  validatePriorAssignmentIntegrity(input.priorAssignment, input.catalogSha256);
   if (!Array.isArray(input.expansionRuleIds)) throw new TypeError('Final quality assignment requires expansion rule IDs');
   const ids = new Set<string>();
   for (const ruleId of input.expansionRuleIds) {
@@ -425,23 +566,36 @@ export function buildCAL002QualityAssignment(
   const ruleIds = finalRuleIds(input, decisions);
   const targetPerArm = input.round === 'initial' ? 30 as const : 100 as const;
   const countsBefore = priorCounts(input.priorAssignment);
-  const usedUnits = new Set(input.priorAssignment?.rows.map((row) => row.unitId) ?? []);
+  const usedUnitsByRule = new Map<string, Set<string>>();
+  for (const row of input.priorAssignment?.rows ?? []) {
+    const usedUnits = usedUnitsByRule.get(row.ruleId) ?? new Set<string>();
+    usedUnits.add(row.unitId);
+    usedUnitsByRule.set(row.ruleId, usedUnits);
+  }
   const selected: SelectedRow[] = [];
+  const selectionByRule = new Map<string, RuleSelection>();
 
   for (const ruleId of ruleIds) {
     const prior = countsBefore.get(ruleId) ?? { finding: 0, control: 0 };
     if (prior.finding > targetPerArm || prior.control > targetPerArm) {
       throw new TypeError(`Prior quality assignment exceeds the ${targetPerArm}/${targetPerArm} cap for ${ruleId}`);
     }
-    selected.push(...selectedRowsForRule(
+    const priorRows = priorRowsForRule(input.priorAssignment, ruleId);
+    const usedUnits = usedUnitsByRule.get(ruleId) ?? new Set<string>();
+    usedUnitsByRule.set(ruleId, usedUnits);
+    const ruleSelection = selectedRowsForRule(
       decisions.get(ruleId)!,
       observations,
+      observationsByUnit,
+      priorRows,
       {
         finding: targetPerArm - prior.finding,
         control: targetPerArm - prior.control,
       },
       usedUnits,
-    ));
+    );
+    selectionByRule.set(ruleId, ruleSelection);
+    selected.push(...ruleSelection.rows);
   }
   selected.sort(compareSelectedRows);
 
@@ -452,13 +606,16 @@ export function buildCAL002QualityAssignment(
   }));
   const blindedRows = rows.map((row): CAL002QualityBlindedRow => {
     const observation = observationsByUnit.get(row.unitId)!;
-    const finding = row.role === 'finding' ? relevantFinding(observation, row.ruleId) : undefined;
     return {
       reviewId: row.reviewId,
       ruleId: row.ruleId,
       evidenceClass: row.evidenceClass,
       sourceIdentitySha256: observation.contentSha256,
-      lineWindowLocator: `line:${finding?.line ?? 1}:column:${finding?.column ?? 1}`,
+      lineWindowLocator: lineWindowLocator(
+        selectionManifestSha256,
+        row.reviewId,
+        observation.contentSha256,
+      ),
     };
   }).sort((left, right) =>
     compareCodePoints(
@@ -487,20 +644,53 @@ export function buildCAL002QualityAssignment(
   const shortages: CAL002QualityShortage[] = [];
   for (const ruleId of ruleIds) {
     const prior = countsBefore.get(ruleId) ?? { finding: 0, control: 0 };
+    const priorRows = priorRowsForRule(input.priorAssignment, ruleId);
+    const selectedForRule = selected.filter((row) => row.ruleId === ruleId);
     for (const role of ['control', 'finding'] as const) {
-      const selectedCount = selected.filter((row) => row.ruleId === ruleId && row.role === role).length;
+      const selectedCount = selectedForRule.filter((row) => row.role === role).length;
       const cumulative = prior[role] + selectedCount;
       if (cumulative < targetPerArm) {
         shortages.push({
           ruleId,
           role,
+          reason: 'count',
           requested: targetPerArm,
           selected: cumulative,
           missing: targetPerArm - cumulative,
         });
       }
+      const familyCount = familiesForRole(
+        [...priorRows, ...selectedForRule],
+        role,
+        observationsByUnit,
+      ).size;
+      if (familyCount < FAMILY_REACH_TARGET) {
+        shortages.push({
+          ruleId,
+          role,
+          reason: 'family-reach',
+          requested: FAMILY_REACH_TARGET,
+          selected: familyCount,
+          missing: FAMILY_REACH_TARGET - familyCount,
+        });
+      }
+    }
+    const ruleSelection = selectionByRule.get(ruleId)!;
+    if (ruleSelection.matchedStrataSelected < ruleSelection.matchedStrataRequested) {
+      shortages.push({
+        ruleId,
+        role: 'control',
+        reason: 'matched-strata',
+        requested: ruleSelection.matchedStrataRequested,
+        selected: ruleSelection.matchedStrataSelected,
+        missing: ruleSelection.matchedStrataRequested - ruleSelection.matchedStrataSelected,
+      });
     }
   }
+  shortages.sort((left, right) =>
+    compareCodePoints(left.ruleId, right.ruleId)
+    || compareCodePoints(left.role, right.role)
+    || compareCodePoints(left.reason, right.reason));
   const assignmentArtifact = canonicalArtifact(assignment);
   return {
     assignment,

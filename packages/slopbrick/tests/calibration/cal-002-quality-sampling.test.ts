@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCAL002QualityAssignment,
   scanCAL002QualitySourceCandidates,
+  type CAL002QualityAssignment,
+  type CAL002QualityAssignmentRow,
   type CAL002QualityLaneDecision,
   type CAL002QualityObservation,
 } from '../../src/calibration/cal-002/quality-sampling';
@@ -94,6 +96,47 @@ function reverseObservationInput(observations: readonly CAL002QualityObservation
   }));
 }
 
+function resealAssignment(assignment: CAL002QualityAssignment): CAL002QualityAssignment {
+  const { assignmentSha256: _assignmentSha256, ...withoutSelfHash } = assignment;
+  return {
+    ...withoutSelfHash,
+    assignmentSha256: canonicalArtifact(withoutSelfHash).sha256,
+  };
+}
+
+function resealPriorRows(
+  assignment: CAL002QualityAssignment,
+  selectedRows: readonly Omit<CAL002QualityAssignmentRow, 'reviewId'>[],
+): CAL002QualityAssignment {
+  const selectionManifestSha256 = canonicalArtifact(selectedRows).sha256;
+  const priorBlindedByReviewId = new Map(
+    assignment.blindedRows.map((row) => [row.reviewId, row]),
+  );
+  const rows = selectedRows.map((row): CAL002QualityAssignmentRow => ({
+    reviewId: sha256(`CAL-002-v1\0${selectionManifestSha256}\0${row.ruleId}\0${row.unitId}`),
+    ...row,
+  }));
+  const blindedRows = rows.map((row) => {
+    const priorRow = assignment.rows.find((candidate) =>
+      candidate.ruleId === row.ruleId && candidate.unitId === row.unitId)!;
+    return {
+      ...priorBlindedByReviewId.get(priorRow.reviewId)!,
+      reviewId: row.reviewId,
+    };
+  }).sort((left, right) => {
+    const leftKey = sha256(`CAL-002-v1\0presentation\0${selectionManifestSha256}\0${left.reviewId}`);
+    const rightKey = sha256(`CAL-002-v1\0presentation\0${selectionManifestSha256}\0${right.reviewId}`);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : left.reviewId.localeCompare(right.reviewId);
+  });
+  return resealAssignment({
+    ...assignment,
+    selectionManifestSha256,
+    blindedBatchSha256: canonicalArtifact(blindedRows).sha256,
+    rows,
+    blindedRows,
+  });
+}
+
 describe('CAL-002 blinded quality sampling', () => {
   it('selects deterministic 30/30 initial batches with family reach and matched language/size strata', () => {
     const laneDecisions = [
@@ -158,7 +201,44 @@ describe('CAL-002 blinded quality sampling', () => {
     expect(final.shortages).toEqual([]);
   });
 
-  it('rejects a malformed prior assignment before cumulative selection', () => {
+  it('allows shared observations across rules while preserving per-rule arm uniqueness', () => {
+    const observations = observationsForRule(CONTEXTUAL_RULE, 30, 'typescript', 'shared')
+      .map((observation) => observation.findings.length === 0
+        ? observation
+        : {
+            ...observation,
+            findings: [
+              ...observation.findings,
+              {
+                ruleId: STATISTICAL_RULE,
+                line: observation.findings[0]!.line + 100,
+                column: observation.findings[0]!.column,
+                messageSha256: sha256(`message:${STATISTICAL_RULE}:${observation.unitId}`),
+              },
+            ],
+          });
+    const result = buildCAL002QualityAssignment(buildInput(observations, [
+      laneDecision(CONTEXTUAL_RULE, 'contextual-quality'),
+      laneDecision(STATISTICAL_RULE, 'statistical-review-utility'),
+    ]));
+
+    expect(result.shortages).toEqual([]);
+    for (const ruleId of [CONTEXTUAL_RULE, STATISTICAL_RULE]) {
+      const rows = result.assignment.rows.filter((row) => row.ruleId === ruleId);
+      expect(rows.filter((row) => row.role === 'finding')).toHaveLength(30);
+      expect(rows.filter((row) => row.role === 'control')).toHaveLength(30);
+      expect(new Set(rows.map((row) => row.unitId)).size).toBe(60);
+    }
+    const contextualUnits = new Set(result.assignment.rows
+      .filter((row) => row.ruleId === CONTEXTUAL_RULE)
+      .map((row) => row.unitId));
+    const statisticalUnits = new Set(result.assignment.rows
+      .filter((row) => row.ruleId === STATISTICAL_RULE)
+      .map((row) => row.unitId));
+    expect(statisticalUnits).toEqual(contextualUnits);
+  });
+
+  it('rejects a duplicate prior rule/unit before cumulative selection', () => {
     const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
     const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-contract');
     const initial = buildCAL002QualityAssignment(buildInput(observations, decisions));
@@ -182,6 +262,96 @@ describe('CAL-002 blinded quality sampling', () => {
     })).toThrow(/prior assignment.*duplicate/i);
   });
 
+  it.each([
+    {
+      name: 'selection manifest hash',
+      tamper: (assignment: CAL002QualityAssignment): CAL002QualityAssignment => resealAssignment({
+        ...assignment,
+        selectionManifestSha256: 'b'.repeat(64),
+      }),
+      error: /selection manifest hash/i,
+    },
+    {
+      name: 'blinded batch hash',
+      tamper: (assignment: CAL002QualityAssignment): CAL002QualityAssignment => resealAssignment({
+        ...assignment,
+        blindedBatchSha256: 'b'.repeat(64),
+      }),
+      error: /blinded batch hash/i,
+    },
+    {
+      name: 'assignment hash',
+      tamper: (assignment: CAL002QualityAssignment): CAL002QualityAssignment => ({
+        ...assignment,
+        assignmentSha256: 'b'.repeat(64),
+      }),
+      error: /assignment hash/i,
+    },
+  ])('rejects a stale prior $name', ({ tamper, error }) => {
+    const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
+    const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-hash');
+    const initial = buildCAL002QualityAssignment(buildInput(observations, decisions));
+
+    expect(() => buildCAL002QualityAssignment({
+      ...buildInput(observations, decisions),
+      assignmentId: 'cal-002-quality-final-stale-prior',
+      round: 'final',
+      expansionRuleIds: [CONTEXTUAL_RULE],
+      priorAssignment: tamper(initial.assignment),
+    })).toThrow(error);
+  });
+
+  it('rejects prior review-ID drift even when dependent hashes are resealed', () => {
+    const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
+    const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-review-id');
+    const initial = buildCAL002QualityAssignment(buildInput(observations, decisions));
+    const driftedReviewId = sha256('drifted-prior-review-id');
+    const originalReviewId = initial.assignment.rows[0]!.reviewId;
+    const rows = initial.assignment.rows.map((row) => row.reviewId === originalReviewId
+      ? { ...row, reviewId: driftedReviewId }
+      : row);
+    const blindedRows = initial.assignment.blindedRows.map((row) => row.reviewId === originalReviewId
+      ? { ...row, reviewId: driftedReviewId }
+      : row);
+    const priorAssignment = resealAssignment({
+      ...initial.assignment,
+      rows,
+      blindedRows,
+      blindedBatchSha256: canonicalArtifact(blindedRows).sha256,
+    });
+
+    expect(() => buildCAL002QualityAssignment({
+      ...buildInput(observations, decisions),
+      assignmentId: 'cal-002-quality-final-review-id-drift',
+      round: 'final',
+      expansionRuleIds: [CONTEXTUAL_RULE],
+      priorAssignment,
+    })).toThrow(/prior review ID/i);
+  });
+
+  it('rejects a resealed prior assignment above the initial 30-per-arm ceiling', () => {
+    const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
+    const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-ceiling');
+    const initial = buildCAL002QualityAssignment(buildInput(observations, decisions));
+    let changedRole = false;
+    const selectedRows = initial.assignment.rows.map(({ reviewId: _reviewId, ...row }) => {
+      if (!changedRole && row.role === 'control') {
+        changedRole = true;
+        return { ...row, role: 'finding' as const };
+      }
+      return row;
+    });
+    const priorAssignment = resealPriorRows(initial.assignment, selectedRows);
+
+    expect(() => buildCAL002QualityAssignment({
+      ...buildInput(observations, decisions),
+      assignmentId: 'cal-002-quality-final-prior-ceiling',
+      round: 'final',
+      expansionRuleIds: [CONTEXTUAL_RULE],
+      priorAssignment,
+    })).toThrow(/initial 30-per-arm ceiling/i);
+  });
+
   it('records deterministic shortages instead of duplicating units', () => {
     const observations = observationsForRule(CONTEXTUAL_RULE, 6, 'typescript', 'shortage')
       .filter((_, index) => index < 10);
@@ -193,10 +363,34 @@ describe('CAL-002 blinded quality sampling', () => {
     expect(result.assignment.rows.filter((row) => row.role === 'finding')).toHaveLength(5);
     expect(result.assignment.rows.filter((row) => row.role === 'control')).toHaveLength(5);
     expect(result.shortages).toEqual([
-      { ruleId: CONTEXTUAL_RULE, role: 'control', requested: 30, selected: 5, missing: 25 },
-      { ruleId: CONTEXTUAL_RULE, role: 'finding', requested: 30, selected: 5, missing: 25 },
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'count', requested: 30, selected: 5, missing: 25 },
+      { ruleId: CONTEXTUAL_RULE, role: 'finding', reason: 'count', requested: 30, selected: 5, missing: 25 },
     ]);
     expect(new Set(result.assignment.rows.map((row) => row.unitId)).size).toBe(result.assignment.rows.length);
+  });
+
+  it('rejects wrong-bucket controls and reports count, family, and matched-strata shortages', () => {
+    const observations = observationsForRule(CONTEXTUAL_RULE, 30, 'typescript', 'constraints')
+      .map((observation, index) => ({
+        ...observation,
+        familyId: `constraints-family-${Math.floor(index / 2) % 4}`,
+        byteCount: observation.findings.length === 0
+          ? 2 ** (byteBucket(observation.byteCount) + 4)
+          : observation.byteCount,
+      }));
+    const result = buildCAL002QualityAssignment(buildInput(
+      observations,
+      [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')],
+    ));
+
+    expect(result.assignment.rows.filter((row) => row.role === 'finding')).toHaveLength(30);
+    expect(result.assignment.rows.filter((row) => row.role === 'control')).toHaveLength(0);
+    expect(result.shortages).toEqual([
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'count', requested: 30, selected: 0, missing: 30 },
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'family-reach', requested: 5, selected: 0, missing: 5 },
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'matched-strata', requested: 30, selected: 0, missing: 30 },
+      { ruleId: CONTEXTUAL_RULE, role: 'finding', reason: 'family-reach', requested: 5, selected: 4, missing: 1 },
+    ]);
   });
 
   it('hashes a review-id-free selection manifest and exposes a role-free presentation batch', () => {
@@ -217,6 +411,10 @@ describe('CAL-002 blinded quality sampling', () => {
     expect(presentationKeys).toEqual([...presentationKeys].sort());
     expect(result.blindedBatch).toEqual(result.assignment.blindedRows);
     expect(JSON.stringify(result.blindedBatch)).not.toMatch(/finding|control|role|sourceLabel|repository|rawSource|\/Users\//iu);
+    expect(JSON.stringify(result.blindedBatch)).not.toMatch(/line:\d+|column:\d+/iu);
+    for (const row of result.blindedBatch) {
+      expect(row.lineWindowLocator).toMatch(/^window:[a-f0-9]{64}$/u);
+    }
     expect(result.blindedBatchSha256).toBe(canonicalArtifact(result.blindedBatch).sha256);
 
     const withPath = [{ ...observations[0]!, path: '/Users/cheng/private.ts' }, ...observations.slice(1)];
