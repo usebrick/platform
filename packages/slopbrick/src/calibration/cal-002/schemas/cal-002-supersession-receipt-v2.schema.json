@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-supersession-receipt-v2.schema.json",
+  "title": "CAL-002 Supersession Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "authorityReceiptSha256",
+    "rows",
+    "admitted"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-supersession-receipt-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "rows": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "prefixItems": [
+        { "$ref": "#/$defs/sqlRow" },
+        { "$ref": "#/$defs/anyRow" },
+        { "$ref": "#/$defs/consoleRow" }
+      ],
+      "items": false
+    },
+    "admitted": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "replacementRuleId",
+        "parityReceiptSha256",
+        "migrationCommitSha",
+        "uniqueCoverageDisposition"
+      ],
+      "properties": {
+        "ruleId": {
+          "enum": [
+            "db/sql-concat",
+            "logic/math-any-density",
+            "logic/math-console-log-storm"
+          ]
+        },
+        "replacementRuleId": {
+          "enum": [
+            "security/sql-construction",
+            "ai/any-density",
+            "ai/console-debug-storm"
+          ]
+        },
+        "parityReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "migrationCommitSha": { "$ref": "#/$defs/commit" },
+        "uniqueCoverageDisposition": {
+          "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+        }
+      }
+    },
+    "sqlRow": {
+      "type": "object",
+      "$ref": "#/$defs/row",
+      "properties": {
+        "ruleId": { "const": "db/sql-concat" },
+        "replacementRuleId": { "const": "security/sql-construction" },
+        "uniqueCoverageDisposition": { "const": "ported" }
+      }
+    },
+    "anyRow": {
+      "type": "object",
+      "$ref": "#/$defs/row",
+      "properties": {
+        "ruleId": { "const": "logic/math-any-density" },
+        "replacementRuleId": { "const": "ai/any-density" },
+        "uniqueCoverageDisposition": { "const": "rejected-as-false-positive" }
+      }
+    },
+    "consoleRow": {
+      "type": "object",
+      "$ref": "#/$defs/row",
+      "properties": {
+        "ruleId": { "const": "logic/math-console-log-storm" },
+        "replacementRuleId": { "const": "ai/console-debug-storm" },
+        "uniqueCoverageDisposition": { "const": "ported" }
+      }
+    }
+  }
+}

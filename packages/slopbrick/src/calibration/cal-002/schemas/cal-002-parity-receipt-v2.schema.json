@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-parity-receipt-v2.schema.json",
+  "title": "CAL-002 Parity Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "authorityReceiptSha256",
+    "ruleId",
+    "replacementRuleId",
+    "migrationCommitSha",
+    "uniqueCoverageDisposition",
+    "reasonCode",
+    "caseResults",
+    "status",
+    "admitted"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-parity-receipt-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "ruleId": {
+      "enum": [
+        "db/sql-concat",
+        "logic/math-any-density",
+        "logic/math-console-log-storm"
+      ]
+    },
+    "replacementRuleId": {
+      "enum": [
+        "security/sql-construction",
+        "ai/any-density",
+        "ai/console-debug-storm"
+      ]
+    },
+    "migrationCommitSha": { "$ref": "#/$defs/commit" },
+    "uniqueCoverageDisposition": {
+      "enum": ["ported", "rejected-as-false-positive", "split-to-new-rule"]
+    },
+    "splitRuleId": { "$ref": "#/$defs/ruleId" },
+    "reasonCode": {
+      "enum": [
+        "with-query-coverage-ported",
+        "line-denominator-not-type-bearing",
+        "window-clustering-ported-with-guards"
+      ]
+    },
+    "caseResults": { "type": "array" },
+    "status": { "const": "passed" },
+    "admitted": { "const": false }
+  },
+  "not": {
+    "type": "object",
+    "properties": { "splitRuleId": true },
+    "required": ["splitRuleId"]
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "ruleId": { "const": "db/sql-concat" },
+        "replacementRuleId": { "const": "security/sql-construction" },
+        "uniqueCoverageDisposition": { "const": "ported" },
+        "reasonCode": { "const": "with-query-coverage-ported" },
+        "caseResults": { "$ref": "#/$defs/sqlCases" }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ruleId": { "const": "logic/math-any-density" },
+        "replacementRuleId": { "const": "ai/any-density" },
+        "uniqueCoverageDisposition": { "const": "rejected-as-false-positive" },
+        "reasonCode": { "const": "line-denominator-not-type-bearing" },
+        "caseResults": { "$ref": "#/$defs/anyCases" }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "ruleId": { "const": "logic/math-console-log-storm" },
+        "replacementRuleId": { "const": "ai/console-debug-storm" },
+        "uniqueCoverageDisposition": { "const": "ported" },
+        "reasonCode": { "const": "window-clustering-ported-with-guards" },
+        "caseResults": { "$ref": "#/$defs/consoleCases" }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "sourceSha256",
+        "expectedReplacementObservation",
+        "observedReplacementObservation"
+      ],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "expectedReplacementObservation": { "enum": ["finding", "no-finding"] },
+        "observedReplacementObservation": { "enum": ["finding", "no-finding"] }
+      }
+    },
+    "sqlGuardedCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "guarded-non-query-concatenation" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "sqlPositiveCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "positive-with-query-concatenation" },
+        "expectedReplacementObservation": { "const": "finding" },
+        "observedReplacementObservation": { "const": "finding" }
+      }
+    },
+    "anyGuardedCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "guarded-non-type-bearing-any" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "anyPositiveCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "positive-type-bearing-any" },
+        "expectedReplacementObservation": { "const": "finding" },
+        "observedReplacementObservation": { "const": "finding" }
+      }
+    },
+    "consoleGuardedCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "guarded-isolated-console-call" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "consolePositiveCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "positive-clustered-console-window" },
+        "expectedReplacementObservation": { "const": "finding" },
+        "observedReplacementObservation": { "const": "finding" }
+      }
+    },
+    "sqlCases": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        { "$ref": "#/$defs/sqlGuardedCase" },
+        { "$ref": "#/$defs/sqlPositiveCase" }
+      ],
+      "items": false
+    },
+    "anyCases": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        { "$ref": "#/$defs/anyGuardedCase" },
+        { "$ref": "#/$defs/anyPositiveCase" }
+      ],
+      "items": false
+    },
+    "consoleCases": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        { "$ref": "#/$defs/consoleGuardedCase" },
+        { "$ref": "#/$defs/consolePositiveCase" }
+      ],
+      "items": false
+    }
+  }
+}
