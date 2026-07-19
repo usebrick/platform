@@ -141,7 +141,8 @@ scope fails the class even when the underlying concern is real.
 - `project-contract-required` — a repository-level index or declared contract
   is required before the claim can be evaluated;
 - `parity-required` — a replacement exists, but supersession is incomplete;
-  and
+- `research-only` — retained only for non-admitting origin analysis and never
+  eligible for quality evidence; and
 - `obsolete` — the current rule cannot enter current quality evidence.
 
 Only `evidence-ready` rows may generate deterministic or blinded quality
