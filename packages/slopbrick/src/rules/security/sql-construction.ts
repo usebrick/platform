@@ -36,13 +36,121 @@ import { lineOfSource } from '../utils';
 // become findings.
 const DIRECT_SQL_START_RE =
   /^(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b|REPLACE\s+INTO\b|TRUNCATE(?:\s+TABLE)?\s+\S+\b|MERGE\s+INTO\b)/i;
-const CTE_SQL_START_RE =
-  /^WITH\b[\s\S]*?\)\s*(?:,\s*[A-Za-z_][\w$]*\s+AS\s*\([\s\S]*?\)\s*)*(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b)/i;
+const CTE_TERMINAL_SQL_START_RE =
+  /^(?:SELECT\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b)/i;
+const SQL_IDENTIFIER_START_RE = /[A-Za-z_]/u;
+const SQL_IDENTIFIER_PART_RE = /[A-Za-z0-9_$]/u;
+
+function isSqlIdentifierPart(value: string | undefined): boolean {
+  return value !== undefined && SQL_IDENTIFIER_PART_RE.test(value);
+}
+
+function hasSqlKeywordAt(source: string, index: number, keyword: string): boolean {
+  return source.slice(index, index + keyword.length).toUpperCase() === keyword
+    && !isSqlIdentifierPart(source[index - 1])
+    && !isSqlIdentifierPart(source[index + keyword.length]);
+}
+
+function skipSqlWhitespace(source: string, start: number): number {
+  let index = start;
+  while (index < source.length && /\s/u.test(source[index]!)) index += 1;
+  return index;
+}
+
+function sqlIdentifierEnd(source: string, start: number): number {
+  if (!SQL_IDENTIFIER_START_RE.test(source[start] ?? '')) return -1;
+  let index = start + 1;
+  while (index < source.length && isSqlIdentifierPart(source[index])) index += 1;
+  return index;
+}
+
+function matchingSqlParen(source: string, openIndex: number): number {
+  if (source[openIndex] !== '(') return -1;
+  let depth = 0;
+  for (let index = openIndex; index < source.length; index += 1) {
+    const character = source[index]!;
+    const next = source[index + 1];
+
+    if (character === "'" || character === '"') {
+      const quote = character;
+      for (index += 1; index < source.length; index += 1) {
+        if (source[index] === '\\') {
+          index += 1;
+          continue;
+        }
+        if (source[index] !== quote) continue;
+        if (source[index + 1] === quote) {
+          index += 1;
+          continue;
+        }
+        break;
+      }
+      continue;
+    }
+    if (character === '-' && next === '-') {
+      const newline = source.indexOf('\n', index + 2);
+      if (newline < 0) return -1;
+      index = newline;
+      continue;
+    }
+    if (character === '/' && next === '*') {
+      const close = source.indexOf('*/', index + 2);
+      if (close < 0) return -1;
+      index = close + 1;
+      continue;
+    }
+    if (character === '(') depth += 1;
+    if (character !== ')') continue;
+    depth -= 1;
+    if (depth === 0) return index;
+  }
+  return -1;
+}
+
+function startsCteSqlStatement(source: string): boolean {
+  let index = skipSqlWhitespace(source, 0);
+  if (!hasSqlKeywordAt(source, index, 'WITH')) return false;
+  index = skipSqlWhitespace(source, index + 'WITH'.length);
+  if (hasSqlKeywordAt(source, index, 'RECURSIVE')) {
+    index = skipSqlWhitespace(source, index + 'RECURSIVE'.length);
+  }
+
+  while (index < source.length) {
+    const identifierEnd = sqlIdentifierEnd(source, index);
+    if (identifierEnd < 0) return false;
+    index = skipSqlWhitespace(source, identifierEnd);
+
+    if (source[index] === '(') {
+      const columnListEnd = matchingSqlParen(source, index);
+      if (columnListEnd < 0) return false;
+      index = skipSqlWhitespace(source, columnListEnd + 1);
+    }
+    if (!hasSqlKeywordAt(source, index, 'AS')) return false;
+    index = skipSqlWhitespace(source, index + 'AS'.length);
+
+    if (hasSqlKeywordAt(source, index, 'NOT')) {
+      index = skipSqlWhitespace(source, index + 'NOT'.length);
+      if (!hasSqlKeywordAt(source, index, 'MATERIALIZED')) return false;
+      index = skipSqlWhitespace(source, index + 'MATERIALIZED'.length);
+    } else if (hasSqlKeywordAt(source, index, 'MATERIALIZED')) {
+      index = skipSqlWhitespace(source, index + 'MATERIALIZED'.length);
+    }
+
+    const queryEnd = matchingSqlParen(source, index);
+    if (queryEnd < 0) return false;
+    index = skipSqlWhitespace(source, queryEnd + 1);
+    if (source[index] !== ',') {
+      return CTE_TERMINAL_SQL_START_RE.test(source.slice(index));
+    }
+    index = skipSqlWhitespace(source, index + 1);
+  }
+  return false;
+}
 
 function startsSqlStatement(content: string): boolean {
   const withoutLeadingComments = content.replace(/^\s*(?:--[^\n]*\n\s*)*/u, '');
   return DIRECT_SQL_START_RE.test(withoutLeadingComments)
-    || CTE_SQL_START_RE.test(withoutLeadingComments);
+    || startsCteSqlStatement(withoutLeadingComments);
 }
 
 // Match template-literal interpolation `${...}` inside a string.

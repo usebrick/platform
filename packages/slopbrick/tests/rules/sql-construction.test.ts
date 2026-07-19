@@ -64,6 +64,33 @@ describe('security/sql-construction', () => {
     )).toEqual([]);
   });
 
+  it('ports CTE terminal SELECT without FROM plus INSERT, UPDATE, and DELETE', async () => {
+    const source = [
+      'const selected = `WITH seed AS (VALUES (1)) SELECT ${value}`;',
+      'const inserted = `WITH seed AS (SELECT 1) INSERT INTO audit VALUES (${value})`;',
+      'const updated = `WITH seed AS (SELECT 1) UPDATE users SET name = ${name}`;',
+      'const deleted = `WITH seed AS (SELECT 1) DELETE FROM users WHERE id = ${id}`;',
+      'const multiple = `WITH first AS (SELECT 1), second AS (SELECT 2) SELECT ${value}`;',
+    ].join('\n');
+
+    expect((await runRule(source)).map((issue) => issue.ruleId)).toEqual(
+      Array.from({ length: 5 }, () => 'security/sql-construction'),
+    );
+  });
+
+  it('does not treat CTE-shaped prose or a long incomplete CTE chain as SQL', async () => {
+    const incompleteCtes = Array.from(
+      { length: 120 },
+      (_, index) => `item_${index} AS (SELECT ${index})`,
+    ).join(', ');
+    const source = [
+      'const prose = `With approval (${role}) select an option from the menu`;',
+      `const incomplete = \`WITH ${incompleteCtes} FINISH \${value}\`;`,
+    ].join('\n');
+
+    expect(await runRule(source)).toEqual([]);
+  });
+
   it('fires on string-concatenated SQL with +', async () => {
     const issues = await runRule(
       `const q = 'SELECT * FROM users WHERE id = ' + userId;`,
