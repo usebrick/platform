@@ -1,5 +1,6 @@
 /** Offline-only CAL-002 owner-review dispatcher. */
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
@@ -20,13 +21,26 @@ import {
   CAL002_PROTOCOL_VERSION,
   canonicalArtifact,
   validateCAL002Assignment,
+  validateCAL002Catalog,
   type CAL002Catalog,
   type CAL002ReviewLabel,
 } from '../../src/calibration/cal-002/contracts';
 import {
+  buildCAL002ApplicationReceipt,
+  buildCAL002MatrixApproval,
+  buildCAL002PolicyArtifact,
+  type CAL002MatrixApproval,
+  type CAL002FinalMatrix,
+  type SlopbrickRuleEvidencePolicy,
+} from '../../src/calibration/cal-002/application';
+import { buildCAL002FinalMatrix } from '../../src/calibration/cal-002/matrix';
+import {
   resolveCAL002OriginDecisions,
   type CAL002OriginDecisionRow,
+  type CAL002OriginReceipt,
 } from '../../src/calibration/cal-002/origin';
+import type { CAL002OracleReceipt } from '../../src/calibration/cal-002/oracles';
+import type { CAL002QualityMetrics } from '../../src/calibration/cal-002/quality-metrics';
 import type {
   CAL002QualityAssignment,
   CAL002QualityBlindedRow,
@@ -79,7 +93,40 @@ interface OriginArguments {
   readonly out: string;
 }
 
-type Arguments = ReviewArguments | OriginArguments;
+interface MatrixArguments {
+  readonly command: 'matrix';
+  readonly root: string;
+  readonly catalog: string;
+  readonly laneDecisions: string;
+  readonly originReceipt: string;
+  readonly qualityMetrics: string;
+  readonly oracleReceipt: string;
+  readonly out: string;
+  readonly implementationCommitSha?: string;
+}
+
+interface ApproveMatrixArguments {
+  readonly command: 'approve-matrix';
+  readonly root: string;
+  readonly matrix: string;
+  readonly out: string;
+  readonly approvalCommitSha?: string;
+}
+
+interface ApplyArguments {
+  readonly command: 'apply';
+  readonly root: string;
+  readonly matrix: string;
+  readonly approval: string;
+  readonly out: string;
+  readonly destination?: string;
+  readonly receipt?: string;
+  readonly catalog?: string;
+  readonly implementationCommitSha?: string;
+  readonly dryRun: boolean;
+}
+
+type Arguments = ReviewArguments | OriginArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
 
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
@@ -197,17 +244,110 @@ function parseOriginArguments(tokens: readonly string[]): OriginArguments {
   };
 }
 
+function parseValuesAndFlags(
+  tokens: readonly string[],
+  command: string,
+  allowedValues: ReadonlySet<string>,
+  allowedFlags: ReadonlySet<string>,
+): { readonly values: ReadonlyMap<string, string>; readonly flags: ReadonlySet<string> } {
+  const values = new Map<string, string>();
+  const flags = new Set<string>();
+  for (let index = 0; index < tokens.length; index += 1) {
+    const option = tokens[index];
+    if (allowedFlags.has(option ?? '')) {
+      if (flags.has(option!)) throw new Error(`Duplicate CAL-002 option ${option}`);
+      flags.add(option!);
+      continue;
+    }
+    const value = tokens[index + 1];
+    if (!allowedValues.has(option ?? '')) throw new Error(`Unknown CAL-002 option ${option ?? '<missing>'}`);
+    if (value === undefined || value.startsWith('--')) throw new Error(`${option} requires one value`);
+    if (values.has(option!)) throw new Error(`Duplicate CAL-002 option ${option}`);
+    values.set(option!, value);
+    index += 1;
+  }
+  if (values.has('--dry-run') || flags.has('--dry-run') && !allowedFlags.has('--dry-run')) {
+    throw new Error(`${command} has an invalid dry-run option`);
+  }
+  return { values, flags };
+}
+
+function requiredValue(values: ReadonlyMap<string, string>, option: string, command: string): string {
+  const value = values.get(option);
+  if (value === undefined || value.length === 0) throw new Error(`${command} requires ${option}`);
+  return value;
+}
+
+function parseMatrixArguments(tokens: readonly string[]): MatrixArguments {
+  const { values } = parseValuesAndFlags(tokens, 'matrix', new Set([
+    '--root', '--catalog', '--lane-decisions', '--origin-receipt', '--quality-metrics', '--oracle-receipt',
+    '--out', '--implementation-commit-sha',
+  ]), new Set());
+  return {
+    command: 'matrix',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    catalog: requiredValue(values, '--catalog', 'matrix'),
+    laneDecisions: requiredValue(values, '--lane-decisions', 'matrix'),
+    originReceipt: requiredValue(values, '--origin-receipt', 'matrix'),
+    qualityMetrics: requiredValue(values, '--quality-metrics', 'matrix'),
+    oracleReceipt: requiredValue(values, '--oracle-receipt', 'matrix'),
+    out: requiredValue(values, '--out', 'matrix'),
+    implementationCommitSha: values.get('--implementation-commit-sha'),
+  };
+}
+
+function parseApproveMatrixArguments(tokens: readonly string[]): ApproveMatrixArguments {
+  const { values } = parseValuesAndFlags(tokens, 'approve-matrix', new Set([
+    '--root', '--matrix', '--out', '--approval-commit-sha',
+  ]), new Set());
+  return {
+    command: 'approve-matrix',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    matrix: requiredValue(values, '--matrix', 'approve-matrix'),
+    out: requiredValue(values, '--out', 'approve-matrix'),
+    approvalCommitSha: values.get('--approval-commit-sha'),
+  };
+}
+
+function parseApplyArguments(tokens: readonly string[]): ApplyArguments {
+  const { values, flags } = parseValuesAndFlags(tokens, 'apply', new Set([
+    '--root', '--catalog', '--matrix', '--approval', '--out', '--destination', '--receipt', '--receipt-out', '--implementation-commit-sha',
+  ]), new Set(['--dry-run']));
+  if (values.has('--receipt') && values.has('--receipt-out')) {
+    throw new Error('Use only one of --receipt or --receipt-out');
+  }
+  return {
+    command: 'apply',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    catalog: values.get('--catalog'),
+    matrix: requiredValue(values, '--matrix', 'apply'),
+    approval: requiredValue(values, '--approval', 'apply'),
+    out: requiredValue(values, '--out', 'apply'),
+    destination: values.get('--destination'),
+    receipt: values.get('--receipt-out') ?? values.get('--receipt'),
+    implementationCommitSha: values.get('--implementation-commit-sha'),
+    dryRun: flags.has('--dry-run'),
+  };
+}
+
 function parseArguments(argv: readonly string[]): Arguments {
   let first = 0;
   while (argv[first] === '--') first += 1;
   const [command, ...tokens] = argv.slice(first);
   if (command === 'review-quality') return parseReviewArguments(tokens);
   if (command === 'classify-origin') return parseOriginArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality or classify-origin with the required local artifact options');
+  if (command === 'matrix') return parseMatrixArguments(tokens);
+  if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
+  if (command === 'apply') return parseApplyArguments(tokens);
+  throw new Error('Usage: cal:complete review-quality, classify-origin, matrix, approve-matrix, or apply with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
   const supplied = args.implementationCommitSha ?? process.env[IMPLEMENTATION_SHA_ENV];
+  return resolveCommitSha(supplied, 'review-quality');
+}
+
+function resolveCommitSha(supplied: string | undefined, command: string): string {
   if (supplied !== undefined && supplied.length > 0) return supplied;
   try {
     return execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -216,7 +356,7 @@ function resolveImplementationCommitSha(args: ReviewArguments): string {
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
   } catch {
-    throw new Error(`review-quality requires --implementation-commit-sha, ${IMPLEMENTATION_SHA_ENV}, or a local git HEAD`);
+    throw new Error(`${command} requires --implementation-commit-sha, ${IMPLEMENTATION_SHA_ENV}, or a local git HEAD`);
   }
 }
 
@@ -410,29 +550,64 @@ async function writePrivateCanonical(root: string, relativePath: string, value: 
   }
 }
 
-async function writeImmutablePrivateCanonical(root: string, relativePath: string, value: unknown): Promise<void> {
+async function writeImmutablePrivateCanonical(
+  root: string,
+  relativePath: string,
+  value: unknown,
+  label = 'CAL-002 immutable artifact',
+): Promise<void> {
   const path = await privateWritePath(root, relativePath);
+  const name = basename(path);
+  const directory = dirname(path);
+  const lockPath = join(directory, '.' + name + '.lock');
   const bytes = canonicalArtifact(value).json;
-  let handle;
+  let lock;
   try {
-    handle = await open(path, 'wx', PRIVATE_FILE_MODE);
+    lock = await open(lockPath, 'wx', PRIVATE_FILE_MODE);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    const existing = await readPrivateCanonical(root, relativePath, 'CAL-002 origin decisions');
-    if (canonicalArtifact(existing).json === bytes) return;
-    throw new Error('A different CAL-002 origin decisions artifact already exists and is immutable');
-  }
-  try {
-    await handle.writeFile(bytes, 'utf8');
-    await handle.sync();
-  } catch (error) {
-    await handle.close().catch(() => undefined);
-    await unlink(path).catch(() => undefined);
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+      throw new Error(`${label} is locked by another writer`);
+    }
     throw error;
-  } finally {
-    await handle.close().catch(() => undefined);
   }
-  await syncPrivateDirectory(dirname(path));
+  try {
+    try {
+      const existing = await lstat(path);
+      if (existing.isSymbolicLink() || !existing.isFile()) {
+        throw new Error(`${label} path must be a regular file`);
+      }
+      if ((existing.mode & 0o777) !== PRIVATE_FILE_MODE) {
+        throw new Error(`${label} must have private mode 0600`);
+      }
+      const existingValue = await readPrivateCanonical(root, relativePath, label);
+      if (canonicalArtifact(existingValue).json === bytes) return;
+      throw new Error(`A different ${label} already exists and is immutable`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    const temporary = join(directory, '.' + name + '.' + process.pid + '.' + randomBytes(12).toString('hex') + '.tmp');
+    const handle = await open(temporary, 'wx', PRIVATE_FILE_MODE);
+    try {
+      await handle.writeFile(bytes, 'utf8');
+      await handle.sync();
+    } catch (error) {
+      await handle.close().catch(() => undefined);
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+    await handle.close();
+    try {
+      await rename(temporary, path);
+      await syncPrivateDirectory(directory);
+    } catch (error) {
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+  } finally {
+    await lock.close().catch(() => undefined);
+    await unlink(lockPath).catch(() => undefined);
+    await syncPrivateDirectory(directory);
+  }
 }
 
 function originState(value: unknown, catalog: CAL002Catalog): OriginState {
@@ -919,13 +1094,127 @@ async function classifyOriginLocked(
   }
 }
 
+async function buildMatrixCommand(args: MatrixArguments): Promise<void> {
+  const catalog = await readCanonicalArtifact({ root: args.root, relativePath: args.catalog, label: 'CAL-002 catalog' }) as CAL002Catalog;
+  const laneArtifact = originDecisionArtifact(
+    await readCanonicalArtifact({ root: args.root, relativePath: args.laneDecisions, label: 'CAL-002 lane decisions' }),
+    catalog,
+  );
+  const originReceipt = await readCanonicalArtifact({ root: args.root, relativePath: args.originReceipt, label: 'CAL-002 origin receipt' }) as CAL002OriginReceipt;
+  const qualityMetrics = await readCanonicalArtifact({ root: args.root, relativePath: args.qualityMetrics, label: 'CAL-002 quality metrics' }) as CAL002QualityMetrics;
+  const oracleReceipt = await readCanonicalArtifact({ root: args.root, relativePath: args.oracleReceipt, label: 'CAL-002 oracle receipt' }) as CAL002OracleReceipt;
+  const result = buildCAL002FinalMatrix({
+    catalog,
+    laneDecisions: laneArtifact.rows,
+    originReceipt,
+    qualityMetrics,
+    oracleReceipt,
+    reducerImplementationCommitSha: resolveCommitSha(args.implementationCommitSha, 'matrix'),
+  });
+  await writeImmutablePrivateCanonical(args.root, args.out, result.matrix, 'CAL-002 final matrix');
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    matrixSha256: result.matrixSha256,
+    counts: result.matrix.counts,
+    admitted: false,
+    applied: false,
+  });
+}
+
+async function approveMatrix(args: ApproveMatrixArguments): Promise<void> {
+  const matrix = await readCanonicalArtifact({ root: args.root, relativePath: args.matrix, label: 'CAL-002 final matrix' }) as CAL002FinalMatrix;
+  const matrixSha256 = canonicalArtifact(matrix).sha256;
+  process.stderr.write([
+    `Final matrix SHA-256: ${matrixSha256}`,
+    `Rows: ${matrix.rows.length}`,
+    `Outcomes: ${canonicalArtifact(matrix.counts).json}`,
+    '1 approve this exact matrix SHA for application',
+    '2 reject this matrix SHA and return to the named evidence row',
+  ].join('\n') + '\n');
+  const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
+  try {
+    for await (const line of input) {
+      if (line === '1') {
+        const approval = buildCAL002MatrixApproval({
+          matrix,
+          approvalCommitSha: resolveCommitSha(args.approvalCommitSha, 'approve-matrix'),
+        });
+        await writeImmutablePrivateCanonical(args.root, args.out, approval.approval, 'CAL-002 matrix approval');
+        machineOutput({
+          ok: true,
+          command: args.command,
+          status: 'approved',
+          finalMatrixSha256: approval.approval.finalMatrixSha256,
+          approvalSha256: approval.approvalSha256,
+        });
+        return;
+      }
+      if (line === '2' || line === 'q') {
+        machineOutput({ ok: true, command: args.command, status: 'rejected', finalMatrixSha256: matrixSha256, receiptWritten: false });
+        return;
+      }
+      process.stderr.write('Invalid selection; choose one closed matrix approval key.\n');
+    }
+    machineOutput({ ok: true, command: args.command, status: 'rejected', finalMatrixSha256: matrixSha256, receiptWritten: false });
+  } finally {
+    input.close();
+  }
+}
+
+async function applyPolicy(args: ApplyArguments): Promise<void> {
+  const matrix = await readCanonicalArtifact({ root: args.root, relativePath: args.matrix, label: 'CAL-002 final matrix' }) as CAL002FinalMatrix;
+  const approval = await readCanonicalArtifact({ root: args.root, relativePath: args.approval, label: 'CAL-002 matrix approval' }) as CAL002MatrixApproval;
+  const result = buildCAL002PolicyArtifact({
+    matrix,
+    approval,
+    applicationImplementationCommitSha: resolveCommitSha(args.implementationCommitSha, 'apply'),
+  });
+  if (args.dryRun) {
+    await writeImmutablePrivateCanonical(args.root, args.out, result.policy, 'CAL-002 proposed policy');
+    machineOutput({
+      ok: true,
+      command: args.command,
+      status: 'dry-run',
+      policySha256: result.policySha256,
+      finalMatrixSha256: result.policy.finalMatrixSha256,
+      admitted: false,
+      applied: true,
+    });
+    return;
+  }
+
+  const destination = args.destination ?? args.out;
+  await writeImmutablePrivateCanonical(args.root, destination, result.policy, 'CAL-002 applied policy');
+  const persisted = await readPrivateCanonical(args.root, destination, 'CAL-002 applied policy');
+  if (canonicalArtifact(persisted).json !== result.policyJson) {
+    throw new Error('CAL-002 applied policy did not reproduce the proposed canonical bytes');
+  }
+  if (args.receipt !== undefined) {
+    await writeImmutablePrivateCanonical(args.root, args.receipt, result.applicationReceipt, 'CAL-002 application receipt');
+  }
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'applied',
+    policySha256: result.policySha256,
+    applicationReceiptSha256: result.applicationReceiptSha256,
+    admitted: false,
+    applied: true,
+  });
+}
+
 async function main(): Promise<void> {
   let command = process.argv[2] ?? 'unknown';
   try {
     const args = parseArguments(process.argv.slice(2));
     command = args.command;
     if (args.command === 'review-quality') await reviewQuality(args);
-    else await classifyOrigin(args);
+    else if (args.command === 'classify-origin') await classifyOrigin(args);
+    else if (args.command === 'matrix') await buildMatrixCommand(args);
+    else if (args.command === 'approve-matrix') await approveMatrix(args);
+    else await applyPolicy(args);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     process.stderr.write(`CAL-002 ${command}: ${message}\n`);

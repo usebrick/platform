@@ -450,6 +450,27 @@ describe('CAL-002 review-quality CLI', () => {
   });
 });
 
+describe('CAL-002 matrix approval and application CLI', () => {
+  it('recognizes the matrix command surface and fails closed on missing required artifacts', () => {
+    const result = run([script, 'matrix', '--root', temporaryRoot(), '--out', 'proposed-matrix.json'], '');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/matrix requires --catalog/i);
+    expect(result.stdout).toContain('"ok":false');
+  });
+
+  it('recognizes approve-matrix and apply dry-run as closed local commands', () => {
+    const root = temporaryRoot();
+    const approval = run([script, 'approve-matrix', '--root', root, '--matrix', 'final-matrix.json', '--out', 'matrix-approval.json'], '');
+    expect(approval.status).toBe(2);
+    expect(approval.stderr).toMatch(/ENOENT|final matrix/i);
+
+    const apply = run([script, 'apply', '--dry-run', '--root', root, '--matrix', 'final-matrix.json', '--approval', 'matrix-approval.json', '--out', 'proposed-policy.json'], '');
+    expect(apply.status).toBe(2);
+    expect(apply.stderr).toMatch(/apply requires --catalog|final-matrix|matrix/i);
+  });
+});
+
 describe('CAL-002 classify-origin CLI', () => {
   function originArgs(root: string): readonly string[] {
     return [

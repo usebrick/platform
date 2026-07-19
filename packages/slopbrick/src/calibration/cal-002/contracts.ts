@@ -829,7 +829,7 @@ function validPolicyCombination(row: RecordValue): boolean {
     case 'default-off':
       return row.enabledByDefault === false && row.scoreEligible === false
         && ((row.claimCeiling === 'internal-origin-association' && row.provenance === 'internal-origin-calibrated')
-          || ((row.claimCeiling === 'quality-usefulness' || row.claimCeiling === 'review-target-utility') && row.provenance === 'current-quality-failed-claim-bar'));
+          || ((row.claimCeiling === 'deterministic-defect' || row.claimCeiling === 'quality-usefulness' || row.claimCeiling === 'review-target-utility') && row.provenance === 'current-quality-failed-claim-bar'));
     case 'quality-advisory':
       return row.claimCeiling === 'review-target-utility' && row.enabledByDefault === true && row.scoreEligible === false && row.provenance === 'advisory-review-utility';
     case 'insufficient-evidence':
