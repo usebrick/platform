@@ -69,6 +69,17 @@ export const unusedImportRule = createRule<UnusedImportContext>({
       if (binding.isTypeOnly) continue;
       // Skip if the binding is referenced.
       if (binding.isReferenced) continue;
+      // Preserve the classic JSX runtime import. Projects may compile JSX
+      // through React.createElement even when the source contains no explicit
+      // `React` identifier reference; actual JSX syntax is the executable use.
+      if (
+        binding.kind === 'import-default'
+        && binding.name === 'React'
+        && binding.source === 'react'
+        && facts.v2.jsx.elements.length > 0
+      ) {
+        continue;
+      }
       // Skip side-effect-only imports (`import './foo'`). These
       // intentionally have no specifiers.
       if (!binding.name) continue;

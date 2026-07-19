@@ -61,4 +61,14 @@ describe('dead/unused-parameter', () => {
     const issues = await runRule(source);
     expect(issues).toHaveLength(0);
   });
+
+  it.each([
+    ['spread props', 'function View(props){ return <Child {...props}/>; }'],
+    ['referenced value', 'function f(value){ return String(value); }'],
+    ['comment adjacent', '// function f(stale){}\nfunction f(value){ return value; }'],
+    ['underscore marker', 'function f(_unused){ return 1; }'],
+    ['destructured value', 'const f = ({value}) => value;'],
+  ])('does not flag the %s transfer control', async (_label, source) => {
+    expect(await runRule(source)).toHaveLength(0);
+  });
 });

@@ -70,4 +70,19 @@ describe('dead/unreachable', () => {
     const issues = await runRule(source);
     expect(issues[0].severity).toBe('high');
   });
+
+  it('does not flag cleanup in a finally block', async () => {
+    const issues = await runRule('function f(){ try { work(); } finally { cleanup(); } }');
+    expect(issues).toHaveLength(0);
+  });
+
+  it.each([
+    ['alternate syntax', 'function f(){ throw new Error("x"); }'],
+    ['baseline', 'function f(){ return compute(); }'],
+    ['comment adjacent', '// return; cleanup();\nfunction f(){ cleanup(); }'],
+    ['near miss', 'function f(){ if(false){ cleanup(); } }'],
+    ['regression safe', 'function f(){ for(;;){ break; } cleanup(); }'],
+  ])('does not flag the %s transfer control', async (_label, source) => {
+    expect(await runRule(source)).toHaveLength(0);
+  });
 });

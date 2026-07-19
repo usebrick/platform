@@ -114,4 +114,19 @@ export const marker = true;
     const reactIssue = issues.find((i) => i.message.includes('React'));
     expect(reactIssue).toBeUndefined();
   });
+
+  it('does not flag a classic React default import when the file contains JSX', async () => {
+    const source = 'import React from "react";\nexport const view=<div/>;';
+    const issues = await runRule(source);
+    expect(issues.find((issue) => issue.message.includes("'React'"))).toBeUndefined();
+  });
+
+  it.each([
+    ['alternate syntax', 'import "./side-effect";'],
+    ['baseline', 'import * as api from "./api";\napi.run();'],
+    ['comment adjacent', '// import { parse } from "./parse";\nexport const value=1;'],
+    ['regression safe', 'import { type Parser } from "./parse";\nexport type Config=Parser;'],
+  ])('does not flag the %s transfer control', async (_label, source) => {
+    expect(await runRule(source)).toHaveLength(0);
+  });
 });

@@ -73,4 +73,19 @@ describe('dead/unused-local', () => {
     const reactIssue = issues.find((i) => i.message.includes('React'));
     expect(reactIssue).toBeUndefined();
   });
+
+  it('does not claim a module-top-level const as an unused local', async () => {
+    const source = 'const moduleRegistration = register();\nexport function f(){ return 1; }';
+    expect(await runRule(source)).toHaveLength(0);
+  });
+
+  it.each([
+    ['alternate syntax', 'function f(){ const _ignored=compute(); return 1; }'],
+    ['baseline', 'function f(){ let value=1; return value; }'],
+    ['comment adjacent', '// const stale=compute();\nfunction f(){ return 1; }'],
+    ['near miss', 'const exported=1; export { exported };'],
+    ['regression safe', 'function f(){ class Local{}; return new Local(); }'],
+  ])('does not flag the %s transfer control', async (_label, source) => {
+    expect(await runRule(source)).toHaveLength(0);
+  });
 });
