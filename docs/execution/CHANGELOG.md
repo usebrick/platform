@@ -3,6 +3,41 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 33 — 2026-07-19
+
+### Changed
+
+- Recorded CAL-002 progressive authority Task 11 as implementation-
+  checkpointed at `651f52d78` after controller adversarial audit. Two
+  independent reviewers stalled and were closed, so no external approval is
+  claimed.
+- Added complete security transfer fixtures for `security/hardcoded-secret`
+  and `security/sql-construction`, closing the canonical nine-transfer set.
+- Added the strict canonical 32-starting + 9-transferred = 41-row v2 oracle
+  reducer and schema. It revalidates authority, frozen v1 evidence, hashes,
+  Corpus v1 source binding, five control families, non-admission, and source/
+  path exclusion; a failed row cannot become default-on.
+- Recorded the narrow comment-mask correction exposed by the approved
+  hardcoded-secret control. It preserves issue lines and does not change
+  activation, policy, or admission.
+- Advanced the next bounded action to Task 12's exact 73-row quality-only
+  public-copy doctrine and generated-catalog guard.
+
+### Evidence
+
+- `651f52d78`
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- The exact integrated Task 11 matrix plus signal-strength guardrails passes
+  134/134 on Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both.
+- The scoped commit self-scan passed at AI Slop Score 4.2/100, Engineering
+  Hygiene 100/100, and Security 100/100; its one low compression-profile
+  diagnostic is informational and non-admitting.
+- Protected owner state remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+- No durable oracle receipt, current-policy application, owner run, admission,
+  push, tag, publish, deploy, or release was produced.
+
 ## Revision 32 — 2026-07-19
 
 ### Changed

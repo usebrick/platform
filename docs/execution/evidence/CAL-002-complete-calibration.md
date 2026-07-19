@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-19
-- **State:** `in_progress` implementation checkpoint at revision 32
-- **Scope:** CAL-002 progressive authority Tasks 1–10; no protected owner
+- **State:** `in_progress` implementation checkpoint at revision 33
+- **Scope:** CAL-002 progressive authority Tasks 1–11; no protected owner
   workflow, runtime policy application, admission, or release is evidenced by
   this receipt.
 
@@ -100,18 +100,30 @@
   an exact name/source plus actual-JSX condition. The independent reviewer
   stalled and was closed, so only the controller audit is recorded. No durable
   transfer-oracle receipt was written.
+- Task 11 is checkpointed at `651f52d78`. It adds complete real-execution
+  fixtures for `security/hardcoded-secret` and `security/sql-construction`,
+  completes the canonical nine-transfer aggregate, and adds the strict 32-
+  starting + 9-transferred = 41-row v2 oracle reducer and schema. The reducer
+  revalidates the frozen v1 receipt, exact authority transfers, fixture hashes,
+  source-binding receipt, and five real-source control families per row; it
+  stores no raw source or path, preserves failed/default-off rows, and remains
+  `admitted: false`. The approved comment control exposed and now guards a real
+  hardcoded-secret comment false positive while preserving line offsets. The
+  exact integrated matrix plus signal-strength guardrails passes 134/134 on
+  Node 22.22.3 and 24.15.0 with package typecheck on both. Two independent
+  reviewers stalled and were closed, so only the controller audit is recorded,
+  not external approval. No durable oracle receipt was written.
 - No authority proposal, private cohort, durable quality/parity/supersession
   or transfer-oracle receipt, runtime policy, rule activation, score, source,
   baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 32.
+  deployment, tag, publish, push, or acquired data changed in revision 33.
   Local application remains separate from those release-boundary decisions.
 
 ## Next evidence
 
-The next implementation evidence is Task 11's complete security transfer
-fixtures for `security/hardcoded-secret` and `security/sql-construction`, plus
-the exact combined 32-starting + 9-transferred = 41-row v2 oracle receipt. The
-receipt must bind authority and implementation evidence, carry no source text
-or virtual path, remain `admitted: false`, and fail closed on incomplete or
-invalid transfers. No current-policy application, owner artifact, admission,
-or release follows from the Task 11 evidence commit alone.
+The next implementation evidence is Task 12's TypeScript-AST public-copy
+extractor and doctrine guard across the exact 73 active quality rows, their
+`RULE_HINTS`, emitted messages/advice, and generated catalog rows. It must
+remove AI/human causation and authorship framing from current quality-facing
+copy without changing detector behavior, severity, category, legacy metadata,
+runtime policy, owner artifacts, admission, or release state.

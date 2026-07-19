@@ -25,10 +25,10 @@ remains `applied: false` and `admitted: false`; the v2 proposal is also
 implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
 to ready, so CAL-002 owns the calibration and provenance closeout without
 inventing owner evidence. Progressive authority Tasks 1–8 are implementation-
-checkpointed and independently approved through `e8e62b779`; Tasks 9 and 10
-are implementation-checkpointed at `33ea0d732` and `aeef2915a` after controller
-adversarial audit, with no external approval claimed because their independent
-reviewers stalled.
+checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
+implementation-checkpointed through `651f52d78` after controller adversarial
+audit, with no external approval claimed because their independent reviewers
+stalled.
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -42,7 +42,10 @@ correction required by its approved control; it writes no durable receipt and
 does not activate a rule. Task 10 adds complete dead-code and unused-binding
 transfer fixtures and the narrow classic React/JSX runtime guard required by
 its approved control; it also writes no durable receipt and does not activate a
-rule. No protected owner workflow or runtime policy application has occurred.
+rule. Task 11 closes the two security fixtures, comment-masks hardcoded-secret
+scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
+writing a durable receipt or applying policy. No protected owner workflow or
+runtime policy application has occurred.
 
 ## Scope
 
@@ -103,8 +106,8 @@ rule. No protected owner workflow or runtime policy application has occurred.
 
 ## Verification
 
-Continue with the focused one-worker security transfer-oracle and combined v2
-oracle-receipt tests. Before any policy application, verify frozen
+Continue with the focused one-worker 73-row quality-copy doctrine and generated-
+catalog truth tests. Before any policy application, verify frozen
 identities, source permissions, catalog/config hashes, exact row coverage, lane
 separation, non-admission, provenance output, and the prescribed recursive and
 package-local self-scan gates. This revision does not apply a runtime policy;
@@ -124,7 +127,7 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Red-test Task 11's complete transfer fixtures for `security/hardcoded-secret`
-and `security/sql-construction`, then the combined exact 32-starting + 9-
-transferred = 41-row v2 oracle receipt. Keep the work evidence-only and non-
-admitting; do not activate a detector or apply policy.
+Red-test Task 12's TypeScript-AST public-copy extractor and exact 73-row quality
+doctrine across descriptions, emitted messages/advice, `RULE_HINTS`, and
+generated catalog rows. Keep detector behavior, legacy metadata, runtime
+policy, and admission unchanged.

@@ -82,10 +82,10 @@ Its scenarios are not measured UseBrick demand or forecasts.
 The frozen CAL-002 v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
 historical hold. Progressive authority Tasks 1–8 remain implementation-
-checkpointed and independently approved through `e8e62b779`; Tasks 9 and 10
-are implementation-checkpointed at `33ea0d732` and `aeef2915a` after controller
-adversarial audit, with no external approval claimed because their independent
-reviewers stalled.
+checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
+implementation-checkpointed through `651f52d78` after controller adversarial
+audit, with no external approval claimed because their independent reviewers
+stalled.
 Together they preserve
 the locked 119-rule projection—47 starting quality + 26 transferred quality +
 4 blocked quality + 3 superseded + 7 retired + 32 research-origin rows—add the
@@ -97,9 +97,12 @@ parity or supersession receipts. Task 9 adds the reusable transferred-oracle
 contract and closed C++/Rust cases, and corrects commented-out C-style casts.
 Task 10 closes the four dead-code and unused-binding transfer fixtures and
 adds the narrow classic React/JSX runtime guard required by an approved
-control. Neither task changes activation or policy, and none of these paths
-has been run against protected owner state. The next bounded slice is Task
-11's two security transfers and combined 41-row v2 oracle receipt. CAL-002
+control. Task 11 closes the two security transfer fixtures, masks comments for
+`security/hardcoded-secret`, and adds the strict, canonical 32-starting + 9-
+transferred = 41-row v2 oracle reducer and schema. These tasks do not change
+activation or policy, and none of these paths has been run against protected
+owner state. The next bounded slice is Task 12's 73-row quality-only public-
+copy doctrine and generated-catalog guard. CAL-002
 remains `in_progress` at implementation
 WIP `2/2`; the proposed policy remains `applied: false` and `admitted: false`.
 No runtime policy, admission, or release state changed. Local application, if
@@ -189,11 +192,11 @@ planning artifacts only, not participant action.
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
   `requires` edge. No default state, score, baseline, source, admission, release,
-  deployment, or public artifact changed in revision 32.
+  deployment, or public artifact changed in revision 33.
 - Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
-  checkpointed through `e8e62b779`, and Tasks 9–10 are checkpointed through
-  `aeef2915a`; next add Task 11's two security transfer fixtures and combined
-  41-row v2 oracle receipt. `VAL-001` and
+  checkpointed through `e8e62b779`, and Tasks 9–11 are checkpointed through
+  `651f52d78`; next enforce Task 12's quality-only public-copy doctrine across
+  all 73 active quality rows and generated catalog copy. `VAL-001` and
   `TEL-001` remain ready; `REL-001` remains the unchanged separate public-
   authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
