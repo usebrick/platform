@@ -88,7 +88,7 @@ interface FixedParityAuthority {
   readonly replacementRuleId: CAL002ParityReceiptV2['replacementRuleId'];
   readonly uniqueCoverageDisposition: CAL002ParityReceiptV2['uniqueCoverageDisposition'];
   readonly reasonCode: CAL002ParityReceiptV2['reasonCode'];
-  readonly cases: readonly [FixedParityCase, FixedParityCase];
+  readonly cases: readonly FixedParityCase[];
 }
 
 const CANONICAL_SUPERSEDED_RULE_IDS = [
@@ -103,8 +103,9 @@ const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAutho
     uniqueCoverageDisposition: 'ported',
     reasonCode: 'with-query-coverage-ported',
     cases: [
-      { caseId: 'guarded-non-query-concatenation', observation: 'no-finding' },
-      { caseId: 'positive-with-query-concatenation', observation: 'finding' },
+      { caseId: 'sql-with-template-ported', observation: 'finding' },
+      { caseId: 'sql-with-parameterized-guard', observation: 'no-finding' },
+      { caseId: 'sql-with-comment-guard', observation: 'no-finding' },
     ],
   },
   'logic/math-any-density': {
@@ -112,8 +113,9 @@ const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAutho
     uniqueCoverageDisposition: 'rejected-as-false-positive',
     reasonCode: 'line-denominator-not-type-bearing',
     cases: [
-      { caseId: 'guarded-non-type-bearing-any', observation: 'no-finding' },
-      { caseId: 'positive-type-bearing-any', observation: 'finding' },
+      { caseId: 'any-line-density-rejected', observation: 'no-finding' },
+      { caseId: 'any-declaration-ratio-retained', observation: 'finding' },
+      { caseId: 'any-non-typescript-guard', observation: 'no-finding' },
     ],
   },
   'logic/math-console-log-storm': {
@@ -121,8 +123,11 @@ const FIXED_PARITY_AUTHORITY: Readonly<Record<SupersededRuleId, FixedParityAutho
     uniqueCoverageDisposition: 'ported',
     reasonCode: 'window-clustering-ported-with-guards',
     cases: [
-      { caseId: 'guarded-isolated-console-call', observation: 'no-finding' },
-      { caseId: 'positive-clustered-console-window', observation: 'finding' },
+      { caseId: 'console-five-in-thirty-ported', observation: 'finding' },
+      { caseId: 'console-window-spread-guard', observation: 'no-finding' },
+      { caseId: 'console-test-file-guard', observation: 'no-finding' },
+      { caseId: 'console-logger-file-guard', observation: 'no-finding' },
+      { caseId: 'console-structured-logger-guard', observation: 'no-finding' },
     ],
   },
 };
@@ -369,12 +374,6 @@ export function validateCAL002SupersessionReceiptV2(value: unknown): CAL002Valid
   });
 
   const records = rows.filter(isRecord);
-  const migrationShas = records
-    .map((row) => row.migrationCommitSha)
-    .filter((sha): sha is string => typeof sha === 'string' && COMMIT_SHA.test(sha));
-  if (new Set(migrationShas).size > 1) {
-    errors.push('artifact.rows must bind the same migration commit SHA');
-  }
   const parityHashes = records
     .map((row) => row.parityReceiptSha256)
     .filter((sha): sha is string => typeof sha === 'string' && SHA256.test(sha));
@@ -453,10 +452,6 @@ export function buildCAL002SupersessionReceiptV2(
   const missing = CANONICAL_SUPERSEDED_RULE_IDS.filter((ruleId) => !byRuleId.has(ruleId));
   if (missing.length > 0) {
     throw new TypeError('CAL-002 supersession is missing canonical parity receipt: ' + missing.join(', '));
-  }
-  const migrationCommitShas = new Set(parityReceipts.map((receipt) => receipt.migrationCommitSha));
-  if (migrationCommitShas.size !== 1) {
-    throw new TypeError('CAL-002 parity receipts must bind the same migration commit SHA');
   }
 
   const rows = CANONICAL_SUPERSEDED_RULE_IDS.map((ruleId): CAL002SupersessionRowV2 => {

@@ -43,19 +43,33 @@ const PARITY_AUTHORITY = {
     replacementRuleId: 'security/sql-construction',
     reasonCode: 'with-query-coverage-ported',
     uniqueCoverageDisposition: 'ported',
-    caseIds: ['guarded-non-query-concatenation', 'positive-with-query-concatenation'],
+    cases: [
+      { caseId: 'sql-with-template-ported', observation: 'finding' },
+      { caseId: 'sql-with-parameterized-guard', observation: 'no-finding' },
+      { caseId: 'sql-with-comment-guard', observation: 'no-finding' },
+    ],
   },
   'logic/math-any-density': {
     replacementRuleId: 'ai/any-density',
     reasonCode: 'line-denominator-not-type-bearing',
     uniqueCoverageDisposition: 'rejected-as-false-positive',
-    caseIds: ['guarded-non-type-bearing-any', 'positive-type-bearing-any'],
+    cases: [
+      { caseId: 'any-line-density-rejected', observation: 'no-finding' },
+      { caseId: 'any-declaration-ratio-retained', observation: 'finding' },
+      { caseId: 'any-non-typescript-guard', observation: 'no-finding' },
+    ],
   },
   'logic/math-console-log-storm': {
     replacementRuleId: 'ai/console-debug-storm',
     reasonCode: 'window-clustering-ported-with-guards',
     uniqueCoverageDisposition: 'ported',
-    caseIds: ['guarded-isolated-console-call', 'positive-clustered-console-window'],
+    cases: [
+      { caseId: 'console-five-in-thirty-ported', observation: 'finding' },
+      { caseId: 'console-window-spread-guard', observation: 'no-finding' },
+      { caseId: 'console-test-file-guard', observation: 'no-finding' },
+      { caseId: 'console-logger-file-guard', observation: 'no-finding' },
+      { caseId: 'console-structured-logger-guard', observation: 'no-finding' },
+    ],
   },
 } as const;
 
@@ -80,21 +94,12 @@ function approvedAuthorityReceipt(): CAL002AuthorityReceiptV2 {
 }
 
 function caseResults(ruleId: SupersededRuleId): readonly CAL002ParityCaseResultV2[] {
-  const [negativeCaseId, positiveCaseId] = PARITY_AUTHORITY[ruleId].caseIds;
-  return [
-    {
-      caseId: negativeCaseId,
-      sourceSha256: '1'.repeat(64),
-      expectedReplacementObservation: 'no-finding',
-      observedReplacementObservation: 'no-finding',
-    },
-    {
-      caseId: positiveCaseId,
-      sourceSha256: '2'.repeat(64),
-      expectedReplacementObservation: 'finding',
-      observedReplacementObservation: 'finding',
-    },
-  ];
+  return PARITY_AUTHORITY[ruleId].cases.map(({ caseId, observation }, index) => ({
+    caseId,
+    sourceSha256: String(index + 1).repeat(64),
+    expectedReplacementObservation: observation,
+    observedReplacementObservation: observation,
+  }));
 }
 
 function parity(
@@ -186,7 +191,15 @@ describe('CAL-002 v2 supersession parity', () => {
         status: 'passed',
         admitted: false,
       });
-      expect(receipt.caseResults.map((caseResult) => caseResult.caseId)).toEqual(PARITY_AUTHORITY[ruleId].caseIds);
+      expect(receipt.caseResults.map((caseResult) => ({
+        caseId: caseResult.caseId,
+        expectedReplacementObservation: caseResult.expectedReplacementObservation,
+        observedReplacementObservation: caseResult.observedReplacementObservation,
+      }))).toEqual(PARITY_AUTHORITY[ruleId].cases.map(({ caseId, observation }) => ({
+        caseId,
+        expectedReplacementObservation: observation,
+        observedReplacementObservation: observation,
+      })));
       expect(receipt.caseResults.some((caseResult) => caseResult.expectedReplacementObservation === 'finding')).toBe(true);
       expect(receipt.caseResults.some((caseResult) => caseResult.expectedReplacementObservation === 'no-finding')).toBe(true);
       expect(() => assertCAL002ParityReceiptV2(receipt)).not.toThrow();
@@ -216,26 +229,58 @@ describe('CAL-002 v2 supersession parity', () => {
 
   it('rejects failed, incomplete, unknown, and non-canonical parity cases', () => {
     const cases = caseResults('db/sql-concat');
+    const failedCases = structuredClone(cases);
+    failedCases[0]!.observedReplacementObservation = 'no-finding';
     expect(() => parity('db/sql-concat', {
-      caseResults: [
-        cases[0]!,
-        { ...cases[1]!, observedReplacementObservation: 'no-finding' },
-      ],
+      caseResults: failedCases,
     })).toThrow(/observed|expected|parity/i);
-    expect(() => parity('db/sql-concat', { caseResults: [cases[0]!] })).toThrow(/positive|finding/i);
-    expect(() => parity('db/sql-concat', { caseResults: [cases[1]!] })).toThrow(/guarded|no-finding/i);
+    expect(() => parity('db/sql-concat', { caseResults: [cases[1]!] })).toThrow(/positive|finding/i);
+    expect(() => parity('db/sql-concat', { caseResults: [cases[0]!] })).toThrow(/guarded|no-finding/i);
     expect(() => parity('db/sql-concat', {
-      caseResults: [{ ...cases[0]!, caseId: 'unknown-case' }, cases[1]!],
+      caseResults: [{ ...cases[0]!, caseId: 'unknown-case' }, ...cases.slice(1)],
     })).toThrow(/unknown|case ID/i);
     expect(() => parity('db/sql-concat', { caseResults: [...cases].reverse() })).toThrow(/canonical|order/i);
   });
 
-  it('rejects mismatched migration commits and authority receipt hashes', () => {
-    expect(() => buildCAL002SupersessionReceiptV2(approvedAuthorityReceipt(), [
-      sqlParity(),
-      anyParity(),
-      parity('logic/math-console-log-storm', { migrationCommitSha: 'e'.repeat(40) }),
-    ])).toThrow(/migration.*commit|same commit/i);
+  it('preserves each independent migration commit and parity receipt hash', () => {
+    const sql = parity('db/sql-concat', { migrationCommitSha: 'd'.repeat(40) });
+    const any = parity('logic/math-any-density', { migrationCommitSha: 'e'.repeat(40) });
+    const console = parity('logic/math-console-log-storm', { migrationCommitSha: 'f'.repeat(40) });
+    const receipt = buildCAL002SupersessionReceiptV2(
+      approvedAuthorityReceipt(),
+      [console, sql, any],
+    ).receipt;
+
+    expect(receipt.rows.map((row) => ({
+      ruleId: row.ruleId,
+      migrationCommitSha: row.migrationCommitSha,
+      parityReceiptSha256: row.parityReceiptSha256,
+    }))).toEqual([
+      {
+        ruleId: 'db/sql-concat',
+        migrationCommitSha: 'd'.repeat(40),
+        parityReceiptSha256: canonicalArtifact(sql).sha256,
+      },
+      {
+        ruleId: 'logic/math-any-density',
+        migrationCommitSha: 'e'.repeat(40),
+        parityReceiptSha256: canonicalArtifact(any).sha256,
+      },
+      {
+        ruleId: 'logic/math-console-log-storm',
+        migrationCommitSha: 'f'.repeat(40),
+        parityReceiptSha256: canonicalArtifact(console).sha256,
+      },
+    ]);
+    expect(validateCAL002SupersessionReceiptV2(receipt)).toEqual({ ok: true, errors: [] });
+    const supersessionSchema = schemaValidator('cal-002-supersession-receipt-v2.schema.json');
+    expect(supersessionSchema(receipt), JSON.stringify(supersessionSchema.errors)).toBe(true);
+  });
+
+  it('rejects malformed migration SHAs and authority receipt hash mismatches', () => {
+    expect(() => parity('db/sql-concat', {
+      migrationCommitSha: 'not-a-commit-sha',
+    })).toThrow(/migrationCommitSha|40-character commit SHA/i);
 
     const wrongAuthority = structuredClone(sqlParity());
     wrongAuthority.authorityReceiptSha256 = 'f'.repeat(64);
@@ -264,23 +309,37 @@ describe('CAL-002 v2 supersession parity', () => {
       { file: 'cal-002-supersession-receipt-v2.schema.json', version: CAL002_SUPERSESSION_RECEIPT_VERSION },
     ]);
 
-    const parityReceipt = sqlParity();
+    const parityReceipts = [sqlParity(), anyParity(), consoleParity()];
+    const parityReceipt = parityReceipts[0]!;
     const supersessionReceipt = buildCAL002SupersessionReceiptV2(
       approvedAuthorityReceipt(),
       [sqlParity(), anyParity(), consoleParity()],
     ).receipt;
     const paritySchema = schemaValidator('cal-002-parity-receipt-v2.schema.json');
     const supersessionSchema = schemaValidator('cal-002-supersession-receipt-v2.schema.json');
-    expect(paritySchema(parityReceipt), JSON.stringify(paritySchema.errors)).toBe(true);
+    for (const receipt of parityReceipts) {
+      expect(paritySchema(receipt), JSON.stringify(paritySchema.errors)).toBe(true);
+      expect(validateCAL002ParityReceiptV2(receipt)).toEqual({ ok: true, errors: [] });
+    }
     expect(supersessionSchema(supersessionReceipt), JSON.stringify(supersessionSchema.errors)).toBe(true);
-    expect(validateCAL002ParityReceiptV2(parityReceipt)).toEqual({ ok: true, errors: [] });
     expect(validateCAL002SupersessionReceiptV2(supersessionReceipt)).toEqual({ ok: true, errors: [] });
     expect(() => assertCAL002SupersessionReceiptV2(supersessionReceipt)).not.toThrow();
 
     const failedCase = structuredClone(parityReceipt);
-    failedCase.caseResults[1]!.observedReplacementObservation = 'no-finding';
-    expect(validateCAL002ParityReceiptV2(failedCase).ok).toBe(false);
-    expect(paritySchema(failedCase), JSON.stringify(paritySchema.errors)).toBe(false);
+    failedCase.caseResults[0]!.observedReplacementObservation = 'no-finding';
+    const wrongObservation = structuredClone(parityReceipt);
+    wrongObservation.caseResults[0]!.expectedReplacementObservation = 'no-finding';
+    wrongObservation.caseResults[0]!.observedReplacementObservation = 'no-finding';
+    const wrongCount = structuredClone(parityReceipt);
+    wrongCount.caseResults.pop();
+    const wrongId = structuredClone(parityReceipt);
+    wrongId.caseResults[0]!.caseId = 'unknown-case';
+    const wrongOrder = structuredClone(parityReceipt);
+    wrongOrder.caseResults.reverse();
+    for (const invalidReceipt of [failedCase, wrongObservation, wrongCount, wrongId, wrongOrder]) {
+      expect(validateCAL002ParityReceiptV2(invalidReceipt).ok).toBe(false);
+      expect(paritySchema(invalidReceipt), JSON.stringify(paritySchema.errors)).toBe(false);
+    }
 
     const missingRow = structuredClone(supersessionReceipt);
     missingRow.rows.pop();

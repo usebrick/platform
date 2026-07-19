@@ -111,87 +111,137 @@
         "observedReplacementObservation": { "enum": ["finding", "no-finding"] }
       }
     },
-    "sqlGuardedCase": {
+    "sqlTemplatePortedCase": {
       "type": "object",
       "$ref": "#/$defs/case",
       "properties": {
-        "caseId": { "const": "guarded-non-query-concatenation" },
-        "expectedReplacementObservation": { "const": "no-finding" },
-        "observedReplacementObservation": { "const": "no-finding" }
-      }
-    },
-    "sqlPositiveCase": {
-      "type": "object",
-      "$ref": "#/$defs/case",
-      "properties": {
-        "caseId": { "const": "positive-with-query-concatenation" },
+        "caseId": { "const": "sql-with-template-ported" },
         "expectedReplacementObservation": { "const": "finding" },
         "observedReplacementObservation": { "const": "finding" }
       }
     },
-    "anyGuardedCase": {
+    "sqlParameterizedGuardCase": {
       "type": "object",
       "$ref": "#/$defs/case",
       "properties": {
-        "caseId": { "const": "guarded-non-type-bearing-any" },
+        "caseId": { "const": "sql-with-parameterized-guard" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
-    "anyPositiveCase": {
+    "sqlCommentGuardCase": {
       "type": "object",
       "$ref": "#/$defs/case",
       "properties": {
-        "caseId": { "const": "positive-type-bearing-any" },
-        "expectedReplacementObservation": { "const": "finding" },
-        "observedReplacementObservation": { "const": "finding" }
-      }
-    },
-    "consoleGuardedCase": {
-      "type": "object",
-      "$ref": "#/$defs/case",
-      "properties": {
-        "caseId": { "const": "guarded-isolated-console-call" },
+        "caseId": { "const": "sql-with-comment-guard" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
-    "consolePositiveCase": {
+    "anyLineDensityRejectedCase": {
       "type": "object",
       "$ref": "#/$defs/case",
       "properties": {
-        "caseId": { "const": "positive-clustered-console-window" },
+        "caseId": { "const": "any-line-density-rejected" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "anyDeclarationRatioRetainedCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "any-declaration-ratio-retained" },
         "expectedReplacementObservation": { "const": "finding" },
         "observedReplacementObservation": { "const": "finding" }
+      }
+    },
+    "anyNonTypescriptGuardCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "any-non-typescript-guard" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "consoleFiveInThirtyPortedCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "console-five-in-thirty-ported" },
+        "expectedReplacementObservation": { "const": "finding" },
+        "observedReplacementObservation": { "const": "finding" }
+      }
+    },
+    "consoleWindowSpreadGuardCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "console-window-spread-guard" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "consoleTestFileGuardCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "console-test-file-guard" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "consoleLoggerFileGuardCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "console-logger-file-guard" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
+      }
+    },
+    "consoleStructuredLoggerGuardCase": {
+      "type": "object",
+      "$ref": "#/$defs/case",
+      "properties": {
+        "caseId": { "const": "console-structured-logger-guard" },
+        "expectedReplacementObservation": { "const": "no-finding" },
+        "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "sqlCases": {
       "type": "array",
-      "minItems": 2,
-      "maxItems": 2,
+      "minItems": 3,
+      "maxItems": 3,
       "prefixItems": [
-        { "$ref": "#/$defs/sqlGuardedCase" },
-        { "$ref": "#/$defs/sqlPositiveCase" }
+        { "$ref": "#/$defs/sqlTemplatePortedCase" },
+        { "$ref": "#/$defs/sqlParameterizedGuardCase" },
+        { "$ref": "#/$defs/sqlCommentGuardCase" }
       ],
       "items": false
     },
     "anyCases": {
       "type": "array",
-      "minItems": 2,
-      "maxItems": 2,
+      "minItems": 3,
+      "maxItems": 3,
       "prefixItems": [
-        { "$ref": "#/$defs/anyGuardedCase" },
-        { "$ref": "#/$defs/anyPositiveCase" }
+        { "$ref": "#/$defs/anyLineDensityRejectedCase" },
+        { "$ref": "#/$defs/anyDeclarationRatioRetainedCase" },
+        { "$ref": "#/$defs/anyNonTypescriptGuardCase" }
       ],
       "items": false
     },
     "consoleCases": {
       "type": "array",
-      "minItems": 2,
-      "maxItems": 2,
+      "minItems": 5,
+      "maxItems": 5,
       "prefixItems": [
-        { "$ref": "#/$defs/consoleGuardedCase" },
-        { "$ref": "#/$defs/consolePositiveCase" }
+        { "$ref": "#/$defs/consoleFiveInThirtyPortedCase" },
+        { "$ref": "#/$defs/consoleWindowSpreadGuardCase" },
+        { "$ref": "#/$defs/consoleTestFileGuardCase" },
+        { "$ref": "#/$defs/consoleLoggerFileGuardCase" },
+        { "$ref": "#/$defs/consoleStructuredLoggerGuardCase" }
       ],
       "items": false
     }
