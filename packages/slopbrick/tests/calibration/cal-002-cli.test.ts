@@ -1,12 +1,15 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { Rule } from '../../src/types';
+import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
+import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
 import {
   CAL002_ASSIGNMENT_VERSION,
   CAL002_LOCKED_RULE_CATALOG_SHA256,
@@ -18,6 +21,8 @@ import {
   recordCAL002Review,
   startCAL002Review,
 } from '../../src/calibration/cal-002/review-session';
+import { RuleRegistry } from '../../src/rules/registry';
+import { getDefaultOffRules } from '../../src/rules/signal-strength';
 
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
 const repositoryRoot = join(packageRoot, '..', '..');
@@ -101,6 +106,50 @@ function fixture(
     '--receipt', 'review-receipt.json',
     '--implementation-commit-sha', implementationCommitSha,
   ] };
+}
+
+function originCatalogFixture(root: string): void {
+  const registry = new RuleRegistry();
+  registry.loadBuiltins();
+  const rules = registry.getRules() as readonly Pick<Rule, 'id' | 'category' | 'aiSpecific' | 'defaultOff'>[];
+  const defaultOff = getDefaultOffRules();
+  const rows: CAL001DecisionRow[] = rules.map((rule) => {
+    const existingDefaultOff = rule.defaultOff === true || defaultOff.has(rule.id);
+    const decision = rule.aiSpecific ? 'default-off' as const : 'quality-only' as const;
+    return {
+      ruleId: rule.id,
+      aiSpecific: rule.aiSpecific,
+      existingDefaultOff,
+      decision,
+      policyAction: decision === 'quality-only' || existingDefaultOff ? 'preserve' : 'owner-review-required',
+      evidence: {
+        holdoutReceiptSha256: 'a'.repeat(64),
+        metricsSha256: 'b'.repeat(64),
+        report: 'CAL-001-v1-origin-discrimination-diagnostic',
+      },
+      originResult: {
+        status: rule.aiSpecific ? 'diagnostic-only' : 'not-evaluated',
+        splitStatus: { train: 'available', validation: 'available', test: 'available' },
+        ruleStatus: { train: 'ok', validation: 'ok', test: 'ok' },
+      },
+      usefulnessResult: 'not-evaluated',
+      confounds: {
+        leakage: 'clear',
+        sourceLabels: 'publisher-attested-polarity-not-authorship',
+        frameworkBuckets: 'not-available',
+        semanticBuckets: 'not-available',
+      },
+      owner: 'calibration-maintainers',
+      rationale: 'CAL-002 origin CLI fixture',
+    };
+  });
+  const catalog = buildCAL002Catalog({
+    rules,
+    effectiveDefaultOffRuleIds: defaultOff,
+    cal001Rows: rows,
+    cal001MatrixSha256: 'c'.repeat(64),
+  }).catalog;
+  writeCanonical(join(root, 'catalog.json'), catalog);
 }
 
 function run(args: readonly string[], input: string, cwd = packageRoot, env: NodeJS.ProcessEnv = process.env) {
@@ -398,5 +447,141 @@ describe('CAL-002 review-quality CLI', () => {
     expect(result.stderr).toMatch(/assignment.*canonical/i);
     expect(() => readFileSync(join(root, 'review-state.json'))).toThrow();
     expect(() => readFileSync(join(root, 'review-receipt.json'))).toThrow();
+  });
+});
+
+describe('CAL-002 classify-origin CLI', () => {
+  function originArgs(root: string): readonly string[] {
+    return [
+      script,
+      'classify-origin',
+      '--root', root,
+      '--catalog', 'catalog.json',
+      '--state', 'origin-state.json',
+      '--out', 'lane-decisions.json',
+    ];
+  }
+
+  it('pauses and resumes 40 owner decisions while auto-holding the other 32', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const first = run(originArgs(root), 'q\n', root);
+    expect(first.status).toBe(0);
+    expect(JSON.parse(first.stdout)).toMatchObject({
+      ok: true,
+      command: 'classify-origin',
+      status: 'paused',
+      labeled: 0,
+      remaining: 40,
+      nextRuleId: 'ai/any-density',
+    });
+    expect(first.stderr).toContain('1 hold-origin-default-off');
+    expect(first.stderr).toContain('2 transfer-to-quality');
+    expect(first.stderr).toContain('3 retire');
+    expect(statSync(join(root, 'origin-state.json')).mode & 0o777).toBe(0o600);
+
+    const second = run(originArgs(root), Array.from({ length: 40 }, () => '1').join('\n') + '\n', root);
+    expect(second.status).toBe(0);
+    expect(JSON.parse(second.stdout)).toMatchObject({
+      ok: true,
+      command: 'classify-origin',
+      status: 'completed',
+      labeled: 40,
+      remaining: 0,
+    });
+    const stateBytes = readFileSync(join(root, 'origin-state.json'), 'utf8');
+    const state = JSON.parse(stateBytes) as { status: string; decisions: unknown[] };
+    expect(state.status).toBe('completed');
+    expect(state.decisions).toHaveLength(40);
+    const artifactBytes = readFileSync(join(root, 'lane-decisions.json'), 'utf8');
+    const artifact = JSON.parse(artifactBytes) as { rows: unknown[]; admitted: boolean };
+    expect(artifact.rows).toHaveLength(72);
+    expect(artifact.admitted).toBe(false);
+    expect(stateBytes).toBe(canonicalArtifact(state).json);
+    expect(artifactBytes).toBe(canonicalArtifact(artifact).json);
+    expect(statSync(join(root, 'lane-decisions.json')).mode & 0o777).toBe(0o600);
+    expect(artifactBytes).not.toMatch(/(?:source|path|Users|checkoutPath)/i);
+
+    const receiptBytes = artifactBytes;
+    const replay = run(originArgs(root), '', root);
+    expect(replay.status).toBe(0);
+    expect(JSON.parse(replay.stdout)).toMatchObject({ ok: true, status: 'completed', labeled: 40 });
+    expect(readFileSync(join(root, 'lane-decisions.json'), 'utf8')).toBe(receiptBytes);
+  });
+
+  it('keeps transfer reasons closed and rejects invalid selections without state mutation', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const paused = run(originArgs(root), 'invalid\nq\n', root);
+    expect(paused.status).toBe(0);
+    expect(paused.stderr).toMatch(/invalid selection/i);
+    expect(JSON.parse(paused.stdout)).toMatchObject({ status: 'paused', labeled: 0, remaining: 40 });
+
+    const input = '2\n3\n' + Array.from({ length: 39 }, () => '1').join('\n') + '\n';
+    const completed = run(originArgs(root), input, root);
+    expect(completed.status).toBe(0);
+    expect(JSON.parse(completed.stdout)).toMatchObject({ status: 'completed', labeled: 40 });
+    const artifact = JSON.parse(readFileSync(join(root, 'lane-decisions.json'), 'utf8')) as {
+      rows: readonly { ruleId: string; disposition: string; reason?: string }[];
+    };
+    expect(artifact.rows.find((row) => row.ruleId === 'ai/any-density')).toEqual({
+      ruleId: 'ai/any-density',
+      disposition: 'transfer-to-quality',
+      reason: 'statistical-review-utility-claim',
+    });
+    expect(completed.stderr).toContain('standards-or-contract-quality-claim');
+    expect(completed.stderr).toContain('contextual-defect-quality-claim');
+    expect(completed.stderr).toContain('statistical-review-utility-claim');
+  });
+
+  it('fails closed on malformed or conflicting completed artifacts', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const first = run(originArgs(root), 'q\n', root);
+    expect(first.status).toBe(0);
+    writeFileSync(join(root, 'origin-state.json'), canonicalArtifact({
+      version: 'cal-002-origin-state-v1',
+      protocolVersion: CAL002_PROTOCOL_VERSION,
+      catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+      decisions: [],
+      status: 'completed',
+    }).json, { mode: 0o600 });
+    const result = run(originArgs(root), '', root);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/completed|unresolved|receipt|decisions/i);
+    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
+  });
+
+  it('holds an exclusive session lock across the read-decide-write lifecycle', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    writeFileSync(join(root, '.origin-state.json.session.lock'), '', { mode: 0o600 });
+
+    const result = run(originArgs(root), 'q\n', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/review session is locked/i);
+    expect(() => readFileSync(join(root, 'origin-state.json'))).toThrow();
+    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
+  });
+
+  it('rejects a symlinked parent before creating any private artifact outside the root', () => {
+    const root = temporaryRoot();
+    const outside = temporaryRoot();
+    originCatalogFixture(root);
+    symlinkSync(outside, join(root, 'linked'), 'dir');
+    const result = run([
+      script,
+      'classify-origin',
+      '--root', root,
+      '--catalog', 'catalog.json',
+      '--state', 'linked/origin-state.json',
+      '--out', 'lane-decisions.json',
+    ], 'q\n', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/symbolic link/i);
+    expect(() => readFileSync(join(outside, 'origin-state.json'))).toThrow();
+    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
   });
 });

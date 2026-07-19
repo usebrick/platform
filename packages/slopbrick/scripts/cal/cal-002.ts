@@ -1,6 +1,9 @@
 /** Offline-only CAL-002 owner-review dispatcher. */
 import { execFileSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
+import { constants } from 'node:fs';
+import { lstat, mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 
 import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
 import {
@@ -14,10 +17,16 @@ import {
 } from '../../src/calibration/cal-002/artifact-io';
 import {
   CAL002_LOCKED_RULE_CATALOG_SHA256,
+  CAL002_PROTOCOL_VERSION,
   canonicalArtifact,
   validateCAL002Assignment,
+  type CAL002Catalog,
   type CAL002ReviewLabel,
 } from '../../src/calibration/cal-002/contracts';
+import {
+  resolveCAL002OriginDecisions,
+  type CAL002OriginDecisionRow,
+} from '../../src/calibration/cal-002/origin';
 import type {
   CAL002QualityAssignment,
   CAL002QualityBlindedRow,
@@ -50,7 +59,7 @@ const DISPLAY_SOURCE_BYTE_LIMIT = 16 * 1024;
 const IMPLEMENTATION_SHA_ENV = 'CAL002_REVIEW_IMPLEMENTATION_COMMIT_SHA';
 const LINE_WINDOW_LOCATOR = /^window:[a-f0-9]{64}$/u;
 
-interface Arguments {
+interface ReviewArguments {
   readonly command: 'review-quality';
   readonly root: string;
   readonly corpusRoot?: string;
@@ -62,20 +71,63 @@ interface Arguments {
   readonly implementationCommitSha?: string;
 }
 
+interface OriginArguments {
+  readonly command: 'classify-origin';
+  readonly root: string;
+  readonly catalog: string;
+  readonly state: string;
+  readonly out: string;
+}
+
+type Arguments = ReviewArguments | OriginArguments;
+
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
   readonly rows: readonly { readonly reviewId: string; readonly sourcePath: string }[];
+}
+
+const ORIGIN_STATE_VERSION = 'cal-002-origin-state-v1' as const;
+const ORIGIN_DECISIONS_VERSION = 'cal-002-origin-decisions-v1' as const;
+const ORIGIN_MENU = [
+  '1 hold-origin-default-off',
+  '2 transfer-to-quality',
+  '3 retire',
+  'q save and quit',
+].join('\n');
+const ORIGIN_TRANSFER_MENU = [
+  '1 standards-or-contract-quality-claim',
+  '2 contextual-defect-quality-claim',
+  '3 statistical-review-utility-claim',
+  'q save and quit',
+].join('\n');
+const ORIGIN_TRANSFER_REASON_BY_KEY: Readonly<Record<string, 'standards-or-contract-quality-claim' | 'contextual-defect-quality-claim' | 'statistical-review-utility-claim'>> = {
+  '1': 'standards-or-contract-quality-claim',
+  '2': 'contextual-defect-quality-claim',
+  '3': 'statistical-review-utility-claim',
+};
+const PRIVATE_FILE_MODE = 0o600;
+
+interface OriginState {
+  readonly version: typeof ORIGIN_STATE_VERSION;
+  readonly protocolVersion: typeof CAL002_PROTOCOL_VERSION;
+  readonly catalogSha256: typeof CAL002_LOCKED_RULE_CATALOG_SHA256;
+  readonly decisions: readonly CAL002OriginDecisionRow[];
+  readonly status: 'in-progress' | 'completed';
+}
+
+interface OriginDecisionArtifact {
+  readonly version: typeof ORIGIN_DECISIONS_VERSION;
+  readonly protocolVersion: typeof CAL002_PROTOCOL_VERSION;
+  readonly catalogSha256: typeof CAL002_LOCKED_RULE_CATALOG_SHA256;
+  readonly rows: readonly CAL002OriginDecisionRow[];
+  readonly admitted: false;
 }
 
 function machineOutput(value: unknown): void {
   process.stdout.write(`${canonicalArtifact(value).json}\n`);
 }
 
-function parseArguments(argv: readonly string[]): Arguments {
-  let first = 0;
-  while (argv[first] === '--') first += 1;
-  const [command, ...tokens] = argv.slice(first);
-  if (command !== 'review-quality') throw new Error('Usage: cal:complete review-quality with the required local artifact options');
+function parseReviewArguments(tokens: readonly string[]): ReviewArguments {
   const values = new Map<string, string>();
   const allowed = new Set([
     '--root',
@@ -108,7 +160,7 @@ function parseArguments(argv: readonly string[]): Arguments {
     throw new Error('review-quality requires --corpus-root unless --source-map is supplied');
   }
   return {
-    command,
+    command: 'review-quality',
     root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
     corpusRoot,
     assignment: required('--assignment'),
@@ -120,7 +172,41 @@ function parseArguments(argv: readonly string[]): Arguments {
   };
 }
 
-function resolveImplementationCommitSha(args: Arguments): string {
+function parseOriginArguments(tokens: readonly string[]): OriginArguments {
+  const values = new Map<string, string>();
+  const allowed = new Set(['--root', '--catalog', '--state', '--out']);
+  for (let index = 0; index < tokens.length; index += 2) {
+    const option = tokens[index];
+    const value = tokens[index + 1];
+    if (!allowed.has(option ?? '')) throw new Error('Unknown CAL-002 option ' + (option ?? '<missing>'));
+    if (value === undefined || value.startsWith('--')) throw new Error(option + ' requires one value');
+    if (values.has(option)) throw new Error('Duplicate CAL-002 option ' + option);
+    values.set(option, value);
+  }
+  const required = (option: string): string => {
+    const value = values.get(option);
+    if (value === undefined || value.length === 0) throw new Error('classify-origin requires ' + option);
+    return value;
+  };
+  return {
+    command: 'classify-origin',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    catalog: required('--catalog'),
+    state: required('--state'),
+    out: required('--out'),
+  };
+}
+
+function parseArguments(argv: readonly string[]): Arguments {
+  let first = 0;
+  while (argv[first] === '--') first += 1;
+  const [command, ...tokens] = argv.slice(first);
+  if (command === 'review-quality') return parseReviewArguments(tokens);
+  if (command === 'classify-origin') return parseOriginArguments(tokens);
+  throw new Error('Usage: cal:complete review-quality or classify-origin with the required local artifact options');
+}
+
+function resolveImplementationCommitSha(args: ReviewArguments): string {
   const supplied = args.implementationCommitSha ?? process.env[IMPLEMENTATION_SHA_ENV];
   if (supplied !== undefined && supplied.length > 0) return supplied;
   try {
@@ -145,6 +231,293 @@ function assertExactKeys(value: Record<string, unknown>, expected: readonly stri
   if (actual.length !== keys.length || actual.some((key, index) => key !== keys[index])) {
     throw new Error(`${label} has unknown or missing fields`);
   }
+}
+
+function assertSafeRelativePath(path: string, label: string): void {
+  if (
+    path.length === 0
+    || path.includes('\0')
+    || isAbsolute(path)
+    || win32.isAbsolute(path)
+  ) {
+    throw new Error(label + ' must be a safe relative path');
+  }
+  const segments = path.split(/[\\/]/u);
+  if (segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')) {
+    throw new Error(label + ' must be a safe relative path');
+  }
+}
+
+async function privatePath(root: string, relativePath: string, allowMissingLeaf: boolean): Promise<string> {
+  assertSafeRelativePath(relativePath, 'CAL-002 private artifact path');
+  const canonicalRoot = resolve(root);
+  const rootMetadata = await lstat(canonicalRoot);
+  if (rootMetadata.isSymbolicLink() || !rootMetadata.isDirectory()) {
+    throw new Error('CAL-002 private artifact root must be a regular directory');
+  }
+  const candidate = resolve(canonicalRoot, relativePath);
+  const fromRoot = relative(canonicalRoot, candidate);
+  if (
+    fromRoot.length === 0
+    || fromRoot === '..'
+    || fromRoot.startsWith('..' + sep)
+    || isAbsolute(fromRoot)
+  ) {
+    throw new Error('CAL-002 private artifact path must be contained by its root');
+  }
+  let current = canonicalRoot;
+  const segments = fromRoot.split(sep);
+  for (const [index, segment] of segments.entries()) {
+    current = join(current, segment);
+    try {
+      const metadata = await lstat(current);
+      if (metadata.isSymbolicLink()) throw new Error('CAL-002 private artifact path contains a symbolic link');
+      if (index < segments.length - 1 && !metadata.isDirectory()) {
+        throw new Error('CAL-002 private artifact path ancestor is not a directory');
+      }
+      if (index === segments.length - 1 && !metadata.isFile() && !allowMissingLeaf) {
+        throw new Error('CAL-002 private artifact must be a regular file');
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT' && allowMissingLeaf && index === segments.length - 1) {
+        return candidate;
+      }
+      throw error;
+    }
+  }
+  return candidate;
+}
+
+async function privateWritePath(root: string, relativePath: string): Promise<string> {
+  assertSafeRelativePath(relativePath, 'CAL-002 private artifact path');
+  const canonicalRoot = resolve(root);
+  const rootMetadata = await lstat(canonicalRoot);
+  if (rootMetadata.isSymbolicLink() || !rootMetadata.isDirectory()) {
+    throw new Error('CAL-002 private artifact root must be a regular directory');
+  }
+  const candidate = resolve(canonicalRoot, relativePath);
+  const fromRoot = relative(canonicalRoot, candidate);
+  if (
+    fromRoot.length === 0
+    || fromRoot === '..'
+    || fromRoot.startsWith('..' + sep)
+    || isAbsolute(fromRoot)
+  ) {
+    throw new Error('CAL-002 private artifact path must be contained by its root');
+  }
+  const parent = dirname(candidate);
+  const parentRelative = relative(canonicalRoot, parent);
+  let current = canonicalRoot;
+  for (const segment of parentRelative.length === 0 ? [] : parentRelative.split(sep)) {
+    current = join(current, segment);
+    try {
+      const metadata = await lstat(current);
+      if (metadata.isSymbolicLink()) throw new Error('CAL-002 private artifact path contains a symbolic link');
+      if (!metadata.isDirectory()) throw new Error('CAL-002 private artifact path ancestor is not a directory');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      try {
+        await mkdir(current, { mode: 0o700 });
+      } catch (createError) {
+        if ((createError as NodeJS.ErrnoException).code !== 'EEXIST') throw createError;
+      }
+      const created = await lstat(current);
+      if (created.isSymbolicLink() || !created.isDirectory()) {
+        throw new Error('CAL-002 private artifact directory creation was unsafe');
+      }
+    }
+  }
+  return privatePath(canonicalRoot, relativePath, true);
+}
+
+async function readPrivateCanonical(root: string, relativePath: string, label: string): Promise<unknown> {
+  const path = await privatePath(root, relativePath, false);
+  const metadata = await lstat(path);
+  if ((metadata.mode & 0o777) !== PRIVATE_FILE_MODE) {
+    throw new Error(label + ' must have private mode 0600');
+  }
+  const bytes = await readFile(path, 'utf8');
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes) as unknown;
+  } catch {
+    throw new Error(label + ' is not valid JSON');
+  }
+  if (bytes !== canonicalArtifact(value).json) {
+    throw new Error(label + ' is not exact canonical JSON');
+  }
+  return value;
+}
+
+async function syncPrivateDirectory(path: string): Promise<void> {
+  const directory = await open(path, constants.O_RDONLY);
+  try {
+    await directory.sync();
+  } finally {
+    await directory.close();
+  }
+}
+
+async function writePrivateCanonical(root: string, relativePath: string, value: unknown): Promise<void> {
+  const path = await privateWritePath(root, relativePath);
+  const name = path.split(sep).at(-1) ?? 'origin-state.json';
+  const lockPath = join(dirname(path), '.' + name + '.lock');
+  let lock;
+  try {
+    lock = await open(lockPath, 'wx', PRIVATE_FILE_MODE);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+      throw new Error('CAL-002 origin state is locked by another writer');
+    }
+    throw error;
+  }
+  try {
+    try {
+      const existing = await lstat(path);
+      if (existing.isSymbolicLink() || !existing.isFile()) {
+        throw new Error('CAL-002 private state path must be a regular file');
+      }
+      if ((existing.mode & 0o777) !== PRIVATE_FILE_MODE) {
+        throw new Error('CAL-002 private state must retain private mode 0600');
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    const temporary = join(dirname(path), '.' + name + '.' + process.pid + '.tmp');
+    const handle = await open(temporary, 'wx', PRIVATE_FILE_MODE);
+    try {
+      await handle.writeFile(canonicalArtifact(value).json, 'utf8');
+      await handle.sync();
+    } catch (error) {
+      await handle.close().catch(() => undefined);
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+    await handle.close();
+    try {
+      await rename(temporary, path);
+      await syncPrivateDirectory(dirname(path));
+    } catch (error) {
+      await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+  } catch (error) {
+    throw error;
+  } finally {
+    await lock.close().catch(() => undefined);
+    await unlink(lockPath).catch(() => undefined);
+    await syncPrivateDirectory(dirname(path));
+  }
+}
+
+async function writeImmutablePrivateCanonical(root: string, relativePath: string, value: unknown): Promise<void> {
+  const path = await privateWritePath(root, relativePath);
+  const bytes = canonicalArtifact(value).json;
+  let handle;
+  try {
+    handle = await open(path, 'wx', PRIVATE_FILE_MODE);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const existing = await readPrivateCanonical(root, relativePath, 'CAL-002 origin decisions');
+    if (canonicalArtifact(existing).json === bytes) return;
+    throw new Error('A different CAL-002 origin decisions artifact already exists and is immutable');
+  }
+  try {
+    await handle.writeFile(bytes, 'utf8');
+    await handle.sync();
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    await unlink(path).catch(() => undefined);
+    throw error;
+  } finally {
+    await handle.close().catch(() => undefined);
+  }
+  await syncPrivateDirectory(dirname(path));
+}
+
+function originState(value: unknown, catalog: CAL002Catalog): OriginState {
+  const state = record(value, 'CAL-002 origin state');
+  assertExactKeys(state, ['version', 'protocolVersion', 'catalogSha256', 'decisions', 'status'], 'CAL-002 origin state');
+  if (state.version !== ORIGIN_STATE_VERSION || state.protocolVersion !== CAL002_PROTOCOL_VERSION) {
+    throw new Error('CAL-002 origin state version or protocol is invalid');
+  }
+  if (state.catalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
+    throw new Error('CAL-002 origin state catalog hash is invalid');
+  }
+  if (state.status !== 'in-progress' && state.status !== 'completed') {
+    throw new Error('CAL-002 origin state status is invalid');
+  }
+  if (!Array.isArray(state.decisions)) throw new Error('CAL-002 origin state decisions must be an array');
+  const decisions = state.decisions as readonly CAL002OriginDecisionRow[];
+  const sorted = [...decisions].sort((left, right) => left.ruleId.localeCompare(right.ruleId));
+  if (canonicalArtifact(decisions).json !== canonicalArtifact(sorted).json) {
+    throw new Error('CAL-002 origin state decisions are not in canonical order');
+  }
+  const resolution = resolveCAL002OriginDecisions({
+    catalog,
+    decisions,
+    allowIncomplete: true,
+  });
+  if (state.status === 'completed' && resolution.unresolvedRuleIds.length > 0) {
+    throw new Error('Completed CAL-002 origin state has unresolved owner rows');
+  }
+  return {
+    version: ORIGIN_STATE_VERSION,
+    protocolVersion: CAL002_PROTOCOL_VERSION,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    decisions,
+    status: state.status,
+  };
+}
+
+function buildOriginState(
+  catalog: CAL002Catalog,
+  decisions: readonly CAL002OriginDecisionRow[],
+  status: OriginState['status'],
+): OriginState {
+  const resolution = resolveCAL002OriginDecisions({
+    catalog,
+    decisions,
+    allowIncomplete: true,
+  });
+  if (status === 'completed' && resolution.unresolvedRuleIds.length > 0) {
+    throw new Error('Cannot complete CAL-002 origin state with unresolved owner rows');
+  }
+  return {
+    version: ORIGIN_STATE_VERSION,
+    protocolVersion: CAL002_PROTOCOL_VERSION,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    decisions: [...decisions].sort((left, right) => left.ruleId.localeCompare(right.ruleId)),
+    status,
+  };
+}
+
+function originDecisionArtifact(value: unknown, catalog: CAL002Catalog): OriginDecisionArtifact {
+  const artifact = record(value, 'CAL-002 origin decisions');
+  assertExactKeys(artifact, ['version', 'protocolVersion', 'catalogSha256', 'rows', 'admitted'], 'CAL-002 origin decisions');
+  if (artifact.version !== ORIGIN_DECISIONS_VERSION || artifact.protocolVersion !== CAL002_PROTOCOL_VERSION) {
+    throw new Error('CAL-002 origin decisions version or protocol is invalid');
+  }
+  if (artifact.catalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256 || artifact.admitted !== false) {
+    throw new Error('CAL-002 origin decisions identity or admission flag is invalid');
+  }
+  if (!Array.isArray(artifact.rows)) throw new Error('CAL-002 origin decisions rows must be an array');
+  const ownerIds = new Set(catalog.rows.filter((row) => row.lane === 'origin' && row.ownerReviewRequired).map((row) => row.ruleId));
+  const ownerRows = (artifact.rows as readonly CAL002OriginDecisionRow[]).filter((row) => ownerIds.has(row.ruleId));
+  const resolution = resolveCAL002OriginDecisions({
+    catalog,
+    decisions: ownerRows,
+  });
+  if (canonicalArtifact(resolution.rows).json !== canonicalArtifact(artifact.rows).json) {
+    throw new Error('CAL-002 origin decisions do not exactly cover the catalog');
+  }
+  return {
+    version: ORIGIN_DECISIONS_VERSION,
+    protocolVersion: CAL002_PROTOCOL_VERSION,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    rows: artifact.rows as readonly CAL002OriginDecisionRow[],
+    admitted: false,
+  };
 }
 
 function qualityAssignment(value: unknown): CAL002QualityAssignment {
@@ -196,7 +569,7 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-async function loadState(args: Arguments, assignment: CAL002QualityAssignment, batch: readonly CAL002QualityBlindedRow[]): Promise<CAL002ReviewState> {
+async function loadState(args: ReviewArguments, assignment: CAL002QualityAssignment, batch: readonly CAL002QualityBlindedRow[]): Promise<CAL002ReviewState> {
   let state: CAL002ReviewState;
   try {
     state = await readReviewState({ root: args.root, relativePath: args.state });
@@ -239,7 +612,7 @@ function safeLineWindowLocator(value: unknown): string {
 }
 
 function sourceReader(
-  args: Arguments,
+  args: ReviewArguments,
   assignment: CAL002QualityAssignment,
   batch: readonly CAL002QualityBlindedRow[],
   sources: SourceMap | undefined,
@@ -269,7 +642,7 @@ function sourceReader(
   };
 }
 
-async function resumeCompletedReview(args: Arguments, state: CAL002ReviewState): Promise<void> {
+async function resumeCompletedReview(args: ReviewArguments, state: CAL002ReviewState): Promise<void> {
   let receipt;
   try {
     receipt = await readReviewReceipt({ root: args.root, relativePath: args.receipt });
@@ -289,7 +662,7 @@ async function resumeCompletedReview(args: Arguments, state: CAL002ReviewState):
   });
 }
 
-async function recoverInterruptedCompletion(args: Arguments, state: CAL002ReviewState): Promise<boolean> {
+async function recoverInterruptedCompletion(args: ReviewArguments, state: CAL002ReviewState): Promise<boolean> {
   let receipt;
   try {
     receipt = await readReviewReceipt({ root: args.root, relativePath: args.receipt });
@@ -310,7 +683,7 @@ async function recoverInterruptedCompletion(args: Arguments, state: CAL002Review
   return true;
 }
 
-async function reviewQuality(args: Arguments): Promise<void> {
+async function reviewQuality(args: ReviewArguments): Promise<void> {
   const assignmentValue = await readCanonicalArtifact({ root: args.root, relativePath: args.assignment, label: 'CAL-002 assignment' });
   const assignment = qualityAssignment(assignmentValue);
   const batch = args.blindedBatch === undefined
@@ -395,12 +768,164 @@ async function reviewQuality(args: Arguments): Promise<void> {
   }
 }
 
+async function loadOriginState(args: OriginArguments, catalog: CAL002Catalog): Promise<OriginState> {
+  try {
+    return originState(
+      await readPrivateCanonical(args.root, args.state, 'CAL-002 origin state'),
+      catalog,
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return buildOriginState(catalog, [], 'in-progress');
+  }
+}
+
+async function withOriginSessionLock<T>(args: OriginArguments, action: () => Promise<T>): Promise<T> {
+  const statePath = await privateWritePath(args.root, args.state);
+  const lockPath = join(dirname(statePath), '.' + basename(statePath) + '.session.lock');
+  let lock;
+  try {
+    lock = await open(lockPath, 'wx', PRIVATE_FILE_MODE);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+      throw new Error('CAL-002 origin review session is locked by another process');
+    }
+    throw error;
+  }
+  try {
+    return await action();
+  } finally {
+    await lock.close().catch(() => undefined);
+    await unlink(lockPath).catch(() => undefined);
+    await syncPrivateDirectory(dirname(statePath));
+  }
+}
+
+async function classifyOrigin(args: OriginArguments): Promise<void> {
+  const catalog = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.catalog,
+    label: 'CAL-002 catalog',
+  }) as CAL002Catalog;
+  const ownerRuleIds = catalog.rows
+    .filter((row) => row.lane === 'origin' && row.ownerReviewRequired)
+    .map((row) => row.ruleId)
+    .sort();
+  await withOriginSessionLock(args, () => classifyOriginLocked(args, catalog, ownerRuleIds));
+}
+
+async function classifyOriginLocked(
+  args: OriginArguments,
+  catalog: CAL002Catalog,
+  ownerRuleIds: readonly string[],
+): Promise<void> {
+  let state = await loadOriginState(args, catalog);
+  if (state.status === 'completed') {
+    const artifact = originDecisionArtifact(
+      await readPrivateCanonical(args.root, args.out, 'CAL-002 origin decisions'),
+      catalog,
+    );
+    machineOutput({
+      ok: true,
+      command: args.command,
+      status: 'completed',
+      labeled: ownerRuleIds.length,
+      remaining: 0,
+      decisionsSha256: canonicalArtifact(artifact).sha256,
+    });
+    return;
+  }
+
+  const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
+  const lines = input[Symbol.asyncIterator]();
+  const pause = async (nextRuleId: string | undefined): Promise<void> => {
+    state = buildOriginState(catalog, state.decisions, 'in-progress');
+    await writePrivateCanonical(args.root, args.state, state);
+    machineOutput({
+      ok: true,
+      command: args.command,
+      status: 'paused',
+      labeled: state.decisions.length,
+      remaining: ownerRuleIds.length - state.decisions.length,
+      ...(nextRuleId === undefined ? {} : { nextRuleId }),
+    });
+  };
+  try {
+    const decisions = new Map(state.decisions.map((row) => [row.ruleId, row]));
+    for (const ruleId of ownerRuleIds) {
+      if (decisions.has(ruleId)) continue;
+      process.stderr.write('Origin rule: ' + ruleId + '\n' + ORIGIN_MENU + '\n');
+      let decision: CAL002OriginDecisionRow | undefined;
+      while (decision === undefined) {
+        const next = await lines.next();
+        const key = next.done ? undefined : next.value;
+        if (key === undefined || key === 'q') {
+          await pause(ruleId);
+          return;
+        }
+        if (key === '1') {
+          decision = { ruleId, disposition: 'hold-origin-default-off' };
+        } else if (key === '3') {
+          decision = { ruleId, disposition: 'retire', reason: 'duplicate-or-obsolete' };
+        } else if (key === '2') {
+          while (decision === undefined) {
+            process.stderr.write(ORIGIN_TRANSFER_MENU + '\n');
+            const reasonInput = await lines.next();
+            const reasonKey = reasonInput.done ? undefined : reasonInput.value;
+            if (reasonKey === undefined || reasonKey === 'q') {
+              await pause(ruleId);
+              return;
+            }
+            const reason = ORIGIN_TRANSFER_REASON_BY_KEY[reasonKey];
+            if (reason === undefined) {
+              process.stderr.write('Invalid transfer reason; choose one closed menu key.\n');
+              continue;
+            }
+            decision = { ruleId, disposition: 'transfer-to-quality', reason };
+          }
+        } else {
+          process.stderr.write('Invalid selection; choose one closed menu key.\n');
+        }
+      }
+      decisions.set(ruleId, decision);
+      state = buildOriginState(catalog, [...decisions.values()], 'in-progress');
+      await writePrivateCanonical(args.root, args.state, state);
+    }
+
+    const resolution = resolveCAL002OriginDecisions({
+      catalog,
+      decisions: [...decisions.values()],
+    });
+    const artifact: OriginDecisionArtifact = {
+      version: ORIGIN_DECISIONS_VERSION,
+      protocolVersion: CAL002_PROTOCOL_VERSION,
+      catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+      rows: resolution.rows,
+      admitted: false,
+    };
+    await writeImmutablePrivateCanonical(args.root, args.out, artifact);
+    state = buildOriginState(catalog, [...decisions.values()], 'completed');
+    await writePrivateCanonical(args.root, args.state, state);
+    machineOutput({
+      ok: true,
+      command: args.command,
+      status: 'completed',
+      labeled: ownerRuleIds.length,
+      remaining: 0,
+      decisionsSha256: canonicalArtifact(artifact).sha256,
+    });
+  } finally {
+    input.close();
+  }
+}
+
 async function main(): Promise<void> {
   let command = process.argv[2] ?? 'unknown';
   try {
     const args = parseArguments(process.argv.slice(2));
     command = args.command;
-    await reviewQuality(args);
+    if (args.command === 'review-quality') await reviewQuality(args);
+    else await classifyOrigin(args);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     process.stderr.write(`CAL-002 ${command}: ${message}\n`);
