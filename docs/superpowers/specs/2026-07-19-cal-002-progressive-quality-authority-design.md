@@ -94,9 +94,12 @@ semantics are fixed by this design.
 AI association. The initial vocabulary is:
 
 - `security`
+- `accessibility`
 - `correctness`
 - `reliability`
+- `performance`
 - `maintainability`
+- `documentation-quality`
 - `type-safety`
 - `resource-safety`
 - `test-confidence`
@@ -116,6 +119,8 @@ implementations.
 `claimClass` states what the implementation can legitimately claim:
 
 - `language-or-security-contract`
+- `accessibility-standard`
+- `repository-contract`
 - `deterministic-syntax-or-dataflow`
 - `contextual-heuristic`
 - `statistical-review-signal`
