@@ -51,6 +51,19 @@ describe('security/sql-construction', () => {
     expect(issues[0]?.aiSpecific).toBe(true);
   });
 
+  it('flags interpolated CTE queries through the canonical rule', async () => {
+    const issues = await runRule(
+      'const q = `WITH active AS (SELECT * FROM users WHERE id = ${userId}) SELECT * FROM active`;',
+    );
+    expect(issues.map((issue) => issue.ruleId)).toEqual(['security/sql-construction']);
+  });
+
+  it('keeps parameterized CTE queries negative', async () => {
+    expect(await runRule(
+      'client.query("WITH active AS (SELECT * FROM users WHERE id = $1) SELECT * FROM active", [userId]);',
+    )).toEqual([]);
+  });
+
   it('fires on string-concatenated SQL with +', async () => {
     const issues = await runRule(
       `const q = 'SELECT * FROM users WHERE id = ' + userId;`,

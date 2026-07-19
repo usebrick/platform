@@ -6,7 +6,7 @@
 // variables or expressions into a SQL string instead of using
 // parameterized queries / prepared statements.
 //
-//   const q = `SELECT * FROM users WHERE id = ${userId}`;     // BAD
+//   BAD: a SELECT query assembled with template interpolation
 //   const q = `SELECT * FROM users WHERE id = ?`;             // OK
 //   const q = 'SELECT * FROM users WHERE id = ' + userId;     // BAD
 //
@@ -34,8 +34,16 @@ import { lineOfSource } from '../utils';
 // and "Update every call site" out of the detector. String tokens are
 // extracted lexically below, so comments and nested advice strings cannot
 // become findings.
-const SQL_QUERY_START_RE =
-  /^\s*(?:--[^\n]*\n\s*)*(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b|REPLACE\s+INTO\b|TRUNCATE(?:\s+TABLE)?\s+\S+\b|MERGE\s+INTO\b)/i;
+const DIRECT_SQL_START_RE =
+  /^(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b|REPLACE\s+INTO\b|TRUNCATE(?:\s+TABLE)?\s+\S+\b|MERGE\s+INTO\b)/i;
+const CTE_SQL_START_RE =
+  /^WITH\b[\s\S]*?\)\s*(?:,\s*[A-Za-z_][\w$]*\s+AS\s*\([\s\S]*?\)\s*)*(?:SELECT\b[\s\S]*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\S+\s+SET\b|DELETE\s+FROM\b)/i;
+
+function startsSqlStatement(content: string): boolean {
+  const withoutLeadingComments = content.replace(/^\s*(?:--[^\n]*\n\s*)*/u, '');
+  return DIRECT_SQL_START_RE.test(withoutLeadingComments)
+    || CTE_SQL_START_RE.test(withoutLeadingComments);
+}
 
 // Match template-literal interpolation `${...}` inside a string.
 const TEMPLATE_INTERPOLATION_RE = /\$\{[\s\S]*\}/;
@@ -57,7 +65,7 @@ export const sqlConstructionRule = createRule<RuleContext>({
     if (!source) return issues;
 
     for (const token of scanJsStringTokens(source)) {
-      if (!SQL_QUERY_START_RE.test(token.content)) continue;
+      if (!startsSqlStatement(token.content)) continue;
 
       // 1. Template-literal SQL with interpolation.
       if (token.quote === '`' && TEMPLATE_INTERPOLATION_RE.test(token.content)) {
