@@ -49,6 +49,8 @@ const implementationCommitSha = 'd'.repeat(40);
 const REVIEW_A = '1'.repeat(64);
 const REVIEW_B = '2'.repeat(64);
 const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
+const QUALITY_COHORT_RELATIVE_PATH = '.slopbrick/calibration/cal-002/quality-cohort-v2.json';
+const PROTECTED_ORIGIN_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/origin-state.json';
 
 function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
@@ -1113,7 +1115,7 @@ describe('CAL-002 quality disposition CLI', () => {
       '--reach', 'quality-reach.json',
       '--select', 'layout/gap-monopoly',
       '--select', 'ai/any-density',
-      '--out', '.slopbrick/calibration/cal-002/quality-cohort-v2.json',
+      '--out', QUALITY_COHORT_RELATIVE_PATH,
     ], '', root);
 
     expect(result.status).toBe(0);
@@ -1127,7 +1129,7 @@ describe('CAL-002 quality disposition CLI', () => {
       admitted: false,
       applied: false,
     });
-    const cohortPath = join(root, '.slopbrick/calibration/cal-002/quality-cohort-v2.json');
+    const cohortPath = join(root, QUALITY_COHORT_RELATIVE_PATH);
     const cohortBytes = readFileSync(cohortPath, 'utf8');
     const cohort = JSON.parse(cohortBytes);
     expect(cohort).toEqual({
@@ -1139,7 +1141,6 @@ describe('CAL-002 quality disposition CLI', () => {
     expect(statSync(cohortPath).mode & 0o777).toBe(0o600);
     expect(readFileSync(join(root, 'quality-disposition.json'), 'utf8')).toBe(closeoutBytes);
 
-    const duplicateOut = '.slopbrick/calibration/cal-002/duplicate-cohort-v2.json';
     const duplicate = run([
       script,
       'plan-quality-cohort',
@@ -1148,10 +1149,71 @@ describe('CAL-002 quality disposition CLI', () => {
       '--reach', 'quality-reach.json',
       '--select', 'ai/any-density',
       '--select', 'ai/any-density',
-      '--out', duplicateOut,
+      '--out', QUALITY_COHORT_RELATIVE_PATH,
     ], '', root);
     expect(duplicate.status).toBe(2);
     expect(duplicate.stderr).toMatch(/unique/i);
-    expect(existsSync(join(root, duplicateOut))).toBe(false);
+    expect(readFileSync(cohortPath, 'utf8')).toBe(cohortBytes);
+  });
+
+  it.each([
+    ['the existing quality disposition', 'quality-disposition.json'],
+    ['the protected origin state', PROTECTED_ORIGIN_STATE_RELATIVE_PATH],
+  ] as const)('rejects cohort output aliasing %s without changing bytes or mode', (_label, destination) => {
+    const root = temporaryRoot();
+    approvedAuthorityReceiptFixture(root);
+    writeCanonical(join(root, 'quality-reach.json'), []);
+    if (destination === 'quality-disposition.json') {
+      const closeout = run([
+        script,
+        'quality-closeout',
+        '--root', root,
+        '--authority', 'authority-receipt.json',
+        '--out', destination,
+        '--implementation-commit-sha', implementationCommitSha,
+      ], '', root);
+      expect(closeout.status).toBe(0);
+    } else {
+      mkdirSync(join(root, '.slopbrick/calibration/cal-002'), { recursive: true, mode: 0o700 });
+      writeCanonical(join(root, destination), {
+        version: 'cal-002-origin-state-v1',
+        status: 'protected-test-fixture',
+      });
+    }
+    const destinationPath = join(root, destination);
+    const bytesBefore = readFileSync(destinationPath, 'utf8');
+    const modeBefore = statSync(destinationPath).mode & 0o777;
+
+    const result = run([
+      script,
+      'plan-quality-cohort',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--reach', 'quality-reach.json',
+      '--out', destination,
+    ], '', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain(QUALITY_COHORT_RELATIVE_PATH);
+    expect(readFileSync(destinationPath, 'utf8')).toBe(bytesBefore);
+    expect(statSync(destinationPath).mode & 0o777).toBe(modeBefore);
+    expect(existsSync(join(root, QUALITY_COHORT_RELATIVE_PATH))).toBe(false);
+  });
+
+  it('rejects a noncanonical cohort output before reading authority or reach artifacts', () => {
+    const root = temporaryRoot();
+    const result = run([
+      script,
+      'plan-quality-cohort',
+      '--root', root,
+      '--authority', 'missing-authority.json',
+      '--reach', 'missing-reach.json',
+      '--out', 'quality-disposition.json',
+    ], '', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/--out.*must resolve.*quality-cohort-v2\.json/i);
+    expect(result.stderr).not.toMatch(/ENOENT|missing-authority|missing-reach/i);
+    expect(existsSync(join(root, QUALITY_COHORT_RELATIVE_PATH))).toBe(false);
   });
 });

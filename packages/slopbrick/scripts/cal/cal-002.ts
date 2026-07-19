@@ -241,6 +241,7 @@ const AUTHORITY_MENU = [
   '2 reject the exact batch and leave runtime policy unchanged',
 ].join('\n');
 const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
+const QUALITY_COHORT_RELATIVE_PATH = '.slopbrick/calibration/cal-002/quality-cohort-v2.json';
 const PRIVATE_FILE_MODE = 0o600;
 
 interface OriginState {
@@ -395,13 +396,17 @@ function parsePlanQualityCohortArguments(tokens: readonly string[]): PlanQuality
     if (values.has(option!)) throw new Error(`Duplicate CAL-002 option ${option}`);
     values.set(option!, value);
   }
+  const out = requiredValue(values, '--out', 'plan-quality-cohort');
+  if (out !== QUALITY_COHORT_RELATIVE_PATH) {
+    throw new Error(`plan-quality-cohort --out must resolve to ${QUALITY_COHORT_RELATIVE_PATH}`);
+  }
   return {
     command: 'plan-quality-cohort',
     root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
     authority: requiredValue(values, '--authority', 'plan-quality-cohort'),
     reach: requiredValue(values, '--reach', 'plan-quality-cohort'),
     selectedRuleIds,
-    out: requiredValue(values, '--out', 'plan-quality-cohort'),
+    out: QUALITY_COHORT_RELATIVE_PATH,
   };
 }
 
