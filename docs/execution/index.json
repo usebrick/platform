@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 31,
+  "revision": 32,
   "updatedAt": "2026-07-19",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Red-test Task 10's four dead-code transfer fixtures and native detector controls.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-dead.test.ts tests/rules/dead/unreachable.test.ts tests/rules/dead/unused-import.test.ts tests/rules/dead/unused-local.test.ts tests/rules/dead/unused-parameter.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Red-test Task 11's security transfers and combined 41-row v2 oracle receipt.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-security.test.ts tests/calibration/cal-002-oracles-v2.test.ts tests/rules/security.test.ts tests/rules/sql-construction.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Red-test Task 10's four dead-code transfer fixtures and native detector controls.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-dead.test.ts tests/rules/dead/unreachable.test.ts tests/rules/dead/unused-import.test.ts tests/rules/dead/unused-local.test.ts tests/rules/dead/unused-parameter.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Red-test Task 11's security transfers and combined 41-row v2 oracle receipt.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-security.test.ts tests/calibration/cal-002-oracles-v2.test.ts tests/rules/security.test.ts tests/rules/sql-construction.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

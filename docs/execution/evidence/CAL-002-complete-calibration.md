@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-19
-- **State:** `in_progress` implementation checkpoint at revision 31
-- **Scope:** CAL-002 progressive authority Tasks 1–9; no protected owner
+- **State:** `in_progress` implementation checkpoint at revision 32
+- **Scope:** CAL-002 progressive authority Tasks 1–10; no protected owner
   workflow, runtime policy application, admission, or release is evidenced by
   this receipt.
 
@@ -90,17 +90,28 @@
   cast false positive; comment masking preserves offsets. The independent
   reviewer stalled and was closed, so only the controller audit is recorded,
   not external approval. No durable transfer-oracle receipt was written.
+- Task 10 is checkpointed at `aeef2915a`. It adds complete real-execution
+  cases for `dead/unreachable`, `dead/unused-import`, `dead/unused-local`, and
+  `dead/unused-parameter`, including exact positive, negative, adversarial, and
+  five-family controls. The exact focused matrix passes 50/50 on Node 22.22.3
+  and 24.15.0 with package typecheck on both; 45 broader visitor assertions
+  and signal-strength guardrails also pass. Its approved JSX control exposed
+  and now guards a classic default `React` runtime-import false positive using
+  an exact name/source plus actual-JSX condition. The independent reviewer
+  stalled and was closed, so only the controller audit is recorded. No durable
+  transfer-oracle receipt was written.
 - No authority proposal, private cohort, durable quality/parity/supersession
   or transfer-oracle receipt, runtime policy, rule activation, score, source,
   baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 31.
+  deployment, tag, publish, push, or acquired data changed in revision 32.
   Local application remains separate from those release-boundary decisions.
 
 ## Next evidence
 
-The next implementation evidence is Task 10's complete dead-code and unused-
-binding transfer fixtures for `dead/unreachable`, `dead/unused-import`,
-`dead/unused-local`, and `dead/unused-parameter`, executed through their real
-parser/facts/rule paths and mirrored in native detector controls. This remains
-evidence preparation only: no detector activation, current-policy application,
-owner artifact, or admission can follow from the Task 10 test commit alone.
+The next implementation evidence is Task 11's complete security transfer
+fixtures for `security/hardcoded-secret` and `security/sql-construction`, plus
+the exact combined 32-starting + 9-transferred = 41-row v2 oracle receipt. The
+receipt must bind authority and implementation evidence, carry no source text
+or virtual path, remain `admitted: false`, and fail closed on incomplete or
+invalid transfers. No current-policy application, owner artifact, admission,
+or release follows from the Task 11 evidence commit alone.

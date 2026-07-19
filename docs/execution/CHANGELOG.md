@@ -3,6 +3,36 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 32 — 2026-07-19
+
+### Changed
+
+- Recorded CAL-002 progressive authority Task 10 as implementation-
+  checkpointed at `aeef2915a` after controller adversarial audit. Its
+  independent reviewer stalled and was closed, so no external approval is
+  claimed.
+- Added complete real-execution transfer fixtures for `dead/unreachable`,
+  `dead/unused-import`, `dead/unused-local`, and `dead/unused-parameter`, with
+  exact positive, negative, adversarial, and five-family controls.
+- Recorded the narrow classic React/JSX runtime guard exposed by the approved
+  unused-import control. It requires the exact default name/source and actual
+  JSX and does not change activation, default state, policy, or admission.
+- Advanced the next bounded action to Task 11's two security transfers and
+  combined exact 41-row v2 oracle receipt.
+
+### Evidence
+
+- `aeef2915a`
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- The exact Task 10 matrix passes 50/50 on Node 22.22.3 and 24.15.0 with
+  SlopBrick typecheck on both; 45 broader visitor assertions and signal-
+  strength guardrails pass.
+- Protected owner state remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+- No durable transfer-oracle receipt, current-policy application, owner run,
+  admission, push, tag, publish, deploy, or release was produced.
+
 ## Revision 31 — 2026-07-19
 
 ### Changed

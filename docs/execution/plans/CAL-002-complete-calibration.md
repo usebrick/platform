@@ -25,9 +25,10 @@ remains `applied: false` and `admitted: false`; the v2 proposal is also
 implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
 to ready, so CAL-002 owns the calibration and provenance closeout without
 inventing owner evidence. Progressive authority Tasks 1–8 are implementation-
-checkpointed and independently approved through `e8e62b779`; Task 9 is
-implementation-checkpointed at `33ea0d732` after controller adversarial audit,
-with no external approval claimed because the independent reviewer stalled.
+checkpointed and independently approved through `e8e62b779`; Tasks 9 and 10
+are implementation-checkpointed at `33ea0d732` and `aeef2915a` after controller
+adversarial audit, with no external approval claimed because their independent
+reviewers stalled.
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -38,8 +39,10 @@ IDs remain runnable; their tests use synthetic valid commit SHAs and do not
 write durable parity or supersession receipts. Task 9 adds the shared transfer-
 oracle fixture contract and complete C++/Rust cases, plus the comment-masking
 correction required by its approved control; it writes no durable receipt and
-does not activate a rule. No protected owner workflow or runtime policy
-application has occurred.
+does not activate a rule. Task 10 adds complete dead-code and unused-binding
+transfer fixtures and the narrow classic React/JSX runtime guard required by
+its approved control; it also writes no durable receipt and does not activate a
+rule. No protected owner workflow or runtime policy application has occurred.
 
 ## Scope
 
@@ -100,8 +103,8 @@ application has occurred.
 
 ## Verification
 
-Continue with the focused one-worker dead-code transfer-oracle and native rule
-tests. Before any policy application, verify frozen
+Continue with the focused one-worker security transfer-oracle and combined v2
+oracle-receipt tests. Before any policy application, verify frozen
 identities, source permissions, catalog/config hashes, exact row coverage, lane
 separation, non-admission, provenance output, and the prescribed recursive and
 package-local self-scan gates. This revision does not apply a runtime policy;
@@ -121,7 +124,7 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Red-test Task 10's complete transferred-oracle fixtures and native controls for
-`dead/unreachable`, `dead/unused-import`, `dead/unused-local`, and
-`dead/unused-parameter`. Keep the work evidence-only and non-admitting; do not
-activate a detector or apply policy.
+Red-test Task 11's complete transfer fixtures for `security/hardcoded-secret`
+and `security/sql-construction`, then the combined exact 32-starting + 9-
+transferred = 41-row v2 oracle receipt. Keep the work evidence-only and non-
+admitting; do not activate a detector or apply policy.
