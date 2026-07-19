@@ -272,16 +272,9 @@ export async function readVerifiedSourcesByHash(input: {
   }[];
 }): Promise<ReadonlyMap<string, string>> {
   const root = await existingRoot(input.root);
-  const sourceHints = input.sources.map((source) => source.unitId?.replaceAll('\\', '/'));
   const expectedHashes = new Set(input.sources.map((source) => source.expectedSha256));
-  const files = [...await regularFilesBeneath(root)].sort((left, right) => {
-    const leftRelative = relative(root, left).split(sep).join('/');
-    const rightRelative = relative(root, right).split(sep).join('/');
-    const leftHint = sourceHints.some((hint) => hint !== undefined && (leftRelative === hint || leftRelative.endsWith(`/${hint}`))) ? 0 : 1;
-    const rightHint = sourceHints.some((hint) => hint !== undefined && (rightRelative === hint || rightRelative.endsWith(`/${hint}`))) ? 0 : 1;
-    return leftHint - rightHint || (leftRelative < rightRelative ? -1 : leftRelative > rightRelative ? 1 : 0);
-  });
-  const matches = new Map<string, Buffer[]>();
+  const files = await regularFilesBeneath(root);
+  const matches = new Map<string, { readonly relativePath: string; readonly bytes: Buffer }[]>();
   for (const path of files) {
     const metadata = await lstat(path);
     if (metadata.isSymbolicLink() || !metadata.isFile()) continue;
@@ -289,19 +282,24 @@ export async function readVerifiedSourcesByHash(input: {
     const sha256 = createHash('sha256').update(bytes).digest('hex');
     if (!expectedHashes.has(sha256)) continue;
     const prior = matches.get(sha256) ?? [];
-    prior.push(bytes);
+    prior.push({ relativePath: relative(root, path).split(sep).join('/'), bytes });
     matches.set(sha256, prior);
   }
   const resolved = new Map<string, string>();
-  for (const expectedSha256 of expectedHashes) {
-    const hashMatches = matches.get(expectedSha256) ?? [];
+  for (const source of input.sources) {
+    const hashMatches = matches.get(source.expectedSha256) ?? [];
     if (hashMatches.length === 0) {
       throw new Error('CAL-002 source hash could not be resolved beneath --corpus-root; verify the corpus snapshot');
     }
-    if (hashMatches.length !== 1) {
-      throw new Error(`CAL-002 source hash is ambiguous beneath --corpus-root (${hashMatches.length} regular-file matches)`);
+    const unitId = source.unitId?.replaceAll('\\', '/');
+    const hintMatches = unitId === undefined
+      ? []
+      : hashMatches.filter((candidate) => candidate.relativePath === unitId || candidate.relativePath.endsWith(`/${unitId}`));
+    const candidates = hintMatches.length > 0 ? hintMatches : hashMatches;
+    if (candidates.length !== 1) {
+      throw new Error(`CAL-002 source hash is ambiguous beneath --corpus-root (${candidates.length} applicable regular-file matches)`);
     }
-    resolved.set(expectedSha256, hashMatches[0]!.toString('utf8'));
+    resolved.set(source.expectedSha256, candidates[0]!.bytes.toString('utf8'));
   }
   return resolved;
 }

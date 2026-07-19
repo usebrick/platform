@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
+import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
 import {
   readCanonicalArtifact,
   readReviewReceipt,
@@ -107,7 +108,7 @@ function parseArguments(argv: readonly string[]): Arguments {
   }
   return {
     command,
-    root: values.get('--root') ?? process.cwd(),
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
     corpusRoot,
     assignment: required('--assignment'),
     blindedBatch: values.get('--blinded-batch'),
@@ -223,7 +224,7 @@ function progress(state: CAL002ReviewState): { readonly labeled: number; readonl
 function safeDisplayedSource(source: string): string {
   const bytes = Buffer.from(source, 'utf8');
   const bounded = bytes.subarray(0, DISPLAY_SOURCE_BYTE_LIMIT).toString('utf8');
-  const neutralized = bounded.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/gu, (value) => `\\x${value.codePointAt(0)!.toString(16).padStart(2, '0')}`);
+  const neutralized = bounded.replace(/[\x00-\x09\x0b-\x1f\x7f-\x9f]/gu, (value) => `\\x${value.codePointAt(0)!.toString(16).padStart(2, '0')}`);
   return bytes.byteLength > DISPLAY_SOURCE_BYTE_LIMIT
     ? `${neutralized}${neutralized.endsWith('\n') ? '' : '\n'}[source context truncated at ${DISPLAY_SOURCE_BYTE_LIMIT} bytes]\n`
     : `${neutralized}${neutralized.endsWith('\n') ? '' : '\n'}`;

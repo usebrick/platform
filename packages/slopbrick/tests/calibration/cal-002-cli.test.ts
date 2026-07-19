@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -34,6 +34,12 @@ function sha256(value: string): string {
 
 function temporaryRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'cal-002-cli-'));
+  roots.push(root);
+  return root;
+}
+
+function temporaryRepositoryRoot(): string {
+  const root = mkdtempSync(join(repositoryRoot, '.cal-002-cli-'));
   roots.push(root);
   return root;
 }
@@ -150,6 +156,25 @@ describe('CAL-002 review-quality CLI', () => {
     expect(result.stderr).not.toMatch(/Unknown CAL-002 option --|Usage:/i);
   });
 
+  it('resolves package-wrapper plan artifacts from the repository workspace root without --root', () => {
+    const root = temporaryRepositoryRoot();
+    fixture(root);
+    const fixturePath = relative(repositoryRoot, root);
+    const result = runPackage([
+      'review-quality',
+      '--corpus-root', root,
+      '--assignment', join(fixturePath, 'assignment.json'),
+      '--state', join(fixturePath, 'review-state.json'),
+      '--out', join(fixturePath, 'review-receipt.json'),
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '3\n2\n');
+
+    expect(result.status).toBe(0);
+    expect(packageMachineOutput(result.stdout)).toMatchObject({ ok: true, command: 'review-quality', status: 'completed' });
+    expect(JSON.parse(readFileSync(join(root, 'review-state.json'), 'utf8'))).toMatchObject({ status: 'completed' });
+    expect(JSON.parse(readFileSync(join(root, 'review-receipt.json'), 'utf8'))).toMatchObject({ admitted: false });
+  });
+
   it('accepts only the closed menu, saves once, and resumes at the first unlabeled row', () => {
     const invalidRoot = temporaryRoot();
     const invalid = run(fixture(invalidRoot).args, 'not-useful\nq\n');
@@ -215,7 +240,7 @@ describe('CAL-002 review-quality CLI', () => {
     const corpusRoot = join(workspace, 'corpus');
     mkdirSync(join(corpusRoot, 'nested'), { recursive: true, mode: 0o700 });
     mkdirSync(join(corpusRoot, '.git'), { recursive: true, mode: 0o700 });
-    const source = `export const visible = "\u001b[31mred";\n${'x'.repeat(20_000)}\nNEVER-DISPLAYED-TAIL\n`;
+    const source = `export const visible = "\u001b[31mred";\t// tab\u0085\n${'x'.repeat(20_000)}\nNEVER-DISPLAYED-TAIL\n`;
     writeFileSync(join(corpusRoot, 'nested', 'sample.ts'), source, { mode: 0o600 });
     writeFileSync(join(corpusRoot, '.git', 'ignored-copy.ts'), source, { mode: 0o600 });
     const rows = [{ reviewId: REVIEW_A, ruleId: 'layout/gap-monopoly', evidenceClass: 'contextual-quality', role: 'finding', unitId: 'nested/sample.ts' }] as const;
@@ -254,7 +279,10 @@ describe('CAL-002 review-quality CLI', () => {
     expect(result.stderr).toContain(`lineWindowLocator: window:${'a'.repeat(64)}`);
     expect(result.stderr).toContain('export const visible');
     expect(result.stderr).toContain('\\x1b[31mred');
+    expect(result.stderr).toContain('\\x09// tab\\x85');
     expect(result.stderr).not.toContain('\u001b');
+    expect(result.stderr).not.toContain('\t');
+    expect(result.stderr.replaceAll('\n', '')).not.toMatch(/[\x00-\x1f\x7f-\x9f]/u);
     expect(result.stderr).not.toContain('NEVER-DISPLAYED-TAIL');
     expect(result.stderr.length).toBeLessThan(18_000);
     expect(result.stderr).not.toContain('nested/sample.ts');

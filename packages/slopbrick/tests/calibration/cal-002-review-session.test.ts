@@ -19,6 +19,7 @@ import {
 import {
   readCanonicalArtifact,
   readVerifiedSource,
+  readVerifiedSourcesByHash,
   writeImmutableReceipt,
   writeReviewState,
 } from '../../src/calibration/cal-002/artifact-io';
@@ -241,5 +242,34 @@ describe('CAL-002 private artifact I/O', () => {
       relativePath: 'sources/sample.ts',
       expectedSha256: createHash('sha256').update(source).digest('hex'),
     })).resolves.toBe(source);
+  });
+
+  it('uses the unit ID to resolve duplicate hash candidates and otherwise fails closed', async () => {
+    const root = await temporaryRoot();
+    const source = 'const duplicate = true;\n';
+    const sourceSha256 = createHash('sha256').update(source).digest('hex');
+    await mkdir(join(root, 'snapshot-a', 'src'), { recursive: true });
+    await mkdir(join(root, 'snapshot-b', 'src'), { recursive: true });
+    await writeFile(join(root, 'snapshot-a', 'src', 'sample.ts'), source, { mode: 0o600 });
+    await writeFile(join(root, 'snapshot-b', 'src', 'sample.ts'), source, { mode: 0o600 });
+
+    const resolved = await readVerifiedSourcesByHash({
+      root,
+      sources: [{ expectedSha256: sourceSha256, unitId: 'snapshot-b/src/sample.ts' }],
+    });
+    expect(resolved.get(sourceSha256)).toBe(source);
+
+    await expect(readVerifiedSourcesByHash({
+      root,
+      sources: [{ expectedSha256: sourceSha256, unitId: 'src/sample.ts' }],
+    })).rejects.toThrow(/ambiguous/i);
+    await expect(readVerifiedSourcesByHash({
+      root,
+      sources: [{ expectedSha256: sourceSha256, unitId: 'missing/sample.ts' }],
+    })).rejects.toThrow(/ambiguous/i);
+    await expect(readVerifiedSourcesByHash({
+      root,
+      sources: [{ expectedSha256: '0'.repeat(64), unitId: 'snapshot-b/src/sample.ts' }],
+    })).rejects.toThrow(/could not be resolved|missing/i);
   });
 });
