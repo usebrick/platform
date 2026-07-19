@@ -55,7 +55,7 @@ function maxCallsInInclusiveWindow(lines: readonly number[], windowSize: number)
   let start = 0;
   let maximum = 0;
   for (let end = 0; end < lines.length; end += 1) {
-    while (lines[end]! - lines[start]! > windowSize) start += 1;
+    while (lines[end]! - lines[start]! >= windowSize) start += 1;
     maximum = Math.max(maximum, end - start + 1);
   }
   return maximum;

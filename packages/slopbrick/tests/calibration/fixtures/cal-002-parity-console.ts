@@ -9,8 +9,8 @@ function buildProductionSized(bodyLines: readonly string[]): string {
 }
 
 function fiveClusteredLogs(): string[] {
-  const callOffsets = new Set([0, 7, 14, 21, 30]);
-  return Array.from({ length: 31 }, (_, offset) => (
+  const callOffsets = new Set([0, 7, 14, 21, 29]);
+  return Array.from({ length: 30 }, (_, offset) => (
     callOffsets.has(offset)
       ? `console.log('cluster ${offset}', input);`
       : 'void input;'

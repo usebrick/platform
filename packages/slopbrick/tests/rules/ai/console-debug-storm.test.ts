@@ -48,10 +48,19 @@ function buildStormSource(prefix = ''): string {
 }
 
 function fiveClusteredLogs(): string[] {
+  const callOffsets = new Set([0, 7, 14, 21, 29]);
+  return Array.from({ length: 30 }, (_, offset) => (
+    callOffsets.has(offset)
+      ? `console.log('cluster ${offset}', input);`
+      : 'void input;'
+  ));
+}
+
+function fiveLogsAcrossThirtyOneLines(): string[] {
   const callOffsets = new Set([0, 7, 14, 21, 30]);
   return Array.from({ length: 31 }, (_, offset) => (
     callOffsets.has(offset)
-      ? `console.log('cluster ${offset}', input);`
+      ? `console.log('boundary ${offset}', input);`
       : 'void input;'
   ));
 }
@@ -126,6 +135,23 @@ describe('ai/console-debug-storm', () => {
     expect(await runRule(clustered, 'service.test.ts')).toEqual([]);
     expect(await runRule(clustered, 'logger.ts')).toEqual([]);
     expect(await runRule(`import pino from 'pino';\n${clustered}`)).toEqual([]);
+    expect(await runRule(buildPaddedSource(fiveLogsAcrossThirtyOneLines()))).toEqual([]);
     expect(await runRule(buildPaddedSource(fiveLogsSeparatedBy(31)))).toEqual([]);
+  });
+
+  it('preserves the total-debug threshold independently of log clustering', async () => {
+    const warnings = (count: number): string[] => Array.from(
+      { length: count },
+      (_, index) => `console.warn('warning ${index}', input);`,
+    );
+    const tenWarnings = buildPaddedSource(warnings(10));
+    const nineWarnings = buildPaddedSource(warnings(9));
+
+    expect(tenWarnings.length).toBeGreaterThan(1000);
+    expect(nineWarnings.length).toBeGreaterThan(1000);
+    expect((await runRule(tenWarnings)).map((issue) => issue.ruleId)).toEqual([
+      'ai/console-debug-storm',
+    ]);
+    expect(await runRule(nineWarnings)).toEqual([]);
   });
 });
