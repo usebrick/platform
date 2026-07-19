@@ -38,7 +38,7 @@ export const aiAnyDensityRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'medium',
   aiSpecific: true,
-  description: 'TypeScript `any` density deviates from human baseline — AI agents use `any` as a type-safety escape hatch (Lee, Hassan, Hindle, MSR 2026)',
+  description: 'A high share of TypeScript declarations use `any`, weakening static type checks.',
   create(context) {
     return context;
   },
@@ -71,14 +71,12 @@ export const aiAnyDensityRule = createRule<RuleContext>({
         severity: 'medium',
         aiSpecific: true,
         message:
-          `\`any\` density is ${(ratio * 100).toFixed(0)}% of declarations ` +
-          `(${anyCount} \`any\` / ${declCount} declarations). ` +
-          `High \`any\` density is a type-safety escape hatch; review whether each ` +
-          `annotation has a precise type and a documented reason.`,
+          `\`any\` appears in ${(ratio * 100).toFixed(0)}% of type-bearing declarations ` +
+          `(${anyCount} \`any\` uses / ${declCount} declarations). Review whether each escape hatch is necessary.`,
         line: 1,
         column: 1,
         advice:
-          'Replace `any` with a precise type (`unknown`, `Record<string, unknown>`, or a domain-specific type). The `: any` annotation propagates type-errors and defeats TypeScript\'s safety guarantees.',
+          'Replace `any` with a precise type, `unknown` plus narrowing, or a documented boundary type. Keep an escape hatch only when the surrounding contract cannot be represented safely.',
       },
     ];
   },
