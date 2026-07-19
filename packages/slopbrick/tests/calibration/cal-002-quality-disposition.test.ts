@@ -56,6 +56,29 @@ function metricRow(
   evidenceClass: CAL002QualityMetricsRow['evidenceClass'],
   outcome: CAL002QualityMetricsRow['outcome'] = 'default-on',
 ): CAL002QualityMetricsRow {
+  const evidence = outcome === 'default-on'
+    ? {
+        requestedPerArm: 30 as const,
+        finding: { actionableDefect: 22, usefulNoSafeFix: 4, notUseful: 2, cannotDetermine: 2 },
+        control: { actionableDefect: 1, usefulNoSafeFix: 1, notUseful: 27, cannotDetermine: 1 },
+      }
+    : outcome === 'default-off'
+      ? {
+          requestedPerArm: 30 as const,
+          finding: { actionableDefect: 0, usefulNoSafeFix: 0, notUseful: 30, cannotDetermine: 0 },
+          control: { actionableDefect: 0, usefulNoSafeFix: 0, notUseful: 30, cannotDetermine: 0 },
+        }
+      : outcome === 'quality-advisory'
+        ? {
+            requestedPerArm: 100 as const,
+            finding: { actionableDefect: 60, usefulNoSafeFix: 0, notUseful: 40, cannotDetermine: 0 },
+            control: { actionableDefect: 40, usefulNoSafeFix: 0, notUseful: 60, cannotDetermine: 0 },
+          }
+        : {
+            requestedPerArm: 30 as const,
+            finding: { actionableDefect: 18, usefulNoSafeFix: 0, notUseful: 12, cannotDetermine: 0 },
+            control: { actionableDefect: 8, usefulNoSafeFix: 0, notUseful: 22, cannotDetermine: 0 },
+          };
   const claimCeiling = outcome === 'insufficient-evidence'
     ? 'insufficient-evidence'
     : outcome === 'quality-advisory' || evidenceClass === 'statistical-review-utility'
@@ -64,9 +87,7 @@ function metricRow(
   return {
     ruleId,
     evidenceClass,
-    requestedPerArm: 30,
-    finding: { actionableDefect: 20, usefulNoSafeFix: 4, notUseful: 4, cannotDetermine: 2 },
-    control: { actionableDefect: 2, usefulNoSafeFix: 2, notUseful: 25, cannotDetermine: 1 },
+    ...evidence,
     outcome,
     claimCeiling,
   };
@@ -220,6 +241,57 @@ describe('CAL-002 v2 quality disposition', () => {
       gateEligible: false,
       metricsRowSha256: canonicalArtifact(advisory).sha256,
     });
+  });
+
+  it.each([
+    ['default-on', 'default-off'],
+    ['quality-advisory', 'default-off'],
+    ['default-off', 'default-on'],
+  ] as const)(
+    'rejects forged %s when the v1 reducer requires %s',
+    (forgedOutcome, reducerOutcome) => {
+      const reducerConsistent = metricRow('layout/gap-monopoly', 'contextual-quality', reducerOutcome);
+      const forged: CAL002QualityMetricsRow = {
+        ...reducerConsistent,
+        outcome: forgedOutcome,
+        claimCeiling: forgedOutcome === 'quality-advisory'
+          ? 'review-target-utility'
+          : 'quality-usefulness',
+      };
+
+      expect(() => buildCAL002QualityDispositionV2({
+        authorityReceipt: approvedAuthorityReceipt(),
+        selectedRuleIds: [forged.ruleId],
+        selectedMetrics: [forged],
+        implementationCommitSha: COMMIT_SHA,
+      })).toThrow(/outcome.*reducer|reducer.*outcome/i);
+    },
+  );
+
+  it('preserves reducer-consistent insufficient rows and conservative v1 shortage outcomes', () => {
+    const insufficient = metricRow('test/duplicate-setup', 'contextual-quality', 'insufficient-evidence');
+    const shortage: CAL002QualityMetricsRow = {
+      ...metricRow('layout/gap-monopoly', 'contextual-quality', 'default-on'),
+      outcome: 'insufficient-evidence',
+      claimCeiling: 'insufficient-evidence',
+    };
+
+    for (const metric of [insufficient, shortage]) {
+      const row = buildCAL002QualityDispositionV2({
+        authorityReceipt: approvedAuthorityReceipt(),
+        selectedRuleIds: [metric.ruleId],
+        selectedMetrics: [metric],
+        implementationCommitSha: COMMIT_SHA,
+      }).disposition.rows.find(({ ruleId }) => ruleId === metric.ruleId);
+
+      expect(row).toMatchObject({
+        runtimeOutcome: 'insufficient-evidence',
+        enabledByDefault: false,
+        scoreEligible: false,
+        gateEligible: false,
+        metricsRowSha256: canonicalArtifact(metric).sha256,
+      });
+    }
   });
 
   it('rejects statistical default-on, metrics outside the selection, duplicate metrics, and incomplete selections', () => {

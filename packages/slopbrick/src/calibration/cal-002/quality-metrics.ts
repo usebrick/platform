@@ -32,7 +32,7 @@ import {
   type CAL002ReviewReceipt,
 } from './review-session';
 
-type CAL002QualityEvidenceClass = Extract<
+export type CAL002QualityEvidenceClass = Extract<
   CAL002EvidenceClass,
   'contextual-quality' | 'statistical-review-utility'
 >;
@@ -125,6 +125,20 @@ export interface CAL002QualityEvaluation {
   readonly rationaleCode: CAL002QualityRationaleCode;
   readonly terminal: boolean;
   readonly nextRound?: { readonly findings: 100; readonly controls: 100 };
+}
+
+export interface ReduceCAL002QualityMetricsRowInput {
+  readonly ruleId: string;
+  readonly evidenceClass: CAL002QualityEvidenceClass;
+  readonly requestedPerArm: 30 | 100;
+  readonly finding: CAL002QualityLabelCounts;
+  readonly control: CAL002QualityLabelCounts;
+  readonly hasShortage: boolean;
+}
+
+export interface CAL002QualityMetricsRowReduction {
+  readonly evaluation: CAL002QualityEvaluation;
+  readonly row: CAL002QualityMetricsRow;
 }
 
 export interface CAL002QualityExpansionRequest {
@@ -603,6 +617,108 @@ function decisionFor(input: {
   };
 }
 
+function normalizedLabelCounts(
+  value: CAL002QualityLabelCounts,
+  label: string,
+): CAL002QualityLabelCounts {
+  requireRecord(value, label);
+  const keys = Object.keys(value).sort(compareCodePoints);
+  const expectedKeys: readonly (keyof CAL002QualityLabelCounts)[] = [
+    'actionableDefect',
+    'cannotDetermine',
+    'notUseful',
+    'usefulNoSafeFix',
+  ];
+  if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) {
+    throw new TypeError(`${label} must contain exact label-count fields`);
+  }
+  for (const key of expectedKeys) {
+    if (!Number.isInteger(value[key]) || value[key] < 0) {
+      throw new TypeError(`${label}.${key} must be a non-negative integer`);
+    }
+  }
+  return {
+    actionableDefect: value.actionableDefect,
+    usefulNoSafeFix: value.usefulNoSafeFix,
+    notUseful: value.notUseful,
+    cannotDetermine: value.cannotDetermine,
+  };
+}
+
+function labelCountTotal(value: CAL002QualityLabelCounts): number {
+  return value.actionableDefect + value.usefulNoSafeFix + value.notUseful + value.cannotDetermine;
+}
+
+function metricsRowForEvaluation(evaluation: CAL002QualityEvaluation): CAL002QualityMetricsRow {
+  return {
+    ruleId: evaluation.ruleId,
+    evidenceClass: evaluation.evidenceClass,
+    requestedPerArm: evaluation.requestedPerArm,
+    finding: evaluation.finding.labels,
+    control: evaluation.control.labels,
+    outcome: evaluation.outcome,
+    claimCeiling: evaluation.claimCeiling,
+  };
+}
+
+export function reduceCAL002QualityMetricsRow(
+  input: ReduceCAL002QualityMetricsRowInput,
+): CAL002QualityMetricsRowReduction {
+  requireRecord(input, 'CAL-002 quality metrics row reducer input');
+  if (input.evidenceClass !== 'contextual-quality' && input.evidenceClass !== 'statistical-review-utility') {
+    throw new TypeError('CAL-002 quality metrics row reducer has an invalid evidence class');
+  }
+  if (input.requestedPerArm !== 30 && input.requestedPerArm !== 100) {
+    throw new TypeError('CAL-002 quality metrics row reducer requestedPerArm must be 30 or 100');
+  }
+  if (typeof input.hasShortage !== 'boolean') {
+    throw new TypeError('CAL-002 quality metrics row reducer hasShortage must be boolean');
+  }
+  const findingLabels = normalizedLabelCounts(input.finding, 'CAL-002 quality metrics finding labels');
+  const controlLabels = normalizedLabelCounts(input.control, 'CAL-002 quality metrics control labels');
+  const findingTotal = labelCountTotal(findingLabels);
+  const controlTotal = labelCountTotal(controlLabels);
+  if (findingTotal > input.requestedPerArm || controlTotal > input.requestedPerArm) {
+    throw new TypeError('CAL-002 quality metrics row exceeds its requested labels');
+  }
+
+  const round = input.requestedPerArm === 30 ? 'initial' as const : 'final' as const;
+  const determinateFloor = Math.ceil(input.requestedPerArm * 0.8);
+  const finding = armEvaluation(findingLabels);
+  const control = armEvaluation(controlLabels);
+  const hasShortage = input.hasShortage
+    || findingTotal < input.requestedPerArm
+    || controlTotal < input.requestedPerArm;
+  const decision = decisionFor({
+    evidenceClass: input.evidenceClass,
+    round,
+    finding,
+    control,
+    determinateFloor,
+    hasShortage,
+  });
+  const findingInterval = finding.usefulInterval;
+  const controlInterval = control.usefulInterval;
+  const evaluation: CAL002QualityEvaluation = {
+    ruleId: input.ruleId,
+    evidenceClass: input.evidenceClass,
+    requestedPerArm: input.requestedPerArm,
+    determinateFloor,
+    finding,
+    control,
+    reviewUtilityBar: findingInterval !== undefined
+      && controlInterval !== undefined
+      && findingInterval.lower >= 0.5
+      && findingInterval.lower > controlInterval.upper,
+    controlDominated: findingInterval !== undefined
+      && controlInterval !== undefined
+      && findingInterval.upper <= controlInterval.lower,
+    ...decision,
+    ...(!decision.terminal ? { nextRound: { findings: 100 as const, controls: 100 as const } } : {}),
+  };
+  return { evaluation, row: metricsRowForEvaluation(evaluation) };
+}
+
 function countRows(
   ruleId: string,
   rounds: readonly ValidatedRound[],
@@ -661,41 +777,16 @@ function evaluationFor(
   rounds: readonly ValidatedRound[],
 ): CAL002QualityEvaluation {
   const labels = countRows(ruleId, rounds);
-  const finding = armEvaluation(labels.finding);
-  const control = armEvaluation(labels.control);
   const requestedPerArm = currentRound === 'initial' ? 30 as const : 100 as const;
-  const determinateFloor = Math.ceil(requestedPerArm * 0.8);
   const current = rounds[rounds.length - 1]!;
-  const hasShortage = shortageForRule(current.shortages, ruleId);
-  const decision = decisionFor({
-    evidenceClass,
-    round: currentRound,
-    finding,
-    control,
-    determinateFloor,
-    hasShortage,
-  });
-  const findingInterval = finding.usefulInterval;
-  const controlInterval = control.usefulInterval;
-  const reviewUtilityBar = findingInterval !== undefined
-    && controlInterval !== undefined
-    && findingInterval.lower >= 0.5
-    && findingInterval.lower > controlInterval.upper;
-  const controlDominated = findingInterval !== undefined
-    && controlInterval !== undefined
-    && findingInterval.upper <= controlInterval.lower;
-  return {
+  return reduceCAL002QualityMetricsRow({
     ruleId,
     evidenceClass,
     requestedPerArm,
-    determinateFloor,
-    finding,
-    control,
-    reviewUtilityBar,
-    controlDominated,
-    ...decision,
-    ...(!decision.terminal ? { nextRound: { findings: 100 as const, controls: 100 as const } } : {}),
-  };
+    finding: labels.finding,
+    control: labels.control,
+    hasShortage: shortageForRule(current.shortages, ruleId),
+  }).evaluation;
 }
 
 function validateRoundCombination(
@@ -785,15 +876,7 @@ export function reduceCAL002QualityEvidence(
     assignmentSha256: current.assignment.assignmentSha256,
     reviewReceiptSha256: current.reviewReceiptSha256,
     reducerImplementationCommitSha: input.reducerImplementationCommitSha,
-    rows: evaluations.map((row): CAL002QualityMetricsRow => ({
-      ruleId: row.ruleId,
-      evidenceClass: row.evidenceClass,
-      requestedPerArm: row.requestedPerArm,
-      finding: row.finding.labels,
-      control: row.control.labels,
-      outcome: row.outcome,
-      claimCeiling: row.claimCeiling,
-    })),
+    rows: evaluations.map((row) => metricsRowForEvaluation(row)),
     admitted: false,
   };
   const validation = validateCAL002QualityMetrics(metrics);

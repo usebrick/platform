@@ -16,6 +16,7 @@ import {
   type CAL002RuntimeOutcomeV2,
 } from './contracts-v2';
 import {
+  reduceCAL002QualityMetricsRow,
   wilson95,
   type CAL002QualityLabelCounts,
   type CAL002QualityMetricsRow,
@@ -290,27 +291,21 @@ function validateMetricRow(
   if (authority.evidenceClass === 'statistical-review-utility' && outcome === 'default-on') {
     throw new TypeError(`CAL-002 statistical evidence cannot produce default-on for ${authority.ruleId}`);
   }
-  const claimCeiling: CAL002QualityMetricsRow['claimCeiling'] = outcome === 'insufficient-evidence'
-    ? 'insufficient-evidence'
-    : outcome === 'quality-advisory' || authority.evidenceClass === 'statistical-review-utility'
-      ? 'review-target-utility'
-      : 'quality-usefulness';
-  if (value.claimCeiling !== claimCeiling) {
-    throw new TypeError(`CAL-002 selected metric ${authority.ruleId} outcome and claim ceiling are incompatible`);
-  }
-  if (outcome !== 'insufficient-evidence'
-    && (finding.total === finding.cannotDetermine || control.total === control.cannotDetermine)) {
-    throw new TypeError(`CAL-002 selected metric ${authority.ruleId} is measured without determinate labels`);
-  }
-  return {
+  const normalized = reduceCAL002QualityMetricsRow({
     ruleId: authority.ruleId,
     evidenceClass: authority.evidenceClass,
     requestedPerArm: value.requestedPerArm,
     finding: finding.counts,
     control: control.counts,
-    outcome,
-    claimCeiling,
-  };
+    // A v1 metrics row does not retain family-reach or matched-strata shortage
+    // details. Preserve its conservative insufficient result without allowing
+    // any outcome that could elevate runtime authority.
+    hasShortage: outcome === 'insufficient-evidence',
+  }).row;
+  if (outcome !== normalized.outcome || value.claimCeiling !== normalized.claimCeiling) {
+    throw new TypeError(`CAL-002 selected metric ${authority.ruleId} outcome/claim ceiling does not match the v1 reducer`);
+  }
+  return normalized;
 }
 
 function unmeasuredRow(
