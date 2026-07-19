@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
+import { delimiter, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -32,6 +32,7 @@ import {
   CAL002_PROTOCOL_VERSION_V2,
   type CAL002AuthorityReceiptV2,
 } from '../../src/calibration/cal-002/contracts-v2';
+import { CAL002_ORIGIN_FROZEN_GOVERNING_HASHES } from '../../src/calibration/cal-002/origin-v2';
 import {
   completeCAL002Review,
   recordCAL002Review,
@@ -51,6 +52,11 @@ const REVIEW_B = '2'.repeat(64);
 const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
 const QUALITY_COHORT_RELATIVE_PATH = '.slopbrick/calibration/cal-002/quality-cohort-v2.json';
 const PROTECTED_ORIGIN_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/origin-state.json';
+const FROZEN_HOLDOUT_COMMIT_SHA = '45d2dd038107d3d1d7731192126bf0d48dd6f84b';
+const FROZEN_DECISION_COMMIT_SHA = '215647e22d8b289f944cc44e047efeedb553a04d';
+const RECORDED_HOLDOUT_RECEIPT_PATH = '/private/tmp/cal-001-v1-holdout-receipt-2026-07-17.json';
+const RECORDED_METRICS_PATH = '/private/tmp/cal-001-v1-holdout-metrics-2026-07-17.json';
+const RECORDED_MATRIX_PATH = '/private/tmp/cal-001-v1-decision-matrix-2026-07-17.json';
 
 function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
@@ -213,7 +219,11 @@ function approvedAuthorityReceiptFixture(root: string): CAL002AuthorityReceiptV2
   return receipt;
 }
 
-function cal001MatrixFixture(root: string): { readonly matrix: CAL001DecisionMatrix; readonly matrixSha256: string } {
+function cal001MatrixFixture(root: string): {
+  readonly matrix: CAL001DecisionMatrix;
+  readonly matrixSha256: string;
+  readonly metrics: CAL001HoldoutMetrics;
+} {
   const registry = new RuleRegistry();
   registry.loadBuiltins();
   const rules = registry.getRules();
@@ -241,7 +251,121 @@ function cal001MatrixFixture(root: string): { readonly matrix: CAL001DecisionMat
     metrics,
   });
   writeCanonical(join(root, 'cal001-matrix.json'), result.matrix);
-  return result;
+  return { ...result, metrics };
+}
+
+function historicalRerunArtifactsFixture(root: string): {
+  readonly holdoutReceiptPath: string;
+  readonly metricsPath: string;
+  readonly matrixPath: string;
+} {
+  const { metrics } = cal001MatrixFixture(root);
+  const registry = new RuleRegistry();
+  registry.loadBuiltins();
+  const defaultOff = getDefaultOffRules();
+  const metricsSha256 = canonicalArtifact(metrics).sha256;
+  const holdoutReceipt = {
+    version: 'cal-001-v1-holdout-receipt-v1',
+    protocolVersion: 'CAL-001-v1',
+    implementationCommitSha: FROZEN_HOLDOUT_COMMIT_SHA,
+    configHash: '5'.repeat(64),
+    workerCount: 1,
+    evaluation: 'diagnostic-only',
+    admitted: false,
+    inputHashes: {
+      protocolSha256: '1'.repeat(64),
+      sourceBindingReceiptSha256: '2'.repeat(64),
+      planSha256: '3'.repeat(64),
+    },
+    metrics: { metricsSha256 },
+  } as const;
+  const holdoutReceiptSha256 = canonicalArtifact(holdoutReceipt).sha256;
+  const matrix = buildCAL001DecisionMatrix({
+    protocolVersion: 'CAL-001-v1',
+    holdoutImplementationCommitSha: FROZEN_HOLDOUT_COMMIT_SHA,
+    decisionImplementationCommitSha: FROZEN_DECISION_COMMIT_SHA,
+    holdoutReceiptSha256,
+    metricsSha256,
+    leakageStatus: 'clear',
+    metricsStatus: 'available',
+    ruleCatalog: registry.getRules().map((rule) => ({
+      ruleId: rule.id,
+      aiSpecific: rule.aiSpecific,
+      existingDefaultOff: rule.defaultOff === true || defaultOff.has(rule.id),
+    })),
+    metrics,
+  }).matrix;
+  const holdoutReceiptPath = join(root, 'rerun-fixture-holdout.json');
+  const metricsPath = join(root, 'rerun-fixture-metrics.json');
+  const matrixPath = join(root, 'rerun-fixture-matrix.json');
+  writeCanonical(holdoutReceiptPath, holdoutReceipt);
+  writeCanonical(metricsPath, metrics);
+  writeCanonical(matrixPath, matrix);
+  return { holdoutReceiptPath, metricsPath, matrixPath };
+}
+
+function fakeHistoricalRerunTools(root: string): {
+  readonly bin: string;
+  readonly logPath: string;
+  readonly driverPath: string;
+} {
+  const bin = join(root, 'fake-bin');
+  mkdirSync(bin, { recursive: true, mode: 0o700 });
+  const logPath = join(root, 'tool-log.jsonl');
+  const driverPath = join(root, 'fake-tool.cjs');
+  writeFileSync(driverPath, `
+const { appendFileSync, copyFileSync, mkdirSync, rmSync, writeFileSync } = require('node:fs');
+const { dirname, join } = require('node:path');
+const tool = process.argv[2];
+const args = process.argv.slice(3);
+appendFileSync(process.env.CAL002_TEST_TOOL_LOG, JSON.stringify({
+  tool,
+  cwd: process.cwd(),
+  args,
+  corepackNetwork: process.env.COREPACK_ENABLE_NETWORK,
+}) + '\\n');
+const valueAfter = (flag) => args[args.indexOf(flag) + 1];
+if (tool === 'git') {
+  if (args[0] === 'rev-parse') process.stdout.write('${'c'.repeat(40)}\\n');
+  if (args[0] === 'worktree' && args[1] === 'add') {
+    const checkout = args[3];
+    const commit = args[4];
+    mkdirSync(checkout, { recursive: true });
+    if (commit === '${FROZEN_DECISION_COMMIT_SHA}') {
+      const reducer = join(checkout, 'packages/slopbrick/src/calibration/corpus-v1/calibration-decisions.ts');
+      mkdirSync(dirname(reducer), { recursive: true });
+      if (process.env.CAL002_TEST_REDUCER_FIXTURE) {
+        copyFileSync(process.env.CAL002_TEST_REDUCER_FIXTURE, reducer);
+      } else {
+        writeFileSync(reducer, 'fixture decision reducer bytes\\n');
+      }
+    }
+  }
+  if (args[0] === 'worktree' && args[1] === 'remove') rmSync(args[3], { recursive: true, force: true });
+  process.exit(0);
+}
+if (tool === 'corepack') {
+  if (args.includes('cal:corpus:v1-holdout')) {
+    if (process.env.CAL002_TEST_FAIL_HOLDOUT === '1') {
+      process.stderr.write('injected historical holdout failure\\n');
+      process.exit(2);
+    }
+    copyFileSync(process.env.CAL002_TEST_HOLDOUT_FIXTURE, valueAfter('--out'));
+    copyFileSync(process.env.CAL002_TEST_METRICS_FIXTURE, valueAfter('--metrics-out'));
+  }
+  if (args.includes('cal:corpus:v1-decisions')) {
+    copyFileSync(process.env.CAL002_TEST_MATRIX_FIXTURE, valueAfter('--out'));
+  }
+  process.exit(0);
+}
+process.exit(64);
+`, { mode: 0o600 });
+  for (const tool of ['git', 'corepack']) {
+    const path = join(bin, tool);
+    writeFileSync(path, '#!/bin/sh\nexec node "$CAL002_TEST_TOOL_DRIVER" "' + tool + '" "$@"\n', { mode: 0o700 });
+    chmodSync(path, 0o700);
+  }
+  return { bin, logPath, driverPath };
 }
 
 function run(args: readonly string[], input: string, cwd = packageRoot, env: NodeJS.ProcessEnv = process.env) {
@@ -1219,17 +1343,65 @@ describe('CAL-002 quality disposition CLI', () => {
 });
 
 describe('CAL-002 research-origin v2 CLI', () => {
+  it.runIf([
+    RECORDED_HOLDOUT_RECEIPT_PATH,
+    RECORDED_METRICS_PATH,
+    RECORDED_MATRIX_PATH,
+  ].every((path) => existsSync(path)))(
+    'reuses the exact frozen local identity into a temporary closed receipt',
+    () => {
+      const root = temporaryRepositoryRoot();
+      approvedAuthorityReceiptFixture(root);
+      const out = 'origin-receipt-v2.json';
+      const result = run([
+        script,
+        'verify-origin-v2',
+        '--root', root,
+        '--authority', 'authority-receipt.json',
+        '--corpus-root', join(root, 'must-not-run'),
+        '--out', out,
+        '--implementation-commit-sha', implementationCommitSha,
+      ], '', root, {
+        ...process.env,
+        CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH: RECORDED_HOLDOUT_RECEIPT_PATH,
+        CAL002_ORIGIN_METRICS_PATH: RECORDED_METRICS_PATH,
+        CAL002_ORIGIN_MATRIX_PATH: RECORDED_MATRIX_PATH,
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        ok: true,
+        command: 'verify-origin-v2',
+        status: 'reused',
+        rows: 32,
+        admitted: false,
+      });
+      expect(JSON.parse(readFileSync(join(root, out), 'utf8'))).toMatchObject({
+        status: 'reused',
+        governingHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+        admitted: false,
+      });
+      expect(existsSync(join(root, 'must-not-run'))).toBe(false);
+    },
+  );
+
   it('fails closed without complete hash or one-worker rerun evidence and writes no receipt', () => {
     const root = temporaryRepositoryRoot();
     approvedAuthorityReceiptFixture(root);
     const corpusRoot = join(root, 'empty-corpus');
     mkdirSync(corpusRoot, { recursive: true, mode: 0o700 });
     const out = 'origin-receipt-v2.json';
+    const fakeTools = fakeHistoricalRerunTools(root);
     const missingEvidenceEnvironment = {
       ...process.env,
+      PATH: `${fakeTools.bin}${delimiter}${process.env.PATH ?? ''}`,
       CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH: join(root, 'missing-holdout.json'),
       CAL002_ORIGIN_METRICS_PATH: join(root, 'missing-metrics.json'),
       CAL002_ORIGIN_MATRIX_PATH: join(root, 'missing-matrix.json'),
+      CAL002_TEST_TOOL_DRIVER: fakeTools.driverPath,
+      CAL002_TEST_TOOL_LOG: fakeTools.logPath,
+      CAL002_TEST_FAIL_HOLDOUT: '1',
     };
 
     const result = run([
@@ -1246,6 +1418,187 @@ describe('CAL-002 research-origin v2 CLI', () => {
     expect(result.stderr).not.toMatch(/Usage: cal:complete/i);
     expect(existsSync(join(root, out))).toBe(false);
   });
+
+  it('uses exact detached historical evaluators offline and removes both rerun worktrees', () => {
+    const root = temporaryRepositoryRoot();
+    approvedAuthorityReceiptFixture(root);
+    const corpusRoot = join(root, 'safe-empty-corpus');
+    mkdirSync(corpusRoot, { recursive: true, mode: 0o700 });
+    const fixtures = historicalRerunArtifactsFixture(root);
+    const fakeTools = fakeHistoricalRerunTools(root);
+    const out = 'origin-receipt-v2.json';
+    const result = run([
+      script,
+      'verify-origin-v2',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--corpus-root', corpusRoot,
+      '--out', out,
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '', root, {
+      ...process.env,
+      PATH: `${fakeTools.bin}${delimiter}${process.env.PATH ?? ''}`,
+      CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH: join(root, 'missing-holdout.json'),
+      CAL002_ORIGIN_METRICS_PATH: join(root, 'missing-metrics.json'),
+      CAL002_ORIGIN_MATRIX_PATH: join(root, 'missing-matrix.json'),
+      CAL002_TEST_TOOL_DRIVER: fakeTools.driverPath,
+      CAL002_TEST_TOOL_LOG: fakeTools.logPath,
+      CAL002_TEST_HOLDOUT_FIXTURE: fixtures.holdoutReceiptPath,
+      CAL002_TEST_METRICS_FIXTURE: fixtures.metricsPath,
+      CAL002_TEST_MATRIX_FIXTURE: fixtures.matrixPath,
+    });
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/governing|rerun|required/i);
+    expect(result.stderr).toMatch(/reducerSha256/i);
+    expect(existsSync(join(root, out))).toBe(false);
+
+    const entries = readFileSync(fakeTools.logPath, 'utf8').trim().split('\n').map((line) => (
+      JSON.parse(line) as {
+        readonly tool: string;
+        readonly cwd: string;
+        readonly args: readonly string[];
+        readonly corepackNetwork?: string;
+      }
+    ));
+    const additions = entries.filter((entry) =>
+      entry.tool === 'git' && entry.args[0] === 'worktree' && entry.args[1] === 'add');
+    expect(additions.map((entry) => [entry.args[2], entry.args[4]])).toEqual([
+      ['--detach', FROZEN_HOLDOUT_COMMIT_SHA],
+      ['--detach', FROZEN_DECISION_COMMIT_SHA],
+    ]);
+    const holdoutCheckout = additions[0]!.args[3]!;
+    const decisionCheckout = additions[1]!.args[3]!;
+
+    const corepack = entries.filter((entry) => entry.tool === 'corepack');
+    expect(corepack.filter((entry) => entry.args[1] === 'install').map((entry) => [
+      entry.cwd,
+      entry.args,
+      entry.corepackNetwork,
+    ])).toEqual([
+      [holdoutCheckout, ['pnpm', 'install', '--offline', '--frozen-lockfile'], '0'],
+      [decisionCheckout, ['pnpm', 'install', '--offline', '--frozen-lockfile'], '0'],
+    ]);
+    expect(corepack.filter((entry) => entry.args.at(-1) === 'build').map((entry) => [
+      entry.cwd,
+      entry.args,
+    ])).toEqual([
+      [holdoutCheckout, ['pnpm', '--filter', '@usebrick/core', 'build']],
+      [holdoutCheckout, ['pnpm', '--filter', '@usebrick/engine', 'build']],
+      [holdoutCheckout, ['pnpm', '--filter', 'slopbrick', 'build']],
+      [decisionCheckout, ['pnpm', '--filter', '@usebrick/core', 'build']],
+      [decisionCheckout, ['pnpm', '--filter', '@usebrick/engine', 'build']],
+      [decisionCheckout, ['pnpm', '--filter', 'slopbrick', 'build']],
+    ]);
+    const holdoutRun = corepack.find((entry) => entry.args.includes('cal:corpus:v1-holdout'))!;
+    expect(holdoutRun.cwd).toBe(holdoutCheckout);
+    expect(holdoutRun.args[holdoutRun.args.indexOf('--implementation-commit-sha') + 1]).toBe(
+      FROZEN_HOLDOUT_COMMIT_SHA,
+    );
+    const decisionRun = corepack.find((entry) => entry.args.includes('cal:corpus:v1-decisions'))!;
+    expect(decisionRun.cwd).toBe(decisionCheckout);
+    expect(decisionRun.args[decisionRun.args.indexOf('--holdout-implementation-commit-sha') + 1]).toBe(
+      FROZEN_HOLDOUT_COMMIT_SHA,
+    );
+    expect(decisionRun.args[decisionRun.args.indexOf('--decision-implementation-commit-sha') + 1]).toBe(
+      FROZEN_DECISION_COMMIT_SHA,
+    );
+
+    const removals = entries.filter((entry) =>
+      entry.tool === 'git' && entry.args[0] === 'worktree' && entry.args[1] === 'remove');
+    expect(removals.map((entry) => entry.args[3]).sort()).toEqual(
+      [holdoutCheckout, decisionCheckout].sort(),
+    );
+    expect(existsSync(holdoutCheckout)).toBe(false);
+    expect(existsSync(decisionCheckout)).toBe(false);
+  });
+
+  it.runIf([
+    RECORDED_HOLDOUT_RECEIPT_PATH,
+    RECORDED_METRICS_PATH,
+    RECORDED_MATRIX_PATH,
+  ].every((path) => existsSync(path)))(
+    'completes an exact-hash injected historical rerun and writes only a temp receipt',
+    () => {
+      const root = temporaryRepositoryRoot();
+      approvedAuthorityReceiptFixture(root);
+      const corpusRoot = join(root, 'safe-empty-corpus');
+      mkdirSync(corpusRoot, { recursive: true, mode: 0o700 });
+      const reducerFixturePath = join(root, 'frozen-decision-reducer.ts');
+      const reducer = spawnSync('git', [
+        'show',
+        `${FROZEN_DECISION_COMMIT_SHA}:packages/slopbrick/src/calibration/corpus-v1/calibration-decisions.ts`,
+      ], {
+        cwd: repositoryRoot,
+        encoding: 'buffer',
+        maxBuffer: 1024 * 1024,
+      });
+      expect(reducer.status).toBe(0);
+      expect(createHash('sha256').update(reducer.stdout).digest('hex')).toBe(
+        CAL002_ORIGIN_FROZEN_GOVERNING_HASHES.reducerSha256,
+      );
+      writeFileSync(reducerFixturePath, reducer.stdout, { mode: 0o600 });
+      const fakeTools = fakeHistoricalRerunTools(root);
+      const out = 'origin-receipt-v2.json';
+
+      const result = run([
+        script,
+        'verify-origin-v2',
+        '--root', root,
+        '--authority', 'authority-receipt.json',
+        '--corpus-root', corpusRoot,
+        '--out', out,
+        '--implementation-commit-sha', implementationCommitSha,
+      ], '', root, {
+        ...process.env,
+        PATH: `${fakeTools.bin}${delimiter}${process.env.PATH ?? ''}`,
+        CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH: join(root, 'missing-holdout.json'),
+        CAL002_ORIGIN_METRICS_PATH: join(root, 'missing-metrics.json'),
+        CAL002_ORIGIN_MATRIX_PATH: join(root, 'missing-matrix.json'),
+        CAL002_TEST_TOOL_DRIVER: fakeTools.driverPath,
+        CAL002_TEST_TOOL_LOG: fakeTools.logPath,
+        CAL002_TEST_HOLDOUT_FIXTURE: RECORDED_HOLDOUT_RECEIPT_PATH,
+        CAL002_TEST_METRICS_FIXTURE: RECORDED_METRICS_PATH,
+        CAL002_TEST_MATRIX_FIXTURE: RECORDED_MATRIX_PATH,
+        CAL002_TEST_REDUCER_FIXTURE: reducerFixturePath,
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        ok: true,
+        command: 'verify-origin-v2',
+        status: 'rerun-completed',
+        rows: 32,
+        admitted: false,
+      });
+      const receipt = JSON.parse(readFileSync(join(root, out), 'utf8')) as {
+        readonly status: string;
+        readonly governingHashes: unknown;
+        readonly rows: readonly unknown[];
+        readonly admitted: boolean;
+      };
+      expect(receipt).toMatchObject({
+        status: 'rerun-completed',
+        governingHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+        admitted: false,
+      });
+      expect(receipt.rows).toHaveLength(32);
+
+      const entries = readFileSync(fakeTools.logPath, 'utf8').trim().split('\n').map((line) => (
+        JSON.parse(line) as { readonly tool: string; readonly args: readonly string[] }
+      ));
+      const additions = entries.filter((entry) =>
+        entry.tool === 'git' && entry.args[0] === 'worktree' && entry.args[1] === 'add');
+      const removals = entries.filter((entry) =>
+        entry.tool === 'git' && entry.args[0] === 'worktree' && entry.args[1] === 'remove');
+      expect(additions).toHaveLength(2);
+      expect(removals.map((entry) => entry.args[3]).sort()).toEqual(
+        additions.map((entry) => entry.args[3]).sort(),
+      );
+      for (const addition of additions) expect(existsSync(addition.args[3]!)).toBe(false);
+    },
+  );
 
   it('rejects the protected v1 origin state as output before reading inputs', () => {
     const root = temporaryRoot();
@@ -1267,5 +1620,48 @@ describe('CAL-002 research-origin v2 CLI', () => {
     expect(result.stderr).toMatch(/protected.*origin state|artifact destinations|same file/i);
     expect(result.stderr).not.toMatch(/ENOENT|missing-authority|missing-corpus/i);
     expect(readFileSync(protectedPath, 'utf8')).toBe(before);
+  });
+
+  it.each([
+    [
+      'case-folded authority',
+      '.SLOPBRICK/CALIBRATION/CAL-002/ORIGIN-STATE.JSON',
+      'origin-receipt-v2.json',
+    ],
+    [
+      'case-folded output',
+      'missing-authority.json',
+      '.SLOPBRICK/CALIBRATION/CAL-002/ORIGIN-STATE.JSON',
+    ],
+    [
+      'NFKC-normalized output',
+      'missing-authority.json',
+      '.slopbrick/calibration/cal-002/origin-state\uff0ejson',
+    ],
+  ] as const)('rejects a %s alias of protected v1 state before reads or writes', (_label, authority, out) => {
+    const root = temporaryRepositoryRoot();
+    const protectedPath = join(root, PROTECTED_ORIGIN_STATE_RELATIVE_PATH);
+    mkdirSync(join(root, '.slopbrick/calibration/cal-002'), { recursive: true, mode: 0o700 });
+    writeCanonical(protectedPath, { version: 'cal-002-origin-state-v1', marker: 'unchanged' });
+    const before = readFileSync(protectedPath, 'utf8');
+
+    const result = run([
+      script,
+      'verify-origin-v2',
+      '--root', root,
+      '--authority', authority,
+      '--corpus-root', join(root, 'must-not-be-read'),
+      '--out', out,
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/protected|alias|collision|distinct/i);
+    expect(result.stderr).not.toMatch(/ENOENT|missing-authority|must-not-be-read/i);
+    expect(readFileSync(protectedPath, 'utf8')).toBe(before);
+    if (out === 'origin-receipt-v2.json'
+      || out.includes('\uff0e')) {
+      expect(existsSync(join(root, out))).toBe(false);
+    }
   });
 });

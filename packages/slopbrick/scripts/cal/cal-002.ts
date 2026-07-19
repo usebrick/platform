@@ -265,6 +265,7 @@ const PROTECTED_ORIGIN_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/ori
 const CAL001_RECORDED_HOLDOUT_RECEIPT_PATH = '/private/tmp/cal-001-v1-holdout-receipt-2026-07-17.json';
 const CAL001_RECORDED_METRICS_PATH = '/private/tmp/cal-001-v1-holdout-metrics-2026-07-17.json';
 const CAL001_RECORDED_MATRIX_PATH = '/private/tmp/cal-001-v1-decision-matrix-2026-07-17.json';
+const CAL001_FROZEN_DECISION_COMMIT_SHA = '215647e22d8b289f944cc44e047efeedb553a04d';
 const PRIVATE_FILE_MODE = 0o600;
 
 interface OriginState {
@@ -827,6 +828,7 @@ async function readExternalCanonicalArtifact(path: string, label: string): Promi
 
 async function deriveCAL001OriginGoverningHashes(input: {
   readonly monorepoRoot: string;
+  readonly reducerRoot: string;
   readonly holdoutReceiptPath: string;
   readonly metricsPath: string;
   readonly matrixPath: string;
@@ -863,7 +865,7 @@ async function deriveCAL001OriginGoverningHashes(input: {
     throw new Error('CAL-001 local artifacts do not preserve their canonical evidence bindings');
   }
   const reducerBytes = await readFile(join(
-    input.monorepoRoot,
+    input.reducerRoot,
     'packages/slopbrick/src/calibration/corpus-v1/calibration-decisions.ts',
   ));
   return {
@@ -886,6 +888,7 @@ async function recordedCAL001OriginGoverningHashes(
   try {
     return await deriveCAL001OriginGoverningHashes({
       monorepoRoot,
+      reducerRoot: monorepoRoot,
       holdoutReceiptPath: process.env.CAL002_ORIGIN_HOLDOUT_RECEIPT_PATH
         ?? CAL001_RECORDED_HOLDOUT_RECEIPT_PATH,
       metricsPath: process.env.CAL002_ORIGIN_METRICS_PATH
@@ -910,60 +913,157 @@ function childFailureMessage(error: unknown): string {
     : 'unknown child-process failure';
 }
 
+function runHistoricalChild(input: {
+  readonly executable: 'git' | 'corepack';
+  readonly args: readonly string[];
+  readonly cwd: string;
+  readonly label: string;
+  readonly env?: NodeJS.ProcessEnv;
+}): void {
+  try {
+    execFileSync(input.executable, [...input.args], {
+      cwd: input.cwd,
+      env: input.env ?? process.env,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch (error) {
+    throw new Error(`${input.label}: ${childFailureMessage(error)}`);
+  }
+}
+
 async function rerunCAL001OriginEvidence(
   monorepoRoot: string,
   corpusRoot: string,
 ): Promise<CAL002OriginGoverningHashes> {
-  const rerunImplementationCommitSha = execFileSync('git', ['rev-parse', 'HEAD'], {
-    cwd: monorepoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  }).trim();
-  assertCommitSha(rerunImplementationCommitSha, 'CAL-001 rerun implementation commit SHA');
   const temporaryRoot = await realpath(await mkdtemp(join(tmpdir(), 'cal-002-origin-v2-')));
+  const holdoutCheckout = join(temporaryRoot, 'holdout-evaluator');
+  const decisionCheckout = join(temporaryRoot, 'decision-reducer');
   const holdoutReceiptPath = join(temporaryRoot, 'holdout-receipt.json');
   const metricsPath = join(temporaryRoot, 'holdout-metrics.json');
   const matrixPath = join(temporaryRoot, 'decision-matrix.json');
+  const childEnvironment = {
+    ...process.env,
+    CI: '1',
+    COREPACK_ENABLE_NETWORK: '0',
+  };
+  const addedCheckouts: string[] = [];
+  let result: CAL002OriginGoverningHashes | undefined;
+  let primaryError: unknown;
   try {
-    try {
-      execFileSync('corepack', [
+    runHistoricalChild({
+      executable: 'git',
+      args: ['worktree', 'add', '--detach', holdoutCheckout, CAL002_ORIGIN_FROZEN_GOVERNING_HASHES.scannerCommitSha],
+      cwd: monorepoRoot,
+      label: 'CAL-001 frozen holdout worktree creation failed',
+    });
+    addedCheckouts.push(holdoutCheckout);
+    runHistoricalChild({
+      executable: 'git',
+      args: ['worktree', 'add', '--detach', decisionCheckout, CAL001_FROZEN_DECISION_COMMIT_SHA],
+      cwd: monorepoRoot,
+      label: 'CAL-001 frozen decision worktree creation failed',
+    });
+    addedCheckouts.push(decisionCheckout);
+
+    for (const checkout of addedCheckouts) {
+      runHistoricalChild({
+        executable: 'corepack',
+        args: ['pnpm', 'install', '--offline', '--frozen-lockfile'],
+        cwd: checkout,
+        env: childEnvironment,
+        label: 'CAL-001 historical offline install failed',
+      });
+      for (const packageName of ['@usebrick/core', '@usebrick/engine', 'slopbrick']) {
+        runHistoricalChild({
+          executable: 'corepack',
+          args: ['pnpm', '--filter', packageName, 'build'],
+          cwd: checkout,
+          env: childEnvironment,
+          label: `CAL-001 historical ${packageName} build failed`,
+        });
+      }
+    }
+
+    runHistoricalChild({
+      executable: 'corepack',
+      args: [
         'pnpm', '--filter', 'slopbrick', 'cal:corpus:v1-holdout', '--',
         '--corpus-root', corpusRoot,
-        '--protocol', join(monorepoRoot, 'docs/execution/evidence/CAL-001-protocol.md'),
+        '--protocol', join(holdoutCheckout, 'docs/execution/evidence/CAL-001-protocol.md'),
         '--out', holdoutReceiptPath,
         '--metrics-out', metricsPath,
-        '--implementation-commit-sha', rerunImplementationCommitSha,
-      ], {
-        cwd: monorepoRoot,
-        env: process.env,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-      execFileSync('corepack', [
+        '--implementation-commit-sha', CAL002_ORIGIN_FROZEN_GOVERNING_HASHES.scannerCommitSha,
+      ],
+      cwd: holdoutCheckout,
+      env: childEnvironment,
+      label: 'CAL-001 frozen one-worker holdout rerun failed',
+    });
+    runHistoricalChild({
+      executable: 'corepack',
+      args: [
         'pnpm', '--filter', 'slopbrick', 'cal:corpus:v1-decisions', '--',
         '--holdout-receipt', holdoutReceiptPath,
         '--metrics', metricsPath,
         '--out', matrixPath,
-        '--holdout-implementation-commit-sha', rerunImplementationCommitSha,
-        '--decision-implementation-commit-sha', rerunImplementationCommitSha,
-      ], {
-        cwd: monorepoRoot,
-        env: process.env,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch (error) {
-      throw new Error(`CAL-001 one-worker origin rerun failed: ${childFailureMessage(error)}`);
-    }
-    return await deriveCAL001OriginGoverningHashes({
-      monorepoRoot,
+        '--holdout-implementation-commit-sha', CAL002_ORIGIN_FROZEN_GOVERNING_HASHES.scannerCommitSha,
+        '--decision-implementation-commit-sha', CAL001_FROZEN_DECISION_COMMIT_SHA,
+      ],
+      cwd: decisionCheckout,
+      env: childEnvironment,
+      label: 'CAL-001 frozen decision rerun failed',
+    });
+
+    const governingHashes = await deriveCAL001OriginGoverningHashes({
+      monorepoRoot: decisionCheckout,
+      reducerRoot: decisionCheckout,
       holdoutReceiptPath,
       metricsPath,
       matrixPath,
     });
-  } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
+    const verification = assessCAL002CAL001Reuse({
+      governingHashes,
+      expectedGoverningHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
+    });
+    if (verification.status !== 'reused') {
+      throw new Error(
+        `CAL-001 historical rerun did not reproduce frozen governing hashes: ${verification.mismatches.join(', ')}`,
+      );
+    }
+    result = governingHashes;
+  } catch (error) {
+    primaryError = error;
   }
+
+  const cleanupErrors: string[] = [];
+  for (const checkout of [...addedCheckouts].reverse()) {
+    try {
+      runHistoricalChild({
+        executable: 'git',
+        args: ['worktree', 'remove', '--force', checkout],
+        cwd: monorepoRoot,
+        label: 'CAL-001 historical worktree cleanup failed',
+      });
+    } catch (error) {
+      cleanupErrors.push(error instanceof Error ? error.message : String(error));
+      await rm(checkout, { recursive: true, force: true });
+    }
+  }
+  try {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  } catch (error) {
+    cleanupErrors.push(`CAL-001 historical temporary cleanup failed: ${childFailureMessage(error)}`);
+  }
+  if (cleanupErrors.length > 0) {
+    const primary = primaryError === undefined
+      ? ''
+      : `${primaryError instanceof Error ? primaryError.message : String(primaryError)}; `;
+    throw new Error(`${primary}CAL-001 historical cleanup was incomplete: ${cleanupErrors.join('; ')}`);
+  }
+  if (primaryError !== undefined) throw primaryError;
+  if (result === undefined) throw new Error('CAL-001 historical rerun completed without governing hashes');
+  return result;
 }
 
 async function privateWritePath(root: string, relativePath: string): Promise<string> {
@@ -1882,17 +1982,12 @@ async function planQualityCohort(args: PlanQualityCohortArguments): Promise<void
 }
 
 async function verifyOriginV2(args: VerifyOriginV2Arguments): Promise<void> {
-  assertSafeRelativePath(args.authority, 'CAL-002 authority receipt path');
-  assertSafeRelativePath(args.out, 'CAL-002 v2 origin receipt path');
-  if (args.authority === PROTECTED_ORIGIN_STATE_RELATIVE_PATH
-    || args.out === PROTECTED_ORIGIN_STATE_RELATIVE_PATH) {
-    throw new Error('verify-origin-v2 must not read or write the protected CAL-002 v1 origin state');
-  }
   await assertDistinctArtifactDestinations({
     root: args.root,
     artifacts: [
       { relativePath: args.authority, label: 'CAL-002 authority receipt' },
       { relativePath: args.out, label: 'CAL-002 v2 origin receipt' },
+      { relativePath: PROTECTED_ORIGIN_STATE_RELATIVE_PATH, label: 'CAL-002 protected v1 origin state' },
     ],
   });
   const monorepoRoot = detectMonorepoRoot(process.cwd())
@@ -1927,7 +2022,6 @@ async function verifyOriginV2(args: VerifyOriginV2Arguments): Promise<void> {
   const result = buildCAL002OriginReceiptV2({
     authorityReceipt,
     governingHashes: governingHashes ?? {},
-    expectedGoverningHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
     originImplementationCommitSha,
     ...(rerunEvidence === undefined ? {} : { rerunEvidence }),
   });

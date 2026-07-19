@@ -20,7 +20,7 @@ import {
 
 export const CAL002_ORIGIN_RECEIPT_VERSION_V2 = 'cal-002-origin-receipt-v2' as const;
 
-export const CAL002_ORIGIN_FROZEN_GOVERNING_HASHES = {
+export const CAL002_ORIGIN_FROZEN_GOVERNING_HASHES = Object.freeze({
   protocolSha256: 'd78ceb22bd2d3a2bc91676d93facd7003af6c1b8351fdf773139a138bd1f1528',
   sourceBindingReceiptSha256: '47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac',
   splitPlanSha256: '9c4638526e9a4161d3e74f70197f0b25717439e6bd477bef98664a03c9a9219c',
@@ -31,7 +31,7 @@ export const CAL002_ORIGIN_FROZEN_GOVERNING_HASHES = {
   metricsSha256: '9d4e57ef42dfad1d65becf750690ef9991ba29c03f0181531fb4321853f1bea5',
   cal001MatrixSha256: '3c170e308f8ec0be1c1c31b4a5716810388f2692f6e7f0a179b4fd48665eca1c',
   reducerSha256: '42b554357d45913c05b4b5f5adeef928a08fbb27a1b83c2f4465bc9dbac7343b',
-} as const satisfies CAL002OriginGoverningHashes;
+} as const satisfies CAL002OriginGoverningHashes);
 
 export interface CAL002OriginRowV2 {
   readonly ruleId: string;
@@ -61,7 +61,6 @@ export interface CAL002OriginReceiptV2 {
 export interface BuildCAL002OriginReceiptV2Input {
   readonly authorityReceipt: CAL002AuthorityReceiptV2;
   readonly governingHashes: Partial<CAL002OriginGoverningHashes>;
-  readonly expectedGoverningHashes: CAL002OriginGoverningHashes;
   readonly originImplementationCommitSha: string;
   readonly rerunEvidence?: CAL002CAL001RerunEvidence;
 }
@@ -129,7 +128,6 @@ function assertInputKeys(value: Record<string, unknown>): void {
   const allowed = [
     'authorityReceipt',
     'governingHashes',
-    'expectedGoverningHashes',
     'originImplementationCommitSha',
     'rerunEvidence',
   ];
@@ -145,16 +143,16 @@ function researchAuthorityRows(rows: readonly CAL002AuthorityRowV2[]): readonly 
     row.destination === 'research-origin' && row.readiness === 'research-only');
 }
 
-function canonicalResearchRuleIds(): readonly string[] {
+function canonicalResearchRows(): readonly CAL002AuthorityRowV2[] {
   const rows = researchAuthorityRows(canonicalAuthorityRowsV2());
   if (rows.length !== 32) {
     throw new TypeError('CAL-002 canonical authority does not contain exactly 32 research-origin rows');
   }
-  return rows.map((row) => row.ruleId);
+  return rows;
 }
 
 function assertResearchAuthorityRows(rows: readonly CAL002AuthorityRowV2[]): void {
-  const expectedRuleIds = canonicalResearchRuleIds();
+  const expectedRuleIds = canonicalResearchRows().map((row) => row.ruleId);
   const actualRuleIds = rows.map((row) => row.ruleId);
   if (actualRuleIds.length !== expectedRuleIds.length
     || actualRuleIds.some((ruleId, index) => ruleId !== expectedRuleIds[index])) {
@@ -177,17 +175,6 @@ function assertResearchAuthorityRows(rows: readonly CAL002AuthorityRowV2[]): voi
   }
 }
 
-function selectedGoverningHashes(
-  input: BuildCAL002OriginReceiptV2Input,
-  status: CAL002OriginReceiptV2['status'],
-): CAL002OriginGoverningHashes {
-  if (status === 'reused') return input.expectedGoverningHashes;
-  if (input.rerunEvidence === undefined) {
-    throw new TypeError('CAL-002 origin hash drift requires completed one-worker rerun evidence');
-  }
-  return input.rerunEvidence.governingHashes;
-}
-
 export function buildCAL002OriginReceiptV2(
   input: BuildCAL002OriginReceiptV2Input,
 ): CAL002OriginReceiptResultV2 {
@@ -200,7 +187,7 @@ export function buildCAL002OriginReceiptV2(
   assertResearchAuthorityRows(authorityRows);
   const reuse = assessCAL002CAL001Reuse({
     governingHashes: input.governingHashes,
-    expectedGoverningHashes: input.expectedGoverningHashes,
+    expectedGoverningHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
     ...(input.rerunEvidence === undefined ? {} : { rerunEvidence: input.rerunEvidence }),
   });
   if (reuse.status === 'rerun-required') {
@@ -209,10 +196,6 @@ export function buildCAL002OriginReceiptV2(
     );
   }
   const status = reuse.status;
-  const governingHashes = selectedGoverningHashes(input, status);
-  if (governingHashes.catalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
-    throw new TypeError('CAL-002 origin governing catalog hash does not match the locked catalog');
-  }
 
   const receipt: CAL002OriginReceiptV2 = {
     version: CAL002_ORIGIN_RECEIPT_VERSION_V2,
@@ -220,7 +203,7 @@ export function buildCAL002OriginReceiptV2(
     authorityReceiptSha256: canonicalArtifact(input.authorityReceipt).sha256,
     originImplementationCommitSha: input.originImplementationCommitSha,
     status,
-    governingHashes,
+    governingHashes: CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
     rows: authorityRows.map((row) => {
       const evidenceSha256 = row.aiAssociation.evidenceSha256;
       if (evidenceSha256 === undefined) {
@@ -263,15 +246,15 @@ function validateHashes(value: unknown, errors: string[]): void {
     } catch (error) {
       errors.push((error as Error).message);
     }
-  }
-  if (value.catalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
-    errors.push('artifact.governingHashes.catalogSha256 must match the locked catalog');
+    if (value[key] !== CAL002_ORIGIN_FROZEN_GOVERNING_HASHES[key]) {
+      errors.push(`artifact.governingHashes.${key} must match the frozen CAL-001 identity`);
+    }
   }
 }
 
 function validateRow(
   value: unknown,
-  expectedRuleId: string,
+  expectedRow: CAL002AuthorityRowV2,
   status: unknown,
   index: number,
   errors: string[],
@@ -282,7 +265,7 @@ function validateRow(
     return;
   }
   if (!sameKeys(value, ROW_KEYS)) errors.push(`${path} has unknown or missing fields`);
-  if (value.ruleId !== expectedRuleId) errors.push(`${path}.ruleId must follow canonical research-origin order`);
+  if (value.ruleId !== expectedRow.ruleId) errors.push(`${path}.ruleId must follow canonical research-origin order`);
   if (value.destination !== 'research-origin') errors.push(`${path}.destination must be research-origin`);
   if (value.evidenceStatus !== status) errors.push(`${path}.evidenceStatus must match artifact.status`);
   if (value.claimCeiling !== 'internal-origin-association') {
@@ -297,6 +280,9 @@ function validateRow(
     assertSha256(value.evidenceSha256, `${path}.evidenceSha256`);
   } catch (error) {
     errors.push((error as Error).message);
+  }
+  if (value.evidenceSha256 !== expectedRow.aiAssociation.evidenceSha256) {
+    errors.push(`${path}.evidenceSha256 must match canonical research association evidence`);
   }
   if (value.admitted !== false) errors.push(`${path}.admitted must be false`);
 }
@@ -321,13 +307,13 @@ export function validateCAL002OriginReceiptV2(value: unknown): CAL002ValidationR
     errors.push('artifact.status must be reused or rerun-completed');
   }
   validateHashes(value.governingHashes, errors);
-  const expectedRuleIds = canonicalResearchRuleIds();
-  if (!Array.isArray(value.rows) || value.rows.length !== expectedRuleIds.length) {
+  const expectedRows = canonicalResearchRows();
+  if (!Array.isArray(value.rows) || value.rows.length !== expectedRows.length) {
     errors.push('artifact.rows must contain exactly 32 canonical research-origin rows');
   }
   const rows = Array.isArray(value.rows) ? value.rows : [];
-  for (const [index, expectedRuleId] of expectedRuleIds.entries()) {
-    validateRow(rows[index], expectedRuleId, value.status, index, errors);
+  for (const [index, expectedRow] of expectedRows.entries()) {
+    validateRow(rows[index], expectedRow, value.status, index, errors);
   }
   if (value.admitted !== false) errors.push('artifact.admitted must be false');
   return { ok: errors.length === 0, errors };

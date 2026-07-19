@@ -22,6 +22,7 @@ import {
 } from '../../src/calibration/cal-002/contracts';
 import type { CAL002OriginGoverningHashes } from '../../src/calibration/cal-002/origin';
 import {
+  CAL002_ORIGIN_FROZEN_GOVERNING_HASHES,
   buildCAL002OriginReceiptV2,
   validateCAL002OriginReceiptV2,
 } from '../../src/calibration/cal-002/origin-v2';
@@ -60,25 +61,13 @@ function authorityWithRows(rows: readonly CAL002AuthorityRowV2[]): CAL002Authori
 }
 
 function matchingGoverningHashes(): CAL002OriginGoverningHashes {
-  return {
-    protocolSha256: '1'.repeat(64),
-    sourceBindingReceiptSha256: '2'.repeat(64),
-    splitPlanSha256: '3'.repeat(64),
-    scannerCommitSha: '4'.repeat(40),
-    configSha256: '5'.repeat(64),
-    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
-    holdoutReceiptSha256: '6'.repeat(64),
-    metricsSha256: '7'.repeat(64),
-    cal001MatrixSha256: '8'.repeat(64),
-    reducerSha256: '9'.repeat(64),
-  };
+  return { ...CAL002_ORIGIN_FROZEN_GOVERNING_HASHES };
 }
 
 function completeInput() {
   return {
     authorityReceipt: approvedAuthorityReceipt(),
     governingHashes: matchingGoverningHashes(),
-    expectedGoverningHashes: matchingGoverningHashes(),
     originImplementationCommitSha: COMMIT_SHA,
   };
 }
@@ -194,6 +183,19 @@ describe('CAL-002 research-origin v2 projection', () => {
     } as never)).toThrow(/unknown|missing|input/i);
   });
 
+  it('does not let a caller replace the frozen governing identity', () => {
+    const callerControlled = {
+      ...matchingGoverningHashes(),
+      configSha256: 'f'.repeat(64),
+    };
+
+    expect(() => buildCAL002OriginReceiptV2({
+      ...completeInput(),
+      governingHashes: callerControlled,
+      expectedGoverningHashes: callerControlled,
+    } as never)).toThrow(/unknown|input|expectedGoverningHashes/i);
+  });
+
   it('requires completed one-worker evidence before accepting governing-hash drift', () => {
     const expected = matchingGoverningHashes();
     const drifted = { ...expected, configSha256: 'a'.repeat(64) };
@@ -249,6 +251,37 @@ describe('CAL-002 research-origin v2 projection', () => {
       mutate(candidate);
       expect(validateCAL002OriginReceiptV2(candidate).ok, label).toBe(false);
       expect(validateSchema(candidate), label).toBe(false);
+    }
+  });
+
+  it('pins every governing hash in the runtime validator and schema', () => {
+    const valid = buildCAL002OriginReceiptV2(completeInput()).receipt;
+    const validateSchema = compileSchema();
+
+    for (const key of Object.keys(CAL002_ORIGIN_FROZEN_GOVERNING_HASHES)) {
+      const candidate: Record<string, unknown> = { ...clone(valid) };
+      const governingHashes = {
+        ...(candidate.governingHashes as Record<string, string>),
+      };
+      governingHashes[key] = key === 'scannerCommitSha' ? 'f'.repeat(40) : 'f'.repeat(64);
+      candidate.governingHashes = governingHashes;
+
+      expect(validateCAL002OriginReceiptV2(candidate).ok, key).toBe(false);
+      expect(validateSchema(candidate), key).toBe(false);
+    }
+  });
+
+  it('pins every row to its canonical research authority association hash', () => {
+    const valid = buildCAL002OriginReceiptV2(completeInput()).receipt;
+    const validateSchema = compileSchema();
+
+    for (const index of valid.rows.keys()) {
+      const candidate: Record<string, unknown> = { ...clone(valid) };
+      const rows = candidate.rows as Record<string, unknown>[];
+      rows[index]!.evidenceSha256 = 'f'.repeat(64);
+
+      expect(validateCAL002OriginReceiptV2(candidate).ok, valid.rows[index]!.ruleId).toBe(false);
+      expect(validateSchema(candidate), valid.rows[index]!.ruleId).toBe(false);
     }
   });
 
