@@ -322,6 +322,86 @@ interface ControlSelection {
   readonly requiredMatches: number;
 }
 
+function matchesControlStratum(
+  candidate: CAL002QualityObservation,
+  finding: CAL002QualityObservation,
+): boolean {
+  return candidate.language === finding.language
+    && byteBucket(candidate.byteCount) === byteBucket(finding.byteCount);
+}
+
+function controlSlotsByFamily(
+  candidates: readonly CAL002QualityObservation[],
+  requiredMatches: readonly CAL002QualityObservation[],
+  usedUnits: ReadonlySet<string>,
+  priorFamilies: ReadonlySet<string>,
+): ReadonlyMap<string, ReadonlySet<number>> {
+  const slotsByFamily = new Map<string, Set<number>>();
+  for (const [slotIndex, match] of requiredMatches.entries()) {
+    for (const candidate of candidates) {
+      if (usedUnits.has(candidate.unitId) || priorFamilies.has(candidate.familyId)) continue;
+      if (!matchesControlStratum(candidate, match)) continue;
+      const slots = slotsByFamily.get(candidate.familyId) ?? new Set<number>();
+      slots.add(slotIndex);
+      slotsByFamily.set(candidate.familyId, slots);
+    }
+  }
+  return slotsByFamily;
+}
+
+function assignFamilySlot(
+  familyId: string,
+  slotsByFamily: ReadonlyMap<string, ReadonlySet<number>>,
+  slotToFamily: Map<number, string>,
+  visitedSlots: Set<number>,
+): boolean {
+  const slots = [...(slotsByFamily.get(familyId) ?? [])].sort((left, right) => left - right);
+  for (const slotIndex of slots) {
+    if (visitedSlots.has(slotIndex)) continue;
+    visitedSlots.add(slotIndex);
+    const assignedFamily = slotToFamily.get(slotIndex);
+    if (assignedFamily === undefined || assignFamilySlot(assignedFamily, slotsByFamily, slotToFamily, visitedSlots)) {
+      slotToFamily.set(slotIndex, familyId);
+      return true;
+    }
+  }
+  return false;
+}
+
+function reserveControlFamilies(
+  ruleId: string,
+  candidates: readonly CAL002QualityObservation[],
+  requiredMatches: readonly CAL002QualityObservation[],
+  usedUnits: Set<string>,
+  priorFamilies: ReadonlySet<string>,
+): ReadonlyMap<number, CAL002QualityObservation> {
+  const neededFamilies = Math.max(0, FAMILY_REACH_TARGET - priorFamilies.size);
+  if (neededFamilies === 0) return new Map();
+
+  const eligibleSlotsByFamily = controlSlotsByFamily(candidates, requiredMatches, usedUnits, priorFamilies);
+  const slotToFamily = new Map<number, string>();
+  const familyIds = [...eligibleSlotsByFamily.keys()].sort(compareCodePoints);
+  for (const familyId of familyIds) {
+    assignFamilySlot(familyId, eligibleSlotsByFamily, slotToFamily, new Set());
+    if (slotToFamily.size >= neededFamilies) break;
+  }
+
+  const reserved = new Map<number, CAL002QualityObservation>();
+  const matchedSlots = [...slotToFamily.entries()].sort(([left], [right]) => left - right);
+  for (const [slotIndex, familyId] of matchedSlots) {
+    const match = requiredMatches[slotIndex]!;
+    const eligible = candidates.filter((candidate) =>
+      candidate.familyId === familyId
+      && matchesControlStratum(candidate, match));
+    const candidate = bestAvailableCandidate(eligible, usedUnits, (left, right) =>
+      compareCodePoints(selectionKey(ruleId, 'control', left.unitId), selectionKey(ruleId, 'control', right.unitId)));
+    if (candidate === undefined) continue;
+    reserved.set(slotIndex, candidate);
+    usedUnits.add(candidate.unitId);
+  }
+  return reserved;
+}
+
 function selectControls(
   ruleId: string,
   candidates: readonly CAL002QualityObservation[],
@@ -333,10 +413,20 @@ function selectControls(
   const selected: CAL002QualityObservation[] = [];
   const selectedFamilies = new Set(priorFamilies);
   const requiredMatches = matchedFindings.slice(0, requested);
-  for (const match of requiredMatches) {
-    const eligible = candidates.filter((candidate) =>
-      candidate.language === match.language
-      && byteBucket(candidate.byteCount) === byteBucket(match.byteCount));
+  const reserved = reserveControlFamilies(
+    ruleId,
+    candidates,
+    requiredMatches,
+    usedUnits,
+    priorFamilies,
+  );
+  for (const candidate of reserved.values()) {
+    selected.push(candidate);
+    selectedFamilies.add(candidate.familyId);
+  }
+  for (const [slotIndex, match] of requiredMatches.entries()) {
+    if (reserved.has(slotIndex)) continue;
+    const eligible = candidates.filter((candidate) => matchesControlStratum(candidate, match));
     const next = bestAvailableCandidate(eligible, usedUnits, (left, right) =>
       Number(selectedFamilies.has(left.familyId)) - Number(selectedFamilies.has(right.familyId))
       || compareCodePoints(selectionKey(ruleId, 'control', left.unitId), selectionKey(ruleId, 'control', right.unitId)));
@@ -464,6 +554,7 @@ function selectedRowsForRule(
 function validatePriorAssignmentIntegrity(
   prior: CAL002QualityAssignment,
   catalogSha256: string,
+  observationsByUnit: ReadonlyMap<string, CAL002QualityObservation>,
 ): void {
   const priorValidation = validateCAL002Assignment(prior);
   if (!priorValidation.ok) {
@@ -485,6 +576,9 @@ function validatePriorAssignmentIntegrity(
   const seenRuleUnits = new Set<string>();
   const counts = new Map<string, number>();
   for (const row of prior.rows) {
+    if (!observationsByUnit.has(row.unitId)) {
+      throw new TypeError(`Final quality prior unit ${row.unitId} has no current observation`);
+    }
     const ruleUnit = `${row.ruleId}\0${row.unitId}`;
     if (seenRuleUnits.has(ruleUnit)) {
       throw new TypeError(`Final quality prior assignment has duplicate rule/unit ${row.ruleId} ${row.unitId}`);
@@ -508,12 +602,24 @@ function validatePriorAssignmentIntegrity(
   }
   for (const row of prior.rows) {
     const blinded = blindedByReviewId.get(row.reviewId);
+    const observation = observationsByUnit.get(row.unitId)!;
     if (
       blinded === undefined
       || blinded.ruleId !== row.ruleId
       || blinded.evidenceClass !== row.evidenceClass
     ) {
       throw new TypeError(`Final quality prior blinded row does not match review ID ${row.reviewId}`);
+    }
+    if (blinded.sourceIdentitySha256 !== observation.contentSha256) {
+      throw new TypeError(`Final quality prior source identity does not match current observation ${row.unitId}`);
+    }
+    const expectedLineWindowLocator = lineWindowLocator(
+      expectedSelectionManifestSha256,
+      row.reviewId,
+      observation.contentSha256,
+    );
+    if (blinded.lineWindowLocator !== expectedLineWindowLocator) {
+      throw new TypeError(`Final quality prior line-window locator does not match current observation ${row.unitId}`);
     }
   }
 
@@ -529,6 +635,7 @@ function validatePriorAssignmentIntegrity(
 function finalRuleIds(
   input: BuildCAL002QualityAssignmentInput,
   decisions: ReadonlyMap<string, CAL002QualityLaneDecision>,
+  observationsByUnit: ReadonlyMap<string, CAL002QualityObservation>,
 ): readonly string[] {
   if (input.round === 'initial') {
     if (input.priorAssignment !== undefined || input.expansionRuleIds !== undefined) {
@@ -537,7 +644,7 @@ function finalRuleIds(
     return [...decisions.keys()].sort(compareCodePoints);
   }
   if (input.priorAssignment === undefined) throw new TypeError('Final quality assignment requires a prior assignment');
-  validatePriorAssignmentIntegrity(input.priorAssignment, input.catalogSha256);
+  validatePriorAssignmentIntegrity(input.priorAssignment, input.catalogSha256, observationsByUnit);
   if (!Array.isArray(input.expansionRuleIds)) throw new TypeError('Final quality assignment requires expansion rule IDs');
   const ids = new Set<string>();
   for (const ruleId of input.expansionRuleIds) {
@@ -563,7 +670,7 @@ export function buildCAL002QualityAssignment(
   const decisions = indexLaneDecisions(input.laneDecisions);
   const observationsByUnit = indexObservations(input.observations);
   const observations = [...observationsByUnit.values()].sort((left, right) => compareCodePoints(left.unitId, right.unitId));
-  const ruleIds = finalRuleIds(input, decisions);
+  const ruleIds = finalRuleIds(input, decisions, observationsByUnit);
   const targetPerArm = input.round === 'initial' ? 30 as const : 100 as const;
   const countsBefore = priorCounts(input.priorAssignment);
   const usedUnitsByRule = new Map<string, Set<string>>();

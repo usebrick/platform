@@ -178,6 +178,78 @@ describe('CAL-002 blinded quality sampling', () => {
     expect(new Set(first.assignment.rows.map((row) => row.reviewId)).size).toBe(first.assignment.rows.length);
   });
 
+  it('reserves a satisfiable five-family control assignment across finding strata', () => {
+    const finding = (
+      unitId: string,
+      familyId: string,
+      language: string,
+      byteCount: number,
+    ): CAL002QualityObservation => ({
+      unitId,
+      familyId,
+      language,
+      byteCount,
+      contentSha256: sha256(`content:${unitId}`),
+      findings: [{
+        ruleId: CONTEXTUAL_RULE,
+        line: 1,
+        column: 1,
+        messageSha256: sha256(`message:${unitId}`),
+      }],
+    });
+    const control = (
+      unitId: string,
+      familyId: string,
+      language: string,
+      byteCount: number,
+    ): CAL002QualityObservation => ({
+      unitId,
+      familyId,
+      language,
+      byteCount,
+      contentSha256: sha256(`content:${unitId}`),
+      findings: [],
+    });
+    const observations = [
+      finding('cross-flex-finding-51', 'finding-family-1', 'typescript', 2 ** 8),
+      finding('cross-only-a-finding-72', 'finding-family-2', 'typescript', 2 ** 9),
+      finding('cross-only-c-finding-81', 'finding-family-3', 'typescript', 2 ** 10),
+      finding('cross-only-d-finding-70', 'finding-family-4', 'typescript', 2 ** 11),
+      finding('cross-only-e-finding-74', 'finding-family-5', 'typescript', 2 ** 12),
+      control('cross-flex-a-control', 'control-family-a', 'typescript', 2 ** 8),
+      control('cross-flex-b-control', 'control-family-b', 'typescript', 2 ** 8),
+      control('cross-only-a-control', 'control-family-a', 'typescript', 2 ** 9),
+      control('cross-only-c-control', 'control-family-c', 'typescript', 2 ** 10),
+      control('cross-only-d-control', 'control-family-d', 'typescript', 2 ** 11),
+      control('cross-only-e-control', 'control-family-e', 'typescript', 2 ** 12),
+    ];
+
+    const first = buildCAL002QualityAssignment(buildInput(
+      observations,
+      [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')],
+    ));
+    const replay = buildCAL002QualityAssignment(buildInput(
+      reverseObservationInput(observations),
+      [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')],
+    ));
+    const controls = first.assignment.rows.filter((row) => row.role === 'control');
+    const observationByUnit = new Map(observations.map((observation) => [observation.unitId, observation]));
+
+    expect(replay).toEqual(first);
+    expect(controls.map((row) => row.unitId).sort()).toEqual([
+      'cross-flex-b-control',
+      'cross-only-a-control',
+      'cross-only-c-control',
+      'cross-only-d-control',
+      'cross-only-e-control',
+    ]);
+    expect(new Set(controls.map((row) => observationByUnit.get(row.unitId)!.familyId)).size).toBe(5);
+    expect(first.shortages).toEqual([
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'count', requested: 30, selected: 5, missing: 25 },
+      { ruleId: CONTEXTUAL_RULE, role: 'finding', reason: 'count', requested: 30, selected: 5, missing: 25 },
+    ]);
+  });
+
   it('caps final expansion at 100/100 cumulatively without reusing prior units', () => {
     const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
     const observations = observationsForRule(CONTEXTUAL_RULE, 125, 'typescript', 'expansion');
@@ -329,6 +401,46 @@ describe('CAL-002 blinded quality sampling', () => {
     })).toThrow(/prior review ID/i);
   });
 
+  it.each([
+    {
+      name: 'source identity',
+      tamper: (row: CAL002QualityAssignment['blindedRows'][number]) => ({
+        ...row,
+        sourceIdentitySha256: 'b'.repeat(64),
+      }),
+      error: /prior source identity/i,
+    },
+    {
+      name: 'line-window locator',
+      tamper: (row: CAL002QualityAssignment['blindedRows'][number]) => ({
+        ...row,
+        lineWindowLocator: `window:${'b'.repeat(64)}`,
+      }),
+      error: /prior line-window locator/i,
+    },
+  ])('rejects a resealed prior $name stale against the current observation', ({ tamper, error }) => {
+    const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
+    const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-blinded-projection');
+    const initial = buildCAL002QualityAssignment(buildInput(observations, decisions));
+    const targetReviewId = initial.assignment.rows[0]!.reviewId;
+    const blindedRows = initial.assignment.blindedRows.map((row) => row.reviewId === targetReviewId
+      ? tamper(row)
+      : row);
+    const priorAssignment = resealAssignment({
+      ...initial.assignment,
+      blindedRows,
+      blindedBatchSha256: canonicalArtifact(blindedRows).sha256,
+    });
+
+    expect(() => buildCAL002QualityAssignment({
+      ...buildInput(observations, decisions),
+      assignmentId: 'cal-002-quality-final-stale-blinded-projection',
+      round: 'final',
+      expansionRuleIds: [CONTEXTUAL_RULE],
+      priorAssignment,
+    })).toThrow(error);
+  });
+
   it('rejects a resealed prior assignment above the initial 30-per-arm ceiling', () => {
     const decisions = [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')];
     const observations = observationsForRule(CONTEXTUAL_RULE, 100, 'typescript', 'prior-ceiling');
@@ -390,6 +502,30 @@ describe('CAL-002 blinded quality sampling', () => {
       { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'family-reach', requested: 5, selected: 0, missing: 5 },
       { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'matched-strata', requested: 30, selected: 0, missing: 30 },
       { ruleId: CONTEXTUAL_RULE, role: 'finding', reason: 'family-reach', requested: 5, selected: 4, missing: 1 },
+    ]);
+  });
+
+  it('rejects wrong-language controls in the same byte bucket with deterministic shortages', () => {
+    const observations = observationsForRule(CONTEXTUAL_RULE, 30, 'typescript', 'wrong-language')
+      .map((observation) => observation.findings.length === 0
+        ? { ...observation, language: 'python' }
+        : observation);
+    const first = buildCAL002QualityAssignment(buildInput(
+      observations,
+      [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')],
+    ));
+    const replay = buildCAL002QualityAssignment(buildInput(
+      reverseObservationInput(observations),
+      [laneDecision(CONTEXTUAL_RULE, 'contextual-quality')],
+    ));
+
+    expect(replay).toEqual(first);
+    expect(first.assignment.rows.filter((row) => row.role === 'finding')).toHaveLength(30);
+    expect(first.assignment.rows.filter((row) => row.role === 'control')).toHaveLength(0);
+    expect(first.shortages).toEqual([
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'count', requested: 30, selected: 0, missing: 30 },
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'family-reach', requested: 5, selected: 0, missing: 5 },
+      { ruleId: CONTEXTUAL_RULE, role: 'control', reason: 'matched-strata', requested: 30, selected: 0, missing: 30 },
     ]);
   });
 
