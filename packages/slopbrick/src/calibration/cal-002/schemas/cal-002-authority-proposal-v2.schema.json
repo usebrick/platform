@@ -1,0 +1,2451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-authority-proposal-v2.schema.json",
+  "title": "CAL-002 Authority Proposal v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "catalogSha256",
+    "priorStateSha256",
+    "rows",
+    "counts",
+    "admitted",
+    "applied"
+  ],
+  "properties": {
+    "version": {
+      "const": "cal-002-authority-proposal-v2"
+    },
+    "protocolVersion": {
+      "const": "CAL-002-v2"
+    },
+    "catalogSha256": {
+      "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506"
+    },
+    "priorStateSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 119,
+      "maxItems": 119,
+      "const": [
+        {
+          "ruleId": "ai/any-density",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "type-safety",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 175.31,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/comment-ratio",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 4.26,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/compression-profile",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 4.92,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/console-debug-storm",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "observability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 949.21,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/default-react-stack",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 251225.49,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/errors-near-eof",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 13.09,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/fetch-default-overuse",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "architecture-consistency",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 2679.84,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/library-reinvention",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 47415.05,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/markdown-leakage",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 10003.17,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/renyi-profile",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "identifier-frequency-method-not-validated",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 5251.67,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/segment-surprisal-cv",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 9.52,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/state-default-overuse",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1315.06,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/tailwind-color-overuse",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 230.97,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/text-like-ratio",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 201664,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ai/whitespace-regularity",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 8.25,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "component/giant-component",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 132.31,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "component/multiple-components-per-file",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 15.96,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "component/shadcn-prop-mismatch",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "library-contract-not-resolved",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 9990.98,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "context/import-path-mismatch",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "architecture-consistency",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 49.48,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cpp/c-style-cast",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.93,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cpp/magic-numbers",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.86,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cpp/printf-debug",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "observability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 2.43,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cpp/raw-new-delete",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "resource-safety",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.9,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cs/async-without-await",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "correctness",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cs/empty-catch-block",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "cs/sql-string-interpolation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dart/dynamic-call",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dart/missing-dispose",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dart/print-debug",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dart/unwrapped-futures",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "db/sql-concat",
+          "sourceClass": "owner-batch",
+          "destination": "superseded",
+          "action": "supersede",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "parity-required",
+          "assignmentEligible": false,
+          "replacementRuleId": "security/sql-construction",
+          "reasonCode": "canonical-sql-rule-parity-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 7511.26,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dead/dead-branch",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "correctness",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1080.68,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dead/unreachable",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "correctness",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 153.14,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dead/unused-import",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 30.06,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dead/unused-local",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 120.18,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dead/unused-parameter",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 98,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "docs/broken-link",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "documentation-quality",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 178.13,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "docs/stale-function-reference",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "documentation-quality",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1638.47,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "docs/stale-package-reference",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "documentation-quality",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 939.43,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dup/identical-block",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "maintainability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dup/near-duplicate",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "dup/structural-clone",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "go/nil-slice-vs-empty",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "go/struct-tag-inconsistency",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "java/lost-stack-trace",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "java/sql-string-concat",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.59,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "java/suspicious-implementation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "correctness",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "java/thread-sleep-in-loop",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "performance",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.97,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "kt/coroutine-cancellation-missing",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "kt/force-unwrap",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "type-safety",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "kt/global-coroutine-scope",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "kt/string-template-injection",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "layout/gap-monopoly",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 8859.33,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "layout/math-element-uniformity",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "element-count-not-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 770.74,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "layout/math-grid-uniformity",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 5839.98,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "layout/spacing-grid",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 4051.29,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/boundary-violation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "architecture-consistency",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 51.32,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/ghost-defensive",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "block",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "repair-required",
+          "assignmentEligible": false,
+          "reasonCode": "type-aware-proof-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 112035.56,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/heaps-deviation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "maintainability",
+          "claimClass": "statistical-review-signal",
+          "readiness": "evidence-ready",
+          "evidenceClass": "statistical-review-utility",
+          "assignmentEligible": true,
+          "reasonCode": "statistical-review-utility-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 25.54,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/key-prop-missing",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "correctness",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 574.52,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/math-any-density",
+          "sourceClass": "owner-batch",
+          "destination": "superseded",
+          "action": "supersede",
+          "qualityDomain": "type-safety",
+          "claimClass": "contextual-heuristic",
+          "readiness": "parity-required",
+          "assignmentEligible": false,
+          "replacementRuleId": "ai/any-density",
+          "reasonCode": "canonical-any-rule-parity-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 464.59,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/math-console-log-storm",
+          "sourceClass": "owner-batch",
+          "destination": "superseded",
+          "action": "supersede",
+          "qualityDomain": "observability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "parity-required",
+          "assignmentEligible": false,
+          "replacementRuleId": "ai/console-debug-storm",
+          "reasonCode": "canonical-console-rule-parity-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 794.4,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/math-gini-class-usage",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "concentration-not-quality-defect",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 4648.6,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/math-variable-name-entropy",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "maintainability",
+          "claimClass": "statistical-review-signal",
+          "readiness": "evidence-ready",
+          "evidenceClass": "statistical-review-utility",
+          "assignmentEligible": true,
+          "reasonCode": "statistical-review-utility-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 4548.81,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/optimistic-no-rollback",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "block",
+          "qualityDomain": "correctness",
+          "claimClass": "contextual-heuristic",
+          "readiness": "repair-required",
+          "assignmentEligible": false,
+          "reasonCode": "reconciliation-path-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 3523.57,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/reactive-hook-soup",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1370.15,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/zipf-slope-anomaly",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "maintainability",
+          "claimClass": "statistical-review-signal",
+          "readiness": "evidence-ready",
+          "evidenceClass": "statistical-review-utility",
+          "assignmentEligible": true,
+          "reasonCode": "statistical-review-utility-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 57.13,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "logic/zombie-state",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "maintainability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 119891.71,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "perf/cls-image",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "performance",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 2895.78,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "perf/css-bloat",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "performance",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 365.63,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "php/empty-catch",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "php/sql-injection",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "product/terminology-drift",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "architecture-consistency",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 397.75,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "product/ux-pattern-fragmentation",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "block",
+          "qualityDomain": "architecture-consistency",
+          "claimClass": "contextual-heuristic",
+          "readiness": "project-contract-required",
+          "assignmentEligible": false,
+          "reasonCode": "project-wide-contract-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 22864.4,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rb/exception-swallowing",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "reliability",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rb/n-plus-one-query",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "performance",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rb/sql-string-concat",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rust/stringly-typed",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "type-safety",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 24735.12,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rust/todo-macro",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "completeness",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 210.08,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rust/unused-pub-fn",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "whole-crate-reach-not-observed",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 10803.43,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "rust/unwrap-in-production",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "reliability",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 70.81,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/dangerous-cors",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "security",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1721.87,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/eval",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1929.18,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/exposed-env-var",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1055.81,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/fail-open-auth",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "security",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 99999,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/hardcoded-secret",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1269.08,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/localstorage-token",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 99999,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/missing-auth-check",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 99999,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/public-admin-route",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 142.2,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/sql-construction",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 485.42,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/target-blank-no-noopener",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 26141.63,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "security/unsafe-html-render",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "security",
+          "claimClass": "language-or-security-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 513.12,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "swift/fatal-error-thrown",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.57,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "swift/force-unwrap",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.48,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "swift/implicitly-unwrapped-optional",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.18,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "swift/print-debug",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1.13,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "swift/strong-self-capture",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 0.56,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "test/duplicate-setup",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "test-confidence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 51016.19,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "test/fake-placeholder",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "fixture-values-not-quality-defect",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 547.47,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "test/weak-assertion",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "block",
+          "qualityDomain": "test-confidence",
+          "claimClass": "deterministic-syntax-or-dataflow",
+          "readiness": "repair-required",
+          "assignmentEligible": false,
+          "reasonCode": "deterministic-contextual-split-required",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 131.62,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ts/enum-vs-as-const",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ts/excessive-type-assertion",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ts/import-type-misuse",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "ts/never-vs-unknown",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "typo/math-button-label-uniformity",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "statistical-review-signal",
+          "readiness": "evidence-ready",
+          "evidenceClass": "statistical-review-utility",
+          "assignmentEligible": true,
+          "reasonCode": "statistical-review-utility-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 6894.19,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "typo/placeholder-text",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "documentation-quality",
+          "claimClass": "repository-contract",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 17330.5,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/arbitrary-escape",
+          "sourceClass": "owner-batch",
+          "destination": "quality",
+          "action": "transfer",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1219.67,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/inline-style-dominance",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 134.59,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/math-color-cluster",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 46814.86,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/math-default-font",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 3035.16,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/math-font-entropy",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 869.95,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/math-rounded-entropy",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 3785.45,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/math-spacing-entropy",
+          "sourceClass": "research-origin",
+          "destination": "research-origin",
+          "action": "hold",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "research-only",
+          "assignmentEligible": false,
+          "reasonCode": "auto-held-research-origin",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1898.99,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/naturalness-anomaly",
+          "sourceClass": "owner-batch",
+          "destination": "retired",
+          "action": "retire",
+          "qualityDomain": "none",
+          "claimClass": "no-valid-quality-claim",
+          "readiness": "obsolete",
+          "assignmentEligible": false,
+          "reasonCode": "identifier-diversity-threshold-not-validated",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 10.86,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/radius-scale-violation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 82131.33,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "visual/spacing-scale-violation",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "design-system-coherence",
+          "claimClass": "contextual-heuristic",
+          "readiness": "evidence-ready",
+          "evidenceClass": "contextual-quality",
+          "assignmentEligible": true,
+          "reasonCode": "contextual-defect-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 273.97,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "wcag/focus-appearance",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "accessibility",
+          "claimClass": "accessibility-standard",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 8397.24,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "wcag/focus-obscured",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "accessibility",
+          "claimClass": "accessibility-standard",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 1214.21,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        },
+        {
+          "ruleId": "wcag/missing-alt",
+          "sourceClass": "starting-quality",
+          "destination": "quality",
+          "action": "preserve",
+          "qualityDomain": "accessibility",
+          "claimClass": "accessibility-standard",
+          "readiness": "evidence-ready",
+          "evidenceClass": "deterministic-or-standards",
+          "assignmentEligible": true,
+          "reasonCode": "standards-or-contract-quality-claim",
+          "aiAssociation": {
+            "source": "legacy-signal-strength",
+            "claimCeiling": "association-only",
+            "lift": 935.33,
+            "measuredAt": "2026-07-04T00:00:00Z",
+            "protocol": "legacy-signal-strength-v1"
+          }
+        }
+      ],
+      "items": {
+        "$ref": "#/$defs/authorityRow"
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "startingQuality",
+        "transferred",
+        "blocked",
+        "superseded",
+        "retired",
+        "researchOrigin"
+      ],
+      "properties": {
+        "total": {
+          "const": 119
+        },
+        "startingQuality": {
+          "const": 47
+        },
+        "transferred": {
+          "const": 26
+        },
+        "blocked": {
+          "const": 4
+        },
+        "superseded": {
+          "const": 3
+        },
+        "retired": {
+          "const": 7
+        },
+        "researchOrigin": {
+          "const": 32
+        }
+      }
+    },
+    "admitted": {
+      "const": false
+    },
+    "applied": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "aiAssociation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "claimCeiling"
+      ],
+      "properties": {
+        "source": {
+          "enum": [
+            "cal-001-internal-origin",
+            "legacy-signal-strength",
+            "none-recorded"
+          ]
+        },
+        "claimCeiling": {
+          "enum": [
+            "association-only",
+            "none"
+          ]
+        },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "lift": {
+          "type": "number",
+          "minimum": 0
+        },
+        "measuredAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "protocol": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "authorityRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "sourceClass",
+        "destination",
+        "action",
+        "qualityDomain",
+        "claimClass",
+        "readiness",
+        "assignmentEligible",
+        "reasonCode",
+        "aiAssociation"
+      ],
+      "properties": {
+        "ruleId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+        },
+        "sourceClass": {
+          "enum": [
+            "starting-quality",
+            "owner-batch",
+            "research-origin"
+          ]
+        },
+        "destination": {
+          "enum": [
+            "quality",
+            "research-origin",
+            "superseded",
+            "retired"
+          ]
+        },
+        "action": {
+          "enum": [
+            "preserve",
+            "transfer",
+            "block",
+            "supersede",
+            "retire",
+            "hold"
+          ]
+        },
+        "qualityDomain": {
+          "enum": [
+            "security",
+            "accessibility",
+            "correctness",
+            "reliability",
+            "performance",
+            "maintainability",
+            "documentation-quality",
+            "type-safety",
+            "resource-safety",
+            "test-confidence",
+            "architecture-consistency",
+            "observability",
+            "design-system-coherence",
+            "completeness",
+            "none"
+          ]
+        },
+        "claimClass": {
+          "enum": [
+            "language-or-security-contract",
+            "accessibility-standard",
+            "repository-contract",
+            "deterministic-syntax-or-dataflow",
+            "contextual-heuristic",
+            "statistical-review-signal",
+            "no-valid-quality-claim"
+          ]
+        },
+        "readiness": {
+          "enum": [
+            "evidence-ready",
+            "repair-required",
+            "project-contract-required",
+            "parity-required",
+            "research-only",
+            "obsolete"
+          ]
+        },
+        "evidenceClass": {
+          "enum": [
+            "deterministic-or-standards",
+            "contextual-quality",
+            "statistical-review-utility"
+          ]
+        },
+        "assignmentEligible": {
+          "type": "boolean"
+        },
+        "replacementRuleId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+        },
+        "reasonCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aiAssociation": {
+          "$ref": "#/$defs/aiAssociation"
+        }
+      }
+    }
+  }
+}

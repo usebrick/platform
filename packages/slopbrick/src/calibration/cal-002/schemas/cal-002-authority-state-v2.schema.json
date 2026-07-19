@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-authority-state-v2.schema.json",
+  "title": "CAL-002 Authority State v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "catalogSha256",
+    "proposalSha256",
+    "priorStateSha256",
+    "revision",
+    "reviewerAuthority",
+    "decision",
+    "admitted",
+    "applied"
+  ],
+  "properties": {
+    "version": {
+      "const": "cal-002-authority-state-v2"
+    },
+    "protocolVersion": {
+      "const": "CAL-002-v2"
+    },
+    "catalogSha256": {
+      "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506"
+    },
+    "proposalSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "priorStateSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "revision": {
+      "const": 2
+    },
+    "reviewerAuthority": {
+      "const": "repository-owner"
+    },
+    "decision": {
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+    "admitted": {
+      "const": false
+    },
+    "applied": {
+      "const": false
+    }
+  }
+}
