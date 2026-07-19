@@ -4,7 +4,7 @@
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
-- **Updated:** 2026-07-18
+- **Updated:** 2026-07-19
 
 ## Outcome
 
@@ -29,9 +29,13 @@ and execution has started in the second implementation WIP slot. No score,
 rule, baseline, source, release, or public artifact changed.
 
 `CAL-002` is now active beside this plan to complete the evidence and
-provenance closeout. It does not add an unmet `requires` edge: `SB-UX-001`
+provenance closeout. Its approved additive v2 authority taxonomy preserves the
+frozen v1 evidence and locked 119-rule catalog, and distinguishes 47 starting
+quality, 26 transferred, 4 blocked, 3 superseded, 7 retired, and 32
+research-origin rows. It does not add an unmet `requires` edge: `SB-UX-001`
 remains active while CAL-002 establishes the precise current-versus-legacy
-calibration labels this first-scan contract must eventually expose.
+calibration labels this first-scan contract must eventually expose. No runtime
+policy or release state changed in revision 27.
 
 ## Scope
 
@@ -40,6 +44,9 @@ calibration labels this first-scan contract must eventually expose.
 - Evidence labels for deterministic, current quality-calibrated, internal
   origin-calibrated, legacy-calibrated, advisory, and insufficient-evidence
   findings.
+- Current policy provenance must consume the CAL-002 v2 projection without
+  treating research-origin association as quality, authorship, score, gate, or
+  default-on authority.
 - One headline score with transparent dimensions and incompleteness state.
 - Three recommended actions based on severity, confidence, reach, and repair
   safety.

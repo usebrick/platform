@@ -1,7 +1,7 @@
 # Usebrick execution status
 
-**Snapshot:** 2026-07-18
-**Index revision:** 26
+**Snapshot:** 2026-07-19
+**Index revision:** 27
 **Global status:** `advancing`
 
 ## Executive state
@@ -20,14 +20,23 @@ and close the first-scan current-versus-legacy provenance gap. `SB-UX-001`
 remains active with CAL-002 as its evidence-provenance closeout gate; CAL-002
 does not add an unmet `requires` edge. `VAL-001` returns to ready with its one
 owner-attested self-scan-to-rescan row preserved, and `TEL-001` remains ready.
-The first CAL-002 code action is the red catalog and local-schema contract
-tests. The repository owner is the only current product tester; the recorded
+The first CAL-002 code action is the red v2 authority taxonomy and exact
+119-row projection contract tests. The v1 implementation boundary is
+checkpointed through `e6c9695ea`; its old three-way origin questionnaire is
+paused after one historical hold. The approved v2 projection is 47 starting
+quality + 26 transferred quality + 4 blocked quality + 3 superseded + 7 retired
++ 32 research-origin = 119, with owner rows exactly `26/4/3/7`. The repository
+owner is the only current product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
 `admitted: false`; no rule, score, source, baseline, admission, release,
-deployment, or public artifact changed in revision 26. Stale-path cleanup is
-isolated behind exact owner approval and does not block local product work.
+deployment, or public artifact changed in revision 27. CAL-002 remains
+`in_progress`, implementation WIP remains `2/2`, and its proposed policy also
+remains `applied: false` and `admitted: false`. No runtime policy changed;
+local application remains separate from push, tag, publish, deploy, and release.
+Stale-path cleanup is isolated behind exact owner approval and does not block
+local product work.
 
 ## Product and release truth
 
@@ -89,6 +98,10 @@ isolated behind exact owner approval and does not block local product work.
   before any policy change, and the matrix records `applied: false` and
   `admitted: false`. Canonical matrix SHA-256 is
   `3c170e308f8ec0be1c1c31b4a5716810388f2692f6e7f0a179b4fd48665eca1c`.
+- CAL-002 v1 evidence remains historical input to the approved additive v2
+  authority workflow; no v1 receipt or the protected owner state was rewritten.
+  The four blocked quality rows remain assignment-ineligible, and the v2
+  projection remains non-admitting and unapplied.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -172,7 +185,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Write the red CAL-002 catalog and local-schema contract tests. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -235,9 +248,10 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 `SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. The first
-CAL-002 code action is the red catalog and local-schema contract tests; its
-separate quality and origin evidence lanes are the first-scan provenance
-closeout gate for SB-UX-001. `VAL-001` and `TEL-001` remain ready. VAL-001 may
+CAL-002 code action is the red additive v2 authority taxonomy and exact
+119-row projection contract tests; its separate quality and origin evidence
+lanes are the first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
+`TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
 evidence. `REL-001` remains the unchanged separate public-authority checkpoint.

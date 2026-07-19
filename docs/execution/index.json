@@ -1,7 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": 26,
-  "updatedAt": "2026-07-18",
+  "revision": 27,
+  "updatedAt": "2026-07-19",
+  "cal002Status": "in_progress",
+  "cal002NextAction": {
+    "text": "Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-authority.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
+    "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
+  },
   "globalStatus": "advancing",
   "roadmap": "ROADMAP.md",
   "status": "docs/execution/STATUS.md",
@@ -228,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the red CAL-002 catalog and local-schema contract tests.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-contracts.test.ts tests/calibration/cal-002-catalog.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-authority.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

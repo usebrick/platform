@@ -3,6 +3,30 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 27 — 2026-07-19
+
+### Changed
+
+- Reconciled the execution control plane to the approved additive CAL-002 v2
+  authority amendment. The v1 implementation boundary remains checkpointed
+  through `e6c9695ea`, and the old three-way origin questionnaire is paused
+  after one historical hold.
+- Locked the whole-catalog projection at 47 starting quality + 26 transferred
+  quality + 4 blocked quality + 3 superseded + 7 retired + 32 research-origin
+  rows = 119. The owner-row transition is exactly `26/4/3/7`; blocked rows
+  remain assignment-ineligible.
+- Kept `CAL-002` `in_progress`, implementation WIP at `2/2`, and the proposed
+  policy `applied: false` and `admitted: false`. Local application remains
+  distinct from push, tag, publish, deploy, and release authority.
+
+### Evidence
+
+- `docs/execution/plans/CAL-002-complete-calibration.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- This documentation-only reconciliation changed no runtime policy, frozen
+  evidence artifact, owner state, rule, score, source, baseline, admission,
+  release, deployment, tag, publish, push, or acquired data.
+
 ## Revision 26 — 2026-07-18
 
 ### Changed

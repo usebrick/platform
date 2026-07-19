@@ -1,6 +1,6 @@
 # Usebrick roadmap
 
-**Updated:** 2026-07-18
+**Updated:** 2026-07-19
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -61,6 +61,15 @@ returns to ready while active `CAL-002` completes the separate claim-matched
 calibration and provenance program. The external participant protocol is parked
 with zero sessions and no recruitment authorization.
 
+The CAL-002 v1 implementation boundary is checkpointed through `e6c9695ea`.
+Its old three-way origin questionnaire is paused after one historical hold. The
+approved v2 replacement preserves the frozen v1 evidence and locked 119-rule
+catalog, with 47 starting quality + 26 transferred quality + 4 blocked quality
++ 3 superseded + 7 retired + 32 research-origin rows = 119. CAL-002 remains
+`in_progress` at implementation WIP `2/2`; the proposed policy remains
+`applied: false` and `admitted: false`. Local application, if later authorized,
+remains separate from push, tag, publish, deploy, and release authority.
+
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
 `REL-001`; neither decision blocks local first-scan or outcome-contract work.
@@ -108,9 +117,10 @@ Public npm release and website deployment remain separate owner decisions under
   Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
   without changing rule state or v10.3.
 - Start active `CAL-002` beside `SB-UX-001`: complete separate quality and
-  origin evidence lanes, then apply one reviewed non-admitting 119-row policy
-  atomically. Keep CAL-001 evidence frozen, preserve `admitted: false`, and
-  make first-scan provenance distinguish current from legacy calibration.
+  origin evidence lanes, beginning with the additive v2 authority taxonomy and
+  exact 119-row projection. Keep CAL-001 and CAL-002 v1 evidence frozen,
+  preserve `applied: false` and `admitted: false`, and make first-scan
+  provenance distinguish current from legacy calibration.
 - Keep `VAL-001` ready with RUN-001 preserved. Future owner walkthroughs stay
   optional, owner-selected evidence with no participant or target-count gate.
 
@@ -135,12 +145,11 @@ remain separate owner-authorized actions.
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
   `requires` edge. No score, rule, baseline, source, admission, release,
-  deployment, or public artifact changed in revision 26.
-- Run active `CAL-002` from the approved design and detailed plan: red-test
-  the local catalog and schema contracts, resolve every rule through separate
-  quality and origin lanes, and only then consider one reviewed non-admitting
-  policy application. `VAL-001` and `TEL-001` remain ready; `REL-001` remains
-  the unchanged separate public-authority boundary.
+  deployment, or public artifact changed in revision 27.
+- Run active `CAL-002` from the approved amendment: red-test the additive v2
+  authority taxonomy and exact 119-row projection, then resolve every rule
+  through separate quality and origin lanes. `VAL-001` and `TEL-001` remain
+  ready; `REL-001` remains the unchanged separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract with export and deletion and no raw source or proprietary repository
   identifier by default.

@@ -4,7 +4,7 @@
 - **Priority:** 7
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers and repository owner
-- **Updated:** 2026-07-18
+- **Updated:** 2026-07-19
 
 ## Outcome
 
@@ -14,19 +14,25 @@ current-versus-legacy provenance in the first-scan contract.
 
 ## Current truth
 
-The approved design at `1def91feb` and its reviewed detailed implementation
-plan preserve the completed CAL-001 holdout while resolving current rule
-claims separately from origin association. CAL-001's 119-row matrix remains
-`applied: false` and `admitted: false`; it does not establish current quality
-usefulness for every rule or authorize a default-on rule. `SB-UX-001` is the
-other active implementation plan. `VAL-001-RUN-001` remains recorded but
-`VAL-001` returns to ready, so CAL-002 owns the calibration and provenance
-closeout without inventing owner evidence.
+The approved amendment preserves the completed CAL-002 v1 implementation
+boundary through `e6c9695ea`, the frozen v1 evidence, and the locked 119-rule
+catalog. The old three-way origin questionnaire is paused after one historical
+hold. The replacement uses exactly 26/4/3/7 owner rows and the whole-catalog
+projection is 47 starting quality + 26 transferred quality + 4 blocked quality
++ 3 superseded + 7 retired + 32 research-origin = 119. CAL-001's v1 matrix
+remains `applied: false` and `admitted: false`; the v2 proposal is also
+`applied: false` and `admitted: false`. `SB-UX-001` is the other active
+implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
+to ready, so CAL-002 owns the calibration and provenance closeout without
+inventing owner evidence.
 
 ## Scope
 
 - Build one hash-bound current 119-rule catalog and separate quality and
   internal-origin evidence lanes.
+- Reconcile the v2 authority taxonomy across 47 starting quality, 26
+  transferred quality, 4 blocked quality, 3 superseded, 7 retired, and 32
+  research-origin rows, with blocked rows disabled and assignment-ineligible.
 - Review deterministic, contextual, and statistical quality claims against
   their claim-matched evidence without treating origin labels as quality
   labels.
@@ -50,7 +56,8 @@ closeout without inventing owner evidence.
 
 ## Acceptance criteria
 
-- Every current rule has exactly one final row and lane-owned claim ceiling.
+- Every current rule has exactly one final row and lane-owned claim ceiling;
+  the projection is exactly 119 rows with the approved six-part counts.
 - Quality usefulness and origin association retain separate labels,
   denominators, metrics, and evidence receipts.
 - The atomic policy rejects missing, duplicate, stale, or catalog-drifted
@@ -63,9 +70,9 @@ closeout without inventing owner evidence.
 
 ## Execution steps
 
-1. Red-test the hash-bound catalog and local-schema contracts -> verify the
-   focused one-worker CAL-002 contract and catalog tests fail for missing
-   behavior before implementation.
+1. Red-test the additive v2 authority taxonomy and exact 119-row projection ->
+   verify the focused one-worker CAL-002 authority and v2 contract tests fail
+   for missing behavior before implementation.
 2. Implement the separate quality and origin lane contracts -> verify focused
    lane, schema, receipt, and adversarial tests with one worker.
 3. Generate and review the complete matrix dry run -> verify exact 119-row
@@ -78,10 +85,12 @@ closeout without inventing owner evidence.
 
 ## Verification
 
-Start with the focused one-worker contract and catalog tests. Before any policy
-application, verify frozen identities, source permissions, catalog/config
+Start with the focused one-worker authority and v2 contract tests. Before any
+policy application, verify frozen identities, source permissions, catalog/config
 hashes, exact row coverage, lane separation, non-admission, provenance output,
-and the prescribed recursive and package-local self-scan gates.
+and the prescribed recursive and package-local self-scan gates. This revision
+does not apply a runtime policy; local application remains separate from push,
+tag, publish, deploy, and release authority.
 
 ## Evidence destination
 
@@ -96,4 +105,4 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Write the red CAL-002 catalog and local-schema contract tests.
+Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.
