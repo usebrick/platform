@@ -54,21 +54,17 @@
   "allOf": [
     {
       "if": {
-        "type": "object",
         "properties": {
           "uniqueCoverageDisposition": { "const": "split-to-new-rule" }
         },
         "required": ["uniqueCoverageDisposition"]
       },
       "then": {
-        "type": "object",
         "properties": { "splitRuleId": { "$ref": "#/$defs/ruleId" } },
         "required": ["splitRuleId"]
       },
       "else": {
-        "type": "object",
         "not": {
-          "type": "object",
           "properties": { "splitRuleId": true },
           "required": ["splitRuleId"]
         }
@@ -77,7 +73,6 @@
   ],
   "oneOf": [
     {
-      "type": "object",
       "properties": {
         "ruleId": { "const": "db/sql-concat" },
         "replacementRuleId": { "const": "security/sql-construction" },
@@ -86,7 +81,6 @@
       }
     },
     {
-      "type": "object",
       "properties": {
         "ruleId": { "const": "logic/math-any-density" },
         "replacementRuleId": { "const": "ai/any-density" },
@@ -95,7 +89,6 @@
       }
     },
     {
-      "type": "object",
       "properties": {
         "ruleId": { "const": "logic/math-console-log-storm" },
         "replacementRuleId": { "const": "ai/console-debug-storm" },
@@ -129,99 +122,121 @@
     },
     "sqlTemplatePortedCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "sql-with-template-ported" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "finding" },
         "observedReplacementObservation": { "const": "finding" }
       }
     },
     "sqlParameterizedGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "sql-with-parameterized-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "sqlCommentGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "sql-with-comment-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "anyLineDensityRejectedCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "any-line-density-rejected" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "anyDeclarationRatioRetainedCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "any-declaration-ratio-retained" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "finding" },
         "observedReplacementObservation": { "const": "finding" }
       }
     },
     "anyNonTypescriptGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "any-non-typescript-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "consoleFiveInThirtyPortedCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "console-five-in-thirty-ported" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "finding" },
         "observedReplacementObservation": { "const": "finding" }
       }
     },
     "consoleWindowSpreadGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "console-window-spread-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "consoleTestFileGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "console-test-file-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "consoleLoggerFileGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "console-logger-file-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
     },
     "consoleStructuredLoggerGuardCase": {
       "type": "object",
+      "additionalProperties": false,
       "$ref": "#/$defs/case",
       "properties": {
         "caseId": { "const": "console-structured-logger-guard" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
         "expectedReplacementObservation": { "const": "no-finding" },
         "observedReplacementObservation": { "const": "no-finding" }
       }
