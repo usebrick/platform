@@ -1,13 +1,13 @@
 # CAL-002 progressive quality authority design amendment
 
-- **Status:** design direction approved by the repository owner on 2026-07-19;
-  written specification pending final owner review
+- **Status:** written specification approved by the repository owner on
+  2026-07-19
 - **Date:** 2026-07-19
 - **Repository:** `usebrick/platform`
 - **Amends:** `2026-07-18-complete-calibration-program-design.md`
 - **Current implementation boundary:** CAL-002 through `e6c9695ea`
-- **Implementation authority:** none until this written specification and a
-  replacement detailed plan are approved
+- **Implementation authority:** none until the replacement detailed plan is
+  reviewed and approved
 - **Preserves:** frozen CAL-001 evidence, current CAL-002 receipts, non-admission,
   local-only owner authority, release separation, and user-owned paths
 
@@ -493,7 +493,6 @@ substitute for detector-specific controls, owner review, or runtime admission.
 
 ## Next gate
 
-The repository owner reviews this written specification. After explicit
-approval, invoke the writing-plans workflow and produce the detailed TDD
-amendment. Do not resume the v1 owner questionnaire or implement protocol
-changes before that plan is reviewed.
+Review the superseding detailed TDD amendment produced by the writing-plans
+workflow. Do not resume the v1 owner questionnaire or implement protocol
+changes before that plan is approved.
