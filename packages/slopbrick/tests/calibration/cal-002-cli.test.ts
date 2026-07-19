@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,7 @@ import {
 import type { CAL001HoldoutMetrics } from '../../src/calibration/corpus-v1/calibration-holdout';
 import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
 import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
+import { authorityProposalSha256V2 } from '../../src/calibration/cal-002/authority';
 import {
   CAL002_ASSIGNMENT_VERSION,
   CAL002_LOCKED_RULE_CATALOG_SHA256,
@@ -119,7 +120,7 @@ function fixture(
   ] };
 }
 
-function originCatalogFixture(root: string): void {
+function originCatalogFixture(root: string) {
   const registry = new RuleRegistry();
   registry.loadBuiltins();
   const rules = registry.getRules() as readonly Pick<Rule, 'id' | 'category' | 'aiSpecific' | 'defaultOff'>[];
@@ -161,6 +162,20 @@ function originCatalogFixture(root: string): void {
     cal001MatrixSha256: 'c'.repeat(64),
   }).catalog;
   writeCanonical(join(root, 'catalog.json'), catalog);
+  return catalog;
+}
+
+function priorOriginStateFixture(root: string): { readonly bytes: string; readonly sha256: string } {
+  const state = {
+    version: 'cal-002-origin-state-v1',
+    protocolVersion: CAL002_PROTOCOL_VERSION,
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    decisions: [{ ruleId: 'ai/any-density', disposition: 'hold-origin-default-off' }],
+    status: 'in-progress',
+  } as const;
+  const bytes = canonicalArtifact(state).json;
+  writeFileSync(join(root, 'origin-state.json'), bytes, { mode: 0o600 });
+  return { bytes, sha256: sha256(bytes) };
 }
 
 function cal001MatrixFixture(root: string): { readonly matrix: CAL001DecisionMatrix; readonly matrixSha256: string } {
@@ -659,138 +674,159 @@ describe('CAL-002 catalog CLI', () => {
   });
 });
 
-describe('CAL-002 classify-origin CLI', () => {
-  function originArgs(root: string): readonly string[] {
+describe('CAL-002 authority CLI migration', () => {
+  function authorityArgs(root: string): readonly string[] {
     return [
       script,
-      'classify-origin',
+      'classify-authority',
       '--root', root,
       '--catalog', 'catalog.json',
-      '--state', 'origin-state.json',
-      '--out', 'lane-decisions.json',
+      '--prior-state', 'origin-state.json',
+      '--proposal-out', 'authority-proposal.json',
+      '--state-out', 'authority-state.json',
+      '--receipt-out', 'authority-receipt.json',
     ];
   }
 
-  it('pauses and resumes 40 owner decisions while auto-holding the other 32', () => {
+  it('refuses the v1 questionnaire before legacy argument parsing and preserves its bytes', () => {
     const root = temporaryRoot();
-    originCatalogFixture(root);
-    const first = run(originArgs(root), 'q\n', root);
-    expect(first.status).toBe(0);
-    expect(JSON.parse(first.stdout)).toMatchObject({
-      ok: true,
-      command: 'classify-origin',
-      status: 'paused',
-      labeled: 0,
-      remaining: 40,
-      nextRuleId: 'ai/any-density',
-    });
-    expect(first.stderr).toContain('1 hold-origin-default-off');
-    expect(first.stderr).toContain('2 transfer-to-quality');
-    expect(first.stderr).toContain('3 retire');
-    expect(statSync(join(root, 'origin-state.json')).mode & 0o777).toBe(0o600);
+    const prior = priorOriginStateFixture(root);
 
-    const second = run(originArgs(root), Array.from({ length: 40 }, () => '1').join('\n') + '\n', root);
-    expect(second.status).toBe(0);
-    expect(JSON.parse(second.stdout)).toMatchObject({
-      ok: true,
-      command: 'classify-origin',
-      status: 'completed',
-      labeled: 40,
-      remaining: 0,
-    });
-    const stateBytes = readFileSync(join(root, 'origin-state.json'), 'utf8');
-    const state = JSON.parse(stateBytes) as { status: string; decisions: unknown[] };
-    expect(state.status).toBe('completed');
-    expect(state.decisions).toHaveLength(40);
-    const artifactBytes = readFileSync(join(root, 'lane-decisions.json'), 'utf8');
-    const artifact = JSON.parse(artifactBytes) as { rows: unknown[]; admitted: boolean };
-    expect(artifact.rows).toHaveLength(72);
-    expect(artifact.admitted).toBe(false);
-    expect(stateBytes).toBe(canonicalArtifact(state).json);
-    expect(artifactBytes).toBe(canonicalArtifact(artifact).json);
-    expect(statSync(join(root, 'lane-decisions.json')).mode & 0o777).toBe(0o600);
-    expect(artifactBytes).not.toMatch(/(?:source|path|Users|checkoutPath)/i);
+    const result = run([
+      script,
+      'classify-origin',
+      '--state', join(root, 'origin-state.json'),
+    ], '1\n', root);
 
-    const receiptBytes = artifactBytes;
-    const replay = run(originArgs(root), '', root);
-    expect(replay.status).toBe(0);
-    expect(JSON.parse(replay.stdout)).toMatchObject({ ok: true, status: 'completed', labeled: 40 });
-    expect(readFileSync(join(root, 'lane-decisions.json'), 'utf8')).toBe(receiptBytes);
-  });
-
-  it('keeps transfer reasons closed and rejects invalid selections without state mutation', () => {
-    const root = temporaryRoot();
-    originCatalogFixture(root);
-    const paused = run(originArgs(root), 'invalid\nq\n', root);
-    expect(paused.status).toBe(0);
-    expect(paused.stderr).toMatch(/invalid selection/i);
-    expect(JSON.parse(paused.stdout)).toMatchObject({ status: 'paused', labeled: 0, remaining: 40 });
-
-    const input = '2\n3\n' + Array.from({ length: 39 }, () => '1').join('\n') + '\n';
-    const completed = run(originArgs(root), input, root);
-    expect(completed.status).toBe(0);
-    expect(JSON.parse(completed.stdout)).toMatchObject({ status: 'completed', labeled: 40 });
-    const artifact = JSON.parse(readFileSync(join(root, 'lane-decisions.json'), 'utf8')) as {
-      rows: readonly { ruleId: string; disposition: string; reason?: string }[];
-    };
-    expect(artifact.rows.find((row) => row.ruleId === 'ai/any-density')).toEqual({
-      ruleId: 'ai/any-density',
-      disposition: 'transfer-to-quality',
-      reason: 'statistical-review-utility-claim',
-    });
-    expect(completed.stderr).toContain('standards-or-contract-quality-claim');
-    expect(completed.stderr).toContain('contextual-defect-quality-claim');
-    expect(completed.stderr).toContain('statistical-review-utility-claim');
-  });
-
-  it('fails closed on malformed or conflicting completed artifacts', () => {
-    const root = temporaryRoot();
-    originCatalogFixture(root);
-    const first = run(originArgs(root), 'q\n', root);
-    expect(first.status).toBe(0);
-    writeFileSync(join(root, 'origin-state.json'), canonicalArtifact({
-      version: 'cal-002-origin-state-v1',
-      protocolVersion: CAL002_PROTOCOL_VERSION,
-      catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
-      decisions: [],
-      status: 'completed',
-    }).json, { mode: 0o600 });
-    const result = run(originArgs(root), '', root);
     expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/completed|unresolved|receipt|decisions/i);
-    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
+    expect(result.stderr).toContain('classify-authority');
+    expect(result.stderr).toContain('v1 state remains immutable');
+    expect(result.stderr).not.toMatch(/requires --catalog|hold-origin-default-off|transfer-to-quality/i);
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: false, command: 'classify-origin' });
+    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+    expect(readFileSync(join(root, 'origin-state.json'), 'utf8')).toBe(prior.bytes);
+  });
+
+  it('approves the exact batch with canonical private artifacts and association-free binding', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const prior = priorOriginStateFixture(root);
+
+    const result = run(authorityArgs(root), '1\n', root);
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      command: 'classify-authority',
+      status: 'approved',
+      admitted: false,
+      applied: false,
+    });
+    expect(result.stderr).toContain('26 transfer / 4 blocked / 3 supersede / 7 retire');
+    const proposalBytes = readFileSync(join(root, 'authority-proposal.json'), 'utf8');
+    const stateBytes = readFileSync(join(root, 'authority-state.json'), 'utf8');
+    const receiptBytes = readFileSync(join(root, 'authority-receipt.json'), 'utf8');
+    const proposal = JSON.parse(proposalBytes) as { rows: readonly { sourceClass: string }[]; admitted: boolean; applied: boolean };
+    const state = JSON.parse(stateBytes) as { proposalSha256: string; decision: string; admitted: boolean; applied: boolean };
+    const receipt = JSON.parse(receiptBytes) as {
+      proposalSha256: string;
+      decision: string;
+      rows: readonly { sourceClass: string }[];
+      admitted: boolean;
+      applied: boolean;
+    };
+    const gateSha256 = authorityProposalSha256V2(proposal as Parameters<typeof authorityProposalSha256V2>[0]);
+    expect(gateSha256).not.toBe(canonicalArtifact(proposal).sha256);
+    expect(state).toMatchObject({ proposalSha256: gateSha256, decision: 'approved', admitted: false, applied: false });
+    expect(receipt).toMatchObject({ proposalSha256: gateSha256, decision: 'approved', admitted: false, applied: false });
+    expect(proposal.rows).toHaveLength(119);
+    expect(proposal.rows.filter((row) => row.sourceClass === 'owner-batch')).toHaveLength(40);
+    expect(receipt.rows).toHaveLength(119);
+    expect(receipt.rows.filter((row) => row.sourceClass === 'owner-batch')).toHaveLength(40);
+    expect(proposalBytes).toBe(canonicalArtifact(proposal).json);
+    expect(stateBytes).toBe(canonicalArtifact(state).json);
+    expect(receiptBytes).toBe(canonicalArtifact(receipt).json);
+    expect(statSync(join(root, 'authority-proposal.json')).mode & 0o777).toBe(0o600);
+    expect(statSync(join(root, 'authority-state.json')).mode & 0o777).toBe(0o600);
+    expect(statSync(join(root, 'authority-receipt.json')).mode & 0o777).toBe(0o600);
+    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+
+    const replay = run(authorityArgs(root), '', root);
+    expect(replay.status).toBe(0);
+    expect(JSON.parse(replay.stdout)).toMatchObject({ status: 'approved', proposalSha256: gateSha256 });
+    expect(readFileSync(join(root, 'authority-proposal.json'), 'utf8')).toBe(proposalBytes);
+    expect(readFileSync(join(root, 'authority-state.json'), 'utf8')).toBe(stateBytes);
+    expect(readFileSync(join(root, 'authority-receipt.json'), 'utf8')).toBe(receiptBytes);
+  });
+
+  it('writes only rejected v2 state and keeps that decision closed', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const prior = priorOriginStateFixture(root);
+
+    const result = run(authorityArgs(root), '2\n', root);
+
+    expect(result.status).toBe(2);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      command: 'classify-authority',
+      status: 'rejected',
+      admitted: false,
+      applied: false,
+    });
+    const stateBytes = readFileSync(join(root, 'authority-state.json'), 'utf8');
+    const state = JSON.parse(stateBytes) as { decision: string; admitted: boolean; applied: boolean };
+    expect(state).toMatchObject({ decision: 'rejected', admitted: false, applied: false });
+    expect(stateBytes).toBe(canonicalArtifact(state).json);
+    expect(statSync(join(root, 'authority-state.json')).mode & 0o777).toBe(0o600);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+
+    const replay = run(authorityArgs(root), '1\n', root);
+    expect(replay.status).toBe(2);
+    expect(JSON.parse(replay.stdout)).toMatchObject({ ok: true, status: 'rejected' });
+    expect(readFileSync(join(root, 'authority-state.json'), 'utf8')).toBe(stateBytes);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+  });
+
+  it('rejects overlapping authority outputs before any artifact mutation', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const prior = priorOriginStateFixture(root);
+    const args = [
+      script,
+      'classify-authority',
+      '--root', root,
+      '--catalog', 'catalog.json',
+      '--prior-state', 'origin-state.json',
+      '--proposal-out', 'authority-proposal.json',
+      '--state-out', 'authority-collision.json',
+      '--receipt-out', 'authority-collision.json',
+    ];
+
+    const result = run(args, '1\n', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/authority.*paths.*distinct|distinct.*authority.*paths/i);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-collision.json'))).toBe(false);
+    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
   });
 
   it('holds an exclusive session lock across the read-decide-write lifecycle', () => {
     const root = temporaryRoot();
     originCatalogFixture(root);
-    writeFileSync(join(root, '.origin-state.json.session.lock'), '', { mode: 0o600 });
+    priorOriginStateFixture(root);
+    writeFileSync(join(root, '.authority-state.json.session.lock'), '', { mode: 0o600 });
 
-    const result = run(originArgs(root), 'q\n', root);
-
-    expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/review session is locked/i);
-    expect(() => readFileSync(join(root, 'origin-state.json'))).toThrow();
-    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
-  });
-
-  it('rejects a symlinked parent before creating any private artifact outside the root', () => {
-    const root = temporaryRoot();
-    const outside = temporaryRoot();
-    originCatalogFixture(root);
-    symlinkSync(outside, join(root, 'linked'), 'dir');
-    const result = run([
-      script,
-      'classify-origin',
-      '--root', root,
-      '--catalog', 'catalog.json',
-      '--state', 'linked/origin-state.json',
-      '--out', 'lane-decisions.json',
-    ], 'q\n', root);
+    const result = run(authorityArgs(root), '1\n', root);
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/symbolic link/i);
-    expect(() => readFileSync(join(outside, 'origin-state.json'))).toThrow();
-    expect(() => readFileSync(join(root, 'lane-decisions.json'))).toThrow();
+    expect(result.stderr).toMatch(/authority.*session.*locked/i);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-state.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
   });
 });

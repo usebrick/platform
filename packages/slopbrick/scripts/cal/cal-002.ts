@@ -1,6 +1,6 @@
 /** Offline-only CAL-002 owner-review dispatcher. */
 import { execFileSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
@@ -9,13 +9,23 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } fr
 import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
 import {
   readCanonicalArtifact,
+  readPrivateCanonicalArtifact,
   readReviewReceipt,
   readReviewState,
   readVerifiedSource,
   readVerifiedSourcesByHash,
+  withPrivateArtifactSessionLock,
+  writeImmutableCanonicalReceipt,
   writeImmutableReceipt,
+  writePrivateCanonicalState,
   writeReviewState,
 } from '../../src/calibration/cal-002/artifact-io';
+import { buildCAL002AuthorityProposalV2 } from '../../src/calibration/cal-002/authority';
+import {
+  completeCAL002AuthoritySessionV2,
+  decideCAL002AuthoritySessionV2,
+  startCAL002AuthoritySessionV2,
+} from '../../src/calibration/cal-002/authority-session';
 import {
   CAL002_LOCKED_RULE_CATALOG_SHA256,
   CAL002_PROTOCOL_VERSION,
@@ -57,6 +67,14 @@ import type {
   CAL002QualityAssignment,
   CAL002QualityBlindedRow,
 } from '../../src/calibration/cal-002/quality-sampling';
+import {
+  assertCAL002AuthorityProposalV2,
+  assertCAL002AuthorityReceiptV2,
+  assertCAL002AuthorityStateV2,
+  type CAL002AuthorityProposalV2,
+  type CAL002AuthorityReceiptV2,
+  type CAL002AuthorityStateV2,
+} from '../../src/calibration/cal-002/contracts-v2';
 import {
   assertCAL002ReviewState,
   completeCAL002Review,
@@ -105,6 +123,16 @@ interface OriginArguments {
   readonly out: string;
 }
 
+interface AuthorityArguments {
+  readonly command: 'classify-authority';
+  readonly root: string;
+  readonly catalog: string;
+  readonly priorState: string;
+  readonly proposalOut: string;
+  readonly stateOut: string;
+  readonly receiptOut: string;
+}
+
 interface CatalogArguments {
   readonly command: 'catalog';
   readonly root: string;
@@ -145,7 +173,7 @@ interface ApplyArguments {
   readonly dryRun: boolean;
 }
 
-type Arguments = ReviewArguments | OriginArguments | CatalogArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
+type Arguments = ReviewArguments | OriginArguments | AuthorityArguments | CatalogArguments | MatrixArguments | ApproveMatrixArguments | ApplyArguments;
 
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
@@ -171,6 +199,10 @@ const ORIGIN_TRANSFER_REASON_BY_KEY: Readonly<Record<string, 'standards-or-contr
   '2': 'contextual-defect-quality-claim',
   '3': 'statistical-review-utility-claim',
 };
+const AUTHORITY_MENU = [
+  '1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch',
+  '2 reject the exact batch and leave runtime policy unchanged',
+].join('\n');
 const PRIVATE_FILE_MODE = 0o600;
 
 interface OriginState {
@@ -260,6 +292,29 @@ function parseOriginArguments(tokens: readonly string[]): OriginArguments {
     catalog: required('--catalog'),
     state: required('--state'),
     out: required('--out'),
+  };
+}
+
+function parseAuthorityArguments(tokens: readonly string[]): AuthorityArguments {
+  const { values } = parseValuesAndFlags(tokens, 'classify-authority', new Set([
+    '--root', '--catalog', '--prior-state', '--proposal-out', '--state-out', '--receipt-out',
+  ]), new Set());
+  const catalog = requiredValue(values, '--catalog', 'classify-authority');
+  const priorState = requiredValue(values, '--prior-state', 'classify-authority');
+  const proposalOut = requiredValue(values, '--proposal-out', 'classify-authority');
+  const stateOut = requiredValue(values, '--state-out', 'classify-authority');
+  const receiptOut = requiredValue(values, '--receipt-out', 'classify-authority');
+  if (new Set([catalog, priorState, proposalOut, stateOut, receiptOut]).size !== 5) {
+    throw new Error('classify-authority artifact paths must be distinct');
+  }
+  return {
+    command: 'classify-authority',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    catalog,
+    priorState,
+    proposalOut,
+    stateOut,
+    receiptOut,
   };
 }
 
@@ -365,11 +420,12 @@ function parseArguments(argv: readonly string[]): Arguments {
   const [command, ...tokens] = argv.slice(first);
   if (command === 'review-quality') return parseReviewArguments(tokens);
   if (command === 'classify-origin') return parseOriginArguments(tokens);
+  if (command === 'classify-authority') return parseAuthorityArguments(tokens);
   if (command === 'catalog') return parseCatalogArguments(tokens);
   if (command === 'matrix') return parseMatrixArguments(tokens);
   if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
   if (command === 'apply') return parseApplyArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-origin, catalog, matrix, approve-matrix, or apply with local artifact options');
+  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, catalog, matrix, approve-matrix, or apply with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -1297,6 +1353,161 @@ async function classifyOriginLocked(
   }
 }
 
+async function readAuthorityPriorState(
+  args: AuthorityArguments,
+  catalog: CAL002Catalog,
+): Promise<OriginState> {
+  const assertValue: (value: unknown) => asserts value is OriginState = (value) => {
+    originState(value, catalog);
+  };
+  return readPrivateCanonicalArtifact({
+    root: args.root,
+    relativePath: args.priorState,
+    label: 'CAL-002 prior v1 origin state',
+    assertValue,
+  });
+}
+
+async function loadAuthorityState(
+  args: AuthorityArguments,
+  pending: CAL002AuthorityStateV2,
+): Promise<CAL002AuthorityStateV2> {
+  let state: CAL002AuthorityStateV2;
+  try {
+    state = await readPrivateCanonicalArtifact({
+      root: args.root,
+      relativePath: args.stateOut,
+      label: 'CAL-002 authority state',
+      assertValue: assertCAL002AuthorityStateV2,
+    });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return pending;
+  }
+  const expected = { ...pending, decision: state.decision };
+  if (canonicalArtifact(state).json !== canonicalArtifact(expected).json) {
+    throw new Error('CAL-002 authority state does not match the exact proposal and prior v1 state');
+  }
+  return state;
+}
+
+async function persistApprovedAuthority(
+  args: AuthorityArguments,
+  proposal: CAL002AuthorityProposalV2,
+  state: CAL002AuthorityStateV2,
+  priorStateBytes: string,
+): Promise<void> {
+  const completed = completeCAL002AuthoritySessionV2({ proposal, state, priorStateBytes });
+  await writePrivateCanonicalState<CAL002AuthorityStateV2>({
+    root: args.root,
+    relativePath: args.stateOut,
+    label: 'CAL-002 authority state',
+    value: completed.state,
+    assertValue: assertCAL002AuthorityStateV2,
+  });
+  await writeImmutableCanonicalReceipt<CAL002AuthorityProposalV2>({
+    root: args.root,
+    relativePath: args.proposalOut,
+    label: 'CAL-002 authority proposal',
+    value: proposal,
+    assertValue: assertCAL002AuthorityProposalV2,
+  });
+  await writeImmutableCanonicalReceipt<CAL002AuthorityReceiptV2>({
+    root: args.root,
+    relativePath: args.receiptOut,
+    label: 'CAL-002 authority receipt',
+    value: completed.receipt,
+    assertValue: assertCAL002AuthorityReceiptV2,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'approved',
+    proposalSha256: completed.state.proposalSha256,
+    proposalArtifactSha256: canonicalArtifact(proposal).sha256,
+    stateSha256: completed.stateSha256,
+    receiptSha256: completed.receiptSha256,
+    admitted: false,
+    applied: false,
+  });
+}
+
+function reportRejectedAuthority(args: AuthorityArguments, state: CAL002AuthorityStateV2): void {
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'rejected',
+    proposalSha256: state.proposalSha256,
+    priorStateSha256: state.priorStateSha256,
+    admitted: false,
+    applied: false,
+  });
+  process.exitCode = 2;
+}
+
+async function classifyAuthorityLocked(args: AuthorityArguments): Promise<void> {
+  const catalog = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.catalog,
+    label: 'CAL-002 catalog',
+  }) as CAL002Catalog;
+  const priorState = await readAuthorityPriorState(args, catalog);
+  const priorStateBytes = canonicalArtifact(priorState).json;
+  const priorStateSha256 = createHash('sha256').update(priorStateBytes, 'utf8').digest('hex');
+  const proposalResult = buildCAL002AuthorityProposalV2(catalog, priorStateSha256);
+  const pending = startCAL002AuthoritySessionV2({
+    proposal: proposalResult.proposal,
+    priorStateSha256,
+  });
+  const state = await loadAuthorityState(args, pending);
+  if (state.decision === 'approved') {
+    await persistApprovedAuthority(args, proposalResult.proposal, state, priorStateBytes);
+    return;
+  }
+  if (state.decision === 'rejected') {
+    reportRejectedAuthority(args, state);
+    return;
+  }
+
+  const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
+  const lines = input[Symbol.asyncIterator]();
+  try {
+    process.stderr.write(`CAL-002 authority batch:\n${AUTHORITY_MENU}\n`);
+    while (true) {
+      const next = await lines.next();
+      if (next.done) throw new Error('classify-authority requires owner choice 1 or 2');
+      if (next.value === '1') {
+        const approved = decideCAL002AuthoritySessionV2(state, 'approved');
+        await persistApprovedAuthority(args, proposalResult.proposal, approved, priorStateBytes);
+        return;
+      }
+      if (next.value === '2') {
+        const rejected = decideCAL002AuthoritySessionV2(state, 'rejected');
+        await writePrivateCanonicalState<CAL002AuthorityStateV2>({
+          root: args.root,
+          relativePath: args.stateOut,
+          label: 'CAL-002 authority state',
+          value: rejected,
+          assertValue: assertCAL002AuthorityStateV2,
+        });
+        reportRejectedAuthority(args, rejected);
+        return;
+      }
+      process.stderr.write('Invalid selection; choose owner authority key 1 or 2.\n');
+    }
+  } finally {
+    input.close();
+  }
+}
+
+async function classifyAuthority(args: AuthorityArguments): Promise<void> {
+  await withPrivateArtifactSessionLock({
+    root: args.root,
+    relativePath: args.stateOut,
+    label: 'CAL-002 authority',
+  }, () => classifyAuthorityLocked(args));
+}
+
 async function buildCatalogCommand(args: CatalogArguments): Promise<void> {
   const matrix = await readCAL001DecisionMatrix(args.root, args.cal001Matrix);
   const registry = new RuleRegistry();
@@ -1435,12 +1646,19 @@ async function applyPolicy(args: ApplyArguments): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  let command = process.argv[2] ?? 'unknown';
+  const argv = process.argv.slice(2);
+  let first = 0;
+  while (argv[first] === '--') first += 1;
+  let command = argv[first] ?? 'unknown';
   try {
-    const args = parseArguments(process.argv.slice(2));
+    if (command === 'classify-origin') {
+      throw new Error('Use classify-authority; the v1 state remains immutable and will not be read or rewritten');
+    }
+    const args = parseArguments(argv);
     command = args.command;
     if (args.command === 'review-quality') await reviewQuality(args);
     else if (args.command === 'classify-origin') await classifyOrigin(args);
+    else if (args.command === 'classify-authority') await classifyAuthority(args);
     else if (args.command === 'catalog') await buildCatalogCommand(args);
     else if (args.command === 'matrix') await buildMatrixCommand(args);
     else if (args.command === 'approve-matrix') await approveMatrix(args);
