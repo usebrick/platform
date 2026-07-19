@@ -253,11 +253,11 @@ function expectRejectedByBoth(file: keyof typeof fixtures, value: unknown, patte
 }
 
 describe('CAL-002 local artifact contracts', () => {
-  it('enumerates exactly the eight local schemas and compiles each with Ajv 2020', () => {
+  it('keeps the exact eight v1 schemas as the ordered registry prefix and compiles each with Ajv 2020', () => {
     const index = JSON.parse(readFileSync(join(SCHEMA_DIR, 'index.json'), 'utf8')) as {
       schemas: { file: string; version: string }[];
     };
-    expect(index.schemas).toEqual([
+    const v1Schemas = [
       { file: 'cal-002-catalog.schema.json', version: CAL002_CATALOG_VERSION },
       { file: 'cal-002-assignment.schema.json', version: CAL002_ASSIGNMENT_VERSION },
       { file: 'cal-002-review-receipt.schema.json', version: CAL002_REVIEW_RECEIPT_VERSION },
@@ -266,10 +266,11 @@ describe('CAL-002 local artifact contracts', () => {
       { file: 'cal-002-final-matrix.schema.json', version: CAL002_FINAL_MATRIX_VERSION },
       { file: 'cal-002-matrix-approval.schema.json', version: CAL002_MATRIX_APPROVAL_VERSION },
       { file: 'slopbrick-rule-evidence-policy.schema.json', version: SLOPBRICK_RULE_EVIDENCE_POLICY_VERSION },
-    ]);
+    ] as const;
+    expect(index.schemas.slice(0, v1Schemas.length)).toEqual(v1Schemas);
 
     const ajv = new Ajv2020({ allErrors: true, strict: true });
-    for (const { file } of index.schemas) {
+    for (const { file } of v1Schemas) {
       const schema = JSON.parse(readFileSync(join(SCHEMA_DIR, file), 'utf8'));
       const validate = ajv.compile(schema);
       expect(validate(fixtures[file as keyof typeof fixtures]), `${file}: ${JSON.stringify(validate.errors)}`).toBe(true);

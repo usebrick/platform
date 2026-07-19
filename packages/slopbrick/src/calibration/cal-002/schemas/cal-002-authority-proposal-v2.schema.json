@@ -9,7 +9,10 @@
     "protocolVersion",
     "catalogSha256",
     "priorStateSha256",
+    "associationSnapshot",
     "rows",
+    "authorityRowsSha256",
+    "associationRowsSha256",
     "counts",
     "admitted",
     "applied"
@@ -27,6 +30,9 @@
     "priorStateSha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "associationSnapshot": {
+      "$ref": "#/$defs/associationSnapshot"
     },
     "rows": {
       "type": "array",
@@ -47,6 +53,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 175.31,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -65,6 +72,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 4.26,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -83,6 +91,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 4.92,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -102,6 +111,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 949.21,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -120,6 +130,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 251225.49,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -138,6 +149,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 13.09,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -157,6 +169,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 2679.84,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -175,6 +188,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 47415.05,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -193,6 +207,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 10003.17,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -211,6 +226,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 5251.67,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -229,6 +245,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 9.52,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -248,6 +265,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1315.06,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -267,6 +285,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 230.97,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -285,6 +304,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 201664,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -303,6 +323,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 8.25,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -322,6 +343,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 132.31,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -341,6 +363,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 15.96,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -359,6 +382,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 9990.98,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -378,6 +402,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 49.48,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -397,6 +422,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.93,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -416,6 +442,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.86,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -435,6 +462,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 2.43,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -454,6 +482,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.9,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -473,6 +502,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -492,6 +522,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -511,6 +542,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -529,6 +561,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -547,6 +580,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -565,6 +599,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -583,6 +618,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -602,6 +638,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 7511.26,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -621,6 +658,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1080.68,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -640,6 +678,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 153.14,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -659,6 +698,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 30.06,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -678,6 +718,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 120.18,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -697,6 +738,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 98,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -716,6 +758,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 178.13,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -735,6 +778,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1638.47,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -754,6 +798,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 939.43,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -773,6 +818,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -791,6 +837,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -809,6 +856,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -827,6 +875,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -845,6 +894,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -864,6 +914,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -883,6 +934,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.59,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -902,6 +954,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -921,6 +974,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.97,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -940,6 +994,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -959,6 +1014,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -978,6 +1034,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -997,6 +1054,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1016,6 +1074,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 8859.33,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1034,6 +1093,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 770.74,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1052,6 +1112,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 5839.98,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1071,6 +1132,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 4051.29,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1090,6 +1152,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 51.32,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1108,6 +1171,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 112035.56,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1127,6 +1191,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 25.54,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1146,6 +1211,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 574.52,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1165,6 +1231,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 464.59,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1184,6 +1251,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 794.4,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1202,6 +1270,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 4648.6,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1221,6 +1290,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 4548.81,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1239,6 +1309,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 3523.57,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1258,6 +1329,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1370.15,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1277,6 +1349,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 57.13,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1296,6 +1369,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 119891.71,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1315,6 +1389,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 2895.78,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1334,6 +1409,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 365.63,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1353,6 +1429,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1372,6 +1449,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1391,6 +1469,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 397.75,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1409,6 +1488,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 22864.4,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1428,6 +1508,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1447,6 +1528,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1466,6 +1548,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1485,6 +1568,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 24735.12,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1504,6 +1588,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 210.08,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1522,6 +1607,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 10803.43,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1541,6 +1627,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 70.81,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1560,6 +1647,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1721.87,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1579,6 +1667,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1929.18,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1598,6 +1687,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1055.81,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1617,6 +1707,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 99999,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1636,6 +1727,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1269.08,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1655,6 +1747,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 99999,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1674,6 +1767,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 99999,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1693,6 +1787,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 142.2,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1712,6 +1807,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 485.42,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1731,6 +1827,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 26141.63,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1750,6 +1847,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 513.12,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1768,6 +1866,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.57,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1786,6 +1885,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.48,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1804,6 +1904,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.18,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1822,6 +1923,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1.13,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1840,6 +1942,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 0.56,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1859,6 +1962,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 51016.19,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1877,6 +1981,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 547.47,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1895,6 +2000,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 131.62,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1913,6 +2019,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1931,6 +2038,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1949,6 +2057,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1967,6 +2076,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -1986,6 +2096,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 6894.19,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2005,6 +2116,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 17330.5,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2024,6 +2136,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1219.67,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2043,6 +2156,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 134.59,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2061,6 +2175,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 46814.86,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2079,6 +2194,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 3035.16,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2097,6 +2213,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 869.95,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2115,6 +2232,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 3785.45,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2133,6 +2251,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1898.99,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2151,6 +2270,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 10.86,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2170,6 +2290,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 82131.33,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2189,6 +2310,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 273.97,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2208,6 +2330,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 8397.24,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2227,6 +2350,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 1214.21,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2246,6 +2370,7 @@
           "aiAssociation": {
             "source": "legacy-signal-strength",
             "claimCeiling": "association-only",
+            "evidenceSha256": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2",
             "lift": 935.33,
             "measuredAt": "2026-07-04T00:00:00Z",
             "protocol": "legacy-signal-strength-v1"
@@ -2255,6 +2380,12 @@
       "items": {
         "$ref": "#/$defs/authorityRow"
       }
+    },
+    "authorityRowsSha256": {
+      "const": "c58222f7a43aa798a5d4e5a812666409df2dde588784b485109e66f0d56c3b38"
+    },
+    "associationRowsSha256": {
+      "const": "e8ce2b2a9e313fc2ea6639ddcd4f0ff9e53ed119eb4aa09f196f3c3fb90bac92"
     },
     "counts": {
       "type": "object",
@@ -2300,6 +2431,26 @@
     }
   },
   "$defs": {
+    "associationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "protocol",
+        "evidenceSha256"
+      ],
+      "properties": {
+        "version": {
+          "const": "cal-002-legacy-association-snapshot-v1"
+        },
+        "protocol": {
+          "const": "legacy-signal-strength-v1"
+        },
+        "evidenceSha256": {
+          "const": "740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2"
+        }
+      }
+    },
     "aiAssociation": {
       "type": "object",
       "additionalProperties": false,

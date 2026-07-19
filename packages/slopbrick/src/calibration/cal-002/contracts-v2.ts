@@ -4,7 +4,13 @@ import {
   canonicalArtifact,
   type CAL002ValidationResult,
 } from './contracts';
-import { canonicalAuthorityRowsV2 } from './authority';
+import {
+  CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+  CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+  CAL002_ASSOCIATION_SNAPSHOT_VERSION,
+  authorityRowsSha256V2,
+  canonicalAuthorityRowsV2,
+} from './authority';
 
 export const CAL002_PROTOCOL_VERSION_V2 = 'CAL-002-v2' as const;
 export const CAL002_AUTHORITY_PROPOSAL_VERSION = 'cal-002-authority-proposal-v2' as const;
@@ -63,6 +69,12 @@ export interface CAL002AIAssociationV2 {
   readonly protocol?: string;
 }
 
+export interface CAL002AssociationSnapshotV2 {
+  readonly version: 'cal-002-legacy-association-snapshot-v1';
+  readonly protocol: 'legacy-signal-strength-v1';
+  readonly evidenceSha256: string;
+}
+
 export interface CAL002AuthorityRowV2 {
   readonly ruleId: string;
   readonly sourceClass: 'starting-quality' | 'owner-batch' | 'research-origin';
@@ -78,12 +90,17 @@ export interface CAL002AuthorityRowV2 {
   readonly aiAssociation: CAL002AIAssociationV2;
 }
 
+export type CAL002AuthorityDecisionRowV2 = Omit<CAL002AuthorityRowV2, 'aiAssociation'>;
+
 export interface CAL002AuthorityProposalV2 {
   readonly version: typeof CAL002_AUTHORITY_PROPOSAL_VERSION;
   readonly protocolVersion: typeof CAL002_PROTOCOL_VERSION_V2;
   readonly catalogSha256: typeof CAL002_LOCKED_RULE_CATALOG_SHA256;
   readonly priorStateSha256: string;
+  readonly associationSnapshot: CAL002AssociationSnapshotV2;
   readonly rows: readonly CAL002AuthorityRowV2[];
+  readonly authorityRowsSha256: string;
+  readonly associationRowsSha256: string;
   readonly counts: {
     readonly total: 119;
     readonly startingQuality: 47;
@@ -101,6 +118,7 @@ export interface CAL002AuthorityProposalResultV2 {
   readonly proposal: CAL002AuthorityProposalV2;
   readonly proposalJson: string;
   readonly proposalSha256: string;
+  readonly proposalArtifactSha256: string;
 }
 
 export interface CAL002AuthorityStateV2 {
@@ -125,8 +143,10 @@ export interface CAL002AuthorityReceiptV2 {
   readonly revision: 2;
   readonly reviewerAuthority: 'repository-owner';
   readonly decision: 'approved';
+  readonly associationSnapshot: CAL002AssociationSnapshotV2;
   readonly rows: readonly CAL002AuthorityRowV2[];
   readonly authorityRowsSha256: string;
+  readonly associationRowsSha256: string;
   readonly admitted: false;
   readonly applied: false;
 }
@@ -240,6 +260,21 @@ function validateHeaderV2(
   literal(record.protocolVersion, CAL002_PROTOCOL_VERSION_V2, 'artifact.protocolVersion', context);
 }
 
+function validateAssociationSnapshot(value: unknown, path: string, context: ValidationContext): void {
+  const snapshot = objectAt(value, path, context);
+  if (!snapshot) return;
+  const keys = ['version', 'protocol', 'evidenceSha256'];
+  exactKeys(snapshot, keys, keys, path, context);
+  literal(snapshot.version, CAL002_ASSOCIATION_SNAPSHOT_VERSION, `${path}.version`, context);
+  literal(snapshot.protocol, CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL, `${path}.protocol`, context);
+  literal(
+    snapshot.evidenceSha256,
+    CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+    `${path}.evidenceSha256`,
+    context,
+  );
+}
+
 function validateAssociation(value: unknown, path: string, context: ValidationContext): void {
   const association = objectAt(value, path, context);
   if (!association) return;
@@ -300,28 +335,37 @@ function validateCanonicalRows(value: unknown, context: ValidationContext): read
     context.add('artifact.rows', 'must be an array');
     return undefined;
   }
+  const errorCountBeforeRows = context.errors.length;
   const expected = canonicalAuthorityRowsV2();
   if (value.length !== CAL002_LOCKED_RULE_IDS.length) {
     context.add('artifact.rows', `must contain exactly ${CAL002_LOCKED_RULE_IDS.length} rows`);
   }
   const seen = new Set<string>();
-  value.forEach((row, index) => {
+  for (let index = 0; index < CAL002_LOCKED_RULE_IDS.length; index += 1) {
+    if (!Object.hasOwn(value, index)) {
+      context.add(`artifact.rows[${index}]`, 'is a missing sparse-array element');
+      continue;
+    }
+    const row = value[index];
     const errorCountBeforeRow = context.errors.length;
     validateAuthorityRow(row, index, context);
-    if (!isRecord(row) || typeof row.ruleId !== 'string') return;
+    if (!isRecord(row) || typeof row.ruleId !== 'string') continue;
     if (seen.has(row.ruleId)) context.add(`artifact.rows[${index}].ruleId`, 'is a duplicate rule ID');
     seen.add(row.ruleId);
     const expectedRow = expected[index];
     if (!expectedRow || row.ruleId !== expectedRow.ruleId) {
       context.add(`artifact.rows[${index}].ruleId`, 'must follow canonical locked rule-ID order');
-      return;
+      continue;
     }
     if (context.errors.length === errorCountBeforeRow
       && canonicalArtifact(row).json !== canonicalArtifact(expectedRow).json) {
       context.add(`artifact.rows[${index}]`, 'authority metadata must match the canonical rule-ID projection');
     }
-  });
-  return value;
+  }
+  if (seen.size !== CAL002_LOCKED_RULE_IDS.length) {
+    context.add('artifact.rows', 'must contain the complete canonical 119-rule identity');
+  }
+  return context.errors.length === errorCountBeforeRows ? value : undefined;
 }
 
 function validateCounts(value: unknown, context: ValidationContext): void {
@@ -353,12 +397,24 @@ export function validateCAL002AuthorityProposalV2(value: unknown): CAL002Validat
   const context = new ValidationContext();
   const artifact = objectAt(value, 'artifact', context);
   if (!artifact) return context.finish();
-  const keys = ['version', 'protocolVersion', 'catalogSha256', 'priorStateSha256', 'rows', 'counts', 'admitted', 'applied'];
+  const keys = [
+    'version', 'protocolVersion', 'catalogSha256', 'priorStateSha256', 'associationSnapshot',
+    'rows', 'authorityRowsSha256', 'associationRowsSha256', 'counts', 'admitted', 'applied',
+  ];
   exactKeys(artifact, keys, keys, 'artifact', context);
   validateHeaderV2(artifact, CAL002_AUTHORITY_PROPOSAL_VERSION, context);
   literal(artifact.catalogSha256, CAL002_LOCKED_RULE_CATALOG_SHA256, 'artifact.catalogSha256', context);
   sha256(artifact.priorStateSha256, 'artifact.priorStateSha256', context);
-  validateCanonicalRows(artifact.rows, context);
+  validateAssociationSnapshot(artifact.associationSnapshot, 'artifact.associationSnapshot', context);
+  const rows = validateCanonicalRows(artifact.rows, context);
+  if (sha256(artifact.authorityRowsSha256, 'artifact.authorityRowsSha256', context) && rows
+    && artifact.authorityRowsSha256 !== authorityRowsSha256V2(rows as readonly CAL002AuthorityRowV2[])) {
+    context.add('artifact.authorityRowsSha256', 'must bind the authority-only decision rows hash');
+  }
+  if (sha256(artifact.associationRowsSha256, 'artifact.associationRowsSha256', context) && rows
+    && artifact.associationRowsSha256 !== canonicalArtifact(rows).sha256) {
+    context.add('artifact.associationRowsSha256', 'must bind the full association-bearing rows hash');
+  }
   validateCounts(artifact.counts, context);
   literal(artifact.admitted, false, 'artifact.admitted', context);
   literal(artifact.applied, false, 'artifact.applied', context);
@@ -392,7 +448,8 @@ export function validateCAL002AuthorityReceiptV2(value: unknown): CAL002Validati
   if (!artifact) return context.finish();
   const keys = [
     'version', 'protocolVersion', 'catalogSha256', 'proposalSha256', 'priorStateSha256',
-    'revision', 'reviewerAuthority', 'decision', 'rows', 'authorityRowsSha256', 'admitted', 'applied',
+    'revision', 'reviewerAuthority', 'decision', 'associationSnapshot', 'rows',
+    'authorityRowsSha256', 'associationRowsSha256', 'admitted', 'applied',
   ];
   exactKeys(artifact, keys, keys, 'artifact', context);
   validateHeaderV2(artifact, CAL002_AUTHORITY_RECEIPT_VERSION, context);
@@ -402,10 +459,15 @@ export function validateCAL002AuthorityReceiptV2(value: unknown): CAL002Validati
   literal(artifact.revision, 2, 'artifact.revision', context);
   literal(artifact.reviewerAuthority, 'repository-owner', 'artifact.reviewerAuthority', context);
   literal(artifact.decision, 'approved', 'artifact.decision', context);
+  validateAssociationSnapshot(artifact.associationSnapshot, 'artifact.associationSnapshot', context);
   const rows = validateCanonicalRows(artifact.rows, context);
   if (sha256(artifact.authorityRowsSha256, 'artifact.authorityRowsSha256', context) && rows
-    && artifact.authorityRowsSha256 !== canonicalArtifact(rows).sha256) {
-    context.add('artifact.authorityRowsSha256', 'must bind the canonical rows hash');
+    && artifact.authorityRowsSha256 !== authorityRowsSha256V2(rows as readonly CAL002AuthorityRowV2[])) {
+    context.add('artifact.authorityRowsSha256', 'must bind the authority-only decision rows hash');
+  }
+  if (sha256(artifact.associationRowsSha256, 'artifact.associationRowsSha256', context) && rows
+    && artifact.associationRowsSha256 !== canonicalArtifact(rows).sha256) {
+    context.add('artifact.associationRowsSha256', 'must bind the full association-bearing rows hash');
   }
   literal(artifact.admitted, false, 'artifact.admitted', context);
   literal(artifact.applied, false, 'artifact.applied', context);

@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 import type { Rule } from '../../src/types';
 import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
 import { buildCAL002Catalog } from '../../src/calibration/cal-002/catalog';
-import { canonicalArtifact } from '../../src/calibration/cal-002/contracts';
 import {
   CAL002_AUTHORITY_PROPOSAL_VERSION,
   CAL002_AUTHORITY_RECEIPT_VERSION,
@@ -89,8 +88,10 @@ const receipt = {
   revision: 2,
   reviewerAuthority: 'repository-owner',
   decision: 'approved',
+  associationSnapshot: proposalResult.proposal.associationSnapshot,
   rows: proposalResult.proposal.rows,
-  authorityRowsSha256: canonicalArtifact(proposalResult.proposal.rows).sha256,
+  authorityRowsSha256: proposalResult.proposal.authorityRowsSha256,
+  associationRowsSha256: proposalResult.proposal.associationRowsSha256,
   admitted: false,
   applied: false,
 } as const;
@@ -210,6 +211,14 @@ describe('CAL-002 v2 authority contracts', () => {
       { ...clone(receipt), admitted: true, applied: true },
       /admitted|applied|false/i,
     );
+
+    const wrongSnapshot = clone(proposalResult.proposal);
+    wrongSnapshot.associationSnapshot.evidenceSha256 = HASH_A;
+    expectRejectedByBoth(
+      'cal-002-authority-proposal-v2.schema.json',
+      wrongSnapshot,
+      /associationSnapshot|evidenceSha256|snapshot/i,
+    );
   });
 
   it('rejects non-canonical rows, count drift, and receipt row-hash drift', () => {
@@ -246,5 +255,28 @@ describe('CAL-002 v2 authority contracts', () => {
     (malformed.rows[0] as Record<string, unknown>).reasonCode = 1n;
     expect(() => validateCAL002AuthorityProposalV2(malformed)).not.toThrow();
     expect(validateCAL002AuthorityProposalV2(malformed).ok).toBe(false);
+
+    const malformedReceipt = clone(receipt);
+    (malformedReceipt.rows[0] as Record<string, unknown>).reasonCode = 1n;
+    expect(() => validateCAL002AuthorityReceiptV2(malformedReceipt)).not.toThrow();
+    expect(validateCAL002AuthorityReceiptV2(malformedReceipt).ok).toBe(false);
+  });
+
+  it('rejects sparse 119-slot proposal and receipt rows in both validators', () => {
+    const sparseProposal = clone(proposalResult.proposal);
+    delete (sparseProposal.rows as unknown[])[7];
+    expectRejectedByBoth(
+      'cal-002-authority-proposal-v2.schema.json',
+      sparseProposal,
+      /missing|sparse|index|identity|119/i,
+    );
+
+    const sparseReceipt = clone(receipt);
+    delete (sparseReceipt.rows as unknown[])[7];
+    expectRejectedByBoth(
+      'cal-002-authority-receipt-v2.schema.json',
+      sparseReceipt,
+      /missing|sparse|index|identity|119/i,
+    );
   });
 });

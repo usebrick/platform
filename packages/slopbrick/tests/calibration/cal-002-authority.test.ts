@@ -8,15 +8,22 @@ import {
   CAL002_LOCKED_RULE_IDS,
   CAL002_OWNER_REVIEW_RULE_IDS,
   CAL002_STATISTICAL_RULE_IDS,
+  canonicalArtifact,
 } from '../../src/calibration/cal-002/contracts';
 import {
   assertCAL002AIAssociationV2,
   validateCAL002AIAssociationV2,
 } from '../../src/calibration/cal-002/contracts-v2';
 import {
+  CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+  CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+  CAL002_ASSOCIATION_SNAPSHOT_VERSION,
   CAL002_OWNER_AUTHORITY_ROWS,
   CAL002_STARTING_QUALITY_METADATA,
+  authorityDecisionRowsV2,
   authorityMetadataForRuleId,
+  authorityProposalSha256V2,
+  authorityRowsSha256V2,
   buildCAL002AuthorityProposalV2,
 } from '../../src/calibration/cal-002/authority';
 import { RuleRegistry } from '../../src/rules/registry';
@@ -163,6 +170,46 @@ describe('CAL-002 v2 authority', () => {
       claimCeiling: 'none',
       lift: 1,
     }).errors.join(' ')).toMatch(/source|none-recorded|lift/i);
+  });
+
+  it('pins the immutable legacy association snapshot with exact evidence identity', () => {
+    const result = buildCAL002AuthorityProposalV2(buildCatalogFixture(), HASH_A);
+    expect(CAL002_ASSOCIATION_SNAPSHOT_VERSION).toBe('cal-002-legacy-association-snapshot-v1');
+    expect(CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL).toBe('legacy-signal-strength-v1');
+    expect(CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256)
+      .toBe('740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2');
+    expect(result.proposal.associationSnapshot).toEqual({
+      version: CAL002_ASSOCIATION_SNAPSHOT_VERSION,
+      protocol: CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+      evidenceSha256: CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+    });
+    expect(result.proposal.rows.every(
+      (row) => row.aiAssociation.evidenceSha256 === CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+    )).toBe(true);
+    expect(Object.isFrozen(result.proposal.associationSnapshot)).toBe(true);
+    expect(result.proposal.rows.every((row) => Object.isFrozen(row.aiAssociation))).toBe(true);
+  });
+
+  it('keeps authority decisions and gate hashes stable across association-only changes', () => {
+    const result = buildCAL002AuthorityProposalV2(buildCatalogFixture(), HASH_A);
+    const changedRows = result.proposal.rows.map((row, index) => index === 0 ? {
+      ...row,
+      aiAssociation: {
+        ...row.aiAssociation,
+        lift: (row.aiAssociation.lift ?? 0) + 1,
+        measuredAt: '2099-01-01T00:00:00Z',
+      },
+    } : row);
+    const changedProposal = {
+      ...result.proposal,
+      rows: changedRows,
+      associationRowsSha256: canonicalArtifact(changedRows).sha256,
+    };
+
+    expect(authorityDecisionRowsV2(changedRows)).toEqual(authorityDecisionRowsV2(result.proposal.rows));
+    expect(authorityRowsSha256V2(changedRows)).toBe(result.proposal.authorityRowsSha256);
+    expect(authorityProposalSha256V2(changedProposal)).toBe(result.proposalSha256);
+    expect(canonicalArtifact(changedProposal).sha256).not.toBe(result.proposalArtifactSha256);
   });
 
   it('rejects unknown rule IDs instead of synthesizing authority', () => {

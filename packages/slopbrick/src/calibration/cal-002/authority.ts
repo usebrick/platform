@@ -1,4 +1,4 @@
-import { getSignalStrength } from '../../rules/signal-strength';
+import { loadSignalStrength } from '../../rules/signal-strength';
 import {
   CAL002_CONTEXTUAL_RULE_IDS,
   CAL002_DETERMINISTIC_RULE_IDS,
@@ -13,6 +13,7 @@ import {
 } from './contracts';
 import type {
   CAL002AIAssociationV2,
+  CAL002AuthorityDecisionRowV2,
   CAL002AuthorityProposalResultV2,
   CAL002AuthorityProposalV2,
   CAL002AuthorityRowV2,
@@ -20,6 +21,52 @@ import type {
   CAL002QualityDomain,
   CAL002Readiness,
 } from './contracts-v2';
+
+export const CAL002_ASSOCIATION_SNAPSHOT_VERSION = 'cal-002-legacy-association-snapshot-v1' as const;
+export const CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL = 'legacy-signal-strength-v1' as const;
+export const CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256 = '740b1d2c91ea96ff0956104e0081e73b89995f0ece4a1e65db28ef9b395c99c2' as const;
+
+export const CAL002_ASSOCIATION_SNAPSHOT = Object.freeze({
+  version: CAL002_ASSOCIATION_SNAPSHOT_VERSION,
+  protocol: CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+  evidenceSha256: CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+} as const);
+
+function pinnedAssociationSnapshot(): ReadonlyMap<string, CAL002AIAssociationV2> {
+  const signalStrength = loadSignalStrength();
+  const rows = CAL002_LOCKED_RULE_IDS.map((ruleId) => {
+    const evidence = signalStrength[ruleId];
+    if (!evidence || !Number.isFinite(evidence.ratio) || evidence.ratio < 0 || !evidence.lastCalibratedAt) {
+      throw new TypeError(`CAL-002 legacy association snapshot is incomplete for ${ruleId}`);
+    }
+    return {
+      ruleId,
+      source: 'legacy-signal-strength' as const,
+      claimCeiling: 'association-only' as const,
+      lift: evidence.ratio,
+      measuredAt: evidence.lastCalibratedAt,
+      protocol: CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+    };
+  });
+  const snapshotSha256 = canonicalArtifact({
+    version: CAL002_ASSOCIATION_SNAPSHOT_VERSION,
+    protocol: CAL002_ASSOCIATION_SNAPSHOT_PROTOCOL,
+    rows,
+  }).sha256;
+  if (snapshotSha256 !== CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256) {
+    throw new TypeError('CAL-002 legacy association snapshot evidence SHA-256 drift');
+  }
+  return new Map(rows.map((row) => [row.ruleId, Object.freeze({
+    source: row.source,
+    claimCeiling: row.claimCeiling,
+    evidenceSha256: CAL002_ASSOCIATION_SNAPSHOT_EVIDENCE_SHA256,
+    lift: row.lift,
+    measuredAt: row.measuredAt,
+    protocol: row.protocol,
+  })]));
+}
+
+const PINNED_ASSOCIATIONS = pinnedAssociationSnapshot();
 
 export const CAL002_STARTING_QUALITY_METADATA = {
   'context/import-path-mismatch': ['architecture-consistency', 'repository-contract'],
@@ -156,17 +203,9 @@ function reasonForEvidenceClass(evidenceClass: CAL002EvidenceClass): string {
 }
 
 function aiAssociationForRuleId(ruleId: string): CAL002AIAssociationV2 {
-  const evidence = getSignalStrength(ruleId);
-  if (!evidence || !Number.isFinite(evidence.ratio) || evidence.ratio < 0) {
-    return { source: 'none-recorded', claimCeiling: 'none' };
-  }
-  return {
-    source: 'legacy-signal-strength',
-    claimCeiling: 'association-only',
-    lift: evidence.ratio,
-    measuredAt: evidence.lastCalibratedAt,
-    protocol: 'legacy-signal-strength-v1',
-  };
+  const association = PINNED_ASSOCIATIONS.get(ruleId);
+  if (!association) throw new TypeError(`CAL-002 legacy association snapshot has no row for ${ruleId}`);
+  return association;
 }
 
 function startingRows(): CAL002AuthorityRowV2[] {
@@ -261,6 +300,30 @@ export function authorityMetadataForRuleId(ruleId: string): CAL002AuthorityRowV2
   return row;
 }
 
+export function authorityDecisionRowsV2(
+  rows: readonly CAL002AuthorityRowV2[],
+): readonly CAL002AuthorityDecisionRowV2[] {
+  return rows.map(({ aiAssociation: _association, ...decision }) => decision);
+}
+
+export function authorityRowsSha256V2(rows: readonly CAL002AuthorityRowV2[]): string {
+  return canonicalArtifact(authorityDecisionRowsV2(rows)).sha256;
+}
+
+export function authorityProposalSha256V2(proposal: CAL002AuthorityProposalV2): string {
+  return canonicalArtifact({
+    version: proposal.version,
+    protocolVersion: proposal.protocolVersion,
+    catalogSha256: proposal.catalogSha256,
+    priorStateSha256: proposal.priorStateSha256,
+    rows: authorityDecisionRowsV2(proposal.rows),
+    authorityRowsSha256: proposal.authorityRowsSha256,
+    counts: proposal.counts,
+    admitted: proposal.admitted,
+    applied: proposal.applied,
+  }).sha256;
+}
+
 function assertCatalogIntegrity(catalog: CAL002Catalog): void {
   const result = validateCAL002Catalog(catalog);
   if (!result.ok) throw new TypeError(`CAL-002 catalog drift: ${result.errors.join('; ')}`);
@@ -278,12 +341,16 @@ export function buildCAL002AuthorityProposalV2(
   assertSha256(priorStateSha256, 'priorStateSha256');
   assertCatalogIntegrity(catalog);
   const rows = canonicalAuthorityRowsV2();
+  const authorityRowsSha256 = authorityRowsSha256V2(rows);
   const proposal: CAL002AuthorityProposalV2 = {
     version: 'cal-002-authority-proposal-v2',
     protocolVersion: 'CAL-002-v2',
     catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
     priorStateSha256,
+    associationSnapshot: CAL002_ASSOCIATION_SNAPSHOT,
     rows,
+    authorityRowsSha256,
+    associationRowsSha256: canonicalArtifact(rows).sha256,
     counts: {
       total: 119,
       startingQuality: 47,
@@ -297,5 +364,10 @@ export function buildCAL002AuthorityProposalV2(
     applied: false,
   };
   const artifact = canonicalArtifact(proposal);
-  return { proposal, proposalJson: artifact.json, proposalSha256: artifact.sha256 };
+  return {
+    proposal,
+    proposalJson: artifact.json,
+    proposalSha256: authorityProposalSha256V2(proposal),
+    proposalArtifactSha256: artifact.sha256,
+  };
 }
