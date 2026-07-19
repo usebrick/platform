@@ -58,6 +58,20 @@ void f() {
     );
     expect(issues).toEqual([]);
   });
+
+  it.each([
+    ['alternate syntax', 'auto a=std::make_shared<Foo>();'],
+    ['baseline', 'Foo value{};'],
+    ['comment adjacent', '// Foo* a=new Foo(); delete a;\nFoo value{};'],
+    ['near miss', 'void* p=allocate(); release(p);'],
+    ['regression safe', 'std::vector<Foo> values(2);'],
+  ])('does not flag the %s transfer control', (_label, source) => {
+    const issues = cppRawNewDeleteRule.analyze(
+      { minPairs: 1 },
+      makeFacts(source),
+    );
+    expect(issues).toEqual([]);
+  });
 });
 
 describe('cpp/c-style-cast', () => {
@@ -141,6 +155,17 @@ if (x) {
 }
 `.trim()),
     );
+    expect(issues).toEqual([]);
+  });
+
+  it.each([
+    ['alternate syntax', 'auto y = static_cast<long>(x);'],
+    ['baseline', 'auto y = dynamic_cast<Node*>(base);'],
+    ['comment adjacent', '// int y = (int)x;\nauto y = x;'],
+    ['near miss', 'auto y = int{x};'],
+    ['regression safe', 'auto y = static_cast<MyClass*>(base);'],
+  ])('does not flag the %s transfer control', (_label, source) => {
+    const issues = cppCStyleCastRule.analyze(CTX, makeFacts(source));
     expect(issues).toEqual([]);
   });
 });

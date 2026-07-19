@@ -49,6 +49,7 @@
  */
 
 import type { Rule, Issue, RuleContext, ScanFacts } from '../../types';
+import { maskJsComments } from '../../engine/source-lex';
 import { createRule } from '../rule';
 
 export interface CppCStyleCastContext {
@@ -96,9 +97,14 @@ export const cppCStyleCastRule = createRule<CppCStyleCastContext>({
     // v0.24.0: full C++ gate.
     if (!/\.(cpp|cc|cxx|h|hpp|hh|hxx|H)$/i.test(facts.filePath)) return issues;
 
+    // Preserve offsets and line terminators while masking C-family comments.
+    // The rule still reports against the original source, but cast-shaped
+    // examples in comments cannot become executable findings.
+    const code = maskJsComments(source);
+
     let m: RegExpExecArray | null;
     C_STYLE_CAST_REGEX.lastIndex = 0;
-    while ((m = C_STYLE_CAST_REGEX.exec(source)) !== null) {
+    while ((m = C_STYLE_CAST_REGEX.exec(code)) !== null) {
       // Examine the inner content of the parens. We require a
       // numeric type, or a class name with `*` / `&`. Without
       // either, this is likely a function call or a control-flow
@@ -116,7 +122,7 @@ export const cppCStyleCastRule = createRule<CppCStyleCastContext>({
       // angle-bracket of a named cast. Look back ~60 chars
       // (v0.34.3: increased from 40 to handle longer type names
       // like `static_cast<folly::Function<std::string()>>`).
-      const before = source.slice(Math.max(0, m.index - 60), m.index);
+      const before = code.slice(Math.max(0, m.index - 60), m.index);
       if (NAMED_CAST_PREFIX_REGEX.test(before)) continue;
 
       const line = source.slice(0, m.index).split('\n').length;

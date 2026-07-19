@@ -90,6 +90,30 @@ describe('rust/todo-macro', () => {
     expect(issues).toEqual([]);
   });
 
+  it('does not fire on an implemented production body', () => {
+    const source = 'fn load() -> i32 { 42 }';
+    const facts = makeFacts({
+      source,
+      functions: [{ name: 'load', line: 1, column: 0, isPublic: false, isMethod: false, bodyLines: 1, inTestConfig: false }],
+    });
+    expect(runRule(facts)).toEqual([]);
+  });
+
+  it('does not fire on todo! inside a macro definition', () => {
+    const source = 'macro_rules! deferred { () => { todo!() } }';
+    expect(runRule(makeFacts({ source, functions: [] }))).toEqual([]);
+  });
+
+  it.each([
+    ['alternate syntax', 'fn load()->Result<i32,Error>{ Err(Error::Pending) }'],
+    ['baseline', 'fn load()->i32{ 42 }'],
+    ['comment adjacent', '// todo!()\nfn load()->i32{ 42 }'],
+    ['near miss', 'fn todo_count()->usize{ 0 }'],
+    ['regression safe', 'unimplemented_feature();'],
+  ])('does not flag the %s transfer control', (_label, source) => {
+    expect(runRule(makeFacts({ source, functions: [] }))).toEqual([]);
+  });
+
   it('returns empty when facts.v2.rustFile is absent', () => {
     const facts: ScanFacts = {
       filePath: 'x.tsx',
