@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { TextDecoder } from 'node:util';
 
 import {
   authorityDecisionRowsV2,
@@ -58,14 +59,22 @@ function assertStateBinding(
 
 function priorStateBytesSha256(bytes: Uint8Array | string): string {
   const buffer = typeof bytes === 'string' ? Buffer.from(bytes, 'utf8') : Buffer.from(bytes);
-  const text = buffer.toString('utf8');
+  let text: string;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+  } catch {
+    throw new TypeError('CAL-002 prior v1 state bytes are not valid UTF-8');
+  }
+  if (!Buffer.from(text, 'utf8').equals(buffer)) {
+    throw new TypeError('CAL-002 prior v1 state bytes do not round-trip as exact UTF-8');
+  }
   let value: unknown;
   try {
     value = JSON.parse(text) as unknown;
   } catch {
     throw new TypeError('CAL-002 prior v1 state bytes are not valid JSON');
   }
-  if (Buffer.compare(buffer, Buffer.from(text, 'utf8')) !== 0 || canonicalArtifact(value).json !== text) {
+  if (!Buffer.from(canonicalArtifact(value).json, 'utf8').equals(buffer)) {
     throw new TypeError('CAL-002 prior v1 state bytes are not exact canonical JSON');
   }
   return createHash('sha256').update(buffer).digest('hex');

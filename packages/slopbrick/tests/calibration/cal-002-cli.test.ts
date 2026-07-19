@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -38,6 +38,7 @@ const roots: string[] = [];
 const implementationCommitSha = 'd'.repeat(40);
 const REVIEW_A = '1'.repeat(64);
 const REVIEW_B = '2'.repeat(64);
+const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
 
 function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
@@ -216,6 +217,25 @@ function run(args: readonly string[], input: string, cwd = packageRoot, env: Nod
     env,
     input,
     maxBuffer: 1024 * 1024,
+  });
+}
+
+function runAsync(args: readonly string[], input: string, cwd = packageRoot): Promise<{
+  readonly status: number | null;
+  readonly stdout: string;
+  readonly stderr: string;
+}> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(tsx, args, { cwd, env: process.env, stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk: string) => { stdout += chunk; });
+    child.stderr.on('data', (chunk: string) => { stderr += chunk; });
+    child.once('error', rejectPromise);
+    child.once('close', (status) => resolvePromise({ status, stdout, stderr }));
+    child.stdin.end(input);
   });
 }
 
@@ -675,6 +695,10 @@ describe('CAL-002 catalog CLI', () => {
 });
 
 describe('CAL-002 authority CLI migration', () => {
+  function authorityStatePath(root: string): string {
+    return join(root, AUTHORITY_STATE_RELATIVE_PATH);
+  }
+
   function authorityArgs(root: string): readonly string[] {
     return [
       script,
@@ -683,7 +707,7 @@ describe('CAL-002 authority CLI migration', () => {
       '--catalog', 'catalog.json',
       '--prior-state', 'origin-state.json',
       '--proposal-out', 'authority-proposal.json',
-      '--state-out', 'authority-state.json',
+      '--state-out', AUTHORITY_STATE_RELATIVE_PATH,
       '--receipt-out', 'authority-receipt.json',
     ];
   }
@@ -724,7 +748,7 @@ describe('CAL-002 authority CLI migration', () => {
     });
     expect(result.stderr).toContain('26 transfer / 4 blocked / 3 supersede / 7 retire');
     const proposalBytes = readFileSync(join(root, 'authority-proposal.json'), 'utf8');
-    const stateBytes = readFileSync(join(root, 'authority-state.json'), 'utf8');
+    const stateBytes = readFileSync(authorityStatePath(root), 'utf8');
     const receiptBytes = readFileSync(join(root, 'authority-receipt.json'), 'utf8');
     const proposal = JSON.parse(proposalBytes) as { rows: readonly { sourceClass: string }[]; admitted: boolean; applied: boolean };
     const state = JSON.parse(stateBytes) as { proposalSha256: string; decision: string; admitted: boolean; applied: boolean };
@@ -747,7 +771,7 @@ describe('CAL-002 authority CLI migration', () => {
     expect(stateBytes).toBe(canonicalArtifact(state).json);
     expect(receiptBytes).toBe(canonicalArtifact(receipt).json);
     expect(statSync(join(root, 'authority-proposal.json')).mode & 0o777).toBe(0o600);
-    expect(statSync(join(root, 'authority-state.json')).mode & 0o777).toBe(0o600);
+    expect(statSync(authorityStatePath(root)).mode & 0o777).toBe(0o600);
     expect(statSync(join(root, 'authority-receipt.json')).mode & 0o777).toBe(0o600);
     expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
 
@@ -755,7 +779,7 @@ describe('CAL-002 authority CLI migration', () => {
     expect(replay.status).toBe(0);
     expect(JSON.parse(replay.stdout)).toMatchObject({ status: 'approved', proposalSha256: gateSha256 });
     expect(readFileSync(join(root, 'authority-proposal.json'), 'utf8')).toBe(proposalBytes);
-    expect(readFileSync(join(root, 'authority-state.json'), 'utf8')).toBe(stateBytes);
+    expect(readFileSync(authorityStatePath(root), 'utf8')).toBe(stateBytes);
     expect(readFileSync(join(root, 'authority-receipt.json'), 'utf8')).toBe(receiptBytes);
   });
 
@@ -774,11 +798,11 @@ describe('CAL-002 authority CLI migration', () => {
       admitted: false,
       applied: false,
     });
-    const stateBytes = readFileSync(join(root, 'authority-state.json'), 'utf8');
+    const stateBytes = readFileSync(authorityStatePath(root), 'utf8');
     const state = JSON.parse(stateBytes) as { decision: string; admitted: boolean; applied: boolean };
     expect(state).toMatchObject({ decision: 'rejected', admitted: false, applied: false });
     expect(stateBytes).toBe(canonicalArtifact(state).json);
-    expect(statSync(join(root, 'authority-state.json')).mode & 0o777).toBe(0o600);
+    expect(statSync(authorityStatePath(root)).mode & 0o777).toBe(0o600);
     expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
     expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
     expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
@@ -786,12 +810,61 @@ describe('CAL-002 authority CLI migration', () => {
     const replay = run(authorityArgs(root), '1\n', root);
     expect(replay.status).toBe(2);
     expect(JSON.parse(replay.stdout)).toMatchObject({ ok: true, status: 'rejected' });
-    expect(readFileSync(join(root, 'authority-state.json'), 'utf8')).toBe(stateBytes);
+    expect(readFileSync(authorityStatePath(root), 'utf8')).toBe(stateBytes);
     expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
     expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
   });
 
-  it('rejects overlapping authority outputs before any artifact mutation', () => {
+  it('makes a canonical rejection terminal before a sequential alternate state path can prompt or mutate', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    priorOriginStateFixture(root);
+
+    const rejected = run(authorityArgs(root), '2\n', root);
+    expect(rejected.status).toBe(2);
+    const rejectedStateBytes = readFileSync(authorityStatePath(root), 'utf8');
+    const alternateState = 'alternate/authority-state-v2.json';
+    const alternateArgs = authorityArgs(root).map((token, index, tokens) => (
+      tokens[index - 1] === '--state-out' ? alternateState : token
+    ));
+
+    const bypass = run(alternateArgs, '1\n', root);
+
+    expect(bypass.status).toBe(2);
+    expect(bypass.stderr).toContain(AUTHORITY_STATE_RELATIVE_PATH);
+    expect(bypass.stderr).not.toContain('CAL-002 authority batch:');
+    expect(readFileSync(authorityStatePath(root), 'utf8')).toBe(rejectedStateBytes);
+    expect(existsSync(join(root, 'alternate'))).toBe(false);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+  });
+
+  it('rejects concurrent same-proposal alternate state paths before prompting or output mutation', async () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    priorOriginStateFixture(root);
+    const withState = (relativePath: string): readonly string[] => authorityArgs(root).map((token, index, tokens) => (
+      tokens[index - 1] === '--state-out' ? relativePath : token
+    ));
+
+    const [first, second] = await Promise.all([
+      runAsync(withState('alternate-a/authority-state-v2.json'), '1\n', root),
+      runAsync(withState('alternate-b/authority-state-v2.json'), '1\n', root),
+    ]);
+
+    expect([first.status, second.status]).toEqual([2, 2]);
+    expect(first.stderr).toContain(AUTHORITY_STATE_RELATIVE_PATH);
+    expect(second.stderr).toContain(AUTHORITY_STATE_RELATIVE_PATH);
+    expect(first.stderr).not.toContain('CAL-002 authority batch:');
+    expect(second.stderr).not.toContain('CAL-002 authority batch:');
+    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
+    expect(existsSync(join(root, 'alternate-a'))).toBe(false);
+    expect(existsSync(join(root, 'alternate-b'))).toBe(false);
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+  });
+
+  it('rejects case-folded authority destination aliases before lock, prompt, or mutation', () => {
     const root = temporaryRoot();
     originCatalogFixture(root);
     const prior = priorOriginStateFixture(root);
@@ -801,32 +874,74 @@ describe('CAL-002 authority CLI migration', () => {
       '--root', root,
       '--catalog', 'catalog.json',
       '--prior-state', 'origin-state.json',
-      '--proposal-out', 'authority-proposal.json',
-      '--state-out', 'authority-collision.json',
-      '--receipt-out', 'authority-collision.json',
+      '--proposal-out', 'Authority-Proposal.json',
+      '--state-out', AUTHORITY_STATE_RELATIVE_PATH,
+      '--receipt-out', 'authority-proposal.json',
     ];
 
     const result = run(args, '1\n', root);
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/authority.*paths.*distinct|distinct.*authority.*paths/i);
+    expect(result.stderr).toMatch(/alias|collision|distinct/i);
+    expect(result.stderr).not.toContain('CAL-002 authority batch:');
+    expect(existsSync(join(root, 'Authority-Proposal.json'))).toBe(false);
     expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
-    expect(existsSync(join(root, 'authority-collision.json'))).toBe(false);
+    expect(existsSync(authorityStatePath(root))).toBe(false);
+    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
     expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+  });
+
+  it('rejects an artifact at the authority state writer-lock destination before mutation', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    priorOriginStateFixture(root);
+    const writerLock = '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock';
+    const args = authorityArgs(root).map((token, index, tokens) => (
+      tokens[index - 1] === '--proposal-out' ? writerLock : token
+    ));
+
+    const result = run(args, '1\n', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/reserved|alias|collision|distinct/i);
+    expect(result.stderr).not.toContain('CAL-002 authority batch:');
+    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+  });
+
+  it('rejects invalid UTF-8 prior v1 bytes before prompt or output mutation', () => {
+    const root = temporaryRoot();
+    originCatalogFixture(root);
+    const prior = priorOriginStateFixture(root);
+    const priorBytes = Buffer.from(prior.bytes, 'utf8');
+    const statusOffset = prior.bytes.indexOf('in-progress');
+    priorBytes[statusOffset] = 0xff;
+    writeFileSync(join(root, 'origin-state.json'), priorBytes, { mode: 0o600 });
+
+    const result = run(authorityArgs(root), '1\n', root);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/UTF-8/i);
+    expect(result.stderr).not.toContain('CAL-002 authority batch:');
+    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
+    expect(existsSync(authorityStatePath(root))).toBe(false);
+    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+    expect(readFileSync(join(root, 'origin-state.json'))).toEqual(priorBytes);
   });
 
   it('holds an exclusive session lock across the read-decide-write lifecycle', () => {
     const root = temporaryRoot();
     originCatalogFixture(root);
     priorOriginStateFixture(root);
-    writeFileSync(join(root, '.authority-state.json.session.lock'), '', { mode: 0o600 });
+    mkdirSync(join(root, '.slopbrick/calibration/cal-002'), { recursive: true, mode: 0o700 });
+    writeFileSync(join(root, '.slopbrick/calibration/cal-002/.authority-state-v2.json.session.lock'), '', { mode: 0o600 });
 
     const result = run(authorityArgs(root), '1\n', root);
 
     expect(result.status).toBe(2);
     expect(result.stderr).toMatch(/authority.*session.*locked/i);
     expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
-    expect(existsSync(join(root, 'authority-state.json'))).toBe(false);
+    expect(existsSync(authorityStatePath(root))).toBe(false);
     expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
   });
 });

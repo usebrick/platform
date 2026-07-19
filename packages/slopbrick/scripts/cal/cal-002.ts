@@ -8,8 +8,10 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } fr
 
 import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
 import {
+  assertDistinctArtifactDestinations,
   readCanonicalArtifact,
   readPrivateCanonicalArtifact,
+  readPrivateCanonicalArtifactWithBytes,
   readReviewReceipt,
   readReviewState,
   readVerifiedSource,
@@ -203,6 +205,7 @@ const AUTHORITY_MENU = [
   '1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch',
   '2 reject the exact batch and leave runtime policy unchanged',
 ].join('\n');
+const AUTHORITY_STATE_RELATIVE_PATH = '.slopbrick/calibration/cal-002/authority-state-v2.json';
 const PRIVATE_FILE_MODE = 0o600;
 
 interface OriginState {
@@ -304,8 +307,8 @@ function parseAuthorityArguments(tokens: readonly string[]): AuthorityArguments 
   const proposalOut = requiredValue(values, '--proposal-out', 'classify-authority');
   const stateOut = requiredValue(values, '--state-out', 'classify-authority');
   const receiptOut = requiredValue(values, '--receipt-out', 'classify-authority');
-  if (new Set([catalog, priorState, proposalOut, stateOut, receiptOut]).size !== 5) {
-    throw new Error('classify-authority artifact paths must be distinct');
+  if (stateOut !== AUTHORITY_STATE_RELATIVE_PATH) {
+    throw new Error(`classify-authority --state-out must resolve to ${AUTHORITY_STATE_RELATIVE_PATH}`);
   }
   return {
     command: 'classify-authority',
@@ -313,7 +316,7 @@ function parseAuthorityArguments(tokens: readonly string[]): AuthorityArguments 
     catalog,
     priorState,
     proposalOut,
-    stateOut,
+    stateOut: AUTHORITY_STATE_RELATIVE_PATH,
     receiptOut,
   };
 }
@@ -1356,11 +1359,11 @@ async function classifyOriginLocked(
 async function readAuthorityPriorState(
   args: AuthorityArguments,
   catalog: CAL002Catalog,
-): Promise<OriginState> {
+): Promise<{ readonly value: OriginState; readonly bytes: Buffer }> {
   const assertValue: (value: unknown) => asserts value is OriginState = (value) => {
     originState(value, catalog);
   };
-  return readPrivateCanonicalArtifact({
+  return readPrivateCanonicalArtifactWithBytes({
     root: args.root,
     relativePath: args.priorState,
     label: 'CAL-002 prior v1 origin state',
@@ -1395,7 +1398,7 @@ async function persistApprovedAuthority(
   args: AuthorityArguments,
   proposal: CAL002AuthorityProposalV2,
   state: CAL002AuthorityStateV2,
-  priorStateBytes: string,
+  priorStateBytes: Uint8Array,
 ): Promise<void> {
   const completed = completeCAL002AuthoritySessionV2({ proposal, state, priorStateBytes });
   await writePrivateCanonicalState<CAL002AuthorityStateV2>({
@@ -1452,8 +1455,7 @@ async function classifyAuthorityLocked(args: AuthorityArguments): Promise<void> 
     label: 'CAL-002 catalog',
   }) as CAL002Catalog;
   const priorState = await readAuthorityPriorState(args, catalog);
-  const priorStateBytes = canonicalArtifact(priorState).json;
-  const priorStateSha256 = createHash('sha256').update(priorStateBytes, 'utf8').digest('hex');
+  const priorStateSha256 = createHash('sha256').update(priorState.bytes).digest('hex');
   const proposalResult = buildCAL002AuthorityProposalV2(catalog, priorStateSha256);
   const pending = startCAL002AuthoritySessionV2({
     proposal: proposalResult.proposal,
@@ -1461,7 +1463,7 @@ async function classifyAuthorityLocked(args: AuthorityArguments): Promise<void> 
   });
   const state = await loadAuthorityState(args, pending);
   if (state.decision === 'approved') {
-    await persistApprovedAuthority(args, proposalResult.proposal, state, priorStateBytes);
+    await persistApprovedAuthority(args, proposalResult.proposal, state, priorState.bytes);
     return;
   }
   if (state.decision === 'rejected') {
@@ -1478,7 +1480,7 @@ async function classifyAuthorityLocked(args: AuthorityArguments): Promise<void> 
       if (next.done) throw new Error('classify-authority requires owner choice 1 or 2');
       if (next.value === '1') {
         const approved = decideCAL002AuthoritySessionV2(state, 'approved');
-        await persistApprovedAuthority(args, proposalResult.proposal, approved, priorStateBytes);
+        await persistApprovedAuthority(args, proposalResult.proposal, approved, priorState.bytes);
         return;
       }
       if (next.value === '2') {
@@ -1501,9 +1503,22 @@ async function classifyAuthorityLocked(args: AuthorityArguments): Promise<void> 
 }
 
 async function classifyAuthority(args: AuthorityArguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.catalog, label: 'CAL-002 catalog' },
+      { relativePath: args.priorState, label: 'CAL-002 prior v1 origin state' },
+      { relativePath: args.proposalOut, label: 'CAL-002 authority proposal' },
+      { relativePath: args.stateOut, label: 'CAL-002 authority state' },
+      { relativePath: args.receiptOut, label: 'CAL-002 authority receipt' },
+    ],
+    reservePrivateLocksFor: [
+      { relativePath: AUTHORITY_STATE_RELATIVE_PATH, label: 'CAL-002 authority state' },
+    ],
+  });
   await withPrivateArtifactSessionLock({
     root: args.root,
-    relativePath: args.stateOut,
+    relativePath: AUTHORITY_STATE_RELATIVE_PATH,
     label: 'CAL-002 authority',
   }, () => classifyAuthorityLocked(args));
 }

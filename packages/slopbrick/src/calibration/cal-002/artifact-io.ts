@@ -11,6 +11,7 @@ import {
   unlink,
 } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
+import { TextDecoder } from 'node:util';
 
 import { canonicalArtifact } from './contracts';
 import {
@@ -25,6 +26,11 @@ export interface ArtifactLocation {
   readonly relativePath: string;
 }
 
+export interface ArtifactDestination {
+  readonly relativePath: string;
+  readonly label: string;
+}
+
 interface ReadCanonicalArtifactInput extends ArtifactLocation {
   readonly label: string;
 }
@@ -35,6 +41,11 @@ interface ValidatedArtifactInput<T> extends ReadCanonicalArtifactInput {
 
 interface ValidatedArtifactWriteInput<T> extends ValidatedArtifactInput<T> {
   readonly value: T;
+}
+
+export interface PrivateCanonicalArtifact<T> {
+  readonly value: T;
+  readonly bytes: Buffer;
 }
 
 const PRIVATE_FILE_MODE = 0o600;
@@ -67,6 +78,99 @@ function assertContained(root: string, candidate: string): void {
   const fromRoot = relative(root, candidate);
   if (fromRoot === '' || fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
     throw new Error('CAL-002 artifact path must be safely contained beneath the root');
+  }
+}
+
+interface InspectedArtifactDestination extends ArtifactDestination {
+  readonly aliasKey: string;
+  readonly identity?: string;
+  readonly reserved: boolean;
+}
+
+function prospectiveAliasKey(root: string, candidate: string): string {
+  return relative(root, candidate)
+    .split(sep)
+    .map((segment) => segment.normalize('NFKC').toLocaleLowerCase('und').normalize('NFKC'))
+    .join('/');
+}
+
+async function inspectArtifactDestination(
+  root: string,
+  destination: ArtifactDestination,
+  reserved: boolean,
+): Promise<InspectedArtifactDestination> {
+  if (unsafeRelativePath(destination.relativePath)) {
+    throw new Error(`CAL-002 ${destination.label} path must be a safe relative path`);
+  }
+  const candidate = resolve(root, destination.relativePath);
+  assertContained(root, candidate);
+  const segments = relative(root, candidate).split(sep);
+  let current = root;
+  let missing = false;
+  let identity: string | undefined;
+  for (const [index, segment] of segments.entries()) {
+    current = join(current, segment);
+    if (missing) continue;
+    try {
+      const metadata = await lstat(current);
+      if (metadata.isSymbolicLink()) {
+        throw new Error(`CAL-002 ${destination.label} path contains a symbolic link: ${segment}`);
+      }
+      if (index < segments.length - 1 && !metadata.isDirectory()) {
+        throw new Error(`CAL-002 ${destination.label} path ancestor is not a directory: ${segment}`);
+      }
+      if (index === segments.length - 1) {
+        if (!metadata.isFile()) throw new Error(`CAL-002 ${destination.label} destination must be a regular file`);
+        identity = `${metadata.dev}:${metadata.ino}`;
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      missing = true;
+    }
+  }
+  return {
+    ...destination,
+    aliasKey: prospectiveAliasKey(root, candidate),
+    ...(identity === undefined ? {} : { identity }),
+    reserved,
+  };
+}
+
+function privateLockDestinations(destination: ArtifactDestination): readonly ArtifactDestination[] {
+  const directory = dirname(destination.relativePath);
+  const leaf = basename(destination.relativePath);
+  return [
+    { relativePath: join(directory, `.${leaf}.lock`), label: `${destination.label} writer lock` },
+    { relativePath: join(directory, `.${leaf}.session.lock`), label: `${destination.label} session lock` },
+  ];
+}
+
+export async function assertDistinctArtifactDestinations(input: {
+  readonly root: string;
+  readonly artifacts: readonly ArtifactDestination[];
+  readonly reservePrivateLocksFor?: readonly ArtifactDestination[];
+}): Promise<void> {
+  const root = await existingRoot(input.root);
+  const artifacts = await Promise.all(input.artifacts.map((destination) => (
+    inspectArtifactDestination(root, destination, false)
+  )));
+  const reservations = await Promise.all((input.reservePrivateLocksFor ?? [])
+    .flatMap(privateLockDestinations)
+    .map((destination) => inspectArtifactDestination(root, destination, true)));
+  const destinations = [...artifacts, ...reservations];
+  for (let leftIndex = 0; leftIndex < destinations.length; leftIndex += 1) {
+    const left = destinations[leftIndex]!;
+    for (let rightIndex = leftIndex + 1; rightIndex < destinations.length; rightIndex += 1) {
+      const right = destinations[rightIndex]!;
+      if (left.reserved && right.reserved) continue;
+      const sameProspectiveDestination = left.aliasKey === right.aliasKey;
+      const sameExistingIdentity = left.identity !== undefined && left.identity === right.identity;
+      if (!sameProspectiveDestination && !sameExistingIdentity) continue;
+      const reserved = left.reserved || right.reserved ? ' reserved' : '';
+      throw new Error(
+        `CAL-002 artifact destinations must be distinct: ${left.label} aliases${reserved} ${right.label}`,
+      );
+    }
   }
 }
 
@@ -134,32 +238,51 @@ async function syncDirectory(path: string): Promise<void> {
   }
 }
 
-export async function readCanonicalArtifact(input: ReadCanonicalArtifactInput): Promise<unknown> {
-  const path = await resolveArtifactPath(input, false);
-  const bytes = await readFile(path, 'utf8');
+function decodeExactCanonicalArtifact(bytes: Buffer, label: string): unknown {
+  let text: string;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error(`${label} is not valid UTF-8`);
+  }
+  if (!Buffer.from(text, 'utf8').equals(bytes)) {
+    throw new Error(`${label} does not round-trip as exact UTF-8 bytes`);
+  }
   let value: unknown;
   try {
-    value = JSON.parse(bytes) as unknown;
+    value = JSON.parse(text) as unknown;
   } catch {
-    throw new Error(`${input.label} is not valid JSON`);
+    throw new Error(`${label} is not valid JSON`);
   }
-  let canonical: string;
+  let canonicalBytes: Buffer;
   try {
-    canonical = canonicalArtifact(value).json;
+    canonicalBytes = Buffer.from(canonicalArtifact(value).json, 'utf8');
   } catch (error) {
-    throw new Error(`${input.label} is not canonical JSON: ${(error as Error).message}`);
+    throw new Error(`${label} is not canonical JSON: ${(error as Error).message}`);
   }
-  if (bytes !== canonical) throw new Error(`${input.label} is not exact canonical JSON`);
+  if (!bytes.equals(canonicalBytes)) throw new Error(`${label} is not exact canonical JSON`);
   return value;
 }
 
-export async function readPrivateCanonicalArtifact<T>(input: ValidatedArtifactInput<T>): Promise<T> {
+export async function readCanonicalArtifact(input: ReadCanonicalArtifactInput): Promise<unknown> {
+  const path = await resolveArtifactPath(input, false);
+  return decodeExactCanonicalArtifact(await readFile(path), input.label);
+}
+
+export async function readPrivateCanonicalArtifactWithBytes<T>(
+  input: ValidatedArtifactInput<T>,
+): Promise<PrivateCanonicalArtifact<T>> {
   const path = await resolveArtifactPath(input, false);
   const metadata = await lstat(path);
   if ((metadata.mode & 0o777) !== PRIVATE_FILE_MODE) throw new Error(`${input.label} must have private mode 0600`);
-  const value = await readCanonicalArtifact(input);
+  const bytes = await readFile(path);
+  const value = decodeExactCanonicalArtifact(bytes, input.label);
   input.assertValue(value);
-  return value;
+  return { value, bytes };
+}
+
+export async function readPrivateCanonicalArtifact<T>(input: ValidatedArtifactInput<T>): Promise<T> {
+  return (await readPrivateCanonicalArtifactWithBytes(input)).value;
 }
 
 async function writePrivateValueAtomically<T>(input: ValidatedArtifactWriteInput<T>): Promise<void> {

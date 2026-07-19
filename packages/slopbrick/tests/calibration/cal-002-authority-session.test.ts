@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
   chmod,
+  link,
   lstat,
   mkdir,
   mkdtemp,
@@ -17,7 +18,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { Rule } from '../../src/types';
 import type { CAL001DecisionRow } from '../../src/calibration/corpus-v1/calibration-decisions';
 import {
+  assertDistinctArtifactDestinations,
   readPrivateCanonicalArtifact,
+  readPrivateCanonicalArtifactWithBytes,
   writeImmutableCanonicalReceipt,
   writePrivateCanonicalState,
 } from '../../src/calibration/cal-002/artifact-io';
@@ -193,6 +196,11 @@ describe('CAL-002 v2 authority session', () => {
       state: { ...approved, proposalSha256: canonicalArtifact(fixture.proposalResult.proposal).sha256 },
       priorStateBytes: fixture.priorBytes,
     })).toThrow(/proposal.*match|match.*proposal/i);
+    expect(() => completeCAL002AuthoritySessionV2({
+      proposal: fixture.proposalResult.proposal,
+      state: approved,
+      priorStateBytes: Buffer.from([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xff, 0x22, 0x7d]),
+    })).toThrow(/UTF-8/i);
   });
 });
 
@@ -220,6 +228,14 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       label: 'CAL-002 authority state',
       assertValue: assertCAL002AuthorityStateV2,
     })).resolves.toEqual(approved);
+    const readWithBytes = await readPrivateCanonicalArtifactWithBytes<CAL002AuthorityStateV2>({
+      root,
+      relativePath,
+      label: 'CAL-002 authority state',
+      assertValue: assertCAL002AuthorityStateV2,
+    });
+    expect(readWithBytes.value).toEqual(approved);
+    expect(readWithBytes.bytes).toEqual(Buffer.from(canonicalArtifact(approved).json, 'utf8'));
     await expect(writePrivateCanonicalState<CAL002AuthorityStateV2>({
       root,
       relativePath: '../escape.json',
@@ -242,6 +258,31 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       value: approved,
       assertValue: assertCAL002AuthorityStateV2,
     })).rejects.toThrow(/0600|private mode/i);
+  });
+
+  it('rejects invalid UTF-8 before validator normalization', async () => {
+    const root = await temporaryRoot();
+    const relativePath = 'invalid-utf8.json';
+    await writeFile(
+      join(root, relativePath),
+      Buffer.from([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xff, 0x22, 0x7d]),
+      { mode: 0o600 },
+    );
+    let validatorCalled = false;
+    const assertValue: (value: unknown) => asserts value is { readonly x: string } = (value) => {
+      validatorCalled = true;
+      if (typeof value !== 'object' || value === null || typeof (value as { x?: unknown }).x !== 'string') {
+        throw new TypeError('invalid fixture');
+      }
+    };
+
+    await expect(readPrivateCanonicalArtifactWithBytes({
+      root,
+      relativePath,
+      label: 'invalid UTF-8 fixture',
+      assertValue,
+    })).rejects.toThrow(/UTF-8/i);
+    expect(validatorCalled).toBe(false);
   });
 
   it('makes exact receipts idempotent, rejects different receipts, and rejects symlink traversal', async () => {
@@ -293,5 +334,67 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       value: receipt,
       assertValue: assertCAL002AuthorityReceiptV2,
     })).rejects.toThrow(/symbolic link|symlink/i);
+  });
+
+  it('rejects case-folded and Unicode-normalized prospective aliases without creating parents', async () => {
+    const root = await temporaryRoot();
+
+    await expect(assertDistinctArtifactDestinations({
+      root,
+      artifacts: [
+        { relativePath: 'case/Authority-Receipt.json', label: 'first receipt' },
+        { relativePath: 'case/authority-receipt.json', label: 'second receipt' },
+      ],
+    })).rejects.toThrow(/alias|collision|distinct/i);
+    await expect(assertDistinctArtifactDestinations({
+      root,
+      artifacts: [
+        { relativePath: 'unicode/caf\u00e9.json', label: 'composed receipt' },
+        { relativePath: 'unicode/cafe\u0301.json', label: 'decomposed receipt' },
+      ],
+    })).rejects.toThrow(/alias|collision|distinct/i);
+
+    await expect(lstat(join(root, 'case'))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(lstat(join(root, 'unicode'))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('rejects existing leaves with the same physical identity', async () => {
+    const root = await temporaryRoot();
+    const firstPath = join(root, 'catalog.json');
+    await writeFile(firstPath, '{}', { mode: 0o600 });
+    await link(firstPath, join(root, 'catalog-alias.json'));
+
+    await expect(assertDistinctArtifactDestinations({
+      root,
+      artifacts: [
+        { relativePath: 'catalog.json', label: 'catalog' },
+        { relativePath: 'catalog-alias.json', label: 'prior state' },
+      ],
+    })).rejects.toThrow(/identity|alias|collision|distinct/i);
+  });
+
+  it('reserves private state writer and session lock destinations without creating their parent', async () => {
+    const root = await temporaryRoot();
+    const state = '.slopbrick/calibration/cal-002/authority-state-v2.json';
+    const lockArtifacts = [
+      '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock',
+      '.slopbrick/calibration/cal-002/.authority-state-v2.json.session.lock',
+    ];
+
+    for (const proposal of lockArtifacts) {
+      await expect(assertDistinctArtifactDestinations({
+        root,
+        artifacts: [
+          { relativePath: 'catalog.json', label: 'catalog' },
+          { relativePath: 'origin-state.json', label: 'prior state' },
+          { relativePath: proposal, label: 'proposal' },
+          { relativePath: state, label: 'state' },
+          { relativePath: 'authority-receipt.json', label: 'receipt' },
+        ],
+        reservePrivateLocksFor: [{ relativePath: state, label: 'authority state' }],
+      })).rejects.toThrow(/reserved|alias|collision|distinct/i);
+    }
+
+    await expect(lstat(join(root, '.slopbrick'))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 });
