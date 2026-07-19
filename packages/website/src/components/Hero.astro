@@ -1,9 +1,7 @@
 ---
-// Hero — the first (oversized) brick, but it now does real work.
-// 2-column layout: brand/copy on the left, a live .slopbrick/
-// artifact preview on the right. The preview rotates through the
-// 4 files every 7s with a subtle cross-fade, so visitors see the
-// real shape without leaving the page.
+// Hero — the UseBrick coherence statement and current SlopBrick
+// install boundary. The right column keeps a visibly historical
+// scan example so current product facts and example output do not blur.
 //
 // Layout decisions:
 // - .hero__content is grid-template-columns: 1fr 1.1fr so the
@@ -13,8 +11,8 @@
 // - .hero__title has <br class="hero__title-break"> only on
 //   wide viewports (display: block on >920px, display: none on
 //   smaller). On mobile the title flows naturally.
-// - .hero__facts is flex-wrap: wrap with row gap so the 4
-//   short fact labels flow as pills and wrap on narrow.
+// - .hero__facts is flex-wrap: wrap with row gap so the short
+//   fact labels flow as pills and wrap on narrow screens.
 import languageSupport from '../data/language-support.json';
 import version from '../data/version.json';
 import productFacts from '../data/product-facts.json';
@@ -29,17 +27,19 @@ import productFacts from '../data/product-facts.json';
       <aside class="hero__copy">
         <span class="hero__eyebrow">
           <span class="hero__eyebrow-dot" aria-hidden="true"></span>
-          SlopBrick v{productFacts.published.version} published · {productFacts.published.ruleCount} rules · 4 scores
+          UseBrick coherence and verification
         </span>
 
         <h1 class="hero__title">
-          It works. Is it<br class="hero__title-break" /> <span class="hero__title-accent">actually well built?</span>
+          Your agents can write code.<br class="hero__title-break" /> <span class="hero__title-accent">UseBrick keeps the system coherent.</span>
         </h1>
 
         <p class="hero__subtitle">
-          SlopBrick scans a repository locally for visual, implementation, security, and coherence problems that AI coding amplifies.
-          The published scanner has <strong>{productFacts.published.ruleCount} rules</strong> across <strong>{productFacts.published.categoryCount} categories</strong>.
-          The unreleased v{version.slopbrick} candidate has {productFacts.ruleCount} rules; its historical {productFacts.corpusLabel} metrics are evidence, not current v10.3 admission proof.
+          One repository-owned contract shared by developers, coding agents, and CI.
+          <strong>SlopBrick is the shipped local scanner and current CLI.</strong>
+          Published v{productFacts.published.version} has {productFacts.published.ruleCount} rules across {productFacts.published.categoryCount} categories;
+          the unreleased v{version.slopbrick} candidate has {productFacts.ruleCount} rules across {productFacts.categoryCount} categories.
+          Its historical {productFacts.corpusLabel} metrics are evidence, not current v10.3 admission proof.
         </p>
 
         <div class="hero__cta-row">
@@ -81,7 +81,8 @@ import productFacts from '../data/product-facts.json';
         <ul class="hero__facts">
           <li class="hero__fact--live"><span class="hero__fact-dot" aria-hidden="true"></span><span>published</span> v{productFacts.published.version}</li>
           <li><span>{productFacts.published.ruleCount} rules</span> in the published catalog</li>
-          <li><span>no network</span> during scans by default</li>
+          <li><span>local history</span> on by default</li>
+          <li><span>outbound reporting</span> off by default</li>
           <li><span>MIT</span> license</li>
           <li><span>Node ≥20</span> for published v{productFacts.published.version}</li>
         </ul>

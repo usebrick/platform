@@ -3,8 +3,8 @@
 - **Status:** `parked`
 - **Priority:** 10
 - **Track / lane:** implementation / mend
-- **Owner:** usebrick platform
-- **Updated:** 2026-07-18
+- **Owner:** UseBrick platform
+- **Updated:** 2026-07-19
 
 ## Outcome
 
@@ -14,14 +14,15 @@ without collateral edits.
 
 ## Current truth
 
-MendBrick is not shipped and arbitrary AI refactoring is outside the product
-boundary. The plan remains parked until owner-side LockBrick validation
-demonstrates sufficient finding precision and repair trust. Team demand remains
-separate and unproven.
+The Mend capability is not shipped, and arbitrary AI refactoring is outside the
+product boundary. The plan remains parked until owner-side Lock validation
+demonstrates trusted enforcement and a selected transformation has
+deterministic, byte-identical rollback proof. Team demand remains separate and
+unproven.
 
 ## Scope
 
-- Select one high-confidence, mechanically expressible LockBrick finding.
+- Select one high-confidence, mechanically expressible Lock finding.
 - Define preconditions, exact edit boundary, dry-run diff, idempotence, rescan,
   repository gate, and rollback contracts.
 - Run on fixtures, then owner-controlled repositories selected explicitly for
@@ -31,13 +32,13 @@ separate and unproven.
 
 - General autonomous refactoring, multi-file architectural migrations,
   model-only fixes, or repairs without repository test verification.
-- Starting before the LockBrick trust gate.
+- Starting before the Lock trust gate.
 
 ## Dependencies
 
 - `requires`: `LOCK-001`
 - `benefitsFrom`: `CAL-001`
-- Resume gate: LockBrick owner-validation precision is accepted and at least
+- Resume gate: Lock owner-validation precision is accepted and at least
   one enforced finding has a deterministic transformation the owner wants to
   evaluate.
 
@@ -54,7 +55,7 @@ separate and unproven.
 ## Execution steps
 
 1. Select the repair only after the resume gate -> verify: cite the trusted
-   LockBrick finding and explicit owner usefulness decision.
+   Lock finding and explicit owner usefulness decision.
 2. Red-test preconditions, dry-run, apply, idempotence, and rollback -> verify:
    run the focused repair test with one worker.
 3. Implement the deterministic transformer -> verify: byte-for-byte fixture
@@ -79,4 +80,4 @@ repository checks and scan.
 ## Next action
 
 Remain parked until `LOCK-001` proves a trusted enforced finding and the owner
-chooses its deterministic repair for evaluation.
+chooses its deterministic repair for evaluation with complete rollback proof.

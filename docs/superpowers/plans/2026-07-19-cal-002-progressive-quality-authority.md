@@ -2807,148 +2807,80 @@ git commit -m "feat(slopbrick): apply progressive evidence policy"
 
 Expected: protected v1 state and historical signal metrics are byte-identical; exactly four application files are committed; local runtime policy is now active and still non-admitting.
 
-### Task 21: Reconcile every current document in three parallel, non-overlapping groups
+### Task 21: Project later observed CAL-002 closeout facts into already-aligned current docs
 
-**Parallel wave:** Start three clean worktrees from the Task 20 application commit. Each worker commits its own group; the coordinator applies the three commits with `git cherry-pick -n` and creates one closeout commit after global validation.
-
-**Product-doc worker files:**
-- Modify: `README.md`
-- Modify: `ROADMAP.md`
-- Modify: `docs/ARCHITECTURE.md`
-- Modify: `docs/calibration/README.md`
-- Modify: `docs/maths.md`
-- Modify: `docs/methodology.md`
-- Modify: `docs/rules.md`
-- Modify: `packages/website/docs/blog/lifecycle-narrative.md`
-
-**Package-doc worker files:**
-- Modify: `CONTRIBUTING.md`
-- Modify: `packages/slopbrick/README.md`
-- Modify: `packages/slopbrick/CHANGELOG.md`
-- Modify: `packages/slopbrick/CONTRIBUTING.md`
-- Modify: `packages/slopbrick/EXAMPLES.md`
-- Modify: `packages/slopbrick/ROADMAP.md`
-- Modify: `packages/slopbrick/docs/MCP.md`
-- Modify: `packages/slopbrick/docs/architecture.md`
-- Modify: `packages/slopbrick/docs/calibration/README.md`
-- Modify: `packages/slopbrick/docs/language-support-matrix.md`
-- Verify only: `packages/slopbrick/docs/rule-catalog.md`
-- Modify: `packages/slopbrick/docs/scoring-explained.md`
-- Modify: `packages/slopbrick/docs/scoring-runbook.md`
-
-**Execution-doc worker files:**
-- Modify: `docs/execution/index.json`
-- Modify: `docs/execution/STATUS.md`
-- Modify: `docs/execution/CHANGELOG.md`
-- Modify: `docs/execution/plans/CAL-002-complete-calibration.md`
-- Modify: `docs/execution/plans/SB-UX-001-first-scan.md`
-- Modify: `docs/execution/plans/VAL-001-owner-validation.md`
-- Modify: `docs/execution/plans/TEL-001-local-outcomes.md`
-- Modify: `docs/execution/evidence/CAL-002-complete-calibration.md`
-- Modify: `docs/execution/evidence/SB-UX-001-first-scan.md`
+**Sequencing boundary:** The approved positioning and documentation convergence
+plan at
+[`2026-07-19-usebrick-coherence-docs.md`](./2026-07-19-usebrick-coherence-docs.md)
+lands before CAL-002 closeout. That plan owns the three documentation groups,
+UseBrick doctrine, dated market note, execution revision 28, and their
+cross-surface integration. Do not recreate or override its file map here.
 
 **Interfaces:**
-- Consumes: applied policy/application receipt, observed full gates/self-scan, owner comprehension decision, and unchanged release boundary.
-- Produces: execution revision 28, CAL-002 and SB-UX-001 `done`, VAL-001 and TEL-001 `ready`, implementation WIP `0/2`, and TEL-001 as the next local implementation action.
+- Consumes: only the committed Task 20 policy/application artifacts, observed
+  full-gate and self-scan outputs, explicit owner decisions, and the integrated
+  coherence-doc checkpoint.
+- Produces: a later factual projection of observed CAL application hashes, gate
+  results, statuses, and receipts into already-aligned current documents.
+- Does not predeclare: closeout status, WIP transition, next execution revision,
+  self-scan counts, hashes, owner choices, or release authority.
 
-- [ ] **Step 1: Give every worker the same immutable truth packet**
+- [ ] **Step 1: Wait for both prerequisites**
+
+Begin only after the coherence documentation checkpoint is integrated and Task
+20 has committed its application receipt. Revision 28 belongs to the strategy
+pass; CAL closeout must use the next truthful execution revision available at
+that later time.
+
+- [ ] **Step 2: Build one observed closeout packet**
+
+Read, do not infer, the exact values from committed artifacts and fresh command
+output:
 
 ```text
-Workspace candidate: unreleased slopbrick 0.45.0, 119 rules / 27 categories.
-Authority projection: 47 starting quality, 26 transferred, 4 blocked, 3 superseded, 7 retired, 32 research-origin.
-Contextual/statistical closeout: 32 not-requested-owner-capacity rows, zero labels; no Wilson/current usefulness claim.
-AI association: internal provenance/prioritization only, never quality or authorship authority.
-Runtime: default-on current quality may score/gate; advisory, unmeasured, failed, insufficient, and research-origin are explicit-diagnostic-only and non-scoring; blocked/superseded/retired never run.
-Application: local, applied true, admitted false; exact matrix/policy/application hashes come from committed artifacts.
-Release: no push, tag, GitHub Release, npm publish, website deploy, or public authorization.
-Historical: v10.1 576,750-file evidence remains historical; v10.3 admission remains zero.
+matrix, policy, and application SHA-256 values
+applied and admitted values
+focused, recursive, generated-doc, MCP, and self-scan gate results
+self-scan selected/analyzed/failure counts and exit status
+owner comprehension or no-decision state
+working-tree and protected-path state
+release and deployment authorization state
 ```
 
-Each worker reads hashes/counts from artifacts and observed gate receipt; none invents values or edits historical evidence.
+Missing or failed evidence stays missing or failed. Historical v10.1 evidence
+remains historical, v10.3 admission remains independently stated, and no
+protected owner state or immutable evidence is rewritten.
 
-- [ ] **Step 2: Update product direction and architecture surfaces**
+- [ ] **Step 3: Update facts without reopening strategy**
 
-The product-doc worker makes root roadmap/product roles authoritative, explains all-quality analysis and orthogonal AI association, distinguishes current policy from historical signal metrics, and labels the website lifecycle article historical where it cannot be current. It links immutable CAL-002 evidence without claiming release.
+Update only current documents that already carry the affected CAL-002 facts.
+Change only observed application hashes, gate results, plan/status transitions,
+and receipt links. Do not change the approved UseBrick position, dated market
+model, buyer hypothesis, capability hierarchy, package versions, historical
+plans/evidence, generated artifacts, or release boundary.
 
-```bash
-corepack pnpm plans:validate
-git diff --check
-git add README.md ROADMAP.md docs/ARCHITECTURE.md docs/calibration/README.md docs/maths.md docs/methodology.md docs/rules.md packages/website/docs/blog/lifecycle-narrative.md
-git commit -m "docs(platform): describe progressive quality authority"
-```
+- [ ] **Step 4: Derive status from evidence**
 
-- [ ] **Step 3: Update package usage, contribution, MCP, scoring, and changelog surfaces**
+Mark CAL-002 or a dependent plan `done` only if its own acceptance criteria and
+fresh gates pass. Otherwise retain the truthful non-terminal status and next
+action. Recompute implementation WIP from actual `in_progress` plans; do not
+copy the obsolete predeclared `0/2` closeout.
 
-The package-doc worker documents current run/score/opt-in semantics, new-rule evidence/readiness requirements, no safe repair for non-authoritative rows, MCP/CLI provenance parity, package-local self-scan command, and current versus legacy evidence. `packages/slopbrick/ROADMAP.md` remains an archived pointer to root roadmap. The generated catalog is checked, never hand-edited.
-
-```bash
-corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check
-corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1
-git diff --check
-git add CONTRIBUTING.md packages/slopbrick/README.md packages/slopbrick/CHANGELOG.md packages/slopbrick/CONTRIBUTING.md packages/slopbrick/EXAMPLES.md packages/slopbrick/ROADMAP.md packages/slopbrick/docs/MCP.md packages/slopbrick/docs/architecture.md packages/slopbrick/docs/calibration/README.md packages/slopbrick/docs/language-support-matrix.md packages/slopbrick/docs/scoring-explained.md packages/slopbrick/docs/scoring-runbook.md
-git commit -m "docs(slopbrick): document current evidence policy"
-```
-
-- [ ] **Step 4: Close execution truth at revision 28**
-
-The execution-doc worker records actual artifact hashes, gate outputs, self-scan counts/exit, owner choices, dirty state, admission false, and release unauthorized separately. Set CAL-002 and SB-UX-001 `done`, VAL-001/TEL-001 `ready`, WIP `0/2`, and TEL-001 next action to consume typed outcome/provenance without identity or source text. Keep REL-001 unchanged.
-
-```json
-{
-  "revision": 28,
-  "updatedAt": "2026-07-19",
-  "implementationWip": { "active": 0, "limit": 2 },
-  "status": {
-    "CAL-002": "done",
-    "SB-UX-001": "done",
-    "VAL-001": "ready",
-    "TEL-001": "ready"
-  }
-}
-```
+- [ ] **Step 5: Validate the factual projection**
 
 ```bash
 corepack pnpm plans:validate
 node --test scripts/validate-execution-docs.test.mjs
-git diff --check
-git add docs/execution/index.json docs/execution/STATUS.md docs/execution/CHANGELOG.md docs/execution/plans/CAL-002-complete-calibration.md docs/execution/plans/SB-UX-001-first-scan.md docs/execution/plans/VAL-001-owner-validation.md docs/execution/plans/TEL-001-local-outcomes.md docs/execution/evidence/CAL-002-complete-calibration.md docs/execution/evidence/SB-UX-001-first-scan.md
-git commit -m "docs(execution): close progressive calibration"
-```
-
-- [ ] **Step 5: Integrate the three doc groups without preserving intermediate commits**
-
-From main at the Task 20 commit:
-
-```bash
-git cherry-pick -n codex/cal002-docs-product
-git cherry-pick -n codex/cal002-docs-package
-git cherry-pick -n codex/cal002-docs-execution
-git diff --cached --name-only
-```
-
-Expected: staged files are exactly the three disjoint groups; generated catalog remains the Task 20 artifact; protected dirty paths are unstaged.
-
-- [ ] **Step 6: Run global doc and truth validation**
-
-```bash
 corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check
 corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1
-corepack pnpm plans:validate
-node --test scripts/validate-execution-docs.test.mjs
-rg -n -i "reliable AI detector|proof of authorship|AI-generated code quality|current.*576,750|v10\.3.*admitted" README.md ROADMAP.md CONTRIBUTING.md docs/ARCHITECTURE.md docs/calibration/README.md docs/maths.md docs/methodology.md docs/rules.md packages/slopbrick/README.md packages/slopbrick/CONTRIBUTING.md packages/slopbrick/EXAMPLES.md packages/slopbrick/ROADMAP.md packages/slopbrick/docs/MCP.md packages/slopbrick/docs/architecture.md packages/slopbrick/docs/calibration/README.md packages/slopbrick/docs/language-support-matrix.md packages/slopbrick/docs/rule-catalog.md packages/slopbrick/docs/scoring-explained.md packages/slopbrick/docs/scoring-runbook.md packages/website/docs/blog/lifecycle-narrative.md
-git diff --cached --check
+git diff --check
 git status --short
 ```
 
-Expected: generator, focused doc/copy/MCP tests, plan validator, and execution validator pass. Every `rg` match is absent or explicitly historical/non-authoritative. Revision 28 and WIP `0/2` agree everywhere; unrelated dirty paths remain unstaged.
-
-- [ ] **Step 7: Commit one truthful current-doc closeout**
-
-```bash
-git commit -m "docs(calibration): close progressive authority program"
-```
-
-Expected: one final docs commit contains all current-document reconciliation; no historical plan/evidence rewrite, release mutation, or user-owned path is included.
+Expected: validators and applicable observed gates pass or their failures are
+recorded truthfully; the diff contains only current factual closeout fields and
+receipts. No push, tag, GitHub Release, npm publication, website deployment,
+public release, historical rewrite, or protected-path change is authorized.
 
 ---
 

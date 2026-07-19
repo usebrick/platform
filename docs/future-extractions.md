@@ -1,6 +1,9 @@
 # Future package extractions
 
-When the platform grows, some modules currently in `packages/core/` may deserve their own workspace package. This document tracks the candidates and the threshold for extraction.
+UseBrick capability names do not imply workspace packages. When the platform
+grows, a module currently inside an existing package may deserve extraction,
+but only after the global gate below and a surface-specific need are both
+satisfied. This document records possibilities, not roadmap authorization.
 
 > **v0.15.0+:** The "Repository Memory" naming is gone. Types and functions
 > are now `Structure*` (`MemoryFile` → `StructureFile`, `loadMemory` →
@@ -14,12 +17,14 @@ When the platform grows, some modules currently in `packages/core/` may deserve 
 
 **What it would contain:** the full Repository Structure read/write/validate surface — `loadInventory`, `saveInventory`, `loadConstitution`, `saveConstitution`, `readCache`, `writeCacheFromInventory`, `isInventoryFresh`, `invalidateFile`, all `isXFile` validators, the `STRUCTURE_SCHEMA_VERSION` constant.
 
-**Extract when ANY of these is true:**
-- A second shipped consumer needs the structure surface but not the complete
-  schema/type package (which would show structure-as-engine has become a real
-  boundary)
-- The structure module's surface stabilizes (no new functions in 6+ months) — at that point it deserves its own versioning
-- A Python or Go consumer of the schemas wants to read `.slopbrick/inventory.json` without pulling in the full `@usebrick/core` package (split it via exports)
+**Consider after the global extraction gate, when:**
+- at least two real shipped consumers need the structure surface independently
+  of the complete schema/type package; and
+- the structure interface has remained stable long enough to support its own
+  compatibility and versioning contract.
+
+A future non-TypeScript consumer may justify publishing schema artifacts, but
+it does not by itself authorize a TypeScript package split.
 
 **Don't extract while:**
 - Only `slopbrick` consumes the structure surface — keeping it in `core` is fine
@@ -31,26 +36,36 @@ When the platform grows, some modules currently in `packages/core/` may deserve 
 
 **What it would contain:** all cross-language contract artifacts — JSON Schemas, generated TypeScript interfaces, MCP request/response models, future Protobuf/gRPC specs.
 
-**Extract when:**
-- An approved non-TypeScript consumer needs the schemas — at that point,
-  `contracts/` can become the language-agnostic spec and `core/` the TypeScript
-  implementation
-- The schemas stop evolving at the same cadence as the implementation (they're frozen while `core/` keeps adding internal helpers)
+**Consider after the global extraction gate, when:**
+- at least two real consumers need a language-agnostic contract lifecycle; and
+- schema cadence is demonstrably independent from Core implementation cadence.
 
 **Don't extract while:**
 - Only TypeScript consumes the schemas — keeping them in `core/` keeps the iteration loop tight
 - Schema changes are still happening in lock-step with TypeScript changes
 
-## Decision boundary for future packages
+## Global extraction gate
 
-An extraction is a possibility, not roadmap status. It requires its own ADR,
-versioning/ownership contract, at least two real consumers, and evidence that a
-package boundary reduces coupling. The root [roadmap](../ROADMAP.md) and
-[execution index](execution/index.json) decide sequencing.
+Every extraction requires all of the following before implementation:
+
+1. an approved ADR covering ownership, compatibility, versioning, migration,
+   and release lifecycle;
+2. at least two real consumers that need the boundary independently;
+3. a stable interface supported by contract tests; and
+4. evidence that extraction reduces coupling rather than moving coordination
+   cost into publishing and semver.
+
+An extraction is a possibility, not roadmap status. The root
+[roadmap](../ROADMAP.md) and [execution index](execution/index.json) decide
+sequencing.
 
 If an extraction is approved, reusable libraries use the scoped
 `@usebrick/*` namespace. `slopbrick` remains the shipped unscoped CLI. There is
-no approved umbrella CLI or independent StackPick/GIR/MCP package today.
+no approved umbrella CLI or independent StackPick/GIR/MCP package today. A
+future umbrella `usebrick` CLI requires its own implementation, command and
+configuration compatibility design, package/name decision, migration plan, and
+reviewed release authorization. Capability language such as future `usebrick
+scan` is not an implementation decision.
 
 ## When NOT to extract
 
@@ -67,6 +82,8 @@ Premature splitting hurts more than it helps. Resist the urge to extract when:
 | `@usebrick/core` | Private workspace contract package | A public cross-language consumer and a reviewed schema/versioning ADR |
 | `@usebrick/engine` | Private pure scanning package | A second shipped runtime needs the stable pure API independently of SlopBrick |
 | `slopbrick` | Published CLI and embedded MCP server | Keep together while one release lifecycle and one owner are simpler |
-| MemoryBrick | Read-only product direction | M0 proves provenance/freshness value and two consumers need a stable API |
-| LockBrick | Planned paid workflow | Team pilots prove a separately versioned policy engine is needed |
+| Memory capability | Planned read-only context compiler | M0 beats native agent context, the interface stabilizes, and two consumers need it independently |
+| Lock capability | Planned paid-workflow hypothesis inside `slopbrick` | Real use proves a separately versioned policy engine reduces coupling for two consumers |
+| Mend capability | Parked narrow reversible repair | Trusted enforcement and rollback proof produce a stable repair contract needed by two consumers |
+| RenderBrick Labs | Draft source-only versus rendered-evidence benchmark | Material benchmark value plus two real consumers and an approved runtime boundary ADR |
 | Standalone MCP | Not approved | Multiple clients need an independent lifecycle and the boundary has no CLI-internal assumptions |

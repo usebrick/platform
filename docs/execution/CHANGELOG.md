@@ -3,6 +3,48 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 28 — 2026-07-19
+
+### Changed
+
+- Approved UseBrick as the sole customer-facing coherence and verification
+  product, with one repository-owned contract shared by developers, coding
+  agents, and CI. SlopBrick remains the shipped npm package, current CLI, free
+  local scanner, and acquisition surface; Memory, Lock, Mend, and Render Labs
+  remain bounded capabilities rather than separate products or packages.
+- Added one dated market-positioning note that separates observed evidence
+  from assumptions and scenarios. Cross-study seat and spend arithmetic is not
+  a measured UseBrick market, forecast, or product-demand claim.
+- Moved `GTM-001` from `parked` to `ready` for planning 10–20 consent-safe
+  observed external sessions. Completed sessions remain **0** and outreach is
+  `false`; the next action prepares a participant profile, script, consent
+  text, and redacted receipt without contacting or scheduling anyone.
+- Added draft `LABS-001` to compare source-only work with rendered/runtime
+  evidence using fixed defects, blind scoring, equal model/time budgets,
+  incremental detection and false-positive measures, and an explicit stop
+  decision.
+- Preserved active `SB-UX-001` and `CAL-002` at implementation WIP `2/2` and
+  company WIP at `0/1`. Ready and draft plans consume no WIP.
+- Recorded CAL-002 progressive authority Tasks 1–3 as implementation-
+  checkpointed and independently approved through `5f5a1c554`. The next
+  bounded action is Task 4's exact 32-row zero-label quality disposition and
+  optional readiness-gated cohort plan. No protected owner workflow was run,
+  and no runtime policy, application, admission, or release state changed.
+
+### Evidence
+
+- `docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md`
+- `docs/research/usebrick-market-positioning-2026-07-19.md`
+- `docs/superpowers/plans/2026-07-19-usebrick-coherence-docs.md`
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/plans/GTM-001-vibecoder-pilots.md`
+- `docs/execution/plans/LABS-001-rendered-evidence-benchmark.md`
+- This strategy and execution-document revision changes no runtime code,
+  package version, rule, score, source, baseline, calibration application,
+  admission, historical evidence, or protected owner state. It authorizes no
+  outreach, participant data, push, tag, GitHub Release, npm publication,
+  website deployment, or public release.
+
 ## Revision 27 — 2026-07-19
 
 ### Changed

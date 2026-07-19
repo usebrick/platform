@@ -1,79 +1,112 @@
-# GTM-001 — Preserve the dormant vibecoder participant protocol
+# GTM-001 — Prepare consent-safe external workflow sessions
 
-- **Status:** `parked`
-- **Priority:** 14
+- **Status:** `ready`
+- **Priority:** 15
 - **Track / lane:** company / adoption
-- **Owner:** usebrick product
-- **Updated:** 2026-07-18
+- **Owner:** UseBrick product
+- **Updated:** 2026-07-19
+- **Session target:** 10–20 observed sessions
+- **Completed sessions:** 0
+- **Outreach authorized:** `false`
 
 ## Outcome
 
-Retain a consent-safe protocol for possible future external participant
-research without placing recruitment or participant evidence on the active
-execution path.
+Prepare a consent-safe research packet for 10–20 observed external sessions
+with AI-native software teams and agencies of roughly 5–100 developers. Ready
+means ready to finish planning materials; it does not authorize contacting,
+scheduling, observing, recording, or collecting data from anyone.
 
 ## Current truth
 
-Vibecoders remain the product entry point and main door, but the repository
-owner is the only current product tester. The protocol at
-`docs/research/vibecoder-pilots.md` has zero scheduled or completed sessions,
-and no external recruitment is authorized. Owner-only walkthroughs are tracked
-separately by `VAL-001` and cannot be reinterpreted as participant or demand
-evidence.
+The repository owner is the only completed product tester. External sessions
+scheduled: **0**. External sessions completed: **0**. Outreach authorized:
+**false**. The retained protocol at `docs/research/vibecoder-pilots.md` remains
+a dormant template until this plan's profile, script, consent text, and
+redacted receipt are prepared and the repository owner separately authorizes
+participant action.
+
+Serious solo developers and vibe coders remain the free local-scan entry
+audience. The unproven initial buyer hypothesis is AI-native software teams and
+agencies with roughly 5–100 developers. Owner-only walkthroughs remain product
+evidence under `VAL-001`; they are not external-session, team-demand, market,
+or willingness-to-pay evidence.
 
 ## Scope
 
-- Preserve the consent, privacy, withdrawal, and bounded-outcome template.
-- Keep the record explicitly at zero sessions while the plan is parked.
-- Require a future owner-approved execution revision before any participant
-  recruitment, scheduling, or data collection.
-- Keep any future participant observations separate from detector calibration,
-  source authority, owner validation, and market-demand evidence.
+- Define the participant profile around AI-native teams and agencies with
+  roughly 5–100 developers and a repository they are authorized to use.
+- Prepare one bounded session script and record consent before any observation.
+- Prepare withdrawal, deletion, privacy, and redaction language before any
+  participant is contacted.
+- Prepare a redacted receipt template that measures only:
+  - scan completion;
+  - first useful finding;
+  - action taken or declined;
+  - rescan completion;
+  - return within the observation window; and
+  - team/workflow and willingness-to-pay signal.
+- Keep product outcomes separate from calibration labels, source authority,
+  origin association, owner validation, and detector-quality claims.
 
 ## Non-goals
 
-- Active recruitment, scheduling, consent collection, or participant data.
-- Treating owner walkthroughs as participant sessions.
+- Outreach, contact, recruitment, scheduling, observation, consent collection,
+  recording, participant data, or populated session receipts in this revision.
+- Treating owner walkthroughs as external sessions or backfilling the zero
+  completed-session count.
 - A statistically representative market study, paid acquisition campaign,
-  enterprise sales motion, or calibration-label source.
+  enterprise sales motion, pricing decision, or calibration-label source.
 
 ## Dependencies
 
 - `requires`: none
-- `benefitsFrom`: none
+- `benefitsFrom`: `SB-UX-001`, `TEL-001`, `VAL-001`
 
 ## Acceptance criteria
 
-- The protocol is visibly parked with zero sessions and no active recruitment
-  instruction.
-- No current plan requires or benefits from GTM-001.
-- The retained template preserves consent, privacy, withdrawal, and bounded
-  outcome protections for a separately authorized future study.
-- No owner-only result is counted as participant, team, or demand evidence.
+- The plan and execution index say `ready`, target 10–20 observed sessions,
+  record zero completed sessions, and set outreach authorization to false.
+- The participant profile, script, consent text, and redacted receipt template
+  can be reviewed without contacting or scheduling anyone.
+- Consent precedes observation, and withdrawal/deletion remain available
+  without requiring a reason.
+- The receipt contains every bounded adoption measure in Scope and excludes
+  source, repository identity, raw output, participant identity, and
+  calibration/source labels.
+- A later execution revision and explicit owner authorization are required
+  before any participant action.
 
 ## Execution steps
 
-1. Mark the protocol and execution plan parked with zero sessions.
-2. Remove GTM-001 from active product and implementation dependencies.
-3. Preserve the consent-safe template as dormant reference material.
-4. If the owner later authorizes external participant research, create a new
-   bounded execution revision before contacting or recording anyone.
+1. Draft the participant profile for AI-native teams and agencies with 5–100
+   developers; do not assemble or contact a prospect list.
+2. Draft the session script around scan completion, first useful finding,
+   action or decline, rescan, return, and team/workflow value.
+3. Draft consent, withdrawal, deletion, and redaction text that is accepted
+   before observation begins.
+4. Draft the empty redacted receipt template; never populate it from owner,
+   synthetic, inferred, or invented sessions.
+5. Submit the complete packet for owner review. A later revision must record a
+   separate outreach decision before any contact or scheduling.
 
 ## Verification
 
-Verify that the protocol says parked, records zero sessions, authorizes no
-recruitment, and is absent from active dependency arrays.
+Run `corepack pnpm plans:validate`, confirm the target is 10–20, completed
+sessions are zero, outreach is false, and no step instructs the worker to
+contact, schedule, observe, record, or collect participant data now.
 
 ## Evidence destination
 
-`docs/research/vibecoder-pilots.md`
+The dormant protocol remains `docs/research/vibecoder-pilots.md`. A future
+authorized execution revision must name the reviewed, redacted receipt path
+before a participant record exists.
 
 ## Rollback
 
-No participant record exists. If future authorized research creates one, retain
-the withdrawal and anonymization protections in the dormant protocol.
+Return the plan to `parked` if the planning packet fails consent, privacy, or
+scope review. No participant record or contact list exists to migrate.
 
 ## Next action
 
-Preserve the dormant protocol. Do not recruit, schedule, or record participants
-unless the owner later authorizes a separate external-research revision.
+Prepare the participant profile, session script, consent text, and redacted
+receipt template for owner review. Do not contact or schedule anyone.

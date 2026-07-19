@@ -11,4 +11,15 @@ describe('website development data contract', () => {
     expect(packageJson.scripts?.prebuild).toBe('node --import tsx scripts/prebuild.ts');
     expect(packageJson.scripts?.dev).toMatch(/pnpm prebuild/);
   });
+
+  it('describes the UseBrick coherence site without changing its package version', () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'),
+    ) as { version?: string; description?: string };
+
+    expect(packageJson.version).toBe('0.14.5');
+    expect(packageJson.description).toContain('UseBrick coherence product site');
+    expect(packageJson.description).toContain('SlopBrick-first onboarding');
+    expect(packageJson.description).toContain('verified facts');
+  });
 });

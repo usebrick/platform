@@ -4,13 +4,14 @@
 - **Priority:** 8
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
-- **Updated:** 2026-07-18
+- **Updated:** 2026-07-19
 
 ## Outcome
 
-Define and prove a local, inspectable outcome-event contract that can record
-fix, dismiss, suppress, intentional, and repair-acceptance outcomes without
-raw source or proprietary repository identity by default.
+Define and prove a privacy-safe, local, inspectable outcome-event contract for
+scan completion, first useful finding, action or decline, rescan completion,
+and return behavior without raw source or proprietary repository identity by
+default.
 
 ## Current truth
 
@@ -27,10 +28,16 @@ defines the typed finding/outcome boundary.
 `CAL-002` now owns the separate 119-rule policy and provenance closeout beside
 active `SB-UX-001`. This plan remains `ready`; it neither consumes WIP nor
 waits for a rule-state, admission, release, or deployment change.
+Local outcome history and outbound reporting remain separate: outbound stays
+off by default and endpoint-gated, and this plan does not authorize hosted
+ingestion.
 
 ## Scope
 
 - Versioned local outcome-event schema and validation.
+- Privacy-safe events for scan completion, first useful finding, action taken
+  or declined, rescan completion, return within an observation window, and an
+  optional coarse team/workflow signal after separately authorized research.
 - Explicit consent and configuration semantics for any outbound reporting.
 - Inspect, export, and delete commands or equivalent library operations.
 - Data minimization: detector/version, framework bucket, size bucket, outcome,
@@ -60,13 +67,16 @@ waits for a rule-state, admission, release, or deployment change.
 - Tests cover opt-out, consent transition, redaction, corrupt storage, and
   deletion.
 - Documentation distinguishes local history from outbound reporting.
+- Outcome events remain product/workflow observations and cannot be promoted
+  to calibration labels, source authority, or authorship evidence.
 - Any future hosted use requires a separate privacy and authorization gate.
 
 ## Execution steps
 
 1. Write the schema/threat-model tests -> verify:
    `corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1`.
-2. Implement the minimal local event writer/reader over a user-controlled path ->
+2. Model useful/action-or-decline/rescan/return outcomes, then implement the
+   minimal local event writer/reader over a user-controlled path ->
    verify: focused tests cover corrupt and absent storage.
 3. Add inspect/export/delete behavior -> verify: round-trip then deletion leaves
    no records.
@@ -91,5 +101,5 @@ delete path. Preserve schema/test evidence for review.
 
 After `SB-UX-001` defines its finding/outcome boundary, specify and test the
 smallest local event capable of representing RUN-001's useful,
-declined-no-safe-fix, and unchanged-rescan states with no raw source or
-proprietary repository identifier.
+declined-no-safe-fix, unchanged-rescan, and bounded return states with no raw
+source or proprietary repository identifier. Keep outbound reporting opt-in.

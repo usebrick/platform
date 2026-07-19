@@ -28,6 +28,11 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Changed
 
+- Aligned the unreleased workspace-candidate documentation around UseBrick as
+  the sole coherence product and SlopBrick as its shipped scanner, CLI, and MCP
+  front door. Memory, Lock, and Mend remain capability names only; this is a
+  documentation change with no runtime, version, calibration, or public-release
+  claim.
 - Made the default pretty scan a bounded first screen and added `--full` for
   the complete score-and-finding report. Evidence labels do not claim
   authorship, only current finding-bound repairs are called safe, and ordinary

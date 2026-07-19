@@ -4,11 +4,12 @@
 - **Priority:** 14
 - **Track / lane:** implementation / validation
 - **Owner:** repository owner
-- **Updated:** 2026-07-18
+- **Updated:** 2026-07-19
 
 ## Outcome
 
-Record deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs and explicit usefulness decisions without participant or market-demand claims.
+Record deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs
+and explicit usefulness decisions as product evidence, never market evidence.
 
 ## Current truth
 
@@ -21,6 +22,9 @@ rule-state change, or owner-review-required CAL-001 row follows from it.
 RUN-001 remains recorded, but this plan returns to `ready` so `CAL-002` can
 own the current 119-rule calibration and provenance closeout beside active
 `SB-UX-001`; no new owner run is implied by this transition.
+Owner validation may improve the product contract, but it cannot establish an
+external session, team workflow, buyer demand, conversion, or willingness to
+pay.
 
 ## Scope
 
@@ -45,6 +49,8 @@ own the current 119-rule calibration and provenance closeout beside active
 - Every row binds scan and rescan receipts plus an explicit usefulness decision.
 - Missing evidence remains blank rather than inferred.
 - Product decisions remain separate from source labels and origin metrics.
+- Every summary labels owner validation as product evidence and excludes it
+  from external-session and market-evidence counts.
 
 ## Execution steps
 
@@ -77,4 +83,5 @@ Remove an invalid ledger row while retaining the underlying scan receipts; do no
 
 Carry RUN-001's useful/no-safe-fix/unchanged states into `SB-UX-001` and keep
 them available as bounded quality-review context for `CAL-002`. Repeat the
-walkthrough only when the owner selects another repository or fixture.
+walkthrough only when the owner selects another repository or fixture; never
+count the result as market evidence.

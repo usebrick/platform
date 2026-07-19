@@ -1,5 +1,13 @@
 # SlopBrick Historical Rule Catalog (103 Rules)
 
+> **Current product boundary:** UseBrick is the sole coherence and verification
+> product; SlopBrick is the shipped scanner and CLI front door. Memory, Lock,
+> and Mend are capability names rather than products or packages. Rule metadata
+> can describe AI association, but it is not quality authority or authorship
+> proof. Current direction lives in the [root roadmap](../ROADMAP.md), while
+> volatile market evidence belongs in the dated [positioning research
+> note](./research/usebrick-market-positioning-2026-07-19.md).
+
 > **Current-state notice (2026-07-13):** This catalog records the historical
 > published 103-rule surface. The workspace candidate currently contains 119
 > executable rules across 27 categories; generated registry/catalog checks are

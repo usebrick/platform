@@ -3,8 +3,8 @@
 - **Status:** `parked`
 - **Priority:** 11
 - **Track / lane:** company / enterprise
-- **Owner:** usebrick company
-- **Updated:** 2026-07-18
+- **Owner:** UseBrick company
+- **Updated:** 2026-07-19
 
 ## Outcome
 
@@ -14,13 +14,13 @@ feature checklist.
 
 ## Current truth
 
-Usebrick has no proven paid LockBrick cohort requiring organisation-wide SSO,
+UseBrick has no proven paid Lock cohort requiring organisation-wide SSO,
 audit, policy inheritance, private runners, self-hosting, or cross-repository
 governance. Building those now would precede the scanner and team trust gates.
 
 ## Scope
 
-- After real external LockBrick use satisfies the demand gate, collect
+- After real external Lock-workflow use satisfies the demand gate, collect
   structured governance requirements,
   buyer/approver role, frequency, current workaround, risk, and willingness to
   pay.
@@ -47,6 +47,8 @@ governance. Building those now would precede the scanner and team trust gates.
 
 - Several independent paying teams identify the same top need and its
   cost/risk, not merely a generic enterprise wishlist.
+- No enterprise implementation begins until several paying teams independently
+  report the same governance need through real workflow use.
 - The evidence names the buyer, user, frequency, current workaround, and
   willingness-to-pay signal without exposing private repository data.
 - A proceed decision selects one bounded slice with success and stop criteria.
@@ -80,5 +82,5 @@ keep the plan parked.
 ## Next action
 
 Remain parked until `future-external-demand-evidence` shows repeated
-multi-repository governance demand from independent teams. Do not infer that
-demand from owner testing.
+multi-repository governance demand for the same need from several independent
+paying teams. Do not infer that demand from owner testing or planned sessions.

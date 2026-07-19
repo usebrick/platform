@@ -3,6 +3,11 @@
 This directory is the repository-level entry point for SlopBrick calibration.
 It separates current scheduling from frozen protocols and collected evidence.
 
+UseBrick is the sole coherence and verification product. SlopBrick is its
+shipped scanner, current CLI, and evidence-producing front door. Memory, Lock,
+and Mend are capability and sequencing names only; they do not widen corpus,
+calibration, package, or release authority.
+
 ## Current authority
 
 - The [product roadmap](../../ROADMAP.md) owns outcomes and sequencing.
@@ -11,6 +16,9 @@ It separates current scheduling from frozen protocols and collected evidence.
 - [Current status](../execution/STATUS.md) owns mutable counts and release
   readiness facts.
 - Bounded current work lives under [`docs/execution/plans/`](../execution/plans/).
+- Volatile market evidence belongs in the dated [positioning research
+  note](../research/usebrick-market-positioning-2026-07-19.md), not calibration
+  claims.
 
 Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
 publisher-attested internal origin analysis and calibration evaluation. Its
@@ -33,8 +41,9 @@ source permitted use != rule application
 [`CORPUS-002`](../execution/plans/CORPUS-002-source-use-routing.md) owns the
 deterministic source router. [`VAL-001`](../execution/plans/VAL-001-owner-validation.md)
 owns real repository-owner usefulness walkthroughs. The owner is the only
-current product tester; no participant recruitment or fixed pilot gate is
-active.
+completed product tester and the completed external-session count is zero.
+External-validation status belongs in the execution index; this documentation
+does not authorize outreach, scheduling, observation, or participant claims.
 
 ## Frozen specifications and evidence
 

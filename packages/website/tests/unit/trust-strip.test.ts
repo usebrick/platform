@@ -18,4 +18,12 @@ describe('TrustStrip language-support claim', () => {
     );
     expect(match?.[2].replace(/\s+/g, ' ').trim()).toBe('See the support matrix for scope');
   });
+
+  it('distinguishes repository-local history from endpoint-gated outbound reporting', () => {
+    expect(source).toContain('local scan history on by default');
+    expect(source).toContain('outbound reporting off by default');
+    expect(source).toContain('endpoint-gated');
+    expect(source).not.toContain('no telemetry');
+    expect(source).not.toContain('no network');
+  });
 });

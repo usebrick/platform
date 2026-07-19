@@ -7,6 +7,12 @@ import { verifyMcpDocsDocument } from '../../scripts/generate-mcp-docs';
 const docsPath = join(__dirname, '..', '..', 'docs', 'MCP.md');
 
 describe('MCP documentation registry contract', () => {
+  it('describes the MCP server as repository-owned evidence', () => {
+    const document = readFileSync(docsPath, 'utf8');
+
+    expect(document).toContain('repository-owned evidence');
+  });
+
   it('matches TOOL_DEFINITIONS without requiring a generated monolithic doc', () => {
     const document = readFileSync(docsPath, 'utf8');
     expect(verifyMcpDocsDocument(document)).toBe(document);

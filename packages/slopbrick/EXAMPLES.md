@@ -4,7 +4,13 @@
 > copy-paste ready. The config file is a JS module — you can use
 > any Node.js logic (env vars, conditional imports, etc.).
 
-The `slopbrick init` wizard writes a working config for the 8
+SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
+customer-facing coherence and verification product. Memory, Lock, and Mend are
+capability names, not products or packages. Current command examples use
+`npx slopbrick ...`; the configuration import remains the published
+`slopbrick` package.
+
+The `npx slopbrick init` wizard writes a working config for the 8
 common categories. This doc covers the OTHER cases — CI overrides,
 custom rule severities, large monorepos, and edge cases.
 
@@ -19,6 +25,7 @@ custom rule severities, large monorepos, and edge cases.
 - [Disabling defaultOff rules](#disabling-defaultoff-rules)
 - [Enabling dormant rules](#enabling-dormant-rules)
 - [Custom category weights](#custom-category-weights)
+- [Local history and outbound reporting](#local-history-and-outbound-reporting)
 - [MCP server settings](#mcp-server-settings)
 
 ---
@@ -56,7 +63,7 @@ export default defineConfig({
 });
 ```
 
-This is what you get from `slopbrick init` with no answers (the
+This is what you get from `npx slopbrick init` with no answers (the
 "empty" option in the wizard).
 
 ---
@@ -71,12 +78,12 @@ import { defineConfig } from 'slopbrick';
 export default defineConfig({
   // ... include / exclude ...
   thresholds: { meanSlop: 15, p90Slop: 30, individualSlopThreshold: 60 },
-  // Run `slopbrick ci` — exits 1 on threshold fail.
+  // Run `npx slopbrick ci` — exits 1 on threshold fail.
 });
 ```
 
 ```bash
-slopbrick ci
+npx slopbrick ci
 # exits 0 on pass, 1 on fail
 ```
 
@@ -181,7 +188,7 @@ slopbrick does NOT scan anything in `**/_deprecated/**` by default.
 
 ## Including Python or Go
 
-The v0.14.5l fix made slopbrick scan Python and Go files
+The v0.14.5l fix made the SlopBrick scan path include Python and Go files
 (they previously got an empty result). To include them
 explicitly:
 
@@ -285,9 +292,32 @@ export default defineConfig({
 
 ---
 
+## Local history and outbound reporting
+
+Local project-memory artifacts, local flywheel history, and outbound usage
+reporting are separate controls:
+
+```js
+export default defineConfig({
+  projectMemory: false, // disable canonical project-memory artifacts and its run log
+  telemetry: false,     // disable the local flywheel scan history
+});
+```
+
+Outbound reporting remains off unless the endpoint and per-run flag are both
+present; neither local-history setting silently opts a scan into a network
+request:
+
+```bash
+export SLOPBRICK_TELEMETRY_ENDPOINT="https://your-host.example/ingest"
+npx slopbrick scan --report-usage
+```
+
+---
+
 ## MCP server settings
 
-When `slopbrick mcp` is connected to Claude Code or Cursor, the
+When `npx slopbrick mcp` is connected to Claude Code or Cursor, the
 server reads the same config but some settings take effect
 differently:
 
@@ -326,6 +356,8 @@ everything slopbrick knows. Most teams should leave it off.
 | `categoryWeights` | `Record<string, number>` | per-category multipliers | Severity weighting for engineering/category burdens |
 | `compositeWeights` | `{ boundary, context, visual }` | `{ 0.40, 0.35, 0.25 }` | AI-slop bucket weights in the repositoryHealth composite |
 | `mcp` | `{ preloadStructure, includeDefaultOff, trustMode }` | `{ true, false, false }` | MCP server settings |
+| `projectMemory` | `boolean` | `true` | Canonical repository artifacts and the bounded project-memory run log |
+| `telemetry` | `boolean` | `true` | Local flywheel scan history; not outbound reporting consent |
 | `constitution` | `string` | `null` | Path to a custom `.slopbrick/constitution.json` |
 | `output` | `{ format, dir }` | `{ format: 'pretty', dir: '.slopbrick' }` | Output settings |
 

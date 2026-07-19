@@ -1,32 +1,40 @@
 # usebrick/platform
 
-> **Usebrick keeps AI-generated software coherent.**
+> **UseBrick is the coherence and verification layer for agent-built
+> software.**
 
-Usebrick is the monorepo behind [usebrick.dev](https://usebrick.dev). It starts
-with a simple question for vibe coders and AI-assisted builders:
+UseBrick is the sole customer-facing product behind
+[usebrick.dev](https://usebrick.dev): one repository-owned contract shared by
+developers, coding agents, and CI. It starts with a practical question after
+an agent-assisted build:
 
 > The app works, but is it actually well built?
 
-The product path is deliberately progressive. SlopBrick gives an individual
-developer a useful local scan without requiring a platform account. The same
-verified repository understanding can later support team enforcement and safe
-repair.
+SlopBrick gives serious solo developers and vibe coders a useful local scan
+without requiring a platform account. They are the free entry audience, not a
+proven buyer segment. The initial buyer hypothesis is AI-native software teams
+and agencies with roughly 5–100 developers; external evidence for that
+hypothesis has not yet been collected.
 
-## Product model
+## Product and capability model
 
-| Product | Role | Current status |
+| Product or capability | Role | Current status |
 | --- | --- | --- |
-| **SlopBrick** | Free local scanner and the main entry point | Shipping on npm; product-quality and trust work continues |
-| **MemoryBrick** | Repository-owned knowledge substrate and context compiler | Planned; begins by projecting and validating existing structure artifacts |
-| **LockBrick** | Deterministic team policy and new-drift enforcement | Planned as the first paid team layer |
-| **MendBrick** | Deterministic, reversible repair | Later, after detection and enforcement earn trust |
-| **Pick flow** | Initialisation and policy authoring | Folded into onboarding; not a separate product for now |
+| **UseBrick** | The coherence and verification product and repository-owned contract | Sole customer-facing product |
+| **SlopBrick** | Observe, detect, explain, and emit repository evidence | Shipped npm package, current CLI, free local scanner, and acquisition surface |
+| **Memory capability** | Compile facts, approved intent, provenance, and freshness into bounded agent context | Planned read-only substrate; no new package or store is authorized |
+| **Lock capability** | Prevent newly introduced verified drift with approved policy | Planned paid-workflow hypothesis inside the current CLI |
+| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Parked until detection and enforcement earn trust |
+| **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
+| **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
-MemoryBrick does not mean vendor-owned chat history or unrestricted agent
-memory. Its intended job is to combine observed repository facts with approved
-intent, rationale, provenance, and freshness, then compile bounded context for
-agents and CI. The deterministic Repository Structure schemas already in this
-monorepo are its technical starting point.
+The Memory capability does not mean vendor-owned chat history or unrestricted
+agent memory. Its intended job is to combine observed repository facts with
+approved intent, rationale, provenance, and freshness, then compile bounded
+context for agents and CI. The deterministic Repository Structure schemas
+already in this monorepo are its technical starting point. Capability names
+describe responsibilities and sequencing boundaries; they do not authorize
+separately marketed products or workspace packages.
 
 See the [canonical roadmap](./ROADMAP.md), the
 [execution index](./docs/execution/index.json), and the
@@ -69,11 +77,13 @@ The boundaries are independent:
 - a calibration decision is not a rule-state change unless `applied: true` is
   recorded in a separately authorized change.
 
-The repository owner is the only current product tester. Near-term validation
-uses deterministic owner-run scan-to-finding-to-fix-to-rescan walkthroughs
-under [`VAL-001`](./docs/execution/plans/VAL-001-owner-validation.md). No
-participant recruitment or fixed pilot gate is active; future team and market-
-demand evidence remains unproven. Source routing is owned by
+The repository owner is the only completed product tester. Near-term product
+validation uses deterministic owner-run scan-to-finding-to-fix-to-rescan
+walkthroughs under
+[`VAL-001`](./docs/execution/plans/VAL-001-owner-validation.md). `GTM-001` is
+ready to plan 10–20 consent-safe observed external sessions, but zero sessions
+are complete and outreach, scheduling, and recording remain unauthorized.
+Owner evidence is never market evidence. Source routing is owned by
 [`CORPUS-002`](./docs/execution/plans/CORPUS-002-source-use-routing.md).
 
 ## Quick start
@@ -216,19 +226,18 @@ point. Library packages use the `@usebrick/` scope.
 ## Architecture
 
 ```text
-source + config
-      │
-      ▼
-slopbrick CLI ──► @usebrick/engine ──► findings and scores
-      │                                      │
-      ├──────────────► .slopbrick/ artifacts │
-      │                                      ▼
-      └──────────────► MCP and CI consume @usebrick/core contracts
-
-future MemoryBrick: verified facts + approved intent + provenance/freshness
-future LockBrick:   deterministic delta enforcement in CI
-future MendBrick:   reversible repairs for trusted findings
+observe facts and runtime evidence
+              -> preserve approved intent and rationale
+              -> compile fresh bounded agent context
+              -> block newly introduced drift
+              -> apply narrow reversible repairs
+              -> rescan, test, and verify
 ```
+
+Today, the `slopbrick` CLI and embedded MCP server implement the observation
+and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory,
+Lock, Mend, and Render Labs remain planned, parked, or experimental capability
+boundaries as labeled above.
 
 Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the package boundaries
 and data flow.

@@ -1,5 +1,5 @@
 ---
-// Calibration — the four numbers that earn the "usebrick" name.
+// Calibration — a bounded historical self-scan example.
 // Count-up animation on reveal (counter.ts). Each stat shows:
 // - The actual score (e.g. 25) with band label (e.g. "low")
 // - A one-line brief explanation of what the score measures
@@ -15,6 +15,7 @@
 // current release-gate evidence or a cherry-picked marketing number.
 
 import StructureDemo from './StructureDemo.astro';
+import productFacts from '../data/product-facts.json';
 
 // 4 stats with: number target, band label, brief explanation,
 // verdict text, severity class.
@@ -56,17 +57,17 @@ const stats = [
 
 <section class="section calibration" id="calibration">
   <header class="calibration__head">
-    <span class="calibration__label">calibrated, not guessed</span>
+    <span class="calibration__label">historical evidence, clearly bounded</span>
     <h2 class="calibration__title">
-      The numbers that earn the name <span class="calibration__accent">usebrick</span>.
+      Calibration makes repository evidence <span class="calibration__accent">reviewable</span>.
     </h2>
     <p class="calibration__subhead">
-      Historical example from <code>slopbrick scan</code> on this site&apos;s own repo,
+      Historical self-scan example from <code>slopbrick scan</code> on this site&apos;s own repo,
       captured 2026-07-06; these values are not current release-gate evidence.
       Per-rule calibration lives in <code>src/rules/signal-strength.json</code>;
-      measured rules carry historical v10.1 precision/recall evidence from
-      576,750 analyzed files; 16 workspace rules remain unmeasured and
-      default-off while v10.3 admission is pending.
+      measured rules carry historical {productFacts.corpusLabel} precision/recall evidence from{' '}
+      {productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files; {productFacts.unmeasuredRuleCount}{' '}
+      workspace rules remain unmeasured and default-off. Current v10.3 admission remains zero.
     </p>
   </header>
 
@@ -91,7 +92,7 @@ const stats = [
     noise than signal, or has no approved calibration, stays <em>defaultOff</em>
     until it earns its way on. <strong>aiSlopScore</strong> uses the natural-reading
     direction (0 = clean, 100 = saturated) — the other three scores
-    are &quot;higher = better&quot;.
-    <cite class="calibration__cite">the usebrick calibration contract</cite>
+    are &quot;higher = better&quot;. Origin association is not authorship or quality authority.
+    <cite class="calibration__cite">the UseBrick evidence boundary</cite>
   </blockquote>
 </section>

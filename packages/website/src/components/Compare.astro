@@ -1,5 +1,5 @@
 ---
-// Compare — slopbrick vs "everything else" (pre-2026 status quo).
+// Compare — repository-owned coherence versus disconnected review.
 // Side-by-side courses of bricks separated by a centered VS divider.
 // The yay bricks are warm-toned (orange check); the nay bricks are
 // cold-toned with line-through (struck-through old ways). Each
@@ -10,37 +10,36 @@ import BrickLayout from './BrickLayout.astro';
 import productFacts from '../data/product-facts.json';
 import version from '../data/version.json';
 
-// "What slopbrick does" — 5 concrete capabilities you can verify
-// in the docs and the CLI output.
+// Current shipped facts stay distinct from planned protection.
 const yay = [
   `Published v${productFacts.published.version}: ${productFacts.published.ruleCount} rules in ${productFacts.published.categoryCount} categories and four headline scores`,
-  'Writes inventory.json, constitution.json, health.json, and derived structure.md; structure.json is separate local run history',
-  'Local CLI and MCP surfaces expose portable evidence without requiring a hosted account',
-  'Repository policy can turn selected, trusted findings into deterministic exit codes',
+  'One shared repository truth: inventory.json, constitution.json, health.json, and derived structure.md remain beside the code; structure.json is separate local run history',
+  'Reviewed baselines create a path to new-debt protection without requiring teams to clear all historical debt; the paid Lock capability remains planned',
+  'The local CLI and embedded MCP expose portable cross-agent evidence without requiring a hosted account',
   `Historical ${productFacts.corpusLabel} evidence covers ${productFacts.measuredRuleCount} rules and ${productFacts.corpusAnalyzedFiles.toLocaleString()} analyzed files; v10.3 admission remains separate`,
 ];
 
-// "What the alternative looks like" — the situation slopbrick replaces.
+// The fragmented workflow UseBrick is intended to replace.
 const nay = [
-  'Generic findings with no repository-specific evidence or baseline',
-  'Gates that require all historical debt to be fixed before adoption',
-  'Each coding agent rediscovering conventions from scratch',
-  'Opaque quality scores with no rule-level explanation',
-  'Planned features presented as if they already ship',
+  'Findings detached from repository intent, provenance, and a reviewed baseline',
+  'All-debt gates that make incremental adoption impractical',
+  'Each developer, coding agent, and CI job rediscovering conventions independently',
+  'Scores that cannot be traced back to file-level and rule-level evidence',
+  'Roadmap capabilities presented without a shipped, planned, parked, or Labs boundary',
 ];
 ---
 
 <section class="section compare-section" id="compare">
   <BrickLayout as="header" tone="raised" class="compare-section__head" span={2}>
-    <span class="compare-section__label">usebrick vs the rest</span>
+    <span class="compare-section__label">shared truth, not another agent silo</span>
     <h2 class="compare-section__title">
-      Find new slop before it becomes <span class="compare-section__accent">repository debt</span>.
+      Keep every contributor working from <span class="compare-section__accent">the same evidence</span>.
     </h2>
     <p class="compare-section__body">
-      Start with the published scanner and four scores: AI Slop, Engineering Hygiene, Security,
-      and Repository Health. The unreleased v{version.slopbrick} workspace candidate has
-      {productFacts.ruleCount} rules across {productFacts.categoryCount} categories. Its repository
-      artifacts make evidence reviewable; native agent adapters and paid enforcement remain roadmap work.
+      UseBrick connects shared repository truth, a path to new-debt protection, and portable cross-agent evidence.
+      Start with the shipped SlopBrick scanner and four scores: AI Slop, Engineering Hygiene, Security,
+      and Repository Health. The unreleased v{version.slopbrick} workspace candidate has {productFacts.ruleCount}{' '}
+      rules across {productFacts.categoryCount} categories; paid enforcement remains planned.
     </p>
   </BrickLayout>
 
@@ -50,7 +49,7 @@ const nay = [
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="20 6 9 17 4 12" />
         </svg>
-        <span>usebrick</span>
+        <span>one UseBrick contract</span>
       </div>
       <div class="compare__items">
         {yay.map((line) => (
@@ -76,7 +75,7 @@ const nay = [
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
-        <span>everything else</span>
+        <span>fragmented context</span>
       </div>
       <div class="compare__items">
         {nay.map((line) => (

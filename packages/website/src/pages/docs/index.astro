@@ -1,19 +1,43 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Footer from '../../components/Footer.astro';
+import productFacts from '../../data/product-facts.json';
+import version from '../../data/version.json';
 ---
 
-<Base canonicalPath="/docs" title="Documentation — usebrick.dev" description="Canonical SlopBrick and usebrick platform documentation.">
+<Base canonicalPath="/docs" title="UseBrick documentation — coherence and verification" description="UseBrick product truth, current SlopBrick install and CLI commands, verified package facts, and repository-owned documentation.">
   <main id="top" class="docs-page">
     <article class="docs-page__content">
       <a class="docs-page__back" href="/">← usebrick.dev</a>
-      <p class="docs-page__eyebrow">canonical documentation</p>
-      <h1>Scan first. Keep the evidence.</h1>
+      <p class="docs-page__eyebrow">one product · current interfaces</p>
+      <h1>UseBrick is the coherence and verification layer for agent-built software.</h1>
       <p class="docs-page__lede">
-        SlopBrick is the shipped front door; the repository is the source of truth
-        for its behavior and for the wider Usebrick roadmap. These links open the
-        versioned documentation beside the code and release evidence.
+        One repository-owned contract is shared by developers, coding agents, and CI.
+        SlopBrick is the shipped local scanner and current CLI. Its documentation and
+        evidence live beside the code; Memory, Lock, Mend, and Render Labs are capability
+        boundaries, not separately shipped products.
       </p>
+
+      <section class="docs-page__current" aria-labelledby="current-cli">
+        <h2 id="current-cli">Current SlopBrick install and CLI</h2>
+        <p>
+          Published v{productFacts.published.version} contains {productFacts.published.ruleCount}{' '}
+          rules in {productFacts.published.categoryCount} categories. The unreleased
+          v{version.slopbrick} workspace candidate contains {productFacts.ruleCount} rules in{' '}
+          {productFacts.categoryCount} categories.
+        </p>
+        <pre><code>npm install -g slopbrick
+slopbrick init
+slopbrick scan
+slopbrick explain
+slopbrick ci
+slopbrick mcp</code></pre>
+        <p>
+          Every command above uses the current <code>slopbrick</code> binary. Privacy boundary:
+          local scan history on by default; outbound reporting off by default and endpoint-gated.
+        </p>
+      </section>
+
       <nav aria-label="Documentation links">
         <ul class="docs-page__links">
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/README.md" rel="noopener noreferrer">SlopBrick README <span>→</span></a></li>
@@ -21,7 +45,7 @@ import Footer from '../../components/Footer.astro';
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/repository-structure.md" rel="noopener noreferrer">Repository structure and schemas <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/MCP.md" rel="noopener noreferrer">MCP integration <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/language-support-matrix.md" rel="noopener noreferrer">Language support matrix <span>→</span></a></li>
-          <li><a href="https://github.com/usebrick/platform/blob/main/ROADMAP.md" rel="noopener noreferrer">Platform roadmap <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/ROADMAP.md" rel="noopener noreferrer">UseBrick roadmap <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/docs/execution/STATUS.md" rel="noopener noreferrer">Current execution status <span>→</span></a></li>
         </ul>
       </nav>
@@ -57,9 +81,33 @@ import Footer from '../../components/Footer.astro';
   }
   .docs-page__lede {
     max-width: 58ch;
-    margin: var(--space-6) 0 var(--space-12);
+    margin: var(--space-6) 0 var(--space-8);
     color: var(--text-secondary);
     font-size: 1.15rem;
+  }
+  .docs-page__current {
+    margin-bottom: var(--space-12);
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+  }
+  .docs-page__current h2 {
+    margin-bottom: var(--space-3);
+    font: 600 clamp(1.5rem, 4vw, 2.1rem)/1.15 var(--font-display);
+  }
+  .docs-page__current p {
+    max-width: 64ch;
+    color: var(--text-secondary);
+  }
+  .docs-page__current pre {
+    margin: var(--space-5) 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    border-radius: var(--radius);
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font: 500 0.9rem/1.7 var(--font-mono);
   }
   .docs-page__links {
     list-style: none;

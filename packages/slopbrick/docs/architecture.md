@@ -1,5 +1,15 @@
 # slopbrick architecture snapshot (v0.44.0 was unreleased at authoring)
 
+> **Current doctrine (2026-07-19):** UseBrick is the sole customer-facing
+> coherence and verification product. SlopBrick is its shipped local scanner,
+> current CLI, embedded MCP server, and evidence-producing front door. Memory,
+> Lock, and Mend are internal capability and sequencing names, not standalone
+> products or packages. Current usage uses `npx slopbrick ...`; this historical
+> snapshot does not authorize a different CLI. Repository-local history and
+> endpoint-gated outbound reporting remain separate. AI association is neither
+> quality nor authorship authority; v10.1 is historical evidence and current
+> v10.3 admission remains zero.
+
 > **Historical design record.** The title and train references below describe
 > an earlier snapshot. Current architecture and release boundaries live in the
 > platform [architecture](../../../docs/ARCHITECTURE.md) and [execution
@@ -203,4 +213,7 @@ These are the unresolved design tensions as of 0.9.0. They're documented so futu
 
 ---
 
-For the per-score semantics, see `docs/scoring-runbook.md`. For the 12-phase plan and release train, see `ROADMAP.md`. For the empirical research grounding the v0.8.0/0.9.0 phase decisions, see `docs/research/`.
+For current per-score semantics, see [the scoring
+runbook](./scoring-runbook.md). Current product direction lives in the root
+[UseBrick roadmap](../../../ROADMAP.md). The historical empirical research
+grounding the v0.8.0/0.9.0 phase decisions remains under `docs/research/`.

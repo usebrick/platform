@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 27,
+  "revision": 28,
   "updatedAt": "2026-07-19",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-authority.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Red-test Task 4's exact 32-row zero-label quality disposition and optional readiness-gated cohort plan.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-quality-sampling.test.ts tests/calibration/cal-002-quality-metrics.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-authority.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Red-test Task 4's exact 32-row zero-label quality disposition and optional readiness-gated cohort plan.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-quality-sampling.test.ts tests/calibration/cal-002-quality-metrics.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-contracts-v2.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [
@@ -272,7 +272,7 @@
     },
     {
       "id": "MEM-001",
-      "title": "Build MemoryBrick M0 as a read-only repository projection",
+      "title": "Benchmark the read-only Memory capability",
       "track": "implementation",
       "lane": "memory",
       "horizon": "next",
@@ -438,25 +438,32 @@
     },
     {
       "id": "GTM-001",
-      "title": "Preserve the dormant vibecoder participant protocol",
+      "title": "Prepare consent-safe external workflow sessions",
       "track": "company",
       "lane": "adoption",
-      "horizon": "later",
-      "status": "parked",
+      "horizon": "now",
+      "status": "ready",
       "priority": 15,
       "path": "docs/execution/plans/GTM-001-vibecoder-pilots.md",
       "dependencies": {
         "requires": [],
         "externalGates": [],
-        "benefitsFrom": [],
+        "benefitsFrom": [
+          "SB-UX-001",
+          "TEL-001",
+          "VAL-001"
+        ],
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the dormant consent-safe protocol; do not recruit unless the owner later authorizes external participant research.",
-        "verify": "test -f docs/research/vibecoder-pilots.md",
+        "text": "Prepare the participant profile, session script, consent text, and redacted receipt template for 10–20 observed sessions; do not contact or schedule anyone.",
+        "verify": "corepack pnpm plans:validate",
         "evidencePath": "docs/research/vibecoder-pilots.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
+        "docs/research/usebrick-market-positioning-2026-07-19.md"
+      ]
     },
     {
       "id": "REL-001",
@@ -486,6 +493,33 @@
         "docs/superpowers/specs/2026-07-18-release-boundary-split-design.md",
         "docs/execution/evidence/SB-045-release-qualification.md",
         "docs/execution/evidence/REL-001-public-claim-disposition.md"
+      ]
+    },
+    {
+      "id": "LABS-001",
+      "title": "Benchmark rendered evidence against source-only analysis",
+      "track": "implementation",
+      "lane": "labs",
+      "horizon": "next",
+      "status": "draft",
+      "priority": 17,
+      "path": "docs/execution/plans/LABS-001-rendered-evidence-benchmark.md",
+      "dependencies": {
+        "requires": [],
+        "externalGates": [],
+        "benefitsFrom": [
+          "SB-UX-001",
+          "VAL-001"
+        ],
+        "conflictsWith": []
+      },
+      "nextAction": {
+        "text": "Draft the fixed defect set, blind rubric, equal-budget protocol, material-value threshold, and stop decision before running a browser or agent.",
+        "verify": "test -f docs/execution/plans/LABS-001-rendered-evidence-benchmark.md",
+        "evidencePath": "docs/execution/evidence/LABS-001-rendered-evidence-benchmark.md"
+      },
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md"
       ]
     }
   ]

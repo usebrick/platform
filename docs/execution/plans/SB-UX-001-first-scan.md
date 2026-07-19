@@ -8,8 +8,9 @@
 
 ## Outcome
 
-A vibecoder can finish a first scan, understand the strongest evidenced
-problem, choose one of three useful actions, fix it, and see the rescan change
+A free local-scan user can finish a first scan, understand the strongest
+evidenced problem, choose one of three useful actions, fix or explicitly
+decline it, see the rescan result, and understand how to protect the repository
 without reading a giant undifferentiated report.
 
 ## Current truth
@@ -35,10 +36,12 @@ quality, 26 transferred, 4 blocked, 3 superseded, 7 retired, and 32
 research-origin rows. It does not add an unmet `requires` edge: `SB-UX-001`
 remains active while CAL-002 establishes the precise current-versus-legacy
 calibration labels this first-scan contract must eventually expose. No runtime
-policy or release state changed in revision 27.
+policy or release state changed in revision 28.
 
 ## Scope
 
+- Optimize the free first scan for the **scan -> useful finding -> fix or
+  decline -> rescan -> protect** adoption loop, not for rule-count exposure.
 - Five user-facing areas: Visual Slop, Frontend Implementation, Code and Logic,
   Repository Coherence, and Accessibility and Resilience.
 - Evidence labels for deterministic, current quality-calibrated, internal
@@ -78,6 +81,9 @@ policy or release state changed in revision 27.
   reader-oriented output checks pass.
 - Owner-run walkthroughs can identify the first recommended action without
   relying on synthetic or participant evidence.
+- Receipts can distinguish scan completion, first useful finding, action or
+  decline, rescan completion, and later protection without treating those
+  outcomes as market evidence.
 - Current policy provenance distinguishes current quality, internal origin,
   legacy, advisory, and insufficient evidence without implying authorship,
   admission, or a safe repair.

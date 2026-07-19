@@ -1,14 +1,21 @@
-# Usebrick execution status
+# UseBrick execution status
 
 **Snapshot:** 2026-07-19
-**Index revision:** 27
+**Index revision:** 28
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. The deterministic router preserves every existing
+routing are complete. Revision 28 approves UseBrick as the sole customer-facing
+coherence and verification product, with SlopBrick as the shipped package,
+current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
+to prepare planning materials for 10–20 consent-safe observed external
+sessions; completed sessions remain zero and outreach is false. New
+`LABS-001` is `draft` for a bounded rendered-evidence benchmark. Neither plan
+is active, so company WIP remains `0/1` and implementation WIP remains `2/2`.
+The deterministic router preserves every existing
 Mendeley and CAL-001 hash while failing closed for pending, reference-only,
 unregistered, malformed, or manually widened source dispositions. The local
 v0.45 trust-release qualification is complete under `SB-045`; `REL-001` owns
@@ -20,23 +27,29 @@ and close the first-scan current-versus-legacy provenance gap. `SB-UX-001`
 remains active with CAL-002 as its evidence-provenance closeout gate; CAL-002
 does not add an unmet `requires` edge. `VAL-001` returns to ready with its one
 owner-attested self-scan-to-rescan row preserved, and `TEL-001` remains ready.
-The first CAL-002 code action is the red v2 authority taxonomy and exact
-119-row projection contract tests. The v1 implementation boundary is
-checkpointed through `e6c9695ea`; its old three-way origin questionnaire is
-paused after one historical hold. The approved v2 projection is 47 starting
-quality + 26 transferred quality + 4 blocked quality + 3 superseded + 7 retired
-+ 32 research-origin = 119, with owner rows exactly `26/4/3/7`. The repository
-owner is the only current product tester; the recorded
+The frozen v1 implementation boundary remains checkpointed through
+`e6c9695ea`; its old three-way origin questionnaire is paused after one
+historical hold. Progressive authority Tasks 1–3 are implementation-
+checkpointed and independently approved through `5f5a1c554`: they reconcile
+the additive authority contract, preserve exact v1 bytes, and add a terminal,
+immutable owner-batch path with conservative destination-alias refusal. That
+path has not been run against the protected owner state. The approved v2
+projection remains 47 starting quality + 26 transferred quality + 4 blocked
+quality + 3 superseded + 7 retired + 32 research-origin = 119, with owner rows
+exactly `26/4/3/7`. The next CAL-002 code action is Task 4's red exact 32-row
+zero-label quality disposition and optional readiness-gated cohort plan. The
+repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
 `admitted: false`; no rule, score, source, baseline, admission, release,
-deployment, or public artifact changed in revision 27. CAL-002 remains
+deployment, or public artifact changed in revision 28. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. No runtime policy changed;
 local application remains separate from push, tag, publish, deploy, and release.
-Stale-path cleanup is isolated behind exact owner approval and does not block
-local product work.
+This strategy and execution-document revision changes no runtime code or
+policy. Stale-path cleanup is isolated behind exact owner approval and does not
+block local product work.
 
 ## Product and release truth
 
@@ -102,6 +115,11 @@ local product work.
   authority workflow; no v1 receipt or the protected owner state was rewritten.
   The four blocked quality rows remain assignment-ineligible, and the v2
   projection remains non-admitting and unapplied.
+- CAL-002 progressive authority Tasks 1–3 are implementation-checkpointed at
+  `5f5a1c554`. The focused five-file matrix passes 63/63 on exact Node 22.22.3
+  and 24.15.0 runtimes with typecheck on both. This qualifies the code path,
+  not a live owner decision: no authority proposal, state, receipt, runtime
+  application, or admission artifact was produced from protected state.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -145,7 +163,13 @@ local product work.
   HumanEval remain non-executable under their current dispositions. This
   source-use result does not change redistribution, v10.3 admission,
   usefulness-review, or rule-application state.
-- MemoryBrick, LockBrick, and MendBrick are not shipped standalone products.
+- UseBrick is the sole customer-facing coherence and verification product.
+  SlopBrick is the shipped npm package, current CLI, free local scanner, and
+  acquisition surface. Memory, Lock, Mend, and Render Labs are capability and
+  sequencing names, not shipped products or package authorization.
+- The dated market note isolates adoption, pricing, competitor, and market-size
+  observations. Its arithmetic is a scenario, not measured UseBrick demand or
+  a forecast.
 - A 2026-07-18 read-only check of `https://usebrick.dev/` still showed the old
   v0.43 marketing artifact, including contradictory rule counts and absolute
   “no telemetry” claims. The local website candidate corrects those claims,
@@ -169,8 +193,9 @@ local product work.
 `SB-045` is done. `SB-UX-001` and `CAL-002` consume the two implementation
 slots. `VAL-001` returns to ready with RUN-001 preserved, and `TEL-001` remains
 ready behind the typed first-scan boundary. `REL-001` and `DOC-PRUNE-001` are
-waiting external and consume no WIP. `GTM-001` is parked; no participant
-recruitment is planned or authorized.
+waiting external and consume no WIP. `GTM-001` is ready for planning materials
+only, targets 10–20 observed sessions, records zero completed sessions, and
+keeps outreach unauthorized. Draft `LABS-001` also consumes no WIP.
 `DOC-PRUNE-001` may resume only after exact path approval and does not consume
 WIP while waiting.
 
@@ -185,7 +210,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 4's exact 32-row zero-label quality disposition and optional readiness-gated cohort plan. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -193,8 +218,9 @@ WIP while waiting.
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
-| 15 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `parked` | — | Preserve the dormant protocol; do not recruit without a future owner-authorized revision. |
+| 15 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Prepare the profile, script, consent text, and redacted receipt for 10–20 sessions; do not contact or schedule anyone. |
 | 16 | [`REL-001`](plans/REL-001-public-release-boundary.md) | `waiting_external` | — | Await independent owner dispositions for npm release and website deployment. |
+| 17 | [`LABS-001`](plans/LABS-001-rendered-evidence-benchmark.md) | `draft` | — | Draft fixed defects, blind scoring, equal budgets, material-value threshold, and the stop decision. |
 
 ## Release gates
 
@@ -216,7 +242,8 @@ package and website. Each surface must be `hold` or `authorize`; every
 authorization must name the exact reviewed commit/SHA and, for npm, the exact
 tag. A green gate, merge, push, or roadmap transition cannot replace that
 input. `SB-UX-001`, `TEL-001`, and owner-selected `VAL-001` work may continue;
-no participant recruitment is authorized.
+`GTM-001` planning materials may be prepared, but outreach, contact,
+scheduling, observation, recording, and participant data remain unauthorized.
 
 `DOC-PRUNE-001` waits only for exact owner approval of its numbered archive and
 delete inventory, including the disposition of five consumed Changesets. No
@@ -239,6 +266,11 @@ continue with another eligible source or a smaller honest corpus.
   evidence. Start with bounded inventories and 100/100 smoke runs.
 - Memory can become stale or context-heavy. M0 remains read-only and benchmark
   gated.
+- Cross-study market arithmetic can be mistaken for measured demand. Keep it
+  in the dated research note and label it as a scenario, not a forecast.
+- Rendered evidence may add cost or false positives without incremental value.
+  `LABS-001` freezes defects and blind scoring and stops if material value is
+  absent.
 - The stable-identity `ci --max-new-issues` contract is now implemented under
   `SB-045`; future UX work must preserve its tested current/new-debt semantics
   and must not reintroduce the retired `.slop-audit-cache.json` path.
@@ -247,14 +279,19 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. The first
-CAL-002 code action is the red additive v2 authority taxonomy and exact
-119-row projection contract tests; its separate quality and origin evidence
-lanes are the first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
+`SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. CAL-002
+authority Tasks 1–3 are approved through `5f5a1c554`; Task 4 now red-tests the
+exact 32-row zero-label quality disposition and optional readiness-gated
+cohort plan. Its separate quality and origin evidence lanes remain the
+first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
 evidence. `REL-001` remains the unchanged separate public-authority checkpoint.
-Do not lower thresholds, activate rules, invent owner runs, acquire data,
+`GTM-001` may prepare only its participant profile, script, consent text, and
+redacted receipt template; its completed-session count stays zero and outreach
+stays false. `LABS-001` remains draft until its fixed defects, blind rubric,
+equal budgets, material threshold, and stop decision are reviewed. Do not lower
+thresholds, activate rules, invent owner or participant runs, acquire data,
 refresh a baseline, or infer publish, tag, or deployment authority from local
 roadmap progress.

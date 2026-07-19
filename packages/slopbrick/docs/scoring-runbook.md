@@ -1,5 +1,10 @@
 # SlopBrick scoring runbook
 
+SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
+customer-facing coherence and verification product. Memory, Lock, and Mend are
+capability and sequencing names, not separate products or packages. Current
+command examples use `npx slopbrick ...`.
+
 This is the operator guide for interpreting and gating SlopBrick reports. The
 plain-language score definitions are in [scoring
 explained](./scoring-explained.md). The versioned code contract is
@@ -57,10 +62,10 @@ inverting Repository Health, and do not describe the informational Bayesian
 ### Inspect a repository
 
 ```bash
-slopbrick scan --brief
-slopbrick scan --why-failing
-slopbrick scan --explain-score
-slopbrick scan --format json
+npx slopbrick scan --brief
+npx slopbrick scan --why-failing
+npx slopbrick scan --explain-score
+npx slopbrick scan --format json
 ```
 
 - `--brief` shows the result and threshold compactly.
@@ -71,9 +76,9 @@ slopbrick scan --format json
 ### Inspect a changed population
 
 ```bash
-slopbrick scan --changed --format json
-slopbrick scan --staged --format json
-slopbrick pr
+npx slopbrick scan --changed --format json
+npx slopbrick scan --staged --format json
+npx slopbrick pr
 ```
 
 Record the selection scope with the result. A changed-file score should not be
@@ -82,9 +87,9 @@ presented as the repository's full score.
 ### Establish and compare a baseline
 
 ```bash
-slopbrick scan --baseline
-slopbrick scan --no-increase
-slopbrick ci --max-new-issues 0
+npx slopbrick scan --baseline
+npx slopbrick scan --no-increase
+npx slopbrick ci --max-new-issues 0
 ```
 
 `aiSlopScore` is lower-is-better. An increase is a regression. Review the
@@ -117,7 +122,7 @@ score-baseline change as proof of new debt.
 ### CI command
 
 ```bash
-slopbrick ci --max-slop <n> --strict-constitution
+npx slopbrick ci --max-slop <n> --strict-constitution
 ```
 
 The current `ci` command forces changed-file selection and no-increase
@@ -159,6 +164,10 @@ documentation, database/business logic, patterns, PRs, and maintenance cost.
 These can expose categorical scores, sub-scores, or estimates, but they do not
 expand the four-field headline contract.
 
+Roadmap capability names do not add commands. In particular, Memory, Lock, and
+Mend remain sequencing boundaries until an implemented interface is reviewed;
+operators should use only the current SlopBrick runtime help and tests.
+
 Use each command's runtime help and tests. Do not combine unrelated sub-scores
 into a new public composite in documentation.
 
@@ -180,6 +189,11 @@ The bounded legacy/local `.slopbrick/structure.json` run log and
 `.slopbrick/flywheel/scans.jsonl` history are separate from those canonical
 snapshots and have different controls. See [repository
 structure](./repository-structure.md).
+
+Those repository-local writes are also separate from outbound usage reporting,
+which remains off unless both its endpoint and per-run opt-in flag are present.
+Disabling the local flywheel does not by itself disable project-memory
+artifacts or describe network behavior.
 
 ## Calibration interpretation
 

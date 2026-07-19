@@ -1,7 +1,8 @@
 # UseBrick coherence positioning and documentation convergence
 
 **Date:** 2026-07-19
-**Status:** written-spec review
+**Status:** approved
+**Approved:** 2026-07-19 by repository-owner implementation instruction
 **Authority:** repository-owner market review and documentation instruction
 
 ## Reason for existence

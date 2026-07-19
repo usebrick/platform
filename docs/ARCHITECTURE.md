@@ -1,49 +1,46 @@
-# usebrick architecture
+# UseBrick architecture
 
-**Updated:** 2026-07-18
+**Updated:** 2026-07-19
 **Status:** Current product and package reference
 
-Usebrick keeps AI-generated software coherent. Vibe coders and AI-assisted
-builders enter through SlopBrick: a local scanner that answers whether a
-working application is also coherent, maintainable, accessible, and aligned
-with its repository. Teams can later reuse the same verified repository
-understanding for policy enforcement and repair.
+UseBrick is the coherence and verification layer for agent-built software and
+the sole customer-facing product: one repository-owned contract shared by
+developers, coding agents, and CI. Serious solo developers and vibe coders
+enter through SlopBrick's free local scan. The initial buyer hypothesis is
+AI-native software teams and agencies with roughly 5–100 developers; the
+repository owner remains the only completed product tester.
 
 Product direction lives in [`ROADMAP.md`](../ROADMAP.md). Live implementation
 status and dependency edges live in
 [`docs/execution/index.json`](./execution/index.json), not in this reference.
 
-## Product layers
+## Product and capability model
 
 ```text
-                           usebrick
-              quality and coherence for AI-built software
+                             UseBrick
+             repository-owned coherence contract
                                 │
-                 repository-owned understanding
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        │                       │                       │
-    SlopBrick               LockBrick              MendBrick
-  detect and explain     prevent new drift       repair trusted drift
-        │                       │                       │
-        └───────────────────────┴───────────────────────┘
-                                │
-                         MemoryBrick substrate
-                facts, intent, provenance, freshness
+       observe -> preserve -> compile -> prevent -> repair -> verify
+          │          │          │          │          │         │
+      SlopBrick    policy     Memory      Lock       Mend      Render
+       shipped     authoring  planned    planned     parked     Labs
 ```
 
-| Layer | Architectural role | Delivery boundary |
+| Product or capability | Architectural role | Delivery boundary |
 | --- | --- | --- |
-| **SlopBrick** | Deterministic local scanning, evidence, scores, repository artifacts, MCP, and CI primitives | Shipping; the main entry point |
-| **MemoryBrick** | Repository-owned model of observed facts, declared intent, rationale, evolution, provenance, and freshness; compiler for bounded agent context | Planned; starts as a read-only projection of existing artifacts before any new store or schema migration |
-| **Pick flow** | Initialisation and policy authoring | Part of onboarding, not a separate package or product surface |
-| **LockBrick** | Deterministic enforcement of approved policy and newly introduced slop | First planned paid team layer; begin inside the existing CLI |
-| **MendBrick** | Deterministic and reversible repairs for findings teams already trust | Later; no arbitrary repository-wide AI refactoring |
+| **UseBrick** | Repository-owned contract shared by developers, coding agents, and CI | Sole customer-facing product |
+| **SlopBrick** | Deterministic local scanning, evidence, scores, repository artifacts, MCP, and CI primitives | Shipped npm package, current CLI, free scanner, and acquisition surface |
+| **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Planned read-only projection before any new store, migration, or package |
+| **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
+| **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | Planned first paid-workflow hypothesis inside the existing CLI |
+| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | Parked; no arbitrary repository-wide AI refactoring |
+| **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
-MemoryBrick is not vendor-owned chat history, a transcript archive, or an
-unbounded vector store. The repository remains the authority, memory changes
-must be reviewable, and agents may propose rather than silently author
-normative facts.
+The Memory capability is not vendor-owned chat history, a transcript archive,
+or an unbounded vector store. The repository remains the authority, memory
+changes must be reviewable, and agents may propose rather than silently author
+normative facts. These capability names define architecture and sequencing;
+none implies a separately marketed product or package extraction.
 
 ## Verified delivery state
 
@@ -263,9 +260,10 @@ this path. Network failure does not change the scan exit code.
 These local and outbound mechanisms are separate. `--no-telemetry` disables
 the local flywheel; it is not a generic read-only mode.
 
-## Future MemoryBrick flow
+## Planned Memory capability flow
 
-MemoryBrick must extend the existing deterministic model in bounded stages:
+The Memory capability must extend the existing deterministic model in bounded
+stages:
 
 ```text
 code + config + approved docs and decisions
@@ -278,13 +276,25 @@ code + config + approved docs and decisions
                     │
           ┌─────────┴──────────┐
           ▼                    ▼
-  native agent adapters   LockBrick policy
+  native agent adapters   Lock capability policy
   boot/scoped/on-demand   deterministic CI
 ```
 
 The first stage is read-only projection and evaluation. A new `.usebrick/`
 store, schema migration, or instruction-file writer requires its own ADR,
 threat model, ownership rules, and compatibility plan.
+
+## RenderBrick Labs boundary
+
+Rendered evidence is not part of the current scan data path. `LABS-001` may
+compare a source-only agent with the same agent given Playwright/Chrome
+screenshots and runtime evidence, plus an existing visual-testing baseline
+where available. The benchmark must use fixed defects, blind scoring, the same
+model and time budget, and incremental detection and false-positive measures.
+
+If rendered evidence adds no material value, the experiment stops. This Labs
+path does not authorize a Chromium fork, standalone browser, workspace package,
+runtime integration, or customer-facing capability claim.
 
 ## Release and deployment boundary
 

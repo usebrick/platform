@@ -85,12 +85,13 @@ inventing owner evidence.
 
 ## Verification
 
-Start with the focused one-worker authority and v2 contract tests. Before any
-policy application, verify frozen identities, source permissions, catalog/config
-hashes, exact row coverage, lane separation, non-admission, provenance output,
-and the prescribed recursive and package-local self-scan gates. This revision
-does not apply a runtime policy; local application remains separate from push,
-tag, publish, deploy, and release authority.
+Continue with the focused one-worker quality-disposition, v1 quality-reducer,
+CLI, and v2 schema tests. Before any policy application, verify frozen
+identities, source permissions, catalog/config hashes, exact row coverage, lane
+separation, non-admission, provenance output, and the prescribed recursive and
+package-local self-scan gates. This revision does not apply a runtime policy;
+local application remains separate from push, tag, publish, deploy, and release
+authority.
 
 ## Evidence destination
 
@@ -105,4 +106,5 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Red-test the additive CAL-002 v2 authority taxonomy and exact 119-row projection.
+Red-test Task 4's exact 32-row zero-label quality disposition and optional
+readiness-gated cohort plan.

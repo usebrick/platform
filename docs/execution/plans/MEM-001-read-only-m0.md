@@ -1,23 +1,25 @@
-# MEM-001 — Build MemoryBrick M0 as a read-only repository projection
+# MEM-001 — Benchmark the read-only Memory capability
 
 - **Status:** `draft`
 - **Priority:** 8
 - **Track / lane:** implementation / memory
-- **Owner:** usebrick platform
-- **Updated:** 2026-07-17
+- **Owner:** UseBrick platform
+- **Updated:** 2026-07-19
 
 ## Outcome
 
-Prove that a small repository-owned projection of observed facts, declared
-policy, provenance, and freshness improves the same task across multiple coding
-agents without becoming stale, bloated, or vendor-owned.
+Prove that a small repository-owned projection of observed facts, approved
+intent, provenance, and freshness improves the same task versus each coding
+agent's native context without becoming stale, bloated, or vendor-owned.
 
 ## Current truth
 
 The repository already has deterministic structure schemas and agent
-instruction files, but no approved MemoryBrick storage contract, provenance
-model, freshness state machine, adapter compiler, or cross-agent benchmark.
-MemoryBrick is not a shipped standalone product.
+instruction files, but no approved Memory-capability storage contract,
+provenance model, freshness state machine, adapter compiler, or cross-agent
+benchmark.
+The Memory name is a planned capability boundary, not a shipped product or
+package.
 
 ## Scope
 
@@ -30,7 +32,9 @@ MemoryBrick is not a shipped standalone product.
 - Deterministic freshness/citation status for each projected fact.
 - Small boot context, path-scoped context, and on-demand references.
 - Bounded native adapters for at least Codex, Claude, and Copilot.
-- Cross-agent benchmark on the same repository tasks.
+- Cross-agent benchmark on the same repository tasks comparing native agent
+  context, repository-owned boot/scoped context, and on-demand references for
+  at least Codex, Claude, and Copilot.
 
 ## Non-goals
 
@@ -53,8 +57,8 @@ MemoryBrick is not a shipped standalone product.
 - Agents can propose but cannot silently promote authoritative memory.
 - Generated boot context stays within a stated budget and adapters are
   deterministic/disposable.
-- The benchmark compares no guidance, manual instruction, generated adapters,
-  and on-demand memory across at least three agents.
+- The benchmark compares each agent's native context with repository-owned
+  boot/scoped adapters and on-demand context across at least three agents.
 - M0 improves at least one predeclared architecture/build/test outcome without
   increasing stale-instruction failures.
 
@@ -67,8 +71,9 @@ MemoryBrick is not a shipped standalone product.
    validation and deterministic snapshot tests.
 4. Generate bounded adapters -> verify: identical inputs produce byte-identical
    outputs and budgets pass.
-5. Run the cross-agent benchmark -> verify: publish raw task/result receipts
-   with limitations, not only a headline.
+5. Run the same tasks and budgets with native and repository-owned context
+   across agents -> verify: publish raw task/result receipts with limitations,
+   not only a headline.
 
 ## Verification
 

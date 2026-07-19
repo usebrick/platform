@@ -1,5 +1,10 @@
 # SlopBrick calibration
 
+UseBrick is the sole customer-facing coherence and verification product.
+SlopBrick is its shipped scanner, current CLI, and evidence-producing front
+door. Memory, Lock, and Mend are capability names only; they do not create
+products, packages, commands, or calibration authority.
+
 This directory contains Corpus v1, CAL-001, v10.3 calibration/admission
 implementation, evidence, and historical plans. It is not the platform
 roadmap.
@@ -8,6 +13,9 @@ Current company sequencing lives in the root [roadmap](../../../../ROADMAP.md)
 and [execution ledger](../../../../docs/execution/README.md). The current
 SlopBrick release plan must link to the exact calibration decision/work item it
 depends on instead of treating every file in this directory as active.
+Volatile market evidence belongs in the dated [positioning research
+note](../../../../docs/research/usebrick-market-positioning-2026-07-19.md),
+not in calibration claims.
 
 ## Current truth (2026-07-18)
 
@@ -27,8 +35,9 @@ use does not admit v10.3 data or activate a rule.
   and **zero admitted units**.
 - CAL-001 completed the 10,000-row evaluation and recorded all 119 decisions
   with `applied: false` and `admitted: false`.
-- The repository owner is the only current product tester. VAL-001 is owner-
-  only; GTM-001 is parked with zero sessions and no recruitment authorization.
+- The repository owner is the only completed product tester. VAL-001 is owner-
+  only, completed external sessions remain zero, and this documentation does
+  not authorize outreach, scheduling, observation, or participant claims.
 
 ```text
 source permitted use != v10.3 gold admission

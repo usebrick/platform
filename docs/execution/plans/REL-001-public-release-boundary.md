@@ -4,7 +4,7 @@
 - **Priority:** 15
 - **Track / lane:** implementation / release
 - **Owner:** repository owner / release maintainer
-- **Updated:** 2026-07-18
+- **Updated:** 2026-07-19
 
 ## Outcome
 
@@ -19,6 +19,8 @@ recovery line was merged and pushed to `main` at
 `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6`, but no tag, GitHub Release, npm
 publish, or website deployment followed. The verified public package remains
 `slopbrick@0.43.0`, and the live site remains a separately controlled artifact.
+Local positioning, documentation, and website-source changes do not alter
+either public artifact and are not publication or deployment authority.
 
 ## Scope
 
@@ -39,6 +41,8 @@ publish, or website deployment followed. The verified public package remains
   permission.
 - Changing product code, detector state, calibration, or public claims before
   an exact owner decision.
+- Treating a local docs commit, website test, or website build as permission to
+  push, tag, publish, deploy, or announce a release.
 
 ## Dependencies
 
@@ -56,6 +60,8 @@ publish, or website deployment followed. The verified public package remains
 - The website path deploys only the named reviewed SHA.
 - Read-only post-action checks agree with the written disposition.
 - Local roadmap work remains schedulable while this plan waits.
+- Local documentation and website-source updates leave both public surfaces
+  unauthorized until their independent owner dispositions name exact SHAs.
 
 ## Execution steps
 

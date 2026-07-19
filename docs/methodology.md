@@ -1,5 +1,14 @@
 # SlopBrick Calibration Methodology
 
+> **Current product boundary:** UseBrick is the sole customer-facing coherence
+> and verification product. SlopBrick is the shipped scanner, CLI, and
+> evidence-producing front door. Memory, Lock, and Mend identify planned
+> capabilities and sequencing boundaries, not products, packages, or
+> authorization for new commands. See the [root roadmap](../ROADMAP.md) for
+> direction and the dated
+> [positioning research note](./research/usebrick-market-positioning-2026-07-19.md)
+> for volatile market evidence.
+
 > **Historical evidence notice (updated 2026-07-18):** The v10.1/v10.2 material in
 > this document describes exploratory or historical calibration, not an
 > admitted v10.3 evaluation corpus. The latest verified public release is

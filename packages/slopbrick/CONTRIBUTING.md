@@ -2,6 +2,12 @@
 
 Thanks for helping make SlopBrick more accurate, useful, and honest.
 
+UseBrick is the sole customer-facing coherence and verification product.
+SlopBrick is its shipped scanner, current CLI, embedded MCP server, and npm
+front door. Memory, Lock, and Mend are capability and sequencing names, not
+standalone products or package proposals. Current end-user examples use
+`npx slopbrick ...`.
+
 The highest-value contributions are:
 
 1. reproducible false-positive or false-negative reports;
@@ -167,6 +173,9 @@ is explicitly a dated evidence snapshot.
 - Keep explanations observable and actionable.
 - Never describe code quality, a GitHub repository's age, or a rule firing as
   proof of AI or human provenance.
+- Keep repository-local scan history distinct from endpoint-gated, opt-in
+  outbound usage reporting; do not collapse both controls into an absolute
+  telemetry or network claim.
 
 ## Calibration contributions
 

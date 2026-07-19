@@ -5,10 +5,18 @@
 > change independently; do not assume that naming a client means it
 > automatically discovers SlopBrick.
 
-The slopbrick Model Context Protocol (MCP) server speaks JSON-RPC
-2.0 over stdio. Start it with `slopbrick mcp` and connect your AI
-agent to it. The generated runtime registry below is the source of truth for
-the current tool set; do not maintain a separate hand-count in prose.
+SlopBrick is the shipped scanner, CLI, and embedded MCP server inside
+UseBrick, the sole customer-facing coherence and verification product. The MCP
+tools expose bounded repository-owned evidence so agents can reuse observed
+patterns and declared policy. Memory, Lock, and Mend are capability names, not
+separate products, packages, or MCP servers.
+
+The SlopBrick Model Context Protocol (MCP) server speaks JSON-RPC 2.0 over
+stdio. Start it with `npx slopbrick mcp` and connect your AI agent to it. The
+generated runtime registry below is the source of truth for the current tool
+set; do not maintain a separate hand-count in prose. AI-associated evidence is
+not code-quality or authorship authority: the 576,750-file v10.1 result is
+historical, and current v10.3 admission remains zero.
 
 <!-- slopbrick:mcp-registry:begin -->
 ## Runtime registry (generated)
@@ -80,6 +88,10 @@ In `~/.continue/config.json`:
 SlopBrick exposes an MCP server over stdio. Use the client's current official
 instructions for registering a command-based server; transport support is a
 client capability, not something SlopBrick can guarantee.
+
+Connecting the MCP server does not opt into outbound usage reporting. Local
+repository artifacts and history remain distinct from the endpoint-gated,
+per-run reporting flag documented in the package README.
 
 ## Tool reference
 
@@ -353,9 +365,9 @@ fast path.
 ### "Tool returns no results"
 
 - `slop_suggest` can inspect detected patterns without a declared constitution,
-  but `slopbrick init` is required if you want explicit project policy.
+  but `npx slopbrick init` is required if you want explicit project policy.
 - `slop_suggest_with_structure` requires `.slopbrick/structure.md` to
-  exist. Run `slopbrick scan` first.
+  exist. Run `npx slopbrick scan` first.
 - `slop_scan_file` requires a supported path and a scan path appropriate to its
   language. See the generated [language support
   matrix](./language-support-matrix.md); discovery does not imply a complete

@@ -1,7 +1,6 @@
 ---
-// Tools — the usebrick product ladder. Each card states whether the
-// layer is shipped, substrate, next, or later so roadmap work never
-// appears as a current product claim.
+// Tools — one UseBrick capability loop. Each card has an explicit
+// status so roadmap work never appears as a current product claim.
 
 import BrickLayout from './BrickLayout.astro';
 import productFacts from '../data/product-facts.json';
@@ -18,29 +17,35 @@ interface Tool {
 
 const tools: Tool[] = [
   {
-    name: 'slopbrick',
-    label: 'SCAN · SHIPPED',
-    desc: `The free front door for vibecoders: scan locally, inspect four scores, and act on file-level evidence. v${productFacts.published.version} publishes ${productFacts.published.ruleCount} rules in ${productFacts.published.categoryCount} categories.`,
+    name: 'SlopBrick',
+    label: 'OBSERVE · SHIPPED',
+    desc: `The shipped local scanner and current CLI. Published v${productFacts.published.version} carries ${productFacts.published.ruleCount} rules in ${productFacts.published.categoryCount} categories and emits repository-owned evidence.`,
     icon: 'cli',
     featured: true,
   },
   {
-    name: 'memorybrick',
-    label: 'REMEMBER · SUBSTRATE',
-    desc: 'Repository-owned observed facts, declared policy, health, and concise agent context. Existing artifacts and MCP access are the foundation; provenance and freshness are the next contract.',
+    name: 'Memory',
+    label: 'PRESERVE + COMPILE · PLANNED',
+    desc: 'A planned capability for preserving approved intent and compiling fresh, bounded context from repository-owned facts and provenance. It is not a shipped memory service.',
     icon: 'mcp',
   },
   {
-    name: 'lockbrick',
-    label: 'PROTECT · NEXT',
-    desc: 'The first paid team layer: fail new architectural drift and stale policy in CI without requiring a repository-wide cleanup first.',
+    name: 'Lock',
+    label: 'PREVENT DRIFT · PLANNED',
+    desc: 'A planned new-debt gate inside the current CLI: enforce only reviewed policy without demanding a repository-wide cleanup. Paid enforcement does not ship today.',
     icon: 'schemas',
   },
   {
-    name: 'mendbrick',
-    label: 'REPAIR · LATER',
-    desc: 'Deterministic, reversible repair for findings teams already trust. Pick is folded into init and policy authoring instead of marketed as another product.',
+    name: 'Mend',
+    label: 'REPAIR · PARKED',
+    desc: 'A parked capability for narrow, deterministic, reversible repairs with receipts. It waits for trusted detection, enforcement, and rollback proof.',
     icon: 'constitution',
+  },
+  {
+    name: 'Render Labs',
+    label: 'VERIFY RUNTIME · LABS',
+    desc: 'A benchmark-only experiment comparing source inspection with rendered and runtime evidence. It is not a browser product, package, shipped capability, or proven advantage.',
+    icon: 'mcp',
   },
 ];
 ---
@@ -49,12 +54,12 @@ const tools: Tool[] = [
   <div class="brick-wall tools__wall">
     <BrickLayout as="header" tone="raised" class="tools__head" span={2}>
       <div class="tools__head-inner">
-        <span class="tools__label">one product, a clear adoption ladder</span>
-        <h2 class="tools__title">Scan first. <span class="tools__title-accent">Protect what works.</span></h2>
+        <span class="tools__label">one product · capabilities, not separate products</span>
+        <h2 class="tools__title">One loop. <span class="tools__title-accent">Shared repository truth.</span></h2>
         <p class="tools__body">
-          SlopBrick is the shipped front door. Repository-owned memory makes findings contextual.
-          LockBrick turns trusted rules into team policy. MendBrick follows only with safe repair.
-          The roadmap never turns a planned layer into a shipped claim.
+          Observe → Preserve intent → Compile context → Prevent drift → Repair → Verify runtime.
+          SlopBrick ships today; Memory and Lock are planned, Mend is parked, and Render Labs is a bounded benchmark.
+          Policy authoring stays inside UseBrick onboarding rather than becoming another product.
         </p>
       </div>
     </BrickLayout>

@@ -1,8 +1,12 @@
 # SlopBrick scoring explained
 
-`slopbrick scan` reports four headline scores. They describe different aspects
-of the observed implementation; none proves whether a human or AI wrote the
-code.
+SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
+customer-facing coherence and verification product. Memory, Lock, and Mend are
+capability names, not separate products, packages, or score surfaces.
+
+`npx slopbrick scan` reports four headline scores. They describe different
+aspects of the observed implementation; none proves whether a human or AI
+wrote the code.
 
 ## The four scores
 
@@ -60,7 +64,7 @@ effective `security/*` findings:
 security = 100 / (1 + securityFindingCount / 5)
 ```
 
-The specialised `slopbrick security` command also exposes categorical risk and
+The specialised `npx slopbrick security` command also exposes categorical risk and
 its own strict gate. The numeric headline and categorical diagnostic answer
 related but different questions.
 
@@ -96,7 +100,7 @@ complete coverage is not release evidence.
 Run:
 
 ```bash
-slopbrick scan --explain-score
+npx slopbrick scan --explain-score
 ```
 
 to print the deterministic aggregate inputs behind the current report. The
@@ -125,6 +129,13 @@ The other three headline fields use higher-is-better bands:
 | below 40 | concerning |
 
 Band labels are summaries, not substitutes for findings and evidence.
+
+## Evidence authority
+
+AI association is not a code-quality label or authorship verdict. Historical
+v10.1 evidence covers 576,750 analysed files; it is not current v10.3 admission
+evidence, and v10.3 currently has zero admitted units. A score, band, or
+finding cannot widen that authority.
 
 ## Other score-like fields
 

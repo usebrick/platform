@@ -3,8 +3,9 @@
 **Find the visual, frontend, code, and repository-coherence problems that AI
 coding workflows amplify.**
 
-SlopBrick is the local scanner and front door to usebrick. It answers the
-vibecoder's first question:
+SlopBrick is the shipped scanner and CLI. It is also UseBrick's free local
+scanner, embedded MCP server, npm package, and acquisition front door. It
+answers a developer's first-scan question:
 
 > It works—but is it actually well built?
 
@@ -18,6 +19,18 @@ npm install -D slopbrick
 npx slopbrick init
 npx slopbrick scan
 ```
+
+## Product and capability boundary
+
+UseBrick is the sole customer-facing product and the wider repository-owned
+coherence and verification contract shared by developers, coding agents, and
+CI. SlopBrick observes, detects, explains, and emits evidence today.
+
+Memory, Lock, and Mend are internal capability and sequencing names. They are
+not standalone products or shipped packages, and they do not authorize a
+replacement CLI. Active direction lives in the root [UseBrick
+roadmap](../../ROADMAP.md); volatile market observations belong in the dated
+[positioning research note](../../docs/research/usebrick-market-positioning-2026-07-19.md).
 
 ## Release status
 
@@ -126,10 +139,11 @@ snapshot and does not implement core's `structure.schema.json` projection.
 - `structure.md` is a concise, agent-readable projection of the inventory and
   constitution.
 
-These files are the first practical layer of the planned MemoryBrick
-substrate. An AI tool does not discover them automatically: connect the MCP
-server, use the managed instruction snippets created by `slopbrick init`, or
-explicitly include the artifact in that tool's repository instructions.
+These files are the shipped substrate for the planned repository-memory
+capability. “Memory” is a capability boundary, not a separately shipped
+product. An AI tool does not discover the files automatically: connect the MCP
+server, use the managed instruction snippets created by `npx slopbrick init`,
+or explicitly include the artifact in that tool's repository instructions.
 
 See the [artifact contract](./docs/repository-structure.md).
 
@@ -158,7 +172,7 @@ npx slopbrick scan --baseline
 npx slopbrick ci --max-new-issues 0
 ```
 
-Use `--workspace <path>` for another project and `slopbrick --help` for the
+Use `--workspace <path>` for another project and `npx slopbrick --help` for the
 runtime-generated command reference. Do not rely on a hard-coded command count
 in documentation.
 
@@ -170,9 +184,9 @@ npx slopbrick lock      # install the pre-commit gate
 npx slopbrick watch
 ```
 
-These are current SlopBrick capabilities. **LockBrick** is the planned paid
-policy/governance layer; the name should not be used to imply that a separate
-LockBrick product already ships.
+These are current SlopBrick commands. The planned Lock capability is a future
+policy/governance boundary inside UseBrick; it is not a separate product or
+package and does not change what the current CLI ships.
 
 `scan --baseline` writes the score baseline and a separate durable finding
 baseline under `.slopbrick/cache/`. `ci --max-new-issues <n>` compares stable
@@ -209,7 +223,8 @@ are generated from the runtime registry in [the MCP guide](./docs/MCP.md).
 
 ## Local history and outbound reporting
 
-Two different mechanisms are intentionally separated:
+Repository-local scan history and opt-in outbound usage reporting are two
+different mechanisms and are intentionally separated:
 
 ### Local scan history: on by default
 

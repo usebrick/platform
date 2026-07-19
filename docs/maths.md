@@ -1,5 +1,13 @@
 # SlopBrick Mathematical Foundations
 
+> **Current product boundary:** UseBrick is the sole coherence and verification
+> product. SlopBrick is the shipped scanner and CLI that emits the evidence
+> described here. Memory, Lock, and Mend are roadmap capability names, not
+> products or packages. AI association is neither code-quality authority nor
+> authorship proof. Current direction lives in the [root roadmap](../ROADMAP.md);
+> volatile market evidence lives in the dated [positioning research
+> note](./research/usebrick-market-positioning-2026-07-19.md).
+
 > **Historical formula notice (2026-07-13):** The examples in this document
 > describe the earlier v0.37-era implementation. The current public score
 > contract is versioned `v2` and the canonical formulas are documented in

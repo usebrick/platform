@@ -3,20 +3,23 @@
 - **Status:** `draft`
 - **Priority:** 9
 - **Track / lane:** implementation / lock
-- **Owner:** SlopBrick and usebrick platform
-- **Updated:** 2026-07-18
+- **Owner:** SlopBrick and UseBrick platform
+- **Updated:** 2026-07-19
 
 ## Outcome
 
-The repository owner can prove that one class of verified new critical drift
-is blocked without cleaning all existing debt. This owner-only proof does not
-establish team adoption, willingness to pay, or package demand.
+Prove the first paid-workflow hypothesis inside the current `slopbrick` CLI:
+one class of verified new critical drift can be blocked without cleaning all
+existing debt. This owner-only proof does not establish team adoption,
+willingness to pay, or package demand.
 
 ## Current truth
 
 SlopBrick already has deterministic findings, constitution, diff, threshold,
-and baseline primitives. LockBrick is not a standalone package or paid product
-yet, and those primitives have not been proven as one team enforcement loop.
+and baseline primitives. The Lock capability is not shipped or packaged, and
+those primitives have not been proven as one team enforcement loop.
+The initial buyer hypothesis is AI-native teams and agencies with roughly
+5–100 developers, but no external workflow or price evidence exists.
 
 ## Scope
 
@@ -33,7 +36,7 @@ yet, and those primitives have not been proven as one team enforcement loop.
 
 - Extracting a new package, generic PR review, blocking on advisory/model-only
   findings, multi-repo governance, or replacing SAST.
-- Making MemoryBrick a hard dependency before its trust gate.
+- Making the Memory capability a hard dependency before its trust gate.
 
 ## Dependencies
 
@@ -52,6 +55,8 @@ yet, and those primitives have not been proven as one team enforcement loop.
   report false-block and waiver burden without participant claims.
 - Package extraction is decided only after the owner-side CLI validation and
   later external demand evidence; it is not assumed.
+- The result is labeled a paid-workflow hypothesis until real teams demonstrate
+  repeat use, acceptable waiver burden, and willingness to pay.
 
 ## Execution steps
 

@@ -1,22 +1,24 @@
 ---
 // CTASection — the last brick. The largest brick in the page.
-// "Lay the next brick" is the implicit ask. The user is being
-// invited to add usebrick to their codebase.
+// The current call to action is SlopBrick-first onboarding into
+// the wider UseBrick repository contract.
 import productFacts from '../data/product-facts.json';
 ---
 
 <section class="cta" id="install">
   <div class="brick brick--cta brick--accent">
-    <span class="cta__label">v{productFacts.published.version} published · the next brick</span>
+    <span class="cta__label">UseBrick coherence · SlopBrick v{productFacts.published.version} published</span>
     <h2 class="cta__title">
-      One <code class="cta__code">slopbrick.config.mjs</code>.<br />
-      Four <em class="cta__em">scores</em>. {productFacts.published.categoryCount} <em class="cta__em">categories</em>.
+      One repository contract.<br />{' '}
+      Start with the <em class="cta__em">shipped scanner</em>.
     </h2>
     <p class="cta__body">
-      <code class="cta__code">npm install -g slopbrick</code> &nbsp;·&nbsp;
-      scan a repo &nbsp;·&nbsp; ship <code class="cta__code">.slopbrick/</code> &nbsp;·&nbsp;
-      your CI can check it &nbsp;·&nbsp; your agents can consume it. MIT, no account required.
-      Local scan history is enabled by default; outbound usage reporting is opt-in.
+      SlopBrick is the shipped local scanner and current CLI.
+      Install with <code class="cta__code">npm install -g slopbrick</code>, run
+      <code class="cta__code">slopbrick scan</code>, and keep reviewable evidence beside the code
+      for developers, coding agents, and CI. The published catalog has {productFacts.published.ruleCount}{' '}
+      rules in {productFacts.published.categoryCount} categories. MIT, no account required;
+      local scan history on by default; outbound reporting off by default and endpoint-gated.
     </p>
     <div class="cta__buttons">
       <button class="btn btn--primary" data-copy="npm install -g slopbrick" data-magnetic>
@@ -27,11 +29,12 @@ import productFacts from '../data/product-facts.json';
         </svg>
         <span>npm install -g slopbrick</span>
       </button>
-      <a class="btn" href="https://github.com/usebrick/platform" rel="noopener">
-        <svg class="btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57v-2.02C6.7 21.6 6.1 19.6 6.1 19.6c-.55-1.4-1.35-1.77-1.35-1.77-1.1-.75.08-.74.08-.74 1.22.08 1.86 1.25 1.86 1.25 1.08 1.85 2.84 1.32 3.53 1 .1-.78.42-1.32.77-1.62-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .31.22.7.83.58A12 12 0 0 0 12 .3z" />
+      <a class="btn" href="/docs">
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
         </svg>
-        <span>github</span>
+        <span>read the docs</span>
       </a>
     </div>
   </div>
