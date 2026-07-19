@@ -32,38 +32,38 @@
       "minItems": 32,
       "maxItems": 32,
       "prefixItems": [
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/any-density" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/console-debug-storm" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/fetch-default-overuse" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/state-default-overuse" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/tailwind-color-overuse" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/giant-component" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/multiple-components-per-file" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/magic-numbers" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/printf-debug" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "dead/dead-branch" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "java/suspicious-implementation" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/gap-monopoly" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/spacing-grid" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/boundary-violation" } } },
-        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/heaps-deviation" } } },
-        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/math-variable-name-entropy" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/reactive-hook-soup" } } },
-        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/zipf-slope-anomaly" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/zombie-state" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "perf/css-bloat" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "product/terminology-drift" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rb/n-plus-one-query" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/stringly-typed" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/unwrap-in-production" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/dangerous-cors" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/fail-open-auth" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "test/duplicate-setup" } } },
-        { "type": "object", "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "typo/math-button-label-uniformity" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/arbitrary-escape" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/inline-style-dominance" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/radius-scale-violation" } } },
-        { "type": "object", "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/spacing-scale-violation" } } }
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/any-density" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/console-debug-storm" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/fetch-default-overuse" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/state-default-overuse" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "ai/tailwind-color-overuse" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/giant-component" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "component/multiple-components-per-file" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/magic-numbers" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "cpp/printf-debug" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "dead/dead-branch" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "java/suspicious-implementation" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/gap-monopoly" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "layout/spacing-grid" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/boundary-violation" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/heaps-deviation" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/math-variable-name-entropy" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/reactive-hook-soup" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "logic/zipf-slope-anomaly" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "logic/zombie-state" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "perf/css-bloat" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "product/terminology-drift" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rb/n-plus-one-query" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/stringly-typed" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "rust/unwrap-in-production" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/dangerous-cors" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "security/fail-open-auth" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "test/duplicate-setup" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/statisticalRow", "properties": { "ruleId": { "const": "typo/math-button-label-uniformity" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/arbitrary-escape" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/inline-style-dominance" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/radius-scale-violation" } } },
+        { "type": "object", "additionalProperties": false, "patternProperties": { "^(evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true }, "$ref": "#/$defs/contextualRow", "properties": { "ruleId": { "const": "visual/spacing-scale-violation" } } }
       ],
       "items": false
     },
@@ -150,12 +150,10 @@
       "allOf": [
         {
           "if": {
-            "type": "object",
             "properties": { "measurementStatus": { "const": "not-requested-owner-capacity" } },
             "required": ["measurementStatus"]
           },
           "then": {
-            "type": "object",
             "properties": {
               "sampleCounts": { "$ref": "#/$defs/zeroSampleCounts" },
               "runtimeOutcome": { "const": "quality-candidate-default-off" },
@@ -165,15 +163,12 @@
               "repairSafety": { "const": "no-safe-repair" }
             },
             "not": {
-              "type": "object",
               "anyOf": [
                 {
-                  "type": "object",
                   "properties": { "uncertainty": true },
                   "required": ["uncertainty"]
                 },
                 {
-                  "type": "object",
                   "properties": { "metricsRowSha256": true },
                   "required": ["metricsRowSha256"]
                 }
@@ -183,12 +178,10 @@
         },
         {
           "if": {
-            "type": "object",
             "properties": { "measurementStatus": { "const": "measured" } },
             "required": ["measurementStatus"]
           },
           "then": {
-            "type": "object",
             "required": ["metricsRowSha256"],
             "properties": {
               "metricsRowSha256": { "$ref": "#/$defs/sha256" },
@@ -199,12 +192,10 @@
             "allOf": [
               {
                 "if": {
-                  "type": "object",
                   "properties": { "runtimeOutcome": { "const": "default-on" } },
                   "required": ["runtimeOutcome"]
                 },
                 "then": {
-                  "type": "object",
                   "properties": {
                     "enabledByDefault": { "const": true },
                     "scoreEligible": { "const": true },
@@ -212,7 +203,6 @@
                   }
                 },
                 "else": {
-                  "type": "object",
                   "properties": {
                     "enabledByDefault": { "const": false },
                     "scoreEligible": { "const": false },
@@ -222,25 +212,23 @@
               },
               {
                 "if": {
-                  "type": "object",
                   "properties": { "runtimeOutcome": { "const": "insufficient-evidence" } },
                   "required": ["runtimeOutcome"]
                 },
                 "then": {
-                  "type": "object",
                   "not": {
-                    "type": "object",
                     "properties": { "uncertainty": true },
                     "required": ["uncertainty"]
                   }
                 },
                 "else": {
-                  "type": "object",
                   "required": ["uncertainty"],
                   "properties": {
                     "uncertainty": { "$ref": "#/$defs/uncertainty" },
                     "sampleCounts": {
                       "type": "object",
+                      "additionalProperties": false,
+                      "patternProperties": { "^cannotDetermine$": true },
                       "properties": {
                         "findings": { "type": "integer", "minimum": 1 },
                         "controls": { "type": "integer", "minimum": 1 }
@@ -254,12 +242,10 @@
         },
         {
           "if": {
-            "type": "object",
             "properties": { "evidenceClass": { "const": "statistical-review-utility" } },
             "required": ["evidenceClass"]
           },
           "then": {
-            "type": "object",
             "properties": {
               "runtimeOutcome": {
                 "enum": [
@@ -280,6 +266,8 @@
         { "$ref": "#/$defs/row" },
         {
           "type": "object",
+          "additionalProperties": false,
+          "patternProperties": { "^(ruleId|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true },
           "properties": {
             "evidenceClass": { "const": "contextual-quality" }
           }
@@ -287,11 +275,15 @@
         {
           "if": {
             "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^(ruleId|evidenceClass|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true },
             "properties": { "measurementStatus": { "const": "measured" } },
             "required": ["measurementStatus"]
           },
           "then": {
             "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^(ruleId|evidenceClass|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|metricsRowSha256)$": true },
             "properties": { "repairSafety": { "const": "finding-bound-only" } }
           }
         }
@@ -302,6 +294,8 @@
         { "$ref": "#/$defs/row" },
         {
           "type": "object",
+          "additionalProperties": false,
+          "patternProperties": { "^(ruleId|measurementStatus|sampleCounts|uncertainty|runtimeOutcome|enabledByDefault|scoreEligible|gateEligible|repairSafety|metricsRowSha256)$": true },
           "properties": {
             "evidenceClass": { "const": "statistical-review-utility" }
           }
