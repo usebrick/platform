@@ -46,7 +46,20 @@ const IMPORT_RE = /import\s+.*?from\s+['"]([^'"]+)['"]/g;
 const REQUIRE_RE = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 const MIN_CONSOLE_CALLS = 10;
+const CLUSTER_WINDOW_LINES = 30;
+const CLUSTER_MIN_CALLS = 5;
+const CONSOLE_LOG_RE = /\bconsole\s*\.\s*log\s*\(/g;
 const MIN_FILE_SIZE = 1000;  // don't fire on tiny files
+
+function maxCallsInInclusiveWindow(lines: readonly number[], windowSize: number): number {
+  let start = 0;
+  let maximum = 0;
+  for (let end = 0; end < lines.length; end += 1) {
+    while (lines[end]! - lines[start]! > windowSize) start += 1;
+    maximum = Math.max(maximum, end - start + 1);
+  }
+  return maximum;
+}
 
 export const aiConsoleDebugStormRule = createRule<RuleContext>({
   id: 'ai/console-debug-storm',
@@ -67,12 +80,6 @@ export const aiConsoleDebugStormRule = createRule<RuleContext>({
     const source = facts.v2._source ?? '';
     if (!source || source.length < MIN_FILE_SIZE) return [];
 
-    const consoleCount = (source.match(CONSOLE_RE) || []).length;
-    const debuggerCount = (source.match(DEBUGGER_RE) || []).length;
-    const totalDebug = consoleCount + debuggerCount;
-
-    if (totalDebug < MIN_CONSOLE_CALLS) return [];
-
     // Check for structured logger
     const imports = new Set<string>();
     for (const m of source.matchAll(IMPORT_RE)) {
@@ -86,6 +93,16 @@ export const aiConsoleDebugStormRule = createRule<RuleContext>({
     );
     if (hasLogger) return [];
 
+    const consoleCount = (source.match(CONSOLE_RE) || []).length;
+    const debuggerCount = (source.match(DEBUGGER_RE) || []).length;
+    const totalDebug = consoleCount + debuggerCount;
+    const consoleLogLines = [...source.matchAll(CONSOLE_LOG_RE)]
+      .map((match) => source.slice(0, match.index ?? 0).split('\n').length)
+      .sort((left, right) => left - right);
+    const clusteredLogs = maxCallsInInclusiveWindow(consoleLogLines, CLUSTER_WINDOW_LINES);
+
+    if (totalDebug < MIN_CONSOLE_CALLS && clusteredLogs < CLUSTER_MIN_CALLS) return [];
+
     return [
       {
         ruleId: 'ai/console-debug-storm',
@@ -94,7 +111,8 @@ export const aiConsoleDebugStormRule = createRule<RuleContext>({
         aiSpecific: true,
         message:
           `${totalDebug} debug statements (${consoleCount} console.* + ${debuggerCount} debugger), ` +
-          `no structured logger import. ` +
+          'with a peak concentration of ' + clusteredLogs + ' console.log calls in a ' +
+          `${CLUSTER_WINDOW_LINES}-line inclusive window and no structured logger import. ` +
           `Review whether debug output is bounded, actionable, and appropriate for the ` +
           `target environment before committing.`,
         line: 1,

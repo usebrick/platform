@@ -47,6 +47,36 @@ function buildStormSource(prefix = ''): string {
   return lines.join('\n');
 }
 
+function fiveClusteredLogs(): string[] {
+  const callOffsets = new Set([0, 7, 14, 21, 30]);
+  return Array.from({ length: 31 }, (_, offset) => (
+    callOffsets.has(offset)
+      ? `console.log('cluster ${offset}', input);`
+      : 'void input;'
+  ));
+}
+
+function fiveLogsSeparatedBy(lineDistance: number): string[] {
+  const lines: string[] = [];
+  for (let index = 0; index < 5; index += 1) {
+    if (index > 0) {
+      for (let offset = 1; offset < lineDistance; offset += 1) lines.push('void input;');
+    }
+    lines.push(`console.log('spread ${index}', input);`);
+  }
+  return lines;
+}
+
+function buildPaddedSource(bodyLines: readonly string[]): string {
+  return [
+    'export function doWork(input: number): number {',
+    ...bodyLines.map((line) => `  ${line}`),
+    '  return input * 2;',
+    '}',
+    `/* ${'production-sized calibration padding '.repeat(40)} */`,
+  ].join('\n');
+}
+
 describe('ai/console-debug-storm', () => {
   it('flags >=10 console.* calls with no structured logger', async () => {
     const source = buildStormSource();
@@ -80,5 +110,22 @@ describe('ai/console-debug-storm', () => {
     const source = buildStormSource();
     const issues = await runRule(source, 'service.test.ts');
     expect(issues).toHaveLength(0);
+  });
+
+  it('flags five console.log calls inside a thirty-line inclusive window', async () => {
+    const source = buildPaddedSource(fiveClusteredLogs());
+    expect(source.length).toBeGreaterThan(1000);
+    expect((await runRule(source)).map((issue) => issue.ruleId)).toEqual([
+      'ai/console-debug-storm',
+    ]);
+  });
+
+  it('does not port clustering through canonical guards', async () => {
+    const clustered = buildPaddedSource(fiveClusteredLogs());
+    expect(await runRule(fiveClusteredLogs().join('\n'))).toEqual([]);
+    expect(await runRule(clustered, 'service.test.ts')).toEqual([]);
+    expect(await runRule(clustered, 'logger.ts')).toEqual([]);
+    expect(await runRule(`import pino from 'pino';\n${clustered}`)).toEqual([]);
+    expect(await runRule(buildPaddedSource(fiveLogsSeparatedBy(31)))).toEqual([]);
   });
 });
