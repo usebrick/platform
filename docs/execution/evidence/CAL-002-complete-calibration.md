@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-19
-- **State:** `in_progress` implementation checkpoint at revision 29
-- **Scope:** CAL-002 progressive authority Tasks 1–5; no protected owner
+- **State:** `in_progress` implementation checkpoint at revision 30
+- **Scope:** CAL-002 progressive authority Tasks 1–8; no protected owner
   workflow, runtime policy application, admission, or release is evidenced by
   this receipt.
 
@@ -58,18 +58,39 @@
 - The integrated Task 4 + Task 5 focused matrix passes 101/101 on exact Node
   22.22.3 and 24.15.0 runtimes with package typecheck on both. Two independent
   final reviews approved the corrected Task 5 slice.
-- No authority proposal, private cohort, quality receipt, parity receipt,
-  supersession receipt, runtime policy, rule activation, score, source,
+- Task 6 is checkpointed through `7b061b695`; its main integration starts at
+  `a60bd50cb`. It ports canonical CTE coverage with a forward linear parser,
+  rejects CTE-shaped prose and long incomplete chains, retains parameter and
+  comment guards, and covers terminal `SELECT`, `INSERT`, `UPDATE`, and
+  `DELETE`. The corrected focused matrix passes 31/31 and independent review
+  approved it after performance and semantic corrections.
+- Task 7 is checkpointed through `93257dcab`; its main integration starts at
+  `9b8c908ca`. It ports five `console.log` calls in a true 30-line inclusive
+  span, preserves minimum-size, test-file, logger-file, structured-logger, and
+  exact 10/9 total-debug behavior, and rejects the exact 31-line span. The
+  corrected focused matrix passes 21/21 and independent review approved it at
+  99% confidence.
+- Task 8 is checkpointed at `e8e62b779`. It leaves the declaration-ratio
+  detector and 0.30 threshold unchanged, rejects old line-denominator reach,
+  retains annotation/assertion/generic detection and the TypeScript guard,
+  and replaces public finding text with quality-only framing. Its focused
+  matrix passes 17/17 and independent review approved it at 98% confidence.
+- The integrated Tasks 6–8 matrix passes 51/51 on exact Node 22.22.3 and
+  24.15.0 runtimes with package typecheck on both. Test-built parity receipts
+  use synthetic valid commit SHAs; no durable actual-commit parity or
+  supersession receipt was written, and all old rule IDs remain runnable.
+- No authority proposal, private cohort, durable quality/parity/supersession
+  receipt, runtime policy, rule activation, score, source,
   baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 29.
+  deployment, tag, publish, push, or acquired data changed in revision 30.
   Local application remains separate from those release-boundary decisions.
 
 ## Next evidence
 
-The next implementation evidence is the parallel-safe Tasks 6–8 parity wave:
-SQL CTE coverage, console five-in-thirty clustering guards, and declaration-
-ratio `any` density without the rejected line-based heuristic. Each migration
-must pass its fixed Task 5 parity cases, bind its own implementation commit,
-remain non-admitting, and avoid generating protected owner artifacts. The
-following wave adds the claim-matched transfer oracles before any complete
-matrix application can be proposed.
+The next implementation evidence is Task 9's shared transfer-oracle fixture
+contract and complete C++/Rust deterministic cases for `cpp/c-style-cast`,
+`cpp/raw-new-delete`, and `rust/todo-macro`. The fixture validator must reject
+source-bearing durable projections, absolute paths, duplicate identities,
+incomplete five-family controls, and language-extension drift. This remains
+evidence preparation only: no detector activation, current-policy application,
+owner artifact, or admission can follow from the Task 9 test commit alone.

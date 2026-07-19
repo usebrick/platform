@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 29,
+  "revision": 30,
   "updatedAt": "2026-07-19",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Execute Tasks 6–8 in parallel: SQL CTE, console clustering, and declaration-ratio any parity migrations.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/sql-construction.test.ts tests/rules/db/sql-concat.test.ts tests/calibration/cal-002-sql-parity.test.ts tests/rules/ai/console-debug-storm.test.ts tests/rules/math-console-log-storm.test.ts tests/calibration/cal-002-console-parity.test.ts tests/rules/ai/any-density.test.ts tests/calibration/cal-002-any-parity.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Red-test Task 9's shared transfer-oracle contract and complete C++/Rust deterministic cases.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-cpp-rust.test.ts tests/rules/cpp/cpp-rules.test.ts tests/rules/rust/todo-macro.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Execute Tasks 6–8 in parallel: SQL CTE, console clustering, and declaration-ratio any parity migrations.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/sql-construction.test.ts tests/rules/db/sql-concat.test.ts tests/calibration/cal-002-sql-parity.test.ts tests/rules/ai/console-debug-storm.test.ts tests/rules/math-console-log-storm.test.ts tests/calibration/cal-002-console-parity.test.ts tests/rules/ai/any-density.test.ts tests/calibration/cal-002-any-parity.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Red-test Task 9's shared transfer-oracle contract and complete C++/Rust deterministic cases.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-transfer-oracles-cpp-rust.test.ts tests/rules/cpp/cpp-rules.test.ts tests/rules/rust/todo-macro.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

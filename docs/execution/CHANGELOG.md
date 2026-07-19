@@ -3,6 +3,41 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 30 — 2026-07-19
+
+### Changed
+
+- Recorded CAL-002 progressive authority Tasks 1–8 as implementation-
+  checkpointed and independently approved through `e8e62b779`.
+- Recorded Task 6's bounded linear SQL CTE parser and canonical parity fixture
+  after corrections for pathological backtracking, broad prose, terminal
+  `SELECT` without `FROM`, multiple CTEs, and all four approved terminal DML
+  forms.
+- Recorded Task 7's five-`console.log` clustering in a true 30-line inclusive
+  span after its physical-line boundary correction, while retaining the
+  production-sized exact 10/9 total-debug behavior and canonical guards.
+- Recorded Task 8's unchanged declaration-ratio detector and threshold,
+  explicit rejection of the old line denominator, retained annotation/
+  assertion/generic reach, and quality-only public framing.
+- Advanced the next bounded action to Task 9's shared transfer-oracle fixture
+  contract and complete C++/Rust deterministic cases.
+- Preserved active `SB-UX-001` and `CAL-002` at implementation WIP `2/2`.
+  The workspace rule implementations changed as specified, but no default
+  state, score, baseline, current policy, owner state, application, admission,
+  release, deployment, tag, publish, or push changed.
+
+### Evidence
+
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/plans/CAL-002-complete-calibration.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- Task 6 passes 31 focused tests, Task 7 passes 21, and Task 8 passes 17. The
+  integrated Tasks 6–8 matrix passes 51/51 on exact Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both runtimes.
+- The parity receipts produced in tests use synthetic valid commit SHAs; no
+  durable actual-commit parity or supersession receipt was written, and the
+  old rule IDs remain runnable pending a later atomic policy application.
+
 ## Revision 29 — 2026-07-19
 
 ### Changed
