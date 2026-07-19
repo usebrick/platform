@@ -48,6 +48,7 @@ const LABEL_BY_KEY: Readonly<Record<string, CAL002ReviewLabel>> = {
 };
 const DISPLAY_SOURCE_BYTE_LIMIT = 16 * 1024;
 const IMPLEMENTATION_SHA_ENV = 'CAL002_REVIEW_IMPLEMENTATION_COMMIT_SHA';
+const LINE_WINDOW_LOCATOR = /^window:[a-f0-9]{64}$/u;
 
 interface Arguments {
   readonly command: 'review-quality';
@@ -230,6 +231,13 @@ function safeDisplayedSource(source: string): string {
     : `${neutralized}${neutralized.endsWith('\n') ? '' : '\n'}`;
 }
 
+function safeLineWindowLocator(value: unknown): string {
+  if (typeof value !== 'string' || !LINE_WINDOW_LOCATOR.test(value)) {
+    throw new Error('CAL-002 lineWindowLocator must be window: followed by 64 lowercase hexadecimal characters');
+  }
+  return value;
+}
+
 function sourceReader(
   args: Arguments,
   assignment: CAL002QualityAssignment,
@@ -281,6 +289,27 @@ async function resumeCompletedReview(args: Arguments, state: CAL002ReviewState):
   });
 }
 
+async function recoverInterruptedCompletion(args: Arguments, state: CAL002ReviewState): Promise<boolean> {
+  let receipt;
+  try {
+    receipt = await readReviewReceipt({ root: args.root, relativePath: args.receipt });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw error;
+  }
+  const completedState: CAL002ReviewState = { ...state, status: 'completed' };
+  const verified = verifyCompletedCAL002ReviewReceipt({ state: completedState, receipt });
+  await writeReviewState({ root: args.root, relativePath: args.state, state: completedState });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    ...progress(completedState),
+    ...verified,
+  });
+  return true;
+}
+
 async function reviewQuality(args: Arguments): Promise<void> {
   const assignmentValue = await readCanonicalArtifact({ root: args.root, relativePath: args.assignment, label: 'CAL-002 assignment' });
   const assignment = qualityAssignment(assignmentValue);
@@ -301,6 +330,7 @@ async function reviewQuality(args: Arguments): Promise<void> {
     await resumeCompletedReview(args, state);
     return;
   }
+  if (await recoverInterruptedCompletion(args, state)) return;
   const readSource = sourceReader(args, assignment, batch, sources);
   const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
   const lines = input[Symbol.asyncIterator]();
@@ -309,12 +339,13 @@ async function reviewQuality(args: Arguments): Promise<void> {
       const reviewId = nextCAL002ReviewId(state);
       if (reviewId === undefined) break;
       const observation = batch.find((row) => row.reviewId === reviewId)!;
+      const lineWindowLocator = safeLineWindowLocator(observation.lineWindowLocator);
       const sourceText = await readSource(observation);
       process.stderr.write([
         `Review ${reviewId}`,
         `ruleId: ${observation.ruleId}`,
         `evidenceClass: ${observation.evidenceClass}`,
-        `lineWindowLocator: ${observation.lineWindowLocator}`,
+        `lineWindowLocator: ${lineWindowLocator}`,
         `Source context (SHA-256 verified; maximum ${DISPLAY_SOURCE_BYTE_LIMIT} bytes):`,
         safeDisplayedSource(sourceText),
       ].join('\n'));

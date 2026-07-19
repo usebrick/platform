@@ -48,7 +48,10 @@ function writeCanonical(path: string, value: unknown): void {
   writeFileSync(path, canonicalArtifact(value).json, { mode: 0o600 });
 }
 
-function fixture(root: string): { readonly args: readonly string[]; readonly assignment: Record<string, unknown> } {
+function fixture(
+  root: string,
+  options: { readonly lineWindowLocatorB?: string } = {},
+): { readonly args: readonly string[]; readonly assignment: Record<string, unknown> } {
   mkdirSync(join(root, 'sources'), { recursive: true, mode: 0o700 });
   const sourceA = 'export const alpha = 1;\n';
   const sourceB = 'export const beta = 2;\n';
@@ -59,7 +62,7 @@ function fixture(root: string): { readonly args: readonly string[]; readonly ass
     { reviewId: REVIEW_A, ruleId: 'layout/gap-monopoly', evidenceClass: 'contextual-quality', role: 'control', unitId: 'sources/a.ts' },
   ] as const;
   const blindedRows = [
-    { reviewId: REVIEW_B, ruleId: 'layout/gap-monopoly', evidenceClass: 'contextual-quality', sourceIdentitySha256: sha256(sourceB), lineWindowLocator: `window:${'b'.repeat(64)}` },
+    { reviewId: REVIEW_B, ruleId: 'layout/gap-monopoly', evidenceClass: 'contextual-quality', sourceIdentitySha256: sha256(sourceB), lineWindowLocator: options.lineWindowLocatorB ?? `window:${'b'.repeat(64)}` },
     { reviewId: REVIEW_A, ruleId: 'layout/gap-monopoly', evidenceClass: 'contextual-quality', sourceIdentitySha256: sha256(sourceA), lineWindowLocator: `window:${'a'.repeat(64)}` },
   ] as const;
   const blindedBatchSha256 = canonicalArtifact(blindedRows).sha256;
@@ -235,6 +238,20 @@ describe('CAL-002 review-quality CLI', () => {
     expect(readFileSync(join(root, 'review-receipt.json'), 'utf8')).toBe(receiptBytes);
   });
 
+  it('rejects an unsafe line-window locator before any raw control reaches stderr', () => {
+    const root = temporaryRoot();
+    const maliciousLocator = `window:${'b'.repeat(64)}\u001b[31m\t\u0085`;
+    const result = run(fixture(root, { lineWindowLocatorB: maliciousLocator }).args, 'q\n');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/lineWindowLocator.*window.*lowercase.*hex/i);
+    expect(result.stderr).not.toContain(maliciousLocator);
+    expect(result.stderr).not.toContain('\u001b');
+    expect(result.stderr).not.toContain('\t');
+    expect(result.stderr.replaceAll('\n', '')).not.toMatch(/[\x00-\x1f\x7f-\x9f]/u);
+    expect(() => readFileSync(join(root, 'review-state.json'))).toThrow();
+  });
+
   it('accepts the plan interface, resolves source transiently by hash, and emits bounded claim-matched safe context', () => {
     const workspace = temporaryRoot();
     const corpusRoot = join(workspace, 'corpus');
@@ -290,28 +307,58 @@ describe('CAL-002 review-quality CLI', () => {
     expect(persisted).not.toMatch(/(?:source|path|visible|NEVER-DISPLAYED-TAIL)/i);
   });
 
-  it('recovers an interrupted completion from an exact receipt and rejects a different immutable receipt', () => {
+  it('recovers an interrupted completion from a receipt created by a different implementation SHA', () => {
     const recoveredRoot = temporaryRoot();
     const recoveredFixture = fixture(recoveredRoot);
     const state = fullyLabeledState(recoveredFixture.assignment);
-    const completed = completeCAL002Review({ state, reviewerAuthority: 'repository-owner', implementationCommitSha });
+    const receiptImplementationCommitSha = 'a'.repeat(40);
+    const completed = completeCAL002Review({
+      state,
+      reviewerAuthority: 'repository-owner',
+      implementationCommitSha: receiptImplementationCommitSha,
+    });
     writeCanonical(join(recoveredRoot, 'review-state.json'), state);
     writeCanonical(join(recoveredRoot, 'review-receipt.json'), completed.receipt);
+    const receiptBytes = readFileSync(join(recoveredRoot, 'review-receipt.json'), 'utf8');
     const recovered = run(recoveredFixture.args, '');
     expect(recovered.status).toBe(0);
-    expect(JSON.parse(recovered.stdout)).toMatchObject({ ok: true, status: 'completed', stateSha256: completed.stateSha256 });
+    expect(JSON.parse(recovered.stdout)).toMatchObject({
+      ok: true,
+      status: 'completed',
+      stateSha256: completed.stateSha256,
+      receiptSha256: completed.receiptSha256,
+    });
     expect(JSON.parse(readFileSync(join(recoveredRoot, 'review-state.json'), 'utf8'))).toEqual(completed.state);
+    expect(readFileSync(join(recoveredRoot, 'review-receipt.json'), 'utf8')).toBe(receiptBytes);
+    expect(completed.receipt.reviewImplementationCommitSha).toBe(receiptImplementationCommitSha);
+  });
 
+  it('rejects an immutable receipt whose state binding differs from the in-progress state', () => {
     const collisionRoot = temporaryRoot();
     const collisionFixture = fixture(collisionRoot);
     const collisionState = fullyLabeledState(collisionFixture.assignment);
     const collisionCompleted = completeCAL002Review({ state: collisionState, reviewerAuthority: 'repository-owner', implementationCommitSha });
     writeCanonical(join(collisionRoot, 'review-state.json'), collisionState);
-    writeCanonical(join(collisionRoot, 'review-receipt.json'), { ...collisionCompleted.receipt, reviewImplementationCommitSha: 'e'.repeat(40) });
+    writeCanonical(join(collisionRoot, 'review-receipt.json'), { ...collisionCompleted.receipt, stateSha256: '0'.repeat(64) });
     const collision = run(collisionFixture.args, '');
     expect(collision.status).toBe(2);
-    expect(collision.stderr).toMatch(/different|collision|immutable/i);
+    expect(collision.stderr).toMatch(/receipt.*match|match.*receipt/i);
     expect(JSON.parse(readFileSync(join(collisionRoot, 'review-state.json'), 'utf8'))).toEqual(collisionState);
+  });
+
+  it('rejects a malformed immutable receipt without mutating in-progress state', () => {
+    const root = temporaryRoot();
+    const built = fixture(root);
+    const state = fullyLabeledState(built.assignment);
+    writeCanonical(join(root, 'review-state.json'), state);
+    writeFileSync(join(root, 'review-receipt.json'), '{malformed', { mode: 0o600 });
+
+    const result = run(built.args, '');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/receipt.*valid JSON/i);
+    expect(JSON.parse(readFileSync(join(root, 'review-state.json'), 'utf8'))).toEqual(state);
+    expect(readFileSync(join(root, 'review-receipt.json'), 'utf8')).toBe('{malformed');
   });
 
   it('resumes a completed state only when its matching receipt is present and valid', () => {
