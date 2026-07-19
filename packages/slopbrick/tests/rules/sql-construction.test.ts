@@ -191,4 +191,14 @@ describe('security/sql-construction', () => {
     const issues = await runRule(source);
     expect(issues).toHaveLength(0);
   });
+
+  it.each([
+    ['parameter binding', 'connection.execute("SELECT * FROM users WHERE id = ?",[id]);'],
+    ['ORM lookup', 'prisma.user.findUnique({where:{id}});'],
+    ['commented interpolation', '// const q=`SELECT * FROM users WHERE id=${id}`;\nconst ok=true;'],
+    ['query builder', 'knex("users").where("id",id);'],
+    ['static SQL', 'const q="SELECT * FROM users WHERE active=true";'],
+  ])('keeps the CAL-002 %s control negative', async (_name, source) => {
+    expect(await runRule(source)).toEqual([]);
+  });
 });

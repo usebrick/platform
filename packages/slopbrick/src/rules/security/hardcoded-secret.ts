@@ -22,6 +22,7 @@
 // inlines the literal).
 
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
+import { maskJsComments } from '../../engine/source-lex';
 import { createRule } from '../rule';
 import { lineOfSource } from '../utils';
 
@@ -110,7 +111,7 @@ export const hardcodedSecretRule = createRule<RuleContext>({
     const issues: Issue[] = [];
     const source = facts.v2?._source;
     if (!source) return issues;
-    const hits = scanForSecrets(source);
+    const hits = scanForSecrets(maskJsComments(source));
     for (const hit of hits) {
       const literalPreview =
         hit.literal.length > 24 ? hit.literal.slice(0, 8) + '…' + hit.literal.slice(-4) : hit.literal;

@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-oracle-receipt-v2.schema.json",
+  "title": "CAL-002 deterministic oracle receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "authorityReceiptSha256",
+    "startingOracleReceiptSha256",
+    "implementationCommitSha",
+    "rows",
+    "counts",
+    "admitted"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-oracle-receipt-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "startingOracleReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "implementationCommitSha": { "$ref": "#/$defs/commitSha" },
+    "rows": {
+      "type": "array",
+      "minItems": 41,
+      "maxItems": 41,
+      "items": { "$ref": "#/$defs/row" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starting", "transferred", "passed", "failed"],
+      "properties": {
+        "starting": { "const": 32 },
+        "transferred": { "const": 9 },
+        "passed": { "type": "integer", "minimum": 0, "maximum": 41 },
+        "failed": { "type": "integer", "minimum": 0, "maximum": 41 }
+      }
+    },
+    "admitted": { "const": false }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+    },
+    "caseId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "observation": {
+      "enum": ["finding", "no-finding"]
+    },
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "reference", "positiveCaseIds", "negativeCaseIds"],
+      "properties": {
+        "authority": {
+          "enum": ["language-contract", "security-contract", "wcag-22", "repository-contract"]
+        },
+        "reference": { "type": "string", "minLength": 1 },
+        "positiveCaseIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/caseId" }
+        },
+        "negativeCaseIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/caseId" }
+        }
+      }
+    },
+    "caseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "expected", "observed", "sourceSha256"],
+      "properties": {
+        "caseId": { "$ref": "#/$defs/caseId" },
+        "expected": { "$ref": "#/$defs/observation" },
+        "observed": { "$ref": "#/$defs/observation" },
+        "sourceSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "fixtureControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "familyId", "contentSha256", "observed"],
+      "properties": {
+        "caseId": { "$ref": "#/$defs/caseId" },
+        "familyId": { "type": "string", "minLength": 1 },
+        "contentSha256": { "$ref": "#/$defs/sha256" },
+        "observed": { "$ref": "#/$defs/observation" }
+      }
+    },
+    "realSourceControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controlId",
+        "familyId",
+        "contentSha256",
+        "sourceBindingReceiptSha256",
+        "observed"
+      ],
+      "properties": {
+        "controlId": { "$ref": "#/$defs/sha256" },
+        "familyId": { "type": "string", "minLength": 1 },
+        "contentSha256": { "$ref": "#/$defs/sha256" },
+        "sourceBindingReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "observed": { "const": "no-finding" }
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ruleId",
+        "transferred",
+        "declaration",
+        "caseResults",
+        "fixtureControls",
+        "realSourceControls",
+        "status",
+        "outcome",
+        "failures",
+        "admitted"
+      ],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "transferred": { "type": "boolean" },
+        "declaration": { "$ref": "#/$defs/declaration" },
+        "caseResults": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/caseResult" }
+        },
+        "fixtureControls": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/fixtureControl" }
+        },
+        "realSourceControls": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/realSourceControl" }
+        },
+        "status": { "enum": ["passed", "failed"] },
+        "outcome": { "enum": ["default-on", "default-off"] },
+        "failures": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "admitted": { "const": false }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "passed" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "outcome": { "const": "default-on" },
+              "failures": { "type": "array", "maxItems": 0 },
+              "realSourceControls": { "type": "array", "minItems": 5 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "outcome": { "const": "default-off" },
+              "failures": { "type": "array", "minItems": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

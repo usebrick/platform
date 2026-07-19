@@ -129,6 +129,26 @@ describe('security/hardcoded-secret', () => {
     );
     expect(issues).toHaveLength(0);
   });
+
+  it.each([
+    ['environment reference', 'const token=process.env.TOKEN;'],
+    ['ordinary label', 'const label="token";'],
+    ['commented provider token', '// const token="ghp_abcdefghijklmnopqrstuvwxyz123456";\nconst ok=true;'],
+    ['test placeholder', 'const password="test";'],
+    ['secret reference', 'const config={ secretRef:"vault://service/key" };'],
+  ])('keeps the CAL-002 %s control negative', async (_name, source) => {
+    expect(await runRule(source, hardcodedSecretRule, makeConfig())).toEqual([]);
+  });
+
+  it('masks comments without shifting the line of a real secret', async () => {
+    const issues = await runRule(
+      '// const token="ghp_abcdefghijklmnopqrstuvwxyz123456";\nconst key="AKIAIOSFODNN7EXAMPLE";',
+      hardcodedSecretRule,
+      makeConfig(),
+    );
+    expect(issues.some((issue) => issue.message.includes('AWS'))).toBe(true);
+    expect(issues.find((issue) => issue.message.includes('AWS'))?.line).toBe(2);
+  });
 });
 
 // ---------------------------------------------------------------------------
