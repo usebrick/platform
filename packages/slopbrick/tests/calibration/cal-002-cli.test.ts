@@ -864,49 +864,66 @@ describe('CAL-002 authority CLI migration', () => {
     expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
   });
 
-  it('rejects case-folded authority destination aliases before lock, prompt, or mutation', () => {
-    const root = temporaryRoot();
-    originCatalogFixture(root);
-    const prior = priorOriginStateFixture(root);
-    const args = [
-      script,
-      'classify-authority',
-      '--root', root,
-      '--catalog', 'catalog.json',
-      '--prior-state', 'origin-state.json',
-      '--proposal-out', 'Authority-Proposal.json',
-      '--state-out', AUTHORITY_STATE_RELATIVE_PATH,
-      '--receipt-out', 'authority-proposal.json',
-    ];
+  it('rejects full-fold authority destination aliases before lock, prompt, or mutation', () => {
+    const aliases = [
+      ['ASCII case', 'Authority-Proposal.json', 'authority-proposal.json'],
+      ['sharp s', 'authority-proposal-\u00df.json', 'authority-proposal-SS.json'],
+      ['sigma', 'authority-proposal-\u03a3.json', 'authority-proposal-\u03c2.json'],
+    ] as const;
 
-    const result = run(args, '1\n', root);
+    for (const [label, proposalOut, receiptOut] of aliases) {
+      const root = temporaryRoot();
+      originCatalogFixture(root);
+      const prior = priorOriginStateFixture(root);
+      const args = [
+        script,
+        'classify-authority',
+        '--root', root,
+        '--catalog', 'catalog.json',
+        '--prior-state', 'origin-state.json',
+        '--proposal-out', proposalOut,
+        '--state-out', AUTHORITY_STATE_RELATIVE_PATH,
+        '--receipt-out', receiptOut,
+      ];
 
-    expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/alias|collision|distinct/i);
-    expect(result.stderr).not.toContain('CAL-002 authority batch:');
-    expect(existsSync(join(root, 'Authority-Proposal.json'))).toBe(false);
-    expect(existsSync(join(root, 'authority-proposal.json'))).toBe(false);
-    expect(existsSync(authorityStatePath(root))).toBe(false);
-    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
-    expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8'))).toBe(prior.sha256);
+      const result = run(args, '1\n', root);
+
+      expect(result.status, label).toBe(2);
+      expect(result.stderr, label).toMatch(/alias|collision|distinct/i);
+      expect(result.stderr, label).not.toContain('CAL-002 authority batch:');
+      expect(existsSync(join(root, proposalOut)), label).toBe(false);
+      expect(existsSync(join(root, receiptOut)), label).toBe(false);
+      expect(existsSync(authorityStatePath(root)), label).toBe(false);
+      expect(existsSync(join(root, '.slopbrick')), label).toBe(false);
+      expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8')), label).toBe(prior.sha256);
+    }
   });
 
-  it('rejects an artifact at the authority state writer-lock destination before mutation', () => {
-    const root = temporaryRoot();
-    originCatalogFixture(root);
-    priorOriginStateFixture(root);
-    const writerLock = '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock';
-    const args = authorityArgs(root).map((token, index, tokens) => (
-      tokens[index - 1] === '--proposal-out' ? writerLock : token
-    ));
+  it('rejects artifacts aliasing authority state lock destinations before mutation', () => {
+    const lockAliases = [
+      ['writer lock', '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock'],
+      ['full-fold session lock', '.slopbrick/calibration/cal-002/.authority-state-v2.json.se\u00dfion.lock'],
+    ] as const;
 
-    const result = run(args, '1\n', root);
+    for (const [label, proposalOut] of lockAliases) {
+      const root = temporaryRoot();
+      originCatalogFixture(root);
+      const prior = priorOriginStateFixture(root);
+      const args = authorityArgs(root).map((token, index, tokens) => (
+        tokens[index - 1] === '--proposal-out' ? proposalOut : token
+      ));
 
-    expect(result.status).toBe(2);
-    expect(result.stderr).toMatch(/reserved|alias|collision|distinct/i);
-    expect(result.stderr).not.toContain('CAL-002 authority batch:');
-    expect(existsSync(join(root, '.slopbrick'))).toBe(false);
-    expect(existsSync(join(root, 'authority-receipt.json'))).toBe(false);
+      const result = run(args, '1\n', root);
+
+      expect(result.status, label).toBe(2);
+      expect(result.stderr, label).toMatch(/reserved|alias|collision|distinct/i);
+      expect(result.stderr, label).not.toContain('CAL-002 authority batch:');
+      expect(existsSync(join(root, proposalOut)), label).toBe(false);
+      expect(existsSync(authorityStatePath(root)), label).toBe(false);
+      expect(existsSync(join(root, 'authority-receipt.json')), label).toBe(false);
+      expect(existsSync(join(root, '.slopbrick')), label).toBe(false);
+      expect(sha256(readFileSync(join(root, 'origin-state.json'), 'utf8')), label).toBe(prior.sha256);
+    }
   });
 
   it('rejects invalid UTF-8 prior v1 bytes before prompt or output mutation', () => {

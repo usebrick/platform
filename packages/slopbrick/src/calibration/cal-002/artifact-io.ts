@@ -82,16 +82,32 @@ function assertContained(root: string, candidate: string): void {
 }
 
 interface InspectedArtifactDestination extends ArtifactDestination {
-  readonly aliasKey: string;
+  readonly prospectiveSegments: readonly string[];
   readonly identity?: string;
   readonly reserved: boolean;
 }
 
-function prospectiveAliasKey(root: string, candidate: string): string {
+const PROSPECTIVE_ALIAS_COLLATOR = new Intl.Collator('und', {
+  usage: 'search',
+  sensitivity: 'base',
+  ignorePunctuation: false,
+  numeric: false,
+});
+
+function prospectivePathSegments(root: string, candidate: string): readonly string[] {
   return relative(root, candidate)
     .split(sep)
-    .map((segment) => segment.normalize('NFKC').toLocaleLowerCase('und').normalize('NFKC'))
-    .join('/');
+    .map((segment) => segment.normalize('NFKC'));
+}
+
+function prospectiveDestinationsAlias(
+  left: InspectedArtifactDestination,
+  right: InspectedArtifactDestination,
+): boolean {
+  if (left.prospectiveSegments.length !== right.prospectiveSegments.length) return false;
+  return left.prospectiveSegments.every((segment, index) => (
+    PROSPECTIVE_ALIAS_COLLATOR.compare(segment, right.prospectiveSegments[index]!) === 0
+  ));
 }
 
 async function inspectArtifactDestination(
@@ -130,7 +146,7 @@ async function inspectArtifactDestination(
   }
   return {
     ...destination,
-    aliasKey: prospectiveAliasKey(root, candidate),
+    prospectiveSegments: prospectivePathSegments(root, candidate),
     ...(identity === undefined ? {} : { identity }),
     reserved,
   };
@@ -163,7 +179,7 @@ export async function assertDistinctArtifactDestinations(input: {
     for (let rightIndex = leftIndex + 1; rightIndex < destinations.length; rightIndex += 1) {
       const right = destinations[rightIndex]!;
       if (left.reserved && right.reserved) continue;
-      const sameProspectiveDestination = left.aliasKey === right.aliasKey;
+      const sameProspectiveDestination = prospectiveDestinationsAlias(left, right);
       const sameExistingIdentity = left.identity !== undefined && left.identity === right.identity;
       if (!sameProspectiveDestination && !sameExistingIdentity) continue;
       const reserved = left.reserved || right.reserved ? ' reserved' : '';

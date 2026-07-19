@@ -338,24 +338,23 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
 
   it('rejects case-folded and Unicode-normalized prospective aliases without creating parents', async () => {
     const root = await temporaryRoot();
+    const aliases = [
+      ['case', 'Authority-Receipt.json', 'authority-receipt.json'],
+      ['unicode', 'caf\u00e9.json', 'cafe\u0301.json'],
+      ['sharp-s', 'proposal-\u00df.json', 'proposal-SS.json'],
+      ['sigma', 'proposal-\u03a3.json', 'proposal-\u03c2.json'],
+    ] as const;
 
-    await expect(assertDistinctArtifactDestinations({
-      root,
-      artifacts: [
-        { relativePath: 'case/Authority-Receipt.json', label: 'first receipt' },
-        { relativePath: 'case/authority-receipt.json', label: 'second receipt' },
-      ],
-    })).rejects.toThrow(/alias|collision|distinct/i);
-    await expect(assertDistinctArtifactDestinations({
-      root,
-      artifacts: [
-        { relativePath: 'unicode/caf\u00e9.json', label: 'composed receipt' },
-        { relativePath: 'unicode/cafe\u0301.json', label: 'decomposed receipt' },
-      ],
-    })).rejects.toThrow(/alias|collision|distinct/i);
-
-    await expect(lstat(join(root, 'case'))).rejects.toMatchObject({ code: 'ENOENT' });
-    await expect(lstat(join(root, 'unicode'))).rejects.toMatchObject({ code: 'ENOENT' });
+    for (const [directory, first, second] of aliases) {
+      await expect(assertDistinctArtifactDestinations({
+        root,
+        artifacts: [
+          { relativePath: join(directory, first), label: 'first receipt' },
+          { relativePath: join(directory, second), label: 'second receipt' },
+        ],
+      })).rejects.toThrow(/alias|collision|distinct/i);
+      await expect(lstat(join(root, directory))).rejects.toMatchObject({ code: 'ENOENT' });
+    }
   });
 
   it('rejects existing leaves with the same physical identity', async () => {
@@ -379,6 +378,7 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
     const lockArtifacts = [
       '.slopbrick/calibration/cal-002/.authority-state-v2.json.lock',
       '.slopbrick/calibration/cal-002/.authority-state-v2.json.session.lock',
+      '.slopbrick/calibration/cal-002/.authority-state-v2.json.se\u00dfion.lock',
     ];
 
     for (const proposal of lockArtifacts) {
