@@ -31,6 +31,7 @@ import {
   type CAL002RealSourceControlInputV2,
   type CAL002TransferOracleObservationV2,
 } from '../../src/calibration/cal-002/oracles-v2';
+import { assertCAL002OracleReceiptV2ForMatrix } from '../../src/calibration/cal-002/matrix-v2';
 import { CAL001_FROZEN_INPUT_HASHES } from '../../src/calibration/corpus-v1/calibration-inputs';
 import { reconcileCorpusV1SourceRows } from '../../src/calibration/corpus-v1/source-binding';
 import {
@@ -261,6 +262,33 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
     expect(result.receipt.counts).toMatchObject({ passed: 40, failed: 1 });
   });
 
+  it('keeps a failed fixture control representable through matrix validation', () => {
+    const input = completeInput();
+    const fixture = CAL002_TRANSFER_ORACLE_CASES[0]!;
+    const control = fixture.controls[0]!;
+    const result = buildCAL002OracleReceiptV2({
+      ...input,
+      observations: input.observations.map((observation) => (
+        observation.ruleId === fixture.ruleId && observation.caseId === control.caseId
+          ? { ...observation, observed: 'finding' as const }
+          : observation
+      )),
+    });
+    const failed = result.receipt.rows.find((row) => row.ruleId === fixture.ruleId)!;
+
+    expect(failed).toMatchObject({
+      status: 'failed',
+      outcome: 'default-off',
+      failures: ['unexpected-oracle-observation'],
+    });
+    expect(failed.fixtureControls.find((candidate) => candidate.caseId === control.caseId))
+      .toMatchObject({ observed: 'finding' });
+    expect(() => assertCAL002OracleReceiptV2ForMatrix(
+      result.receipt,
+      canonicalArtifact(input.authorityReceipt).sha256,
+    )).not.toThrow();
+  });
+
   it('fails closed on a missing transfer fixture', () => {
     expect(() => buildCAL002OracleReceiptV2(completeInput({
       transferredFixtures: CAL002_TRANSFER_ORACLE_CASES.slice(1),
@@ -389,6 +417,18 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
     const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
     const receipt = buildCAL002OracleReceiptV2(completeInput()).receipt;
     expect(validate(receipt), JSON.stringify(validate.errors)).toBe(true);
+    const fixture = CAL002_TRANSFER_ORACLE_CASES[0]!;
+    const control = fixture.controls[0]!;
+    const failedInput = completeInput();
+    const failedFixtureReceipt = buildCAL002OracleReceiptV2({
+      ...failedInput,
+      observations: failedInput.observations.map((observation) => (
+        observation.ruleId === fixture.ruleId && observation.caseId === control.caseId
+          ? { ...observation, observed: 'finding' as const }
+          : observation
+      )),
+    }).receipt;
+    expect(validate(failedFixtureReceipt), JSON.stringify(validate.errors)).toBe(true);
     expect(validate({ ...receipt, source: 'forbidden' })).toBe(false);
     const nonFrozenControl = {
       ...receipt,
@@ -420,6 +460,16 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
       } : row),
     };
     expect(validate(shuffledFixtureControls)).toBe(false);
+    const passedWithFindingFixtureControl = {
+      ...receipt,
+      rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {
+        ...row,
+        fixtureControls: row.fixtureControls.map((control, controlIndex) => controlIndex === 0
+          ? { ...control, observed: 'finding' }
+          : control),
+      } : row),
+    };
+    expect(validate(passedWithFindingFixtureControl)).toBe(false);
     const shuffledControls = {
       ...receipt,
       rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {

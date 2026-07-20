@@ -215,6 +215,17 @@
             "properties": {
               "outcome": { "const": "default-on" },
               "failures": { "type": "array", "maxItems": 0 },
+              "fixtureControls": {
+                "not": {
+                  "type": "array",
+                  "contains": {
+                    "type": "object",
+                    "$ref": "#/$defs/fixtureControl",
+                    "required": ["observed"],
+                    "properties": { "observed": { "const": "finding" } }
+                  }
+                }
+              },
               "realSourceControls": {
                 "type": "array",
                 "minItems": 5,

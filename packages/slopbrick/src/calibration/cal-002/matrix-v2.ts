@@ -197,6 +197,7 @@ function assertOracleControl(
   label: string,
   realSource: boolean,
   realContext?: { readonly ruleId: string; readonly sourceBindingReceiptSha256: string },
+  requireNoFinding = realSource,
 ): void {
   const keys = realSource
     ? ['controlId', 'familyId', 'contentSha256', 'sourceBindingReceiptSha256', 'observed']
@@ -220,7 +221,9 @@ function assertOracleControl(
       .digest('hex');
     if (value.controlId !== expectedControlId) throw new TypeError(`${label}.controlId is not derived from its binding`);
   }
-  if (value.observed !== 'no-finding') throw new TypeError(`${label}.observed must be no-finding`);
+  if (requireNoFinding && value.observed !== 'no-finding') {
+    throw new TypeError(`${label}.observed must be no-finding`);
+  }
 }
 
 function assertOracleRow(
@@ -260,7 +263,13 @@ function assertOracleRow(
   assertArray(value.realSourceControls, `${label}.realSourceControls`);
   assertArray(value.failures, `${label}.failures`);
   value.caseResults.forEach((item, itemIndex) => assertOracleCase(item, `${label}.caseResults[${itemIndex}]`));
-  value.fixtureControls.forEach((item, itemIndex) => assertOracleControl(item, `${label}.fixtureControls[${itemIndex}]`, false));
+  value.fixtureControls.forEach((item, itemIndex) => assertOracleControl(
+    item,
+    `${label}.fixtureControls[${itemIndex}]`,
+    false,
+    undefined,
+    value.status === 'passed',
+  ));
   value.realSourceControls.forEach((item, itemIndex) => assertOracleControl(
     item,
     `${label}.realSourceControls[${itemIndex}]`,
