@@ -6,6 +6,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   symlink,
   writeFile,
@@ -21,6 +22,7 @@ import {
   assertDistinctArtifactDestinations,
   readPrivateCanonicalArtifact,
   readPrivateCanonicalArtifactWithBytes,
+  withPrivateArtifactSessionLock,
   writeImmutableCanonicalReceipt,
   writePrivateCanonicalState,
 } from '../../src/calibration/cal-002/artifact-io';
@@ -298,13 +300,13 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
     const relativePath = 'receipts/authority.json';
     const receiptPath = join(root, relativePath);
 
-    await writeImmutableCanonicalReceipt<CAL002AuthorityReceiptV2>({
+    await expect(writeImmutableCanonicalReceipt<CAL002AuthorityReceiptV2>({
       root,
       relativePath,
       label: 'CAL-002 authority receipt',
       value: receipt,
       assertValue: assertCAL002AuthorityReceiptV2,
-    });
+    })).resolves.toBe('created');
     const exactBytes = await readFile(receiptPath, 'utf8');
     await expect(writeImmutableCanonicalReceipt<CAL002AuthorityReceiptV2>({
       root,
@@ -312,7 +314,7 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       label: 'CAL-002 authority receipt',
       value: receipt,
       assertValue: assertCAL002AuthorityReceiptV2,
-    })).resolves.toBeUndefined();
+    })).resolves.toBe('replayed');
     expect((await lstat(receiptPath)).mode & 0o777).toBe(0o600);
     expect(await readFile(receiptPath, 'utf8')).toBe(exactBytes);
     expect(exactBytes).toBe(canonicalArtifact(receipt).json);
@@ -324,6 +326,7 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       value: { ...receipt, priorStateSha256: 'f'.repeat(64) },
       assertValue: assertCAL002AuthorityReceiptV2,
     })).rejects.toThrow(/different|immutable/i);
+    expect(await readdir(join(root, 'receipts'))).toEqual(['authority.json']);
 
     await mkdir(join(root, 'links'));
     await symlink(outside, join(root, 'links', 'outside'));
@@ -334,6 +337,51 @@ describe('CAL-002 validator-injected private artifact I/O', () => {
       value: receipt,
       assertValue: assertCAL002AuthorityReceiptV2,
     })).rejects.toThrow(/symbolic link|symlink/i);
+  });
+
+  it('never exposes a final immutable destination when same-directory staging cannot be created', async () => {
+    const root = await temporaryRoot();
+    const fixture = authorityFixture();
+    const approved = decideCAL002AuthoritySessionV2(fixture.pending, 'approved');
+    const { receipt } = completeCAL002AuthoritySessionV2({
+      proposal: fixture.proposalResult.proposal,
+      state: approved,
+      priorStateBytes: fixture.priorBytes,
+    });
+    const relativePath = join('receipts', `${'x'.repeat(230)}.json`);
+
+    await expect(writeImmutableCanonicalReceipt({
+      root,
+      relativePath,
+      label: 'CAL-002 overlong staging receipt',
+      value: receipt,
+      assertValue: assertCAL002AuthorityReceiptV2,
+    })).rejects.toMatchObject({ code: 'ENAMETOOLONG' });
+    await expect(lstat(join(root, relativePath))).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(await readdir(join(root, 'receipts'))).toEqual([]);
+  });
+
+  it('makes every immutable receipt writer honor the destination session lock', async () => {
+    const root = await temporaryRoot();
+    const fixture = authorityFixture();
+    const approved = decideCAL002AuthoritySessionV2(fixture.pending, 'approved');
+    const { receipt } = completeCAL002AuthoritySessionV2({
+      proposal: fixture.proposalResult.proposal,
+      state: approved,
+      priorStateBytes: fixture.priorBytes,
+    });
+    const input = {
+      root,
+      relativePath: 'receipts/authority.json',
+      label: 'CAL-002 authority receipt',
+      value: receipt,
+      assertValue: assertCAL002AuthorityReceiptV2,
+    };
+
+    await withPrivateArtifactSessionLock(input, async () => {
+      await expect(writeImmutableCanonicalReceipt(input)).rejects.toThrow(/session.*locked/i);
+    });
+    await expect(lstat(join(root, input.relativePath))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('rejects case-folded and Unicode-normalized prospective aliases without creating parents', async () => {

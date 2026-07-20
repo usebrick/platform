@@ -4,6 +4,7 @@ import {
   CORPUS_V1_SOURCE_BINDING_VERSION,
   type CorpusV1SourceBindingResult,
 } from '../corpus-v1/source-binding';
+import { CAL001_FROZEN_INPUT_HASHES } from '../corpus-v1/calibration-inputs';
 import { canonicalJson } from '../v103/canonical';
 import {
   CAL002_DETERMINISTIC_RULE_IDS,
@@ -27,7 +28,7 @@ import {
 
 export const CAL002_ORACLE_RECEIPT_VERSION_V2 = 'cal-002-oracle-receipt-v2' as const;
 
-const TRANSFER_CONTROL_FAMILIES = [
+export const CAL002_REAL_SOURCE_CONTROL_FAMILIES = [
   'alternate-syntax',
   'baseline',
   'comment-adjacent',
@@ -35,7 +36,7 @@ const TRANSFER_CONTROL_FAMILIES = [
   'regression-safe',
 ] as const;
 
-type TransferControlFamily = (typeof TRANSFER_CONTROL_FAMILIES)[number];
+type TransferControlFamily = (typeof CAL002_REAL_SOURCE_CONTROL_FAMILIES)[number];
 
 export interface CAL002TransferOracleSourceCaseV2 {
   readonly caseId: string;
@@ -120,6 +121,7 @@ export interface CAL002OracleReceiptV2 {
   readonly protocolVersion: typeof CAL002_PROTOCOL_VERSION_V2;
   readonly authorityReceiptSha256: string;
   readonly startingOracleReceiptSha256: string;
+  readonly sourceBindingReceiptSha256: string;
   readonly implementationCommitSha: string;
   readonly rows: readonly CAL002OracleReceiptRowV2[];
   readonly counts: {
@@ -157,7 +159,7 @@ const AUTHORITIES = new Set<CAL002OracleAuthority>([
   'repository-contract',
 ]);
 const OBSERVATIONS = new Set<CAL002OracleObservation>(['finding', 'no-finding']);
-const CONTROL_FAMILY_SET = new Set<string>(TRANSFER_CONTROL_FAMILIES);
+const CONTROL_FAMILY_SET = new Set<string>(CAL002_REAL_SOURCE_CONTROL_FAMILIES);
 
 function compareCodePoints(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -244,6 +246,9 @@ function verifySourceBinding(value: CorpusV1SourceBindingResult): void {
   const expectedJson = canonicalJson(value.receipt);
   if (value.receiptJson !== expectedJson || sha256(value.receiptJson) !== value.receiptSha256) {
     throw new TypeError('Corpus v1 source-binding receipt hash or canonical JSON mismatch');
+  }
+  if (value.receiptSha256 !== CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256) {
+    throw new TypeError('Corpus v1 source-binding identity does not match the frozen CAL-001 input');
   }
 }
 
@@ -354,7 +359,7 @@ function validateFixture(
         throw new TypeError(`Duplicate CAL-002 transfer case ${fixture.ruleId}/${testCase.caseId}`);
       }
       seen.add(testCase.caseId);
-      if (control && testCase.familyId !== TRANSFER_CONTROL_FAMILIES[index]) {
+      if (control && testCase.familyId !== CAL002_REAL_SOURCE_CONTROL_FAMILIES[index]) {
         throw new TypeError(`CAL-002 transfer ${fixture.ruleId} control family mismatch`);
       }
       cases.push({ testCase, expected, control });
@@ -459,6 +464,7 @@ function indexRealSourceControls(
   const acceptedByRule = new Map<string, CAL002RealSourceControlV2[]>();
   const unexpectedRules = new Set<string>();
   const seen = new Set<string>();
+  const seenContent = new Set<string>();
   for (const [index, control] of rows.entries()) {
     requireRecord(control, `CAL-002 real-source control[${index}]`);
     requireRuleId(control.ruleId, `CAL-002 real-source control[${index}].ruleId`);
@@ -484,6 +490,11 @@ function indexRealSourceControls(
     const bindingKey = `${control.ruleId}\0${control.familyId}`;
     if (seen.has(bindingKey)) throw new TypeError(`Duplicate CAL-002 real-source control ${bindingKey}`);
     seen.add(bindingKey);
+    const contentKey = `${control.ruleId}\0${control.contentSha256}`;
+    if (seenContent.has(contentKey)) {
+      throw new TypeError(`Duplicate CAL-002 real-source control content for ${control.ruleId}`);
+    }
+    seenContent.add(contentKey);
     if (control.observed !== 'no-finding') {
       unexpectedRules.add(control.ruleId);
       continue;
@@ -607,6 +618,7 @@ export function buildCAL002OracleReceiptV2(
     protocolVersion: CAL002_PROTOCOL_VERSION_V2,
     authorityReceiptSha256: canonicalArtifact(input.authorityReceipt).sha256,
     startingOracleReceiptSha256: canonicalArtifact(input.startingOracleReceipt).sha256,
+    sourceBindingReceiptSha256: input.sourceBinding.receiptSha256,
     implementationCommitSha: input.implementationCommitSha,
     rows,
     counts: {

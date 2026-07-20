@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +20,7 @@ import {
   CAL002_PROTOCOL_VERSION_V2,
   type CAL002AuthorityReceiptV2,
 } from '../../src/calibration/cal-002/contracts-v2';
+import { CAL001_FROZEN_INPUT_HASHES } from '../../src/calibration/corpus-v1/calibration-inputs';
 import {
   CAL002_ORACLE_RECEIPT_VERSION_V2,
   type CAL002OracleReceiptV2,
@@ -35,10 +37,15 @@ import {
   type BuildCAL002FinalMatrixInputV2,
   type CAL002FinalMatrixV2,
 } from '../../src/calibration/cal-002/matrix-v2';
+import { CAL002_TRANSFER_CONTROL_FAMILIES } from './fixtures/cal-002-transfer-oracle-types';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_DIR = join(HERE, '../../src/calibration/cal-002/schemas');
 const COMMIT_SHA = 'd'.repeat(40);
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
 
 function approvedAuthorityReceipt(): CAL002AuthorityReceiptV2 {
   const rows = canonicalAuthorityRowsV2();
@@ -82,13 +89,16 @@ function oracleReceipt(authority: CAL002AuthorityReceiptV2): CAL002OracleReceipt
         contentSha256: (((index + 2) % 9) + 1).toString().repeat(64),
         observed: 'no-finding' as const,
       }],
-      realSourceControls: Array.from({ length: 5 }, (_, controlIndex) => ({
-        controlId: String(((index + controlIndex) % 9) + 1).repeat(64),
-        familyId: `family-${controlIndex}`,
-        contentSha256: String(((index + controlIndex + 1) % 9) + 1).repeat(64),
-        sourceBindingReceiptSha256: 'f'.repeat(64),
-        observed: 'no-finding' as const,
-      })),
+      realSourceControls: CAL002_TRANSFER_CONTROL_FAMILIES.map((familyId, controlIndex) => {
+        const contentSha256 = String(((index + controlIndex + 1) % 9) + 1).repeat(64);
+        return {
+          controlId: sha256(`${row.ruleId}\0${familyId}\0${contentSha256}`),
+          familyId,
+          contentSha256,
+          sourceBindingReceiptSha256: CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256,
+          observed: 'no-finding' as const,
+        };
+      }),
       status: 'passed' as const,
       outcome: 'default-on' as const,
       failures: [],
@@ -99,6 +109,7 @@ function oracleReceipt(authority: CAL002AuthorityReceiptV2): CAL002OracleReceipt
     version: CAL002_ORACLE_RECEIPT_VERSION_V2,
     protocolVersion: CAL002_PROTOCOL_VERSION_V2,
     authorityReceiptSha256: canonicalArtifact(authority).sha256,
+    sourceBindingReceiptSha256: CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256,
     startingOracleReceiptSha256: 'c'.repeat(64),
     implementationCommitSha: COMMIT_SHA,
     rows,
@@ -233,6 +244,64 @@ describe('CAL-002 final matrix v2', () => {
           caseResults: candidate.caseResults.map((caseResult, caseIndex) => caseIndex === 0
             ? { ...caseResult, observed: 'no-finding' as const }
             : caseResult),
+        } : candidate),
+      },
+    })],
+    ['oracle receipt with non-frozen source binding', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: { ...input.oracleReceipt, sourceBindingReceiptSha256: '9'.repeat(64) },
+    })],
+    ['oracle control with non-derived identity', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          realSourceControls: candidate.realSourceControls.map((control, controlIndex) => controlIndex === 0
+            ? { ...control, controlId: '9'.repeat(64) }
+            : control),
+        } : candidate),
+      },
+    })],
+    ['oracle pass with duplicate real-source families', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          realSourceControls: candidate.realSourceControls.map((control, controlIndex) => controlIndex === 1
+            ? { ...control, familyId: candidate.realSourceControls[0]!.familyId }
+            : control),
+        } : candidate),
+      },
+    })],
+    ['oracle pass with duplicate real-source content hashes', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          realSourceControls: candidate.realSourceControls.map((control, controlIndex) => controlIndex === 1
+            ? {
+                ...control,
+                contentSha256: candidate.realSourceControls[0]!.contentSha256,
+                controlId: sha256(`${candidate.ruleId}\0${control.familyId}\0${candidate.realSourceControls[0]!.contentSha256}`),
+              }
+            : control),
+        } : candidate),
+      },
+    })],
+    ['oracle pass with shuffled real-source family order', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          realSourceControls: [
+            candidate.realSourceControls[1]!,
+            candidate.realSourceControls[0]!,
+            ...candidate.realSourceControls.slice(2),
+          ],
         } : candidate),
       },
     })],

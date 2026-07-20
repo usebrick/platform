@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+
+import { CAL001_FROZEN_INPUT_HASHES } from '../corpus-v1/calibration-inputs';
 import {
   canonicalAuthorityRowsV2,
 } from './authority';
@@ -23,6 +26,7 @@ import {
 } from './contracts-v2';
 import {
   CAL002_ORACLE_RECEIPT_VERSION_V2,
+  CAL002_REAL_SOURCE_CONTROL_FAMILIES,
   type CAL002OracleReceiptRowV2,
   type CAL002OracleReceiptV2,
 } from './oracles-v2';
@@ -43,6 +47,7 @@ import {
 } from './supersession';
 
 export const CAL002_FINAL_MATRIX_VERSION_V2 = 'cal-002-final-matrix-v2' as const;
+const REAL_SOURCE_CONTROL_FAMILY_SET = new Set<string>(CAL002_REAL_SOURCE_CONTROL_FAMILIES);
 
 export type CAL002PolicyProvenanceV2 =
   | 'deterministic-finding-evidence'
@@ -187,7 +192,12 @@ function assertOracleCase(value: unknown, label: string): void {
   assertSha256(value.sourceSha256, `${label}.sourceSha256`);
 }
 
-function assertOracleControl(value: unknown, label: string, realSource: boolean): void {
+function assertOracleControl(
+  value: unknown,
+  label: string,
+  realSource: boolean,
+  realContext?: { readonly ruleId: string; readonly sourceBindingReceiptSha256: string },
+): void {
   const keys = realSource
     ? ['controlId', 'familyId', 'contentSha256', 'sourceBindingReceiptSha256', 'observed']
     : ['caseId', 'familyId', 'contentSha256', 'observed'];
@@ -198,7 +208,18 @@ function assertOracleControl(value: unknown, label: string, realSource: boolean)
     throw new TypeError(`${label} has invalid identity fields`);
   }
   assertSha256(value.contentSha256, `${label}.contentSha256`);
-  if (realSource) assertSha256(value.sourceBindingReceiptSha256, `${label}.sourceBindingReceiptSha256`);
+  if (realSource) {
+    assertSha256(value.sourceBindingReceiptSha256, `${label}.sourceBindingReceiptSha256`);
+    if (realContext === undefined
+      || value.sourceBindingReceiptSha256 !== realContext.sourceBindingReceiptSha256
+      || !REAL_SOURCE_CONTROL_FAMILY_SET.has(value.familyId as string)) {
+      throw new TypeError(`${label} has invalid closed source-binding provenance`);
+    }
+    const expectedControlId = createHash('sha256')
+      .update(`${realContext.ruleId}\0${value.familyId}\0${value.contentSha256}`)
+      .digest('hex');
+    if (value.controlId !== expectedControlId) throw new TypeError(`${label}.controlId is not derived from its binding`);
+  }
   if (value.observed !== 'no-finding') throw new TypeError(`${label}.observed must be no-finding`);
 }
 
@@ -206,6 +227,7 @@ function assertOracleRow(
   value: unknown,
   authority: CAL002AuthorityRowV2,
   index: number,
+  sourceBindingReceiptSha256: string,
 ): asserts value is CAL002OracleReceiptRowV2 {
   const label = `CAL-002 v2 oracle rows[${index}]`;
   if (!isRecord(value) || !exactKeys(value, [
@@ -239,7 +261,12 @@ function assertOracleRow(
   assertArray(value.failures, `${label}.failures`);
   value.caseResults.forEach((item, itemIndex) => assertOracleCase(item, `${label}.caseResults[${itemIndex}]`));
   value.fixtureControls.forEach((item, itemIndex) => assertOracleControl(item, `${label}.fixtureControls[${itemIndex}]`, false));
-  value.realSourceControls.forEach((item, itemIndex) => assertOracleControl(item, `${label}.realSourceControls[${itemIndex}]`, true));
+  value.realSourceControls.forEach((item, itemIndex) => assertOracleControl(
+    item,
+    `${label}.realSourceControls[${itemIndex}]`,
+    true,
+    { ruleId: authority.ruleId, sourceBindingReceiptSha256 },
+  ));
   const caseIds = value.caseResults.map((item) => isRecord(item) ? item.caseId : undefined);
   const declaredCaseIds = [...positiveIds, ...negativeIds];
   if (new Set(caseIds).size !== caseIds.length
@@ -252,7 +279,11 @@ function assertOracleRow(
       || (typeof item.caseId === 'string' && positiveIds.has(item.caseId) && item.expected !== 'finding')
       || (typeof item.caseId === 'string' && negativeIds.has(item.caseId) && item.expected !== 'no-finding')));
   const realFamilies = value.realSourceControls.map((item) => isRecord(item) ? item.familyId : undefined);
-  const completeRealControls = realFamilies.length === 5 && new Set(realFamilies).size === 5;
+  const realContentHashes = value.realSourceControls.map((item) => isRecord(item) ? item.contentSha256 : undefined);
+  const completeRealControls = realFamilies.length === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && new Set(realFamilies).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && new Set(realContentHashes).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && CAL002_REAL_SOURCE_CONTROL_FAMILIES.every((familyId, index) => realFamilies[index] === familyId);
   if (value.failures.some((failure) => typeof failure !== 'string' || failure.length === 0)) {
     throw new TypeError(`${label}.failures is invalid`);
   }
@@ -271,7 +302,7 @@ function assertOracleReceipt(
 ): asserts value is CAL002OracleReceiptV2 {
   if (!isRecord(value) || !exactKeys(value, [
     'version', 'protocolVersion', 'authorityReceiptSha256', 'startingOracleReceiptSha256',
-    'implementationCommitSha', 'rows', 'counts', 'admitted',
+    'sourceBindingReceiptSha256', 'implementationCommitSha', 'rows', 'counts', 'admitted',
   ])) throw new TypeError('CAL-002 v2 oracle receipt has unknown or missing fields');
   if (value.version !== CAL002_ORACLE_RECEIPT_VERSION_V2
     || value.protocolVersion !== CAL002_PROTOCOL_VERSION_V2
@@ -280,6 +311,10 @@ function assertOracleReceipt(
     throw new TypeError('CAL-002 v2 oracle receipt has protocol, authority, or admission drift');
   }
   assertSha256(value.startingOracleReceiptSha256, 'CAL-002 v2 oracle startingOracleReceiptSha256');
+  assertSha256(value.sourceBindingReceiptSha256, 'CAL-002 v2 oracle sourceBindingReceiptSha256');
+  if (value.sourceBindingReceiptSha256 !== CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256) {
+    throw new TypeError('CAL-002 v2 oracle receipt has non-frozen source-binding identity');
+  }
   assertCommitSha(value.implementationCommitSha, 'CAL-002 v2 oracle implementationCommitSha');
   assertArray(value.rows, 'CAL-002 v2 oracle rows');
   const rows = value.rows;
@@ -289,7 +324,12 @@ function assertOracleReceipt(
   if (rows.length !== 41 || expected.length !== 41) {
     throw new TypeError('CAL-002 v2 oracle receipt must contain exactly 41 evidence-ready rows');
   }
-  expected.forEach((authority, index) => assertOracleRow(rows[index], authority, index));
+  expected.forEach((authority, index) => assertOracleRow(
+    rows[index],
+    authority,
+    index,
+    value.sourceBindingReceiptSha256 as string,
+  ));
   if (!isRecord(value.counts) || !exactKeys(value.counts, ['starting', 'transferred', 'passed', 'failed'])) {
     throw new TypeError('CAL-002 v2 oracle counts are invalid');
   }

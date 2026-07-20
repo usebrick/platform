@@ -9,6 +9,7 @@
     "protocolVersion",
     "authorityReceiptSha256",
     "startingOracleReceiptSha256",
+    "sourceBindingReceiptSha256",
     "implementationCommitSha",
     "rows",
     "counts",
@@ -19,6 +20,7 @@
     "protocolVersion": { "const": "CAL-002-v2" },
     "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
     "startingOracleReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "sourceBindingReceiptSha256": { "$ref": "#/$defs/frozenSourceBindingReceiptSha256" },
     "implementationCommitSha": { "$ref": "#/$defs/commitSha" },
     "rows": {
       "type": "array",
@@ -43,6 +45,9 @@
     "sha256": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "frozenSourceBindingReceiptSha256": {
+      "const": "47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac"
     },
     "commitSha": {
       "type": "string",
@@ -99,7 +104,9 @@
       "required": ["caseId", "familyId", "contentSha256", "observed"],
       "properties": {
         "caseId": { "$ref": "#/$defs/caseId" },
-        "familyId": { "type": "string", "minLength": 1 },
+        "familyId": {
+          "enum": ["alternate-syntax", "baseline", "comment-adjacent", "near-miss", "regression-safe"]
+        },
         "contentSha256": { "$ref": "#/$defs/sha256" },
         "observed": { "$ref": "#/$defs/observation" }
       }
@@ -116,9 +123,11 @@
       ],
       "properties": {
         "controlId": { "$ref": "#/$defs/sha256" },
-        "familyId": { "type": "string", "minLength": 1 },
+        "familyId": {
+          "enum": ["alternate-syntax", "baseline", "comment-adjacent", "near-miss", "regression-safe"]
+        },
         "contentSha256": { "$ref": "#/$defs/sha256" },
-        "sourceBindingReceiptSha256": { "$ref": "#/$defs/sha256" },
+        "sourceBindingReceiptSha256": { "$ref": "#/$defs/frozenSourceBindingReceiptSha256" },
         "observed": { "const": "no-finding" }
       }
     },
@@ -173,7 +182,44 @@
             "properties": {
               "outcome": { "const": "default-on" },
               "failures": { "type": "array", "maxItems": 0 },
-              "realSourceControls": { "type": "array", "minItems": 5 }
+              "realSourceControls": {
+                "type": "array",
+                "minItems": 5,
+                "maxItems": 5,
+                "prefixItems": [
+                  {
+                    "allOf": [
+                      { "$ref": "#/$defs/realSourceControl" },
+                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "alternate-syntax" } } }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      { "$ref": "#/$defs/realSourceControl" },
+                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "baseline" } } }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      { "$ref": "#/$defs/realSourceControl" },
+                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "comment-adjacent" } } }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      { "$ref": "#/$defs/realSourceControl" },
+                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "near-miss" } } }
+                    ]
+                  },
+                  {
+                    "allOf": [
+                      { "$ref": "#/$defs/realSourceControl" },
+                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "regression-safe" } } }
+                    ]
+                  }
+                ],
+                "items": false
+              }
             }
           }
         },

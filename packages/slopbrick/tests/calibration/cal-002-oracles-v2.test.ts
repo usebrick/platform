@@ -31,6 +31,7 @@ import {
   type CAL002RealSourceControlInputV2,
   type CAL002TransferOracleObservationV2,
 } from '../../src/calibration/cal-002/oracles-v2';
+import { CAL001_FROZEN_INPUT_HASHES } from '../../src/calibration/corpus-v1/calibration-inputs';
 import { reconcileCorpusV1SourceRows } from '../../src/calibration/corpus-v1/source-binding';
 import {
   CAL002_ORACLE_DECLARATIONS,
@@ -99,7 +100,7 @@ function passedStartingOracleReceipt(): CAL002OracleReceipt {
   }).receipt;
 }
 
-function sourceBinding() {
+function syntheticSourceBinding() {
   const sourceId = 'cal-002-oracle-controls';
   const code = 'const verifiedControl = true;';
   const header = 'problem_id,Sample_Code,Generated,Language,Source';
@@ -125,6 +126,24 @@ function sourceBinding() {
     materializedSha256: contentSha256,
   })}\n`);
   return reconcileCorpusV1SourceRows({ sourceId, csvBytes, projectionManifestBytes });
+}
+
+function sourceBinding() {
+  const receipt = {
+    version: 'corpus-v1-source-binding-v1' as const,
+    sourceId: 'humanvsai-code-dataset-mendeley-v1',
+    authorityTier: 'publisher_attested' as const,
+    rightsDisposition: 'internal_analysis' as const,
+    csvSha256: '7f38972cbbd3f7f26988e77e3b9e8fce2fa92fb8bbc30911a51dc93cded4b192',
+    projectionManifestSha256: '588afb3fe94fdde5958ee4aeac9a5ce3b0680cff61d329ec91998819206c6eab',
+    rowBindingSha256: '86b46373ba0cae5149a722777eeff537b27c7a8d43fd8259fa8c197ea1bd300c',
+    rows: { matched: 10_000, positive: 5_000, negative: 5_000 },
+    sourceClaims: { 'ChatGPT-3.5': 1492, 'ChatGPT-4': 3508, CodeNet: 5000 },
+    languages: { C: 1737, 'C++': 2640, Java: 2945, Python: 2678 },
+  };
+  const artifact = canonicalArtifact(receipt);
+  expect(artifact.sha256).toBe(CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256);
+  return { receipt, receiptJson: artifact.json, receiptSha256: artifact.sha256 };
 }
 
 function allTransferredCases(): readonly {
@@ -206,6 +225,17 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
     });
     expect(result.receipt.rows.filter((row) => row.transferred)).toHaveLength(9);
     expect(result.receipt.rows.every((row) => row.outcome === 'default-on')).toBe(true);
+    expect(result.receipt.sourceBindingReceiptSha256)
+      .toBe(CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256);
+    for (const row of result.receipt.rows) {
+      expect(row.realSourceControls.map((control) => control.familyId))
+        .toEqual(CAL002_TRANSFER_CONTROL_FAMILIES);
+      for (const control of row.realSourceControls) {
+        expect(control.sourceBindingReceiptSha256)
+          .toBe(CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256);
+        expect(control.controlId).toBe(sha256(`${row.ruleId}\0${control.familyId}\0${control.contentSha256}`));
+      }
+    }
     const receiptJson = JSON.stringify(result.receipt);
     expect(receiptJson).not.toContain('"source":');
     expect(receiptJson).not.toContain('"virtualPath":');
@@ -271,6 +301,19 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
     }))).toThrow(/content.*hash|hash.*content/i);
   });
 
+  it('rejects duplicate real-source content hashes within one five-slot control set', () => {
+    const controls = realSourceControls();
+    const first = controls[0]!;
+    const duplicate = {
+      ...controls[1]!,
+      source: first.source,
+      contentSha256: first.contentSha256,
+    };
+    expect(() => buildCAL002OracleReceiptV2(completeInput({
+      realSourceControls: [first, duplicate, ...controls.slice(2)],
+    }))).toThrow(/duplicate.*content|content.*duplicate/i);
+  });
+
   it('rejects a forged source-binding result and closes an observed real-source finding', () => {
     const binding = sourceBinding();
     expect(() => buildCAL002OracleReceiptV2(completeInput({
@@ -290,6 +333,16 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
       'real-source-control-shortage',
       'unexpected-real-source-control-observation',
     ]));
+  });
+
+  it('rejects a canonical but non-frozen source-binding identity', () => {
+    expect(() => buildCAL002OracleReceiptV2(completeInput({
+      sourceBinding: syntheticSourceBinding(),
+      realSourceControls: realSourceControls().map((control) => ({
+        ...control,
+        sourceBindingReceiptSha256: syntheticSourceBinding().receiptSha256,
+      })),
+    }))).toThrow(/frozen|source-binding.*identity/i);
   });
 
   it('rejects a v1 receipt with other than exactly 32 starting rows', () => {
@@ -337,5 +390,27 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
     const receipt = buildCAL002OracleReceiptV2(completeInput()).receipt;
     expect(validate(receipt), JSON.stringify(validate.errors)).toBe(true);
     expect(validate({ ...receipt, source: 'forbidden' })).toBe(false);
+    const nonFrozenControl = {
+      ...receipt,
+      rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {
+        ...row,
+        realSourceControls: row.realSourceControls.map((control, controlIndex) => controlIndex === 0
+          ? { ...control, sourceBindingReceiptSha256: '9'.repeat(64) }
+          : control),
+      } : row),
+    };
+    expect(validate(nonFrozenControl)).toBe(false);
+    const shuffledControls = {
+      ...receipt,
+      rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {
+        ...row,
+        realSourceControls: [
+          row.realSourceControls[1]!,
+          row.realSourceControls[0]!,
+          ...row.realSourceControls.slice(2),
+        ],
+      } : row),
+    };
+    expect(validate(shuffledControls)).toBe(false);
   });
 });

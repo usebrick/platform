@@ -21,6 +21,7 @@ import {
   readVerifiedSourcesByHash,
   withPrivateArtifactSessionLock,
   writeImmutableCanonicalReceipt,
+  writeImmutableCanonicalReceiptAlreadyLocked,
   writeImmutableReceipt,
   writePrivateCanonicalState,
   writeReviewState,
@@ -116,11 +117,19 @@ import {
 } from '../../src/calibration/cal-002/contracts-v2';
 import {
   buildCAL002OracleReceiptV2,
+  CAL002_REAL_SOURCE_CONTROL_FAMILIES,
   type CAL002OracleReceiptV2,
   type CAL002RealSourceControlInputV2,
   type CAL002TransferOracleObservationV2,
 } from '../../src/calibration/cal-002/oracles-v2';
-import type { CorpusV1SourceBindingResult } from '../../src/calibration/corpus-v1/source-binding';
+import { bindMendeleyCorpusV1SourceRows } from '../../src/calibration/corpus-v1/source-binding';
+import { CAL001_FROZEN_INPUT_HASHES } from '../../src/calibration/corpus-v1/calibration-inputs';
+import {
+  corpusV1ProjectionRoot,
+  parseProjectionIndex,
+  readCorpusV1Unit,
+  type ProjectionIndexRow,
+} from './corpus-v1-source';
 import {
   assertCAL002ParityReceiptV2,
   assertCAL002SupersessionReceiptV2,
@@ -136,7 +145,6 @@ import {
   CAL002_ORACLE_SOURCE_CONTROLS,
 } from '../../tests/calibration/fixtures/cal-002-oracle-cases';
 import { CAL002_TRANSFER_ORACLE_CASES } from '../../tests/calibration/fixtures/cal-002-transfer-oracle-cases';
-import { CAL002_TRANSFER_CONTROL_FAMILIES } from '../../tests/calibration/fixtures/cal-002-transfer-oracle-types';
 import { CAL002_SQL_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-sql';
 import { CAL002_ANY_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-any';
 import { CAL002_CONSOLE_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-console';
@@ -785,6 +793,31 @@ function resolveCommitSha(supplied: string | undefined, command: string): string
   } catch {
     throw new Error(`${command} requires --implementation-commit-sha, ${IMPLEMENTATION_SHA_ENV}, or a local git HEAD`);
   }
+}
+
+function resolveGitCommitRef(ref: string, label: string): string {
+  let objectSha: string;
+  try {
+    objectSha = execFileSync('git', ['rev-parse', '--verify', '--end-of-options', ref], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    throw new Error(`${label} does not resolve to a local git object`);
+  }
+  let commitSha: string;
+  try {
+    commitSha = execFileSync('git', ['rev-parse', '--verify', '--end-of-options', `${objectSha}^{commit}`], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    throw new Error(`${label} does not resolve to a commit`);
+  }
+  assertCommitSha(commitSha, label);
+  return commitSha;
 }
 
 function record(value: unknown, label: string): Record<string, unknown> {
@@ -2504,11 +2537,15 @@ async function reduceParityV2(args: ReduceParityV2Arguments): Promise<void> {
   }) as CAL002AuthorityReceiptV2;
   assertCAL002AuthorityReceiptV2(authorityReceipt);
   const fixed = PARITY_COMMAND_AUTHORITY[args.ruleId];
+  const migrationCommitSha = resolveGitCommitRef(
+    args.migrationCommitRef,
+    'reduce-parity-v2 --migration-commit-ref',
+  );
   const result = buildCAL002ParityReceiptV2({
     authorityReceipt,
     ruleId: args.ruleId,
     replacementRuleId: fixed.replacementRuleId,
-    migrationCommitSha: args.migrationCommitRef,
+    migrationCommitSha,
     uniqueCoverageDisposition: fixed.uniqueCoverageDisposition,
     reasonCode: fixed.reasonCode,
     caseResults: await parityCaseResults(args.ruleId),
@@ -2530,77 +2567,35 @@ async function reduceParityV2(args: ReduceParityV2Arguments): Promise<void> {
   });
 }
 
-async function regularFilesForOracle(root: string): Promise<readonly string[]> {
-  const files: string[] = [];
-  const visit = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
-    entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
-    for (const entry of entries) {
-      if (entry.isSymbolicLink() || ['.git', 'node_modules', '.slopbrick'].includes(entry.name)) continue;
-      const path = join(directory, entry.name);
-      if (entry.isDirectory()) await visit(path);
-      else if (entry.isFile()) files.push(path);
-    }
-  };
-  await visit(root);
-  return files;
-}
-
-async function findSourceBindingResult(
-  roots: readonly string[],
-  expectedSha256: string,
-): Promise<CorpusV1SourceBindingResult> {
-  const seen = new Set<string>();
-  for (const candidateRoot of roots) {
-    const root = await realpath(candidateRoot);
-    if (seen.has(root)) continue;
-    seen.add(root);
-    for (const path of await regularFilesForOracle(root)) {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(await readFile(path, 'utf8')) as unknown;
-      } catch {
-        continue;
-      }
-      const receipt = isRecord(parsed) && isRecord(parsed.receipt) ? parsed.receipt : parsed;
-      if (!isRecord(receipt) || receipt.version !== 'corpus-v1-source-binding-v1') continue;
-      const artifact = canonicalArtifact(receipt);
-      if (artifact.sha256 !== expectedSha256) continue;
-      return {
-        receipt: receipt as CorpusV1SourceBindingResult['receipt'],
-        receiptJson: artifact.json,
-        receiptSha256: artifact.sha256,
-      };
-    }
-  }
-  throw new Error('reduce-oracles-v2 could not resolve the exact source-binding receipt SHA beneath --root or --corpus-root');
-}
+const CORPUS_V1_PROJECTION_MANIFEST = 'sources/benchmarks/humanvsai-code-dataset/projection-v1/projection-manifest.jsonl';
 
 async function buildRealSourceControls(
-  corpusRoot: string,
+  projectionRoot: string,
+  projectionRows: readonly ProjectionIndexRow[],
   ruleIds: readonly string[],
   sourceBindingReceiptSha256: string,
 ): Promise<readonly CAL002RealSourceControlInputV2[]> {
-  const files = (await regularFilesForOracle(corpusRoot)).slice(0, 2_000);
   const controls: CAL002RealSourceControlInputV2[] = [];
   for (const ruleId of ruleIds) {
     const accepted: { readonly source: string; readonly contentSha256: string }[] = [];
-    for (const path of files) {
-      if (accepted.length === CAL002_TRANSFER_CONTROL_FAMILIES.length) break;
+    const acceptedHashes = new Set<string>();
+    for (const projection of projectionRows) {
+      if (accepted.length === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length) break;
       let source: string;
       try {
-        source = await readFile(path, 'utf8');
-        const observation = await observeRule(ruleId, source, relative(corpusRoot, path).split(sep).join('/'));
+        const unit = await readCorpusV1Unit(projectionRoot, projection);
+        source = unit.bytes.toString('utf8');
+        if (createHash('sha256').update(source, 'utf8').digest('hex') !== projection.contentSha256) continue;
+        if (acceptedHashes.has(projection.contentSha256)) continue;
+        const observation = await observeRule(ruleId, source, projection.relativePath);
         if (observation !== 'no-finding') continue;
       } catch {
         continue;
       }
-      accepted.push({ source, contentSha256: createHash('sha256').update(source).digest('hex') });
+      acceptedHashes.add(projection.contentSha256);
+      accepted.push({ source, contentSha256: projection.contentSha256 });
     }
-    if (accepted.length !== CAL002_TRANSFER_CONTROL_FAMILIES.length) {
-      throw new Error(`reduce-oracles-v2 could not resolve five real-source no-finding controls for ${ruleId}`);
-    }
-    controls.push(...CAL002_TRANSFER_CONTROL_FAMILIES.map((familyId, index) => ({
+    controls.push(...CAL002_REAL_SOURCE_CONTROL_FAMILIES.slice(0, accepted.length).map((familyId, index) => ({
       ruleId,
       familyId,
       source: accepted[index]!.source,
@@ -2643,6 +2638,18 @@ async function reduceOraclesV2(args: ReduceOraclesV2Arguments): Promise<void> {
   if (corpusMetadata.isSymbolicLink() || !corpusMetadata.isDirectory()) {
     throw new Error('reduce-oracles-v2 --corpus-root must be a real directory');
   }
+  const sourceBinding = await bindMendeleyCorpusV1SourceRows({ corpusRoot });
+  if (sourceBinding.receiptSha256 !== args.sourceBindingReceiptSha
+    || sourceBinding.receiptSha256 !== CAL001_FROZEN_INPUT_HASHES.sourceBindingReceiptSha256) {
+    throw new Error('reduce-oracles-v2 source-binding receipt does not match the exact frozen corpus binding');
+  }
+  const projectionManifestBytes = await readFile(join(corpusRoot, CORPUS_V1_PROJECTION_MANIFEST));
+  const projectionManifestSha256 = createHash('sha256').update(projectionManifestBytes).digest('hex');
+  if (projectionManifestSha256 !== sourceBinding.receipt.projectionManifestSha256) {
+    throw new Error('reduce-oracles-v2 projection manifest bytes do not match the bound source receipt');
+  }
+  const projectionRows = [...parseProjectionIndex(projectionManifestBytes).values()];
+  const projectionRoot = await corpusV1ProjectionRoot(corpusRoot);
   const implementationCommitSha = resolveCommitSha(undefined, 'reduce-oracles-v2');
   const starting = buildCAL002OracleReceipt({
     catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
@@ -2674,12 +2681,9 @@ async function reduceOraclesV2(args: ReduceOraclesV2Arguments): Promise<void> {
       });
     }
   }
-  const sourceBinding = await findSourceBindingResult(
-    [args.root, corpusRoot],
-    args.sourceBindingReceiptSha,
-  );
   const realSourceControls = await buildRealSourceControls(
-    corpusRoot,
+    projectionRoot,
+    projectionRows,
     authorityReceipt.rows
       .filter((row) => row.evidenceClass === 'deterministic-or-standards' && row.readiness === 'evidence-ready')
       .map((row) => row.ruleId),
@@ -2890,7 +2894,7 @@ async function writeAppliedPairV2(input: {
     relativePath: input.receiptOut,
     label: 'CAL-002 application receipt v2 transaction',
   }, async () => {
-    const policyExisted = await existingImmutableV2({
+    await existingImmutableV2({
       root: input.root,
       relativePath: input.policyOut,
       label: 'CAL-002 applied policy v2',
@@ -2904,23 +2908,38 @@ async function writeAppliedPairV2(input: {
       value: input.receipt,
       assertValue: assertCAL002ApplicationReceiptV2,
     });
+    let receiptWrite: 'created' | 'replayed' | undefined;
     try {
-      await writeImmutableCanonicalReceipt({
-        root: input.root,
-        relativePath: input.policyOut,
-        label: 'CAL-002 applied policy v2',
-        value: input.policy,
-        assertValue: assertSlopbrickRuleEvidencePolicyV2,
-      });
-      await writeImmutableCanonicalReceipt({
+      receiptWrite = await writeImmutableCanonicalReceiptAlreadyLocked({
         root: input.root,
         relativePath: input.receiptOut,
         label: 'CAL-002 application receipt v2',
         value: input.receipt,
         assertValue: assertCAL002ApplicationReceiptV2,
       });
+      await writeImmutableCanonicalReceiptAlreadyLocked({
+        root: input.root,
+        relativePath: input.policyOut,
+        label: 'CAL-002 applied policy v2',
+        value: input.policy,
+        assertValue: assertSlopbrickRuleEvidencePolicyV2,
+      });
     } catch (error) {
-      if (!policyExisted) await unlink(resolve(input.root, input.policyOut)).catch(() => undefined);
+      if (receiptWrite === 'created') {
+        try {
+          const current = await readPrivateCanonicalArtifact({
+            root: input.root,
+            relativePath: input.receiptOut,
+            label: 'CAL-002 application receipt v2 rollback candidate',
+            assertValue: assertCAL002ApplicationReceiptV2,
+          });
+          if (canonicalArtifact(current).json === canonicalArtifact(input.receipt).json) {
+            await unlink(resolve(input.root, input.receiptOut));
+          }
+        } catch {
+          // Never delete a receipt that cannot be proven to be this writer's exact artifact.
+        }
+      }
       throw error;
     }
   }));
@@ -2935,10 +2954,17 @@ async function applyV2(args: ApplyV2Arguments): Promise<void> {
       { relativePath: args.out, label: args.dryRun ? 'CAL-002 unapplied policy candidate v2' : 'CAL-002 applied policy v2' },
       ...(args.receiptOut === undefined ? [] : [{ relativePath: args.receiptOut, label: 'CAL-002 application receipt v2' }]),
     ],
+    reservePrivateLocksFor: [
+      { relativePath: args.out, label: args.dryRun ? 'CAL-002 unapplied policy candidate v2' : 'CAL-002 applied policy v2' },
+      ...(args.receiptOut === undefined ? [] : [{ relativePath: args.receiptOut, label: 'CAL-002 application receipt v2' }]),
+    ],
   });
+  const implementationCommitSha = resolveGitCommitRef(
+    args.implementationCommitRef,
+    'apply-v2 --implementation-commit-ref',
+  );
   const matrix = await readCanonicalArtifact({ root: args.root, relativePath: args.matrix, label: 'CAL-002 final matrix v2' }) as CAL002FinalMatrixV2;
   assertCAL002FinalMatrixV2(matrix);
-  assertCommitSha(args.implementationCommitRef, 'apply-v2 --implementation-commit-ref');
   if (args.dryRun) {
     const candidate = projectCAL002PolicyCandidateV2(matrix);
     await writeImmutableCanonicalReceipt({
@@ -2956,7 +2982,7 @@ async function applyV2(args: ApplyV2Arguments): Promise<void> {
   const result = buildCAL002AppliedPolicyV2({
     matrix,
     approval,
-    applicationImplementationCommitSha: args.implementationCommitRef,
+    applicationImplementationCommitSha: implementationCommitSha,
   });
   await writeAppliedPairV2({
     root: args.root,

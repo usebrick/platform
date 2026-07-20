@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { constants } from 'node:fs';
 import {
   lstat,
+  link,
   mkdir,
   open,
   readdir,
@@ -42,6 +43,8 @@ interface ValidatedArtifactInput<T> extends ReadCanonicalArtifactInput {
 interface ValidatedArtifactWriteInput<T> extends ValidatedArtifactInput<T> {
   readonly value: T;
 }
+
+export type ImmutableCanonicalWriteResult = 'created' | 'replayed';
 
 export interface PrivateCanonicalArtifact<T> {
   readonly value: T;
@@ -366,29 +369,35 @@ async function writePrivateValueAtomically<T>(input: ValidatedArtifactWriteInput
   }
 }
 
-async function writePrivateValueExclusively<T>(input: ValidatedArtifactWriteInput<T>): Promise<void> {
+async function writePrivateValueExclusively<T>(
+  input: ValidatedArtifactWriteInput<T>,
+): Promise<ImmutableCanonicalWriteResult> {
   const path = await ensureSafeParent(input.root, input.relativePath);
+  const directory = dirname(path);
+  const expectedJson = canonicalArtifact(input.value).json;
+  const temporary = join(directory, `.${basename(path)}.${process.pid}.${randomBytes(12).toString('hex')}.tmp`);
   let handle;
   try {
-    handle = await open(path, 'wx', PRIVATE_FILE_MODE);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+    handle = await open(temporary, 'wx', PRIVATE_FILE_MODE);
+    await handle.writeFile(expectedJson, 'utf8');
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+    try {
+      await link(temporary, path);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
       const existing = await readPrivateCanonicalArtifact(input);
-      if (canonicalArtifact(existing).json === canonicalArtifact(input.value).json) return;
+      if (canonicalArtifact(existing).json === expectedJson) return 'replayed';
       throw new Error(`A different ${input.label} already exists and is immutable`);
     }
-    throw error;
+    await syncDirectory(directory);
+    return 'created';
+  } finally {
+    await handle?.close().catch(() => undefined);
+    await unlink(temporary).catch(() => undefined);
+    await syncDirectory(directory);
   }
-  try {
-    await handle.writeFile(canonicalArtifact(input.value).json, 'utf8');
-    await handle.sync();
-  } catch (error) {
-    await handle.close().catch(() => undefined);
-    await unlink(path).catch(() => undefined);
-    throw error;
-  }
-  await handle.close();
-  await syncDirectory(dirname(path));
 }
 
 export async function writePrivateCanonicalState<T>(input: ValidatedArtifactWriteInput<T>): Promise<void> {
@@ -396,9 +405,17 @@ export async function writePrivateCanonicalState<T>(input: ValidatedArtifactWrit
   await writePrivateValueAtomically(input);
 }
 
-export async function writeImmutableCanonicalReceipt<T>(input: ValidatedArtifactWriteInput<T>): Promise<void> {
+export async function writeImmutableCanonicalReceiptAlreadyLocked<T>(
+  input: ValidatedArtifactWriteInput<T>,
+): Promise<ImmutableCanonicalWriteResult> {
   input.assertValue(input.value);
-  await writePrivateValueExclusively(input);
+  return writePrivateValueExclusively(input);
+}
+
+export async function writeImmutableCanonicalReceipt<T>(
+  input: ValidatedArtifactWriteInput<T>,
+): Promise<ImmutableCanonicalWriteResult> {
+  return withPrivateArtifactSessionLock(input, () => writeImmutableCanonicalReceiptAlreadyLocked(input));
 }
 
 export async function withPrivateArtifactSessionLock<T>(
@@ -451,7 +468,7 @@ export async function writeReviewState(input: ArtifactLocation & { readonly stat
 }
 
 export async function writeImmutableReceipt(input: ArtifactLocation & { readonly receipt: CAL002ReviewReceipt }): Promise<void> {
-  return writeImmutableCanonicalReceipt({
+  await writeImmutableCanonicalReceipt({
     ...input,
     label: 'CAL-002 review receipt',
     value: input.receipt,

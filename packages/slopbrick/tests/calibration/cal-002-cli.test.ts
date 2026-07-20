@@ -72,6 +72,22 @@ function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
 
+function resolveTestCommit(ref: string): string {
+  const object = spawnSync('git', ['rev-parse', '--verify', '--end-of-options', ref], {
+    cwd: packageRoot,
+    encoding: 'utf8',
+  });
+  if (object.status !== 0) throw new Error(object.stderr);
+  const result = spawnSync('git', ['rev-parse', '--verify', '--end-of-options', `${object.stdout.trim()}^{commit}`], {
+    cwd: packageRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) throw new Error(result.stderr);
+  return result.stdout.trim();
+}
+
+const directCommitSha = resolveTestCommit('HEAD');
+
 function temporaryRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'cal-002-cli-'));
   roots.push(root);
@@ -353,6 +369,24 @@ function approvedAuthorityReceiptFixture(root: string): CAL002AuthorityReceiptV2
   };
   writeCanonical(join(root, 'authority-receipt.json'), receipt);
   return receipt;
+}
+
+function serializedSourceBindingFixture(root: string): string {
+  const receipt = {
+    version: 'corpus-v1-source-binding-v1',
+    sourceId: 'untrusted-serialized-fixture',
+    authorityTier: 'publisher_attested',
+    rightsDisposition: 'internal_analysis',
+    csvSha256: '1'.repeat(64),
+    projectionManifestSha256: '2'.repeat(64),
+    rowBindingSha256: '3'.repeat(64),
+    rows: { matched: 5, positive: 0, negative: 5 },
+    sourceClaims: { fixture: 5 },
+    languages: { TypeScript: 5 },
+  } as const;
+  const artifact = canonicalArtifact(receipt);
+  writeCanonical(join(root, 'serialized-source-binding.json'), receipt);
+  return artifact.sha256;
 }
 
 function cal001MatrixFixture(root: string): {
@@ -860,23 +894,24 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
     const root = temporaryRoot();
     approvedAuthorityReceiptFixture(root);
     const cases = [
-      ['db/sql-concat', 'sql.json'],
-      ['logic/math-console-log-storm', 'console.json'],
-      ['logic/math-any-density', 'any.json'],
+      ['db/sql-concat', 'sql.json', ':/port SQL CTE coverage'],
+      ['logic/math-console-log-storm', 'console.json', directCommitSha],
+      ['logic/math-any-density', 'any.json', directCommitSha],
     ] as const;
-    for (const [ruleId, out] of cases) {
+    for (const [ruleId, out, migrationRef] of cases) {
       const parity = run([
         script,
         'reduce-parity-v2',
         '--root', root,
         '--authority', 'authority-receipt.json',
         '--rule-id', ruleId,
-        '--migration-commit-ref', implementationCommitSha,
+        '--migration-commit-ref', migrationRef,
         '--out', out,
       ], '');
       expect(parity.status, parity.stderr).toBe(0);
       expect(JSON.parse(readFileSync(join(root, out), 'utf8'))).toMatchObject({
         ruleId,
+        migrationCommitSha: migrationRef.startsWith(':/') ? resolveTestCommit(migrationRef) : migrationRef,
         status: 'passed',
         admitted: false,
       });
@@ -898,6 +933,36 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
     });
   });
 
+  it('does not substitute a serialized source-binding artifact or arbitrary corpus files for the pinned corpus adapter', () => {
+    const root = temporaryRoot();
+    const corpusRoot = join(root, 'corpus');
+    mkdirSync(corpusRoot);
+    approvedAuthorityReceiptFixture(root);
+    originCatalogFixture(root);
+    const serializedReceiptSha = serializedSourceBindingFixture(root);
+    for (let index = 0; index < 5; index += 1) {
+      writeFileSync(join(corpusRoot, `arbitrary-${index}.ts`), `export const arbitrary${index} = ${index};\n`, { mode: 0o600 });
+    }
+
+    const result = run([
+      script,
+      'reduce-oracles-v2',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--catalog', 'catalog.json',
+      '--corpus-root', 'corpus',
+      '--source-binding-receipt-sha', serializedReceiptSha,
+      '--starting-out', 'starting.json',
+      '--out', 'oracles.json',
+    ], '');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/publisher CSV|Code_Dataset|ENOENT/i);
+    expect(result.stderr).not.toMatch(/could not resolve five real-source|serialized-source-binding/i);
+    expect(existsSync(join(root, 'starting.json'))).toBe(false);
+    expect(existsSync(join(root, 'oracles.json'))).toBe(false);
+  });
+
   it('lets apply-v2 dry-run omit approval and receipt while requiring them for final apply', () => {
     const root = temporaryRoot();
     const dryRun = run([
@@ -906,7 +971,7 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       '--dry-run',
       '--root', root,
       '--matrix', 'missing-matrix.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', ':/port SQL CTE coverage',
       '--out', 'candidate.json',
     ], '');
     expect(dryRun.status).toBe(2);
@@ -918,7 +983,7 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       'apply-v2',
       '--root', root,
       '--matrix', 'matrix.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', directCommitSha,
       '--out', 'policy.json',
     ], '');
     expect(finalApply.status).toBe(2);
@@ -987,7 +1052,7 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       '--dry-run',
       '--root', root,
       '--matrix', 'matrix.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', directCommitSha,
       '--out', 'candidate.json',
     ], '');
     expect(dryRun.status).toBe(0);
@@ -1000,13 +1065,22 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       '--root', root,
       '--matrix', 'matrix.json',
       '--approval', 'approval.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', ':/port SQL CTE coverage',
       '--out', 'policy.json',
       '--receipt-out', 'receipt.json',
     ], '');
     expect(finalApply.status).toBe(0);
-    expect(JSON.parse(readFileSync(join(root, 'policy.json'), 'utf8'))).toMatchObject({ applied: true, admitted: false });
-    expect(JSON.parse(readFileSync(join(root, 'receipt.json'), 'utf8'))).toMatchObject({ applied: true, admitted: false });
+    const resolvedImplementationCommit = resolveTestCommit(':/port SQL CTE coverage');
+    expect(JSON.parse(readFileSync(join(root, 'policy.json'), 'utf8'))).toMatchObject({
+      applicationImplementationCommitSha: resolvedImplementationCommit,
+      applied: true,
+      admitted: false,
+    });
+    expect(JSON.parse(readFileSync(join(root, 'receipt.json'), 'utf8'))).toMatchObject({
+      applicationImplementationCommitSha: resolvedImplementationCommit,
+      applied: true,
+      admitted: false,
+    });
   });
 
   it('leaves both valid final-apply destinations byte-identical on an immutable pair conflict', () => {
@@ -1034,7 +1108,7 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       '--root', root,
       '--matrix', 'matrix.json',
       '--approval', 'approval.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', directCommitSha,
       '--out', 'policy.json',
       '--receipt-out', 'receipt.json',
     ], '');
@@ -1055,12 +1129,64 @@ describe('CAL-002 v2 progressive evidence CLI', () => {
       '--dry-run',
       '--root', root,
       '--matrix', 'matrix.json',
-      '--implementation-commit-ref', implementationCommitSha,
+      '--implementation-commit-ref', directCommitSha,
       '--out', 'matrix.json',
     ], '');
     expect(result.status).toBe(2);
     expect(result.stderr).toMatch(/same file|alias|distinct/i);
     expect(readFileSync(join(root, 'matrix.json'))).toEqual(before);
+  });
+
+  it('reserves apply-v2 output writer and session lock names before reading inputs', () => {
+    const root = temporaryRoot();
+    const reservedMatrixPath = '.policy.json.session.lock';
+    writeCanonical(join(root, reservedMatrixPath), finalMatrixV2Fixture());
+    const before = readFileSync(join(root, reservedMatrixPath));
+    const result = run([
+      script,
+      'apply-v2',
+      '--dry-run',
+      '--root', root,
+      '--matrix', reservedMatrixPath,
+      '--implementation-commit-ref', 'HEAD^0',
+      '--out', 'policy.json',
+    ], '');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/reserved|session lock|distinct|alias/i);
+    expect(readFileSync(join(root, reservedMatrixPath))).toEqual(before);
+    expect(existsSync(join(root, 'policy.json'))).toBe(false);
+  });
+
+  it('allows only one concurrent final apply to commit a hash-consistent receipt-first pair', async () => {
+    const root = temporaryRoot();
+    const matrix = finalMatrixV2Fixture();
+    const approval = buildCAL002MatrixApprovalV2({
+      matrix,
+      approvalCommitSha: implementationCommitSha,
+    }).approval;
+    writeCanonical(join(root, 'matrix.json'), matrix);
+    writeCanonical(join(root, 'approval.json'), approval);
+    const args = (implementationRef: string) => [
+      script,
+      'apply-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--approval', 'approval.json',
+      '--implementation-commit-ref', implementationRef,
+      '--out', 'policy.json',
+      '--receipt-out', 'receipt.json',
+    ];
+
+    const results = await Promise.all([
+      runAsync(args('HEAD^0'), ''),
+      runAsync(args('HEAD^'), ''),
+    ]);
+    expect(results.filter((result) => result.status === 0)).toHaveLength(1);
+    expect(results.filter((result) => result.status === 2)).toHaveLength(1);
+    const policy = JSON.parse(readFileSync(join(root, 'policy.json'), 'utf8')) as Record<string, unknown>;
+    const receipt = JSON.parse(readFileSync(join(root, 'receipt.json'), 'utf8')) as Record<string, unknown>;
+    expect(receipt.applicationImplementationCommitSha).toBe(policy.applicationImplementationCommitSha);
+    expect(receipt.policySha256).toBe(canonicalArtifact(policy).sha256);
   });
 });
 
