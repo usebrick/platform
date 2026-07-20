@@ -1664,4 +1664,35 @@ describe('CAL-002 research-origin v2 CLI', () => {
       expect(existsSync(join(root, out))).toBe(false);
     }
   });
+
+  it.each([
+    ['direct writer lock', '.slopbrick/calibration/cal-002/.origin-state.json.lock'],
+    ['direct session lock', '.slopbrick/calibration/cal-002/.origin-state.json.session.lock'],
+    ['Unicode case-folded writer lock', '.\u017flopbrick/calibration/cal-002/.origin-\u017ftate.json.lock'],
+    ['Unicode case-folded session lock', '.\u017flopbrick/calibration/cal-002/.origin-\u017ftate.json.session.lock'],
+    ['NFKC-normalized writer lock', '.slopbrick/calibration/cal-002/.origin-state\uff0ejson.lock'],
+    ['NFKC-normalized session lock', '.slopbrick/calibration/cal-002/.origin-state\uff0ejson.session.lock'],
+  ] as const)('rejects %s aliases of protected v1 private locks before reads or writes', (label, out) => {
+    const root = temporaryRepositoryRoot();
+    const protectedPath = join(root, PROTECTED_ORIGIN_STATE_RELATIVE_PATH);
+    mkdirSync(join(root, '.slopbrick/calibration/cal-002'), { recursive: true, mode: 0o700 });
+    writeCanonical(protectedPath, { version: 'cal-002-origin-state-v1', marker: 'unchanged' });
+    const before = readFileSync(protectedPath, 'utf8');
+
+    const result = run([
+      script,
+      'verify-origin-v2',
+      '--root', root,
+      '--authority', 'missing-authority.json',
+      '--corpus-root', join(root, 'must-not-be-read'),
+      '--out', out,
+      '--implementation-commit-sha', implementationCommitSha,
+    ], '', root);
+
+    expect(result.status, label).toBe(2);
+    expect(result.stderr, label).toMatch(/reserved|alias|collision|distinct/i);
+    expect(result.stderr, label).not.toMatch(/ENOENT|missing-authority|must-not-be-read/i);
+    expect(readFileSync(protectedPath, 'utf8'), label).toBe(before);
+    expect(existsSync(join(root, out)), label).toBe(false);
+  });
 });

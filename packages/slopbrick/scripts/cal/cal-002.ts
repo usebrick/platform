@@ -1989,6 +1989,9 @@ async function verifyOriginV2(args: VerifyOriginV2Arguments): Promise<void> {
       { relativePath: args.out, label: 'CAL-002 v2 origin receipt' },
       { relativePath: PROTECTED_ORIGIN_STATE_RELATIVE_PATH, label: 'CAL-002 protected v1 origin state' },
     ],
+    reservePrivateLocksFor: [
+      { relativePath: PROTECTED_ORIGIN_STATE_RELATIVE_PATH, label: 'CAL-002 protected v1 origin state' },
+    ],
   });
   const monorepoRoot = detectMonorepoRoot(process.cwd())
     ?? detectMonorepoRoot(args.root);
