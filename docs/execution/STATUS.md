@@ -1,14 +1,14 @@
 # UseBrick execution status
 
-**Snapshot:** 2026-07-19
-**Index revision:** 33
+**Snapshot:** 2026-07-20
+**Index revision:** 34
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 33 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 34 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -45,26 +45,35 @@ exposed a false positive. Task 10 closes four dead-code and unused-binding
 transfer fixtures and adds the narrow classic React/JSX runtime guard required
 by its approved control. Task 11 closes the two security transfer fixtures,
 masks comments for `security/hardcoded-secret`, and adds the canonical strict
-41-row v2 oracle reducer and schema. No durable parity, supersession, or
-transfer-oracle receipt has been created, and none of those paths has been run
-against protected owner state.
+41-row v2 oracle reducer and schema. Task 12 is integrated at `473ceafc3`
+after two independent final approvals. Its fail-closed TypeScript-AST doctrine
+covers exactly 73 active quality rows across descriptions, emitted messages
+and advice, `RULE_HINTS`, and the deterministic 119-row generated catalog,
+whose SHA-256 is
+`9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
+The quality-disposition, parity, and supersession receipt schemas are closed
+through `66251c9fa`. The combined Task 12 and schema focus passes 476/476 with
+package typecheck on exact Node 22.22.3 and 24.15.0; the full Node 24 package
+suite passes 4,392 tests with 15 skipped and zero failures. No durable quality,
+parity, supersession, or transfer-oracle receipt has been created, and none of
+those paths has been run against protected owner state.
 The approved v2 projection remains 47 starting quality + 26
 transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
 research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
-code action is Task 12's 73-row quality-only public-copy doctrine and generated-
-catalog guard. The
+code action is Task 13's exact 32-row research-origin v2 evidence projection
+and verifier. The
 repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
 `admitted: false`; no default state, score, source, baseline, admission, release,
-  deployment, or public artifact changed in revision 33. CAL-002 remains
+deployment, or published artifact changed in revision 34. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. No runtime policy changed;
 local application remains separate from push, tag, publish, deploy, and release.
-This documentation revision records the bounded Tasks 9–11 evidence preparation;
-it does not itself change runtime code or policy. Stale-path cleanup is
-isolated behind exact owner approval and does not
+This documentation revision records the bounded Task 12 doctrine and receipt-
+schema closure; it does not itself change runtime code or policy. Stale-path
+cleanup is isolated behind exact owner approval and does not
 block local product work.
 
 ## Product and release truth
@@ -132,7 +141,8 @@ block local product work.
   The four blocked quality rows remain assignment-ineligible, and the v2
   projection remains non-admitting and unapplied.
 - CAL-002 progressive authority Tasks 1–8 are implementation-checkpointed
-  through `e8e62b779`, and Tasks 9–11 are checkpointed through `651f52d78`.
+  through `e8e62b779`, Tasks 9–11 are checkpointed through `651f52d78`, and
+  Task 12 is integrated at `473ceafc3` after two independent final approvals.
   Task 4's
   final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
@@ -160,10 +170,16 @@ block local product work.
   no source text or path. The approved comment control also corrects a real
   hardcoded-secret comment false positive without shifting issue lines. Its
   exact integrated matrix plus signal-strength guardrails passes 134/134 on
-  both supported runtimes with typecheck on both. These commits qualify code paths,
-  not live owner decisions: no authority proposal, private cohort, durable
-  quality/parity/supersession receipt, runtime policy application, or admission
-  artifact was produced from protected owner state.
+  both supported runtimes with typecheck on both. Task 12's exact doctrine
+  focus passes 187/187 and its affected matrix passes 444/444 on both exact
+  runtimes. With the quality-disposition, parity, and supersession schema
+  closures at `dd8360fba`, `b5bd09090`, and `66251c9fa`, the combined focus
+  passes 476/476 with typecheck on both exact runtimes. The generated 119-row
+  catalog replays identically on both, and the full Node 24 package suite
+  passes 4,392 tests with 15 skipped and zero failures. These commits qualify
+  code paths, not live owner decisions: no authority proposal, private cohort,
+  durable quality/parity/supersession receipt, runtime policy application, or
+  admission artifact was produced from protected owner state.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -254,7 +270,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 12's 73-row quality-only public-copy doctrine and generated-catalog guard. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 13's exact 32-row research-origin v2 evidence projection and verifier. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -325,10 +341,11 @@ continue with another eligible source or a smaller honest corpus.
 
 `SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. CAL-002
 authority Tasks 1–8 are approved through `e8e62b779`, and Tasks 9–11 are
-checkpointed through `651f52d78` after controller audit; Task 12 now enforces
-quality-only public copy across all 73 active quality rows without creating
-owner evidence or applying policy. Its separate quality and origin
-evidence lanes remain the
+checkpointed through `651f52d78` after controller audit. Task 12 is integrated
+at `473ceafc3` with two independent final approvals and exact 73-row quality-
+copy coverage; Task 13 now projects and verifies only the 32 research-origin
+rows without consuming owner decisions or applying policy. Its separate
+quality and origin evidence lanes remain the
 first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has

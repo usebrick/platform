@@ -1,6 +1,6 @@
 # UseBrick roadmap
 
-**Updated:** 2026-07-19
+**Updated:** 2026-07-20
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -85,29 +85,31 @@ historical hold. Progressive authority Tasks 1–8 remain implementation-
 checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
 implementation-checkpointed through `651f52d78` after controller adversarial
 audit, with no external approval claimed because their independent reviewers
-stalled.
-Together they preserve
-the locked 119-rule projection—47 starting quality + 26 transferred quality +
-4 blocked quality + 3 superseded + 7 retired + 32 research-origin rows—add the
-reviewed immutable owner-batch path, close all 32 quality rows without labels,
-and freeze fixed parity and receipt contracts for the three supersession
-migrations. Tasks 6–8 then implement those canonical SQL, console, and `any`
-semantics while leaving the old IDs runnable and without producing durable
-parity or supersession receipts. Task 9 adds the reusable transferred-oracle
-contract and closed C++/Rust cases, and corrects commented-out C-style casts.
-Task 10 closes the four dead-code and unused-binding transfer fixtures and
-adds the narrow classic React/JSX runtime guard required by an approved
-control. Task 11 closes the two security transfer fixtures, masks comments for
-`security/hardcoded-secret`, and adds the strict, canonical 32-starting + 9-
-transferred = 41-row v2 oracle reducer and schema. These tasks do not change
-activation or policy, and none of these paths has been run against protected
-owner state. The next bounded slice is Task 12's 73-row quality-only public-
-copy doctrine and generated-catalog guard. CAL-002
-remains `in_progress` at implementation
-WIP `2/2`; the proposed policy remains `applied: false` and `admitted: false`.
-No runtime policy, admission, or release state changed. Local application, if
-later authorized, remains separate from push, tag, publish, deploy, and
-release authority.
+stalled. Task 12 is integrated at `473ceafc3` after two independent final
+approvals. Together these tasks preserve the locked 119-rule projection—47
+starting quality + 26 transferred quality + 4 blocked quality + 3 superseded +
+7 retired + 32 research-origin rows—add the reviewed immutable owner-batch
+path, close all 32 quality rows without labels, freeze the supersession and
+transfer-oracle contracts, and implement the canonical SQL, console, and
+`any` semantics while the old IDs remain runnable. Task 12's fail-closed
+TypeScript-AST doctrine keeps current public copy for exactly 73 active quality
+rows free of origin, causation, and authorship claims across descriptions,
+emitted messages and advice, `RULE_HINTS`, and the generated 119-row catalog.
+The catalog is deterministic at SHA-256
+`9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
+
+The quality-disposition, parity, and supersession receipt schemas were closed
+at `dd8360fba`, `b5bd09090`, and `66251c9fa`; this rejects malformed open
+shapes without producing a receipt or applying policy. The combined Task 12
+and schema focus passes 476/476 with package typecheck on exact Node 22.22.3
+and 24.15.0, and the full Node 24 package suite passes 4,392 tests with 15
+skipped and zero failures. None of these paths has been run against protected
+owner state. The next bounded slice is Task 13's exact 32-row research-origin
+v2 evidence projection and verifier. CAL-002 remains `in_progress` at
+implementation WIP `2/2`; the proposed policy remains `applied: false` and
+`admitted: false`. No runtime policy, admission, or release state changed.
+Local application, if later authorized, remains separate from push, tag,
+publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -192,13 +194,14 @@ planning artifacts only, not participant action.
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
   `requires` edge. No default state, score, baseline, source, admission, release,
-  deployment, or public artifact changed in revision 33.
+  deployment, or published artifact changed in revision 34.
 - Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
   checkpointed through `e8e62b779`, and Tasks 9–11 are checkpointed through
-  `651f52d78`; next enforce Task 12's quality-only public-copy doctrine across
-  all 73 active quality rows and generated catalog copy. `VAL-001` and
-  `TEL-001` remain ready; `REL-001` remains the unchanged separate public-
-  authority boundary.
+  `651f52d78`; Task 12 is integrated at `473ceafc3` with the three receipt-
+  schema closures through `66251c9fa`. Next project and verify only the exact
+  32 research-origin rows in Task 13 without consuming owner decisions or
+  applying policy. `VAL-001` and `TEL-001` remain ready; `REL-001` remains the
+  unchanged separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract for useful finding, action or decline, rescan, and return outcomes,
   with export and deletion and no raw source or proprietary repository

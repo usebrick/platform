@@ -3,6 +3,48 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 34 — 2026-07-20
+
+### Changed
+
+- Recorded CAL-002 progressive authority Task 12 as integrated at
+  `473ceafc3` from originating implementation `5adba9714` after two independent
+  final approvals.
+- Added the fail-closed TypeScript-AST public-copy doctrine across exactly 73
+  active quality rows, including descriptions, emitted messages and advice,
+  `RULE_HINTS`, and the generated 119-row catalog. Current quality-facing copy
+  no longer asserts AI/human causation or authorship; legacy provenance remains
+  available in its separate historical boundary.
+- Closed the pre-existing quality-disposition, parity, and supersession receipt
+  schemas at `dd8360fba`, `b5bd09090`, and `66251c9fa` so malformed open shapes
+  fail validation without creating or applying any receipt.
+- Advanced the next bounded action to Task 13's exact 32-row research-origin
+  v2 evidence projection and verifier.
+
+### Evidence
+
+- `473ceafc3`
+- `dd8360fba`
+- `b5bd09090`
+- `66251c9fa`
+- `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
+- `docs/execution/evidence/CAL-002-complete-calibration.md`
+- Task 12's exact doctrine focus passes 187/187 and its affected matrix passes
+  444/444 on exact Node 22.22.3 and 24.15.0. The combined Task 12 and schema
+  focus passes 476/476 with SlopBrick typecheck on both runtimes.
+- The generated 119-row catalog replays identically on both runtimes at
+  SHA-256
+  `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
+- The full Node 24.15.0 SlopBrick suite passes 4,392 tests with 15 skipped and
+  zero failures. Task 12 received independent final-review scores of 98/100
+  and 97/100; the schema-closure wave received 96/100 and 98/100, all with no
+  must-fix findings.
+- Protected owner state remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+- No durable quality, parity, supersession, oracle, or origin receipt, current-
+  policy application, owner run, admission, push, tag, publish, deploy, or
+  release was produced.
+
 ## Revision 33 — 2026-07-19
 
 ### Changed

@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
-- **Recorded:** 2026-07-19
-- **State:** `in_progress` implementation checkpoint at revision 33
-- **Scope:** CAL-002 progressive authority Tasks 1–11; no protected owner
+- **Recorded:** 2026-07-20
+- **State:** `in_progress` implementation checkpoint at revision 34
+- **Scope:** CAL-002 progressive authority Tasks 1–12; no protected owner
   workflow, runtime policy application, admission, or release is evidenced by
   this receipt.
 
@@ -113,17 +113,35 @@
   Node 22.22.3 and 24.15.0 with package typecheck on both. Two independent
   reviewers stalled and were closed, so only the controller audit is recorded,
   not external approval. No durable oracle receipt was written.
+- Task 12 is integrated at `473ceafc3` from originating implementation
+  `5adba9714`. Its fail-closed TypeScript-AST extractor and doctrine cover
+  exactly 73 active quality rows across rule descriptions, emitted messages
+  and advice, `RULE_HINTS`, and the deterministic 119-row generated catalog.
+  Current quality-facing copy does not assert AI/human causation or authorship;
+  detector behavior, severity, category, and legacy provenance remain
+  unchanged. The exact doctrine focus passes 187/187 and the affected matrix
+  passes 444/444 on exact Node 22.22.3 and 24.15.0. Two independent final
+  reviews approved the slice at 98/100 and 97/100 with no must-fix findings.
+  The catalog replays identically on both runtimes at SHA-256
+  `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
+- The existing quality-disposition, parity, and supersession receipt schemas
+  are closed at `dd8360fba`, `b5bd09090`, and `66251c9fa`. Strict validation
+  rejects malformed open shapes; the combined Task 12 and schema focus passes
+  476/476 with package typecheck on both exact runtimes. The schema wave
+  received independent approvals at 96/100 and 98/100 with no must-fix
+  findings. The full Node 24.15.0 SlopBrick suite passes 4,392 tests with 15
+  skipped and zero failures.
 - No authority proposal, private cohort, durable quality/parity/supersession
   or transfer-oracle receipt, runtime policy, rule activation, score, source,
   baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 33.
+  deployment, tag, publish, push, or acquired data changed in revision 34.
   Local application remains separate from those release-boundary decisions.
 
 ## Next evidence
 
-The next implementation evidence is Task 12's TypeScript-AST public-copy
-extractor and doctrine guard across the exact 73 active quality rows, their
-`RULE_HINTS`, emitted messages/advice, and generated catalog rows. It must
-remove AI/human causation and authorship framing from current quality-facing
-copy without changing detector behavior, severity, category, legacy metadata,
-runtime policy, owner artifacts, admission, or release state.
+The next implementation evidence is Task 13's exact 32-row research-origin v2
+receipt projection and `verify-origin-v2` path. It must derive only canonical
+`research-only` authority rows, bind frozen governing evidence and replay
+identities, consume no v1 owner-decision rows, store no raw source or path, and
+remain non-admitting and unapplied without changing protected owner artifacts,
+runtime policy, admission, or release state.
