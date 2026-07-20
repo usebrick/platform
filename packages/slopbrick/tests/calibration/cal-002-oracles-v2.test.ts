@@ -400,6 +400,26 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
       } : row),
     };
     expect(validate(nonFrozenControl)).toBe(false);
+    const incompleteFixtureControls = {
+      ...receipt,
+      rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {
+        ...row,
+        fixtureControls: row.fixtureControls.slice(0, 4),
+      } : row),
+    };
+    expect(validate(incompleteFixtureControls)).toBe(false);
+    const shuffledFixtureControls = {
+      ...receipt,
+      rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {
+        ...row,
+        fixtureControls: [
+          row.fixtureControls[1]!,
+          row.fixtureControls[0]!,
+          ...row.fixtureControls.slice(2),
+        ],
+      } : row),
+    };
+    expect(validate(shuffledFixtureControls)).toBe(false);
     const shuffledControls = {
       ...receipt,
       rows: receipt.rows.map((row, rowIndex) => rowIndex === 0 ? {

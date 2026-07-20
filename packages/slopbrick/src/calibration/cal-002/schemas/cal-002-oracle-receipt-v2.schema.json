@@ -159,7 +159,40 @@
           "type": "array",
           "minItems": 5,
           "maxItems": 5,
-          "items": { "$ref": "#/$defs/fixtureControl" }
+          "uniqueItems": true,
+          "prefixItems": [
+            {
+              "type": "object",
+              "$ref": "#/$defs/fixtureControl",
+              "required": ["familyId"],
+              "properties": { "familyId": { "const": "alternate-syntax" } }
+            },
+            {
+              "type": "object",
+              "$ref": "#/$defs/fixtureControl",
+              "required": ["familyId"],
+              "properties": { "familyId": { "const": "baseline" } }
+            },
+            {
+              "type": "object",
+              "$ref": "#/$defs/fixtureControl",
+              "required": ["familyId"],
+              "properties": { "familyId": { "const": "comment-adjacent" } }
+            },
+            {
+              "type": "object",
+              "$ref": "#/$defs/fixtureControl",
+              "required": ["familyId"],
+              "properties": { "familyId": { "const": "near-miss" } }
+            },
+            {
+              "type": "object",
+              "$ref": "#/$defs/fixtureControl",
+              "required": ["familyId"],
+              "properties": { "familyId": { "const": "regression-safe" } }
+            }
+          ],
+          "items": false
         },
         "realSourceControls": {
           "type": "array",

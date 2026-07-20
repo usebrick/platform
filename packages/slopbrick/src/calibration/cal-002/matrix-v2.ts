@@ -278,6 +278,17 @@ function assertOracleRow(
     && (item.expected !== item.observed
       || (typeof item.caseId === 'string' && positiveIds.has(item.caseId) && item.expected !== 'finding')
       || (typeof item.caseId === 'string' && negativeIds.has(item.caseId) && item.expected !== 'no-finding')));
+  const fixtureCaseIds = value.fixtureControls.map((item) => isRecord(item) ? item.caseId : undefined);
+  const fixtureFamilies = value.fixtureControls.map((item) => isRecord(item) ? item.familyId : undefined);
+  const fixtureContentHashes = value.fixtureControls.map((item) => isRecord(item) ? item.contentSha256 : undefined);
+  const completeFixtureControls = fixtureFamilies.length === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && new Set(fixtureCaseIds).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && new Set(fixtureFamilies).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && new Set(fixtureContentHashes).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
+    && CAL002_REAL_SOURCE_CONTROL_FAMILIES.every((familyId, controlIndex) => fixtureFamilies[controlIndex] === familyId);
+  if (!completeFixtureControls) {
+    throw new TypeError(`${label}.fixtureControls must contain the exact five canonical controls`);
+  }
   const realFamilies = value.realSourceControls.map((item) => isRecord(item) ? item.familyId : undefined);
   const realContentHashes = value.realSourceControls.map((item) => isRecord(item) ? item.contentSha256 : undefined);
   const completeRealControls = realFamilies.length === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length

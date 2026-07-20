@@ -2163,7 +2163,6 @@ corepack pnpm --filter slopbrick cal:complete -- reduce-oracles-v2 \
   --authority docs/execution/evidence/artifacts/cal-002/authority-receipt-v2.json \
   --corpus-root /Users/cheng/corpus-expansion/v10.3 \
   --source-binding-receipt-sha 47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac \
-  --workers 1 \
   --starting-out docs/execution/evidence/artifacts/cal-002/oracle-receipt-v1.json \
   --out docs/execution/evidence/artifacts/cal-002/oracle-receipt-v2.json
 ```

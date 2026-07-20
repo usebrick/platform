@@ -83,12 +83,12 @@ function oracleReceipt(authority: CAL002AuthorityReceiptV2): CAL002OracleReceipt
         { caseId: 'positive', expected: 'finding' as const, observed: 'finding' as const, sourceSha256: ((index % 9) + 1).toString().repeat(64) },
         { caseId: 'negative', expected: 'no-finding' as const, observed: 'no-finding' as const, sourceSha256: (((index + 1) % 9) + 1).toString().repeat(64) },
       ],
-      fixtureControls: [{
-        caseId: 'baseline',
-        familyId: 'baseline',
-        contentSha256: (((index + 2) % 9) + 1).toString().repeat(64),
+      fixtureControls: CAL002_TRANSFER_CONTROL_FAMILIES.map((familyId, controlIndex) => ({
+        caseId: `fixture-${familyId}`,
+        familyId,
+        contentSha256: String(((index + controlIndex + 2) % 9) + 1).repeat(64),
         observed: 'no-finding' as const,
-      }],
+      })),
       realSourceControls: CAL002_TRANSFER_CONTROL_FAMILIES.map((familyId, controlIndex) => {
         const contentSha256 = String(((index + controlIndex + 1) % 9) + 1).repeat(64);
         return {
@@ -250,6 +250,42 @@ describe('CAL-002 final matrix v2', () => {
     ['oracle receipt with non-frozen source binding', (input: BuildCAL002FinalMatrixInputV2) => ({
       ...input,
       oracleReceipt: { ...input.oracleReceipt, sourceBindingReceiptSha256: '9'.repeat(64) },
+    })],
+    ['oracle pass with incomplete fixture controls', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          fixtureControls: candidate.fixtureControls.slice(0, 4),
+        } : candidate),
+      },
+    })],
+    ['oracle pass with duplicate fixture-control families', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          fixtureControls: candidate.fixtureControls.map((control, controlIndex) => controlIndex === 1
+            ? { ...control, familyId: candidate.fixtureControls[0]!.familyId }
+            : control),
+        } : candidate),
+      },
+    })],
+    ['oracle pass with shuffled fixture-control order', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          fixtureControls: [
+            candidate.fixtureControls[1]!,
+            candidate.fixtureControls[0]!,
+            ...candidate.fixtureControls.slice(2),
+          ],
+        } : candidate),
+      },
     })],
     ['oracle control with non-derived identity', (input: BuildCAL002FinalMatrixInputV2) => ({
       ...input,
