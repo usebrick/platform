@@ -100,12 +100,22 @@ The catalog is deterministic at SHA-256
 
 The quality-disposition, parity, and supersession receipt schemas were closed
 at `dd8360fba`, `b5bd09090`, and `66251c9fa`; this rejects malformed open
-shapes without producing a receipt or applying policy. The reproducible
-revision-34 gate is the exact four-file, one-worker suite recorded in the
-CAL-002 evidence receipt: it passes 213/213 on exact Node 22.22.3 and 24.15.0,
-with SlopBrick typecheck on both runtimes. The next bounded slice is Task 13's
-exact 32-row research-origin v2 evidence projection and verifier. CAL-002
-remains `in_progress` at implementation WIP `2/2`; the proposed policy remains
+shapes without producing a receipt or applying policy. Task 13 is integrated
+on main at `e956f7900` and `366246e5d`, with protected lock hardening at
+`8c8760783`; originating sidecar `34bf81fe1` / `fa5d452c5` is provenance only.
+It projects exactly 32 canonical `research-only` origin rows, binds frozen
+governing and replay identities, consumes no v1 owner-decision rows, stores no
+raw source or path, and gives every row `runtimeOutcome: default-off`,
+`enabledByDefault: false`, `runnableByExplicitOptIn: true`,
+`scoreEligible: false`, `gateEligible: false`, and `admitted: false`. Task 13
+created no application artifact and did not apply policy; the proposed policy
+remains `applied: false`. Its three-file gate passes 76/76 on exact Node
+22.22.3 and 24.15.0 with SlopBrick typecheck on both runtimes; revision 34's
+four-file 213/213 receipt remains preserved. Independent
+specification and code-quality review approved the lock/session-lock alias fix
+with no remaining findings. The next bounded slice is Task 14's fail-closed
+exact 119-row v2 matrix, approval, and policy projection. CAL-002 remains
+`in_progress` at implementation WIP `2/2`; the proposed policy remains
 `applied: false` and `admitted: false`. This checkpoint grants no authority to
 apply policy, admit evidence, or perform a release action. Remote state is
 outside this receipt;
@@ -194,16 +204,19 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 34 grants no authority to alter default state,
+  `requires` edge. Revision 35 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
 - Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
-  checkpointed through `e8e62b779`, and Tasks 9–11 are checkpointed through
-  `651f52d78`; Task 12 is integrated at `473ceafc3` with the three receipt-
-  schema closures through `66251c9fa`. Next project and verify only the exact
-  32 research-origin rows in Task 13 without consuming owner decisions or
-  applying policy. `VAL-001` and `TEL-001` remain ready; `REL-001` remains the
-  unchanged separate public-authority boundary.
+  checkpointed through `e8e62b779`, Tasks 9–11 through `651f52d78`, Task 12
+  at `473ceafc3`, and Task 13 on main at `e956f7900`, `366246e5d`, and
+  lock-hardening `8c8760783`. Next red-test/build only Task 14's fail-closed
+  exact 119-row v2 matrix, approval, and policy projection in `matrix-v2.ts`
+  and `application-v2.ts`, four schemas, and CLI tests. Do not write a policy
+  file under `src/rules`, consume an owner decision, create a durable receipt,
+  apply policy, admit evidence, or take a release action. `VAL-001` and
+  `TEL-001` remain ready; `REL-001` remains the unchanged separate
+  public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract for useful finding, action or decline, rescan, and return outcomes,
   with export and deletion and no raw source or proprietary repository

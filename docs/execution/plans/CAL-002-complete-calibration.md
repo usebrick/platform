@@ -32,10 +32,21 @@ stalled. Task 12 is integrated at `473ceafc3` after two independent final
 approvals. Its fail-closed TypeScript-AST doctrine covers exactly 73 active
 quality rows and the deterministic 119-row catalog without changing detector
 behavior or legacy provenance. The quality-disposition, parity, and
-supersession receipt schemas are closed through `66251c9fa`; the combined
-focus is represented by the reproducible revision-34 four-file gate: 213/213
-on exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both runtimes.
-Task 4 closes
+supersession receipt schemas are closed through `66251c9fa`; the reproducible
+revision-34 four-file gate remains 213/213 on exact Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both runtimes. Task 13 is integrated on main at
+`e956f7900` and `366246e5d`, with protected lock hardening at `8c8760783`;
+originating sidecar `34bf81fe1` / `fa5d452c5` is provenance only. It projects
+exactly 32 canonical `research-only` origin rows, binds frozen governing and
+replay identities, consumes no v1 owner-decision rows, stores no raw source or
+path, and gives every row `runtimeOutcome: default-off`,
+`enabledByDefault: false`, `runnableByExplicitOptIn: true`,
+`scoreEligible: false`, `gateEligible: false`, and `admitted: false`. Task 13
+created no application artifact and did not apply policy; the proposed policy
+remains `applied: false`. Its three-file gate passes 76/76 on exact Node
+22.22.3 and 24.15.0 with SlopBrick typecheck on both. Independent specification
+and code-quality review approved the lock/session-lock alias fix with no
+remaining findings. Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
 5 freezes fixed parity cases and receipt validators that require each
@@ -51,8 +62,9 @@ its approved control; it also writes no durable receipt and does not activate a
 rule. Task 11 closes the two security fixtures, comment-masks hardcoded-secret
 scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
 writing a durable receipt or applying policy. Task 12 writes no durable
-receipt and applies no policy. This checkpoint grants no release authority;
-remote state is outside its receipt.
+receipt and applies no policy. Task 13 neither changes a v1 owner decision nor
+creates a durable receipt, applies policy, admits evidence, or grants release
+authority; remote state is outside its receipt.
 
 ## Scope
 
@@ -113,13 +125,13 @@ remote state is outside its receipt.
 
 ## Verification
 
-Continue with the focused one-worker Task 13 research-origin v2, v1-origin
-compatibility, and CLI tests. Before any policy application, verify frozen
-identities, source permissions, catalog/config hashes, exact row coverage, lane
-separation, non-admission, provenance output, and the prescribed recursive and
-package-local self-scan gates. This revision does not apply a runtime policy;
-local application remains separate from push, tag, publish, deploy, and release
-authority.
+Continue with the focused one-worker Task 14 five-file matrix/application,
+v1-compatibility, and CLI command. Before any later policy application, verify
+frozen identities, exact 119-row coverage, lane separation, non-admission, and
+the prescribed recursive and package-local self-scan gates. This Task 14
+implementation must not write a policy file under `src/rules`, consume an
+owner decision, create a durable receipt, apply policy, admit evidence, or take
+a release action.
 
 ## Evidence destination
 
@@ -134,7 +146,8 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Red-test Task 13's exact 32-row research-origin v2 receipt projection and
-`verify-origin-v2` CLI. Derive only canonical `research-only` authority rows,
-bind frozen governing evidence without consuming v1 owner decisions, store no
-raw source or path, and keep runtime policy and admission unchanged.
+Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and
+policy projection in `matrix-v2.ts` and `application-v2.ts`, four schemas, and
+CLI tests. Do not write a policy file under `src/rules`, consume an owner
+decision, create a durable receipt, apply policy, admit evidence, or take a
+release action.

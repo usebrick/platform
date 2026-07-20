@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-20
-- **State:** `in_progress` implementation checkpoint at revision 34
-- **Scope:** CAL-002 progressive authority Tasks 1–12. This receipt grants no
+- **State:** `in_progress` implementation checkpoint at revision 35
+- **Scope:** CAL-002 progressive authority Tasks 1–13. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -125,6 +125,20 @@
   are closed at `dd8360fba`, `b5bd09090`, and `66251c9fa`. Strict validation
   rejects malformed open shapes. The revision-34 bounded gate below replaces
   session-only aggregate totals as the durable code-path receipt.
+- Task 13 is integrated on main at `e956f7900` and `366246e5d`; protected
+  lock hardening is integrated at `8c8760783`. Originating sidecar commits
+  `34bf81fe1` and `fa5d452c5` are provenance only. The v2 projection contains
+  exactly 32 canonical `research-only` origin rows, binds frozen governing and
+  replay identities, consumes no v1 owner-decision row, and stores no raw
+  source or path. Every row has `runtimeOutcome: default-off`,
+  `enabledByDefault: false`, `runnableByExplicitOptIn: true`,
+  `scoreEligible: false`, `gateEligible: false`, and `admitted: false`. Task
+  13 created no application artifact and did not apply policy; the proposed
+  policy remains `applied: false`.
+- Independent specification and code-quality review approved the
+  lock/session-lock alias fix with no remaining findings. The protected v1
+  owner state remains an input only: no Task 13 action changes an owner
+  decision, durable receipt, runtime policy, admission, or release state.
 - This checkpoint grants no authority to create an authority proposal, private
   cohort, durable quality/parity/supersession or transfer-oracle receipt, apply
   runtime policy, activate a rule, admit evidence, or perform a release action.
@@ -162,11 +176,37 @@ The stat and SHA-256 assertions protect the local private owner-state input
 when that input is intentionally available. They do not establish a remote
 state or grant release authority.
 
+## Revision-35 reproducible bounded gate
+
+The Task 13 gate covers exactly these three files:
+
+- `tests/calibration/cal-002-origin-v2.test.ts`
+- `tests/calibration/cal-002-origin.test.ts`
+- `tests/calibration/cal-002-cli.test.ts`
+
+It passes 76/76 with one worker on exact Node 22.22.3 and exact Node 24.15.0,
+with SlopBrick typecheck on both runtimes. The protected-state stat and SHA-256
+assertions below were verified on main: mode 0600, 256 bytes, and SHA-256
+`07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+Revision 34's reproducible four-file 213/213 receipt remains preserved above.
+
+### Exact command manifest
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-origin-v2.test.ts tests/calibration/cal-002-origin.test.ts tests/calibration/cal-002-cli.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-origin-v2.test.ts tests/calibration/cal-002-origin.test.ts tests/calibration/cal-002-cli.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+test "$(stat -f '%Lp %z' .slopbrick/calibration/cal-002/origin-state.json)" = "600 256"
+test "$(shasum -a 256 .slopbrick/calibration/cal-002/origin-state.json | awk '{print $1}')" = "07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd"
+git diff --check
+```
+
 ## Next evidence
 
-The next implementation evidence is Task 13's exact 32-row research-origin v2
-receipt projection and `verify-origin-v2` path. It must derive only canonical
-`research-only` authority rows, bind frozen governing evidence and replay
-identities, consume no v1 owner-decision rows, store no raw source or path, and
-remain non-admitting and unapplied without changing protected owner artifacts,
-runtime policy, admission, or release state.
+The next implementation evidence is Task 14's fail-closed exact 119-row v2
+matrix, approval, and policy projection in `matrix-v2.ts` and
+`application-v2.ts`, four schemas, and CLI tests. Red-test/build the reducer
+without writing a policy file under `src/rules`, consuming an owner decision,
+creating a durable receipt, applying policy, admitting evidence, or taking a
+release action.

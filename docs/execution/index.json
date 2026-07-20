@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 34,
+  "revision": 35,
   "updatedAt": "2026-07-20",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Red-test Task 13's exact 32-row research-origin v2 evidence projection and verifier.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-origin-v2.test.ts tests/calibration/cal-002-origin.test.ts tests/calibration/cal-002-cli.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection without policy application, admission, owner decision, durable receipt, or release action.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matrix-v2.test.ts tests/calibration/cal-002-application-v2.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-matrix.test.ts tests/calibration/cal-002-application.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Red-test Task 13's exact 32-row research-origin v2 evidence projection and verifier.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-origin-v2.test.ts tests/calibration/cal-002-origin.test.ts tests/calibration/cal-002-cli.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection without policy application, admission, owner decision, durable receipt, or release action.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matrix-v2.test.ts tests/calibration/cal-002-application-v2.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-matrix.test.ts tests/calibration/cal-002-application.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

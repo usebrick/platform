@@ -3,6 +3,42 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 35 — 2026-07-20
+
+### Changed
+
+- Recorded CAL-002 Task 13 as integrated on main at `e956f7900` and
+  `366246e5d`, with protected lock hardening at `8c8760783`. The originating
+  sidecar commits `34bf81fe1` and `fa5d452c5` are provenance only.
+- Task 13 projects exactly 32 canonical `research-only` origin rows. It binds
+  frozen governing and replay identities, consumes no v1 owner-decision row,
+  stores no raw source or path, and gives every row `runtimeOutcome: default-off`,
+  `enabledByDefault: false`, `runnableByExplicitOptIn: true`,
+  `scoreEligible: false`, `gateEligible: false`, and `admitted: false`. Task 13
+  created no application artifact and did not apply policy; the proposed policy
+  remains `applied: false`.
+- Recorded independent specification and code-quality approval of the
+  lock/session-lock alias hardening with no remaining findings.
+- Advanced the next bounded action to Task 14: red-test/build the fail-closed
+  exact 119-row v2 matrix, approval, and policy projection in `matrix-v2.ts`
+  and `application-v2.ts`, four schemas, and CLI tests. Task 14 does not write
+  a policy file under `src/rules`, consume an owner decision, create a durable
+  receipt, apply policy, admit evidence, or perform a release action.
+
+### Evidence
+
+- `e956f7900`
+- `366246e5d`
+- `8c8760783`
+- The revision-35 three-file one-worker gate passes 76/76 on exact Node
+  22.22.3 and 24.15.0, with SlopBrick typecheck on both runtimes.
+- On main, the protected owner-state assertion verified mode 0600, 256 bytes,
+  and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+- Revision 34's four-file 213/213 receipt remains preserved and reproducible.
+- This checkpoint grants no authority to write runtime policy, admit evidence,
+  push, tag, publish, deploy, or release. Remote state is outside this receipt.
+
 ## Revision 34 — 2026-07-20
 
 ### Changed

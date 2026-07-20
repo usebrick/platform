@@ -1,14 +1,14 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-20
-**Index revision:** 34
+**Index revision:** 35
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 34 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 35 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -52,29 +52,42 @@ and advice, `RULE_HINTS`, and the deterministic 119-row generated catalog,
 whose SHA-256 is
 `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
 The quality-disposition, parity, and supersession receipt schemas are closed
-through `66251c9fa`. The revision-34 bounded gate runs exactly four named tests
-and passes 213/213 on exact Node 22.22.3 and 24.15.0, with SlopBrick typecheck
-on both runtimes. The gate is local code-path evidence only; it neither
-consumes protected owner state nor grants release authority.
+through `66251c9fa`. The revision-34 bounded gate remains exactly four named
+tests and 213/213 on exact Node 22.22.3 and 24.15.0, with SlopBrick typecheck
+on both runtimes. Task 13 is integrated on main at `e956f7900` and
+`366246e5d`, with protected lock hardening at `8c8760783`; originating sidecar
+`34bf81fe1` / `fa5d452c5` is provenance only. It projects exactly 32 canonical
+`research-only` origin rows, binds frozen governing and replay identities,
+consumes no v1 owner-decision rows, and stores no raw source or path. Every row
+has `runtimeOutcome: default-off`, `enabledByDefault: false`,
+`runnableByExplicitOptIn: true`, `scoreEligible: false`, `gateEligible: false`,
+and `admitted: false`. Task 13 created no application artifact and did not
+apply policy; the proposed policy remains `applied: false`. Its three-file gate
+passes 76/76 on exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both
+runtimes. Independent specification and code-quality review approved the
+lock/session-lock alias fix with no remaining findings. These gates are local
+code-path evidence only; they neither consume protected owner state nor grant
+release authority.
 The approved v2 projection remains 47 starting quality + 26
 transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
 research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
-code action is Task 13's exact 32-row research-origin v2 evidence projection
-and verifier. The
+code action is Task 14's fail-closed exact 119-row v2 matrix, approval, and
+policy projection in `matrix-v2.ts` and `application-v2.ts`, four schemas, and
+CLI tests. The
 repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
-`admitted: false`; revision 34 grants no authority to alter default state,
+`admitted: false`; revision 35 grants no authority to alter default state,
 score, source, baseline, admission, release, deployment, or published
 artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. Local application remains
 separate from push, tag, publish, deploy, and release. This documentation
-revision records the bounded Task 12 doctrine and receipt-schema closure; it
-does not grant authority to change runtime code or policy, and remote state is
-outside the receipt. Stale-path cleanup is isolated behind exact owner approval
-and does not block local product work.
+revision records Task 13's bounded research-origin evidence and protected-lock
+hardening; it does not grant authority to change runtime code or policy, and
+remote state is outside the receipt. Stale-path cleanup is isolated behind
+exact owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -141,8 +154,9 @@ and does not block local product work.
   The four blocked quality rows remain assignment-ineligible, and the v2
   projection remains non-admitting and unapplied.
 - CAL-002 progressive authority Tasks 1–8 are implementation-checkpointed
-  through `e8e62b779`, Tasks 9–11 are checkpointed through `651f52d78`, and
-  Task 12 is integrated at `473ceafc3` after two independent final approvals.
+  through `e8e62b779`, Tasks 9–11 are checkpointed through `651f52d78`, Task
+  12 is integrated at `473ceafc3`, and Task 13 is integrated on main at
+  `e956f7900`, `366246e5d`, and lock-hardening `8c8760783`.
   Task 4's
   final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
@@ -173,11 +187,20 @@ and does not block local product work.
   both supported runtimes with typecheck on both. For Task 12 and the schema
   closures, revision 34's durable bounded evidence is the reproducible
   four-file gate: 213/213 on both exact runtimes with typecheck on both. The
-  generated 119-row catalog replays identically on both. These commits qualify
-  code paths, not live owner decisions: this checkpoint grants no authority to
-  create an authority proposal, private cohort, durable
-  quality/parity/supersession receipt, runtime policy application, or admission
-  artifact. Remote state is outside the receipt.
+  generated 119-row catalog replays identically on both. Task 13 adds exactly
+  32 canonical research-only rows with frozen governing/replay binding, no v1
+  owner-decision consumption, no raw source/path, `runtimeOutcome: default-off`,
+  `enabledByDefault: false`, `runnableByExplicitOptIn: true`,
+  `scoreEligible: false`, `gateEligible: false`, and `admitted: false`. No
+  Task 13 application artifact or policy application was created; the proposed
+  policy remains `applied: false`. Its three-file gate passes 76/76 on both
+  exact runtimes with typecheck on both; protected lock/session-lock aliases
+  are independently approved with no remaining findings. These commits qualify
+  code paths, not live owner
+  decisions: this checkpoint grants no authority to create an authority
+  proposal, private cohort, durable quality/parity/supersession receipt,
+  runtime policy application, or admission artifact. Remote state is outside
+  the receipt.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -268,7 +291,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test Task 13's exact 32-row research-origin v2 evidence projection and verifier. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection without application, admission, owner decision, durable receipt, or release action. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -338,13 +361,22 @@ continue with another eligible source or a smaller honest corpus.
 ## Next checkpoint
 
 `SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. CAL-002
-authority Tasks 1–8 are approved through `e8e62b779`, and Tasks 9–11 are
-checkpointed through `651f52d78` after controller audit. Task 12 is integrated
-at `473ceafc3` with two independent final approvals and exact 73-row quality-
-copy coverage; Task 13 now projects and verifies only the 32 research-origin
-rows without consuming owner decisions or applying policy. Its separate
-quality and origin evidence lanes remain the
-first-scan provenance closeout gate for SB-UX-001. `VAL-001` and
+authority Tasks 1–8 are approved through `e8e62b779`, Tasks 9–11 are
+checkpointed through `651f52d78`, Task 12 is integrated at `473ceafc3`, and
+Task 13 is integrated on main at `e956f7900`, `366246e5d`, and lock-hardening
+`8c8760783`. Its exact 32 canonical research-only rows retain frozen
+governing/replay binding, consume no v1 owner decision, contain no raw source
+or path, and have `runtimeOutcome: default-off`, `enabledByDefault: false`,
+`runnableByExplicitOptIn: true`, `scoreEligible: false`, `gateEligible: false`,
+and `admitted: false`. No Task 13 application artifact or policy application
+was created; the proposed policy remains `applied: false`. Next red-test/build
+Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection
+in `matrix-v2.ts` and
+`application-v2.ts`, four schemas, and CLI tests. Do not write a policy file
+under `src/rules`, consume an owner decision, create a durable receipt, apply
+policy, admit evidence, or take a release action. Its separate quality and
+origin evidence lanes remain the first-scan provenance closeout gate for
+SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
