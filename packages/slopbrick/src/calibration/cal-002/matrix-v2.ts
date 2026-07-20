@@ -221,6 +221,9 @@ function assertOracleControl(
       .digest('hex');
     if (value.controlId !== expectedControlId) throw new TypeError(`${label}.controlId is not derived from its binding`);
   }
+  if (value.observed !== 'finding' && value.observed !== 'no-finding') {
+    throw new TypeError(`${label}.observed has an invalid observation`);
+  }
   if (requireNoFinding && value.observed !== 'no-finding') {
     throw new TypeError(`${label}.observed must be no-finding`);
   }

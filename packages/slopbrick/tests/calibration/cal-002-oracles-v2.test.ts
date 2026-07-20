@@ -287,6 +287,20 @@ describe('CAL-002 deterministic oracle receipt v2', () => {
       result.receipt,
       canonicalArtifact(input.authorityReceipt).sha256,
     )).not.toThrow();
+
+    const malformed = {
+      ...result.receipt,
+      rows: result.receipt.rows.map((row) => row.ruleId === fixture.ruleId ? {
+        ...row,
+        fixtureControls: row.fixtureControls.map((candidate) => candidate.caseId === control.caseId
+          ? { ...candidate, observed: 'unexpected-observation' }
+          : candidate),
+      } : row),
+    };
+    expect(() => assertCAL002OracleReceiptV2ForMatrix(
+      malformed,
+      canonicalArtifact(input.authorityReceipt).sha256,
+    )).toThrow(/invalid observation/i);
   });
 
   it('fails closed on a missing transfer fixture', () => {
