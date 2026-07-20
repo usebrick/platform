@@ -67,17 +67,16 @@
   "allOf": [
     {
       "if": {
-        "type": "object",
         "properties": { "status": { "const": "reused" } },
         "required": ["status"]
       },
       "then": {
-        "type": "object",
         "properties": {
           "rows": {
             "type": "array",
             "contains": {
               "type": "object",
+              "$ref": "#/$defs/row",
               "properties": { "evidenceStatus": { "const": "reused" } },
               "required": ["evidenceStatus"]
             },
@@ -87,12 +86,12 @@
         }
       },
       "else": {
-        "type": "object",
         "properties": {
           "rows": {
             "type": "array",
             "contains": {
               "type": "object",
+              "$ref": "#/$defs/row",
               "properties": { "evidenceStatus": { "const": "rerun-completed" } },
               "required": ["evidenceStatus"]
             },

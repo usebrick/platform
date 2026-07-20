@@ -279,20 +279,34 @@ describe('CAL-002 local artifact contracts', () => {
     }
   });
 
-  it('keeps every object definition closed', () => {
+  it('keeps every object definition closed or delegates a refinement to a closed local definition', () => {
     const index = JSON.parse(readFileSync(join(SCHEMA_DIR, 'index.json'), 'utf8')) as { schemas: { file: string }[] };
-    const visit = (value: unknown, path: string): void => {
+    const resolveLocalRef = (schema: unknown, ref: unknown): unknown => {
+      if (typeof ref !== 'string' || !ref.startsWith('#/')) return undefined;
+      return ref.slice(2).split('/').reduce<unknown>((current, encodedSegment) => {
+        if (current === null || typeof current !== 'object' || Array.isArray(current)) return undefined;
+        const segment = encodedSegment.replace(/~1/g, '/').replace(/~0/g, '~');
+        return (current as Record<string, unknown>)[segment];
+      }, schema);
+    };
+    const visit = (value: unknown, path: string, schema: unknown): void => {
       if (Array.isArray(value)) {
-        value.forEach((child, index) => visit(child, `${path}[${index}]`));
+        value.forEach((child, index) => visit(child, `${path}[${index}]`, schema));
         return;
       }
       if (value === null || typeof value !== 'object') return;
       const record = value as Record<string, unknown>;
-      if (record.type === 'object') expect(record.additionalProperties, path).toBe(false);
-      Object.entries(record).forEach(([key, child]) => visit(child, `${path}.${key}`));
+      if (record.type === 'object' && record.additionalProperties !== false) {
+        expect(resolveLocalRef(schema, record.$ref), `${path} must refine a closed local object`).toMatchObject({
+          type: 'object',
+          additionalProperties: false,
+        });
+      }
+      Object.entries(record).forEach(([key, child]) => visit(child, `${path}.${key}`, schema));
     };
     for (const { file } of index.schemas) {
-      visit(JSON.parse(readFileSync(join(SCHEMA_DIR, file), 'utf8')), file);
+      const schema = JSON.parse(readFileSync(join(SCHEMA_DIR, file), 'utf8')) as unknown;
+      visit(schema, file, schema);
     }
   });
 

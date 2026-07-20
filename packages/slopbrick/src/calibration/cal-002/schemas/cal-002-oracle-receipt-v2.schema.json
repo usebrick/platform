@@ -188,34 +188,34 @@
                 "maxItems": 5,
                 "prefixItems": [
                   {
-                    "allOf": [
-                      { "$ref": "#/$defs/realSourceControl" },
-                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "alternate-syntax" } } }
-                    ]
+                    "type": "object",
+                    "$ref": "#/$defs/realSourceControl",
+                    "required": ["familyId"],
+                    "properties": { "familyId": { "const": "alternate-syntax" } }
                   },
                   {
-                    "allOf": [
-                      { "$ref": "#/$defs/realSourceControl" },
-                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "baseline" } } }
-                    ]
+                    "type": "object",
+                    "$ref": "#/$defs/realSourceControl",
+                    "required": ["familyId"],
+                    "properties": { "familyId": { "const": "baseline" } }
                   },
                   {
-                    "allOf": [
-                      { "$ref": "#/$defs/realSourceControl" },
-                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "comment-adjacent" } } }
-                    ]
+                    "type": "object",
+                    "$ref": "#/$defs/realSourceControl",
+                    "required": ["familyId"],
+                    "properties": { "familyId": { "const": "comment-adjacent" } }
                   },
                   {
-                    "allOf": [
-                      { "$ref": "#/$defs/realSourceControl" },
-                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "near-miss" } } }
-                    ]
+                    "type": "object",
+                    "$ref": "#/$defs/realSourceControl",
+                    "required": ["familyId"],
+                    "properties": { "familyId": { "const": "near-miss" } }
                   },
                   {
-                    "allOf": [
-                      { "$ref": "#/$defs/realSourceControl" },
-                      { "type": "object", "required": ["familyId"], "properties": { "familyId": { "const": "regression-safe" } } }
-                    ]
+                    "type": "object",
+                    "$ref": "#/$defs/realSourceControl",
+                    "required": ["familyId"],
+                    "properties": { "familyId": { "const": "regression-safe" } }
                   }
                 ],
                 "items": false
