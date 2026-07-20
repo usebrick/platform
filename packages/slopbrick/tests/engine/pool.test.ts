@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { Worker } from 'node:worker_threads';
 import { WorkerPool } from '../../src/engine/pool';
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -266,40 +267,32 @@ setTimeout(() => parentPort.postMessage({ type: 'ready' }), 200);
 
   it('rejects after bounded ready-handshake timeouts', async () => {
     const dir = createTmpDir();
-    const attemptLog = join(dir, 'never-ready-attempts.log');
-    process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG = attemptLog;
     try {
       const workerScript = join(dir, 'never-ready-worker.cjs');
       writeFileSync(
         workerScript,
         `
-const fs = require('node:fs');
-fs.appendFileSync(process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG, 'spawn\\n');
 setInterval(() => {}, 1_000);
 `,
       );
+      let startupAttempts = 0;
 
       const pool = new WorkerPool({
         config: DEFAULT_CONFIG,
         threadCount: 1,
         workerScript,
         workerTimeoutMs: 50,
+        workerFactory: (script, options) => {
+          startupAttempts += 1;
+          return new Worker(script, options);
+        },
       });
 
       await expect(settlesWithin(pool.scan(['never-ready.tsx']), 1_000)).rejects.toThrow(
-        /workers could not start.*did not send ready within 50ms/i,
+        /workers could not start after 3 consecutive failures.*did not send ready within 50ms/i,
       );
-
-      const attempts = existsSync(attemptLog)
-        ? readFileSync(attemptLog, 'utf8').split('\n').filter(Boolean)
-        : [];
-      // The pool makes three bounded startup attempts; the last worker can
-      // be terminated immediately on rejection before its fixture process
-      // gets a scheduling slice to append the log.
-      expect(attempts.length).toBeGreaterThanOrEqual(2);
-      expect(attempts.length).toBeLessThanOrEqual(3);
+      expect(startupAttempts).toBe(3);
     } finally {
-      delete process.env.SLOP_POOL_NEVER_READY_ATTEMPT_LOG;
       rmSync(dir, { recursive: true, force: true });
     }
   });

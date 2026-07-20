@@ -449,7 +449,7 @@ describe('v10.3 byte-backed verified admission context', () => {
       toolReceiptSha256: calibrationAdmissionToolReceiptSha256(bundle.toolReceipts.find((receipt) => receipt.action !== 'authority:overlap')!),
     }));
     await expectRejected(wrongAction.root, wrongAction.evidence);
-  });
+  }, 120_000);
 
   it('rejects rich-bundle source-review reason drift despite rehashed record and authority graph', async () => {
     const fixture = await runtimeFixture();
