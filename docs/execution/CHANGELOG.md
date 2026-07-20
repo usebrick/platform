@@ -29,21 +29,15 @@ release notes remain in package changelogs.
 - `66251c9fa`
 - `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
 - `docs/execution/evidence/CAL-002-complete-calibration.md`
-- Task 12's exact doctrine focus passes 187/187 and its affected matrix passes
-  444/444 on exact Node 22.22.3 and 24.15.0. The combined Task 12 and schema
-  focus passes 476/476 with SlopBrick typecheck on both runtimes.
+- The revision-34 bounded gate runs exactly four named tests and passes 213/213
+  on exact Node 22.22.3 and 24.15.0, with SlopBrick typecheck on both runtimes.
 - The generated 119-row catalog replays identically on both runtimes at
   SHA-256
   `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
-- The full Node 24.15.0 SlopBrick suite passes 4,392 tests with 15 skipped and
-  zero failures. Task 12 received independent final-review scores of 98/100
-  and 97/100; the schema-closure wave received 96/100 and 98/100, all with no
-  must-fix findings.
 - Protected owner state remains mode 0600, 256 bytes, and SHA-256
   `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
-- No durable quality, parity, supersession, oracle, or origin receipt, current-
-  policy application, owner run, admission, push, tag, publish, deploy, or
-  release was produced.
+- This checkpoint grants no authority to apply policy, admit evidence, push,
+  tag, publish, deploy, or release. Remote state is outside this receipt.
 
 ## Revision 33 — 2026-07-19
 

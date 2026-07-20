@@ -52,11 +52,10 @@ and advice, `RULE_HINTS`, and the deterministic 119-row generated catalog,
 whose SHA-256 is
 `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
 The quality-disposition, parity, and supersession receipt schemas are closed
-through `66251c9fa`. The combined Task 12 and schema focus passes 476/476 with
-package typecheck on exact Node 22.22.3 and 24.15.0; the full Node 24 package
-suite passes 4,392 tests with 15 skipped and zero failures. No durable quality,
-parity, supersession, or transfer-oracle receipt has been created, and none of
-those paths has been run against protected owner state.
+through `66251c9fa`. The revision-34 bounded gate runs exactly four named tests
+and passes 213/213 on exact Node 22.22.3 and 24.15.0, with SlopBrick typecheck
+on both runtimes. The gate is local code-path evidence only; it neither
+consumes protected owner state nor grants release authority.
 The approved v2 projection remains 47 starting quality + 26
 transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
 research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
@@ -66,15 +65,16 @@ repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
-`admitted: false`; no default state, score, source, baseline, admission, release,
-deployment, or published artifact changed in revision 34. CAL-002 remains
+`admitted: false`; revision 34 grants no authority to alter default state,
+score, source, baseline, admission, release, deployment, or published
+artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
-remains `applied: false` and `admitted: false`. No runtime policy changed;
-local application remains separate from push, tag, publish, deploy, and release.
-This documentation revision records the bounded Task 12 doctrine and receipt-
-schema closure; it does not itself change runtime code or policy. Stale-path
-cleanup is isolated behind exact owner approval and does not
-block local product work.
+remains `applied: false` and `admitted: false`. Local application remains
+separate from push, tag, publish, deploy, and release. This documentation
+revision records the bounded Task 12 doctrine and receipt-schema closure; it
+does not grant authority to change runtime code or policy, and remote state is
+outside the receipt. Stale-path cleanup is isolated behind exact owner approval
+and does not block local product work.
 
 ## Product and release truth
 
@@ -170,16 +170,14 @@ block local product work.
   no source text or path. The approved comment control also corrects a real
   hardcoded-secret comment false positive without shifting issue lines. Its
   exact integrated matrix plus signal-strength guardrails passes 134/134 on
-  both supported runtimes with typecheck on both. Task 12's exact doctrine
-  focus passes 187/187 and its affected matrix passes 444/444 on both exact
-  runtimes. With the quality-disposition, parity, and supersession schema
-  closures at `dd8360fba`, `b5bd09090`, and `66251c9fa`, the combined focus
-  passes 476/476 with typecheck on both exact runtimes. The generated 119-row
-  catalog replays identically on both, and the full Node 24 package suite
-  passes 4,392 tests with 15 skipped and zero failures. These commits qualify
-  code paths, not live owner decisions: no authority proposal, private cohort,
-  durable quality/parity/supersession receipt, runtime policy application, or
-  admission artifact was produced from protected owner state.
+  both supported runtimes with typecheck on both. For Task 12 and the schema
+  closures, revision 34's durable bounded evidence is the reproducible
+  four-file gate: 213/213 on both exact runtimes with typecheck on both. The
+  generated 119-row catalog replays identically on both. These commits qualify
+  code paths, not live owner decisions: this checkpoint grants no authority to
+  create an authority proposal, private cohort, durable
+  quality/parity/supersession receipt, runtime policy application, or admission
+  artifact. Remote state is outside the receipt.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive

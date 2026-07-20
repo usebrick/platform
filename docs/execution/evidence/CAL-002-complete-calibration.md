@@ -2,9 +2,9 @@
 
 - **Recorded:** 2026-07-20
 - **State:** `in_progress` implementation checkpoint at revision 34
-- **Scope:** CAL-002 progressive authority Tasks 1–12; no protected owner
-  workflow, runtime policy application, admission, or release is evidenced by
-  this receipt.
+- **Scope:** CAL-002 progressive authority Tasks 1–12. This receipt grants no
+  authority to apply policy, admit evidence, or perform a release action;
+  remote state is outside the receipt.
 
 ## Inputs
 
@@ -119,23 +119,48 @@
   and advice, `RULE_HINTS`, and the deterministic 119-row generated catalog.
   Current quality-facing copy does not assert AI/human causation or authorship;
   detector behavior, severity, category, and legacy provenance remain
-  unchanged. The exact doctrine focus passes 187/187 and the affected matrix
-  passes 444/444 on exact Node 22.22.3 and 24.15.0. Two independent final
-  reviews approved the slice at 98/100 and 97/100 with no must-fix findings.
-  The catalog replays identically on both runtimes at SHA-256
+  unchanged. The catalog replays identically on both runtimes at SHA-256
   `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
 - The existing quality-disposition, parity, and supersession receipt schemas
   are closed at `dd8360fba`, `b5bd09090`, and `66251c9fa`. Strict validation
-  rejects malformed open shapes; the combined Task 12 and schema focus passes
-  476/476 with package typecheck on both exact runtimes. The schema wave
-  received independent approvals at 96/100 and 98/100 with no must-fix
-  findings. The full Node 24.15.0 SlopBrick suite passes 4,392 tests with 15
-  skipped and zero failures.
-- No authority proposal, private cohort, durable quality/parity/supersession
-  or transfer-oracle receipt, runtime policy, rule activation, score, source,
-  baseline, frozen evidence artifact, owner state, admission, release,
-  deployment, tag, publish, push, or acquired data changed in revision 34.
-  Local application remains separate from those release-boundary decisions.
+  rejects malformed open shapes. The revision-34 bounded gate below replaces
+  session-only aggregate totals as the durable code-path receipt.
+- This checkpoint grants no authority to create an authority proposal, private
+  cohort, durable quality/parity/supersession or transfer-oracle receipt, apply
+  runtime policy, activate a rule, admit evidence, or perform a release action.
+  Remote state is outside this receipt. Local application remains separate from
+  push, tag, publish, deploy, and release decisions.
+
+## Revision-34 reproducible bounded gate
+
+The gate covers exactly these four files:
+
+- `tests/rules/quality-authority-copy.test.ts`
+- `tests/generated-docs-truth.test.ts`
+- `tests/calibration/cal-002-quality-disposition.test.ts`
+- `tests/calibration/cal-002-supersession.test.ts`
+
+It passes 213/213 with one worker on exact Node 22.22.3 and exact Node 24.15.0.
+The catalog remains the deterministic 119-row projection with exactly 73 active
+quality rows, SHA-256
+`9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`, and
+`applied: false` / `admitted: false`.
+
+### Exact command manifest
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/quality-authority-copy.test.ts tests/generated-docs-truth.test.ts tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/quality-authority-copy.test.ts tests/generated-docs-truth.test.ts tests/calibration/cal-002-quality-disposition.test.ts tests/calibration/cal-002-supersession.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+test "$(stat -f '%Lp %z' .slopbrick/calibration/cal-002/origin-state.json)" = "600 256"
+test "$(shasum -a 256 .slopbrick/calibration/cal-002/origin-state.json | awk '{print $1}')" = "07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd"
+git diff --check
+```
+
+The stat and SHA-256 assertions protect the local private owner-state input
+when that input is intentionally available. They do not establish a remote
+state or grant release authority.
 
 ## Next evidence
 

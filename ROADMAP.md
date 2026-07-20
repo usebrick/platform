@@ -100,15 +100,16 @@ The catalog is deterministic at SHA-256
 
 The quality-disposition, parity, and supersession receipt schemas were closed
 at `dd8360fba`, `b5bd09090`, and `66251c9fa`; this rejects malformed open
-shapes without producing a receipt or applying policy. The combined Task 12
-and schema focus passes 476/476 with package typecheck on exact Node 22.22.3
-and 24.15.0, and the full Node 24 package suite passes 4,392 tests with 15
-skipped and zero failures. None of these paths has been run against protected
-owner state. The next bounded slice is Task 13's exact 32-row research-origin
-v2 evidence projection and verifier. CAL-002 remains `in_progress` at
-implementation WIP `2/2`; the proposed policy remains `applied: false` and
-`admitted: false`. No runtime policy, admission, or release state changed.
-Local application, if later authorized, remains separate from push, tag,
+shapes without producing a receipt or applying policy. The reproducible
+revision-34 gate is the exact four-file, one-worker suite recorded in the
+CAL-002 evidence receipt: it passes 213/213 on exact Node 22.22.3 and 24.15.0,
+with SlopBrick typecheck on both runtimes. The next bounded slice is Task 13's
+exact 32-row research-origin v2 evidence projection and verifier. CAL-002
+remains `in_progress` at implementation WIP `2/2`; the proposed policy remains
+`applied: false` and `admitted: false`. This checkpoint grants no authority to
+apply policy, admit evidence, or perform a release action. Remote state is
+outside this receipt;
+local application, if later authorized, remains separate from push, tag,
 publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
@@ -193,8 +194,9 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. No default state, score, baseline, source, admission, release,
-  deployment, or published artifact changed in revision 34.
+  `requires` edge. Revision 34 grants no authority to alter default state,
+  score, baseline, source, admission, release, deployment, or published
+  artifacts; remote state is outside its receipt.
 - Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
   checkpointed through `e8e62b779`, and Tasks 9–11 are checkpointed through
   `651f52d78`; Task 12 is integrated at `473ceafc3` with the three receipt-

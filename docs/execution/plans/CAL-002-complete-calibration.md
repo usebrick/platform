@@ -33,7 +33,8 @@ approvals. Its fail-closed TypeScript-AST doctrine covers exactly 73 active
 quality rows and the deterministic 119-row catalog without changing detector
 behavior or legacy provenance. The quality-disposition, parity, and
 supersession receipt schemas are closed through `66251c9fa`; the combined
-focus passes 476/476 with package typecheck on exact Node 22.22.3 and 24.15.0.
+focus is represented by the reproducible revision-34 four-file gate: 213/213
+on exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both runtimes.
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -50,8 +51,8 @@ its approved control; it also writes no durable receipt and does not activate a
 rule. Task 11 closes the two security fixtures, comment-masks hardcoded-secret
 scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
 writing a durable receipt or applying policy. Task 12 writes no durable
-receipt and applies no policy. No protected owner workflow or runtime policy
-application has occurred.
+receipt and applies no policy. This checkpoint grants no release authority;
+remote state is outside its receipt.
 
 ## Scope
 
