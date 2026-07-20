@@ -26,7 +26,7 @@ export const arbitraryEscapeRule = createRule<ArbitraryEscapeContext>({
   category: 'visual',
   severity: 'medium',
   aiSpecific: true,
-  description: 'Bracket-notation Tailwind values (e.g. `p-[13px]`, `bg-[#7c3aed]`) — AI agents reach for arbitrary escapes instead of design tokens (Refactoring UI; Mäntylä 2003)',
+  description: 'Repeated arbitrary Tailwind values may bypass the project token system; review intentional exceptions.',
   create(context: RuleContext): ArbitraryEscapeContext {
     return {
       allowlist: context.config.arbitraryValueAllowlist,
@@ -54,7 +54,7 @@ export const arbitraryEscapeRule = createRule<ArbitraryEscapeContext>({
           if (!token) return undefined;
           return {
             kind: 'replace' as const,
-            description: `Replace '${offender}' with '${token}'`,
+            description: 'Replace the arbitrary value with the nearest Tailwind spacing token.',
             targetFile: facts.filePath,
             oldValue: offender,
             newValue: token,

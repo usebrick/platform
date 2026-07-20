@@ -22,7 +22,7 @@ export const mathButtonLabelUniformityRule = createRule<RuleContext>({
   category: 'typo',
   severity: 'medium',
   aiSpecific: false,
-  description: 'Button text lengths have suspiciously low variance — AI writes "Get started", "Sign up", "Learn more"',
+  description: 'Button-label lengths have unusually low variance; review whether labels communicate distinct actions.',
   create(context) {
     return context;
   },

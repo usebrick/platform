@@ -61,8 +61,7 @@ export const deadBranchRule = createRule<DeadBranchContext>({
         advice: isWhileTrue
           ? `If this is an intentional infinite loop (event loop, hot loop with explicit \`break\`), add a \`// slopbrick-disable\` comment. Otherwise, replace the literal with a real condition.`
           : `Replace the literal with a real condition, or remove the dead branch entirely. ` +
-            `This is the AI-iteration signature: the model toggled a feature flag to a constant ` +
-            `or left a wrapper from a previous refactor.`,
+            `Constant branches hide unreachable behavior and stale feature-flag paths.`,
       });
     }
 

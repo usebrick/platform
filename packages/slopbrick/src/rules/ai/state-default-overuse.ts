@@ -48,7 +48,7 @@ export const aiStateDefaultOveruseRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'low',
   aiSpecific: true,
-  description: '≥5 useState calls with no useReducer / Zustand / Jotai — Sascha 2025 (LLMs produce 2022-era state patterns)',
+  description: 'Five or more useState calls appear without useReducer or a recognized state-library import; review ownership and transition complexity.',
   create(context) {
     return context;
   },
@@ -87,7 +87,7 @@ export const aiStateDefaultOveruseRule = createRule<RuleContext>({
         severity: 'low',
         aiSpecific: true,
         message:
-          `${useStateCount} \`useState\` calls, 0 \`useReducer\`, no state library ` +
+          `${useStateCount} \`useState\` calls, 0 \`useReducer\`, no recognized state-library import ` +
           `(Zustand/Jotai/Valtio/Recoil/Redux). Review state ownership, lifecycle, ` +
           `and transition complexity before choosing a different primitive.`,
         line: 1,

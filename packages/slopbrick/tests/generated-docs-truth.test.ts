@@ -2,6 +2,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { canonicalAuthorityRowsV2 } from '../src/calibration/cal-002/authority';
+import { builtinRules } from '../src/rules/builtins';
+import {
+  assertQualityCopy,
+  collectGeneratedCatalogCopy,
+} from './helpers/public-rule-copy';
+
 describe('generated documentation truth', () => {
   it('binds the package front door to the approved UseBrick doctrine', () => {
     const approvedPositioning = readFileSync(
@@ -47,5 +54,21 @@ describe('generated documentation truth', () => {
 
     expect(catalog).toContain('[../../../ROADMAP.md](../../../ROADMAP.md)');
     expect(catalog).not.toContain('12-phase plan');
+  });
+
+  it('keeps generated descriptions for all 73 quality rows exact and provenance-neutral', () => {
+    const catalogPath = join(__dirname, '..', 'docs', 'rule-catalog.md');
+    const qualityIds = canonicalAuthorityRowsV2()
+      .filter((row) => row.sourceClass === 'starting-quality' || row.action === 'transfer')
+      .map((row) => row.ruleId)
+      .sort();
+    expect(qualityIds).toHaveLength(73);
+    for (const ruleId of qualityIds) {
+      const copy = collectGeneratedCatalogCopy(ruleId, catalogPath);
+      const runtimeRules = builtinRules.filter((rule) => rule.id === ruleId);
+      expect(runtimeRules, `${ruleId} runtime rule identity`).toHaveLength(1);
+      expect(copy.text, `${ruleId} generated description`).toBe(runtimeRules[0]!.description);
+      expect(() => assertQualityCopy(copy.text, copy.location)).not.toThrow();
+    }
   });
 });

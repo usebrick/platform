@@ -131,7 +131,7 @@ export const placeholderTextRule = createRule<RuleContext>({
   severity: 'low',
   aiSpecific: false,
   description:
-    'Placeholder text contains dev/AI defaults (Lorem ipsum, Enter text here, TODO, etc.) — unfinished UI.',
+    'User-facing text contains a known placeholder or unfinished-copy marker.',
   create(context) {
     return context;
   },

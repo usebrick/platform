@@ -495,7 +495,7 @@ function makeIssue(target: Region, other: Region): Issue {
     column: 0,
     advice:
       'Consider extracting this repeated code into a shared helper or module. ' +
-      'Duplication is maintainability evidence; it does not establish authorship or AI generation.',
+      'Extract only when the repeated region represents shared behavior rather than intentional local clarity.',
     extras: {
       duplicateOf: {
         file: other.filePath,

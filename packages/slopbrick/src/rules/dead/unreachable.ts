@@ -46,7 +46,7 @@ export const unreachableRule = createRule<UnreachableContext>({
   category: 'logic',
   severity: 'high',
   aiSpecific: true,
-  description: 'Statement is unreachable after an unconditional return/throw/break/continue',
+  description: 'Statement is unreachable after an unconditional return, throw, break, or continue.',
   create(_context: RuleContext): UnreachableContext {
     return {};
   },
@@ -65,10 +65,8 @@ export const unreachableRule = createRule<UnreachableContext>({
         message: `Unreachable after ${u.terminator}: ${u.snippet}`,
         line: u.line,
         column: u.column,
-        advice: `Remove this statement — code after a ${u.terminator} is unreachable. ` +
-          `This is the AI-iteration signature: the model added an early ${u.terminator} ` +
-          `for a new error path, then forgot the rest of the function body was still ` +
-          `sitting below it.`,
+        advice: `Remove the unreachable statement or move it before the unconditional ${u.terminator} ` +
+          `when that ordering is intended.`,
       });
     }
 

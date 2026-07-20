@@ -54,7 +54,10 @@ describe('ai/state-default-overuse', () => {
     expect(issues.length).toBeGreaterThanOrEqual(1);
     expect(issues[0].ruleId).toBe('ai/state-default-overuse');
     expect(issues[0].aiSpecific).toBe(true);
-    expect(`${issues[0].message}\n${issues[0].advice}`).not.toMatch(/LLM|human code|verify authorship/i);
+    expect(`${aiStateDefaultOveruseRule.description}\n${issues[0].message}`)
+      .toMatch(/recognized state-library import/iu);
+    expect(`${aiStateDefaultOveruseRule.description}\n${issues[0].message}\n${issues[0].advice}`)
+      .not.toMatch(/\bAI\b|\bLLMs?\b|human code|verify authorship/i);
   });
 
   it('does not flag when useReducer is present alongside useState', async () => {

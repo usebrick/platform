@@ -39,7 +39,7 @@ export const heapsDeviationRule = createRule<RuleContext>({
   category: 'logic',
   severity: 'medium',
   aiSpecific: false,
-  description: 'File vocabulary growth (Heaps λ) deviates significantly from corpus baseline — peer-reviewed source-code hygiene statistic (Christ et al. EMNLP Findings 2025); not an authorship verdict',
+  description: 'File vocabulary growth (Heaps λ) differs from the calibrated corpus baseline; treat this as review-only.',
   create(context) {
     return context;
   },
@@ -70,14 +70,13 @@ export const heapsDeviationRule = createRule<RuleContext>({
       message:
         `Heaps exponent λ=${fit.exponent.toFixed(3)} is ${direction} than corpus baseline ` +
         `(${lambdaMean.toFixed(2)} ± ${lambdaStd.toFixed(2)}, z=${z.toFixed(2)}σ). ` +
-        `Per Christ et al. (EMNLP Findings 2025), this vocabulary-growth statistic provides peer-reviewed ` +
-        `source-code hygiene context; it is not an authorship verdict or proof of authorship.`,
+        `This vocabulary-growth statistic is a review signal for naming and source-code structure.`,
       line: 1,
       column: 1,
       advice:
         `Review identifier vocabulary and source-code structure: this file's vocabulary ${direction === 'higher' ? 'grows faster' : 'grows slower'} ` +
-        `than the calibrated baseline. Check domain naming, generated output, schemas, fixtures, or boilerplate; this hygiene signal ` +
-        `is not an authorship verdict or proof of authorship.`,
+        `than the calibrated baseline. Check domain naming, generated output, schemas, fixtures, or boilerplate; ` +
+        `change code only when it improves clarity or maintainability.`,
     });
     return issues;
   },

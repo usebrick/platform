@@ -93,8 +93,7 @@ export const unusedImportRule = createRule<UnusedImportContext>({
         line: binding.line,
         column: binding.column,
         advice: `Remove the import or use '${binding.name}' somewhere in the file. ` +
-          `This is the most common AI-iteration rot — the model added the import ` +
-          `when it introduced a feature, then rewrote the function without cleaning up.`,
+          `Unused imports can hide the real dependency surface and incomplete refactors.`,
       });
     }
 

@@ -69,6 +69,8 @@ describe('product/terminology-drift', () => {
     const issues = analyze(['PostList', 'PostDetail', 'PostCard']);
     expect(issues.length).toBe(2); // 3 variants -> 2 drifters
     expect(issues.every((i) => i.message.includes('"Post'))).toBe(true);
+    expect(terminologyDriftRule.description).toMatch(/leading or trailing token/iu);
+    expect(issues.every((issue) => /leading or trailing.+token/iu.test(issue.message))).toBe(true);
   });
 
   it('fires on BOTH prefix and suffix drift when both apply', () => {

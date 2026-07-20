@@ -66,7 +66,7 @@ export const aiConsoleDebugStormRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'low',
   aiSpecific: true,
-  description: '≥10 console.log/debug/info/warn/error + debugger statements, no structured logger — GitClear 2025 (AI debug noise often left in)',
+  description: 'Without a structured logger, either at least 10 console/debugger statements occur or five console.log calls cluster within a 30-line window.',
   create(context) {
     return context;
   },

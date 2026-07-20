@@ -105,11 +105,11 @@ const RULE_HINTS: Record<string, string> = {
   'logic/ghost-defensive':
     'Use optional chaining (?.) or early returns instead of deep && guards. If a defensive chain runs 3+ levels deep, refactor.',
   'logic/heaps-deviation':
-    'Review identifier vocabulary and source-code structure against the baseline; check domain naming; generated/fixture/schema/boilerplate context. This hygiene signal is not an authorship verdict or proof. (Christ et al. EMNLP Findings 2025.)',
+    'Review identifier vocabulary and structure against the baseline. Check domain naming, generated output, fixtures, schemas, and boilerplate; change code only when it improves clarity. (Christ et al. 2025.)',
   'logic/ks-distribution-shift':
     'Inspect the shifted features. KS detects both AI-associated anomalies and production-rot anomalies because it is symmetric; combine with Heaps/Zipf only as context, never as authorship proof. (v0.12.0 — arXiv:2510.15996, Oct 2025.)',
   'logic/zipf-slope-anomaly':
-    "Review whether identifier frequency reflects the domain vocabulary, generated output, or boilerplate. This symmetric statistical signal is not an authorship verdict. (v0.12.0 — Christ et al. EMNLP Findings 2025.)",
+    'Review whether identifier frequency reflects the domain vocabulary, generated output, or boilerplate; change names only when it improves domain clarity. (v0.12.0 — Christ et al. EMNLP Findings 2025.)',
   'logic/math-any-density':
     'Replace `: any` with proper types. Start with the parameter/return types of the most-used functions.',
   'logic/math-console-log-storm':
@@ -165,7 +165,7 @@ const RULE_HINTS: Record<string, string> = {
   'test/fake-placeholder':
     'Use domain-specific fixture values (`alice@acme-corp.com`, `Order#48231`) or a factory like @faker-js/faker. Avoid textbook placeholders (`John Doe`, `test@test.com`, `id: 1`).',
   'product/terminology-drift':
-    'Keep the leading noun consistent across files: `PostList`, `PostDetail`, `PostCard` are one entity, not three. Canonical vocabulary prevents product-copy drift.',
+    'Review groups of three or more PascalCase names that share a leading or trailing token. Standardize the counterpart terms only when they represent the same product concept.',
   'product/ux-pattern-fragmentation':
     'Keep the per-category count tight: modal ≤3, toast ≤2, button ≤4, input ≤3, card ≤3. Pick the canonical one and alias the rest. `slopbrick patterns` reports the per-category count.',
   // v0.13.0 — AI-specific rules (peer-reviewed signals).
@@ -200,7 +200,7 @@ const RULE_HINTS: Record<string, string> = {
   'ai/fetch-default-overuse':
     "If the project needs shared caching, retries, error boundaries, or abort handling, route component requests through its data-fetching layer. Direct fetch() is fine when those capabilities are intentionally unnecessary.",
   'ai/console-debug-storm':
-    "Five or more console.log calls in a single file create unbounded debug noise. Remove them before commit and use the project's logger or a real debugger; this is an engineering hygiene issue, not authorship proof.",
+    "Without a structured logger, either 10 or more debug statements or five console.log calls in a 30-line window create unbounded noise. Remove them before commit or use the project's logger or debugger.",
   // v0.17.0 — db/* rules (Postgres static analysis via pgsql-parser)
   'db/sql-concat':
     'Never build SQL with template-literal interpolation — `db.query(\`SELECT … WHERE id = ${id}\`)` is a SQL injection vector. Use parameterized queries (`db.query("… WHERE id = $1", [id])`) or your ORM query builder.',
@@ -236,7 +236,7 @@ const RULE_HINTS: Record<string, string> = {
     "Choose nil/empty semantics based on the API contract and use one consistent convention within the package. This is a correctness/style issue, not authorship proof.",
   // v0.19.0 — Duplication detector
   'dup/identical-block':
-    "Consider extracting this repeated normalized code region into a shared helper or module. This is maintainability evidence (an exact Type-1 clone after comment/whitespace normalization); it does not establish authorship or AI generation.",
+    'Consider extracting this repeated normalized code region into a shared helper or module when it represents shared behavior. It is exact Type-1 clone evidence after comment and whitespace normalization.',
   // v0.23.0 — Type-2 near-duplicate detector (MinHash + LSH)
   'dup/near-duplicate':
     "Refactor to a shared helper when the repeated behavior should evolve together. Type-2 similarity can be intentional reuse or copy-paste and is not authorship proof. (v0.23.0 — MinHash + LSH, k=5, thr 0.7.)",

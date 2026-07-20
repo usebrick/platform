@@ -49,7 +49,7 @@ export const aiFetchDefaultOveruseRule = createRule<RuleContext>({
   category: 'ai',
   severity: 'low',
   aiSpecific: true,
-  description: '≥3 direct fetch() calls with no TanStack Query / SWR / axios — Sascha 2025 (LLMs default to raw fetch even when libs exist)',
+  description: 'Three or more direct fetch() calls appear without a recognized data-fetching library import; review caching, retry, invalidation, and cancellation needs.',
   create(context) {
     return context;
   },
@@ -84,7 +84,7 @@ export const aiFetchDefaultOveruseRule = createRule<RuleContext>({
         severity: 'low',
         aiSpecific: true,
         message:
-          `${fetchCount} direct \`fetch()\` calls with no shared data-fetching layer detected. ` +
+          `${fetchCount} direct \`fetch()\` calls with no recognized data-fetching library import. ` +
           `Review whether this project needs shared caching, retries, invalidation, or abort handling; ` +
           `direct \`fetch()\` can be intentional when those capabilities are unnecessary.`,
         line: 1,

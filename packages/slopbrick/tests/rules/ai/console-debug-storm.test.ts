@@ -153,5 +153,6 @@ describe('ai/console-debug-storm', () => {
       'ai/console-debug-storm',
     ]);
     expect(await runRule(nineWarnings)).toEqual([]);
+    expect(aiConsoleDebugStormRule.description).toMatch(/either.+or/iu);
   });
 });

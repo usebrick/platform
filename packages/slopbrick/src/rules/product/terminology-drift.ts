@@ -82,7 +82,7 @@ export const terminologyDriftRule = createRule<RuleContext>({
   severity: 'medium',
   aiSpecific: false,
   description:
-    'Three or more semantically-similar component names differ (e.g. PostList/ArticleList/NewsList on the "List" suffix, or PostList/PostDetail/PostCard on the "Post" prefix). AI agents pick slightly different words each invocation; pick one and standardize.',
+    'Three or more PascalCase component names share a leading or trailing token while their counterpart tokens differ; review whether the terms are intentional.',
   create(context) {
     return context;
   },
@@ -136,17 +136,16 @@ export const terminologyDriftRule = createRule<RuleContext>({
           severity: 'medium',
           aiSpecific: true,
           message:
-            `Component "${drifter.name}" looks like a variant of the canonical "${canonical.name}" ` +
-            `(shared stem "${group.stem}"). ${group.variants.size} distinct surface forms across ` +
-            `the codebase — pick one and standardize. Consistent product vocabulary reduces ` +
-            `copy drift and keeps search, navigation, and user mental models coherent.`,
+            `Component "${drifter.name}" and "${canonical.name}" share the leading or trailing ` +
+            `token "${group.stem}". ${group.variants.size} distinct PascalCase names share that ` +
+            `token in this file; review whether their counterpart terms express intentional ` +
+            `distinctions or terminology drift.`,
           filePath: drifter.file,
           line: drifter.line,
           column: 1,
           advice:
-            `Rename "${drifter.name}" to "${canonical.name}" (or vice versa), or define both as ` +
-            `aliases if they intentionally serve different contexts. The drift hurts search, ` +
-            `navigation, and the user's mental model.`,
+            `If the names represent the same product concept, choose one term and standardize it. ` +
+            `If they represent different concepts, document the distinction before renaming either.`,
         });
       }
     }

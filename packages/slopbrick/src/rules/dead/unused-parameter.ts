@@ -65,9 +65,8 @@ export const unusedParameterRule = createRule<UnusedParameterContext>({
         line: binding.line,
         column: binding.column,
         advice: `Remove the parameter (and update every call site) or use '${binding.name}' ` +
-          `in the function body. This is the AI-iteration signature: the model added ` +
-          `the parameter when it introduced a feature, then rewrote the function without ` +
-          `removing parameters the new code does not need.`,
+          `in the function body. Unused parameters make the API misleading and complicate ` +
+          `future refactors.`,
       });
     }
 

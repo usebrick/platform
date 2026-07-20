@@ -34,7 +34,7 @@ export const zipfSlopeAnomalyRule = createRule<RuleContext>({
   category: 'logic',
   severity: 'medium',
   aiSpecific: false,
-  description: 'File identifier rank-frequency distribution (Zipf s) deviates from corpus baseline — peer-reviewed LLM indicator',
+  description: 'Identifier rank-frequency slope differs from the historical baseline; treat this as review-only.',
   create(context) {
     return context;
   },
@@ -69,7 +69,7 @@ export const zipfSlopeAnomalyRule = createRule<RuleContext>({
       message:
         `Zipf exponent s=${fit.exponent.toFixed(3)} is ${direction} than corpus baseline ` +
         `(${exponentMean.toFixed(2)} ± ${exponentStd.toFixed(2)}, z=${z.toFixed(2)}σ, R²=${fit.rSquared.toFixed(2)}). ` +
-        `This identifier-frequency statistic can reflect domain vocabulary, generated output, or boilerplate; it is not an authorship verdict.`,
+        `This identifier-frequency statistic can reflect domain vocabulary, generated output, or boilerplate.`,
       line: 1,
       column: 1,
       advice:

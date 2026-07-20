@@ -36,7 +36,7 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
   category: 'logic',
   severity: 'high',
   aiSpecific: false,
-  description: 'Identifier names show low Shannon entropy — AI defaults to a small vocabulary of generic names',
+  description: 'Identifier vocabulary has low Shannon entropy and may overuse generic names; treat this as review-only.',
   create(context) {
     return context;
   },
@@ -59,9 +59,9 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
       if (matches) for (const m of matches) bump(counts, m);
     }
 
-    const { h, vocab, total } = shannonEntropy(counts);
-    if (total < 40) return issues;
-    if (h > 1.8) return issues;
+    const entropy = shannonEntropy(counts);
+    if (entropy.total < 40) return issues;
+    if (entropy.h > 1.8) return issues;
 
     const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
     const topStr = top.map(([k, v]) => `${k}×${v}`).join(', ');
@@ -73,7 +73,7 @@ export const mathVariableNameEntropyRule = createRule<RuleContext>({
       severity: 'high',
       aiSpecific: false,
       message:
-        `Identifier names show low entropy (H=${h.toFixed(2)}, vocab=${vocab}, n=${total}). ` +
+        `Identifier names show low entropy (H=${entropy.h.toFixed(2)}, vocab=${entropy.vocab}, n=${entropy.total}). ` +
         `Top: ${topStr}. Review whether generic names obscure domain meaning; rename only when it improves clarity and maintainability.`,
       line: anchor?.line ?? 1,
       column: anchor?.column ?? 1,

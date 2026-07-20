@@ -57,7 +57,7 @@ export const javaLostStackTraceRule = createRule<JavaLostStackTraceContext>({
   severity: 'medium',
   aiSpecific: false,
   description:
-    'catch block throws a new exception without the original cause — stack trace is lost',
+    'A replacement exception omits the caught exception as its cause, losing the original stack trace.',
   create(_context: RuleContext): JavaLostStackTraceContext {
     return {};
   },
@@ -130,9 +130,7 @@ export const javaLostStackTraceRule = createRule<JavaLostStackTraceContext>({
           `\`throw new ${m[1]}("...", ${enclosing.exVar})\` — ` +
           `the second argument to the exception constructor is the ` +
           `cause, which Java's Throwable framework preserves in the ` +
-          `stack trace chain. Reference: java/lost-stack-trace v0.35.1 ` +
-          `(Raidar-inspired content-based detection of AI-polished ` +
-          `error handling).`,
+          `stack trace chain.`,
       });
     }
     return issues;

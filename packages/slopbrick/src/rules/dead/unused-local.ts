@@ -97,9 +97,7 @@ export const unusedLocalRule = createRule<UnusedLocalContext>({
         line: binding.line,
         column: binding.column,
         advice: `Remove the declaration or use '${binding.name}' somewhere in the file. ` +
-          `This is the second-most-common AI-iteration signature — the model declared ` +
-          `the binding when it introduced a feature, then rewrote the function without ` +
-          `cleaning up.`,
+          `Unused locals obscure intent and can hide incomplete refactors.`,
       });
     }
 

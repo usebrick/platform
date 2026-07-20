@@ -36,7 +36,7 @@ async function runRule(source: string): Promise<Issue[]> {
 }
 
 describe('logic/heaps-deviation wording', () => {
-  it('frames the non-AI signal as source-code hygiene, not authorship evidence', async () => {
+  it('frames the signal as review-only vocabulary and structure evidence', async () => {
     const source = Array.from({ length: 80 }, () => 'const token = token;').join('\n');
     const [issue] = await runRule(source);
 
@@ -44,18 +44,17 @@ describe('logic/heaps-deviation wording', () => {
     expect(issue?.ruleId).toBe('logic/heaps-deviation');
     expect(issue?.aiSpecific).toBe(false);
     expect(issue?.severity).toBe('medium');
-    expect(issue?.message).toMatch(/vocabulary|source-code|statistical/i);
-    expect(issue?.message).toMatch(/not (proof|an) authorship|not an authorship verdict/i);
-    expect(issue?.message).not.toMatch(/LLM-generated|LLM-style|verify authorship/i);
+    expect(issue?.message).toMatch(/vocabulary|source-code|structure/i);
     expect(issue?.advice).toMatch(/structural|source-code|identifier vocabulary/i);
-    expect(issue?.advice).toMatch(/not (proof|an) authorship|not an authorship verdict/i);
-    expect(issue?.advice).not.toMatch(/LLM-style|verify authorship/i);
+    expect(heapsDeviationRule.description).toMatch(/vocabulary|baseline|review-only/i);
+    expect(RULE_HINTS['logic/heaps-deviation']).toMatch(/vocabulary|source-code|clarity/i);
 
-    expect(heapsDeviationRule.description).toMatch(/hygiene|source-code|statistical/i);
-    expect(heapsDeviationRule.description).toMatch(/not an authorship verdict/i);
-    expect(heapsDeviationRule.description).not.toMatch(/LLM indicator/i);
-    expect(RULE_HINTS['logic/heaps-deviation']).toMatch(/hygiene|source-code|structural/i);
-    expect(RULE_HINTS['logic/heaps-deviation']).toMatch(/not (proof|an) authorship|not an authorship verdict/i);
-    expect(RULE_HINTS['logic/heaps-deviation']).not.toMatch(/LLM-style|verify authorship/i);
+    const publicText = [
+      issue?.message,
+      issue?.advice,
+      heapsDeviationRule.description,
+      RULE_HINTS['logic/heaps-deviation'],
+    ].join(' ');
+    expect(publicText).not.toMatch(/\bAI\b|\bLLMs?\b|authorship|fingerprint|human[- ]code/iu);
   });
 });

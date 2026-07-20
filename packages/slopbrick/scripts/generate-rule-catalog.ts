@@ -17,6 +17,8 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import ts from 'typescript';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = path.resolve(__dirname, '../src/rules');
 const SIGNAL_STRENGTH = path.resolve(__dirname, '../src/rules/signal-strength.json');
@@ -57,6 +59,7 @@ interface RuleMeta {
 //   2. Multiline string literals:  description:\n  'foo\n  bar'
 //   3. Mixed quote types:          description: "foo 'bar' baz"
 //   4. Constant references:        description: SOME_CONST
+//   5. Concatenated literals:       description: 'foo ' + 'bar'
 // ---------------------------------------------------------------------------
 
 function extractRuleMeta(src: string): {
@@ -78,45 +81,80 @@ function extractRuleMeta(src: string): {
 }
 
 function extractDescription(src: string): string {
-  // Find the `id:` field that opens the rule body.
-  const idM = src.match(/\bid:\s*['"][^'"]+['"]/);
-  if (!idM) return '';
-  const idPos = idM.index!;
+  const source = ts.createSourceFile(
+    'rule.ts',
+    src,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const constants = new Map<string, ts.Expression[]>();
+  let description: ts.Expression | undefined;
 
-  // The rule's *own* `description:` lives between `id:` and the next
-  // `create(` / `analyze(` call. Anything past that boundary is a
-  // FixSuggestion / Issue description inside the analyze body.
-  const afterId = src.slice(idPos + idM[0].length);
-  const endOfMetadata = afterId.search(/\b(create|analyze)\s*[<(]/);
-  const region = endOfMetadata < 0 ? afterId : afterId.slice(0, endOfMetadata);
-
-  const descIdx = region.indexOf('description:');
-  if (descIdx < 0) return '';
-  let pos = descIdx + 'description:'.length;
-  while (pos < region.length && /\s/.test(region[pos])) pos++;
-  if (pos >= region.length) return '';
-
-  const opener = region[pos];
-  if (opener !== "'" && opener !== '"' && opener !== '`') {
-    // Constant reference — record the name so the gap is visible.
-    const ident = region.slice(pos).match(/^[A-Za-z_$][A-Za-z0-9_$]*/);
-    return ident ? `[constant: ${ident[0]}]` : '';
-  }
-
-  pos++;
-  let buf = '';
-  while (pos < region.length) {
-    const c = region[pos];
-    if (c === '\\' && pos + 1 < region.length) {
-      buf += region[pos + 1];
-      pos += 2;
-      continue;
+  const nameOf = (name: ts.PropertyName): string | undefined => {
+    if (ts.isIdentifier(name) || ts.isStringLiteralLike(name)) return name.text;
+    if (ts.isComputedPropertyName(name) && ts.isStringLiteralLike(name.expression)) {
+      return name.expression.text;
     }
-    if (c === opener) break;
-    buf += c;
-    pos++;
-  }
-  return buf.trim();
+    return undefined;
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+      const existing = constants.get(node.name.text) ?? [];
+      existing.push(node.initializer);
+      constants.set(node.name.text, existing);
+    }
+    if (ts.isObjectLiteralExpression(node)) {
+      const id = node.properties.find((property) =>
+        ts.isPropertyAssignment(property)
+        && nameOf(property.name) === 'id'
+        && ts.isStringLiteralLike(property.initializer),
+      );
+      if (id) {
+        const candidate = node.properties.find((property) =>
+          ts.isPropertyAssignment(property) && nameOf(property.name) === 'description',
+        );
+        if (candidate && ts.isPropertyAssignment(candidate)) description = candidate.initializer;
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  if (!description) return '';
+
+  const resolve = (expression: ts.Expression, seen: ReadonlySet<ts.Node>): string => {
+    if (seen.has(expression)) throw new TypeError('Cyclic rule-description constant');
+    const nextSeen = new Set(seen);
+    nextSeen.add(expression);
+
+    if (ts.isStringLiteralLike(expression)) return expression.text;
+    if (ts.isParenthesizedExpression(expression)
+      || ts.isAsExpression(expression)
+      || ts.isTypeAssertionExpression(expression)
+      || ts.isNonNullExpression(expression)
+      || ts.isSatisfiesExpression(expression)) {
+      return resolve(expression.expression, nextSeen);
+    }
+    if (ts.isBinaryExpression(expression)
+      && expression.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+      return resolve(expression.left, nextSeen) + resolve(expression.right, nextSeen);
+    }
+    if (ts.isIdentifier(expression)) {
+      const candidates = constants.get(expression.text) ?? [];
+      if (candidates.length !== 1) {
+        throw new TypeError(
+          `Rule description constant ${expression.text} must resolve exactly once; found ${candidates.length}`,
+        );
+      }
+      return resolve(candidates[0]!, nextSeen);
+    }
+    throw new TypeError(
+      `Rule description must be statically resolvable; found ${ts.SyntaxKind[expression.kind]}`,
+    );
+  };
+
+  return resolve(description, new Set()).trim();
 }
 
 async function discoverRules(): Promise<RuleMeta[]> {
