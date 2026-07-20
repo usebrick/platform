@@ -396,7 +396,8 @@ async function writePrivateValueExclusively<T>(
   } finally {
     await handle?.close().catch(() => undefined);
     await unlink(temporary).catch(() => undefined);
-    await syncDirectory(directory);
+    // Cleanup durability must not mask the explicit publication fsync or its visible final artifact.
+    await syncDirectory(directory).catch(() => undefined);
   }
 }
 
@@ -438,7 +439,8 @@ export async function withPrivateArtifactSessionLock<T>(
   } finally {
     await lock.close().catch(() => undefined);
     await unlink(lockPath).catch(() => undefined);
-    await syncDirectory(dirname(path));
+    // Lock cleanup cannot change the outcome of the action that completed while this lock was held.
+    await syncDirectory(dirname(path)).catch(() => undefined);
   }
 }
 

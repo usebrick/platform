@@ -2867,6 +2867,23 @@ async function existingImmutableV2<T>(input: {
   }
 }
 
+type ImmutableVisibilityV2 = 'absent' | 'exact' | 'unproven';
+
+async function immutableVisibilityV2<T>(input: {
+  readonly root: string;
+  readonly relativePath: string;
+  readonly label: string;
+  readonly value: T;
+  readonly assertValue: (value: unknown) => asserts value is T;
+}): Promise<ImmutableVisibilityV2> {
+  try {
+    const existing = await readPrivateCanonicalArtifact(input);
+    return canonicalArtifact(existing).json === canonicalArtifact(input.value).json ? 'exact' : 'unproven';
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'absent' : 'unproven';
+  }
+}
+
 async function writeAppliedPairV2(input: {
   readonly root: string;
   readonly policyOut: string;
@@ -2901,7 +2918,7 @@ async function writeAppliedPairV2(input: {
       value: input.policy,
       assertValue: assertSlopbrickRuleEvidencePolicyV2,
     });
-    await existingImmutableV2({
+    const receiptExisted = await existingImmutableV2({
       root: input.root,
       relativePath: input.receiptOut,
       label: 'CAL-002 application receipt v2',
@@ -2925,19 +2942,26 @@ async function writeAppliedPairV2(input: {
         assertValue: assertSlopbrickRuleEvidencePolicyV2,
       });
     } catch (error) {
-      if (receiptWrite === 'created') {
-        try {
-          const current = await readPrivateCanonicalArtifact({
+      if (receiptWrite === 'created' || !receiptExisted) {
+        const [policyVisibility, receiptVisibility] = await Promise.all([
+          immutableVisibilityV2({
+            root: input.root,
+            relativePath: input.policyOut,
+            label: 'CAL-002 applied policy v2 rollback check',
+            value: input.policy,
+            assertValue: assertSlopbrickRuleEvidencePolicyV2,
+          }),
+          immutableVisibilityV2({
             root: input.root,
             relativePath: input.receiptOut,
-            label: 'CAL-002 application receipt v2 rollback candidate',
+            label: 'CAL-002 application receipt v2 rollback check',
+            value: input.receipt,
             assertValue: assertCAL002ApplicationReceiptV2,
-          });
-          if (canonicalArtifact(current).json === canonicalArtifact(input.receipt).json) {
-            await unlink(resolve(input.root, input.receiptOut));
-          }
-        } catch {
-          // Never delete a receipt that cannot be proven to be this writer's exact artifact.
+          }),
+        ]);
+        // Only an absent policy proves that removing this writer's receipt cannot expose a commit marker.
+        if (policyVisibility === 'absent' && receiptVisibility === 'exact') {
+          await unlink(resolve(input.root, input.receiptOut)).catch(() => undefined);
         }
       }
       throw error;
