@@ -123,6 +123,7 @@ export interface CAL002FinalMatrixResultV2 {
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const COMMIT_SHA = /^[a-f0-9]{40}$/u;
+const CASE_ID = /^[a-z0-9][a-z0-9-]*$/u;
 const RUNTIME_OUTCOMES = [
   'default-on',
   'quality-advisory',
@@ -171,10 +172,14 @@ function assertArray(value: unknown, label: string): asserts value is readonly u
   if (!Array.isArray(value)) throw new TypeError(`${label} must be an array`);
 }
 
+function isCaseId(value: unknown): value is string {
+  return typeof value === 'string' && CASE_ID.test(value);
+}
+
 function assertOracleCaseIds(value: unknown, label: string): asserts value is readonly string[] {
   assertArray(value, label);
   if (value.length === 0
-    || value.some((caseId) => typeof caseId !== 'string' || caseId.length === 0)
+    || value.some((caseId) => !isCaseId(caseId))
     || new Set(value).size !== value.length) {
     throw new TypeError(`${label} is invalid`);
   }
@@ -184,7 +189,7 @@ function assertOracleCase(value: unknown, label: string): void {
   if (!isRecord(value) || !exactKeys(value, ['caseId', 'expected', 'observed', 'sourceSha256'])) {
     throw new TypeError(`${label} has unknown or missing fields`);
   }
-  if (typeof value.caseId !== 'string' || value.caseId.length === 0) throw new TypeError(`${label}.caseId is invalid`);
+  if (!isCaseId(value.caseId)) throw new TypeError(`${label}.caseId is invalid`);
   if (!['finding', 'no-finding'].includes(value.expected as string)
     || !['finding', 'no-finding'].includes(value.observed as string)) {
     throw new TypeError(`${label} has an invalid observation`);
@@ -205,6 +210,7 @@ function assertOracleControl(
   if (!isRecord(value) || !exactKeys(value, keys)) throw new TypeError(`${label} has unknown or missing fields`);
   const identityKey = realSource ? 'controlId' : 'caseId';
   if (typeof value[identityKey] !== 'string' || (value[identityKey] as string).length === 0
+    || (!realSource && !isCaseId(value[identityKey]))
     || typeof value.familyId !== 'string' || value.familyId.length === 0) {
     throw new TypeError(`${label} has invalid identity fields`);
   }
@@ -307,7 +313,8 @@ function assertOracleRow(
     && new Set(realFamilies).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
     && new Set(realContentHashes).size === CAL002_REAL_SOURCE_CONTROL_FAMILIES.length
     && CAL002_REAL_SOURCE_CONTROL_FAMILIES.every((familyId, index) => realFamilies[index] === familyId);
-  if (value.failures.some((failure) => typeof failure !== 'string' || failure.length === 0)) {
+  if (value.failures.some((failure) => typeof failure !== 'string' || failure.length === 0)
+    || new Set(value.failures).size !== value.failures.length) {
     throw new TypeError(`${label}.failures is invalid`);
   }
   if (!['passed', 'failed'].includes(value.status as string)

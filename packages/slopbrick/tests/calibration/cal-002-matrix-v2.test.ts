@@ -247,6 +247,47 @@ describe('CAL-002 final matrix v2', () => {
         } : candidate),
       },
     })],
+    ['oracle receipt with a consistently renamed invalid case identity', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          declaration: {
+            ...candidate.declaration,
+            positiveCaseIds: ['Invalid_Case'],
+          },
+          caseResults: candidate.caseResults.map((caseResult) => caseResult.caseId === 'positive'
+            ? { ...caseResult, caseId: 'Invalid_Case' }
+            : caseResult),
+        } : candidate),
+      },
+    })],
+    ['oracle receipt with an invalid fixture-control case identity', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          fixtureControls: candidate.fixtureControls.map((control, controlIndex) => controlIndex === 0
+            ? { ...control, caseId: 'Invalid_Control' }
+            : control),
+        } : candidate),
+      },
+    })],
+    ['failed oracle receipt with duplicate failures', (input: BuildCAL002FinalMatrixInputV2) => ({
+      ...input,
+      oracleReceipt: {
+        ...input.oracleReceipt,
+        rows: input.oracleReceipt.rows.map((candidate, index) => index === 0 ? {
+          ...candidate,
+          status: 'failed' as const,
+          outcome: 'default-off' as const,
+          failures: ['duplicate-failure', 'duplicate-failure'],
+        } : candidate),
+        counts: { ...input.oracleReceipt.counts, passed: 40, failed: 1 },
+      },
+    })],
     ['oracle receipt with non-frozen source binding', (input: BuildCAL002FinalMatrixInputV2) => ({
       ...input,
       oracleReceipt: { ...input.oracleReceipt, sourceBindingReceiptSha256: '9'.repeat(64) },
