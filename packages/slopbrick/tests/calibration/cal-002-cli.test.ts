@@ -31,7 +31,17 @@ import {
   CAL002_AUTHORITY_RECEIPT_VERSION,
   CAL002_PROTOCOL_VERSION_V2,
   type CAL002AuthorityReceiptV2,
+  type CAL002RuntimeOutcomeV2,
 } from '../../src/calibration/cal-002/contracts-v2';
+import {
+  buildCAL002AppliedPolicyV2,
+  buildCAL002MatrixApprovalV2,
+} from '../../src/calibration/cal-002/application-v2';
+import {
+  assertCAL002FinalMatrixV2,
+  type CAL002FinalMatrixV2,
+  type CAL002FinalRowV2,
+} from '../../src/calibration/cal-002/matrix-v2';
 import { CAL002_ORIGIN_FROZEN_GOVERNING_HASHES } from '../../src/calibration/cal-002/origin-v2';
 import {
   completeCAL002Review,
@@ -82,6 +92,132 @@ function temporaryPrivateTmpRoot(): string {
 
 function writeCanonical(path: string, value: unknown): void {
   writeFileSync(path, canonicalArtifact(value).json, { mode: 0o600 });
+}
+
+function finalMatrixV2Fixture(): CAL002FinalMatrixV2 {
+  const rows = canonicalAuthorityRowsV2().map((authority, index): CAL002FinalRowV2 => {
+    const common = {
+      ruleId: authority.ruleId,
+      destination: authority.destination,
+      qualityDomain: authority.qualityDomain,
+      claimClass: authority.claimClass,
+      readiness: authority.readiness,
+      aiAssociation: authority.aiAssociation,
+      evidenceSha256: String((index % 9) + 1).repeat(64),
+      admitted: false as const,
+    };
+    if (authority.readiness === 'repair-required' || authority.readiness === 'project-contract-required') {
+      return {
+        ...common,
+        measurementStatus: 'unavailable',
+        runtimeOutcome: 'default-off',
+        enabledByDefault: false,
+        runnableByExplicitOptIn: false,
+        scoreEligible: false,
+        gateEligible: false,
+        repairSafety: 'no-safe-repair',
+        provenance: 'blocked-quality-candidate',
+      };
+    }
+    if (authority.destination === 'superseded') {
+      return {
+        ...common,
+        measurementStatus: 'not-applicable',
+        runtimeOutcome: 'superseded',
+        enabledByDefault: false,
+        runnableByExplicitOptIn: false,
+        scoreEligible: false,
+        gateEligible: false,
+        repairSafety: 'not-applicable',
+        provenance: 'superseded-policy',
+        replacementRuleId: authority.replacementRuleId!,
+      };
+    }
+    if (authority.destination === 'retired') {
+      return {
+        ...common,
+        measurementStatus: 'not-applicable',
+        runtimeOutcome: 'retired',
+        enabledByDefault: false,
+        runnableByExplicitOptIn: false,
+        scoreEligible: false,
+        gateEligible: false,
+        repairSafety: 'not-applicable',
+        provenance: 'retired-policy',
+      };
+    }
+    if (authority.destination === 'research-origin') {
+      return {
+        ...common,
+        measurementStatus: 'not-applicable',
+        runtimeOutcome: 'default-off',
+        enabledByDefault: false,
+        runnableByExplicitOptIn: true,
+        scoreEligible: false,
+        gateEligible: false,
+        repairSafety: 'not-applicable',
+        provenance: 'internal-origin-association',
+      };
+    }
+    if (authority.evidenceClass === 'deterministic-or-standards') {
+      return {
+        ...common,
+        evidenceClass: authority.evidenceClass,
+        measurementStatus: 'oracle-verified',
+        runtimeOutcome: 'default-on',
+        enabledByDefault: true,
+        runnableByExplicitOptIn: true,
+        scoreEligible: true,
+        gateEligible: true,
+        repairSafety: 'finding-bound-only',
+        provenance: 'deterministic-finding-evidence',
+      };
+    }
+    return {
+      ...common,
+      evidenceClass: authority.evidenceClass!,
+      measurementStatus: 'not-requested-owner-capacity',
+      runtimeOutcome: 'quality-candidate-default-off',
+      enabledByDefault: false,
+      runnableByExplicitOptIn: true,
+      scoreEligible: false,
+      gateEligible: false,
+      repairSafety: 'no-safe-repair',
+      provenance: 'quality-candidate-unmeasured',
+    };
+  });
+  const outcomes: readonly CAL002RuntimeOutcomeV2[] = [
+    'default-on', 'quality-advisory', 'quality-candidate-default-off', 'default-off',
+    'insufficient-evidence', 'superseded', 'retired',
+  ];
+  const matrix: CAL002FinalMatrixV2 = {
+    version: 'cal-002-final-matrix-v2',
+    protocolVersion: 'CAL-002-v2',
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    authorityReceiptSha256: 'a'.repeat(64),
+    oracleReceiptSha256: 'b'.repeat(64),
+    qualityDispositionSha256: 'c'.repeat(64),
+    originReceiptSha256: 'd'.repeat(64),
+    supersessionReceiptSha256: 'e'.repeat(64),
+    reducerImplementationCommitSha: implementationCommitSha,
+    rows,
+    projectionCounts: {
+      startingQuality: 47,
+      transferred: 26,
+      blocked: 4,
+      superseded: 3,
+      retired: 7,
+      researchOrigin: 32,
+    },
+    outcomeCounts: Object.fromEntries(outcomes.map((outcome) => [
+      outcome,
+      rows.filter((row) => row.runtimeOutcome === outcome).length,
+    ])) as Record<CAL002RuntimeOutcomeV2, number>,
+    admitted: false,
+    applied: false,
+  };
+  assertCAL002FinalMatrixV2(matrix);
+  return matrix;
 }
 
 function fixture(
@@ -703,6 +839,228 @@ describe('CAL-002 matrix approval and application CLI', () => {
     const apply = run([script, 'apply', '--dry-run', '--root', root, '--matrix', 'final-matrix.json', '--approval', 'matrix-approval.json', '--out', 'proposed-policy.json'], '');
     expect(apply.status).toBe(2);
     expect(apply.stderr).toMatch(/apply requires --catalog|final-matrix|matrix/i);
+  });
+});
+
+describe('CAL-002 v2 progressive evidence CLI', () => {
+  it.each([
+    ['reduce-parity-v2', ['--rule-id', 'db/sql-concat', '--migration-commit-ref', implementationCommitSha, '--out', 'parity.json'], /authority/i],
+    ['reduce-oracles-v2', ['--catalog', 'catalog.json', '--corpus-root', 'corpus', '--source-binding-receipt-sha', 'a'.repeat(64), '--starting-out', 'starting.json', '--out', 'oracles.json'], /authority/i],
+    ['verify-supersession', ['--sql-parity', 'sql.json', '--console-parity', 'console.json', '--any-parity', 'any.json', '--out', 'supersession.json'], /authority/i],
+    ['matrix-v2', ['--oracles', 'oracles.json', '--quality-disposition', 'quality.json', '--origin', 'origin.json', '--supersession', 'supersession.json', '--out', 'matrix.json'], /authority/i],
+  ] as const)('recognizes %s and fails on its first missing required option', (command, options, pattern) => {
+    const result = run([script, command, '--root', temporaryRoot(), ...options], '');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(pattern);
+    expect(result.stderr).not.toMatch(/Usage:.*review-quality/i);
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: false, command });
+  });
+
+  it('executes all three closed parity reductions and verifies their supersession receipt', () => {
+    const root = temporaryRoot();
+    approvedAuthorityReceiptFixture(root);
+    const cases = [
+      ['db/sql-concat', 'sql.json'],
+      ['logic/math-console-log-storm', 'console.json'],
+      ['logic/math-any-density', 'any.json'],
+    ] as const;
+    for (const [ruleId, out] of cases) {
+      const parity = run([
+        script,
+        'reduce-parity-v2',
+        '--root', root,
+        '--authority', 'authority-receipt.json',
+        '--rule-id', ruleId,
+        '--migration-commit-ref', implementationCommitSha,
+        '--out', out,
+      ], '');
+      expect(parity.status, parity.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(join(root, out), 'utf8'))).toMatchObject({
+        ruleId,
+        status: 'passed',
+        admitted: false,
+      });
+    }
+    const supersession = run([
+      script,
+      'verify-supersession',
+      '--root', root,
+      '--authority', 'authority-receipt.json',
+      '--sql-parity', 'sql.json',
+      '--console-parity', 'console.json',
+      '--any-parity', 'any.json',
+      '--out', 'supersession.json',
+    ], '');
+    expect(supersession.status, supersession.stderr).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, 'supersession.json'), 'utf8'))).toMatchObject({
+      version: 'cal-002-supersession-receipt-v2',
+      admitted: false,
+    });
+  });
+
+  it('lets apply-v2 dry-run omit approval and receipt while requiring them for final apply', () => {
+    const root = temporaryRoot();
+    const dryRun = run([
+      script,
+      'apply-v2',
+      '--dry-run',
+      '--root', root,
+      '--matrix', 'missing-matrix.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'candidate.json',
+    ], '');
+    expect(dryRun.status).toBe(2);
+    expect(dryRun.stderr).toMatch(/matrix|ENOENT/i);
+    expect(dryRun.stderr).not.toMatch(/requires --approval|requires --receipt-out/i);
+
+    const finalApply = run([
+      script,
+      'apply-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'policy.json',
+    ], '');
+    expect(finalApply.status).toBe(2);
+    expect(finalApply.stderr).toMatch(/requires --approval|requires --receipt-out/i);
+  });
+
+  it('recognizes approve-matrix-v2 and uses the exact closed decision wording', () => {
+    const root = temporaryRoot();
+    const result = run([
+      script,
+      'approve-matrix-v2',
+      '--root', root,
+      '--matrix', 'missing-matrix.json',
+      '--out', 'approval.json',
+    ], '2 reject and name the failed row\n');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/matrix|ENOENT/i);
+    expect(result.stderr).not.toMatch(/Unknown|Usage:/i);
+  });
+
+  it('accepts only the exact closed approval or rejection line for a valid matrix', () => {
+    const root = temporaryRoot();
+    writeCanonical(join(root, 'matrix.json'), finalMatrixV2Fixture());
+
+    const approved = run([
+      script,
+      'approve-matrix-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--out', 'approval.json',
+    ], '1 approve this exact 119-row matrix SHA\n');
+    expect(approved.status).toBe(0);
+    expect(approved.stderr).toContain('1 approve this exact 119-row matrix SHA');
+    expect(JSON.parse(readFileSync(join(root, 'approval.json'), 'utf8'))).toMatchObject({
+      reviewerAuthority: 'repository-owner',
+      decision: 'approved',
+      admitted: false,
+      applied: false,
+    });
+
+    const rejected = run([
+      script,
+      'approve-matrix-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--out', 'rejected.json',
+    ], '2 reject and name the failed row\n');
+    expect(rejected.status).toBe(0);
+    expect(JSON.parse(rejected.stdout)).toMatchObject({ status: 'rejected', receiptWritten: false });
+    expect(existsSync(join(root, 'rejected.json'))).toBe(false);
+  });
+
+  it('writes only an unapplied dry-run candidate, then atomically writes a valid applied pair', () => {
+    const root = temporaryRoot();
+    const matrix = finalMatrixV2Fixture();
+    const approval = buildCAL002MatrixApprovalV2({
+      matrix,
+      approvalCommitSha: implementationCommitSha,
+    }).approval;
+    writeCanonical(join(root, 'matrix.json'), matrix);
+    writeCanonical(join(root, 'approval.json'), approval);
+
+    const dryRun = run([
+      script,
+      'apply-v2',
+      '--dry-run',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'candidate.json',
+    ], '');
+    expect(dryRun.status).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, 'candidate.json'), 'utf8'))).toMatchObject({ applied: false, admitted: false });
+    expect(existsSync(join(root, 'receipt.json'))).toBe(false);
+
+    const finalApply = run([
+      script,
+      'apply-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--approval', 'approval.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'policy.json',
+      '--receipt-out', 'receipt.json',
+    ], '');
+    expect(finalApply.status).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, 'policy.json'), 'utf8'))).toMatchObject({ applied: true, admitted: false });
+    expect(JSON.parse(readFileSync(join(root, 'receipt.json'), 'utf8'))).toMatchObject({ applied: true, admitted: false });
+  });
+
+  it('leaves both valid final-apply destinations byte-identical on an immutable pair conflict', () => {
+    const root = temporaryRoot();
+    const matrix = finalMatrixV2Fixture();
+    const approval = buildCAL002MatrixApprovalV2({
+      matrix,
+      approvalCommitSha: implementationCommitSha,
+    }).approval;
+    const existing = buildCAL002AppliedPolicyV2({
+      matrix,
+      approval,
+      applicationImplementationCommitSha: 'e'.repeat(40),
+    });
+    writeCanonical(join(root, 'matrix.json'), matrix);
+    writeCanonical(join(root, 'approval.json'), approval);
+    writeCanonical(join(root, 'policy.json'), existing.policy);
+    writeCanonical(join(root, 'receipt.json'), existing.applicationReceipt);
+    const policyBefore = readFileSync(join(root, 'policy.json'));
+    const receiptBefore = readFileSync(join(root, 'receipt.json'));
+
+    const result = run([
+      script,
+      'apply-v2',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--approval', 'approval.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'policy.json',
+      '--receipt-out', 'receipt.json',
+    ], '');
+
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/different CAL-002 applied policy v2 already exists and is immutable/i);
+    expect(readFileSync(join(root, 'policy.json'))).toEqual(policyBefore);
+    expect(readFileSync(join(root, 'receipt.json'))).toEqual(receiptBefore);
+  });
+
+  it('rejects apply-v2 input/output aliases before mutating the matrix', () => {
+    const root = temporaryRoot();
+    writeCanonical(join(root, 'matrix.json'), finalMatrixV2Fixture());
+    const before = readFileSync(join(root, 'matrix.json'));
+    const result = run([
+      script,
+      'apply-v2',
+      '--dry-run',
+      '--root', root,
+      '--matrix', 'matrix.json',
+      '--implementation-commit-ref', implementationCommitSha,
+      '--out', 'matrix.json',
+    ], '');
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/same file|alias|distinct/i);
+    expect(readFileSync(join(root, 'matrix.json'))).toEqual(before);
   });
 });
 

@@ -3,11 +3,13 @@ import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { constants } from 'node:fs';
-import { lstat, mkdir, mkdtemp, open, readFile, realpath, rename, rm, unlink } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, open, readFile, readdir, realpath, rename, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 
 import { detectMonorepoRoot } from '../../src/config/detect/monorepo';
+import { parseFile } from '@usebrick/engine';
+import { extractFacts } from '../../src/engine/visitor';
 import {
   assertDistinctArtifactDestinations,
   readCanonicalArtifact,
@@ -60,6 +62,23 @@ import {
 } from '../../src/calibration/cal-002/application';
 import { buildCAL002FinalMatrix } from '../../src/calibration/cal-002/matrix';
 import {
+  assertCAL002ApplicationReceiptV2,
+  assertCAL002MatrixApprovalV2,
+  assertSlopbrickRuleEvidencePolicyV2,
+  buildCAL002AppliedPolicyV2,
+  buildCAL002MatrixApprovalV2,
+  projectCAL002PolicyCandidateV2,
+  type CAL002ApplicationReceiptV2,
+  type CAL002MatrixApprovalV2,
+  type SlopbrickRuleEvidencePolicyV2,
+} from '../../src/calibration/cal-002/application-v2';
+import {
+  assertCAL002FinalMatrixV2,
+  assertCAL002OracleReceiptV2ForMatrix,
+  buildCAL002FinalMatrixV2,
+  type CAL002FinalMatrixV2,
+} from '../../src/calibration/cal-002/matrix-v2';
+import {
   assessCAL002CAL001Reuse,
   resolveCAL002OriginDecisions,
   type CAL002OriginDecisionRow,
@@ -72,7 +91,7 @@ import {
   buildCAL002OriginReceiptV2,
   type CAL002OriginReceiptV2,
 } from '../../src/calibration/cal-002/origin-v2';
-import type { CAL002OracleReceipt } from '../../src/calibration/cal-002/oracles';
+import { buildCAL002OracleReceipt, type CAL002OracleReceipt } from '../../src/calibration/cal-002/oracles';
 import type { CAL002QualityMetrics } from '../../src/calibration/cal-002/quality-metrics';
 import type {
   CAL002QualityAssignment,
@@ -95,6 +114,33 @@ import {
   type CAL002AuthorityReceiptV2,
   type CAL002AuthorityStateV2,
 } from '../../src/calibration/cal-002/contracts-v2';
+import {
+  buildCAL002OracleReceiptV2,
+  type CAL002OracleReceiptV2,
+  type CAL002RealSourceControlInputV2,
+  type CAL002TransferOracleObservationV2,
+} from '../../src/calibration/cal-002/oracles-v2';
+import type { CorpusV1SourceBindingResult } from '../../src/calibration/corpus-v1/source-binding';
+import {
+  assertCAL002ParityReceiptV2,
+  assertCAL002SupersessionReceiptV2,
+  buildCAL002ParityReceiptV2,
+  buildCAL002SupersessionReceiptV2,
+  type CAL002ParityCaseResultV2,
+  type CAL002ParityReceiptV2,
+  type CAL002SupersessionReceiptV2,
+} from '../../src/calibration/cal-002/supersession';
+import {
+  CAL002_ORACLE_DECLARATIONS,
+  CAL002_ORACLE_MUTATION_CASES,
+  CAL002_ORACLE_SOURCE_CONTROLS,
+} from '../../tests/calibration/fixtures/cal-002-oracle-cases';
+import { CAL002_TRANSFER_ORACLE_CASES } from '../../tests/calibration/fixtures/cal-002-transfer-oracle-cases';
+import { CAL002_TRANSFER_CONTROL_FAMILIES } from '../../tests/calibration/fixtures/cal-002-transfer-oracle-types';
+import { CAL002_SQL_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-sql';
+import { CAL002_ANY_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-any';
+import { CAL002_CONSOLE_PARITY_CASES } from '../../tests/calibration/fixtures/cal-002-parity-console';
+import type { ResolvedConfig, RuleContext } from '../../src/types';
 import {
   assertCAL002ReviewState,
   completeCAL002Review,
@@ -219,6 +265,65 @@ interface ApplyArguments {
   readonly dryRun: boolean;
 }
 
+interface ReduceParityV2Arguments {
+  readonly command: 'reduce-parity-v2';
+  readonly root: string;
+  readonly authority: string;
+  readonly ruleId: CAL002ParityReceiptV2['ruleId'];
+  readonly migrationCommitRef: string;
+  readonly out: string;
+}
+
+interface ReduceOraclesV2Arguments {
+  readonly command: 'reduce-oracles-v2';
+  readonly root: string;
+  readonly authority: string;
+  readonly catalog: string;
+  readonly corpusRoot: string;
+  readonly sourceBindingReceiptSha: string;
+  readonly startingOut: string;
+  readonly out: string;
+}
+
+interface VerifySupersessionArguments {
+  readonly command: 'verify-supersession';
+  readonly root: string;
+  readonly authority: string;
+  readonly sqlParity: string;
+  readonly consoleParity: string;
+  readonly anyParity: string;
+  readonly out: string;
+}
+
+interface MatrixV2Arguments {
+  readonly command: 'matrix-v2';
+  readonly root: string;
+  readonly authority: string;
+  readonly oracles: string;
+  readonly qualityDisposition: string;
+  readonly origin: string;
+  readonly supersession: string;
+  readonly out: string;
+}
+
+interface ApproveMatrixV2Arguments {
+  readonly command: 'approve-matrix-v2';
+  readonly root: string;
+  readonly matrix: string;
+  readonly out: string;
+}
+
+interface ApplyV2Arguments {
+  readonly command: 'apply-v2';
+  readonly root: string;
+  readonly matrix: string;
+  readonly approval?: string;
+  readonly implementationCommitRef: string;
+  readonly out: string;
+  readonly receiptOut?: string;
+  readonly dryRun: boolean;
+}
+
 type Arguments =
   | ReviewArguments
   | OriginArguments
@@ -229,7 +334,13 @@ type Arguments =
   | CatalogArguments
   | MatrixArguments
   | ApproveMatrixArguments
-  | ApplyArguments;
+  | ApplyArguments
+  | ReduceParityV2Arguments
+  | ReduceOraclesV2Arguments
+  | VerifySupersessionArguments
+  | MatrixV2Arguments
+  | ApproveMatrixV2Arguments
+  | ApplyV2Arguments;
 
 interface SourceMap {
   readonly version: 'cal-002-review-source-map-v1';
@@ -534,6 +645,107 @@ function parseApplyArguments(tokens: readonly string[]): ApplyArguments {
   };
 }
 
+function parseReduceParityV2Arguments(tokens: readonly string[]): ReduceParityV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'reduce-parity-v2', new Set([
+    '--root', '--authority', '--rule-id', '--migration-commit-ref', '--out',
+  ]), new Set());
+  const ruleId = requiredValue(values, '--rule-id', 'reduce-parity-v2');
+  if (!['db/sql-concat', 'logic/math-any-density', 'logic/math-console-log-storm'].includes(ruleId)) {
+    throw new Error('reduce-parity-v2 --rule-id is not one of the three closed supersession rows');
+  }
+  return {
+    command: 'reduce-parity-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'reduce-parity-v2'),
+    ruleId: ruleId as CAL002ParityReceiptV2['ruleId'],
+    migrationCommitRef: requiredValue(values, '--migration-commit-ref', 'reduce-parity-v2'),
+    out: requiredValue(values, '--out', 'reduce-parity-v2'),
+  };
+}
+
+function parseReduceOraclesV2Arguments(tokens: readonly string[]): ReduceOraclesV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'reduce-oracles-v2', new Set([
+    '--root', '--authority', '--catalog', '--corpus-root', '--source-binding-receipt-sha',
+    '--starting-out', '--out',
+  ]), new Set());
+  return {
+    command: 'reduce-oracles-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'reduce-oracles-v2'),
+    catalog: requiredValue(values, '--catalog', 'reduce-oracles-v2'),
+    corpusRoot: requiredValue(values, '--corpus-root', 'reduce-oracles-v2'),
+    sourceBindingReceiptSha: requiredValue(values, '--source-binding-receipt-sha', 'reduce-oracles-v2'),
+    startingOut: requiredValue(values, '--starting-out', 'reduce-oracles-v2'),
+    out: requiredValue(values, '--out', 'reduce-oracles-v2'),
+  };
+}
+
+function parseVerifySupersessionArguments(tokens: readonly string[]): VerifySupersessionArguments {
+  const { values } = parseValuesAndFlags(tokens, 'verify-supersession', new Set([
+    '--root', '--authority', '--sql-parity', '--console-parity', '--any-parity', '--out',
+  ]), new Set());
+  return {
+    command: 'verify-supersession',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'verify-supersession'),
+    sqlParity: requiredValue(values, '--sql-parity', 'verify-supersession'),
+    consoleParity: requiredValue(values, '--console-parity', 'verify-supersession'),
+    anyParity: requiredValue(values, '--any-parity', 'verify-supersession'),
+    out: requiredValue(values, '--out', 'verify-supersession'),
+  };
+}
+
+function parseMatrixV2Arguments(tokens: readonly string[]): MatrixV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'matrix-v2', new Set([
+    '--root', '--authority', '--oracles', '--quality-disposition', '--origin', '--supersession', '--out',
+  ]), new Set());
+  return {
+    command: 'matrix-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    authority: requiredValue(values, '--authority', 'matrix-v2'),
+    oracles: requiredValue(values, '--oracles', 'matrix-v2'),
+    qualityDisposition: requiredValue(values, '--quality-disposition', 'matrix-v2'),
+    origin: requiredValue(values, '--origin', 'matrix-v2'),
+    supersession: requiredValue(values, '--supersession', 'matrix-v2'),
+    out: requiredValue(values, '--out', 'matrix-v2'),
+  };
+}
+
+function parseApproveMatrixV2Arguments(tokens: readonly string[]): ApproveMatrixV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'approve-matrix-v2', new Set([
+    '--root', '--matrix', '--out',
+  ]), new Set());
+  return {
+    command: 'approve-matrix-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    matrix: requiredValue(values, '--matrix', 'approve-matrix-v2'),
+    out: requiredValue(values, '--out', 'approve-matrix-v2'),
+  };
+}
+
+function parseApplyV2Arguments(tokens: readonly string[]): ApplyV2Arguments {
+  const { values, flags } = parseValuesAndFlags(tokens, 'apply-v2', new Set([
+    '--root', '--matrix', '--approval', '--implementation-commit-ref', '--out', '--receipt-out',
+  ]), new Set(['--dry-run']));
+  const dryRun = flags.has('--dry-run');
+  const approval = values.get('--approval');
+  const receiptOut = values.get('--receipt-out');
+  if (!dryRun && approval === undefined) throw new Error('apply-v2 requires --approval for final apply');
+  if (!dryRun && receiptOut === undefined) throw new Error('apply-v2 requires --receipt-out for final apply');
+  if (dryRun && approval !== undefined) throw new Error('apply-v2 --dry-run must not consume --approval');
+  if (dryRun && receiptOut !== undefined) throw new Error('apply-v2 --dry-run must not emit --receipt-out');
+  return {
+    command: 'apply-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    matrix: requiredValue(values, '--matrix', 'apply-v2'),
+    approval,
+    implementationCommitRef: requiredValue(values, '--implementation-commit-ref', 'apply-v2'),
+    out: requiredValue(values, '--out', 'apply-v2'),
+    receiptOut,
+    dryRun,
+  };
+}
+
 function parseArguments(argv: readonly string[]): Arguments {
   let first = 0;
   while (argv[first] === '--') first += 1;
@@ -548,7 +760,13 @@ function parseArguments(argv: readonly string[]): Arguments {
   if (command === 'matrix') return parseMatrixArguments(tokens);
   if (command === 'approve-matrix') return parseApproveMatrixArguments(tokens);
   if (command === 'apply') return parseApplyArguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-origin, classify-authority, quality-closeout, plan-quality-cohort, verify-origin-v2, catalog, matrix, approve-matrix, or apply with local artifact options');
+  if (command === 'reduce-parity-v2') return parseReduceParityV2Arguments(tokens);
+  if (command === 'reduce-oracles-v2') return parseReduceOraclesV2Arguments(tokens);
+  if (command === 'verify-supersession') return parseVerifySupersessionArguments(tokens);
+  if (command === 'matrix-v2') return parseMatrixV2Arguments(tokens);
+  if (command === 'approve-matrix-v2') return parseApproveMatrixV2Arguments(tokens);
+  if (command === 'apply-v2') return parseApplyV2Arguments(tokens);
+  throw new Error('Usage: cal:complete review-quality, classify-authority, quality-closeout, plan-quality-cohort, verify-origin-v2, catalog, matrix, approve-matrix, apply, reduce-parity-v2, reduce-oracles-v2, verify-supersession, matrix-v2, approve-matrix-v2, or apply-v2 with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -2183,6 +2401,573 @@ async function applyPolicy(args: ApplyArguments): Promise<void> {
   });
 }
 
+const PARITY_COMMAND_AUTHORITY = {
+  'db/sql-concat': {
+    replacementRuleId: 'security/sql-construction',
+    uniqueCoverageDisposition: 'ported',
+    reasonCode: 'with-query-coverage-ported',
+    cases: [
+      ['sql-with-template-ported', 'finding'],
+      ['sql-with-parameterized-guard', 'no-finding'],
+      ['sql-with-comment-guard', 'no-finding'],
+    ],
+  },
+  'logic/math-any-density': {
+    replacementRuleId: 'ai/any-density',
+    uniqueCoverageDisposition: 'rejected-as-false-positive',
+    reasonCode: 'line-denominator-not-type-bearing',
+    cases: [
+      ['any-line-density-rejected', 'no-finding'],
+      ['any-declaration-ratio-retained', 'finding'],
+      ['any-non-typescript-guard', 'no-finding'],
+    ],
+  },
+  'logic/math-console-log-storm': {
+    replacementRuleId: 'ai/console-debug-storm',
+    uniqueCoverageDisposition: 'ported',
+    reasonCode: 'window-clustering-ported-with-guards',
+    cases: [
+      ['console-five-in-thirty-ported', 'finding'],
+      ['console-window-spread-guard', 'no-finding'],
+      ['console-test-file-guard', 'no-finding'],
+      ['console-logger-file-guard', 'no-finding'],
+      ['console-structured-logger-guard', 'no-finding'],
+    ],
+  },
+} as const;
+
+const PARITY_CASE_FIXTURES = {
+  'db/sql-concat': CAL002_SQL_PARITY_CASES,
+  'logic/math-any-density': CAL002_ANY_PARITY_CASES,
+  'logic/math-console-log-storm': CAL002_CONSOLE_PARITY_CASES,
+} as const;
+
+function calibrationRuleConfig(): ResolvedConfig {
+  return {
+    include: [],
+    exclude: [],
+    rules: {},
+    frameworkMultipliers: {},
+    ruleConfig: {},
+    arbitraryValueAllowlist: [],
+    wcag: { targetSizeExemptSelectors: [] },
+    thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 },
+  };
+}
+
+async function observeRule(
+  ruleId: string,
+  source: string,
+  virtualPath: string,
+): Promise<'finding' | 'no-finding'> {
+  const root = await mkdtemp(join(tmpdir(), 'cal-002-command-observation-'));
+  try {
+    const filePath = join(root, virtualPath);
+    await mkdir(dirname(filePath), { recursive: true, mode: 0o700 });
+    await writeFile(filePath, source, { mode: 0o600 });
+    const parsed = await parseFile(filePath);
+    const facts = extractFacts(filePath, parsed.ast, parsed.source);
+    const registry = new RuleRegistry();
+    registry.loadBuiltins(ruleId);
+    const rule = registry.get(ruleId);
+    if (rule === undefined) throw new Error(`CAL-002 command cannot resolve rule ${ruleId}`);
+    const context: RuleContext = { config: calibrationRuleConfig(), filePath, cwd: root };
+    const issues = rule.analyze(rule.create(context), facts);
+    return issues.some((issue) => issue.ruleId === ruleId) ? 'finding' : 'no-finding';
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+async function parityCaseResults(ruleId: CAL002ParityReceiptV2['ruleId']): Promise<readonly CAL002ParityCaseResultV2[]> {
+  const replacementRuleId = PARITY_COMMAND_AUTHORITY[ruleId].replacementRuleId;
+  return Promise.all(PARITY_CASE_FIXTURES[ruleId].map(async (testCase) => ({
+    caseId: testCase.caseId,
+    sourceSha256: createHash('sha256').update(testCase.source).digest('hex'),
+    expectedReplacementObservation: testCase.expectedReplacementObservation,
+    observedReplacementObservation: await observeRule(replacementRuleId, testCase.source, testCase.virtualPath),
+  })));
+}
+
+async function reduceParityV2(args: ReduceParityV2Arguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.out, label: 'CAL-002 parity receipt' },
+    ],
+  });
+  const authorityReceipt = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.authority,
+    label: 'CAL-002 authority receipt',
+  }) as CAL002AuthorityReceiptV2;
+  assertCAL002AuthorityReceiptV2(authorityReceipt);
+  const fixed = PARITY_COMMAND_AUTHORITY[args.ruleId];
+  const result = buildCAL002ParityReceiptV2({
+    authorityReceipt,
+    ruleId: args.ruleId,
+    replacementRuleId: fixed.replacementRuleId,
+    migrationCommitSha: args.migrationCommitRef,
+    uniqueCoverageDisposition: fixed.uniqueCoverageDisposition,
+    reasonCode: fixed.reasonCode,
+    caseResults: await parityCaseResults(args.ruleId),
+  });
+  await writeImmutableCanonicalReceipt<CAL002ParityReceiptV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 parity receipt',
+    value: result.receipt,
+    assertValue: assertCAL002ParityReceiptV2,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'passed',
+    ruleId: args.ruleId,
+    receiptSha256: result.receiptSha256,
+    admitted: false,
+  });
+}
+
+async function regularFilesForOracle(root: string): Promise<readonly string[]> {
+  const files: string[] = [];
+  const visit = async (directory: string): Promise<void> => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
+    for (const entry of entries) {
+      if (entry.isSymbolicLink() || ['.git', 'node_modules', '.slopbrick'].includes(entry.name)) continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) await visit(path);
+      else if (entry.isFile()) files.push(path);
+    }
+  };
+  await visit(root);
+  return files;
+}
+
+async function findSourceBindingResult(
+  roots: readonly string[],
+  expectedSha256: string,
+): Promise<CorpusV1SourceBindingResult> {
+  const seen = new Set<string>();
+  for (const candidateRoot of roots) {
+    const root = await realpath(candidateRoot);
+    if (seen.has(root)) continue;
+    seen.add(root);
+    for (const path of await regularFilesForOracle(root)) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(await readFile(path, 'utf8')) as unknown;
+      } catch {
+        continue;
+      }
+      const receipt = isRecord(parsed) && isRecord(parsed.receipt) ? parsed.receipt : parsed;
+      if (!isRecord(receipt) || receipt.version !== 'corpus-v1-source-binding-v1') continue;
+      const artifact = canonicalArtifact(receipt);
+      if (artifact.sha256 !== expectedSha256) continue;
+      return {
+        receipt: receipt as CorpusV1SourceBindingResult['receipt'],
+        receiptJson: artifact.json,
+        receiptSha256: artifact.sha256,
+      };
+    }
+  }
+  throw new Error('reduce-oracles-v2 could not resolve the exact source-binding receipt SHA beneath --root or --corpus-root');
+}
+
+async function buildRealSourceControls(
+  corpusRoot: string,
+  ruleIds: readonly string[],
+  sourceBindingReceiptSha256: string,
+): Promise<readonly CAL002RealSourceControlInputV2[]> {
+  const files = (await regularFilesForOracle(corpusRoot)).slice(0, 2_000);
+  const controls: CAL002RealSourceControlInputV2[] = [];
+  for (const ruleId of ruleIds) {
+    const accepted: { readonly source: string; readonly contentSha256: string }[] = [];
+    for (const path of files) {
+      if (accepted.length === CAL002_TRANSFER_CONTROL_FAMILIES.length) break;
+      let source: string;
+      try {
+        source = await readFile(path, 'utf8');
+        const observation = await observeRule(ruleId, source, relative(corpusRoot, path).split(sep).join('/'));
+        if (observation !== 'no-finding') continue;
+      } catch {
+        continue;
+      }
+      accepted.push({ source, contentSha256: createHash('sha256').update(source).digest('hex') });
+    }
+    if (accepted.length !== CAL002_TRANSFER_CONTROL_FAMILIES.length) {
+      throw new Error(`reduce-oracles-v2 could not resolve five real-source no-finding controls for ${ruleId}`);
+    }
+    controls.push(...CAL002_TRANSFER_CONTROL_FAMILIES.map((familyId, index) => ({
+      ruleId,
+      familyId,
+      source: accepted[index]!.source,
+      contentSha256: accepted[index]!.contentSha256,
+      sourceBindingReceiptSha256,
+      observed: 'no-finding' as const,
+    })));
+  }
+  return controls;
+}
+
+async function reduceOraclesV2(args: ReduceOraclesV2Arguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.catalog, label: 'CAL-002 catalog' },
+      { relativePath: args.startingOut, label: 'CAL-002 starting oracle receipt' },
+      { relativePath: args.out, label: 'CAL-002 v2 oracle receipt' },
+    ],
+  });
+  const authorityReceipt = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.authority,
+    label: 'CAL-002 authority receipt',
+  }) as CAL002AuthorityReceiptV2;
+  assertCAL002AuthorityReceiptV2(authorityReceipt);
+  const catalog = await readCanonicalArtifact({
+    root: args.root,
+    relativePath: args.catalog,
+    label: 'CAL-002 catalog',
+  }) as CAL002Catalog;
+  const catalogValidation = validateCAL002Catalog(catalog);
+  if (!catalogValidation.ok || catalog.ruleCatalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
+    throw new Error(`CAL-002 oracle catalog is invalid: ${catalogValidation.errors.join('; ')}`);
+  }
+  assertSha256(args.sourceBindingReceiptSha, 'reduce-oracles-v2 --source-binding-receipt-sha');
+  const corpusRoot = await realpath(args.corpusRoot);
+  const corpusMetadata = await lstat(corpusRoot);
+  if (corpusMetadata.isSymbolicLink() || !corpusMetadata.isDirectory()) {
+    throw new Error('reduce-oracles-v2 --corpus-root must be a real directory');
+  }
+  const implementationCommitSha = resolveCommitSha(undefined, 'reduce-oracles-v2');
+  const starting = buildCAL002OracleReceipt({
+    catalogSha256: CAL002_LOCKED_RULE_CATALOG_SHA256,
+    implementationCommitSha,
+    declarations: CAL002_ORACLE_DECLARATIONS.map(({
+      ruleId, authority, reference, positiveCaseIds, negativeCaseIds,
+    }) => ({ ruleId, authority, reference, positiveCaseIds, negativeCaseIds })),
+    caseResults: CAL002_ORACLE_MUTATION_CASES.map(({
+      ruleId, caseId, expected, observed, sourceSha256,
+    }) => ({ ruleId, caseId, expected, observed, sourceSha256 })),
+    sourceControls: CAL002_ORACLE_SOURCE_CONTROLS.map(({
+      ruleId, unitId, familyId, contentSha256, observed,
+    }) => ({ ruleId, unitId, familyId, contentSha256, observed })),
+  });
+  const observations: CAL002TransferOracleObservationV2[] = [];
+  for (const fixture of CAL002_TRANSFER_ORACLE_CASES) {
+    const cases = [
+      ...fixture.positiveCases.map((testCase) => ({ testCase, expected: 'finding' as const })),
+      ...fixture.negativeCases.map((testCase) => ({ testCase, expected: 'no-finding' as const })),
+      ...fixture.adversarialCases.map((testCase) => ({ testCase, expected: 'no-finding' as const })),
+      ...fixture.controls.map((testCase) => ({ testCase, expected: 'no-finding' as const })),
+    ];
+    for (const { testCase } of cases) {
+      observations.push({
+        ruleId: fixture.ruleId,
+        caseId: testCase.caseId,
+        observed: await observeRule(fixture.ruleId, testCase.source, testCase.virtualPath),
+        sourceSha256: createHash('sha256').update(testCase.source).digest('hex'),
+      });
+    }
+  }
+  const sourceBinding = await findSourceBindingResult(
+    [args.root, corpusRoot],
+    args.sourceBindingReceiptSha,
+  );
+  const realSourceControls = await buildRealSourceControls(
+    corpusRoot,
+    authorityReceipt.rows
+      .filter((row) => row.evidenceClass === 'deterministic-or-standards' && row.readiness === 'evidence-ready')
+      .map((row) => row.ruleId),
+    args.sourceBindingReceiptSha,
+  );
+  const result = buildCAL002OracleReceiptV2({
+    authorityReceipt,
+    startingOracleReceipt: starting.receipt,
+    transferredFixtures: CAL002_TRANSFER_ORACLE_CASES,
+    observations,
+    sourceBinding,
+    realSourceControls,
+    implementationCommitSha,
+  });
+  await writeImmutablePrivateCanonical(
+    args.root,
+    args.startingOut,
+    starting.receipt,
+    'CAL-002 starting oracle receipt',
+  );
+  const authorityReceiptSha256 = canonicalArtifact(authorityReceipt).sha256;
+  const assertOracleValue: (value: unknown) => asserts value is CAL002OracleReceiptV2 = (value) => {
+    assertCAL002OracleReceiptV2ForMatrix(value, authorityReceiptSha256);
+  };
+  await writeImmutableCanonicalReceipt<CAL002OracleReceiptV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 v2 oracle receipt',
+    value: result.receipt,
+    assertValue: assertOracleValue,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    startingReceiptSha256: starting.receiptSha256,
+    receiptSha256: result.receiptSha256,
+    rows: result.receipt.rows.length,
+    counts: result.receipt.counts,
+    admitted: false,
+  });
+}
+
+async function verifySupersession(args: VerifySupersessionArguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.sqlParity, label: 'CAL-002 SQL parity receipt' },
+      { relativePath: args.consoleParity, label: 'CAL-002 console parity receipt' },
+      { relativePath: args.anyParity, label: 'CAL-002 any parity receipt' },
+      { relativePath: args.out, label: 'CAL-002 supersession receipt' },
+    ],
+  });
+  const authorityReceipt = await readCanonicalArtifact({ root: args.root, relativePath: args.authority, label: 'CAL-002 authority receipt' }) as CAL002AuthorityReceiptV2;
+  const parities = await Promise.all([
+    readCanonicalArtifact({ root: args.root, relativePath: args.sqlParity, label: 'CAL-002 SQL parity receipt' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.consoleParity, label: 'CAL-002 console parity receipt' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.anyParity, label: 'CAL-002 any parity receipt' }),
+  ]).then((artifacts) => artifacts.map((artifact) => {
+    assertCAL002ParityReceiptV2(artifact);
+    return artifact;
+  }));
+  assertCAL002AuthorityReceiptV2(authorityReceipt);
+  const result = buildCAL002SupersessionReceiptV2(authorityReceipt, parities);
+  await writeImmutableCanonicalReceipt<CAL002SupersessionReceiptV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 supersession receipt',
+    value: result.receipt,
+    assertValue: assertCAL002SupersessionReceiptV2,
+  });
+  machineOutput({ ok: true, command: args.command, status: 'passed', rows: 3, receiptSha256: result.receiptSha256, admitted: false });
+}
+
+async function buildMatrixV2Command(args: MatrixV2Arguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.authority, label: 'CAL-002 authority receipt' },
+      { relativePath: args.oracles, label: 'CAL-002 oracle receipt' },
+      { relativePath: args.qualityDisposition, label: 'CAL-002 quality disposition' },
+      { relativePath: args.origin, label: 'CAL-002 origin receipt' },
+      { relativePath: args.supersession, label: 'CAL-002 supersession receipt' },
+      { relativePath: args.out, label: 'CAL-002 final matrix v2' },
+    ],
+  });
+  const [authorityReceipt, oracleReceipt, qualityDisposition, originReceipt, supersessionReceipt] = await Promise.all([
+    readCanonicalArtifact({ root: args.root, relativePath: args.authority, label: 'CAL-002 authority receipt' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.oracles, label: 'CAL-002 oracle receipt' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.qualityDisposition, label: 'CAL-002 quality disposition' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.origin, label: 'CAL-002 origin receipt' }),
+    readCanonicalArtifact({ root: args.root, relativePath: args.supersession, label: 'CAL-002 supersession receipt' }),
+  ]);
+  const result = buildCAL002FinalMatrixV2({
+    authorityReceipt: authorityReceipt as CAL002AuthorityReceiptV2,
+    oracleReceipt: oracleReceipt as CAL002OracleReceiptV2,
+    qualityDisposition: qualityDisposition as CAL002QualityDispositionV2,
+    originReceipt: originReceipt as CAL002OriginReceiptV2,
+    supersessionReceipt: supersessionReceipt as CAL002SupersessionReceiptV2,
+    reducerImplementationCommitSha: resolveCommitSha(undefined, 'matrix-v2'),
+  });
+  await writeImmutableCanonicalReceipt<CAL002FinalMatrixV2>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 final matrix v2',
+    value: result.matrix,
+    assertValue: assertCAL002FinalMatrixV2,
+  });
+  machineOutput({ ok: true, command: args.command, status: 'completed', matrixSha256: result.matrixSha256, rows: 119, admitted: false, applied: false });
+}
+
+async function approveMatrixV2(args: ApproveMatrixV2Arguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.matrix, label: 'CAL-002 final matrix v2' },
+      { relativePath: args.out, label: 'CAL-002 matrix approval v2' },
+    ],
+  });
+  const matrix = await readCanonicalArtifact({ root: args.root, relativePath: args.matrix, label: 'CAL-002 final matrix v2' }) as CAL002FinalMatrixV2;
+  assertCAL002FinalMatrixV2(matrix);
+  const matrixSha256 = canonicalArtifact(matrix).sha256;
+  process.stderr.write([
+    `Final matrix SHA-256: ${matrixSha256}`,
+    `Rows: ${matrix.rows.length}`,
+    '1 approve this exact 119-row matrix SHA',
+    '2 reject and name the failed row',
+  ].join('\n') + '\n');
+  const input = createInterface({ input: process.stdin, terminal: false, crlfDelay: Infinity });
+  try {
+    for await (const line of input) {
+      if (line === '1 approve this exact 119-row matrix SHA') {
+        const result = buildCAL002MatrixApprovalV2({
+          matrix,
+          approvalCommitSha: resolveCommitSha(undefined, 'approve-matrix-v2'),
+        });
+        await writeImmutableCanonicalReceipt<CAL002MatrixApprovalV2>({
+          root: args.root,
+          relativePath: args.out,
+          label: 'CAL-002 matrix approval v2',
+          value: result.approval,
+          assertValue: assertCAL002MatrixApprovalV2,
+        });
+        machineOutput({ ok: true, command: args.command, status: 'approved', finalMatrixSha256: matrixSha256, approvalSha256: result.approvalSha256, admitted: false, applied: false });
+        return;
+      }
+      if (line === '2 reject and name the failed row') {
+        machineOutput({ ok: true, command: args.command, status: 'rejected', finalMatrixSha256: matrixSha256, receiptWritten: false });
+        return;
+      }
+      process.stderr.write('Invalid selection; enter one exact closed matrix-v2 decision line.\n');
+    }
+    throw new Error('approve-matrix-v2 requires one exact closed decision line');
+  } finally {
+    input.close();
+  }
+}
+
+async function existingImmutableV2<T>(input: {
+  readonly root: string;
+  readonly relativePath: string;
+  readonly label: string;
+  readonly value: T;
+  readonly assertValue: (value: unknown) => asserts value is T;
+}): Promise<boolean> {
+  try {
+    const existing = await readPrivateCanonicalArtifact({
+      root: input.root,
+      relativePath: input.relativePath,
+      label: input.label,
+      assertValue: input.assertValue,
+    });
+    if (canonicalArtifact(existing).json !== canonicalArtifact(input.value).json) {
+      throw new Error(`A different ${input.label} already exists and is immutable`);
+    }
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+async function writeAppliedPairV2(input: {
+  readonly root: string;
+  readonly policyOut: string;
+  readonly receiptOut: string;
+  readonly policy: Extract<SlopbrickRuleEvidencePolicyV2, { readonly applied: true }>;
+  readonly receipt: CAL002ApplicationReceiptV2;
+}): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: input.root,
+    artifacts: [
+      { relativePath: input.policyOut, label: 'CAL-002 applied policy v2' },
+      { relativePath: input.receiptOut, label: 'CAL-002 application receipt v2' },
+    ],
+    reservePrivateLocksFor: [
+      { relativePath: input.policyOut, label: 'CAL-002 applied policy v2' },
+      { relativePath: input.receiptOut, label: 'CAL-002 application receipt v2' },
+    ],
+  });
+  await withPrivateArtifactSessionLock({
+    root: input.root,
+    relativePath: input.policyOut,
+    label: 'CAL-002 applied policy v2 transaction',
+  }, () => withPrivateArtifactSessionLock({
+    root: input.root,
+    relativePath: input.receiptOut,
+    label: 'CAL-002 application receipt v2 transaction',
+  }, async () => {
+    const policyExisted = await existingImmutableV2({
+      root: input.root,
+      relativePath: input.policyOut,
+      label: 'CAL-002 applied policy v2',
+      value: input.policy,
+      assertValue: assertSlopbrickRuleEvidencePolicyV2,
+    });
+    await existingImmutableV2({
+      root: input.root,
+      relativePath: input.receiptOut,
+      label: 'CAL-002 application receipt v2',
+      value: input.receipt,
+      assertValue: assertCAL002ApplicationReceiptV2,
+    });
+    try {
+      await writeImmutableCanonicalReceipt({
+        root: input.root,
+        relativePath: input.policyOut,
+        label: 'CAL-002 applied policy v2',
+        value: input.policy,
+        assertValue: assertSlopbrickRuleEvidencePolicyV2,
+      });
+      await writeImmutableCanonicalReceipt({
+        root: input.root,
+        relativePath: input.receiptOut,
+        label: 'CAL-002 application receipt v2',
+        value: input.receipt,
+        assertValue: assertCAL002ApplicationReceiptV2,
+      });
+    } catch (error) {
+      if (!policyExisted) await unlink(resolve(input.root, input.policyOut)).catch(() => undefined);
+      throw error;
+    }
+  }));
+}
+
+async function applyV2(args: ApplyV2Arguments): Promise<void> {
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      { relativePath: args.matrix, label: 'CAL-002 final matrix v2' },
+      ...(args.approval === undefined ? [] : [{ relativePath: args.approval, label: 'CAL-002 matrix approval v2' }]),
+      { relativePath: args.out, label: args.dryRun ? 'CAL-002 unapplied policy candidate v2' : 'CAL-002 applied policy v2' },
+      ...(args.receiptOut === undefined ? [] : [{ relativePath: args.receiptOut, label: 'CAL-002 application receipt v2' }]),
+    ],
+  });
+  const matrix = await readCanonicalArtifact({ root: args.root, relativePath: args.matrix, label: 'CAL-002 final matrix v2' }) as CAL002FinalMatrixV2;
+  assertCAL002FinalMatrixV2(matrix);
+  assertCommitSha(args.implementationCommitRef, 'apply-v2 --implementation-commit-ref');
+  if (args.dryRun) {
+    const candidate = projectCAL002PolicyCandidateV2(matrix);
+    await writeImmutableCanonicalReceipt({
+      root: args.root,
+      relativePath: args.out,
+      label: 'CAL-002 unapplied policy candidate v2',
+      value: candidate.policy,
+      assertValue: assertSlopbrickRuleEvidencePolicyV2,
+    });
+    machineOutput({ ok: true, command: args.command, status: 'dry-run', policySha256: candidate.policySha256, admitted: false, applied: false, receiptWritten: false });
+    return;
+  }
+  if (args.approval === undefined || args.receiptOut === undefined) throw new Error('apply-v2 final apply requires approval and receipt destinations');
+  const approval = await readCanonicalArtifact({ root: args.root, relativePath: args.approval, label: 'CAL-002 matrix approval v2' }) as CAL002MatrixApprovalV2;
+  const result = buildCAL002AppliedPolicyV2({
+    matrix,
+    approval,
+    applicationImplementationCommitSha: args.implementationCommitRef,
+  });
+  await writeAppliedPairV2({
+    root: args.root,
+    policyOut: args.out,
+    receiptOut: args.receiptOut,
+    policy: result.policy,
+    receipt: result.applicationReceipt,
+  });
+  machineOutput({ ok: true, command: args.command, status: 'applied', policySha256: result.policySha256, applicationReceiptSha256: result.applicationReceiptSha256, admitted: false, applied: true });
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   let first = 0;
@@ -2203,7 +2988,13 @@ async function main(): Promise<void> {
     else if (args.command === 'catalog') await buildCatalogCommand(args);
     else if (args.command === 'matrix') await buildMatrixCommand(args);
     else if (args.command === 'approve-matrix') await approveMatrix(args);
-    else await applyPolicy(args);
+    else if (args.command === 'apply') await applyPolicy(args);
+    else if (args.command === 'reduce-parity-v2') await reduceParityV2(args);
+    else if (args.command === 'reduce-oracles-v2') await reduceOraclesV2(args);
+    else if (args.command === 'verify-supersession') await verifySupersession(args);
+    else if (args.command === 'matrix-v2') await buildMatrixV2Command(args);
+    else if (args.command === 'approve-matrix-v2') await approveMatrixV2(args);
+    else await applyV2(args);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     process.stderr.write(`CAL-002 ${command}: ${message}\n`);

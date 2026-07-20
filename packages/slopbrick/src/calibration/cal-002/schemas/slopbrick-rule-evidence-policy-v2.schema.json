@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/slopbrick-rule-evidence-policy-v2.json",
+  "oneOf": [
+    { "$ref": "#/$defs/unappliedPolicy" },
+    { "$ref": "#/$defs/appliedPolicy" }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "association": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "claimCeiling"],
+      "properties": {
+        "source": { "enum": ["cal-001-internal-origin", "legacy-signal-strength", "none-recorded"] },
+        "claimCeiling": { "enum": ["association-only", "none"] },
+        "evidenceSha256": { "$ref": "#/$defs/sha256" },
+        "lift": { "type": "number", "minimum": 0 },
+        "measuredAt": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "none-recorded" } }, "required": ["source"] },
+          "then": {
+            "properties": {
+              "claimCeiling": { "const": "none" },
+              "evidenceSha256": false,
+              "lift": false,
+              "measuredAt": false,
+              "protocol": false
+            }
+          },
+          "else": { "properties": { "claimCeiling": { "const": "association-only" } } }
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "qualityDomain", "claimClass", "readiness", "runtimeOutcome", "enabledByDefault", "runnableByExplicitOptIn", "scoreEligible", "gateEligible", "repairSafety", "provenance", "aiAssociation"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "qualityDomain": { "enum": ["security", "accessibility", "correctness", "reliability", "performance", "maintainability", "documentation-quality", "type-safety", "resource-safety", "test-confidence", "architecture-consistency", "observability", "design-system-coherence", "completeness", "none"] },
+        "claimClass": { "enum": ["language-or-security-contract", "accessibility-standard", "repository-contract", "deterministic-syntax-or-dataflow", "contextual-heuristic", "statistical-review-signal", "no-valid-quality-claim"] },
+        "readiness": { "enum": ["evidence-ready", "repair-required", "project-contract-required", "parity-required", "research-only", "obsolete"] },
+        "runtimeOutcome": { "enum": ["default-on", "quality-advisory", "quality-candidate-default-off", "default-off", "insufficient-evidence", "superseded", "retired"] },
+        "enabledByDefault": { "type": "boolean" },
+        "runnableByExplicitOptIn": { "type": "boolean" },
+        "scoreEligible": { "type": "boolean" },
+        "gateEligible": { "type": "boolean" },
+        "repairSafety": { "enum": ["finding-bound-only", "no-safe-repair", "not-applicable"] },
+        "provenance": { "enum": ["deterministic-finding-evidence", "current-quality-calibrated", "current-quality-advisory", "quality-candidate-unmeasured", "blocked-quality-candidate", "internal-origin-association", "current-quality-failed-claim-bar", "insufficient-evidence", "superseded-policy", "retired-policy"] },
+        "replacementRuleId": { "$ref": "#/$defs/ruleId" },
+        "aiAssociation": { "$ref": "#/$defs/association" }
+      },
+      "oneOf": [
+        { "properties": { "provenance": { "const": "deterministic-finding-evidence" }, "runtimeOutcome": { "const": "default-on" }, "enabledByDefault": { "const": true }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": true }, "gateEligible": { "const": true }, "repairSafety": { "const": "finding-bound-only" }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "current-quality-calibrated" }, "runtimeOutcome": { "const": "default-on" }, "enabledByDefault": { "const": true }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": true }, "gateEligible": { "const": true }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "current-quality-advisory" }, "runtimeOutcome": { "const": "quality-advisory" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "quality-candidate-unmeasured" }, "runtimeOutcome": { "const": "quality-candidate-default-off" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "repairSafety": { "const": "no-safe-repair" }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "blocked-quality-candidate" }, "runtimeOutcome": { "const": "default-off" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": false }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "repairSafety": { "const": "no-safe-repair" }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "internal-origin-association" }, "qualityDomain": { "const": "none" }, "runtimeOutcome": { "const": "default-off" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "repairSafety": { "const": "not-applicable" }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "current-quality-failed-claim-bar" }, "runtimeOutcome": { "const": "default-off" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "insufficient-evidence" }, "runtimeOutcome": { "const": "insufficient-evidence" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "replacementRuleId": false }, "required": ["provenance"] },
+        { "properties": { "provenance": { "const": "superseded-policy" }, "runtimeOutcome": { "const": "superseded" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": false }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "repairSafety": { "const": "not-applicable" }, "replacementRuleId": { "$ref": "#/$defs/ruleId" } }, "required": ["provenance", "replacementRuleId"] },
+        { "properties": { "provenance": { "const": "retired-policy" }, "runtimeOutcome": { "const": "retired" }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": false }, "scoreEligible": { "const": false }, "gateEligible": { "const": false }, "repairSafety": { "const": "not-applicable" }, "replacementRuleId": false }, "required": ["provenance"] }
+      ]
+    },
+    "baseProperties": {
+      "version": { "const": "slopbrick-rule-evidence-policy-v2" },
+      "protocolVersion": { "const": "CAL-002-v2" },
+      "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+      "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+      "policyRowsSha256": { "$ref": "#/$defs/sha256" },
+      "rows": { "type": "array", "minItems": 119, "maxItems": 119, "items": { "$ref": "#/$defs/row" } },
+      "admitted": { "const": false }
+    },
+    "unappliedPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "policyRowsSha256", "rows", "admitted", "applied"],
+      "properties": {
+        "version": { "const": "slopbrick-rule-evidence-policy-v2" },
+        "protocolVersion": { "const": "CAL-002-v2" },
+        "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+        "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+        "policyRowsSha256": { "$ref": "#/$defs/sha256" },
+        "rows": { "type": "array", "minItems": 119, "maxItems": 119, "items": { "$ref": "#/$defs/row" } },
+        "admitted": { "const": false },
+        "applied": { "const": false }
+      }
+    },
+    "appliedPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "policyRowsSha256", "matrixApprovalSha256", "applicationImplementationCommitSha", "rows", "admitted", "applied"],
+      "properties": {
+        "version": { "const": "slopbrick-rule-evidence-policy-v2" },
+        "protocolVersion": { "const": "CAL-002-v2" },
+        "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+        "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+        "policyRowsSha256": { "$ref": "#/$defs/sha256" },
+        "matrixApprovalSha256": { "$ref": "#/$defs/sha256" },
+        "applicationImplementationCommitSha": { "$ref": "#/$defs/commit" },
+        "rows": { "type": "array", "minItems": 119, "maxItems": 119, "items": { "$ref": "#/$defs/row" } },
+        "admitted": { "const": false },
+        "applied": { "const": true }
+      }
+    }
+  }
+}

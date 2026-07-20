@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-application-receipt-v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "finalMatrixSha256", "matrixApprovalSha256", "policyRowsSha256", "policySha256", "applicationImplementationCommitSha", "admitted", "applied"],
+  "properties": {
+    "version": { "const": "cal-002-application-receipt-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+    "finalMatrixSha256": { "$ref": "#/$defs/sha256" },
+    "matrixApprovalSha256": { "$ref": "#/$defs/sha256" },
+    "policyRowsSha256": { "$ref": "#/$defs/sha256" },
+    "policySha256": { "$ref": "#/$defs/sha256" },
+    "applicationImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "admitted": { "const": false },
+    "applied": { "const": true }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+  }
+}

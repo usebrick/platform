@@ -15,6 +15,10 @@
     { "file": "cal-002-quality-disposition-v2.schema.json", "version": "cal-002-quality-disposition-v2" },
     { "file": "cal-002-parity-receipt-v2.schema.json", "version": "cal-002-parity-receipt-v2" },
     { "file": "cal-002-supersession-receipt-v2.schema.json", "version": "cal-002-supersession-receipt-v2" },
-    { "file": "cal-002-oracle-receipt-v2.schema.json", "version": "cal-002-oracle-receipt-v2" }
+    { "file": "cal-002-oracle-receipt-v2.schema.json", "version": "cal-002-oracle-receipt-v2" },
+    { "file": "cal-002-final-matrix-v2.schema.json", "version": "cal-002-final-matrix-v2" },
+    { "file": "cal-002-matrix-approval-v2.schema.json", "version": "cal-002-matrix-approval-v2" },
+    { "file": "slopbrick-rule-evidence-policy-v2.schema.json", "version": "slopbrick-rule-evidence-policy-v2" },
+    { "file": "cal-002-application-receipt-v2.schema.json", "version": "cal-002-application-receipt-v2" }
   ]
 }

@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-final-matrix-v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "protocolVersion", "catalogSha256", "authorityReceiptSha256", "oracleReceiptSha256", "qualityDispositionSha256", "originReceiptSha256", "supersessionReceiptSha256", "reducerImplementationCommitSha", "rows", "projectionCounts", "outcomeCounts", "admitted", "applied"],
+  "properties": {
+    "version": { "const": "cal-002-final-matrix-v2" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "catalogSha256": { "const": "d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506" },
+    "authorityReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "oracleReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "qualityDispositionSha256": { "$ref": "#/$defs/sha256" },
+    "originReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "supersessionReceiptSha256": { "$ref": "#/$defs/sha256" },
+    "reducerImplementationCommitSha": { "$ref": "#/$defs/commit" },
+    "rows": { "type": "array", "minItems": 119, "maxItems": 119, "items": { "$ref": "#/$defs/row" } },
+    "projectionCounts": { "$ref": "#/$defs/projectionCounts" },
+    "outcomeCounts": { "$ref": "#/$defs/outcomeCounts" },
+    "admitted": { "const": false },
+    "applied": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$" },
+    "association": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "claimCeiling"],
+      "properties": {
+        "source": { "enum": ["cal-001-internal-origin", "legacy-signal-strength", "none-recorded"] },
+        "claimCeiling": { "enum": ["association-only", "none"] },
+        "evidenceSha256": { "$ref": "#/$defs/sha256" },
+        "lift": { "type": "number", "minimum": 0 },
+        "measuredAt": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "none-recorded" } }, "required": ["source"] },
+          "then": {
+            "properties": {
+              "claimCeiling": { "const": "none" },
+              "evidenceSha256": false,
+              "lift": false,
+              "measuredAt": false,
+              "protocol": false
+            }
+          },
+          "else": { "properties": { "claimCeiling": { "const": "association-only" } } }
+        }
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "destination", "qualityDomain", "claimClass", "readiness", "measurementStatus", "runtimeOutcome", "enabledByDefault", "runnableByExplicitOptIn", "scoreEligible", "gateEligible", "repairSafety", "provenance", "evidenceSha256", "aiAssociation", "admitted"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/ruleId" },
+        "destination": { "enum": ["quality", "research-origin", "superseded", "retired"] },
+        "qualityDomain": { "enum": ["security", "accessibility", "correctness", "reliability", "performance", "maintainability", "documentation-quality", "type-safety", "resource-safety", "test-confidence", "architecture-consistency", "observability", "design-system-coherence", "completeness", "none"] },
+        "claimClass": { "enum": ["language-or-security-contract", "accessibility-standard", "repository-contract", "deterministic-syntax-or-dataflow", "contextual-heuristic", "statistical-review-signal", "no-valid-quality-claim"] },
+        "readiness": { "enum": ["evidence-ready", "repair-required", "project-contract-required", "parity-required", "research-only", "obsolete"] },
+        "evidenceClass": { "enum": ["deterministic-or-standards", "contextual-quality", "statistical-review-utility"] },
+        "measurementStatus": { "enum": ["oracle-verified", "measured", "not-requested-owner-capacity", "not-applicable", "unavailable"] },
+        "runtimeOutcome": { "enum": ["default-on", "quality-advisory", "quality-candidate-default-off", "default-off", "insufficient-evidence", "superseded", "retired"] },
+        "enabledByDefault": { "type": "boolean" },
+        "runnableByExplicitOptIn": { "type": "boolean" },
+        "scoreEligible": { "type": "boolean" },
+        "gateEligible": { "type": "boolean" },
+        "repairSafety": { "enum": ["finding-bound-only", "no-safe-repair", "not-applicable"] },
+        "provenance": { "enum": ["deterministic-finding-evidence", "current-quality-calibrated", "current-quality-advisory", "quality-candidate-unmeasured", "blocked-quality-candidate", "internal-origin-association", "current-quality-failed-claim-bar", "insufficient-evidence", "superseded-policy", "retired-policy"] },
+        "evidenceSha256": { "$ref": "#/$defs/sha256" },
+        "replacementRuleId": { "$ref": "#/$defs/ruleId" },
+        "aiAssociation": { "$ref": "#/$defs/association" },
+        "admitted": { "const": false }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            { "properties": { "provenance": { "enum": ["deterministic-finding-evidence", "current-quality-calibrated"] }, "enabledByDefault": { "const": true }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": true }, "gateEligible": { "const": true } } },
+            { "properties": { "provenance": { "enum": ["current-quality-advisory", "quality-candidate-unmeasured", "internal-origin-association", "current-quality-failed-claim-bar", "insufficient-evidence"] }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": true }, "scoreEligible": { "const": false }, "gateEligible": { "const": false } } },
+            { "properties": { "provenance": { "enum": ["blocked-quality-candidate", "superseded-policy", "retired-policy"] }, "enabledByDefault": { "const": false }, "runnableByExplicitOptIn": { "const": false }, "scoreEligible": { "const": false }, "gateEligible": { "const": false } } }
+          ]
+        },
+        {
+          "if": { "properties": { "provenance": { "const": "superseded-policy" } }, "required": ["provenance"] },
+          "then": { "required": ["replacementRuleId"], "properties": { "destination": { "const": "superseded" }, "runtimeOutcome": { "const": "superseded" }, "measurementStatus": { "const": "not-applicable" }, "repairSafety": { "const": "not-applicable" }, "evidenceClass": false, "replacementRuleId": { "$ref": "#/$defs/ruleId" } } },
+          "else": { "properties": { "replacementRuleId": false } }
+        },
+        {
+          "if": { "properties": { "provenance": { "const": "retired-policy" } }, "required": ["provenance"] },
+          "then": { "properties": { "destination": { "const": "retired" }, "runtimeOutcome": { "const": "retired" }, "measurementStatus": { "const": "not-applicable" }, "repairSafety": { "const": "not-applicable" }, "evidenceClass": false } }
+        },
+        {
+          "if": { "properties": { "provenance": { "const": "internal-origin-association" } }, "required": ["provenance"] },
+          "then": { "properties": { "destination": { "const": "research-origin" }, "qualityDomain": { "const": "none" }, "runtimeOutcome": { "const": "default-off" }, "measurementStatus": { "const": "not-applicable" }, "repairSafety": { "const": "not-applicable" }, "evidenceClass": false } }
+        },
+        {
+          "if": { "properties": { "provenance": { "const": "blocked-quality-candidate" } }, "required": ["provenance"] },
+          "then": { "properties": { "destination": { "const": "quality" }, "runtimeOutcome": { "const": "default-off" }, "measurementStatus": { "const": "unavailable" }, "repairSafety": { "const": "no-safe-repair" }, "evidenceClass": false } }
+        },
+        {
+          "if": { "properties": { "provenance": { "const": "quality-candidate-unmeasured" } }, "required": ["provenance"] },
+          "then": { "required": ["evidenceClass"], "properties": { "destination": { "const": "quality" }, "runtimeOutcome": { "const": "quality-candidate-default-off" }, "measurementStatus": { "const": "not-requested-owner-capacity" }, "repairSafety": { "const": "no-safe-repair" } } }
+        },
+        {
+          "if": { "properties": { "evidenceClass": { "const": "statistical-review-utility" } }, "required": ["evidenceClass"] },
+          "then": { "not": { "properties": { "runtimeOutcome": { "const": "default-on" } }, "required": ["runtimeOutcome"] } }
+        }
+      ]
+    },
+    "projectionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startingQuality", "transferred", "blocked", "superseded", "retired", "researchOrigin"],
+      "properties": {
+        "startingQuality": { "const": 47 },
+        "transferred": { "const": 26 },
+        "blocked": { "const": 4 },
+        "superseded": { "const": 3 },
+        "retired": { "const": 7 },
+        "researchOrigin": { "const": 32 }
+      }
+    },
+    "outcomeCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default-on", "quality-advisory", "quality-candidate-default-off", "default-off", "insufficient-evidence", "superseded", "retired"],
+      "properties": {
+        "default-on": { "type": "integer", "minimum": 0 },
+        "quality-advisory": { "type": "integer", "minimum": 0 },
+        "quality-candidate-default-off": { "type": "integer", "minimum": 0 },
+        "default-off": { "type": "integer", "minimum": 0 },
+        "insufficient-evidence": { "type": "integer", "minimum": 0 },
+        "superseded": { "type": "integer", "minimum": 0 },
+        "retired": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
