@@ -6,6 +6,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   appendOutcomeEventV1,
+  deleteOutcomeEventsV1,
+  exportOutcomeEventsV1,
+  OUTCOME_EVENT_EXPORT_VERSION_V1,
   OutcomeEventStoreError,
   readOutcomeEventsV1,
 } from '../../src/telemetry/outcome-store';
@@ -72,5 +75,34 @@ describe('privacy-safe local outcome event store', () => {
     expect(() => appendOutcomeEventV1(storagePath, validEvent))
       .toThrow(OutcomeEventStoreError);
     expect(readFileSync(storagePath, 'utf8')).toBe(corruptBytes);
+  });
+
+  it('exports an inspectable versioned document and deletes only the selected ledger', () => {
+    const storagePath = join(root, 'local', 'events-v1.jsonl');
+    const exportPath = join(root, 'exports', 'outcomes.json');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'action-decided',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      detectorId: 'logic/heaps-deviation',
+      decision: 'declined',
+      reason: 'no-safe-repair',
+    };
+    appendOutcomeEventV1(storagePath, event);
+
+    expect(exportOutcomeEventsV1(storagePath, exportPath)).toBe(1);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8'))).toEqual({
+      version: OUTCOME_EVENT_EXPORT_VERSION_V1,
+      eventVersion: OUTCOME_EVENT_VERSION_V1,
+      events: [event],
+    });
+    expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+
+    expect(deleteOutcomeEventsV1(storagePath)).toBe(true);
+    expect(deleteOutcomeEventsV1(storagePath)).toBe(false);
+    expect(readOutcomeEventsV1(storagePath)).toEqual([]);
+    expect(existsSync(exportPath)).toBe(true);
   });
 });
