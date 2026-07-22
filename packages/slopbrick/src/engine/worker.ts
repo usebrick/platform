@@ -11,6 +11,7 @@ import { effectiveIssuesForScore } from '../cli/effective-issues.js';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import {
   bindExplicitRuleOverrides,
+  bindInvocationRuleOverrides,
   type RuleOverrideMap,
 } from '../config/rule-override-provenance.js';
 import { setLoggerQuiet } from './logger';
@@ -297,6 +298,7 @@ async function run(): Promise<void> {
   const data = workerData as {
     config: unknown;
     explicitRuleOverrides?: unknown;
+    invocationRuleOverrides?: unknown;
     cwd?: unknown;
     quiet?: unknown;
     rule?: string;
@@ -314,7 +316,14 @@ async function run(): Promise<void> {
       || Array.isArray(explicitRuleOverrides))) {
     throw new Error('workerData.explicitRuleOverrides must be a rule override object');
   }
+  const invocationRuleOverrides = data.invocationRuleOverrides;
+  if (invocationRuleOverrides !== undefined
+    && (typeof invocationRuleOverrides !== 'object' || invocationRuleOverrides === null
+      || Array.isArray(invocationRuleOverrides))) {
+    throw new Error('workerData.invocationRuleOverrides must be a rule override object');
+  }
   bindExplicitRuleOverrides(config, explicitRuleOverrides as RuleOverrideMap | undefined);
+  bindInvocationRuleOverrides(config, invocationRuleOverrides as RuleOverrideMap | undefined);
   const cwd = typeof data.cwd === 'string' ? data.cwd : process.cwd();
 
   const registry = new RuleRegistry();

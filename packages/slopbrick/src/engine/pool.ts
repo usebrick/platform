@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { logger } from './logger';
 import {
   getExplicitRuleOverrides,
+  getInvocationRuleOverrides,
   type RuleOverrideMap,
 } from '../config/rule-override-provenance.js';
 import type { FileScanResult, ResolvedConfig } from '../types';
@@ -83,6 +84,7 @@ export class WorkerPool {
   private workerScript: string;
   private config: ResolvedConfig;
   private explicitRuleOverrides: RuleOverrideMap;
+  private invocationRuleOverrides: RuleOverrideMap;
   private cwd: string;
   private threadCount: number;
   private workerTimeoutMs: number;
@@ -95,6 +97,7 @@ export class WorkerPool {
   constructor(options: WorkerPoolOptions) {
     this.config = options.config;
     this.explicitRuleOverrides = getExplicitRuleOverrides(options.config);
+    this.invocationRuleOverrides = getInvocationRuleOverrides(options.config);
     this.cwd = options.cwd ?? process.cwd();
     this.workerTimeoutMs = options.workerTimeoutMs ?? DEFAULT_WORKER_TIMEOUT_MS;
     this.quiet = options.quiet ?? false;
@@ -299,6 +302,7 @@ export class WorkerPool {
             workerData: {
               config: this.config,
               explicitRuleOverrides: this.explicitRuleOverrides,
+              invocationRuleOverrides: this.invocationRuleOverrides,
               cwd: this.cwd,
               quiet: this.quiet,
               rule: this.rule,
