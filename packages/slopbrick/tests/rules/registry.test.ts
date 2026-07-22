@@ -14,7 +14,10 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 import { RuleRegistry } from '../../src/rules/registry';
 import { createRule } from '../../src/rules/rule';
 import { loadConfig } from '../../src/config';
-import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
+import {
+  bindExplicitRuleOverrides,
+  bindInvocationRuleOverrides,
+} from '../../src/config/rule-override-provenance';
 import type { Issue, ResolvedConfig, Rule, ScanFacts } from '../../src/types';
 import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 
@@ -167,6 +170,11 @@ describe('RuleRegistry', () => {
     }));
 
     expect(registry.createContexts(makeConfig({ [ruleId]: 'high' }), 'src/a.ts', '/tmp')).toEqual([]);
+    expect(registry.createContexts(
+      bindInvocationRuleOverrides(makeConfig(), { [ruleId]: 'auto' }),
+      'src/a.ts',
+      '/tmp',
+    )).toEqual([]);
     expect(create).not.toHaveBeenCalled();
   });
 

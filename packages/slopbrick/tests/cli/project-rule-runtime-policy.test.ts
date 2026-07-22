@@ -11,7 +11,10 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 
 import { DEFAULT_CONFIG } from '../../src/config';
 import { runScan } from '../../src/cli/scan';
-import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
+import {
+  bindExplicitRuleOverrides,
+  bindInvocationRuleOverrides,
+} from '../../src/config/rule-override-provenance';
 import { runProjectRules } from '../../src/rules/project';
 import type { FileScanResult, ResolvedConfig } from '../../src/types';
 import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
@@ -62,6 +65,37 @@ describe('project-rule current-policy execution', () => {
     const explicit = makeConfig({ [GAP_RULE_ID]: 'medium' });
     expect(runProjectRules(gapResults(), explicit)).toEqual(expect.arrayContaining([
       expect.objectContaining({ ruleId: GAP_RULE_ID, severity: 'medium' }),
+    ]));
+  });
+
+  it('preserves legacy project detector execution while the current-policy provider is inactive', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+
+    expect(runProjectRules(gapResults(), makeConfig(undefined))).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: GAP_RULE_ID, severity: 'medium' }),
+    ]));
+  });
+
+  it('accepts invocation provenance for a diagnostic project detector without overriding repository off', () => {
+    const isRuleRunnable = vi.fn((ruleId: string, overrides: Readonly<Record<string, string>>) =>
+      ruleId !== GAP_RULE_ID
+      || (Object.hasOwn(overrides, ruleId) && overrides[ruleId] !== 'off'));
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue({ isRuleRunnable });
+
+    const diagnostic = bindInvocationRuleOverrides(
+      makeConfig(undefined),
+      { [GAP_RULE_ID]: 'auto' },
+    );
+    expect(runProjectRules(gapResults(), diagnostic)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: GAP_RULE_ID, severity: 'medium' }),
+    ]));
+
+    const explicitlyOff = bindInvocationRuleOverrides(
+      makeConfig({ [GAP_RULE_ID]: 'off' }),
+      { [GAP_RULE_ID]: 'auto' },
+    );
+    expect(runProjectRules(gapResults(), explicitlyOff)).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: GAP_RULE_ID }),
     ]));
   });
 
