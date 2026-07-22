@@ -20,6 +20,7 @@ import type { CliGlobalOptions, ScanRunResult } from './scan';
 import { runDrift } from './drift';
 import { computeAiMaintenanceCostFromReport } from '../engine/maintenance-cost';
 import { setLoggerQuiet } from '../engine/logger';
+import { effectiveIssuesForScore } from './effective-issues.js';
 import type {
   AiMaintenanceCost,
   AiMaintenanceCostResult,
@@ -85,7 +86,8 @@ export async function runMaintenanceCostScan(
   )?.count ?? 0;
   const designTokenDrift = spacing + radius > 0 ? { spacing, radius } : undefined;
 
-  const hasAiSignals = detectAiSignals(scan.report, config);
+  const scoreIssues = effectiveIssuesForScore(scan.report.issues, scan.config);
+  const hasAiSignals = detectAiSignals(scoreIssues);
 
   // Use the convenience wrapper that pulls everything from the report.
   const result = computeAiMaintenanceCostFromReport(
@@ -96,10 +98,10 @@ export async function runMaintenanceCostScan(
       repositoryHealth: scan.report.repositoryHealth,
       architectureConsistency: scan.report.architectureConsistency,
       aiSecurityRisk: scan.report.aiSecurityRisk,
-      highSeverityIssueCount: scan.report.issues.filter(
+      highSeverityIssueCount: scoreIssues.filter(
         (i) => i.severity === 'high',
       ).length,
-      issues: scan.report.issues.map((i) => ({ severity: i.severity })),
+      issues: scoreIssues.map((i) => ({ severity: i.severity })),
       fileCount: scan.report.fileCount,
     },
     {
@@ -118,11 +120,10 @@ export async function runMaintenanceCostScan(
  * heuristic — three binary tests on existing scan output.
  */
 function detectAiSignals(
-  report: ScanRunResult['report'],
-  _config: ResolvedConfig,
+  issues: ScanRunResult['report']['issues'],
 ): boolean {
   // 1. AI-typical rules fired (visual/inline-style, logic/weak-types).
-  const aiRuleCount = report.issues.filter(
+  const aiRuleCount = issues.filter(
     (i) => i.aiSpecific === true,
   ).length;
   if (aiRuleCount >= 3) return true;

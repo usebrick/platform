@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 
 import {
   buildArchitectureScore,
@@ -11,6 +17,13 @@ import {
 } from '../../src/engine/architecture-score';
 import type { PatternInventory } from '../../src/mcp/patterns';
 import type { FileScanResult, ResolvedConfig } from '../../src/types';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-arch-'));
@@ -295,6 +308,42 @@ describe('ARCHITECTURE_SCORE_WEIGHTS', () => {
 });
 
 describe('buildArchitectureScore (integration)', () => {
+  it('keeps explicitly enabled scale diagnostics out of architecture scoring', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/Diagnostic.tsx',
+        '<div className="p-[13px] m-[13px] gap-[13px] px-[13px] py-[13px]" />;',
+      );
+      const explicitRules = {
+        'visual/spacing-scale-violation': 'high' as const,
+      };
+      const config = bindExplicitRuleOverrides({
+        include: ['src/**/*.tsx'],
+        exclude: [],
+        rules: explicitRules,
+        frameworkMultipliers: {},
+        ruleConfig: {},
+        arbitraryValueAllowlist: [],
+        wcag: { targetSizeExemptSelectors: [] },
+        thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 },
+        spacingScale: [0, 1],
+        radiusScale: [],
+      }, explicitRules);
+
+      const score = await buildArchitectureScore(dir, config, 100);
+
+      expect(score.score).toBe(100);
+      expect(score.deductions.find(
+        (deduction) => deduction.category === 'spacingScaleViolations',
+      )).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('runs end-to-end on a synthetic project', async () => {
     const dir = freshDir();
     try {

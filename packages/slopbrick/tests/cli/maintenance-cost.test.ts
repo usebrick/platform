@@ -1,9 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 
 import {
   runMaintenanceCostScan,
@@ -11,9 +17,16 @@ import {
   maintenanceCostExitCode,
   type MaintenanceCostScanResult,
 } from '../../src/cli/maintenance-cost';
+import { DEFAULT_CONFIG } from '../../src/config';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 
 const execFileAsync = promisify(execFile);
 const BIN = join(process.cwd(), 'bin', 'slopbrick.js');
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-maint-cost-'));
@@ -116,6 +129,33 @@ describe('formatMaintenanceCostReport', () => {
 });
 
 describe('runMaintenanceCostScan', () => {
+  it('keeps a repository-enabled diagnostic out of maintenance-cost issue inputs', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/Giant.tsx',
+        `export function Giant() {${'\n'.repeat(205)}return <div />;\n}\n`,
+      );
+      writeFile(
+        dir,
+        'slopbrick.config.mjs',
+        `export default { rules: { 'component/giant-component': 'high' } };\n`,
+      );
+
+      const output = await runMaintenanceCostScan(dir, DEFAULT_CONFIG, { strict: true });
+      expect(output.scan.report.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'component/giant-component', severity: 'high' }),
+      ]));
+      expect(output.result.axes.find(({ axis }) => axis === 'highSeverityPenalty')).toMatchObject({
+        health: 100,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('end-to-end via CLI binary on a tiny fixture', async () => {
     const dir = freshDir();
     try {

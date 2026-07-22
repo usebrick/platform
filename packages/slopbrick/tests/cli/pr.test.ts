@@ -6,7 +6,7 @@
 //   - End-to-end tests that spawn the built `bin/slopbrick.js` and
 //     assert on stdout / exit code.
 
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   mkdtempSync,
   rmSync,
@@ -19,12 +19,25 @@ import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
+
 import { runPrScan, runPrScanFromDiffFile, formatPrReport, prExitCode, parseUnifiedDiffPaths } from '../../src/cli/pr';
 import { DEFAULT_CONFIG } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 import type { ResolvedConfig } from '../../src/types';
 
 const execFileAsync = promisify(execFile);
 const BIN = join(process.cwd(), 'bin', 'slopbrick.js');
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return realpathSync(mkdtempSync(join(tmpdir(), 'slopbrick-pr-')));
@@ -182,6 +195,51 @@ describe('runPrScan', () => {
       expect(result.totalScore).toBeGreaterThan(0);
       expect(result.files[0]?.relPath).toBe('src/list.tsx');
       expect(result.bySeverity.high).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a repository-enabled diagnostic visible without adding PR score', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = freshDir();
+    try {
+      setupPrFixture(
+        dir,
+        (d) => writeFile(d, 'README.md', 'hello'),
+        (d) => writeFile(
+          d,
+          'src/Giant.tsx',
+          `export function Giant() {${'\n'.repeat(205)}return <div />;\n}\n`,
+        ),
+      );
+      const explicitRules = { 'component/giant-component': 'high' as const };
+      const config = bindExplicitRuleOverrides({
+        ...configWith(),
+        rules: { ...DEFAULT_CONFIG.rules, ...explicitRules },
+      }, explicitRules);
+      const disabledRules = { 'component/giant-component': 'off' as const };
+      const disabledConfig = bindExplicitRuleOverrides({
+        ...configWith(),
+        rules: { ...DEFAULT_CONFIG.rules, ...disabledRules },
+      }, disabledRules);
+
+      const disabledResult = await runPrScan(dir, disabledConfig, {
+        base: 'main',
+        head: 'HEAD',
+      });
+
+      const result = await runPrScan(dir, config, {
+        base: 'main',
+        head: 'HEAD',
+        threshold: disabledResult.totalScore,
+      });
+
+      expect(result.files[0]?.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'component/giant-component', severity: 'high' }),
+      ]));
+      expect(result.totalScore).toBe(disabledResult.totalScore);
+      expect(result.passed).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -668,6 +726,46 @@ describe('runPrScanFromDiffFile — pure (no CLI)', () => {
       const result = await runPrScanFromDiffFile(dir, DEFAULT_CONFIG, emptyDiffPath, {});
       expect(result.filesChanged).toBe(0);
       expect(result.totalScore).toBe(0);
+      expect(result.passed).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps diagnostics visible but score-neutral in diff-file mode', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-pr-diff-'));
+    try {
+      writeFile(
+        dir,
+        'src/Giant.tsx',
+        `export function Giant() {${'\n'.repeat(205)}return <div />;\n}\n`,
+      );
+      const diffPath = writeFile(
+        dir,
+        'change.diff',
+        ['--- /dev/null', '+++ b/src/Giant.tsx'].join('\n'),
+      );
+      const explicitRules = { 'component/giant-component': 'high' as const };
+      const config = bindExplicitRuleOverrides({
+        ...configWith(),
+        rules: { ...DEFAULT_CONFIG.rules, ...explicitRules },
+      }, explicitRules);
+      const disabledRules = { 'component/giant-component': 'off' as const };
+      const disabledConfig = bindExplicitRuleOverrides({
+        ...configWith(),
+        rules: { ...DEFAULT_CONFIG.rules, ...disabledRules },
+      }, disabledRules);
+
+      const disabledResult = await runPrScanFromDiffFile(dir, disabledConfig, diffPath);
+      const result = await runPrScanFromDiffFile(dir, config, diffPath, {
+        threshold: disabledResult.totalScore,
+      });
+
+      expect(result.files[0]?.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'component/giant-component', severity: 'high' }),
+      ]));
+      expect(result.totalScore).toBe(disabledResult.totalScore);
       expect(result.passed).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });

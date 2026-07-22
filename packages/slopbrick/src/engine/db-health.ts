@@ -3,8 +3,9 @@
 // v0.38.0: Five of the original six db-health rules were deleted as
 // v10-DORMANT (`db/missing-fk-index`, `db/duplicate-index`,
 // `db/missing-not-null`, `db/enum-sprawl`, `db/naming-inconsistency`).
-// Only `db/sql-concat` remains — it scans TS files for template-literal
-// SQL queries (regex-based, no pgsql-parser AST needed).
+// Only the legacy-compatible `db/sql-concat` implementation remains. It scans
+// TS files for template-literal SQL queries when current policy permits it;
+// the approved current policy supersedes it and therefore does not run it.
 //
 // The score formula is unchanged: clamp(0, 100, 100 - (issueWeight / scannedFiles) * 5)
 // Categorical bands:
@@ -18,6 +19,8 @@ import { extname, relative, resolve } from 'node:path';
 import type { ResolvedConfig, DbFinding, Issue } from '../types';
 import { discoverFiles, isExcludedBySelfScan } from './discover.js';
 import { sqlConcatRule } from '../rules/db/sql-concat';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
+import { getRunnableRuleOverrides } from '../config/rule-override-provenance.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -76,6 +79,11 @@ export async function buildDbHealth(
     .slice(0, maxFiles);
 
   const findings: DbFinding[] = [];
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const runSqlConcat = currentPolicy?.isRuleRunnable(
+    'db/sql-concat',
+    getRunnableRuleOverrides(config),
+  ) ?? true;
   let scannedTsFiles = 0;
   for (const abs of tsFiles) {
     let source: string;
@@ -85,6 +93,7 @@ export async function buildDbHealth(
       continue;
     }
     scannedTsFiles += 1;
+    if (!runSqlConcat) continue;
     const relPath = relative(cwd, abs);
     const context = { config, filePath: relPath, cwd };
     const facts = { filePath: relPath, v2: { _source: source } as any };

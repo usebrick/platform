@@ -10,17 +10,17 @@ import { renderInvalidScan } from './_shared.js';
  * v0.18.x (R-H1): test subcommand extracted from cli/program.ts.
  *
  * Test Quality score (0-100, lower = more issues). Runs the four
- * `test/*` rules across test files. --strict exits 1 on any test
- * issue (CI gate).
+ * `test/*` rules across test files. --strict exits 1 on any gate-eligible
+ * test issue (CI gate).
  */
 export function registerTest(program: Command): void {
   program
     .command('test')
     .description(
-      'Test Quality score (0-100, lower = more issues). Runs the four `test/*` rules across test files. Use --strict to exit 1 on any test issue (CI gate).',
+      'Test Quality score (0-100, lower = more issues). Runs the four `test/*` rules across test files. Use --strict to exit 1 on any gate-eligible test issue (CI gate).',
     )
     .option('--format <pretty|json>', 'output format', 'pretty')
-    .option('--strict', 'exit 1 on any test issue (CI gate)', false)
+    .option('--strict', 'exit 1 on any gate-eligible test issue (CI gate)', false)
     .action(
       async (cmdOptions: { format?: 'pretty' | 'json'; strict?: boolean }, command: Command) => {
         try {

@@ -10,7 +10,7 @@
 //
 // Exit codes (set by program.ts):
 //   0  — clean or informational
-//   1  — `--strict` and any test issue was found
+//   1  — `--strict` and a gate-eligible test issue was found
 //   2  — fatal error (config not loadable, IO failure)
 
 import { resolve } from 'node:path';
@@ -20,11 +20,12 @@ import { buildTestQualityScore, formatTestQualityScore } from '../engine/test-qu
 import type { TestQualityScore } from '../engine/test-quality';
 import { setLoggerQuiet } from '../engine/logger';
 import type { Issue, ResolvedConfig } from '../types';
+import { effectiveIssuesForGate, effectiveIssuesForScore } from './effective-issues.js';
 
 export interface TestScanOptions {
   /** Cap on files scanned. Default: 1000. */
   maxFiles?: number;
-  /** When true, exit 1 on any test issue (CI gate). */
+  /** When true, exit 1 on any gate-eligible test issue (CI gate). */
   strict?: boolean;
 }
 
@@ -37,7 +38,7 @@ export interface TestScanResult {
   scannedFiles: number;
   /** The effective include globs used. */
   include: string[];
-  /** True when --strict was passed AND issues were found. */
+  /** True unless strict mode found at least one gate-eligible issue. */
   passed: boolean;
 }
 
@@ -82,8 +83,10 @@ export async function runTestScan(
   // output gets swallowed and the test command prints nothing.
   setLoggerQuiet(false);
   const testIssues = scan.report.issues.filter((issue) => issue.category === 'test');
+  const scoreIssues = effectiveIssuesForScore(testIssues, scan.config);
+  const gateIssues = effectiveIssuesForGate(testIssues, scan.config);
   const testQuality = buildTestQualityScore(
-    testIssues,
+    scoreIssues,
     scan.report.fileCount,
   );
   const result: TestScanResult = {
@@ -91,7 +94,7 @@ export async function runTestScan(
     testIssues,
     scannedFiles: scan.report.fileCount,
     include,
-    passed: !options.strict || testIssues.length === 0,
+    passed: !options.strict || gateIssues.length === 0,
   };
   return { result, scan };
 }
@@ -157,7 +160,7 @@ export function formatTestReport(
  * Used by program.ts action and tests.
  *
  *   0 — informational (clean repo OR no strict flag)
- *   1 — strict mode AND at least one test issue
+ *   1 — strict mode AND at least one gate-eligible test issue
  */
 export function testExitCode(result: TestScanResult): 0 | 1 {
   return result.passed ? 0 : 1;

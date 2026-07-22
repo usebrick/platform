@@ -1,14 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 import {
   buildDbHealth,
   DB_RULE_WEIGHTS,
   DB_FRESHNESS_THRESHOLDS,
 } from '../../src/engine/db-health';
 import { runScan } from '../../src/cli/scan';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-db-'));
@@ -60,6 +72,25 @@ describe('buildDbHealth (end-to-end)', () => {
       expect(result.byRule['db/sql-concat']).toBeGreaterThanOrEqual(1);
       const concat = result.findings.find((f) => f.ruleId === 'db/sql-concat');
       expect(concat?.dbFile).toMatch(/queries\.ts$/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not run the superseded db/sql-concat rule under current policy', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/queries.ts',
+        `export const query = (id: string) => db.query(\`SELECT * FROM users WHERE id = \${id}\`);\n`,
+      );
+
+      const result = await buildDbHealth(dir, STUB_CONFIG, {});
+      expect(result.findings).toEqual([]);
+      expect(result.byRule['db/sql-concat']).toBe(0);
+      expect(result.dbHealth).toBe(100);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -15,7 +15,7 @@
 //   2  — fatal error (not a git repo, no config, IO failure)
 //
 // Score formula (per file):
-//   slop       = sum(SEVERITY_WEIGHTS[issue.severity]) for all issues
+//   slop       = sum(SEVERITY_WEIGHTS[issue.severity]) for score-eligible issues
 //   violations = count of constitution violations
 //   total      = slop + violations
 // PR score = sum(per-file totals). Default threshold = 20.
@@ -31,6 +31,7 @@ import { scanFile } from '../engine/worker';
 import { SEVERITY_WEIGHTS } from '../engine/metrics';
 import { checkFileConstitution } from '../mcp/patterns';
 import { SOURCE_EXTENSIONS } from '../engine/discover.js';
+import { effectiveIssuesForScore } from './effective-issues.js';
 import type { ResolvedConfig, Severity } from '../types';
 
 const execFile = promisify(execFileCb);
@@ -100,9 +101,9 @@ export interface PrResult {
   totalScore: number;
   /** The threshold applied (CLI > config > default 20). */
   threshold: number;
-  /** Issue counts grouped by rule category. */
+  /** Score-eligible issue counts grouped by rule category. */
   byCategory: Record<string, number>;
-  /** Issue counts grouped by severity. */
+  /** Score-eligible issue counts grouped by severity. */
   bySeverity: Record<Severity, number>;
   /** Per-file detail, sorted by descending score then relPath. */
   files: PrFileResult[];
@@ -281,7 +282,7 @@ export async function runPrScan(
     );
 
     let slopPoints = 0;
-    for (const issue of scan.issues) {
+    for (const issue of effectiveIssuesForScore(scan.issues, config)) {
       const weight = SEVERITY_WEIGHTS[issue.severity] ?? 0;
       slopPoints += weight;
       bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1;
@@ -562,12 +563,15 @@ async function scoreChangedPaths(
     if (result.parseError) continue;
 
     const issues = result.issues;
+    const scoreIssues = effectiveIssuesForScore(issues, config);
     let slopPoints = 0;
     const issueEntries: PrIssueEntry[] = [];
-    for (const issue of issues) {
+    for (const issue of scoreIssues) {
       slopPoints += SEVERITY_WEIGHTS[issue.severity] ?? 0;
       byCategory[issue.category] = (byCategory[issue.category] ?? 0) + 1;
       bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1;
+    }
+    for (const issue of issues) {
       issueEntries.push({
         ruleId: issue.ruleId,
         severity: issue.severity,

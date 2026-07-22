@@ -46,6 +46,8 @@ import { extractFacts } from './visitor.js';
 import { spacingScaleViolationRule } from '../rules/visual/spacing-scale-violation.js';
 import { radiusScaleViolationRule } from '../rules/visual/radius-scale-violation.js';
 import { discoverFiles } from './discover.js';
+import { getRunnableRuleOverrides } from '../config/rule-override-provenance.js';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import type { ResolvedConfig, RuleContext, FileScanResult } from '../types';
 
 export interface CategoryDeduction {
@@ -319,16 +321,30 @@ async function collectScaleViolations(
 ): Promise<{ spacing: number; radius: number }> {
   let spacing = 0;
   let radius = 0;
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const runnableOverrides = getRunnableRuleOverrides(config);
+  const canScore = (ruleId: string): boolean => currentPolicy === undefined || (
+    currentPolicy.isRuleRunnable(ruleId, runnableOverrides)
+    && (currentPolicy.isRuleScoreEligible(ruleId) ?? true)
+  );
+  const scoreSpacing = canScore('visual/spacing-scale-violation');
+  const scoreRadius = canScore('visual/radius-scale-violation');
+
+  if (!scoreSpacing && !scoreRadius) return { spacing, radius };
 
   const analyzeFacts = (
     filePath: string,
     facts: NonNullable<FileScanResult['facts']>,
   ): void => {
     const ctx: RuleContext = { config, filePath, cwd };
-    const spacingCtx = spacingScaleViolationRule.create(ctx);
-    const radiusCtx = radiusScaleViolationRule.create(ctx);
-    spacing += spacingScaleViolationRule.analyze(spacingCtx, facts).length;
-    radius += radiusScaleViolationRule.analyze(radiusCtx, facts).length;
+    if (scoreSpacing) {
+      const spacingCtx = spacingScaleViolationRule.create(ctx);
+      spacing += spacingScaleViolationRule.analyze(spacingCtx, facts).length;
+    }
+    if (scoreRadius) {
+      const radiusCtx = radiusScaleViolationRule.create(ctx);
+      radius += radiusScaleViolationRule.analyze(radiusCtx, facts).length;
+    }
   };
 
   if (selectedFilePaths !== undefined) {

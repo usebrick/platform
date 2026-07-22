@@ -1,9 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 
 import {
   runTestScan,
@@ -12,10 +18,17 @@ import {
   type TestScanResult,
 } from '../../src/cli/test';
 import { DEFAULT_CONFIG } from '../../src/config';
+import { getRunnableRuleOverrides } from '../../src/config/rule-override-provenance';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 import type { ResolvedConfig } from '../../src/types';
 
 const execFileAsync = promisify(execFile);
 const BIN = join(process.cwd(), 'bin', 'slopbrick.js');
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-test-cmd-'));
@@ -108,6 +121,55 @@ describe('runTestScan', () => {
       );
       const { result } = await runTestScan(dir, configWith());
       expect(result.testQuality.score).toBeLessThan(100);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a repository-enabled test diagnostic visible, score-neutral, and non-gating', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = freshDir();
+    try {
+      writeFile(
+        dir,
+        'src/diagnostic.test.tsx',
+        `describe('a', () => {
+          beforeEach(() => {
+            const utils = setup();
+            const view = render(<App />);
+            view.attach(utils);
+          });
+        });
+        describe('b', () => {
+          beforeEach(() => {
+            const utils = setup();
+            const view = render(<App />);
+            view.attach(utils);
+          });
+        });
+        describe('c', () => {
+          beforeEach(() => {
+            const utils = setup();
+            const view = render(<App />);
+            view.attach(utils);
+          });
+        });\n`,
+      );
+      writeFile(
+        dir,
+        'slopbrick.config.mjs',
+        `export default { rules: { 'test/duplicate-setup': 'high' } };\n`,
+      );
+
+      const { result, scan } = await runTestScan(dir, configWith(), { strict: true });
+
+      expect(scan.config.rules['test/duplicate-setup']).toBe('high');
+      expect(getRunnableRuleOverrides(scan.config)['test/duplicate-setup']).toBe('high');
+      expect(result.testIssues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'test/duplicate-setup', severity: 'high' }),
+      ]));
+      expect(result.testQuality.score).toBe(100);
+      expect(result.passed).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

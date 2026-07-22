@@ -5,6 +5,20 @@ import { runScan } from '../scan.js';
 import type { CliGlobalOptions } from '../scan.js';
 import { computeAiSecurityRisk, formatAiSecurityRiskLine } from '../../engine/ai-security-risk';
 import { renderInvalidScan } from './_shared.js';
+import { effectiveIssuesForGate, effectiveIssuesForScore } from '../effective-issues.js';
+import type { Issue, ResolvedConfig } from '../../types';
+
+export function projectSecurityIssuesByPolicy(
+  issues: readonly Issue[],
+  config: Pick<ResolvedConfig, 'rules'>,
+): { visible: Issue[]; score: Issue[]; gate: Issue[] } {
+  const visible = issues.filter((issue) => issue.category === 'security');
+  return {
+    visible,
+    score: effectiveIssuesForScore(visible, config),
+    gate: effectiveIssuesForGate(visible, config),
+  };
+}
 
 /**
  * v0.18.x (R-H1): security subcommand extracted from cli/program.ts.
@@ -35,7 +49,7 @@ export function registerSecurity(program: Command): void {
             rawFormat === 'json' || rawFormat === 'pretty' ? rawFormat : 'pretty';
 
           const cwd = resolve(options.workspace ?? process.cwd());
-          const { report } = await runScan({ ...options, workspace: cwd });
+          const { report, config } = await runScan({ ...options, workspace: cwd });
           const invalidExitCode = renderInvalidScan(
             report,
             options,
@@ -46,8 +60,9 @@ export function registerSecurity(program: Command): void {
             process.exit(invalidExitCode);
             return;
           }
-          const securityIssues = report.issues.filter((i) => i.category === 'security');
-          const { risk, findings } = computeAiSecurityRisk(securityIssues);
+          const securityIssues = projectSecurityIssuesByPolicy(report.issues, config);
+          const { risk, findings } = computeAiSecurityRisk(securityIssues.score);
+          const gateRisk = computeAiSecurityRisk(securityIssues.gate).risk;
 
           if (format === 'json') {
             logger.info(
@@ -55,8 +70,8 @@ export function registerSecurity(program: Command): void {
                 {
                   aiSecurityRisk: risk,
                   findings,
-                  totalFindings: securityIssues.length,
-                  issues: securityIssues,
+                  totalFindings: securityIssues.visible.length,
+                  issues: securityIssues.visible,
                 },
                 null,
                 2,
@@ -64,22 +79,22 @@ export function registerSecurity(program: Command): void {
             );
           } else {
             logger.info(formatAiSecurityRiskLine(risk, findings));
-            if (securityIssues.length > 0) {
+            if (securityIssues.visible.length > 0) {
               logger.info('');
               logger.info('  Findings:');
-              for (const issue of securityIssues.slice(0, 20)) {
+              for (const issue of securityIssues.visible.slice(0, 20)) {
                 logger.info(
                   `    [${issue.severity.padEnd(7)}] ${issue.filePath ?? ''}:${issue.line}  ${issue.ruleId}`,
                 );
                 logger.info(`        ${issue.message}`);
               }
-              if (securityIssues.length > 20) {
-                logger.info(`    …and ${securityIssues.length - 20} more`);
+              if (securityIssues.visible.length > 20) {
+                logger.info(`    …and ${securityIssues.visible.length - 20} more`);
               }
             }
           }
 
-          if (cmdOptions.strict && (risk === 'high' || risk === 'critical')) {
+          if (cmdOptions.strict && (gateRisk === 'high' || gateRisk === 'critical')) {
             process.exit(1);
           }
           process.exit(0);
