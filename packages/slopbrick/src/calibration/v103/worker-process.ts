@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { scanFile } from '../../engine/worker.js';
 import { loadConfig } from '../../config/index.js';
+import { bindInvocationRuleOverrides } from '../../config/rule-override-provenance.js';
 import { RuleRegistry } from '../../rules/registry.js';
 
 function ruleFilter(name: 'SLOP_INCLUDE_RULES' | 'SLOP_EXCLUDE_RULES'): string[] {
@@ -16,9 +17,14 @@ const resultPath = process.env.SLOP_RESULT_PATH;
 async function main(): Promise<void> {
   if (!filePath || !resultPath) process.exit(1);
   try {
-    const config = await loadConfig(filePath);
+    const includeRules = ruleFilter('SLOP_INCLUDE_RULES');
+    const excludeRules = ruleFilter('SLOP_EXCLUDE_RULES');
+    const config = bindInvocationRuleOverrides(
+      await loadConfig(filePath),
+      Object.fromEntries(includeRules.map((ruleId) => [ruleId, 'auto'] as const)),
+    );
     const registry = new RuleRegistry();
-    registry.loadBuiltins(undefined, { includeRules: ruleFilter('SLOP_INCLUDE_RULES'), excludeRules: ruleFilter('SLOP_EXCLUDE_RULES') });
+    registry.loadBuiltins(undefined, { includeRules, excludeRules });
     const result = await scanFile(filePath, config, registry, process.cwd());
     writeFileSync(resultPath, JSON.stringify({ ok: true, issues: result.issues, componentCount: result.componentCount, parseError: result.parseError }));
     process.exit(0);
