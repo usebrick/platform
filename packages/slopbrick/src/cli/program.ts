@@ -122,6 +122,7 @@ import {
 } from '../report/scan-validity';
 import { CliUsageError, ScanExitCode } from './exit-codes';
 import { validateOutputFormat } from './report/output-format.js';
+import { effectiveIssuesForGate } from './effective-issues.js';
 
 /** Current in-memory result returned when the shared scan action is invoked by CI. */
 export interface ScanActionOutcome {
@@ -376,7 +377,9 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       const stagedGatingResult = report.scoreValidity === 'valid' && options.staged
         ? stagedGating(scores, config, baseline, cwd)
         : { failed: false };
-      const strictFailure = options.strict === true && report.issues.some((issue) => issue.severity === 'high');
+      const gateEligibleIssues = effectiveIssuesForGate(report.issues, config);
+      const strictFailure = options.strict === true
+        && gateEligibleIssues.some((issue) => issue.severity === 'high');
       const gateDecision = evaluateGateDecision({
         report,
         config,
@@ -465,7 +468,10 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         const gitHead = (await getGitHead(cwd)) ?? 'unknown';
         const cache = buildBaselineCache(report, configHash, gitHead, cwd);
         saveBaseline(cwd, cache);
-        saveDebtBaseline(cwd, buildDebtBaseline(report, cwd, configHash, gitHead));
+        saveDebtBaseline(cwd, buildDebtBaseline({
+          ...report,
+          issues: gateEligibleIssues,
+        }, cwd, configHash, gitHead));
         if (!options.quiet && !machineReadableStdout) {
           const acknowledgements = [
             `Saved baseline to ${baselinePath(cwd)}`,
@@ -553,7 +559,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           // the gate, not just that something did. Show the top 5
           // (by fire count) so they can `slopbrick explain <ruleId>`
           // or `slopbrick rules` to drill in.
-          const topHigh = report.issues
+          const topHigh = gateEligibleIssues
             .filter((i) => i.severity === 'high')
             .reduce<Record<string, number>>((acc, i) => {
               acc[i.ruleId] = (acc[i.ruleId] ?? 0) + 1;

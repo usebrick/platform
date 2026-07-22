@@ -31,6 +31,7 @@ import { persistRun } from './persistRun';
 import { evaluateNewDebt, loadDebtBaselineState } from './debt-baseline';
 import { hashConfig } from '../../engine/cache';
 import { projectFirstScan } from '../../report/first-scan';
+import { effectiveIssuesForGate } from '../effective-issues.js';
 import type { RuleRegistry } from '../../rules/registry';
 import type {
   FileScanResult,
@@ -224,8 +225,12 @@ export async function finalizeReport(
 
   let newDebtFailure = false;
   if (validScan && options.ciGate?.maxNewIssues !== undefined) {
+    const gateEligibleReport = {
+      ...report,
+      issues: effectiveIssuesForGate(report.issues, config),
+    };
     const newDebt = evaluateNewDebt(
-      report,
+      gateEligibleReport,
       debtBaselineState.status === 'loaded' ? debtBaselineState.baseline : undefined,
       cwd,
       options.ciGate.maxNewIssues,

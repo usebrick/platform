@@ -27,6 +27,25 @@ export function effectiveIssuesForScore(
 }
 
 /**
+ * Return the finding set allowed to affect finding-count gates. Current-policy
+ * diagnostics may remain visible at their configured severity, but an explicit
+ * repository opt-in cannot promote `gateEligible: false` evidence into a gate.
+ * Unknown rules retain the legacy severity/config behavior.
+ */
+export function effectiveIssuesForGate(
+  issues: readonly Issue[],
+  config: Pick<ResolvedConfig, 'rules'>,
+): Issue[] {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  return issues.filter((issue) => {
+    if (issue.severity === ('off' as Issue['severity'])) return false;
+    if (config.rules[issue.ruleId] === 'off') return false;
+    const currentEligibility = currentPolicy?.getCurrentRulePolicy(issue.ruleId)?.gateEligible;
+    return currentEligibility ?? true;
+  });
+}
+
+/**
  * Mark findings from default-off rules as audit-only unless the user made an
  * explicit per-rule choice. Returns the number newly changed to `off`.
  */

@@ -7,7 +7,10 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 }));
 
 import { DEFAULT_CONFIG } from '../../src/config';
-import { effectiveIssuesForScore } from '../../src/cli/effective-issues';
+import {
+  effectiveIssuesForGate,
+  effectiveIssuesForScore,
+} from '../../src/cli/effective-issues';
 import { aggregateReport } from '../../src/engine/metrics';
 import { assembleScanReport } from '../../src/cli/report/assembleScanReport';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
@@ -87,6 +90,29 @@ describe('canonical Repository Health assembly', () => {
     ], {
       rules: { 'context/import-path-mismatch': 'off' },
     })).toEqual([]);
+  });
+
+  it('keeps repository-enabled diagnostics visible but out of finding-based gates', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const issues = [
+      issue('context/import-path-mismatch', 'high'),
+      issue('ai/any-density', 'high'),
+      issue('ai/comment-ratio', 'high'),
+      issue('plugin/ordinary', 'high'),
+      issue('plugin/configured-off', 'high'),
+    ];
+    const config = {
+      rules: {
+        'ai/any-density': 'high' as const,
+        'ai/comment-ratio': 'high' as const,
+        'plugin/configured-off': 'off' as const,
+      },
+    };
+
+    expect(effectiveIssuesForGate(issues, config).map(({ ruleId }) => ruleId)).toEqual([
+      'context/import-path-mismatch',
+      'plugin/ordinary',
+    ]);
   });
 
   it('does not let a competing enrichment value overwrite the aggregate formula', () => {
