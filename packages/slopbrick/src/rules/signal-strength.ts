@@ -28,6 +28,27 @@ export function loadSignalStrength(): Record<string, SignalStrengthEntry> {
   return DATA;
 }
 
+export interface HistoricalSignalStrengthTable {
+  readonly status: 'historical-point-estimate-only';
+  readonly dataset: 'v10.1';
+  readonly entries: Readonly<Record<string, SignalStrengthEntry>>;
+}
+
+const HISTORICAL_SIGNAL_STRENGTH: HistoricalSignalStrengthTable = Object.freeze({
+  status: 'historical-point-estimate-only',
+  dataset: 'v10.1',
+  entries: DATA,
+});
+
+/**
+ * Names the authority boundary around the shipped signal table and exposes a
+ * read-only view. These values are useful historical point estimates; they
+ * are not current policy, current quality authority, or authorship evidence.
+ */
+export function loadHistoricalSignalStrength(): HistoricalSignalStrengthTable {
+  return HISTORICAL_SIGNAL_STRENGTH;
+}
+
 export function getSignalStrength(ruleId: string): SignalStrengthEntry | undefined {
   return DATA[ruleId];
 }

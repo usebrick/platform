@@ -2,16 +2,17 @@ Rule:        visual/math-default-font
 Category:    visual
 Severity:    high
 AI-specific: yes (designed to fire on AI tells)
-Rule status: configured-severity (built-in static policy)
+Rule status: configured-severity (configuration and current-policy projection)
+Current policy: unavailable; legacy defaults only
 Evidence:    ai-signal
-Calibration: historical point estimates only
+Historical metrics: historical point estimates only
   Calibrated: 2026-07-04T00:00:00Z
   Recall:    0.16%
   FPR:       0.03%
   Precision: 86.69%
   Lift:      3035.16×
-Calibration source/cohort: unavailable — The shipped estimate predates v10.3 admission; no validated cohort/source is available.
-Confidence limits: unavailable — No validated confidence interval is available in the shipped calibration contract.
+Historical source/cohort: unavailable — The shipped estimate predates v10.3 admission; no validated cohort/source is available.
+Historical confidence limits: unavailable — No validated confidence interval is available in the shipped calibration contract.
 Matched fact/snippet: unavailable in a rule-level explanation; run `slopbrick scan` for file/line evidence.
 Note: This output does not claim runtime suppression or authorship proof.
 Source:      src/rules/visual/math-default-font.ts

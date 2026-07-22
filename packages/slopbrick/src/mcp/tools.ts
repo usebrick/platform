@@ -9,7 +9,11 @@ import { analyzeBusinessLogic, buildBusinessLogicReport } from '../engine/busine
 import { readStructureMarkdown } from '../engine/structure-md';
 import { SCORE_BRIEFS } from '../report/score-contract.js';
 import { isIncompleteScan, isNotApplicableScan } from '../report/scan-validity.js';
-import { buildRuleCalibrationEvidence, buildRuleExplanation } from '../rules/explanation.js';
+import {
+  buildCurrentRulePolicyExplanation,
+  buildRuleCalibrationEvidence,
+  buildRuleExplanation,
+} from '../rules/explanation.js';
 import { getSignalStrength } from '../rules/signal-strength.js';
 import { RULE_HINTS } from '../snippet/data.js';
 import { SCAN_FILE_TOOL_DESCRIPTION } from '../engine/language-support.js';
@@ -69,7 +73,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'slop_explain_rule',
     description:
-      'Explain one rule with its pattern, remediation/source path, suppression snippet, evidence category, honest calibration point estimates (confidence intervals are explicitly unavailable when not validated), and static configuration policy. The policy is not a claim about direct-file scan runtime behavior.',
+      'Explain one rule with its pattern, remediation/source path, suppression snippet, current policy when available, separate historical point estimates, and configuration state. Historical metrics are not current quality authority or authorship proof; the explanation is not a claim about one direct-file scan runtime.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -733,6 +737,7 @@ export function toMcpFinding(issue: Issue, cwd?: string) {
   const evidence = projectMcpEvidence(issue.evidence);
   const message = projectMcpMessage(issue.message);
   const advice = issue.advice === undefined ? undefined : projectMcpMessage(issue.advice);
+  const historicalMetrics = buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId));
   return {
     ruleId: issue.ruleId,
     category: issue.category,
@@ -742,7 +747,9 @@ export function toMcpFinding(issue: Issue, cwd?: string) {
     // historical estimates are useful context, but no v10.3 source/cohort is
     // admitted yet. Unknown rules must say unavailable instead of omitting the
     // field and making consumers guess whether metadata was lost.
-    calibration: buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId)),
+    calibration: historicalMetrics,
+    historicalMetrics,
+    currentPolicy: buildCurrentRulePolicyExplanation(issue.ruleId),
     line: issue.line,
     column: issue.column,
     message,

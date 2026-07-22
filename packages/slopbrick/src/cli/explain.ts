@@ -19,7 +19,7 @@ function formatLift(value: number | undefined): string {
   return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}×` : 'unavailable';
 }
 
-function formatCalibrationStatus(status: ExplainResult['evidence']['calibration']['status']): string {
+function formatCalibrationStatus(status: ExplainResult['historicalMetrics']['status']): string {
   return status === 'historical-point-estimate-only'
     ? 'historical point estimates only'
     : 'unavailable';
@@ -44,18 +44,21 @@ export function formatExplain(result: ExplainResult | { error: string }): string
   lines.push('Category:    ' + result.category);
   lines.push('Severity:    ' + result.severity);
   lines.push('AI-specific: ' + (result.aiSpecific ? 'yes (designed to fire on AI tells)' : 'no (cross-cutting quality rule)'));
-  lines.push('Rule status: ' + result.configuration.policyState + ' (built-in static policy)');
+  lines.push('Rule status: ' + result.configuration.policyState + ' (configuration and current-policy projection)');
+  lines.push('Current policy: ' + (result.currentPolicy.status === 'applied'
+    ? `${result.currentPolicy.runtimeOutcome}; ${result.currentPolicy.provenance}`
+    : 'unavailable; legacy defaults only'));
   lines.push('Evidence:    ' + result.evidence.category);
-  lines.push('Calibration: ' + formatCalibrationStatus(result.evidence.calibration.status));
-  if (result.evidence.calibration.status === 'historical-point-estimate-only') {
-    lines.push('  Calibrated: ' + (result.evidence.calibration.lastCalibratedAt ?? 'unavailable'));
-    lines.push('  Recall:    ' + formatRate(result.evidence.calibration.recall));
-    lines.push('  FPR:       ' + formatRate(result.evidence.calibration.falsePositiveRate));
-    lines.push('  Precision: ' + formatRate(result.evidence.calibration.precision));
-    lines.push('  Lift:      ' + formatLift(result.evidence.calibration.lift));
+  lines.push('Historical metrics: ' + formatCalibrationStatus(result.historicalMetrics.status));
+  if (result.historicalMetrics.status === 'historical-point-estimate-only') {
+    lines.push('  Calibrated: ' + (result.historicalMetrics.lastCalibratedAt ?? 'unavailable'));
+    lines.push('  Recall:    ' + formatRate(result.historicalMetrics.recall));
+    lines.push('  FPR:       ' + formatRate(result.historicalMetrics.falsePositiveRate));
+    lines.push('  Precision: ' + formatRate(result.historicalMetrics.precision));
+    lines.push('  Lift:      ' + formatLift(result.historicalMetrics.lift));
   }
-  lines.push('Calibration source/cohort: unavailable — ' + result.evidence.calibration.provenance.reason);
-  lines.push('Confidence limits: unavailable — ' + result.evidence.calibration.confidenceLimitsReason);
+  lines.push('Historical source/cohort: unavailable — ' + result.historicalMetrics.provenance.reason);
+  lines.push('Historical confidence limits: unavailable — ' + result.historicalMetrics.confidenceLimitsReason);
   lines.push('Matched fact/snippet: unavailable in a rule-level explanation; run `slopbrick scan` for file/line evidence.');
   lines.push('Note: This output does not claim runtime suppression or authorship proof.');
   lines.push('Source:      ' + result.sourcePath);

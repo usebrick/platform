@@ -1,8 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 import { explainRule, formatExplain } from '../src/cli/explain';
 import { buildRuleExplanation } from '../src/rules/explanation';
 import { DEFAULT_CONFIG } from '../src/config';
 import type { Rule } from '../src/types';
+import { approvedCurrentPolicyFixture } from './helpers/current-evidence-policy-v2';
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 const fakeRule: Rule = {
   id: 'visual/test-rule',
@@ -83,17 +95,85 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     expect(out).toContain('Rule status: configured-off');
     expect(out).toContain('AI-specific: no (cross-cutting quality rule)');
     expect(out).toContain('Evidence:    quality');
-    expect(out).toContain('Calibration: historical point estimates only');
+    expect(out).toContain('Current policy: unavailable; legacy defaults only');
+    expect(out).toContain('Historical metrics: historical point estimates only');
     expect(out).toContain('Calibrated: 2026-07-04T00:00:00Z');
-    expect(out).toContain('Calibration source/cohort: unavailable');
+    expect(out).toContain('Historical source/cohort: unavailable');
     expect(out).toContain('Precision:');
     expect(out).toContain('Matched fact/snippet: unavailable in a rule-level explanation');
-    expect(out).toContain('Confidence limits: unavailable');
+    expect(out).toContain('Historical confidence limits: unavailable');
     expect(out).toContain('This output does not claim runtime suppression or authorship proof.');
   });
 });
 
 describe('buildRuleExplanation', () => {
+  it('separates the applied current policy from historical point estimates', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const rule = {
+      ...fakeRule,
+      id: 'ai/any-density',
+      category: 'ai' as const,
+      aiSpecific: true,
+      defaultOff: true,
+    };
+
+    const result = buildRuleExplanation(rule, DEFAULT_CONFIG, {
+      'ai/any-density': 'Review unsafe any concentration.',
+    });
+
+    expect(result.currentPolicy).toMatchObject({
+      status: 'applied',
+      runtimeOutcome: 'quality-candidate-default-off',
+      enabledByDefault: false,
+      runnableByExplicitOptIn: true,
+      scoreEligible: false,
+      provenance: 'quality-candidate-unmeasured',
+      admitted: false,
+    });
+    expect(result.historicalMetrics).toMatchObject({
+      status: 'historical-point-estimate-only',
+    });
+    expect(JSON.stringify(result.currentPolicy)).not.toMatch(
+      /precision|recall|falsePositiveRate|fpRate|ratio|verdict/i,
+    );
+    expect(result.configuration.policyState).toBe('current-default-off');
+  });
+
+  it('uses current default and non-runnable states before legacy defaults', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const defaultOn = buildRuleExplanation({
+      ...fakeRule,
+      id: 'context/import-path-mismatch',
+      category: 'context',
+      aiSpecific: false,
+    }, DEFAULT_CONFIG, {});
+    const blocked = buildRuleExplanation({
+      ...fakeRule,
+      id: 'logic/ghost-defensive',
+      category: 'logic',
+      aiSpecific: false,
+    }, {
+      ...DEFAULT_CONFIG,
+      rules: { 'logic/ghost-defensive': 'high' },
+    }, {});
+
+    expect(defaultOn.configuration).toMatchObject({
+      defaultOff: false,
+      policyState: 'current-default-on',
+    });
+    expect(blocked.currentPolicy).toMatchObject({
+      status: 'applied',
+      enabledByDefault: false,
+      runnableByExplicitOptIn: false,
+      provenance: 'blocked-quality-candidate',
+    });
+    expect(blocked.configuration).toMatchObject({
+      configuredSeverity: 'high',
+      defaultOff: true,
+      policyState: 'current-non-runnable',
+    });
+  });
+
   it('reports an unavailable confidence interval instead of fabricating one', () => {
     const result = buildRuleExplanation(fakeRule, {
       ...DEFAULT_CONFIG,
@@ -137,7 +217,7 @@ describe('buildRuleExplanation', () => {
     );
 
     expect(result.configuration.defaultOff).toBe(true);
-    expect(result.configuration.policyState).toBe('default-off');
+    expect(result.configuration.policyState).toBe('legacy-default-off');
     expect(JSON.stringify(result)).not.toMatch(/effective|runtime|suppressed/i);
   });
 });

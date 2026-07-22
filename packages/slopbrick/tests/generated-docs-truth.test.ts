@@ -1,15 +1,81 @@
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { canonicalAuthorityRowsV2 } from '../src/calibration/cal-002/authority';
+import { canonicalArtifact } from '../src/calibration/cal-002/contracts';
 import { builtinRules } from '../src/rules/builtins';
 import {
   assertQualityCopy,
   collectGeneratedCatalogCopy,
 } from './helpers/public-rule-copy';
+import { approvedCurrentPolicyArtifactFixture } from './helpers/current-evidence-policy-v2';
+import { generateRuleCatalogOutput } from '../scripts/generate-rule-catalog';
 
 describe('generated documentation truth', () => {
+  it('renders approved current columns separately and fails drift checking against the inactive catalog', async () => {
+    const packageRoot = join(__dirname, '..');
+    const policyPath = '/private/tmp/cal-002-policy-fixture-v2.json';
+    const signalPath = join(packageRoot, 'src', 'rules', 'signal-strength.json');
+    const signalBytes = readFileSync(signalPath);
+    const inactiveCatalog = readFileSync(join(packageRoot, 'docs', 'rule-catalog.md'), 'utf8');
+    expect(await generateRuleCatalogOutput({ check: false })).toBe(inactiveCatalog);
+    const policy = approvedCurrentPolicyArtifactFixture();
+    writeFileSync(
+      policyPath,
+      `${JSON.stringify(policy, null, 2)}\n`,
+      { mode: 0o600 },
+    );
+
+    try {
+      await expect(generateRuleCatalogOutput({ policyPath, check: false }))
+        .rejects.toThrow(/exact canonical JSON/);
+      writeFileSync(policyPath, canonicalArtifact(policy).json, { mode: 0o600 });
+
+      const output = await generateRuleCatalogOutput({ policyPath, check: false });
+      const expected = policy.rows.find((row) => row.ruleId === 'ai/any-density');
+      const row = output.split('\n').find((line) => line.startsWith('| `ai/any-density` |'));
+      expect(expected).toBeDefined();
+      expect(output).toContain('| runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict |');
+      expect(row).toContain(`| ${expected!.runtimeOutcome} | ${expected!.enabledByDefault} | ${expected!.runnableByExplicitOptIn} | ${expected!.scoreEligible} | ${expected!.provenance} | ${expected!.qualityDomain} | ${expected!.claimClass} | false | USEFUL |`);
+      expect(output).toContain('historical context only; it is not current quality authority or authorship evidence');
+
+      const result = spawnSync(process.execPath, [
+        join(__dirname, 'helpers', 'tsx-runner.cjs'),
+        join(packageRoot, 'scripts', 'generate-rule-catalog.ts'),
+        '--policy',
+        policyPath,
+        '--check',
+      ], {
+        cwd: packageRoot,
+        encoding: 'utf8',
+      });
+
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toMatch(/policy|runtimeOutcome|out of sync/i);
+
+      const duplicatePolicy = spawnSync(process.execPath, [
+        join(__dirname, 'helpers', 'tsx-runner.cjs'),
+        join(packageRoot, 'scripts', 'generate-rule-catalog.ts'),
+        '--policy',
+        policyPath,
+        '--policy',
+        policyPath,
+        '--check',
+      ], {
+        cwd: packageRoot,
+        encoding: 'utf8',
+      });
+      expect(duplicatePolicy.status).toBe(1);
+      expect(`${duplicatePolicy.stdout}${duplicatePolicy.stderr}`)
+        .toContain('--policy may only be supplied once');
+      expect(readFileSync(signalPath)).toEqual(signalBytes);
+    } finally {
+      rmSync(policyPath, { force: true });
+    }
+  });
+
   it('binds the package front door to the approved UseBrick doctrine', () => {
     const approvedPositioning = readFileSync(
       join(

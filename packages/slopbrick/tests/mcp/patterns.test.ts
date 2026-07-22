@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, symlinkSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 
 import {
   extractImports,
@@ -12,6 +18,13 @@ import {
 import { handleToolCall, TOOL_DEFINITIONS, toMcpFinding } from '../../src/mcp/tools';
 import { DEFAULT_CONFIG } from '../../src/config';
 import type { ResolvedConfig, Constitution } from '../../src/types';
+import { buildRuleExplanation } from '../../src/rules/explanation';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function freshDir(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-patterns-'));
@@ -73,6 +86,38 @@ describe('extractImports', () => {
 });
 
 describe('MCP evidence contract', () => {
+  it('keeps MCP and CLI current-policy projections identical and metric-free', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const rule = {
+      id: 'ai/any-density', category: 'ai' as const, severity: 'medium' as const, aiSpecific: true,
+      description: 'Any density', create: () => ({}), analyze: () => [],
+    };
+    const config = { ...TEST_CONFIG, rules: { 'ai/any-density': 'medium' as const } };
+    const cliExplanation = buildRuleExplanation(rule, config, {});
+    const result = await handleToolCall(
+      'slop_explain_rule',
+      { ruleId: 'ai/any-density' },
+      { cwd: '/tmp', rules: [rule], config },
+    );
+
+    expect(result.isError).toBeFalsy();
+    const payload = JSON.parse(result.content[0]!.text) as typeof cliExplanation;
+    expect(payload.currentPolicy).toEqual(cliExplanation.currentPolicy);
+    expect(payload.configuration.policyState).toBe('current-explicit-diagnostic');
+    expect(payload.historicalMetrics.status).toBe('historical-point-estimate-only');
+    expect(JSON.stringify(payload.currentPolicy)).not.toMatch(
+      /precision|recall|falsePositiveRate|fpRate|ratio|verdict/i,
+    );
+
+    const finding = toMcpFinding({
+      ruleId: 'ai/any-density', category: 'ai', severity: 'medium', aiSpecific: true,
+      message: 'Any density', line: 1, column: 1,
+    });
+    expect(finding.currentPolicy).toEqual(cliExplanation.currentPolicy);
+    expect(finding.historicalMetrics.status).toBe('historical-point-estimate-only');
+    expect(finding.calibration).toEqual(finding.historicalMetrics);
+  });
+
   it('exposes per-finding calibration estimates while withholding unverified provenance', () => {
     const historical = toMcpFinding({
       ruleId: 'logic/heaps-deviation', category: 'logic', severity: 'medium', aiSpecific: false,

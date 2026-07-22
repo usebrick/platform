@@ -15,14 +15,25 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
+import { canonicalJson } from '../src/calibration/v103/canonical.js';
+import {
+  createCurrentEvidencePolicyAccessors,
+  type CurrentEvidencePolicyAccessors,
+} from '../src/rules/current-evidence-policy.js';
+import { getCurrentEvidencePolicyAccessors } from '../src/rules/current-evidence-policy-runtime.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = path.resolve(__dirname, '../src/rules');
 const SIGNAL_STRENGTH = path.resolve(__dirname, '../src/rules/signal-strength.json');
 const OUTPUT_FILE = path.resolve(__dirname, '../docs/rule-catalog.md');
+
+export interface GenerateRuleCatalogOptions {
+  readonly policyPath?: string;
+  readonly check: boolean;
+}
 
 interface SignalStrength {
   recall?: number;
@@ -219,7 +230,26 @@ function count<T>(items: T[], pred: (t: T) => boolean): number {
   return items.filter(pred).length;
 }
 
-function render(rules: RuleMeta[]): string {
+function assertPolicyCatalogParity(
+  rules: readonly RuleMeta[],
+  currentPolicy: CurrentEvidencePolicyAccessors,
+): void {
+  const discoveredIds = rules.map((rule) => rule.id).sort();
+  const policyIds = currentPolicy.policy.rows.map((row) => row.ruleId).sort();
+  if (discoveredIds.length !== 119 || policyIds.length !== 119) {
+    throw new TypeError(
+      `Current policy catalog must contain exactly 119 rows; discovered ${discoveredIds.length}, policy ${policyIds.length}`,
+    );
+  }
+  if (discoveredIds.some((ruleId, index) => ruleId !== policyIds[index])) {
+    throw new TypeError('Current policy rows do not exactly match the generated rule catalog');
+  }
+}
+
+function render(
+  rules: RuleMeta[],
+  currentPolicy: CurrentEvidencePolicyAccessors | undefined,
+): string {
   // Sanity check: dedupe by id
   const seen = new Set<string>();
   for (const r of rules) {
@@ -277,24 +307,40 @@ function render(rules: RuleMeta[]): string {
     const one = catRules.length === 1;
 
     md += `## \`${cat}/\` (${catRules.length} rule${one ? '' : 's'})\n\n`;
-    md += `| Rule | Severity | Default | AI-specific | Description |\n`;
-    md += `|------|----------|:-------:|:-----------:|-------------|\n`;
+    if (currentPolicy) {
+      md += `| Rule | Severity | runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict | AI-specific | Description |\n`;
+      md += `|------|----------|----------------|:----------------:|:-----------------------:|:-------------:|--------------------|---------------|------------|:--------:|-------------------|:-----------:|-------------|\n`;
+    } else {
+      md += `| Rule | Severity | Default | AI-specific | Description |\n`;
+      md += `|------|----------|:-------:|:-----------:|-------------|\n`;
+    }
     for (const r of catRules) {
       const sev = r.severity;
       const def = r.defaultOff ? 'off' : 'on';
       const ai = r.aiSpecific ? '✓' : '—';
       // escape `|` inside description
       const desc = r.description.replace(/\|/g, '\\|');
-      md += `| \`${r.id}\` | ${sev} | ${def} | ${ai} | ${desc} |\n`;
+      if (currentPolicy) {
+        const row = currentPolicy.getCurrentRulePolicy(r.id);
+        if (!row) throw new TypeError(`Current policy is missing catalog rule ${r.id}`);
+        md += `| \`${r.id}\` | ${sev} | ${row.runtimeOutcome} | ${row.enabledByDefault} | ${row.runnableByExplicitOptIn} | ${row.scoreEligible} | ${row.provenance} | ${row.qualityDomain} | ${row.claimClass} | ${currentPolicy.policy.admitted} | ${r.verdict ?? 'unavailable'} | ${ai} | ${desc} |\n`;
+      } else {
+        md += `| \`${r.id}\` | ${sev} | ${def} | ${ai} | ${desc} |\n`;
+      }
     }
     md += '\n';
   }
 
   // "Default" key for readers: short glossary before "See also".
   md += `## Glossary\n\n`;
-  md += `- **Default** — whether the rule runs out of the box. `;
-  md += `Rules marked \`off\` are \`defaultOff: true\` in [`;
-  md += `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) (typically INVERTED, NOISY, or DORMANT calibration verdict) and require explicit opt-in via \`rules: { '${'<id>'}': 'medium' }\` in \`slopbrick.config.mjs\`.\n`;
+  if (currentPolicy) {
+    md += `- **Current policy columns** — \`runtimeOutcome\`, default/runnable state, score authority, provenance, quality domain, claim class, and admission come only from the validated owner-approved policy projection.\n`;
+    md += `- **historicalVerdict** — the immutable legacy signal-table verdict, retained as historical context only; it is not current quality authority or authorship evidence.\n`;
+  } else {
+    md += `- **Default** — whether the rule runs out of the box. `;
+    md += `Rules marked \`off\` are \`defaultOff: true\` in [`;
+    md += `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) (typically INVERTED, NOISY, or DORMANT calibration verdict) and require explicit opt-in via \`rules: { '${'<id>'}': 'medium' }\` in \`slopbrick.config.mjs\`.\n`;
+  }
   md += `- **AI-specific** — marks the AI-associated detector lane used for reporting and calibration. It is rule metadata, not proof that AI wrote a file or that the pattern is unique to AI-generated code; calibration status and default state determine how the evidence may be used.\n`;
   md += `- **Severity** — see [scoring-runbook.md](./scoring-runbook.md) for the per-severity weight in PR Slop Score.\n\n`;
 
@@ -304,7 +350,9 @@ function render(rules: RuleMeta[]): string {
   md += `[`;
   md += `../src/rules/` + `](../src/rules/) and `;
   md += `[`;
-  md += `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) for the \`defaultOff\` flag.\n\n`;
+  md += currentPolicy
+    ? `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) for separately labeled historical verdicts; current columns come from the validated \`--policy\` projection.\n\n`
+    : `../src/rules/signal-strength.json` + `](../src/rules/signal-strength.json) for the \`defaultOff\` flag.\n\n`;
   md += `If you add or change a rule, regenerate the registry (which also regenerates this catalog):\n\n`;
   md += '```bash\n';
   md += `pnpm generate:rules\n`;
@@ -318,13 +366,72 @@ function render(rules: RuleMeta[]): string {
   return md;
 }
 
-async function main() {
-  const checkMode = process.argv.includes('--check');
+function parseOptions(args: readonly string[]): GenerateRuleCatalogOptions {
+  let check = false;
+  let policyPath: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--check') {
+      if (check) throw new TypeError('--check may only be supplied once');
+      check = true;
+      continue;
+    }
+    if (arg === '--policy') {
+      if (policyPath !== undefined) {
+        throw new TypeError('--policy may only be supplied once');
+      }
+      const value = args[index + 1];
+      if (!value || value.startsWith('--')) {
+        throw new TypeError('--policy requires one JSON file path');
+      }
+      policyPath = value;
+      index += 1;
+      continue;
+    }
+    throw new TypeError(`Unknown generate-rule-catalog option: ${arg}`);
+  }
+  return { check, ...(policyPath === undefined ? {} : { policyPath }) };
+}
 
+async function readCanonicalJson(policyPath: string): Promise<unknown> {
+  const bytes = await readFile(path.resolve(policyPath), 'utf8');
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes) as unknown;
+  } catch {
+    throw new TypeError('Current evidence policy is not valid JSON');
+  }
+  const canonical = canonicalJson(value);
+  if (bytes !== canonical && bytes !== `${canonical}\n`) {
+    throw new TypeError('Current evidence policy must be exact canonical JSON');
+  }
+  return value;
+}
+
+async function resolveCurrentPolicy(
+  policyPath: string | undefined,
+): Promise<CurrentEvidencePolicyAccessors | undefined> {
+  if (policyPath === undefined) return getCurrentEvidencePolicyAccessors();
+  return createCurrentEvidencePolicyAccessors(await readCanonicalJson(policyPath));
+}
+
+export async function generateRuleCatalogOutput(
+  options: GenerateRuleCatalogOptions,
+): Promise<string> {
   const rules = await discoverRules();
-  const output = render(rules);
+  const currentPolicy = await resolveCurrentPolicy(options.policyPath);
+  if (currentPolicy) assertPolicyCatalogParity(rules, currentPolicy);
+  return render(rules, currentPolicy);
+}
 
-  if (checkMode) {
+async function main() {
+  const options = parseOptions(process.argv.slice(2));
+  const rules = await discoverRules();
+  const currentPolicy = await resolveCurrentPolicy(options.policyPath);
+  if (currentPolicy) assertPolicyCatalogParity(rules, currentPolicy);
+  const output = render(rules, currentPolicy);
+
+  if (options.check) {
     if (!existsSync(OUTPUT_FILE)) {
       console.error(`❌ ${OUTPUT_FILE} does not exist.`);
       console.error(`   Run \`pnpm generate:rules:catalog\` to create it, then commit.`);
@@ -332,7 +439,10 @@ async function main() {
     }
     const existing = await readFile(OUTPUT_FILE, 'utf8');
     if (existing !== output) {
-      console.error(`❌ ${path.relative(process.cwd(), OUTPUT_FILE)} is out of sync with src/rules/.`);
+      const authority = currentPolicy
+        ? 'src/rules/ and the selected current policy projection'
+        : 'src/rules/';
+      console.error(`❌ ${path.relative(process.cwd(), OUTPUT_FILE)} is out of sync with ${authority}.`);
       console.error(`   Run \`pnpm generate:rules:catalog\` and commit the result.`);
       console.error(`   (${rules.length} rule(s) discovered; existing file has different content.)`);
       process.exit(1);
@@ -345,7 +455,12 @@ async function main() {
   console.log(`Generated ${OUTPUT_FILE} with ${rules.length} rule(s).`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const executedPath = process.argv[1]
+  ? pathToFileURL(path.resolve(process.argv[1])).href
+  : undefined;
+if (executedPath === import.meta.url) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

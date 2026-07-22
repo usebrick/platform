@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { builtinRules } from '../../rules/builtins';
-import { loadSignalStrength, isReliableSignal } from '../../rules/signal-strength.js';
+import { loadHistoricalSignalStrength, isReliableSignal } from '../../rules/signal-strength.js';
 import { formatRulesList } from '../render.js';
 
 /**
@@ -9,8 +9,9 @@ import { formatRulesList } from '../render.js';
  *
  * List all built-in rules with their categories, severities, and
  * descriptions. Supports category filtering, AI-only filtering,
- * JSON output, and a per-rule precision/recall table via
- * `--show-signal-strength`.
+ * JSON output, and a per-rule historical precision/recall table via
+ * `--show-signal-strength`. The historical table is not current policy or
+ * authorship evidence.
  *
  * The global `--json [path]` flag shadows the local `--json` here
  * (commander limitation when both exist). Use `optsWithGlobals()`
@@ -26,7 +27,7 @@ export function registerRules(program: Command): void {
     .option('--json', 'emit JSON instead of a pretty table')
     // category-grouped listing. Sorted by ratio descending (worst signal
     // first) so noisy rules surface to the top.
-    .option('--show-signal-strength', 'print per-rule precision/recall table')
+    .option('--show-signal-strength', 'print historical v10.1 precision/recall point estimates')
     .action((
       cmdOptions: { category?: string; aiOnly?: boolean; json?: boolean; showSignalStrength?: boolean },
       command: Command,
@@ -41,13 +42,16 @@ export function registerRules(program: Command): void {
         rules = rules.filter((r) => r.aiSpecific);
       }
       if (cmdOptions.showSignalStrength) {
-        const strengths = loadSignalStrength();
+        const historical = loadHistoricalSignalStrength();
+        const strengths = historical.entries;
         const rows = rules
           .map((r) => ({
             id: r.id,
             category: r.category,
             severity: r.severity,
             aiSpecific: r.aiSpecific,
+            metricsStatus: historical.status,
+            historicalVerdict: strengths[r.id]?.verdict ?? null,
             strength: strengths[r.id],
           }))
           .sort((a, b) => {
@@ -61,7 +65,7 @@ export function registerRules(program: Command): void {
           return;
         }
         const lines: string[] = [];
-        lines.push(`slopbrick signal-strength — ${rows.length} rules (worst signal first)\n`);
+        lines.push(`slopbrick signal-strength — historical v10.1 point estimates — ${rows.length} rules (worst signal first)\n`);
         lines.push('  rule id                                  precision  recall  fpRate  ratio   notes');
         lines.push('  ---------------------------------------  ---------  ------  ------  ------  -----');
         for (const row of rows) {

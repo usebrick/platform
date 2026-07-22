@@ -1,8 +1,8 @@
 /**
- * v0.37.0: `slopbrick calibration` — show the v10 calibration report.
+ * v0.37.0: `slopbrick calibration` — show historical v10.1 point estimates.
  *
  * Reads `src/rules/signal-strength.json` and prints a per-rule
- * summary of the v10 calibration: verdict, precision, recall,
+ * summary of the historical v10.1 calibration: verdict, precision, recall,
  * F1, lift, and per-source fire counts.
  *
  * Filters:
@@ -12,7 +12,7 @@
  *   --no-color       disable ANSI colors
  *   --json           output as JSON
  *
- * Source of truth: src/rules/signal-strength.json (each rule
+ * Historical source: src/rules/signal-strength.json (each rule
  * entry has _v10* fields added by v0.36.1's merge-full.mjs).
  */
 
@@ -108,7 +108,7 @@ const SIGNAL_COLOR: Record<string, string> = {
 export function registerCalibration(program: Command): void {
   program
     .command('calibration')
-    .description('Show the v10 calibration report (AI vs human signal per rule)')
+    .description('Show historical v10.1 point estimates per rule (not current policy or authorship proof)')
     .option('--top <N>', 'show only the top N rules by F1', (v) => parseInt(v, 10))
     .option('--signal <signal>', 'filter by v10 signal (strong|weak|dormant|inverted)')
     .option('--min-precision <p>', 'minimum precision 0-1', (v) => parseFloat(v))
@@ -147,6 +147,8 @@ export function registerCalibration(program: Command): void {
 
       if (opts.json) {
         process.stdout.write(JSON.stringify({
+          metricsStatus: 'historical-point-estimate-only',
+          dataset: 'v10.1',
           source: filtered[0]?.source ?? '?',
           totalRules: rows.length,
           filteredRules: filtered.length,
@@ -163,9 +165,10 @@ export function registerCalibration(program: Command): void {
 
       // Header
       const sourceLine = filtered[0]?.source ?? '?';
-      process.stdout.write('\n' + bold('slopbrick calibration report') + '\n');
-      process.stdout.write('source: ' + cyan(sourceLine) + '\n');
-      process.stdout.write(`rules: ${rows.length} calibrated, ${filtered.length} shown\n\n`);
+      process.stdout.write('\n' + bold('slopbrick calibration report — historical v10.1 point estimates') + '\n');
+      process.stdout.write('historical source: ' + cyan(sourceLine) + '\n');
+      process.stdout.write(`rules: ${rows.length} with historical metrics, ${filtered.length} shown\n`);
+      process.stdout.write('authority: not current quality policy and not authorship evidence\n\n');
 
       // Distribution
       const dist: Record<string, number> = {};

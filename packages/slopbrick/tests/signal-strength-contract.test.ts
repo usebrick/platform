@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { loadSignalStrength, getDefaultOffRules } from '../src/rules/signal-strength';
+import { Command } from 'commander';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  getDefaultOffRules,
+  loadHistoricalSignalStrength,
+  loadSignalStrength,
+} from '../src/rules/signal-strength';
+import { logger } from '../src/engine/logger';
+import { registerRules } from '../src/cli/commands/rules';
+import { registerCalibration } from '../src/cli/commands/calibration';
 
 // The spec test imports the raw JSON, but TypeScript's JSON inference
 // produces a heterogeneous union (some entries have defaultOff, some
@@ -8,7 +16,56 @@ import { loadSignalStrength, getDefaultOffRules } from '../src/rules/signal-stre
 // typed. Test bodies below are unchanged from the spec.
 const signalStrengthData = loadSignalStrength();
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('signal-strength contract (Zod-validated)', () => {
+  it('labels the shipped table as historical point estimates', () => {
+    const historical = loadHistoricalSignalStrength();
+
+    expect(historical.status).toBe('historical-point-estimate-only');
+    expect(historical.entries).toBe(signalStrengthData);
+    expect(JSON.stringify(historical)).not.toMatch(/currentPolicy|current-quality/i);
+  });
+
+  it('labels rules and calibration command output as historical rather than current authority', async () => {
+    const logged: string[] = [];
+    vi.spyOn(logger, 'info').mockImplementation((value) => {
+      logged.push(String(value));
+    });
+    const rulesProgram = new Command();
+    rulesProgram.exitOverride();
+    registerRules(rulesProgram);
+    await rulesProgram.parseAsync([
+      'node', 'slopbrick', 'rules', '--show-signal-strength', '--json',
+    ]);
+    const rows = JSON.parse(logged.join('')) as Array<{
+      metricsStatus: string;
+      historicalVerdict: string | null;
+      strength?: { precision: number };
+    }>;
+    expect(rows[0]).toMatchObject({
+      metricsStatus: 'historical-point-estimate-only',
+    });
+    expect(rows.some((row) => row.historicalVerdict !== null)).toBe(true);
+
+    const chunks: string[] = [];
+    vi.spyOn(process.stdout, 'write').mockImplementation(((chunk: string | Uint8Array) => {
+      chunks.push(String(chunk));
+      return true;
+    }) as typeof process.stdout.write);
+    const calibrationProgram = new Command();
+    calibrationProgram.exitOverride();
+    registerCalibration(calibrationProgram);
+    await calibrationProgram.parseAsync([
+      'node', 'slopbrick', 'calibration', '--top', '1', '--no-color',
+    ]);
+    const output = chunks.join('');
+    expect(output).toContain('historical v10.1 point estimates');
+    expect(output).toContain('not current quality policy and not authorship evidence');
+  });
+
   it('loads the calibration data successfully', () => {
     const data = loadSignalStrength();
     expect(Object.keys(data).length).toBeGreaterThan(50);
