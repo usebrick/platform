@@ -275,6 +275,21 @@ Beacon failures do not change the scan exit code. Review the implementation in
 [`src/beacon/`](./src/beacon/) and its tests before changing the privacy
 contract.
 
+### Local outcome events: explicit API, no outbound path
+
+The unreleased v0.45 candidate exposes a strict local outcome-event contract
+for scan completion, first-finding usefulness, action or decline, rescan
+comparison, and bounded return. Normal scans do not write this ledger. A caller
+must explicitly invoke the public library API with a caller-selected path.
+
+`readOutcomeEventsV1`, `appendOutcomeEventV1`, `exportOutcomeEventsV1`, and
+`deleteOutcomeEventsV1` provide inspect, append, export, and deletion. Unknown
+fields, raw source, paths, repository identity, and user/session identity are
+outside the v1 schema. There is no outcome-event network transport; the
+existing opt-in usage beacon remains separate and cannot carry these events.
+
+See the [field-by-field contract and privacy boundary](./docs/outcome-events.md).
+
 ## Rule and language scope
 
 The workspace [rule catalog](./docs/rule-catalog.md) and [language support

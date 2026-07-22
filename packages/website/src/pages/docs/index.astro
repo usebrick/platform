@@ -38,6 +38,11 @@ slopbrick mcp</code></pre>
           local scan history on by default; outbound reporting off by default and endpoint-gated.
         </p>
         <p>
+          The unreleased v{version.slopbrick} candidate also exposes a strict local outcome-event
+          library contract. Normal scans do not write it, callers select its path explicitly, and
+          no outcome-event network transport exists.
+        </p>
+        <p>
           The current scanner reports four scores and uses Repository Health as its first-screen
           headline. Slop Index is retained only as a future shareable reporting concept, not a
           fifth score or current command. Repository-owned policy remains authoritative over any
@@ -50,6 +55,7 @@ slopbrick mcp</code></pre>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/README.md" rel="noopener noreferrer">SlopBrick README <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/scoring-explained.md" rel="noopener noreferrer">Scoring explained <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/repository-structure.md" rel="noopener noreferrer">Repository structure and schemas <span>→</span></a></li>
+          <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/outcome-events.md" rel="noopener noreferrer">Local outcome-event contract <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/MCP.md" rel="noopener noreferrer">MCP integration <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/language-support-matrix.md" rel="noopener noreferrer">Language support matrix <span>→</span></a></li>
           <li><a href="https://github.com/usebrick/platform/blob/main/ROADMAP.md" rel="noopener noreferrer">UseBrick roadmap <span>→</span></a></li>

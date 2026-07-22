@@ -218,11 +218,16 @@ SlopBrick is local-first, but a normal scan is not read-only:
   `--no-telemetry` or `telemetry: false`;
 - outbound usage reporting is **off by default** and occurs only when both
   `--report-usage` and `SLOPBRICK_TELEMETRY_ENDPOINT` are supplied.
+- the unreleased v0.45 candidate also exposes an explicit-path, local-only
+  outcome-event library API; normal scans do not write it, and it has no
+  outbound transport.
 
 Do not describe the current CLI as having “no telemetry” or “no network”
 without those distinctions. The outbound beacon sends no source files or file
 paths; its exact current payload is documented in
 [`packages/slopbrick/README.md`](./packages/slopbrick/README.md#outbound-usage-beacon-off-by-default).
+The separate outcome contract is documented in
+[`packages/slopbrick/docs/outcome-events.md`](./packages/slopbrick/docs/outcome-events.md).
 
 ## Packages
 

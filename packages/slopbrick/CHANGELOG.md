@@ -9,6 +9,11 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Added
 
+- Added a strict `slopbrick-outcome-event-v1` local library contract for scan,
+  first-finding usefulness, action or decline, rescan, and bounded-return
+  observations. Its public API validates, appends, inspects, exports, and
+  deletes caller-selected local storage; normal scans do not write it and no
+  outcome-event outbound transport exists.
 - Added the optional `firstScan` projection to JSON and SARIF, with one
   Repository Health headline, five exhaustive areas, evidence and repair
   boundaries, at most three recommended actions, and compatible-baseline

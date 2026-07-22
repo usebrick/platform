@@ -283,6 +283,8 @@ A normal scan is local-first but stateful:
   `--no-telemetry` or `telemetry: false`;
 - the incremental cache and baseline are written only when their relevant
   options are used;
+- the v1 outcome-event ledger is written only through the explicit public
+  library API to a caller-selected path; normal scans do not create it;
 - managed `AGENTS.md` or `CLAUDE.md` blocks are rewritten only with
   `--refresh-snippets` or the corresponding explicit configuration.
 
@@ -293,6 +295,12 @@ this path. Network failure does not change the scan exit code.
 
 These local and outbound mechanisms are separate. `--no-telemetry` disables
 the local flywheel; it is not a generic read-only mode.
+
+The outcome-event v1 contract is a third, separately controlled local path. It
+has a closed schema, coarse context and time buckets, explicit inspect/export/
+delete operations, and no network adapter. The existing usage beacon cannot
+carry outcome events. Any future outcome transport requires a separate privacy
+and authorization decision.
 
 ## Planned Memory capability flow
 
