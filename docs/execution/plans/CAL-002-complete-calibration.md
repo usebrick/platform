@@ -1,6 +1,6 @@
 # CAL-002 — Complete claim-matched rule calibration
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 7
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers and repository owner
@@ -20,9 +20,10 @@ catalog. The old three-way origin questionnaire is paused after one historical
 hold. The replacement uses exactly 26/4/3/7 owner rows and the whole-catalog
 projection is 47 starting quality + 26 transferred quality + 4 blocked quality
 + 3 superseded + 7 retired + 32 research-origin = 119. CAL-001's v1 matrix
-remains `applied: false` and `admitted: false`; the v2 proposal is also
-`applied: false` and `admitted: false`. `SB-UX-001` is the other active
-implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
+remains `applied: false` and `admitted: false`. The owner-approved Task 20
+policy is locally applied and remains `admitted: false` at the single
+human-facing application checkpoint `bd47dbd7e`. `SB-UX-001` is now the only
+active implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
 to ready, so CAL-002 owns the calibration and provenance closeout without
 inventing owner evidence. Progressive authority Tasks 1–8 are implementation-
 checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
@@ -158,6 +159,28 @@ reviews returned 98/100 with zero findings. The production provider remains
 machine-only. High dependency advisories remain a separate `REL-001` release
 blocker.
 
+Task 20 is application-checkpointed at `bd47dbd7e`. The owner approved the
+qualified finding, provenance, score, gate, and action boundaries before the
+exact four-file application commit. The statically bundled policy contains all
+119 canonical rows, is `applied: true` and `admitted: false`, and keeps the 4
+blocked, 3 superseded, and 7 retired rows non-runnable. The 32 unmeasured
+quality candidates and 32 research-origin rows remain default-off and
+score/gate neutral; only the 41 evidence-ready quality rows are default-on and
+score/gate eligible. The immutable application receipt retains the detailed
+matrix, approval, policy, and implementation bindings machine-side.
+
+The complete Task 20 focused candidate matrix passes 183/183, the inactive-
+support verification passes 361/361, and the full SlopBrick suite passes 4,580
+with 15 intentional skips. Recursive Core 285, Engine 60, Website 54, and
+SlopBrick 4,580 tests pass; recursive lint, typecheck, and build pass. The
+package-local self-scan completes 296/296 selected files with zero failures,
+scores 99.94/100, reports four current medium deterministic findings, and
+passes its policy gate without creating a baseline. A fresh final review
+returned 100/100 with no findings, and the focused security matrix passes
+46/46 with no reportable security finding at confidence 8/10 or higher.
+Protected owner state and frozen historical metrics remain byte-identical.
+No push, tag, admission, publication, deployment, or release is authorized.
+
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -240,15 +263,11 @@ state is outside this receipt.
 
 ## Verification
 
-Run Task 20 Steps 1–6 only. Reverify frozen state, generate the exact local
-applied-policy candidate and immutable receipt, bind the candidate provider,
-regenerate catalog truth, run the complete focused and recursive gates, and
-self-scan without baseline mutation. Then stop before commit at the exact
-two-choice owner comprehension gate.
-
-Do not infer the owner's choice. Until choice 1 is recorded, leave the
-candidate uncommitted. A green local candidate does not authorize admission,
-push, tag, publish, deploy, or release.
+Task 20 completed the exact local application only after the owner chose the
+understandable-boundaries path. Task 21 projects those observed facts into the
+current execution control plane, checks generated catalog truth, and reruns the
+focused documentation/MCP contracts. The application remains non-admitting
+and separate from admission, push, tag, publish, deploy, and release.
 
 ## Evidence destination
 
@@ -263,13 +282,8 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 20 Steps 1–6 from the approved progressive-authority plan, then show
-the owner exactly:
-
-1. the finding, provenance, score, and action boundaries are understandable;
-   apply this exact policy locally; or
-2. one or more boundaries are unclear; leave the candidate uncommitted and
-   name the failed surface.
-
-Do not commit or activate the candidate before choice 1. Do not infer
-admission, push, tag, publish, deploy, or release authority from either choice.
+Preserve the applied, non-admitting policy at `bd47dbd7e`, hand the current
+quality/origin provenance contract to `SB-UX-001`, and route every public
+action through `REL-001`. Any future policy change requires a new reviewed
+matrix and atomic application; CAL-001, frozen evidence, and protected owner
+state remain immutable.

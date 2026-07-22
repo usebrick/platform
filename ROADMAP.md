@@ -211,10 +211,17 @@ only. The high-severity dependency audit remains a separate `REL-001` release
 blocker.
 
 The single human-facing Task 19 checkpoint identifier is `52af3e272`; leaf
-SHA-256 bindings and the audit payload identity remain machine-only. The next
-bounded slice is Task 20 Steps 1–6: generate and fully qualify the exact local
-application candidate, then stop at the explicit owner comprehension gate.
-No policy activation, push, tag, publish, deploy, or release is authorized.
+SHA-256 bindings and the audit payload identity remain machine-only.
+
+Task 20 is locally application-checkpointed at `bd47dbd7e` after the owner
+approved the qualified finding, provenance, score, gate, and action boundaries.
+The exact 119-row policy is now statically bound, `applied: true`, and
+`admitted: false`: 41 evidence-ready quality rows are default-on; 32 unmeasured
+quality candidates and 32 research-origin rows remain default-off and
+score/gate neutral; 4 blocked, 3 superseded, and 7 retired rows remain
+non-runnable. CAL-002 is complete and hands current provenance to `SB-UX-001`.
+Detailed leaf identities remain in the machine receipt. No push, tag,
+admission, publication, deployment, or release is authorized.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -300,16 +307,13 @@ planning artifacts only, not participant action.
 - Continue `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
   current-versus-new debt, and three prioritized actions in the
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
-  and shared-report impact map are approved. It remains active with `CAL-002`
-  as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 41 grants no authority to alter default state,
-  score, baseline, source, admission, release, deployment, or published
-  artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–19 remain
-  checkpointed as recorded above. Run Task 20 Steps 1–6 only: generate and
-  fully qualify the exact local application candidate, then stop at the
-  explicit owner comprehension gate before commit or activation. Do not infer
-  the owner choice, admit evidence, or take a release action.
+  and shared-report impact map are approved. Completed `CAL-002` now supplies
+  its current quality/origin provenance contract without adding an unmet
+  `requires` edge. The applied policy remains non-admitting and local; it does
+  not authorize baseline, source, admission, release, deployment, or published
+  artifact changes.
+- Preserve completed `CAL-002` at its Task 20 application checkpoint. Any later
+  policy change requires a new reviewed matrix and atomic application.
   `VAL-001` and `TEL-001` remain ready; `REL-001` remains the separate
   public-authority boundary and records the independent dependency-audit
   blocker.

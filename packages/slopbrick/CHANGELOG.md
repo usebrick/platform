@@ -34,17 +34,18 @@ current publisher-attested internal Corpus v1 evaluation path.
   CAL-002 projection. They snapshot and freeze validated state, preserve legacy
   fallback for unknown IDs, keep blocked/superseded/retired rows non-runnable,
   and separate explicit diagnostic visibility from score eligibility. The
-  production provider remains inactive, so scanner behavior is unchanged.
-- Added dormant current-policy enforcement seams across registry context
+  owner-approved Task 20 application now binds the exact policy statically in
+  the unreleased workspace candidate while retaining `admitted: false`.
+- Added current-policy enforcement across registry context
   creation, shared scan/watch normalization, and worker Bayesian/composite
   inputs. Exact approved-policy tests prove that explicit diagnostics remain
-  score-neutral and blocked/superseded/retired rules cannot run; because the
-  production provider still returns `undefined`, this does not activate or
-  apply policy in the unreleased candidate.
-- Preserved inactive-provider composite behavior and routed active-policy
-  synthetic findings plus the project-level identical-block coordinator
-  through the same current-authority and explicit-off boundaries.
-- Added one dormant current-policy evidence projection shared by first-scan,
+  score-neutral and blocked/superseded/retired rules cannot run. The static
+  provider now applies those boundaries locally in the unreleased candidate.
+- Preserved absent-policy composite fallback in focused compatibility tests
+  and routed active-policy synthetic findings plus the project-level
+  identical-block coordinator through the same current-authority and
+  explicit-off boundaries.
+- Added one current-policy evidence projection shared by first-scan,
   terminal, JSON, Markdown, HTML, and SARIF. It keeps rule-authored source
   evidence separate, labels legacy signal metrics as historical, and fails
   closed when the complete finding identity does not match.
@@ -53,7 +54,8 @@ current publisher-attested internal Corpus v1 evaluation path.
   frozen v10.1 metrics remain separately labeled historical point estimates.
 - Added policy-driven generated-catalog validation for all 119 exact rule
   identities, including independent runnable, score, and gate projections and
-  a drift-failing check mode. The production provider remains inactive.
+  a drift-failing check mode. The owner-approved static provider now consumes
+  that exact non-admitting policy in the unreleased workspace candidate.
 
 ### Changed
 

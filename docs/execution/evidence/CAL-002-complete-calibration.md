@@ -570,11 +570,55 @@ The final audit command currently exits nonzero on the separately recorded
 release advisories. It does not invalidate the preceding Task 19 behavior
 gates and must not be described as green.
 
+## Revision-42 Task 20 local application and closeout
+
+- The owner selected the understandable finding, provenance, score, gate, and
+  action boundaries after reviewing the ANSI-free first screen and one example
+  from each runtime disposition. The single human-facing Task 20 application
+  checkpoint is `bd47dbd7e`; leaf policy and receipt identities remain
+  machine-only.
+- The exact four-file application binds the statically bundled 119-row current
+  policy and immutable
+  [`application-receipt-v2.json`](artifacts/cal-002/application-receipt-v2.json).
+  The policy is `applied: true` and `admitted: false`.
+- Runtime authority is 41 default-on score/gate-eligible quality rows, 32
+  default-off non-scoring quality candidates, 32 default-off non-scoring
+  research-origin rows, 4 blocked non-runnable rows, 3 superseded non-runnable
+  rows, and 7 retired non-runnable rows.
+- The complete active candidate matrix passes 183/183 and the inactive support
+  matrix passes 361/361. The full SlopBrick suite passes 4,580 with 15
+  intentional skips; recursive tests pass Core 285, Engine 60, Website 54, and
+  SlopBrick 4,580, and recursive lint, typecheck, and build pass.
+- The package-local self-scan completes 296/296 selected files with zero parse,
+  timeout, crash, or internal failures. It scores 99.94/100, reports four
+  current medium `dup/identical-block` findings, passes the policy gate, and
+  leaves the durable baseline absent.
+- A fresh independent final review returned 100/100 with no findings. The
+  focused application/security matrix passes 46/46, and the security review
+  found no reportable issue at confidence 8/10 or higher.
+- Task 21 validation reports 18 plans valid at implementation WIP `1/2` and
+  company WIP `0/1`; all 20 execution-doc tests pass, the generated 119-rule
+  catalog is in sync, and the focused documentation/MCP matrix passes 209/209.
+- Protected owner state and frozen historical signal metrics remain
+  byte-identical. The separately recorded dependency advisories remain a
+  `REL-001` public-release blocker; Task 20 changed no dependency.
+- No push, tag, admission, npm publication, website deployment, or public
+  release is authorized. Local application and public release remain separate.
+
+### Closeout verification commands
+
+```sh
+corepack pnpm plans:validate
+node --test scripts/validate-execution-docs.test.mjs
+corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check
+corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1
+git diff --check
+```
+
 ## Next evidence
 
-Run Task 20 Steps 1–6 next: reverify frozen state, generate the exact applied-
-policy candidate and receipt, bind the candidate provider, regenerate catalog
-truth, run the complete focused and recursive gates, and self-scan. Then stop
-at the exact two-choice owner comprehension gate. Until the owner chooses 1,
-leave the candidate uncommitted. No activation, admission, push, tag, publish,
-deployment, or release is authorized.
+CAL-002 is complete. Preserve its applied, non-admitting policy and hand the
+current quality/origin provenance contract to `SB-UX-001`. Any later policy
+change requires a new reviewed matrix and atomic application. Route admission,
+push, tag, publication, deployment, and release through their separately
+authorized control planes, including `REL-001` for public actions.

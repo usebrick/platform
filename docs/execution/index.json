@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 41,
+  "revision": 42,
   "updatedAt": "2026-07-22",
-  "cal002Status": "in_progress",
+  "cal002Status": "done",
   "cal002NextAction": {
-    "text": "Run Task 20 Steps 1-6: generate and fully qualify the exact local application candidate, then stop at the explicit owner comprehension gate before activation.",
-    "verify": "corepack pnpm -r typecheck && SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test && corepack pnpm -r build",
+    "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, hand current provenance to SB-UX-001, and keep public actions under REL-001.",
+    "verify": "corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check && corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -220,7 +220,7 @@
       "track": "implementation",
       "lane": "calibration",
       "horizon": "next",
-      "status": "in_progress",
+      "status": "done",
       "priority": 7,
       "path": "docs/execution/plans/CAL-002-complete-calibration.md",
       "dependencies": {
@@ -234,15 +234,16 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run Task 20 Steps 1-6: generate and fully qualify the exact local application candidate, then stop at the explicit owner comprehension gate before activation.",
-        "verify": "corepack pnpm -r typecheck && SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test && corepack pnpm -r build",
+        "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, hand current provenance to SB-UX-001, and keep public actions under REL-001.",
+        "verify": "corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check && corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [
         "docs/superpowers/specs/2026-07-18-complete-calibration-program-design.md",
         "docs/superpowers/plans/2026-07-18-complete-calibration-program.md",
         "docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md",
-        "docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json"
+        "docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json",
+        "docs/execution/evidence/artifacts/cal-002/application-receipt-v2.json"
       ]
     },
     {

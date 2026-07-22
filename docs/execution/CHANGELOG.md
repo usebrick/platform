@@ -3,6 +3,51 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 42 — 2026-07-22
+
+### Changed
+
+- Recorded the owner-approved CAL-002 Task 20 local application at the single
+  human-facing checkpoint `bd47dbd7e` and linked its machine-verifiable
+  application receipt.
+- Bound the exact 119-row policy into the static runtime provider while keeping
+  every row non-admitting. The 41 evidence-ready quality rows are default-on;
+  32 unmeasured quality candidates and 32 research-origin rows remain
+  default-off and score/gate neutral; 4 blocked, 3 superseded, and 7 retired
+  rows remain non-runnable.
+- Closed `CAL-002` and reduced implementation WIP to `1/2`, with
+  `SB-UX-001` retaining the active first-scan lane. Current provenance now
+  hands off to that plan without adding a release dependency.
+- Kept detailed matrix, approval, policy, and receipt SHA-256 identities
+  machine-only under the owner-selected one-checkpoint documentation
+  convention.
+
+### Evidence
+
+- The active candidate matrix passes 183/183; inactive support verification
+  passes 361/361; the full SlopBrick suite passes 4,580 with 15 intentional
+  skips; recursive Core, Engine, Website, and SlopBrick tests, lint, typecheck,
+  and build pass.
+- The package-local self-scan completes 296/296 files with zero failures,
+  scores 99.94/100, reports four current medium deterministic findings, passes
+  its policy gate, and creates no baseline.
+- Fresh final review returned 100/100 with no findings. The focused security
+  matrix passes 46/46, with no reportable security finding at confidence 8/10
+  or higher.
+- Task 21 closeout validation reports 18 plans valid at implementation WIP
+  `1/2` and company WIP `0/1`; all 20 execution-doc tests pass, the generated
+  119-rule catalog is in sync, and the focused documentation/MCP matrix passes
+  209/209.
+
+### Boundary
+
+- The applied policy remains `admitted: false`; CAL-001 and all frozen evidence
+  remain unchanged.
+- The high dependency advisories remain a separate `REL-001` public-release
+  blocker.
+- No push, tag, admission, publication, deployment, or release authority is
+  claimed by this local application or documentation closeout.
+
 ## Revision 41 — 2026-07-22
 
 ### Changed

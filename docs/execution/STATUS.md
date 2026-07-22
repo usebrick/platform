@@ -1,33 +1,31 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 41
+**Index revision:** 42
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
-source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 41 records the dormant CAL-002 Task 19 authority
-checkpoint while preserving UseBrick as the sole customer-facing coherence and
-verification product, with SlopBrick as the shipped package, current CLI, free
-scanner, and acquisition surface. `GTM-001` is now `ready`
-to prepare planning materials for 10–20 consent-safe observed external
-sessions; completed sessions remain zero and outreach is false. New
-`LABS-001` is `draft` for a bounded rendered-evidence benchmark. Neither plan
-is active, so company WIP remains `0/1` and implementation WIP remains `2/2`.
-The deterministic router preserves every existing
-Mendeley and CAL-001 hash while failing closed for pending, reference-only,
-unregistered, malformed, or manually widened source dispositions. The local
-v0.45 trust-release qualification is complete under `SB-045`; `REL-001` owns
-the separate npm and website decisions and consumes no WIP. `SB-UX-001` and
-`CAL-002` are the two active implementation plans. CAL-002 starts from the
-approved design and detailed plan to resolve separate quality and origin
-evidence lanes, apply one reviewed non-admitting 119-row policy atomically,
-and close the first-scan current-versus-legacy provenance gap. `SB-UX-001`
-remains active with CAL-002 as its evidence-provenance closeout gate; CAL-002
-does not add an unmet `requires` edge. `VAL-001` returns to ready with its one
-owner-attested self-scan-to-rescan row preserved, and `TEL-001` remains ready.
+source-attested Corpus v1 seed, CAL-001 evaluation, CORPUS-002 source-use
+routing, and CAL-002 claim-matched calibration are complete. Revision 42
+records the owner-approved local Task 20 application while preserving UseBrick
+as the sole customer-facing coherence and verification product, with SlopBrick
+as the shipped package, current CLI, free scanner, and acquisition surface.
+The applied 119-row policy remains non-admitting and public release authority
+remains separate. `GTM-001` is `ready` to prepare planning materials for 10–20
+consent-safe observed external sessions; completed sessions remain zero and
+outreach is false. `LABS-001` is `draft` for a bounded rendered-evidence
+benchmark. Neither plan is active, so company WIP remains `0/1`; `SB-UX-001`
+is now the sole active implementation plan and implementation WIP is `1/2`.
+The deterministic router preserves every existing Mendeley and CAL-001 hash
+while failing closed for pending, reference-only, unregistered, malformed, or
+manually widened source dispositions. The local v0.45 trust-release
+qualification is complete under `SB-045`; `REL-001` owns the separate npm and
+website decisions and consumes no WIP. Completed CAL-002 supplies the current
+quality/origin provenance contract to `SB-UX-001` without adding an unmet
+`requires` edge. `VAL-001` remains ready with its one owner-attested self-scan-
+to-rescan row preserved, and `TEL-001` remains ready.
 The frozen v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
 historical hold. Progressive authority Tasks 1–8 are implementation-
@@ -176,20 +174,27 @@ auto-suppressed, and a passing policy gate. Two fresh final reviews returned
 separate `REL-001` release blocker. The production provider remains
 `undefined`.
 
-The next CAL-002 action is Task 20 Steps 1–6: generate and fully qualify the
-exact local application candidate, then stop at the explicit owner
-comprehension gate. The repository owner remains the only completed product
-tester; the recorded row judged a statistical hygiene recommendation useful
-for review, declined an immediate fix because no safe bounded repair followed
-from the evidence, and reproduced the unchanged findings. CAL-001 remains
-`applied: false` and `admitted: false`; revision 41 grants no authority to
-alter default state, score, source, baseline, admission, release, deployment,
-or published artifacts. CAL-002 remains
-`in_progress`, implementation WIP remains `2/2`, and its proposed policy also
-remains `applied: false` and `admitted: false`. Local application remains
-separate from push, tag, publish, deploy, and release; remote state is outside
-the receipt. Stale-path cleanup is isolated behind exact owner approval and
-does not block local product work.
+Task 20 is locally application-checkpointed at `bd47dbd7e`. The owner approved
+the qualified finding, provenance, score, gate, and action boundaries before
+the exact four-file commit. Its statically bundled 119-row policy is
+`applied: true` and `admitted: false`: 41 evidence-ready quality rows are
+default-on and score/gate eligible; 32 unmeasured quality candidates and 32
+research-origin rows remain default-off and score/gate neutral; 4 blocked, 3
+superseded, and 7 retired rows remain non-runnable. The immutable application
+receipt retains detailed bindings machine-side.
+
+The full Task 20 candidate suite passes 4,580 tests with 15 intentional skips;
+recursive Core 285, Engine 60, Website 54, and SlopBrick 4,580 tests, lint,
+typecheck, and build pass. The package-local self-scan completes 296/296 files
+with zero failures, scores 99.94/100, reports four current medium deterministic
+findings, passes its policy gate, and creates no baseline. Fresh final review
+returned 100/100 with no findings; the focused security matrix passes 46/46
+with no reportable security finding at confidence 8/10 or higher. CAL-002 is
+`done` and implementation WIP is `1/2`. CAL-001 remains `applied: false` and
+`admitted: false`; protected state and frozen evidence remain unchanged.
+Local application remains separate from push, tag, admission, publication,
+deployment, and release. Stale-path cleanup remains isolated behind exact
+owner approval and does not block local product work.
 
 ## Product and release truth
 
@@ -408,7 +413,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 20 Steps 1–6, qualify the local candidate, and stop at the explicit owner comprehension gate. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and hand current provenance to `SB-UX-001`; route public actions through `REL-001`. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -478,45 +483,15 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`SB-UX-001` and `CAL-002` are active at implementation WIP `2/2`. CAL-002
-authority Tasks 1–8 are approved through `e8e62b779`, Tasks 9–11 are
-checkpointed through `651f52d78`, Task 12 is integrated at `473ceafc3`, and
-Task 13 is integrated on main at `e956f7900`, `366246e5d`, and lock-hardening
-`8c8760783`. Task 14 is integrated from `d7b11b70e` through `c13ce8f47` with
-its exact 119-row reducer, 41 deterministic evidence rows, five fixed named
-control slots, frozen source binding, and receipt-first/policy-last immutable
-publication contract independently approved. Task 15 is complete at
-`6a85e4346`; its single-root manifest follow-up is `80acf1ada`, with evidence
-root `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
-Task 16 is implementation-checkpointed through `417ca5668`; its production
-provider remains inactive and exact legacy scanner behavior remains in force.
+`SB-UX-001` is the sole active implementation plan at WIP `1/2`. CAL-002 is
+complete at the single human-facing Task 20 application checkpoint
+`bd47dbd7e`. The exact 119-row policy is locally applied and non-admitting;
+its detailed matrix, approval, policy, and receipt identities remain
+machine-verifiable rather than repeated in status prose. Protected owner state,
+frozen historical evidence, and CAL-001 remain unchanged.
 
-Task 17 is implementation-checkpointed through `61dc8f803`; the production
-provider remains inactive, and the policy-aware registry, score, watch, and
-worker paths are exercised only through exact approved-policy tests.
-
-Task 18 is implementation-checkpointed through `be1be85b8`; its shared report
-projection is qualified across every renderer, and the production provider
-remains inactive.
-
-Task 19 is implementation-checkpointed at `52af3e272`; its current-policy,
-historical-metrics, catalog, provenance, docs-gate, secondary-diagnostic, and
-reversible-history boundaries passed the exact dual-Node and recursive gates
-and two independent 98/100 reviews. This is the only Task 19 checkpoint SHA
-repeated in human-facing planning prose; leaf SHA-256 bindings remain in
-machine receipts.
-
-Run Task 20 Steps 1–6 next: reverify frozen state, generate the applied-policy
-candidate and receipt, bind the static provider in the candidate, regenerate
-catalog truth, run the complete focused and recursive gates, and self-scan.
-Then stop at the exact two-choice owner comprehension gate. Until choice 1 is
-recorded, leave the candidate uncommitted and do not activate or apply policy.
-The proposed policy remains `applied: false` and `admitted: false`; do not take
-a push, tag, publish, deploy, or release action. The high dependency advisories
-remain an independent `REL-001` release blocker.
-The separate quality and origin evidence lanes remain the first-scan
-provenance closeout gate for SB-UX-001. `VAL-001` and
-`TEL-001` remain ready. VAL-001 may
+The separate quality and origin evidence lanes now hand current provenance to
+`SB-UX-001`. `VAL-001` and `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
 evidence. `REL-001` remains the separate public-authority checkpoint and keeps
