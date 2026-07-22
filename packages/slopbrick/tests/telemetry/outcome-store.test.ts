@@ -1,3 +1,4 @@
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   constants,
   existsSync,
@@ -277,6 +278,51 @@ describe('privacy-safe local outcome event store', () => {
     expect(() => exportOutcomeEventsV1(storagePath, `${storagePath}.lock`))
       .toThrow(OutcomeEventStoreError);
     expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+
+    const mapSecret = 'private-array-map-source-fragment';
+    const originalMap = Array.prototype.map;
+    Object.defineProperty(Array.prototype, 'map', {
+      configurable: true,
+      value: () => [{ source: mapSecret }],
+      writable: true,
+    });
+    try {
+      exportOutcomeEventsV1(storagePath, exportPath);
+    } finally {
+      Object.defineProperty(Array.prototype, 'map', {
+        configurable: true,
+        value: originalMap,
+        writable: true,
+      });
+    }
+    expect(readFileSync(exportPath, 'utf8')).not.toContain(mapSecret);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
+
+    const iteratorSecret = 'private-array-iterator-source-fragment';
+    const originalIterator = Array.prototype[Symbol.iterator];
+    Object.defineProperty(Array.prototype, Symbol.iterator, {
+      configurable: true,
+      value: function* inheritedIterator(this: unknown[]) {
+        const first = this[0];
+        if (first !== null && typeof first === 'object' && 'event' in first) {
+          yield { source: iteratorSecret };
+          return;
+        }
+        yield* originalIterator.call(this);
+      },
+      writable: true,
+    });
+    try {
+      exportOutcomeEventsV1(storagePath, exportPath);
+    } finally {
+      Object.defineProperty(Array.prototype, Symbol.iterator, {
+        configurable: true,
+        value: originalIterator,
+        writable: true,
+      });
+    }
+    expect(readFileSync(exportPath, 'utf8')).not.toContain(iteratorSecret);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
   });
 
   it('rejects a single whitespace-padded event above the per-event byte bound', () => {
@@ -294,6 +340,57 @@ describe('privacy-safe local outcome event store', () => {
 
     expect(() => readOutcomeEventsV1(storagePath)).toThrow(/event size limit/u);
     expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/event size limit/u);
+  });
+
+  it.runIf(process.platform !== 'win32')(
+    'rejects a FIFO promptly before attempting to read it',
+    () => {
+      const fifoPath = join(root, 'events-v1.fifo');
+      execFileSync('mkfifo', [fifoPath]);
+      const script = [
+        "import { readOutcomeEventsV1 } from './src/telemetry/outcome-store.ts';",
+        'try {',
+        '  readOutcomeEventsV1(process.argv[1]);',
+        '  process.exitCode = 2;',
+        '} catch (error) {',
+        "  process.exitCode = error?.name === 'OutcomeEventStoreError' ? 0 : 3;",
+        '}',
+      ].join('\n');
+      const child = spawnSync(
+        process.execPath,
+        ['--import', 'tsx', '--input-type=module', '-e', script, fifoPath],
+        { cwd: process.cwd(), encoding: 'utf8', timeout: 1_000 },
+      );
+
+      expect(child.error).toBeUndefined();
+      expect(child.status, child.stderr).toBe(0);
+    },
+  );
+
+  it('rejects a filesystem-equivalent case alias before export can replace the ledger', () => {
+    const caseProbe = join(root, 'case-probe');
+    writeFileSync(caseProbe, 'probe\n', 'utf8');
+    const caseInsensitive = existsSync(join(root, 'CASE-PROBE'));
+    rmSync(caseProbe);
+    if (!caseInsensitive) return;
+
+    const storagePath = join(root, 'Events-v1.jsonl');
+    const aliasExportPath = join(root, 'events-v1.jsonl');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    appendOutcomeEventV1(storagePath, event);
+    const ledgerBytes = readFileSync(storagePath, 'utf8');
+
+    expect(() => exportOutcomeEventsV1(storagePath, aliasExportPath))
+      .toThrow(OutcomeEventStoreError);
+    expect(readFileSync(storagePath, 'utf8')).toBe(ledgerBytes);
+    expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
   });
 
   it.runIf(process.platform !== 'win32' && constants.O_NOFOLLOW > 0)(
