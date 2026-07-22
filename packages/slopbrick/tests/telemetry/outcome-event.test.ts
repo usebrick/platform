@@ -1,6 +1,7 @@
 import Ajv2020 from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 
+import * as slopbrick from '../../src/index';
 import {
   OUTCOME_EVENT_SCHEMA_V1,
   OUTCOME_EVENT_VERSION_V1,
@@ -117,5 +118,15 @@ describe('privacy-safe local outcome event contract', () => {
       expect(JSON.stringify(result.errors)).not.toContain(secret);
       expect(validateSchema(event)).toBe(false);
     }
+  });
+
+  it('publishes the local outcome contract and lifecycle operations through SlopBrick', () => {
+    expect(slopbrick.OUTCOME_EVENT_VERSION_V1).toBe(OUTCOME_EVENT_VERSION_V1);
+    expect(slopbrick.OUTCOME_EVENT_SCHEMA_V1).toBe(OUTCOME_EVENT_SCHEMA_V1);
+    expect(slopbrick.validateOutcomeEventV1).toBe(validateOutcomeEventV1);
+    expect(slopbrick.appendOutcomeEventV1).toEqual(expect.any(Function));
+    expect(slopbrick.readOutcomeEventsV1).toEqual(expect.any(Function));
+    expect(slopbrick.exportOutcomeEventsV1).toEqual(expect.any(Function));
+    expect(slopbrick.deleteOutcomeEventsV1).toEqual(expect.any(Function));
   });
 });
