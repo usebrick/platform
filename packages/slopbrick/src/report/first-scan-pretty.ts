@@ -6,7 +6,7 @@ import type {
   FirstScanRecommendedAction,
   GateDecision,
 } from '../types/index.js';
-import { FIRST_SCAN_AREAS } from './first-scan.js';
+import { FIRST_SCAN_AREAS, formatFirstScanFindingEvidence } from './first-scan.js';
 
 export interface FirstScanPrettyOptions {
   columns?: number;
@@ -224,16 +224,7 @@ function areasSection(firstScan: FirstScanExperience, columns: number): string {
 }
 
 function evidenceSummary(action: FirstScanRecommendedAction): string {
-  if (action.evidence.tier === 'calibrated' && action.evidence.calibration) {
-    const calibration = action.evidence.calibration;
-    return `calibrated; verdict ${calibration.verdict}; precision ${formatNumber(calibration.precision * 100)}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}. ${action.evidence.claim} Not a quality verdict.`;
-  }
-  if (action.evidence.tier === 'deterministic') {
-    if (action.evidence.sourceSpan === 'exact') return 'deterministic; exact source span.';
-    if (action.evidence.sourceSpan === 'omitted') return 'deterministic; bounded source span omitted.';
-    return 'deterministic; no source span attached.';
-  }
-  return 'advisory; review guidance only.';
+  return formatFirstScanFindingEvidence(action.evidence);
 }
 
 function actionKind(action: FirstScanRecommendedAction): string {

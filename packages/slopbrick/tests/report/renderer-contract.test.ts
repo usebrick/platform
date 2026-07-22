@@ -1,4 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
+
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,6 +30,11 @@ const scoreBasis = {
   suppressedIssueCount: 2,
   parseErrorCount: 1,
 };
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 const offIssue: Issue = {
   ruleId: 'test/off-rule',
@@ -155,10 +167,11 @@ describe('headline score renderer contract', () => {
     const full = formatPretty(input, { full: true, cwd: '/workspace' });
     const fullDetail = full.split('\n\nFull report\n\n')[1] ?? '';
     for (const output of [compact, fullDetail]) {
-      expect(output).toContain('historical verdict USEFUL');
-      expect(output).toContain('historical precision 63.69%');
-      expect(output).toContain('last calibrated 2026-07-04');
-      expect(output).toContain(
+      const normalized = output.replace(/\s+/g, ' ');
+      expect(normalized).toContain('historical verdict USEFUL');
+      expect(normalized).toContain('historical precision 63.69%');
+      expect(normalized).toContain('last calibrated 2026-07-04');
+      expect(normalized).toContain(
         'Historical rule metrics only; not current policy evidence and not proof of who wrote the code.',
       );
     }
@@ -168,6 +181,7 @@ describe('headline score renderer contract', () => {
   });
 
   it('renders one current-policy evidence object and copy across terminal, JSON, Markdown, HTML, and SARIF', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const policyIssue: Issue = {
       ...activeIssue,
       ruleId: 'ai/any-density',
@@ -198,7 +212,6 @@ describe('headline score renderer contract', () => {
     input.firstScan = projectFirstScan(input, {
       cwd: '/workspace',
       configHash: 'config-a',
-      currentPolicy: approvedCurrentPolicyFixture(),
     });
 
     const json = JSON.parse(formatJson(input)) as {
@@ -233,8 +246,9 @@ describe('headline score renderer contract', () => {
       formatMarkdown(input),
       formatHtml(input),
     ]) {
-      expect(output).toContain('quality-candidate-unmeasured');
-      expect(output).toContain('Accepted quality concern; owner measurement was not requested.');
+      const normalized = output.replace(/\s+/g, ' ');
+      expect(normalized).toContain('quality-candidate-unmeasured');
+      expect(normalized).toContain('Accepted quality concern; owner measurement was not requested.');
     }
   });
 

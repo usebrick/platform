@@ -11,7 +11,7 @@ import type {
 import { HEADLINE_SCORES, REPOSITORY_HEALTH_FORMULA, SCORE_BRIEFS, formatHeadlineScore } from './score-contract.js';
 import { formatScanAccountingSummary, formatScanValidityNotice, isIncompleteScan, isNotApplicableScan } from './scan-validity.js';
 import { formatFindingContext } from './finding-context.js';
-import { FIRST_SCAN_AREAS } from './first-scan.js';
+import { FIRST_SCAN_AREAS, formatFirstScanFindingEvidence } from './first-scan.js';
 import { formatFirstScanPretty } from './first-scan-pretty.js';
 import { findingIdentity } from './finding-identity.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
@@ -1136,13 +1136,7 @@ function formatIssue(issue: Issue): string {
 }
 
 function formatProjectedEvidence(finding: FirstScanFinding): string {
-  const calibration = finding.evidence.calibration;
-  const calibrationText = calibration
-    ? `verdict ${calibration.verdict}; precision ${(calibration.precision * 100).toFixed(2).replace(/\.00$/, '')}%; last calibrated ${calibration.lastCalibratedAt.slice(0, 10)}. ${finding.evidence.claim} Not a quality verdict.`
-    : '';
-  return calibration
-    ? `${finding.evidence.tier} — ${calibrationText}`
-    : `${finding.evidence.tier} — ${finding.evidence.claim}`;
+  return formatFirstScanFindingEvidence(finding.evidence);
 }
 
 function formatProjectedAction(finding: FirstScanFinding): string {

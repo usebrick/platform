@@ -1,5 +1,10 @@
 import type { Severity } from './primitives';
 import type { Issue } from './scan';
+import type {
+  CAL002ClaimClass,
+  CAL002QualityDomain,
+  CAL002Readiness,
+} from '../calibration/cal-002/contracts-v2';
 
 export type FirstScanAreaId =
   | 'visual-slop'
@@ -8,7 +13,16 @@ export type FirstScanAreaId =
   | 'repository-coherence'
   | 'accessibility-and-resilience';
 
-export type FirstScanEvidenceTier = 'deterministic' | 'calibrated' | 'advisory';
+export type FirstScanEvidenceTier =
+  | 'deterministic'
+  | 'current-quality-calibrated'
+  | 'current-quality-advisory'
+  | 'quality-candidate-unmeasured'
+  | 'current-quality-failed'
+  | 'insufficient-evidence'
+  | 'internal-origin-association'
+  | 'legacy-calibrated'
+  | 'advisory';
 export type FirstScanFindingChange = 'current' | 'new' | 'unchanged';
 export type FirstScanActionChange = FirstScanFindingChange | 'mixed';
 export type FirstScanRepairSafety = 'finding-bound' | 'no-safe-repair';
@@ -28,7 +42,13 @@ export interface FirstScanFindingEvidence {
   tier: FirstScanEvidenceTier;
   claim: string;
   sourceSpan: 'exact' | 'omitted' | 'absent';
-  calibration?: {
+  policyVersion?: 'slopbrick-rule-evidence-policy-v2';
+  qualityDomain?: CAL002QualityDomain;
+  claimClass?: CAL002ClaimClass;
+  readiness?: CAL002Readiness;
+  scoreEligible?: boolean;
+  admitted?: false;
+  legacyMetrics?: {
     verdict: NonNullable<Issue['signalStrength']>['verdict'];
     precision: number;
     lastCalibratedAt: string;

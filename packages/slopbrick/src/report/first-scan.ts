@@ -3,6 +3,7 @@ import type {
   DebtBaseline,
   FirstScanActionChange,
   FirstScanAreaId,
+  FirstScanEvidenceTier,
   FirstScanExperience,
   FirstScanFinding,
   FirstScanFindingAction,
@@ -13,6 +14,9 @@ import type {
   ProjectReport,
   Severity,
 } from '../types';
+import type { CAL002PolicyProvenanceV2 } from '../calibration/cal-002/matrix-v2.js';
+import type { CurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy.js';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import { classifyFindingContext } from './finding-context';
 import { compareFindingBaseline } from './finding-delta';
 import { findingIdentity, repositoryRelativeFindingLocation } from './finding-identity';
@@ -46,7 +50,43 @@ export const FIRST_SCAN_AREAS = [
 ] as const;
 
 const SEVERITY_ORDER: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
-const EVIDENCE_ORDER = { deterministic: 0, calibrated: 1, advisory: 2 } as const;
+const EVIDENCE_ORDER: Record<FirstScanEvidenceTier, number> = {
+  deterministic: 0,
+  'current-quality-calibrated': 1,
+  'current-quality-advisory': 2,
+  'quality-candidate-unmeasured': 3,
+  'current-quality-failed': 4,
+  'insufficient-evidence': 5,
+  'internal-origin-association': 6,
+  'legacy-calibrated': 7,
+  advisory: 8,
+};
+
+const CURRENT_POLICY_CLAIMS: Record<CAL002PolicyProvenanceV2, string> = {
+  'deterministic-finding-evidence': 'Current deterministic quality evidence.',
+  'current-quality-calibrated': 'Current owner-reviewed quality evidence.',
+  'current-quality-advisory': 'Review utility only; disabled and score-neutral.',
+  'quality-candidate-unmeasured': 'Accepted quality concern; owner measurement was not requested.',
+  'blocked-quality-candidate': 'Quality candidate blocked before evidence and not runnable.',
+  'internal-origin-association': 'Internal origin association only; not quality evidence and does not identify who wrote the code.',
+  'current-quality-failed-claim-bar': 'Current quality claim bar was not met; diagnostic only.',
+  'insufficient-evidence': 'Current evidence is insufficient; diagnostic only.',
+  'superseded-policy': 'Historical rule replaced by the named canonical rule.',
+  'retired-policy': 'Historical rule retired from current diagnostics.',
+};
+
+const CURRENT_POLICY_TIERS: Record<CAL002PolicyProvenanceV2, FirstScanEvidenceTier> = {
+  'deterministic-finding-evidence': 'deterministic',
+  'current-quality-calibrated': 'current-quality-calibrated',
+  'current-quality-advisory': 'current-quality-advisory',
+  'quality-candidate-unmeasured': 'quality-candidate-unmeasured',
+  'blocked-quality-candidate': 'insufficient-evidence',
+  'internal-origin-association': 'internal-origin-association',
+  'current-quality-failed-claim-bar': 'current-quality-failed',
+  'insufficient-evidence': 'insufficient-evidence',
+  'superseded-policy': 'insufficient-evidence',
+  'retired-policy': 'insufficient-evidence',
+};
 const HEADLINE_LABELS = {
   aiSlopCleanliness: 'AI Slop cleanliness',
   engineeringHygiene: 'Engineering hygiene',
@@ -63,7 +103,39 @@ export interface ProjectFirstScanOptions {
   baseline?: DebtBaseline;
 }
 
-function findingEvidence(issue: Issue): FirstScanFindingEvidence {
+function legacyMetrics(issue: Issue): FirstScanFindingEvidence['legacyMetrics'] {
+  if (!issue.signalStrength) return undefined;
+  return {
+    verdict: issue.signalStrength.verdict,
+    precision: issue.signalStrength.precision,
+    lastCalibratedAt: issue.signalStrength.lastCalibratedAt,
+  };
+}
+
+function sourceSpan(issue: Issue): FirstScanFindingEvidence['sourceSpan'] {
+  return issue.evidence?.status ?? 'absent';
+}
+
+function projectFirstScanFindingEvidence(
+  issue: Issue,
+  currentPolicy?: CurrentEvidencePolicyAccessors,
+): FirstScanFindingEvidence {
+  const row = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
+  const historical = legacyMetrics(issue);
+  if (row && currentPolicy) {
+    return {
+      tier: CURRENT_POLICY_TIERS[row.provenance],
+      claim: CURRENT_POLICY_CLAIMS[row.provenance],
+      sourceSpan: sourceSpan(issue),
+      policyVersion: currentPolicy.policy.version,
+      qualityDomain: row.qualityDomain,
+      claimClass: row.claimClass,
+      readiness: row.readiness,
+      scoreEligible: row.scoreEligible,
+      admitted: false,
+      ...(historical ? { legacyMetrics: historical } : {}),
+    };
+  }
   if (issue.evidence) {
     return {
       tier: 'deterministic',
@@ -71,25 +143,69 @@ function findingEvidence(issue: Issue): FirstScanFindingEvidence {
         ? 'Rule-authored matched source span.'
         : 'Rule-authored matched source span; source text omitted because it exceeded the evidence bound.',
       sourceSpan: issue.evidence.status,
+      ...(historical ? { legacyMetrics: historical } : {}),
     };
   }
-  if (issue.signalStrength) {
+  if (historical) {
     return {
-      tier: 'calibrated',
-      claim: 'Measured rule behavior; not proof of authorship.',
+      tier: 'legacy-calibrated',
+      claim: 'Historical rule metrics only; not current policy evidence and not proof of who wrote the code.',
       sourceSpan: 'absent',
-      calibration: {
-        verdict: issue.signalStrength.verdict,
-        precision: issue.signalStrength.precision,
-        lastCalibratedAt: issue.signalStrength.lastCalibratedAt,
-      },
+      legacyMetrics: historical,
     };
   }
   return {
     tier: 'advisory',
-    claim: 'Review guidance only; no rule-authored span or rule metrics are attached.',
+    claim: 'Review guidance only; no current policy row, rule-authored span, or historical rule metrics are attached.',
     sourceSpan: 'absent',
   };
+}
+
+function formatEvidenceNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+}
+
+function historicalMetricsSummary(
+  metrics: NonNullable<FirstScanFindingEvidence['legacyMetrics']>,
+): string {
+  return `historical verdict ${metrics.verdict}; historical precision ${formatEvidenceNumber(metrics.precision * 100)}%; last calibrated ${metrics.lastCalibratedAt.slice(0, 10)}`;
+}
+
+/** One plain-text projection used by every human renderer. Machine renderers
+ * carry the structured object itself. */
+export function formatFirstScanFindingEvidence(
+  evidence: FirstScanFindingEvidence,
+): string {
+  if (evidence.tier === 'legacy-calibrated' && evidence.legacyMetrics) {
+    return `legacy-calibrated; ${historicalMetricsSummary(evidence.legacyMetrics)}. ${evidence.claim}`;
+  }
+  if (evidence.policyVersion) {
+    const span = evidence.sourceSpan === 'exact'
+      ? ' Rule-authored source span is exact.'
+      : evidence.sourceSpan === 'omitted'
+        ? ' Rule-authored source span is bounded and omitted.'
+        : '';
+    const historical = evidence.legacyMetrics
+      ? ` Historical metrics: ${historicalMetricsSummary(evidence.legacyMetrics)}.`
+      : '';
+    return `${evidence.tier}; ${evidence.claim}${span}${historical}`;
+  }
+  if (evidence.tier === 'deterministic') {
+    if (evidence.sourceSpan === 'exact') return 'deterministic; exact source span.';
+    if (evidence.sourceSpan === 'omitted') return 'deterministic; bounded source span omitted.';
+    return 'deterministic; no source span attached.';
+  }
+  return `${evidence.tier}; ${evidence.claim}`;
+}
+
+export function matchesFirstScanFinding(
+  issue: Issue,
+  finding: FirstScanFinding | undefined,
+): finding is FirstScanFinding {
+  return finding !== undefined
+    && finding.ruleId === issue.ruleId
+    && finding.location.line === issue.line
+    && finding.location.column === issue.column;
 }
 
 function allFixes(issue: Issue) {
@@ -107,9 +223,21 @@ function matchingBoundFix(issue: Issue) {
   });
 }
 
-function findingAction(issue: Issue): FirstScanFindingAction {
+function evidencePermitsBoundRepair(
+  evidence: FirstScanFindingEvidence,
+  policyRepairSafety: 'finding-bound-only' | 'no-safe-repair' | 'not-applicable' | undefined,
+): boolean {
+  if (policyRepairSafety !== undefined && policyRepairSafety !== 'finding-bound-only') return false;
+  return evidence.tier === 'deterministic' || evidence.tier === 'current-quality-calibrated';
+}
+
+function findingAction(
+  issue: Issue,
+  evidence: FirstScanFindingEvidence,
+  policyRepairSafety?: 'finding-bound-only' | 'no-safe-repair' | 'not-applicable',
+): FirstScanFindingAction {
   const boundFix = matchingBoundFix(issue);
-  if (boundFix) {
+  if (boundFix && evidencePermitsBoundRepair(evidence, policyRepairSafety)) {
     return {
       kind: 'apply-finding-bound-fix',
       repairSafety: 'finding-bound',
@@ -136,11 +264,17 @@ function findingAction(issue: Issue): FirstScanFindingAction {
   };
 }
 
-function projectFinding(issue: Issue, cwd: string): FirstScanFinding {
+function projectFinding(
+  issue: Issue,
+  cwd: string,
+  currentPolicy?: CurrentEvidencePolicyAccessors,
+): FirstScanFinding {
   const filePath = issue.filePath
     ? repositoryRelativeFindingLocation(issue, cwd)
     : undefined;
   const context = classifyFindingContext(filePath);
+  const evidence = projectFirstScanFindingEvidence(issue, currentPolicy);
+  const policyRepairSafety = currentPolicy?.getCurrentRulePolicy(issue.ruleId)?.repairSafety;
   return {
     identity: findingIdentity(issue, cwd),
     ruleId: issue.ruleId,
@@ -155,9 +289,9 @@ function projectFinding(issue: Issue, cwd: string): FirstScanFinding {
       contextLabel: context.label,
     },
     why: issue.message,
-    evidence: findingEvidence(issue),
+    evidence,
     change: 'current',
-    action: findingAction(issue),
+    action: findingAction(issue, evidence, policyRepairSafety),
   };
 }
 
@@ -248,8 +382,11 @@ function representativeFinding(findings: FindingGroup): FirstScanFinding {
 function weakestEvidence(findings: FindingGroup): FirstScanFindingEvidence {
   return [...findings].sort((left, right) =>
     EVIDENCE_ORDER[right.evidence.tier] - EVIDENCE_ORDER[left.evidence.tier]
-    || (left.evidence.calibration?.precision ?? Number.POSITIVE_INFINITY)
-      - (right.evidence.calibration?.precision ?? Number.POSITIVE_INFINITY)
+    || (left.evidence.tier === 'legacy-calibrated'
+      && right.evidence.tier === 'legacy-calibrated'
+      ? (left.evidence.legacyMetrics?.precision ?? Number.POSITIVE_INFINITY)
+        - (right.evidence.legacyMetrics?.precision ?? Number.POSITIVE_INFINITY)
+      : 0)
   )[0]?.evidence ?? findings[0].evidence;
 }
 
@@ -304,7 +441,11 @@ function projectRecommendations(findings: FirstScanFinding[]): FirstScanRecommen
   const groups = recommendationGroups(findings).sort((left, right) =>
     SEVERITY_ORDER[left.representative.severity] - SEVERITY_ORDER[right.representative.severity]
     || EVIDENCE_ORDER[left.evidence.tier] - EVIDENCE_ORDER[right.evidence.tier]
-    || (right.evidence.calibration?.precision ?? -1) - (left.evidence.calibration?.precision ?? -1)
+    || (left.evidence.tier === 'legacy-calibrated'
+      && right.evidence.tier === 'legacy-calibrated'
+      ? (right.evidence.legacyMetrics?.precision ?? -1)
+        - (left.evidence.legacyMetrics?.precision ?? -1)
+      : 0)
     || Number(right.projectWide) - Number(left.projectWide)
     || right.affectedFileCount - left.affectedFileCount
     || Number(right.action.repairSafety === 'finding-bound')
@@ -338,7 +479,10 @@ export function projectFirstScan(
 ): FirstScanExperience {
   const activeIssues = report.issues.filter((issue) => (issue.severity as string) !== 'off');
   const status = scanStatus(report);
-  const projectedFindings = activeIssues.map((issue) => projectFinding(issue, options.cwd));
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const projectedFindings = activeIssues.map((issue) =>
+    projectFinding(issue, options.cwd, currentPolicy)
+  );
   const comparison = status === 'complete'
     && options.baselineState === 'loaded'
     && options.baseline

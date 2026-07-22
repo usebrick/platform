@@ -365,7 +365,9 @@ describe('formatSarif — additive first-scan contract', () => {
     };
 
     expect(log.runs[0]!.results[0]!.properties).not.toHaveProperty('firstScan');
+    expect(log.runs[0]!.results[0]!.properties).not.toHaveProperty('slopbrickEvidence');
     expect(log.runs[0]!.results[1]!.properties).toHaveProperty('firstScan');
+    expect(log.runs[0]!.results[1]!.properties).toHaveProperty('slopbrickEvidence');
   });
 
   it.each([

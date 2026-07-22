@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
+
 import {
   FIRST_SCAN_AREAS,
   FIRST_SCAN_AREA_BY_CATEGORY,
@@ -38,6 +45,11 @@ const CATEGORIES: Category[] = [
 const CATEGORY_SCORES = Object.fromEntries(
   CATEGORIES.map((category) => [category, 0]),
 ) as Record<Category, number>;
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 function issue(
   category: Category,
@@ -348,6 +360,7 @@ describe('first-scan public contract', () => {
   });
 
   it('projects the approved current authority without promoting historical metrics or unsafe repairs', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const signalStrength = {
       recall: 0.8,
       fpRate: 0.01,
@@ -411,7 +424,6 @@ describe('first-scan public contract', () => {
     }), {
       cwd: '/workspace',
       configHash: 'config-a',
-      currentPolicy: approvedCurrentPolicyFixture(),
     });
     const byRule = new Map(result.findings.map((finding) => [finding.ruleId, finding]));
 
@@ -469,10 +481,12 @@ describe('first-scan public contract', () => {
     'maps the %s policy copy contract to %s without claiming that the case is populated',
     (provenance, tier, claim) => {
       const ruleId = `contract/${provenance}`;
+      getCurrentEvidencePolicyAccessorsMock.mockReturnValue(
+        policyFixtureWithProvenance(ruleId, provenance),
+      );
       const result = projectFirstScan(report({ issues: [issue('logic', { ruleId })] }), {
         cwd: '/workspace',
         configHash: 'config-a',
-        currentPolicy: policyFixtureWithProvenance(ruleId, provenance),
       });
 
       expect(result.findings[0]?.evidence).toMatchObject({
@@ -745,8 +759,8 @@ describe('first-scan pretty renderer contract', () => {
           Why: Untrusted input reaches a sensitive operation.
           Action: manual review — Review input handling before release. No safe bounded repair is available.
         2. Code and Logic — logic/zipf-slope-anomaly [medium]
-          Evidence tier: legacy-calibrated; historical verdict USEFUL; historical precision 63.69%; last calibrated 2026-07-04.
-          Historical rule metrics only; not current policy evidence and not proof of who wrote the code.
+          Evidence tier: legacy-calibrated; historical verdict USEFUL; historical precision 63.69%; last calibrated
+          2026-07-04. Historical rule metrics only; not current policy evidence and not proof of who wrote the code.
           Reach: single-file; 1 finding across 1 file.
           Change: unchanged.
           Why: Identifier frequency differs from the measured baseline.

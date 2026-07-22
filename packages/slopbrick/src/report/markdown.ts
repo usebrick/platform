@@ -10,6 +10,7 @@ import {
   isNotApplicableScan,
 } from './scan-validity.js';
 import { formatFindingContext } from './finding-context.js';
+import { formatFirstScanFindingEvidence, matchesFirstScanFinding } from './first-scan.js';
 import type { Verdict } from '@usebrick/core';
 
 /**
@@ -68,16 +69,27 @@ interface RuleBucketEntry {
   count: number;
   contexts: string[];
   evidence: string[];
+  authorityEvidence: string[];
 }
 
-function bucketEntriesForIssues(issues: ProjectReport['issues']): {
+function bucketEntriesForIssues(
+  issues: ProjectReport['issues'],
+  firstScan: ProjectReport['firstScan'],
+): {
   grouped: Record<Bucket, RuleBucketEntry[]>;
   dist: Record<Bucket, number>;
 } {
   // Dedupe by ruleId — the spec shows one entry per rule ("Zombie State"),
   // not one entry per firing.
   const byRule = new Map<string, RuleBucketEntry>();
+  let firstScanCursor = 0;
   for (const issue of issues) {
+    const finding = firstScan?.status === 'complete'
+      ? firstScan.findings[firstScanCursor++]
+      : undefined;
+    const authorityEvidence = matchesFirstScanFinding(issue, finding)
+      ? formatFirstScanFindingEvidence(finding.evidence)
+      : undefined;
     const existing = byRule.get(issue.ruleId);
     if (existing) {
       existing.count++;
@@ -86,6 +98,9 @@ function bucketEntriesForIssues(issues: ProjectReport['issues']): {
       const evidence = formatIssueEvidence(issue.evidence);
       if (evidence && !existing.evidence.includes(evidence) && existing.evidence.length < 3) {
         existing.evidence.push(evidence);
+      }
+      if (authorityEvidence && !existing.authorityEvidence.includes(authorityEvidence)) {
+        existing.authorityEvidence.push(authorityEvidence);
       }
       continue;
     }
@@ -108,6 +123,7 @@ function bucketEntriesForIssues(issues: ProjectReport['issues']): {
       count: 1,
       contexts: [formatFindingContext(issue.filePath)],
       evidence: evidence ? [evidence] : [],
+      authorityEvidence: authorityEvidence ? [authorityEvidence] : [],
     });
   }
   const entries = Array.from(byRule.values());
@@ -123,6 +139,14 @@ function bucketEntriesForIssues(issues: ProjectReport['issues']): {
     dist[entry.bucket]++;
   }
   return { grouped, dist };
+}
+
+function findingEvidenceSuffix(entry: RuleBucketEntry): string {
+  const source = entry.evidence.length > 0 ? `; ${entry.evidence.join('; ')}` : '';
+  const authority = entry.authorityEvidence.length > 0
+    ? `; authority: ${entry.authorityEvidence.join('; ')}`
+    : '';
+  return `${source}${authority}`;
 }
 
 export function formatMarkdown(report: ProjectReport): string {
@@ -187,7 +211,10 @@ export function formatMarkdown(report: ProjectReport): string {
   lines.push('');
 
   // ----- 3-bucket grouping via bucketForVerdict() + bucketDistribution() -----
-  const { grouped, dist } = bucketEntriesForIssues(report.issues.filter((issue) => !isDefaultOffIssue(issue)));
+  const { grouped, dist } = bucketEntriesForIssues(
+    report.issues.filter((issue) => !isDefaultOffIssue(issue)),
+    report.firstScan,
+  );
 
   // AI Findings (USEFUL + OK → ai bucket)
   lines.push(`## AI Findings (${dist.ai})`);
@@ -197,7 +224,7 @@ export function formatMarkdown(report: ProjectReport): string {
     lines.push('');
   } else {
     for (const r of grouped.ai) {
-      const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+      const evidence = findingEvidenceSuffix(r);
       lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}; Confidence: ${confidenceLabel(r.precision)}${evidence})`);
     }
     lines.push('');
@@ -211,7 +238,7 @@ export function formatMarkdown(report: ProjectReport): string {
     lines.push('');
   } else {
     for (const r of grouped.hygiene) {
-      const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+      const evidence = findingEvidenceSuffix(r);
       lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}${evidence})`);
     }
     lines.push('');
@@ -236,7 +263,7 @@ export function formatMarkdown(report: ProjectReport): string {
       lines.push(`<details><summary>${entries.length} ${verdictLabel(verdict)}</summary>`);
       lines.push('');
       for (const r of entries) {
-        const evidence = r.evidence.length > 0 ? `; ${r.evidence.join('; ')}` : '';
+        const evidence = findingEvidenceSuffix(r);
         lines.push(`- ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}${evidence})`);
       }
       lines.push('');

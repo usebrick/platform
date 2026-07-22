@@ -2,7 +2,8 @@
 // Kept separate from ./sections so section renderers can import them
 // without dragging the section list with them.
 
-import type { Category, Issue, Severity } from '../../types';
+import type { Category, FirstScanFindingEvidence, Issue, Severity } from '../../types';
+import { formatFirstScanFindingEvidence } from '../first-scan.js';
 
 const categoryLabels: Record<Category, string> = {
   visual: 'Visual',
@@ -91,6 +92,11 @@ function renderSignalBadge(strength: Issue['signalStrength']): string {
   return ` <span class="${cls}" title="precision ${pct}% · recall ${recall}%">P${pct}/R${recall}</span>`;
 }
 
+function renderFirstScanEvidence(evidence: FirstScanFindingEvidence | undefined): string {
+  if (!evidence) return '';
+  return `<div class="policy-evidence"><strong>Evidence authority:</strong> ${escapeHtml(formatFirstScanFindingEvidence(evidence))}</div>`;
+}
+
 export {
   categoryLabels,
   severityOrder,
@@ -101,4 +107,5 @@ export {
   severityClass,
   thresholdStatusClass,
   renderSignalBadge,
+  renderFirstScanEvidence,
 };

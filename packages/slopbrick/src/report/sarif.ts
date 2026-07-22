@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { Category, Issue, IssueEvidence, ProjectReport, Severity } from '../types';
-import { normalizeFirstScanForSerialization } from './first-scan.js';
+import { matchesFirstScanFinding, normalizeFirstScanForSerialization } from './first-scan.js';
 import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 type FirstScanExperience = NonNullable<ProjectReport['firstScan']>;
@@ -80,6 +80,9 @@ interface SarifResultProperties {
    * same exact/omitted span semantics as JSON without parsing prose.
    */
   evidence?: IssueEvidence;
+  /** Current authority/provenance projection shared with first-scan JSON and
+   * human renderers. This remains distinct from exact source evidence. */
+  slopbrickEvidence?: FirstScanFinding['evidence'];
   firstScan?: SarifFirstScanResultProperties;
 }
 
@@ -317,6 +320,7 @@ function buildResultFromIssue(
   cwd: string | undefined,
   fileContentCache: Map<string, string>,
   firstScan?: SarifFirstScanResultProperties,
+  slopbrickEvidence?: FirstScanFinding['evidence'],
 ): SarifResult {
   const artifactUri = buildArtifactUri(issue.filePath, cwd);
   const fingerprint = computeFingerprint({
@@ -357,6 +361,7 @@ function buildResultFromIssue(
     category: issue.category,
     severity: issue.severity,
     ...(issue.evidence ? { evidence: issue.evidence } : {}),
+    ...(slopbrickEvidence ? { slopbrickEvidence } : {}),
     ...(firstScan ? { firstScan } : {}),
   };
 
@@ -388,14 +393,7 @@ function projectFirstScanResult(
   issue: Issue,
   finding: FirstScanFinding | undefined,
 ): SarifFirstScanResultProperties | undefined {
-  if (
-    !finding
-    || finding.ruleId !== issue.ruleId
-    || finding.location.line !== issue.line
-    || finding.location.column !== issue.column
-  ) {
-    return undefined;
-  }
+  if (!matchesFirstScanFinding(issue, finding)) return undefined;
   return {
     area: finding.area,
     evidenceTier: finding.evidence.tier,
@@ -440,11 +438,13 @@ export function formatSarif(
       finding = firstScan.findings[firstScanCursor];
       firstScanCursor += 1;
     }
+    const projectedFirstScan = projectFirstScanResult(issue, finding);
     return buildResultFromIssue(
       issue,
       options?.cwd,
       fileContentCache,
-      projectFirstScanResult(issue, finding),
+      projectedFirstScan,
+      projectedFirstScan ? finding?.evidence : undefined,
     );
   });
 

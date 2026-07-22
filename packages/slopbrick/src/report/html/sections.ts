@@ -21,6 +21,7 @@ import {
   severityClass,
   thresholdStatusClass,
   renderSignalBadge,
+  renderFirstScanEvidence,
 } from './utils.js';
 import { bucketForRule, isDefaultOffIssue, summarizeDefaultOffIssues } from '../buckets.js';
 import type { Bucket } from '../buckets.js';
@@ -28,6 +29,7 @@ import { getSignalStrength } from '../../rules/signal-strength.js';
 import { SCORE_BRIEFS, formatHeadlineScore } from '../score-contract.js';
 import { formatScanAccountingSummary, formatScanValidityNotice } from '../scan-validity.js';
 import { formatFindingContext } from '../finding-context.js';
+import { matchesFirstScanFinding } from '../first-scan.js';
 
 function renderHeader(report: ProjectReport): string {
   const counts = countBySeverity(report.issues);
@@ -544,8 +546,16 @@ function renderIssues(report: ProjectReport): string {
     )
     .join('');
 
+  let firstScanCursor = 0;
   const rows = report.issues
     .map((issue: Issue, index: number) => {
+      const finding = (issue.severity as string) !== 'off'
+        && report.firstScan?.status === 'complete'
+        ? report.firstScan.findings[firstScanCursor++]
+        : undefined;
+      const projectedEvidence = matchesFirstScanFinding(issue, finding)
+        ? finding.evidence
+        : undefined;
       const file = issue.filePath ?? '-';
       const adviceRow = issue.advice
         ? `
@@ -569,6 +579,7 @@ function renderIssues(report: ProjectReport): string {
         <td class="expand-advice ${issue.advice ? 'has-advice' : ''}" data-advice="${issue.advice ? index : ''}">
           ${escapeHtml(issue.message)}
           ${renderIssueEvidence(issue)}
+          ${renderFirstScanEvidence(projectedEvidence)}
           ${issue.advice ? '<span class="advice-hint"> (click for advice)</span>' : ''}
         </td>
       </tr>
