@@ -1,4 +1,13 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  constants,
+  existsSync,
+  linkSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -136,4 +145,42 @@ describe('privacy-safe local outcome event store', () => {
     expect(readError).toBeInstanceOf(OutcomeEventStoreError);
     expect((readError as Error).message).not.toContain(secret);
   });
+
+  it.runIf(process.platform !== 'win32' && constants.O_NOFOLLOW > 0)(
+    'refuses symlink paths and a hard-linked export alias without mutating targets',
+    () => {
+      const event: OutcomeEventV1 = {
+        version: OUTCOME_EVENT_VERSION_V1,
+        event: 'return-observed',
+        observedOn: '2026-07-22',
+        producerVersion: '0.45.0',
+        context: { framework: 'mixed', repositorySize: '101-500' },
+        window: 'within-7-days',
+      };
+      const storagePath = join(root, 'events-v1.jsonl');
+      appendOutcomeEventV1(storagePath, event);
+      const storageBytes = readFileSync(storagePath, 'utf8');
+
+      const linkedStore = join(root, 'linked-events.jsonl');
+      symlinkSync(storagePath, linkedStore);
+      expect(() => readOutcomeEventsV1(linkedStore)).toThrow(OutcomeEventStoreError);
+      expect(() => appendOutcomeEventV1(linkedStore, event)).toThrow(OutcomeEventStoreError);
+      expect(readFileSync(storagePath, 'utf8')).toBe(storageBytes);
+
+      const exportTarget = join(root, 'export-target.json');
+      const exportTargetBytes = 'owner-controlled-export-target\n';
+      writeFileSync(exportTarget, exportTargetBytes, 'utf8');
+      const linkedExport = join(root, 'linked-export.json');
+      symlinkSync(exportTarget, linkedExport);
+      expect(() => exportOutcomeEventsV1(storagePath, linkedExport))
+        .toThrow(OutcomeEventStoreError);
+      expect(readFileSync(exportTarget, 'utf8')).toBe(exportTargetBytes);
+
+      const hardLinkedExport = join(root, 'hard-linked-export.json');
+      linkSync(storagePath, hardLinkedExport);
+      expect(() => exportOutcomeEventsV1(storagePath, hardLinkedExport))
+        .toThrow(OutcomeEventStoreError);
+      expect(readFileSync(storagePath, 'utf8')).toBe(storageBytes);
+    },
+  );
 });
