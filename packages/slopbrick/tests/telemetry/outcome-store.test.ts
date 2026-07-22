@@ -5,11 +5,12 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -55,6 +56,10 @@ describe('privacy-safe local outcome event store', () => {
 
     expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
     expect(readFileSync(storagePath, 'utf8')).toBe(`${JSON.stringify(event)}\n`);
+    if (process.platform !== 'win32') {
+      expect(statSync(storagePath).mode & 0o777).toBe(0o600);
+      expect(statSync(dirname(storagePath)).mode & 0o777).toBe(0o700);
+    }
     expect(existsSync(join(root, '.slopbrick', 'flywheel'))).toBe(false);
   });
 
@@ -108,6 +113,10 @@ describe('privacy-safe local outcome event store', () => {
       events: [event],
     });
     expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+    if (process.platform !== 'win32') {
+      expect(statSync(exportPath).mode & 0o777).toBe(0o600);
+      expect(statSync(dirname(exportPath)).mode & 0o777).toBe(0o700);
+    }
 
     expect(deleteOutcomeEventsV1(storagePath)).toBe(true);
     expect(deleteOutcomeEventsV1(storagePath)).toBe(false);
