@@ -1,4 +1,5 @@
 import { builtinRules } from './builtins';
+import { getCurrentEvidencePolicyAccessors } from './current-evidence-policy-runtime';
 import type { Issue, Rule, RuleContext, ResolvedConfig } from '../types';
 
 export interface EnabledRule {
@@ -114,9 +115,12 @@ export class RuleRegistry {
       supportsRsc: config.supportsRsc,
       hotspotIssues,
     };
-    return this.getRules().map((rule) => ({
-      rule,
-      context: rule.create(context),
-    }));
+    const currentPolicy = getCurrentEvidencePolicyAccessors();
+    return this.getRules()
+      .filter((rule) => currentPolicy?.isRuleRunnable(rule.id, config.rules) ?? true)
+      .map((rule) => ({
+        rule,
+        context: rule.create(context),
+      }));
   }
 }
