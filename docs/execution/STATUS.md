@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 44
+**Index revision:** 45
 **Global status:** `advancing`
 
 ## Executive state
@@ -21,8 +21,8 @@ The applied 119-row policy remains non-admitting and public release authority
 remains separate. `GTM-001` is `ready` to prepare planning materials for 10–20
 consent-safe observed external sessions; completed sessions remain zero and
 outreach is false. `LABS-001` is `draft` for a bounded rendered-evidence
-benchmark. Neither plan is active, so company WIP remains `0/1`. No
-implementation plan is active, so implementation WIP is `0/2`.
+benchmark. Neither plan is active, so company WIP remains `0/1`. `TEL-001` is
+active, so implementation WIP is `1/2`.
 The deterministic router preserves every existing Mendeley and CAL-001 hash
 while failing closed for pending, reference-only, unregistered, malformed, or
 manually widened source dispositions. The local v0.45 trust-release
@@ -30,8 +30,10 @@ qualification is complete under `SB-045`; `REL-001` owns the separate npm and
 website decisions and consumes no WIP. Completed CAL-002 supplied the current
 quality/origin provenance contract consumed by completed `SB-UX-001`.
 `VAL-001` remains ready with its one owner-attested self-scan-to-rescan row
-preserved, and `TEL-001` is the next ready implementation plan. Revision 44
-closes all eight SB-UX tasks after the fresh 11-file focused matrix, package
+preserved, and `TEL-001` is the active implementation plan. Revision 45 starts
+its privacy-safe local outcome-event contract after a clean preflight and a
+test-fixture-only canonical-temp repair. Revision 44 closed all eight SB-UX
+tasks after the fresh 11-file focused matrix, package
 and recursive gates, 296/296-file no-baseline self-scan with zero failures,
 baseline non-mutation proof, and the owner's literal first-screen
 comprehension acceptance.
@@ -199,7 +201,8 @@ with zero failures, scores 99.94/100, reports four current medium deterministic
 findings, passes its policy gate, and creates no baseline. Fresh final review
 returned 100/100 with no findings; the focused security matrix passes 46/46
 with no reportable security finding at confidence 8/10 or higher. CAL-002 and
-SB-UX-001 are `done`, and implementation WIP is `0/2`. CAL-001 remains
+SB-UX-001 are `done`; `TEL-001` is active, and implementation WIP is `1/2`.
+CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
 remain unchanged.
 Local application remains separate from push, tag, admission, publication,
@@ -419,11 +422,11 @@ owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 0 | 2 | None |
+| Implementation | 1 | 2 | `TEL-001` |
 | Company | 0 | 1 | None |
 
 `SB-045`, `CAL-002`, and `SB-UX-001` are done. `VAL-001` is ready with
-RUN-001 preserved, and `TEL-001` is the next ready implementation plan.
+RUN-001 preserved, and `TEL-001` is the active implementation plan.
 `REL-001` and `DOC-PRUNE-001` are
 waiting external and consume no WIP. `GTM-001` is ready for planning materials
 only, targets 10–20 observed sessions, records zero completed sessions, and
@@ -443,7 +446,7 @@ WIP while waiting.
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `done` | — | Preserve the completed first-scan contract and hand its typed finding/action/change boundary to TEL-001. |
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
-| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | Model useful, declined, unchanged-rescan, and bounded-return states from SB-UX fields without sensitive identity. |
+| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `in_progress` | — | Model useful, declined, unchanged-rescan, and bounded-return states from SB-UX fields without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | — | Red-test one deterministic new-debt gate after explicitly starting the plan. |
 | 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
@@ -512,11 +515,13 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`SB-UX-001` is complete and implementation WIP is `0/2`. Revision 44 records
-its 11/11-file and 267/267-test focused matrix, green package and recursive
-gates, complete 296/296-file self-scan with zero failures, absent durable
-baseline before and after, and the owner's literal confirmation that the
-bounded first-screen UX is good enough. CAL-002 remains complete at the single
+`TEL-001` is active and implementation WIP is `1/2`. Revision 45 records its
+clean isolated worktree, green recursive lint and typecheck, green recursive
+build, and the 56-pass/2-skip CAL-002 CLI file after repairing only its macOS
+temporary-fixture canonicalization. Product path validation and symlink
+rejection remain unchanged. Revision 44 preserves SB-UX-001's completed
+first-scan evidence and the owner's literal confirmation that the bounded
+first-screen UX is good enough. CAL-002 remains complete at the single
 human-facing Task 20 application checkpoint
 `bd47dbd7e`. The exact 119-row policy is locally applied and non-admitting;
 its detailed matrix, approval, policy, and receipt identities remain
@@ -524,7 +529,9 @@ machine-verifiable rather than repeated in status prose. Protected owner state,
 frozen historical evidence, and CAL-001 remain unchanged.
 
 The separate quality and origin evidence lanes were consumed without being
-collapsed by `SB-UX-001`. `TEL-001` is the next ready implementation plan;
+collapsed by `SB-UX-001`. `TEL-001` now proceeds with the smallest versioned
+local event capable of representing useful, declined-no-safe-fix,
+unchanged-rescan, and bounded-return states without sensitive identity;
 `VAL-001` remains ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand

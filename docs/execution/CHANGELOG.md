@@ -3,6 +3,33 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 45 — 2026-07-22
+
+### Changed
+
+- Moved `TEL-001` from `ready` to `in_progress`, consuming one of two
+  implementation WIP slots.
+- Kept its first slice bounded to a versioned local outcome-event contract for
+  useful, declined-no-safe-fix, unchanged-rescan, and bounded-return states.
+- Repaired the CAL-002 catalog test fallback so macOS temporary directories are
+  canonicalized before they are passed to the production symlink guard.
+
+### Evidence
+
+- The isolated TEL worktree passes recursive lint and typecheck.
+- The recursive build passes. The complete CAL-002 CLI file passes 56 tests
+  with 2 intentional skips after the test-fixture repair.
+- The production external-source validator remains unchanged and continues to
+  reject paths with symbolic-link ancestors.
+
+### Boundary
+
+- This revision starts local TEL execution; it does not add an event writer,
+  outbound reporting, hosted ingestion, user tracking, calibration authority,
+  or public release authority.
+- The CAL-002 repair changes test-fixture construction only. No scanner,
+  scoring, policy, schema, admission, or runtime security behavior changes.
+
 ## Revision 44 — 2026-07-22
 
 ### Changed

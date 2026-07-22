@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 44,
+  "revision": 45,
   "updatedAt": "2026-07-22",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -254,7 +254,7 @@
       "track": "implementation",
       "lane": "telemetry",
       "horizon": "next",
-      "status": "ready",
+      "status": "in_progress",
       "priority": 8,
       "path": "docs/execution/plans/TEL-001-local-outcomes.md",
       "dependencies": {

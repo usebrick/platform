@@ -1,6 +1,6 @@
 # TEL-001 — Define privacy-safe local outcome events
 
-- **Status:** `ready`
+- **Status:** `in_progress`
 - **Priority:** 8
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
@@ -26,8 +26,8 @@ rescan. `SB-UX-001` is now complete and supplies the typed
 finding/action/change boundary this plan consumes.
 
 `CAL-002` has completed the separate 119-rule policy and provenance closeout.
-This plan remains `ready`; it neither consumes WIP nor waits for a rule-state,
-admission, release, or deployment change.
+This plan is now `in_progress` and consumes one implementation WIP slot. It
+does not wait for a rule-state, admission, release, or deployment change.
 Local outcome history and outbound reporting remain separate: outbound stays
 off by default and endpoint-gated, and this plan does not authorize hosted
 ingestion.
