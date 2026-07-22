@@ -1,14 +1,14 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-20
-**Index revision:** 35
+**Index revision:** 36
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 35 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 36 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -68,24 +68,46 @@ runtimes. Independent specification and code-quality review approved the
 lock/session-lock alias fix with no remaining findings. These gates are local
 code-path evidence only; they neither consume protected owner state nor grant
 release authority.
+
+Task 14 is integrated on main from `d7b11b70e` through `c13ce8f47`. It adds
+the closed 119-row matrix reducer, approval, unapplied/applied policy and
+application-receipt contracts, six CLI commands, four new schemas, schema-
+registry hardening, and immutable paired publication.
+
+The reducer independently validates exactly 41 evidence-ready deterministic
+rows: 32 starting plus nine transferred. Each row requires the five ordered
+protocol slots `alternate-syntax`, `baseline`, `comment-adjacent`,
+`near-miss`, and `regression-safe`. These are not semantic source families.
+
+The top-level and per-control binding is frozen to Corpus v1 source receipt
+SHA-256 `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+Durable rows contain no source text or path. Final paired publication is
+receipt-first and policy-commit-marker-last under shared session locks, with
+proof-limited rollback.
+
+The expanded Task 13/14 gate passes 198/198 on exact Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both. The bounded Node 24 full suite passes 4,485
+tests with 15 skipped. Independent final review approved specification and
+code quality with no findings.
+
 The approved v2 projection remains 47 starting quality + 26
 transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
 research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
-code action is Task 14's fail-closed exact 119-row v2 matrix, approval, and
-policy projection in `matrix-v2.ts` and `application-v2.ts`, four schemas, and
-CLI tests. The
+action is Task 15 Steps 1–3: integrated preflight, exact catalog replay, and
+presentation of the closed authority batch for an explicit owner choice. The
 repository owner is the only completed product tester; the recorded
 row judged a statistical hygiene recommendation useful for review, declined an
 immediate fix because no safe bounded repair followed from the evidence, and
 reproduced the unchanged findings. CAL-001 remains `applied: false` and
-`admitted: false`; revision 35 grants no authority to alter default state,
+`admitted: false`; revision 36 grants no authority to alter default state,
 score, source, baseline, admission, release, deployment, or published
 artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
-remains `applied: false` and `admitted: false`. Local application remains
+remains `applied: false` and `admitted: false`. Task 14 consumed no Task 15
+owner decision and created no live runtime policy. Local application remains
 separate from push, tag, publish, deploy, and release. This documentation
-revision records Task 13's bounded research-origin evidence and protected-lock
-hardening; it does not grant authority to change runtime code or policy, and
+revision records Task 14's reviewed code-path contracts; it does not grant
+authority to apply runtime policy, and
 remote state is outside the receipt. Stale-path cleanup is isolated behind
 exact owner approval and does not block local product work.
 
@@ -156,7 +178,8 @@ exact owner approval and does not block local product work.
 - CAL-002 progressive authority Tasks 1–8 are implementation-checkpointed
   through `e8e62b779`, Tasks 9–11 are checkpointed through `651f52d78`, Task
   12 is integrated at `473ceafc3`, and Task 13 is integrated on main at
-  `e956f7900`, `366246e5d`, and lock-hardening `8c8760783`.
+  `e956f7900`, `366246e5d`, and lock-hardening `8c8760783`. Task 14 is
+  integrated from `d7b11b70e` through `c13ce8f47`.
   Task 4's
   final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
@@ -170,9 +193,9 @@ exact owner approval and does not block local product work.
   declaration-ratio behavior, rejects the old line denominator, and passes 17
   focused tests. The integrated Tasks 6–8 matrix passes 51/51 on exact Node
   22.22.3 and 24.15.0 with typecheck on both. Task 9 adds exact three-rule
-  transferred-oracle coverage with positive, negative, adversarial, and five-
-  family controls; its exact focused matrix passes 53/53 on both runtimes with
-  typecheck on both. The approved comment control also corrects a real C-style-
+  transferred-oracle coverage with positive, negative, adversarial, and five
+  fixed control slots; its exact focused matrix passes 53/53 on both runtimes
+  with typecheck on both. The approved comment control also corrects a real C-style-
   cast comment false positive while preserving source offsets. Task 10 adds
   exact four-rule dead-code transfer coverage with the same closed case/control
   structure; its exact focused matrix passes 50/50 on both runtimes with
@@ -180,7 +203,7 @@ exact owner approval and does not block local product work.
   name and source plus actual JSX. Task 11 adds exact two-rule security
   transfer coverage and the canonical 41-row v2 reducer. Its strict receipt
   binds authority, frozen v1 starting evidence, implementation, fixture hashes,
-  and five Corpus-v1-bound real-source control families per row while storing
+  and five Corpus-v1-bound protocol slots per row while storing
   no source text or path. The approved comment control also corrects a real
   hardcoded-secret comment false positive without shifting issue lines. Its
   exact integrated matrix plus signal-strength guardrails passes 134/134 on
@@ -195,12 +218,13 @@ exact owner approval and does not block local product work.
   Task 13 application artifact or policy application was created; the proposed
   policy remains `applied: false`. Its three-file gate passes 76/76 on both
   exact runtimes with typecheck on both; protected lock/session-lock aliases
-  are independently approved with no remaining findings. These commits qualify
-  code paths, not live owner
-  decisions: this checkpoint grants no authority to create an authority
-  proposal, private cohort, durable quality/parity/supersession receipt,
-  runtime policy application, or admission artifact. Remote state is outside
-  the receipt.
+  are independently approved with no remaining findings. Task 14 closes the
+  matrix, policy-projection, approval, application-receipt, CLI, schema, and
+  immutable-publication code contracts. Its 198/198 two-runtime gate and
+  bounded 4,485-test Node 24 suite are green; final independent review has no
+  findings. These commits qualify code paths, not live owner decisions. This
+  checkpoint grants no authority to infer the Task 15 choice, apply runtime
+  policy, or admit evidence. Remote state is outside the receipt.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -291,7 +315,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection without application, admission, owner decision, durable receipt, or release action. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 15 Steps 1–3: integrated preflight, exact catalog replay, and the closed 26/4/3/7 authority proposal; stop for the literal owner choice. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -364,19 +388,20 @@ continue with another eligible source or a smaller honest corpus.
 authority Tasks 1–8 are approved through `e8e62b779`, Tasks 9–11 are
 checkpointed through `651f52d78`, Task 12 is integrated at `473ceafc3`, and
 Task 13 is integrated on main at `e956f7900`, `366246e5d`, and lock-hardening
-`8c8760783`. Its exact 32 canonical research-only rows retain frozen
-governing/replay binding, consume no v1 owner decision, contain no raw source
-or path, and have `runtimeOutcome: default-off`, `enabledByDefault: false`,
-`runnableByExplicitOptIn: true`, `scoreEligible: false`, `gateEligible: false`,
-and `admitted: false`. No Task 13 application artifact or policy application
-was created; the proposed policy remains `applied: false`. Next red-test/build
-Task 14's fail-closed exact 119-row v2 matrix, approval, and policy projection
-in `matrix-v2.ts` and
-`application-v2.ts`, four schemas, and CLI tests. Do not write a policy file
-under `src/rules`, consume an owner decision, create a durable receipt, apply
-policy, admit evidence, or take a release action. Its separate quality and
-origin evidence lanes remain the first-scan provenance closeout gate for
-SB-UX-001. `VAL-001` and
+`8c8760783`. Task 14 is integrated from `d7b11b70e` through `c13ce8f47` with
+its exact 119-row reducer, 41 deterministic evidence rows, five fixed named
+control slots, frozen source binding, and receipt-first/policy-last immutable
+publication contract independently approved.
+
+Run Task 15 Steps 1–3 next: recheck the integrated implementation and protected
+state, replay the exact catalog, and present the closed 26 transfer / 4 blocked
+/ 3 supersede / 7 retire authority batch. The owner must choose the full
+literal approval or rejection line; prior generic approvals do not count.
+
+The proposed policy remains `applied: false` and `admitted: false`. Stop at the
+owner choice; do not apply runtime policy, admit evidence, or take a release
+action. The separate quality and origin evidence lanes remain the first-scan
+provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand

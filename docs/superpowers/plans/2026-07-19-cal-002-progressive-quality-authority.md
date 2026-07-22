@@ -71,7 +71,7 @@
 - `packages/slopbrick/src/rules/ai/any-density.ts` — retains declaration-ratio semantics and quality-only wording; line-density coverage is explicitly rejected.
 - `packages/slopbrick/tests/calibration/fixtures/cal-002-parity-sql.ts`, `cal-002-parity-console.ts`, and `cal-002-parity-any.ts` — conflict-free path-free parity cases for the three replacement decisions.
 - `packages/slopbrick/tests/calibration/fixtures/cal-002-transfer-oracle-types.ts` — shared closed fixture and real-source-control contracts.
-- `packages/slopbrick/tests/calibration/fixtures/cal-002-transfer-oracle-cpp-rust.ts`, `cal-002-transfer-oracle-dead.ts`, and `cal-002-transfer-oracle-security.ts` — conflict-free positive, negative, adversarial, and five-family cases for the nine transfers.
+- `packages/slopbrick/tests/calibration/fixtures/cal-002-transfer-oracle-cpp-rust.ts`, `cal-002-transfer-oracle-dead.ts`, and `cal-002-transfer-oracle-security.ts` — conflict-free positive, negative, adversarial, and five fixed-slot cases for the nine transfers.
 - `packages/slopbrick/tests/calibration/fixtures/cal-002-transfer-oracle-cases.ts` — canonical aggregate over the three fixture groups, created only after their branches are integrated.
 - `packages/slopbrick/tests/helpers/public-rule-copy.ts` — TypeScript-AST extraction of `description`, `message`, and `advice` strings.
 - `packages/slopbrick/tests/rules/quality-authority-copy.test.ts` — doctrine guard over all 73 quality rows, `RULE_HINTS`, and generated catalog copy.
@@ -1188,7 +1188,7 @@ it.each(CAL002_CPP_RUST_TRANSFER_ORACLES)('$ruleId has closed oracle coverage', 
 });
 ```
 
-Add a fixture validator test rejecting source in a durable projection, absolute virtual paths, duplicate case IDs, duplicate control families, fewer than five controls, and a mismatched language extension.
+Add a fixture validator test rejecting source in a durable projection, absolute virtual paths, duplicate case IDs, duplicate control-slot IDs, fewer than five controls, and a mismatched language extension.
 
 - [ ] **Step 2: Run focused tests and confirm red**
 
@@ -1198,7 +1198,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-trans
 
 Expected: FAIL because the transfer fixture contract and cases do not exist.
 
-- [ ] **Step 3: Define the reusable fixture type and canonical five-family helper**
+- [ ] **Step 3: Define the reusable fixture type and canonical five-slot helper**
 
 ```ts
 export type CAL002TransferredOracleRuleId =
@@ -1320,7 +1320,7 @@ git add packages/slopbrick/tests/calibration/fixtures/cal-002-transfer-oracle-ty
 git commit -m "test(calibration): prove C++ and Rust transfers"
 ```
 
-Expected: three transferred rows have closed mutation and five-family controls; no detector or policy is activated by this test commit.
+Expected: three transferred rows have closed mutation and five fixed control slots; no detector or policy is activated by this test commit.
 
 ### Task 10: Add dead-code and unused-binding transferred oracle cases
 
@@ -1351,7 +1351,7 @@ it.each(CAL002_DEAD_TRANSFER_ORACLES)('$ruleId agrees with its declared oracle',
 });
 ```
 
-Also assert exactly four unique rule IDs, five distinct control families per rule, and no module-top-level `const` case is claimed as a positive for `unused-local`.
+Also assert exactly four unique rule IDs, the five fixed control slots in canonical order per rule, and no module-top-level `const` case is claimed as a positive for `unused-local`.
 
 - [ ] **Step 2: Run focused tests and confirm red**
 
@@ -1477,7 +1477,7 @@ it('combines 32 frozen starting rows with exactly nine transferred rows', () => 
 });
 ```
 
-Add failures for a failed oracle, missing transfer, unknown authority row, fewer than five families, a source hash mismatch, a v1 receipt with other than exactly 32 starting deterministic rows, and any transfer not marked evidence-ready.
+Add failures for a failed oracle, missing transfer, unknown authority row, fewer than five protocol slots, a source hash mismatch, a v1 receipt with other than exactly 32 starting deterministic rows, and any transfer not marked evidence-ready.
 
 - [ ] **Step 2: Run security/combined tests and confirm red**
 
@@ -1539,9 +1539,9 @@ export function buildCAL002OracleReceiptV2(input: BuildCAL002OracleReceiptV2Inpu
 }
 ```
 
-Every row stores declaration/reference, case result hashes, five control family/hash results, transfer flag, `passed|failed`, and failure codes; it stores no source text or path.
+Every row stores declaration/reference, case result hashes, five fixed control-slot/hash results, transfer flag, `passed|failed`, and failure codes; it stores no source text or path.
 
-In addition to fixture mutation controls, require five verified real-source controls from five distinct source families for each deterministic row. Accept them only through the existing Corpus v1 source-binding adapter, recompute each content hash before scanning, and derive `controlId` as `sha256(ruleId + '\0' + familyId + '\0' + contentSha256)`. Store only the `CAL002RealSourceControlV2` fields above. If a row lacks five reachable real-source families, emit `failed` with `real-source-control-shortage`; never substitute a fixture or infer a pass.
+In addition to fixture mutation controls, require five source-bound controls assigned to the exact `alternate-syntax`, `baseline`, `comment-adjacent`, `near-miss`, and `regression-safe` slots for each deterministic row. These are protocol slots, not claims about semantic source families. Accept them only through the existing Corpus v1 source-binding adapter, recompute each content hash before scanning, and derive `controlId` as `sha256(ruleId + '\0' + familyId + '\0' + contentSha256)`. Store only the `CAL002RealSourceControlV2` fields above. If a row lacks five reachable source-bound controls, emit `failed` with `real-source-control-shortage`; never substitute a fixture or infer a pass.
 
 - [ ] **Step 5: Run focused tests and commit**
 
@@ -1822,24 +1822,40 @@ Expected: exactly 32 research rows are represented, and no v1 state or v1 receip
 
 ### Task 14: Build the fail-closed v2 matrix, approval, and policy projection
 
+**Integrated:** main range `d7b11b70e..c13ce8f47`. Final independent review
+returned `SPEC APPROVED` and `CODE QUALITY APPROVED` with no findings. The
+expanded Task 13/14 gate passes 198/198 on exact Node 22.22.3 and 24.15.0;
+the bounded Node 24 full suite passes 4,485 tests with 15 skipped.
+
 **Files:**
+- Modify: `docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md`
 - Create: `packages/slopbrick/src/calibration/cal-002/matrix-v2.ts`
 - Create: `packages/slopbrick/src/calibration/cal-002/application-v2.ts`
+- Modify: `packages/slopbrick/src/calibration/cal-002/artifact-io.ts`
+- Modify: `packages/slopbrick/src/calibration/cal-002/oracles-v2.ts`
 - Create: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-final-matrix-v2.schema.json`
 - Create: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-matrix-approval-v2.schema.json`
 - Create: `packages/slopbrick/src/calibration/cal-002/schemas/slopbrick-rule-evidence-policy-v2.schema.json`
 - Create: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-application-receipt-v2.schema.json`
+- Modify: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-oracle-receipt-v2.schema.json`
+- Modify: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-origin-receipt-v2.schema.json`
 - Modify: `packages/slopbrick/src/calibration/cal-002/schemas/index.json`
 - Modify: `packages/slopbrick/scripts/cal/cal-002.ts`
 - Create: `packages/slopbrick/tests/calibration/cal-002-matrix-v2.test.ts`
 - Create: `packages/slopbrick/tests/calibration/cal-002-application-v2.test.ts`
+- Create: `packages/slopbrick/tests/calibration/cal-002-artifact-io.test.ts`
+- Modify: `packages/slopbrick/tests/calibration/cal-002-authority-session.test.ts`
 - Modify: `packages/slopbrick/tests/calibration/cal-002-cli.test.ts`
+- Modify: `packages/slopbrick/tests/calibration/cal-002-contracts.test.ts`
+- Modify: `packages/slopbrick/tests/calibration/cal-002-oracles-v2.test.ts`
+- Modify for full-suite qualification: `packages/slopbrick/tests/calibration/v103-admission-context.test.ts`
+- Modify for full-suite qualification: `packages/slopbrick/tests/engine/pool.test.ts`
 
 **Interfaces:**
 - Consumes: approved authority, 41-row oracle, 32-row quality disposition, 32-row origin, and three-row supersession receipts.
 - Produces: `buildCAL002FinalMatrixV2`, `buildCAL002MatrixApprovalV2`, `projectCAL002PolicyCandidateV2`, and `buildCAL002AppliedPolicyV2`.
 
-- [ ] **Step 1: Write the red 119-row merge tests**
+- [x] **Step 1: Write the red 119-row merge tests**
 
 ```ts
 it('reduces every authority class exactly once', () => {
@@ -1866,7 +1882,7 @@ it('reduces every authority class exactly once', () => {
 
 Add adversarial cases for each acceptance rejection: missing/duplicate row; quality row with `qualityDomain: none`; evidence for a non-ready row; unmeasured row with labels/Wilson fields; statistical default-on; AI association elevation; incomplete supersession; retired/superseded runnable; origin scoring; projection disagreement; stale catalog/authority/evidence hashes; and `admitted: true`.
 
-- [ ] **Step 2: Write the red runtime-effect projection tests**
+- [x] **Step 2: Write the red runtime-effect projection tests**
 
 ```ts
 it.each([
@@ -1886,7 +1902,7 @@ it.each([
 
 Also assert explicit opt-in never changes score/gate eligibility and policy JSON contains no copied `precision`, `recall`, `fpRate`, `ratio`, `verdict`, source text, path, repository ID, or reviewer identity.
 
-- [ ] **Step 3: Run matrix/application tests and confirm red**
+- [x] **Step 3: Run matrix/application tests and confirm red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matrix-v2.test.ts tests/calibration/cal-002-application-v2.test.ts tests/calibration/cal-002-cli.test.ts --maxWorkers=1 --minWorkers=1
@@ -1894,7 +1910,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matri
 
 Expected: FAIL because v2 matrix/application modules and commands are absent.
 
-- [ ] **Step 4: Implement the final row and deterministic reducer table**
+- [x] **Step 4: Implement the final row and deterministic reducer table**
 
 ```ts
 export interface CAL002FinalRowV2 {
@@ -1959,7 +1975,7 @@ return qualityDispositionRow(authority, requireQualityDisposition(ruleId));
 
 An oracle pass emits default-on, scoring/gating, and finding-bound-only repair. An oracle failure emits default-off, explicit diagnostic only, no score/gate, and no safe repair. Contextual outcome comes only from quality disposition. Statistical rows reject default-on.
 
-- [ ] **Step 5: Implement matrix approval and applied policy contracts**
+- [x] **Step 5: Implement matrix approval and applied policy contracts**
 
 ```ts
 export interface SlopbrickRuleEvidencePolicyRowV2 {
@@ -2026,9 +2042,9 @@ export interface CAL002ApplicationReceiptV2 {
 }
 ```
 
-`projectCAL002PolicyCandidateV2(matrix)` emits `applied: false` with no approval/application fields. `buildCAL002AppliedPolicyV2` requires an exact approved matrix receipt and application commit, preserves the candidate `policyRowsSha256`, emits `applied: true`, and creates `cal-002-application-receipt-v2`. Treat `SlopbrickRuleEvidencePolicyV2` as a discriminated union in implementation/schema: `applied: false` forbids approval/application fields; `applied: true` requires both. Both forms cover 119 canonical rows; a failed write leaves the destination byte-identical.
+`projectCAL002PolicyCandidateV2(matrix)` emits `applied: false` with no approval/application fields. `buildCAL002AppliedPolicyV2` requires an exact approved matrix receipt and application commit, preserves the candidate `policyRowsSha256`, emits `applied: true`, and creates `cal-002-application-receipt-v2`. Treat `SlopbrickRuleEvidencePolicyV2` as a discriminated union in implementation/schema: `applied: false` forbids approval/application fields; `applied: true` requires both. Both forms cover 119 canonical rows. Final paired publication writes and verifies the receipt first, then publishes the policy as the commit marker. Rollback may remove only the exact receipt the current locked writer proved it created.
 
-- [ ] **Step 6: Add v2 CLI commands**
+- [x] **Step 6: Add v2 CLI commands**
 
 ```text
 reduce-parity-v2 --authority --rule-id --migration-commit-ref --out
@@ -2039,9 +2055,9 @@ approve-matrix-v2 --matrix --out
 apply-v2 --matrix [--approval] --implementation-commit-ref --out --receipt-out [--dry-run]
 ```
 
-`approve-matrix-v2` accepts exactly `1 approve this exact 119-row matrix SHA` or `2 reject and name the failed row`. `apply-v2 --dry-run` writes only an unapplied candidate. Final apply requires approval and writes the applied policy plus receipt atomically.
+`approve-matrix-v2` accepts exactly `1 approve this exact 119-row matrix SHA` or `2 reject and name the failed row`. `apply-v2 --dry-run` writes only an unapplied candidate. Final apply requires approval, publishes the receipt first, and publishes the applied policy commit marker last under both destination session locks.
 
-- [ ] **Step 7: Run focused/v1 regression tests and commit**
+- [x] **Step 7: Run focused/v1 regression tests and commit**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matrix-v2.test.ts tests/calibration/cal-002-application-v2.test.ts tests/calibration/cal-002-cli.test.ts tests/calibration/cal-002-matrix.test.ts tests/calibration/cal-002-application.test.ts --maxWorkers=1 --minWorkers=1
@@ -2052,6 +2068,40 @@ git commit -m "feat(slopbrick): reduce progressive evidence policy"
 ```
 
 Expected: v2 and v1 reducers pass independently; no policy file is written to `src/rules` in this implementation task.
+
+Independent review expanded the authorized correction scope. The final
+Task 14 range staged only this complete implementation and qualification set:
+
+```bash
+git add \
+  docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md \
+  packages/slopbrick/scripts/cal/cal-002.ts \
+  packages/slopbrick/src/calibration/cal-002/application-v2.ts \
+  packages/slopbrick/src/calibration/cal-002/artifact-io.ts \
+  packages/slopbrick/src/calibration/cal-002/matrix-v2.ts \
+  packages/slopbrick/src/calibration/cal-002/oracles-v2.ts \
+  packages/slopbrick/src/calibration/cal-002/schemas/cal-002-application-receipt-v2.schema.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/cal-002-final-matrix-v2.schema.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/cal-002-matrix-approval-v2.schema.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/cal-002-oracle-receipt-v2.schema.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/cal-002-origin-receipt-v2.schema.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/index.json \
+  packages/slopbrick/src/calibration/cal-002/schemas/slopbrick-rule-evidence-policy-v2.schema.json \
+  packages/slopbrick/tests/calibration/cal-002-application-v2.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-artifact-io.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-authority-session.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-cli.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-contracts.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-matrix-v2.test.ts \
+  packages/slopbrick/tests/calibration/cal-002-oracles-v2.test.ts \
+  packages/slopbrick/tests/calibration/v103-admission-context.test.ts \
+  packages/slopbrick/tests/engine/pool.test.ts
+```
+
+The commits from `d7b11b70e` through `48f979648` close provenance, fsync,
+schema registration, exact fixture controls, failed-control preservation,
+observation enums, identifier syntax, and failure uniqueness. `c13ce8f47`
+stabilizes only the two full-suite qualification harnesses.
 
 ### Task 15: Generate immutable evidence and obtain exact owner approvals
 
@@ -2095,7 +2145,11 @@ corepack pnpm --filter slopbrick cal:complete -- catalog \
   --out docs/execution/evidence/artifacts/cal-002/catalog.json
 ```
 
-Expected: counts `119/47/72/40`, catalog SHA-256 `d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506`, `admitted: false`, and `applied: false`.
+Expected: counts `119/47/72/40`, catalog SHA-256
+`d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506`,
+canonical file SHA-256
+`6faeed123ee1414cc5a8ead873178e43fb23d46cab985d3254acbe9e3cf0e4d5`,
+mode 0600, 23,377 bytes, `admitted: false`, and `applied: false`.
 
 - [ ] **Step 3: Run the one closed authority batch decision**
 
@@ -2111,11 +2165,14 @@ corepack pnpm --filter slopbrick cal:complete -- classify-authority \
 The owner receives exactly:
 
 ```text
-1 approve this exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch
-2 reject this batch and keep CAL-002 runtime policy unchanged
+1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch
+2 reject the exact batch and leave runtime policy unchanged
 ```
 
-On `2`, stop this task. On `1`, verify the receipt binds the proposal, catalog, and protected prior-state SHA; then re-hash the v1 file and require byte identity.
+Require the complete literal decision line, not merely `1` or `2`. On the
+rejection line, stop this task. On the approval line, verify the receipt binds
+the proposal, catalog, and protected prior-state SHA; then re-hash the v1 file
+and require byte identity.
 
 - [ ] **Step 4: Emit the zero-label contextual/statistical disposition**
 
@@ -2155,7 +2212,7 @@ corepack pnpm --filter slopbrick cal:complete -- verify-supersession \
 
 Expected: SQL and console are `ported`; line-density `any` is `rejected-as-false-positive`; every receipt binds an actual migration commit and passed cases.
 
-- [ ] **Step 6: Execute all deterministic oracles and verified real-source controls**
+- [ ] **Step 6: Execute all deterministic oracles and fixed source-bound control slots**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- reduce-oracles-v2 \
@@ -2206,11 +2263,14 @@ corepack pnpm --filter slopbrick cal:complete -- approve-matrix-v2 \
 Present the matrix SHA, counts by runtime outcome and provenance, every failed/shortage oracle, all 32 unmeasured rows, four blocked rows, three replacements, and seven retirements. The owner receives exactly:
 
 ```text
-1 approve this exact 119-row matrix SHA for local application
-2 reject this matrix and return to the named row or evidence receipt
+1 approve this exact 119-row matrix SHA
+2 reject and name the failed row
 ```
 
-On `2`, stop before runtime integration. On `1`, record the literal choice and exact hashes in the CAL-002 evidence ledger.
+Require the complete literal decision line, not merely `1` or `2`. On the
+rejection line, stop before runtime integration. On the approval line, record
+the literal choice and exact hashes in the CAL-002 evidence ledger. Approval
+still authorizes no push, tag, publish, deploy, or release action.
 
 - [ ] **Step 10: Commit only named immutable evidence**
 
@@ -2894,7 +2954,7 @@ public release, historical rewrite, or protected-path change is authorized.
 | Assignment eligibility | Only evidence-ready rows; blocked/research/superseded/retired rows reject assignments. |
 | Zero-label honesty | 32 rows, zero labels, no Wilson interval, `not-requested-owner-capacity`, default-off and score/gate neutral. |
 | Optional cohort bound | Reach first, at most four IDs, 60 initial and 200 maximum labels per selected rule. |
-| Deterministic evidence | 41 explicit oracle rows; nine transfers have positive/negative/adversarial fixtures and five verified real-source family controls; failures close default-off. |
+| Deterministic evidence | Exactly 41 evidence-ready oracle rows: 32 starting plus nine transferred. The nine transfers have positive/negative/adversarial fixtures and five fixed source-bound protocol slots; failures close default-off. |
 | Supersession | Three exact replacement/parity/migration/disposition rows; SQL/console ported and line-density `any` rejected as false-positive coverage. |
 | Origin boundary | Exactly 32 research-only rows, internal association only, default-off, non-scoring, non-admitting. |
 | Runtime effects | Default-on quality may score/gate; explicit advisory/unmeasured/failed/insufficient/origin diagnostics never score; blocked/superseded/retired never run. |

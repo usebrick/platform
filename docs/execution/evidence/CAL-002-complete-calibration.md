@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-20
-- **State:** `in_progress` implementation checkpoint at revision 35
-- **Scope:** CAL-002 progressive authority Tasks 1–13. This receipt grants no
+- **State:** `in_progress` implementation checkpoint at revision 36
+- **Scope:** CAL-002 progressive authority Tasks 1–14. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -80,7 +80,7 @@
   use synthetic valid commit SHAs; no durable actual-commit parity or
   supersession receipt was written, and all old rule IDs remain runnable.
 - Task 9 is checkpointed at `33ea0d732`. It defines the reusable nine-ID
-  transferred-oracle fixture contract, exact five-family control ordering,
+  transferred-oracle fixture contract, exact five-slot control ordering,
   normalized language-path and unique-identity validation, and the source-
   free/path-free durable case projection. Complete cases for
   `cpp/c-style-cast`, `cpp/raw-new-delete`, and `rust/todo-macro` execute
@@ -93,7 +93,7 @@
 - Task 10 is checkpointed at `aeef2915a`. It adds complete real-execution
   cases for `dead/unreachable`, `dead/unused-import`, `dead/unused-local`, and
   `dead/unused-parameter`, including exact positive, negative, adversarial, and
-  five-family controls. The exact focused matrix passes 50/50 on Node 22.22.3
+  five fixed control slots. The exact focused matrix passes 50/50 on Node 22.22.3
   and 24.15.0 with package typecheck on both; 45 broader visitor assertions
   and signal-strength guardrails also pass. Its approved JSX control exposed
   and now guards a classic default `React` runtime-import false positive using
@@ -105,7 +105,7 @@
   completes the canonical nine-transfer aggregate, and adds the strict 32-
   starting + 9-transferred = 41-row v2 oracle reducer and schema. The reducer
   revalidates the frozen v1 receipt, exact authority transfers, fixture hashes,
-  source-binding receipt, and five real-source control families per row; it
+  source-binding receipt, and five source-bound protocol slots per row; it
   stores no raw source or path, preserves failed/default-off rows, and remains
   `admitted: false`. The approved comment control exposed and now guards a real
   hardcoded-secret comment false positive while preserving line offsets. The
@@ -139,11 +139,31 @@
   lock/session-lock alias fix with no remaining findings. The protected v1
   owner state remains an input only: no Task 13 action changes an owner
   decision, durable receipt, runtime policy, admission, or release state.
-- This checkpoint grants no authority to create an authority proposal, private
-  cohort, durable quality/parity/supersession or transfer-oracle receipt, apply
+- Task 14 is integrated on main from `d7b11b70e` through `c13ce8f47`. It adds
+  the closed 119-row matrix reducer, approval, unapplied/applied policy and
+  application-receipt contracts, six CLI commands, four new schemas, schema-
+  registry hardening, and immutable paired publication.
+- The reducer independently validates exactly 41 evidence-ready deterministic
+  rows: 32 starting plus nine transferred. Every row carries exactly five
+  ordered slots—`alternate-syntax`, `baseline`, `comment-adjacent`,
+  `near-miss`, and `regression-safe`. These are fixed protocol slots, not
+  semantic source families.
+- The oracle receipt binds its top-level and every control to frozen Corpus v1
+  source receipt SHA-256
+  `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+  Durable rows contain no raw source or path. Failed rows remain default-off;
+  passed rows require all declarations, observations, controls, and identities
+  to close independently.
+- Immutable final application publishes the receipt first and the applied
+  policy commit marker last under shared destination session locks. Rollback
+  is limited to a receipt the current locked writer proved it created. Task 14
+  exercises this contract only with temporary fixtures.
+- Independent final review approved both specification fidelity and code
+  quality with no Critical, Important, or Minor findings.
+- This checkpoint grants no authority to infer a Task 15 owner choice, apply
   runtime policy, activate a rule, admit evidence, or perform a release action.
-  Remote state is outside this receipt. Local application remains separate from
-  push, tag, publish, deploy, and release decisions.
+  Remote state is outside this receipt. Local application remains separate
+  from push, tag, publish, deploy, and release decisions.
 
 ## Revision-34 reproducible bounded gate
 
@@ -202,11 +222,45 @@ test "$(shasum -a 256 .slopbrick/calibration/cal-002/origin-state.json | awk '{p
 git diff --check
 ```
 
+## Revision-36 Task 14 qualification
+
+- The final Task 14 implementation range is `d7b11b70e..c13ce8f47`.
+- The expanded 13-file Task 13/14 regression gate passes 198/198 on exact Node
+  22.22.3 and exact Node 24.15.0.
+- SlopBrick typecheck passes on both exact runtimes.
+- The bounded Node 24 full suite passes 383 files with 5 skipped and 4,485
+  tests with 15 skipped.
+- Independent final review returned `SPEC APPROVED` and
+  `CODE QUALITY APPROVED`, with no findings at any severity.
+- The protected owner-state input remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+
+### Reproducible full-suite and typecheck commands
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run --maxWorkers=4 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+test "$(stat -f '%Lp %z' .slopbrick/calibration/cal-002/origin-state.json)" = "600 256"
+test "$(shasum -a 256 .slopbrick/calibration/cal-002/origin-state.json | awk '{print $1}')" = "07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd"
+git diff --check
+```
+
+The bounded worker count is part of the reproducible qualification command.
+Earlier unbounded full-suite attempts exposed only load-sensitive test-harness
+assumptions; their two bounded corrections are included in `c13ce8f47`.
+
 ## Next evidence
 
-The next implementation evidence is Task 14's fail-closed exact 119-row v2
-matrix, approval, and policy projection in `matrix-v2.ts` and
-`application-v2.ts`, four schemas, and CLI tests. Red-test/build the reducer
-without writing a policy file under `src/rules`, consuming an owner decision,
-creating a durable receipt, applying policy, admitting evidence, or taking a
-release action.
+Run Task 15 Steps 1–3 only: integrated preflight, exact catalog replay, and the
+closed authority-batch proposal. The next owner prompt must contain the exact
+proposal identity and only this menu:
+
+```text
+1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch
+2 reject the exact batch and leave runtime policy unchanged
+```
+
+Do not infer either choice from earlier approval. Stop at that owner decision
+before creating later Task 15 evidence. No policy application, admission,
+push, tag, publish, deployment, or release is authorized.

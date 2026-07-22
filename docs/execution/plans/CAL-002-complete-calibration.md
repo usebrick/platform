@@ -46,7 +46,34 @@ created no application artifact and did not apply policy; the proposed policy
 remains `applied: false`. Its three-file gate passes 76/76 on exact Node
 22.22.3 and 24.15.0 with SlopBrick typecheck on both. Independent specification
 and code-quality review approved the lock/session-lock alias fix with no
-remaining findings. Task 4 closes
+remaining findings.
+
+Task 14 is integrated on main from `d7b11b70e` through `c13ce8f47`. It
+implements the closed 119-row matrix, approval, unapplied/applied policy
+contracts, application receipt, strict schemas, six CLI commands, and
+immutable paired publication without creating a live policy.
+
+Task 14 independently validates exactly 41 evidence-ready deterministic rows:
+32 starting and nine transferred. Every row carries the five ordered protocol
+slots `alternate-syntax`, `baseline`, `comment-adjacent`, `near-miss`, and
+`regression-safe`; these are not semantic source families.
+
+The top-level and per-control binding is frozen to Corpus v1 receipt SHA-256
+`47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+Durable output stores no source text or path. Final application publication is
+receipt-first and policy-commit-marker-last under shared session locks, with
+proof-limited rollback.
+
+The expanded 13-file Task 13/14 gate passes 198/198 on exact Node 22.22.3 and
+24.15.0 with SlopBrick typecheck on both. A bounded Node 24 full-suite run
+passes 4,485 tests with 15 skipped. Independent final review approved the
+specification and code quality with no findings.
+
+Task 14 tests application only with temporary fixtures. It consumed no Task 15
+owner decision, wrote no live runtime policy, and admitted no evidence. The
+proposed policy remains `applied: false` and `admitted: false`.
+
+Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
 5 freezes fixed parity cases and receipt validators that require each
@@ -63,8 +90,9 @@ rule. Task 11 closes the two security fixtures, comment-masks hardcoded-secret
 scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
 writing a durable receipt or applying policy. Task 12 writes no durable
 receipt and applies no policy. Task 13 neither changes a v1 owner decision nor
-creates a durable receipt, applies policy, admits evidence, or grants release
-authority; remote state is outside its receipt.
+creates a durable receipt. Task 14 provides the code contract for later
+immutable evidence but creates no committed Task 15 authority, matrix, or
+application receipt. Remote state is outside this receipt.
 
 ## Scope
 
@@ -125,13 +153,16 @@ authority; remote state is outside its receipt.
 
 ## Verification
 
-Continue with the focused one-worker Task 14 five-file matrix/application,
-v1-compatibility, and CLI command. Before any later policy application, verify
-frozen identities, exact 119-row coverage, lane separation, non-admission, and
-the prescribed recursive and package-local self-scan gates. This Task 14
-implementation must not write a policy file under `src/rules`, consume an
-owner decision, create a durable receipt, apply policy, admit evidence, or take
-a release action.
+Continue with Task 15 Steps 1–3 only. Recheck the integrated implementation and
+protected input, replay the exact frozen 119-row catalog, then present the
+closed 26 transfer / 4 blocked / 3 supersede / 7 retire authority batch. Stop
+for the literal owner choice before creating its receipt or continuing to
+later Task 15 evidence.
+
+Before any later policy application, verify frozen identities, exact 119-row
+coverage, lane separation, non-admission, and the prescribed recursive and
+package-local self-scan gates. Do not infer an owner decision or take a push,
+tag, publish, deploy, or release action.
 
 ## Evidence destination
 
@@ -146,8 +177,14 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Red-test/build Task 14's fail-closed exact 119-row v2 matrix, approval, and
-policy projection in `matrix-v2.ts` and `application-v2.ts`, four schemas, and
-CLI tests. Do not write a policy file under `src/rules`, consume an owner
-decision, create a durable receipt, apply policy, admit evidence, or take a
-release action.
+Run Task 15 Steps 1–3: integrated preflight, exact catalog replay, and the
+closed authority-batch proposal. Present exactly these owner choices and do
+not translate generic approval into either one:
+
+```text
+1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch
+2 reject the exact batch and leave runtime policy unchanged
+```
+
+Stop after presenting the exact proposal identity and menu. Do not apply
+policy, admit evidence, push, tag, publish, deploy, or release.

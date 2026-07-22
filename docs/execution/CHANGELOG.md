@@ -3,6 +3,49 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 36 — 2026-07-20
+
+### Changed
+
+- Recorded Task 14 integration from `d7b11b70e` through `c13ce8f47`: the
+  closed 119-row matrix reducer, approval and application contracts, six CLI
+  commands, four new schemas, schema-registry hardening, and immutable receipt
+  publication are now on main.
+- Recorded exactly 41 evidence-ready deterministic rows: 32 starting plus nine
+  transferred. Each row requires the five fixed protocol slots
+  `alternate-syntax`, `baseline`, `comment-adjacent`, `near-miss`, and
+  `regression-safe`; those slots are not semantic source families.
+- Recorded top-level and per-control binding to frozen Corpus v1 source receipt
+  SHA-256 `47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac`.
+  Durable receipts contain no raw source or path.
+- Recorded receipt-first, policy-commit-marker-last paired publication with
+  immutable destinations, shared session locks, fsync, and proof-limited
+  rollback. Task 14 exercises only temporary fixtures and does not apply the
+  proposed policy.
+- Advanced CAL-002 to Task 15 Steps 1–3: integrated preflight, exact catalog
+  replay, and presentation of the closed 26 transfer / 4 blocked / 3
+  supersede / 7 retire authority batch for an explicit owner choice.
+
+### Evidence
+
+- Task 14 commit range: `d7b11b70e..c13ce8f47`.
+- The expanded 13-file Task 13/14 gate passes 198/198 on exact Node 22.22.3
+  and 24.15.0, with SlopBrick typecheck on both runtimes.
+- The bounded Node 24 full suite passes 383 files with 5 skipped and 4,485
+  tests with 15 skipped using `--maxWorkers=4 --minWorkers=1`.
+- Independent final review returned `SPEC APPROVED` and
+  `CODE QUALITY APPROVED`, with no Critical, Important, or Minor findings.
+- The protected owner-state input remains mode 0600, 256 bytes, and SHA-256
+  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
+
+### Boundary
+
+- `CAL-002` remains `in_progress`; implementation WIP remains `2/2` and
+  company WIP remains `0/1`.
+- The proposed policy remains `applied: false` and `admitted: false`. No Task
+  15 owner decision, policy application, admission, push, tag, publish,
+  deployment, or release is recorded or authorized.
+
 ## Revision 35 — 2026-07-20
 
 ### Changed

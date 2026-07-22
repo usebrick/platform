@@ -99,28 +99,41 @@ The catalog is deterministic at SHA-256
 `9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
 
 The quality-disposition, parity, and supersession receipt schemas were closed
-at `dd8360fba`, `b5bd09090`, and `66251c9fa`; this rejects malformed open
-shapes without producing a receipt or applying policy. Task 13 is integrated
-on main at `e956f7900` and `366246e5d`, with protected lock hardening at
-`8c8760783`; originating sidecar `34bf81fe1` / `fa5d452c5` is provenance only.
-It projects exactly 32 canonical `research-only` origin rows, binds frozen
-governing and replay identities, consumes no v1 owner-decision rows, stores no
-raw source or path, and gives every row `runtimeOutcome: default-off`,
-`enabledByDefault: false`, `runnableByExplicitOptIn: true`,
-`scoreEligible: false`, `gateEligible: false`, and `admitted: false`. Task 13
-created no application artifact and did not apply policy; the proposed policy
-remains `applied: false`. Its three-file gate passes 76/76 on exact Node
-22.22.3 and 24.15.0 with SlopBrick typecheck on both runtimes; revision 34's
-four-file 213/213 receipt remains preserved. Independent
-specification and code-quality review approved the lock/session-lock alias fix
-with no remaining findings. The next bounded slice is Task 14's fail-closed
-exact 119-row v2 matrix, approval, and policy projection. CAL-002 remains
-`in_progress` at implementation WIP `2/2`; the proposed policy remains
-`applied: false` and `admitted: false`. This checkpoint grants no authority to
-apply policy, admit evidence, or perform a release action. Remote state is
-outside this receipt;
-local application, if later authorized, remains separate from push, tag,
-publish, deploy, and release authority.
+at `dd8360fba`, `b5bd09090`, and `66251c9fa`. Task 13 is integrated on main at
+`e956f7900`, `366246e5d`, and lock hardening `8c8760783`; originating sidecar
+`34bf81fe1` / `fa5d452c5` is provenance only.
+
+Task 13 projects exactly 32 canonical `research-only` origin rows, binds frozen
+governing and replay identities, consumes no v1 owner-decision rows, and stores
+no raw source or path. Every row remains default-off, explicit-opt-in,
+score-neutral, gate-neutral, and non-admitting.
+
+Task 14 is integrated on main from `d7b11b70e` through `c13ce8f47`. It closes
+the fail-closed 119-row matrix, approval, unapplied/applied policy, application
+receipt, six CLI commands, strict schemas, and immutable publication contracts.
+
+The reducer independently checks all 41 evidence-ready deterministic rows—32
+starting plus nine transferred—against five fixed control slots:
+`alternate-syntax`, `baseline`, `comment-adjacent`, `near-miss`, and
+`regression-safe`. These are protocol slots, not semantic source families.
+
+Task 14 binds the top-level and per-control frozen Corpus v1 receipt SHA
+`47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac` and
+keeps durable receipts free of source text and paths. Application publication
+is receipt-first and policy-commit-marker-last, with proof-limited rollback.
+
+Its expanded Task 13/14 gate passes 198/198 on exact Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both. The bounded Node 24 full suite passes 4,485
+tests with 15 skipped; independent final review reports no findings.
+
+Task 14 created no committed Task 15 evidence, consumed no owner decision, and
+did not apply policy. CAL-002 remains `in_progress` at implementation WIP
+`2/2`; the proposed policy remains `applied: false` and `admitted: false`.
+
+The next bounded slice is Task 15 Steps 1–3: integrated preflight, exact frozen
+catalog replay, then presentation of the closed `26/4/3/7` authority batch for
+an explicit owner choice. Local application, if later authorized, remains
+separate from push, tag, publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -204,19 +217,17 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 35 grants no authority to alter default state,
+  `requires` edge. Revision 36 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–8 remain
-  checkpointed through `e8e62b779`, Tasks 9–11 through `651f52d78`, Task 12
-  at `473ceafc3`, and Task 13 on main at `e956f7900`, `366246e5d`, and
-  lock-hardening `8c8760783`. Next red-test/build only Task 14's fail-closed
-  exact 119-row v2 matrix, approval, and policy projection in `matrix-v2.ts`
-  and `application-v2.ts`, four schemas, and CLI tests. Do not write a policy
-  file under `src/rules`, consume an owner decision, create a durable receipt,
-  apply policy, admit evidence, or take a release action. `VAL-001` and
-  `TEL-001` remain ready; `REL-001` remains the unchanged separate
-  public-authority boundary.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–13 remain
+  checkpointed as recorded above, and Task 14 is integrated from `d7b11b70e`
+  through `c13ce8f47`. Run only Task 15 Steps 1–3: recheck integrated state and
+  frozen inputs, replay the exact catalog, and present the closed 26 transfer /
+  4 blocked / 3 supersede / 7 retire batch. Do not infer an owner choice, write
+  runtime policy, apply policy, admit evidence, or take a release action.
+  `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
+  separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract for useful finding, action or decline, rescan, and return outcomes,
   with export and deletion and no raw source or proprietary repository
