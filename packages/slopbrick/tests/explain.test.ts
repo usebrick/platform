@@ -9,6 +9,7 @@ import { explainRule, formatExplain } from '../src/cli/explain';
 import { buildRuleExplanation } from '../src/rules/explanation';
 import { loadHistoricalSignalStrength } from '../src/rules/signal-strength';
 import { DEFAULT_CONFIG } from '../src/config';
+import { bindExplicitRuleOverrides } from '../src/config/rule-override-provenance';
 import type { Rule } from '../src/types';
 import { approvedCurrentPolicyFixture } from './helpers/current-evidence-policy-v2';
 
@@ -241,6 +242,39 @@ describe('buildRuleExplanation', () => {
       configuredSeverity: 'high',
       defaultOff: true,
       policyState: 'current-non-runnable',
+    });
+  });
+
+  it('distinguishes inherited severity from explicit current-policy overrides', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const rule = {
+      ...fakeRule,
+      id: 'component/giant-component',
+      category: 'component' as const,
+    };
+    const explicitSeverityConfig = bindExplicitRuleOverrides({
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, [rule.id]: 'high' },
+    }, { [rule.id]: 'high' });
+    const explicitOffConfig = bindExplicitRuleOverrides({
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, [rule.id]: 'off' },
+    }, { [rule.id]: 'off' });
+
+    expect(buildRuleExplanation(rule, DEFAULT_CONFIG, {}).configuration).toMatchObject({
+      configuredSeverity: 'high',
+      defaultOff: true,
+      policyState: 'current-default-off',
+    });
+    expect(buildRuleExplanation(rule, explicitSeverityConfig, {}).configuration).toMatchObject({
+      configuredSeverity: 'high',
+      defaultOff: true,
+      policyState: 'current-explicit-diagnostic',
+    });
+    expect(buildRuleExplanation(rule, explicitOffConfig, {}).configuration).toMatchObject({
+      configuredSeverity: 'off',
+      defaultOff: true,
+      policyState: 'configured-off',
     });
   });
 
