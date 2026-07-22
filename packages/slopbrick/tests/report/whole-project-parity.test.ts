@@ -11,6 +11,7 @@ import { formatJson } from '../../src/report/json.js';
 import { formatMarkdown } from '../../src/report/markdown.js';
 import { formatPretty } from '../../src/report/pretty.js';
 import { formatSarif } from '../../src/report/sarif.js';
+import { getCurrentEvidencePolicyAccessors } from '../../src/rules/current-evidence-policy-runtime.js';
 import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types.js';
 
 const scoreBasis = {
@@ -135,6 +136,26 @@ describe('whole-project renderer parity', () => {
     const html = formatHtml(report);
     const pretty = formatPretty(report, { full: true });
     const compactPretty = formatPretty(report, { full: false });
+    const currentPolicy = getCurrentEvidencePolicyAccessors();
+    const expectedEvidenceTiers = currentPolicy === undefined
+      ? {
+          'layout/gap-monopoly': 'advisory',
+          'ai/compression-profile': 'advisory',
+        }
+      : {
+          'layout/gap-monopoly': 'quality-candidate-unmeasured',
+          'ai/compression-profile': 'internal-origin-association',
+        };
+
+    if (currentPolicy !== undefined) {
+      expect(currentPolicy.policy).toMatchObject({ applied: true, admitted: false });
+      expect(currentPolicy.getRuleEvidenceProvenance(projectFinding.ruleId)).toBe(
+        expectedEvidenceTiers[projectFinding.ruleId],
+      );
+      expect(currentPolicy.getRuleEvidenceProvenance(fileFinding.ruleId)).toBe(
+        expectedEvidenceTiers[fileFinding.ruleId],
+      );
+    }
 
     // Machine feeds retain the complete audit history, including project
     // findings and disabled findings, while preserving score precision.
@@ -171,7 +192,7 @@ describe('whole-project renderer parity', () => {
     expect(sarif.runs[0]!.tool.driver.properties?.firstScan.areas).toHaveLength(5);
     expect(sarif.runs[0]!.results[0]!.properties.firstScan).toMatchObject({
       area: 'visual-slop',
-      evidenceTier: 'advisory',
+      evidenceTier: expectedEvidenceTiers[projectFinding.ruleId],
       change: 'current',
       actionKind: 'manual-review',
       repairSafety: 'no-safe-repair',
@@ -179,7 +200,7 @@ describe('whole-project renderer parity', () => {
     expect(sarif.runs[0]!.results[1]!.properties).not.toHaveProperty('firstScan');
     expect(sarif.runs[0]!.results[2]!.properties.firstScan).toMatchObject({
       area: 'repository-coherence',
-      evidenceTier: 'advisory',
+      evidenceTier: expectedEvidenceTiers[fileFinding.ruleId],
       change: 'current',
     });
     expect(sarif.runs[0]!.results[3]!.properties).not.toHaveProperty('firstScan');

@@ -40,13 +40,10 @@ describe('stable scan exit-code contract', () => {
   it('returns 1 for a completed threshold policy breach', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
-    writeFileSync(join(dir, 'src', 'noisy.tsx'), `
-      export function Component() {
-        console.log('a'); console.log('b'); console.log('c');
-        console.log('d'); console.log('e'); console.log('f');
-        return <div />;
-      }
-    `);
+    writeFileSync(
+      join(dir, 'src', 'noisy.ts'),
+      'export const accessKey = "AKIAIOSFODNN7EXAMPLE";\n',
+    );
     writeFileSync(
       join(dir, 'slopbrick.config.cjs'),
       'module.exports = { thresholds: { meanSlop: 0, p90Slop: 0, individualSlopThreshold: 0 } };\n',

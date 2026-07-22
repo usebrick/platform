@@ -34,11 +34,7 @@ describe('large JSON scan output', () => {
     }
     writeFileSync(
       join(srcDir, 'noisy.tsx'),
-      `export function Component() {
-        console.log('a'); console.log('b'); console.log('c');
-        console.log('d'); console.log('e'); console.log('f');
-        return <div />;
-      }\n`,
+      'export const accessKey = "AKIAIOSFODNN7EXAMPLE";\n',
     );
     writeFileSync(
       join(dir, 'slopbrick.config.cjs'),

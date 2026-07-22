@@ -40,13 +40,15 @@ function issue(
 function matrixIssues(kind: MatrixKind, includeAudit = false): Issue[] {
   const issues: Issue[] = [];
   if (kind === 'ai-only' || kind === 'mixed') {
-    issues.push(issue('ai/compression-profile', 'ai', true));
+    issues.push(issue('cpp/c-style-cast', 'typo', true, 'low'));
   }
   if (kind === 'hygiene-only' || kind === 'mixed') {
-    issues.push(issue('logic/long-method', 'logic', false));
+    issues.push(issue('context/import-path-mismatch', 'logic', false, 'medium'));
   }
   if (kind === 'backend-only' || kind === 'mixed') {
-    issues.push(issue('db/sql-concat', 'db', false));
+    // Keep the score-contract fixture's diagnostic-only DB projection without
+    // selecting the superseded db/sql-concat tombstone or a security-prefix rule.
+    issues.push(issue('cpp/raw-new-delete', 'db', false));
   }
   if (includeAudit) {
     issues.push(issue('dup/identical-block', 'logic', true, 'high'));
@@ -55,21 +57,9 @@ function matrixIssues(kind: MatrixKind, includeAudit = false): Issue[] {
   return issues;
 }
 
-function matrixConfig(kind: MatrixKind) {
-  if (kind === 'ai-only' || kind === 'mixed') {
-    // The compression signal is calibration-only in v0.45 and therefore
-    // requires an explicit opt-in in synthetic score fixtures.
-    return {
-      ...DEFAULT_CONFIG,
-      rules: { ...DEFAULT_CONFIG.rules, 'ai/compression-profile': 'high' as const },
-    };
-  }
-  return DEFAULT_CONFIG;
-}
-
 function assemble(kind: MatrixKind, includeAudit = false): ProjectReport {
   const allIssues = matrixIssues(kind, includeAudit);
-  const config = matrixConfig(kind);
+  const config = DEFAULT_CONFIG;
   const result: FileScanResult = {
     filePath: 'src/example.ts',
     componentCount: 0,
@@ -175,7 +165,7 @@ describe('Gate 1 canonical score matrix', () => {
     expect(mixed.repositoryHealth).toBeLessThanOrEqual(base.repositoryHealth);
 
     const reversed = matrixIssues('mixed').reverse();
-    const config = matrixConfig('mixed');
+    const config = DEFAULT_CONFIG;
     const effective = effectiveIssuesForScore(reversed, config);
     const score = scoreFile(
       { filePath: 'src/example.ts', componentCount: 0, issues: effective },

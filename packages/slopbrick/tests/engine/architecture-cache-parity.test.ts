@@ -5,6 +5,12 @@ import { join } from 'node:path';
 
 const extractFactsCalls = vi.hoisted(() => vi.fn());
 
+// Keep this test on the positive cache/worker fact-parity path. Current-policy
+// score eligibility is covered separately by architecture-score.test.ts.
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: () => undefined,
+}));
+
 vi.mock('../../src/engine/visitor.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/engine/visitor.js')>();
   return {

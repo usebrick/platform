@@ -39,7 +39,7 @@ describe('selfScan selection policy', () => {
     const scoredFile = join(dir, 'src', 'scored.ts');
     writeFileSync(
       scoredFile,
-      `${Array.from({ length: 5 }, (_, index) => `console.log(${index});`).join('\n')}\n`,
+      'const query = `SELECT * FROM users WHERE id = ${userId}`;\n',
     );
     writeFileSync(join(dir, 'src', 'meta', 'fixture-a.ts'), 'export const fixtureA = true;\n');
     writeFileSync(join(dir, 'src', 'meta', 'fixture-b.ts'), 'export const fixtureB = true;\n');
@@ -56,7 +56,7 @@ describe('selfScan selection policy', () => {
       workspace: dir,
       quiet: true,
       telemetry: false,
-      includeRules: ['logic/math-console-log-storm'],
+      includeRules: ['security/sql-construction'],
     };
     const direct = await runScan(options, [scoredFile]);
     const discovered = await runScan(options);
@@ -188,7 +188,7 @@ describe('selfScan selection policy', () => {
 
     writeFileSync(
       scoredFile,
-      `${Array.from({ length: 5 }, (_, index) => `console.log(${index});`).join('\n')}\n`,
+      'const query = `SELECT * FROM users WHERE id = ${userId}`;\n',
     );
     execFileSync('git', ['add', 'src/scored.ts'], { cwd: dir, stdio: 'ignore' });
     execFileSync(
@@ -225,7 +225,7 @@ describe('selfScan selection policy', () => {
       quiet: true,
       telemetry: false,
       since: baseRef,
-      includeRules: ['logic/math-console-log-storm'],
+      includeRules: ['security/sql-construction'],
     });
 
     expect(result.baseline).toBeDefined();

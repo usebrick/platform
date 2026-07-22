@@ -4,12 +4,37 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { getCurrentEvidencePolicyAccessors } from '../../src/rules/current-evidence-policy-runtime';
 
 const execFileAsync = promisify(execFile);
 
 const BIN = join(process.cwd(), 'bin', 'slopbrick.js');
 
 const SNAPSHOT_DIR = join(process.cwd(), 'tests', 'snapshots');
+
+const MATH_DEFAULT_FONT_RULE_ID = 'visual/math-default-font';
+const INACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK = [
+  'Rule status: configured-severity (configuration and current-policy projection)',
+  'Current policy:',
+  '  Status: unavailable',
+  '  Detail: legacy defaults only',
+].join('\n');
+const ACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK = [
+  'Rule status: current-default-off (configuration and current-policy projection)',
+  'Current policy:',
+  '  Status: applied',
+  '  Runtime outcome: default-off',
+  '  Enabled by default: no',
+  '  Runnable by explicit opt-in: yes',
+  '  Score eligible: no',
+  '  Gate eligible: no',
+  '  Quality domain: none',
+  '  Claim class: no-valid-quality-claim',
+  '  Readiness: research-only',
+  '  Repair safety: not-applicable',
+  '  Provenance: internal-origin-association',
+  '  Admitted: no',
+].join('\n');
 
 function createTmp(): string {
   return mkdtempSync(join(tmpdir(), 'slopbrick-snap-'));
@@ -54,14 +79,41 @@ function assertSnapshot(name: string, actual: string): void {
   }
 }
 
+function normalizeMathDefaultFontPolicyState(actual: string): string {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  if (currentPolicy === undefined) {
+    expect(actual).toContain(INACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK);
+    return actual;
+  }
+
+  expect(currentPolicy.policy).toMatchObject({ applied: true, admitted: false });
+  expect(currentPolicy.getCurrentRulePolicy(MATH_DEFAULT_FONT_RULE_ID)).toMatchObject({
+    runtimeOutcome: 'default-off',
+    enabledByDefault: false,
+    runnableByExplicitOptIn: true,
+    scoreEligible: false,
+    gateEligible: false,
+    qualityDomain: 'none',
+    claimClass: 'no-valid-quality-claim',
+    readiness: 'research-only',
+    repairSafety: 'not-applicable',
+    provenance: 'internal-origin-association',
+  });
+  expect(actual.split(ACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK)).toHaveLength(2);
+  return actual.replace(
+    ACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK,
+    INACTIVE_MATH_DEFAULT_FONT_POLICY_BLOCK,
+  );
+}
+
 describe('CLI snapshot tests (round 24)', () => {
   describe('slopbrick explain', () => {
-    it('produces a stable output for a known rule (round 24)', async () => {
+    it('produces stable inactive and active-policy output for a known rule (round 24)', async () => {
       const dir = createTmp();
       try {
-        const { stdout, exitCode } = await runBin(['explain', 'visual/math-default-font'], dir);
+        const { stdout, exitCode } = await runBin(['explain', MATH_DEFAULT_FONT_RULE_ID], dir);
         expect(exitCode).toBe(0);
-        assertSnapshot('explain-math-default-font', stdout);
+        assertSnapshot('explain-math-default-font', normalizeMathDefaultFontPolicyState(stdout));
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

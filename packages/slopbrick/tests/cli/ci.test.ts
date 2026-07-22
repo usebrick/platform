@@ -59,7 +59,7 @@ describe('ci gates the current scan outcome', () => {
 
     writeFileSync(
       join(dir, 'src', 'new.tsx'),
-      'export const New = () => <div className="p-[13px] m-[9px] gap-[7px]" />;\n',
+      'export const accessKey = "AKIAIOSFODNN7EXAMPLE";\n',
     );
     const result = await run([
       'ci', '--workspace', dir, '--max-new-issues', '0', '--format', 'json', '--threads', '1',
@@ -124,11 +124,14 @@ describe('ci gates the current scan outcome', () => {
   });
 
   it('keeps JSON completion status available when the scan fails its threshold', async () => {
-    const dir = workspace('```ts\nexport const value = 1;\n```\n');
+    const dir = workspace('export const accessKey = "AKIAIOSFODNN7EXAMPLE";\n');
     // The canonical AI score is additive across files. Keep two independent
-    // leakage findings so the max-slop=1 gate remains deterministically red
+    // hardcoded-secret findings so the max-slop=1 gate remains deterministically red
     // without depending on the former file-count dilution formula.
-    writeFileSync(join(dir, 'src', 'second-value.ts'), '```ts\nexport const secondValue = 2;\n```\n');
+    writeFileSync(
+      join(dir, 'src', 'second-value.ts'),
+      'export const secondAccessKey = "AKIAIOSFODNN7EXAMPLE";\n',
+    );
     const result = await run(['ci', '--workspace', dir, '--max-slop', '1', '--format', 'json']);
     expect(result.exitCode).toBe(1);
     const report = JSON.parse(result.stdout) as Record<string, unknown>;

@@ -209,7 +209,7 @@ describe('first-scan projection in the real scan pipeline', () => {
         ),
       );
     }
-    expect(firstPretty.stdout).toContain('No safe bounded repair is available.');
+    expect(firstPretty.stdout).toMatch(/No safe bounded repair is\s+available\./u);
     expect(firstPretty.stdout).not.toContain('Full report');
 
     const baselineRun = await runPackageCli([...scanArgs, '--baseline'], workspace);

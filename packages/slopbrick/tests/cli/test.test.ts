@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
@@ -24,6 +24,31 @@ import type { ResolvedConfig } from '../../src/types';
 
 const execFileAsync = promisify(execFile);
 const BIN = join(process.cwd(), 'bin', 'slopbrick.js');
+const CURRENT_POLICY_PATH = join(__dirname, '../../src/rules/current-evidence-policy.json');
+
+const DUPLICATE_SETUP_FIXTURE = `
+describe('a', () => {
+  beforeEach(() => {
+    const utils = setup();
+    const view = render(<App />);
+    view.attach(utils);
+  });
+});
+describe('b', () => {
+  beforeEach(() => {
+    const utils = setup();
+    const view = render(<App />);
+    view.attach(utils);
+  });
+});
+describe('c', () => {
+  beforeEach(() => {
+    const utils = setup();
+    const view = render(<App />);
+    view.attach(utils);
+  });
+});
+`;
 
 beforeEach(() => {
   getCurrentEvidencePolicyAccessorsMock.mockReset();
@@ -39,6 +64,29 @@ function writeFile(dir: string, rel: string, content: string): string {
   mkdirSync(join(full, '..'), { recursive: true });
   writeFileSync(full, content, 'utf-8');
   return full;
+}
+
+function writeDuplicateSetupCliFixture(dir: string): void {
+  writeFile(dir, 'src/foo.test.tsx', DUPLICATE_SETUP_FIXTURE);
+  writeFile(
+    dir,
+    'slopbrick.config.mjs',
+    `export default {
+      include: ['src/**/*'],
+      exclude: [],
+      rules: { 'test/duplicate-setup': 'medium' },
+    };`,
+  );
+}
+
+function currentPolicyEligibility(
+  ruleId: string,
+): { scoreEligible: boolean; gateEligible: boolean } | undefined {
+  if (!existsSync(CURRENT_POLICY_PATH)) return undefined;
+  const policy = JSON.parse(readFileSync(CURRENT_POLICY_PATH, 'utf8')) as {
+    rows: Array<{ ruleId: string; scoreEligible: boolean; gateEligible: boolean }>;
+  };
+  return policy.rows.find((row) => row.ruleId === ruleId);
 }
 
 function configWith(): ResolvedConfig {
@@ -286,31 +334,34 @@ describe('slopbrick test (CLI)', () => {
   it('exits 0 with issues when --strict is not set', async () => {
     const dir = freshDir();
     try {
-      writeFile(
-        dir,
-        'src/foo.test.tsx',
-        `it('a', () => { const x = 1; expect(x).toBeDefined(); });`,
-      );
-      writeFile(dir, 'slopbrick.config.mjs', `export default { include: ['src/**/*'], exclude: [] };`);
+      writeDuplicateSetupCliFixture(dir);
       const { exitCode, stdout } = await runBin(['test'], dir);
       expect(exitCode).toBe(0);
-      expect(stdout).toContain('Weak assertion');
+      expect(stdout).toContain('test/duplicate-setup');
+      expect(stdout).toContain('Duplicate beforeEach block');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('exits 1 with --strict when issues exist', async () => {
+  it('maps --strict to the current gate eligibility of a visible diagnostic', async () => {
     const dir = freshDir();
     try {
-      writeFile(
-        dir,
-        'src/foo.test.tsx',
-        `it('a', () => { const x = 1; expect(x).toBeDefined(); });`,
-      );
-      writeFile(dir, 'slopbrick.config.mjs', `export default { include: ['src/**/*'], exclude: [] };`);
-      const { exitCode } = await runBin(['test', '--strict'], dir);
-      expect(exitCode).toBe(1);
+      writeDuplicateSetupCliFixture(dir);
+      const { exitCode, stdout } = await runBin(['test', '--strict', '--format', 'json'], dir);
+      const parsed = JSON.parse(stdout) as {
+        totalIssues: number;
+        passed: boolean;
+        issues: Array<{ ruleId: string }>;
+      };
+      const gateEligible = currentPolicyEligibility('test/duplicate-setup')?.gateEligible ?? true;
+
+      expect(parsed.totalIssues).toBeGreaterThan(0);
+      expect(parsed.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'test/duplicate-setup' }),
+      ]));
+      expect(parsed.passed).toBe(!gateEligible);
+      expect(exitCode).toBe(gateEligible ? 1 : 0);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -319,22 +370,29 @@ describe('slopbrick test (CLI)', () => {
   it('emits JSON output with --format json', async () => {
     const dir = freshDir();
     try {
-      writeFile(
-        dir,
-        'src/foo.test.tsx',
-        `it('a', () => { const x = 1; expect(x).toBeDefined(); });`,
-      );
-      writeFile(dir, 'slopbrick.config.mjs', `export default { include: ['src/**/*'], exclude: [] };`);
+      writeDuplicateSetupCliFixture(dir);
       const { exitCode, stdout } = await runBin(['test', '--format', 'json'], dir);
       expect(exitCode).toBe(0);
       const parsed = JSON.parse(stdout) as {
         testQuality: number;
         totalIssues: number;
         byRule: Record<string, number>;
+        issues: Array<{ ruleId: string }>;
       };
+      const scoreEligible = currentPolicyEligibility('test/duplicate-setup')?.scoreEligible ?? true;
+
       expect(parsed.testQuality).toBeGreaterThanOrEqual(0);
       expect(parsed.testQuality).toBeLessThanOrEqual(100);
-      expect(parsed.byRule['test/weak-assertion']).toBeGreaterThanOrEqual(1);
+      expect(parsed.totalIssues).toBeGreaterThan(0);
+      expect(parsed.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'test/duplicate-setup' }),
+      ]));
+      if (scoreEligible) {
+        expect(parsed.byRule['test/duplicate-setup']).toBeGreaterThanOrEqual(1);
+      } else {
+        expect(parsed.testQuality).toBe(100);
+        expect(parsed.byRule['test/duplicate-setup']).toBeUndefined();
+      }
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

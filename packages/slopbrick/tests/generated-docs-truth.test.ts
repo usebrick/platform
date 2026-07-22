@@ -16,6 +16,7 @@ import { generateRuleCatalogOutput } from '../scripts/generate-rule-catalog';
 import { canonicalAuthorityRowsV2 } from '../src/calibration/cal-002/authority';
 import { canonicalArtifact } from '../src/calibration/cal-002/contracts';
 import { builtinRules } from '../src/rules/builtins';
+import { getCurrentEvidencePolicyAccessors } from '../src/rules/current-evidence-policy-runtime';
 import {
   assertQualityCopy,
   collectGeneratedCatalogCopy,
@@ -133,26 +134,27 @@ describe('generated documentation truth', () => {
     );
     const signalBytes = readFileSync(SIGNAL_STRENGTH_PATH);
     const relativePolicyPath = relative(REPOSITORY_ROOT, policyPath);
+    const currentPolicyIsActive = getCurrentEvidencePolicyAccessors() !== undefined;
+    const expectedStatus = currentPolicyIsActive ? 0 : 1;
+    const expectedMessage = currentPolicyIsActive
+      ? /docs\/rule-catalog\.md is in sync \(119 rule\(s\)\)/u
+      : /out of sync with src\/rules\/ and the selected current policy projection/u;
 
     const relativeResult = runCatalogPackageScript([
       '--policy',
       relativePolicyPath,
       '--check',
     ]);
-    expect(relativeResult.status).toBe(1);
-    expect(processOutput(relativeResult)).toMatch(
-      /out of sync with src\/rules\/ and the selected current policy projection/u,
-    );
+    expect(relativeResult.status).toBe(expectedStatus);
+    expect(processOutput(relativeResult)).toMatch(expectedMessage);
 
     const absoluteResult = runCatalogPackageScript([
       '--policy',
       policyPath,
       '--check',
     ]);
-    expect(absoluteResult.status).toBe(1);
-    expect(processOutput(absoluteResult)).toMatch(
-      /out of sync with src\/rules\/ and the selected current policy projection/u,
-    );
+    expect(absoluteResult.status).toBe(expectedStatus);
+    expect(processOutput(absoluteResult)).toMatch(expectedMessage);
     expect(readFileSync(SIGNAL_STRENGTH_PATH)).toEqual(signalBytes);
   });
 

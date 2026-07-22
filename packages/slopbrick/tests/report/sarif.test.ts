@@ -325,9 +325,12 @@ describe('formatSarif — additive first-scan contract', () => {
     expect(driver.properties.firstScan.areas).toHaveLength(5);
     expect(driver.properties.firstScan).not.toHaveProperty('findings');
     expect(driver.properties.firstScan).not.toHaveProperty('recommendedActions');
+    const firstScanByRuleId = new Map(
+      input.firstScan.findings.map((finding) => [finding.ruleId, finding]),
+    );
     expect(results[0]!.properties.firstScan).toEqual({
       area: 'code-and-logic',
-      evidenceTier: 'deterministic',
+      evidenceTier: firstScanByRuleId.get(sampleIssue.ruleId)!.evidence.tier,
       change: 'new',
       actionKind: 'manual-review',
       repairSafety: 'no-safe-repair',
@@ -335,12 +338,12 @@ describe('formatSarif — additive first-scan contract', () => {
     expect(results[1]!.properties).not.toHaveProperty('firstScan');
     expect(results[2]!.properties.firstScan).toMatchObject({
       area: 'repository-coherence',
-      evidenceTier: 'legacy-calibrated',
+      evidenceTier: firstScanByRuleId.get(calibratedIssue.ruleId)!.evidence.tier,
       change: 'unchanged',
     });
     expect(results[3]!.properties.firstScan).toMatchObject({
       area: 'accessibility-and-resilience',
-      evidenceTier: 'advisory',
+      evidenceTier: firstScanByRuleId.get(advisoryIssue.ruleId)!.evidence.tier,
       change: 'current',
     });
     expect(results[0]!.properties.evidence).toEqual(deterministicIssue.evidence);

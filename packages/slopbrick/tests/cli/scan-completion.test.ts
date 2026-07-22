@@ -814,15 +814,15 @@ describe('scan completion status', () => {
   it('forwards rule filters to worker scans (not only inline scans)', async () => {
     const dir = createTmpDir(); dirs.push(dir);
     mkdirSync(join(dir, 'src'));
-    const noisy = Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n');
+    const selectedSource = 'eval(userInput);';
     for (let i = 0; i < 4; i++) {
-      writeFileSync(join(dir, 'src', `noisy-${i}.ts`), `${noisy}\nexport const value${i} = ${i};\n`);
+      writeFileSync(join(dir, 'src', `noisy-${i}.ts`), `${selectedSource}\nexport const value${i} = ${i};\n`);
     }
 
     const result = await runScan({
       workspace: dir,
       quiet: true,
-      includeRules: ['logic/math-console-log-storm'],
+      includeRules: ['security/eval'],
       threadCount: 2,
       workerScript: resolve(process.cwd(), 'dist/engine/worker.cjs'),
     });
@@ -830,7 +830,7 @@ describe('scan completion status', () => {
     expect(result.scanStats).toMatchObject({ status: 'complete', requested: 4, analyzed: 4 });
     expect(result.report.issues.length).toBeGreaterThanOrEqual(4);
     expect(new Set(result.results.flatMap((file) => file.issues.map((issue) => issue.ruleId)))).toEqual(
-      new Set(['logic/math-console-log-storm']),
+      new Set(['security/eval']),
     );
   });
 
@@ -996,14 +996,14 @@ describe('scan completion status', () => {
       join(dir, 'src', 'secret.ts'),
       join(dir, 'src', 'plain.ts'),
     ];
-    writeFileSync(files[0]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
-    writeFileSync(files[1]!, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
+    writeFileSync(files[0]!, 'eval(userInput);\n');
+    writeFileSync(files[1]!, 'eval(userInput);\n');
     writeFileSync(files[2]!, "enum Color { Red = 'red', Blue = 'blue' }\n");
     writeFileSync(files[3]!, 'const apiKey = "AKIAIOSFODNN7EXAMPLE";\n');
     writeFileSync(files[4]!, 'export const plain = true;\n');
 
     const includeRules = [
-      'logic/math-console-log-storm',
+      'security/eval',
       'ts/enum-vs-as-const',
       'security/hardcoded-secret',
     ];
@@ -1022,7 +1022,7 @@ describe('scan completion status', () => {
       excluded: { configExclude: 1 },
     });
     const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
-    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(true);
+    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'security/eval')).toBe(true);
     expect(workerByFile.has(files[1]!)).toBe(false);
     expect(workerByFile.get(files[2]!)?.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ ruleId: 'ts/enum-vs-as-const', severity: 'off' }),
@@ -1140,14 +1140,14 @@ describe('scan completion status', () => {
       ...Array.from({ length: 4 }, (_, i) => join(dir, 'src', `storm-${i}.ts`)),
     ];
     writeFileSync(files[0]!, [
-      '// slopbrick-disable-next-line logic/math-console-log-storm',
-      ...Array.from({ length: 5 }, (_, i) => `console.log(${i});`),
+      '// slopbrick-disable-next-line security/eval',
+      'eval(userInput);',
     ].join('\n'));
     for (const file of files.slice(1)) {
-      writeFileSync(file, Array.from({ length: 5 }, (_, i) => `console.log(${i});`).join('\n'));
+      writeFileSync(file, 'eval(userInput);\n');
     }
 
-    const includeRules = ['logic/math-console-log-storm'];
+    const includeRules = ['security/eval'];
     const workerRun = await runScan({
       workspace: dir,
       quiet: true,
@@ -1157,7 +1157,8 @@ describe('scan completion status', () => {
     });
     expect(workerRun.scanStats).toMatchObject({ status: 'complete', requested: 5, analyzed: 5 });
     const workerByFile = new Map(workerRun.results.map((result) => [result.filePath, result]));
-    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(false);
+    expect(workerByFile.get(files[0]!)?.issues.some((issue) => issue.ruleId === 'security/eval')).toBe(false);
+    expect(workerByFile.get(files[1]!)?.issues.some((issue) => issue.ruleId === 'security/eval')).toBe(true);
 
     const registry = new RuleRegistry();
     registry.loadBuiltins(undefined, { includeRules });

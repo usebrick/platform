@@ -2310,7 +2310,9 @@ export function collectGeneratedCatalogCopy(ruleId: string, catalogPath: string)
   }
   const match = matches[0]!;
   const cells = parseMarkdownRow(match.line);
-  const description = cells.length === 5 ? cells[4] : undefined;
+  const description = cells.length === 5 || cells.length === 14
+    ? cells[cells.length - 1]
+    : undefined;
   if (!description) throw new TypeError(`${ruleId} generated catalog row has no description cell`);
   return {
     location: `${catalogPath}:${match.lineNumber} description`,

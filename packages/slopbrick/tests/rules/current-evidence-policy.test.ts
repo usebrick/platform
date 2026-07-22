@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { canonicalArtifact } from '../../src/calibration/cal-002/contracts';
@@ -10,6 +12,11 @@ import {
   approvedCurrentPolicyArtifactFixture,
   approvedCurrentPolicyFixture,
 } from '../helpers/current-evidence-policy-v2';
+
+const CURRENT_POLICY_PATH = resolve(
+  __dirname,
+  '../../src/rules/current-evidence-policy.json',
+);
 
 describe('current evidence policy accessors', () => {
   it('indexes the exact approved 119-row projection and its default-off set', () => {
@@ -139,7 +146,19 @@ describe('current evidence policy accessors', () => {
     expect(Reflect.set(exposedRow, 'runnableByExplicitOptIn', true)).toBe(false);
   });
 
-  it('keeps the production provider inactive until the atomic activation task', () => {
-    expect(getCurrentEvidencePolicyAccessors()).toBeUndefined();
+  it('aligns the production provider with atomic policy artifact presence', () => {
+    const accessors = getCurrentEvidencePolicyAccessors();
+    if (!existsSync(CURRENT_POLICY_PATH)) {
+      expect(accessors).toBeUndefined();
+      return;
+    }
+
+    const artifact: unknown = JSON.parse(readFileSync(CURRENT_POLICY_PATH, 'utf8'));
+    expect(validateSlopbrickRuleEvidencePolicyV2(artifact)).toEqual({ ok: true, errors: [] });
+    expect(accessors).toBeDefined();
+    expect(accessors!.policy).toEqual(artifact);
+    expect(accessors!.policy).toMatchObject({ applied: true, admitted: false });
+    expect(accessors!.policy.rows).toHaveLength(119);
+    expect(accessors!.policy.applicationImplementationCommitSha).toMatch(/^[0-9a-f]{40}$/u);
   });
 });

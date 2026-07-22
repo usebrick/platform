@@ -20,13 +20,20 @@ describe('incremental cache evidence contract', () => {
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
       join(dir, 'slopbrick.config.mjs'),
-      "export default { rules: { 'logic/math-console-log-storm': 'medium' } };\n",
+      "export default { rules: { 'ai/console-debug-storm': 'medium' } };\n",
     );
     const cachedPath = join(dir, 'src', 'cached.ts');
     const rescannedPath = join(dir, 'src', 'rescanned.ts');
     writeFileSync(
       cachedPath,
-      'console.log(1);\nconsole.log(2);\nconsole.log(3);\nconsole.log(4);\nconsole.log(5);\n',
+      [
+        'export function cached(input: number): number {',
+        ...Array.from({ length: 10 }, (_, index) => `  console.log('cached ${index}', input);`),
+        '  return input;',
+        '}',
+        `/* ${'production-sized incremental cache padding '.repeat(30)} */`,
+        '',
+      ].join('\n'),
     );
     writeFileSync(rescannedPath, 'export const before = true;\n');
     const cachePath = join(dir, 'incremental-cache.json');
@@ -39,7 +46,7 @@ describe('incremental cache evidence contract', () => {
       telemetry: false,
     });
     expect(seeded.report.scoreValidity).toBe('valid');
-    expect(seeded.report.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(true);
+    expect(seeded.report.issues.some((issue) => issue.ruleId === 'ai/console-debug-storm')).toBe(true);
     // Seed a real persisted snapshot. The incremental run must not replace it
     // with an incomplete numeric diagnostic or a cache-derived approximation.
     expect(existsSync(join(dir, '.slopbrick', 'health.json'))).toBe(true);
@@ -64,7 +71,7 @@ describe('incremental cache evidence contract', () => {
     // The cached file's normal rule findings are not hydrated by the hash-only
     // cache. They therefore cannot silently enter an incomplete score or be
     // presented as a complete project result.
-    expect(incremental.report.issues.some((issue) => issue.ruleId === 'logic/math-console-log-storm')).toBe(false);
+    expect(incremental.report.issues.some((issue) => issue.ruleId === 'ai/console-debug-storm')).toBe(false);
     expect(incremental.report.components.map((component) => component.filePath)).not.toContain(cachedPath);
     expect(readFileSync(cachePath, 'utf8')).toBe(cacheBefore);
     expect(readFileSync(join(dir, '.slopbrick', 'health.json'), 'utf8')).toBe(healthBefore);
@@ -74,6 +81,10 @@ describe('incremental cache evidence contract', () => {
     const dir = createTmpDir();
     dirs.push(dir);
     mkdirSync(join(dir, 'src'), { recursive: true });
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      "export default { rules: { 'layout/gap-monopoly': 'medium' } };\n",
+    );
     // Ten identical gap declarations exceed the project rule's small-project
     // tolerance. After changing one file, the full scan still sees the
     // project-wide pattern, while an incremental run only has the changed

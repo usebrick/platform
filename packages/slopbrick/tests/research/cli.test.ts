@@ -54,6 +54,11 @@ describe('research analyze', () => {
       },
     ];
     writeFileSync(join(dir, 'metadata.json'), JSON.stringify(metadata, null, 2), 'utf8');
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      `export default { rules: { 'visual/math-rounded-entropy': 'high' } };\n`,
+      'utf8',
+    );
 
     const outputPath = join(dir, 'analysis.json');
     const { exitCode, stdout } = await run([
@@ -65,6 +70,8 @@ describe('research analyze', () => {
       outputPath,
       '--framework',
       'react',
+      '--config',
+      dir,
     ]);
 
     expect(exitCode).toBe(0);
@@ -79,6 +86,6 @@ describe('research analyze', () => {
     expect(analysis.summary.total).toBe(1);
     expect(analysis.summary.covered).toBeGreaterThan(0);
     expect(analysis.samples[0].covered).toBe(true);
-    expect(analysis.samples[0].aiSpecificRuleIds.length).toBeGreaterThan(0);
+    expect(analysis.samples[0].aiSpecificRuleIds).toContain('visual/math-rounded-entropy');
   });
 });

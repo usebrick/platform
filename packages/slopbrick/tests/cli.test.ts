@@ -449,6 +449,10 @@ describe('scanProject with --tokens (round 21)', () => {
         },
       }),
     );
+    writeFileSync(
+      join(dir, 'slopbrick.config.cjs'),
+      "module.exports = { rules: { 'visual/arbitrary-escape': 'medium' } };\n",
+    );
 
     const baseline = await scanProject({ cwd: dir, workerScript });
     const baselineArbitrary = baseline.issues.filter((i) => i.ruleId === 'visual/arbitrary-escape');
@@ -687,7 +691,10 @@ describe('threshold failure wording', () => {
   beforeEach(() => {
     dir = createTmpDir();
     writeSloppyProject(dir);
-    writeFileSync(join(dir, 'src', 'LeakedBlock.ts'), '```typescript\nexport const value = 1;\n```\n');
+    writeFileSync(
+      join(dir, 'src', 'HardcodedSecret.ts'),
+      'export const accessKey = "AKIAIOSFODNN7EXAMPLE";\n',
+    );
     // v0.15.0 U.4: see the --strict describe for rationale.
     writeAlwaysBreachConfig(dir);
   });
@@ -1137,7 +1144,10 @@ describe('scan --tokens CLI subprocess (round 22)', () => {
       const cfgPath = join(dir, 'slopbrick.config.cjs');
       writeFileSync(
         cfgPath,
-        `module.exports = { thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 } };\n`,
+        `module.exports = {
+  rules: { 'visual/arbitrary-escape': 'medium' },
+  thresholds: { meanSlop: 999, p90Slop: 999, individualSlopThreshold: 999 },
+};\n`,
       );
       const baseline = await run(['--workspace', dir, '--format', 'json']);
       // Don't assert exitCode — the scan may exceed default thresholds regardless.

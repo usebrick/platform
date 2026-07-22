@@ -477,7 +477,7 @@ describe('durable new-debt baseline', () => {
   it('loads one durable baseline for the real scan gate and first-scan projection', async () => {
       const workspace = mkdtempSync(join('/tmp', 'slopbrick-new-debt-e2e-'));
     try {
-      const source = 'export const A = () => <div className="p-[13px] m-[9px] gap-[7px]" />;\n';
+      const source = 'export const A = (userId: string) => `SELECT * FROM users WHERE id = ${userId}`;\n';
       mkdirSync(join(workspace, 'src'), { recursive: true });
       writeFileSync(join(workspace, 'src', 'A.tsx'), source);
 
@@ -518,7 +518,7 @@ describe('durable new-debt baseline', () => {
   it('refreshes first-scan after a late flywheel issue without reloading or reevaluating new debt', async () => {
     const workspace = mkdtempSync(join('/tmp', 'slopbrick-first-scan-flywheel-'));
     try {
-      const source = 'export const A = () => <div className="p-[13px]" />;\n';
+      const source = 'export const A = (userId: string) => `SELECT * FROM users WHERE id = ${userId}`;\n';
       mkdirSync(join(workspace, 'src'), { recursive: true });
       writeFileSync(join(workspace, 'src', 'A.tsx'), source);
 

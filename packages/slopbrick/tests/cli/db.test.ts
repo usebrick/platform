@@ -151,29 +151,38 @@ describe('slopbrick db (CLI)', () => {
     }
   }, 60000);
 
-  it('flags multiple sql-concat findings; --strict exits 1 when drift reaches high', async () => {
+  it('flags unsafe SQL through the sql-construction replacement', async () => {
     const dir = freshDir();
     try {
       mkdirSync(join(dir, 'src'), { recursive: true });
-      // Generate enough sql-concat findings across many files to land
-      // in 'high' drift (>= 40 < 60) and trigger --strict exit 1.
-      for (let i = 0; i < 30; i++) {
-        writeFile(
-          dir,
-          `src/queries${i}.ts`,
-          `export const x${i} = db.query(\`SELECT * FROM users WHERE id = \${id${i}}\`);\n` +
-          `export const y${i} = db.query(\`INSERT INTO logs VALUES (\${msg${i}})\`);\n` +
-          `export const z${i} = db.query(\`UPDATE posts SET body = \${body${i}}\`);\n`,
-        );
-      }
-      const { exitCode } = await execFileAsync('node', [BIN, 'db', '--strict'], { cwd: dir })
+      // db/sql-concat is a non-runnable supersession tombstone under the
+      // approved policy. Its active replacement must retain CLI coverage;
+      // dbExitCode's high/critical strict mapping is covered above.
+      writeFile(
+        dir,
+        'src/queries.ts',
+        'export const query = `SELECT * FROM users WHERE id = ${userId}`;\n',
+      );
+      const { exitCode, stdout } = await execFileAsync(
+        'node',
+        [BIN, 'security', '--format', 'json'],
+        { cwd: dir },
+      )
         .then((r) => ({ exitCode: 0, stdout: r.stdout, stderr: r.stderr }))
         .catch((err: { code?: number; stdout?: string; stderr?: string }) => ({
           exitCode: err.code ?? 1,
           stdout: err.stdout ?? '',
           stderr: err.stderr ?? '',
         }));
-      expect(exitCode).toBe(1);
+      const parsed = JSON.parse(stdout) as {
+        totalFindings: number;
+        issues: Array<{ ruleId: string }>;
+      };
+      expect(exitCode).toBe(0);
+      expect(parsed.totalFindings).toBeGreaterThan(0);
+      expect(parsed.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'security/sql-construction' }),
+      ]));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

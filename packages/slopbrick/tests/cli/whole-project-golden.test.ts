@@ -42,8 +42,9 @@ function writeFixture(): string {
       '  telemetry: false,',
       '  thresholds: { meanSlop: 100, p90Slop: 100, individualSlopThreshold: 100 },',
       "  rules: {",
-      "    'layout/gap-monopoly': 'medium',",
-      "    'logic/math-console-log-storm': 'low',",
+      "    'dup/identical-block': 'medium',",
+      "    'security/sql-construction': 'low',",
+      "    'db/sql-concat': 'off',",
       "    'dup/near-duplicate': 'off',",
       "    'dup/structural-clone': 'off',",
       "    'perf/css-bloat': 'off',",
@@ -53,23 +54,23 @@ function writeFixture(): string {
     ].join('\n'),
   );
 
-  // Three uses in each file give the project post-pass a deterministic
-  // project-wide gap-monopoly finding. Four files deliberately cross the
-  // inline threshold so source and built CLI exercise the worker path. The
-  // five logs are the active file-level finding. The remaining non-empty
+  // The shared 20-line tail gives the cross-file identical-block coordinator
+  // deterministic findings. Four files deliberately cross the inline
+  // threshold so source and built CLI exercise the worker path. The SQL
+  // interpolation is the active file-level finding. The remaining non-empty
   // lines keep the files above ai/comment-ratio's default-off minimum without
-  // introducing any other intentional fixture signals.
+  // introducing any other intentional fixture signals. Both active rules are
+  // runnable and score-eligible with either evidence-policy provider state.
   const source = (name: string) => [
-    `export const ${name} = () => (`,
-    '  <div className="gap-4 gap-4 gap-4">',
-    '    console.log("one");',
-    '    console.log("two");',
-    '    console.log("three");',
-    '    console.log("four");',
-    '    console.log("five");',
-    `    <span>${name}</span>`,
-    '  </div>',
-    ');',
+    `export const ${name} = (userId: string) => {`,
+    '  const query = `SELECT * FROM users WHERE id = ${userId}`;',
+    '  return (',
+    '    <div>',
+    `      <span>${name}</span>`,
+    '      <code>{query}</code>',
+    '    </div>',
+    '  );',
+    '};',
     'const a = 1;',
     'const b = 2;',
     'const c = 3;',
@@ -155,18 +156,15 @@ describe('whole-project CLI/MCP golden parity', () => {
       expect(builtReport.scoreValidity).toBe(sourceReport.scoreValidity);
       expect(activeAndAudit(builtReport)).toEqual(activeAndAudit(sourceReport));
       expect(activeAndAudit(sourceReport).active).toEqual(expect.arrayContaining([
-        expect.objectContaining({ ruleId: 'layout/gap-monopoly', filePath: undefined }),
-        expect.objectContaining({ ruleId: 'logic/math-console-log-storm' }),
+        expect.objectContaining({ ruleId: 'dup/identical-block' }),
+        expect.objectContaining({ ruleId: 'security/sql-construction' }),
       ]));
-      expect(activeAndAudit(sourceReport).audit).toEqual(expect.arrayContaining([
-        expect.objectContaining({ ruleId: 'ai/comment-ratio', severity: 'off' }),
-      ]));
-
       // Independent reconstruction of the deterministic AI score for this
-      // fixture: four low-severity context findings (one per file) and one
-      // medium-severity visual/project finding. Each file is log-saturated
-      // first, then the per-file burdens are additively combined with the
-      // fixed cumulative scale. This is intentionally not an
+      // fixture: four low-severity SQL-construction findings, one per file.
+      // The non-AI identical-block findings affect hygiene but not AI slop.
+      // Each file is log-saturated first, then the per-file burdens are
+      // additively combined with the fixed cumulative scale. This is
+      // intentionally not an
       // `evidence / analysedFiles` average: clean files must not dilute the
       // score, and adding harmful evidence cannot improve it.
       const perFileBurden = (points: number) =>
@@ -178,12 +176,10 @@ describe('whole-project CLI/MCP golden parity', () => {
             Math.log10(11) *
             100,
         );
-      const contextSlop = cumulativeBurden(
+      const visualSlop = cumulativeBurden(
         Array.from({ length: 4 }, () => perFileBurden(SEVERITY_WEIGHTS.low)),
       );
-      const visualSlop = cumulativeBurden([perFileBurden(SEVERITY_WEIGHTS.medium)]);
-      const reconstructedAiSlop =
-        COMPOSITE_WEIGHTS.context * contextSlop + COMPOSITE_WEIGHTS.visual * visualSlop;
+      const reconstructedAiSlop = COMPOSITE_WEIGHTS.visual * visualSlop;
       expect(sourceReport.aiSlopScore).toBeCloseTo(reconstructedAiSlop, 8);
       expect(sourceReport.repositoryHealth).toBeCloseTo(
         0.4 * (100 - sourceReport.aiSlopScore) +
@@ -228,21 +224,16 @@ describe('whole-project CLI/MCP golden parity', () => {
         sourceReport.issues.map((issue) => issue.ruleId),
       );
       expect(sarif.runs[0]!.results.map((result) => result.ruleId)).toEqual(json.issues.map((issue: { ruleId: string }) => issue.ruleId));
-      // JSON/SARIF are machine audit feeds and intentionally retain the
-      // default-off history; human HTML/Markdown/pretty views are the
-      // actionable feed and intentionally omit it. Incremental cache
-      // hydration is a separate contract: this whole-project golden keeps
-      // every selected file freshly analysed so it cannot conflate cached
-      // accounting with effective issue-set parity.
+      // JSON/SARIF retain the complete report issue set while human
+      // HTML/Markdown/pretty views expose the actionable feed. Incremental
+      // cache hydration is a separate contract: this whole-project golden
+      // keeps every selected file freshly analysed so it cannot conflate
+      // cached accounting with effective issue-set parity.
       for (const output of [markdown, html, pretty]) {
-        expect(output).toMatch(/Gap Monopoly|layout\/gap-monopoly/);
-        expect(output).toMatch(/Math Console Log Storm|logic\/math-console-log-storm/);
+        expect(output).toMatch(/Identical Block|dup\/identical-block/);
+        expect(output).toMatch(/Sql Construction|security\/sql-construction/);
         expect(output).not.toContain('ai/comment-ratio');
       }
-      expect(markdown).toMatch(/Default-off audit.*4 suppressed finding instances/);
-      expect(html).toMatch(/Default-off audit.*4 suppressed finding instances/);
-      expect(pretty).toMatch(/4 INVERTED\/NOISY\/DORMANT default-off rule finding\(s\)/);
-
       // Exercise the same built renderer entry points used by consumers. Feed
       // the JSON bytes emitted by the built CLI into the packaged report
       // command so this path covers both the built serializer and renderer.
@@ -275,8 +266,8 @@ describe('whole-project CLI/MCP golden parity', () => {
       expect(stripReportBanner(builtMarkdown.stdout)).toBe(formatMarkdown(builtReport).trimEnd());
       expect(stripReportBanner(builtPretty.stdout)).toBe(formatPretty(builtReport).trimEnd());
       for (const output of [builtMarkdown.stdout, builtHtml.stdout, builtPretty.stdout]) {
-        expect(output).toMatch(/Gap Monopoly|layout\/gap-monopoly/);
-        expect(output).toMatch(/Math Console Log Storm|logic\/math-console-log-storm/);
+        expect(output).toMatch(/Identical Block|dup\/identical-block/);
+        expect(output).toMatch(/Sql Construction|security\/sql-construction/);
         expect(output).not.toContain('ai/comment-ratio');
       }
     } finally {

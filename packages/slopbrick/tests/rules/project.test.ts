@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeGapMonopoly, analyzeCssBloat, analyzeDuplicatedScreens, runProjectRules } from '../../src/rules/project';
 import { filterIssues } from '../../src/index';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 import type { FileScanResult, ResolvedConfig } from '../../src/types';
 
 function makeResult(
@@ -19,7 +20,11 @@ function makeResult(
   };
 }
 
-const baseConfig: ResolvedConfig = {
+function withExplicitRules(config: ResolvedConfig): ResolvedConfig {
+  return bindExplicitRuleOverrides(config, config.rules);
+}
+
+const baseConfig: ResolvedConfig = withExplicitRules({
   include: [],
   exclude: [],
   rules: {
@@ -33,7 +38,7 @@ const baseConfig: ResolvedConfig = {
   thresholds: { meanSlop: 25, p90Slop: 50, individualSlopThreshold: 50 },
   arbitraryValueAllowlist: [],
   wcag: { targetSizeExemptSelectors: [] },
-};
+});
 
 describe('layout/gap-monopoly', () => {
   it('does not trigger when gap values are varied', () => {
@@ -64,14 +69,17 @@ describe('layout/gap-monopoly', () => {
       ...Array.from({ length: 9 }, (_, i) => makeResult(`/a${i}.tsx`, ['gap-4'])),
       makeResult('/b.tsx', ['gap-8']),
     ];
-    const config: ResolvedConfig = { ...baseConfig, gapTokens: ['gap-4'] };
+    const config = withExplicitRules({ ...baseConfig, gapTokens: ['gap-4'] });
     const issues = analyzeGapMonopoly(results, config);
     expect(issues).toHaveLength(0);
   });
 
   it('is disabled when rule is off', () => {
     const results = [makeResult('/a.tsx', ['gap-4'])];
-    const config: ResolvedConfig = { ...baseConfig, rules: { ...baseConfig.rules, 'layout/gap-monopoly': 'off' } };
+    const config = withExplicitRules({
+      ...baseConfig,
+      rules: { ...baseConfig.rules, 'layout/gap-monopoly': 'off' },
+    });
     expect(analyzeGapMonopoly(results, config)).toHaveLength(0);
   });
 
@@ -81,10 +89,10 @@ describe('layout/gap-monopoly', () => {
       makeResult('/b.tsx', ['gap-4']),
       makeResult('/c.tsx', ['gap-4']),
     ];
-    const config: ResolvedConfig = {
+    const config = withExplicitRules({
       ...baseConfig,
       rules: { ...baseConfig.rules, 'layout/gap-monopoly': 'high' },
-    };
+    });
     const issues = analyzeGapMonopoly(results, config);
     expect(issues).toHaveLength(1);
     expect(issues[0].severity).toBe('high');
@@ -260,10 +268,10 @@ describe('layout/duplicated-screen', () => {
       makeResult('/project/src/app/screen-a.tsx', [], [], ['View', 'Text']),
       makeResult('/project/src/app/screen-b.tsx', [], [], ['View', 'Text']),
     ];
-    const config: ResolvedConfig = {
+    const config = withExplicitRules({
       ...baseConfig,
       rules: { ...baseConfig.rules, 'layout/duplicated-screen': 'off' },
-    };
+    });
     expect(analyzeDuplicatedScreens(results, config)).toHaveLength(0);
   });
 
@@ -272,14 +280,13 @@ describe('layout/duplicated-screen', () => {
       makeResult('/project/src/app/screen-a.tsx', [], [], ['View', 'ScrollView', 'View', 'Text']),
       makeResult('/project/src/app/screen-b.tsx', [], [], ['View', 'ScrollView', 'View', 'Text']),
     ];
-    const config: ResolvedConfig = {
+    const config = withExplicitRules({
       ...baseConfig,
       rules: { ...baseConfig.rules, 'layout/duplicated-screen': 'auto' },
-    };
+    });
     const issues = analyzeDuplicatedScreens(results, config);
     expect(issues).toHaveLength(1);
     expect(issues[0].severity).toBe('medium');
   });
 
 });
-

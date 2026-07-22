@@ -20,7 +20,7 @@ function makeWorkspace(): string {
       "  framework: 'react',",
       '  telemetry: false,',
       "  rules: {",
-      "    'logic/math-console-log-storm': 'low',",
+      "    'logic/key-prop-missing': 'low',",
       "    'dup/near-duplicate': 'off',",
       "    'security/public-admin-route': 'off',",
       '  },',
@@ -31,13 +31,8 @@ function makeWorkspace(): string {
   writeFileSync(
     join(dir, 'src', 'example.tsx'),
     [
-      'export function Example() {',
-      "  console.log('a');",
-      "  console.log('b');",
-      "  console.log('c');",
-      "  console.log('d');",
-      "  console.log('e');",
-      '  return <div />;',
+      'export function Example({ items }: { items: string[] }) {',
+      '  return <ul>{items.map((item) => <li>{item}</li>)}</ul>;',
       '}',
       '',
     ].join('\n'),
@@ -92,7 +87,7 @@ describe('CLI and MCP single-file scan parity', () => {
         },
       })));
       expect(payload.issues).toEqual(expect.arrayContaining([
-        expect.objectContaining({ ruleId: 'logic/math-console-log-storm', severity: 'low' }),
+        expect.objectContaining({ ruleId: 'logic/key-prop-missing', severity: 'low' }),
       ]));
     } finally {
       rmSync(dir, { recursive: true, force: true });
