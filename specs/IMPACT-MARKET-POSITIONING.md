@@ -1,11 +1,21 @@
-# Impact Assessment — UseBrick coherence positioning
+# Impact Assessment — UseBrick AI-slop and coherence positioning
+
+**Updated:** 2026-07-22
 
 ## Target
 
 Converge every current strategy, execution, package, and website documentation
-surface on UseBrick as the sole coherence and verification product, with
-SlopBrick as the shipped acquisition surface and the other brick names as
-internal capability boundaries.
+surface on UseBrick as the sole quality, coherence, and verification product.
+Keep SlopBrick's AI-slop identity as the shipped acquisition surface while
+Memory, Lock, Mend, Pick, and Render remain internal capability boundaries.
+
+The account-wide review adds four durable decisions:
+
+- repository intelligence and opt-in global slop intelligence are separate;
+- the Slop Index survives as a future shareable concept, not current behavior;
+- earlier StackPick, PickBrick, GIR, and BRICK Cloud ideas fold into the one
+  product lifecycle; and
+- the coherence graph, not the rule catalog, is the defensible system.
 
 The governing design is
 `docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md`.
@@ -19,7 +29,7 @@ The blast radius is cross-cutting and includes more than thirty current files:
 | Surface | Direct dependents |
 | --- | --- |
 | Strategy authority | `README.md`, `ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/future-extractions.md` |
-| Execution control | `docs/execution/index.json`, `STATUS.md`, changelog, and GTM/MEM/LOCK/MEND/ENT/TEL/VAL/SB-UX/REL plans |
+| Execution control | `docs/execution/index.json`, `STATUS.md`, changelog, and GTM/MEM/LOCK/MEND/ENT/TEL/VAL/SB-UX/REL/LABS plans |
 | Package truth | SlopBrick README, roadmap, examples, contribution, architecture, MCP, scoring, calibration, language, and generated-doc boundaries |
 | Website truth | Base metadata, hero, trust strip, product ladder, comparison, CTA, docs route, lifecycle narrative, and product-fact projection |
 | Market provenance | One new dated `docs/research/` note containing sources, assumptions, scenarios, and explicit uncertainty |
@@ -43,6 +53,7 @@ maps the affected work:
 - `MEND-001`: remains gated on trusted deterministic repair.
 - `ENT-001`: remains gated on repeated paid-team demand.
 - `REL-001`: npm and website authority remains unchanged.
+- `LABS-001`: visual and runtime judgment remains benchmark-only and advisory.
 
 ## Test coverage
 
@@ -58,10 +69,12 @@ maps the affected work:
 
 Gaps to close in the implementation plan:
 
-- phrase-level assertions for sole-product versus capability language;
-- explicit checks that current command examples remain `slopbrick`;
-- an execution-doc assertion for GTM planned/zero-completed-session truth; and
-- link validation for the dated research note and canonical roadmap.
+- assert the AI-slop wedge and one-product lifecycle together;
+- assert the Slop Index future/current boundary;
+- assert repository intelligence versus opt-in global outcomes;
+- assert plan-header priority parity with the execution index;
+- remove stale CAL-002/SB-UX state and obsolete revision numbers; and
+- preserve real `slopbrick` commands, zero-session truth, and release authority.
 
 ## Risk: High
 
@@ -72,8 +85,7 @@ an accidental shipped/release/market-demand claim.
 
 ## Recommended action
 
-Proceed with one approved doctrine and three disjoint documentation worktrees.
-Keep volatile evidence in the dated research note, current state in execution
-authority, and durable positioning in the roadmap. Integrate with phrase,
-link, plan, package-doc, website, build, and diff gates. Do not rewrite
-historical evidence or infer live deployment from a local website build.
+Apply one next-revision documentation convergence. Keep volatile evidence in
+the dated research note, current state in execution authority, and durable
+positioning in the roadmap. Update current projections and validators; do not
+rewrite historical evidence or infer deployment identity from live copy.

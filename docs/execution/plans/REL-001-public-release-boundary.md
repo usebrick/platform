@@ -1,7 +1,7 @@
 # REL-001 — Resolve the SlopBrick v0.45 public release boundary
 
 - **Status:** `waiting_external`
-- **Priority:** 15
+- **Priority:** 16
 - **Track / lane:** implementation / release
 - **Owner:** repository owner / release maintainer
 - **Updated:** 2026-07-22
@@ -21,6 +21,12 @@ publish, or website deployment followed. The verified public package remains
 `slopbrick@0.43.0`, and the live site remains a separately controlled artifact.
 Local positioning, documentation, and website-source changes do not alter
 either public artifact and are not publication or deployment authority.
+
+A 2026-07-22 read-only live check found the public copy aligned on the
+published/candidate version boundary, 103/119 rule counts, four scores, local-
+first network wording, and capability ladder. That resolves the older copy-
+drift observation only. The deployed commit identity remains unverified, and
+no future deployment or npm authority is inferred.
 
 The current high-severity dependency audit is also blocked: transitive
 `brace-expansion` and `svgo` ranges have high advisories, and Astro has one
@@ -108,9 +114,11 @@ release blocker. Do not relabel it as a passing check.
   `authorize` with exact commit and tag) and website (`hold`, or `authorize`
   with exact commit/SHA).
 - **Owner:** repository owner / release maintainer.
-- **Last verified:** 2026-07-18; `main` and `origin/main` converged at
-  `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6` after the pre-push gate, while no
-  tag, GitHub Release, npm publish, or website deployment occurred.
+- **Last verified:** 2026-07-22; the live copy was read-only checked and found
+  aligned, while deployed SHA remained unknown. The last recorded source
+  integration had `main` and `origin/main` converged at
+  `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6`; no tag, GitHub Release, npm
+  publish, or separately authorized website deployment was inferred.
 - **Evidence:** `docs/execution/evidence/SB-045-release-qualification.md` proves
   local qualification; `docs/execution/evidence/REL-001-public-claim-disposition.md`
   records the still-unresolved public decisions.

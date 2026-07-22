@@ -1,5 +1,15 @@
 # SB-UX-001 first-scan evidence receipt
 
+> **Current planning note — 2026-07-22:** This remains the preserved partial
+> Task 8 receipt. Its revision 25, candidate HEAD, counts, and output are the
+> exact observed checkpoint, not current control-plane state. The execution
+> index is now revision 43; Tasks 1–7 remain complete. Revision 43 completed
+> current documentation/evidence reconciliation and documentation-scope gates.
+> Task 8 remains open for its focused first-scan matrix and recursive gates, a
+> fresh no-baseline package-local self-scan, and the remaining owner-
+> comprehension disposition. Do not rewrite the receipt below with prospective
+> output.
+
 **Status:** owner checkpoint in progress; first action identified, evidence/repair boundary `PENDING`
 **Execution index:** revision 25; `SB-UX-001` remains `in_progress`
 **Candidate HEAD:** `8e81ef252ce384e889891ca64c487f742e4d3cd1`

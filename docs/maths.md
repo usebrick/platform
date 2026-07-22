@@ -1,7 +1,7 @@
 # SlopBrick Mathematical Foundations
 
-> **Current product boundary:** UseBrick is the sole coherence and verification
-> product. SlopBrick is the shipped scanner and CLI that emits the evidence
+> **Current product boundary:** UseBrick is the sole quality, coherence, and
+> verification product. SlopBrick is the shipped AI-slop scanner and CLI that emits the evidence
 > described here. Memory, Lock, and Mend are roadmap capability names, not
 > products or packages. AI association is neither code-quality authority nor
 > authorship proof. Current direction lives in the [root roadmap](../ROADMAP.md);

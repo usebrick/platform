@@ -6,13 +6,16 @@ Apply silently. Do not restate unless the user asks for project rules.
 
 ## Product role
 
-SlopBrick is the local scanner and user-acquisition front door for usebrick. It
-finds visual, frontend, code, security, and repository-coherence problems that
-AI coding workflows amplify. It does not prove AI authorship.
+UseBrick is the sole customer-facing repository-owned quality, coherence, and
+verification product. SlopBrick is its shipped local scanner, current CLI,
+central AI-slop detector, and user-acquisition front door. It finds visual,
+frontend, code, security, and repository-coherence problems that AI coding
+workflows amplify. It does not prove AI authorship.
 
-MemoryBrick is the planned repository-memory substrate, LockBrick is the
-planned policy/governance product, and MendBrick is the later deterministic
-repair layer. Do not describe any of them as separately shipped products.
+Memory is the planned repository-intelligence capability, Lock is the first
+paid new-debt workflow hypothesis, and Mend is the later deterministic repair
+capability. Pick/StackPick folds into `init` and policy authoring. Do not
+describe these capability names as separately shipped products or packages.
 
 Current version truth:
 
@@ -54,7 +57,9 @@ not-applicable scans omit canonical scores. The default mean gate passes when
 
 Do not promote legacy `slopIndex`, `assemblyHealth`, `totalScore`, the Bayesian
 `compositeScore`, or specialised subcommand diagnostics into additional
-headline scores.
+headline scores. The branded Slop Index may be discussed only as a future
+shareable acquisition/reporting concept that needs separate calibration, UX,
+compatibility, and release approval.
 
 ## Persisted artifacts and privacy
 

@@ -3,6 +3,54 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 43 — 2026-07-22
+
+### Changed
+
+- Adopted the owner-approved account-wide thesis: **UseBrick keeps AI-generated
+  software coherent** as one repository-owned quality, coherence, and
+  verification product.
+- Kept SlopBrick central as the shipped AI-slop scanner, current CLI, free
+  local front door, and acquisition surface. Memory is repository intelligence,
+  Lock is the first paid new-debt hypothesis, Mend is deterministic repair,
+  Pick/StackPick is policy setup, GIR is future Mend logic, BRICK Cloud is
+  delayed, and Render remains Labs-only.
+- Defined the coherence graph—not rule count, one score, or a memory store—as
+  the moat hypothesis. Separated repository intelligence from privacy-safe,
+  opt-in global outcome intelligence and made approved local policy final.
+- Retained the branded Slop Index as a future shareable acquisition/reporting
+  concept without adding a fifth shipped score, command, field, or formula.
+- Reconciled all affected plan priorities with the execution index and updated
+  `SB-UX-001` from its stale red-test action to the remaining Task 8 docs,
+  gates, no-baseline self-scan, and owner-comprehension closeout.
+- Corrected implementation WIP to `1/2`: CAL-002 is done and only
+  `SB-UX-001` remains active.
+- Recorded that a 2026-07-22 read-only live-site check resolved the older copy-
+  drift observation while leaving deployed SHA and future deployment authority
+  unresolved.
+
+### Evidence
+
+- Execution-plan validation passes with 18 indexed plans, implementation WIP
+  `1/2`, and company WIP `0/1`; the combined execution and positioning
+  validator suite passes 33/33.
+- The generated 119-rule catalog is in sync, and the focused SlopBrick
+  documentation/MCP suite passes 22/22.
+- Website unit tests pass 54/54, Astro typecheck reports zero diagnostics, and
+  the four-route static build completes successfully.
+- These are documentation-convergence gates, not the remaining SB-UX Task 8
+  focused first-scan matrix, recursive gate, package-local self-scan, or owner-
+  comprehension evidence.
+
+### Boundary
+
+- This revision changes strategy, documentation, plan metadata, and their
+  validators only. It does not change scanner behavior, current scores,
+  thresholds, rule state, calibration, telemetry runtime, or package versions.
+- External sessions remain zero and outreach remains unauthorized. No push,
+  tag, GitHub Release, npm publication, website deployment, or public-release
+  authority is inferred.
+
 ## Revision 42 — 2026-07-22
 
 ### Changed

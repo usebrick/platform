@@ -346,8 +346,14 @@ describe('generated documentation truth', () => {
     const packageReadme = readFileSync(join(__dirname, '..', 'README.md'), 'utf8');
     const packageRoadmap = readFileSync(join(__dirname, '..', 'ROADMAP.md'), 'utf8');
 
-    expect(approvedPositioning).toContain('UseBrick is the coherence and verification layer');
-    expect(packageReadme).toContain('SlopBrick is the shipped scanner and CLI');
+    expect(approvedPositioning).toContain('UseBrick keeps AI-generated software coherent');
+    expect(approvedPositioning).toContain(
+      'repository-owned quality, coherence, and verification',
+    );
+    expect(packageReadme).toContain('central AI-slop scanner and acquisition surface');
+    expect(packageReadme).toMatch(
+      /not a fifth current score, command, wire field, or\s+formula/,
+    );
     expect(packageReadme).not.toMatch(
       /\busebrick (scan|init|ci|mcp|explain|baseline|check|fix|runtime)\b/,
     );

@@ -5,9 +5,9 @@
 > change independently; do not assume that naming a client means it
 > automatically discovers SlopBrick.
 
-SlopBrick is the shipped scanner, CLI, and embedded MCP server inside
-UseBrick, the sole customer-facing coherence and verification product. The MCP
-tools expose bounded repository-owned evidence so agents can reuse observed
+SlopBrick is the shipped AI-slop scanner, CLI, and embedded MCP server inside
+UseBrick, the sole customer-facing quality, coherence, and verification
+product. The MCP tools expose bounded repository-owned evidence so agents can reuse observed
 patterns and declared policy. Memory, Lock, and Mend are capability names, not
 separate products, packages, or MCP servers.
 

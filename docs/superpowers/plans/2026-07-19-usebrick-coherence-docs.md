@@ -1,5 +1,17 @@
 # UseBrick coherence documentation implementation plan
 
+> **Completed historical implementation plan.** The original convergence was
+> integrated at `d4197d692`. Its worktree commands, unchecked boxes, revision
+> numbers, and expected counts below preserve the execution handoff and are no
+> longer instructions to run. The owner-approved 2026-07-22 account-wide
+> extension is codified in the [current positioning
+> design](../specs/2026-07-19-usebrick-coherence-positioning-design.md),
+> [root roadmap](../../../ROADMAP.md), [dated market
+> research](../../research/usebrick-market-positioning-2026-07-19.md), and
+> execution-index revision 43. That extension keeps AI slop central, retains
+> the future Slop Index boundary, separates the two intelligence planes, and
+> defines the coherence graph as the moat hypothesis.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reconcile every current strategy, execution, package, and website documentation surface around UseBrick as the sole coherence-and-verification product without changing shipped behavior, historical evidence, or release authority.

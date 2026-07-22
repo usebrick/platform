@@ -1,7 +1,14 @@
-# usebrick.dev — marketing site
+# usebrick.dev — UseBrick product site
 
-The brick-themed landing page for the slopbrick monorepo. Astro with native
-IntersectionObserver/Web Animations APIs and a CSS brick surface.
+The static customer-facing site for UseBrick, the repository-owned quality,
+coherence, and verification layer for agent-built software. SlopBrick is the
+shipped free scanner and CLI; Memory, Lock, Mend, Pick, and Render are labeled
+capabilities, not separately shipped products.
+
+The site keeps AI slop central to SlopBrick while presenting the connected
+system: detect, remember, prevent, repair, and verify. Current command examples
+must use the real `slopbrick` binary. A future Slop Index or `usebrick` CLI may
+appear only as an explicitly unshipped concept.
 
 ## Dev
 
@@ -82,6 +89,11 @@ The candidate version is generated from `../slopbrick/package.json` at build
 time. Published-version facts are kept separately in
 `src/data/product-facts.json`; do not label a candidate as shipped until npm
 and Cloudflare evidence exists.
+
+A read-only 2026-07-22 check of `https://usebrick.dev/` showed the aligned
+published/candidate, rule-count, score, local-network, and product-ladder copy.
+That observation does not identify the deployed commit or authorize another
+deployment.
 
 ## License
 

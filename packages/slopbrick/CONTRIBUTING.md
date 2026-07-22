@@ -2,9 +2,9 @@
 
 Thanks for helping make SlopBrick more accurate, useful, and honest.
 
-UseBrick is the sole customer-facing coherence and verification product.
-SlopBrick is its shipped scanner, current CLI, embedded MCP server, and npm
-front door. Memory, Lock, and Mend are capability and sequencing names, not
+UseBrick is the sole customer-facing quality, coherence, and verification
+product. SlopBrick is its shipped AI-slop scanner, current CLI, embedded MCP
+server, and npm front door. Memory, Lock, and Mend are capability and sequencing names, not
 standalone products or package proposals. Current end-user examples use
 `npx slopbrick ...`.
 

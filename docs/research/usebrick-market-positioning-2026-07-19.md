@@ -1,6 +1,6 @@
 # UseBrick market positioning research — 2026-07-19
 
-**Evidence date:** 2026-07-19
+**Evidence date:** 2026-07-19; account-wide source refresh 2026-07-22
 **Status:** dated strategy input, not market validation
 **Durable authority:** [`ROADMAP.md`](../../ROADMAP.md)
 
@@ -15,6 +15,30 @@ external observed sessions completed: **0**.
 UseBrick should compete as the repository-owned coherence and verification
 layer for agent-built software; SlopBrick is the acquisition surface.
 
+The 2026-07-22 account-wide review sharpened that conclusion:
+
+> **UseBrick keeps AI-generated software coherent.**
+
+SlopBrick remains the free, memorable AI-slop scanner. Repository-owned
+Memory makes findings contextual. Lock prevents new drift. Mend repairs only
+trusted findings. The strategy connects the visible failure to one major
+cause instead of choosing between AI slop and repository memory.
+
+## Idea evolution and retained roles
+
+| Earlier idea | Retained role |
+| --- | --- |
+| `slop-audit` | SlopBrick, the local diagnostic and open distribution wedge |
+| StackPick / PickBrick | `init`, Constitution setup, and policy authoring |
+| MCP Registry Bridge | Agent integration, not a separate product |
+| `slop-lock` | Lock, the first paid new-debt workflow hypothesis |
+| GIR | Deterministic migration logic inside the future Mend capability |
+| BRICK Cloud | Delayed hosted history, approvals, and governance |
+| MemoryBrick | Repository-owned facts, intent, provenance, freshness, and bounded context |
+
+The durable customer experience is one product: **scan, understand, enforce,
+and repair**. Brick names remain architecture and sequencing boundaries.
+
 ## Observed market evidence
 
 - [SlashData's Q3 2025 estimate](https://www.slashdata.co/post/rapid-growth-in-edge-ai-developers-and-where-the-opportunity-lies)
@@ -26,6 +50,10 @@ layer for agent-built software; SlopBrick is the acquisition surface.
   reports continued AI-tool use alongside reluctance and trust concerns. That
   tension supports verification as a problem hypothesis, not proof that teams
   will buy UseBrick.
+- The [Stack Overflow 2025 AI survey](https://survey.stackoverflow.co/2025/ai)
+  reports 84% using or planning to use AI development tools, 50.6% of
+  professional developers using them daily, and 46% distrusting accuracy
+  versus 33% trusting it. This is adoption-and-trust evidence, not demand.
 - [DORA's 2025 report](https://dora.dev/research/2025/dora-report/) treats AI as
   an amplifier of an organization's existing system rather than an automatic
   route to better delivery outcomes. This supports a repository-coherence
@@ -108,11 +136,91 @@ store, another scanner score, another coding agent, or another browser. The
 hypothesis wins only if one repository-owned contract measurably improves the
 path from scan to protection and verified outcomes.
 
+[CodeRabbit Slop Detection](https://docs.coderabbit.ai/pr-reviews/slop-detection)
+validates the phrase as an active category but limits the current feature to
+public GitHub repositories and non-blocking PR notes or optional labels.
+UseBrick should not claim invention of slop detection. Its differentiation is
+local repository-wide analysis, frontend and visual depth, repository-owned
+context, and deterministic new-debt enforcement.
+
+[Qodo](https://www.qodo.ai/) already markets cross-repository context, living
+rules, deterministic standards, governance, and rule-health measurement.
+[Semgrep Guardian](https://semgrep.dev/blog/2026/introducing-semgrep-guardian-real-time-security-for-ai-written-code/)
+integrates agent-time security through MCP, hooks, and skills. UseBrick must
+complement specialists rather than become a smaller generic reviewer or SAST.
+
 The strategic opening is not another generic AI reviewer. It is one local,
 repository-owned contract that lets developers, coding agents, and CI share
 facts, approved intent, provenance, freshness, and verification receipts. The
 current SlopBrick scan is the truthful first surface; planned Memory, Lock,
 Mend, and Render Labs capabilities must earn their claims independently.
+
+## Market whitespace and analysis model
+
+The strongest wedge combines:
+
+- visual and design-system slop before an approved screenshot baseline exists;
+- frontend implementation slop across components, state, responsive behavior,
+  accessibility, and edge states;
+- code and logic slop without claiming to replace general linters or SAST; and
+- repository-coherence slop, where a change introduces a second way to solve a
+  problem the repository already solved.
+
+SlopBrick keeps evidence classes separate:
+
+| Class | Examples | Product use |
+| --- | --- | --- |
+| Deterministic | forbidden dependency, boundary violation, exact token bypass, missing accessible label | May gate only under approved policy |
+| Calibrated | abstraction density, fallback density, unusual pattern growth | Confidence-bearing and suppressible; default-off without current authority |
+| Advisory | weak hierarchy, generic composition, poor mobile intent | Review guidance; never deterministic truth |
+
+The current first scan groups evidence into Visual Slop, Frontend
+Implementation, Code and Logic, Repository Coherence, and Accessibility and
+Resilience. Security remains an orthogonal score and gate.
+
+## Slop Index decision
+
+The account-wide review retains **Slop Index** as a memorable future
+acquisition and reporting concept. It is not current shipped behavior. The
+workspace candidate reports four established scores and uses Repository Health
+as the first-screen headline.
+
+Any future Slop Index must expose its dimensions, evidence quality, current
+versus previous state, new and removed slop, baseline, and CI threshold. A
+name or formula change requires separate calibration, compatibility, UX, and
+release approval.
+
+## Repository memory market boundary
+
+Vendor memory is already real:
+
+- [GitHub Copilot Memory](https://docs.github.com/en/copilot/concepts/agents/copilot-memory)
+  stores repository facts with code citations, validates them against the
+  current branch, scopes them to the repository, and removes unused entries
+  after 28 days.
+- [Claude Code](https://code.claude.com/docs/en/memory) uses checked-in
+  `CLAUDE.md` context and machine-local auto memory, and describes those
+  instructions as context rather than hard enforcement.
+- [Cline Memory Bank](https://docs.cline.bot/best-practices/memory-bank) uses
+  structured project Markdown for cross-session context.
+- [Kiro Steering](https://kiro.dev/docs/steering/) uses workspace Markdown for
+  persistent product, stack, structure, and policy guidance.
+
+MemoryBrick is not differentiated by storing Markdown or facts. Its hypothesis
+is a vendor-neutral, repository-owned projection that reconciles facts with
+approved intent, provenance, freshness, SlopBrick findings, and Lock policy.
+
+## Two intelligence planes and the moat
+
+MemoryBrick learns one repository. Privacy-safe, opt-in SlopBrick outcomes may
+later improve global priors across repositories. Raw proprietary code, private
+decisions, internal component names, and repository identity stay local by
+default.
+
+The defensible asset is the coherence graph: observed facts, declared intent,
+provenance and freshness, accepted or declined findings, enforcement state,
+repair receipts, runtime evidence, and cross-agent benchmark outcomes. The
+rule catalog alone is reproducible and is not the moat.
 
 ## Initial customer hypothesis
 
@@ -155,17 +263,37 @@ buyer.
 - Repeated paid-team evidence before shared governance, enterprise controls,
   or a package extraction is considered.
 
+## Current repository and public boundary — 2026-07-22
+
+- The repository owner remains the only completed tester. External sessions
+  completed: zero. No outreach is authorized by this note.
+- The local workspace remains an unreleased `slopbrick@0.45.0` candidate; the
+  verified public package remains `slopbrick@0.43.0`.
+- A read-only check of [usebrick.dev](https://usebrick.dev/) now shows the
+  aligned published/candidate versions, 103/119 rule boundary, four scores,
+  local-first network wording, and SlopBrick/Memory/Lock/Mend ladder. The older
+  stale-site concern is resolved at the copy level. Deployed commit identity
+  and future deployment authority remain separate.
+
 ## Sources
 
 - [SlashData — professional developer estimate, Q3 2025](https://www.slashdata.co/post/rapid-growth-in-edge-ai-developers-and-where-the-opportunity-lies)
 - [SlashData — developer population and company-size breakdown, 2025](https://www.slashdata.co/post/global-developer-population-trends-2025-how-many-developers-are-there)
 - [JetBrains — specialist developer AI-tool adoption, January 2026](https://blog.jetbrains.com/research/2026/04/which-ai-coding-tools-do-developers-actually-use-at-work/)
 - [Stack Overflow — 2025 Developer Survey AI summary](https://stackoverflow.blog/2025/12/29/developers-remain-willing-but-reluctant-to-use-ai-the-2025-developer-survey-results-are-here/)
+- [Stack Overflow — 2025 AI survey data](https://survey.stackoverflow.co/2025/ai)
 - [DORA — State of AI-assisted Software Development 2025](https://dora.dev/research/2025/dora-report/)
 - [Gartner — enterprise AI coding-agent outlook, May 2026](https://www.gartner.com/en/newsroom/press-releases/2026-05-20-gartner-says-the-market-for-enterprise-ai-coding-agents-is-entering-a-new-phase-of-expansion-and-competitive-realignment)
 - [CodeRabbit pricing](https://www.coderabbit.ai/pricing)
 - [Greptile pricing](https://www.greptile.com/pricing)
 - [Qodo pricing](https://www.qodo.ai/pricing/)
+- [Qodo — product and living-rules positioning](https://www.qodo.ai/)
+- [CodeRabbit — Slop Detection](https://docs.coderabbit.ai/pr-reviews/slop-detection)
+- [Semgrep — Guardian for agent-written code](https://semgrep.dev/blog/2026/introducing-semgrep-guardian-real-time-security-for-ai-written-code/)
+- [GitHub — Copilot Memory](https://docs.github.com/en/copilot/concepts/agents/copilot-memory)
+- [Claude Code — memory](https://code.claude.com/docs/en/memory)
+- [Cline — Memory Bank](https://docs.cline.bot/best-practices/memory-bank)
+- [Kiro — Steering](https://kiro.dev/docs/steering/)
 - [TechCrunch — reported CodeRabbit financing and company-attributed ARR](https://techcrunch.com/2025/09/16/coderabbit-raises-60m-valuing-the-2-year-old-ai-code-review-startup-at-550m/)
 - [TechCrunch — reported Cursor annualized revenue, March 2, 2026](https://techcrunch.com/2026/03/02/cursor-has-reportedly-surpassed-2b-in-annualized-revenue/)
 - [TechCrunch — Lovable company-attributed annualized revenue, June 9, 2026](https://techcrunch.com/2026/06/09/lovable-says-it-has-hit-500m-in-annualized-revenue-with-1-million-new-projects-a-week/)

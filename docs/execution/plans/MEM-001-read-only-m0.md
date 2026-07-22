@@ -1,10 +1,10 @@
 # MEM-001 — Benchmark the read-only Memory capability
 
 - **Status:** `draft`
-- **Priority:** 8
+- **Priority:** 9
 - **Track / lane:** implementation / memory
 - **Owner:** UseBrick platform
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -21,6 +21,12 @@ benchmark.
 The Memory name is a planned capability boundary, not a shipped product or
 package.
 
+Memory is the repository-intelligence plane of the coherence graph. Its job is
+not to copy a vendor's chat memory: it must reconcile observed facts with
+approved patterns, design-system primitives, architecture, exceptions,
+rationale, provenance, and freshness, then compile bounded disposable context
+for multiple agents and CI.
+
 ## Scope
 
 - ADR for storage location, compatibility with existing core artifacts, trust
@@ -29,6 +35,8 @@ package.
   approved, historical, temporary, conflicted.
 - Read-only projection from current code/config/docs; no silent authoritative
   agent writes.
+- Repository baselines for dominant components, tokens, abstractions, and
+  approved exceptions when they can be cited to current evidence.
 - Deterministic freshness/citation status for each projected fact.
 - Small boot context, path-scoped context, and on-demand references.
 - Bounded native adapters for at least Codex, Claude, and Copilot.
@@ -42,6 +50,7 @@ package.
   full `.usebrick/` migration before the ADR.
 - Replacing existing README, ADR, CODEOWNERS, build, or CI sources.
 - Treating generated adapter files as the canonical store.
+- Building a generic memory database or competing on Markdown storage alone.
 
 ## Dependencies
 
@@ -55,6 +64,8 @@ package.
 - Every projected fact records source, scope, authority type, verification
   time/input hash, and freshness state.
 - Agents can propose but cannot silently promote authoritative memory.
+- SlopBrick and future Lock consumers can resolve a finding against approved
+  local intent without a global prior overriding that intent.
 - Generated boot context stays within a stated budget and adapters are
   deterministic/disposable.
 - The benchmark compares each agent's native context with repository-owned

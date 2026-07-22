@@ -17,10 +17,11 @@ present. It is not a fourth canonical snapshot and does not implement core's
 `structure.schema.json`; that schema defines a structured JSON projection,
 while SlopBrick's agent-facing projection is the Markdown `structure.md`.
 
-These artifacts are the first implementation layer of the planned
-MemoryBrick substrate. SlopBrick is the current producer and scanner/front
-door; future MemoryBrick and LockBrick work must build on this contract rather
-than create a second repository-memory format.
+These artifacts are the first implementation layer of the planned repository-
+intelligence capability. SlopBrick is the current producer and scanner/front
+door; future Memory and Lock work must build on this contract rather than
+create a second repository-memory format. Generated context remains a
+projection: approved local policy and cited repository sources are authoritative.
 
 ## What each artifact means
 

@@ -11,11 +11,19 @@ tags: [lifecycle, code-quality, ai-coding, detect-fix-verify]
 > **Historical article (2026-07-01).** Version counts, product packaging, release
 > claims, and future-version prose below are preserved as a dated v0.20-era
 > narrative; they are not current product or execution authority. UseBrick is
-> now the sole customer-facing coherence and verification product, and
-> SlopBrick is its shipped local scanner and current CLI. Memory, Lock, Mend,
+> now the sole customer-facing quality, coherence, and verification product,
+> and SlopBrick is its shipped local scanner and current CLI. Memory, Lock, Mend,
 > and Render Labs are capabilities, not separate products. Current authority
 > lives in the root [roadmap](../../../../ROADMAP.md) and [execution
 > index](../../../../docs/execution/index.json).
+>
+> **Account-wide strategy correction (2026-07-22):** SlopBrick remains the
+> central AI-slop scanner and free acquisition surface. Memory makes findings
+> repository-aware, Lock prevents new drift, and Mend repairs only trusted
+> findings. The current moat hypothesis is the coherence graph joining facts,
+> intent, provenance, outcomes, enforcement, and repair receipts—not a rule
+> catalog, calibration program, or Constitution by itself. References below
+> to those individual assets as "the moat" are historical.
 
 Most code quality tools stop at detection. Some go to *detect + fix*. A handful promise *detect + fix + verify*. All three are **point solutions** — they answer the question "is there a problem right now?" but not "is the codebase getting structurally healthier over time?"
 

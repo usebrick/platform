@@ -5,8 +5,10 @@ Node compatibility adapters; pure parsing and scoring functions are available
 from the explicit `@usebrick/engine/pure` subpath.
 
 This is a private implementation package, not a separately shipped product.
-SlopBrick is the scanner and user-facing front door; the engine is reused by
-the CLI, MCP surface, and future platform layers.
+UseBrick is the repository-owned quality, coherence, and verification product.
+SlopBrick is its shipped AI-slop scanner and user-facing front door; the engine
+is reused by the CLI, MCP surface, and future Memory, Lock, and Mend
+capabilities.
 
 > **v0.15.0:** Extracted from `slopbrick/src/engine/`. The engine is now its
 > own workspace package, consumed by `slopbrick` as a workspace dep. The

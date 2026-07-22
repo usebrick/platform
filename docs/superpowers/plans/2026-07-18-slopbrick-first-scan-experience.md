@@ -1,5 +1,17 @@
 # SlopBrick Evidence-Led First Scan Implementation Plan
 
+> **Execution addendum — 2026-07-22:** Tasks 1–7 are complete and independently
+> reviewed. Task 8 is the only remaining slice. CAL-002 is complete at Task 20,
+> the execution index is revision 43, and implementation WIP is `1/2` with only
+> `SB-UX-001` active. Earlier revision numbers, WIP assumptions, and red-test
+> instructions below are preserved as the original execution sequence; they do
+> not override the current execution index. The future branded Slop Index is
+> outside this plan: current behavior remains four scores with Repository
+> Health as the first-screen headline. Revision 43 completed the current
+> documentation/evidence reconciliation and documentation-scope gates. The
+> focused first-scan matrix, recursive gates, fresh package-local no-baseline
+> self-scan, and owner-comprehension disposition remain open.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make the default SlopBrick scan immediately explain repository health, the strongest three actions, each finding's evidence and repair boundary, and truthful current/new/resolved/unchanged state on rescan.
@@ -966,9 +978,13 @@ git commit -m "test(slopbrick): prove first-scan journey"
 - Create: `docs/execution/evidence/SB-UX-001-first-scan.md`
 
 **Interfaces:**
-- Produces execution-index revision 26 only after all implementation and verification gates pass.
+- Produces the next available execution-index revision only after all
+  implementation and verification gates pass; revision 43 is current at this
+  addendum.
 - Moves `SB-UX-001` from `in_progress` to `done` and releases one WIP slot.
-- Leaves `TEL-001` ready as the next implementation priority and `VAL-001` active.
+- Leaves `TEL-001` ready as the next implementation priority and `VAL-001`
+  ready; unless another plan is explicitly started, implementation WIP becomes
+  `0/2`.
 
 - [ ] **Step 1: Update user documentation**
 
@@ -1049,9 +1065,18 @@ If the owner cannot identify the recommendation or does not respond, keep `SB-UX
 
 - [ ] **Step 7: Close the execution control plane**
 
-Only after Steps 3–6 are green, set revision `26`, mark `SB-UX-001` done, add the evidence receipt and this detailed plan to its evidence, and set its next action to preserve the contract while handing the typed outcome boundary to `TEL-001`. Update `TEL-001` next action to model the first-scan finding/action/change fields without source or repository identity.
+Only after Steps 3–6 are green, increment the current execution index to its
+next available revision, mark `SB-UX-001` done, add the evidence receipt and
+this detailed plan to its evidence, and set its next action to preserve the
+contract while handing the typed outcome boundary to `TEL-001`. Update
+`TEL-001` next action to model the first-scan finding/action/change fields
+without source or repository identity.
 
-Update `ROADMAP.md`, `STATUS.md`, the two plan files, and append changelog revision 26. State implementation WIP `1/2` with only `VAL-001` active and `TEL-001` ready next. Do not mark `VAL-001` done: one no-fix row still does not satisfy its repeated useful fix/rescan exit gate.
+Update `ROADMAP.md`, `STATUS.md`, the two plan files, and append the matching
+changelog revision. State implementation WIP `0/2` unless another plan is
+explicitly started; keep `VAL-001` and `TEL-001` ready. Do not mark `VAL-001`
+done: one no-fix row still does not satisfy its repeated useful fix/rescan exit
+gate.
 
 - [ ] **Step 8: Validate docs and repository diff**
 
@@ -1062,7 +1087,9 @@ git diff --check
 git status --short
 ```
 
-Expected: 16 plans valid, all execution-doc tests pass, no whitespace errors, and only task-owned tracked changes plus the preserved user-owned untracked paths.
+Expected: the current indexed plan count validates, all execution-doc tests
+pass, no whitespace errors remain, and only task-owned tracked changes plus
+the preserved user-owned paths are present.
 
 - [ ] **Step 9: Commit the closeout**
 

@@ -332,6 +332,9 @@ for (const plan of plans) {
   if (!planText.includes(`- **Status:** \`${plan.status}\``)) {
     errors.push(`${plan.id}: Markdown status does not match index.json`);
   }
+  if (!planText.includes(`- **Priority:** ${String(plan.priority)}`)) {
+    errors.push(`${plan.id}: Markdown priority does not match index.json`);
+  }
 
   for (const heading of requiredPlanHeadings) {
     const headingMatch = new RegExp(

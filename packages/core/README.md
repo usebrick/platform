@@ -1,12 +1,14 @@
 # `@usebrick/core` — repository contracts
 
-**The private, workspace-only contract layer shared by the usebrick platform.**
+**The private, workspace-only contract layer shared by UseBrick, the
+repository-owned quality, coherence, and verification product.**
 
-In the product architecture, this package is part of the future
-**MemoryBrick substrate**: it defines repository-owned artifacts, provenance,
-and calibration contracts. SlopBrick is the shipped scanner and front door;
-MemoryBrick, LockBrick, and MendBrick are roadmap layers, not separately
-shipped packages today.
+In the product architecture, this package is the deterministic starting point
+for the planned repository-intelligence capability: it defines repository-
+owned artifacts, provenance, and calibration contracts. SlopBrick is the
+shipped AI-slop scanner and front door; Memory, Lock, and Mend are capability
+boundaries, not separately shipped packages today. The contracts are nodes in
+the wider coherence graph; schemas or storage alone are not the moat.
 
 > Historical naming used “Repository Memory” and `memory.md`. The current
 > agent-readable artifact is `.slopbrick/structure.md`, and the current artifact
@@ -118,7 +120,9 @@ types, validators, or schema peers drift. Run
   model is still settling. The contract needs a real external consumer before
   publication is earned.
 - Publishing `@usebrick/core` to npm forces you to maintain semver on every schema tweak. Keeping it internal means you can iterate freely.
-- The schemas-as-moat argument only holds if the schemas are stable. Premature publication locks in a shape you might want to change.
+- Stable schemas are necessary for the coherence graph, but are not a moat by
+  themselves. Premature publication still locks in a shape you may need to
+  change before a real independent consumer exists.
 
 **When to publish `@usebrick/core`:** after at least one non-SlopBrick
 consumer ships and reads the schemas in production. Not before.

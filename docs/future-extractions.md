@@ -67,6 +67,12 @@ configuration compatibility design, package/name decision, migration plan, and
 reviewed release authorization. Capability language such as future `usebrick
 scan` is not an implementation decision.
 
+The strategy retains the ideas without retaining their package assumptions.
+StackPick and PickBrick fold into `init` and Constitution authoring. GIR is
+future deterministic transformation logic inside Mend. The MCP Registry Bridge
+remains an integration. BRICK Cloud is delayed hosted history and governance,
+gated by paid-team demand.
+
 ## When NOT to extract
 
 Premature splitting hurts more than it helps. Resist the urge to extract when:
@@ -87,3 +93,4 @@ Premature splitting hurts more than it helps. Resist the urge to extract when:
 | Mend capability | Parked narrow reversible repair | Trusted enforcement and rollback proof produce a stable repair contract needed by two consumers |
 | RenderBrick Labs | Draft source-only versus rendered-evidence benchmark | Material benchmark value plus two real consumers and an approved runtime boundary ADR |
 | Standalone MCP | Not approved | Multiple clients need an independent lifecycle and the boundary has no CLI-internal assumptions |
+| Hosted team service / BRICK Cloud lineage | Parked business-model hypothesis | Repeated paid-team use requires shared history, approvals, and governance |

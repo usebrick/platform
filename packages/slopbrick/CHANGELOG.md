@@ -60,8 +60,11 @@ current publisher-attested internal Corpus v1 evaluation path.
 ### Changed
 
 - Aligned the unreleased workspace-candidate documentation around UseBrick as
-  the sole coherence product and SlopBrick as its shipped scanner, CLI, and MCP
-  front door. Memory, Lock, and Mend remain capability names only; this is a
+  the sole quality, coherence, and verification product and SlopBrick as its
+  central AI-slop scanner, shipped CLI/MCP front door, and acquisition surface.
+  Memory is repository intelligence, Lock is the new-debt hypothesis, Mend is
+  deterministic repair, and Pick is policy setup; the Slop Index remains a
+  future reporting concept rather than a fifth shipped score. This is a
   documentation change with no runtime, version, calibration, or public-release
   claim.
 - Made the default pretty scan a bounded first screen and added `--full` for

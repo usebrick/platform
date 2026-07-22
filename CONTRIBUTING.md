@@ -2,11 +2,12 @@
 
 ## Product and package boundary
 
-UseBrick is the sole customer-facing product: the repository-owned coherence
-and verification layer shared by developers, coding agents, and CI. SlopBrick
-is the shipped local scanner, current CLI, embedded MCP server, and package
-front door. Memory, Lock, and Mend are internal capability and sequencing
-names, not standalone products or authorization to create packages.
+UseBrick is the sole customer-facing product: the repository-owned quality,
+coherence, and verification layer shared by developers, coding agents, and CI.
+SlopBrick is the shipped local AI-slop scanner, current CLI, embedded MCP
+server, and package front door. Memory, Lock, and Mend are internal capability
+and sequencing names, not standalone products or authorization to create
+packages.
 
 Current end-user commands use `npx slopbrick ...`. Product direction belongs
 in the root [roadmap](./ROADMAP.md); dated market observations and scenarios

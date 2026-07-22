@@ -1,12 +1,11 @@
 # usebrick/platform
 
-> **UseBrick is the coherence and verification layer for agent-built
-> software.**
+> **UseBrick keeps AI-generated software coherent.**
 
-UseBrick is the sole customer-facing product behind
-[usebrick.dev](https://usebrick.dev): one repository-owned contract shared by
-developers, coding agents, and CI. It starts with a practical question after
-an agent-assisted build:
+UseBrick is the repository-owned quality, coherence, and verification layer
+for agent-built software. It is the sole customer-facing product behind
+[usebrick.dev](https://usebrick.dev): one contract shared by developers,
+coding agents, and CI.
 
 > The app works, but is it actually well built?
 
@@ -20,8 +19,8 @@ hypothesis has not yet been collected.
 
 | Product or capability | Role | Current status |
 | --- | --- | --- |
-| **UseBrick** | The coherence and verification product and repository-owned contract | Sole customer-facing product |
-| **SlopBrick** | Observe, detect, explain, and emit repository evidence | Shipped npm package, current CLI, free local scanner, and acquisition surface |
+| **UseBrick** | The quality, coherence, and verification product and repository-owned contract | Sole customer-facing product |
+| **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
 | **Memory capability** | Compile facts, approved intent, provenance, and freshness into bounded agent context | Planned read-only substrate; no new package or store is authorized |
 | **Lock capability** | Prevent newly introduced verified drift with approved policy | Planned paid-workflow hypothesis inside the current CLI |
 | **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Parked until detection and enforcement earn trust |
@@ -35,6 +34,15 @@ context for agents and CI. The deterministic Repository Structure schemas
 already in this monorepo are its technical starting point. Capability names
 describe responsibilities and sequencing boundaries; they do not authorize
 separately marketed products or workspace packages.
+
+AI slop and repository memory solve different halves of one problem. Slop is
+the visible inconsistency; context loss is one major cause. Memory learns one
+repository, while separately consented privacy-safe outcomes may later improve
+global rule priors. Local approved policy always wins.
+
+The earlier StackPick and PickBrick ideas are now onboarding and Constitution
+authoring. GIR is retained only as future deterministic Mend logic. Hosted
+BRICK Cloud ideas remain delayed until real team adoption.
 
 See the [canonical roadmap](./ROADMAP.md), the
 [execution index](./docs/execution/index.json), and the
@@ -129,6 +137,11 @@ actions:
 Use `scan --full` when you need every active score and finding after that first
 screen. The separately labeled AI Slop policy result remains the configured
 gate; the Repository Health headline does not replace it.
+
+The memorable **Slop Index** remains a future shareable report concept. It is
+not a current CLI field, formula, or release claim. The current four-score
+contract remains authoritative until a separate compatibility, calibration,
+UX, and release decision changes it.
 
 Evidence labels describe what supports a finding. `deterministic` means the
 rule attached an exact source span or deliberately omitted an oversized span;
@@ -239,8 +252,15 @@ and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory,
 Lock, Mend, and Render Labs remain planned, parked, or experimental capability
 boundaries as labeled above.
 
+The long-term moat is the coherence graph connecting observed facts, approved
+intent, provenance and freshness, human outcomes, enforcement decisions,
+repair receipts, runtime evidence, and cross-agent benchmark results. The rule
+catalog alone is not the moat.
+
 Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the package boundaries
-and data flow.
+and data flow, and the dated
+[market research](./docs/research/usebrick-market-positioning-2026-07-19.md)
+for competitive and pricing hypotheses.
 
 ## Contributing
 

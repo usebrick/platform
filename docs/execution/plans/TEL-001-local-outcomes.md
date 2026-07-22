@@ -4,7 +4,7 @@
 - **Priority:** 8
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -25,12 +25,18 @@ finding, immediate repair declined because no safe fix existed, unchanged
 rescan—but it does not authorize event implementation before `SB-UX-001`
 defines the typed finding/outcome boundary.
 
-`CAL-002` now owns the separate 119-rule policy and provenance closeout beside
-active `SB-UX-001`. This plan remains `ready`; it neither consumes WIP nor
-waits for a rule-state, admission, release, or deployment change.
+`CAL-002` has completed the separate 119-rule policy and provenance closeout.
+This plan remains `ready`; it neither consumes WIP nor waits for a rule-state,
+admission, release, or deployment change.
 Local outcome history and outbound reporting remain separate: outbound stays
 off by default and endpoint-gated, and this plan does not authorize hosted
 ingestion.
+
+This contract is the local foundation for a possible global slop-intelligence
+plane. Any later aggregation remains opt-in and privacy-safe. A global prior
+may inform reviewed confidence, but it cannot override explicit repository
+policy or silently become a quality label, severity change, calibration
+admission, source authority, or authorship claim.
 
 ## Scope
 
@@ -51,6 +57,8 @@ ingestion.
   public rule-quality dashboards.
 - Treating a dismissal as proof that a rule is false.
 - Changing finding severity from unreviewed local events.
+- Using local or aggregated outcomes to override approved repository intent or
+  automatically activate, retire, or recalibrate a rule.
 
 ## Dependencies
 
@@ -69,6 +77,7 @@ ingestion.
 - Documentation distinguishes local history from outbound reporting.
 - Outcome events remain product/workflow observations and cannot be promoted
   to calibration labels, source authority, or authorship evidence.
+- Repository-local approved policy wins over any future global prior.
 - Any future hosted use requires a separate privacy and authorization gate.
 
 ## Execution steps
@@ -99,7 +108,7 @@ delete path. Preserve schema/test evidence for review.
 
 ## Next action
 
-After `SB-UX-001` defines its finding/outcome boundary, specify and test the
-smallest local event capable of representing RUN-001's useful,
+After `SB-UX-001` closes Task 8, specify and test the smallest local event
+capable of representing RUN-001's useful,
 declined-no-safe-fix, unchanged-rescan, and bounded return states with no raw
 source or proprietary repository identifier. Keep outbound reporting opt-in.

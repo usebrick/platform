@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 42,
+  "revision": 43,
   "updatedAt": "2026-07-22",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -203,12 +203,13 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Complete the remaining Task 8 gates: rerun the focused first-scan matrix and recursive quality gates, capture a fresh package-local self-scan without baseline mutation, and present that exact first screen for the remaining owner comprehension disposition.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
       },
       "evidence": [
         "docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md",
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
         "specs/PLAN-AUDIT_LATEST.md",
         "specs/IMPACT_LATEST.md",
         "docs/execution/plans/SB-UX-001-first-scan.md"
@@ -267,11 +268,14 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "After SB-UX-001 types the first finding/outcome boundary, model the owner-observed useful, declined-no-safe-fix, and unchanged-rescan states without raw source or repository identity.",
+        "text": "After SB-UX-001 closes Task 8, model the owner-observed useful, declined-no-safe-fix, unchanged-rescan, and bounded-return states without raw source or repository identity.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
+        "docs/research/usebrick-market-positioning-2026-07-19.md"
+      ]
     },
     {
       "id": "MEM-001",
@@ -299,7 +303,9 @@
         "evidencePath": "docs/decisions/memorybrick-m0.md"
       },
       "evidence": [
-        "docs/ARCHITECTURE.md"
+        "docs/ARCHITECTURE.md",
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
+        "docs/research/usebrick-market-positioning-2026-07-19.md"
       ]
     },
     {
@@ -327,7 +333,10 @@
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/new-debt-gate.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/LOCK-001-owner-validation.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
+        "docs/research/usebrick-market-positioning-2026-07-19.md"
+      ]
     },
     {
       "id": "MEND-001",
@@ -353,7 +362,9 @@
         "verify": "test -f docs/execution/evidence/MEND-001-repair-proof.md",
         "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md"
+      ]
     },
     {
       "id": "ENT-001",
@@ -381,7 +392,10 @@
         "verify": "test -f docs/execution/evidence/ENT-001-demand.md",
         "evidencePath": "docs/execution/evidence/ENT-001-demand.md"
       },
-      "evidence": []
+      "evidence": [
+        "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
+        "docs/research/usebrick-market-positioning-2026-07-19.md"
+      ]
     },
     {
       "id": "DOC-PRUNE-001",

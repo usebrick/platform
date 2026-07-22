@@ -1,10 +1,10 @@
 # MEND-001 — Prove the first deterministic reversible repair
 
 - **Status:** `parked`
-- **Priority:** 10
+- **Priority:** 11
 - **Track / lane:** implementation / mend
 - **Owner:** UseBrick platform
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -20,6 +20,10 @@ demonstrates trusted enforcement and a selected transformation has
 deterministic, byte-identical rollback proof. Team demand remains separate and
 unproven.
 
+The earlier GIR proposal survives only as deterministic transformation logic
+inside this capability. It does not authorize a separate migrator product or
+arbitrary model-driven refactoring.
+
 ## Scope
 
 - Select one high-confidence, mechanically expressible Lock finding.
@@ -27,6 +31,9 @@ unproven.
   repository gate, and rollback contracts.
 - Run on fixtures, then owner-controlled repositories selected explicitly for
   local validation.
+- Start with transformations such as approved-token replacement, approved-
+  component reuse, or forbidden-dependency replacement only when exact
+  preconditions and rollback can be proven.
 
 ## Non-goals
 

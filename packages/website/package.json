@@ -3,7 +3,7 @@
   "version": "0.14.5",
   "private": true,
   "type": "module",
-  "description": "The UseBrick coherence product site: SlopBrick-first onboarding and verified facts for one repository-owned developer, agent, and CI contract.",
+  "description": "The UseBrick quality, coherence, and verification product site: SlopBrick-first onboarding and verified facts for one repository-owned developer, agent, and CI contract.",
   "scripts": {
     "dev": "pnpm prebuild && astro dev",
     "build": "astro build",

@@ -36,12 +36,17 @@ function write(root, relativePath, contents) {
   writeFileSync(absolutePath, contents);
 }
 
-function planMarkdown({ id = "P-001", status = "ready", omitSection } = {}) {
+function planMarkdown({
+  id = "P-001",
+  status = "ready",
+  priority = 1,
+  omitSection,
+} = {}) {
   const sections = requiredSections
     .filter((section) => section !== omitSection)
     .map((section) => `## ${section}\n\nContent for ${section}.`)
     .join("\n\n");
-  return `# ${id}\n\n- **Status:** \`${status}\`\n\n${sections}\n`;
+  return `# ${id}\n\n- **Status:** \`${status}\`\n- **Priority:** ${priority}\n\n${sections}\n`;
 }
 
 function makeFixture() {
@@ -177,6 +182,19 @@ test("rejects missing, non-integer, and negative plan priorities", () => {
       );
     });
   }
+});
+
+test("rejects a Markdown priority that disagrees with the index", () => {
+  withFixture(({ root, plan }) => {
+    write(root, plan.path, planMarkdown({ priority: 2 }));
+
+    const result = run(root);
+    assert.equal(result.status, 1);
+    assert.match(
+      result.stderr,
+      /P-001: Markdown priority does not match index\.json/,
+    );
+  });
 });
 
 test("rejects absolute, non-normalized, and out-of-directory plan paths", () => {

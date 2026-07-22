@@ -1,14 +1,12 @@
 # UseBrick architecture
 
-**Updated:** 2026-07-19
+**Updated:** 2026-07-22
 **Status:** Current product and package reference
 
-UseBrick is the coherence and verification layer for agent-built software and
-the sole customer-facing product: one repository-owned contract shared by
-developers, coding agents, and CI. Serious solo developers and vibe coders
-enter through SlopBrick's free local scan. The initial buyer hypothesis is
-AI-native software teams and agencies with roughly 5–100 developers; the
-repository owner remains the only completed product tester.
+UseBrick keeps AI-generated software coherent. It is the repository-owned
+quality, coherence, and verification layer for agent-built software and the
+sole customer-facing product: one contract shared by developers, coding
+agents, and CI.
 
 Product direction lives in [`ROADMAP.md`](../ROADMAP.md). Live implementation
 status and dependency edges live in
@@ -28,8 +26,8 @@ status and dependency edges live in
 
 | Product or capability | Architectural role | Delivery boundary |
 | --- | --- | --- |
-| **UseBrick** | Repository-owned contract shared by developers, coding agents, and CI | Sole customer-facing product |
-| **SlopBrick** | Deterministic local scanning, evidence, scores, repository artifacts, MCP, and CI primitives | Shipped npm package, current CLI, free scanner, and acquisition surface |
+| **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
+| **SlopBrick** | Detect visual, frontend, code, and repository slop; emit evidence, scores, artifacts, MCP, and CI primitives | Shipped npm package, current CLI, free scanner, and acquisition surface |
 | **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Planned read-only projection before any new store, migration, or package |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
 | **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | Planned first paid-workflow hypothesis inside the existing CLI |
@@ -41,6 +39,37 @@ or an unbounded vector store. The repository remains the authority, memory
 changes must be reviewable, and agents may propose rather than silently author
 normative facts. These capability names define architecture and sequencing;
 none implies a separately marketed product or package extraction.
+
+Earlier names fold into this model: StackPick and PickBrick become onboarding
+and Constitution authoring; the MCP Registry Bridge remains an integration;
+GIR becomes future deterministic Mend logic; BRICK Cloud remains delayed
+hosted history and governance.
+
+## Intelligence planes and coherence graph
+
+```text
+repository intelligence                 global slop intelligence
+facts + intent + provenance             privacy-safe opted-in outcomes
+             \                           /
+              \                         /
+                 SlopBrick evidence
+                        │
+             Lock decisions and waivers
+                        │
+       Mend diff + tests + rescan + rollback
+                        │
+              runtime verification
+```
+
+Repository intelligence owns private facts, approved policy, exceptions, and
+rationale. Global outcomes may improve confidence and thresholds only after
+consent and review. A global prior cannot override local approved intent or
+silently become a calibration label.
+
+The coherence graph connects observed facts, declared intent, provenance and
+freshness, outcomes, enforcement state, repair receipts, runtime evidence, and
+cross-agent benchmark results. This connected evidence—not the rule list—is
+the architectural moat.
 
 ## Verified delivery state
 
@@ -205,6 +234,11 @@ SlopBrick's strategic report taxonomy grows toward:
 Each finding must identify its evidence quality—deterministic, calibrated, or
 advisory—so qualitative visual judgement is never represented as certain
 static-analysis fact.
+
+The future Slop Index is a possible shareable projection over these dimensions,
+not a current field or formula. The current four scores and Repository Health
+first-screen headline remain the implemented contract until a separate score
+compatibility and calibration decision is approved.
 
 ### Corpus v1 source-use boundary
 

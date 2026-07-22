@@ -2,7 +2,7 @@
   "name": "usebrick-platform",
   "version": "0.0.0",
   "private": true,
-  "description": "UseBrick is the repository-owned coherence and verification layer for agent-built software; SlopBrick is the shipped scanner and CLI.",
+  "description": "UseBrick is the repository-owned quality, coherence, and verification layer for agent-built software; SlopBrick is the shipped AI-slop scanner and CLI.",
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",

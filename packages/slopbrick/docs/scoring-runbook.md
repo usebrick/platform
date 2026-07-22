@@ -1,8 +1,8 @@
 # SlopBrick scoring runbook
 
-SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
-customer-facing coherence and verification product. Memory, Lock, and Mend are
-capability and sequencing names, not separate products or packages. Current
+SlopBrick is the shipped AI-slop scanner and CLI inside UseBrick, the sole
+customer-facing quality, coherence, and verification product. Memory, Lock,
+and Mend are capability and sequencing names, not separate products or packages. Current
 command examples use `npx slopbrick ...`.
 
 This is the operator guide for interpreting and gating SlopBrick reports. The

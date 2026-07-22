@@ -1,14 +1,22 @@
 # slopbrick architecture snapshot (v0.44.0 was unreleased at authoring)
 
-> **Current doctrine (2026-07-19):** UseBrick is the sole customer-facing
-> coherence and verification product. SlopBrick is its shipped local scanner,
-> current CLI, embedded MCP server, and evidence-producing front door. Memory,
-> Lock, and Mend are internal capability and sequencing names, not standalone
-> products or packages. Current usage uses `npx slopbrick ...`; this historical
-> snapshot does not authorize a different CLI. Repository-local history and
-> endpoint-gated outbound reporting remain separate. AI association is neither
-> quality nor authorship authority; v10.1 is historical evidence and current
-> v10.3 admission remains zero.
+> **Current doctrine (2026-07-22):** UseBrick is the sole customer-facing
+> quality, coherence, and verification product. SlopBrick remains its shipped
+> local AI-slop scanner, current CLI, embedded MCP server, and acquisition
+> front door. Memory, Lock, and Mend are internal capability and sequencing
+> names, not standalone products or packages. Current usage uses
+> `npx slopbrick ...`; this historical snapshot does not authorize a different
+> CLI. Repository-local history and endpoint-gated outbound reporting remain
+> separate. AI association is neither quality nor authorship authority; v10.1
+> is historical evidence and current v10.3 admission remains zero.
+>
+> The current moat hypothesis is the coherence graph connecting observed
+> facts, approved intent, provenance and freshness, outcomes, enforcement, and
+> repair receipts. Historical claims below that the Constitution, calibration,
+> or a rule catalog alone is "the moat" are preserved as dated reasoning, not
+> current strategy. The branded Slop Index is retained only as a future,
+> separately gated reporting concept; the shipped contract still has four
+> scores and uses Repository Health as the first-screen headline.
 
 > **Historical design record.** The title and train references below describe
 > an earlier snapshot. Current architecture and release boundaries live in the

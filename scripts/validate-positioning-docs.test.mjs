@@ -14,11 +14,19 @@ const executionIndex = JSON.parse(read('docs/execution/index.json'));
 const executionStatus = read('docs/execution/STATUS.md');
 const gtmPlan = read('docs/execution/plans/GTM-001-vibecoder-pilots.md');
 const labsPlan = read('docs/execution/plans/LABS-001-rendered-evidence-benchmark.md');
+const telemetryPlan = read('docs/execution/plans/TEL-001-local-outcomes.md');
+const memoryPlan = read('docs/execution/plans/MEM-001-read-only-m0.md');
+const lockPlan = read('docs/execution/plans/LOCK-001-new-debt-gate.md');
 const releasePlan = read('docs/execution/plans/REL-001-public-release-boundary.md');
 const packageReadme = read('packages/slopbrick/README.md');
 const packageRoadmap = read('packages/slopbrick/ROADMAP.md');
+const packageAgentGuidance = read('packages/slopbrick/AGENTS.md');
+const coreAgentGuidance = read('packages/core/AGENTS.md');
+const scoringDocs = read('packages/slopbrick/docs/scoring-explained.md');
 const packageExamples = read('packages/slopbrick/EXAMPLES.md');
 const mcpDocs = read('packages/slopbrick/docs/MCP.md');
+const architecture = read('docs/ARCHITECTURE.md');
+const futureExtractions = read('docs/future-extractions.md');
 const websiteHero = read('packages/website/src/components/Hero.astro');
 const websiteTools = read('packages/website/src/components/Tools.astro');
 const websiteTrust = read('packages/website/src/components/TrustStrip.astro');
@@ -26,15 +34,65 @@ const websiteCta = read('packages/website/src/components/CTASection.astro');
 const websiteDocs = read('packages/website/src/pages/docs/index.astro');
 const marketResearch = read('docs/research/usebrick-market-positioning-2026-07-19.md');
 
-test('binds durable strategy to one UseBrick product and a shipped SlopBrick front door', () => {
+test('binds durable strategy to one UseBrick product and a central SlopBrick front door', () => {
   assert.match(
     withoutQuoteMarkers(roadmap),
-    /UseBrick is the coherence and verification layer for agent-built\s+software/,
+    /UseBrick keeps AI-generated software coherent/,
   );
-  assert.match(rootReadme, /UseBrick is the sole customer-facing product/);
-  assert.match(packageReadme, /SlopBrick is the shipped scanner and CLI/);
+  assert.match(roadmap, /repository-owned quality, coherence, and verification layer/);
+  assert.match(rootReadme, /It is the sole customer-facing product/);
+  assert.match(packageReadme, /central AI-slop scanner and acquisition surface/);
   assert.match(packageRoadmap, /root \[UseBrick roadmap\]\(\.\.\/\.\.\/ROADMAP\.md\)/);
   assert.match(packageRoadmap, /no longer acts as a planning authority/);
+  assert.match(packageAgentGuidance, /UseBrick is the sole customer-facing/);
+  assert.match(packageAgentGuidance, /central AI-slop detector/);
+  assert.match(coreAgentGuidance, /repository-intelligence capability inside UseBrick/);
+});
+
+test('retains the Slop Index only as a separately gated future concept', () => {
+  for (const document of [roadmap, packageReadme, scoringDocs]) {
+    assert.match(document, /Slop Index/);
+    assert.match(document, /future/i);
+  }
+  assert.match(roadmap, /not a current command, field, formula, or release\s+claim/i);
+  assert.match(packageReadme, /not a fifth current score, command, wire field, or\s+formula/i);
+  assert.match(scoringDocs, /does not reactivate a legacy\s+field or add a fifth score today/i);
+});
+
+test('separates repository intelligence from opt-in global outcomes', () => {
+  assert.match(roadmap, /Two intelligence planes/);
+  assert.match(architecture, /repository intelligence\s+global slop intelligence/);
+  assert.match(memoryPlan, /repository-intelligence plane of the coherence graph/);
+  assert.match(telemetryPlan, /possible global slop-intelligence\s+plane/);
+  assert.match(lockPlan, /Explicit repository policy and exceptions remain the final enforcement\s+authority/);
+  assert.match([roadmap, telemetryPlan].join('\n'), /local approved policy wins|Repository-local approved policy wins/i);
+});
+
+test('preserves the original ideas as roles instead of new products', () => {
+  assert.match(roadmap, /StackPick \/ PickBrick/);
+  assert.match(roadmap, /MCP Registry Bridge/);
+  assert.match(roadmap, /GIR/);
+  assert.match(roadmap, /BRICK Cloud/);
+  assert.match(futureExtractions, /StackPick and PickBrick fold into `init` and Constitution authoring/);
+  assert.match(futureExtractions, /BRICK Cloud is delayed hosted history and governance/);
+  assert.match(packageAgentGuidance, /Pick\/StackPick folds into `init` and policy authoring/);
+  assert.match(packageAgentGuidance, /not.*separately shipped products or packages/is);
+});
+
+test('locks the first-scan taxonomy and evidence hierarchy', () => {
+  for (const area of [
+    'Visual Slop',
+    'Frontend Implementation',
+    'Code and Logic',
+    'Repository Coherence',
+    'Accessibility and Resilience',
+  ]) {
+    assert.match(roadmap, new RegExp(area));
+  }
+  assert.match(roadmap, /\*\*Deterministic:\*\*/);
+  assert.match(roadmap, /\*\*Calibrated:\*\*/);
+  assert.match(roadmap, /\*\*Advisory:\*\*/);
+  assert.match(roadmap, /Security remains an orthogonal specialist score and gate/);
 });
 
 test('keeps external validation ready, empty, and non-authorizing', () => {
@@ -63,6 +121,7 @@ test('keeps rendered evidence in a benchmark-only Labs boundary', () => {
 test('keeps customer copy on capabilities rather than separately shipped products', () => {
   assert.match(websiteHero, /Your agents can write code/);
   assert.match(websiteHero, /UseBrick keeps the system coherent/);
+  assert.match(websiteHero, /visual, frontend, code, and repository slop/);
   assert.match(websiteTools, /capabilities, not separate products/);
   assert.match(websiteTools, /Render Labs/);
   assert.match(websiteTools, /VERIFY RUNTIME · LABS/);
@@ -127,4 +186,5 @@ test('preserves the separate release and deployment authority', () => {
     releasePlan,
     /keep npm publication and\s+website deployment unauthorized/i,
   );
+  assert.match(releasePlan, /deployed commit identity remains unverified/i);
 });

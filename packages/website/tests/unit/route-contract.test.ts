@@ -57,14 +57,16 @@ describe('website route contract', () => {
   });
 
   it('positions UseBrick as the coherence product while keeping SlopBrick as the current CLI', () => {
-    expect(homeSource).toContain('UseBrick coherence and verification');
+    expect(homeSource).toContain('UseBrick quality · coherence · verification');
     expect(homeSource).toContain('Your agents can write code');
     expect(homeSource).toContain('UseBrick keeps the system coherent');
     expect(heroSource).toContain(
       'One repository-owned contract shared by developers, coding agents, and CI.',
     );
     expect(heroSource).toContain('npm install -g slopbrick');
-    expect(heroSource).toContain('SlopBrick is the shipped local scanner and current CLI.');
+    expect(heroSource).toContain(
+      'SlopBrick finds visual, frontend, code, and repository slop—and remains the shipped local scanner and current CLI.',
+    );
     expect(homeSource).not.toContain('free front door for vibecoders');
     expect(homeSource).not.toContain('first paid team layer');
     expect(homeSource).not.toMatch(/\busebrick (scan|init|ci|mcp)\b/);
@@ -98,8 +100,9 @@ describe('website route contract', () => {
     expect(calibrationSource).toContain('v10.3 admission');
     expect(ctaSource).toContain('npm install -g slopbrick');
     expect(ctaSource).toContain('SlopBrick is the shipped local scanner and current CLI.');
-    expect(docsSource).toContain('UseBrick is the coherence and verification layer');
-    expect(docsSource).toContain('SlopBrick is the shipped local scanner and current CLI.');
+    expect(docsSource).toContain('UseBrick keeps AI-generated software coherent.');
+    expect(docsSource).toContain('SlopBrick is the shipped local AI-slop scanner');
+    expect(docsSource).toContain('Slop Index is retained only as a future shareable reporting concept');
     expect(docsSource).toContain('slopbrick scan');
     expect(homeSource).not.toMatch(/38\.4m|\$6\.1B|Gartner|JetBrains adoption/);
   });

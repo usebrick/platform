@@ -10,8 +10,10 @@ Apply silently. Do not restate unless the user asks for project rules.
 
 `@usebrick/core` is the private, workspace-only contract layer for repository
 artifacts and calibration evidence. SlopBrick writes the current `.slopbrick/`
-artifacts; the package is also the technical base for the planned MemoryBrick
-substrate. Future product names do not imply shipped packages.
+artifacts; the package is also the technical base for the planned
+repository-intelligence capability inside UseBrick. UseBrick is the sole
+customer-facing product; future capability names do not imply shipped
+packages.
 
 > Historical naming used “Repository Memory” and `memory.md`. The current
 > agent-readable artifact is `.slopbrick/structure.md`, and the current artifact

@@ -1,7 +1,8 @@
 # SlopBrick scoring explained
 
 SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
-customer-facing coherence and verification product. Memory, Lock, and Mend are
+customer-facing quality, coherence, and verification product. It remains the
+free AI-slop scanner and acquisition surface. Memory, Lock, and Mend are
 capability names, not separate products, packages, or score surfaces.
 
 `npx slopbrick scan` reports four headline scores. They describe different
@@ -139,11 +140,18 @@ finding cannot widen that authority.
 
 ## Other score-like fields
 
+The product strategy retains **Slop Index** as a possible future shareable
+acquisition and reporting concept. That decision does not reactivate a legacy
+field or add a fifth score today. A future public Slop Index must expose its
+dimensions, evidence quality, trend, baseline, and new/removed findings, and
+requires separate calibration, compatibility, UX, and release approval.
+
 - `assemblyHealth` is the legacy inverse of `aiSlopScore` retained only for
   complete-report wire/history compatibility.
 - `totalScore` is a retired compatibility field and is omitted from current
   JSON output.
-- `slopIndex` is a legacy name; use `aiSlopScore` in new consumers.
+- `slopIndex` is a legacy compatibility name; use `aiSlopScore` in current
+  consumers. It is distinct from the separately gated future product concept.
 - `compositeScore` is an informational Bayesian AI-likelihood aggregate. It is
   not one of the four deterministic headline scores, does not prove
   authorship, and does not drive the standard mean gate.

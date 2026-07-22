@@ -5,6 +5,11 @@ other workspace packages, not published on npm. The exact TypeScript surface is
 [`src/index.ts`](../src/index.ts); the exact cross-language schema inventory is
 [`schemas/v1/index.json`](../schemas/v1/index.json).
 
+UseBrick is one repository-owned quality, coherence, and verification product.
+Core supplies contracts to the shipped SlopBrick scanner and future Memory,
+Lock, and Mend capabilities; it is not a separately marketed product or a
+published integration surface.
+
 ## Repository artifact API
 
 The package exports generated types for:

@@ -1,10 +1,10 @@
 # ENT-001 — Validate repeated enterprise governance demand
 
 - **Status:** `parked`
-- **Priority:** 11
+- **Priority:** 12
 - **Track / lane:** company / enterprise
 - **Owner:** UseBrick company
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -17,6 +17,9 @@ feature checklist.
 UseBrick has no proven paid Lock cohort requiring organisation-wide SSO,
 audit, policy inheritance, private runners, self-hosting, or cross-repository
 governance. Building those now would precede the scanner and team trust gates.
+The earlier BRICK Cloud idea maps here only as delayed hosted history,
+approvals, team policy, and governance. It is not an authorized product or
+infrastructure program.
 
 ## Scope
 

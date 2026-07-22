@@ -1,8 +1,8 @@
 # SlopBrick Calibration Methodology
 
-> **Current product boundary:** UseBrick is the sole customer-facing coherence
-> and verification product. SlopBrick is the shipped scanner, CLI, and
-> evidence-producing front door. Memory, Lock, and Mend identify planned
+> **Current product boundary:** UseBrick is the sole customer-facing quality,
+> coherence, and verification product. SlopBrick is the shipped AI-slop
+> scanner, CLI, and evidence-producing front door. Memory, Lock, and Mend identify planned
 > capabilities and sequencing boundaries, not products, packages, or
 > authorization for new commands. See the [root roadmap](../ROADMAP.md) for
 > direction and the dated

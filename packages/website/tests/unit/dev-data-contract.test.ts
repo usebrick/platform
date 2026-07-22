@@ -18,7 +18,9 @@ describe('website development data contract', () => {
     ) as { version?: string; description?: string };
 
     expect(packageJson.version).toBe('0.14.5');
-    expect(packageJson.description).toContain('UseBrick coherence product site');
+    expect(packageJson.description).toContain(
+      'UseBrick quality, coherence, and verification product site',
+    );
     expect(packageJson.description).toContain('SlopBrick-first onboarding');
     expect(packageJson.description).toContain('verified facts');
   });

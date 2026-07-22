@@ -1,9 +1,11 @@
 # UseBrick coherence positioning and documentation convergence
 
 **Date:** 2026-07-19
+**Account-wide review incorporated:** 2026-07-22
 **Status:** approved
 **Approved:** 2026-07-19 by repository-owner implementation instruction
-**Authority:** repository-owner market review and documentation instruction
+**Re-approved:** 2026-07-22 by repository-owner account-wide review instruction
+**Authority:** repository-owner market reviews and documentation instructions
 
 ## Reason for existence
 
@@ -15,8 +17,12 @@ evidence or documenting unshipped behavior as current.
 
 ## Decision
 
-> **UseBrick is the coherence and verification layer for agent-built
-> software.**
+> **UseBrick keeps AI-generated software coherent.**
+
+The durable category statement is:
+
+> **UseBrick is the repository-owned quality, coherence, and verification
+> layer for agent-built software.**
 
 The supporting contract is:
 
@@ -69,6 +75,76 @@ The measurable adoption loop is **scan -> useful finding -> fix -> rescan ->
 protect**. Rule count, an AI-detection claim, or a single score is not the
 north star.
 
+## Account-wide product doctrine
+
+The AI-slop scanner and repository-intelligence ideas solve different halves
+of one problem. AI slop is the visible failure: generated software becomes
+generic, inconsistent, fragile, or architecturally incoherent. Context loss is
+one major cause: each agent lacks durable knowledge of what the repository
+uses, expects, and has approved.
+
+UseBrick therefore has two intelligence planes:
+
+| Plane | Job | Authority boundary |
+| --- | --- | --- |
+| Repository intelligence | Preserve observed facts, approved intent, rationale, exceptions, provenance, and freshness | Repository-owned; private facts and policy stay local by default |
+| Global slop intelligence | Learn which patterns are useful, noisy, fixed, declined, suppressed, or recurrent | Privacy-safe and opt-in; outcome events never become labels or policy without separate review |
+
+The local contract wins conflicts. A global prior may inform confidence, but it
+cannot override an explicit repository exception or silently change a gate.
+
+The retained idea lineage is:
+
+| Earlier name | Durable role |
+| --- | --- |
+| `slop-audit` | SlopBrick, the free local diagnostic and distribution wedge |
+| StackPick / PickBrick | `init`, Constitution setup, and policy authoring |
+| MCP Registry Bridge | An integration surface for agents, not the company |
+| `slop-lock` | Lock capability and the first paid new-debt workflow |
+| GIR | Deterministic transformation engine inside the future Mend capability |
+| BRICK Cloud | Delayed hosted history, approvals, and team governance after adoption |
+
+## SlopBrick analysis and score decision
+
+SlopBrick remains explicitly about visual, frontend, code, and repository slop
+that AI-assisted development amplifies. It does not claim that an individual
+file was written by AI.
+
+The first-scan information architecture remains five areas: Visual Slop,
+Frontend Implementation, Code and Logic, Repository Coherence, and
+Accessibility and Resilience.
+
+Security remains an orthogonal specialist score and gate. Testing is visible
+inside resilience and engineering-hygiene evidence. Neither is hidden inside a
+single unexplained number.
+
+Findings use three customer-readable evidence classes:
+
+- **Deterministic:** exact reproducible evidence; eligible for CI only when the
+  applicable policy authorizes it.
+- **Calibrated:** measured association or quality behavior with stated limits;
+  never authorship proof and never default-on without current authority.
+- **Advisory:** qualitative or model-assisted review; non-blocking unless an
+  explicit repository policy converts the concern into a deterministic check.
+
+The **Slop Index** is retained as a future shareable acquisition and reporting
+concept. It is not the current CLI contract. The current workspace candidate
+still reports `aiSlopScore`, `engineeringHygiene`, `security`, and
+`repositoryHealth`; the first-screen headline remains Repository Health.
+Changing the score name or formula requires a separate compatibility,
+calibration, UX, and release decision.
+
+## Defensible system
+
+The rule catalog is not the moat. The defensible asset is a coherence graph
+that connects observed facts, declared intent, provenance and freshness,
+human outcomes, enforcement decisions, repair receipts, runtime evidence, and
+cross-agent benchmark results.
+
+The product experience remains one loop: **scan, understand, enforce, and
+repair**. Brick names express internal responsibilities, not a suite customers
+must purchase or learn separately.
+
 ## Positioning boundaries
 
 - Do not position UseBrick as an authorship detector, generic AI reviewer,
@@ -119,21 +195,24 @@ proof.
 
 ### Now: 0–30 days
 
-- Finish the evidence-led first scan and current CAL-002 authority program.
-- Align local website source, package claims, telemetry language, and release
-  facts; do not infer deployment authorization.
+- Close the evidence-led first scan against the completed CAL-002 authority
+  program.
+- Preserve aligned website, package, telemetry, and release facts; do not infer
+  deployment or release authority from source changes.
+- Implement the privacy-safe local outcome contract after the first-scan type
+  boundary, with inspect, export, delete, and explicit outbound consent.
 - Stop expanding rule count unless an observed user problem requires it.
-- Move `GTM-001` from dormant protocol to a ready, consent-safe plan for 10–20
-  observed external sessions. A documentation change authorizes planning, not
-  contacting, scheduling, or recording a participant.
+- Keep `GTM-001` ready to prepare a consent-safe plan for 10–20 observed
+  external sessions. Documentation authorizes materials, not contact,
+  scheduling, recording, or collection.
 - Measure useful finding, action, rescan, and return behavior. Do not convert
   participant observations into calibration labels or source authority.
 
 ### Next: 31–90 days
 
-- Prove one narrow LockBrick new-debt gate in the existing CLI.
-- Implement privacy-safe outcome events after the first-scan contract.
-- Benchmark MemoryBrick against native agent context across multiple agents.
+- Benchmark a small repository-owned Memory projection against native agent
+  context across multiple agents.
+- Prove one narrow Lock new-debt gate in the existing CLI after scanner trust.
 - Run a bounded RenderBrick source-only versus rendered-evidence experiment.
 - Test team pricing and workflow value with agencies and AI-native teams;
   document prices as hypotheses until paid evidence exists.
@@ -198,6 +277,10 @@ corepack pnpm --filter @usebrick/website build
 Additional phrase and link checks must prove:
 
 - UseBrick is the sole product and SlopBrick is the shipped front door;
+- AI slop remains SlopBrick's acquisition wedge without becoming an authorship
+  claim;
+- the Slop Index is retained only as a future, separately gated concept;
+- repository intelligence and opt-in global outcomes remain separate;
 - planned capabilities are never presented as shipped products;
 - the current CLI is never documented as `usebrick`;
 - owner-only and zero-session truth is not backfilled into external evidence;

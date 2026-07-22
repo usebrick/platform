@@ -4,9 +4,9 @@
 > copy-paste ready. The config file is a JS module — you can use
 > any Node.js logic (env vars, conditional imports, etc.).
 
-SlopBrick is the shipped scanner and CLI inside UseBrick, the sole
-customer-facing coherence and verification product. Memory, Lock, and Mend are
-capability names, not products or packages. Current command examples use
+SlopBrick is the shipped AI-slop scanner and CLI inside UseBrick, the sole
+customer-facing quality, coherence, and verification product. Memory, Lock,
+and Mend are capability names, not products or packages. Current command examples use
 `npx slopbrick ...`; the configuration import remains the published
 `slopbrick` package.
 

@@ -1,7 +1,7 @@
 # SlopBrick calibration
 
-UseBrick is the sole customer-facing coherence and verification product.
-SlopBrick is its shipped scanner, current CLI, and evidence-producing front
+UseBrick is the sole customer-facing quality, coherence, and verification
+product. SlopBrick is its shipped AI-slop scanner, current CLI, and evidence-producing front
 door. Memory, Lock, and Mend are capability names only; they do not create
 products, packages, commands, or calibration authority.
 

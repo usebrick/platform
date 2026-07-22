@@ -4,7 +4,7 @@
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -29,14 +29,18 @@ its plan audit is `READY`, its shared-report blast radius is classified `High`,
 and execution has started in the second implementation WIP slot. No score,
 rule, baseline, source, release, or public artifact changed.
 
-`CAL-002` is now active beside this plan to complete the evidence and
-provenance closeout. Its approved additive v2 authority taxonomy preserves the
-frozen v1 evidence and locked 119-rule catalog, and distinguishes 47 starting
-quality, 26 transferred, 4 blocked, 3 superseded, 7 retired, and 32
-research-origin rows. It does not add an unmet `requires` edge: `SB-UX-001`
-remains active while CAL-002 establishes the precise current-versus-legacy
-calibration labels this first-scan contract must eventually expose. No runtime
-policy or release state changed in revision 28.
+Tasks 1–7 of the reviewed implementation plan are complete and independently
+reviewed. Revision 43 completed Task 8's current documentation/evidence
+reconciliation and documentation-scope gates. Task 8 remains open for the
+focused first-scan matrix and recursive gates, a fresh package-local self-scan
+without baseline mutation, and the remaining owner-comprehension disposition.
+The existing receipt records a partial checkpoint, not completion.
+
+`CAL-002` is complete at Task 20 checkpoint `bd47dbd7e`. Its locally applied,
+non-admitting 119-row policy has 41 default-on quality rows, 32 unmeasured
+quality candidates and 32 research-origin rows default-off, plus 4 blocked, 3
+superseded, and 7 retired rows. SB-UX consumes that current provenance without
+presenting origin association as quality, authorship, or safe-repair proof.
 
 ## Scope
 
@@ -44,9 +48,8 @@ policy or release state changed in revision 28.
   decline -> rescan -> protect** adoption loop, not for rule-count exposure.
 - Five user-facing areas: Visual Slop, Frontend Implementation, Code and Logic,
   Repository Coherence, and Accessibility and Resilience.
-- Evidence labels for deterministic, current quality-calibrated, internal
-  origin-calibrated, legacy-calibrated, advisory, and insufficient-evidence
-  findings.
+- Three user-facing evidence tiers: deterministic, calibrated, and advisory,
+  with the underlying current/legacy provenance preserved in full output.
 - Current policy provenance must consume the CAL-002 v2 projection without
   treating research-origin association as quality, authorship, score, gate, or
   default-on authority.
@@ -55,6 +58,8 @@ policy or release state changed in revision 28.
   safety.
 - Current baseline versus newly introduced/resolved findings on rescan.
 - CLI snapshots and owner-selected local usability walkthroughs.
+- Preserve the current four-score contract and Repository Health headline.
+  The future branded Slop Index is outside this slice.
 
 ## Non-goals
 
@@ -62,6 +67,8 @@ policy or release state changed in revision 28.
   model-only aesthetic verdict.
 - Blocking CI on advisory findings.
 - Redesigning the entire website before the CLI loop is proven.
+- Adding or renaming a score, shipping a Slop Index formula, or changing score
+  compatibility, calibration, thresholds, or gates.
 
 ## Dependencies
 
@@ -90,16 +97,17 @@ policy or release state changed in revision 28.
 
 ## Execution steps
 
-1. Write report information-architecture snapshots before rendering changes ->
-   verify: `corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts --maxWorkers=1 --minWorkers=1`.
-2. Add evidence-tier and five-area projection without changing detector truth ->
-   verify: run report contract tests.
-3. Add three-action prioritization and incompleteness handling -> verify:
-   snapshot deterministic complete, incomplete, and zero-finding fixtures.
-4. Add durable new/resolved/unchanged rescan output -> verify: run baseline
-   integration tests with one worker.
-5. Walk owner-selected fixtures or repositories and record comprehension ->
-   verify: add only real owner-run receipts to `VAL-001`, with no target count.
+1. Tasks 1–7: complete the typed projection, finding delta, pipeline,
+   terminal, JSON/SARIF, and real CLI journey contracts -> complete and
+   independently reviewed.
+2. Task 8: reconcile all current docs and the evidence receipt with the final
+   implementation and CAL-002 provenance -> complete in revision 43; docs
+   truth gates pass.
+3. Rerun the focused first-scan matrix and recursive quality gates serially.
+4. Capture a fresh package-local scan without `--baseline`; prove ordinary
+   scans do not create or refresh the durable debt baseline.
+5. Present the exact first screen and evidence/repair boundary to the owner;
+   record only the literal disposition and close the plan only if accepted.
 
 ## Verification
 
@@ -117,5 +125,7 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Write the red first-scan projection tests for the owner-observed calibrated,
-no-safe-repair, and unchanged-rescan states.
+Complete the remaining Task 8 gates: rerun the focused first-scan matrix and
+recursive quality gates, capture a fresh package-local self-scan without
+baseline mutation, and present that exact first screen for the remaining owner
+comprehension disposition.

@@ -1,17 +1,21 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 42
+**Index revision:** 43
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, CORPUS-002 source-use
-routing, and CAL-002 claim-matched calibration are complete. Revision 42
-records the owner-approved local Task 20 application while preserving UseBrick
-as the sole customer-facing coherence and verification product, with SlopBrick
-as the shipped package, current CLI, free scanner, and acquisition surface.
+routing, and CAL-002 claim-matched calibration are complete. Revision 43
+records the owner-approved account-wide product strategy while preserving the
+local Task 20 application: UseBrick is the sole customer-facing quality,
+coherence, and verification product, and SlopBrick remains the shipped package,
+current CLI, central AI-slop scanner, free local front door, and acquisition
+surface. Memory is the repository-intelligence capability, Lock is the first
+paid new-debt hypothesis, Mend is deterministic repair, Pick is policy setup,
+and Render remains Labs-only.
 The applied 119-row policy remains non-admitting and public release authority
 remains separate. `GTM-001` is `ready` to prepare planning materials for 10–20
 consent-safe observed external sessions; completed sessions remain zero and
@@ -25,7 +29,11 @@ qualification is complete under `SB-045`; `REL-001` owns the separate npm and
 website decisions and consumes no WIP. Completed CAL-002 supplies the current
 quality/origin provenance contract to `SB-UX-001` without adding an unmet
 `requires` edge. `VAL-001` remains ready with its one owner-attested self-scan-
-to-rescan row preserved, and `TEL-001` remains ready.
+to-rescan row preserved, and `TEL-001` remains ready. `SB-UX-001` Tasks 1–7
+are complete. Revision 43 completed Task 8's current documentation/evidence
+reconciliation and documentation-scope gates; the focused first-scan matrix,
+recursive gates, fresh package-local no-baseline self-scan, and owner-
+comprehension disposition remain open.
 The frozen v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
 historical hold. Progressive authority Tasks 1–8 are implementation-
@@ -366,17 +374,36 @@ owner approval and does not block local product work.
   HumanEval remain non-executable under their current dispositions. This
   source-use result does not change redistribution, v10.3 admission,
   usefulness-review, or rule-application state.
-- UseBrick is the sole customer-facing coherence and verification product.
-  SlopBrick is the shipped npm package, current CLI, free local scanner, and
-  acquisition surface. Memory, Lock, Mend, and Render Labs are capability and
-  sequencing names, not shipped products or package authorization.
+- UseBrick is the sole customer-facing quality, coherence, and verification
+  product. SlopBrick is the shipped npm package, current CLI, central AI-slop
+  scanner, free local front door, and acquisition surface. Memory, Lock, Mend,
+  and Render Labs are capability and sequencing names, not shipped products or
+  package authorization. Pick/StackPick is onboarding and Constitution policy;
+  GIR is future Mend logic; hosted BRICK Cloud remains delayed.
+- The strategic moat hypothesis is the coherence graph connecting observed
+  facts, approved intent, provenance/freshness, outcomes, enforcement state,
+  repair receipts, runtime evidence, and cross-agent benchmarks. Rule count,
+  a memory store, or one score is not the moat by itself.
+- SlopBrick uses three user-facing evidence tiers—deterministic, calibrated,
+  and advisory—and five first-scan areas: Visual Slop, Frontend
+  Implementation, Code and Logic, Repository Coherence, and Accessibility and
+  Resilience. Security remains an orthogonal specialist score and gate.
+- The branded Slop Index is retained only as a future shareable acquisition
+  and reporting concept. It is not a fifth current score, formula, command, or
+  wire field; the shipped contract remains four scores with Repository Health
+  as the first-screen headline.
+- Repository intelligence and opt-in global outcome intelligence are separate.
+  Local approved policy wins, and outcome events cannot silently become source,
+  calibration, severity, authorship, or rule-activation authority.
 - The dated market note isolates adoption, pricing, competitor, and market-size
   observations. Its arithmetic is a scenario, not measured UseBrick demand or
   a forecast.
-- A 2026-07-18 read-only check of `https://usebrick.dev/` still showed the old
-  v0.43 marketing artifact, including contradictory rule counts and absolute
-  “no telemetry” claims. The local website candidate corrects those claims,
-  but no live deployment has been authorized or inferred.
+- A 2026-07-22 read-only check of `https://usebrick.dev/` showed aligned
+  published/candidate versions, the 103/119 rule boundary, four scores, local-
+  first network wording, and the SlopBrick/Memory/Lock/Mend ladder. The older
+  copy-drift observation is resolved at the content level. The deployed commit
+  identity remains unverified, and no future deployment is authorized or
+  inferred.
 - The approved recovery branch was merged and pushed to `main` at
   `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6` after the installed pre-push gate
   passed. That integration did not create a tag, GitHub Release, npm publish,
@@ -390,12 +417,12 @@ owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 2 | 2 | `SB-UX-001`, `CAL-002` |
+| Implementation | 1 | 2 | `SB-UX-001` |
 | Company | 0 | 1 | None |
 
-`SB-045` is done. `SB-UX-001` and `CAL-002` consume the two implementation
-slots. `VAL-001` returns to ready with RUN-001 preserved, and `TEL-001` remains
-ready behind the typed first-scan boundary. `REL-001` and `DOC-PRUNE-001` are
+`SB-045` and `CAL-002` are done. `SB-UX-001` consumes one implementation
+slot. `VAL-001` is ready with RUN-001 preserved, and `TEL-001` remains ready
+behind the first-scan closeout. `REL-001` and `DOC-PRUNE-001` are
 waiting external and consume no WIP. `GTM-001` is ready for planning materials
 only, targets 10–20 observed sessions, records zero completed sessions, and
 keeps outreach unauthorized. Draft `LABS-001` also consumes no WIP.
@@ -412,9 +439,9 @@ WIP while waiting.
 | 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
-| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
+| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Rerun the focused first-scan matrix and recursive gates, capture the fresh no-baseline package-local self-scan, and obtain the remaining owner-comprehension disposition. |
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and hand current provenance to `SB-UX-001`; route public actions through `REL-001`. |
-| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
+| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After SB-UX Task 8 closes, model useful, declined, unchanged-rescan, and bounded-return states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
 | 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
@@ -435,9 +462,9 @@ WIP while waiting.
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
 | High-severity dependency audit | BLOCKED | Current audit reports high transitive advisories in `brace-expansion` and `svgo`; resolve them before any public release execution. |
-| Public claims and metadata | Waiting external | The public package and live website remain unchanged until `REL-001` records exact owner dispositions. |
+| Public claims and metadata | Partially verified | The npm package remains v0.43.0. A read-only live-site check shows aligned copy, but deployed SHA is unknown and future public mutations remain under `REL-001`. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
-| Website deployment | Not authorized | The local candidate corrects verified live-site claim drift; it still requires owner/SHA review and separate deployment authorization. |
+| Website deployment | Not authorized | Current live copy is aligned at a read-only content level; deployed SHA and any future deployment still require owner/SHA review and separate authorization. |
 
 ## Waiting external
 
@@ -483,8 +510,12 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`SB-UX-001` is the sole active implementation plan at WIP `1/2`. CAL-002 is
-complete at the single human-facing Task 20 application checkpoint
+`SB-UX-001` is the sole active implementation plan at WIP `1/2`. Its Tasks
+1–7 are complete and independently reviewed; Task 8 remains open for current
+documentation/evidence reconciliation, focused and recursive gates, a fresh
+package-local self-scan without baseline mutation, and the remaining literal
+owner-comprehension disposition. CAL-002 is complete at the single human-
+facing Task 20 application checkpoint
 `bd47dbd7e`. The exact 119-row policy is locally applied and non-admitting;
 its detailed matrix, approval, policy, and receipt identities remain
 machine-verifiable rather than repeated in status prose. Protected owner state,

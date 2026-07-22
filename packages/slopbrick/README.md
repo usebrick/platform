@@ -23,14 +23,24 @@ npx slopbrick scan
 ## Product and capability boundary
 
 UseBrick is the sole customer-facing product and the wider repository-owned
-coherence and verification contract shared by developers, coding agents, and
-CI. SlopBrick observes, detects, explains, and emits evidence today.
+quality, coherence, and verification contract shared by developers, coding
+agents, and CI. SlopBrick observes, detects, explains, and emits evidence
+today; it remains the central AI-slop scanner and acquisition surface rather
+than becoming a minor module behind repository memory.
 
 Memory, Lock, and Mend are internal capability and sequencing names. They are
 not standalone products or shipped packages, and they do not authorize a
 replacement CLI. Active direction lives in the root [UseBrick
 roadmap](../../ROADMAP.md); volatile market observations belong in the dated
 [positioning research note](../../docs/research/usebrick-market-positioning-2026-07-19.md).
+
+AI slop and repository context are two halves of one product problem:
+SlopBrick exposes low-quality or context-blind implementation, while the
+planned Memory capability supplies repository-owned facts and approved intent
+that make those findings more specific. Privacy-safe, explicitly opted-in
+outcome events may later improve global priors, but local approved policy wins
+and outcomes cannot silently become source, calibration, severity, or
+authorship authority.
 
 ## Release status
 
@@ -88,6 +98,13 @@ empty or not-applicable scans omit canonical score fields.
 
 For the full contract, see [scoring explained](./docs/scoring-explained.md) and
 the [scoring runbook](./docs/scoring-runbook.md).
+
+The memorable **Slop Index** name is retained as a future shareable acquisition
+and reporting concept. It is not a fifth current score, command, wire field, or
+formula. The current contract remains the four scores above, with Repository
+Health as the first-screen headline. Any future Slop Index requires separate
+calibration, compatibility, UX, and release approval and must expose its
+dimensions, evidence quality, trend, baseline, and new/removed findings.
 
 ### Bounded first screen
 

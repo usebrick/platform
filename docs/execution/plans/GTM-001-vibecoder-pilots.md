@@ -4,7 +4,7 @@
 - **Priority:** 15
 - **Track / lane:** company / adoption
 - **Owner:** UseBrick product
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 - **Session target:** 10–20 observed sessions
 - **Completed sessions:** 0
 - **Outreach authorized:** `false`
@@ -30,6 +30,12 @@ audience. The unproven initial buyer hypothesis is AI-native software teams and
 agencies with roughly 5–100 developers. Owner-only walkthroughs remain product
 evidence under `VAL-001`; they are not external-session, team-demand, market,
 or willingness-to-pay evidence.
+
+The account-wide product thesis to test is one loop—scan, useful finding,
+action or decline, rescan, protect—not whether participants like a rule count
+or a generic AI reviewer. SlopBrick remains the free entry point; team value
+must be tied to repository-aware prevention rather than interest in the phrase
+"AI slop."
 
 ## Scope
 

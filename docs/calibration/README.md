@@ -3,10 +3,10 @@
 This directory is the repository-level entry point for SlopBrick calibration.
 It separates current scheduling from frozen protocols and collected evidence.
 
-UseBrick is the sole coherence and verification product. SlopBrick is its
-shipped scanner, current CLI, and evidence-producing front door. Memory, Lock,
-and Mend are capability and sequencing names only; they do not widen corpus,
-calibration, package, or release authority.
+UseBrick is the sole quality, coherence, and verification product. SlopBrick
+is its shipped AI-slop scanner, current CLI, and evidence-producing front door.
+Memory, Lock, and Mend are capability and sequencing names only; they do not
+widen corpus, calibration, package, or release authority.
 
 ## Current authority
 

@@ -1,10 +1,10 @@
 # LOCK-001 — Validate deterministic new-debt enforcement
 
 - **Status:** `draft`
-- **Priority:** 9
+- **Priority:** 10
 - **Track / lane:** implementation / lock
 - **Owner:** SlopBrick and UseBrick platform
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -20,10 +20,15 @@ and baseline primitives. The Lock capability is not shipped or packaged, and
 those primitives have not been proven as one team enforcement loop.
 The initial buyer hypothesis is AI-native teams and agencies with roughly
 5–100 developers, but no external workflow or price evidence exists.
+Lock is the first paid-layer hypothesis because it turns trusted SlopBrick
+evidence and repository-owned intent into a repeatable prevention workflow;
+it is not a separate marketed product.
 
 ## Scope
 
 - One deterministic finding family with stable identity.
+- Prefer a repository-coherence or frontend/design-system family where an
+  approved local policy makes the violation exact.
 - Baseline current debt and fail only on qualifying new debt.
 - Clear changed evidence, approved policy source, waiver with reason/expiry,
   incomplete-scan failure semantics, and CI explanation.
@@ -37,6 +42,8 @@ The initial buyer hypothesis is AI-native teams and agencies with roughly
 - Extracting a new package, generic PR review, blocking on advisory/model-only
   findings, multi-repo governance, or replacing SAST.
 - Making the Memory capability a hard dependency before its trust gate.
+- Allowing a global outcome prior, calibrated association, or advisory visual
+  judgement to override explicit local policy or block CI by itself.
 
 ## Dependencies
 
@@ -49,6 +56,8 @@ The initial buyer hypothesis is AI-native teams and agencies with roughly
   removing it passes.
 - Changed evidence and the applicable approved policy are machine-readable and
   human-readable.
+- Explicit repository policy and exceptions remain the final enforcement
+  authority; global priors can never silently create a block.
 - Incomplete scans never pass silently.
 - Waivers require owner/reason/expiry and are visible in output.
 - Owner-run receipts exercise the gate on real or deterministic changes and

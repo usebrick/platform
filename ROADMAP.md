@@ -5,396 +5,266 @@
 
 ## Product thesis
 
-> **UseBrick is the coherence and verification layer for agent-built
-> software.**
+> **UseBrick keeps AI-generated software coherent.**
 
-UseBrick is the sole customer-facing product: one repository-owned contract
-shared by developers, coding agents, and CI. It helps people answer a practical
-question after an agent-assisted build—"It works, but is it actually well
-built?"—then carries verified repository truth through an adoption loop of
-**scan -> useful finding -> fix -> rescan -> protect**.
+UseBrick is the repository-owned quality, coherence, and verification layer
+for agent-built software. It is one customer-facing product and one contract
+shared by developers, coding agents, and CI.
 
-## Entry point and customer journey
+SlopBrick is the free local front door. Memory preserves what the repository
+knows and expects. Lock prevents new drift. Mend repairs only trusted findings.
 
-Serious solo developers and vibe coders are the free local-scan entry audience.
-They are not the proven core buyer. The initial buyer hypothesis is AI-native
-software teams and agencies with roughly 5–100 developers, especially teams
-managing frequent agent-authored changes and architecture, maintenance,
-contractual, or reputational risk.
+The practical question remains:
 
-The shortest useful journey is:
+> The app works, but is it actually well built?
 
-1. run SlopBrick locally without an account;
-2. understand one evidenced visual, frontend, code, or repository-coherence
-   problem;
-3. fix it and rescan;
-4. save a repository baseline;
-5. adopt new-debt-only CI checks with the team; and
-6. add organisation governance only after repeated team demand.
+The measurable loop is **scan -> useful finding -> fix or decline -> rescan ->
+protect**. Rule count, authorship claims, and any one score are supporting
+surfaces, not the north star.
 
-The product-led loop does not require a dashboard, hosted account, or complete
-historical cleanup. Rule count, AI-origin association, and a single score are
-supporting evidence surfaces, not the north star.
+## Users and market hypothesis
+
+Serious solo developers, founders, and vibe coders are the product-led entry
+audience. They should get a useful local result without an account.
+
+The initial paying-buyer hypothesis is AI-native software teams and agencies
+with roughly 5–100 developers, especially TypeScript-heavy web teams managing
+frequent agent-authored changes and architecture, maintenance, contractual, or
+reputational risk.
+
+Neither segment is validated. The repository owner is the only completed
+tester. External sessions completed: zero. Market sizing, competitor facts,
+and pricing scenarios live in the dated
+[research note](docs/research/usebrick-market-positioning-2026-07-19.md).
 
 ## Product and capability model
 
 | Product or capability | Role | Sequencing boundary |
 | --- | --- | --- |
-| **UseBrick** | Coherence and verification product; repository-owned contract | Sole customer-facing product. |
-| **SlopBrick** | Observe, detect, explain, and emit repository evidence | Shipped npm package, current CLI, free local scanner, and acquisition surface. |
-| **Memory capability** | Compile facts, approved intent, provenance, and freshness into bounded agent context | Start read-only and benchmark against native agent context; no package or new store before an ADR. |
-| **Pick flow** | Initialize repository policy and approved intent | Fold into onboarding and policy authoring; current commands remain `slopbrick`. |
-| **Lock capability** | Prevent newly introduced verified drift | First paid-workflow hypothesis inside the current CLI; earn external team evidence before extraction. |
-| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Keep parked until enforcement trust and rollback proof exist. |
-| **RenderBrick Labs** | Test whether rendered/runtime evidence adds value beyond source inspection | Draft benchmark only; stop if incremental value is not material. |
-| **Enterprise controls** | Shared policy, approvals, audit, and multi-repository governance | Build only after several paying teams independently report the same need. |
+| **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
+| **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free scanner, and acquisition surface |
+| **Memory capability** | Compile observed facts, approved intent, provenance, and freshness into bounded context | Begin read-only; benchmark before adding a store or package |
+| **Pick flow** | Initialize the Constitution, approved stack, and policy | Fold into onboarding and policy authoring |
+| **Lock capability** | Prevent newly introduced verified drift | First paid workflow hypothesis inside the existing CLI |
+| **Mend capability** | Apply narrow deterministic repairs with proof and rollback | Parked until enforcement earns trust |
+| **RenderBrick Labs** | Test incremental value from rendered and runtime evidence | Benchmark only; stop if value is not material |
+| **Enterprise controls** | Shared policy, approvals, audit, and multi-repository governance | Build only after repeated paid-team demand |
+
+Current commands remain `slopbrick`. A future `usebrick scan`, `check`, `fix`,
+or `runtime` surface requires its own implementation and migration decision.
+
+## Retained idea lineage
+
+| Earlier idea | Current role |
+| --- | --- |
+| `slop-audit` | Became SlopBrick, the open diagnostic wedge |
+| StackPick / PickBrick | Became `init`, Constitution setup, and policy authoring |
+| MCP Registry Bridge | Remains an agent integration, not the company |
+| `slop-lock` | Became the Lock new-debt workflow |
+| GIR | Becomes deterministic transformation logic inside Mend |
+| BRICK Cloud | Delayed hosted history, approvals, and governance |
+
+UseBrick is not a suite of separately marketed small tools. Brick names define
+responsibilities and evidence gates inside one lifecycle.
+
+## Connected system and moat
+
+```text
+observe repository and runtime facts
+              -> preserve approved intent and rationale
+              -> compile fresh bounded agent context
+              -> block newly introduced drift
+              -> apply narrow reversible repairs
+              -> rescan, test, and verify
+```
+
+No step is unique by itself. The defensible asset is the **coherence graph**:
+
+1. observed structure, dependencies, patterns, and runtime state;
+2. declared architecture, conventions, exceptions, and rationale;
+3. provenance, scope, and freshness for every fact;
+4. accepted, declined, suppressed, waived, and fixed outcomes;
+5. enforcement decisions and new-debt state;
+6. repair diffs, tests, rescans, runtime checks, and rollback receipts; and
+7. cross-agent benchmark evidence.
+
+The rule catalog is reproducible. Durable value comes from connecting the
+catalog to repository intent and verified outcomes.
+
+## SlopBrick product contract
+
+SlopBrick finds low-quality, inconsistent, or context-blind patterns amplified
+by AI-assisted development. It does not prove that AI wrote a file.
+
+### First-scan taxonomy
+
+1. Visual Slop.
+2. Frontend Implementation.
+3. Code and Logic.
+4. Repository Coherence.
+5. Accessibility and Resilience.
+
+Security remains an orthogonal specialist score and gate. Testing appears in
+resilience and engineering-hygiene evidence. The first screen shows at most
+three actions and preserves access to the full report.
+
+### Evidence model
+
+- **Deterministic:** exact reproducible evidence. It may gate only when the
+  applicable policy authorizes it.
+- **Calibrated:** measured association or quality behavior with stated limits.
+  It is not authorship proof and stays default-off without current authority.
+- **Advisory:** qualitative or model-assisted review. It cannot block unless an
+  explicit repository policy turns the concern into a deterministic check.
+
+### Scores and the Slop Index
+
+The memorable **Slop Index** is retained as a future shareable acquisition and
+reporting concept. It is not a current command, field, formula, or release
+claim.
+
+The current workspace candidate reports `aiSlopScore`,
+`engineeringHygiene`, `security`, and `repositoryHealth`. Repository Health is
+the bounded first-screen headline; the configured AI Slop policy result remains
+separate.
+
+Any future Slop Index must expose its dimensions, evidence quality, trend,
+new and removed slop, baseline, and CI threshold. A rename or formula change
+requires separate calibration, compatibility, UX, and release approval.
+
+## Two intelligence planes
+
+| Plane | Learns | Boundary |
+| --- | --- | --- |
+| Repository intelligence | Facts, approved patterns, architecture, exceptions, and rationale for one repository | Repository-owned and local by default |
+| Global slop intelligence | Which findings are fixed, declined, suppressed, recurrent, or accepted across opted-in use | Privacy-safe and opt-in; no raw source or repository identity by default |
+
+A global prior may inform confidence. It cannot override an approved local
+exception, silently change severity, or become calibration/source authority
+without a separate reviewed admission step.
+
+Memory must be structured, provenance-aware, freshness-aware, human-readable,
+agent-neutral, and enforceable by Lock. Merely storing Markdown or chat history
+is not differentiation.
 
 ## Current verified baseline
 
-SlopBrick is the only shipped capability in this hierarchy and the current
-front door to UseBrick. The public package and the unreleased workspace
-candidate are different artifacts. Memory, Lock, Mend, and Render Labs are
-capability and sequencing names, not shipped products or package authority.
-The precise dated counts, corpus state, self-scan result, release
-authorization, and working-tree state live in
-[the execution status](docs/execution/STATUS.md), not in this strategy file.
+- Latest verified npm release: `slopbrick@0.43.0`.
+- Workspace candidate: unreleased `slopbrick@0.45.0`.
+- Published catalog: 103 rules in 22 generated categories.
+- Workspace catalog: 119 rules in 27 categories.
+- CAL-002: complete at Task 20 checkpoint `bd47dbd7e`.
+- Applied policy: 41 default-on quality rows; 32 unmeasured quality candidates
+  and 32 research-origin rows default-off; 4 blocked, 3 superseded, and 7
+  retired; every row remains non-admitting.
+- Corpus v1: source-attested internal evaluation only; not witnessed
+  authorship, quality ground truth, redistribution authority, or v10.3 gold.
+- Public release and future deployment authority remain under `REL-001`.
 
-Corpus v1 currently uses the pinned Mendeley `HumanVSAI_CodeDataset` v1 for
-publisher-attested internal origin analysis and calibration evaluation. Its
-5,000 AI / 5,000 Human labels are publisher claims bound to exact local bytes,
-family-safe splits, and collision checks; they are not witnessed authorship or
-quality labels. The source is not approved for public redistribution, and its
-use does not admit v10.3 data or activate a rule.
-
-The repository owner is the only completed product tester. `VAL-001` preserves
-its first owner-run self-scan and unchanged rescan as recorded evidence, then
-returns to ready while active `CAL-002` completes the separate claim-matched
-calibration and provenance program. `GTM-001` is ready for planning 10–20
-consent-safe observed external sessions. Completed sessions remain zero, and
-this roadmap does not authorize outreach, contact, scheduling, recording, or
-data collection.
-
-Volatile adoption, pricing, competitor, and market-size observations live only
-in the dated
-[market-positioning research note](docs/research/usebrick-market-positioning-2026-07-19.md).
-Its scenarios are not measured UseBrick demand or forecasts.
-
-The frozen CAL-002 v1 implementation boundary remains checkpointed through
-`e6c9695ea`; its old three-way origin questionnaire is paused after one
-historical hold. Progressive authority Tasks 1–8 remain implementation-
-checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
-implementation-checkpointed through `651f52d78` after controller adversarial
-audit, with no external approval claimed because their independent reviewers
-stalled. Task 12 is integrated at `473ceafc3` after two independent final
-approvals. Together these tasks preserve the locked 119-rule projection—47
-starting quality + 26 transferred quality + 4 blocked quality + 3 superseded +
-7 retired + 32 research-origin rows—add the reviewed immutable owner-batch
-path, close all 32 quality rows without labels, freeze the supersession and
-transfer-oracle contracts, and implement the canonical SQL, console, and
-`any` semantics while the old IDs remain runnable. Task 12's fail-closed
-TypeScript-AST doctrine keeps current public copy for exactly 73 active quality
-rows free of origin, causation, and authorship claims across descriptions,
-emitted messages and advice, `RULE_HINTS`, and the generated 119-row catalog.
-The catalog is deterministic at SHA-256
-`9bc6ede48b7df38d0b0e71be32691c3eebb9258817a95916752e442c7e771efd`.
-
-The quality-disposition, parity, and supersession receipt schemas were closed
-at `dd8360fba`, `b5bd09090`, and `66251c9fa`. Task 13 is integrated on main at
-`e956f7900`, `366246e5d`, and lock hardening `8c8760783`; originating sidecar
-`34bf81fe1` / `fa5d452c5` is provenance only.
-
-Task 13 projects exactly 32 canonical `research-only` origin rows, binds frozen
-governing and replay identities, consumes no v1 owner-decision rows, and stores
-no raw source or path. Every row remains default-off, explicit-opt-in,
-score-neutral, gate-neutral, and non-admitting.
-
-Task 14 is integrated on main from `d7b11b70e` through `c13ce8f47`. It closes
-the fail-closed 119-row matrix, approval, unapplied/applied policy, application
-receipt, six CLI commands, strict schemas, and immutable publication contracts.
-
-The reducer independently checks all 41 evidence-ready deterministic rows—32
-starting plus nine transferred—against five fixed control slots:
-`alternate-syntax`, `baseline`, `comment-adjacent`, `near-miss`, and
-`regression-safe`. These are protocol slots, not semantic source families.
-
-Task 14 binds the top-level and per-control frozen Corpus v1 receipt SHA
-`47bd66907ec2efa67da718e0cfb38458151ca84d3cdedc941488fe4b001475ac` and
-keeps durable receipts free of source text and paths. Application publication
-is receipt-first and policy-commit-marker-last, with proof-limited rollback.
-
-Its expanded Task 13/14 gate passes 198/198 on exact Node 22.22.3 and 24.15.0
-with SlopBrick typecheck on both. The bounded Node 24 full suite passes 4,485
-tests with 15 skipped; independent final review reports no findings.
-
-Task 15 is checkpointed at `6a85e4346`, with the additive single-root manifest
-contract at `80acf1ada`. The owner approved the exact `26/4/3/7` authority batch
-and exact 119-row matrix. All 41 deterministic rows passed, all 32 unmeasured
-quality candidates remain score- and gate-ineligible, and all 32 research-
-origin rows remain default-off and non-admitting.
-
-The one human-facing Task 15 evidence root is
-`53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`;
-its manifest binds the exact 13 primary artifacts without repeating each leaf
-hash in roadmap prose. The matrix and approval remain `applied: false` and
-`admitted: false`.
-
-Task 16 is implementation-checkpointed through `417ca5668`, with the clean-
-install schema-test dependency correction at `3c1572f89`. The pure accessors
-fail closed unless a complete applied policy matches the exact approved Task 15
-projection, detach and freeze the validated state, keep blocked, superseded,
-and retired rows non-runnable, and separate explicit diagnostic visibility
-from score eligibility. Unknown IDs retain the legacy fallback. The production
-provider still returns `undefined`, so scanner behavior remains unchanged.
-
-The focused Task 16 contract passes 7/7 on exact Node 22.22.3 and 24.15.0 with
-SlopBrick typecheck on both. The recursive gates are green, including 4,496
-passing SlopBrick tests with 15 intentional skips, and two independent final
-reviews returned 99/100 and 100/100 with no findings.
-
-Task 17 is implementation-checkpointed through `61dc8f803`; its separate
-orchestration diagnosis is `36137d740`. Registry context creation now enforces
-current runnable authority before a rule can instantiate. The canonical score
-selector excludes current score-ineligible diagnostics from every score,
-Bayesian input, and composite chain while leaving explicitly permitted audit
-evidence visible. Scan and watch share the same normalization boundary;
-explicit `off` remains stronger than policy and unknown IDs preserve legacy
-behavior. The review correction also preserves exact dormant-provider
-composite behavior, applies explicit `off` to active-policy synthetic findings,
-and routes the project-level identical-block coordinator through current
-authority.
-
-The exact Task 17 nine-file gate passes 188/188 on exact Node 22.22.3 and
-24.15.0 with SlopBrick typecheck on both. Recursive tests pass Core 285,
-Engine 60, Website 54, and SlopBrick 4,511 with 15 intentional skips;
-recursive typecheck and build pass. Two independent final reviews returned
-100/100 with no remaining findings after the correction cycle. The production
-provider still returns `undefined`, so this checkpoint proves dormant runtime
-semantics without applying policy or changing production scanner behavior.
-
-Task 18 is implementation-checkpointed through `be1be85b8`, with its security
-review at `e17f736e5`. One current-policy evidence object now drives first-scan,
-terminal, JSON, Markdown, HTML, and SARIF output. Rule-authored source spans
-remain separate; legacy signal metrics remain nested and explicitly historical.
-Finding association checks the complete finding identity and fails closed on
-file or message collisions, including absolute-path inputs. Blocked,
-superseded, and retired tombstones are excluded consistently from findings,
-recommendations, and baseline deltas. Safe-repair language remains limited to
-finding-bound deterministic or current-quality-calibrated repairs.
-
-The exact Task 18 eight-file gate passes 123/123 on Node 22.22.3 and 24.15.0
-with SlopBrick typecheck on both. Recursive tests pass Core 285, Engine 60,
-Website 54, and SlopBrick 4,530 with 15 intentional skips; recursive typecheck
-and build pass. Targeted report coverage is 84.55% for statements/lines,
-77.27% for branches, and 97.77% for functions. Two independent final
-re-reviews returned 99/100 with no remaining findings. The production provider
-still returns `undefined`, so this remains dormant semantics only.
-
-Task 19 is implementation-checkpointed at `52af3e272`. Explain, CLI, MCP, and
-the generated catalog now separate current policy from frozen v10.1 historical
-metrics. The catalog validates the exact 119 identities and projects runnable,
-score, and gate authority independently. Repository configuration and
-invocation provenance remain distinct across the main and calibration workers;
-repository `off` wins. Direct documentation scans, secondary CLI diagnostics,
-history, and flywheel input now use the same policy boundaries without turning
-visible audit evidence into score or gate authority. Durable history migration
-removes only immutable current-policy ineligibility; temporary repository
-configuration is applied in memory and remains reversible.
-
-The exact 35-file Task 19 matrix passes 637/637 on Node 22.22.3 and 24.15.0.
-Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580 with
-15 intentional skips; recursive lint, typecheck, and build pass. The
-package-local self-scan scores 99.81/100 with 13 active medium findings, 803
-policy-ineligible findings auto-suppressed, and a passing policy gate. Two
-fresh independent final reviews returned 98/100 with no findings. The
-production provider still returns `undefined`, so this is dormant semantics
-only. The high-severity dependency audit remains a separate `REL-001` release
-blocker.
-
-The single human-facing Task 19 checkpoint identifier is `52af3e272`; leaf
-SHA-256 bindings and the audit payload identity remain machine-only.
-
-Task 20 is locally application-checkpointed at `bd47dbd7e` after the owner
-approved the qualified finding, provenance, score, gate, and action boundaries.
-The exact 119-row policy is now statically bound, `applied: true`, and
-`admitted: false`: 41 evidence-ready quality rows are default-on; 32 unmeasured
-quality candidates and 32 research-origin rows remain default-off and
-score/gate neutral; 4 blocked, 3 superseded, and 7 retired rows remain
-non-runnable. CAL-002 is complete and hands current provenance to `SB-UX-001`.
-Detailed leaf identities remain in the machine receipt. No push, tag,
-admission, publication, deployment, or release is authorized.
-
-The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
-Public npm release and website deployment remain separate owner decisions under
-`REL-001`; neither decision blocks local first-scan or outcome-contract work.
+Exact tests, receipts, dependency blockers, self-scan results, and working-tree
+state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Operating principles
 
-- **Local-first and useful before signup.** The first scan must provide value
-  without a hosted account.
-- **Evidence before confidence.** Distinguish deterministic findings,
-  calibrated signals, and advisory visual judgement.
-- **One human-facing evidence root per checkpoint.** Planning and status prose
-  repeats at most one aggregate evidence root or implementation checkpoint SHA
-  for a bounded checkpoint. Leaf SHA-256 values stay in machine receipts and
-  validators instead of being copied through human-facing summaries.
-- **Repository truth and global learning are separate.** The Memory capability
-  compiles local intent and exceptions; opt-in outbound reporting may improve
-  global priors without raw source by default.
-- **Current debt is not new debt.** Teams can adopt the Lock capability without
-  cleaning an entire existing repository first.
-- **No uncalibrated default-on rules.** Candidate signals remain off until
-  their stated admission criteria are met.
-- **Origin and quality are separate axes.** AI-positive does not mean bad, and
+- **Local-first and useful before signup.** The first scan must stand alone.
+- **Evidence before confidence.** Keep deterministic, calibrated, and advisory
+  findings distinct.
+- **Repository truth wins.** Global learning cannot silently override policy.
+- **Current debt is not new debt.** Lock must work without a full cleanup.
+- **No uncalibrated default-on rules.** Candidate signals stay off until their
+  current admission criteria pass.
+- **Origin and quality are separate.** AI-positive does not mean bad, and
   human-negative does not mean good.
-- **Evidence tier controls use, not existence.** Verified publisher-attested
-  data can support bounded internal origin evaluation without becoming v10.3
-  gold evidence, redistribution-approved bytes, usefulness proof, or an
-  applied rule decision.
-- **Repairs are deterministic and reversible first.** Every Mend-capability
-  change must rescan, run repository checks, and roll back safely.
-- **One source of planning truth.** Strategy belongs here; live state and
-  dependencies belong in `docs/execution/index.json`.
-- **No project-wide blockers.** If an input is unavailable or a method proves
-  invalid, preserve the evidence, replace that path with the smallest truthful
-  alternative, and continue the highest-priority independent plan. Never
-  fabricate provenance, labels, passing gates, or authority to make progress
-  appear green.
+- **Repairs are deterministic and reversible first.** Mend must rescan, test,
+  and roll back.
+- **One product, one planning authority.** Strategy lives here; status and
+  dependencies live in `docs/execution/index.json`.
+- **No implicit public action.** Local qualification, push, release, npm
+  publication, and website deployment remain separate authorities.
+- **No project-wide blockers.** Continue the highest-priority independent plan
+  without inventing labels, evidence, or authorization.
 
-## Now — 0 to 30 days
+## Now — close the free product loop
 
-### Outcomes
+1. Finish `SB-UX-001` Task 8: current documentation, complete gates, fresh
+   package-local self-scan, owner comprehension checkpoint, and evidence receipt.
+2. Begin `TEL-001`: local, inspectable outcome events for useful finding,
+   action or decline, rescan, and return; provide export and deletion.
+3. Preserve `VAL-001` as optional owner-selected product evidence. It has no
+   participant target and cannot establish market demand.
+4. Keep `GTM-001` limited to profile, script, consent, and empty redacted
+   receipt materials. No outreach or collection is authorized.
+5. Stop expanding rule count unless an observed problem requires a rule.
 
-- Maintain the completed documentation control plane and execute only
-  explicitly approved stale-path cleanup without slowing product work.
-- Preserve the completed SlopBrick v0.45 local qualification: unified report
-  and exit decisions, finding-specific remediation, durable baselines, an
-  explicit self-scan disposition, and a truthful local go/no-go packet. Keep
-  public release and deployment authority isolated under `REL-001`.
-- Preserve the completed CORPUS-002 source-use routing around the verified
-  Mendeley seed and keep every frozen Corpus v1 and CAL-001 hash reproducible
-  without changing rule state or v10.3.
-- Start active `CAL-002` beside `SB-UX-001`: complete separate quality and
-  origin evidence lanes, beginning with the additive v2 authority taxonomy and
-  exact 119-row projection. Keep CAL-001 and CAL-002 v1 evidence frozen,
-  preserve `applied: false` and `admitted: false`, and make first-scan
-  provenance distinguish current from legacy calibration.
-- Keep `VAL-001` ready with RUN-001 preserved. Future owner walkthroughs stay
-  optional, owner-selected evidence with no participant or target-count gate.
-- Align local website source, package claims, telemetry language, and release
-  facts without inferring a live deployment, publication, or public release.
-- Stop expanding rule count unless an observed user problem requires it.
-- Keep `GTM-001` ready to prepare a participant profile, session script,
-  consent text, and redacted receipt template for 10–20 observed external
-  sessions. Completed sessions remain zero; no outreach, contact, scheduling,
-  recording, or data collection is authorized.
+## Next — make the scanner repository-aware and enforceable
 
-### Exit gate
+1. Build `MEM-001` as a read-only projection of facts, intent, provenance, and
+   freshness. Benchmark it against native context across agents.
+2. Prove `LOCK-001` on one deterministic new-debt family in the existing CLI,
+   including changed evidence, waivers, and incomplete-scan failure semantics.
+3. Run `LABS-001` with fixed defects and blind source-only versus rendered
+   evidence scoring. Stop if incremental value is not material.
+4. Run external sessions and test pricing only after separate participant
+   authorization. Keep every price and buyer claim hypothetical until observed.
 
-The local gate is satisfied: planning validation passes, v0.45 has green local
-qualification gates plus an explicit self-scan decision, and the completed
-CORPUS-002 receipt preserves the seed, smoke, holdout, and decision-matrix
-receipts. Begin the Next-horizon local work without waiting for `REL-001`.
-Owner validation has begun and may accumulate only when the owner chooses;
-the first no-fix row does not satisfy the repeated fix-loop exit gate. No
-participant count is a release or source-use gate. Publishing and deploying
-remain separate owner-authorized actions. `GTM-001` readiness authorizes
-planning artifacts only, not participant action.
+## Later — repair and team governance
 
-## Next — 31 to 90 days
+- Start Mend with a small set of deterministic transformations: token
+  replacement, approved-component reuse, forbidden-dependency replacement, or
+  another mechanically bounded change with byte-identical rollback.
+- Add shared policy, exceptions, approvals, PR receipts, and hosted history
+  only when they improve the proven local workflow.
+- Add cross-repository context and enterprise controls only after several
+  paying teams independently report the same recurring need.
 
-### Outcomes
+## Business-model hypothesis
 
-- Continue `SB-UX-001`: deliver a five-part scan taxonomy, evidence tiers,
-  current-versus-new debt, and three prioritized actions in the
-  first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
-  and shared-report impact map are approved. Completed `CAL-002` now supplies
-  its current quality/origin provenance contract without adding an unmet
-  `requires` edge. The applied policy remains non-admitting and local; it does
-  not authorize baseline, source, admission, release, deployment, or published
-  artifact changes.
-- Preserve completed `CAL-002` at its Task 20 application checkpoint. Any later
-  policy change requires a new reviewed matrix and atomic application.
-  `VAL-001` and `TEL-001` remain ready; `REL-001` remains the separate
-  public-authority boundary and records the independent dependency-audit
-  blocker.
-- Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
-  contract for useful finding, action or decline, rescan, and return outcomes,
-  with export and deletion and no raw source or proprietary repository
-  identifier by default.
-- Build the Memory M0 capability as a read-only projection of observed facts,
-  declared policy, provenance, and freshness; benchmark repository-owned
-  context against native context across multiple agents.
-- Add a source-specific adapter only when its immutable evidence, rights, and
-  requested use pass the closed source policy. Keep pending FormAI, OSSForge,
-  and HumanEval dispositions non-executable until their own bounded changes
-  close; keep proxies and ordinary recent repositories out of origin fitting.
-- Validate the Lock capability's deterministic new-only gate as the first paid
-  workflow hypothesis inside the current CLI on owner-controlled repositories
-  or fixtures. Keep team adoption and willingness-to-pay claims open until
-  external evidence exists.
-- Run `LABS-001` as a bounded source-only versus rendered/runtime-evidence
-  benchmark with fixed defects and blind scoring. Stop if rendered evidence
-  adds no material incremental value.
-- Test team pricing and workflow value with AI-native teams and agencies only
-  after separate participant authorization; keep every price a hypothesis
-  until paid evidence exists.
+- **Free:** local scan, basic MCP, repository artifacts, one baseline, open
+  schemas, deterministic rules, and basic Constitution support.
+- **Team:** new-debt CI, shared policy, evidence receipts, approvals, exceptions,
+  outcome history, and cross-agent adapters. Research range: $19–$29 per active
+  contributor with a possible $99–$399 workspace minimum.
+- **Enterprise:** self-hosting, SSO/RBAC, audit, policy inheritance, private
+  models, retention controls, and multi-repository governance only after demand.
 
-### Exit gate
-
-Advance when owner-run receipts repeatedly reach a useful finding and rescan,
-the Memory capability improves a measured cross-agent task without
-stale/bloated context, and the Lock capability prevents verified new debt with
-an acceptable waiver burden.
-These owner receipts do not satisfy future team or market-demand gates.
-
-## Later — 3 to 12 months
-
-- Expand the Lock capability only around rules teams trust and are willing to
-  enforce.
-- Start the Mend capability with a very small set of deterministic
-  transformations whose
-  rollback and verification work on owner-controlled validation repositories.
-- Add hosted team history, approvals, and policy ownership only when they make
-  the local workflow materially better.
-- Add enterprise SSO, audit, policy inheritance, self-hosting, and multi-repo
-  context only after repeated paid demand.
+These are packaging and pricing hypotheses, not offers or validated demand.
 
 ## Twelve-month decision gates
 
 | Gate | Proceed only when | If the gate fails |
 | --- | --- | --- |
-| Scanner trust | Owner-run walkthroughs reach a useful evidenced finding, fix, and rescan; deterministic checks have acceptable precision. | Keep improving SlopBrick and do not widen the suite. |
-| Repository intelligence | Repository-owned context improves architecture/build/test outcomes across agents and at least two teams maintain it in Git. | Keep it read-only and experimental; do not make enforcement depend on it. |
-| Team monetization | The Lock workflow sees repeated weekly use, low false-block/waiver burden, and demonstrated willingness to pay. | Stay product-led and repair precision before hosted expansion. |
-| Repair | A bounded fix set applies, rescans, tests, and rolls back reliably on owner-controlled validation repositories. | Keep the Mend capability parked. |
-| Rendered evidence | Blind comparison shows material incremental defect detection without unacceptable false positives. | Stop the Labs path; do not build a browser or make a customer claim. |
-| Enterprise | Several paying teams independently request the same multi-repository controls. | Do not build enterprise infrastructure speculatively. |
+| Scanner trust | Owner walkthroughs repeatedly reach a useful finding and rescan; deterministic checks have acceptable precision | Improve SlopBrick; do not widen the suite |
+| Outcome intelligence | Events are inspectable, privacy-safe, useful, and explicitly consented for outbound use | Keep outcomes local or disable the path |
+| Repository intelligence | Repository-owned context improves predeclared tasks without stale or bloated context | Keep Memory read-only and experimental |
+| Team enforcement | Lock prevents verified new debt with acceptable false-block and waiver burden | Keep enforcement in shadow mode |
+| Repair | A bounded fix applies, rescans, tests, and rolls back byte-identically | Keep Mend parked |
+| Rendered evidence | Blind comparison shows material incremental detection without unacceptable false positives | Stop Render Labs |
+| Monetization | Teams repeatedly use Lock and demonstrate willingness to pay | Stay free and product-led |
+| Enterprise | Several paying teams independently request the same controls | Do not build enterprise infrastructure |
 
 ## Success measures
 
 The north star is **repositories that fix or prevent at least one verified
 finding each week**.
 
-Supporting owner-side measures are scan completion, time to first useful
-finding, action taken or declined, rescan completion, return within the
-observation window, confirmed new-debt preventions, and waiver rate. Future
-external measures include team/workflow fit, willingness-to-pay signals,
-conversion, and paid retention only after real external evidence exists.
+Owner-side measures are scan completion, time to first useful finding, action
+or decline, rescan, return, confirmed prevention, and waiver rate. Conversion,
+willingness to pay, and retention remain future external measures.
+
 Guardrails are incomplete scans, raw-source egress, uncalibrated default-on
-rules, unsafe repair rollback, and claim/evidence drift.
+rules, unsafe repair, stale memory, false blocks, and claim/evidence drift.
 
 ## Non-goals
 
 - Proving that an individual file was written by AI.
-- Replacing security scanners, generic linters, code-review bots, visual
-  regression tools, or coding agents.
-- Treating all recent GitHub code as human or AI ground truth.
-- Building an unrestricted archive of agent conversations or a vector database
-  of every file.
+- Replacing security scanners, generic linters, PR reviewers, visual-regression
+  tools, coding agents, or project management.
+- Building a design generator, unrestricted transcript archive, or vector
+  database of every file.
 - Marketing capability names as separate products or creating packages before
   their architecture and evidence gates pass.
-- Making release, publish, deploy, or remote mutations implicit in roadmap
-  progress.
+- Treating market scenarios, owner testing, or planned sessions as demand.
+- Making push, tag, release, publication, deployment, or outreach implicit.
 
 ## Execution authority
 
@@ -403,4 +273,10 @@ rules, unsafe repair rollback, and claim/evidence drift.
 - [Current status](docs/execution/STATUS.md)
 - [Planning changelog](docs/execution/CHANGELOG.md)
 - [Bounded plans](docs/execution/plans/)
-- [Recoverable archive policy](docs/archive/README.md)
+
+Verify strategy and execution consistency with:
+
+```bash
+corepack pnpm plans:validate
+node --test scripts/validate-positioning-docs.test.mjs
+```

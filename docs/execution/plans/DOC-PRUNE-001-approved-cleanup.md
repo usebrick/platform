@@ -1,7 +1,7 @@
 # DOC-PRUNE-001 — Archive or delete the approved stale-document inventory
 
 - **Status:** `waiting_external`
-- **Priority:** 12
+- **Priority:** 13
 - **Track / lane:** implementation / platform
 - **Owner:** usebrick platform
 - **Updated:** 2026-07-17

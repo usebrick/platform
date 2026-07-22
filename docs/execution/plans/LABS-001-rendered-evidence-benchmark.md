@@ -4,7 +4,7 @@
 - **Priority:** 17
 - **Track / lane:** implementation / labs
 - **Owner:** UseBrick Labs
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -19,6 +19,13 @@ UseBrick has no measured proof that rendered evidence improves agent outcomes.
 RenderBrick Labs is a benchmark-only capability name. No browser product,
 standalone package, Chromium fork, runtime integration, or incremental-value
 claim exists.
+
+The strategic question is whether rendered evidence finds visual slop that
+source inspection and ordinary visual regression cannot: mobile clipping,
+hidden controls, overlays, stacking failures, scroll-dependent defects,
+font-loading shifts, and dynamic states. Qualitative hierarchy or "generic
+AI-template" judgements remain advisory unless repository policy makes a
+concern deterministic.
 
 ## Scope
 
@@ -40,6 +47,7 @@ false positives, time/cost, unsupported claims, and successful verification.
   RenderBrick package, or adding browser control to the current CLI.
 - Marketing rendered evidence, claiming customer value, or using one demo as a
   product decision.
+- Treating model aesthetic judgement as deterministic truth or a CI gate.
 - Replacing accessibility, visual-regression, unit, or end-to-end tests.
 - Changing runtime code, scanner policy, package versions, or release state.
 
