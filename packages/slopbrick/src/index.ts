@@ -15,6 +15,8 @@ import { runCli as runCliEntry } from './cli/program';
 
 export * from './types';
 export { loadConfig, DEFAULT_CONFIG } from './config';
+export * from './telemetry/outcome-event';
+export * from './telemetry/outcome-store';
 
 // v0.15.0: re-export @usebrick/engine so existing slopbrick consumers
 // (tests, the CLI's internal lazy imports, and downstream integrations
