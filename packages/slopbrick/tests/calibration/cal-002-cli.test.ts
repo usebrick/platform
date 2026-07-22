@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,7 +101,7 @@ function temporaryRepositoryRoot(): string {
 }
 
 function temporaryPrivateTmpRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), 'cal-002-catalog-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'cal-002-catalog-')));
   roots.push(root);
   return root;
 }

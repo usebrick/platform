@@ -79,10 +79,12 @@ does not weaken the production symlink policy.
 
 ## Acceptance Criteria
 
-- [ ] The fallback catalog regression passes without the historical matrix.
-- [ ] The production external-artifact guard still rejects symlink ancestors.
-- [ ] The SlopBrick baseline suite has no unexplained failure.
+- [x] The fallback catalog regression passes without the historical matrix.
+- [x] The production external-artifact guard still rejects symlink ancestors.
+- [x] The previously unexplained SlopBrick baseline failure is reproduced and repaired.
 
 ## Resolution
 
-<!-- filled in after validation -->
+The test fixture now resolves its newly created temp directory to the canonical
+host path before invoking the catalog CLI. The focused regression passes while
+the production external-artifact validation remains unchanged.
