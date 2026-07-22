@@ -1,7 +1,10 @@
 import {
+  OUTCOME_DETECTOR_IDS_V1,
   OUTCOME_EVENT_VERSION_V1,
   OUTCOME_EVIDENCE_TIERS_V1,
   OUTCOME_FRAMEWORK_BUCKETS_V1,
+  OUTCOME_OBSERVED_ON_PATTERN_V1,
+  OUTCOME_PRODUCER_VERSION_PATTERN_V1,
   OUTCOME_REPOSITORY_SIZE_BUCKETS_V1,
 } from './outcome-event-types';
 
@@ -33,13 +36,13 @@ const commonProperties = {
   observedOn: {
     type: 'string',
     description: 'UTC calendar day of observation; exact time is deliberately omitted.',
-    pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+    pattern: OUTCOME_OBSERVED_ON_PATTERN_V1,
   },
   producerVersion: {
     type: 'string',
-    description: 'SlopBrick version that produced or accepted the observation.',
-    pattern: '^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$',
-    maxLength: 64,
+    description: 'Low-entropy public SlopBrick release version; prerelease and build text are excluded.',
+    pattern: OUTCOME_PRODUCER_VERSION_PATTERN_V1,
+    maxLength: 11,
   },
   context: {
     description: 'Coarse framework and selected-file-count buckets for this observation.',
@@ -49,9 +52,8 @@ const commonProperties = {
 
 const detectorIdSchema = {
   type: 'string',
-  description: 'Public SlopBrick detector ID; never a finding, file, or repository identifier.',
-  pattern: '^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$',
-  maxLength: 128,
+  description: 'Detector ID from the immutable public SlopBrick v1 allowlist.',
+  enum: OUTCOME_DETECTOR_IDS_V1,
 } as const;
 
 export const OUTCOME_EVENT_SCHEMA_V1 = {
@@ -75,6 +77,29 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
           description: 'Coarse rescan comparison; it carries no finding details.',
         },
       },
+      allOf: [
+        {
+          if: { properties: { scanKind: { const: 'initial' } }, required: ['scanKind'] },
+          then: { properties: { comparison: { const: 'not-evaluated' } } },
+        },
+        {
+          if: {
+            properties: { scanKind: { const: 'rescan' }, status: { const: 'complete' } },
+            required: ['scanKind', 'status'],
+          },
+          then: { properties: { comparison: { enum: ['unchanged', 'changed'] } } },
+        },
+        {
+          if: {
+            properties: {
+              scanKind: { const: 'rescan' },
+              status: { enum: ['incomplete', 'not-applicable'] },
+            },
+            required: ['scanKind', 'status'],
+          },
+          then: { properties: { comparison: { const: 'unavailable' } } },
+        },
+      ],
     },
     {
       type: 'object',
