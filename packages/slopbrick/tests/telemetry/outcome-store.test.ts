@@ -105,4 +105,35 @@ describe('privacy-safe local outcome event store', () => {
     expect(readOutcomeEventsV1(storagePath)).toEqual([]);
     expect(existsSync(exportPath)).toBe(true);
   });
+
+  it('rejects serialization hooks and never echoes an unknown key that contains private text', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const secret = 'private-client-source-fragment';
+    const hookedEvent: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    Object.defineProperty(hookedEvent, 'toJSON', {
+      enumerable: false,
+      value: () => ({ source: secret }),
+    });
+
+    expect(() => appendOutcomeEventV1(storagePath, hookedEvent))
+      .toThrow(OutcomeEventStoreError);
+    expect(existsSync(storagePath)).toBe(false);
+
+    writeFileSync(storagePath, `${JSON.stringify({ [secret]: true })}\n`, 'utf8');
+    let readError: unknown;
+    try {
+      readOutcomeEventsV1(storagePath);
+    } catch (error) {
+      readError = error;
+    }
+    expect(readError).toBeInstanceOf(OutcomeEventStoreError);
+    expect((readError as Error).message).not.toContain(secret);
+  });
 });
