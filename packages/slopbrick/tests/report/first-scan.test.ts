@@ -522,10 +522,20 @@ describe('first-scan public contract', () => {
         : undefined,
     });
 
-    const result = project(report({ issues: [issue('logic', { ruleId })] }));
+    const result = projectFirstScan(report({ issues: [issue('logic', { ruleId })] }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      baselineState: 'loaded',
+      baseline: buildDebtBaseline(report(), '/workspace', 'config-a', 'commit-a'),
+    });
 
     expect(result.findings).toEqual([]);
     expect(result.recommendedActions).toEqual([]);
+    expect(result.delta).toMatchObject({
+      status: 'compared',
+      currentCount: 0,
+      newCount: 0,
+    });
   });
 
   it('projects the weakest source-span truth across a grouped recommendation', () => {

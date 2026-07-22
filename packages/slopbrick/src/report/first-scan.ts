@@ -535,6 +535,9 @@ export function projectFirstScan(
     // rows that permit it. Tombstones remain non-runnable even in stale input.
     return row === undefined || row.enabledByDefault || row.runnableByExplicitOptIn;
   });
+  const effectiveReport = activeIssues.length === report.issues.length
+    ? report
+    : { ...report, issues: activeIssues };
   const status = scanStatus(report);
   const projectedFindings = activeIssues.map((issue) =>
     projectFinding(issue, options.cwd, currentPolicy)
@@ -542,7 +545,7 @@ export function projectFirstScan(
   const comparison = status === 'complete'
     && options.baselineState === 'loaded'
     && options.baseline
-    ? compareFindingBaseline(report, options.baseline, options.cwd, options.configHash)
+    ? compareFindingBaseline(effectiveReport, options.baseline, options.cwd, options.configHash)
     : undefined;
   const findings = comparison?.status === 'compared'
     ? projectedFindings.map((finding) => ({
