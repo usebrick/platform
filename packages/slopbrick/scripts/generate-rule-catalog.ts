@@ -64,6 +64,11 @@ interface SignalStrength {
   lastCalibratedAt?: string;
 }
 
+interface SignalStrengthTable {
+  readonly rows: Record<string, unknown>;
+  readonly ruleIds: readonly string[];
+}
+
 interface CanonicalRuleMeta {
   readonly id?: string;
   readonly category?: string;
@@ -263,7 +268,7 @@ function extractDescription(src: string): string {
 async function readSignalStrength(
   signalStrengthPath: string,
   requireCompleteHistoricalVerdicts: boolean,
-): Promise<Record<string, SignalStrength>> {
+): Promise<SignalStrengthTable> {
   let bytes: string;
   try {
     bytes = await readFile(signalStrengthPath, 'utf8');
@@ -271,7 +276,7 @@ async function readSignalStrength(
     if (requireCompleteHistoricalVerdicts) {
       throw new TypeError('Policy-mode catalog generation requires readable historical signal data');
     }
-    return {};
+    return { rows: {}, ruleIds: [] };
   }
 
   let parsed: unknown;
@@ -286,7 +291,98 @@ async function readSignalStrength(
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new TypeError('Historical signal data must be a JSON object');
   }
-  return parsed as Record<string, SignalStrength>;
+  const rows = parsed as Record<string, unknown>;
+  const ruleIds = requireCompleteHistoricalVerdicts
+    ? readPolicySignalRuleIds(bytes, signalStrengthPath)
+    : Object.keys(rows)
+      .filter((ruleId) => !ruleId.startsWith('_'))
+      .sort(compareCodePoints);
+  if (requireCompleteHistoricalVerdicts) {
+    for (const ruleId of ruleIds) assertPolicySignalRow(ruleId, rows[ruleId]);
+  }
+  return { rows, ruleIds };
+}
+
+function readPolicySignalRuleIds(bytes: string, signalStrengthPath: string): string[] {
+  const source = ts.parseJsonText(signalStrengthPath, bytes);
+  const statement = source.statements[0];
+  if (!statement
+    || !ts.isExpressionStatement(statement)
+    || !ts.isObjectLiteralExpression(statement.expression)) {
+    throw new TypeError('Policy-mode catalog generation requires historical signal data as a JSON object');
+  }
+
+  const ruleIds = statement.expression.properties.flatMap((property) => {
+    if (!ts.isPropertyAssignment(property) || !ts.isStringLiteralLike(property.name)) {
+      throw new TypeError('Policy-mode catalog generation requires named historical signal rows');
+    }
+    return property.name.text.startsWith('_') ? [] : [property.name.text];
+  }).sort(compareCodePoints);
+  const duplicateIds = [...new Set(ruleIds.filter(
+    (ruleId, index) => index > 0 && ruleIds[index - 1] === ruleId,
+  ))];
+  if (duplicateIds.length > 0) {
+    throw new TypeError(
+      `Policy-mode catalog generation found duplicate historical signal rule IDs: ${duplicateIds.join(', ')}`,
+    );
+  }
+  return ruleIds;
+}
+
+function assertPolicySignalRow(ruleId: string, candidate: unknown): asserts candidate is SignalStrength {
+  if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
+    throw new TypeError(
+      `Policy-mode catalog generation requires a valid historical signal row shape for ${ruleId}`,
+    );
+  }
+  const row = candidate as Record<string, unknown>;
+  if (typeof row.verdict !== 'string' || !RECOGNIZED_HISTORICAL_VERDICTS.has(row.verdict)) {
+    throw new TypeError(
+      `Policy-mode catalog generation requires a recognized historicalVerdict for ${ruleId}`,
+    );
+  }
+  const validUnitInterval = (value: unknown): boolean =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+  const validShape = validUnitInterval(row.recall)
+    && validUnitInterval(row.fpRate)
+    && validUnitInterval(row.precision)
+    && typeof row.ratio === 'number'
+    && Number.isFinite(row.ratio)
+    && typeof row.lastCalibratedAt === 'string'
+    && (row.defaultOff === undefined || typeof row.defaultOff === 'boolean')
+    && (row.aiSpecific === undefined || typeof row.aiSpecific === 'boolean');
+  if (!validShape) {
+    throw new TypeError(
+      `Policy-mode catalog generation requires a valid historical signal row shape for ${ruleId}`,
+    );
+  }
+}
+
+function assertPolicySignalRuleParity(
+  signalRuleIds: readonly string[],
+  rules: readonly RuleMeta[],
+): void {
+  const discoveredRuleIds = rules.map((rule) => rule.id).sort(compareCodePoints);
+  const duplicateDiscoveredIds = [...new Set(discoveredRuleIds.filter(
+    (ruleId, index) => index > 0 && discoveredRuleIds[index - 1] === ruleId,
+  ))];
+  if (duplicateDiscoveredIds.length > 0) {
+    throw new TypeError(`Duplicate rule id in catalog: ${duplicateDiscoveredIds.join(', ')}`);
+  }
+  if (signalRuleIds.length === discoveredRuleIds.length
+    && signalRuleIds.every((ruleId, index) => ruleId === discoveredRuleIds[index])) return;
+
+  const signalIds = new Set(signalRuleIds);
+  const discoveredIds = new Set(discoveredRuleIds);
+  const missing = discoveredRuleIds.filter((ruleId) => !signalIds.has(ruleId));
+  const extra = signalRuleIds.filter((ruleId) => !discoveredIds.has(ruleId));
+  const detail = [
+    ...(missing.length === 0 ? [] : [`missing: ${missing.join(', ')}`]),
+    ...(extra.length === 0 ? [] : [`extra: ${extra.join(', ')}`]),
+  ].join('; ');
+  throw new TypeError(
+    `Policy-mode signal-strength rule IDs do not exactly match discovered rule IDs; ${detail}`,
+  );
 }
 
 async function discoverRules(options: {
@@ -328,15 +424,13 @@ async function discoverRules(options: {
       }
 
       const id = meta.id;
-      const candidate = signalStrength[id];
-      const ssEntry = candidate !== null && typeof candidate === 'object' ? candidate : {};
+      const candidate = signalStrength.rows[id];
+      const ssEntry = candidate !== null
+        && typeof candidate === 'object'
+        && !Array.isArray(candidate)
+        ? candidate as SignalStrength
+        : {};
       const verdict = typeof ssEntry.verdict === 'string' ? ssEntry.verdict : null;
-      if (options.requireCompleteHistoricalVerdicts
-        && (verdict === null || !RECOGNIZED_HISTORICAL_VERDICTS.has(verdict))) {
-        throw new TypeError(
-          `Policy-mode catalog generation requires a recognized historicalVerdict for ${id}`,
-        );
-      }
       const desc = meta.description || '';
       const signalDefaultOff = ssEntry.defaultOff === true
         || (ssEntry.defaultOff === undefined
@@ -358,6 +452,9 @@ async function discoverRules(options: {
     }
   }
 
+  if (options.requireCompleteHistoricalVerdicts) {
+    assertPolicySignalRuleParity(signalStrength.ruleIds, out);
+  }
   return out;
 }
 
