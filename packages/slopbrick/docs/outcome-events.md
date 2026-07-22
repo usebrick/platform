@@ -109,5 +109,12 @@ the selected ledger's regular-file, single-link, and device/inode identity
 before unlinking it. It is safe to repeat after a successful deletion; alias
 paths are rejected rather than reported as deleted.
 
+The sibling lock coordinates callers that use this API. Identity checks are
+repeated immediately before lock release and deletion, but v1 does not claim
+to withstand a different process running as the same operating-system user
+that deliberately swaps directory entries outside the API while an operation
+is in progress. Such a process already has access to the owner-private event
+data. Non-regular paths such as FIFOs are opened non-blocking and rejected.
+
 These events cannot activate, retire, recalibrate, or change the severity of a
 rule. Repository policy remains authoritative over any future global prior.

@@ -293,7 +293,7 @@ export replacement, and identity-checked deletion; unsupported filesystem
 semantics fail closed. There is no outcome-event network transport; the
 existing opt-in usage beacon remains separate and cannot carry these events.
 
-See the [field-by-field contract and privacy boundary](./docs/outcome-events.md).
+See the [field-by-field contract and privacy boundary](https://github.com/usebrick/platform/blob/main/packages/slopbrick/docs/outcome-events.md).
 
 ## Rule and language scope
 

@@ -9,9 +9,12 @@ export const OUTCOME_EVENT_VERSION_V1 = 'slopbrick-outcome-event-v1' as const;
 // V1 is deliberately bound to the immutable 119-rule public catalog rather
 // than accepting arbitrary rule-shaped strings as a repository-identity
 // channel. A future catalog must make an explicit compatibility decision.
-export const OUTCOME_DETECTOR_IDS_V1 = Object.freeze([
-  ...CAL002_LOCKED_RULE_IDS,
-]);
+const outcomeDetectorIdsV1: (typeof CAL002_LOCKED_RULE_IDS[number])[] = [];
+for (let index = 0; index < CAL002_LOCKED_RULE_IDS.length; index += 1) {
+  const detectorId = CAL002_LOCKED_RULE_IDS[index];
+  if (detectorId !== undefined) outcomeDetectorIdsV1[index] = detectorId;
+}
+export const OUTCOME_DETECTOR_IDS_V1 = Object.freeze(outcomeDetectorIdsV1);
 
 export const OUTCOME_OBSERVED_ON_PATTERN_V1 = String.raw`^(?:(?:[0-9]{4}-(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01]))|(?:[0-9]{4}-(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30))|(?:[0-9]{4}-02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29))$`;
 

@@ -19,8 +19,14 @@ import { dirname, join, parse, resolve, sep } from 'node:path';
 
 import { OutcomeEventStoreError } from './outcome-store-contract';
 
-interface StoreLock {
+export interface FileIdentity {
+  readonly device: bigint;
+  readonly inode: bigint;
+}
+
+export interface StoreLock {
   readonly descriptor: number;
+  readonly identity: FileIdentity;
   readonly path: string;
   readonly storagePath: string;
 }
@@ -37,7 +43,10 @@ function assertNoSymbolicLinkComponents(path: string, label: string): void {
   const absolutePath = resolve(path);
   const root = parse(absolutePath).root;
   let cursor = root;
-  for (const component of absolutePath.slice(root.length).split(sep).filter(Boolean)) {
+  const components = absolutePath.slice(root.length).split(sep);
+  for (let index = 0; index < components.length; index += 1) {
+    const component = components[index];
+    if (component === undefined || component === '') continue;
     cursor = join(cursor, component);
     try {
       if (lstatSync(cursor).isSymbolicLink()) {
@@ -71,13 +80,33 @@ function assertSingleLinkRegularFile(descriptor: number, label: string): void {
   if (metadata.nlink !== 1n) throw new OutcomeEventStoreError(`${label} must not have hard-link aliases`);
 }
 
+function descriptorIdentity(descriptor: number): FileIdentity {
+  const metadata = fstatSync(descriptor, { bigint: true });
+  return { device: metadata.dev, inode: metadata.ino };
+}
+
+function sameIdentity(left: FileIdentity, right: FileIdentity): boolean {
+  return left.device === right.device && left.inode === right.inode;
+}
+
+function pathIdentity(path: string, label: string): FileIdentity {
+  const metadata = lstatSync(path, { bigint: true });
+  if (!metadata.isFile()) throw new OutcomeEventStoreError(`${label} must be a regular file`);
+  if (metadata.nlink !== 1n) throw new OutcomeEventStoreError(`${label} must not have hard-link aliases`);
+  return { device: metadata.dev, inode: metadata.ino };
+}
+
 function openRegularFile(path: string, flags: number, label: string, mode?: number): number {
   assertFilesystemSupport();
   const absolutePath = resolve(path);
   assertNoSymbolicLinkComponents(absolutePath, label);
   let descriptor: number;
   try {
-    descriptor = openSync(absolutePath, flags | constants.O_NOFOLLOW, mode);
+    descriptor = openSync(
+      absolutePath,
+      flags | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+      mode,
+    );
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
       throw new OutcomeEventStoreError(`${label} must not be a symbolic link`);
@@ -99,6 +128,16 @@ export function openOutcomeFileForRead(path: string, label: string): number | un
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     throw error;
+  }
+}
+
+export function outcomeFileIdentity(path: string, label: string): FileIdentity | undefined {
+  const descriptor = openOutcomeFileForRead(path, label);
+  if (descriptor === undefined) return undefined;
+  try {
+    return descriptorIdentity(descriptor);
+  } finally {
+    closeSync(descriptor);
   }
 }
 
@@ -151,7 +190,12 @@ export function acquireOutcomeStoreLock(storagePath: string): StoreLock {
   try {
     assertSingleLinkRegularFile(descriptor, 'Outcome event store lock');
     fchmodSync(descriptor, 0o600);
-    return { descriptor, path: lockPath, storagePath: absoluteStoragePath };
+    return {
+      descriptor,
+      identity: descriptorIdentity(descriptor),
+      path: lockPath,
+      storagePath: absoluteStoragePath,
+    };
   } catch (error) {
     closeSync(descriptor);
     try { unlinkSync(lockPath); } catch { /* preserve the primary error */ }
@@ -161,23 +205,41 @@ export function acquireOutcomeStoreLock(storagePath: string): StoreLock {
 
 export function releaseOutcomeStoreLock(lock: StoreLock): void {
   try {
+    const currentIdentity = pathIdentity(lock.path, 'Outcome event store lock');
+    if (!sameIdentity(lock.identity, currentIdentity)) {
+      throw new OutcomeEventStoreError('Outcome event store lock identity changed before release');
+    }
     unlinkSync(lock.path);
   } finally {
     closeSync(lock.descriptor);
   }
 }
 
-function assertReplaceableTarget(path: string, label: string): void {
-  const descriptor = openOutcomeFileForRead(path, label);
-  if (descriptor !== undefined) closeOutcomeFile(descriptor);
+function assertReplaceableTarget(
+  path: string,
+  label: string,
+  forbiddenIdentities: readonly FileIdentity[],
+): void {
+  const identity = outcomeFileIdentity(path, label);
+  if (identity === undefined) return;
+  for (let index = 0; index < forbiddenIdentities.length; index += 1) {
+    const forbidden = forbiddenIdentities[index];
+    if (forbidden !== undefined && sameIdentity(identity, forbidden)) {
+      throw new OutcomeEventStoreError('Outcome export must not alias protected local storage');
+    }
+  }
 }
 
-export function writePrivateAtomic(path: string, contents: string): void {
+export function writePrivateAtomic(
+  path: string,
+  contents: string,
+  forbiddenIdentities: readonly FileIdentity[],
+): void {
   assertFilesystemSupport();
   const absolutePath = resolve(path);
   assertPrivateParent(absolutePath, 'Outcome export');
   assertNoSymbolicLinkComponents(absolutePath, 'Outcome export');
-  assertReplaceableTarget(absolutePath, 'Outcome export');
+  assertReplaceableTarget(absolutePath, 'Outcome export', forbiddenIdentities);
 
   const temporaryPath = `${absolutePath}.tmp-${randomBytes(12).toString('hex')}`;
   let descriptor: number | undefined;
@@ -195,7 +257,7 @@ export function writePrivateAtomic(path: string, contents: string): void {
     descriptor = undefined;
 
     assertNoSymbolicLinkComponents(absolutePath, 'Outcome export');
-    assertReplaceableTarget(absolutePath, 'Outcome export');
+    assertReplaceableTarget(absolutePath, 'Outcome export', forbiddenIdentities);
     renameSync(temporaryPath, absolutePath);
   } finally {
     if (descriptor !== undefined) closeSync(descriptor);

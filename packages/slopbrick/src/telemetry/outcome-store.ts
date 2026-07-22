@@ -19,6 +19,7 @@ import {
   deleteSingleLinkRegularFile,
   openOutcomeFileForAppend,
   openOutcomeFileForRead,
+  outcomeFileIdentity,
   readOutcomeFile,
   releaseOutcomeStoreLock,
   secureOutcomePathExists,
@@ -32,6 +33,15 @@ export {
   OUTCOME_EVENT_STORE_MAX_EVENTS_V1,
   OutcomeEventStoreError,
 } from './outcome-store-contract';
+
+function joinErrors(errors: readonly string[]): string {
+  let message = '';
+  for (let index = 0; index < errors.length; index += 1) {
+    const error = errors[index];
+    if (error !== undefined) message += `${index === 0 ? '' : '; '}${error}`;
+  }
+  return message;
+}
 
 function parseStoredEvent(line: string, lineNumber: number): OutcomeEventV1 {
   let value: unknown;
@@ -47,7 +57,7 @@ function parseStoredEvent(line: string, lineNumber: number): OutcomeEventV1 {
   const parsed = parseOutcomeEventV1(value);
   if (!parsed.ok) {
     throw new OutcomeEventStoreError(
-      `Outcome event store line ${lineNumber} is invalid: ${parsed.errors.join('; ')}`,
+      `Outcome event store line ${lineNumber} is invalid: ${joinErrors(parsed.errors)}`,
       lineNumber,
     );
   }
@@ -63,7 +73,10 @@ function parseLedger(contents: string): OutcomeEventV1[] {
   if (lines.length > OUTCOME_EVENT_STORE_MAX_EVENTS_V1) {
     throw new OutcomeEventStoreError('Outcome event store exceeds its event limit');
   }
-  return lines.map((line, index) => {
+  const events: OutcomeEventV1[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === undefined) continue;
     if (line.trim() === '') {
       throw new OutcomeEventStoreError(
         `Outcome event store line ${index + 1} is blank`,
@@ -76,8 +89,9 @@ function parseLedger(contents: string): OutcomeEventV1[] {
         index + 1,
       );
     }
-    return parseStoredEvent(line, index + 1);
-  });
+    events[index] = parseStoredEvent(line, index + 1);
+  }
+  return events;
 }
 
 function readDescriptorLedger(descriptor: number): {
@@ -105,7 +119,7 @@ export function readOutcomeEventsV1(storagePath: string): OutcomeEventV1[] {
 export function appendOutcomeEventV1(storagePath: string, event: unknown): void {
   const parsed = parseOutcomeEventV1(event);
   if (!parsed.ok) {
-    throw new OutcomeEventStoreError(`Refusing invalid outcome event: ${parsed.errors.join('; ')}`);
+    throw new OutcomeEventStoreError(`Refusing invalid outcome event: ${joinErrors(parsed.errors)}`);
   }
   const bytes = `${JSON.stringify(parsed.event)}\n`;
   if (Buffer.byteLength(bytes) > OUTCOME_EVENT_MAX_BYTES_V1) {
@@ -134,8 +148,12 @@ export function appendOutcomeEventV1(storagePath: string, event: unknown): void 
 }
 
 function canonicalExportDocument(events: readonly OutcomeEventV1[]): Record<string, unknown> {
-  const safeEvents = Array.from(events);
+  const safeEvents: OutcomeEventV1[] = [];
   Object.setPrototypeOf(safeEvents, null);
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (event !== undefined) safeEvents[index] = event;
+  }
   const document = Object.create(null) as Record<string, unknown>;
   document.version = OUTCOME_EVENT_EXPORT_VERSION_V1;
   document.eventVersion = OUTCOME_EVENT_VERSION_V1;
@@ -146,22 +164,34 @@ function canonicalExportDocument(events: readonly OutcomeEventV1[]): Record<stri
 export function exportOutcomeEventsV1(storagePath: string, exportPath: string): number {
   const absoluteStoragePath = resolve(storagePath);
   const absoluteExportPath = resolve(exportPath);
-  if (absoluteStoragePath === absoluteExportPath) {
+  if (pathComparisonKey(absoluteStoragePath) === pathComparisonKey(absoluteExportPath)) {
     throw new OutcomeEventStoreError('Outcome export path must differ from the local JSONL store');
   }
-  if (absoluteExportPath === `${absoluteStoragePath}.lock`) {
+  if (pathComparisonKey(absoluteExportPath) === pathComparisonKey(`${absoluteStoragePath}.lock`)) {
     throw new OutcomeEventStoreError('Outcome export path must differ from the active store lock');
   }
 
   const lock = acquireOutcomeStoreLock(storagePath);
   try {
+    const storageIdentity = outcomeFileIdentity(lock.storagePath, 'Outcome event store');
     const events = readLockedStorage(lock.storagePath);
     const document = canonicalExportDocument(events);
-    writePrivateAtomic(exportPath, `${JSON.stringify(document, null, 2)}\n`);
+    const protectedIdentities = storageIdentity === undefined
+      ? [lock.identity]
+      : [storageIdentity, lock.identity];
+    writePrivateAtomic(
+      exportPath,
+      `${JSON.stringify(document, null, 2)}\n`,
+      protectedIdentities,
+    );
     return events.length;
   } finally {
     releaseOutcomeStoreLock(lock);
   }
+}
+
+function pathComparisonKey(path: string): string {
+  return path.normalize('NFC').toLowerCase();
 }
 
 export function deleteOutcomeEventsV1(storagePath: string): boolean {
