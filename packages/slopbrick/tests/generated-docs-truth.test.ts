@@ -226,6 +226,49 @@ describe('generated documentation truth', () => {
     )).rejects.toThrow(/extra: ai\/valid-looking-120th/u);
   });
 
+  it('rejects missing, duplicate, and invalid-shape policy signal rows', async () => {
+    const dir = privateTempDir();
+    const policyPath = writeCanonicalFixture(
+      dir,
+      'approved-policy.json',
+      approvedCurrentPolicyArtifactFixture(),
+    );
+    const missingRowPath = writeSignalFixture(dir, 'missing-signal-row.json', (signal) => {
+      delete signal['ai/any-density'];
+    });
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: missingRowPath },
+    )).rejects.toThrow(/missing: ai\/any-density/u);
+
+    const invalidShapePath = writeSignalFixture(dir, 'invalid-signal-row.json', (signal) => {
+      signal['ai/any-density'] = { verdict: 'USEFUL' };
+    });
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: invalidShapePath },
+    )).rejects.toThrow(/valid historical signal row shape for ai\/any-density/u);
+
+    const signal = JSON.parse(
+      readFileSync(SIGNAL_STRENGTH_PATH, 'utf8'),
+    ) as Record<string, Record<string, unknown>>;
+    const sourceRow = signal['ai/any-density'];
+    if (!sourceRow) throw new TypeError('Expected the duplicate source signal row fixture');
+    const source = readFileSync(SIGNAL_STRENGTH_PATH, 'utf8').trimEnd();
+    expect(source.endsWith('}')).toBe(true);
+    const duplicateRowPath = join(dir, 'duplicate-signal-row.json');
+    writeFileSync(
+      duplicateRowPath,
+      `${source.slice(0, -1)},${JSON.stringify('ai/any-density')}:${JSON.stringify(sourceRow)}}`,
+      { flag: 'wx', mode: 0o600 },
+    );
+    expect(statSync(duplicateRowPath).mode & 0o777).toBe(0o600);
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: duplicateRowPath },
+    )).rejects.toThrow(/duplicate historical signal rule IDs: ai\/any-density/u);
+  });
+
   it.each([
     {
       name: 'category',
