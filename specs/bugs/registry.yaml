@@ -1,0 +1,8 @@
+bugs:
+  - bug_id: BUG-2026-07-22T030745
+    date: 2026-07-22
+    severity: low
+    priority: P1
+    scope: slopbrick-test-dependencies
+    summary: Fresh installs cannot resolve AJV from SlopBrick schema tests
+    file: specs/bugs/BUG-2026-07-22T030745-missing-slopbrick-ajv.md
