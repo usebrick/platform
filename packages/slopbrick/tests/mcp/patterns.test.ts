@@ -86,7 +86,7 @@ describe('extractImports', () => {
 });
 
 describe('MCP evidence contract', () => {
-  it('keeps MCP and CLI current-policy projections identical and metric-free', async () => {
+  it('keeps rule-level MCP and CLI current-policy projections identical and metric-free', async () => {
     getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const rule = {
       id: 'ai/any-density', category: 'ai' as const, severity: 'medium' as const, aiSpecific: true,
@@ -102,6 +102,18 @@ describe('MCP evidence contract', () => {
 
     expect(result.isError).toBeFalsy();
     const payload = JSON.parse(result.content[0]!.text) as typeof cliExplanation;
+    expect(payload.currentPolicy).toEqual({
+      status: 'applied',
+      runtimeOutcome: 'quality-candidate-default-off',
+      enabledByDefault: false,
+      runnableByExplicitOptIn: true,
+      scoreEligible: false,
+      gateEligible: false,
+      qualityDomain: 'type-safety',
+      claimClass: 'contextual-heuristic',
+      provenance: 'quality-candidate-unmeasured',
+      admitted: false,
+    });
     expect(payload.currentPolicy).toEqual(cliExplanation.currentPolicy);
     expect(payload.configuration.policyState).toBe('current-explicit-diagnostic');
     expect(payload.historicalMetrics.status).toBe('historical-point-estimate-only');
@@ -113,9 +125,39 @@ describe('MCP evidence contract', () => {
       ruleId: 'ai/any-density', category: 'ai', severity: 'medium', aiSpecific: true,
       message: 'Any density', line: 1, column: 1,
     });
-    expect(finding.currentPolicy).toEqual(cliExplanation.currentPolicy);
-    expect(finding.historicalMetrics.status).toBe('historical-point-estimate-only');
-    expect(finding.calibration).toEqual(finding.historicalMetrics);
+    expect(finding).not.toHaveProperty('currentPolicy');
+    expect(finding).not.toHaveProperty('historicalMetrics');
+    expect(finding.calibration).toEqual(cliExplanation.historicalMetrics);
+  });
+
+  it('exposes a superseded policy and replacement through slop_explain_rule', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const rule = {
+      id: 'logic/math-any-density', category: 'logic' as const, severity: 'medium' as const,
+      aiSpecific: false, description: 'Legacy any density', create: () => ({}), analyze: () => [],
+    };
+    const result = await handleToolCall(
+      'slop_explain_rule',
+      { ruleId: 'logic/math-any-density' },
+      { cwd: '/tmp', rules: [rule], config: TEST_CONFIG },
+    );
+
+    expect(result.isError).toBeFalsy();
+    const payload = JSON.parse(result.content[0]!.text) as ReturnType<typeof buildRuleExplanation>;
+    expect(payload.currentPolicy).toEqual({
+      status: 'applied',
+      runtimeOutcome: 'superseded',
+      enabledByDefault: false,
+      runnableByExplicitOptIn: false,
+      scoreEligible: false,
+      gateEligible: false,
+      qualityDomain: 'type-safety',
+      claimClass: 'contextual-heuristic',
+      provenance: 'superseded-policy',
+      replacementRuleId: 'ai/any-density',
+      admitted: false,
+    });
+    expect(payload.historicalMetrics).toBeDefined();
   });
 
   it('exposes per-finding calibration estimates while withholding unverified provenance', () => {

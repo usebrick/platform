@@ -95,7 +95,7 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     expect(out).toContain('Rule status: configured-off');
     expect(out).toContain('AI-specific: no (cross-cutting quality rule)');
     expect(out).toContain('Evidence:    quality');
-    expect(out).toContain('Current policy: unavailable; legacy defaults only');
+    expect(out).toContain('Current policy:\n  Status: unavailable\n  Detail: legacy defaults only');
     expect(out).toContain('Historical metrics: historical point estimates only');
     expect(out).toContain('Calibrated: 2026-07-04T00:00:00Z');
     expect(out).toContain('Historical source/cohort: unavailable');
@@ -103,6 +103,54 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     expect(out).toContain('Matched fact/snippet: unavailable in a rule-level explanation');
     expect(out).toContain('Historical confidence limits: unavailable');
     expect(out).toContain('This output does not claim runtime suppression or authorship proof.');
+  });
+
+  it('renders every current-policy field for a default-off row', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const result = buildRuleExplanation({
+      ...fakeRule,
+      id: 'ai/any-density',
+      category: 'ai',
+      defaultOff: true,
+    }, DEFAULT_CONFIG, {});
+    const out = formatExplain(result);
+
+    expect(out).toContain([
+      'Current policy:',
+      '  Status: applied',
+      '  Runtime outcome: quality-candidate-default-off',
+      '  Enabled by default: no',
+      '  Runnable by explicit opt-in: yes',
+      '  Score eligible: no',
+      '  Gate eligible: no',
+      '  Quality domain: type-safety',
+      '  Claim class: contextual-heuristic',
+      '  Provenance: quality-candidate-unmeasured',
+      '  Admitted: no',
+    ].join('\n'));
+    expect(out).not.toContain('Replacement rule ID:');
+  });
+
+  it('renders the replacement rule for a superseded row', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const result = buildRuleExplanation({
+      ...fakeRule,
+      id: 'logic/math-any-density',
+      category: 'logic',
+      aiSpecific: false,
+    }, DEFAULT_CONFIG, {});
+    const out = formatExplain(result);
+
+    expect(out).toContain('  Runtime outcome: superseded');
+    expect(out).toContain('  Enabled by default: no');
+    expect(out).toContain('  Runnable by explicit opt-in: no');
+    expect(out).toContain('  Score eligible: no');
+    expect(out).toContain('  Gate eligible: no');
+    expect(out).toContain('  Quality domain: type-safety');
+    expect(out).toContain('  Claim class: contextual-heuristic');
+    expect(out).toContain('  Provenance: superseded-policy');
+    expect(out).toContain('  Replacement rule ID: ai/any-density');
+    expect(out).toContain('  Admitted: no');
   });
 });
 

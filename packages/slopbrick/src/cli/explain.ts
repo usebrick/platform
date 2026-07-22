@@ -19,6 +19,14 @@ function formatLift(value: number | undefined): string {
   return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}×` : 'unavailable';
 }
 
+function formatPolicyBoolean(value: boolean | undefined): string {
+  return value === undefined ? 'unavailable' : value ? 'yes' : 'no';
+}
+
+function formatPolicyValue(value: string | undefined): string {
+  return value ?? 'unavailable';
+}
+
 function formatCalibrationStatus(status: ExplainResult['historicalMetrics']['status']): string {
   return status === 'historical-point-estimate-only'
     ? 'historical point estimates only'
@@ -45,9 +53,24 @@ export function formatExplain(result: ExplainResult | { error: string }): string
   lines.push('Severity:    ' + result.severity);
   lines.push('AI-specific: ' + (result.aiSpecific ? 'yes (designed to fire on AI tells)' : 'no (cross-cutting quality rule)'));
   lines.push('Rule status: ' + result.configuration.policyState + ' (configuration and current-policy projection)');
-  lines.push('Current policy: ' + (result.currentPolicy.status === 'applied'
-    ? `${result.currentPolicy.runtimeOutcome}; ${result.currentPolicy.provenance}`
-    : 'unavailable; legacy defaults only'));
+  lines.push('Current policy:');
+  lines.push('  Status: ' + result.currentPolicy.status);
+  if (result.currentPolicy.status === 'applied') {
+    lines.push('  Runtime outcome: ' + formatPolicyValue(result.currentPolicy.runtimeOutcome));
+    lines.push('  Enabled by default: ' + formatPolicyBoolean(result.currentPolicy.enabledByDefault));
+    lines.push('  Runnable by explicit opt-in: ' + formatPolicyBoolean(result.currentPolicy.runnableByExplicitOptIn));
+    lines.push('  Score eligible: ' + formatPolicyBoolean(result.currentPolicy.scoreEligible));
+    lines.push('  Gate eligible: ' + formatPolicyBoolean(result.currentPolicy.gateEligible));
+    lines.push('  Quality domain: ' + formatPolicyValue(result.currentPolicy.qualityDomain));
+    lines.push('  Claim class: ' + formatPolicyValue(result.currentPolicy.claimClass));
+    lines.push('  Provenance: ' + formatPolicyValue(result.currentPolicy.provenance));
+    if (result.currentPolicy.replacementRuleId !== undefined) {
+      lines.push('  Replacement rule ID: ' + result.currentPolicy.replacementRuleId);
+    }
+    lines.push('  Admitted: ' + formatPolicyBoolean(result.currentPolicy.admitted));
+  } else {
+    lines.push('  Detail: legacy defaults only');
+  }
   lines.push('Evidence:    ' + result.evidence.category);
   lines.push('Historical metrics: ' + formatCalibrationStatus(result.historicalMetrics.status));
   if (result.historicalMetrics.status === 'historical-point-estimate-only') {

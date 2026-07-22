@@ -10,7 +10,6 @@ import { readStructureMarkdown } from '../engine/structure-md';
 import { SCORE_BRIEFS } from '../report/score-contract.js';
 import { isIncompleteScan, isNotApplicableScan } from '../report/scan-validity.js';
 import {
-  buildCurrentRulePolicyExplanation,
   buildRuleCalibrationEvidence,
   buildRuleExplanation,
 } from '../rules/explanation.js';
@@ -737,19 +736,16 @@ export function toMcpFinding(issue: Issue, cwd?: string) {
   const evidence = projectMcpEvidence(issue.evidence);
   const message = projectMcpMessage(issue.message);
   const advice = issue.advice === undefined ? undefined : projectMcpMessage(issue.advice);
-  const historicalMetrics = buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId));
+  const calibration = buildRuleCalibrationEvidence(getSignalStrength(issue.ruleId));
   return {
     ruleId: issue.ruleId,
     category: issue.category,
     severity: issue.severity,
     aiSpecific: issue.aiSpecific,
-    // Keep the per-finding calibration claim aligned with `slop_explain_rule`:
-    // historical estimates are useful context, but no v10.3 source/cohort is
-    // admitted yet. Unknown rules must say unavailable instead of omitting the
-    // field and making consumers guess whether metadata was lost.
-    calibration: historicalMetrics,
-    historicalMetrics,
-    currentPolicy: buildCurrentRulePolicyExplanation(issue.ruleId),
+    // Retain the established per-finding compatibility field. Separated
+    // currentPolicy and historicalMetrics belong to slop_explain_rule so this
+    // scan payload stays in parity with the CLI finding contract.
+    calibration,
     line: issue.line,
     column: issue.column,
     message,
