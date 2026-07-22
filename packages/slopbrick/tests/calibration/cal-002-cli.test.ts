@@ -1223,6 +1223,7 @@ describe('CAL-002 catalog CLI', () => {
 
     const first = run(args, '', root);
 
+    expect(first.stderr).not.toContain('contains a symbolic link');
     expect(first.status).toBe(0);
     expect(first.stdout.trim().split('\n')).toHaveLength(1);
     const output = JSON.parse(first.stdout) as {
