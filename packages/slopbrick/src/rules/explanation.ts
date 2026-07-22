@@ -58,6 +58,7 @@ export function describeRulePolicy(
 ): RulePolicy {
   const configuredSeverity = config.rules[rule.id] ?? null;
   const explicitRuleOverrides = getExplicitRuleOverrides(config);
+  const hasExplicitRuleOverride = Object.hasOwn(explicitRuleOverrides, rule.id);
   const currentRow = currentPolicy?.getCurrentRulePolicy(rule.id);
   const defaultOff = currentRow === undefined
     ? rule.defaultOff === true || getDefaultOffRules().has(rule.id)
@@ -71,10 +72,12 @@ export function describeRulePolicy(
     }
     if (!currentRow.enabledByDefault
       && currentRow.runnableByExplicitOptIn
-      && Object.hasOwn(explicitRuleOverrides, rule.id)) {
+      && hasExplicitRuleOverride) {
       return { configuredSeverity, defaultOff, policyState: 'current-explicit-diagnostic' };
     }
-    if (configuredSeverity !== null && configuredSeverity !== 'auto') {
+    if (hasExplicitRuleOverride
+      && configuredSeverity !== null
+      && configuredSeverity !== 'auto') {
       return { configuredSeverity, defaultOff, policyState: 'configured-severity' };
     }
     return {
@@ -83,7 +86,9 @@ export function describeRulePolicy(
       policyState: currentRow.enabledByDefault ? 'current-default-on' : 'current-default-off',
     };
   }
-  if (configuredSeverity !== null && configuredSeverity !== 'auto') {
+  if (hasExplicitRuleOverride
+    && configuredSeverity !== null
+    && configuredSeverity !== 'auto') {
     return { configuredSeverity, defaultOff, policyState: 'configured-severity' };
   }
   if (defaultOff) {
