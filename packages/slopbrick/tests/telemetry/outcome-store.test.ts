@@ -331,6 +331,46 @@ describe.runIf(supportsSecureOutcomeStore)('privacy-safe local outcome event sto
     expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
   });
 
+  it('does not let inherited numeric array setters substitute exported events', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const exportPath = join(root, 'outcomes.json');
+    const secret = 'private-array-index-source-fragment';
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    appendOutcomeEventV1(storagePath, event);
+
+    const inheritedIndex = Object.getOwnPropertyDescriptor(Array.prototype, '0');
+    Object.defineProperty(Array.prototype, '0', {
+      configurable: true,
+      set(this: unknown[], value: unknown) {
+        const replacement = value !== null && typeof value === 'object' && 'event' in value
+          ? { source: secret }
+          : value;
+        Object.defineProperty(this, '0', {
+          configurable: true,
+          enumerable: true,
+          value: replacement,
+          writable: true,
+        });
+      },
+    });
+    try {
+      exportOutcomeEventsV1(storagePath, exportPath);
+    } finally {
+      if (inheritedIndex === undefined) delete (Array.prototype as unknown as Record<string, unknown>)['0'];
+      else Object.defineProperty(Array.prototype, '0', inheritedIndex);
+    }
+
+    expect(readFileSync(exportPath, 'utf8')).not.toContain(secret);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
+  });
+
   it('rejects a single whitespace-padded event above the per-event byte bound', () => {
     const storagePath = join(root, 'events-v1.jsonl');
     const event: OutcomeEventV1 = {

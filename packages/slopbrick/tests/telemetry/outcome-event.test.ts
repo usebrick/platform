@@ -232,6 +232,31 @@ describe('privacy-safe local outcome event contract', () => {
     expect(checked).toBe(89);
   });
 
+  it('does not let inherited numeric array setters suppress validation errors', () => {
+    const inheritedIndex = Object.getOwnPropertyDescriptor(Array.prototype, '0');
+    let result: ReturnType<typeof validateOutcomeEventV1> | undefined;
+
+    Object.defineProperty(Array.prototype, '0', {
+      configurable: true,
+      set() {},
+    });
+    try {
+      result = validateOutcomeEventV1({
+        version: OUTCOME_EVENT_VERSION_V1,
+        event: 'return-observed',
+        observedOn: '2026-07-22',
+        producerVersion: '0.45.0',
+        context: { framework: 'mixed', repositorySize: '101-500' },
+        window: 'private-customer-identifier',
+      });
+    } finally {
+      if (inheritedIndex === undefined) delete (Array.prototype as unknown as Record<string, unknown>)['0'];
+      else Object.defineProperty(Array.prototype, '0', inheritedIndex);
+    }
+
+    expect(result?.ok).toBe(false);
+  });
+
   it('publishes the local outcome contract and lifecycle operations through SlopBrick', () => {
     expect(slopbrick.OUTCOME_EVENT_VERSION_V1).toBe(OUTCOME_EVENT_VERSION_V1);
     expect(slopbrick.OUTCOME_EVENT_SCHEMA_V1).toBe(OUTCOME_EVENT_SCHEMA_V1);
