@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import * as slopbrick from '../../src/index';
 import {
+  OUTCOME_DETECTOR_IDS_V1,
   OUTCOME_EVENT_SCHEMA_V1,
   OUTCOME_EVENT_VERSION_V1,
   validateOutcomeEventV1,
@@ -117,6 +118,48 @@ describe('privacy-safe local outcome event contract', () => {
       expect(result.ok).toBe(false);
       expect(JSON.stringify(result.errors)).not.toContain(secret);
       expect(validateSchema(event)).toBe(false);
+    }
+  });
+
+  it('closes allowed value channels and rejects impossible scan states', () => {
+    const validateSchema = new Ajv2020({ allErrors: true, strict: true })
+      .compile(OUTCOME_EVENT_SCHEMA_V1);
+    const common = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+    } as const;
+    const finding = {
+      ...common,
+      event: 'first-finding-assessed',
+      detectorId: 'logic/heaps-deviation',
+      evidenceTier: 'quality-candidate-unmeasured',
+      assessment: 'useful',
+    } as const;
+    const initialScan = {
+      ...common,
+      event: 'scan-completed',
+      scanKind: 'initial',
+      status: 'complete',
+      comparison: 'not-evaluated',
+    } as const;
+    const invalidEvents = [
+      { ...finding, detectorId: 'private-client/secret-repository' },
+      { ...finding, producerVersion: '0.45.0-private-customer' },
+      { ...finding, producerVersion: '01.2.3' },
+      { ...finding, observedOn: '2026-99-99' },
+      { ...finding, observedOn: '2025-02-29' },
+      { ...initialScan, comparison: 'changed' },
+      { ...initialScan, scanKind: 'rescan', comparison: 'not-evaluated' },
+      { ...initialScan, scanKind: 'rescan', status: 'incomplete', comparison: 'changed' },
+    ];
+
+    expect(OUTCOME_DETECTOR_IDS_V1).toContain('logic/heaps-deviation');
+    expect(OUTCOME_DETECTOR_IDS_V1).toHaveLength(119);
+    for (const event of invalidEvents) {
+      expect(validateOutcomeEventV1(event).ok, JSON.stringify(event)).toBe(false);
+      expect(validateSchema(event), JSON.stringify(event)).toBe(false);
     }
   });
 
