@@ -81,6 +81,51 @@ function emittedIssue(ruleId: string, aiSpecific: boolean): Issue {
 }
 
 describe('Gate 1 score-contract category matrix', () => {
+  it('preserves legacy worker score inputs while the current-policy provider is inactive', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-score-legacy-'));
+    tempDirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const filePath = join(dir, 'src', 'a.ts');
+    writeFileSync(filePath, 'export const value = 1;\n');
+
+    const legacyDefaultOffRuleId = 'dup/identical-block';
+    const registry = new RuleRegistry();
+    registry.register(createRule({
+      id: legacyDefaultOffRuleId,
+      category: 'duplication',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: true,
+      create: () => ({}),
+      analyze: () => [emittedIssue(legacyDefaultOffRuleId, true)],
+    }));
+    const legacyCompositeId = 'composite/legacy-default-off-member';
+    loadCompositesInto(registry, [{
+      id: legacyCompositeId,
+      category: 'ai',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: false,
+      description: 'Inactive-provider legacy composite regression',
+      ruleIds: [legacyDefaultOffRuleId],
+      minMatch: 1,
+      create: () => ({}),
+      analyze: () => [],
+    }]);
+
+    const result = await scanFile(filePath, {
+      ...DEFAULT_CONFIG,
+      include: ['src/**/*.ts'],
+      exclude: [],
+    }, registry, dir);
+
+    expect(result.compositeScore).toEqual(compositeScore(
+      [legacyDefaultOffRuleId],
+      loadSignalStrength(),
+    ));
+    expect(result.issues.map((issue) => issue.ruleId)).toContain(legacyCompositeId);
+  });
+
   it('uses only score-eligible findings for Bayesian and synthetic composite inputs', async () => {
     getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const dir = mkdtempSync(join(tmpdir(), 'slopbrick-score-authority-'));
@@ -143,6 +188,51 @@ describe('Gate 1 score-contract category matrix', () => {
       [eligibleRuleId],
       loadSignalStrength(),
     ));
+  });
+
+  it('applies explicit off before appending a second-pass composite under current policy', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-composite-off-'));
+    tempDirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const filePath = join(dir, 'src', 'a.ts');
+    writeFileSync(filePath, 'export const value = 1;\n');
+
+    const eligibleRuleId = 'context/import-path-mismatch';
+    const compositeId = 'composite/explicit-off';
+    const registry = new RuleRegistry();
+    registry.register(createRule({
+      id: eligibleRuleId,
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: false,
+      create: () => ({}),
+      analyze: () => [emittedIssue(eligibleRuleId, false)],
+    }));
+    loadCompositesInto(registry, [{
+      id: compositeId,
+      category: 'ai',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: false,
+      description: 'Explicit-off composite regression',
+      ruleIds: [eligibleRuleId],
+      minMatch: 1,
+      create: () => ({}),
+      analyze: () => [],
+    }]);
+
+    const result = await scanFile(filePath, {
+      ...DEFAULT_CONFIG,
+      include: ['src/**/*.ts'],
+      exclude: [],
+      rules: {
+        ...DEFAULT_CONFIG.rules,
+        [compositeId]: 'off',
+      },
+    }, registry, dir);
+
+    expect(result.issues.map((issue) => issue.ruleId)).not.toContain(compositeId);
   });
 
   it('keeps no-findings scores neutral for empty, tiny, and large analyzed repositories', () => {

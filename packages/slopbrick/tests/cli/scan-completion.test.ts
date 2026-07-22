@@ -1,7 +1,14 @@
-import { describe, expect, it, beforeAll, afterEach } from 'vitest';
+import { describe, expect, it, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
+
 import { assertDistBuilt, cleanupTempDir, createTmpDir, run } from '../helpers/cli';
 import { runScan } from '../../src/cli/scan';
 import { filterByDisabledDirectives, filterIssues } from '../../src/cli/threshold';
@@ -18,9 +25,14 @@ import { computeAiMaintenanceCostFromReport } from '../../src/engine/maintenance
 import { formatJson } from '../../src/report/json';
 import { DEFAULT_CONFIG } from '../../src/config';
 import { effectiveIssuesForScore } from '../../src/cli/effective-issues';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 import type { FileScanResult } from '../../src/types';
 
 beforeAll(assertDistBuilt);
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
 
 const NOT_APPLICABLE_JSON_KEYS = new Set([
   'version',
@@ -2164,6 +2176,34 @@ describe('scan completion status', () => {
       identicalBlockCandidateWindows: 2,
       identicalBlockTruncated: false,
     });
+  });
+
+  it('uses current default-on and explicit-off authority for the identical-block coordinator', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = createTmpDir(); dirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const shared = Array.from({ length: 20 }, (_, index) => `void shared${index};`).join('\n');
+    writeFileSync(join(dir, 'src', 'a.ts'), `${shared}\n`);
+    writeFileSync(join(dir, 'src', 'b.ts'), `${shared}\n`);
+
+    const currentDefaultOn = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    expect(currentDefaultOn.report.issues.filter(
+      (issue) => issue.ruleId === 'dup/identical-block',
+    )).toHaveLength(2);
+    expect(currentDefaultOn.report.scanAccounting).toMatchObject({
+      identicalBlockCandidateWindows: 2,
+      identicalBlockTruncated: false,
+    });
+
+    writeFileSync(
+      join(dir, 'slopbrick.config.mjs'),
+      "export default { rules: { 'dup/identical-block': 'off' } };\n",
+    );
+    const explicitlyOff = await runScan({ workspace: dir, quiet: true, telemetry: false });
+    expect(explicitlyOff.report.issues.some(
+      (issue) => issue.ruleId === 'dup/identical-block',
+    )).toBe(false);
+    expect(explicitlyOff.report.scanAccounting?.identicalBlockCandidateWindows).toBeUndefined();
   });
 
   it.each([
