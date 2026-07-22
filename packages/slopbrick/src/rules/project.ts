@@ -1,13 +1,13 @@
 import type { FileScanResult, Issue, ResolvedConfig, Severity } from '../types';
 import { canonicalizeStyleSource } from '../engine/normalize';
-import { getExplicitRuleOverrides } from '../config/rule-override-provenance';
+import { getRunnableRuleOverrides } from '../config/rule-override-provenance';
 import { getCurrentEvidencePolicyAccessors } from './current-evidence-policy-runtime';
 
 function isRuleEnabled(config: ResolvedConfig, id: string): boolean {
   const severity = config.rules[id];
   if (severity === undefined || severity === 'off') return false;
   const currentPolicy = getCurrentEvidencePolicyAccessors();
-  return currentPolicy?.isRuleRunnable(id, getExplicitRuleOverrides(config)) ?? true;
+  return currentPolicy?.isRuleRunnable(id, getRunnableRuleOverrides(config)) ?? true;
 }
 
 function resolveProjectSeverity(

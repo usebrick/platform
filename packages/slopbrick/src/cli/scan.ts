@@ -32,8 +32,9 @@ import {
   resolveConfigPath as findConfigPath,
 } from '../config';
 import {
+  bindInvocationRuleOverrides,
   copyExplicitRuleOverrides,
-  getExplicitRuleOverrides,
+  getRunnableRuleOverrides,
 } from '../config/rule-override-provenance.js';
 import {
   classifyDiscoveryCandidates,
@@ -480,6 +481,12 @@ async function runScanWithScopedState(
       );
     }
   }
+  const invocationRuleOverrides = Object.fromEntries(
+    [options.rule, ...(options.includeRules ?? [])]
+      .filter((ruleId): ruleId is string => ruleId !== undefined)
+      .map((ruleId) => [ruleId, 'auto'] as const),
+  );
+  bindInvocationRuleOverrides(config, invocationRuleOverrides);
   registry.loadBuiltins(options.rule, { includeRules: effectiveIncludeRules, excludeRules: options.excludeRules });
   if (telemetryEnabled) {
     const flywheelState = loadFlywheelState(cwd);
@@ -588,7 +595,7 @@ async function runScanWithScopedState(
     options.rule === duplicateRuleId ||
     options.includeRules?.includes(duplicateRuleId) === true;
   const currentPolicy = getCurrentEvidencePolicyAccessors();
-  const explicitRuleOverrides = getExplicitRuleOverrides(config);
+  const explicitRuleOverrides = getRunnableRuleOverrides(config);
   const currentDuplicatePolicy = currentPolicy?.getCurrentRulePolicy(duplicateRuleId);
   const duplicateCoordinatorEnabled =
     registry.has(duplicateRuleId) &&
