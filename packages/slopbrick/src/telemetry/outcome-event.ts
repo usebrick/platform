@@ -236,7 +236,14 @@ const DETECTOR_ID = /^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/u;
 const COMMON_KEYS = ['version', 'event', 'observedOn', 'producerVersion', 'context'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return false;
+  return Reflect.ownKeys(value).every((key) => {
+    if (typeof key !== 'string') return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor?.enumerable === true && Object.hasOwn(descriptor, 'value');
+  });
 }
 
 function includes<T extends string>(values: readonly T[], value: unknown): value is T {
@@ -252,7 +259,7 @@ function exactKeys(
     if (!Object.hasOwn(value, key)) errors.push(`missing field: ${key}`);
   }
   for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) errors.push(`unknown field: ${key}`);
+    if (!allowed.includes(key)) errors.push('unknown field');
   }
 }
 

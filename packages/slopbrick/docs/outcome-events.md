@@ -53,7 +53,8 @@ Accepted events contain no:
 - free-form metadata.
 
 The runtime validator and JSON Schema reject attempts to add those fields.
-Validation errors identify the rejected field but never echo its value.
+Validation errors identify an unknown-field violation without echoing its key
+or value.
 Malformed stored lines fail closed and are not extended by later appends.
 
 The existing one-shot usage beacon is a different mechanism. It remains off
