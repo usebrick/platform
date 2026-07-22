@@ -18,6 +18,10 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
+import {
+  CAL002_LOCKED_RULE_CATALOG_SHA256,
+  canonicalArtifact,
+} from '../src/calibration/cal-002/contracts.js';
 import { canonicalJson } from '../src/calibration/v103/canonical.js';
 import {
   createCurrentEvidencePolicyAccessors,
@@ -29,10 +33,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = path.resolve(__dirname, '../src/rules');
 const SIGNAL_STRENGTH = path.resolve(__dirname, '../src/rules/signal-strength.json');
 const OUTPUT_FILE = path.resolve(__dirname, '../docs/rule-catalog.md');
+const REPOSITORY_ROOT = path.resolve(__dirname, '../../..');
+const RECOGNIZED_HISTORICAL_VERDICTS = new Set([
+  'USEFUL',
+  'OK',
+  'NOISY',
+  'INVERTED',
+  'HYGIENE',
+  'DORMANT',
+]);
+const HISTORICAL_DEFAULT_OFF_VERDICTS = new Set(['NOISY', 'INVERTED', 'DORMANT']);
 
 export interface GenerateRuleCatalogOptions {
   readonly policyPath?: string;
   readonly check: boolean;
+}
+
+export interface GenerateRuleCatalogSources {
+  readonly rulesDir?: string;
+  readonly signalStrengthPath?: string;
 }
 
 interface SignalStrength {
@@ -43,6 +62,13 @@ interface SignalStrength {
   verdict?: string;
   defaultOff?: boolean;
   lastCalibratedAt?: string;
+}
+
+interface CanonicalRuleMeta {
+  readonly id?: string;
+  readonly category?: string;
+  readonly aiSpecific?: boolean;
+  readonly defaultOff?: boolean;
 }
 
 interface RuleMeta {
@@ -56,10 +82,16 @@ interface RuleMeta {
   severity: 'low' | 'medium' | 'high';
   /** Whether the rule fires on AI-specific facts. */
   aiSpecific: boolean;
+  /** Canonical category read from the rule object for frozen catalog identity. */
+  catalogCategory: string;
+  /** Canonical AI-specific flag read from the rule object for frozen catalog identity. */
+  catalogAiSpecific: boolean;
   /** Short description from `description: '...'`. */
   description: string;
   /** Whether the rule is `defaultOff: true` in signal-strength.json. */
   defaultOff: boolean;
+  /** Frozen catalog default state from source metadata plus signal-strength.json. */
+  existingDefaultOff: boolean;
   /** Calibration verdict (USEFUL / OK / HYGIENE / NOISY / INVERTED / DORMANT). */
   verdict: string | null;
 }
@@ -78,6 +110,7 @@ function extractRuleMeta(src: string): {
   category?: string;
   severity?: 'low' | 'medium' | 'high';
   aiSpecific?: boolean;
+  defaultOff?: boolean;
   description?: string;
 } {
   const find = (re: RegExp): string | undefined => src.match(re)?.[1];
@@ -87,8 +120,67 @@ function extractRuleMeta(src: string): {
     category: find(/category:\s*['"]([^'"]+)['"]/),
     severity: find(/severity:\s*['"]([^'"]+)['"]/) as 'low' | 'medium' | 'high' | undefined,
     aiSpecific: /aiSpecific:\s*true/.test(src) ? true : /aiSpecific:\s*false/.test(src) ? false : undefined,
+    defaultOff: /defaultOff:\s*true/.test(src) ? true : /defaultOff:\s*false/.test(src) ? false : undefined,
     description: extractDescription(src),
   };
+}
+
+function extractCanonicalRuleMeta(src: string): CanonicalRuleMeta {
+  const source = ts.createSourceFile(
+    'rule.ts',
+    src,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  let result: CanonicalRuleMeta | undefined;
+
+  const propertyName = (property: ts.ObjectLiteralElementLike): string | undefined => {
+    if (!('name' in property) || property.name === undefined) return undefined;
+    if (ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)) {
+      return property.name.text;
+    }
+    return undefined;
+  };
+  const property = (
+    node: ts.ObjectLiteralExpression,
+    name: string,
+  ): ts.PropertyAssignment | undefined => node.properties.find((candidate) =>
+    ts.isPropertyAssignment(candidate) && propertyName(candidate) === name,
+  ) as ts.PropertyAssignment | undefined;
+  const stringValue = (candidate: ts.PropertyAssignment | undefined): string | undefined =>
+    candidate && ts.isStringLiteralLike(candidate.initializer)
+      ? candidate.initializer.text
+      : undefined;
+  const booleanValue = (candidate: ts.PropertyAssignment | undefined): boolean | undefined => {
+    if (candidate?.initializer.kind === ts.SyntaxKind.TrueKeyword) return true;
+    if (candidate?.initializer.kind === ts.SyntaxKind.FalseKeyword) return false;
+    return undefined;
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isObjectLiteralExpression(node)) {
+      const id = stringValue(property(node, 'id'));
+      const category = stringValue(property(node, 'category'));
+      const severity = stringValue(property(node, 'severity'));
+      if (id?.includes('/') && category !== undefined && severity !== undefined) {
+        if (result !== undefined) {
+          throw new TypeError(`Rule source declares multiple canonical rule objects for ${id}`);
+        }
+        const aiSpecific = booleanValue(property(node, 'aiSpecific'));
+        const defaultOff = booleanValue(property(node, 'defaultOff'));
+        result = {
+          id,
+          category,
+          ...(aiSpecific === undefined ? {} : { aiSpecific }),
+          ...(defaultOff === undefined ? {} : { defaultOff }),
+        };
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return result ?? {};
 }
 
 function extractDescription(src: string): string {
@@ -168,17 +260,52 @@ function extractDescription(src: string): string {
   return resolve(description, new Set()).trim();
 }
 
-async function discoverRules(): Promise<RuleMeta[]> {
-  const ss = (await readFile(SIGNAL_STRENGTH, 'utf8').catch(() => '{}')) as string;
-  const signalStrength: Record<string, SignalStrength> = JSON.parse(ss);
+async function readSignalStrength(
+  signalStrengthPath: string,
+  requireCompleteHistoricalVerdicts: boolean,
+): Promise<Record<string, SignalStrength>> {
+  let bytes: string;
+  try {
+    bytes = await readFile(signalStrengthPath, 'utf8');
+  } catch {
+    if (requireCompleteHistoricalVerdicts) {
+      throw new TypeError('Policy-mode catalog generation requires readable historical signal data');
+    }
+    return {};
+  }
 
-  const entries = await readdir(RULES_DIR, { withFileTypes: true });
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bytes) as unknown;
+  } catch (error) {
+    if (requireCompleteHistoricalVerdicts) {
+      throw new TypeError('Policy-mode catalog generation requires valid historical signal data');
+    }
+    throw error;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new TypeError('Historical signal data must be a JSON object');
+  }
+  return parsed as Record<string, SignalStrength>;
+}
+
+async function discoverRules(options: {
+  readonly rulesDir: string;
+  readonly signalStrengthPath: string;
+  readonly requireCompleteHistoricalVerdicts: boolean;
+}): Promise<RuleMeta[]> {
+  const signalStrength = await readSignalStrength(
+    options.signalStrengthPath,
+    options.requireCompleteHistoricalVerdicts,
+  );
+
+  const entries = await readdir(options.rulesDir, { withFileTypes: true });
   const categories = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
 
   const out: RuleMeta[] = [];
 
   for (const category of categories) {
-    const dir = path.join(RULES_DIR, category);
+    const dir = path.join(options.rulesDir, category);
     const files = (await readdir(dir))
       .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
       .filter((f) => f !== 'utils.ts' && !f.endsWith('.utils.ts'))
@@ -191,23 +318,42 @@ async function discoverRules(): Promise<RuleMeta[]> {
       const filePath = path.join(dir, file);
       const src = await readFile(filePath, 'utf8');
       const meta = extractRuleMeta(src);
+      const catalogMeta = extractCanonicalRuleMeta(src);
 
-      if (!meta.id) {
+      if (!meta.id || !catalogMeta.id) {
         throw new Error(`Could not find id in ${path.join(category, file)}`);
+      }
+      if (meta.id !== catalogMeta.id) {
+        throw new TypeError(`Rule metadata extraction disagrees on the id in ${path.join(category, file)}`);
       }
 
       const id = meta.id;
-      const ssEntry = signalStrength[id] || {};
+      const candidate = signalStrength[id];
+      const ssEntry = candidate !== null && typeof candidate === 'object' ? candidate : {};
+      const verdict = typeof ssEntry.verdict === 'string' ? ssEntry.verdict : null;
+      if (options.requireCompleteHistoricalVerdicts
+        && (verdict === null || !RECOGNIZED_HISTORICAL_VERDICTS.has(verdict))) {
+        throw new TypeError(
+          `Policy-mode catalog generation requires a recognized historicalVerdict for ${id}`,
+        );
+      }
       const desc = meta.description || '';
+      const signalDefaultOff = ssEntry.defaultOff === true
+        || (ssEntry.defaultOff === undefined
+          && verdict !== null
+          && HISTORICAL_DEFAULT_OFF_VERDICTS.has(verdict));
       out.push({
         id,
         fileCategory: meta.category || category,
         file: file.replace(/\.ts$/, ''),
         severity: meta.severity || 'medium',
         aiSpecific: meta.aiSpecific === true,
+        catalogCategory: catalogMeta.category || category,
+        catalogAiSpecific: catalogMeta.aiSpecific === true,
         description: desc || '(description missing — file has no `description:` field at top of rule)',
         defaultOff: ssEntry.defaultOff === true,
-        verdict: ssEntry.verdict || null,
+        existingDefaultOff: catalogMeta.defaultOff === true || signalDefaultOff,
+        verdict,
       });
     }
   }
@@ -230,16 +376,44 @@ function count<T>(items: T[], pred: (t: T) => boolean): number {
   return items.filter(pred).length;
 }
 
+function compareCodePoints(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function assertPolicyCatalogParity(
   rules: readonly RuleMeta[],
   currentPolicy: CurrentEvidencePolicyAccessors,
 ): void {
-  const discoveredIds = rules.map((rule) => rule.id).sort();
-  const policyIds = currentPolicy.policy.rows.map((row) => row.ruleId).sort();
-  if (discoveredIds.length !== 119 || policyIds.length !== 119) {
+  const metadataRows = rules
+    .map((rule) => ({
+      ruleId: rule.id,
+      category: rule.catalogCategory,
+      aiSpecific: rule.catalogAiSpecific,
+      existingDefaultOff: rule.existingDefaultOff,
+    }))
+    .sort((left, right) => compareCodePoints(left.ruleId, right.ruleId));
+  const metadataSha256 = canonicalArtifact(metadataRows).sha256;
+  if (metadataRows.length !== 119) {
     throw new TypeError(
-      `Current policy catalog must contain exactly 119 rows; discovered ${discoveredIds.length}, policy ${policyIds.length}`,
+      `Current policy catalog must contain exactly 119 rows; discovered ${metadataRows.length}`,
     );
+  }
+  if (metadataSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256) {
+    throw new TypeError(
+      'Discovered rules do not match the canonical locked CAL-002 catalog metadata identity',
+    );
+  }
+  if (currentPolicy.policy.catalogSha256 !== CAL002_LOCKED_RULE_CATALOG_SHA256
+    || currentPolicy.policy.catalogSha256 !== metadataSha256) {
+    throw new TypeError('Current policy catalogSha256 does not match the locked catalog metadata');
+  }
+
+  const discoveredIds = metadataRows.map((row) => row.ruleId);
+  const policyIds = currentPolicy.policy.rows
+    .map((row) => row.ruleId)
+    .sort(compareCodePoints);
+  if (policyIds.length !== 119) {
+    throw new TypeError(`Current policy catalog must contain exactly 119 rows; policy has ${policyIds.length}`);
   }
   if (discoveredIds.some((ruleId, index) => ruleId !== policyIds[index])) {
     throw new TypeError('Current policy rows do not exactly match the generated rule catalog');
@@ -317,7 +491,7 @@ function render(
     for (const r of catRules) {
       const sev = r.severity;
       const def = r.defaultOff ? 'off' : 'on';
-      const ai = r.aiSpecific ? '✓' : '—';
+      const ai = (currentPolicy ? r.catalogAiSpecific : r.aiSpecific) ? '✓' : '—';
       // escape `|` inside description
       const desc = r.description.replace(/\|/g, '\\|');
       if (currentPolicy) {
@@ -366,7 +540,12 @@ function render(
   return md;
 }
 
-function parseOptions(args: readonly string[]): GenerateRuleCatalogOptions {
+function parseOptions(rawArgs: readonly string[]): GenerateRuleCatalogOptions {
+  const separatorIndex = rawArgs.indexOf('--');
+  if (separatorIndex > 0 || (separatorIndex === 0 && rawArgs.slice(1).includes('--'))) {
+    throw new TypeError('A standalone -- separator may only appear once at the beginning');
+  }
+  const args = separatorIndex === 0 ? rawArgs.slice(1) : rawArgs;
   let check = false;
   let policyPath: string | undefined;
   for (let index = 0; index < args.length; index += 1) {
@@ -394,7 +573,10 @@ function parseOptions(args: readonly string[]): GenerateRuleCatalogOptions {
 }
 
 async function readCanonicalJson(policyPath: string): Promise<unknown> {
-  const bytes = await readFile(path.resolve(policyPath), 'utf8');
+  const resolvedPolicyPath = path.isAbsolute(policyPath)
+    ? policyPath
+    : path.resolve(REPOSITORY_ROOT, policyPath);
+  const bytes = await readFile(resolvedPolicyPath, 'utf8');
   let value: unknown;
   try {
     value = JSON.parse(bytes) as unknown;
@@ -417,17 +599,26 @@ async function resolveCurrentPolicy(
 
 export async function generateRuleCatalogOutput(
   options: GenerateRuleCatalogOptions,
+  sources: GenerateRuleCatalogSources = {},
 ): Promise<string> {
-  const rules = await discoverRules();
   const currentPolicy = await resolveCurrentPolicy(options.policyPath);
+  const rules = await discoverRules({
+    rulesDir: sources.rulesDir ?? RULES_DIR,
+    signalStrengthPath: sources.signalStrengthPath ?? SIGNAL_STRENGTH,
+    requireCompleteHistoricalVerdicts: currentPolicy !== undefined,
+  });
   if (currentPolicy) assertPolicyCatalogParity(rules, currentPolicy);
   return render(rules, currentPolicy);
 }
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
-  const rules = await discoverRules();
   const currentPolicy = await resolveCurrentPolicy(options.policyPath);
+  const rules = await discoverRules({
+    rulesDir: RULES_DIR,
+    signalStrengthPath: SIGNAL_STRENGTH,
+    requireCompleteHistoricalVerdicts: currentPolicy !== undefined,
+  });
   if (currentPolicy) assertPolicyCatalogParity(rules, currentPolicy);
   const output = render(rules, currentPolicy);
 

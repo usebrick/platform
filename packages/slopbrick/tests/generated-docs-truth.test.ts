@@ -1,8 +1,18 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import {
+  chmodSync,
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, relative, resolve } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { generateRuleCatalogOutput } from '../scripts/generate-rule-catalog';
 import { canonicalAuthorityRowsV2 } from '../src/calibration/cal-002/authority';
 import { canonicalArtifact } from '../src/calibration/cal-002/contracts';
 import { builtinRules } from '../src/rules/builtins';
@@ -11,69 +21,245 @@ import {
   collectGeneratedCatalogCopy,
 } from './helpers/public-rule-copy';
 import { approvedCurrentPolicyArtifactFixture } from './helpers/current-evidence-policy-v2';
-import { generateRuleCatalogOutput } from '../scripts/generate-rule-catalog';
+
+const PACKAGE_ROOT = resolve(__dirname, '..');
+const REPOSITORY_ROOT = resolve(PACKAGE_ROOT, '..', '..');
+const RULES_DIR = join(PACKAGE_ROOT, 'src', 'rules');
+const SIGNAL_STRENGTH_PATH = join(PACKAGE_ROOT, 'src', 'rules', 'signal-strength.json');
+const tempDirs: string[] = [];
+
+function privateTempDir(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'slopbrick-rule-catalog-'));
+  chmodSync(dir, 0o700);
+  expect(statSync(dir).mode & 0o777).toBe(0o700);
+  tempDirs.push(dir);
+  return dir;
+}
+
+function writeCanonicalFixture(dir: string, name: string, value: unknown): string {
+  const fixturePath = join(dir, name);
+  writeFileSync(fixturePath, canonicalArtifact(value).json, { flag: 'wx', mode: 0o600 });
+  expect(statSync(fixturePath).mode & 0o777).toBe(0o600);
+  return fixturePath;
+}
+
+function writeSignalFixture(
+  dir: string,
+  name: string,
+  mutate: (signal: Record<string, Record<string, unknown>>) => void,
+): string {
+  const signal = JSON.parse(
+    readFileSync(SIGNAL_STRENGTH_PATH, 'utf8'),
+  ) as Record<string, Record<string, unknown>>;
+  mutate(signal);
+  const fixturePath = join(dir, name);
+  writeFileSync(fixturePath, JSON.stringify(signal), { flag: 'wx', mode: 0o600 });
+  expect(statSync(fixturePath).mode & 0o777).toBe(0o600);
+  return fixturePath;
+}
+
+function copyRulesFixture(
+  dir: string,
+  name: string,
+  rulePath: string,
+  mutate: (source: string) => string,
+): string {
+  const rulesDir = join(dir, name);
+  cpSync(RULES_DIR, rulesDir, { errorOnExist: true, force: false, recursive: true });
+  const fixturePath = join(rulesDir, rulePath);
+  const source = readFileSync(fixturePath, 'utf8');
+  const mutated = mutate(source);
+  expect(mutated).not.toBe(source);
+  rmSync(fixturePath);
+  writeFileSync(fixturePath, mutated, { flag: 'wx', mode: 0o600 });
+  return rulesDir;
+}
+
+function runCatalogPackageScript(args: readonly string[]) {
+  return spawnSync('corepack', [
+    'pnpm',
+    '--filter',
+    'slopbrick',
+    'generate:rules:catalog',
+    '--',
+    ...args,
+  ], {
+    cwd: REPOSITORY_ROOT,
+    encoding: 'utf8',
+  });
+}
+
+function processOutput(result: ReturnType<typeof runCatalogPackageScript>): string {
+  return `${result.stdout}${result.stderr}`;
+}
+
+afterEach(() => {
+  while (tempDirs.length > 0) {
+    rmSync(tempDirs.pop()!, { recursive: true, force: true });
+  }
+});
 
 describe('generated documentation truth', () => {
   it('renders approved current columns separately and fails drift checking against the inactive catalog', async () => {
-    const packageRoot = join(__dirname, '..');
-    const policyPath = '/private/tmp/cal-002-policy-fixture-v2.json';
-    const signalPath = join(packageRoot, 'src', 'rules', 'signal-strength.json');
-    const signalBytes = readFileSync(signalPath);
-    const inactiveCatalog = readFileSync(join(packageRoot, 'docs', 'rule-catalog.md'), 'utf8');
+    const dir = privateTempDir();
+    const inactiveCatalog = readFileSync(join(PACKAGE_ROOT, 'docs', 'rule-catalog.md'), 'utf8');
     expect(await generateRuleCatalogOutput({ check: false })).toBe(inactiveCatalog);
     const policy = approvedCurrentPolicyArtifactFixture();
+    const noncanonicalPolicyPath = join(dir, 'noncanonical-policy.json');
     writeFileSync(
-      policyPath,
+      noncanonicalPolicyPath,
       `${JSON.stringify(policy, null, 2)}\n`,
-      { mode: 0o600 },
+      { flag: 'wx', mode: 0o600 },
+    );
+    await expect(generateRuleCatalogOutput({ policyPath: noncanonicalPolicyPath, check: false }))
+      .rejects.toThrow(/exact canonical JSON/);
+
+    const policyPath = writeCanonicalFixture(dir, 'approved-policy.json', policy);
+    const output = await generateRuleCatalogOutput({ policyPath, check: false });
+    const expected = policy.rows.find((row) => row.ruleId === 'ai/any-density');
+    const row = output.split('\n').find((line) => line.startsWith('| `ai/any-density` |'));
+    expect(expected).toBeDefined();
+    expect(output).toContain('| runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict |');
+    expect(row).toContain(`| ${expected!.runtimeOutcome} | ${expected!.enabledByDefault} | ${expected!.runnableByExplicitOptIn} | ${expected!.scoreEligible} | ${expected!.provenance} | ${expected!.qualityDomain} | ${expected!.claimClass} | false | USEFUL |`);
+    expect(output).toContain('historical context only; it is not current quality authority or authorship evidence');
+  });
+
+  it('accepts one package separator and resolves policy paths from the repository root', () => {
+    const dir = privateTempDir();
+    const policyPath = writeCanonicalFixture(
+      dir,
+      'approved-policy.json',
+      approvedCurrentPolicyArtifactFixture(),
+    );
+    const signalBytes = readFileSync(SIGNAL_STRENGTH_PATH);
+    const relativePolicyPath = relative(REPOSITORY_ROOT, policyPath);
+
+    const relativeResult = runCatalogPackageScript([
+      '--policy',
+      relativePolicyPath,
+      '--check',
+    ]);
+    expect(relativeResult.status).toBe(1);
+    expect(processOutput(relativeResult)).toMatch(
+      /out of sync with src\/rules\/ and the selected current policy projection/u,
     );
 
-    try {
-      await expect(generateRuleCatalogOutput({ policyPath, check: false }))
-        .rejects.toThrow(/exact canonical JSON/);
-      writeFileSync(policyPath, canonicalArtifact(policy).json, { mode: 0o600 });
+    const absoluteResult = runCatalogPackageScript([
+      '--policy',
+      policyPath,
+      '--check',
+    ]);
+    expect(absoluteResult.status).toBe(1);
+    expect(processOutput(absoluteResult)).toMatch(
+      /out of sync with src\/rules\/ and the selected current policy projection/u,
+    );
+    expect(readFileSync(SIGNAL_STRENGTH_PATH)).toEqual(signalBytes);
+  });
 
-      const output = await generateRuleCatalogOutput({ policyPath, check: false });
-      const expected = policy.rows.find((row) => row.ruleId === 'ai/any-density');
-      const row = output.split('\n').find((line) => line.startsWith('| `ai/any-density` |'));
-      expect(expected).toBeDefined();
-      expect(output).toContain('| runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict |');
-      expect(row).toContain(`| ${expected!.runtimeOutcome} | ${expected!.enabledByDefault} | ${expected!.runnableByExplicitOptIn} | ${expected!.scoreEligible} | ${expected!.provenance} | ${expected!.qualityDomain} | ${expected!.claimClass} | false | USEFUL |`);
-      expect(output).toContain('historical context only; it is not current quality authority or authorship evidence');
+  it.each([
+    {
+      name: 'a second standalone separator',
+      args: ['--', '--check'],
+      message: /standalone -- separator may only appear once at the beginning/u,
+    },
+    {
+      name: 'duplicate policy options',
+      args: ['--policy', 'first.json', '--policy', 'second.json', '--check'],
+      message: /--policy may only be supplied once/u,
+    },
+    {
+      name: 'duplicate check options',
+      args: ['--check', '--check'],
+      message: /--check may only be supplied once/u,
+    },
+    {
+      name: 'unknown options',
+      args: ['--unknown'],
+      message: /Unknown generate-rule-catalog option: --unknown/u,
+    },
+  ])('rejects $name after the approved package separator', ({ args, message }) => {
+    const result = runCatalogPackageScript(args);
+    expect(result.status).toBe(1);
+    expect(processOutput(result)).toMatch(message);
+  });
 
-      const result = spawnSync(process.execPath, [
-        join(__dirname, 'helpers', 'tsx-runner.cjs'),
-        join(packageRoot, 'scripts', 'generate-rule-catalog.ts'),
-        '--policy',
-        policyPath,
-        '--check',
-      ], {
-        cwd: packageRoot,
-        encoding: 'utf8',
-      });
+  it('binds policy mode to the locked catalog metadata and policy hash', async () => {
+    const dir = privateTempDir();
+    const policy = approvedCurrentPolicyArtifactFixture();
+    const policyPath = writeCanonicalFixture(dir, 'approved-policy.json', policy);
+    const metadataDriftPath = writeSignalFixture(dir, 'default-off-drift.json', (signal) => {
+      signal['ai/any-density']!.defaultOff = true;
+    });
 
-      expect(result.status).toBe(1);
-      expect(`${result.stdout}${result.stderr}`).toMatch(/policy|runtimeOutcome|out of sync/i);
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: metadataDriftPath },
+    )).rejects.toThrow(/canonical locked CAL-002 catalog metadata identity/u);
 
-      const duplicatePolicy = spawnSync(process.execPath, [
-        join(__dirname, 'helpers', 'tsx-runner.cjs'),
-        join(packageRoot, 'scripts', 'generate-rule-catalog.ts'),
-        '--policy',
-        policyPath,
-        '--policy',
-        policyPath,
-        '--check',
-      ], {
-        cwd: packageRoot,
-        encoding: 'utf8',
-      });
-      expect(duplicatePolicy.status).toBe(1);
-      expect(`${duplicatePolicy.stdout}${duplicatePolicy.stderr}`)
-        .toContain('--policy may only be supplied once');
-      expect(readFileSync(signalPath)).toEqual(signalBytes);
-    } finally {
-      rmSync(policyPath, { force: true });
-    }
+    const policyHashDriftPath = writeCanonicalFixture(dir, 'policy-hash-drift.json', {
+      ...policy,
+      catalogSha256: '0'.repeat(64),
+    });
+    await expect(generateRuleCatalogOutput({ policyPath: policyHashDriftPath, check: false }))
+      .rejects.toThrow(/catalogSha256/u);
+  });
+
+  it.each([
+    {
+      name: 'category',
+      mutate: (source: string) => source.replace("category: 'ai'", "category: 'logic'"),
+    },
+    {
+      name: 'aiSpecific',
+      mutate: (source: string) => source.replace('aiSpecific: true', 'aiSpecific: false'),
+    },
+  ])('rejects same-ID $name metadata drift', async ({ name, mutate }) => {
+    const dir = privateTempDir();
+    const policyPath = writeCanonicalFixture(
+      dir,
+      'approved-policy.json',
+      approvedCurrentPolicyArtifactFixture(),
+    );
+    const rulesDir = copyRulesFixture(
+      dir,
+      `${name}-rules`,
+      join('ai', 'any-density.ts'),
+      mutate,
+    );
+
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { rulesDir },
+    )).rejects.toThrow(/canonical locked CAL-002 catalog metadata identity/u);
+  });
+
+  it('requires readable signal data and a recognized historical verdict for all 119 policy rows', async () => {
+    const dir = privateTempDir();
+    const policyPath = writeCanonicalFixture(
+      dir,
+      'approved-policy.json',
+      approvedCurrentPolicyArtifactFixture(),
+    );
+    const missingVerdictPath = writeSignalFixture(dir, 'missing-verdict.json', (signal) => {
+      delete signal['ai/any-density']!.verdict;
+    });
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: missingVerdictPath },
+    )).rejects.toThrow(/recognized historicalVerdict for ai\/any-density/u);
+
+    const unknownVerdictPath = writeSignalFixture(dir, 'unknown-verdict.json', (signal) => {
+      signal['ai/any-density']!.verdict = 'CURRENT';
+    });
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: unknownVerdictPath },
+    )).rejects.toThrow(/recognized historicalVerdict for ai\/any-density/u);
+
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: join(dir, 'missing-signal-strength.json') },
+    )).rejects.toThrow(/readable historical signal data/u);
   });
 
   it('binds the package front door to the approved UseBrick doctrine', () => {
