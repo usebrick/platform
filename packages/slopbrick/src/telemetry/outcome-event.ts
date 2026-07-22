@@ -128,7 +128,10 @@ const commonProperties = {
     pattern: '^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$',
     maxLength: 64,
   },
-  context: { $ref: '#/$defs/context' },
+  context: {
+    description: 'Coarse framework and selected-file-count buckets for this observation.',
+    $ref: '#/$defs/context',
+  },
 } as const;
 
 const detectorIdSchema = {
