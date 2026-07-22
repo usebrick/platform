@@ -189,9 +189,32 @@ and build pass. Targeted report coverage is 84.55% for statements/lines,
 re-reviews returned 99/100 with no remaining findings. The production provider
 still returns `undefined`, so this remains dormant semantics only.
 
-The next bounded slice is Task 19: separate current policy from historical
-metrics in explain, MCP, and generated catalog surfaces. Local application
-remains separate from push, tag, publish, deploy, and release authority.
+Task 19 is implementation-checkpointed at `52af3e272`. Explain, CLI, MCP, and
+the generated catalog now separate current policy from frozen v10.1 historical
+metrics. The catalog validates the exact 119 identities and projects runnable,
+score, and gate authority independently. Repository configuration and
+invocation provenance remain distinct across the main and calibration workers;
+repository `off` wins. Direct documentation scans, secondary CLI diagnostics,
+history, and flywheel input now use the same policy boundaries without turning
+visible audit evidence into score or gate authority. Durable history migration
+removes only immutable current-policy ineligibility; temporary repository
+configuration is applied in memory and remains reversible.
+
+The exact 35-file Task 19 matrix passes 637/637 on Node 22.22.3 and 24.15.0.
+Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580 with
+15 intentional skips; recursive lint, typecheck, and build pass. The
+package-local self-scan scores 99.81/100 with 13 active medium findings, 803
+policy-ineligible findings auto-suppressed, and a passing policy gate. Two
+fresh independent final reviews returned 98/100 with no findings. The
+production provider still returns `undefined`, so this is dormant semantics
+only. The high-severity dependency audit remains a separate `REL-001` release
+blocker.
+
+The single human-facing Task 19 checkpoint identifier is `52af3e272`; leaf
+SHA-256 bindings and the audit payload identity remain machine-only. The next
+bounded slice is Task 20 Steps 1–6: generate and fully qualify the exact local
+application candidate, then stop at the explicit owner comprehension gate.
+No policy activation, push, tag, publish, deploy, or release is authorized.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -203,6 +226,10 @@ Public npm release and website deployment remain separate owner decisions under
   without a hosted account.
 - **Evidence before confidence.** Distinguish deterministic findings,
   calibrated signals, and advisory visual judgement.
+- **One human-facing evidence root per checkpoint.** Planning and status prose
+  repeats at most one aggregate evidence root or implementation checkpoint SHA
+  for a bounded checkpoint. Leaf SHA-256 values stay in machine receipts and
+  validators instead of being copied through human-facing summaries.
 - **Repository truth and global learning are separate.** The Memory capability
   compiles local intent and exceptions; opt-in outbound reporting may improve
   global priors without raw source by default.
@@ -275,16 +302,17 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 40 grants no authority to alter default state,
+  `requires` edge. Revision 41 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–18 remain
-  checkpointed as recorded above. Run Task 19 only: separate current policy
-  from historical metrics across explain, MCP, and generated catalog surfaces
-  while the production provider remains inactive. Do not write or apply
-  policy, admit evidence, or take a release action.
-  `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
-  separate public-authority boundary.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–19 remain
+  checkpointed as recorded above. Run Task 20 Steps 1–6 only: generate and
+  fully qualify the exact local application candidate, then stop at the
+  explicit owner comprehension gate before commit or activation. Do not infer
+  the owner choice, admit evidence, or take a release action.
+  `VAL-001` and `TEL-001` remain ready; `REL-001` remains the separate
+  public-authority boundary and records the independent dependency-audit
+  blocker.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event
   contract for useful finding, action or decline, rescan, and return outcomes,
   with export and deletion and no raw source or proprietary repository

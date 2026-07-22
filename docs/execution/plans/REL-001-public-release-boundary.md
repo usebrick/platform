@@ -4,7 +4,7 @@
 - **Priority:** 15
 - **Track / lane:** implementation / release
 - **Owner:** repository owner / release maintainer
-- **Updated:** 2026-07-19
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -21,6 +21,13 @@ publish, or website deployment followed. The verified public package remains
 `slopbrick@0.43.0`, and the live site remains a separately controlled artifact.
 Local positioning, documentation, and website-source changes do not alter
 either public artifact and are not publication or deployment authority.
+
+The current high-severity dependency audit is also blocked: transitive
+`brace-expansion` and `svgo` ranges have high advisories, and Astro has one
+moderate advisory. This technical release precondition is independent of the
+owner dispositions. Even an exact owner authorization cannot execute a public
+release until the high-severity audit is green through a separately reviewed
+dependency correction.
 
 ## Scope
 
@@ -62,6 +69,8 @@ either public artifact and are not publication or deployment authority.
 - Local roadmap work remains schedulable while this plan waits.
 - Local documentation and website-source updates leave both public surfaces
   unauthorized until their independent owner dispositions name exact SHAs.
+- The high-severity dependency audit passes before npm release execution; a
+  green Task 19 behavior gate cannot substitute for this release precondition.
 
 ## Execution steps
 
@@ -82,8 +91,12 @@ GitHub workflow, and live-site checks. Always run:
 
 ```bash
 corepack pnpm plans:validate
+corepack pnpm security:audit
 git diff --check
 ```
+
+`security:audit` currently exits nonzero and is intentionally recorded as a
+release blocker. Do not relabel it as a passing check.
 
 ## Evidence destination
 
@@ -103,7 +116,8 @@ git diff --check
   records the still-unresolved public decisions.
 - **Resume condition:** both public surfaces have explicit `hold` or
   `authorize` decisions; each authorization names its exact reviewed
-  identifiers.
+  identifiers. Any authorized npm execution additionally waits for a green
+  high-severity dependency audit.
 - **Recheck:** compare npm registry metadata, GitHub release/workflow state,
   live-site claims, and deployment provenance with the recorded decisions.
 - **Parallel safe:** `SB-UX-001`, `TEL-001`, and owner-selected `VAL-001` work
@@ -118,5 +132,7 @@ to an exact reviewed deployment and record that action in the receipt.
 
 ## Next action
 
-Await the two explicit owner dispositions. Until then, keep npm publication and
-website deployment unauthorized while local roadmap work continues.
+Await the two explicit owner dispositions and separately clear the
+high-severity dependency audit through reviewed implementation work. Until
+then, keep npm publication and website deployment unauthorized while local
+roadmap work continues. Neither gate substitutes for the other.

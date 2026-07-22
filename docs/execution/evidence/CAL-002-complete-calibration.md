@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-22
-- **State:** `in_progress` dormant-report-provenance checkpoint at revision 40
-- **Scope:** CAL-002 progressive authority Tasks 1–18. This receipt grants no
+- **State:** `in_progress` dormant-explanation-and-policy checkpoint at revision 41
+- **Scope:** CAL-002 progressive authority Tasks 1–19. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -32,7 +32,8 @@
   assignment-ineligible.
 - Implementation WIP remains exactly `2/2`: `SB-UX-001` and `CAL-002`.
 - `VAL-001` returns to `ready` with RUN-001 preserved; `TEL-001` remains
-  `ready`; `REL-001` remains unchanged.
+  `ready`; `REL-001` remains the separate public-authority boundary and now
+  also records the independent high-severity dependency-audit blocker.
 
 ## Implementation checkpoint
 
@@ -259,6 +260,26 @@
   typecheck and build pass. Targeted report coverage records 84.55%
   statements/lines, 77.27% branches, and 97.77% functions. Two independent
   final re-reviews returned 99/100 with no remaining findings.
+- Task 19 is implementation-checkpointed at `52af3e272`. Current policy and
+  frozen v10.1 historical metrics are separate across explain, CLI, MCP, and
+  generated catalog surfaces. Exact 119-row identity, runnable, score, and
+  gate projections fail closed independently.
+- Repository config and invocation provenance remain distinct in main and
+  calibration workers; repository `off` wins. Direct docs scans and secondary
+  diagnostics use the same policy authority. Strict docs exit follows its
+  independent gate projection, not the informational score projection.
+- Durable history migration removes only immutable current-policy
+  score-ineligible IDs. Temporary repository config filters flywheel teaching
+  in memory and cannot erase otherwise eligible historical rows.
+- The exact 35-file gate passes 637/637 on Node 22.22.3 and 24.15.0. Recursive
+  tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580 with 15
+  intentional skips; recursive lint, typecheck, and build pass. The self-scan
+  scores 99.81/100 with 13 active medium findings, 803 policy-ineligible
+  findings auto-suppressed, and a passing policy gate. Two fresh final reviews
+  returned 98/100 with zero findings.
+- The production provider remains `undefined`; Task 19 neither applies nor
+  activates policy. The dependency audit's high transitive advisories remain
+  a separate public-release blocker under `REL-001`.
 
 ## Revision-34 reproducible bounded gate
 
@@ -466,10 +487,94 @@ corepack pnpm -r build
 git diff --check
 ```
 
+## Revision-41 Task 19 dormant explanation and policy authority
+
+- The single human-facing implementation checkpoint is `52af3e272`.
+  Intermediate commits, leaf SHA-256 values, and the dependency-audit payload
+  identity remain machine-only.
+- Explain, CLI, MCP, and catalog output expose current policy separately from
+  frozen v10.1 point estimates. Current fields cannot inherit historical
+  precision, recall, false-positive rate, ratios, or verdicts.
+- The generated catalog validates all 119 identities and exposes runnable,
+  score, and gate authority independently. Repository configuration and
+  invocation provenance survive main-worker and v10.3-worker boundaries;
+  repository `off` remains authoritative.
+- Direct docs scans, strict docs exit, security/test/PR/maintenance/database/
+  architecture paths, audit-only counts, persisted history, and flywheel input
+  use the same authority model. Score and gate outcomes may differ. Only
+  immutable policy ineligibility migrates durable history; temporary config is
+  an in-memory, reversible filter.
+- Provider-undefined and absent-policy behavior retain exact legacy semantics.
+  The policy remains unapplied and non-admitting.
+- The exact dual-Node matrix passes 637/637. Recursive tests pass Core 285,
+  Engine 60, Website 54, and SlopBrick 4,580 with 15 intentional skips;
+  recursive lint, typecheck, and build pass. The package-local self-scan scores
+  99.81/100 with 13 active medium findings, 803 policy-ineligible findings
+  auto-suppressed, and a passing gate.
+- Two fresh independent final reviews returned 98/100 with zero findings. The
+  separate high-severity dependency audit remains blocked by transitive
+  `brace-expansion` and `svgo` advisories; one moderate Astro advisory is also
+  present. No dependency was changed in Task 19.
+
+### Reproducible focused and recursive commands
+
+```sh
+set -- \
+  tests/calibration/v103-worker-invoker.test.ts \
+  tests/cli/docs.test.ts \
+  tests/cli/explain-config.test.ts \
+  tests/cli/maintenance-cost.test.ts \
+  tests/cli/persistence-policy-authority.test.ts \
+  tests/cli/pr.test.ts \
+  tests/cli/project-rule-runtime-policy.test.ts \
+  tests/cli/score-authority.test.ts \
+  tests/cli/security-policy-authority.test.ts \
+  tests/cli/test.test.ts \
+  tests/cli/watch-normalization.test.ts \
+  tests/engine/architecture-score.test.ts \
+  tests/engine/db-health.test.ts \
+  tests/engine/doc-freshness-policy-authority.test.ts \
+  tests/engine/pool.test.ts \
+  tests/engine/score-contract-matrix.test.ts \
+  tests/explain.test.ts \
+  tests/generated-docs-truth.test.ts \
+  tests/mcp/patterns.test.ts \
+  tests/report/v0.14.5i-ux.test.ts \
+  tests/rules/registry.test.ts \
+  tests/signal-strength-contract.test.ts \
+  tests/rules/current-evidence-policy.test.ts \
+  tests/cli/score-contract-matrix.e2e.test.ts \
+  tests/cli/scan-completion.test.ts \
+  tests/engine/composite-cluster.test.ts \
+  tests/engine/composite-weights.test.ts \
+  tests/report/first-scan.test.ts \
+  tests/report/renderer-contract.test.ts \
+  tests/report/renderer-lanes.test.ts \
+  tests/report/json.test.ts \
+  tests/report/sarif.test.ts \
+  tests/report/markdown.test.ts \
+  tests/report/html.test.ts \
+  tests/cli/first-scan-pipeline.test.ts
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run "$@" --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run "$@" --maxWorkers=1 --minWorkers=1
+corepack pnpm -r lint
+corepack pnpm -r typecheck
+corepack pnpm -r test
+corepack pnpm -r build
+corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan --workspace . --threads 1 --no-telemetry
+corepack pnpm security:audit
+git diff --check
+```
+
+The final audit command currently exits nonzero on the separately recorded
+release advisories. It does not invalidate the preceding Task 19 behavior
+gates and must not be described as green.
+
 ## Next evidence
 
-Run Task 19 next: separate current policy from historical metrics in explain,
-MCP, and generated catalog surfaces. Keep the production provider returning
-`undefined`; do not apply the matrix, activate runtime authority, or change
-production scanner behavior. No push, tag, publish, deployment, or release is
-authorized.
+Run Task 20 Steps 1–6 next: reverify frozen state, generate the exact applied-
+policy candidate and receipt, bind the candidate provider, regenerate catalog
+truth, run the complete focused and recursive gates, and self-scan. Then stop
+at the exact two-choice owner comprehension gate. Until the owner chooses 1,
+leave the candidate uncommitted. No activation, admission, push, tag, publish,
+deployment, or release is authorized.

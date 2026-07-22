@@ -1,16 +1,17 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 40
+**Index revision:** 41
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 40 preserves UseBrick as the sole customer-facing
-coherence and verification product, with SlopBrick as the shipped package,
-current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
+routing are complete. Revision 41 records the dormant CAL-002 Task 19 authority
+checkpoint while preserving UseBrick as the sole customer-facing coherence and
+verification product, with SlopBrick as the shipped package, current CLI, free
+scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
 sessions; completed sessions remain zero and outreach is false. New
 `LABS-001` is `draft` for a bounded rendered-evidence benchmark. Neither plan
@@ -156,14 +157,33 @@ and build pass. Targeted report coverage records 84.55% statements/lines,
 returned 99/100 with no remaining findings. The production provider still
 returns `undefined`.
 
-The next CAL-002 action is Task 19: separate current policy from historical
-metrics across explain, MCP, and generated catalog surfaces while keeping the
-production provider inactive. The repository owner remains the only completed
-product tester; the recorded row judged a statistical hygiene recommendation
-useful for review, declined an immediate fix because no safe bounded repair
-followed from the evidence, and reproduced the unchanged findings. CAL-001
-remains `applied: false` and `admitted: false`; revision 40 grants no authority
-to alter default state, score, source, baseline, admission, release, deployment,
+Task 19 is implementation-checkpointed at `52af3e272`. Explain, CLI, MCP, and
+the generated catalog separate current policy from frozen v10.1 historical
+metrics. The exact 119 identities expose runnable, score, and gate authority
+independently. Repository `off` remains stronger than invocation provenance in
+both main and calibration workers. Direct docs scans and secondary CLI paths
+use the same authority; strict docs exit follows gate eligibility even when
+the informational score differs. Durable history migration removes only
+immutable current-policy score ineligibility, while temporary repository
+configuration filters flywheel input in memory and remains reversible.
+
+The exact 35-file Task 19 matrix passes 637/637 on Node 22.22.3 and 24.15.0.
+Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580 with
+15 intentional skips; recursive lint, typecheck, and build pass. The self-scan
+scores 99.81/100 with 13 active medium findings, 803 policy-ineligible findings
+auto-suppressed, and a passing policy gate. Two fresh final reviews returned
+98/100 with zero findings. The high-severity dependency audit remains a
+separate `REL-001` release blocker. The production provider remains
+`undefined`.
+
+The next CAL-002 action is Task 20 Steps 1–6: generate and fully qualify the
+exact local application candidate, then stop at the explicit owner
+comprehension gate. The repository owner remains the only completed product
+tester; the recorded row judged a statistical hygiene recommendation useful
+for review, declined an immediate fix because no safe bounded repair followed
+from the evidence, and reproduced the unchanged findings. CAL-001 remains
+`applied: false` and `admitted: false`; revision 41 grants no authority to
+alter default state, score, source, baseline, admission, release, deployment,
 or published artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. Local application remains
@@ -388,7 +408,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 20 Steps 1–6, qualify the local candidate, and stop at the explicit owner comprehension gate. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -409,6 +429,7 @@ WIP while waiting.
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
+| High-severity dependency audit | BLOCKED | Current audit reports high transitive advisories in `brace-expansion` and `svgo`; resolve them before any public release execution. |
 | Public claims and metadata | Waiting external | The public package and live website remain unchanged until `REL-001` records exact owner dispositions. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
 | Website deployment | Not authorized | The local candidate corrects verified live-site claim drift; it still requires owner/SHA review and separate deployment authorization. |
@@ -478,16 +499,28 @@ Task 18 is implementation-checkpointed through `be1be85b8`; its shared report
 projection is qualified across every renderer, and the production provider
 remains inactive.
 
-Run Task 19 next: separate current policy from historical metrics in explain,
-MCP, and generated catalog surfaces. Keep the production provider returning
-`undefined`; do not activate or apply policy. The proposed policy remains
-`applied: false` and `admitted: false`; do not take a release action.
+Task 19 is implementation-checkpointed at `52af3e272`; its current-policy,
+historical-metrics, catalog, provenance, docs-gate, secondary-diagnostic, and
+reversible-history boundaries passed the exact dual-Node and recursive gates
+and two independent 98/100 reviews. This is the only Task 19 checkpoint SHA
+repeated in human-facing planning prose; leaf SHA-256 bindings remain in
+machine receipts.
+
+Run Task 20 Steps 1–6 next: reverify frozen state, generate the applied-policy
+candidate and receipt, bind the static provider in the candidate, regenerate
+catalog truth, run the complete focused and recursive gates, and self-scan.
+Then stop at the exact two-choice owner comprehension gate. Until choice 1 is
+recorded, leave the candidate uncommitted and do not activate or apply policy.
+The proposed policy remains `applied: false` and `admitted: false`; do not take
+a push, tag, publish, deploy, or release action. The high dependency advisories
+remain an independent `REL-001` release blocker.
 The separate quality and origin evidence lanes remain the first-scan
 provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
-evidence. `REL-001` remains the unchanged separate public-authority checkpoint.
+evidence. `REL-001` remains the separate public-authority checkpoint and keeps
+the high-severity dependency audit blocked independently of CAL-002.
 `GTM-001` may prepare only its participant profile, script, consent text, and
 redacted receipt template; its completed-session count stays zero and outreach
 stays false. `LABS-001` remains draft until its fixed defects, blind rubric,

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 40,
+  "revision": 41,
   "updatedAt": "2026-07-22",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Run Task 20 Steps 1-6: generate and fully qualify the exact local application candidate, then stop at the explicit owner comprehension gate before activation.",
+    "verify": "corepack pnpm -r typecheck && SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test && corepack pnpm -r build",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Run Task 20 Steps 1-6: generate and fully qualify the exact local application candidate, then stop at the explicit owner comprehension gate before activation.",
+        "verify": "corepack pnpm -r typecheck && SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test && corepack pnpm -r build",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [
@@ -487,8 +487,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Await explicit, independent owner dispositions for the npm release and website deployment; infer neither from local qualification or main integration.",
-        "verify": "corepack pnpm plans:validate",
+        "text": "Await explicit owner dispositions and keep public actions blocked; independently clear the high-severity dependency audit before any release execution.",
+        "verify": "corepack pnpm security:audit",
         "evidencePath": "docs/execution/evidence/REL-001-public-claim-disposition.md"
       },
       "evidence": [

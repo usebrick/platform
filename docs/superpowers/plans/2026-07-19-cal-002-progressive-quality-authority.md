@@ -2688,7 +2688,7 @@ authority was exercised.
 - Consumes: current policy provider and immutable legacy `signal-strength.json`.
 - Produces: current configuration/evidence explanation, separate historical metrics projection, MCP parity, and generator options `--policy <path>` plus `--check`.
 
-- [ ] **Step 1: Write red current-versus-historical tests**
+- [x] **Step 1: Write red current-versus-historical tests**
 
 ```ts
 expect(explainRule('ai/any-density')).toMatchObject({
@@ -2707,7 +2707,7 @@ expect(mcpExplanation.currentPolicy).toEqual(cliExplanation.currentPolicy);
 
 Generator tests use `--policy /private/tmp/cal-002-policy-fixture-v2.json`, built during the test from the approved matrix and deleted in teardown, and assert columns `runtimeOutcome`, `enabledByDefault`, `runnableByExplicitOptIn`, `scoreEligible`, `evidenceProvenance`, `qualityDomain`, `claimClass`, `admitted`, and separately labeled `historicalVerdict`.
 
-- [ ] **Step 2: Run explain/MCP/catalog tests and confirm red**
+- [x] **Step 2: Run explain/MCP/catalog tests and confirm red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1
@@ -2715,7 +2715,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/sig
 
 Expected: FAIL because explanation and generated catalog expose only historical signal data/current static metadata.
 
-- [ ] **Step 3: Add a two-layer explanation contract**
+- [x] **Step 3: Add a two-layer explanation contract**
 
 ```ts
 export interface RuleExplanation {
@@ -2740,7 +2740,7 @@ export interface RuleExplanation {
 
 Expand `RulePolicyState` to `'configured-off' | 'configured-severity' | 'current-default-on' | 'current-explicit-diagnostic' | 'current-default-off' | 'current-non-runnable' | 'legacy-default-off' | 'rule-default'`. `describeRulePolicy` uses current defaults/runnability when available and legacy defaults only for unknown rows. CLI and MCP render identical current fields. Calibration/rules commands label v10.1 metrics historical and never call them current quality or authorship truth.
 
-- [ ] **Step 4: Make catalog generation policy-driven and drift-failing**
+- [x] **Step 4: Make catalog generation policy-driven and drift-failing**
 
 ```ts
 interface GenerateRuleCatalogOptions {
@@ -2755,7 +2755,7 @@ const currentPolicy = options.policyPath
 
 When current policy is unavailable, preserve the existing generated document exactly. When supplied/active, require the locked catalog hash and 119 rows, generate current columns from policy only, place legacy verdict in its own historical column, and make `--check` fail on policy/catalog/doc disagreement.
 
-- [ ] **Step 5: Run focused tests and commit the isolated worker slice**
+- [x] **Step 5: Run focused tests and commit the isolated worker slice**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1
@@ -2766,6 +2766,21 @@ git commit -m "feat(slopbrick): separate current and historical evidence"
 ```
 
 Expected: explain, MCP, and generated-doc tests pass against the approved policy fixture; `signal-strength.json` remains byte-identical.
+
+**Completion receipt (revision 41):** Task 19 is implementation-checkpointed
+at `52af3e272`. The final correction cycle independently separated docs score
+and gate projections and made mutable repository configuration a reversible,
+in-memory historical filter while durable migration removes only immutable
+policy ineligibility. The exact 35-file integration matrix passes 637/637 on
+Node 22.22.3 and 24.15.0. Recursive tests pass Core 285, Engine 60, Website 54,
+and SlopBrick 4,580 with 15 intentional skips; recursive lint, typecheck, and
+build pass. The package-local self-scan scores 99.81/100 with 13 active medium
+findings, 803 policy-ineligible findings auto-suppressed, and a passing policy
+gate. Two fresh final reviews returned 98/100 with zero findings. The
+production provider remains `undefined`; no policy was applied or activated,
+and no admission, push, tag, publish, deploy, or release authority was
+exercised. This implementation checkpoint is the only Task 19 SHA repeated in
+human-facing prose; leaf SHA-256 values remain machine-only.
 
 ### Runtime wave integration barrier
 

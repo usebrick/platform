@@ -18,6 +18,9 @@ roadmap status never substitute for the decisions below.
   `11769b3a6d88faa94b16e8a3de96536a8bbc5ca6`.
 - Tag, GitHub Release, npm publication, and website deployment from that
   integration: none.
+- Current high-severity dependency audit: blocked by transitive
+  `brace-expansion` and `svgo` advisories. One moderate Astro advisory is also
+  present. No Task 19 dependency or lockfile change attempted to resolve them.
 
 ## Owner dispositions
 
@@ -30,9 +33,17 @@ roadmap status never substitute for the decisions below.
 either `hold` or `authorize` for each surface. An authorization must include the
 exact commit/SHA and, for npm, the exact tag before any action begins.
 
+An npm authorization is necessary but not sufficient: public release execution
+also requires the high-severity dependency audit to pass after a separately
+reviewed correction. Local CAL-002 qualification does not waive that gate.
+
 ## Verification
 
 ```bash
 corepack pnpm plans:validate
+corepack pnpm security:audit
 git diff --check
 ```
+
+The audit command currently exits nonzero; that result is the recorded release
+blocker, not a successful verification claim.

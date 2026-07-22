@@ -48,6 +48,12 @@ current publisher-attested internal Corpus v1 evaluation path.
   terminal, JSON, Markdown, HTML, and SARIF. It keeps rule-authored source
   evidence separate, labels legacy signal metrics as historical, and fails
   closed when the complete finding identity does not match.
+- Added a two-layer rule explanation shared by CLI and MCP: current policy
+  carries runnable, score, gate, provenance, and configuration state, while
+  frozen v10.1 metrics remain separately labeled historical point estimates.
+- Added policy-driven generated-catalog validation for all 119 exact rule
+  identities, including independent runnable, score, and gate projections and
+  a drift-failing check mode. The production provider remains inactive.
 
 ### Changed
 
@@ -79,6 +85,14 @@ current publisher-attested internal Corpus v1 evaluation path.
   recommendations, and baseline deltas; grouped recommendations now preserve
   the weakest source-span truth, and only finding-bound deterministic or
   current-quality-calibrated repairs may be described as safe.
+- Kept repository configuration distinct from invocation provenance across
+  main and calibration workers, with repository `off` taking precedence.
+  Direct docs scans and secondary diagnostic commands now honor independent
+  current score and gate authority, including strict docs exit.
+- Kept score-ineligible current diagnostics out of persisted teaching and the
+  flywheel without making temporary repository overrides destructive: durable
+  history migrates only immutable current-policy ineligibility, while mutable
+  config filtering remains in memory and reversible.
 
 ## [Unreleased] — v0.44.0 trust restoration (historical carry-forward)
 

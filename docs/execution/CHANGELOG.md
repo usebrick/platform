@@ -3,6 +3,52 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 41 — 2026-07-22
+
+### Changed
+
+- Recorded CAL-002 Task 19 at the single human-facing implementation
+  checkpoint `52af3e272`. Explain, CLI, MCP, and generated-catalog surfaces now
+  separate current policy from frozen v10.1 historical metrics.
+- Bound the exact 119 identities to independent runnable, score, and gate
+  projections. Repository configuration and invocation provenance stay
+  distinct through main and v10.3 workers, with repository `off` taking
+  precedence.
+- Routed direct documentation scans, strict docs exit, secondary CLI
+  diagnostics, persistence, and flywheel input through current authority.
+  Score and gate projections may diverge; durable history removes only
+  immutable policy-ineligible IDs, while temporary config filtering remains
+  in memory and reversible.
+- Advanced CAL-002 to Task 20 Steps 1–6: generate and fully qualify the exact
+  local application candidate, then stop at the explicit owner comprehension
+  gate before activation.
+- Adopted the owner-selected documentation convention: one aggregate evidence
+  root or implementation checkpoint SHA per bounded human-facing checkpoint;
+  leaf SHA-256 and audit-payload identities remain machine-only.
+- Added the current high-severity dependency audit as a separate `REL-001`
+  release blocker without treating it as a Task 19 behavior failure.
+
+### Evidence
+
+- The exact 35-file Task 19 matrix passes 637/637 on Node 22.22.3 and 24.15.0.
+- Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580
+  with 15 intentional skips; recursive lint, typecheck, and build pass.
+- The package-local self-scan scores 99.81/100, reports 13 active medium
+  findings, auto-suppresses 803 policy-ineligible findings, and passes its
+  policy gate.
+- Two fresh independent final reviews returned 98/100 with zero findings.
+- The dependency audit reports high transitive advisories in
+  `brace-expansion` and `svgo`, plus one moderate Astro advisory. No package or
+  lockfile mutation was made in this checkpoint.
+
+### Boundary
+
+- The production provider still returns `undefined`; current policy remains
+  dormant, `applied: false`, and `admitted: false`.
+- No activation, admission, baseline refresh, push, tag, publish, deploy, or
+  release authority is claimed. Public actions remain separately controlled
+  by `REL-001`.
+
 ## Revision 40 — 2026-07-22
 
 ### Changed

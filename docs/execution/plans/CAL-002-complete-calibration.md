@@ -137,6 +137,27 @@ report coverage records 84.55% statements/lines, 77.27% branches, and 97.77%
 functions. Two independent final re-reviews returned 99/100 with no remaining
 findings.
 
+Task 19 is implementation-checkpointed at `52af3e272`. Explain, CLI, MCP, and
+generated catalog surfaces separate current policy from frozen v10.1
+historical metrics. The exact 119-row catalog independently exposes runnable,
+score, and gate authority. Repository config and invocation provenance remain
+distinct across main and v10.3 workers; repository `off` wins. Direct docs and
+secondary diagnostic paths use the same current authority. Strict docs exit
+follows the independent gate projection. Durable history migration removes
+only immutable policy-ineligible IDs, while temporary config filters flywheel
+input in memory and remains reversible.
+
+The exact 35-file matrix passes 637/637 on Node 22.22.3 and 24.15.0. Recursive
+tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,580 with 15
+intentional skips; recursive lint, typecheck, and build pass. The package-local
+self-scan scores 99.81/100, reports 13 active medium findings, auto-suppresses
+803 policy-ineligible findings, and passes its policy gate. Two fresh final
+reviews returned 98/100 with zero findings. The production provider remains
+`undefined`; no policy is applied or activated. The single human-facing Task
+19 checkpoint is the implementation identifier above; leaf SHA-256 values stay
+machine-only. High dependency advisories remain a separate `REL-001` release
+blocker.
+
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -219,17 +240,15 @@ state is outside this receipt.
 
 ## Verification
 
-Run Task 19 only. Red-test the current-policy and historical-metrics separation
-across rule explanation, CLI, MCP, and generated catalog paths. Current policy
-must not inherit precision, recall, false-positive rate, ratio, or verdict
-fields from immutable legacy signal-strength data. The production provider
-must remain `undefined`, so production scanner behavior remains unchanged
-until the later atomic activation task.
+Run Task 20 Steps 1–6 only. Reverify frozen state, generate the exact local
+applied-policy candidate and immutable receipt, bind the candidate provider,
+regenerate catalog truth, run the complete focused and recursive gates, and
+self-scan without baseline mutation. Then stop before commit at the exact
+two-choice owner comprehension gate.
 
-Before any later policy application, verify frozen identities, exact 119-row
-coverage, lane separation, non-admission, and the prescribed recursive and
-package-local self-scan gates. Do not infer an owner decision or take a push,
-tag, publish, deploy, or release action.
+Do not infer the owner's choice. Until choice 1 is recorded, leave the
+candidate uncommitted. A green local candidate does not authorize admission,
+push, tag, publish, deploy, or release.
 
 ## Evidence destination
 
@@ -244,8 +263,13 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 19: separate current policy from historical metrics in explain, MCP,
-and generated catalog surfaces. Verify with
-`corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1`.
-The production provider must remain `undefined`; do not activate or apply
-policy, admit evidence, push, tag, publish, deploy, or release.
+Run Task 20 Steps 1–6 from the approved progressive-authority plan, then show
+the owner exactly:
+
+1. the finding, provenance, score, and action boundaries are understandable;
+   apply this exact policy locally; or
+2. one or more boundaries are unclear; leave the candidate uncommitted and
+   name the failed surface.
+
+Do not commit or activate the candidate before choice 1. Do not infer
+admission, push, tag, publish, deploy, or release authority from either choice.
