@@ -260,6 +260,10 @@ describe('buildRuleExplanation', () => {
       ...DEFAULT_CONFIG,
       rules: { ...DEFAULT_CONFIG.rules, [rule.id]: 'off' },
     }, { [rule.id]: 'off' });
+    const inheritedOffConfig = bindExplicitRuleOverrides({
+      ...DEFAULT_CONFIG,
+      rules: { ...DEFAULT_CONFIG.rules, [rule.id]: 'off' },
+    }, {});
 
     expect(buildRuleExplanation(rule, DEFAULT_CONFIG, {}).configuration).toMatchObject({
       configuredSeverity: 'high',
@@ -275,6 +279,11 @@ describe('buildRuleExplanation', () => {
       configuredSeverity: 'off',
       defaultOff: true,
       policyState: 'configured-off',
+    });
+    expect(buildRuleExplanation(rule, inheritedOffConfig, {}).configuration).toMatchObject({
+      configuredSeverity: 'off',
+      defaultOff: true,
+      policyState: 'current-default-off',
     });
   });
 

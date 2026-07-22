@@ -86,6 +86,7 @@ import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import {
+  countCurrentPolicyAuditOnlyIssues,
   effectiveIssuesForScore,
   markDefaultOffIssuesForAudit,
   normalizeFileResultForDisplayAndScore,
@@ -658,7 +659,7 @@ async function runScanWithScopedState(
 
   const auditOnlyCounts: AuditOnlyMarkingCounts = {
     legacyDefaultOff: 0,
-    currentPolicy: 0,
+    currentPolicyDefaultOff: 0,
   };
   for (const result of results) {
     normalizeFileResultForDisplayAndScore(result, config, options, auditOnlyCounts);
@@ -770,6 +771,7 @@ async function runScanWithScopedState(
   // overrides. File findings were normalized before scoring; this pass only
   // handles project-level findings added after the per-file pipeline.
   markDefaultOffIssuesForAudit(allIssues, config, auditOnlyCounts);
+  const currentPolicyAuditOnlyCount = countCurrentPolicyAuditOnlyIssues(allIssues);
   if (auditOnlyCounts.legacyDefaultOff > 0 && !options.quiet && !machineReadableStdout) {
     console.error(
       `[v${VERSION}] auto-suppressed ${auditOnlyCounts.legacyDefaultOff} INVERTED/NOISY issue(s) ` +
@@ -778,9 +780,9 @@ async function runScanWithScopedState(
         `Re-enable per-rule via \`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
     );
   }
-  if (auditOnlyCounts.currentPolicy > 0 && !options.quiet && !machineReadableStdout) {
+  if (currentPolicyAuditOnlyCount > 0 && !options.quiet && !machineReadableStdout) {
     console.error(
-      `[v${VERSION}] current evidence policy kept ${auditOnlyCounts.currentPolicy} finding(s) ` +
+      `[v${VERSION}] current evidence policy kept ${currentPolicyAuditOnlyCount} finding(s) ` +
         `audit-only; excluded from scores and finding gates. ` +
         `Use repository rule configuration for persistent diagnostic visibility where policy permits.`,
     );
@@ -861,7 +863,7 @@ async function runScanWithScopedState(
     defaultOffRuleCount: defaultOff.size,
     ...(currentPolicy
       ? {
-          currentPolicyAuditOnlyApplied: auditOnlyCounts.currentPolicy,
+          currentPolicyAuditOnlyApplied: currentPolicyAuditOnlyCount,
           currentPolicyDefaultOffRuleCount: currentPolicy.getCurrentDefaultOffRules().size,
         }
       : {}),

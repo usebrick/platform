@@ -42,7 +42,10 @@ import {
   writeStructureMarkdown,
 } from '../../engine/structure-md';
 import { evaluateThresholdGate } from '../threshold';
-import { effectiveIssuesForScore } from '../effective-issues.js';
+import {
+  effectiveIssuesForScore,
+  filterHistoricalRunsForScore,
+} from '../effective-issues.js';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
@@ -178,7 +181,20 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   // Telemetry + flywheel. Only when telemetry is enabled.
   if (telemetryEnabled && validScan) {
     try {
-      const runs = await readRuns(cwd, fsMemoryIO);
+      const storedRuns = await readRuns(cwd, fsMemoryIO);
+      const history = filterHistoricalRunsForScore(storedRuns, config);
+      if (history.changed && config.projectMemory !== false) {
+        try {
+          await fsMemoryIO.write(
+            join(cwd, '.slopbrick', 'structure.json'),
+            JSON.stringify(history.runs, null, 2),
+          );
+        } catch (error) {
+          if (!options.quiet && !machineReadableStdout) {
+            logger.warn(`memory history policy migration not saved: ${formatErrorMessage(error)}`);
+          }
+        }
+      }
       const telemetryPayloads = readTelemetry(cwd);
       const recentTopHashes = telemetryPayloads.map((payload) =>
         [...payload.files]
@@ -192,7 +208,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
         .map((c) => ({ filePath: c.filePath, hash: hashFile(relative(cwd, c.filePath)) }));
       const unmatchedStringLiterals = results.flatMap((r) => r.unmatchedStringLiterals ?? []);
       const flywheelOutput = computeFlywheelOutput(
-        runs,
+        history.runs,
         currentTopFiles,
         recentTopHashes,
         unmatchedStringLiterals,

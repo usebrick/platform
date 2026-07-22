@@ -63,10 +63,10 @@ export function describeRulePolicy(
   const defaultOff = currentRow === undefined
     ? rule.defaultOff === true || getDefaultOffRules().has(rule.id)
     : !currentRow.enabledByDefault;
-  if (configuredSeverity === 'off') {
-    return { configuredSeverity, defaultOff, policyState: 'configured-off' };
-  }
   if (currentRow !== undefined) {
+    if (hasExplicitRuleOverride && configuredSeverity === 'off') {
+      return { configuredSeverity, defaultOff, policyState: 'configured-off' };
+    }
     if (!currentRow.enabledByDefault && !currentRow.runnableByExplicitOptIn) {
       return { configuredSeverity, defaultOff, policyState: 'current-non-runnable' };
     }
@@ -86,9 +86,10 @@ export function describeRulePolicy(
       policyState: currentRow.enabledByDefault ? 'current-default-on' : 'current-default-off',
     };
   }
-  if (hasExplicitRuleOverride
-    && configuredSeverity !== null
-    && configuredSeverity !== 'auto') {
+  if (configuredSeverity === 'off') {
+    return { configuredSeverity, defaultOff, policyState: 'configured-off' };
+  }
+  if (configuredSeverity !== null && configuredSeverity !== 'auto') {
     return { configuredSeverity, defaultOff, policyState: 'configured-severity' };
   }
   if (defaultOff) {

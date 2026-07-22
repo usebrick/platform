@@ -14,16 +14,47 @@ export function effectiveIssuesForScore(
   issues: readonly Issue[],
   config: Pick<ResolvedConfig, 'rules'>,
 ): Issue[] {
-  const currentPolicy = getCurrentEvidencePolicyAccessors();
-  let defaultOff: ReadonlySet<string> | undefined;
   return issues.filter((issue) => {
     if (issue.severity === ('off' as Issue['severity'])) return false;
-    if (config.rules[issue.ruleId] === 'off') return false;
-    const currentEligibility = currentPolicy?.isRuleScoreEligible(issue.ruleId);
-    if (currentEligibility !== undefined) return currentEligibility;
-    defaultOff ??= getDefaultOffRules();
-    return !(defaultOff.has(issue.ruleId) && !Object.hasOwn(config.rules, issue.ruleId));
+    return isRuleIdEffectiveForScore(issue.ruleId, config);
   });
+}
+
+/** Return whether one rule ID may contribute to score-derived state. */
+export function isRuleIdEffectiveForScore(
+  ruleId: string,
+  config: Pick<ResolvedConfig, 'rules'>,
+): boolean {
+  if (config.rules[ruleId] === 'off') return false;
+  const currentEligibility = getCurrentEvidencePolicyAccessors()
+    ?.isRuleScoreEligible(ruleId);
+  if (currentEligibility !== undefined) return currentEligibility;
+  const defaultOff = getDefaultOffRules();
+  return !(defaultOff.has(ruleId) && !Object.hasOwn(config.rules, ruleId));
+}
+
+/**
+ * Project historical offense IDs through the current score authority before
+ * they can teach the flywheel. Provider-undefined behavior remains dormant.
+ */
+export function filterHistoricalRunsForScore<
+  T extends { topOffenseIds: string[] },
+>(
+  runs: T[],
+  config: Pick<ResolvedConfig, 'rules'>,
+): { runs: T[]; changed: boolean } {
+  if (getCurrentEvidencePolicyAccessors() === undefined) {
+    return { runs, changed: false };
+  }
+  let changed = false;
+  const filteredRuns = runs.map((run) => {
+    const topOffenseIds = run.topOffenseIds.filter((ruleId) =>
+      isRuleIdEffectiveForScore(ruleId, config));
+    if (topOffenseIds.length === run.topOffenseIds.length) return run;
+    changed = true;
+    return { ...run, topOffenseIds };
+  });
+  return { runs: changed ? filteredRuns : runs, changed };
 }
 
 /**
@@ -49,8 +80,22 @@ export function effectiveIssuesForGate(
 export interface AuditOnlyMarkingCounts {
   /** Historical signal-strength default-off findings. */
   legacyDefaultOff: number;
-  /** Findings made audit-only by the current owner-approved evidence policy. */
-  currentPolicy: number;
+  /** Findings severity-demoted because current policy kept the rule default-off. */
+  currentPolicyDefaultOff: number;
+}
+
+/** Count all current findings excluded from both scores and finding gates. */
+export function countCurrentPolicyAuditOnlyIssues(
+  issues: readonly Issue[],
+): number {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  if (currentPolicy === undefined) return 0;
+  return issues.reduce((count, issue) => {
+    const row = currentPolicy.getCurrentRulePolicy(issue.ruleId);
+    return row !== undefined && !row.scoreEligible && !row.gateEligible
+      ? count + 1
+      : count;
+  }, 0);
 }
 
 /**
@@ -69,7 +114,7 @@ export function markDefaultOffIssuesForAudit(
   for (const issue of issues) {
     const currentRow = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
     const classification = currentPolicy !== undefined && currentRow !== undefined
-      ? 'currentPolicy' as const
+      ? 'currentPolicyDefaultOff' as const
       : 'legacyDefaultOff' as const;
     let shouldRemainAuditOnly: boolean;
     if (currentPolicy !== undefined && currentRow !== undefined) {

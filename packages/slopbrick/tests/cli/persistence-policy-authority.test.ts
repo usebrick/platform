@@ -51,6 +51,25 @@ function createWorkspace(config: string): string {
   return dir;
 }
 
+function seedLegacyHistory(dir: string, runCount = 3): void {
+  mkdirSync(join(dir, '.slopbrick'), { recursive: true });
+  writeFileSync(
+    join(dir, '.slopbrick', 'structure.json'),
+    JSON.stringify(
+      Array.from({ length: runCount }, (_, index) => ({
+        timestamp: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
+        version: '0.43.0',
+        slopIndex: 80,
+        categoryScores: { component: 80 },
+        topOffenseIds: ['component/giant-component'],
+        thresholdExceeded: false,
+      })),
+      null,
+      2,
+    ),
+  );
+}
+
 beforeAll(assertDistBuilt);
 beforeEach(() => {
   getCurrentEvidencePolicyAccessorsMock.mockReset();
@@ -82,6 +101,7 @@ export default {
         ruleId: 'component/giant-component',
         severity: 'high',
       }));
+      expect(result.report.currentPolicyAuditOnlyCount).toBe(1);
     }
 
     const history = JSON.parse(
@@ -92,6 +112,49 @@ export default {
     expect(loadFlywheelState(dir).autoTuned).not.toContainEqual(expect.objectContaining({
       ruleId: 'component/giant-component',
     }));
+  });
+
+  it('keeps pre-policy history inert when project memory is read-only', async () => {
+    const dir = createWorkspace(`
+export default {
+  projectMemory: false,
+  telemetry: true,
+};
+`);
+    seedLegacyHistory(dir);
+
+    await runScan({
+      workspace: dir,
+      quiet: true,
+      telemetry: true,
+      threadCount: 1,
+    });
+
+    expect(loadFlywheelState(dir).autoTuned).not.toContainEqual(expect.objectContaining({
+      ruleId: 'component/giant-component',
+    }));
+  });
+
+  it('migrates writable pre-policy history to the current score authority', async () => {
+    const dir = createWorkspace(`
+export default {
+  projectMemory: true,
+  telemetry: true,
+};
+`);
+    seedLegacyHistory(dir);
+
+    await runScan({
+      workspace: dir,
+      quiet: true,
+      telemetry: true,
+      threadCount: 1,
+    });
+
+    const history = JSON.parse(
+      readFileSync(join(dir, '.slopbrick', 'structure.json'), 'utf8'),
+    ) as Array<{ topOffenseIds: string[] }>;
+    expect(history.every((run) => !run.topOffenseIds.includes('component/giant-component'))).toBe(true);
   });
 
   it('reports invocation-only current-policy diagnostics separately from legacy suppression', async () => {
