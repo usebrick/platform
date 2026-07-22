@@ -1,4 +1,5 @@
 import { getDefaultOffRules } from '../rules/signal-strength.js';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import { filterByDisabledDirectives, filterIssues, type IssueFilterOptions } from './threshold';
 import { bindIssueFixes } from '../fix/binding';
 import type { FileScanResult, Issue, ResolvedConfig } from '../types';
@@ -12,13 +13,16 @@ export function effectiveIssuesForScore(
   issues: readonly Issue[],
   config: Pick<ResolvedConfig, 'rules'>,
 ): Issue[] {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
   const defaultOff = getDefaultOffRules();
   const userOverrides = new Set(Object.keys(config.rules));
-  return issues.filter((issue) =>
-    issue.severity !== ('off' as Issue['severity']) &&
-    config.rules[issue.ruleId] !== 'off' &&
-    !(defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId)),
-  );
+  return issues.filter((issue) => {
+    if (issue.severity === ('off' as Issue['severity'])) return false;
+    if (config.rules[issue.ruleId] === 'off') return false;
+    const currentEligibility = currentPolicy?.isRuleScoreEligible(issue.ruleId);
+    if (currentEligibility !== undefined) return currentEligibility;
+    return !(defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId));
+  });
 }
 
 /**
@@ -29,11 +33,16 @@ export function markDefaultOffIssuesForAudit(
   issues: readonly Issue[],
   config: Pick<ResolvedConfig, 'rules'>,
 ): number {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
   const defaultOff = getDefaultOffRules();
   const userOverrides = new Set(Object.keys(config.rules));
   let applied = 0;
   for (const issue of issues) {
-    if (!defaultOff.has(issue.ruleId) || userOverrides.has(issue.ruleId)) continue;
+    const currentRow = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
+    const shouldRemainAuditOnly = currentPolicy !== undefined && currentRow !== undefined
+      ? !currentPolicy.isRuleRunnable(issue.ruleId, config.rules)
+      : defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId);
+    if (!shouldRemainAuditOnly) continue;
     if (issue.severity === ('off' as Issue['severity'])) continue;
     issue.severity = 'off' as Issue['severity'];
     applied += 1;

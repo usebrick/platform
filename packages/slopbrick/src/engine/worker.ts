@@ -7,6 +7,7 @@ import { isExcludedBySelfScan } from './discover.js';
 import { extractFacts } from './visitor';
 
 import { RuleRegistry } from '../rules/registry';
+import { effectiveIssuesForScore } from '../cli/effective-issues.js';
 import { setLoggerQuiet } from './logger';
 import { compositeScore } from '@usebrick/engine';
 import { loadSignalStrength } from '../rules/signal-strength.js';
@@ -199,12 +200,13 @@ export async function scanFile(
       }
     }
     const issues = applyRuleOverrides(rawIssues, config.rules);
+    const scoringIssues = effectiveIssuesForScore(issues, config);
 
     // v0.14.6: composite AI-likelihood score. Naive Bayes LLR
     // combination of the unique rule IDs that fired on this file
     // (post-severity-override). See src/engine/composite-scoring.ts
     // for the math and references.
-    const triggeredRuleIds = Array.from(new Set(issues.map((i) => i.ruleId)));
+    const triggeredRuleIds = Array.from(new Set(scoringIssues.map((i) => i.ruleId)));
     const compScore = compositeScore(triggeredRuleIds, loadSignalStrength());
 
     // v0.42.0 (Sprint 3, §3b.5): re-run composite rules now that we
@@ -236,7 +238,9 @@ export async function scanFile(
         );
         if (compositeIssues.length > 0) {
           issues.push(...compositeIssues);
-          for (const ci of compositeIssues) fireSet.add(ci.ruleId);
+          for (const ci of effectiveIssuesForScore(compositeIssues, config)) {
+            fireSet.add(ci.ruleId);
+          }
         }
       } catch (err) {
         if (process.env.SLOP_AUDIT_DEBUG === '1') {
