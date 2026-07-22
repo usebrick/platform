@@ -50,7 +50,12 @@ const RETURN_KEYS = [
 ] as const;
 
 function addError(errors: string[], message: string): void {
-  errors[errors.length] = message;
+  Object.defineProperty(errors, errors.length, {
+    configurable: true,
+    enumerable: true,
+    value: message,
+    writable: true,
+  });
 }
 
 function captureDataRecord(value: unknown): DataRecord | undefined {

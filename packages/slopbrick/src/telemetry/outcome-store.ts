@@ -64,6 +64,15 @@ function parseStoredEvent(line: string, lineNumber: number): OutcomeEventV1 {
   return parsed.event;
 }
 
+function setArrayEntry<T>(values: T[], index: number, value: T): void {
+  Object.defineProperty(values, index, {
+    configurable: true,
+    enumerable: true,
+    value,
+    writable: true,
+  });
+}
+
 function parseLedger(contents: string): OutcomeEventV1[] {
   if (contents === '') return [];
   if (!contents.endsWith('\n')) {
@@ -89,7 +98,7 @@ function parseLedger(contents: string): OutcomeEventV1[] {
         index + 1,
       );
     }
-    events[index] = parseStoredEvent(line, index + 1);
+    setArrayEntry(events, index, parseStoredEvent(line, index + 1));
   }
   return events;
 }
@@ -158,7 +167,7 @@ function canonicalExportDocument(events: readonly OutcomeEventV1[]): Record<stri
   Object.setPrototypeOf(safeEvents, null);
   for (let index = 0; index < events.length; index += 1) {
     const event = events[index];
-    if (event !== undefined) safeEvents[index] = event;
+    if (event !== undefined) setArrayEntry(safeEvents, index, event);
   }
   const document = Object.create(null) as Record<string, unknown>;
   document.version = OUTCOME_EVENT_EXPORT_VERSION_V1;
