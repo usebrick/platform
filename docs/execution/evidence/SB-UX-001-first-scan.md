@@ -11,6 +11,7 @@
 **Status:** qualified and owner-approved; Task 8 complete
 **Execution index:** revision 44; `SB-UX-001` is `done`
 **Qualification base:** `774249c806e16584adb64337ec0deb607490e8c5`
+**Closeout checkpoint:** `cfd52e9b4a7070223b556bea6b0ca99e2065911d`
 **Package:** unreleased `slopbrick@0.45.0` candidate
 **Runtime:** Node `v24.15.0`; pnpm `9.15.0`
 

@@ -33,6 +33,8 @@ release notes remain in package changelogs.
 - The owner accepted the exact current ANSI-free first screen after the
   comprehension boundary was explained. No additional `VAL-001` walkthrough
   row or usefulness claim was inferred.
+- The 17-file closeout checkpoint is
+  `cfd52e9b4a7070223b556bea6b0ca99e2065911d`.
 
 ### Boundary
 

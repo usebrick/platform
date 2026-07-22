@@ -10,7 +10,7 @@
 > documentation/evidence reconciliation and documentation-scope gates;
 > revision 44 records the fresh focused/package/recursive gates, 296/296-file
 > no-baseline self-scan, baseline non-mutation proof, and owner-comprehension
-> acceptance.
+> acceptance. The closeout checkpoint is `cfd52e9b4`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -1091,7 +1091,7 @@ Expected: the current indexed plan count validates, all execution-doc tests
 pass, no whitespace errors remain, and only task-owned tracked changes plus
 the preserved user-owned paths are present.
 
-- [ ] **Step 9: Commit the closeout**
+- [x] **Step 9: Commit the closeout**
 
 ```bash
 git add README.md ROADMAP.md packages/slopbrick/README.md packages/slopbrick/CHANGELOG.md docs/execution/index.json docs/execution/STATUS.md docs/execution/CHANGELOG.md docs/execution/plans/SB-UX-001-first-scan.md docs/execution/plans/TEL-001-local-outcomes.md docs/execution/evidence/SB-UX-001-first-scan.md
