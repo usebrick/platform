@@ -204,6 +204,28 @@ describe('generated documentation truth', () => {
       .rejects.toThrow(/catalogSha256/u);
   });
 
+  it('rejects a valid-looking 120th signal row without a discovered rule', async () => {
+    const dir = privateTempDir();
+    const policyPath = writeCanonicalFixture(
+      dir,
+      'approved-policy.json',
+      approvedCurrentPolicyArtifactFixture(),
+    );
+    const extraRowPath = writeSignalFixture(dir, 'extra-signal-row.json', (signal) => {
+      const sourceRow = signal['ai/any-density'];
+      if (!sourceRow) throw new TypeError('Expected the source signal row fixture');
+      const ruleIds = Object.keys(signal).filter((ruleId) => !ruleId.startsWith('_'));
+      expect(ruleIds).toHaveLength(119);
+      signal['ai/valid-looking-120th'] = { ...sourceRow };
+      expect(Object.keys(signal).filter((ruleId) => !ruleId.startsWith('_'))).toHaveLength(120);
+    });
+
+    await expect(generateRuleCatalogOutput(
+      { policyPath, check: false },
+      { signalStrengthPath: extraRowPath },
+    )).rejects.toThrow(/extra: ai\/valid-looking-120th/u);
+  });
+
   it.each([
     {
       name: 'category',
