@@ -451,13 +451,13 @@ describe('published consumer contract', () => {
       expect(readdirSync(join(project, 'node_modules')).every((entry) => !lstatSync(join(project, 'node_modules', entry)).isSymbolicLink())).toBe(true);
       expect(spawnSync(process.execPath, ['-e', "require.resolve('yauzl')"], { cwd: project, encoding: 'utf8', env: npmEnvironment(npmCache) }).status).toBe(0);
 
-      const esmProbe = spawnSync(process.execPath, ['--input-type=module', '-e', "const pkg = await import('slopbrick'); if (typeof pkg.VERSION !== 'string') process.exit(1);"], {
+      const esmProbe = spawnSync(process.execPath, ['--input-type=module', '-e', "const pkg = await import('slopbrick'); const names = ['validateOutcomeEventV1', 'appendOutcomeEventV1', 'readOutcomeEventsV1', 'exportOutcomeEventsV1', 'deleteOutcomeEventsV1']; if (typeof pkg.VERSION !== 'string' || pkg.OUTCOME_EVENT_VERSION_V1 !== 'slopbrick-outcome-event-v1' || names.some((name) => typeof pkg[name] !== 'function')) process.exit(1);"], {
         cwd: project,
         encoding: 'utf8',
         env: npmEnvironment(npmCache),
       });
       expect(esmProbe.status, esmProbe.stderr).toBe(0);
-      const cjsProbe = spawnSync(process.execPath, ['-e', "const pkg = require('slopbrick'); if (typeof pkg.VERSION !== 'string') process.exit(1);"], {
+      const cjsProbe = spawnSync(process.execPath, ['-e', "const pkg = require('slopbrick'); const names = ['validateOutcomeEventV1', 'appendOutcomeEventV1', 'readOutcomeEventsV1', 'exportOutcomeEventsV1', 'deleteOutcomeEventsV1']; if (typeof pkg.VERSION !== 'string' || pkg.OUTCOME_EVENT_VERSION_V1 !== 'slopbrick-outcome-event-v1' || names.some((name) => typeof pkg[name] !== 'function')) process.exit(1);"], {
         cwd: project,
         encoding: 'utf8',
         env: npmEnvironment(npmCache),

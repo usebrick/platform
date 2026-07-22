@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+
 import Ajv2020 from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 
@@ -154,6 +156,7 @@ describe('privacy-safe local outcome event contract', () => {
     const invalidEvents = [
       { ...finding, detectorId: 'private-client/secret-repository' },
       { ...finding, producerVersion: '0.45.0-private-customer' },
+      { ...finding, producerVersion: '999.999.999' },
       { ...finding, producerVersion: '01.2.3' },
       { ...finding, observedOn: '2026-99-99' },
       { ...finding, observedOn: '2025-02-29' },
@@ -255,6 +258,39 @@ describe('privacy-safe local outcome event contract', () => {
     }
 
     expect(result?.ok).toBe(false);
+  });
+
+  it('builds the detector allowlist safely when an inherited numeric setter predates import', () => {
+    const script = [
+      "const secret = 'private/customer-repository';",
+      "Object.defineProperty(Array.prototype, '0', {",
+      '  configurable: true,',
+      '  set(value) {',
+      "    const replacement = value === 'ai/any-density' ? secret : value;",
+      "    Object.defineProperty(this, '0', { configurable: true, enumerable: true, value: replacement, writable: true });",
+      '  },',
+      '});',
+      "const api = await import('./src/telemetry/outcome-event.ts');",
+      'const result = api.validateOutcomeEventV1({',
+      '  version: api.OUTCOME_EVENT_VERSION_V1,',
+      "  event: 'first-finding-assessed',",
+      "  observedOn: '2026-07-22',",
+      "  producerVersion: '0.45.0',",
+      "  context: { framework: 'mixed', repositorySize: '101-500' },",
+      '  detectorId: secret,',
+      "  evidenceTier: 'quality-candidate-unmeasured',",
+      "  assessment: 'useful',",
+      '});',
+      'process.exitCode = api.OUTCOME_DETECTOR_IDS_V1[0] === secret || result.ok ? 4 : 0;',
+    ].join('\n');
+    const child = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', '--input-type=module', '-e', script],
+      { cwd: process.cwd(), encoding: 'utf8' },
+    );
+
+    expect(child.error).toBeUndefined();
+    expect(child.status, child.stderr).toBe(0);
   });
 
   it('publishes the local outcome contract and lifecycle operations through SlopBrick', () => {

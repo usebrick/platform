@@ -202,6 +202,7 @@ describe.runIf(supportsSecureOutcomeStore)('privacy-safe local outcome event sto
 
   it('rejects malformed JSONL, a busy store, and ledgers beyond the bounded size', () => {
     const storagePath = join(root, 'events-v1.jsonl');
+    const exportPath = join(root, 'outcomes.json');
     const event: OutcomeEventV1 = {
       version: OUTCOME_EVENT_VERSION_V1,
       event: 'return-observed',
@@ -218,11 +219,32 @@ describe.runIf(supportsSecureOutcomeStore)('privacy-safe local outcome event sto
     writeFileSync(`${storagePath}.lock`, 'held\n', { mode: 0o600 });
     expect(() => readOutcomeEventsV1(storagePath)).toThrow(/busy/u);
     expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/busy/u);
+    expect(() => exportOutcomeEventsV1(storagePath, exportPath)).toThrow(/busy/u);
+    expect(() => deleteOutcomeEventsV1(storagePath)).toThrow(/busy/u);
     rmSync(`${storagePath}.lock`);
 
     writeFileSync(storagePath, 'x'.repeat(OUTCOME_EVENT_STORE_MAX_BYTES_V1 + 1), 'utf8');
     expect(() => readOutcomeEventsV1(storagePath)).toThrow(/size limit/u);
     expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/size limit/u);
+  });
+
+  it('observes a busy sibling lock even when the ledger is absent', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const exportPath = join(root, 'outcomes.json');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    writeFileSync(`${storagePath}.lock`, 'held\n', { mode: 0o600 });
+
+    expect(() => readOutcomeEventsV1(storagePath)).toThrow(/busy/u);
+    expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/busy/u);
+    expect(() => exportOutcomeEventsV1(storagePath, exportPath)).toThrow(/busy/u);
+    expect(() => deleteOutcomeEventsV1(storagePath)).toThrow(/busy/u);
   });
 
   it('writes canonical bytes for semantically identical event objects', () => {
@@ -500,6 +522,46 @@ describe.runIf(supportsSecureOutcomeStore)('privacy-safe local outcome event sto
       .toThrow(OutcomeEventStoreError);
     expect(readFileSync(storagePath, 'utf8')).toBe(ledgerBytes);
     expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+  });
+
+  it('rejects a Unicode case-fold alias while the ledger is absent', () => {
+    const probePath = join(root, 'Straße-probe');
+    const foldedProbePath = join(root, 'STRASSE-PROBE');
+    writeFileSync(probePath, 'probe\n', 'utf8');
+    const unicodeCaseInsensitive = existsSync(foldedProbePath);
+    rmSync(probePath);
+    if (!unicodeCaseInsensitive) return;
+
+    const storagePath = join(root, 'Straße.jsonl');
+    const aliasExportPath = join(root, 'STRASSE.jsonl');
+    expect(() => exportOutcomeEventsV1(storagePath, aliasExportPath))
+      .toThrow(OutcomeEventStoreError);
+    expect(existsSync(storagePath)).toBe(false);
+    expect(existsSync(aliasExportPath)).toBe(false);
+  });
+
+  it('allows case-distinct paths on case-sensitive filesystems', () => {
+    const caseProbe = join(root, 'case-sensitive-probe');
+    writeFileSync(caseProbe, 'probe\n', 'utf8');
+    const caseInsensitive = existsSync(join(root, 'CASE-SENSITIVE-PROBE'));
+    rmSync(caseProbe);
+    if (caseInsensitive) return;
+
+    const storagePath = join(root, 'Events-v1.jsonl');
+    const exportPath = join(root, 'events-v1.jsonl');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    appendOutcomeEventV1(storagePath, event);
+
+    expect(exportOutcomeEventsV1(storagePath, exportPath)).toBe(1);
+    expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
   });
 
   it.runIf(process.platform !== 'win32' && constants.O_NOFOLLOW > 0)(
