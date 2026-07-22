@@ -64,6 +64,8 @@ export function appendOutcomeEventV1(storagePath: string, event: unknown): void 
     throw new OutcomeEventStoreError(`Refusing invalid outcome event: ${validation.errors.join('; ')}`);
   }
 
+  // Preserve ledger inspectability: never append behind a corrupt line.
+  readOutcomeEventsV1(storagePath);
   mkdirSync(dirname(storagePath), { recursive: true, mode: 0o700 });
   appendFileSync(storagePath, `${JSON.stringify(event)}\n`, {
     encoding: 'utf8',
