@@ -506,6 +506,28 @@ describe('first-scan public contract', () => {
     },
   );
 
+  it.each([
+    'blocked-quality-candidate',
+    'superseded-policy',
+    'retired-policy',
+  ] as const)('does not project a non-runnable %s tombstone as a finding or recommendation', (provenance) => {
+    const ruleId = `contract/${provenance}`;
+    const synthetic = policyFixtureWithProvenance(ruleId, provenance);
+    const row = synthetic.getCurrentRulePolicy(ruleId);
+    if (!row) throw new Error(`missing synthetic ${provenance} row`);
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue({
+      ...synthetic,
+      getCurrentRulePolicy: (candidate) => candidate === ruleId
+        ? { ...row, enabledByDefault: false, runnableByExplicitOptIn: false }
+        : undefined,
+    });
+
+    const result = project(report({ issues: [issue('logic', { ruleId })] }));
+
+    expect(result.findings).toEqual([]);
+    expect(result.recommendedActions).toEqual([]);
+  });
+
   it('projects the weakest source-span truth across a grouped recommendation', () => {
     getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const exact = issue('ai', {

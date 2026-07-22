@@ -240,8 +240,8 @@ describe('headline score renderer contract', () => {
     });
     expect(sarif.runs[0]!.results[0]!.properties.slopbrickEvidence).toEqual(expected);
 
-    const markdown = formatMarkdown(input, { cwd: '/workspace' });
-    const html = formatHtml(input, { cwd: '/workspace' });
+    const markdown = formatMarkdown(input);
+    const html = formatHtml(input);
     for (const output of [
       formatPretty(input, { full: false, cwd: '/workspace' }),
       formatPretty(input, { full: true, cwd: '/workspace' }),
@@ -301,8 +301,8 @@ describe('headline score renderer contract', () => {
     });
     input.issues = [secondIssue, firstIssue];
 
-    const markdown = formatMarkdown(input, { cwd: '/workspace' });
-    const html = formatHtml(input, { cwd: '/workspace' });
+    const markdown = formatMarkdown(input);
+    const html = formatHtml(input);
     const sarif = JSON.parse(formatSarif(input, { cwd: '/workspace' })) as {
       runs: Array<{ results: Array<{ properties: Record<string, unknown> }> }>;
     };

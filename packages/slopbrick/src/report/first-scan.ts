@@ -1,3 +1,4 @@
+import { isAbsolute, normalize, sep } from 'node:path';
 import type {
   Category,
   DebtBaseline,
@@ -184,8 +185,11 @@ function historicalMetricsSummary(
 export function formatFirstScanFindingEvidence(
   evidence: FirstScanFindingEvidence,
 ): string {
-  if (evidence.tier === 'calibrated' && evidence.calibration) {
-    return `calibrated (deprecated v1); ${historicalMetricsSummary(evidence.calibration)}. ${evidence.claim}`;
+  if (evidence.tier === 'calibrated') {
+    const historical = evidence.calibration
+      ? `${historicalMetricsSummary(evidence.calibration)}.`
+      : 'historical metrics unavailable.';
+    return `calibrated (deprecated v1); ${historical} ${evidence.claim}`;
   }
   if (evidence.tier === 'legacy-calibrated' && evidence.legacyMetrics) {
     return `legacy-calibrated; ${historicalMetricsSummary(evidence.legacyMetrics)}. ${evidence.claim}`;
@@ -214,13 +218,30 @@ export function matchesFirstScanFinding(
   finding: FirstScanFinding | undefined,
   cwd?: string,
 ): finding is FirstScanFinding {
+  if (finding === undefined) return false;
+  const identityCwd = (() => {
+    if (cwd !== undefined) return cwd;
+    if (issue.filePath === undefined || !isAbsolute(issue.filePath)) return '';
+    const projectedPath = finding.location.filePath;
+    if (projectedPath === undefined) return undefined;
+    const normalizedProjectedPath = normalize(projectedPath);
+    if (
+      isAbsolute(normalizedProjectedPath)
+      || normalizedProjectedPath === '..'
+      || normalizedProjectedPath.startsWith(`..${sep}`)
+    ) return undefined;
+    const normalizedIssuePath = normalize(issue.filePath);
+    const suffix = `${sep}${normalizedProjectedPath}`;
+    if (!normalizedIssuePath.endsWith(suffix)) return undefined;
+    const inferredRoot = normalizedIssuePath.slice(0, -suffix.length);
+    if (/^[A-Za-z]:$/.test(inferredRoot)) return `${inferredRoot}${sep}`;
+    return inferredRoot || sep;
+  })();
+  if (identityCwd === undefined) return false;
   const filePath = issue.filePath === undefined
     ? undefined
-    : cwd === undefined
-      ? issue.filePath
-      : repositoryRelativeFindingLocation(issue, cwd);
-  return finding !== undefined
-    && finding.ruleId === issue.ruleId
+    : repositoryRelativeFindingLocation(issue, identityCwd);
+  return finding.ruleId === issue.ruleId
     && finding.area === FIRST_SCAN_AREA_BY_CATEGORY[issue.category]
     && finding.severity === issue.severity
     && finding.aiSpecific === issue.aiSpecific
@@ -228,7 +249,7 @@ export function matchesFirstScanFinding(
     && finding.location.line === issue.line
     && finding.location.column === issue.column
     && finding.why === issue.message
-    && (cwd === undefined || finding.identity === findingIdentity(issue, cwd));
+    && finding.identity === findingIdentity(issue, identityCwd);
 }
 
 function allFixes(issue: Issue) {
@@ -506,9 +527,15 @@ export function projectFirstScan(
   report: ProjectReport,
   options: ProjectFirstScanOptions,
 ): FirstScanExperience {
-  const activeIssues = report.issues.filter((issue) => (issue.severity as string) !== 'off');
-  const status = scanStatus(report);
   const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const activeIssues = report.issues.filter((issue) => {
+    if ((issue.severity as string) === 'off') return false;
+    const row = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
+    // A finding's presence is sufficient evidence of explicit opt-in only for
+    // rows that permit it. Tombstones remain non-runnable even in stale input.
+    return row === undefined || row.enabledByDefault || row.runnableByExplicitOptIn;
+  });
+  const status = scanStatus(report);
   const projectedFindings = activeIssues.map((issue) =>
     projectFinding(issue, options.cwd, currentPolicy)
   );
