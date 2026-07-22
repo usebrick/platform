@@ -282,6 +282,7 @@ describe('privacy-safe local outcome event store', () => {
       expect(() => exportOutcomeEventsV1(storagePath, hardLinkedExport))
         .toThrow(OutcomeEventStoreError);
       expect(readFileSync(storagePath, 'utf8')).toBe(storageBytes);
+      rmSync(hardLinkedExport);
 
       const hardLinkedStore = join(root, 'hard-linked-store.jsonl');
       linkSync(storagePath, hardLinkedStore);
@@ -290,6 +291,7 @@ describe('privacy-safe local outcome event store', () => {
       expect(() => deleteOutcomeEventsV1(hardLinkedStore))
         .toThrow(OutcomeEventStoreError);
       expect(readFileSync(storagePath, 'utf8')).toBe(storageBytes);
+      rmSync(hardLinkedStore);
 
       const unrelatedTarget = join(root, 'unrelated-target.json');
       const unrelatedBytes = 'unrelated owner data\n';
