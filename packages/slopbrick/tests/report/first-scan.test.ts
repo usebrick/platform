@@ -9,6 +9,7 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 import {
   FIRST_SCAN_AREAS,
   FIRST_SCAN_AREA_BY_CATEGORY,
+  formatFirstScanFindingEvidence,
   projectFirstScan,
 } from '../../src/report/first-scan';
 import { formatFirstScanPretty } from '../../src/report/first-scan-pretty';
@@ -16,7 +17,10 @@ import {
   findingIdentity,
   repositoryRelativeFindingLocation,
 } from '../../src/report/finding-identity';
-import type { FirstScanExperience } from '../../src/types/first-scan';
+import type {
+  FirstScanExperience,
+  FirstScanFindingEvidence,
+} from '../../src/types/first-scan';
 import type { Category, GateDecision, Issue, ProjectReport } from '../../src/types';
 import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
 import type { CAL002PolicyProvenanceV2 } from '../../src/calibration/cal-002/matrix-v2';
@@ -153,6 +157,9 @@ const CURRENT_POLICY_COPY_CASES = [
   ['current-quality-failed-claim-bar', 'current-quality-failed', 'Current quality claim bar was not met; diagnostic only.'],
   ['insufficient-evidence', 'insufficient-evidence', 'Current evidence is insufficient; diagnostic only.'],
   ['internal-origin-association', 'internal-origin-association', 'Internal origin association only; not quality evidence and does not identify who wrote the code.'],
+  ['blocked-quality-candidate', 'insufficient-evidence', 'Quality candidate blocked before evidence and not runnable.'],
+  ['superseded-policy', 'insufficient-evidence', 'Historical rule replaced by the named canonical rule.'],
+  ['retired-policy', 'insufficient-evidence', 'Historical rule retired from current diagnostics.'],
 ] as const satisfies ReadonlyArray<readonly [CAL002PolicyProvenanceV2, string, string]>;
 
 const PASSED_GATE: GateDecision = {
@@ -498,6 +505,66 @@ describe('first-scan public contract', () => {
       });
     },
   );
+
+  it('projects the weakest source-span truth across a grouped recommendation', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const exact = issue('ai', {
+      ruleId: 'ai/any-density',
+      severity: 'medium',
+      filePath: '/workspace/src/exact.ts',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'value as any',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 13 } },
+      },
+    });
+    const omitted = issue('ai', {
+      ruleId: 'ai/any-density',
+      severity: 'medium',
+      filePath: '/workspace/src/omitted.ts',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'omitted',
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 301 } },
+        omission: {
+          reason: 'oversized',
+          snippetChars: 300,
+          snippetBytes: 300,
+          valueChars: 300,
+          valueBytes: 300,
+        },
+      },
+    });
+    const absent = issue('ai', {
+      ruleId: 'ai/any-density',
+      severity: 'medium',
+      filePath: '/workspace/src/absent.ts',
+    });
+
+    const omittedResult = project(report({ issues: [exact, omitted] }));
+    const absentResult = project(report({ issues: [exact, omitted, absent] }));
+
+    expect(omittedResult.recommendedActions[0]?.evidence.sourceSpan).toBe('omitted');
+    expect(absentResult.recommendedActions[0]?.evidence.sourceSpan).toBe('absent');
+  });
+
+  it('keeps the deprecated v1 calibrated shape renderable as explicitly historical', () => {
+    const evidence: FirstScanFindingEvidence = {
+      tier: 'calibrated',
+      claim: 'Legacy calibrated evidence.',
+      sourceSpan: 'absent',
+      calibration: {
+        verdict: 'USEFUL',
+        precision: 0.8,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+      },
+    };
+
+    expect(formatFirstScanFindingEvidence(evidence)).toBe(
+      'calibrated (deprecated v1); historical verdict USEFUL; historical precision 80%; last calibrated 2026-07-04. Legacy calibrated evidence.',
+    );
+  });
 
   it('uses ruleId ascending as the final recommendation tie-breaker', () => {
     const ties = ['logic/z-last', 'logic/a-first', 'logic/m-middle', 'logic/b-second']

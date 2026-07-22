@@ -240,15 +240,78 @@ describe('headline score renderer contract', () => {
     });
     expect(sarif.runs[0]!.results[0]!.properties.slopbrickEvidence).toEqual(expected);
 
+    const markdown = formatMarkdown(input);
+    const html = formatHtml(input);
     for (const output of [
       formatPretty(input, { full: false, cwd: '/workspace' }),
       formatPretty(input, { full: true, cwd: '/workspace' }),
-      formatMarkdown(input),
-      formatHtml(input),
+      markdown,
+      html,
     ]) {
       const normalized = output.replace(/\s+/g, ' ');
       expect(normalized).toContain('quality-candidate-unmeasured');
       expect(normalized).toContain('Accepted quality concern; owner measurement was not requested.');
+    }
+    expect(markdown).not.toMatch(/\bConfidence:/);
+    expect(html).not.toMatch(/signal-ok|P99\/R80|title="precision 99%/);
+    expect(markdown).toContain('Historical metrics: historical verdict USEFUL');
+    expect(html).toContain('Historical metrics: historical verdict USEFUL');
+  });
+
+  it('fails closed across human and SARIF renderers for same-coordinate cross-file collisions', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const historical = {
+      recall: 0.8,
+      fpRate: 0.01,
+      ratio: 80,
+      precision: 0.99,
+      lastCalibratedAt: '2026-07-04T00:00:00Z',
+      verdict: 'USEFUL' as const,
+    };
+    const firstIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'ai/any-density',
+      category: 'ai',
+      aiSpecific: true,
+      filePath: '/workspace/src/first.ts',
+      line: 7,
+      column: 3,
+      message: 'First file finding.',
+      signalStrength: historical,
+    };
+    const secondIssue: Issue = {
+      ...firstIssue,
+      filePath: '/workspace/src/second.ts',
+      message: 'Second file finding.',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'SECOND_FILE_EXACT',
+        location: { start: { line: 7, column: 3 }, end: { line: 7, column: 20 } },
+      },
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [firstIssue, secondIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+    });
+    input.issues = [secondIssue, firstIssue];
+
+    const markdown = formatMarkdown(input);
+    const html = formatHtml(input);
+    const sarif = JSON.parse(formatSarif(input, { cwd: '/workspace' })) as {
+      runs: Array<{ results: Array<{ properties: Record<string, unknown> }> }>;
+    };
+
+    expect(markdown).not.toContain('authority: quality-candidate-unmeasured');
+    expect(html).not.toContain('<strong>Evidence authority:</strong>');
+    for (const result of sarif.runs[0]!.results) {
+      expect(result.properties).not.toHaveProperty('firstScan');
+      expect(result.properties).not.toHaveProperty('slopbrickEvidence');
     }
   });
 
