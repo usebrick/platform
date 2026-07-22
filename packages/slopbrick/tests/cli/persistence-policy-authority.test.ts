@@ -157,6 +157,32 @@ export default {
     expect(history.every((run) => !run.topOffenseIds.includes('component/giant-component'))).toBe(true);
   });
 
+  it('does not reinterpret historical rows before current policy activation', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+    const dir = createWorkspace(`
+export default {
+  projectMemory: false,
+  telemetry: true,
+};
+`);
+    seedLegacyHistory(dir);
+
+    await runScan({
+      workspace: dir,
+      quiet: true,
+      telemetry: true,
+      threadCount: 1,
+    });
+
+    expect(loadFlywheelState(dir).autoTuned).toContainEqual(expect.objectContaining({
+      ruleId: 'component/giant-component',
+    }));
+    const history = JSON.parse(
+      readFileSync(join(dir, '.slopbrick', 'structure.json'), 'utf8'),
+    ) as Array<{ topOffenseIds: string[] }>;
+    expect(history.every((run) => run.topOffenseIds.includes('component/giant-component'))).toBe(true);
+  });
+
   it('reports invocation-only current-policy diagnostics separately from legacy suppression', async () => {
     const dir = createWorkspace(`
 export default {
