@@ -186,8 +186,9 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Now — close the free product loop
 
-1. Begin `TEL-001`: local, inspectable outcome events for useful finding,
-   action or decline, rescan, and return; provide export and deletion.
+1. Preserve completed `TEL-001`: its local, inspectable outcome events cover
+   useful finding, action or decline, rescan, return, export, and deletion;
+   normal scans and outbound reporting remain separate.
 2. Preserve the completed `SB-UX-001` first-screen contract: one transparent
    headline, five areas, at most three actions, truthful evidence/repair
    boundaries, and no ordinary-scan baseline mutation.
@@ -199,7 +200,8 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Next — make the scanner repository-aware and enforceable
 
-1. Build `MEM-001` as a read-only projection of facts, intent, provenance, and
+1. After explicitly starting the still-draft plan and approving its ADR, build
+   `MEM-001` as a read-only projection of facts, intent, provenance, and
    freshness. Benchmark it against native context across agents.
 2. Prove `LOCK-001` on one deterministic new-debt family in the existing CLI,
    including changed evidence, waivers, and incomplete-scan failure semantics.

@@ -1,6 +1,6 @@
 # TEL-001 — Define privacy-safe local outcome events
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 8
 - **Track / lane:** implementation / telemetry
 - **Owner:** SlopBrick maintainers
@@ -26,8 +26,9 @@ rescan. `SB-UX-001` is now complete and supplies the typed
 finding/action/change boundary this plan consumes.
 
 `CAL-002` has completed the separate 119-rule policy and provenance closeout.
-This plan is now `in_progress` and consumes one implementation WIP slot. It
-does not wait for a rule-state, admission, release, or deployment change.
+This plan completed at implementation checkpoint `be2a784f5` and no longer
+consumes implementation WIP. It did not require a rule-state, admission,
+release, or deployment change.
 Local outcome history and outbound reporting remain separate: outbound stays
 off by default and endpoint-gated, and this plan does not authorize hosted
 ingestion.
@@ -44,10 +45,11 @@ admission, source authority, or authorship claim.
 - Privacy-safe events for scan completion, first useful finding, action taken
   or declined, rescan completion, return within an observation window, and an
   optional coarse team/workflow signal after separately authorized research.
-- Explicit consent and configuration semantics for any outbound reporting.
+- Explicit separation from existing opt-in outbound reporting; any future
+  outcome transport requires its own consent and authorization contract.
 - Inspect, export, and delete commands or equivalent library operations.
 - Data minimization: detector/version, framework bucket, size bucket, outcome,
-  confidence, coarse timing, and optional broad reason.
+  evidence tier, coarse timing, and optional broad reason.
 - Tests proving raw snippets, file contents, absolute paths, repository names,
   remotes, and proprietary IDs are absent by default.
 
@@ -60,6 +62,13 @@ admission, source authority, or authorship claim.
 - Using local or aggregated outcomes to override approved repository intent or
   automatically activate, retire, or recalibrate a rule.
 
+The completed v1 contract exposes validation plus explicit read, append,
+export, and delete library operations over a caller-selected local path.
+Normal scans do not write this ledger, and no outcome-event outbound transport
+exists. Final dual review returned 98/100 and 98/100 with no must-fix finding;
+focused, packed-consumer, recursive, planning, positioning, and self-scan gates
+all passed. The closeout receipt records exact counts and retained boundaries.
+
 ## Dependencies
 
 - `requires`: `SB-045`
@@ -69,11 +78,10 @@ admission, source authority, or authorship claim.
 
 - The schema is versioned, documented field-by-field, and rejects unknown
   sensitive fields.
-- No event leaves the machine unless the user explicitly enables the defined
-  outbound path.
+- No outcome event leaves the machine; v1 defines no outbound path.
 - Users can inspect, export, and delete local events.
-- Tests cover opt-out, consent transition, redaction, corrupt storage, and
-  deletion.
+- Tests cover separation from the existing endpoint-gated beacon, sensitive
+  field rejection, corrupt storage, export, and deletion.
 - Documentation distinguishes local history from outbound reporting.
 - Outcome events remain product/workflow observations and cannot be promoted
   to calibration labels, source authority, or authorship evidence.
@@ -82,20 +90,22 @@ admission, source authority, or authorship claim.
 
 ## Execution steps
 
-1. Write the schema/threat-model tests -> verify:
+1. Completed the schema/threat-model tests -> verified:
    `corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1`.
-2. Model useful/action-or-decline/rescan/return outcomes, then implement the
+2. Modeled useful/action-or-decline/rescan/return outcomes and implemented the
    minimal local event writer/reader over a user-controlled path ->
-   verify: focused tests cover corrupt and absent storage.
-3. Add inspect/export/delete behavior -> verify: round-trip then deletion leaves
-   no records.
-4. Reconcile CLI and website privacy wording -> verify: search current docs for
-   contradictory "no telemetry" claims.
+   verified: focused tests cover corrupt and absent storage.
+3. Added inspect/export/delete behavior -> verified: round-trip then deletion
+   leaves no records.
+4. Reconciled CLI and website privacy wording -> verified: current docs contain
+   no contradictory blanket "no telemetry" claim.
 
 ## Verification
 
-Inspect serialized fixtures directly and run a negative grep for source text,
-absolute paths, repository names, and remotes.
+Focused tests pass 30 tests with one platform-conditional skip. Recursive lint,
+typecheck, test, and build gates pass; the packed consumer and rebuilt ESM/CJS
+entry points expose the complete public API. See the evidence receipt for exact
+counts, final review scores, self-scan output, and non-mutation proof.
 
 ## Evidence destination
 
@@ -103,12 +113,12 @@ absolute paths, repository names, and remotes.
 
 ## Rollback
 
-Disable event writing and remove local generated records through the supported
-delete path. Preserve schema/test evidence for review.
+Stop callers from invoking append and remove local generated records through
+the supported delete path. Preserve schema/test evidence for review.
 
 ## Next action
 
-Specify and test the smallest local event capable of representing RUN-001's
-useful, declined-no-safe-fix, unchanged-rescan, and bounded return states with
-no raw source or proprietary repository identifier. Keep outbound reporting
-opt-in.
+Preserve the qualified local v1 contract and its separation from normal scans,
+the existing opt-in beacon, calibration authority, and public release. Hand the
+completed dependency to draft `MEM-001`; reopen TEL only for a demonstrated
+regression or a separately approved outbound-transport proposal.

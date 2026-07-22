@@ -21,6 +21,10 @@ benchmark.
 The Memory name is a planned capability boundary, not a shipped product or
 package.
 
+`SB-UX-001` and `TEL-001` are complete, so this plan has no unmet repository
+dependency. It remains `draft`: no Memory ADR, canonical format, implementation
+WIP, package, or benchmark run is authorized by the TEL closeout.
+
 Memory is the repository-intelligence plane of the coherence graph. Its job is
 not to copy a vendor's chat memory: it must reconcile observed facts with
 approved patterns, design-system primitives, architecture, exceptions,

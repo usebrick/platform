@@ -69,6 +69,10 @@ Malformed stored lines—including blank interior lines and a missing final
 JSONL newline—fail closed and are not extended by later appends. V1 also caps
 one event at 4 KiB and one ledger at 1 MiB or 4,096 events, whichever is
 reached first. These bounds keep corruption checks and memory use finite.
+“Strict JSONL” here means one nonblank JSON value per newline-terminated line
+under those bounds. The reader validates decoded event semantics; it does not
+require manually supplied valid JSON to use the writer's exact key order or
+escaping. API-written ledger lines and exported documents are canonical.
 
 The existing one-shot usage beacon is a different mechanism. It remains off
 unless both `--report-usage` and `SLOPBRICK_TELEMETRY_ENDPOINT` are supplied,

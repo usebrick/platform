@@ -3,6 +3,44 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 46 — 2026-07-22
+
+### Changed
+
+- Marked `TEL-001` `done` and reduced implementation WIP from `1/2` to `0/2`.
+- Closed the versioned local outcome-event contract at implementation
+  checkpoint `be2a784f5`: four closed event families, explicit local
+  read/append/export/delete operations, no normal-scan writer, and no outcome
+  transport.
+- Cleared `MEM-001`'s completed TEL dependency while retaining `MEM-001` as
+  `draft`; no Memory ADR, implementation, package, or benchmark was started.
+- Updated the roadmap, TEL/MEM plans, status, package privacy documentation,
+  and durable TEL evidence receipt to the qualified contract.
+
+### Evidence
+
+- Final review round 5/5 returned independent scores of 98/100 and 98/100,
+  both `PASS`, with no must-fix or should-fix finding.
+- The focused outcome/beacon matrix passes 30 tests with one
+  platform-conditional skip; the packed-consumer suite passes all 9 tests and
+  rebuilt ESM/CJS probes expose the complete outcome API.
+- Recursive lint, typecheck, tests, and build pass. SlopBrick reports 392
+  passed files plus 5 skipped and 4,603 passed tests plus 18 skipped; Core,
+  Website, and Engine report 285, 54, and 60 passing tests respectively.
+- The fresh package-local self-scan completes at 99.94/100 with four current
+  medium deterministic findings, policy gate pass, and no durable baseline or
+  outcome directory created.
+- Post-closeout plan validation reports 18 valid plans, implementation WIP
+  `0/2`, and company WIP `0/1`; positioning validation remains 12/12.
+
+### Boundary
+
+- This revision adds no hosted ingestion, automatic outcome collection,
+  calibration label, source/admission authority, rule-state change, Memory
+  implementation, release, push, publication, deployment, or outreach.
+- `REL-001`, the high-severity dependency audit, `GTM-001`, and exact
+  stale-path approval remain separate gates.
+
 ## Revision 45 — 2026-07-22
 
 ### Changed

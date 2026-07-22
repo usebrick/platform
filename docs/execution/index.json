@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 45,
+  "revision": 46,
   "updatedAt": "2026-07-22",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -203,7 +203,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the completed first-scan contract and hand its typed finding, action, and change boundary to TEL-001; reopen only for a demonstrated regression.",
+        "text": "Preserve the completed first-scan contract and its typed finding, action, and change boundary now consumed by completed TEL-001; reopen only for a demonstrated regression.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
       },
@@ -254,7 +254,7 @@
       "track": "implementation",
       "lane": "telemetry",
       "horizon": "next",
-      "status": "in_progress",
+      "status": "done",
       "priority": 8,
       "path": "docs/execution/plans/TEL-001-local-outcomes.md",
       "dependencies": {
@@ -269,13 +269,14 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Model the owner-observed useful, declined-no-safe-fix, unchanged-rescan, and bounded-return states using SB-UX-001 finding, action, and change fields without raw source or repository identity.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Preserve the qualified local v1 outcome contract at be2a784f5, hand its completed dependency to draft MEM-001, and reopen only for a demonstrated regression or separately approved outbound transport.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts tests/telemetry/outcome-store.test.ts tests/beacon/emitter.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
       "evidence": [
         "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
-        "docs/research/usebrick-market-positioning-2026-07-19.md"
+        "docs/research/usebrick-market-positioning-2026-07-19.md",
+        "docs/execution/evidence/TEL-001-contract.md"
       ]
     },
     {

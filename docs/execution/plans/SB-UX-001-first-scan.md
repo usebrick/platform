@@ -132,7 +132,8 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Preserve the completed first-scan contract and hand its typed
-finding/action/change boundary to `TEL-001`. Reopen this plan only if a later
+Preserve the completed first-scan contract and its typed
+finding/action/change boundary, now consumed by completed `TEL-001`. Reopen
+this plan only if a later
 default-output change regresses evidence honesty, repair safety, scan validity,
 or baseline non-mutation.
