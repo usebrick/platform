@@ -1,84 +1,67 @@
-# Security review: CAL-002 Task 20 local policy application
+# Security review: SB-UX-001 documentation closeout
 
 - **Reviewed:** 2026-07-22
-- **Reviewed checkpoint:** `bd47dbd7e`
-- **Scope:** statically bundled 119-row current policy, application receipt,
-  runtime provider binding, generated catalog, score/gate effects, and focused
-  activation tests
-- **Verdict:** PASS for local application; PUBLIC RELEASE BLOCKED separately by
-  the dependency audit
+- **Reviewed range:** `774249c80..f2f9de0ef`
+- **Scope:** revision-44 roadmap, execution index/status/changelog, first-scan
+  evidence receipt, current plan projections, impact/audit projections, and
+  downstream handoff wording
+- **Verdict:** PASS for local integration; PUBLIC RELEASE remains separately
+  controlled by `REL-001`
 
 ## Scope and trust boundaries
 
-Task 20 replaces the deliberately inactive provider with one statically bundled
-JSON policy. Module initialization validates the complete object against the
-canonical 119 rule IDs, exact approved authority rows, runtime effects, row
-binding, matrix/approval binding, `applied: true`, and `admitted: false` before
-returning any accessor. Invalid, partial, reordered, stale, or drifted policy
-data fails closed during initialization.
+The reviewed range changes documentation and one static execution-control JSON
+file only. It adds no executable TypeScript or JavaScript, dependency,
+workflow, network client, process execution, database operation,
+authentication/authorization boundary, browser rendering, template sink,
+runtime deserialization path, or package artifact.
 
-The bundled policy is package-controlled build input, not an HTTP, CLI, file,
-environment, repository, or network input. Task 20 adds no dynamic policy path,
-network client, process execution, database query, authentication boundary,
-credential handling, template evaluation, or runtime deserialization of
-attacker-controlled bytes.
+`docs/execution/index.json` is repository planning metadata validated by the
+existing execution-doc validator. Its revision, statuses, evidence paths, and
+next-action strings are not consumed as attacker-controlled runtime policy.
 
-Repository configuration remains a separate existing input. Explicit
-repository `off` remains stronger than policy. Default-off rows require an own
-explicit opt-in; the 32 unmeasured quality candidates and 32 research-origin
-rows cannot score or gate. The 4 blocked, 3 superseded, and 7 retired rows
-cannot run even when configuration requests them. Unknown IDs retain the
-existing legacy fallback.
-
-The application receipt contains integrity metadata only. Durable policy and
-receipt artifacts contain no raw source, repository path, personal identity,
-credential, or admitted corpus unit. SHA-256 is used only for deterministic
-integrity binding; human-facing documentation exposes one Task 20 checkpoint
-and keeps leaf identities machine-only.
+The evidence receipt preserves exact local scan output, including an absolute
+local worktree path and the owner's literal comprehension response. Neither
+contains a credential, token, proprietary source snippet, remote URL,
+repository identity, or authorization secret. The local path is audit evidence,
+not an outbound telemetry payload; `TEL-001` still forbids absolute paths and
+repository identity in outcome events by default.
 
 ## Vulnerability assessment
 
 | Category | Result | Rationale |
 | --- | --- | --- |
-| SQL injection | Clear | No query construction or database sink is introduced. Default-on SQL rules are static detectors, not query execution. |
-| XSS / template injection | Clear | No browser or server-template interpolation is introduced. |
-| SSRF | Clear | No network request or user-controlled URL exists. |
-| Command injection | Clear | No shell, process, `eval`, or dynamic-code sink exists. |
-| Authentication / authorization bypass | Clear | No application-auth boundary changes. Static policy authority is schema- and owner-binding constrained; repository `off` still wins. |
-| Unsafe deserialization | Clear | The package-controlled JSON module is parsed by Node and fully schema/authority validated before access. No untrusted token is deserialized. |
-| Path traversal | Clear | No path-derived read or write target is added. |
-| IDOR | Clear | No user/resource lookup or API authorization boundary exists. |
-| Weak cryptography / secrets exposure | Clear | SHA-256 is integrity-only; no key, token, password, raw source, or personal identity is stored. |
-| NoSQL injection | Clear | No NoSQL query or sink exists. |
+| SQL injection | Clear | No query construction or database sink changed. |
+| XSS / template injection | Clear | No browser or template interpolation changed. Markdown content is static repository text. |
+| SSRF | Clear | No network request or user-controlled URL handling changed. |
+| Command injection | Clear | No shell, process, `eval`, or dynamic-code path changed. Recorded commands are evidence text only. |
+| Authentication / authorization bypass | Clear | No identity, permission, or enforcement boundary changed. |
+| Unsafe deserialization | Clear | The edited JSON is static planning metadata and passes the deterministic validator. |
+| Path traversal | Clear | No path-derived read/write operation changed. Evidence paths are static references. |
+| IDOR | Clear | No API or resource lookup exists in the diff. |
+| Weak cryptography / secrets exposure | Clear | No key, token, password, cryptographic operation, or secret-bearing source was added. |
+| NoSQL injection | Clear | No NoSQL query or sink exists in the diff. |
 
 ## Findings
 
-No Task 20 finding reaches the required confidence threshold of 8/10. The
-activation changes authority over which existing static rules may run, score,
-or gate, but introduce no attacker-controlled source-to-sink path.
-
-The dependency audit independently reports high transitive advisories in
-`brace-expansion` and `svgo`, plus one moderate Astro advisory. Dependency
-findings are excluded from this diff review and remain public-release blockers
-under `REL-001`; Task 20 changes no package or lockfile.
+No finding reaches the required confidence threshold of 8/10. The diff does
+not introduce an attacker-controlled source-to-sink path.
 
 ## Verification
 
-- Exact four-file application checkpoint: pass.
-- Active candidate matrix: 183/183; inactive support matrix: 361/361.
-- Full SlopBrick suite: 4,580 passed with 15 intentional skips.
-- Recursive tests: Core 285, Engine 60, Website 54, SlopBrick 4,580; recursive
-  lint, typecheck, and build pass.
-- Focused application/security matrix: 46/46.
-- Package-local self-scan: 296/296 selected and analyzed, zero failures,
-  99.94/100, four current medium deterministic findings, policy gate pass, and
-  no durable baseline created.
-- Fresh independent final review: 100/100 with no findings.
-- Protected owner state and frozen historical metrics: unchanged.
+- `git diff --check`: pass.
+- Execution plan validation: 18 plans valid; implementation WIP `0/2`; company
+  WIP `0/1`.
+- Execution-doc tests: 21/21 pass.
+- Positioning tests: 12/12 pass.
+- Underlying SB-UX qualification: focused 267/267; SlopBrick 4,580 with 15
+  intentional skips; recursive lint/typecheck/test/build pass.
+- Package-local self-scan: 296/296 analyzed, zero failures, passing policy gate,
+  and no durable baseline created.
 
 ## Residual boundary
 
-The current policy is locally `applied: true` and remains `admitted: false`.
-This review authorizes no push, tag, corpus admission, npm publication, website
-deployment, or public release. The dependency blockers must be resolved and
-`REL-001` must receive separate owner authority before public execution.
+This review permits local integration of the documentation closeout only. It
+does not authorize a push, tag, GitHub Release, npm publication, website
+deployment, telemetry ingestion, baseline creation, or public release. Existing
+dependency-audit blockers and `REL-001` owner gates remain unchanged.
