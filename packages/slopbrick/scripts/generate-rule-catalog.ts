@@ -579,8 +579,8 @@ function render(
 
     md += `## \`${cat}/\` (${catRules.length} rule${one ? '' : 's'})\n\n`;
     if (currentPolicy) {
-      md += `| Rule | Severity | runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict | AI-specific | Description |\n`;
-      md += `|------|----------|----------------|:----------------:|:-----------------------:|:-------------:|--------------------|---------------|------------|:--------:|-------------------|:-----------:|-------------|\n`;
+      md += `| Rule | Severity | runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | gateEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict | AI-specific | Description |\n`;
+      md += `|------|----------|----------------|:----------------:|:-----------------------:|:-------------:|:------------:|--------------------|---------------|------------|:--------:|-------------------|:-----------:|-------------|\n`;
     } else {
       md += `| Rule | Severity | Default | AI-specific | Description |\n`;
       md += `|------|----------|:-------:|:-----------:|-------------|\n`;
@@ -594,7 +594,7 @@ function render(
       if (currentPolicy) {
         const row = currentPolicy.getCurrentRulePolicy(r.id);
         if (!row) throw new TypeError(`Current policy is missing catalog rule ${r.id}`);
-        md += `| \`${r.id}\` | ${sev} | ${row.runtimeOutcome} | ${row.enabledByDefault} | ${row.runnableByExplicitOptIn} | ${row.scoreEligible} | ${row.provenance} | ${row.qualityDomain} | ${row.claimClass} | ${currentPolicy.policy.admitted} | ${r.verdict ?? 'unavailable'} | ${ai} | ${desc} |\n`;
+        md += `| \`${r.id}\` | ${sev} | ${row.runtimeOutcome} | ${row.enabledByDefault} | ${row.runnableByExplicitOptIn} | ${row.scoreEligible} | ${row.gateEligible} | ${row.provenance} | ${row.qualityDomain} | ${row.claimClass} | ${currentPolicy.policy.admitted} | ${r.verdict ?? 'unavailable'} | ${ai} | ${desc} |\n`;
       } else {
         md += `| \`${r.id}\` | ${sev} | ${def} | ${ai} | ${desc} |\n`;
       }
@@ -605,7 +605,7 @@ function render(
   // "Default" key for readers: short glossary before "See also".
   md += `## Glossary\n\n`;
   if (currentPolicy) {
-    md += `- **Current policy columns** — \`runtimeOutcome\`, default/runnable state, score authority, provenance, quality domain, claim class, and admission come only from the validated owner-approved policy projection.\n`;
+    md += `- **Current policy columns** — \`runtimeOutcome\`, default/runnable state, independent score and finding-gate authority, provenance, quality domain, claim class, and admission come only from the validated owner-approved policy projection.\n`;
     md += `- **historicalVerdict** — the immutable legacy signal-table verdict, retained as historical context only; it is not current quality authority or authorship evidence.\n`;
   } else {
     md += `- **Default** — whether the rule runs out of the box. `;

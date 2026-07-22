@@ -139,6 +139,24 @@ describe('v0.14.5i UX improvements', () => {
       expect(out).not.toMatch(/INVERTED\/NOISY issue\(s\) suppressed/);
       // Should not crash
     });
+
+    it('labels current-policy audit-only findings without legacy calibration language', () => {
+      const report = makeReport({
+        defaultOffSuppressedCount: 0,
+        defaultOffRuleCount: 7,
+        currentPolicyAuditOnlyCount: 3,
+        currentPolicyDefaultOffRuleCount: 33,
+      });
+
+      const full = formatPretty(report);
+      const brief = formatBriefReport(report);
+      for (const output of [full, brief]) {
+        expect(output).toContain('3');
+        expect(output).toMatch(/current evidence policy/i);
+        expect(output).toMatch(/audit-only/i);
+        expect(output).not.toMatch(/3 INVERTED\/NOISY/i);
+      }
+    });
   });
 
   // P1: per-category breakdown table

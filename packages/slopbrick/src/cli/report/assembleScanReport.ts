@@ -63,6 +63,8 @@ export interface AssembleScanReportInput {
   diffRef?: string;
   defaultOffApplied: number;
   defaultOffRuleCount: number;
+  currentPolicyAuditOnlyApplied?: number;
+  currentPolicyDefaultOffRuleCount?: number;
   previousRun: { slopIndex: number; timestamp: string } | undefined;
   enrichment: EnrichmentResult;
 }
@@ -96,6 +98,8 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     diffRef,
     defaultOffApplied,
     defaultOffRuleCount,
+    currentPolicyAuditOnlyApplied,
+    currentPolicyDefaultOffRuleCount,
     previousRun,
     enrichment,
   } = input;
@@ -190,6 +194,12 @@ export function assembleScanReport(input: AssembleScanReportInput): ProjectRepor
     repositoryHealthWarnings: enrichment.repositoryHealthWarnings,
     defaultOffSuppressedCount: defaultOffApplied,
     defaultOffRuleCount,
+    ...(currentPolicyAuditOnlyApplied !== undefined || currentPolicyDefaultOffRuleCount !== undefined
+      ? {
+          currentPolicyAuditOnlyCount: currentPolicyAuditOnlyApplied ?? 0,
+          currentPolicyDefaultOffRuleCount: currentPolicyDefaultOffRuleCount ?? 0,
+        }
+      : {}),
     // v0.43.0: visible severity breakdown for tooling. Excludes
     // auto-suppressed default-off issues (which are counted in
     // defaultOffSuppressedCount above). This lets downstream tools

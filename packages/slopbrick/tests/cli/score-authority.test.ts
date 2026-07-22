@@ -115,6 +115,24 @@ describe('canonical Repository Health assembly', () => {
     ]);
   });
 
+  it('keeps score and finding-gate authority independent when policy rows diverge', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue({
+      isRuleScoreEligible: (ruleId: string) => ruleId === 'plugin/score-only',
+      getCurrentRulePolicy: (ruleId: string) => ({
+        gateEligible: ruleId === 'plugin/gate-only',
+      }),
+    });
+    const issues = [
+      issue('plugin/score-only', 'high'),
+      issue('plugin/gate-only', 'high'),
+    ];
+
+    expect(effectiveIssuesForScore(issues, { rules: {} }).map(({ ruleId }) => ruleId))
+      .toEqual(['plugin/score-only']);
+    expect(effectiveIssuesForGate(issues, { rules: {} }).map(({ ruleId }) => ruleId))
+      .toEqual(['plugin/gate-only']);
+  });
+
   it('does not let a competing enrichment value overwrite the aggregate formula', () => {
     const aggregate = aggregateReport(
       [{

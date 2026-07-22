@@ -119,8 +119,8 @@ describe('generated documentation truth', () => {
     const expected = policy.rows.find((row) => row.ruleId === 'ai/any-density');
     const row = output.split('\n').find((line) => line.startsWith('| `ai/any-density` |'));
     expect(expected).toBeDefined();
-    expect(output).toContain('| runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict |');
-    expect(row).toContain(`| ${expected!.runtimeOutcome} | ${expected!.enabledByDefault} | ${expected!.runnableByExplicitOptIn} | ${expected!.scoreEligible} | ${expected!.provenance} | ${expected!.qualityDomain} | ${expected!.claimClass} | false | USEFUL |`);
+    expect(output).toContain('| runtimeOutcome | enabledByDefault | runnableByExplicitOptIn | scoreEligible | gateEligible | evidenceProvenance | qualityDomain | claimClass | admitted | historicalVerdict |');
+    expect(row).toContain(`| ${expected!.runtimeOutcome} | ${expected!.enabledByDefault} | ${expected!.runnableByExplicitOptIn} | ${expected!.scoreEligible} | ${expected!.gateEligible} | ${expected!.provenance} | ${expected!.qualityDomain} | ${expected!.claimClass} | false | USEFUL |`);
     expect(output).toContain('historical context only; it is not current quality authority or authorship evidence');
   });
 

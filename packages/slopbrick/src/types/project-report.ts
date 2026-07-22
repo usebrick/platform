@@ -457,6 +457,12 @@ export interface ProjectReport {
   /** v0.14.5i — Number of distinct rules marked defaultOff. The ratio
    *  suppressedCount / defaultOffRuleCount is the calibration coverage. */
   defaultOffRuleCount?: number;
+  /** Count of findings retained for inspection but excluded from scores and
+   * finding gates by the current owner-approved evidence policy. This is
+   * independent of historical signal-strength default-off suppression. */
+  currentPolicyAuditOnlyCount?: number;
+  /** Number of current-policy rows that are not enabled by default. */
+  currentPolicyDefaultOffRuleCount?: number;
   /** v0.43.0 — Visible severity breakdown (excludes 'off' issues
    *  that were auto-suppressed). High/medium/low numbers reflect
    *  what the user can act on. */

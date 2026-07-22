@@ -79,6 +79,8 @@ export interface FinalizeReportInput {
   baselineMeta: BaselineMeta | undefined;
   defaultOffApplied: number;
   defaultOffRuleCount: number;
+  currentPolicyAuditOnlyApplied?: number;
+  currentPolicyDefaultOffRuleCount?: number;
   startTime: number;
   registry: RuleRegistry;
   incrementalSummary: { skipped: number; rescanned: number } | undefined;
@@ -112,6 +114,8 @@ export async function finalizeReport(
     baselineMeta,
     defaultOffApplied,
     defaultOffRuleCount,
+    currentPolicyAuditOnlyApplied,
+    currentPolicyDefaultOffRuleCount,
     startTime,
     registry,
     incrementalSummary,
@@ -203,6 +207,8 @@ export async function finalizeReport(
     diffRef: options.diffRef,
     defaultOffApplied,
     defaultOffRuleCount,
+    currentPolicyAuditOnlyApplied,
+    currentPolicyDefaultOffRuleCount,
     previousRun,
     enrichment,
   });

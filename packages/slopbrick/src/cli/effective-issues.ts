@@ -45,6 +45,14 @@ export function effectiveIssuesForGate(
   });
 }
 
+/** Independent audit-only classifications exposed by the report contract. */
+export interface AuditOnlyMarkingCounts {
+  /** Historical signal-strength default-off findings. */
+  legacyDefaultOff: number;
+  /** Findings made audit-only by the current owner-approved evidence policy. */
+  currentPolicy: number;
+}
+
 /**
  * Mark findings from default-off rules as audit-only unless the user made an
  * explicit per-rule choice. Returns the number newly changed to `off`.
@@ -52,6 +60,7 @@ export function effectiveIssuesForGate(
 export function markDefaultOffIssuesForAudit(
   issues: readonly Issue[],
   config: Pick<ResolvedConfig, 'rules'>,
+  counts?: AuditOnlyMarkingCounts,
 ): number {
   const currentPolicy = getCurrentEvidencePolicyAccessors();
   const explicitRuleOverrides = getExplicitRuleOverrides(config);
@@ -59,6 +68,9 @@ export function markDefaultOffIssuesForAudit(
   let applied = 0;
   for (const issue of issues) {
     const currentRow = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
+    const classification = currentPolicy !== undefined && currentRow !== undefined
+      ? 'currentPolicy' as const
+      : 'legacyDefaultOff' as const;
     let shouldRemainAuditOnly: boolean;
     if (currentPolicy !== undefined && currentRow !== undefined) {
       shouldRemainAuditOnly = !currentPolicy.isRuleRunnable(issue.ruleId, explicitRuleOverrides);
@@ -70,6 +82,7 @@ export function markDefaultOffIssuesForAudit(
     if (!shouldRemainAuditOnly) continue;
     if (issue.severity === ('off' as Issue['severity'])) continue;
     issue.severity = 'off' as Issue['severity'];
+    if (counts) counts[classification] += 1;
     applied += 1;
   }
   return applied;
@@ -84,6 +97,7 @@ export function normalizeFileResultForDisplayAndScore(
   result: FileScanResult,
   config: Pick<ResolvedConfig, 'rules'>,
   options: IssueFilterOptions,
+  counts?: AuditOnlyMarkingCounts,
 ): number {
   result.issues = filterIssues(result.issues, options);
   filterByDisabledDirectives(result, result.facts?.v2?.disabledRules ?? []);
@@ -94,5 +108,5 @@ export function normalizeFileResultForDisplayAndScore(
       bindIssueFixes(issue, source, issue.filePath);
     }
   }
-  return markDefaultOffIssuesForAudit(result.issues, config);
+  return markDefaultOffIssuesForAudit(result.issues, config, counts);
 }

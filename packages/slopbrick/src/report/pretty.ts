@@ -170,6 +170,17 @@ function formatDefaultOffSuppression(report: ProjectReport): string | null {
   );
 }
 
+/** Current-policy audit evidence is not a historical calibration verdict. */
+function formatCurrentPolicyAuditOnly(report: ProjectReport): string | null {
+  const auditOnly = report.currentPolicyAuditOnlyCount ?? 0;
+  if (auditOnly === 0) return null;
+  return chalk.green(
+    `✓ Current evidence policy kept ${auditOnly} finding(s) audit-only ` +
+      `(${report.currentPolicyDefaultOffRuleCount ?? 0} rules are not enabled by default; ` +
+      `excluded from scores and finding gates).`,
+  );
+}
+
 /**
  * v0.14.5j (P8) — Better status labels. PASS/FAIL is technical jargon;
  * "passing" / "needs work" / "concerning" reads in plain English.
@@ -1306,6 +1317,8 @@ function formatDetailedReport(report: ProjectReport, options: PrettyOptions): st
   // tool is calibrated.
   const trustSignal = formatDefaultOffSuppression(report);
   if (trustSignal) sections.push(trustSignal);
+  const currentPolicyAudit = formatCurrentPolicyAuditOnly(report);
+  if (currentPolicyAudit) sections.push(currentPolicyAudit);
 
   // v0.14.5i (P1): per-category breakdown table so the user can see
   // which categories are driving the score without cat'ing health.json.
@@ -1411,7 +1424,10 @@ function formatScoringExplainer(report: ProjectReport): string {
     'Security (AI-flagged security risks, inverted from risk level; higher = cleaner), ' +
     `Repository Health (composite: ${REPOSITORY_HEALTH_FORMULA}). ` +
     'Only AI Slop Score gates CI; the others are informational. ' +
-    'Default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.',
+    'Legacy signal-table default-off rules (INVERTED/NOISY/DORMANT) are suppressed from the scores automatically.' +
+    ((report.currentPolicyAuditOnlyCount ?? 0) > 0
+      ? ' Current evidence policy diagnostics are separately audit-only unless they have score and finding-gate authority.'
+      : ''),
   );
 }
 
@@ -1554,6 +1570,12 @@ export function formatBriefReport(report: ProjectReport): string {
         `  ✓ ${suppressed} INVERTED/NOISY/DORMANT default-off rule finding(s) are audit-only (${report.defaultOffRuleCount ?? 0} default-off rules configured; suppressed from scores)`,
       ),
     );
+  }
+
+  const currentPolicyAudit = formatCurrentPolicyAuditOnly(report);
+  if (currentPolicyAudit) {
+    lines.push('');
+    lines.push(`  ${currentPolicyAudit}`);
   }
 
   // Footer: where to find more

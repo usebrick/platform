@@ -42,6 +42,7 @@ import {
   writeStructureMarkdown,
 } from '../../engine/structure-md';
 import { evaluateThresholdGate } from '../threshold';
+import { effectiveIssuesForScore } from '../effective-issues.js';
 import { fsMemoryIO } from '../memory-io.js';
 import { buildPatternInventory } from '../../mcp/patterns.js';
 import { formatErrorMessage } from '../format/error';
@@ -142,6 +143,13 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     scanAccounting: report.scanAccounting,
     selectionAccounting: report.selectionAccounting,
   };
+  // Historical run IDs feed the score-affecting flywheel on later scans.
+  // Persist only the canonical score projection there; retain the broad raw
+  // report below for health and telemetry audit evidence.
+  const scoreMemoryReport = {
+    ...memoryReport,
+    issues: effectiveIssuesForScore(memoryReport.issues, config),
+  };
 
   // Append to the historical memory log (`.slopbrick/structure.json`). Skip when
   // projectMemory is explicitly disabled in config.
@@ -152,7 +160,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
     try {
       await appendRun(
         cwd,
-        memoryReport,
+        scoreMemoryReport,
         VERSION,
         fsMemoryIO,
         thresholdGate.status === 'failed',

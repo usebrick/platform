@@ -89,6 +89,7 @@ import {
   effectiveIssuesForScore,
   markDefaultOffIssuesForAudit,
   normalizeFileResultForDisplayAndScore,
+  type AuditOnlyMarkingCounts,
 } from './effective-issues';
 import { countSuccessfullyAnalyzed, isSuccessfullyAnalyzed } from './scan-accounting';
 import { readDtcgTokensFile, tokensToAllowlist } from './tokens.js';
@@ -655,9 +656,12 @@ async function runScanWithScopedState(
     }
   }
 
-  let defaultOffApplied = 0;
+  const auditOnlyCounts: AuditOnlyMarkingCounts = {
+    legacyDefaultOff: 0,
+    currentPolicy: 0,
+  };
   for (const result of results) {
-    defaultOffApplied += normalizeFileResultForDisplayAndScore(result, config, options);
+    normalizeFileResultForDisplayAndScore(result, config, options, auditOnlyCounts);
   }
 
   // Keep the score's effective issue set identical to the user-visible
@@ -765,13 +769,20 @@ async function runScanWithScopedState(
   // User `rules: { 'rule/id': 'medium' }` (or any explicit setting)
   // overrides. File findings were normalized before scoring; this pass only
   // handles project-level findings added after the per-file pipeline.
-  defaultOffApplied += markDefaultOffIssuesForAudit(allIssues, config);
-  if (defaultOffApplied > 0 && !options.quiet && !machineReadableStdout) {
+  markDefaultOffIssuesForAudit(allIssues, config, auditOnlyCounts);
+  if (auditOnlyCounts.legacyDefaultOff > 0 && !options.quiet && !machineReadableStdout) {
     console.error(
-      `[v${VERSION}] auto-suppressed ${defaultOffApplied} INVERTED/NOISY issue(s) ` +
+      `[v${VERSION}] auto-suppressed ${auditOnlyCounts.legacyDefaultOff} INVERTED/NOISY issue(s) ` +
         `from ${defaultOff.size} default-off rule(s). ` +
         `See the main output for the trust-signal summary. ` +
         `Re-enable per-rule via \`rules: { 'rule/id': 'medium' }\` in slopbrick.config.mjs.`,
+    );
+  }
+  if (auditOnlyCounts.currentPolicy > 0 && !options.quiet && !machineReadableStdout) {
+    console.error(
+      `[v${VERSION}] current evidence policy kept ${auditOnlyCounts.currentPolicy} finding(s) ` +
+        `audit-only; excluded from scores and finding gates. ` +
+        `Use repository rule configuration for persistent diagnostic visibility where policy permits.`,
     );
   }
 
@@ -846,8 +857,14 @@ async function runScanWithScopedState(
     effectiveIssues,
     baseline,
     baselineMeta,
-    defaultOffApplied,
+    defaultOffApplied: auditOnlyCounts.legacyDefaultOff,
     defaultOffRuleCount: defaultOff.size,
+    ...(currentPolicy
+      ? {
+          currentPolicyAuditOnlyApplied: auditOnlyCounts.currentPolicy,
+          currentPolicyDefaultOffRuleCount: currentPolicy.getCurrentDefaultOffRules().size,
+        }
+      : {}),
     startTime,
     registry,
     incrementalSummary,
