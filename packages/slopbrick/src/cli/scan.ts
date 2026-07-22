@@ -79,6 +79,7 @@ import {
 import type { CompositeRule } from '../types';
 import { builtinRules } from '../rules/builtins';
 import { getSignalStrength, getDefaultOffRules } from '../rules/signal-strength.js';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import {
   effectiveIssuesForScore,
   markDefaultOffIssuesForAudit,
@@ -582,9 +583,13 @@ async function runScanWithScopedState(
       duplicateConfiguredSeverity !== 'off') ||
     options.rule === duplicateRuleId ||
     options.includeRules?.includes(duplicateRuleId) === true;
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const currentDuplicatePolicy = currentPolicy?.getCurrentRulePolicy(duplicateRuleId);
   const duplicateCoordinatorEnabled =
     registry.has(duplicateRuleId) &&
-    (!getDefaultOffRules().has(duplicateRuleId) || duplicateExplicitlyEnabled);
+    (currentPolicy !== undefined && currentDuplicatePolicy !== undefined
+      ? currentPolicy.isRuleRunnable(duplicateRuleId, config.rules)
+      : !getDefaultOffRules().has(duplicateRuleId) || duplicateExplicitlyEnabled);
   let duplicateIssues: IdenticalBlockIssueMap | undefined;
   let duplicateCachedIssues: Issue[] = [];
   let duplicateSourceReadFailures = 0;

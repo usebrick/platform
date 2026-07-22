@@ -14,14 +14,14 @@ export function effectiveIssuesForScore(
   config: Pick<ResolvedConfig, 'rules'>,
 ): Issue[] {
   const currentPolicy = getCurrentEvidencePolicyAccessors();
-  const defaultOff = getDefaultOffRules();
-  const userOverrides = new Set(Object.keys(config.rules));
+  let defaultOff: ReadonlySet<string> | undefined;
   return issues.filter((issue) => {
     if (issue.severity === ('off' as Issue['severity'])) return false;
     if (config.rules[issue.ruleId] === 'off') return false;
     const currentEligibility = currentPolicy?.isRuleScoreEligible(issue.ruleId);
     if (currentEligibility !== undefined) return currentEligibility;
-    return !(defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId));
+    defaultOff ??= getDefaultOffRules();
+    return !(defaultOff.has(issue.ruleId) && !Object.hasOwn(config.rules, issue.ruleId));
   });
 }
 
@@ -34,14 +34,18 @@ export function markDefaultOffIssuesForAudit(
   config: Pick<ResolvedConfig, 'rules'>,
 ): number {
   const currentPolicy = getCurrentEvidencePolicyAccessors();
-  const defaultOff = getDefaultOffRules();
-  const userOverrides = new Set(Object.keys(config.rules));
+  let defaultOff: ReadonlySet<string> | undefined;
   let applied = 0;
   for (const issue of issues) {
     const currentRow = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
-    const shouldRemainAuditOnly = currentPolicy !== undefined && currentRow !== undefined
-      ? !currentPolicy.isRuleRunnable(issue.ruleId, config.rules)
-      : defaultOff.has(issue.ruleId) && !userOverrides.has(issue.ruleId);
+    let shouldRemainAuditOnly: boolean;
+    if (currentPolicy !== undefined && currentRow !== undefined) {
+      shouldRemainAuditOnly = !currentPolicy.isRuleRunnable(issue.ruleId, config.rules);
+    } else {
+      defaultOff ??= getDefaultOffRules();
+      shouldRemainAuditOnly = defaultOff.has(issue.ruleId)
+        && !Object.hasOwn(config.rules, issue.ruleId);
+    }
     if (!shouldRemainAuditOnly) continue;
     if (issue.severity === ('off' as Issue['severity'])) continue;
     issue.severity = 'off' as Issue['severity'];

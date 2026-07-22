@@ -8,6 +8,7 @@ import { extractFacts } from './visitor';
 
 import { RuleRegistry } from '../rules/registry';
 import { effectiveIssuesForScore } from '../cli/effective-issues.js';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
 import { setLoggerQuiet } from './logger';
 import { compositeScore } from '@usebrick/engine';
 import { loadSignalStrength } from '../rules/signal-strength.js';
@@ -200,7 +201,10 @@ export async function scanFile(
       }
     }
     const issues = applyRuleOverrides(rawIssues, config.rules);
-    const scoringIssues = effectiveIssuesForScore(issues, config);
+    const currentPolicy = getCurrentEvidencePolicyAccessors();
+    const scoringIssues = currentPolicy === undefined
+      ? issues
+      : effectiveIssuesForScore(issues, config);
 
     // v0.14.6: composite AI-likelihood score. Naive Bayes LLR
     // combination of the unique rule IDs that fired on this file
@@ -237,8 +241,14 @@ export async function scanFile(
           factsWithFireSet,
         );
         if (compositeIssues.length > 0) {
-          issues.push(...compositeIssues);
-          for (const ci of effectiveIssuesForScore(compositeIssues, config)) {
+          const visibleCompositeIssues = currentPolicy === undefined
+            ? compositeIssues
+            : applyRuleOverrides(compositeIssues, config.rules);
+          issues.push(...visibleCompositeIssues);
+          const scoringCompositeIssues = currentPolicy === undefined
+            ? visibleCompositeIssues
+            : effectiveIssuesForScore(visibleCompositeIssues, config);
+          for (const ci of scoringCompositeIssues) {
             fireSet.add(ci.ruleId);
           }
         }
