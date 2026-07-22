@@ -91,6 +91,34 @@ describe('current evidence policy accessors', () => {
     }
   });
 
+  it('rejects schema-valid policy identities and row promotions outside the owner-approved projection', () => {
+    const applied = approvedCurrentPolicyArtifactFixture();
+    const promotedRows = applied.rows.map((row) => row.ruleId === 'ai/any-density' ? {
+      ...row,
+      runtimeOutcome: 'default-on' as const,
+      enabledByDefault: true,
+      runnableByExplicitOptIn: true,
+      scoreEligible: true,
+      gateEligible: true,
+      repairSafety: 'finding-bound-only' as const,
+      provenance: 'current-quality-calibrated' as const,
+    } : row);
+
+    expect(() => createCurrentEvidencePolicyAccessors({
+      ...applied,
+      rows: promotedRows,
+      policyRowsSha256: canonicalArtifact(promotedRows).sha256,
+    })).toThrow(TypeError);
+    expect(() => createCurrentEvidencePolicyAccessors({
+      ...applied,
+      finalMatrixSha256: 'f'.repeat(64),
+    })).toThrow(TypeError);
+    expect(() => createCurrentEvidencePolicyAccessors({
+      ...applied,
+      matrixApprovalSha256: 'f'.repeat(64),
+    })).toThrow(TypeError);
+  });
+
   it('keeps the production provider inactive until the atomic activation task', () => {
     expect(getCurrentEvidencePolicyAccessors()).toBeUndefined();
   });
