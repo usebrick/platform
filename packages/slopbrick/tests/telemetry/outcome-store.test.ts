@@ -1,9 +1,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
+  chmodSync,
   constants,
   existsSync,
   linkSync,
   mkdtempSync,
+  mkdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -23,6 +25,7 @@ import {
   OUTCOME_EVENT_EXPORT_VERSION_V1,
   OUTCOME_EVENT_MAX_BYTES_V1,
   OUTCOME_EVENT_STORE_MAX_BYTES_V1,
+  OUTCOME_EVENT_STORE_MAX_EVENTS_V1,
   OutcomeEventStoreError,
   readOutcomeEventsV1,
 } from '../../src/telemetry/outcome-store';
@@ -31,7 +34,9 @@ import {
   type OutcomeEventV1,
 } from '../../src/telemetry/outcome-event';
 
-describe('privacy-safe local outcome event store', () => {
+const supportsSecureOutcomeStore = process.platform !== 'win32' && constants.O_NOFOLLOW > 0;
+
+describe.runIf(supportsSecureOutcomeStore)('privacy-safe local outcome event store', () => {
   let root: string;
 
   beforeEach(() => {
@@ -211,6 +216,7 @@ describe('privacy-safe local outcome event store', () => {
 
     writeFileSync(storagePath, `${JSON.stringify(event)}\n`, 'utf8');
     writeFileSync(`${storagePath}.lock`, 'held\n', { mode: 0o600 });
+    expect(() => readOutcomeEventsV1(storagePath)).toThrow(/busy/u);
     expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/busy/u);
     rmSync(`${storagePath}.lock`);
 
@@ -342,23 +348,63 @@ describe('privacy-safe local outcome event store', () => {
     expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/event size limit/u);
   });
 
+  it('enforces the final-newline and exact event-count boundaries without mutation', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    const line = JSON.stringify(event);
+    writeFileSync(storagePath, line, 'utf8');
+    expect(() => readOutcomeEventsV1(storagePath)).toThrow(/JSONL newline/u);
+    expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/JSONL newline/u);
+    expect(readFileSync(storagePath, 'utf8')).toBe(line);
+
+    const exactLedger = `${new Array(OUTCOME_EVENT_STORE_MAX_EVENTS_V1).fill(line).join('\n')}\n`;
+    expect(Buffer.byteLength(exactLedger)).toBeLessThan(OUTCOME_EVENT_STORE_MAX_BYTES_V1);
+    writeFileSync(storagePath, exactLedger, 'utf8');
+    expect(readOutcomeEventsV1(storagePath)).toHaveLength(OUTCOME_EVENT_STORE_MAX_EVENTS_V1);
+    expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/event limit/u);
+    expect(readFileSync(storagePath, 'utf8')).toBe(exactLedger);
+
+    writeFileSync(storagePath, `${exactLedger}${line}\n`, 'utf8');
+    expect(() => readOutcomeEventsV1(storagePath)).toThrow(/event limit/u);
+  });
+
   it.runIf(process.platform !== 'win32')(
-    'rejects a FIFO promptly before attempting to read it',
+    'rejects FIFO lifecycle paths promptly before attempting blocking I/O',
     () => {
       const fifoPath = join(root, 'events-v1.fifo');
+      const regularStore = join(root, 'regular', 'events-v1.jsonl');
+      const regularExport = join(root, 'regular', 'outcomes.json');
       execFileSync('mkfifo', [fifoPath]);
       const script = [
-        "import { readOutcomeEventsV1 } from './src/telemetry/outcome-store.ts';",
-        'try {',
-        '  readOutcomeEventsV1(process.argv[1]);',
-        '  process.exitCode = 2;',
-        '} catch (error) {',
-        "  process.exitCode = error?.name === 'OutcomeEventStoreError' ? 0 : 3;",
+        "import { appendOutcomeEventV1, deleteOutcomeEventsV1, exportOutcomeEventsV1, readOutcomeEventsV1 } from './src/telemetry/outcome-store.ts';",
+        "import { OUTCOME_EVENT_VERSION_V1 } from './src/telemetry/outcome-event.ts';",
+        "const event = { version: OUTCOME_EVENT_VERSION_V1, event: 'return-observed', observedOn: '2026-07-22', producerVersion: '0.45.0', context: { framework: 'mixed', repositorySize: '101-500' }, window: 'within-7-days' };",
+        'let failures = 0;',
+        'for (const operation of [',
+        '  () => readOutcomeEventsV1(process.argv[1]),',
+        '  () => appendOutcomeEventV1(process.argv[1], event),',
+        '  () => exportOutcomeEventsV1(process.argv[1], process.argv[3]),',
+        '  () => deleteOutcomeEventsV1(process.argv[1]),',
+        ']) {',
+        "  try { operation(); failures += 1; } catch (error) { if (error?.name !== 'OutcomeEventStoreError') failures += 1; }",
         '}',
+        'appendOutcomeEventV1(process.argv[2], event);',
+        "try { exportOutcomeEventsV1(process.argv[2], process.argv[1]); failures += 1; } catch (error) { if (error?.name !== 'OutcomeEventStoreError') failures += 1; }",
+        'process.exitCode = failures === 0 ? 0 : 4;',
       ].join('\n');
       const child = spawnSync(
         process.execPath,
-        ['--import', 'tsx', '--input-type=module', '-e', script, fifoPath],
+        [
+          '--import', 'tsx', '--input-type=module', '-e', script,
+          fifoPath, regularStore, regularExport,
+        ],
         { cwd: process.cwd(), encoding: 'utf8', timeout: 1_000 },
       );
 
@@ -366,6 +412,29 @@ describe('privacy-safe local outcome event store', () => {
       expect(child.status, child.stderr).toBe(0);
     },
   );
+
+  it('rejects writes through an existing non-private direct parent', () => {
+    const privateStore = join(root, 'private', 'events-v1.jsonl');
+    const publicParent = join(root, 'shared');
+    const publicStore = join(publicParent, 'events-v1.jsonl');
+    const publicExport = join(publicParent, 'outcomes.json');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    appendOutcomeEventV1(privateStore, event);
+    mkdirSync(publicParent, { recursive: true });
+    chmodSync(publicParent, 0o755);
+
+    expect(() => appendOutcomeEventV1(publicStore, event)).toThrow(/owner-only/u);
+    expect(() => exportOutcomeEventsV1(privateStore, publicExport)).toThrow(/owner-only/u);
+    expect(existsSync(publicStore)).toBe(false);
+    expect(existsSync(publicExport)).toBe(false);
+  });
 
   it('rejects a filesystem-equivalent case alias before export can replace the ledger', () => {
     const caseProbe = join(root, 'case-probe');
@@ -466,4 +535,12 @@ describe('privacy-safe local outcome event store', () => {
       expect(() => deleteOutcomeEventsV1(aliasStore)).toThrow(OutcomeEventStoreError);
     },
   );
+});
+
+describe.runIf(!supportsSecureOutcomeStore)('unsupported local outcome event store', () => {
+  it('fails closed when POSIX no-follow filesystem semantics are unavailable', () => {
+    const storagePath = join(tmpdir(), 'slopbrick-outcomes-unsupported.jsonl');
+    expect(() => readOutcomeEventsV1(storagePath))
+      .toThrow(/requires POSIX no-follow filesystem semantics/u);
+  });
 });
