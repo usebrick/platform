@@ -392,8 +392,9 @@ function buildResultFromIssue(
 function projectFirstScanResult(
   issue: Issue,
   finding: FirstScanFinding | undefined,
+  cwd?: string,
 ): SarifFirstScanResultProperties | undefined {
-  if (!matchesFirstScanFinding(issue, finding)) return undefined;
+  if (!matchesFirstScanFinding(issue, finding, cwd)) return undefined;
   return {
     area: finding.area,
     evidenceTier: finding.evidence.tier,
@@ -438,7 +439,7 @@ export function formatSarif(
       finding = firstScan.findings[firstScanCursor];
       firstScanCursor += 1;
     }
-    const projectedFirstScan = projectFirstScanResult(issue, finding);
+    const projectedFirstScan = projectFirstScanResult(issue, finding, options?.cwd);
     return buildResultFromIssue(
       issue,
       options?.cwd,

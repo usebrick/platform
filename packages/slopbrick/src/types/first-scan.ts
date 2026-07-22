@@ -22,6 +22,8 @@ export type FirstScanEvidenceTier =
   | 'insufficient-evidence'
   | 'internal-origin-association'
   | 'legacy-calibrated'
+  /** @deprecated v1 compatibility only. Current projections emit `legacy-calibrated`. */
+  | 'calibrated'
   | 'advisory';
 export type FirstScanFindingChange = 'current' | 'new' | 'unchanged';
 export type FirstScanActionChange = FirstScanFindingChange | 'mixed';
@@ -49,6 +51,12 @@ export interface FirstScanFindingEvidence {
   scoreEligible?: boolean;
   admitted?: false;
   legacyMetrics?: {
+    verdict: NonNullable<Issue['signalStrength']>['verdict'];
+    precision: number;
+    lastCalibratedAt: string;
+  };
+  /** @deprecated v1 compatibility only. Current projections emit `legacyMetrics`. */
+  calibration?: {
     verdict: NonNullable<Issue['signalStrength']>['verdict'];
     precision: number;
     lastCalibratedAt: string;

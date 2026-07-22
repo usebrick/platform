@@ -187,7 +187,7 @@ describe('headline score renderer contract', () => {
       ruleId: 'ai/any-density',
       category: 'ai',
       aiSpecific: true,
-      filePath: '/workspace/src/unsafe.ts',
+      filePath: 'src/unsafe.ts',
       message: 'Type assertions weaken static checking.',
       evidence: {
         kind: 'matched-source-span',
@@ -253,7 +253,7 @@ describe('headline score renderer contract', () => {
       expect(normalized).toContain('Accepted quality concern; owner measurement was not requested.');
     }
     expect(markdown).not.toMatch(/\bConfidence:/);
-    expect(html).not.toMatch(/signal-ok|P99\/R80|title="precision 99%/);
+    expect(html).not.toMatch(/<span class="signal-badge signal-ok"|P99\/R80|title="precision 99%/);
     expect(markdown).toContain('Historical metrics: historical verdict USEFUL');
     expect(html).toContain('Historical metrics: historical verdict USEFUL');
   });

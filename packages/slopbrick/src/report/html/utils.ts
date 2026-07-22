@@ -81,17 +81,6 @@ function thresholdStatusClass(failed: boolean): string {
   return failed ? 'status-fail' : 'status-pass';
 }
 
-// Color codes: green for reliable signals (precision >= 0.5 AND recall >=
-// 0.1), red for unreliable, muted for partial data.
-function renderSignalBadge(strength: Issue['signalStrength']): string {
-  if (!strength) return '';
-  const reliable = strength.precision >= 0.5 && strength.recall >= 0.1;
-  const cls = reliable ? 'signal-badge signal-ok' : 'signal-badge signal-warn';
-  const pct = (strength.precision * 100).toFixed(0);
-  const recall = (strength.recall * 100).toFixed(0);
-  return ` <span class="${cls}" title="precision ${pct}% · recall ${recall}%">P${pct}/R${recall}</span>`;
-}
-
 function renderFirstScanEvidence(evidence: FirstScanFindingEvidence | undefined): string {
   if (!evidence) return '';
   return `<div class="policy-evidence"><strong>Evidence authority:</strong> ${escapeHtml(formatFirstScanFindingEvidence(evidence))}</div>`;
@@ -106,6 +95,5 @@ export {
   issuesForFile,
   severityClass,
   thresholdStatusClass,
-  renderSignalBadge,
   renderFirstScanEvidence,
 };

@@ -33,13 +33,6 @@ function ruleDisplayName(ruleId: string): string {
     .join(' ');
 }
 
-/** Confidence label derived from a rule's calibration precision. */
-function confidenceLabel(precision: number): string {
-  if (precision >= 0.8) return 'High';
-  if (precision >= 0.5) return 'Medium';
-  return 'Low';
-}
-
 /** Render the bounded finding-evidence contract without exposing unbounded
  * source. Markdown is a local human report, so exact snippets remain useful;
  * producer-omitted spans stay explicitly omitted rather than becoming a
@@ -64,7 +57,6 @@ function verdictLabel(verdict: Verdict): string {
 interface RuleBucketEntry {
   ruleId: string;
   verdict: Verdict;
-  precision: number;
   bucket: Bucket;
   count: number;
   contexts: string[];
@@ -118,7 +110,6 @@ function bucketEntriesForIssues(
     byRule.set(issue.ruleId, {
       ruleId: issue.ruleId,
       verdict,
-      precision: strength?.precision ?? 0,
       bucket: bucketForRule(verdict, aiSpecific),
       count: 1,
       contexts: [formatFindingContext(issue.filePath)],
@@ -225,7 +216,7 @@ export function formatMarkdown(report: ProjectReport): string {
   } else {
     for (const r of grouped.ai) {
       const evidence = findingEvidenceSuffix(r);
-      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}; Confidence: ${confidenceLabel(r.precision)}${evidence})`);
+      lines.push(`- ✓ ${ruleDisplayName(r.ruleId)} (${r.count} instance${r.count === 1 ? '' : 's'}; context: ${r.contexts.join(', ')}${evidence})`);
     }
     lines.push('');
   }

@@ -59,7 +59,13 @@ const EVIDENCE_ORDER: Record<FirstScanEvidenceTier, number> = {
   'insufficient-evidence': 5,
   'internal-origin-association': 6,
   'legacy-calibrated': 7,
+  calibrated: 7,
   advisory: 8,
+};
+const SOURCE_SPAN_ORDER: Record<FirstScanFindingEvidence['sourceSpan'], number> = {
+  exact: 0,
+  omitted: 1,
+  absent: 2,
 };
 
 const CURRENT_POLICY_CLAIMS: Record<CAL002PolicyProvenanceV2, string> = {
@@ -166,7 +172,9 @@ function formatEvidenceNumber(value: number): string {
 }
 
 function historicalMetricsSummary(
-  metrics: NonNullable<FirstScanFindingEvidence['legacyMetrics']>,
+  metrics: NonNullable<
+    FirstScanFindingEvidence['legacyMetrics'] | FirstScanFindingEvidence['calibration']
+  >,
 ): string {
   return `historical verdict ${metrics.verdict}; historical precision ${formatEvidenceNumber(metrics.precision * 100)}%; last calibrated ${metrics.lastCalibratedAt.slice(0, 10)}`;
 }
@@ -176,6 +184,9 @@ function historicalMetricsSummary(
 export function formatFirstScanFindingEvidence(
   evidence: FirstScanFindingEvidence,
 ): string {
+  if (evidence.tier === 'calibrated' && evidence.calibration) {
+    return `calibrated (deprecated v1); ${historicalMetricsSummary(evidence.calibration)}. ${evidence.claim}`;
+  }
   if (evidence.tier === 'legacy-calibrated' && evidence.legacyMetrics) {
     return `legacy-calibrated; ${historicalMetricsSummary(evidence.legacyMetrics)}. ${evidence.claim}`;
   }
@@ -201,11 +212,23 @@ export function formatFirstScanFindingEvidence(
 export function matchesFirstScanFinding(
   issue: Issue,
   finding: FirstScanFinding | undefined,
+  cwd?: string,
 ): finding is FirstScanFinding {
+  const filePath = issue.filePath === undefined
+    ? undefined
+    : cwd === undefined
+      ? issue.filePath
+      : repositoryRelativeFindingLocation(issue, cwd);
   return finding !== undefined
     && finding.ruleId === issue.ruleId
+    && finding.area === FIRST_SCAN_AREA_BY_CATEGORY[issue.category]
+    && finding.severity === issue.severity
+    && finding.aiSpecific === issue.aiSpecific
+    && finding.location.filePath === filePath
     && finding.location.line === issue.line
-    && finding.location.column === issue.column;
+    && finding.location.column === issue.column
+    && finding.why === issue.message
+    && (cwd === undefined || finding.identity === findingIdentity(issue, cwd));
 }
 
 function allFixes(issue: Issue) {
@@ -382,10 +405,16 @@ function representativeFinding(findings: FindingGroup): FirstScanFinding {
 function weakestEvidence(findings: FindingGroup): FirstScanFindingEvidence {
   return [...findings].sort((left, right) =>
     EVIDENCE_ORDER[right.evidence.tier] - EVIDENCE_ORDER[left.evidence.tier]
-    || (left.evidence.tier === 'legacy-calibrated'
-      && right.evidence.tier === 'legacy-calibrated'
-      ? (left.evidence.legacyMetrics?.precision ?? Number.POSITIVE_INFINITY)
-        - (right.evidence.legacyMetrics?.precision ?? Number.POSITIVE_INFINITY)
+    || SOURCE_SPAN_ORDER[right.evidence.sourceSpan]
+      - SOURCE_SPAN_ORDER[left.evidence.sourceSpan]
+    || ((left.evidence.tier === 'legacy-calibrated' || left.evidence.tier === 'calibrated')
+      && (right.evidence.tier === 'legacy-calibrated' || right.evidence.tier === 'calibrated')
+      ? (left.evidence.legacyMetrics?.precision
+          ?? left.evidence.calibration?.precision
+          ?? Number.POSITIVE_INFINITY)
+        - (right.evidence.legacyMetrics?.precision
+          ?? right.evidence.calibration?.precision
+          ?? Number.POSITIVE_INFINITY)
       : 0)
   )[0]?.evidence ?? findings[0].evidence;
 }
@@ -441,10 +470,10 @@ function projectRecommendations(findings: FirstScanFinding[]): FirstScanRecommen
   const groups = recommendationGroups(findings).sort((left, right) =>
     SEVERITY_ORDER[left.representative.severity] - SEVERITY_ORDER[right.representative.severity]
     || EVIDENCE_ORDER[left.evidence.tier] - EVIDENCE_ORDER[right.evidence.tier]
-    || (left.evidence.tier === 'legacy-calibrated'
-      && right.evidence.tier === 'legacy-calibrated'
-      ? (right.evidence.legacyMetrics?.precision ?? -1)
-        - (left.evidence.legacyMetrics?.precision ?? -1)
+    || ((left.evidence.tier === 'legacy-calibrated' || left.evidence.tier === 'calibrated')
+      && (right.evidence.tier === 'legacy-calibrated' || right.evidence.tier === 'calibrated')
+      ? (right.evidence.legacyMetrics?.precision ?? right.evidence.calibration?.precision ?? -1)
+        - (left.evidence.legacyMetrics?.precision ?? left.evidence.calibration?.precision ?? -1)
       : 0)
     || Number(right.projectWide) - Number(left.projectWide)
     || right.affectedFileCount - left.affectedFileCount

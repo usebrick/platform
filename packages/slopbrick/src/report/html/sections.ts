@@ -20,7 +20,6 @@ import {
   issuesForFile,
   severityClass,
   thresholdStatusClass,
-  renderSignalBadge,
   renderFirstScanEvidence,
 } from './utils.js';
 import { bucketForRule, isDefaultOffIssue, summarizeDefaultOffIssues } from '../buckets.js';
@@ -338,7 +337,7 @@ function renderBucketList(rules: RuleVerdict[]): string {
         <span class="rule-verdict verdict-${escapeHtml(r.verdict.toLowerCase())}">${escapeHtml(r.verdict)}</span>
         ${r.count ? `<span class="rule-confidence">${r.count} instance${r.count === 1 ? '' : 's'}</span>` : ''}
         ${r.contexts?.length ? `<span class="rule-confidence">context: ${escapeHtml(r.contexts.join(', '))}</span>` : ''}
-        ${r.confidence ? `<span class="rule-confidence">Confidence: ${escapeHtml(r.confidence)}</span>` : ''}
+        ${r.confidence ? `<span class="rule-confidence">Historical confidence: ${escapeHtml(r.confidence)}</span>` : ''}
         ${r.message ? `<span class="rule-message">${escapeHtml(r.message)}</span>` : ''}
       </li>`,
     )
@@ -573,7 +572,7 @@ function renderIssues(report: ProjectReport): string {
       <tr class="issue-row severity-${issue.severity}" data-severity="${issue.severity}" data-category="${issue.category}" data-index="${index}">
         <td><span class="severity-pill ${severityClass(issue.severity)}">${issue.severity}</span></td>
         <td>${escapeHtml(categoryLabels[issue.category])}</td>
-        <td>${escapeHtml(issue.ruleId)}${issue.signalStrength ? renderSignalBadge(issue.signalStrength) : ''}</td>
+        <td>${escapeHtml(issue.ruleId)}</td>
         <td>${escapeHtml(file)}</td>
         <td data-sort="number">${issue.line}</td>
         <td class="expand-advice ${issue.advice ? 'has-advice' : ''}" data-advice="${issue.advice ? index : ''}">
