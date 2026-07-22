@@ -6,7 +6,10 @@ import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { DEFAULT_CONFIG } from '../../src/config';
-import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
+import {
+  bindExplicitRuleOverrides,
+  bindInvocationRuleOverrides,
+} from '../../src/config/rule-override-provenance';
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-pool-test-'));
 
@@ -35,7 +38,7 @@ class ControlledWorker extends EventEmitter {
 }
 
 describe('WorkerPool', () => {
-  it('transports only user-authored rule overrides across the worker boundary', async () => {
+  it('transports repository and invocation rule provenance separately across the worker boundary', async () => {
     const worker = new ControlledWorker();
     let workerData: unknown;
     worker.postMessage.mockImplementation((message: { filePath: string }) => {
@@ -53,9 +56,12 @@ describe('WorkerPool', () => {
         worker.emit('message', { type: 'ready' });
       });
     });
-    const config = bindExplicitRuleOverrides(
-      { ...DEFAULT_CONFIG, rules: { ...DEFAULT_CONFIG.rules } },
-      { 'component/giant-component': 'high' },
+    const config = bindInvocationRuleOverrides(
+      bindExplicitRuleOverrides(
+        { ...DEFAULT_CONFIG, rules: { ...DEFAULT_CONFIG.rules } },
+        { 'component/giant-component': 'high' },
+      ),
+      { 'layout/gap-monopoly': 'auto' },
     );
     const pool = new WorkerPool({
       config,
@@ -75,6 +81,9 @@ describe('WorkerPool', () => {
     });
     expect((workerData as { explicitRuleOverrides: Record<string, string> })
       .explicitRuleOverrides).not.toHaveProperty('layout/gap-monopoly');
+    expect(workerData).toMatchObject({
+      invocationRuleOverrides: { 'layout/gap-monopoly': 'auto' },
+    });
   });
 
   it('scans multiple files round-robin', async () => {
