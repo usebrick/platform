@@ -10,6 +10,12 @@ type AppliedCurrentEvidencePolicy = Extract<
   { readonly applied: true }
 >;
 
+const CURRENT_APPROVED_POLICY_BINDING = {
+  finalMatrixSha256: 'ad485bcf192fc093b2cddf0f449a27c4bec5842488ca7a9e6ea27acf87b3e91d',
+  matrixApprovalSha256: 'f80c86e89d21af7927ab394975fc311461026e340ea1c1db620cca54630507ee',
+  policyRowsSha256: '058067fbb644d3ec9fd08ad5c976b166687445a467c4b619116d0dd422c85717',
+} as const;
+
 export interface CurrentEvidencePolicyAccessors {
   readonly policy: AppliedCurrentEvidencePolicy;
   getCurrentRulePolicy(ruleId: string): SlopbrickRuleEvidencePolicyRowV2 | undefined;
@@ -19,6 +25,13 @@ export interface CurrentEvidencePolicyAccessors {
   getRuleEvidenceProvenance(ruleId: string): CAL002PolicyProvenanceV2 | undefined;
 }
 
+function assertCurrentApprovedPolicyBinding(policy: AppliedCurrentEvidencePolicy): void {
+  if (policy.finalMatrixSha256 === CURRENT_APPROVED_POLICY_BINDING.finalMatrixSha256
+    && policy.matrixApprovalSha256 === CURRENT_APPROVED_POLICY_BINDING.matrixApprovalSha256
+    && policy.policyRowsSha256 === CURRENT_APPROVED_POLICY_BINDING.policyRowsSha256) return;
+  throw new TypeError('Current evidence policy does not match the owner-approved projection');
+}
+
 function assertAppliedCompleteCurrentPolicyV2(
   raw: unknown,
 ): asserts raw is AppliedCurrentEvidencePolicy {
@@ -26,6 +39,7 @@ function assertAppliedCompleteCurrentPolicyV2(
   if (!raw.applied) {
     throw new TypeError('Current evidence policy must be the complete applied form');
   }
+  assertCurrentApprovedPolicyBinding(raw);
 }
 
 function createRuleRunnableAccessor(
