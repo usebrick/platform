@@ -102,7 +102,7 @@ function readDescriptorLedger(descriptor: number): {
   return { bytes: Buffer.byteLength(contents), events: parseLedger(contents) };
 }
 
-function readLockedStorage(storagePath: string): OutcomeEventV1[] {
+function readStorageWithoutLock(storagePath: string): OutcomeEventV1[] {
   const descriptor = openOutcomeFileForRead(storagePath, 'Outcome event store');
   if (descriptor === undefined) return [];
   try {
@@ -113,7 +113,13 @@ function readLockedStorage(storagePath: string): OutcomeEventV1[] {
 }
 
 export function readOutcomeEventsV1(storagePath: string): OutcomeEventV1[] {
-  return readLockedStorage(storagePath);
+  if (!secureOutcomePathExists(storagePath)) return [];
+  const lock = acquireOutcomeStoreLock(storagePath);
+  try {
+    return readStorageWithoutLock(lock.storagePath);
+  } finally {
+    releaseOutcomeStoreLock(lock);
+  }
 }
 
 export function appendOutcomeEventV1(storagePath: string, event: unknown): void {
@@ -174,7 +180,7 @@ export function exportOutcomeEventsV1(storagePath: string, exportPath: string): 
   const lock = acquireOutcomeStoreLock(storagePath);
   try {
     const storageIdentity = outcomeFileIdentity(lock.storagePath, 'Outcome event store');
-    const events = readLockedStorage(lock.storagePath);
+    const events = readStorageWithoutLock(lock.storagePath);
     const document = canonicalExportDocument(events);
     const protectedIdentities = storageIdentity === undefined
       ? [lock.identity]
