@@ -30,6 +30,11 @@ current publisher-attested internal Corpus v1 evaluation path.
   file SHA-256, then exposes one self-validating `evidenceRootSha256`.
   The manifest remains non-admitting and unapplied and changes no runtime rule
   authority.
+- Added pure, fail-closed current-policy accessors for the exact approved
+  CAL-002 projection. They snapshot and freeze validated state, preserve legacy
+  fallback for unknown IDs, keep blocked/superseded/retired rows non-runnable,
+  and separate explicit diagnostic visibility from score eligibility. The
+  production provider remains inactive, so scanner behavior is unchanged.
 
 ### Changed
 
@@ -54,6 +59,9 @@ current publisher-attested internal Corpus v1 evaluation path.
 - Implemented `ci --max-new-issues` against a durable, config-bound finding
   identity baseline written by `scan --baseline`; missing or mismatched
   baselines fail closed and suppressed findings are excluded from new debt.
+- Declared AJV as a SlopBrick development dependency so package-local schema
+  tests resolve correctly after a clean frozen workspace install instead of
+  relying on stale root-level installation state.
 
 ## [Unreleased] — v0.44.0 trust restoration (historical carry-forward)
 

@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-22
-- **State:** `in_progress` immutable-evidence checkpoint at revision 37
-- **Scope:** CAL-002 progressive authority Tasks 1–15. This receipt grants no
+- **State:** `in_progress` dormant-runtime checkpoint at revision 38
+- **Scope:** CAL-002 progressive authority Tasks 1–16. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -191,6 +191,27 @@
 - Task 15 does not apply runtime policy. Every artifact remains
   `admitted: false`; the matrix and approval remain `applied: false`. No push,
   tag, publish, deployment, or release is authorized.
+- Task 16 starts with the clean-install test dependency correction at
+  `3c1572f89` and is implementation-checkpointed through `417ca5668`. Its
+  red/green chain adds the current-policy truth table, exact approved-
+  projection binding, rejection of generic or stale projections, and an
+  immutable snapshot that cannot be altered through caller-owned state.
+- The pure accessors keep blocked, superseded, and retired rows non-runnable,
+  allow explicit diagnostics only where policy permits, and keep visibility
+  separate from score eligibility. Unknown IDs preserve legacy fallback.
+- The production provider deliberately returns `undefined`. No registry, CLI,
+  watch, worker, score, baseline, or report path consumes current policy in
+  production, so scanner behavior remains unchanged.
+- The focused Task 16 contract passes 7/7 on exact Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both. The recursive test gate passes Core 285,
+  Engine 60, Website 54, and SlopBrick 4,496 tests with 15 intentional skips;
+  recursive typecheck and build also pass.
+- Two independent final reviewers returned 99/100 and 100/100 with zero
+  findings after independently running the focused contract, SlopBrick
+  typecheck, and implementation-range review.
+- Task 16 does not apply or activate policy. Every Task 15 artifact remains
+  `admitted: false`; the matrix and approval remain `applied: false`. No push,
+  tag, publish, deployment, or release is authorized.
 
 ## Revision-34 reproducible bounded gate
 
@@ -297,10 +318,41 @@ assumptions; their two bounded corrections are included in `c13ce8f47`.
   reviewer attempts stalled and were closed, so no independent approval is
   claimed for this additive follow-up.
 
+## Revision-38 Task 16 dormant policy accessors
+
+- The checkpoint sequence spans `3c1572f89` through `417ca5668`. The first
+  commit fixes clean-install schema-test dependency ownership; the remaining
+  red/green sequence implements and hardens the dormant accessor contract.
+- The accessors accept only a complete applied 119-row policy bound to the
+  exact owner-approved Task 15 matrix, approval, and row projection. Those leaf
+  identities remain machine-only; the single Task 15 evidence root above is
+  the human-facing aggregate.
+- Validated policy state, its row array, every row, and nested association data
+  are detached and frozen before exposure. A caller cannot mutate the policy
+  after validation to widen runnable or score authority.
+- The production provider returns `undefined`; Task 17 may exercise runtime
+  paths through the exact approved-policy test helper but cannot activate the
+  provider.
+- The final two-reviewer AND-gate passed with no findings. Reviewer scores were
+  99/100 and 100/100.
+
+### Reproducible focused and recursive commands
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+corepack pnpm -r test
+corepack pnpm -r typecheck
+corepack pnpm -r build
+git diff --check
+```
+
 ## Next evidence
 
-Run Task 16 next: add pure current-policy accessors behind an inactive provider.
-Task 16 may consume the approved matrix as a test fixture, but it must not apply
-the matrix, activate runtime authority, or change scanner behavior. Task 17
-runtime integration remains a later bounded slice. No push, tag, publish,
-deployment, or release is authorized.
+Run Task 17 next: integrate runnable and score authority into registry, CLI,
+watch, and worker paths through the exact approved-policy test helper. Keep the
+production provider returning `undefined`; do not apply the matrix, activate
+runtime authority, or change production scanner behavior. No push, tag,
+publish, deployment, or release is authorized.

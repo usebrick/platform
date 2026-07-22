@@ -2321,7 +2321,7 @@ evidence root is
 - Consumes: `SlopbrickRuleEvidencePolicyV2` and its strict validator.
 - Produces: `createCurrentEvidencePolicyAccessors(raw)`, `getCurrentRulePolicy`, `getCurrentDefaultOffRules`, `isRuleRunnable`, `isRuleScoreEligible`, `getRuleEvidenceProvenance`, and an inactive `getCurrentEvidencePolicyAccessors()` provider returning `undefined`.
 
-- [ ] **Step 1: Write red accessor truth-table tests**
+- [x] **Step 1: Write red accessor truth-table tests**
 
 ```ts
 it('separates explicit visibility from score authority', () => {
@@ -2341,7 +2341,7 @@ it('fails closed on malformed, partial, admitted, or unapplied policy', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and confirm red**
+- [x] **Step 2: Run the focused test and confirm red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1
@@ -2349,7 +2349,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-po
 
 Expected: FAIL because accessors/provider do not exist.
 
-- [ ] **Step 3: Implement pure validated accessors**
+- [x] **Step 3: Implement pure validated accessors**
 
 ```ts
 export interface CurrentEvidencePolicyAccessors {
@@ -2380,7 +2380,7 @@ export function createCurrentEvidencePolicyAccessors(raw: unknown): CurrentEvide
 }
 ```
 
-- [ ] **Step 4: Add the inactive provider**
+- [x] **Step 4: Add the inactive provider**
 
 ```ts
 import type { CurrentEvidencePolicyAccessors } from './current-evidence-policy.js';
@@ -2394,7 +2394,7 @@ This file deliberately preserves legacy runtime behavior until Task 20 atomicall
 
 Add `approvedCurrentPolicyFixture()` in `tests/helpers/current-evidence-policy-v2.ts`. It reads the committed Task 15 matrix/approval, calls `buildCAL002AppliedPolicyV2` with a fixed test-only 40-character commit SHA, and returns validated accessors. Later runtime tests mock only `getCurrentEvidencePolicyAccessors()` to return this exact approved row projection, so activation behavior is exercised before the static provider changes.
 
-- [ ] **Step 5: Run tests and commit the dormant foundation**
+- [x] **Step 5: Run tests and commit the dormant foundation**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1
@@ -2405,6 +2405,18 @@ git commit -m "feat(slopbrick): prepare current policy accessors"
 ```
 
 Expected: pure truth-table tests pass and scanner behavior remains byte-for-byte legacy because the provider is inactive.
+
+**Checkpoint (2026-07-22):** Complete through `417ca5668`, after the clean-
+install AJV dependency correction at `3c1572f89`. The red/green sequence spans
+`e43eb959d` through `417ca5668`; it closes the truth table, exact approved-
+projection binding, stale/generic projection rejection, and caller-mutation boundary.
+The implementation snapshots and freezes validated policy state; the
+production provider still returns `undefined`. The focused contract passes
+7/7 on exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both; the
+recursive test, typecheck, and build gates pass, including 4,496 SlopBrick
+tests with 15 intentional skips. Two independent final reviews returned 99/100
+and 100/100 with no findings. No policy was applied or activated, and no
+admission, push, tag, publish, deploy, or release authority was exercised.
 
 ### Task 17: Integrate runnable and score authority into scanner paths
 

@@ -138,10 +138,24 @@ its manifest binds the exact 13 primary artifacts without repeating each leaf
 hash in roadmap prose. The matrix and approval remain `applied: false` and
 `admitted: false`.
 
-The next bounded slice is Task 16: add pure current-policy accessors behind an
-inactive provider. Task 16 may use the approved matrix only as a test fixture;
-it cannot activate runtime authority. Local application remains separate from
-push, tag, publish, deploy, and release authority.
+Task 16 is implementation-checkpointed through `417ca5668`, with the clean-
+install schema-test dependency correction at `3c1572f89`. The pure accessors
+fail closed unless a complete applied policy matches the exact approved Task 15
+projection, detach and freeze the validated state, keep blocked, superseded,
+and retired rows non-runnable, and separate explicit diagnostic visibility
+from score eligibility. Unknown IDs retain the legacy fallback. The production
+provider still returns `undefined`, so scanner behavior remains unchanged.
+
+The focused Task 16 contract passes 7/7 on exact Node 22.22.3 and 24.15.0 with
+SlopBrick typecheck on both. The recursive gates are green, including 4,496
+passing SlopBrick tests with 15 intentional skips, and two independent final
+reviews returned 99/100 and 100/100 with no findings.
+
+The next bounded slice is Task 17: integrate runnable and score authority into
+scanner paths using the exact approved-policy test helper while the production
+provider remains inactive. Task 17 may prove runtime semantics through mocks;
+it cannot activate the policy. Local application remains separate from push,
+tag, publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -225,14 +239,15 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 37 grants no authority to alter default state,
+  `requires` edge. Revision 38 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–14 remain
-  checkpointed as recorded above, and Task 15 is complete at `6a85e4346` plus
-  manifest follow-up `80acf1ada`. Run Task 16 only: add pure validated current-
-  policy accessors and an inactive provider. Do not bind runtime scanner paths,
-  write or apply policy, admit evidence, or take a release action.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–15 remain
+  checkpointed as recorded above, and Task 16 is implementation-checkpointed
+  through `417ca5668`. Run Task 17 only: integrate runnable and score authority
+  through exact approved-policy mocks while the production provider remains
+  inactive. Do not write or apply policy, admit evidence, or take a release
+  action.
   `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
   separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event

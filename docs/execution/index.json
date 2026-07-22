@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 37,
+  "revision": 38,
   "updatedAt": "2026-07-22",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Run Task 16: add pure validated current-policy accessors and an inactive provider returning undefined; do not bind scanner runtime paths.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Run Task 17: integrate runnable and score authority through exact approved-policy mocks while the production provider remains inactive.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run Task 16: add pure validated current-policy accessors and an inactive provider returning undefined; do not bind scanner runtime paths.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Run Task 17: integrate runnable and score authority through exact approved-policy mocks while the production provider remains inactive.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

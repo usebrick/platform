@@ -1,14 +1,14 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 37
+**Index revision:** 38
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 37 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 38 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -106,15 +106,27 @@ primary artifacts; leaf identities remain machine-verifiable rather than
 repeated in status prose. The matrix and approval remain `applied: false`, and
 every artifact remains `admitted: false`.
 
-The next CAL-002 action is Task 16: add pure validated current-policy accessors
-behind an inactive provider. It may use the approved matrix only as a test
-fixture and cannot bind scanner runtime paths or activate policy. The repository
-owner remains the only completed product tester; the recorded row judged a
-statistical hygiene recommendation useful for review, declined an immediate
-fix because no safe bounded repair followed from the evidence, and reproduced
-the unchanged findings. CAL-001 remains `applied: false` and `admitted: false`;
-revision 37 grants no authority to alter default state, score, source, baseline,
-admission, release, deployment, or published artifacts. CAL-002 remains
+Task 16 is implementation-checkpointed through `417ca5668`, after the fresh-
+install schema-test dependency correction at `3c1572f89`. Its pure accessors
+require the complete applied shape and exact approved Task 15 projection,
+snapshot and freeze caller-owned policy state, keep blocked, superseded, and
+retired rows non-runnable, and keep explicitly visible diagnostics separate
+from score authority. Unknown rule IDs retain legacy behavior. The production
+provider returns `undefined`, so no scanner runtime path consumes the policy.
+The focused contract passes 7/7 on exact Node 22.22.3 and 24.15.0 with
+SlopBrick typecheck on both; recursive test, typecheck, and build gates are
+green, and two independent final reviews returned 99/100 and 100/100 with no
+findings.
+
+The next CAL-002 action is Task 17: integrate runnable and score authority into
+scanner paths using the exact approved-policy helper in tests while keeping the
+production provider inactive. The repository owner remains the only completed
+product tester; the recorded row judged a statistical hygiene recommendation
+useful for review, declined an immediate fix because no safe bounded repair
+followed from the evidence, and reproduced the unchanged findings. CAL-001
+remains `applied: false` and `admitted: false`; revision 38 grants no authority
+to alter default state, score, source, baseline, admission, release, deployment,
+or published artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
 remains `applied: false` and `admitted: false`. Local application remains
 separate from push, tag, publish, deploy, and release; remote state is outside
@@ -191,7 +203,7 @@ does not block local product work.
   `e956f7900`, `366246e5d`, and lock-hardening `8c8760783`. Task 14 is
   integrated from `d7b11b70e` through `c13ce8f47`. Task 15 evidence is
   checkpointed at `6a85e4346`, with the single-root manifest follow-up at
-  `80acf1ada`.
+  `80acf1ada`. Task 16 is implementation-checkpointed through `417ca5668`.
   Task 4's
   final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
@@ -239,8 +251,11 @@ does not block local product work.
   reuse of 32 research-origin rows, and one approved 119-row matrix. Its
   human-facing evidence root is
   `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
-  These commits still do not apply runtime policy or admit evidence. Remote
-  state is outside the receipt.
+  Task 16 adds pure, exact-binding, immutable current-policy accessors and an
+  inactive provider. Its 7/7 focused contract passes on both supported Node
+  runtimes with typecheck, the recursive gates are green, and independent
+  final review reports no findings. These commits still do not apply runtime
+  policy or admit evidence. Remote state is outside the receipt.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -331,7 +346,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 16: add pure validated current-policy accessors and an inactive provider; do not bind scanner runtime paths. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 17: integrate runnable and score authority through exact approved-policy mocks while the production provider remains inactive. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -410,11 +425,14 @@ control slots, frozen source binding, and receipt-first/policy-last immutable
 publication contract independently approved. Task 15 is complete at
 `6a85e4346`; its single-root manifest follow-up is `80acf1ada`, with evidence
 root `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
+Task 16 is implementation-checkpointed through `417ca5668`; its production
+provider remains inactive and exact legacy scanner behavior remains in force.
 
-Run Task 16 next: add pure validated current-policy accessors and an inactive
-provider returning `undefined`. Use the approved matrix only as a test fixture;
-do not bind scanner runtime paths or activate policy. The proposed policy
-remains `applied: false` and `admitted: false`; do not take a release action.
+Run Task 17 next: integrate runnable and score authority into registry, CLI,
+watch, and worker paths through exact approved-policy mocks. Keep the production
+provider returning `undefined`; do not activate or apply policy. The proposed
+policy remains `applied: false` and `admitted: false`; do not take a release
+action.
 The separate quality and origin evidence lanes remain the first-scan
 provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may

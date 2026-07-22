@@ -3,6 +3,39 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 38 — 2026-07-22
+
+### Changed
+
+- Recorded the CAL-002 Task 16 implementation checkpoint through `417ca5668`,
+  after the clean-install schema-test dependency correction at `3c1572f89`.
+- Added pure, fail-closed current-policy accessors that require a complete
+  applied policy matching the exact owner-approved Task 15 projection, detach
+  and freeze validated state, keep blocked/superseded/retired rows non-runnable,
+  and separate explicit diagnostic visibility from score authority.
+- Kept the production provider returning `undefined`; no registry, CLI, watch,
+  worker, score, baseline, or report path consumes current policy in production.
+- Kept the single Task 15 evidence root as the human-facing aggregate. Exact
+  matrix, approval, and row identities remain machine-only bindings.
+- Advanced CAL-002 to Task 17: integrate runnable and score authority through
+  exact approved-policy mocks while the production provider remains inactive.
+
+### Evidence
+
+- The focused current-policy contract passes 7/7 on exact Node 22.22.3 and
+  24.15.0 with SlopBrick typecheck on both runtimes.
+- The recursive test gate passes Core 285, Engine 60, Website 54, and SlopBrick
+  4,496 tests with 15 intentional skips; recursive typecheck and build pass.
+- Two independent final reviews returned 99/100 and 100/100 with no findings.
+
+### Boundary
+
+- `CAL-002` remains `in_progress`; implementation WIP remains `2/2` and
+  company WIP remains `0/1`.
+- The matrix and approval remain `applied: false`; all evidence remains
+  `admitted: false`. No runtime activation, push, tag, publish, deployment, or
+  release is recorded or authorized.
+
 ## Revision 37 — 2026-07-22
 
 ### Changed

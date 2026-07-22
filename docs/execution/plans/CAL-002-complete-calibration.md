@@ -83,6 +83,20 @@ one human-facing evidence root is
 its manifest binds the exact 13 primary artifacts. The proposed policy remains
 `applied: false` and `admitted: false`, and no live runtime policy exists.
 
+Task 16 is implementation-checkpointed through `417ca5668`, with the clean-
+install schema-test dependency correction at `3c1572f89`. It adds pure,
+fail-closed current-policy accessors that accept only a complete applied policy
+matching the exact approved Task 15 projection. The accessors copy and freeze
+validated state, keep blocked, superseded, and retired rows non-runnable,
+separate diagnostic visibility from score eligibility, and preserve legacy
+fallback for unknown IDs. The production provider deliberately returns
+`undefined`, so Task 16 does not bind or change scanner runtime behavior.
+
+The focused accessor contract passes 7/7 on exact Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both. Recursive test, typecheck, and build gates are
+green; the SlopBrick suite passes 4,496 tests with 15 intentional skips. Two
+independent final reviews returned 99/100 and 100/100 with no findings.
+
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -101,9 +115,10 @@ scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
 writing a durable receipt or applying policy. Task 12 writes no durable
 receipt and applies no policy. Task 13 neither changes a v1 owner decision nor
 creates a durable receipt. Task 14 provides the code contract used by Task 15's
-committed authority, matrix, receipts, and evidence manifest. Task 15 still
-does not apply policy or create a live runtime binding. Remote state is outside
-this receipt.
+committed authority, matrix, receipts, and evidence manifest. Task 16 validates
+and exposes that projection only through pure accessors and an inactive
+provider; it does not apply policy or create a live runtime binding. Remote
+state is outside this receipt.
 
 ## Scope
 
@@ -164,10 +179,11 @@ this receipt.
 
 ## Verification
 
-Run Task 16 only. Red-test the current-policy accessor truth table, then add
-pure validated accessors plus an inactive provider that returns `undefined`.
-Use the committed Task 15 matrix and approval only through the test fixture;
-do not bind any scanner runtime path or activate policy.
+Run Task 17 only. Red-test registry, score, CLI, watch, and worker behavior
+against the exact approved-policy helper, then route runnable and score
+authority through the Task 16 accessors. Keep the production provider returning
+`undefined`, so production scanner behavior remains unchanged until the later
+atomic activation task.
 
 Before any later policy application, verify frozen identities, exact 119-row
 coverage, lane separation, non-admission, and the prescribed recursive and
@@ -187,7 +203,7 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 16: create `current-evidence-policy.ts`, its inactive runtime provider,
-the approved-policy test helper, and the focused accessor truth-table tests.
-The provider must return `undefined`; do not apply policy, bind runtime scanner
-paths, admit evidence, push, tag, publish, deploy, or release.
+Run Task 17: integrate runnable and score authority into the registry, CLI,
+watch, and worker paths through exact approved-policy mocks. The production
+provider must remain `undefined`; do not activate or apply policy, admit
+evidence, push, tag, publish, deploy, or release.
