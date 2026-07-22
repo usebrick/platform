@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { canonicalArtifact } from '../../src/calibration/cal-002/contracts';
+import { validateSlopbrickRuleEvidencePolicyV2 } from '../../src/calibration/cal-002/application-v2';
 import {
   createCurrentEvidencePolicyAccessors,
 } from '../../src/rules/current-evidence-policy';
@@ -103,20 +104,39 @@ describe('current evidence policy accessors', () => {
       repairSafety: 'finding-bound-only' as const,
       provenance: 'current-quality-calibrated' as const,
     } : row);
-
-    expect(() => createCurrentEvidencePolicyAccessors({
+    const forgedArtifacts = [{
       ...applied,
       rows: promotedRows,
       policyRowsSha256: canonicalArtifact(promotedRows).sha256,
-    })).toThrow(TypeError);
-    expect(() => createCurrentEvidencePolicyAccessors({
+    }, {
       ...applied,
       finalMatrixSha256: 'f'.repeat(64),
-    })).toThrow(TypeError);
-    expect(() => createCurrentEvidencePolicyAccessors({
+    }, {
       ...applied,
       matrixApprovalSha256: 'f'.repeat(64),
-    })).toThrow(TypeError);
+    }];
+
+    for (const artifact of forgedArtifacts) {
+      expect(validateSlopbrickRuleEvidencePolicyV2(artifact)).toEqual({ ok: true, errors: [] });
+      expect(() => createCurrentEvidencePolicyAccessors(artifact)).toThrow(TypeError);
+    }
+  });
+
+  it('detaches and freezes validated policy state before exposing accessors', () => {
+    const callerPolicy = structuredClone(approvedCurrentPolicyArtifactFixture());
+    const accessors = createCurrentEvidencePolicyAccessors(callerPolicy);
+    const callerRow = callerPolicy.rows.find((row) => row.ruleId === 'logic/ghost-defensive')!;
+    const exposedRow = accessors.getCurrentRulePolicy('logic/ghost-defensive')!;
+
+    expect(Reflect.set(callerRow, 'runnableByExplicitOptIn', true)).toBe(true);
+    expect(accessors.isRuleRunnable('logic/ghost-defensive', {
+      'logic/ghost-defensive': 'high',
+    })).toBe(false);
+    expect(Object.isFrozen(accessors.policy)).toBe(true);
+    expect(Object.isFrozen(accessors.policy.rows)).toBe(true);
+    expect(Object.isFrozen(exposedRow)).toBe(true);
+    expect(Object.isFrozen(exposedRow.aiAssociation)).toBe(true);
+    expect(Reflect.set(exposedRow, 'runnableByExplicitOptIn', true)).toBe(false);
   });
 
   it('keeps the production provider inactive until the atomic activation task', () => {
