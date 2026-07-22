@@ -35,6 +35,15 @@ current publisher-attested internal Corpus v1 evaluation path.
   fallback for unknown IDs, keep blocked/superseded/retired rows non-runnable,
   and separate explicit diagnostic visibility from score eligibility. The
   production provider remains inactive, so scanner behavior is unchanged.
+- Added dormant current-policy enforcement seams across registry context
+  creation, shared scan/watch normalization, and worker Bayesian/composite
+  inputs. Exact approved-policy tests prove that explicit diagnostics remain
+  score-neutral and blocked/superseded/retired rules cannot run; because the
+  production provider still returns `undefined`, this does not activate or
+  apply policy in the unreleased candidate.
+- Preserved inactive-provider composite behavior and routed active-policy
+  synthetic findings plus the project-level identical-block coordinator
+  through the same current-authority and explicit-off boundaries.
 
 ### Changed
 

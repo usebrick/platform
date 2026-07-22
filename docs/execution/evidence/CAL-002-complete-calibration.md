@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-22
-- **State:** `in_progress` dormant-runtime checkpoint at revision 38
-- **Scope:** CAL-002 progressive authority Tasks 1–16. This receipt grants no
+- **State:** `in_progress` dormant-runtime-path checkpoint at revision 39
+- **Scope:** CAL-002 progressive authority Tasks 1–17. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -212,6 +212,35 @@
 - Task 16 does not apply or activate policy. Every Task 15 artifact remains
   `admitted: false`; the matrix and approval remain `applied: false`. No push,
   tag, publish, deployment, or release is authorized.
+- Task 17 is implementation-checkpointed through `61dc8f803`. The separate
+  read-only agent-runtime stall
+  diagnosis is `36137d740` and records no repository or product blocker.
+- Registry context creation now filters policy-known rows through
+  `isRuleRunnable` before invoking `rule.create`. Blocked, superseded, and
+  retired rules therefore cannot instantiate even when explicitly assigned a
+  severity; permitted default-off rows require an own explicit opt-in.
+- The canonical effective-issue selector gives current score eligibility
+  priority over historical defaults while keeping explicit `off` stronger.
+  Unknown IDs and an absent provider retain exact legacy fallback.
+- Scan and watch use the same audit normalization. Worker Bayesian inputs and
+  synthetic-composite chaining consume only the canonical score-effective
+  issue set. Explicitly permitted quality-candidate and research-origin
+  diagnostics may remain visible but cannot affect scores.
+- Independent review found and the correction cycle closed three boundary
+  gaps: dormant-provider composite fallback, explicit-off handling for
+  active-policy synthetic findings, and current-policy parity for the
+  project-level identical-block coordinator.
+- The approved 119-row projection contains zero failed-oracle rows. Task 17
+  exercises only truthful approved categories and does not fabricate a current
+  failed row to satisfy a hypothetical plan example.
+- The production provider still returns `undefined`; Task 17 changes no live
+  scanner behavior and does not apply or activate policy.
+- The exact nine-file focused gate passes 188/188 on Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both. Recursive tests pass Core 285, Engine 60,
+  Website 54, and SlopBrick 4,511 with 15 intentional skips; recursive
+  typecheck and build pass. The post-correction targeted authority coverage run
+  passes 141/141, and two independent final re-reviews returned 100/100 with
+  no remaining findings.
 
 ## Revision-34 reproducible bounded gate
 
@@ -336,7 +365,7 @@ assumptions; their two bounded corrections are included in `c13ce8f47`.
 - The final two-reviewer AND-gate passed with no findings. Reviewer scores were
   99/100 and 100/100.
 
-### Reproducible focused and recursive commands
+### Reproducible Task 16 commands
 
 ```sh
 PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts --maxWorkers=1 --minWorkers=1
@@ -349,10 +378,44 @@ corepack pnpm -r build
 git diff --check
 ```
 
+## Revision-39 Task 17 dormant runtime authority paths
+
+- The implementation checkpoint is `61dc8f803`; the separate
+  orchestration diagnosis is `36137d740`.
+- Policy-known runtime authority is enforced once at registry context creation
+  and once at the shared effective-issue selector. Worker code consumes that
+  selector rather than duplicating policy decisions.
+- Default-on current rows remain runnable and score-eligible unless explicitly
+  turned off. Permitted default-off quality and research-origin diagnostics
+  require explicit opt-in and remain score-neutral. Blocked, superseded, and
+  retired rows never instantiate. Unknown IDs preserve legacy behavior.
+- Cached and watch findings use the same audit-only normalization as ordinary
+  scans. Score-ineligible issues cannot enter Bayesian input or trigger or
+  chain synthetic composite findings.
+- The reviewed correction preserves exact dormant-provider composite behavior,
+  filters active-policy synthetic findings through explicit overrides, and
+  applies current authority to the project-level identical-block coordinator.
+- The production provider remains `undefined`; this revision proves dormant
+  semantics only. The single Task 15 evidence root remains the human-facing
+  aggregate and no leaf identity is added to this ledger.
+
+### Reproducible focused and recursive commands
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+corepack pnpm -r test
+corepack pnpm -r typecheck
+corepack pnpm -r build
+git diff --check
+```
+
 ## Next evidence
 
-Run Task 17 next: integrate runnable and score authority into registry, CLI,
-watch, and worker paths through the exact approved-policy test helper. Keep the
+Run Task 18 next: project current policy provenance through one first-scan
+evidence contract shared by terminal, JSON, Markdown, HTML, and SARIF. Keep the
 production provider returning `undefined`; do not apply the matrix, activate
 runtime authority, or change production scanner behavior. No push, tag,
 publish, deployment, or release is authorized.

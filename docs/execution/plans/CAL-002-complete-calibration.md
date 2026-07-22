@@ -97,6 +97,28 @@ with SlopBrick typecheck on both. Recursive test, typecheck, and build gates are
 green; the SlopBrick suite passes 4,496 tests with 15 intentional skips. Two
 independent final reviews returned 99/100 and 100/100 with no findings.
 
+Task 17 is implementation-checkpointed through `61dc8f803`; its separate
+orchestration diagnosis is `36137d740`. Registry context creation now rejects
+policy-known blocked, superseded, and retired rules before instantiation,
+including when configuration requests a severity. Permitted default-off rows
+still require an own explicit opt-in. The canonical score selector keeps
+current score-ineligible quality and research-origin diagnostics out of every
+score, Bayesian input, and composite chain while preserving visible audit
+evidence where policy permits. Explicit `off` remains stronger than policy,
+and IDs absent from current policy retain legacy behavior. Scan and watch use
+the same normalization boundary. The review correction preserves exact dormant-
+provider composite behavior, applies explicit `off` to active-policy synthetic
+findings, and routes the project-level identical-block coordinator through
+current authority.
+
+The production provider still returns `undefined`; Task 17 proves the future
+runtime contract through the exact approved Task 15 projection without
+activating it. The nine-file focused gate passes 188/188 on exact Node 22.22.3
+and 24.15.0 with SlopBrick typecheck on both. Recursive tests pass Core 285,
+Engine 60, Website 54, and SlopBrick 4,511 with 15 intentional skips;
+recursive typecheck and build are green. Two independent final re-reviews
+returned 100/100 with no remaining findings.
+
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -179,11 +201,12 @@ state is outside this receipt.
 
 ## Verification
 
-Run Task 17 only. Red-test registry, score, CLI, watch, and worker behavior
-against the exact approved-policy helper, then route runnable and score
-authority through the Task 16 accessors. Keep the production provider returning
-`undefined`, so production scanner behavior remains unchanged until the later
-atomic activation task.
+Run Task 18 only. Red-test the current-policy evidence projection and renderer
+parity across first-scan, terminal, JSON, Markdown, HTML, and SARIF paths.
+Keep rule-authored exact source evidence separate from current policy
+provenance and historical signal-strength metrics. The production provider
+must remain `undefined`, so production scanner behavior remains unchanged
+until the later atomic activation task.
 
 Before any later policy application, verify frozen identities, exact 119-row
 coverage, lane separation, non-admission, and the prescribed recursive and
@@ -203,7 +226,7 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 17: integrate runnable and score authority into the registry, CLI,
-watch, and worker paths through exact approved-policy mocks. The production
-provider must remain `undefined`; do not activate or apply policy, admit
-evidence, push, tag, publish, deploy, or release.
+Run Task 18: project current policy provenance through one first-scan evidence
+contract shared by terminal, JSON, Markdown, HTML, and SARIF outputs. The
+production provider must remain `undefined`; do not activate or apply policy,
+admit evidence, push, tag, publish, deploy, or release.

@@ -151,11 +151,30 @@ SlopBrick typecheck on both. The recursive gates are green, including 4,496
 passing SlopBrick tests with 15 intentional skips, and two independent final
 reviews returned 99/100 and 100/100 with no findings.
 
-The next bounded slice is Task 17: integrate runnable and score authority into
-scanner paths using the exact approved-policy test helper while the production
-provider remains inactive. Task 17 may prove runtime semantics through mocks;
-it cannot activate the policy. Local application remains separate from push,
-tag, publish, deploy, and release authority.
+Task 17 is implementation-checkpointed through `61dc8f803`; its separate
+orchestration diagnosis is `36137d740`. Registry context creation now enforces
+current runnable authority before a rule can instantiate. The canonical score
+selector excludes current score-ineligible diagnostics from every score,
+Bayesian input, and composite chain while leaving explicitly permitted audit
+evidence visible. Scan and watch share the same normalization boundary;
+explicit `off` remains stronger than policy and unknown IDs preserve legacy
+behavior. The review correction also preserves exact dormant-provider
+composite behavior, applies explicit `off` to active-policy synthetic findings,
+and routes the project-level identical-block coordinator through current
+authority.
+
+The exact Task 17 nine-file gate passes 188/188 on exact Node 22.22.3 and
+24.15.0 with SlopBrick typecheck on both. Recursive tests pass Core 285,
+Engine 60, Website 54, and SlopBrick 4,511 with 15 intentional skips;
+recursive typecheck and build pass. Two independent final reviews returned
+100/100 with no remaining findings after the correction cycle. The production
+provider still returns `undefined`, so this checkpoint proves dormant runtime
+semantics without applying policy or changing production scanner behavior.
+
+The next bounded slice is Task 18: project current policy provenance across
+the first-scan contract and all renderers using the exact approved-policy test
+helper. Task 18 cannot activate the provider. Local application remains
+separate from push, tag, publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -239,15 +258,14 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 38 grants no authority to alter default state,
+  `requires` edge. Revision 39 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–15 remain
-  checkpointed as recorded above, and Task 16 is implementation-checkpointed
-  through `417ca5668`. Run Task 17 only: integrate runnable and score authority
-  through exact approved-policy mocks while the production provider remains
-  inactive. Do not write or apply policy, admit evidence, or take a release
-  action.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–17 remain
+  checkpointed as recorded above. Run Task 18 only: project current policy
+  provenance through one shared first-scan and renderer contract while the
+  production provider remains inactive. Do not write or apply policy, admit
+  evidence, or take a release action.
   `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
   separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event

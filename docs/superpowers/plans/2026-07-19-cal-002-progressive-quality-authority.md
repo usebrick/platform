@@ -2440,7 +2440,7 @@ admission, push, tag, publish, deploy, or release authority was exercised.
 - Consumes: `getCurrentEvidencePolicyAccessors()` and exact approved-policy test helper from Task 16.
 - Produces: policy-aware `RuleRegistry.createContexts`, `effectiveIssuesForScore`, display normalization, worker composite input, watch parity, and legacy fallback for rule IDs absent from current policy.
 
-- [ ] **Step 1: Write red runtime authority tests against the approved matrix**
+- [x] **Step 1: Write red runtime authority tests against the approved matrix**
 
 ```ts
 vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
@@ -2465,7 +2465,7 @@ it.each(['logic/ghost-defensive', 'logic/math-any-density', 'ai/renyi-profile'])
 
 Add a default-on score case, explicit `off`, research-origin visible/non-scoring case, failed-oracle visible/non-scoring case, unknown-rule legacy fallback, cached issue normalization, worker composite exclusion, and watch/scan equality.
 
-- [ ] **Step 2: Run focused tests and confirm red**
+- [x] **Step 2: Run focused tests and confirm red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1
@@ -2473,7 +2473,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts te
 
 Expected: FAIL because scanner paths still use only legacy default-off behavior and explicit override can still score.
 
-- [ ] **Step 3: Filter rule contexts through current runnable authority**
+- [x] **Step 3: Filter rule contexts through current runnable authority**
 
 ```ts
 const currentPolicy = getCurrentEvidencePolicyAccessors();
@@ -2484,7 +2484,7 @@ return this.getRules()
 
 No current provider means exact legacy behavior. A current row is runnable only when default-on or explicitly configured and `runnableByExplicitOptIn`; blocked/superseded/retired rows remain excluded even with explicit severity.
 
-- [ ] **Step 4: Make score eligibility non-overridable**
+- [x] **Step 4: Make score eligibility non-overridable**
 
 ```ts
 export function effectiveIssuesForScore(issues: readonly Issue[], config: Pick<ResolvedConfig, 'rules'>): Issue[] {
@@ -2502,7 +2502,7 @@ export function effectiveIssuesForScore(issues: readonly Issue[], config: Pick<R
 
 Update audit marking to use current `enabledByDefault`/runnable state first and legacy defaults only for IDs absent from policy. Filter worker composite candidates through this same effective set; do not duplicate policy logic in worker code.
 
-- [ ] **Step 5: Run focused scanner tests and commit the isolated worker slice**
+- [x] **Step 5: Run focused scanner tests and commit the isolated worker slice**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/rules/current-evidence-policy.test.ts tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1
@@ -2513,6 +2513,28 @@ git commit -m "feat(slopbrick): enforce current runtime authority"
 ```
 
 Expected: approved-policy mock proves exact run/score semantics; inactive production provider keeps the main runtime unchanged until Task 20.
+
+**Checkpoint (2026-07-22):** Complete through `61dc8f803`; the separate
+orchestration diagnosis is `36137d740`. Registry context creation now enforces current
+runnable authority before a rule can instantiate; the canonical effective-
+issue selector makes current score ineligibility non-overridable while
+preserving explicit `off` and unknown-ID legacy behavior; scan and watch share
+the same audit normalization; and worker Bayesian/composite inputs consume
+only score-effective findings. Exact approved-policy tests cover default-on,
+unmeasured quality, research-origin, blocked, superseded, retired, explicit-
+off, unknown, cached/watch, and composite cases. The approved matrix contains
+zero failed-oracle rows, so no fabricated current failed row is claimed. The
+production provider still returns `undefined`, leaving production scanner
+behavior unchanged until Task 20. Review corrections preserve exact dormant-
+provider composite behavior, apply explicit `off` to active-policy synthetic
+findings, and route the project-level identical-block coordinator through
+current authority. The nine-file focused gate passes 188/188 on
+exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both; recursive
+tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,511 with 15
+intentional skips; recursive typecheck and build pass. Two independent final
+re-reviews returned 100/100 with no remaining findings. No policy was applied
+or activated, and no admission, push, tag, publish, deploy, or release authority
+was exercised.
 
 ### Task 18: Project current policy provenance across first-scan and reports
 

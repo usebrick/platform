@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 38,
+  "revision": 39,
   "updatedAt": "2026-07-22",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Run Task 17: integrate runnable and score authority through exact approved-policy mocks while the production provider remains inactive.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Run Task 18: project current policy provenance through the shared first-scan and renderer contract while the production provider remains inactive.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run Task 17: integrate runnable and score authority through exact approved-policy mocks while the production provider remains inactive.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/rules/registry.test.ts tests/cli/score-authority.test.ts tests/cli/score-contract-matrix.e2e.test.ts tests/cli/watch-normalization.test.ts tests/cli/scan-completion.test.ts tests/engine/score-contract-matrix.test.ts tests/engine/composite-cluster.test.ts tests/engine/composite-weights.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Run Task 18: project current policy provenance through the shared first-scan and renderer contract while the production provider remains inactive.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

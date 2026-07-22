@@ -3,6 +3,51 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 39 — 2026-07-22
+
+### Changed
+
+- Recorded the CAL-002 Task 17 implementation checkpoint through `61dc8f803`;
+  the separate orchestration diagnosis is `36137d740`.
+- Routed policy-known runnable authority through registry context creation, so
+  blocked, superseded, and retired rules cannot instantiate even when a
+  severity override requests them.
+- Routed current score authority through the canonical effective-issue
+  selector and worker Bayesian/composite inputs. Explicitly permitted
+  diagnostics can remain visible, but score-ineligible findings cannot affect
+  scoring or synthetic-composite chaining.
+- Preserved explicit `off`, unknown-rule legacy fallback, shared scan/watch
+  normalization, and the inactive production provider. Production scanner
+  behavior therefore remains unchanged.
+- Closed the independent-review gaps around dormant-provider composite
+  fallback, explicit-off filtering of active-policy synthetic findings, and
+  current-policy parity for the project-level identical-block coordinator.
+- Advanced CAL-002 to Task 18: project current policy provenance through one
+  first-scan evidence contract shared by terminal, JSON, Markdown, HTML, and
+  SARIF.
+
+### Evidence
+
+- The exact nine-file Task 17 gate passes 188/188 on Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both runtimes.
+- The recursive test gate passes Core 285, Engine 60, Website 54, and SlopBrick
+  4,511 tests with 15 intentional skips; recursive typecheck and build pass.
+- The post-correction targeted authority coverage run passes 141/141; the
+  canonical score selector is fully covered, including its branches.
+- The Task 17 security review reports no finding at confidence 8/10 or higher.
+- Two independent final re-reviews returned 100/100 with no remaining
+  findings.
+
+### Boundary
+
+- `CAL-002` remains `in_progress`; implementation WIP remains `2/2` and
+  company WIP remains `0/1`.
+- The one Task 15 evidence root remains the only aggregate hash repeated in
+  human-facing authority docs. Leaf identities remain machine-only.
+- The matrix and approval remain `applied: false`; all evidence remains
+  `admitted: false`. No runtime activation, push, tag, publish, deployment, or
+  release is recorded or authorized.
+
 ## Revision 38 — 2026-07-22
 
 ### Changed
