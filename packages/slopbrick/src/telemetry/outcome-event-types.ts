@@ -73,12 +73,26 @@ interface OutcomeEventBaseV1 {
   readonly context: OutcomeEventContextV1;
 }
 
-export interface ScanCompletedOutcomeEventV1 extends OutcomeEventBaseV1 {
+type ScanCompletedOutcomeV1 =
+  | {
+    readonly scanKind: 'initial';
+    readonly status: FirstScanStatus;
+    readonly comparison: 'not-evaluated';
+  }
+  | {
+    readonly scanKind: 'rescan';
+    readonly status: 'complete';
+    readonly comparison: 'unchanged' | 'changed';
+  }
+  | {
+    readonly scanKind: 'rescan';
+    readonly status: Exclude<FirstScanStatus, 'complete'>;
+    readonly comparison: 'unavailable';
+  };
+
+export type ScanCompletedOutcomeEventV1 = OutcomeEventBaseV1 & {
   readonly event: 'scan-completed';
-  readonly scanKind: 'initial' | 'rescan';
-  readonly status: FirstScanStatus;
-  readonly comparison: 'not-evaluated' | 'unchanged' | 'changed' | 'unavailable';
-}
+} & ScanCompletedOutcomeV1;
 
 export interface FirstFindingAssessedOutcomeEventV1 extends OutcomeEventBaseV1 {
   readonly event: 'first-finding-assessed';
