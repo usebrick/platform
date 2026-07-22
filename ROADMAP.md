@@ -171,10 +171,27 @@ recursive typecheck and build pass. Two independent final reviews returned
 provider still returns `undefined`, so this checkpoint proves dormant runtime
 semantics without applying policy or changing production scanner behavior.
 
-The next bounded slice is Task 18: project current policy provenance across
-the first-scan contract and all renderers using the exact approved-policy test
-helper. Task 18 cannot activate the provider. Local application remains
-separate from push, tag, publish, deploy, and release authority.
+Task 18 is implementation-checkpointed through `be1be85b8`, with its security
+review at `e17f736e5`. One current-policy evidence object now drives first-scan,
+terminal, JSON, Markdown, HTML, and SARIF output. Rule-authored source spans
+remain separate; legacy signal metrics remain nested and explicitly historical.
+Finding association checks the complete finding identity and fails closed on
+file or message collisions, including absolute-path inputs. Blocked,
+superseded, and retired tombstones are excluded consistently from findings,
+recommendations, and baseline deltas. Safe-repair language remains limited to
+finding-bound deterministic or current-quality-calibrated repairs.
+
+The exact Task 18 eight-file gate passes 123/123 on Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both. Recursive tests pass Core 285, Engine 60,
+Website 54, and SlopBrick 4,530 with 15 intentional skips; recursive typecheck
+and build pass. Targeted report coverage is 84.55% for statements/lines,
+77.27% for branches, and 97.77% for functions. Two independent final
+re-reviews returned 99/100 with no remaining findings. The production provider
+still returns `undefined`, so this remains dormant semantics only.
+
+The next bounded slice is Task 19: separate current policy from historical
+metrics in explain, MCP, and generated catalog surfaces. Local application
+remains separate from push, tag, publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -258,14 +275,14 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 39 grants no authority to alter default state,
+  `requires` edge. Revision 40 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–17 remain
-  checkpointed as recorded above. Run Task 18 only: project current policy
-  provenance through one shared first-scan and renderer contract while the
-  production provider remains inactive. Do not write or apply policy, admit
-  evidence, or take a release action.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–18 remain
+  checkpointed as recorded above. Run Task 19 only: separate current policy
+  from historical metrics across explain, MCP, and generated catalog surfaces
+  while the production provider remains inactive. Do not write or apply
+  policy, admit evidence, or take a release action.
   `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
   separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event

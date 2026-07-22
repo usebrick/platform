@@ -1,8 +1,8 @@
 # CAL-002 complete calibration control-plane receipt
 
 - **Recorded:** 2026-07-22
-- **State:** `in_progress` dormant-runtime-path checkpoint at revision 39
-- **Scope:** CAL-002 progressive authority Tasks 1–17. This receipt grants no
+- **State:** `in_progress` dormant-report-provenance checkpoint at revision 40
+- **Scope:** CAL-002 progressive authority Tasks 1–18. This receipt grants no
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
@@ -241,6 +241,24 @@
   typecheck and build pass. The post-correction targeted authority coverage run
   passes 141/141, and two independent final re-reviews returned 100/100 with
   no remaining findings.
+- Task 18 is implementation-checkpointed through `be1be85b8`; its security
+  review is `e17f736e5`. One shared evidence object now projects current policy
+  across first-scan, terminal, JSON, Markdown, HTML, and SARIF without
+  overwriting exact source evidence or importing legacy metrics into policy.
+- Finding association fails closed unless the complete identity agrees,
+  including file and message. Absolute issue paths retain parity only through
+  a normalized, non-traversing projected suffix. Grouped recommendations carry
+  their weakest source-span truth.
+- Blocked, superseded, and retired tombstones are excluded before findings,
+  recommendations, and baseline-delta comparison. Safe-repair claims remain
+  limited to finding-bound deterministic or current-quality-calibrated repairs.
+- The production provider remains `undefined`; Task 18 changes no live policy
+  state. Its exact eight-file gate passes 123/123 on Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both. Recursive tests pass Core 285, Engine 60,
+  Website 54, and SlopBrick 4,530 with 15 intentional skips; recursive
+  typecheck and build pass. Targeted report coverage records 84.55%
+  statements/lines, 77.27% branches, and 97.77% functions. Two independent
+  final re-reviews returned 99/100 with no remaining findings.
 
 ## Revision-34 reproducible bounded gate
 
@@ -412,10 +430,46 @@ corepack pnpm -r build
 git diff --check
 ```
 
+## Revision-40 Task 18 dormant report provenance
+
+- The implementation checkpoint is `be1be85b8`; the separate security-review
+  checkpoint is `e17f736e5`.
+- One `FirstScanFindingEvidence` projection supplies current authority to
+  terminal, JSON, Markdown, HTML, and SARIF output. Exact/omitted source spans
+  stay on `Issue.evidence`; legacy point estimates stay nested and explicitly
+  historical.
+- Recommendation strength follows the current evidence tier, never historical
+  precision. Grouped actions use the weakest member source-span state, and
+  only finding-bound deterministic or current-quality-calibrated repairs can
+  be described as safe.
+- Renderer association checks rule, category-derived area, severity,
+  AI-specific flag, file, line, column, message, and canonical identity. It
+  fails closed across collisions and accepts an inferred root only for a
+  normalized, non-absolute, non-traversing absolute-path suffix match.
+- Blocked, superseded, and retired tombstones are filtered before finding,
+  recommendation, and baseline-delta projection. Deprecated v1 calibrated
+  shapes remain renderable but are always labeled historical.
+- The production provider remains `undefined`; this revision proves dormant
+  report semantics only. The single Task 15 evidence root remains the
+  human-facing aggregate, with leaf identities kept machine-only.
+
+### Reproducible focused and recursive commands
+
+```sh
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1
+PATH=$HOME/.local/share/mise/installs/node/22.22.3/bin:$PATH corepack pnpm --filter slopbrick typecheck
+PATH=$HOME/.local/share/mise/installs/node/24.15.0/bin:$PATH corepack pnpm --filter slopbrick typecheck
+corepack pnpm -r test
+corepack pnpm -r typecheck
+corepack pnpm -r build
+git diff --check
+```
+
 ## Next evidence
 
-Run Task 18 next: project current policy provenance through one first-scan
-evidence contract shared by terminal, JSON, Markdown, HTML, and SARIF. Keep the
-production provider returning `undefined`; do not apply the matrix, activate
-runtime authority, or change production scanner behavior. No push, tag,
-publish, deployment, or release is authorized.
+Run Task 19 next: separate current policy from historical metrics in explain,
+MCP, and generated catalog surfaces. Keep the production provider returning
+`undefined`; do not apply the matrix, activate runtime authority, or change
+production scanner behavior. No push, tag, publish, deployment, or release is
+authorized.

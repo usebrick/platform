@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "revision": 39,
+  "revision": 40,
   "updatedAt": "2026-07-22",
   "cal002Status": "in_progress",
   "cal002NextAction": {
-    "text": "Run Task 18: project current policy provenance through the shared first-scan and renderer contract while the production provider remains inactive.",
-    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
+    "text": "Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive.",
+    "verify": "corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
   "globalStatus": "advancing",
@@ -234,8 +234,8 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Run Task 18: project current policy provenance through the shared first-scan and renderer contract while the production provider remains inactive.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
       "evidence": [

@@ -1,14 +1,14 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 39
+**Index revision:** 40
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 39 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 40 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -137,13 +137,32 @@ Website 54, and SlopBrick 4,511 with 15 intentional skips; recursive typecheck
 and build pass. Two independent final re-reviews returned 100/100 with no
 remaining findings.
 
-The next CAL-002 action is Task 18: project current policy provenance through
-one first-scan evidence contract shared by terminal, JSON, Markdown, HTML, and
-SARIF while keeping the production provider inactive. The repository owner remains the only completed
+Task 18 is implementation-checkpointed through `be1be85b8`; its security
+review is `e17f736e5`. One shared evidence projection now carries current
+policy provenance across first-scan, terminal, JSON, Markdown, HTML, and SARIF
+without conflating rule-authored source evidence or historical signal metrics.
+Renderer association fails closed on the complete finding identity, including
+file and message, and preserves absolute-path parity. Non-runnable blocked,
+superseded, and retired tombstones are excluded from findings,
+recommendations, and baseline deltas. Grouped recommendations preserve the
+weakest source-span truth, and only finding-bound deterministic or
+current-quality-calibrated repairs may be called safe.
+
+The exact Task 18 eight-file gate passes 123/123 on Node 22.22.3 and 24.15.0
+with SlopBrick typecheck on both. Recursive tests pass Core 285, Engine 60,
+Website 54, and SlopBrick 4,530 with 15 intentional skips; recursive typecheck
+and build pass. Targeted report coverage records 84.55% statements/lines,
+77.27% branches, and 97.77% functions. Two independent final re-reviews
+returned 99/100 with no remaining findings. The production provider still
+returns `undefined`.
+
+The next CAL-002 action is Task 19: separate current policy from historical
+metrics across explain, MCP, and generated catalog surfaces while keeping the
+production provider inactive. The repository owner remains the only completed
 product tester; the recorded row judged a statistical hygiene recommendation
 useful for review, declined an immediate fix because no safe bounded repair
 followed from the evidence, and reproduced the unchanged findings. CAL-001
-remains `applied: false` and `admitted: false`; revision 39 grants no authority
+remains `applied: false` and `admitted: false`; revision 40 grants no authority
 to alter default state, score, source, baseline, admission, release, deployment,
 or published artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
@@ -369,7 +388,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 18: project current policy provenance through the shared first-scan and renderer contract while the production provider remains inactive. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 19: separate current policy from historical metrics in explain, MCP, and catalog surfaces while the production provider remains inactive. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -455,10 +474,14 @@ Task 17 is implementation-checkpointed through `61dc8f803`; the production
 provider remains inactive, and the policy-aware registry, score, watch, and
 worker paths are exercised only through exact approved-policy tests.
 
-Run Task 18 next: project current policy provenance through one first-scan
-evidence contract shared by all renderers. Keep the production provider
-returning `undefined`; do not activate or apply policy. The proposed policy
-remains `applied: false` and `admitted: false`; do not take a release action.
+Task 18 is implementation-checkpointed through `be1be85b8`; its shared report
+projection is qualified across every renderer, and the production provider
+remains inactive.
+
+Run Task 19 next: separate current policy from historical metrics in explain,
+MCP, and generated catalog surfaces. Keep the production provider returning
+`undefined`; do not activate or apply policy. The proposed policy remains
+`applied: false` and `admitted: false`; do not take a release action.
 The separate quality and origin evidence lanes remain the first-scan
 provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may

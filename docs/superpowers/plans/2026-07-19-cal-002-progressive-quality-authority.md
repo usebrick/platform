@@ -2562,7 +2562,7 @@ was exercised.
 - Consumes: current policy provider plus separate `Issue.evidence` and historical `signalStrength` data.
 - Produces: one `FirstScanFindingEvidence` contract shared by terminal, JSON, HTML, Markdown, SARIF, and first-scan recommendation ranking.
 
-- [ ] **Step 1: Write red provenance and renderer-parity tests**
+- [x] **Step 1: Write red provenance and renderer-parity tests**
 
 ```ts
 expect(projectFinding(unmeasuredIssue).evidence).toMatchObject({
@@ -2580,7 +2580,7 @@ expect(sarifResult.properties.slopbrickEvidence).toEqual(jsonFinding.evidence);
 
 Add deterministic-current, current-quality-calibrated, advisory, failed, insufficient, research-origin, and no-current-row legacy cases. Assert advisory/unmeasured/origin actions never claim a safe repair and evidence ordering never promotes legacy precision over current policy.
 
-- [ ] **Step 2: Run report tests and confirm red**
+- [x] **Step 2: Run report tests and confirm red**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1
@@ -2588,7 +2588,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts
 
 Expected: FAIL because `FirstScanEvidenceTier` still compresses current and legacy into `calibrated`.
 
-- [ ] **Step 3: Expand the evidence contract without copying legacy metrics into policy**
+- [x] **Step 3: Expand the evidence contract without copying legacy metrics into policy**
 
 ```ts
 export type FirstScanEvidenceTier =
@@ -2619,7 +2619,7 @@ Rule-authored exact evidence remains highest precedence for source-span truth, w
 
 Use this exact recommendation order from strongest to weakest: `deterministic`, `current-quality-calibrated`, `current-quality-advisory`, `quality-candidate-unmeasured`, `current-quality-failed`, `insufficient-evidence`, `internal-origin-association`, `legacy-calibrated`, `advisory`. Severity/location ordering remains the existing tie-breaker; no historical precision field may reorder a current-policy tier.
 
-- [ ] **Step 4: Use one policy-to-copy mapping across renderers**
+- [x] **Step 4: Use one policy-to-copy mapping across renderers**
 
 ```ts
 const CURRENT_POLICY_CLAIMS: Record<CAL002PolicyProvenanceV2, string> = {
@@ -2638,7 +2638,7 @@ const CURRENT_POLICY_CLAIMS: Record<CAL002PolicyProvenanceV2, string> = {
 
 Pretty, full terminal, Markdown, HTML, JSON, and SARIF use the same projected object/copy. Non-runnable rows normally emit no finding; explanation surfaces handle their tombstones.
 
-- [ ] **Step 5: Run focused report tests and commit the isolated worker slice**
+- [x] **Step 5: Run focused report tests and commit the isolated worker slice**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/report/renderer-contract.test.ts tests/report/renderer-lanes.test.ts tests/report/json.test.ts tests/report/sarif.test.ts tests/report/markdown.test.ts tests/report/html.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1
@@ -2649,6 +2649,22 @@ git commit -m "feat(slopbrick): expose current evidence provenance"
 ```
 
 Expected: every renderer agrees byte-for-byte on machine evidence fields and uses source-faithful non-authorship language.
+
+**Completion receipt (revision 40):** Task 18 is implementation-checkpointed
+through `be1be85b8`; the security review is `e17f736e5`. Review corrections
+made matching fail closed across file/message collisions, preserved
+absolute-path parity, kept deprecated v1 metrics explicitly historical,
+carried the weakest grouped source-span state, filtered non-runnable tombstones
+from baseline deltas, and limited safe-repair language to finding-bound
+deterministic or current-quality-calibrated evidence. The exact eight-file gate
+passes 123/123 on Node 22.22.3 and 24.15.0 with SlopBrick typecheck on both.
+Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,530 with
+15 intentional skips; recursive typecheck and build pass. Targeted report
+coverage records 84.55% statements/lines, 77.27% branches, and 97.77%
+functions. Two independent final re-reviews returned 99/100 with no remaining
+findings. The production provider remains `undefined`; no policy was applied
+or activated, and no admission, push, tag, publish, deploy, or release
+authority was exercised.
 
 ### Task 19: Separate current policy from historical metrics in explain, MCP, and catalog surfaces
 

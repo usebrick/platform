@@ -44,6 +44,10 @@ current publisher-attested internal Corpus v1 evaluation path.
 - Preserved inactive-provider composite behavior and routed active-policy
   synthetic findings plus the project-level identical-block coordinator
   through the same current-authority and explicit-off boundaries.
+- Added one dormant current-policy evidence projection shared by first-scan,
+  terminal, JSON, Markdown, HTML, and SARIF. It keeps rule-authored source
+  evidence separate, labels legacy signal metrics as historical, and fails
+  closed when the complete finding identity does not match.
 
 ### Changed
 
@@ -71,6 +75,10 @@ current publisher-attested internal Corpus v1 evaluation path.
 - Declared AJV as a SlopBrick development dependency so package-local schema
   tests resolve correctly after a clean frozen workspace install instead of
   relying on stale root-level installation state.
+- Kept blocked, superseded, and retired policy tombstones out of findings,
+  recommendations, and baseline deltas; grouped recommendations now preserve
+  the weakest source-span truth, and only finding-bound deterministic or
+  current-quality-calibrated repairs may be described as safe.
 
 ## [Unreleased] — v0.44.0 trust restoration (historical carry-forward)
 

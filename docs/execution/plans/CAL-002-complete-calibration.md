@@ -119,6 +119,24 @@ Engine 60, Website 54, and SlopBrick 4,511 with 15 intentional skips;
 recursive typecheck and build are green. Two independent final re-reviews
 returned 100/100 with no remaining findings.
 
+Task 18 is implementation-checkpointed through `be1be85b8`, with its security
+review at `e17f736e5`. It projects one current-policy evidence object through
+first-scan, terminal, JSON, Markdown, HTML, and SARIF while keeping exact
+source evidence and explicitly historical signal metrics separate. Matching
+uses the complete finding identity and fails closed across file, message, and
+absolute-path collisions. Non-runnable tombstones are absent from findings,
+recommendations, and baseline deltas; grouped recommendations preserve the
+weakest source-span truth; safe-repair language remains finding-bound and
+limited to deterministic or current-quality-calibrated evidence.
+
+The production provider still returns `undefined`. The eight-file focused gate
+passes 123/123 on exact Node 22.22.3 and 24.15.0 with SlopBrick typecheck on
+both. Recursive tests pass Core 285, Engine 60, Website 54, and SlopBrick 4,530
+with 15 intentional skips; recursive typecheck and build are green. Targeted
+report coverage records 84.55% statements/lines, 77.27% branches, and 97.77%
+functions. Two independent final re-reviews returned 99/100 with no remaining
+findings.
+
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
 neutral, gate-neutral, non-admitting, and without a claimed safe repair. Task
@@ -201,10 +219,10 @@ state is outside this receipt.
 
 ## Verification
 
-Run Task 18 only. Red-test the current-policy evidence projection and renderer
-parity across first-scan, terminal, JSON, Markdown, HTML, and SARIF paths.
-Keep rule-authored exact source evidence separate from current policy
-provenance and historical signal-strength metrics. The production provider
+Run Task 19 only. Red-test the current-policy and historical-metrics separation
+across rule explanation, CLI, MCP, and generated catalog paths. Current policy
+must not inherit precision, recall, false-positive rate, ratio, or verdict
+fields from immutable legacy signal-strength data. The production provider
 must remain `undefined`, so production scanner behavior remains unchanged
 until the later atomic activation task.
 
@@ -226,7 +244,8 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 18: project current policy provenance through one first-scan evidence
-contract shared by terminal, JSON, Markdown, HTML, and SARIF outputs. The
-production provider must remain `undefined`; do not activate or apply policy,
-admit evidence, push, tag, publish, deploy, or release.
+Run Task 19: separate current policy from historical metrics in explain, MCP,
+and generated catalog surfaces. Verify with
+`corepack pnpm --filter slopbrick exec vitest run tests/explain.test.ts tests/signal-strength-contract.test.ts tests/mcp/patterns.test.ts tests/generated-docs-truth.test.ts --maxWorkers=1 --minWorkers=1`.
+The production provider must remain `undefined`; do not activate or apply
+policy, admit evidence, push, tag, publish, deploy, or release.

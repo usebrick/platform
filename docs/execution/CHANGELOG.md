@@ -3,6 +3,47 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 40 — 2026-07-22
+
+### Changed
+
+- Recorded the CAL-002 Task 18 implementation checkpoint through `be1be85b8`
+  and its security review at `e17f736e5`.
+- Added one current-policy evidence projection shared by first-scan, terminal,
+  JSON, Markdown, HTML, and SARIF while preserving rule-authored source spans
+  and explicitly historical legacy metrics as separate fields.
+- Made renderer association fail closed on the complete finding identity,
+  including file and message, while preserving safe absolute-path parity.
+- Kept grouped recommendation source-span truth conservative and safe-repair
+  claims limited to finding-bound deterministic or current-quality-calibrated
+  evidence.
+- Removed blocked, superseded, and retired tombstones consistently from
+  findings, recommendations, and baseline deltas.
+- Advanced CAL-002 to Task 19: separate current policy from historical metrics
+  in explain, MCP, and generated catalog surfaces.
+
+### Evidence
+
+- The exact eight-file Task 18 gate passes 123/123 on Node 22.22.3 and 24.15.0
+  with SlopBrick typecheck on both runtimes.
+- The recursive test gate passes Core 285, Engine 60, Website 54, and SlopBrick
+  4,530 tests with 15 intentional skips; recursive typecheck and build pass.
+- The targeted seven-module report run records 84.55% statements/lines, 77.27%
+  branches, and 97.77% functions.
+- The Task 18 security review reports no finding at confidence 8/10 or higher.
+- Two independent final re-reviews returned 99/100 with no remaining findings.
+
+### Boundary
+
+- `CAL-002` remains `in_progress`; implementation WIP remains `2/2` and
+  company WIP remains `0/1`.
+- The one Task 15 evidence root remains the only aggregate hash used for its
+  human-facing evidence set. Leaf SHA-256 bindings stay machine-only.
+- The production provider remains `undefined`; the matrix and approval remain
+  `applied: false`, and all evidence remains `admitted: false`.
+- No runtime activation, push, tag, publish, deployment, or release is
+  authorized by this revision.
+
 ## Revision 39 — 2026-07-22
 
 ### Changed
