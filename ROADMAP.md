@@ -1,6 +1,6 @@
 # UseBrick roadmap
 
-**Updated:** 2026-07-20
+**Updated:** 2026-07-22
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -126,14 +126,22 @@ Its expanded Task 13/14 gate passes 198/198 on exact Node 22.22.3 and 24.15.0
 with SlopBrick typecheck on both. The bounded Node 24 full suite passes 4,485
 tests with 15 skipped; independent final review reports no findings.
 
-Task 14 created no committed Task 15 evidence, consumed no owner decision, and
-did not apply policy. CAL-002 remains `in_progress` at implementation WIP
-`2/2`; the proposed policy remains `applied: false` and `admitted: false`.
+Task 15 is checkpointed at `6a85e4346`, with the additive single-root manifest
+contract at `80acf1ada`. The owner approved the exact `26/4/3/7` authority batch
+and exact 119-row matrix. All 41 deterministic rows passed, all 32 unmeasured
+quality candidates remain score- and gate-ineligible, and all 32 research-
+origin rows remain default-off and non-admitting.
 
-The next bounded slice is Task 15 Steps 1–3: integrated preflight, exact frozen
-catalog replay, then presentation of the closed `26/4/3/7` authority batch for
-an explicit owner choice. Local application, if later authorized, remains
-separate from push, tag, publish, deploy, and release authority.
+The one human-facing Task 15 evidence root is
+`53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`;
+its manifest binds the exact 13 primary artifacts without repeating each leaf
+hash in roadmap prose. The matrix and approval remain `applied: false` and
+`admitted: false`.
+
+The next bounded slice is Task 16: add pure current-policy accessors behind an
+inactive provider. Task 16 may use the approved matrix only as a test fixture;
+it cannot activate runtime authority. Local application remains separate from
+push, tag, publish, deploy, and release authority.
 
 The local SlopBrick v0.45 qualification contract is complete under `SB-045`.
 Public npm release and website deployment remain separate owner decisions under
@@ -217,15 +225,14 @@ planning artifacts only, not participant action.
   first-scan/rescan loop. Its reviewed TDD implementation plan, READY audit,
   and shared-report impact map are approved. It remains active with `CAL-002`
   as its evidence-provenance closeout gate; CAL-002 does not add an unmet
-  `requires` edge. Revision 36 grants no authority to alter default state,
+  `requires` edge. Revision 37 grants no authority to alter default state,
   score, baseline, source, admission, release, deployment, or published
   artifacts; remote state is outside its receipt.
-- Continue active `CAL-002` from the approved amendment: Tasks 1–13 remain
-  checkpointed as recorded above, and Task 14 is integrated from `d7b11b70e`
-  through `c13ce8f47`. Run only Task 15 Steps 1–3: recheck integrated state and
-  frozen inputs, replay the exact catalog, and present the closed 26 transfer /
-  4 blocked / 3 supersede / 7 retire batch. Do not infer an owner choice, write
-  runtime policy, apply policy, admit evidence, or take a release action.
+- Continue active `CAL-002` from the approved amendment: Tasks 1–14 remain
+  checkpointed as recorded above, and Task 15 is complete at `6a85e4346` plus
+  manifest follow-up `80acf1ada`. Run Task 16 only: add pure validated current-
+  policy accessors and an inactive provider. Do not bind runtime scanner paths,
+  write or apply policy, admit evidence, or take a release action.
   `VAL-001` and `TEL-001` remain ready; `REL-001` remains the unchanged
   separate public-authority boundary.
 - Follow with `TEL-001`: define a local, inspectable, opt-in outcome-event

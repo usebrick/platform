@@ -1,14 +1,14 @@
 # UseBrick execution status
 
-**Snapshot:** 2026-07-20
-**Index revision:** 36
+**Snapshot:** 2026-07-22
+**Index revision:** 37
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, and CORPUS-002 source-use
-routing are complete. Revision 36 preserves UseBrick as the sole customer-facing
+routing are complete. Revision 37 preserves UseBrick as the sole customer-facing
 coherence and verification product, with SlopBrick as the shipped package,
 current CLI, free scanner, and acquisition surface. `GTM-001` is now `ready`
 to prepare planning materials for 10–20 consent-safe observed external
@@ -90,26 +90,36 @@ with SlopBrick typecheck on both. The bounded Node 24 full suite passes 4,485
 tests with 15 skipped. Independent final review approved specification and
 code quality with no findings.
 
-The approved v2 projection remains 47 starting quality + 26
-transferred quality + 4 blocked quality + 3 superseded + 7 retired + 32
-research-origin = 119, with owner rows exactly `26/4/3/7`. The next CAL-002
-action is Task 15 Steps 1–3: integrated preflight, exact catalog replay, and
-presentation of the closed authority batch for an explicit owner choice. The
-repository owner is the only completed product tester; the recorded
-row judged a statistical hygiene recommendation useful for review, declined an
-immediate fix because no safe bounded repair followed from the evidence, and
-reproduced the unchanged findings. CAL-001 remains `applied: false` and
-`admitted: false`; revision 36 grants no authority to alter default state,
-score, source, baseline, admission, release, deployment, or published
-artifacts. CAL-002 remains
+Task 15 is checkpointed at `6a85e4346`, with its additive single-root evidence
+manifest at `80acf1ada`. The owner approved the exact 26 transfer / 4 blocked /
+3 supersede / 7 retire authority batch and the exact 119-row matrix. All 41
+deterministic rows passed with zero failed or source-shortage rows; the 32
+unmeasured quality candidates remain score- and gate-ineligible, and the 32
+research-origin rows remain default-off and non-admitting. The resulting
+matrix contains 41 default-on, 36 default-off, 32 quality-candidate-default-off,
+3 superseded, and 7 retired rows.
+
+The single human-facing Task 15 evidence root is
+`53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
+Its manifest binds the sorted name, byte count, and file SHA-256 of all 13
+primary artifacts; leaf identities remain machine-verifiable rather than
+repeated in status prose. The matrix and approval remain `applied: false`, and
+every artifact remains `admitted: false`.
+
+The next CAL-002 action is Task 16: add pure validated current-policy accessors
+behind an inactive provider. It may use the approved matrix only as a test
+fixture and cannot bind scanner runtime paths or activate policy. The repository
+owner remains the only completed product tester; the recorded row judged a
+statistical hygiene recommendation useful for review, declined an immediate
+fix because no safe bounded repair followed from the evidence, and reproduced
+the unchanged findings. CAL-001 remains `applied: false` and `admitted: false`;
+revision 37 grants no authority to alter default state, score, source, baseline,
+admission, release, deployment, or published artifacts. CAL-002 remains
 `in_progress`, implementation WIP remains `2/2`, and its proposed policy also
-remains `applied: false` and `admitted: false`. Task 14 consumed no Task 15
-owner decision and created no live runtime policy. Local application remains
-separate from push, tag, publish, deploy, and release. This documentation
-revision records Task 14's reviewed code-path contracts; it does not grant
-authority to apply runtime policy, and
-remote state is outside the receipt. Stale-path cleanup is isolated behind
-exact owner approval and does not block local product work.
+remains `applied: false` and `admitted: false`. Local application remains
+separate from push, tag, publish, deploy, and release; remote state is outside
+the receipt. Stale-path cleanup is isolated behind exact owner approval and
+does not block local product work.
 
 ## Product and release truth
 
@@ -179,7 +189,9 @@ exact owner approval and does not block local product work.
   through `e8e62b779`, Tasks 9–11 are checkpointed through `651f52d78`, Task
   12 is integrated at `473ceafc3`, and Task 13 is integrated on main at
   `e956f7900`, `366246e5d`, and lock-hardening `8c8760783`. Task 14 is
-  integrated from `d7b11b70e` through `c13ce8f47`.
+  integrated from `d7b11b70e` through `c13ce8f47`. Task 15 evidence is
+  checkpointed at `6a85e4346`, with the single-root manifest follow-up at
+  `80acf1ada`.
   Task 4's
   final focused matrix passes 92/92 on exact Node
   22.22.3 and 24.15.0 runtimes with typecheck on both; the integrated Task 4 +
@@ -222,9 +234,13 @@ exact owner approval and does not block local product work.
   matrix, policy-projection, approval, application-receipt, CLI, schema, and
   immutable-publication code contracts. Its 198/198 two-runtime gate and
   bounded 4,485-test Node 24 suite are green; final independent review has no
-  findings. These commits qualify code paths, not live owner decisions. This
-  checkpoint grants no authority to infer the Task 15 choice, apply runtime
-  policy, or admit evidence. Remote state is outside the receipt.
+  findings. Task 15 records both exact owner decisions, 41/41 passed
+  deterministic rows, 32 deliberately unmeasured quality candidates, exact
+  reuse of 32 research-origin rows, and one approved 119-row matrix. Its
+  human-facing evidence root is
+  `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
+  These commits still do not apply runtime policy or admit evidence. Remote
+  state is outside the receipt.
 - The v10.1 result covering 576,750 analyzed files is historical evidence, not
   current v10.3 admission evidence.
 - The v10.3 material is local/quarantine-only: 452,382 registered/additive
@@ -315,7 +331,7 @@ WIP while waiting.
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Write the red first-scan projection tests for the owner-observed calibrated, no-safe-repair, and unchanged-rescan states. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 15 Steps 1–3: integrated preflight, exact catalog replay, and the closed 26/4/3/7 authority proposal; stop for the literal owner choice. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `in_progress` | — | Run Task 16: add pure validated current-policy accessors and an inactive provider; do not bind scanner runtime paths. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After the UX boundary lands, model the observed useful, declined, and unchanged states without sensitive identity. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
@@ -391,16 +407,15 @@ Task 13 is integrated on main at `e956f7900`, `366246e5d`, and lock-hardening
 `8c8760783`. Task 14 is integrated from `d7b11b70e` through `c13ce8f47` with
 its exact 119-row reducer, 41 deterministic evidence rows, five fixed named
 control slots, frozen source binding, and receipt-first/policy-last immutable
-publication contract independently approved.
+publication contract independently approved. Task 15 is complete at
+`6a85e4346`; its single-root manifest follow-up is `80acf1ada`, with evidence
+root `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
 
-Run Task 15 Steps 1–3 next: recheck the integrated implementation and protected
-state, replay the exact catalog, and present the closed 26 transfer / 4 blocked
-/ 3 supersede / 7 retire authority batch. The owner must choose the full
-literal approval or rejection line; prior generic approvals do not count.
-
-The proposed policy remains `applied: false` and `admitted: false`. Stop at the
-owner choice; do not apply runtime policy, admit evidence, or take a release
-action. The separate quality and origin evidence lanes remain the first-scan
+Run Task 16 next: add pure validated current-policy accessors and an inactive
+provider returning `undefined`. Use the approved matrix only as a test fixture;
+do not bind scanner runtime paths or activate policy. The proposed policy
+remains `applied: false` and `admitted: false`; do not take a release action.
+The separate quality and origin evidence lanes remain the first-scan
 provenance closeout gate for SB-UX-001. `VAL-001` and
 `TEL-001` remain ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has

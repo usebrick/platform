@@ -160,10 +160,10 @@
   exercises this contract only with temporary fixtures.
 - Independent final review approved both specification fidelity and code
   quality with no Critical, Important, or Minor findings.
-- This checkpoint grants no authority to infer a Task 15 owner choice, apply
-  runtime policy, activate a rule, admit evidence, or perform a release action.
-  Remote state is outside this receipt. Local application remains separate
-  from push, tag, publish, deploy, and release decisions.
+- The Task 14 checkpoint alone granted no authority to infer a Task 15 owner
+  choice, apply runtime policy, activate a rule, admit evidence, or perform a
+  release action. Remote state is outside this receipt. Local application
+  remains separate from push, tag, publish, deploy, and release decisions.
 - Task 15 consumed the later literal owner decisions and generated 13 primary
   immutable evidence artifacts plus one evidence manifest. The authority
   choice approved exactly 26 transfers, 4 blocks, 3 supersessions, and 7
@@ -182,6 +182,8 @@
   rows.
 - The owner approved the exact matrix. The canonical recorded decision line is
   `1 approve this exact 119-row matrix SHA`.
+- The 13 primary artifacts and ledger are checkpointed at `6a85e4346`; the
+  additive manifest contract and artifact are checkpointed at `80acf1ada`.
 - The single human-facing Task 15 evidence root is
   `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
   It binds the sorted name, byte count, and file SHA-256 of all 13 primary
@@ -290,6 +292,10 @@ assumptions; their two bounded corrections are included in `c13ce8f47`.
 - `evidence-manifest-v1.json` contains exactly 13 sorted leaf entries and one
   self-validating `evidenceRootSha256`. That root is the only aggregate Task 15
   evidence hash repeated in human-facing status documentation.
+- The final manifest implementation passed controller self-audit after its
+  fresh-checkout file-mode portability correction. Two rounds of independent
+  reviewer attempts stalled and were closed, so no independent approval is
+  claimed for this additive follow-up.
 
 ## Next evidence
 

@@ -3,6 +3,46 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 37 — 2026-07-22
+
+### Changed
+
+- Recorded both exact Task 15 owner decisions: the 26 transfer / 4 blocked / 3
+  supersede / 7 retire authority batch and the exact 119-row matrix are
+  approved.
+- Recorded the primary immutable-evidence checkpoint at `6a85e4346`: all 41
+  deterministic rows passed, 32 quality candidates remain deliberately
+  unmeasured and score/gate-ineligible, and all 32 research-origin rows remain
+  default-off and non-admitting.
+- Recorded the additive evidence-manifest checkpoint at `80acf1ada`. Human-
+  facing authority documents now cite one Task 15 evidence root while the
+  manifest retains the exact sorted name, byte count, and file identity of all
+  13 primary artifacts.
+- Advanced CAL-002 to Task 16: pure validated current-policy accessors behind
+  an inactive provider. Runtime scanner binding remains outside this slice.
+
+### Evidence
+
+- The integrated nine-file Task 15 preflight passes 122/122 on exact Node
+  22.22.3 and 24.15.0.
+- The deterministic reducer completed 41/41 rows with zero failed or source-
+  shortage rows; the matrix/application adversarial gate passes 43/43.
+- The final manifest and artifact-I/O focused gate passes 18/18 on both exact
+  Node runtimes, with SlopBrick typecheck green on both.
+- The single evidence root is
+  `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
+- Controller self-audit corrected fresh-checkout file-mode portability before
+  checkpoint. Two rounds of independent reviewer attempts stalled and were
+  closed, so no independent manifest-review approval is claimed.
+
+### Boundary
+
+- `CAL-002` remains `in_progress`; implementation WIP remains `2/2` and
+  company WIP remains `0/1`.
+- The matrix and approval remain `applied: false`; all evidence remains
+  `admitted: false`. No runtime activation, push, tag, publish, deployment, or
+  release is recorded or authorized.
+
 ## Revision 36 — 2026-07-20
 
 ### Changed

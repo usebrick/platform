@@ -4,7 +4,7 @@
 - **Priority:** 7
 - **Track / lane:** implementation / calibration
 - **Owner:** calibration maintainers and repository owner
-- **Updated:** 2026-07-20
+- **Updated:** 2026-07-22
 
 ## Outcome
 
@@ -69,9 +69,19 @@ The expanded 13-file Task 13/14 gate passes 198/198 on exact Node 22.22.3 and
 passes 4,485 tests with 15 skipped. Independent final review approved the
 specification and code quality with no findings.
 
-Task 14 tests application only with temporary fixtures. It consumed no Task 15
-owner decision, wrote no live runtime policy, and admitted no evidence. The
-proposed policy remains `applied: false` and `admitted: false`.
+Task 14 tests application only with temporary fixtures. Task 15 then consumed
+the two exact owner decisions and generated the closed immutable evidence set.
+The primary evidence checkpoint is `6a85e4346`; the additive single-root
+manifest contract and artifact are checkpointed at `80acf1ada`.
+
+Task 15 records the approved exact 26 transfer / 4 blocked / 3 supersede / 7
+retire authority batch and the approved exact 119-row matrix. All 41
+deterministic rows passed, all 32 unmeasured quality candidates remain score-
+and gate-ineligible, and all 32 research-origin rows remain default-off. The
+one human-facing evidence root is
+`53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`;
+its manifest binds the exact 13 primary artifacts. The proposed policy remains
+`applied: false` and `admitted: false`, and no live runtime policy exists.
 
 Task 4 closes
 the exact 32 quality rows without labels and keeps them disabled, score-
@@ -90,9 +100,10 @@ rule. Task 11 closes the two security fixtures, comment-masks hardcoded-secret
 scanning, and adds the canonical strict 41-row v2 oracle reducer/schema without
 writing a durable receipt or applying policy. Task 12 writes no durable
 receipt and applies no policy. Task 13 neither changes a v1 owner decision nor
-creates a durable receipt. Task 14 provides the code contract for later
-immutable evidence but creates no committed Task 15 authority, matrix, or
-application receipt. Remote state is outside this receipt.
+creates a durable receipt. Task 14 provides the code contract used by Task 15's
+committed authority, matrix, receipts, and evidence manifest. Task 15 still
+does not apply policy or create a live runtime binding. Remote state is outside
+this receipt.
 
 ## Scope
 
@@ -153,11 +164,10 @@ application receipt. Remote state is outside this receipt.
 
 ## Verification
 
-Continue with Task 15 Steps 1–3 only. Recheck the integrated implementation and
-protected input, replay the exact frozen 119-row catalog, then present the
-closed 26 transfer / 4 blocked / 3 supersede / 7 retire authority batch. Stop
-for the literal owner choice before creating its receipt or continuing to
-later Task 15 evidence.
+Run Task 16 only. Red-test the current-policy accessor truth table, then add
+pure validated accessors plus an inactive provider that returns `undefined`.
+Use the committed Task 15 matrix and approval only through the test fixture;
+do not bind any scanner runtime path or activate policy.
 
 Before any later policy application, verify frozen identities, exact 119-row
 coverage, lane separation, non-admission, and the prescribed recursive and
@@ -177,14 +187,7 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Run Task 15 Steps 1–3: integrated preflight, exact catalog replay, and the
-closed authority-batch proposal. Present exactly these owner choices and do
-not translate generic approval into either one:
-
-```text
-1 approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch
-2 reject the exact batch and leave runtime policy unchanged
-```
-
-Stop after presenting the exact proposal identity and menu. Do not apply
-policy, admit evidence, push, tag, publish, deploy, or release.
+Run Task 16: create `current-evidence-policy.ts`, its inactive runtime provider,
+the approved-policy test helper, and the focused accessor truth-table tests.
+The provider must return `undefined`; do not apply policy, bind runtime scanner
+paths, admit evidence, push, tag, publish, deploy, or release.

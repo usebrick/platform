@@ -2134,7 +2134,7 @@ stabilizes only the two full-suite qualification harnesses.
 - Consumes: one integrated commit graph through Task 14, exact local Corpus v1 source binding, the protected v1 owner state, and two closed repository-owner decisions.
 - Produces: immutable, canonical, non-admitting evidence, one approved 119-row matrix, and one artifact-set root over the 13 primary JSON artifacts; does not write runtime policy.
 
-- [ ] **Step 1: Recheck integrated state and frozen inputs**
+- [x] **Step 1: Recheck integrated state and frozen inputs**
 
 ```bash
 git status --short --branch
@@ -2145,7 +2145,7 @@ test "$(shasum -a 256 .slopbrick/calibration/cal-002/origin-state.json | awk '{p
 
 Expected: focused implementation tests pass; protected v1 state is exact; only known user-owned dirty paths remain outside committed implementation.
 
-- [ ] **Step 2: Regenerate and verify the frozen v1 catalog projection**
+- [x] **Step 2: Regenerate and verify the frozen v1 catalog projection**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- catalog \
@@ -2159,7 +2159,7 @@ canonical file SHA-256
 `6faeed123ee1414cc5a8ead873178e43fb23d46cab985d3254acbe9e3cf0e4d5`,
 mode 0600, 23,377 bytes, `admitted: false`, and `applied: false`.
 
-- [ ] **Step 3: Run the one closed authority batch decision**
+- [x] **Step 3: Run the one closed authority batch decision**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- classify-authority \
@@ -2182,7 +2182,7 @@ rejection line, stop this task. On the approval line, verify the receipt binds
 the proposal, catalog, and protected prior-state SHA; then re-hash the v1 file
 and require byte identity.
 
-- [ ] **Step 4: Emit the zero-label contextual/statistical disposition**
+- [x] **Step 4: Emit the zero-label contextual/statistical disposition**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- quality-closeout \
@@ -2192,7 +2192,7 @@ corepack pnpm --filter slopbrick cal:complete -- quality-closeout \
 
 Expected: exactly 32 rows, all `not-requested-owner-capacity`, all counts zero, no uncertainty, all `quality-candidate-default-off`, and no selected cohort. This does not prevent a later separately approved four-rule cohort.
 
-- [ ] **Step 5: Execute and bind the three parity dispositions**
+- [x] **Step 5: Execute and bind the three parity dispositions**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- reduce-parity-v2 \
@@ -2220,7 +2220,7 @@ corepack pnpm --filter slopbrick cal:complete -- verify-supersession \
 
 Expected: SQL and console are `ported`; line-density `any` is `rejected-as-false-positive`; every receipt binds an actual migration commit and passed cases.
 
-- [ ] **Step 6: Execute all deterministic oracles and fixed source-bound control slots**
+- [x] **Step 6: Execute all deterministic oracles and fixed source-bound control slots**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- reduce-oracles-v2 \
@@ -2234,7 +2234,7 @@ corepack pnpm --filter slopbrick cal:complete -- reduce-oracles-v2 \
 
 Expected: 32 starting + 9 transferred = 41 explicit rows. Oracle or real-source-control failures remain completed `failed` rows and later reduce to default-off; source shortages are named `real-source-control-shortage`; no source/path appears in either receipt.
 
-- [ ] **Step 7: Verify the exact 32-row research-origin receipt**
+- [x] **Step 7: Verify the exact 32-row research-origin receipt**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- verify-origin-v2 \
@@ -2245,7 +2245,7 @@ corepack pnpm --filter slopbrick cal:complete -- verify-origin-v2 \
 
 Expected: exact reuse or completed one-worker rerun, 32 research-only rows, all default-off/score-neutral/gate-neutral, `admitted: false`.
 
-- [ ] **Step 8: Build and adversarially verify the complete matrix**
+- [x] **Step 8: Build and adversarially verify the complete matrix**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- matrix-v2 \
@@ -2260,7 +2260,7 @@ corepack pnpm --filter slopbrick exec vitest run tests/calibration/cal-002-matri
 
 Expected: 119 canonical unique rows, exact 47/26/4/3/7/32 projection, no authority elevation from AI association, `applied: false`, `admitted: false`.
 
-- [ ] **Step 9: Obtain the exact matrix decision**
+- [x] **Step 9: Obtain the exact matrix decision**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- approve-matrix-v2 \
@@ -2281,7 +2281,7 @@ the literal choice, then reduce the machine-readable leaf hashes to one
 manifest root in the CAL-002 evidence ledger. Approval still authorizes no
 push, tag, publish, deploy, or release action.
 
-- [ ] **Step 10: Build one canonical evidence-manifest root**
+- [x] **Step 10: Build one canonical evidence-manifest root**
 
 ```bash
 corepack pnpm --filter slopbrick cal:complete -- manifest-v2 \
@@ -2294,7 +2294,7 @@ count, and file SHA-256. `evidenceRootSha256` is the single human-facing
 evidence root over the closed manifest body. The manifest remains
 `admitted: false` and `applied: false`; the manifest does not include itself.
 
-- [ ] **Step 11: Commit only named immutable evidence**
+- [x] **Step 11: Commit only named immutable evidence**
 
 ```bash
 git add docs/execution/evidence/CAL-002-complete-calibration.md docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md packages/slopbrick/CHANGELOG.md packages/slopbrick/scripts/cal/cal-002.ts packages/slopbrick/src/calibration/cal-002/artifact-io.ts packages/slopbrick/src/calibration/cal-002/evidence-manifest.ts packages/slopbrick/src/calibration/cal-002/schemas/cal-002-evidence-manifest-v1.schema.json packages/slopbrick/src/calibration/cal-002/schemas/index.json packages/slopbrick/tests/calibration/cal-002-evidence-manifest.test.ts
@@ -2303,6 +2303,11 @@ git commit -m "feat(calibration): add evidence manifest root"
 ```
 
 Expected: `.slopbrick` and unrelated artifact-directory contents remain unstaged. Evidence commit `6a85e4346` contains the ledger plus 13 primary JSON artifacts; this additive follow-up adds the manifest contract and artifact. Human documentation repeats only the manifest root, matrix approval identity, source binding, and generating commit—not every leaf hash.
+
+Completed: primary evidence is checkpointed at `6a85e4346`; the manifest
+contract and artifact are checkpointed at `80acf1ada`. The single human-facing
+evidence root is
+`53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
 
 ### Task 16: Add pure current-policy accessors behind an inactive provider
 
