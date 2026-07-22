@@ -1,26 +1,33 @@
-# Security review: CAL-002 Task 16 current-policy accessors
+# Security review: CAL-002 Task 17 runtime authority paths
 
 - **Reviewed:** 2026-07-22
-- **Merge base:** `940e838d7`
-- **Reviewed checkpoint:** `14c184b36`
-- **Scope:** Task 16 source, tests, dependency declaration, and revision-38
-  documentation
+- **Merge base:** `6bdb9bbda`
+- **Reviewed checkpoint:** `61dc8f803`
+- **Scope:** Task 17 registry, score-selector, watch-normalization, worker,
+  project coordinator, tests, review corrections, and orchestration diagnosis
 - **Verdict:** PASS
 
 ## Scope and trust boundaries
 
-The production change adds two TypeScript modules. One accepts an unknown
-policy value, passes it through the existing strict policy validator, requires
-the complete applied form, verifies the exact owner-approved projection, then
-copies and freezes the validated policy before exposing read-only accessors.
-The other is an inactive provider that always returns `undefined`.
+Task 17 connects the inactive current-policy provider to three existing
+scanner boundaries: rule-context creation, the canonical effective-issue
+selector, and worker Bayesian/composite inputs. Tests replace only the
+provider with the exact approved Task 15 projection. The production provider
+still returns `undefined`, so production scans retain legacy behavior until a
+separately reviewed activation task.
 
-The reviewed production path performs no filesystem, network, shell, process,
-database, template, authentication, or deserialization operation. The only new
-file reads and `JSON.parse` calls are in a test helper, use repository-owned
-constant paths and filenames, and are excluded from production risk under the
-security-review test-file rule. The embedded SHA-256 values are public artifact
-identities, not credentials or secret material.
+When a validated provider is present, policy-known blocked, superseded, and
+retired rules fail closed before rule context creation. Policy-known
+score-ineligible findings can remain visible when explicit diagnostic use is
+permitted, but cannot enter the canonical scoring set, Bayesian inputs, or
+synthetic-composite chaining. Explicit `off` remains stronger than policy
+eligibility. IDs absent from current policy preserve the existing extension
+and legacy fallback.
+
+The change introduces no new filesystem read or write, network request,
+process execution, database operation, template rendering, credential,
+deserialization, or publication path. It consumes only the validated,
+immutable accessor interface established by Task 16.
 
 ## Vulnerability assessment
 
@@ -30,29 +37,35 @@ identities, not credentials or secret material.
 | XSS / template injection | Clear | No rendered output or HTML/template sink. |
 | SSRF | Clear | No network client or user-controlled URL. |
 | Command injection | Clear | No process or shell execution. |
-| Authentication / authorization bypass | Clear | No identity or authorization boundary. Policy authority fails closed before accessors are created. |
-| Unsafe deserialization | Clear | Production accepts an unknown object only through strict structural and exact-identity validation. Test-only JSON input uses fixed repository artifacts. |
-| Path traversal | Clear | Production performs no path operation; test-only paths are constants. |
-| IDOR | Clear | No object lookup across a user authorization boundary. |
-| Weak cryptography / secrets exposure | Clear | SHA-256 is used only for deterministic identity binding; no secrets are introduced or logged. |
+| Authentication / authorization bypass | Clear | The policy boundary narrows scanner authority; denied current rows cannot be re-enabled by severity overrides. |
+| Unsafe deserialization | Clear | Task 17 accepts no serialized input and uses only Task 16 validated accessors. |
+| Path traversal | Clear | No new path construction or filesystem operation. |
+| IDOR | Clear | No user/resource authorization lookup. |
+| Weak cryptography / secrets exposure | Clear | No new hash, secret, credential, or logging surface. |
 | NoSQL injection | Clear | No NoSQL query or sink. |
 
 ## Findings
 
-No reportable findings at confidence 8/10 or higher. No unresolved HIGH finding
-exists.
+No reportable findings at confidence 8/10 or higher. No unresolved HIGH
+finding exists.
 
 ## Verification
 
-- Focused Task 16 tests: 7/7 on Node 22.22.3 and 24.15.0.
-- Focused source coverage: 100% statements, branches, functions, and lines for
-  both current-policy modules.
+- Exact Task 17 nine-file focused gate: 188/188 on Node 22.22.3 and 24.15.0.
 - SlopBrick typecheck: pass on Node 22.22.3 and 24.15.0.
-- Recursive test, typecheck, and build gates: pass.
-- Independent final reviews: 99/100 and 100/100, zero findings.
+- Recursive tests: Core 285, Engine 60, Website 54, and SlopBrick 4,511 passed
+  with 15 intentional skips.
+- Recursive typecheck and build: pass.
+- Post-correction targeted authority coverage: 141/141 tests; the canonical
+  score selector is 100% covered for statements, branches, functions, and
+  lines.
+- Independent final re-reviews: 100/100 and 100/100, no remaining findings.
+- `git diff --check`: pass.
 
 ## Residual boundary
 
-The production provider remains inactive. Task 17 may connect registry, CLI,
-watch, and worker behavior only through exact approved-policy mocks. Any later
-activation of the provider is a separate security and release review boundary.
+The production provider remains inactive. Task 17 proves behavior through the
+exact approved-policy test helper but does not apply the matrix, activate
+runtime authority, admit evidence, or authorize a push, tag, publish,
+deployment, or release. Task 20 remains the separate activation and security
+review boundary.
