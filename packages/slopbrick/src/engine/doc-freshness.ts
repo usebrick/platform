@@ -26,7 +26,10 @@ import { join, dirname, relative } from 'node:path';
 import { globby } from 'globby';
 import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../types';
 
+import { effectiveIssuesForScore } from '../cli/effective-issues';
+import { getRunnableRuleOverrides } from '../config/rule-override-provenance';
 import { brokenLinkRule } from '../rules/docs/broken-link';
+import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime';
 import { staleFunctionReferenceRule } from '../rules/docs/stale-function-reference';
 import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference';
 
@@ -553,6 +556,9 @@ export async function buildDocFreshness(
   const exports = await extractExports(cwd, config, maxSourceFiles);
 
   const findings: DocFinding[] = [];
+  const emittedIssues: Issue[] = [];
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const runnableRuleOverrides = getRunnableRuleOverrides(config);
   let scanned = 0;
   for (const abs of docLimited) {
     let source: string;
@@ -586,9 +592,13 @@ export async function buildDocFreshness(
       { rule: brokenLinkRule, ruleId: 'docs/broken-link' },
     ];
     for (const { rule, ruleId } of ruleConfigs) {
+      if (config.rules[ruleId] === 'off') continue;
+      if (currentPolicy !== undefined
+        && !currentPolicy.isRuleRunnable(ruleId, runnableRuleOverrides)) continue;
       const ruleContext = rule.create(context as any);
       const issues: Issue[] = rule.analyze(ruleContext, facts as any);
       for (const issue of issues) {
+        emittedIssues.push(issue);
         findings.push({
           ruleId: ruleId,
           severity: issue.severity,
@@ -615,7 +625,9 @@ export async function buildDocFreshness(
   let weight = 0;
   for (const f of findings) {
     byRule[f.ruleId] = (byRule[f.ruleId] ?? 0) + 1;
-    weight += DOC_RULE_WEIGHTS[f.ruleId];
+  }
+  for (const issue of effectiveIssuesForScore(emittedIssues, config)) {
+    weight += DOC_RULE_WEIGHTS[issue.ruleId as DocFinding['ruleId']];
   }
   const docFreshness = Math.max(0, Math.min(100, 100 - weight));
   let docDrift: DocDriftLevel = 'low';
