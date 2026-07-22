@@ -8,13 +8,15 @@ Current policy:
   Detail: legacy defaults only
 Evidence:    ai-signal
 Historical metrics: historical point estimates only
-  Calibrated: 2026-07-04T00:00:00Z
-  Recall:    0.16%
-  FPR:       0.03%
-  Precision: 86.69%
-  Lift:      3035.16×
-Historical source/cohort: unavailable — The shipped estimate predates v10.3 admission; no validated cohort/source is available.
-Historical confidence limits: unavailable — No validated confidence interval is available in the shipped calibration contract.
+  Dataset:   v10.1
+  Signal:    strong
+  Recall:    0.10%
+  Precision: 82.16%
+  F1:        0.20%
+  Positive fires: 304
+  Negative fires: 66
+Historical source/cohort: unavailable — the frozen v10.1 projection carries no admitted v10.3 source/cohort.
+Historical confidence limits: unavailable — the frozen v10.1 projection contains point estimates only.
 Matched fact/snippet: unavailable in a rule-level explanation; run `slopbrick scan` for file/line evidence.
 Note: This output does not claim runtime suppression or authorship proof.
 Source:      src/rules/visual/math-default-font.ts

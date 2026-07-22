@@ -15,10 +15,6 @@ function formatRate(value: number | undefined): string {
   return typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : 'unavailable';
 }
 
-function formatLift(value: number | undefined): string {
-  return typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}×` : 'unavailable';
-}
-
 function formatPolicyBoolean(value: boolean | undefined): string {
   return value === undefined ? 'unavailable' : value ? 'yes' : 'no';
 }
@@ -63,6 +59,8 @@ export function formatExplain(result: ExplainResult | { error: string }): string
     lines.push('  Gate eligible: ' + formatPolicyBoolean(result.currentPolicy.gateEligible));
     lines.push('  Quality domain: ' + formatPolicyValue(result.currentPolicy.qualityDomain));
     lines.push('  Claim class: ' + formatPolicyValue(result.currentPolicy.claimClass));
+    lines.push('  Readiness: ' + formatPolicyValue(result.currentPolicy.readiness));
+    lines.push('  Repair safety: ' + formatPolicyValue(result.currentPolicy.repairSafety));
     lines.push('  Provenance: ' + formatPolicyValue(result.currentPolicy.provenance));
     if (result.currentPolicy.replacementRuleId !== undefined) {
       lines.push('  Replacement rule ID: ' + result.currentPolicy.replacementRuleId);
@@ -73,15 +71,17 @@ export function formatExplain(result: ExplainResult | { error: string }): string
   }
   lines.push('Evidence:    ' + result.evidence.category);
   lines.push('Historical metrics: ' + formatCalibrationStatus(result.historicalMetrics.status));
+  lines.push('  Dataset:   ' + result.historicalMetrics.dataset);
   if (result.historicalMetrics.status === 'historical-point-estimate-only') {
-    lines.push('  Calibrated: ' + (result.historicalMetrics.lastCalibratedAt ?? 'unavailable'));
+    lines.push('  Signal:    ' + result.historicalMetrics.signal);
     lines.push('  Recall:    ' + formatRate(result.historicalMetrics.recall));
-    lines.push('  FPR:       ' + formatRate(result.historicalMetrics.falsePositiveRate));
     lines.push('  Precision: ' + formatRate(result.historicalMetrics.precision));
-    lines.push('  Lift:      ' + formatLift(result.historicalMetrics.lift));
+    lines.push('  F1:        ' + formatRate(result.historicalMetrics.f1));
+    lines.push('  Positive fires: ' + result.historicalMetrics.positiveFires);
+    lines.push('  Negative fires: ' + result.historicalMetrics.negativeFires);
   }
-  lines.push('Historical source/cohort: unavailable — ' + result.historicalMetrics.provenance.reason);
-  lines.push('Historical confidence limits: unavailable — ' + result.historicalMetrics.confidenceLimitsReason);
+  lines.push('Historical source/cohort: unavailable — the frozen v10.1 projection carries no admitted v10.3 source/cohort.');
+  lines.push('Historical confidence limits: unavailable — the frozen v10.1 projection contains point estimates only.');
   lines.push('Matched fact/snippet: unavailable in a rule-level explanation; run `slopbrick scan` for file/line evidence.');
   lines.push('Note: This output does not claim runtime suppression or authorship proof.');
   lines.push('Source:      ' + result.sourcePath);

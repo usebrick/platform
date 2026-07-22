@@ -7,6 +7,7 @@ vi.mock('../src/rules/current-evidence-policy-runtime', () => ({
 }));
 import { explainRule, formatExplain } from '../src/cli/explain';
 import { buildRuleExplanation } from '../src/rules/explanation';
+import { loadHistoricalSignalStrength } from '../src/rules/signal-strength';
 import { DEFAULT_CONFIG } from '../src/config';
 import type { Rule } from '../src/types';
 import { approvedCurrentPolicyFixture } from './helpers/current-evidence-policy-v2';
@@ -97,11 +98,13 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     expect(out).toContain('Evidence:    quality');
     expect(out).toContain('Current policy:\n  Status: unavailable\n  Detail: legacy defaults only');
     expect(out).toContain('Historical metrics: historical point estimates only');
-    expect(out).toContain('Calibrated: 2026-07-04T00:00:00Z');
-    expect(out).toContain('Historical source/cohort: unavailable');
+    expect(out).toContain('Dataset:   v10.1');
+    expect(out).toContain('Signal:    weak');
+    expect(out).toContain('F1:');
+    expect(out).toContain('Positive fires: 8012');
+    expect(out).toContain('Negative fires: 8029');
     expect(out).toContain('Precision:');
     expect(out).toContain('Matched fact/snippet: unavailable in a rule-level explanation');
-    expect(out).toContain('Historical confidence limits: unavailable');
     expect(out).toContain('This output does not claim runtime suppression or authorship proof.');
   });
 
@@ -125,6 +128,8 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
       '  Gate eligible: no',
       '  Quality domain: type-safety',
       '  Claim class: contextual-heuristic',
+      '  Readiness: evidence-ready',
+      '  Repair safety: no-safe-repair',
       '  Provenance: quality-candidate-unmeasured',
       '  Admitted: no',
     ].join('\n'));
@@ -148,6 +153,8 @@ describe('formatExplain (v0.5.2: Help: line)', () => {
     expect(out).toContain('  Gate eligible: no');
     expect(out).toContain('  Quality domain: type-safety');
     expect(out).toContain('  Claim class: contextual-heuristic');
+    expect(out).toContain('  Readiness: parity-required');
+    expect(out).toContain('  Repair safety: not-applicable');
     expect(out).toContain('  Provenance: superseded-policy');
     expect(out).toContain('  Replacement rule ID: ai/any-density');
     expect(out).toContain('  Admitted: no');
@@ -175,12 +182,27 @@ describe('buildRuleExplanation', () => {
       enabledByDefault: false,
       runnableByExplicitOptIn: true,
       scoreEligible: false,
+      readiness: 'evidence-ready',
+      repairSafety: 'no-safe-repair',
       provenance: 'quality-candidate-unmeasured',
       admitted: false,
     });
-    expect(result.historicalMetrics).toMatchObject({
+    expect(result.historicalMetrics).toEqual({
       status: 'historical-point-estimate-only',
+      dataset: 'v10.1',
+      signal: 'weak',
+      precision: 0.63156,
+      recall: 0.00623,
+      f1: 0.01235,
+      positiveFires: 1913,
+      negativeFires: 1116,
     });
+    expect(result.historicalMetrics).toBe(
+      loadHistoricalSignalStrength().entries['ai/any-density'],
+    );
+    expect(Object.isFrozen(result.historicalMetrics)).toBe(true);
+    expect(result.evidence.calibration.precision).toBe(0.6523);
+    expect(result.evidence.calibration).not.toBe(result.historicalMetrics);
     expect(JSON.stringify(result.currentPolicy)).not.toMatch(
       /precision|recall|falsePositiveRate|fpRate|ratio|verdict/i,
     );
@@ -265,7 +287,7 @@ describe('buildRuleExplanation', () => {
     );
 
     expect(result.configuration.defaultOff).toBe(true);
-    expect(result.configuration.policyState).toBe('legacy-default-off');
+    expect(result.configuration.policyState).toBe('default-off');
     expect(JSON.stringify(result)).not.toMatch(/effective|runtime|suppressed/i);
   });
 });

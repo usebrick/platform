@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import signalStrengthData from './signal-strength.json' with { type: 'json' };
 import { signalStrengthSchema, isDefaultOff } from '@usebrick/core';
 import type { Verdict, SignalStrengthEntry } from '@usebrick/core';
@@ -48,9 +49,24 @@ export interface HistoricalSignalStrengthTable {
 }
 
 const HISTORICAL_V10_1_RULE_COUNT = 103;
+const HISTORICAL_V10_1_RULE_IDS_SHA256 = 'cf9821613fad34efadbad4b80baf12b9fe4465cfec82f648001a0cd6e7e7847f';
 const HISTORICAL_V10_1_SIGNALS = new Set<HistoricalV101Signal>([
   'strong', 'weak', 'dormant', 'inverted',
 ]);
+
+/**
+ * Pure identity-set guard for the frozen v10.1 projection. The digest is an
+ * internal binding over the sorted JSON array of rule IDs; it is not a
+ * human-facing evidence or leaf-hash surface.
+ */
+export function assertHistoricalV101RuleIdentities(ruleIds: readonly string[]): void {
+  const canonicalIds = JSON.stringify([...ruleIds].sort());
+  const identitySha256 = createHash('sha256').update(canonicalIds, 'utf8').digest('hex');
+  if (ruleIds.length !== HISTORICAL_V10_1_RULE_COUNT
+    || identitySha256 !== HISTORICAL_V10_1_RULE_IDS_SHA256) {
+    throw new TypeError('Historical signal table must contain the exact frozen v10.1 rule identities');
+  }
+}
 
 function historicalV101Entry(
   ruleId: string,
@@ -87,9 +103,7 @@ const HISTORICAL_V10_1_ENTRIES = Object.freeze(Object.fromEntries(
     return entry === undefined ? [] : [[ruleId, entry] as const];
   }),
 ));
-if (Object.keys(HISTORICAL_V10_1_ENTRIES).length !== HISTORICAL_V10_1_RULE_COUNT) {
-  throw new TypeError(`Historical v10.1 signal table must contain exactly ${HISTORICAL_V10_1_RULE_COUNT} rows`);
-}
+assertHistoricalV101RuleIdentities(Object.keys(HISTORICAL_V10_1_ENTRIES));
 
 const HISTORICAL_SIGNAL_STRENGTH: HistoricalSignalStrengthTable = Object.freeze({
   status: 'historical-point-estimate-only',
@@ -104,6 +118,10 @@ const HISTORICAL_SIGNAL_STRENGTH: HistoricalSignalStrengthTable = Object.freeze(
  */
 export function loadHistoricalSignalStrength(): HistoricalSignalStrengthTable {
   return HISTORICAL_SIGNAL_STRENGTH;
+}
+
+export function getHistoricalSignalStrength(ruleId: string): HistoricalSignalStrengthEntry | undefined {
+  return HISTORICAL_SIGNAL_STRENGTH.entries[ruleId];
 }
 
 export function getSignalStrength(ruleId: string): SignalStrengthEntry | undefined {

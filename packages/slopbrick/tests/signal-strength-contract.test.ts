@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  assertHistoricalV101RuleIdentities,
   getDefaultOffRules,
   loadHistoricalSignalStrength,
   loadSignalStrength,
@@ -42,6 +43,18 @@ describe('signal-strength contract (Zod-validated)', () => {
     expect(Object.isFrozen(historical.entries)).toBe(true);
     expect(Object.isFrozen(historical.entries['ai/any-density'])).toBe(true);
     expect(JSON.stringify(historical)).not.toMatch(/currentPolicy|current-quality/i);
+  });
+
+  it('binds the exact frozen v10.1 rule identities, not only their count', () => {
+    const historicalIds = Object.keys(loadHistoricalSignalStrength().entries);
+    expect(() => assertHistoricalV101RuleIdentities(historicalIds)).not.toThrow();
+
+    const replaced = [...historicalIds];
+    replaced[0] = 'adversarial/replaced-v10.1-rule';
+    expect(replaced).toHaveLength(103);
+    expect(() => assertHistoricalV101RuleIdentities(replaced)).toThrow(
+      /exact frozen v10\.1 rule identities/i,
+    );
   });
 
   it('labels rules and calibration command output as historical rather than current authority', async () => {

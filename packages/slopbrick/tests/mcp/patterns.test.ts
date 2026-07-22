@@ -115,12 +115,19 @@ describe('MCP evidence contract', () => {
       gateEligible: false,
       qualityDomain: 'type-safety',
       claimClass: 'contextual-heuristic',
+      readiness: 'evidence-ready',
+      repairSafety: 'no-safe-repair',
       provenance: 'quality-candidate-unmeasured',
       admitted: false,
     });
     expect(payload.currentPolicy).toEqual(cliExplanation.currentPolicy);
     expect(payload.configuration.policyState).toBe('current-explicit-diagnostic');
-    expect(payload.historicalMetrics.status).toBe('historical-point-estimate-only');
+    expect(payload.historicalMetrics).toMatchObject({
+      status: 'historical-point-estimate-only',
+      dataset: 'v10.1',
+      precision: 0.63156,
+    });
+    expect(payload.evidence.calibration.precision).toBe(0.6523);
     expect(JSON.stringify(payload.currentPolicy)).not.toMatch(
       /precision|recall|falsePositiveRate|fpRate|ratio|verdict/i,
     );
@@ -131,7 +138,30 @@ describe('MCP evidence contract', () => {
     });
     expect(finding).not.toHaveProperty('currentPolicy');
     expect(finding).not.toHaveProperty('historicalMetrics');
-    expect(finding.calibration).toEqual(cliExplanation.historicalMetrics);
+    expect(finding.calibration).toEqual(cliExplanation.evidence.calibration);
+    expect(finding.calibration.precision).toBe(0.6523);
+    expect(finding.calibration).not.toHaveProperty('dataset');
+  });
+
+  it('preserves the legacy default-off policyState on the MCP wire', async () => {
+    const result = await handleToolCall(
+      'slop_explain_rule',
+      { ruleId: 'visual/test-rule' },
+      {
+        cwd: '/tmp',
+        rules: [{
+          id: 'visual/test-rule', category: 'visual', severity: 'medium', aiSpecific: true,
+          defaultOff: true, create: () => ({}), analyze: () => [],
+        }],
+        config: { ...TEST_CONFIG, rules: {} },
+      },
+    );
+
+    expect(result.isError).toBeFalsy();
+    const payload = JSON.parse(result.content[0]!.text) as {
+      configuration: { policyState: string };
+    };
+    expect(payload.configuration.policyState).toBe('default-off');
   });
 
   it('exposes a superseded policy and replacement through slop_explain_rule', async () => {
@@ -157,6 +187,8 @@ describe('MCP evidence contract', () => {
       gateEligible: false,
       qualityDomain: 'type-safety',
       claimClass: 'contextual-heuristic',
+      readiness: 'parity-required',
+      repairSafety: 'not-applicable',
       provenance: 'superseded-policy',
       replacementRuleId: 'ai/any-density',
       admitted: false,

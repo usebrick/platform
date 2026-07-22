@@ -181,31 +181,69 @@ it. Use `slop_suggest` for repository patterns before writing.
 Return rule metadata + rationale + advice.
 
 **Input:**
-- `ruleId` (string, required) — e.g. `"ai/compression-profile"`
+- `ruleId` (string, required) — e.g. `"ai/any-density"`
 
-**Output:**
+**Output shape:** the applied-policy branch is shown so every additive field is
+visible; see the provider note below.
+
 ```json
 {
-  "ruleId": "ai/compression-profile",
+  "ruleId": "ai/any-density",
   "category": "ai",
   "aiSpecific": true,
-  "severity": "high",
+  "severity": "medium",
   "pattern": "...",
-  "remediation": "See the rule source for the canonical before/after: src/rules/ai/compression-profile.ts",
-  "sourcePath": "src/rules/ai/compression-profile.ts",
-  "suppressionSnippet": "rules: { \"ai/compression-profile\": \"off\" }  // or set to a lower severity",
+  "remediation": "See the rule source for the canonical before/after: src/rules/ai/any-density.ts",
+  "sourcePath": "src/rules/ai/any-density.ts",
+  "helpUri": "https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules/ai/any-density.ts",
+  "suppressionSnippet": "rules: { \"ai/any-density\": \"off\" }  // or set to a lower severity",
   "evidence": {
     "category": "ai-signal",
     "calibration": {
       "status": "historical-point-estimate-only",
+      "lastCalibratedAt": "2026-07-04T00:00:00Z",
+      "recall": 0.006,
+      "falsePositiveRate": 0.0037,
+      "precision": 0.6523,
+      "lift": 175.31,
+      "provenance": {
+        "status": "historical-only",
+        "source": null,
+        "cohort": null,
+        "reason": "The shipped estimate predates v10.3 admission; no validated cohort/source is available."
+      },
       "confidenceLimits": null,
       "confidenceLimitsReason": "No validated confidence interval is available in the shipped calibration contract."
     }
   },
+  "currentPolicy": {
+    "status": "applied",
+    "runtimeOutcome": "quality-candidate-default-off",
+    "enabledByDefault": false,
+    "runnableByExplicitOptIn": true,
+    "scoreEligible": false,
+    "gateEligible": false,
+    "qualityDomain": "type-safety",
+    "claimClass": "contextual-heuristic",
+    "readiness": "evidence-ready",
+    "repairSafety": "no-safe-repair",
+    "provenance": "quality-candidate-unmeasured",
+    "admitted": false
+  },
+  "historicalMetrics": {
+    "status": "historical-point-estimate-only",
+    "dataset": "v10.1",
+    "signal": "weak",
+    "precision": 0.63156,
+    "recall": 0.00623,
+    "f1": 0.01235,
+    "positiveFires": 1913,
+    "negativeFires": 1116
+  },
   "configuration": {
     "configuredSeverity": null,
-    "defaultOff": false,
-    "policyState": "rule-default"
+    "defaultOff": true,
+    "policyState": "current-default-off"
   }
 }
 ```
@@ -217,6 +255,17 @@ Return rule metadata + rationale + advice.
 does not state whether a particular `slop_scan_file` invocation executed or
 suppressed the rule; inspect that invocation's returned findings for runtime
 behavior.
+
+`historicalMetrics` is the frozen v10.1 projection. The deprecated
+`evidence.calibration` object remains a legacy compatibility field, as does
+each `slop_scan_file` finding's top-level `calibration`; those scan fields keep
+their established wire shape and values. The embedded production
+current-policy provider intentionally remains undefined, so the standalone
+server currently returns `currentPolicy: { "status": "unavailable" }`. The
+applied form above is the additive contract exercised by policy-bound tests;
+it does not claim that the production provider is active. Legacy fallback
+configuration continues to use the established `policyState: "default-off"`
+wire value.
 
 #### `slop_list_rules`
 

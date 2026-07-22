@@ -1,5 +1,12 @@
-import { getDefaultOffRules, getSignalStrength } from './signal-strength.js';
-import type { SignalStrengthEntry } from './signal-strength.js';
+import {
+  getDefaultOffRules,
+  getHistoricalSignalStrength,
+  getSignalStrength,
+} from './signal-strength.js';
+import type {
+  HistoricalSignalStrengthEntry,
+  SignalStrengthEntry,
+} from './signal-strength.js';
 import { getCurrentEvidencePolicyAccessors } from './current-evidence-policy-runtime.js';
 import type { CurrentEvidencePolicyAccessors } from './current-evidence-policy.js';
 import type {
@@ -20,7 +27,7 @@ export type RulePolicyState =
   | 'current-explicit-diagnostic'
   | 'current-default-off'
   | 'current-non-runnable'
-  | 'legacy-default-off'
+  | 'default-off'
   | 'rule-default';
 
 /**
@@ -80,7 +87,7 @@ export function describeRulePolicy(
     return { configuredSeverity, defaultOff, policyState: 'configured-severity' };
   }
   if (defaultOff) {
-    return { configuredSeverity, defaultOff, policyState: 'legacy-default-off' };
+    return { configuredSeverity, defaultOff, policyState: 'default-off' };
   }
   return { configuredSeverity, defaultOff, policyState: 'rule-default' };
 }
@@ -94,6 +101,8 @@ export interface CurrentRulePolicyExplanation {
   gateEligible?: boolean;
   qualityDomain?: CAL002QualityDomain;
   claimClass?: CAL002ClaimClass;
+  readiness?: CurrentEvidencePolicyAccessors['policy']['rows'][number]['readiness'];
+  repairSafety?: CurrentEvidencePolicyAccessors['policy']['rows'][number]['repairSafety'];
   provenance?: CAL002PolicyProvenanceV2;
   replacementRuleId?: string;
   admitted?: false;
@@ -115,6 +124,8 @@ export function buildCurrentRulePolicyExplanation(
     gateEligible: row.gateEligible,
     qualityDomain: row.qualityDomain,
     claimClass: row.claimClass,
+    readiness: row.readiness,
+    repairSafety: row.repairSafety,
     provenance: row.provenance,
     ...(row.replacementRuleId === undefined ? {} : { replacementRuleId: row.replacementRuleId }),
     admitted: currentPolicy.policy.admitted,
@@ -133,7 +144,10 @@ export interface RuleExplanation {
   suppressionSnippet: string;
   evidence: {
     category: 'ai-signal' | 'quality';
-    /** @deprecated Use `historicalMetrics`; retained as a compatibility alias. */
+    /**
+     * @deprecated Legacy compatibility projection retained for CLI/MCP scan
+     * wire parity. Use `historicalMetrics` for the frozen v10.1 projection.
+     */
     calibration: {
       status: 'historical-point-estimate-only' | 'unavailable';
       /** The per-rule date is validated by the shared signal-strength schema. */
@@ -158,17 +172,29 @@ export interface RuleExplanation {
     };
   };
   currentPolicy: CurrentRulePolicyExplanation;
-  historicalMetrics: RuleCalibrationEvidence;
+  historicalMetrics: RuleHistoricalMetrics;
   configuration: RulePolicy;
 }
 
+export type RuleHistoricalMetrics =
+  | HistoricalSignalStrengthEntry
+  | {
+    readonly status: 'unavailable';
+    readonly dataset: 'v10.1';
+  };
+
+export function buildRuleHistoricalMetrics(ruleId: string): RuleHistoricalMetrics {
+  return getHistoricalSignalStrength(ruleId) ?? Object.freeze({
+    status: 'unavailable',
+    dataset: 'v10.1',
+  });
+}
+
 /**
- * Build the bounded calibration/provenance projection shared by rule
- * explanations and per-finding machine surfaces.  The shipped signal table
- * contains historical point estimates only; its legacy underscore metadata
- * is deliberately not a validated v10.3 source/cohort contract.  Keep that
- * absence explicit on every consumer rather than letting one renderer imply
- * stronger provenance than another.
+ * Build the bounded legacy calibration/provenance projection shared by the
+ * deprecated rule-explanation alias and per-finding machine surfaces. This
+ * compatibility shape intentionally remains separate from the frozen v10.1
+ * projection returned as `historicalMetrics`.
  */
 export type RuleCalibrationEvidence = RuleExplanation['evidence']['calibration'];
 
@@ -216,7 +242,8 @@ export function buildRuleExplanation(
   const sourcePath = `src/rules/${rule.category}/${filename}.ts`;
   const strength = getSignalStrength(rule.id);
   const currentPolicy = getCurrentEvidencePolicyAccessors();
-  const historicalMetrics = buildRuleCalibrationEvidence(strength);
+  const legacyCalibration = buildRuleCalibrationEvidence(strength);
+  const historicalMetrics = buildRuleHistoricalMetrics(rule.id);
   return {
     ruleId: rule.id,
     category: rule.category,
@@ -229,7 +256,7 @@ export function buildRuleExplanation(
     suppressionSnippet: `rules: { "${rule.id}": "off" }  // or set to a lower severity`,
     evidence: {
       category: rule.aiSpecific ? 'ai-signal' : 'quality',
-      calibration: historicalMetrics,
+      calibration: legacyCalibration,
     },
     currentPolicy: buildCurrentRulePolicyExplanation(rule.id, currentPolicy),
     historicalMetrics,
