@@ -73,4 +73,49 @@ describe('privacy-safe local outcome event contract', () => {
       /\/Users\/|github\.com|admission-authority-rebuild-publication|repositoryName|repositoryId|sessionId|userId/u,
     );
   });
+
+  it('documents every accepted field and rejects sensitive extensions without echoing values', () => {
+    for (const variant of OUTCOME_EVENT_SCHEMA_V1.oneOf) {
+      for (const [field, definition] of Object.entries(variant.properties)) {
+        expect(definition, field).toHaveProperty('description');
+      }
+    }
+    for (const [field, definition] of Object.entries(
+      OUTCOME_EVENT_SCHEMA_V1.$defs.context.properties,
+    )) {
+      expect(definition, `context.${field}`).toHaveProperty('description');
+    }
+
+    const safeEvent = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'first-finding-assessed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      detectorId: 'logic/heaps-deviation',
+      evidenceTier: 'quality-candidate-unmeasured',
+      assessment: 'useful',
+    } as const;
+    const secret = 'super-secret-customer-code';
+    const sensitiveEvents: unknown[] = [
+      { ...safeEvent, source: secret },
+      { ...safeEvent, snippet: secret },
+      { ...safeEvent, content: secret },
+      { ...safeEvent, filePath: `/Users/customer/${secret}.ts` },
+      { ...safeEvent, repositoryName: secret },
+      { ...safeEvent, remote: `git@example.invalid/${secret}.git` },
+      { ...safeEvent, userId: secret },
+      { ...safeEvent, sessionId: secret },
+      { ...safeEvent, context: { ...safeEvent.context, repositoryId: secret } },
+    ];
+
+    const validateSchema = new Ajv2020({ allErrors: true, strict: true })
+      .compile(OUTCOME_EVENT_SCHEMA_V1);
+    for (const event of sensitiveEvents) {
+      const result = validateOutcomeEventV1(event);
+      expect(result.ok).toBe(false);
+      expect(JSON.stringify(result.errors)).not.toContain(secret);
+      expect(validateSchema(event)).toBe(false);
+    }
+  });
 });
