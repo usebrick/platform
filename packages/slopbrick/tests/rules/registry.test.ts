@@ -1,10 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
+
 import { RuleRegistry } from '../../src/rules/registry';
 import { createRule } from '../../src/rules/rule';
 import type { Issue, ResolvedConfig, Rule, ScanFacts } from '../../src/types';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RULES_DIR = path.resolve(__dirname, '../../src/rules');
@@ -54,11 +62,11 @@ async function discoverRuleModules(): Promise<RuleModuleInfo[]> {
   return modules.sort((a, b) => `${a.category}/${a.file}`.localeCompare(`${b.category}/${b.file}`));
 }
 
-function makeConfig(): ResolvedConfig {
+function makeConfig(rules: ResolvedConfig['rules'] = {}): ResolvedConfig {
   return {
     include: [],
     exclude: [],
-    rules: {},
+    rules,
     frameworkMultipliers: {},
     ruleConfig: {},
     arbitraryValueAllowlist: [],
@@ -72,6 +80,11 @@ function makeConfig(): ResolvedConfig {
 }
 
 describe('RuleRegistry', () => {
+  beforeEach(() => {
+    getCurrentEvidencePolicyAccessorsMock.mockReset();
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+  });
+
   it('registers and retrieves rules', () => {
     const registry = new RuleRegistry();
     const rule = createRule({
@@ -112,6 +125,107 @@ describe('RuleRegistry', () => {
     const enabled = registry.createContexts(makeConfig(), 'Button.tsx', '/tmp');
     expect(enabled).toHaveLength(1);
     expect(enabled[0].context).toEqual({ filePath: 'Button.tsx' });
+  });
+
+  it('preserves legacy context creation while the current-policy provider is inactive', () => {
+    const registry = new RuleRegistry();
+    const create = vi.fn(() => ({}));
+    registry.register(createRule({
+      id: 'ai/any-density',
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: true,
+      create,
+      analyze: (): Issue[] => [],
+    }));
+
+    expect(registry.createContexts(makeConfig(), 'src/a.ts', '/tmp')).toHaveLength(1);
+    expect(create).toHaveBeenCalledOnce();
+    expect(getCurrentEvidencePolicyAccessorsMock).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    'logic/ghost-defensive',
+    'logic/math-any-density',
+    'ai/renyi-profile',
+  ])('never instantiates non-runnable current-policy rule %s', (ruleId) => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const registry = new RuleRegistry();
+    const create = vi.fn(() => ({}));
+    registry.register(createRule({
+      id: ruleId,
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: true,
+      create,
+      analyze: (): Issue[] => [],
+    }));
+
+    expect(registry.createContexts(makeConfig({ [ruleId]: 'high' }), 'src/a.ts', '/tmp')).toEqual([]);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('requires an own explicit opt-in before instantiating a permitted default-off rule', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const registry = new RuleRegistry();
+    const create = vi.fn(() => ({}));
+    registry.register(createRule({
+      id: 'ai/any-density',
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: true,
+      create,
+      analyze: (): Issue[] => [],
+    }));
+
+    expect(registry.createContexts(makeConfig(), 'src/a.ts', '/tmp')).toEqual([]);
+    expect(registry.createContexts(
+      makeConfig({ 'ai/any-density': 'low' }),
+      'src/a.ts',
+      '/tmp',
+    )).toHaveLength(1);
+    expect(create).toHaveBeenCalledOnce();
+  });
+
+  it('honors explicit off for a current default-on rule', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const registry = new RuleRegistry();
+    const create = vi.fn(() => ({}));
+    registry.register(createRule({
+      id: 'context/import-path-mismatch',
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: false,
+      create,
+      analyze: (): Issue[] => [],
+    }));
+
+    expect(registry.createContexts(makeConfig(), 'src/a.ts', '/tmp')).toHaveLength(1);
+    expect(registry.createContexts(
+      makeConfig({ 'context/import-path-mismatch': 'off' }),
+      'src/a.ts',
+      '/tmp',
+    )).toEqual([]);
+    expect(create).toHaveBeenCalledOnce();
+  });
+
+  it('preserves legacy instantiation for rule IDs absent from current policy', () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const registry = new RuleRegistry();
+    const create = vi.fn(() => ({}));
+    registry.register(createRule({
+      id: 'plugin/custom-rule',
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: false,
+      create,
+      analyze: (): Issue[] => [],
+    }));
+
+    expect(registry.createContexts(makeConfig(), 'src/a.ts', '/tmp')).toHaveLength(1);
+    expect(create).toHaveBeenCalledOnce();
   });
 
   it('loads all built-in rules', async () => {
