@@ -42,6 +42,24 @@ function assertAppliedCompleteCurrentPolicyV2(
   assertCurrentApprovedPolicyBinding(raw);
 }
 
+function freezeCurrentPolicyRow(
+  row: SlopbrickRuleEvidencePolicyRowV2,
+): SlopbrickRuleEvidencePolicyRowV2 {
+  return Object.freeze({
+    ...row,
+    aiAssociation: Object.freeze({ ...row.aiAssociation }),
+  });
+}
+
+function createImmutableCurrentPolicySnapshot(
+  policy: AppliedCurrentEvidencePolicy,
+): AppliedCurrentEvidencePolicy {
+  return Object.freeze({
+    ...policy,
+    rows: Object.freeze(policy.rows.map(freezeCurrentPolicyRow)),
+  });
+}
+
 function createRuleRunnableAccessor(
   rows: ReadonlyMap<string, SlopbrickRuleEvidencePolicyRowV2>,
 ): CurrentEvidencePolicyAccessors['isRuleRunnable'] {
@@ -58,13 +76,14 @@ export function createCurrentEvidencePolicyAccessors(
   raw: unknown,
 ): CurrentEvidencePolicyAccessors {
   assertAppliedCompleteCurrentPolicyV2(raw);
-  const rows = new Map(raw.rows.map((row) => [row.ruleId, row]));
-  const defaultOffRuleIds = raw.rows
+  const policy = createImmutableCurrentPolicySnapshot(raw);
+  const rows = new Map(policy.rows.map((row) => [row.ruleId, row]));
+  const defaultOffRuleIds = policy.rows
     .filter((row) => !row.enabledByDefault)
     .map((row) => row.ruleId);
 
   return {
-    policy: raw,
+    policy,
     getCurrentRulePolicy: (ruleId) => rows.get(ruleId),
     getCurrentDefaultOffRules: () => new Set(defaultOffRuleIds),
     isRuleRunnable: createRuleRunnableAccessor(rows),
