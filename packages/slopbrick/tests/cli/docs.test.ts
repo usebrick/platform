@@ -31,6 +31,8 @@ function stubResult(): DocsScanResult {
     result: {
       docFreshness: 95,
       docDrift: 'low',
+      gateDocFreshness: 95,
+      gateDocDrift: 'low',
       scannedDocFiles: 1,
       scannedSourceFiles: 10,
       findings: [],
@@ -58,6 +60,7 @@ describe('docsExitCode', () => {
   it('returns 1 in high drift with --strict', () => {
     const r = stubResult();
     r.result.docDrift = 'high';
+    r.result.gateDocDrift = 'high';
     expect(docsExitCode(r, { strict: true })).toBe(1);
     expect(docsExitCode(r, { strict: false })).toBe(0);
   });
@@ -65,6 +68,17 @@ describe('docsExitCode', () => {
   it('returns 1 in critical drift with --strict', () => {
     const r = stubResult();
     r.result.docDrift = 'critical';
+    r.result.gateDocDrift = 'critical';
+    expect(docsExitCode(r, { strict: true })).toBe(1);
+  });
+
+  it('uses gate drift independently from score drift', () => {
+    const r = stubResult();
+    r.result.docDrift = 'critical';
+    r.result.gateDocDrift = 'low';
+    expect(docsExitCode(r, { strict: true })).toBe(0);
+    r.result.docDrift = 'low';
+    r.result.gateDocDrift = 'critical';
     expect(docsExitCode(r, { strict: true })).toBe(1);
   });
 });
@@ -86,6 +100,8 @@ describe('formatDocsReport', () => {
     const json = JSON.parse(formatDocsReport(r, { json: true })) as Record<string, unknown>;
     expect(json.docFreshness).toBe(95);
     expect(json.docDrift).toBe('low');
+    expect(json.gateDocFreshness).toBe(95);
+    expect(json.gateDocDrift).toBe('low');
     expect(json.scannedDocFiles).toBe(1);
     expect(Array.isArray(json.byRule)).toBe(false);
     expect((json.byRule as Record<string, number>)['docs/stale-package-reference']).toBe(0);

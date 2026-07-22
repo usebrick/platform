@@ -10,7 +10,7 @@
 //
 // Exit codes (set by program.ts action):
 //   0  — informational (or --strict off, regardless of drift level)
-//   1  — --strict set AND docDrift is 'high' or 'critical'
+//   1  — --strict set AND gateDocDrift is 'high' or 'critical'
 //   2  — fatal error (config not loadable, IO failure)
 
 
@@ -26,7 +26,7 @@ export interface DocsOptions {
   maxDocFiles?: number;
   /** Cap on source files for export extraction. Defaults to 500. */
   maxSourceFiles?: number;
-  /** When true, exit 1 on high/critical drift (CI gate). */
+  /** When true, exit 1 on high/critical gate-eligible drift (CI gate). */
   strict?: boolean;
 }
 
@@ -78,6 +78,8 @@ export function formatDocsReport(
         version: '0.8.0',
         docFreshness: result.result.docFreshness,
         docDrift: result.result.docDrift,
+        gateDocFreshness: result.result.gateDocFreshness,
+        gateDocDrift: result.result.gateDocDrift,
         scannedDocFiles: result.result.scannedDocFiles,
         scannedSourceFiles: result.result.scannedSourceFiles,
         byRule: result.result.byRule,
@@ -130,6 +132,10 @@ function formatDocsPretty(result: DocsScanResult): string {
   lines.push(
     `Documentation Freshness: ${score}/100  (docDrift: ${drift.toLowerCase()})`,
   );
+  lines.push(
+    `Strict Gate Freshness: ${result.result.gateDocFreshness}/100  ` +
+      `(gateDocDrift: ${result.result.gateDocDrift})`,
+  );
   lines.push('');
   lines.push(`  Scanned doc files: ${result.result.scannedDocFiles}`);
   lines.push(
@@ -173,6 +179,11 @@ function formatDocsMarkdown(result: DocsScanResult): string {
   const drift = result.result.docDrift;
   lines.push(`## Documentation Freshness: ${result.result.docFreshness}/100 (${drift} drift)`);
   lines.push('');
+  lines.push(
+    `Strict gate freshness: ${result.result.gateDocFreshness}/100 ` +
+      `(${result.result.gateDocDrift} drift)`,
+  );
+  lines.push('');
   lines.push('| Rule | Count | Weight |');
   lines.push('|------|-------|--------|');
   for (const [rule, count] of Object.entries(result.result.byRule)) {
@@ -194,12 +205,12 @@ function formatDocsMarkdown(result: DocsScanResult): string {
  * Pure helper: derive a stable exit code from a DocsScanResult.
  *
  *   0 — informational (or --strict off)
- *   1 — --strict set AND drift ∈ {high, critical}
+ *   1 — --strict set AND gate-eligible drift ∈ {high, critical}
  */
 export function docsExitCode(
   result: DocsScanResult,
   options: { strict?: boolean } = {},
 ): 0 | 1 {
   if (!options.strict) return 0;
-  return result.result.docDrift === 'high' || result.result.docDrift === 'critical' ? 1 : 0;
+  return result.result.gateDocDrift === 'high' || result.result.gateDocDrift === 'critical' ? 1 : 0;
 }

@@ -58,6 +58,27 @@ export function filterHistoricalRunsForScore<
 }
 
 /**
+ * Remove only offense IDs permanently excluded by the active current policy.
+ * Repository config and flywheel overrides are mutable and must never erase
+ * otherwise eligible historical evidence from durable storage.
+ */
+export function filterHistoricalRunsForCurrentPolicy<
+  T extends { topOffenseIds: string[] },
+>(runs: T[]): { runs: T[]; changed: boolean } {
+  const currentPolicy = getCurrentEvidencePolicyAccessors();
+  if (currentPolicy === undefined) return { runs, changed: false };
+  let changed = false;
+  const filteredRuns = runs.map((run) => {
+    const topOffenseIds = run.topOffenseIds.filter((ruleId) =>
+      currentPolicy.isRuleScoreEligible(ruleId) ?? true);
+    if (topOffenseIds.length === run.topOffenseIds.length) return run;
+    changed = true;
+    return { ...run, topOffenseIds };
+  });
+  return { runs: changed ? filteredRuns : runs, changed };
+}
+
+/**
  * Return the finding set allowed to affect finding-count gates. Current-policy
  * diagnostics may remain visible at their configured severity, but an explicit
  * repository opt-in cannot promote `gateEligible: false` evidence into a gate.

@@ -44,6 +44,7 @@ import {
 import { evaluateThresholdGate } from '../threshold';
 import {
   effectiveIssuesForScore,
+  filterHistoricalRunsForCurrentPolicy,
   filterHistoricalRunsForScore,
 } from '../effective-issues.js';
 import { fsMemoryIO } from '../memory-io.js';
@@ -182,12 +183,12 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
   if (telemetryEnabled && validScan) {
     try {
       const storedRuns = await readRuns(cwd, fsMemoryIO);
-      const history = filterHistoricalRunsForScore(storedRuns, config);
-      if (history.changed && config.projectMemory !== false) {
+      const durableHistory = filterHistoricalRunsForCurrentPolicy(storedRuns);
+      if (durableHistory.changed && config.projectMemory !== false) {
         try {
           await fsMemoryIO.write(
             join(cwd, '.slopbrick', 'structure.json'),
-            JSON.stringify(history.runs, null, 2),
+            JSON.stringify(durableHistory.runs, null, 2),
           );
         } catch (error) {
           if (!options.quiet && !machineReadableStdout) {
@@ -195,6 +196,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
           }
         }
       }
+      const effectiveHistory = filterHistoricalRunsForScore(durableHistory.runs, config);
       const telemetryPayloads = readTelemetry(cwd);
       const recentTopHashes = telemetryPayloads.map((payload) =>
         [...payload.files]
@@ -208,7 +210,7 @@ export async function persistRun(input: PersistRunInput): Promise<void> {
         .map((c) => ({ filePath: c.filePath, hash: hashFile(relative(cwd, c.filePath)) }));
       const unmatchedStringLiterals = results.flatMap((r) => r.unmatchedStringLiterals ?? []);
       const flywheelOutput = computeFlywheelOutput(
-        history.runs,
+        effectiveHistory.runs,
         currentTopFiles,
         recentTopHashes,
         unmatchedStringLiterals,

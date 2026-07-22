@@ -51,7 +51,11 @@ function createWorkspace(config: string): string {
   return dir;
 }
 
-function seedLegacyHistory(dir: string, runCount = 3): void {
+function seedLegacyHistory(
+  dir: string,
+  runCount = 3,
+  ruleId = 'component/giant-component',
+): void {
   mkdirSync(join(dir, '.slopbrick'), { recursive: true });
   writeFileSync(
     join(dir, '.slopbrick', 'structure.json'),
@@ -61,7 +65,7 @@ function seedLegacyHistory(dir: string, runCount = 3): void {
         version: '0.43.0',
         slopIndex: 80,
         categoryScores: { component: 80 },
-        topOffenseIds: ['component/giant-component'],
+        topOffenseIds: [ruleId],
         thresholdExceeded: false,
       })),
       null,
@@ -155,6 +159,31 @@ export default {
       readFileSync(join(dir, '.slopbrick', 'structure.json'), 'utf8'),
     ) as Array<{ topOffenseIds: string[] }>;
     expect(history.every((run) => !run.topOffenseIds.includes('component/giant-component'))).toBe(true);
+  });
+
+  it('preserves policy-eligible history across a temporary repository off override', async () => {
+    const ruleId = 'context/import-path-mismatch';
+    const dir = createWorkspace(`
+export default {
+  projectMemory: true,
+  telemetry: true,
+  rules: { '${ruleId}': 'off' },
+};
+`);
+    seedLegacyHistory(dir, 3, ruleId);
+
+    await runScan({
+      workspace: dir,
+      quiet: true,
+      telemetry: true,
+      threadCount: 1,
+    });
+
+    const history = JSON.parse(
+      readFileSync(join(dir, '.slopbrick', 'structure.json'), 'utf8'),
+    ) as Array<{ topOffenseIds: string[] }>;
+    expect(history).toHaveLength(4);
+    expect(history.slice(0, 3).every((run) => run.topOffenseIds.includes(ruleId))).toBe(true);
   });
 
   it('does not reinterpret historical rows before current policy activation', async () => {

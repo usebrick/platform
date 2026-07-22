@@ -40,6 +40,9 @@ describe('buildDocFreshness policy authority', () => {
       expect(legacy.byRule['docs/stale-package-reference']).toBeGreaterThan(0);
       expect(legacy.byRule['docs/stale-function-reference']).toBeGreaterThan(0);
       expect(legacy.docDrift).toBe('critical');
+      expect(legacy.gateDocFreshness).toBe(legacy.docFreshness);
+      expect(legacy.gateDocDrift).toBe(legacy.docDrift);
+      expect(docsExitCode({ result: legacy, scan: {} as never }, { strict: true })).toBe(1);
 
       const approved = approvedCurrentPolicyFixture();
       getCurrentEvidencePolicyAccessorsMock.mockReturnValue({
@@ -70,7 +73,33 @@ describe('buildDocFreshness policy authority', () => {
       ))).toBe(true);
       expect(current.docFreshness).toBe(100);
       expect(current.docDrift).toBe('low');
-      expect(docsExitCode({ result: current, scan: {} as never }, { strict: true })).toBe(0);
+      expect(current.gateDocFreshness).toBe(0);
+      expect(current.gateDocDrift).toBe('critical');
+      expect(docsExitCode({ result: current, scan: {} as never }, { strict: true })).toBe(1);
+
+      getCurrentEvidencePolicyAccessorsMock.mockReturnValue({
+        ...approved,
+        getCurrentRulePolicy: (ruleId: string) => {
+          const row = approved.getCurrentRulePolicy(ruleId);
+          return ruleId === 'docs/stale-package-reference' && row !== undefined
+            ? { ...row, gateEligible: false }
+            : row;
+        },
+        isRuleRunnable: (ruleId: string, configuredRules: Readonly<Record<string, string>>) => {
+          if (configuredRules[ruleId] === 'off') return false;
+          if (ruleId === 'docs/stale-function-reference') {
+            return Object.hasOwn(configuredRules, ruleId);
+          }
+          return true;
+        },
+      });
+
+      const gateNeutral = await buildDocFreshness(dir, config);
+      expect(gateNeutral.docFreshness).toBe(0);
+      expect(gateNeutral.docDrift).toBe('critical');
+      expect(gateNeutral.gateDocFreshness).toBe(100);
+      expect(gateNeutral.gateDocDrift).toBe('low');
+      expect(docsExitCode({ result: gateNeutral, scan: {} as never }, { strict: true })).toBe(0);
     } finally {
       getCurrentEvidencePolicyAccessorsMock.mockReset();
       rmSync(dir, { recursive: true, force: true });

@@ -26,7 +26,7 @@ import { join, dirname, relative } from 'node:path';
 import { globby } from 'globby';
 import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../types';
 
-import { effectiveIssuesForScore } from '../cli/effective-issues';
+import { effectiveIssuesForGate, effectiveIssuesForScore } from '../cli/effective-issues';
 import { getRunnableRuleOverrides } from '../config/rule-override-provenance';
 import { brokenLinkRule } from '../rules/docs/broken-link';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime';
@@ -518,6 +518,10 @@ export interface BuildDocFreshnessOptions {
 export interface BuildDocFreshnessResult {
   docFreshness: number;
   docDrift: DocDriftLevel;
+  /** Independent weighted projection used only by `docs --strict`. */
+  gateDocFreshness: number;
+  /** Drift band derived from `gateDocFreshness`, never from score authority. */
+  gateDocDrift: DocDriftLevel;
   scannedDocFiles: number;
   scannedSourceFiles: number;
   findings: DocFinding[];
@@ -622,22 +626,24 @@ export async function buildDocFreshness(
     'docs/stale-function-reference': 0,
     'docs/broken-link': 0,
   };
-  let weight = 0;
   for (const f of findings) {
     byRule[f.ruleId] = (byRule[f.ruleId] ?? 0) + 1;
   }
-  for (const issue of effectiveIssuesForScore(emittedIssues, config)) {
-    weight += DOC_RULE_WEIGHTS[issue.ruleId as DocFinding['ruleId']];
-  }
-  const docFreshness = Math.max(0, Math.min(100, 100 - weight));
-  let docDrift: DocDriftLevel = 'low';
-  if (docFreshness < DOC_FRESHNESS_THRESHOLDS.high) docDrift = 'critical';
-  else if (docFreshness < DOC_FRESHNESS_THRESHOLDS.medium) docDrift = 'high';
-  else if (docFreshness < DOC_FRESHNESS_THRESHOLDS.low) docDrift = 'medium';
+  const weightedFreshness = (issues: readonly Issue[]): number => {
+    const weight = issues.reduce((total, issue) =>
+      total + DOC_RULE_WEIGHTS[issue.ruleId as DocFinding['ruleId']], 0);
+    return Math.max(0, Math.min(100, 100 - weight));
+  };
+  const docFreshness = weightedFreshness(effectiveIssuesForScore(emittedIssues, config));
+  const gateDocFreshness = weightedFreshness(effectiveIssuesForGate(emittedIssues, config));
+  const docDrift = docDriftFromFreshness(docFreshness);
+  const gateDocDrift = docDriftFromFreshness(gateDocFreshness);
 
   return {
     docFreshness,
     docDrift,
+    gateDocFreshness,
+    gateDocDrift,
     scannedDocFiles: scanned,
     scannedSourceFiles: exports.size,
     findings,
