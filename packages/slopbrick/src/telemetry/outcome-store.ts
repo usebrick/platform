@@ -70,6 +70,12 @@ function parseLedger(contents: string): OutcomeEventV1[] {
         index + 1,
       );
     }
+    if (Buffer.byteLength(`${line}\n`) > OUTCOME_EVENT_MAX_BYTES_V1) {
+      throw new OutcomeEventStoreError(
+        `Outcome event store line ${index + 1} exceeds the event size limit`,
+        index + 1,
+      );
+    }
     return parseStoredEvent(line, index + 1);
   });
 }
@@ -128,16 +134,23 @@ export function appendOutcomeEventV1(storagePath: string, event: unknown): void 
 }
 
 function canonicalExportDocument(events: readonly OutcomeEventV1[]): Record<string, unknown> {
+  const safeEvents = Array.from(events);
+  Object.setPrototypeOf(safeEvents, null);
   const document = Object.create(null) as Record<string, unknown>;
   document.version = OUTCOME_EVENT_EXPORT_VERSION_V1;
   document.eventVersion = OUTCOME_EVENT_VERSION_V1;
-  document.events = events;
+  document.events = safeEvents;
   return document;
 }
 
 export function exportOutcomeEventsV1(storagePath: string, exportPath: string): number {
-  if (resolve(storagePath) === resolve(exportPath)) {
+  const absoluteStoragePath = resolve(storagePath);
+  const absoluteExportPath = resolve(exportPath);
+  if (absoluteStoragePath === absoluteExportPath) {
     throw new OutcomeEventStoreError('Outcome export path must differ from the local JSONL store');
+  }
+  if (absoluteExportPath === `${absoluteStoragePath}.lock`) {
+    throw new OutcomeEventStoreError('Outcome export path must differ from the active store lock');
   }
 
   const lock = acquireOutcomeStoreLock(storagePath);
