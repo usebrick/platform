@@ -20,6 +20,7 @@ import {
   deleteOutcomeEventsV1,
   exportOutcomeEventsV1,
   OUTCOME_EVENT_EXPORT_VERSION_V1,
+  OUTCOME_EVENT_MAX_BYTES_V1,
   OUTCOME_EVENT_STORE_MAX_BYTES_V1,
   OutcomeEventStoreError,
   readOutcomeEventsV1,
@@ -245,6 +246,54 @@ describe('privacy-safe local outcome event store', () => {
     exportOutcomeEventsV1(firstStore, firstExport);
     exportOutcomeEventsV1(secondStore, secondExport);
     expect(readFileSync(firstExport, 'utf8')).toBe(readFileSync(secondExport, 'utf8'));
+  });
+
+  it('ignores inherited array serialization hooks and rejects the active lock as an export path', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const exportPath = join(root, 'outcomes.json');
+    const secret = 'private-array-source-fragment';
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    appendOutcomeEventV1(storagePath, event);
+
+    Object.defineProperty(Array.prototype, 'toJSON', {
+      configurable: true,
+      value: () => [{ source: secret }],
+    });
+    try {
+      exportOutcomeEventsV1(storagePath, exportPath);
+    } finally {
+      delete (Array.prototype as unknown as { toJSON?: unknown }).toJSON;
+    }
+    expect(readFileSync(exportPath, 'utf8')).not.toContain(secret);
+    expect(JSON.parse(readFileSync(exportPath, 'utf8')).events).toEqual([event]);
+
+    expect(() => exportOutcomeEventsV1(storagePath, `${storagePath}.lock`))
+      .toThrow(OutcomeEventStoreError);
+    expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
+  });
+
+  it('rejects a single whitespace-padded event above the per-event byte bound', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const event: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    const paddedLine = `${' '.repeat(OUTCOME_EVENT_MAX_BYTES_V1)}${JSON.stringify(event)}\n`;
+    writeFileSync(storagePath, paddedLine, 'utf8');
+
+    expect(() => readOutcomeEventsV1(storagePath)).toThrow(/event size limit/u);
+    expect(() => appendOutcomeEventV1(storagePath, event)).toThrow(/event size limit/u);
   });
 
   it.runIf(process.platform !== 'win32' && constants.O_NOFOLLOW > 0)(
