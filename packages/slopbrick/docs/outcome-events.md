@@ -23,8 +23,8 @@ unknown fields at the event and context levels.
 | --- | --- | --- |
 | `version` | `slopbrick-outcome-event-v1` | Closes the event wire version. |
 | `event` | One of the four event names below | Selects the event-specific fields. |
-| `observedOn` | `YYYY-MM-DD` | Keeps only the observation day; exact time is omitted. |
-| `producerVersion` | Semver | Identifies the SlopBrick version that produced or accepted the observation. |
+| `observedOn` | Valid `YYYY-MM-DD` UTC calendar date | Keeps only the observation day; exact time is omitted. |
+| `producerVersion` | Public `major.minor.patch`, with each component `0`–`999` | Identifies the SlopBrick release without prerelease/build text that could carry private identifiers. |
 | `context.framework` | `react`, `vue`, `svelte`, `other-web`, `non-web`, `mixed`, or `unknown` | Coarse framework family, not a package fingerprint. |
 | `context.repositorySize` | `1-20`, `21-100`, `101-500`, `501-2000`, `2001+`, or `unknown` | Bucket for selected files, not an exact count. |
 
@@ -39,7 +39,13 @@ unknown fields at the event and context levels.
 
 `assessment` records review utility; it is not a calibration label.
 `evidenceTier` is the first-scan evidence boundary; it is not proof of AI
-authorship. Action reasons are closed coarse enums, with no free-form text.
+authorship. `detectorId` must be one of the 119 IDs in the immutable v1 public
+detector allowlist. Action reasons are closed coarse enums, with no free-form
+text.
+
+Scan comparison states are also closed: an initial scan uses
+`not-evaluated`; a complete rescan uses `unchanged` or `changed`; and an
+incomplete or not-applicable rescan uses `unavailable`.
 
 ## Privacy boundary
 
@@ -52,10 +58,17 @@ Accepted events contain no:
 - exact timestamps; or
 - free-form metadata.
 
-The runtime validator and JSON Schema reject attempts to add those fields.
-Validation errors identify an unknown-field violation without echoing its key
-or value.
-Malformed stored lines fail closed and are not extended by later appends.
+The runtime validator captures data descriptors into a fixed-key,
+null-prototype snapshot before validation. Storage serializes only that
+snapshot, never the caller's object, so inherited, proxy-provided, and own
+serialization hooks cannot replace a validated event. The JSON Schema rejects
+the same ordinary JSON value violations. Validation errors identify an
+unknown-field violation without echoing its key or value.
+
+Malformed stored lines—including blank interior lines and a missing final
+JSONL newline—fail closed and are not extended by later appends. V1 also caps
+one event at 4 KiB and one ledger at 1 MiB or 4,096 events, whichever is
+reached first. These bounds keep corruption checks and memory use finite.
 
 The existing one-shot usage beacon is a different mechanism. It remains off
 unless both `--report-usage` and `SLOPBRICK_TELEMETRY_ENDPOINT` are supplied,
@@ -73,17 +86,28 @@ import {
 } from 'slopbrick';
 
 const store = '.slopbrick/outcomes/events-v1.jsonl';
+const exportPath = '.slopbrick/outcomes/export-v1.json';
 
 appendOutcomeEventV1(store, event);
 const events = readOutcomeEventsV1(store);
-exportOutcomeEventsV1(store, './outcome-export.json');
+exportOutcomeEventsV1(store, exportPath);
 deleteOutcomeEventsV1(store);
 ```
 
-The caller supplies both paths. The writer creates owner-only directories and
-forces the ledger and export to owner-only file permissions. Export produces a
-deterministic `slopbrick-outcome-export-v1` document and does not mutate the
-ledger. Delete removes only the selected ledger and is safe to repeat.
+The caller supplies both paths. On POSIX, the writer creates missing direct
+parent directories with owner-only permissions and requires an existing direct
+parent to already be owner-owned and owner-only. Every path component must be
+canonical and free of symbolic links; ledgers, locks, and existing export
+targets with hard-link aliases are rejected. Platforms without reliable
+no-follow semantics fail closed rather than claiming the same guarantee.
+
+Append holds an exclusive sibling lock and validates and writes through the
+same open file descriptor. Export writes a private exclusive temporary file
+and atomically renames it, producing canonical
+`slopbrick-outcome-export-v1` bytes without mutating the ledger. Delete checks
+the selected ledger's regular-file, single-link, and device/inode identity
+before unlinking it. It is safe to repeat after a successful deletion; alias
+paths are rejected rather than reported as deleted.
 
 These events cannot activate, retire, recalibrate, or change the severity of a
 rule. Repository policy remains authoritative over any future global prior.

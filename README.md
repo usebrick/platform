@@ -220,7 +220,9 @@ SlopBrick is local-first, but a normal scan is not read-only:
   `--report-usage` and `SLOPBRICK_TELEMETRY_ENDPOINT` are supplied.
 - the unreleased v0.45 candidate also exposes an explicit-path, local-only
   outcome-event library API; normal scans do not write it, and it has no
-  outbound transport.
+  outbound transport. Its v1 store is bounded and fail-closed: writes require
+  an owner-private canonical POSIX path, reject symbolic/hard-link aliases,
+  and serialize only fixed-key validated snapshots.
 
 Do not describe the current CLI as having “no telemetry” or “no network”
 without those distinctions. The outbound beacon sends no source files or file

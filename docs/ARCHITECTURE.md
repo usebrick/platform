@@ -284,7 +284,8 @@ A normal scan is local-first but stateful:
 - the incremental cache and baseline are written only when their relevant
   options are used;
 - the v1 outcome-event ledger is written only through the explicit public
-  library API to a caller-selected path; normal scans do not create it;
+  library API to a caller-selected, owner-private canonical POSIX path; normal
+  scans do not create it;
 - managed `AGENTS.md` or `CLAUDE.md` blocks are rewritten only with
   `--refresh-snippets` or the corresponding explicit configuration.
 
@@ -298,9 +299,13 @@ the local flywheel; it is not a generic read-only mode.
 
 The outcome-event v1 contract is a third, separately controlled local path. It
 has a closed schema, coarse context and time buckets, explicit inspect/export/
-delete operations, and no network adapter. The existing usage beacon cannot
-carry outcome events. Any future outcome transport requires a separate privacy
-and authorization decision.
+delete operations, and no network adapter. The validator captures canonical
+fixed-key snapshots; the bounded JSONL store rejects symlink and hard-link
+aliases, validates and appends under an exclusive lock through one descriptor,
+exports by private atomic replacement, and checks inode identity before
+deletion. Unsupported no-follow semantics fail closed. The existing usage
+beacon cannot carry outcome events. Any future outcome transport requires a
+separate privacy and authorization decision.
 
 ## Planned Memory capability flow
 

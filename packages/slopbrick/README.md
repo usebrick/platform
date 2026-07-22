@@ -285,7 +285,12 @@ must explicitly invoke the public library API with a caller-selected path.
 `readOutcomeEventsV1`, `appendOutcomeEventV1`, `exportOutcomeEventsV1`, and
 `deleteOutcomeEventsV1` provide inspect, append, export, and deletion. Unknown
 fields, raw source, paths, repository identity, and user/session identity are
-outside the v1 schema. There is no outcome-event network transport; the
+outside the v1 schema. The v1 value surface is also closed to the immutable
+119-detector allowlist, valid day-only dates, and low-entropy public release
+versions. Storage uses canonical snapshots, bounded strict JSONL, owner-private
+POSIX paths, no-follow/single-link checks, an exclusive append lock, atomic
+export replacement, and identity-checked deletion; unsupported filesystem
+semantics fail closed. There is no outcome-event network transport; the
 existing opt-in usage beacon remains separate and cannot carry these events.
 
 See the [field-by-field contract and privacy boundary](./docs/outcome-events.md).
