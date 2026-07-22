@@ -12,16 +12,23 @@ export const OUTCOME_EVENT_VERSION_V1 = 'slopbrick-outcome-event-v1' as const;
 const outcomeDetectorIdsV1: (typeof CAL002_LOCKED_RULE_IDS[number])[] = [];
 for (let index = 0; index < CAL002_LOCKED_RULE_IDS.length; index += 1) {
   const detectorId = CAL002_LOCKED_RULE_IDS[index];
-  if (detectorId !== undefined) outcomeDetectorIdsV1[index] = detectorId;
+  if (detectorId !== undefined) {
+    Object.defineProperty(outcomeDetectorIdsV1, index, {
+      configurable: true,
+      enumerable: true,
+      value: detectorId,
+      writable: true,
+    });
+  }
 }
 export const OUTCOME_DETECTOR_IDS_V1 = Object.freeze(outcomeDetectorIdsV1);
 
 export const OUTCOME_OBSERVED_ON_PATTERN_V1 = String.raw`^(?:(?:[0-9]{4}-(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01]))|(?:[0-9]{4}-(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30))|(?:[0-9]{4}-02-(?:0[1-9]|1[0-9]|2[0-8]))|(?:(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:[02468][048]|[13579][26])00)-02-29))$`;
 
-// Only low-entropy public release coordinates are accepted. Prerelease and
-// build strings are intentionally excluded because they can carry private
-// customer or repository text.
-export const OUTCOME_PRODUCER_VERSION_PATTERN_V1 = String.raw`^(?:0|[1-9][0-9]{0,2})\.(?:0|[1-9][0-9]{0,2})\.(?:0|[1-9][0-9]{0,2})$`;
+// V1 is bound to a closed producer coordinate instead of accepting arbitrary
+// semver-shaped text as a caller-controlled identity channel. Future package
+// versions must make an explicit event-contract compatibility decision.
+export const OUTCOME_PRODUCER_VERSIONS_V1 = Object.freeze(['0.45.0'] as const);
 
 export const OUTCOME_FRAMEWORK_BUCKETS_V1 = Object.freeze([
   'react',
@@ -97,7 +104,7 @@ export interface OutcomeEventContextV1 {
 interface OutcomeEventBaseV1 {
   readonly version: typeof OUTCOME_EVENT_VERSION_V1;
   readonly observedOn: string;
-  readonly producerVersion: string;
+  readonly producerVersion: typeof OUTCOME_PRODUCER_VERSIONS_V1[number];
   readonly context: OutcomeEventContextV1;
 }
 

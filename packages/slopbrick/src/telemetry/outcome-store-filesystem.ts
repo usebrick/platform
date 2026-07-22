@@ -141,6 +141,53 @@ export function outcomeFileIdentity(path: string, label: string): FileIdentity |
   }
 }
 
+export function assertOutcomePathsDistinct(storagePath: string, candidatePath: string): void {
+  assertFilesystemSupport();
+  const absoluteStoragePath = resolve(storagePath);
+  const absoluteCandidatePath = resolve(candidatePath);
+  assertPrivateParent(absoluteStoragePath, 'Outcome event store');
+  assertNoSymbolicLinkComponents(absoluteStoragePath, 'Outcome event store');
+
+  let descriptor: number;
+  try {
+    descriptor = openSync(
+      absoluteStoragePath,
+      constants.O_RDWR | constants.O_CREAT | constants.O_EXCL
+        | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+      0o600,
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const storageIdentity = outcomeFileIdentity(absoluteStoragePath, 'Outcome event store');
+    const candidateIdentity = outcomeFileIdentity(absoluteCandidatePath, 'Outcome export');
+    if (storageIdentity !== undefined && candidateIdentity !== undefined
+      && sameIdentity(storageIdentity, candidateIdentity)) {
+      throw new OutcomeEventStoreError('Outcome export must not alias protected local storage');
+    }
+    return;
+  }
+
+  const probeIdentity = descriptorIdentity(descriptor);
+  try {
+    assertSingleLinkRegularFile(descriptor, 'Outcome event store alias probe');
+    fchmodSync(descriptor, 0o600);
+    const candidateIdentity = outcomeFileIdentity(absoluteCandidatePath, 'Outcome export');
+    if (candidateIdentity !== undefined && sameIdentity(probeIdentity, candidateIdentity)) {
+      throw new OutcomeEventStoreError('Outcome export must not alias protected local storage');
+    }
+  } finally {
+    try {
+      const currentIdentity = pathIdentity(absoluteStoragePath, 'Outcome event store alias probe');
+      if (!sameIdentity(probeIdentity, currentIdentity)) {
+        throw new OutcomeEventStoreError('Outcome event store alias probe identity changed');
+      }
+      unlinkSync(absoluteStoragePath);
+    } finally {
+      closeSync(descriptor);
+    }
+  }
+}
+
 export function openOutcomeFileForAppend(path: string, label: string): number {
   return openRegularFile(
     path,
@@ -276,6 +323,19 @@ export function secureOutcomePathExists(path: string): boolean {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
     throw error;
   }
+}
+
+export function assertOutcomeStoreUnlocked(storagePath: string): void {
+  assertFilesystemSupport();
+  const absoluteStoragePath = resolve(storagePath);
+  assertNoSymbolicLinkComponents(absoluteStoragePath, 'Outcome event store');
+  try {
+    lstatSync(`${absoluteStoragePath}.lock`);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  throw new OutcomeEventStoreError('Outcome event store is busy');
 }
 
 export function deleteSingleLinkRegularFile(path: string): boolean {

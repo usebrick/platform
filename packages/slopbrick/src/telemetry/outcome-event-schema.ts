@@ -10,7 +10,7 @@ import {
   OUTCOME_FRAMEWORK_BUCKETS_V1,
   OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1,
   OUTCOME_OBSERVED_ON_PATTERN_V1,
-  OUTCOME_PRODUCER_VERSION_PATTERN_V1,
+  OUTCOME_PRODUCER_VERSIONS_V1,
   OUTCOME_REPOSITORY_SIZE_BUCKETS_V1,
   OUTCOME_RETURN_WINDOWS_V1,
   OUTCOME_SCAN_COMPARISONS_V1,
@@ -50,9 +50,8 @@ const commonProperties = {
   },
   producerVersion: {
     type: 'string',
-    description: 'Low-entropy public SlopBrick release version; prerelease and build text are excluded.',
-    pattern: OUTCOME_PRODUCER_VERSION_PATTERN_V1,
-    maxLength: 11,
+    description: 'Closed SlopBrick producer coordinate for the v1 contract.',
+    enum: OUTCOME_PRODUCER_VERSIONS_V1,
   },
   context: {
     description: 'Coarse framework and selected-file-count buckets for this observation.',

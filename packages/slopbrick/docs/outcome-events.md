@@ -24,7 +24,7 @@ unknown fields at the event and context levels.
 | `version` | `slopbrick-outcome-event-v1` | Closes the event wire version. |
 | `event` | One of the four event names below | Selects the event-specific fields. |
 | `observedOn` | Valid `YYYY-MM-DD` UTC calendar date | Keeps only the observation day; exact time is omitted. |
-| `producerVersion` | Public `major.minor.patch`, with each component `0`–`999` | Identifies the SlopBrick release without prerelease/build text that could carry private identifiers. |
+| `producerVersion` | `0.45.0` | Closed producer coordinate for v1. Future versions require an explicit compatibility update instead of accepting caller-chosen semver text. |
 | `context.framework` | `react`, `vue`, `svelte`, `other-web`, `non-web`, `mixed`, or `unknown` | Coarse framework family, not a package fingerprint. |
 | `context.repositorySize` | `1-20`, `21-100`, `101-500`, `501-2000`, `2001+`, or `unknown` | Bucket for selected files, not an exact count. |
 
@@ -109,8 +109,13 @@ the selected ledger's regular-file, single-link, and device/inode identity
 before unlinking it. It is safe to repeat after a successful deletion; alias
 paths are rejected rather than reported as deleted.
 
-The sibling lock coordinates callers that use this API. Identity checks are
-repeated immediately before lock release and deletion, but v1 does not claim
+The sibling lock coordinates callers that use this API. Read and delete also
+observe an existing sibling lock when the ledger is absent, while preserving
+their non-creating empty result when neither ledger nor lock exists. Export
+uses a temporary storage-path identity probe when needed, so filesystem-level
+aliases are rejected even before the ledger exists without treating distinct
+case-sensitive paths as aliases. Identity checks are repeated immediately
+before lock release and deletion, but v1 does not claim
 to withstand a different process running as the same operating-system user
 that deliberately swaps directory entries outside the API while an operation
 is in progress. Such a process already has access to the owner-private event

@@ -14,9 +14,10 @@ current publisher-attested internal Corpus v1 evaluation path.
   observations. Its public API validates, appends, inspects, exports, and
   deletes caller-selected local storage; normal scans do not write it and no
   outcome-event outbound transport exists. The v1 value surface is allowlisted
-  and canonicalized; storage is bounded and fail-closed around malformed JSONL,
-  symbolic/hard-link aliases, concurrent append, atomic export, and
-  identity-checked deletion.
+  and canonicalized, including an own-property-built 119-detector catalog and
+  one closed `0.45.0` producer coordinate. Storage is bounded and fail-closed
+  around malformed JSONL, symbolic/hard-link/filesystem-equivalent aliases,
+  cooperative lifecycle locking, atomic export, and identity-checked deletion.
 - Added the optional `firstScan` projection to JSON and SARIF, with one
   Repository Health headline, five exhaustive areas, evidence and repair
   boundaries, at most three recommended actions, and compatible-baseline

@@ -222,7 +222,9 @@ SlopBrick is local-first, but a normal scan is not read-only:
   outcome-event library API; normal scans do not write it, and it has no
   outbound transport. Its v1 store is bounded and fail-closed: writes require
   an owner-private canonical POSIX path, reject symbolic/hard-link aliases,
-  and serialize only fixed-key validated snapshots.
+  reject filesystem-equivalent export aliases even before the ledger exists,
+  and serialize only fixed-key validated snapshots. Its producer coordinate is
+  closed to `0.45.0` rather than accepting caller-selected version text.
 
 Do not describe the current CLI as having “no telemetry” or “no network”
 without those distinctions. The outbound beacon sends no source files or file

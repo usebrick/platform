@@ -9,7 +9,7 @@ import {
   OUTCOME_FRAMEWORK_BUCKETS_V1,
   OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1,
   OUTCOME_OBSERVED_ON_PATTERN_V1,
-  OUTCOME_PRODUCER_VERSION_PATTERN_V1,
+  OUTCOME_PRODUCER_VERSIONS_V1,
   OUTCOME_REPOSITORY_SIZE_BUCKETS_V1,
   OUTCOME_RETURN_WINDOWS_V1,
   OUTCOME_SCAN_COMPARISONS_V1,
@@ -25,7 +25,6 @@ export type OutcomeEventParseResultV1 =
 type DataRecord = Record<string, unknown>;
 
 const OBSERVED_ON = new RegExp(OUTCOME_OBSERVED_ON_PATTERN_V1, 'u');
-const PRODUCER_VERSION = new RegExp(OUTCOME_PRODUCER_VERSION_PATTERN_V1, 'u');
 const DETECTOR_IDS = Object.create(null) as Record<string, true>;
 for (let index = 0; index < OUTCOME_DETECTOR_IDS_V1.length; index += 1) {
   const detectorId = OUTCOME_DETECTOR_IDS_V1[index];
@@ -120,9 +119,9 @@ function validateCommon(value: DataRecord, errors: string[]): DataRecord | undef
   if (typeof value.observedOn !== 'string' || !OBSERVED_ON.test(value.observedOn)) {
     addError(errors, 'observedOn must be a valid coarse UTC calendar date');
   }
-  if (typeof value.producerVersion !== 'string'
-    || value.producerVersion.length > 11
-    || !PRODUCER_VERSION.test(value.producerVersion)) addError(errors, 'producerVersion is invalid');
+  if (!includes(OUTCOME_PRODUCER_VERSIONS_V1, value.producerVersion)) {
+    addError(errors, 'producerVersion is invalid');
+  }
   return validateContext(value.context, errors);
 }
 

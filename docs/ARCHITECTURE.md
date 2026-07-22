@@ -300,10 +300,12 @@ the local flywheel; it is not a generic read-only mode.
 The outcome-event v1 contract is a third, separately controlled local path. It
 has a closed schema, coarse context and time buckets, explicit inspect/export/
 delete operations, and no network adapter. The validator captures canonical
-fixed-key snapshots; the bounded JSONL store rejects symlink and hard-link
-aliases, validates and appends under an exclusive lock through one descriptor,
-exports by private atomic replacement, and checks inode identity before
-deletion. Unsupported no-follow semantics fail closed. The existing usage
+fixed-key snapshots and accepts only the closed v1 `0.45.0` producer
+coordinate; the bounded JSONL store rejects symlink, hard-link, and
+filesystem-equivalent export aliases, honors the sibling lock across every
+lifecycle operation, validates and appends through one descriptor, exports
+by private atomic replacement, and checks inode identity before deletion.
+Unsupported no-follow semantics fail closed. The existing usage
 beacon cannot carry outcome events. Any future outcome transport requires a
 separate privacy and authorization decision.
 

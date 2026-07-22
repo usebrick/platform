@@ -15,6 +15,8 @@ import {
 import {
   acquireOutcomeStoreLock,
   appendOutcomeBytes,
+  assertOutcomePathsDistinct,
+  assertOutcomeStoreUnlocked,
   closeOutcomeFile,
   deleteSingleLinkRegularFile,
   openOutcomeFileForAppend,
@@ -122,7 +124,10 @@ function readStorageWithoutLock(storagePath: string): OutcomeEventV1[] {
 }
 
 export function readOutcomeEventsV1(storagePath: string): OutcomeEventV1[] {
-  if (!secureOutcomePathExists(storagePath)) return [];
+  if (!secureOutcomePathExists(storagePath)) {
+    assertOutcomeStoreUnlocked(storagePath);
+    return [];
+  }
   const lock = acquireOutcomeStoreLock(storagePath);
   try {
     return readStorageWithoutLock(lock.storagePath);
@@ -179,15 +184,16 @@ function canonicalExportDocument(events: readonly OutcomeEventV1[]): Record<stri
 export function exportOutcomeEventsV1(storagePath: string, exportPath: string): number {
   const absoluteStoragePath = resolve(storagePath);
   const absoluteExportPath = resolve(exportPath);
-  if (pathComparisonKey(absoluteStoragePath) === pathComparisonKey(absoluteExportPath)) {
+  if (absoluteStoragePath === absoluteExportPath) {
     throw new OutcomeEventStoreError('Outcome export path must differ from the local JSONL store');
   }
-  if (pathComparisonKey(absoluteExportPath) === pathComparisonKey(`${absoluteStoragePath}.lock`)) {
+  if (absoluteExportPath === `${absoluteStoragePath}.lock`) {
     throw new OutcomeEventStoreError('Outcome export path must differ from the active store lock');
   }
 
   const lock = acquireOutcomeStoreLock(storagePath);
   try {
+    assertOutcomePathsDistinct(lock.storagePath, absoluteExportPath);
     const storageIdentity = outcomeFileIdentity(lock.storagePath, 'Outcome event store');
     const events = readStorageWithoutLock(lock.storagePath);
     const document = canonicalExportDocument(events);
@@ -205,12 +211,11 @@ export function exportOutcomeEventsV1(storagePath: string, exportPath: string): 
   }
 }
 
-function pathComparisonKey(path: string): string {
-  return path.normalize('NFC').toLowerCase();
-}
-
 export function deleteOutcomeEventsV1(storagePath: string): boolean {
-  if (!secureOutcomePathExists(storagePath)) return false;
+  if (!secureOutcomePathExists(storagePath)) {
+    assertOutcomeStoreUnlocked(storagePath);
+    return false;
+  }
   const lock = acquireOutcomeStoreLock(storagePath);
   try {
     return deleteSingleLinkRegularFile(lock.storagePath);
