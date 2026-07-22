@@ -566,6 +566,18 @@ describe('first-scan public contract', () => {
     );
   });
 
+  it('labels a partial deprecated v1 calibrated shape as historical even without metrics', () => {
+    const evidence: FirstScanFindingEvidence = {
+      tier: 'calibrated',
+      claim: 'Legacy calibrated evidence.',
+      sourceSpan: 'absent',
+    };
+
+    expect(formatFirstScanFindingEvidence(evidence)).toBe(
+      'calibrated (deprecated v1); historical metrics unavailable. Legacy calibrated evidence.',
+    );
+  });
+
   it('uses ruleId ascending as the final recommendation tie-breaker', () => {
     const ties = ['logic/z-last', 'logic/a-first', 'logic/m-middle', 'logic/b-second']
       .map((ruleId) => issue('logic', { ruleId, severity: 'medium' }));
