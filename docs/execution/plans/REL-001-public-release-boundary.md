@@ -128,7 +128,7 @@ release blocker. Do not relabel it as a passing check.
   high-severity dependency audit.
 - **Recheck:** compare npm registry metadata, GitHub release/workflow state,
   live-site claims, and deployment provenance with the recorded decisions.
-- **Parallel safe:** `SB-UX-001`, `TEL-001`, and owner-selected `VAL-001` work
+- **Parallel safe:** `TEL-001` and owner-selected `VAL-001` work
   may continue. This wait consumes no WIP and authorizes no participant action.
 
 ## Rollback

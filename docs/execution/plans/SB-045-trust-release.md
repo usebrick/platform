@@ -117,6 +117,6 @@ evidence if it exposed pre-existing drift.
 
 ## Next action
 
-Preserve the completed qualification packet, hand first-scan work to
-`SB-UX-001`, and route every public release or deployment decision through
+Preserve the completed qualification packet and completed `SB-UX-001`
+first-scan handoff; route every public release or deployment decision through
 `REL-001`.

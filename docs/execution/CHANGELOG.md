@@ -3,6 +3,46 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 44 — 2026-07-22
+
+### Changed
+
+- Closed `SB-UX-001` after all eight tasks and the current owner-comprehension
+  checkpoint completed. The owner confirmed that the current bounded first
+  screen is good enough and that its deterministic, manual-review, and
+  no-safe-bounded-repair boundary is understandable.
+- Marked `SB-UX-001` `done`, reduced implementation WIP from `1/2` to `0/2`,
+  and made `TEL-001` the next ready implementation plan.
+- Preserved `LOCK-001` as `draft` while clearing its completed SB-UX dependency.
+  `MEM-001` remains `draft` and still waits for `TEL-001`.
+- Updated the roadmap, execution status/index, SB-UX/TEL/Lock plans, detailed
+  implementation plan, current impact/audit projections, and the evidence
+  receipt without changing scanner behavior.
+
+### Evidence
+
+- The exact 11-file first-scan matrix passes 267/267 tests and SlopBrick
+  typecheck passes.
+- The SlopBrick package suite passes 4,580 tests with 15 intentional skips;
+  recursive Core, Website, Engine, and SlopBrick lint, typecheck, test, and
+  build gates pass.
+- The package-local no-baseline self-scan analyzes 296/296 selected files with
+  zero failures, reports one deterministic manual-review recommendation, passes
+  its policy gate at Repository Health 99.94/100, and leaves the durable debt
+  baseline missing before and after.
+- The owner accepted the exact current ANSI-free first screen after the
+  comprehension boundary was explained. No additional `VAL-001` walkthrough
+  row or usefulness claim was inferred.
+
+### Boundary
+
+- This closeout changes documentation, evidence, and plan-control state only.
+  It does not extract the duplicate block, change a score, threshold, rule,
+  policy, calibration row, baseline, package version, or telemetry runtime.
+- External sessions remain zero and outreach remains unauthorized. No merge,
+  push, tag, GitHub Release, npm publication, website deployment, or public-
+  release authority is inferred.
+
 ## Revision 43 — 2026-07-22
 
 ### Changed

@@ -4,6 +4,11 @@
 
 Add optional `ProjectReport.firstScan` and thread it through the existing SlopBrick report finalization, durable debt baseline, default pretty output, JSON, and SARIF boundaries. The proposal is specified in `docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`.
 
+**Closeout status — 2026-07-22:** The high-risk additive change completed its
+focused, package, recursive, machine-format, package-local self-scan, baseline
+non-mutation, and owner-comprehension gates. Execution-index revision 44 closes
+`SB-UX-001`; no score, rule, baseline, release, or deployment authority changed.
+
 ## Dependents (66 TypeScript files)
 
 The target is a shared report API, so the blast radius is broader than the five new modules:
@@ -64,4 +69,7 @@ The change touches a shared public interface and default report path with more t
 
 ## Recommended action
 
-Proceed test-first in the frozen task order. Enter `SB-UX-001` into WIP before code; land the pure projection and identity boundary first; extend baseline comparison without automatic writes; attach it to real scans; then change human and machine presentation. Do not close the story until focused/package/recursive gates, the mandated self-scan, baseline non-mutation proof, and the owner comprehension checkpoint all pass.
+Preserve the completed additive contract and its regression matrix. Route the
+typed finding/action/change boundary to `TEL-001`, and reopen `SB-UX-001` only
+if default-output, compatibility, scan-validity, evidence-honesty, repair-
+safety, or baseline non-mutation behavior regresses.

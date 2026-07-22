@@ -20,7 +20,7 @@ The account-wide review adds four durable decisions:
 The governing design is
 `docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md`.
 This dedicated impact file does not replace `specs/IMPACT_LATEST.md`, which
-currently owns the active SB-UX-001 shared-report impact map.
+preserves the completed SB-UX-001 shared-report impact map.
 
 ## Dependents
 

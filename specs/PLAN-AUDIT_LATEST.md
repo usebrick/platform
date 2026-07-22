@@ -1,8 +1,12 @@
 # Plan Audit — SlopBrick evidence-led first scan
 
-**Date:** 2026-07-18 · **Verdict:** READY
+**Date:** 2026-07-18 · **Verdict:** EXECUTED (original audit: READY)
 **Plan:** `docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`
 **Execution authority:** `docs/execution/index.json` revision 24
+
+> **Execution status — 2026-07-22:** The audited plan completed under
+> execution-index revision 44. The fresh focused, package, recursive,
+> self-scan, baseline non-mutation, and owner-comprehension gates all passed.
 
 ## Principles Alignment
 
@@ -11,7 +15,7 @@
 | Vertical slices | ✅ | Eight bounded tasks each define files, interfaces, a red state, focused green verification, and a Conventional Commit checkpoint. Legacy behavior remains runnable between slices. |
 | Scope bounded | ✅ | The plan permits one additive report projection, baseline snapshots, human rendering, and JSON/SARIF metadata. It explicitly excludes detector, score, rule, corpus, telemetry, network, release, and deployment changes. |
 | Success criteria | ✅ | The final matrix covers five areas, one transparent headline, three actions, evidence and repair truth, deltas, invalid scans, compatibility, accessibility-oriented text, owner comprehension, and release boundaries. |
-| Hard gates | ✅ | Revision-25 WIP entry precedes code; baseline identity and no-auto-refresh are frozen; focused/full gates precede a real self-scan; owner comprehension precedes revision-26 closeout. |
+| Hard gates | ✅ | Revision-25 WIP entry preceded code; baseline identity and no-auto-refresh remained frozen; focused/full gates preceded the real self-scan; owner comprehension preceded revision-44 closeout. |
 | Domain language | ✅ | `firstScan`, evidence tiers, finding-bound repair, five areas, current/new/resolved/unchanged, Repository Health, policy gate, and baseline compatibility are defined once in the locked product contract. |
 
 ## Conventions Completeness
@@ -38,15 +42,17 @@
 | Language / framework | TypeScript on Node.js 22/24, Vitest, Commander CLI, Chalk terminal rendering |
 | Codebase state | Existing monorepo; additive backward-compatible change to a published package candidate |
 
-## Open Gaps
+## Execution gate disposition
 
-No planning gap blocks implementation. These are execution gates, not plan defects:
+All audited execution gates are complete:
 
-- [ ] Produce the red tests before each implementation slice.
-- [ ] Preserve the frozen finding-identity hash and revision-1 baseline reader.
-- [ ] Pass focused, package, recursive, machine-format, and package-local self-scan gates.
-- [ ] Obtain the owner's explicit first-action comprehension disposition before marking `SB-UX-001` done.
+- [x] Produce the red tests before each implementation slice.
+- [x] Preserve the frozen finding-identity hash and revision-1 baseline reader.
+- [x] Pass focused, package, recursive, machine-format, and package-local self-scan gates.
+- [x] Obtain the owner's explicit first-action comprehension disposition before marking `SB-UX-001` done.
 
 ## Verdict
 
-**READY** — scope, terminology, dependencies, tests, commands, compatibility, owner acceptance, and rollback are concrete. Repository survey and impact mapping are complete; proceed with either `superpowers:subagent-driven-development` or `superpowers:executing-plans` after the user selects the execution mode.
+**EXECUTED** — the original audit found the plan ready; implementation and
+closeout subsequently completed with the specified compatibility, test,
+self-scan, baseline non-mutation, and owner-acceptance evidence.

@@ -1,24 +1,191 @@
 # SB-UX-001 first-scan evidence receipt
 
-> **Current planning note — 2026-07-22:** This remains the preserved partial
-> Task 8 receipt. Its revision 25, candidate HEAD, counts, and output are the
-> exact observed checkpoint, not current control-plane state. The execution
-> index is now revision 43; Tasks 1–7 remain complete. Revision 43 completed
-> current documentation/evidence reconciliation and documentation-scope gates.
-> Task 8 remains open for its focused first-scan matrix and recursive gates, a
-> fresh no-baseline package-local self-scan, and the remaining owner-
-> comprehension disposition. Do not rewrite the receipt below with prospective
-> output.
+> **Current closeout — 2026-07-22:** Task 8's focused matrix,
+> package and recursive gates, and fresh package-local self-scan are complete
+> at the current documentation-convergence base. The exact current first screen
+> is recorded below. The repository owner accepted the first-screen
+> comprehension boundary, so execution-index revision 44 closes `SB-UX-001`.
+> The older revision-25 partial receipt is preserved afterward as historical
+> evidence.
 
-**Status:** owner checkpoint in progress; first action identified, evidence/repair boundary `PENDING`
-**Execution index:** revision 25; `SB-UX-001` remains `in_progress`
-**Candidate HEAD:** `8e81ef252ce384e889891ca64c487f742e4d3cd1`
+**Status:** qualified and owner-approved; Task 8 complete
+**Execution index:** revision 44; `SB-UX-001` is `done`
+**Qualification base:** `774249c806e16584adb64337ec0deb607490e8c5`
 **Package:** unreleased `slopbrick@0.45.0` candidate
+**Runtime:** Node `v24.15.0`; pnpm `9.15.0`
 
-This receipt records Task 8 Steps 1–5 and prepares the literal first screen for
-the repository-owner checkpoint. It does not record owner acceptance,
-usefulness, a fix, a `VAL-001` row, revision 26, completion, release, or
-deployment.
+This receipt records the current Task 8 Steps 3–5 result and the owner's
+literal first-screen comprehension disposition. It does not claim usefulness,
+a fix, a new `VAL-001` row, release, deployment, outreach, or publication.
+
+## 2026-07-22 fresh Task 8 closeout evidence
+
+The qualification ran in the clean isolated worktree
+`/Users/cheng/platform-sb-ux-task8` on branch
+`codex/sb-ux-task8-closeout`, created directly from committed HEAD so the
+owner's unrelated dirty state in the primary checkout remained untouched.
+`corepack pnpm install --frozen-lockfile` and `corepack pnpm plans:validate`
+both exited `0`; the latter reported 18 valid plans, implementation WIP `1/2`,
+and company WIP `0/1`.
+
+### Fresh focused and release-equivalent gates
+
+The first focused invocation in the clean worktree exposed only absent build
+artifacts (`@usebrick/core`, `@usebrick/engine`, and SlopBrick `dist` paths).
+After building Core, Engine, and SlopBrick in dependency order, the exact
+focused command was rerun unchanged and passed. This was a cold-worktree build
+precondition, not a product or test failure.
+
+| Gate | Fresh observed result |
+| --- | --- |
+| Core, Engine, and SlopBrick dependency-order builds | passed; existing non-fatal Zod declaration warnings only |
+| Focused 11-file Task 8 matrix | 11/11 files passed; 267/267 tests passed |
+| `corepack pnpm --filter slopbrick typecheck` | passed |
+| SlopBrick package test | 390 files passed, 5 skipped; 4,580 tests passed, 15 skipped |
+| Recursive lint | passed |
+| Recursive typecheck | Core, Website, Engine, and SlopBrick passed; Astro checked 47 files with 0 errors, 0 warnings, and 0 hints |
+| Recursive test | Core 35 files/285 tests; Website 11/54; Engine 5/60; SlopBrick 390 passed files plus 5 skipped and 4,580 passed tests plus 15 skipped |
+| Recursive build | passed; Core codegen fresh, Website built 4 pages, and all package builds completed |
+
+The exact focused command was:
+
+```text
+corepack pnpm --filter slopbrick exec vitest run \
+  tests/report/first-scan.test.ts \
+  tests/report/json.test.ts \
+  tests/report/sarif.test.ts \
+  tests/report/renderer-contract.test.ts \
+  tests/report/renderer-lanes.test.ts \
+  tests/report/whole-project-parity.test.ts \
+  tests/cli/first-scan-pipeline.test.ts \
+  tests/cli/output-ux.test.ts \
+  tests/cli/scan-completion.test.ts \
+  tests/cli/gate-decision-contract.test.ts \
+  tests/cli/new-debt-gate.test.ts \
+  --maxWorkers=1 --minWorkers=1
+```
+
+The remaining serial gates were:
+
+```text
+corepack pnpm --filter slopbrick typecheck
+SLOPBRICK_VITEST_WORKERS=1 corepack pnpm --filter slopbrick test
+corepack pnpm -r lint
+corepack pnpm -r typecheck
+SLOPBRICK_VITEST_WORKERS=1 corepack pnpm -r test
+corepack pnpm -r build
+```
+
+Every listed command exited `0` after the dependency-order build precondition.
+
+### Fresh package-local self-scan
+
+The mandated ordinary scan ran without `--baseline`:
+
+```text
+corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan --workspace . --threads 1 --no-telemetry --no-color
+```
+
+Its machine-readable companion used the same scan boundary with
+`--format json`. Together they recorded:
+
+| Field | Fresh result |
+| --- | --- |
+| Completion / score validity | `complete` / `valid` |
+| Observed / selected / analyzed | 934 / 296 / 296 |
+| Selection exclusions | 638 config exclusions; all other exclusion classes 0 |
+| Runtime failures / skips | 0 / 0 |
+| Successful files with no retained finding | 292 |
+| Active findings | 4 medium `dup/identical-block`; 0 high; 0 low |
+| Recommendations | 1 deterministic, manual-review, no-safe-repair action |
+| Durable debt baseline before / after | missing / missing |
+| Finding delta | unavailable: `missing-baseline` |
+| Repository Health | 99.94 / 100 |
+| Policy gate | passed — `Gate decision: pass` |
+| Exit | 0 |
+
+`scanAccounting` also recorded 60,089 identical-block candidate windows under
+the 250,000-window limit, zero input skips, and `identicalBlockTruncated:
+false`. The package-relative durable baseline remained absent after both the
+pretty and JSON scans:
+
+```text
+packages/slopbrick/.slopbrick/cache/debt-baseline.json
+baseline=MISSING
+```
+
+The tracked worktree remained clean after the scans. No ordinary scan created
+or refreshed durable debt state.
+
+### Exact current ANSI-free owner-facing first screen
+
+```text
+Repository Health
+  99.94 / 100 — higher is better
+
+Scan status
+  complete
+
+Policy gate
+  passed — Gate decision: pass
+
+Dimensions
+  AI Slop cleanliness: 100 / 100; 40% weight
+  Engineering hygiene: 99.8 / 100; 30% weight
+  Security: 100 / 100; 20% weight
+  Test quality: 100 / 100; 10% weight
+
+Areas
+  Visual Slop: 0 findings (high 0, medium 0, low 0)
+  Frontend Implementation: 0 findings (high 0, medium 0, low 0)
+  Code and Logic: 4 findings (high 0, medium 4, low 0)
+  Repository Coherence: 0 findings (high 0, medium 0, low 0)
+  Accessibility and Resilience: 0 findings (high 0, medium 0, low 0)
+
+Recommended actions
+  1. Code and Logic — dup/identical-block [medium]
+    Evidence tier: deterministic; Current deterministic quality evidence. Historical metrics:
+    historical verdict DORMANT; historical precision 0%; last calibrated 2026-07-04.
+    Reach: multi-file; 4 findings across 4 files.
+    Change: current.
+    Why: Identical normalized 20-line code region at line 179 also appears in
+    /Users/cheng/platform-sb-ux-task8/packages/slopbrick/src/calibration/cal-002/contracts.ts:227
+    Action: manual review — Consider extracting this repeated code into a shared helper or module.
+    Extract only when the repeated region represents shared behavior rather than intentional local
+    clarity. No safe bounded repair is available.
+
+Rescan comparison
+  Finding delta unavailable: durable debt baseline is missing.
+
+Run again after a change to compare findings. Use --full for every score and finding.
+(scan took 12753ms, total 12843ms)
+```
+
+### Current owner comprehension checkpoint
+
+Disposition: `APPROVED`.
+
+The current screen differs from the older revision-25 checkpoint: it now
+prioritizes one deterministic identical-block recommendation rather than two
+calibrated vocabulary-statistic recommendations. Therefore the older literal
+response `start recommended` is preserved below but was not reused as the
+current disposition.
+
+After the boundary was explained as a product-understanding checkpoint rather
+than approval to refactor, create a baseline, release, push, publish, or deploy,
+the owner responded literally:
+
+> yes i think the ux is good enoug whats your opinion=
+
+This is accepted as explicit confirmation that the current first
+screen is understandable and good enough for this bounded milestone. It does
+not assert that the duplicate should be extracted, that a safe repair exists,
+or that the finding was useful in a separate owner walkthrough.
+
+> **Preserved revision-25 partial receipt:** Every remaining section records
+> the older checkpoint exactly as observed. Its revision, counts, first screen,
+> and partial owner response are historical evidence, not the current closeout
+> state above.
 
 ## Implementation identity
 

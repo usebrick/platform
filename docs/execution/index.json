@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "revision": 43,
+  "revision": 44,
   "updatedAt": "2026-07-22",
   "cal002Status": "done",
   "cal002NextAction": {
-    "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, hand current provenance to SB-UX-001, and keep public actions under REL-001.",
+    "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, retain its completed SB-UX-001 provenance handoff, and keep public actions under REL-001.",
     "verify": "corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check && corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1",
     "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
   },
@@ -59,7 +59,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the completed local qualification packet, hand first-scan work to SB-UX-001, and route public decisions through REL-001.",
+        "text": "Preserve the completed local qualification packet and completed SB-UX-001 handoff; route public decisions through REL-001.",
         "verify": "test -f docs/execution/evidence/SB-045-release-qualification.md",
         "evidencePath": "docs/execution/evidence/SB-045-release-qualification.md"
       },
@@ -188,7 +188,7 @@
       "track": "implementation",
       "lane": "slopbrick-ux",
       "horizon": "next",
-      "status": "in_progress",
+      "status": "done",
       "priority": 6,
       "path": "docs/execution/plans/SB-UX-001-first-scan.md",
       "dependencies": {
@@ -203,7 +203,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Complete the remaining Task 8 gates: rerun the focused first-scan matrix and recursive quality gates, capture a fresh package-local self-scan without baseline mutation, and present that exact first screen for the remaining owner comprehension disposition.",
+        "text": "Preserve the completed first-scan contract and hand its typed finding, action, and change boundary to TEL-001; reopen only for a demonstrated regression.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/report/first-scan.test.ts tests/cli/first-scan-pipeline.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/SB-UX-001-first-scan.md"
       },
@@ -212,7 +212,8 @@
         "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
         "specs/PLAN-AUDIT_LATEST.md",
         "specs/IMPACT_LATEST.md",
-        "docs/execution/plans/SB-UX-001-first-scan.md"
+        "docs/execution/plans/SB-UX-001-first-scan.md",
+        "docs/execution/evidence/SB-UX-001-first-scan.md"
       ]
     },
     {
@@ -235,7 +236,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, hand current provenance to SB-UX-001, and keep public actions under REL-001.",
+        "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, retain its completed SB-UX-001 provenance handoff, and keep public actions under REL-001.",
         "verify": "corepack pnpm --filter slopbrick generate:rules:catalog -- --policy packages/slopbrick/src/rules/current-evidence-policy.json --check && corepack pnpm --filter slopbrick exec vitest run tests/generated-docs-truth.test.ts tests/rules/quality-authority-copy.test.ts tests/mcp/docs.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/CAL-002-complete-calibration.md"
       },
@@ -268,7 +269,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "After SB-UX-001 closes Task 8, model the owner-observed useful, declined-no-safe-fix, unchanged-rescan, and bounded-return states without raw source or repository identity.",
+        "text": "Model the owner-observed useful, declined-no-safe-fix, unchanged-rescan, and bounded-return states using SB-UX-001 finding, action, and change fields without raw source or repository identity.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
@@ -445,7 +446,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Carry VAL-001-RUN-001 into SB-UX-001 and repeat the owner walkthrough only when the owner selects another repository or fixture.",
+        "text": "Preserve VAL-001-RUN-001 and the completed SB-UX-001 comprehension disposition; repeat the owner walkthrough only when the owner selects another repository or fixture.",
         "verify": "rg -q 'VAL-001-RUN-001' docs/execution/evidence/VAL-001-owner-validation.md",
         "evidencePath": "docs/execution/evidence/VAL-001-owner-validation.md"
       },

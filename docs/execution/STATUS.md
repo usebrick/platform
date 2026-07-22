@@ -1,16 +1,17 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-22
-**Index revision:** 43
+**Index revision:** 44
 **Global status:** `advancing`
 
 ## Executive state
 
 The documentation control plane, Corpus v1 admission decision, bounded
 source-attested Corpus v1 seed, CAL-001 evaluation, CORPUS-002 source-use
-routing, and CAL-002 claim-matched calibration are complete. Revision 43
-records the owner-approved account-wide product strategy while preserving the
-local Task 20 application: UseBrick is the sole customer-facing quality,
+routing, CAL-002 claim-matched calibration, and the SB-UX first-scan contract
+are complete. Revision 43 records the owner-approved account-wide product
+strategy while preserving the local Task 20 application: UseBrick is the sole
+customer-facing quality,
 coherence, and verification product, and SlopBrick remains the shipped package,
 current CLI, central AI-slop scanner, free local front door, and acquisition
 surface. Memory is the repository-intelligence capability, Lock is the first
@@ -20,20 +21,20 @@ The applied 119-row policy remains non-admitting and public release authority
 remains separate. `GTM-001` is `ready` to prepare planning materials for 10–20
 consent-safe observed external sessions; completed sessions remain zero and
 outreach is false. `LABS-001` is `draft` for a bounded rendered-evidence
-benchmark. Neither plan is active, so company WIP remains `0/1`; `SB-UX-001`
-is now the sole active implementation plan and implementation WIP is `1/2`.
+benchmark. Neither plan is active, so company WIP remains `0/1`. No
+implementation plan is active, so implementation WIP is `0/2`.
 The deterministic router preserves every existing Mendeley and CAL-001 hash
 while failing closed for pending, reference-only, unregistered, malformed, or
 manually widened source dispositions. The local v0.45 trust-release
 qualification is complete under `SB-045`; `REL-001` owns the separate npm and
-website decisions and consumes no WIP. Completed CAL-002 supplies the current
-quality/origin provenance contract to `SB-UX-001` without adding an unmet
-`requires` edge. `VAL-001` remains ready with its one owner-attested self-scan-
-to-rescan row preserved, and `TEL-001` remains ready. `SB-UX-001` Tasks 1–7
-are complete. Revision 43 completed Task 8's current documentation/evidence
-reconciliation and documentation-scope gates; the focused first-scan matrix,
-recursive gates, fresh package-local no-baseline self-scan, and owner-
-comprehension disposition remain open.
+website decisions and consumes no WIP. Completed CAL-002 supplied the current
+quality/origin provenance contract consumed by completed `SB-UX-001`.
+`VAL-001` remains ready with its one owner-attested self-scan-to-rescan row
+preserved, and `TEL-001` is the next ready implementation plan. Revision 44
+closes all eight SB-UX tasks after the fresh 11-file focused matrix, package
+and recursive gates, 296/296-file no-baseline self-scan with zero failures,
+baseline non-mutation proof, and the owner's literal first-screen
+comprehension acceptance.
 The frozen v1 implementation boundary remains checkpointed through
 `e6c9695ea`; its old three-way origin questionnaire is paused after one
 historical hold. Progressive authority Tasks 1–8 are implementation-
@@ -197,9 +198,10 @@ typecheck, and build pass. The package-local self-scan completes 296/296 files
 with zero failures, scores 99.94/100, reports four current medium deterministic
 findings, passes its policy gate, and creates no baseline. Fresh final review
 returned 100/100 with no findings; the focused security matrix passes 46/46
-with no reportable security finding at confidence 8/10 or higher. CAL-002 is
-`done` and implementation WIP is `1/2`. CAL-001 remains `applied: false` and
-`admitted: false`; protected state and frozen evidence remain unchanged.
+with no reportable security finding at confidence 8/10 or higher. CAL-002 and
+SB-UX-001 are `done`, and implementation WIP is `0/2`. CAL-001 remains
+`applied: false` and `admitted: false`; protected state and frozen evidence
+remain unchanged.
 Local application remains separate from push, tag, admission, publication,
 deployment, and release. Stale-path cleanup remains isolated behind exact
 owner approval and does not block local product work.
@@ -417,12 +419,12 @@ owner approval and does not block local product work.
 
 | Track | Active | Limit | Plans |
 | --- | ---: | ---: | --- |
-| Implementation | 1 | 2 | `SB-UX-001` |
+| Implementation | 0 | 2 | None |
 | Company | 0 | 1 | None |
 
-`SB-045` and `CAL-002` are done. `SB-UX-001` consumes one implementation
-slot. `VAL-001` is ready with RUN-001 preserved, and `TEL-001` remains ready
-behind the first-scan closeout. `REL-001` and `DOC-PRUNE-001` are
+`SB-045`, `CAL-002`, and `SB-UX-001` are done. `VAL-001` is ready with
+RUN-001 preserved, and `TEL-001` is the next ready implementation plan.
+`REL-001` and `DOC-PRUNE-001` are
 waiting external and consume no WIP. `GTM-001` is ready for planning materials
 only, targets 10–20 observed sessions, records zero completed sessions, and
 keeps outreach unauthorized. Draft `LABS-001` also consumes no WIP.
@@ -434,16 +436,16 @@ WIP while waiting.
 | Priority | Plan | Status | Unmet `requires` | Next action |
 | ---: | --- | --- | --- | --- |
 | 0 | [`PLAT-001`](plans/PLAT-001-planning-control.md) | `done` | — | Keep future strategy and status changes in the canonical control plane. |
-| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `done` | — | Preserve the local qualification packet and hand first-scan work to SB-UX-001. |
+| 1 | [`SB-045`](plans/SB-045-trust-release.md) | `done` | — | Preserve the local qualification packet and completed SB-UX handoff; route public decisions through REL-001. |
 | 2 | [`CORPUS-DEC-001`](plans/CORPUS-DEC-001-admission-contract.md) | `done` | — | Apply the accepted evidence and rights boundary through `CORPUS-001`. |
 | 3 | [`CORPUS-002`](plans/CORPUS-002-source-use-routing.md) | `done` | — | Hand the completed source disposition to `VAL-001` without changing rule state. |
 | 4 | [`CORPUS-001`](plans/CORPUS-001-v1-seed.md) | `done` | — | Hand off the verified source-attested seed without widening its evidence or rights claims. |
 | 5 | [`CAL-001`](plans/CAL-001-heldout-calibration.md) | `done` | — | Keep the matrix `applied: false` and `admitted: false`; route usefulness review through `VAL-001`. |
-| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `in_progress` | — | Rerun the focused first-scan matrix and recursive gates, capture the fresh no-baseline package-local self-scan, and obtain the remaining owner-comprehension disposition. |
-| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and hand current provenance to `SB-UX-001`; route public actions through `REL-001`. |
-| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | After SB-UX Task 8 closes, model useful, declined, unchanged-rescan, and bounded-return states without sensitive identity. |
-| 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `SB-UX-001`, `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
-| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | `SB-UX-001` | Red-test one deterministic new-debt gate. |
+| 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `done` | — | Preserve the completed first-scan contract and hand its typed finding/action/change boundary to TEL-001. |
+| 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
+| 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `ready` | — | Model useful, declined, unchanged-rescan, and bounded-return states from SB-UX fields without sensitive identity. |
+| 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | `TEL-001` | Approve the M0 storage/provenance/freshness ADR. |
+| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | — | Red-test one deterministic new-debt gate after explicitly starting the plan. |
 | 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
@@ -472,7 +474,7 @@ WIP while waiting.
 package and website. Each surface must be `hold` or `authorize`; every
 authorization must name the exact reviewed commit/SHA and, for npm, the exact
 tag. A green gate, merge, push, or roadmap transition cannot replace that
-input. `SB-UX-001`, `TEL-001`, and owner-selected `VAL-001` work may continue;
+input. `TEL-001` and owner-selected `VAL-001` work may continue;
 `GTM-001` planning materials may be prepared, but outreach, contact,
 scheduling, observation, recording, and participant data remain unauthorized.
 
@@ -510,19 +512,20 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`SB-UX-001` is the sole active implementation plan at WIP `1/2`. Its Tasks
-1–7 are complete and independently reviewed; Task 8 remains open for current
-documentation/evidence reconciliation, focused and recursive gates, a fresh
-package-local self-scan without baseline mutation, and the remaining literal
-owner-comprehension disposition. CAL-002 is complete at the single human-
-facing Task 20 application checkpoint
+`SB-UX-001` is complete and implementation WIP is `0/2`. Revision 44 records
+its 11/11-file and 267/267-test focused matrix, green package and recursive
+gates, complete 296/296-file self-scan with zero failures, absent durable
+baseline before and after, and the owner's literal confirmation that the
+bounded first-screen UX is good enough. CAL-002 remains complete at the single
+human-facing Task 20 application checkpoint
 `bd47dbd7e`. The exact 119-row policy is locally applied and non-admitting;
 its detailed matrix, approval, policy, and receipt identities remain
 machine-verifiable rather than repeated in status prose. Protected owner state,
 frozen historical evidence, and CAL-001 remain unchanged.
 
-The separate quality and origin evidence lanes now hand current provenance to
-`SB-UX-001`. `VAL-001` and `TEL-001` remain ready. VAL-001 may
+The separate quality and origin evidence lanes were consumed without being
+collapsed by `SB-UX-001`. `TEL-001` is the next ready implementation plan;
+`VAL-001` remains ready. VAL-001 may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
 evidence. `REL-001` remains the separate public-authority checkpoint and keeps

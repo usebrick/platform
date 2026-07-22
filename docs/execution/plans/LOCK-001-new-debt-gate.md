@@ -24,6 +24,10 @@ Lock is the first paid-layer hypothesis because it turns trusted SlopBrick
 evidence and repository-owned intent into a repeatable prevention workflow;
 it is not a separate marketed product.
 
+`SB-UX-001` is complete, so this plan's required first-scan and stable
+finding-delta boundary is satisfied. `LOCK-001` remains `draft`; dependency
+clearance does not start implementation or establish paid demand.
+
 ## Scope
 
 - One deterministic finding family with stable identity.
@@ -97,5 +101,5 @@ and decision receipts so the failure can be reproduced.
 
 ## Next action
 
-After `SB-UX-001`, write the red baseline-delta contract for one deterministic
-critical finding in the existing CLI.
+Write the red baseline-delta contract for one deterministic critical finding
+in the existing CLI after this draft plan is explicitly started.

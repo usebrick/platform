@@ -186,10 +186,11 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Now — close the free product loop
 
-1. Finish `SB-UX-001` Task 8: current documentation, complete gates, fresh
-   package-local self-scan, owner comprehension checkpoint, and evidence receipt.
-2. Begin `TEL-001`: local, inspectable outcome events for useful finding,
+1. Begin `TEL-001`: local, inspectable outcome events for useful finding,
    action or decline, rescan, and return; provide export and deletion.
+2. Preserve the completed `SB-UX-001` first-screen contract: one transparent
+   headline, five areas, at most three actions, truthful evidence/repair
+   boundaries, and no ordinary-scan baseline mutation.
 3. Preserve `VAL-001` as optional owner-selected product evidence. It has no
    participant target and cannot establish market demand.
 4. Keep `GTM-001` limited to profile, script, consent, and empty redacted

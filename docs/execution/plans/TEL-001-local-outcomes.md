@@ -21,9 +21,9 @@ telemetry policy. No hosted outcome-learning backend is authorized by this
 plan. The required `SB-045` local qualification is complete. Public release
 and website deployment remain under `REL-001` and do not block this local
 contract. `VAL-001-RUN-001` supplies one real local outcome sequence—useful
-finding, immediate repair declined because no safe fix existed, unchanged
-rescan—but it does not authorize event implementation before `SB-UX-001`
-defines the typed finding/outcome boundary.
+finding, immediate repair declined because no safe fix existed, and unchanged
+rescan. `SB-UX-001` is now complete and supplies the typed
+finding/action/change boundary this plan consumes.
 
 `CAL-002` has completed the separate 119-rule policy and provenance closeout.
 This plan remains `ready`; it neither consumes WIP nor waits for a rule-state,
@@ -108,7 +108,7 @@ delete path. Preserve schema/test evidence for review.
 
 ## Next action
 
-After `SB-UX-001` closes Task 8, specify and test the smallest local event
-capable of representing RUN-001's useful,
-declined-no-safe-fix, unchanged-rescan, and bounded return states with no raw
-source or proprietary repository identifier. Keep outbound reporting opt-in.
+Specify and test the smallest local event capable of representing RUN-001's
+useful, declined-no-safe-fix, unchanged-rescan, and bounded return states with
+no raw source or proprietary repository identifier. Keep outbound reporting
+opt-in.

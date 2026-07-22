@@ -22,8 +22,9 @@ projection is 47 starting quality + 26 transferred quality + 4 blocked quality
 + 3 superseded + 7 retired + 32 research-origin = 119. CAL-001's v1 matrix
 remains `applied: false` and `admitted: false`. The owner-approved Task 20
 policy is locally applied and remains `admitted: false` at the single
-human-facing application checkpoint `bd47dbd7e`. `SB-UX-001` is now the only
-active implementation plan. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
+human-facing application checkpoint `bd47dbd7e`. `SB-UX-001` has completed its
+provenance-aware first-scan contract, and no implementation plan is currently
+active. `VAL-001-RUN-001` remains recorded but `VAL-001` returns
 to ready, so CAL-002 owns the calibration and provenance closeout without
 inventing owner evidence. Progressive authority Tasks 1–8 are implementation-
 checkpointed and independently approved through `e8e62b779`; Tasks 9–11 are
@@ -282,8 +283,8 @@ until a complete replacement matrix is reviewed.
 
 ## Next action
 
-Preserve the applied, non-admitting policy at `bd47dbd7e`, hand the current
-quality/origin provenance contract to `SB-UX-001`, and route every public
-action through `REL-001`. Any future policy change requires a new reviewed
+Preserve the applied, non-admitting policy at `bd47dbd7e` and its completed
+quality/origin provenance handoff to `SB-UX-001`; route every public action
+through `REL-001`. Any future policy change requires a new reviewed
 matrix and atomic application; CAL-001, frozen evidence, and protected owner
 state remain immutable.

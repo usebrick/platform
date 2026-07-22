@@ -1,16 +1,16 @@
 # SlopBrick Evidence-Led First Scan Implementation Plan
 
-> **Execution addendum — 2026-07-22:** Tasks 1–7 are complete and independently
-> reviewed. Task 8 is the only remaining slice. CAL-002 is complete at Task 20,
-> the execution index is revision 43, and implementation WIP is `1/2` with only
-> `SB-UX-001` active. Earlier revision numbers, WIP assumptions, and red-test
-> instructions below are preserved as the original execution sequence; they do
+> **Execution addendum — 2026-07-22:** Tasks 1–8 are complete. CAL-002 is
+> complete at Task 20, execution-index revision 44 closes `SB-UX-001`, and
+> implementation WIP is `0/2`. Earlier revision numbers, WIP assumptions, and
+> red-test instructions below are preserved as the original execution sequence; they do
 > not override the current execution index. The future branded Slop Index is
 > outside this plan: current behavior remains four scores with Repository
 > Health as the first-screen headline. Revision 43 completed the current
-> documentation/evidence reconciliation and documentation-scope gates. The
-> focused first-scan matrix, recursive gates, fresh package-local no-baseline
-> self-scan, and owner-comprehension disposition remain open.
+> documentation/evidence reconciliation and documentation-scope gates;
+> revision 44 records the fresh focused/package/recursive gates, 296/296-file
+> no-baseline self-scan, baseline non-mutation proof, and owner-comprehension
+> acceptance.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -986,7 +986,7 @@ git commit -m "test(slopbrick): prove first-scan journey"
   ready; unless another plan is explicitly started, implementation WIP becomes
   `0/2`.
 
-- [ ] **Step 1: Update user documentation**
+- [x] **Step 1: Update user documentation**
 
 Document in both READMEs:
 
@@ -999,7 +999,7 @@ Document in both READMEs:
 
 Add a `0.45.0` changelog entry under the existing unreleased heading. Do not add a release date or claim publication.
 
-- [ ] **Step 2: Write the evidence receipt from actual outputs**
+- [x] **Step 2: Write the evidence receipt from actual outputs**
 
 Create `docs/execution/evidence/SB-UX-001-first-scan.md` with:
 
@@ -1014,7 +1014,7 @@ Create `docs/execution/evidence/SB-UX-001-first-scan.md` with:
 
 Record only command output observed during this task. Do not use prospective hashes or invented counts.
 
-- [ ] **Step 3: Run focused product gates**
+- [x] **Step 3: Run focused product gates**
 
 ```bash
 corepack pnpm --filter slopbrick exec vitest run \
@@ -1035,7 +1035,7 @@ corepack pnpm --filter slopbrick typecheck
 
 Expected: all focused tests and typecheck pass.
 
-- [ ] **Step 4: Run the package and recursive release-equivalent gates serially**
+- [x] **Step 4: Run the package and recursive release-equivalent gates serially**
 
 ```bash
 SLOPBRICK_VITEST_WORKERS=1 corepack pnpm --filter slopbrick test
@@ -1047,7 +1047,7 @@ corepack pnpm -r build
 
 Expected: every source-level gate passes. If a known host-sensitive test fails, isolate and record it honestly; do not call the gate green until the source contract is proved in the supported environment.
 
-- [ ] **Step 5: Run the mandated package-local self-scan without baseline mutation**
+- [x] **Step 5: Run the mandated package-local self-scan without baseline mutation**
 
 Before and after the scan, hash `.slopbrick/cache/debt-baseline.json` if it exists. Then run:
 
@@ -1057,13 +1057,13 @@ corepack pnpm --filter slopbrick exec -- node ./bin/slopbrick.js scan --workspac
 
 Expected: complete scan, bounded first screen, no more than three recommendations, explicit compatible/missing/incompatible baseline state, and an unchanged baseline hash. The configured policy exit may pass or fail based on the unchanged detector truth; record it rather than changing policy.
 
-- [ ] **Step 6: Run the owner comprehension checkpoint**
+- [x] **Step 6: Run the owner comprehension checkpoint**
 
 Present the exact ANSI-free first screen from Step 5 to the repository owner. Ask only whether the first recommended action is identifiable and whether its evidence/repair boundary is understandable. Record the owner's literal disposition in the SB-UX evidence receipt. Add a new `VAL-001` row only if the owner chooses to treat this as another owner-controlled walkthrough; do not infer a row, a fix, or usefulness from test output.
 
 If the owner cannot identify the recommendation or does not respond, keep `SB-UX-001` `in_progress`, record the open acceptance gate, and do not execute the status-close step. No participant or target-count requirement is introduced.
 
-- [ ] **Step 7: Close the execution control plane**
+- [x] **Step 7: Close the execution control plane**
 
 Only after Steps 3–6 are green, increment the current execution index to its
 next available revision, mark `SB-UX-001` done, add the evidence receipt and
@@ -1078,7 +1078,7 @@ explicitly started; keep `VAL-001` and `TEL-001` ready. Do not mark `VAL-001`
 done: one no-fix row still does not satisfy its repeated useful fix/rescan exit
 gate.
 
-- [ ] **Step 8: Validate docs and repository diff**
+- [x] **Step 8: Validate docs and repository diff**
 
 ```bash
 corepack pnpm plans:validate

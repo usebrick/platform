@@ -1,6 +1,6 @@
 # SB-UX-001 — Make the first scan evidence-led and actionable
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Priority:** 6
 - **Track / lane:** implementation / slopbrick-ux
 - **Owner:** SlopBrick product and CLI
@@ -15,9 +15,9 @@ without reading a giant undifferentiated report.
 
 ## Current truth
 
-SlopBrick has broad detector coverage, but the five-part product taxonomy,
-evidence certainty, current-versus-new debt, and prioritized scan-to-rescan
-journey are not yet one tested UX contract. The required `SB-045` local
+SlopBrick's five-part product taxonomy, evidence certainty,
+current-versus-new debt, and prioritized scan-to-rescan journey are now one
+tested UX contract. The required `SB-045` local
 qualification is complete. Public release and website deployment remain under
 `REL-001` and do not block this local UX plan. `VAL-001-RUN-001` now provides a
 real owner baseline: the first recommendation was useful for finding a
@@ -26,15 +26,17 @@ rescan required manual comparison. Those are concrete red states for this
 plan, not participant evidence. The reviewed implementation contract is now
 [`docs/superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md`](../../superpowers/plans/2026-07-18-slopbrick-first-scan-experience.md);
 its plan audit is `READY`, its shared-report blast radius is classified `High`,
-and execution has started in the second implementation WIP slot. No score,
-rule, baseline, source, release, or public artifact changed.
+and its shared-report blast radius remains classified `High`. No score, rule,
+baseline, source, release, or public artifact changed during closeout.
 
-Tasks 1–7 of the reviewed implementation plan are complete and independently
-reviewed. Revision 43 completed Task 8's current documentation/evidence
-reconciliation and documentation-scope gates. Task 8 remains open for the
-focused first-scan matrix and recursive gates, a fresh package-local self-scan
-without baseline mutation, and the remaining owner-comprehension disposition.
-The existing receipt records a partial checkpoint, not completion.
+Tasks 1–8 of the reviewed implementation plan are complete. Revision 43
+completed Task 8's documentation/evidence reconciliation and
+documentation-scope gates. Revision 44 records the fresh 11-file focused
+matrix, package and recursive gates, 296/296-file package-local self-scan with
+zero failures and no baseline mutation, and the owner's literal confirmation
+that the current first screen is good enough. The receipt preserves both the
+current closeout and the older partial checkpoint without conflating either
+with participant or market evidence.
 
 `CAL-002` is complete at Task 20 checkpoint `bd47dbd7e`. Its locally applied,
 non-admitting 119-row policy has 41 default-on quality rows, 32 unmeasured
@@ -103,11 +105,16 @@ presenting origin association as quality, authorship, or safe-repair proof.
 2. Task 8: reconcile all current docs and the evidence receipt with the final
    implementation and CAL-002 provenance -> complete in revision 43; docs
    truth gates pass.
-3. Rerun the focused first-scan matrix and recursive quality gates serially.
+3. Rerun the focused first-scan matrix and recursive quality gates serially ->
+   complete; 11/11 files and 267/267 focused tests passed, followed by green
+   package and recursive gates.
 4. Capture a fresh package-local scan without `--baseline`; prove ordinary
-   scans do not create or refresh the durable debt baseline.
+   scans do not create or refresh the durable debt baseline -> complete;
+   296/296 files analyzed with zero failures and the baseline missing before
+   and after.
 5. Present the exact first screen and evidence/repair boundary to the owner;
-   record only the literal disposition and close the plan only if accepted.
+   record only the literal disposition and close the plan only if accepted ->
+   complete; the owner confirmed the UX is good enough for this bounded slice.
 
 ## Verification
 
@@ -125,7 +132,7 @@ if format compatibility or comprehension regresses.
 
 ## Next action
 
-Complete the remaining Task 8 gates: rerun the focused first-scan matrix and
-recursive quality gates, capture a fresh package-local self-scan without
-baseline mutation, and present that exact first screen for the remaining owner
-comprehension disposition.
+Preserve the completed first-scan contract and hand its typed
+finding/action/change boundary to `TEL-001`. Reopen this plan only if a later
+default-output change regresses evidence honesty, repair safety, scan validity,
+or baseline non-mutation.

@@ -118,7 +118,7 @@ No product behavior or remote state should change in this plan.
 ## Next action
 
 Present the numbered inventory to the repository owner and wait for exact
-approval while `SB-UX-001`, `TEL-001`, and owner-only validation may continue.
+approval while `TEL-001` and owner-only validation may continue.
 
 ## Waiting external
 
@@ -130,6 +130,6 @@ approval while `SB-UX-001`, `TEL-001`, and owner-only validation may continue.
 - **Resume condition:** The evidence file records an unambiguous disposition
   for every approved numbered entry.
 - **Recheck:** `git status --short` plus a byte/hash comparison before acting.
-- **Parallel safe:** `SB-UX-001`, `TEL-001`, and `VAL-001` can advance without
+- **Parallel safe:** `TEL-001` and `VAL-001` can advance without
   this cleanup. `REL-001` remains a separate public-authority wait, and no
   participant recruitment is authorized.

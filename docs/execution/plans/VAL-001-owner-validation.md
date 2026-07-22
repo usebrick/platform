@@ -19,9 +19,9 @@ origin association but did not evaluate usefulness or apply rule changes.
 package-local self-scan, a useful review signal, an owner-approved no-fix
 disposition, and an unchanged complete rescan. No participant evidence,
 rule-state change, or owner-review-required CAL-001 row follows from it.
-RUN-001 remains recorded, but this plan returns to `ready` so `CAL-002` can
-own the current 119-rule calibration and provenance closeout beside active
-`SB-UX-001`; no new owner run is implied by this transition.
+RUN-001 remains recorded, `CAL-002` owns the completed 119-rule calibration,
+and `SB-UX-001` has consumed the bounded owner context and closed. This plan
+remains `ready`; no new owner run is implied by those transitions.
 Owner validation may improve the product contract, but it cannot establish an
 external session, team workflow, buyer demand, conversion, or willingness to
 pay.
@@ -81,7 +81,6 @@ Remove an invalid ledger row while retaining the underlying scan receipts; do no
 
 ## Next action
 
-Carry RUN-001's useful/no-safe-fix/unchanged states into `SB-UX-001` and keep
-them available as bounded quality-review context for `CAL-002`. Repeat the
-walkthrough only when the owner selects another repository or fixture; never
-count the result as market evidence.
+Preserve RUN-001 and the completed `SB-UX-001` comprehension disposition.
+Repeat the walkthrough only when the owner selects another repository or
+fixture; never count the result as market evidence.
