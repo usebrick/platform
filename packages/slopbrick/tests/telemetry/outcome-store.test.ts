@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   appendOutcomeEventV1,
+  OutcomeEventStoreError,
   readOutcomeEventsV1,
 } from '../../src/telemetry/outcome-store';
 import {
@@ -43,5 +44,33 @@ describe('privacy-safe local outcome event store', () => {
     expect(readOutcomeEventsV1(storagePath)).toEqual([event]);
     expect(readFileSync(storagePath, 'utf8')).toBe(`${JSON.stringify(event)}\n`);
     expect(existsSync(join(root, '.slopbrick', 'flywheel'))).toBe(false);
+  });
+
+  it('fails closed on corrupt storage without leaking or extending the corrupt line', () => {
+    const storagePath = join(root, 'events-v1.jsonl');
+    const secret = 'private-customer-source-text';
+    const corruptBytes = `{"source":"${secret}"}\n`;
+    writeFileSync(storagePath, corruptBytes, 'utf8');
+
+    let readError: unknown;
+    try {
+      readOutcomeEventsV1(storagePath);
+    } catch (error) {
+      readError = error;
+    }
+    expect(readError).toBeInstanceOf(OutcomeEventStoreError);
+    expect((readError as Error).message).not.toContain(secret);
+
+    const validEvent: OutcomeEventV1 = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      event: 'return-observed',
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+      window: 'within-7-days',
+    };
+    expect(() => appendOutcomeEventV1(storagePath, validEvent))
+      .toThrow(OutcomeEventStoreError);
+    expect(readFileSync(storagePath, 'utf8')).toBe(corruptBytes);
   });
 });
