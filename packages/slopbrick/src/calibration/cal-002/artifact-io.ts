@@ -46,10 +46,12 @@ interface ValidatedArtifactWriteInput<T> extends ValidatedArtifactInput<T> {
 
 export type ImmutableCanonicalWriteResult = 'created' | 'replayed';
 
-export interface PrivateCanonicalArtifact<T> {
+export interface CanonicalArtifactWithBytes<T> {
   readonly value: T;
   readonly bytes: Buffer;
 }
+
+export type PrivateCanonicalArtifact<T> = CanonicalArtifactWithBytes<T>;
 
 const PRIVATE_FILE_MODE = 0o600;
 const SOURCE_SCAN_SKIP_DIRECTORIES = new Set([
@@ -306,6 +308,16 @@ function decodeExactCanonicalArtifact(bytes: Buffer, label: string): unknown {
 export async function readCanonicalArtifact(input: ReadCanonicalArtifactInput): Promise<unknown> {
   const path = await resolveArtifactPath(input, false);
   return decodeExactCanonicalArtifact(await readFile(path), input.label);
+}
+
+export async function readCanonicalArtifactWithBytes<T>(
+  input: ValidatedArtifactInput<T>,
+): Promise<CanonicalArtifactWithBytes<T>> {
+  const path = await resolveArtifactPath(input, false);
+  const bytes = await readFile(path);
+  const value = decodeExactCanonicalArtifact(bytes, input.label);
+  input.assertValue(value);
+  return { value, bytes };
 }
 
 export async function readPrivateCanonicalArtifactWithBytes<T>(

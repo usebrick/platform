@@ -13,6 +13,7 @@ import { extractFacts } from '../../src/engine/visitor';
 import {
   assertDistinctArtifactDestinations,
   readCanonicalArtifact,
+  readCanonicalArtifactWithBytes,
   readPrivateCanonicalArtifact,
   readPrivateCanonicalArtifactWithBytes,
   readReviewReceipt,
@@ -115,6 +116,12 @@ import {
   type CAL002AuthorityReceiptV2,
   type CAL002AuthorityStateV2,
 } from '../../src/calibration/cal-002/contracts-v2';
+import {
+  CAL002_EVIDENCE_ARTIFACT_NAMES,
+  assertCAL002EvidenceManifestV1,
+  buildCAL002EvidenceManifestV1,
+  type CAL002EvidenceManifestV1,
+} from '../../src/calibration/cal-002/evidence-manifest';
 import {
   buildCAL002OracleReceiptV2,
   CAL002_REAL_SOURCE_CONTROL_FAMILIES,
@@ -321,6 +328,13 @@ interface ApproveMatrixV2Arguments {
   readonly out: string;
 }
 
+interface ManifestV2Arguments {
+  readonly command: 'manifest-v2';
+  readonly root: string;
+  readonly artifactDir: string;
+  readonly out: string;
+}
+
 interface ApplyV2Arguments {
   readonly command: 'apply-v2';
   readonly root: string;
@@ -348,6 +362,7 @@ type Arguments =
   | VerifySupersessionArguments
   | MatrixV2Arguments
   | ApproveMatrixV2Arguments
+  | ManifestV2Arguments
   | ApplyV2Arguments;
 
 interface SourceMap {
@@ -731,6 +746,18 @@ function parseApproveMatrixV2Arguments(tokens: readonly string[]): ApproveMatrix
   };
 }
 
+function parseManifestV2Arguments(tokens: readonly string[]): ManifestV2Arguments {
+  const { values } = parseValuesAndFlags(tokens, 'manifest-v2', new Set([
+    '--root', '--artifact-dir', '--out',
+  ]), new Set());
+  return {
+    command: 'manifest-v2',
+    root: values.get('--root') ?? detectMonorepoRoot(process.cwd()) ?? process.cwd(),
+    artifactDir: requiredValue(values, '--artifact-dir', 'manifest-v2'),
+    out: requiredValue(values, '--out', 'manifest-v2'),
+  };
+}
+
 function parseApplyV2Arguments(tokens: readonly string[]): ApplyV2Arguments {
   const { values, flags } = parseValuesAndFlags(tokens, 'apply-v2', new Set([
     '--root', '--matrix', '--approval', '--implementation-commit-ref', '--out', '--receipt-out',
@@ -773,8 +800,9 @@ function parseArguments(argv: readonly string[]): Arguments {
   if (command === 'verify-supersession') return parseVerifySupersessionArguments(tokens);
   if (command === 'matrix-v2') return parseMatrixV2Arguments(tokens);
   if (command === 'approve-matrix-v2') return parseApproveMatrixV2Arguments(tokens);
+  if (command === 'manifest-v2') return parseManifestV2Arguments(tokens);
   if (command === 'apply-v2') return parseApplyV2Arguments(tokens);
-  throw new Error('Usage: cal:complete review-quality, classify-authority, quality-closeout, plan-quality-cohort, verify-origin-v2, catalog, matrix, approve-matrix, apply, reduce-parity-v2, reduce-oracles-v2, verify-supersession, matrix-v2, approve-matrix-v2, or apply-v2 with local artifact options');
+  throw new Error('Usage: cal:complete review-quality, classify-authority, quality-closeout, plan-quality-cohort, verify-origin-v2, catalog, matrix, approve-matrix, apply, reduce-parity-v2, reduce-oracles-v2, verify-supersession, matrix-v2, approve-matrix-v2, manifest-v2, or apply-v2 with local artifact options');
 }
 
 function resolveImplementationCommitSha(args: ReviewArguments): string {
@@ -2843,6 +2871,52 @@ async function approveMatrixV2(args: ApproveMatrixV2Arguments): Promise<void> {
   }
 }
 
+function assertCanonicalEvidenceLeaf(_value: unknown): asserts _value is unknown {
+  // Safe paths and exact canonical bytes are enforced by artifact-io. Each
+  // leaf's semantic contract was already validated by its producer command.
+}
+
+async function buildEvidenceManifestV2(args: ManifestV2Arguments): Promise<void> {
+  const leaves = CAL002_EVIDENCE_ARTIFACT_NAMES.map((name) => ({
+    name,
+    relativePath: join(args.artifactDir, name),
+    label: `CAL-002 evidence artifact ${name}`,
+  }));
+  await assertDistinctArtifactDestinations({
+    root: args.root,
+    artifacts: [
+      ...leaves.map(({ relativePath, label }) => ({ relativePath, label })),
+      { relativePath: args.out, label: 'CAL-002 evidence manifest v1' },
+    ],
+  });
+  const inputs = await Promise.all(leaves.map(async ({ name, relativePath, label }) => {
+    const artifact = await readCanonicalArtifactWithBytes<unknown>({
+      root: args.root,
+      relativePath,
+      label,
+      assertValue: assertCanonicalEvidenceLeaf,
+    });
+    return { name, bytes: artifact.bytes };
+  }));
+  const manifest = buildCAL002EvidenceManifestV1(inputs);
+  await writeImmutableCanonicalReceipt<CAL002EvidenceManifestV1>({
+    root: args.root,
+    relativePath: args.out,
+    label: 'CAL-002 evidence manifest v1',
+    value: manifest,
+    assertValue: assertCAL002EvidenceManifestV1,
+  });
+  machineOutput({
+    ok: true,
+    command: args.command,
+    status: 'completed',
+    artifacts: manifest.artifacts.length,
+    evidenceRootSha256: manifest.evidenceRootSha256,
+    admitted: false,
+    applied: false,
+  });
+}
+
 async function existingImmutableV2<T>(input: {
   readonly root: string;
   readonly relativePath: string;
@@ -3044,6 +3118,7 @@ async function main(): Promise<void> {
     else if (args.command === 'verify-supersession') await verifySupersession(args);
     else if (args.command === 'matrix-v2') await buildMatrixV2Command(args);
     else if (args.command === 'approve-matrix-v2') await approveMatrixV2(args);
+    else if (args.command === 'manifest-v2') await buildEvidenceManifestV2(args);
     else await applyV2(args);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

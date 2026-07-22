@@ -25,6 +25,11 @@ current publisher-attested internal Corpus v1 evaluation path.
   canonical runtime receipts only after both offline consumers agree.
 - Added explicit provenance and admission-binding checks for manifest output;
   no corpus labels or manifest bytes are admitted by this release candidate.
+- Added the closed `cal:complete -- manifest-v2` evidence reducer. It binds the
+  exact 13-file CAL-002 evidence set by canonical leaf name, byte count, and
+  file SHA-256, then exposes one self-validating `evidenceRootSha256`.
+  The manifest remains non-admitting and unapplied and changes no runtime rule
+  authority.
 
 ### Changed
 

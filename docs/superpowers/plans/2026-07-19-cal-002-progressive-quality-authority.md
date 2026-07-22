@@ -2120,11 +2120,19 @@ stabilizes only the two full-suite qualification harnesses.
 - Create: `docs/execution/evidence/artifacts/cal-002/origin-receipt-v2.json`
 - Create: `docs/execution/evidence/artifacts/cal-002/final-matrix-v2.json`
 - Create after approval: `docs/execution/evidence/artifacts/cal-002/matrix-approval-v2.json`
+- Create after approval: `docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json`
 - Modify: `docs/execution/evidence/CAL-002-complete-calibration.md`
+- Modify: `packages/slopbrick/scripts/cal/cal-002.ts`
+- Modify: `packages/slopbrick/src/calibration/cal-002/artifact-io.ts`
+- Create: `packages/slopbrick/src/calibration/cal-002/evidence-manifest.ts`
+- Create: `packages/slopbrick/src/calibration/cal-002/schemas/cal-002-evidence-manifest-v1.schema.json`
+- Modify: `packages/slopbrick/src/calibration/cal-002/schemas/index.json`
+- Create: `packages/slopbrick/tests/calibration/cal-002-evidence-manifest.test.ts`
+- Modify: `packages/slopbrick/CHANGELOG.md`
 
 **Interfaces:**
 - Consumes: one integrated commit graph through Task 14, exact local Corpus v1 source binding, the protected v1 owner state, and two closed repository-owner decisions.
-- Produces: immutable, canonical, non-admitting evidence and one approved 119-row matrix; does not write runtime policy.
+- Produces: immutable, canonical, non-admitting evidence, one approved 119-row matrix, and one artifact-set root over the 13 primary JSON artifacts; does not write runtime policy.
 
 - [ ] **Step 1: Recheck integrated state and frozen inputs**
 
@@ -2269,18 +2277,32 @@ Present the matrix SHA, counts by runtime outcome and provenance, every failed/s
 
 Require the complete literal decision line, not merely `1` or `2`. On the
 rejection line, stop before runtime integration. On the approval line, record
-the literal choice and exact hashes in the CAL-002 evidence ledger. Approval
-still authorizes no push, tag, publish, deploy, or release action.
+the literal choice, then reduce the machine-readable leaf hashes to one
+manifest root in the CAL-002 evidence ledger. Approval still authorizes no
+push, tag, publish, deploy, or release action.
 
-- [ ] **Step 10: Commit only named immutable evidence**
+- [ ] **Step 10: Build one canonical evidence-manifest root**
 
 ```bash
-git add docs/execution/evidence/CAL-002-complete-calibration.md docs/execution/evidence/artifacts/cal-002/catalog.json docs/execution/evidence/artifacts/cal-002/authority-proposal-v2.json docs/execution/evidence/artifacts/cal-002/authority-receipt-v2.json docs/execution/evidence/artifacts/cal-002/quality-disposition-v2.json docs/execution/evidence/artifacts/cal-002/parity-db-sql-concat-v2.json docs/execution/evidence/artifacts/cal-002/parity-logic-math-console-log-storm-v2.json docs/execution/evidence/artifacts/cal-002/parity-logic-math-any-density-v2.json docs/execution/evidence/artifacts/cal-002/supersession-receipt-v2.json docs/execution/evidence/artifacts/cal-002/oracle-receipt-v1.json docs/execution/evidence/artifacts/cal-002/oracle-receipt-v2.json docs/execution/evidence/artifacts/cal-002/origin-receipt-v2.json docs/execution/evidence/artifacts/cal-002/final-matrix-v2.json docs/execution/evidence/artifacts/cal-002/matrix-approval-v2.json
-git diff --cached --name-only
-git commit -m "data(calibration): approve progressive evidence matrix"
+corepack pnpm --filter slopbrick cal:complete -- manifest-v2 \
+  --artifact-dir docs/execution/evidence/artifacts/cal-002 \
+  --out docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json
 ```
 
-Expected: `.slopbrick` and unrelated artifact-directory contents remain unstaged; the commit contains exactly one ledger plus 13 named JSON artifacts.
+Expected: exactly 13 sorted leaf entries bind canonical artifact name, byte
+count, and file SHA-256. `evidenceRootSha256` is the single human-facing
+evidence root over the closed manifest body. The manifest remains
+`admitted: false` and `applied: false`; the manifest does not include itself.
+
+- [ ] **Step 11: Commit only named immutable evidence**
+
+```bash
+git add docs/execution/evidence/CAL-002-complete-calibration.md docs/execution/evidence/artifacts/cal-002/evidence-manifest-v1.json docs/superpowers/plans/2026-07-19-cal-002-progressive-quality-authority.md packages/slopbrick/CHANGELOG.md packages/slopbrick/scripts/cal/cal-002.ts packages/slopbrick/src/calibration/cal-002/artifact-io.ts packages/slopbrick/src/calibration/cal-002/evidence-manifest.ts packages/slopbrick/src/calibration/cal-002/schemas/cal-002-evidence-manifest-v1.schema.json packages/slopbrick/src/calibration/cal-002/schemas/index.json packages/slopbrick/tests/calibration/cal-002-evidence-manifest.test.ts
+git diff --cached --name-only
+git commit -m "feat(calibration): add evidence manifest root"
+```
+
+Expected: `.slopbrick` and unrelated artifact-directory contents remain unstaged. Evidence commit `6a85e4346` contains the ledger plus 13 primary JSON artifacts; this additive follow-up adds the manifest contract and artifact. Human documentation repeats only the manifest root, matrix approval identity, source binding, and generating commit—not every leaf hash.
 
 ### Task 16: Add pure current-policy accessors behind an inactive provider
 

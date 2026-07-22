@@ -164,17 +164,14 @@
   runtime policy, activate a rule, admit evidence, or perform a release action.
   Remote state is outside this receipt. Local application remains separate
   from push, tag, publish, deploy, and release decisions.
-- Task 15 consumed the later literal owner decisions and generated the 13
-  immutable evidence artifacts recorded in revision 37 below. The authority
+- Task 15 consumed the later literal owner decisions and generated 13 primary
+  immutable evidence artifacts plus one evidence manifest. The authority
   choice approved exactly 26 transfers, 4 blocks, 3 supersessions, and 7
   retirements while preserving all 47 starting-quality and 32 research-origin
   rows.
-- The authority proposal binds the locked catalog, proposal gate SHA-256
-  `5132373325a51a42e2c351512220773d47629e863206d5a0f8ec0f08c48d5ef2`,
-  and byte-identical protected v1 state SHA-256
-  `07997204f63f9a03c16601f953ef078f1caaa8db7f7f8fca9ba4a73f3c6270fd`.
-  Its canonical artifact SHA-256 is
-  `b495add9c4f11ee83c3c6bc007548d36064d8fbdbe5cc478ff4c71dec51fdfc7`.
+- The authority proposal and receipt bind the locked catalog and byte-identical
+  protected v1 state. Their leaf identities remain machine-readable inside the
+  evidence manifest rather than repeated in this human ledger.
 - All 41 deterministic rows passed: 32 starting plus nine transferred. The 32
   quality candidates were deliberately unmeasured with
   `not-requested-owner-capacity`; the 32 research-origin rows reused their
@@ -183,10 +180,12 @@
   rejected as a false positive. The resulting matrix contains 41 default-on,
   36 default-off, 32 quality-candidate-default-off, 3 superseded, and 7 retired
   rows.
-- The owner approved the exact matrix file SHA-256
-  `ad485bcf192fc093b2cddf0f449a27c4bec5842488ca7a9e6ea27acf87b3e91d`.
-  The canonical recorded decision line is
+- The owner approved the exact matrix. The canonical recorded decision line is
   `1 approve this exact 119-row matrix SHA`.
+- The single human-facing Task 15 evidence root is
+  `53ab07e7fd5dbbd09f595c87c255a636f3fb902abe7ec0cbfe923a5392198f8a`.
+  It binds the sorted name, byte count, and file SHA-256 of all 13 primary
+  artifacts. The manifest does not include itself.
 - Task 15 does not apply runtime policy. Every artifact remains
   `admitted: false`; the matrix and approval remain `applied: false`. No push,
   tag, publish, deployment, or release is authorized.
@@ -280,36 +279,17 @@ assumptions; their two bounded corrections are included in `c13ce8f47`.
 
 - The integrated nine-file Task 15 preflight passes 122/122 on exact Node
   22.22.3 and exact Node 24.15.0.
-- The frozen 119-row catalog replay is byte-identical: mode 0600, 23,377 bytes,
-  canonical file SHA-256
-  `6faeed123ee1414cc5a8ead873178e43fb23d46cab985d3254acbe9e3cf0e4d5`,
-  and locked rule-catalog SHA-256
-  `d6d17e252b71e4918375c526c5c209a7550cb089a12f9d82281bb99883a1f506`.
+- The frozen 119-row catalog replay is byte-identical at mode 0600 and 23,377
+  bytes. Its machine identity is bound transitively by the evidence root.
 - The literal authority decision was
   `approve the exact 26 transfer / 4 blocked / 3 supersede / 7 retire batch`.
-  Its immutable receipt SHA-256 is
-  `2adf533cdf38d1d0b3c22a18e6f09356cdd8b6bfced8dcdf439cb628e87b9229`.
 - The exact 41-row oracle reducer completed with 41 passed and zero failed or
   source-shortage rows. The research-origin receipt reused all 32 bound rows.
 - The final 119-row matrix and application adversarial gate passes 43/43. The
-  protected v1 state remains mode 0600, 256 bytes, and byte-identical at its
-  recorded SHA-256.
-
-| Immutable artifact | Canonical file SHA-256 |
-| --- | --- |
-| `catalog.json` | `6faeed123ee1414cc5a8ead873178e43fb23d46cab985d3254acbe9e3cf0e4d5` |
-| `authority-proposal-v2.json` | `b495add9c4f11ee83c3c6bc007548d36064d8fbdbe5cc478ff4c71dec51fdfc7` |
-| `authority-receipt-v2.json` | `2adf533cdf38d1d0b3c22a18e6f09356cdd8b6bfced8dcdf439cb628e87b9229` |
-| `quality-disposition-v2.json` | `650849be9936163733ea84df5e1ed809d3934930e91cb771d5fd9f156ba3f972` |
-| `parity-db-sql-concat-v2.json` | `b87b9983f7bc9a31d2ca4ccc49a010f087d43b90b2cb5cf0ca76bb596fe1ec6c` |
-| `parity-logic-math-console-log-storm-v2.json` | `2f8a7bd6ef4def9b400c4dcf9d60e21025f9537f6e1a2c7bf20372825875edc4` |
-| `parity-logic-math-any-density-v2.json` | `6384dc392d10dd69ce51b15f1fa7639999db9896d393c8c5c7e31c19a68062ef` |
-| `supersession-receipt-v2.json` | `2ff96be2718cdc3c7c4aca90b3f6a73a8a40c460b8b33bdb0db7dcff0d9c0975` |
-| `oracle-receipt-v1.json` | `6593c37928498f081c8cf63de4352e4cc62158132ece2659aa670d41a5fda5e8` |
-| `oracle-receipt-v2.json` | `4c25c32458ffc5aee570f0576de2a83d148adfae33cb5fd360b48accb3d5d9a1` |
-| `origin-receipt-v2.json` | `f3dcb64d11c227e414b81b3249e05c210aeee676834292f4230c862b57cd10bc` |
-| `final-matrix-v2.json` | `ad485bcf192fc093b2cddf0f449a27c4bec5842488ca7a9e6ea27acf87b3e91d` |
-| `matrix-approval-v2.json` | `f80c86e89d21af7927ab394975fc311461026e340ea1c1db620cca54630507ee` |
+  protected v1 state remains mode 0600, 256 bytes, and byte-identical.
+- `evidence-manifest-v1.json` contains exactly 13 sorted leaf entries and one
+  self-validating `evidenceRootSha256`. That root is the only aggregate Task 15
+  evidence hash repeated in human-facing status documentation.
 
 ## Next evidence
 

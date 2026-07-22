@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://usebrick.dev/schemas/cal-002-evidence-manifest-v1.schema.json",
+  "title": "CAL-002 evidence manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "protocolVersion",
+    "artifacts",
+    "evidenceRootSha256",
+    "admitted",
+    "applied"
+  ],
+  "properties": {
+    "version": { "const": "cal-002-evidence-manifest-v1" },
+    "protocolVersion": { "const": "CAL-002-v2" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "prefixItems": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "authority-proposal-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "authority-receipt-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "catalog.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "final-matrix-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "matrix-approval-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "oracle-receipt-v1.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "oracle-receipt-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "origin-receipt-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "parity-db-sql-concat-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "parity-logic-math-any-density-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "parity-logic-math-console-log-storm-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "quality-disposition-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "bytes", "sha256"],
+          "properties": {
+            "name": { "const": "supersession-receipt-v2.json" },
+            "bytes": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      ],
+      "items": false
+    },
+    "evidenceRootSha256": { "$ref": "#/$defs/sha256" },
+    "admitted": { "const": false },
+    "applied": { "const": false }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}
