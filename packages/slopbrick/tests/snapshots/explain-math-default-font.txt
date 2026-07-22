@@ -3,7 +3,9 @@ Category:    visual
 Severity:    high
 AI-specific: yes (designed to fire on AI tells)
 Rule status: configured-severity (configuration and current-policy projection)
-Current policy: unavailable; legacy defaults only
+Current policy:
+  Status: unavailable
+  Detail: legacy defaults only
 Evidence:    ai-signal
 Historical metrics: historical point estimates only
   Calibrated: 2026-07-04T00:00:00Z
