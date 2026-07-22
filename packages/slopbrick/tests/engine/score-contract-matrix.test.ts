@@ -1,8 +1,35 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const getCurrentEvidencePolicyAccessorsMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
+  getCurrentEvidencePolicyAccessors: getCurrentEvidencePolicyAccessorsMock,
+}));
 
 import { DEFAULT_CONFIG } from '../../src/config';
 import { aggregateReport } from '../../src/engine/metrics';
-import type { Category, Severity } from '../../src/types';
+import { scanFile } from '../../src/engine/worker';
+import { RuleRegistry } from '../../src/rules/registry';
+import { createRule } from '../../src/rules/rule';
+import { loadCompositesInto } from '../../src/rules/composite-loader';
+import { compositeScore } from '@usebrick/engine';
+import { loadSignalStrength } from '../../src/rules/signal-strength';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
+import type { Category, CompositeRule, Issue, ResolvedConfig, Severity } from '../../src/types';
+
+const tempDirs: string[] = [];
+
+beforeEach(() => {
+  getCurrentEvidencePolicyAccessorsMock.mockReset();
+  getCurrentEvidencePolicyAccessorsMock.mockReturnValue(undefined);
+});
+
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
 
 type AggregateIssue = {
   ruleId: string;
@@ -41,7 +68,83 @@ function cleanFile(filePath: string): AggregateFile {
   return { filePath, issues: [] };
 }
 
+function emittedIssue(ruleId: string, aiSpecific: boolean): Issue {
+  return {
+    ruleId,
+    category: 'logic',
+    severity: 'medium',
+    aiSpecific,
+    message: `Finding from ${ruleId}`,
+    line: 1,
+    column: 1,
+  };
+}
+
 describe('Gate 1 score-contract category matrix', () => {
+  it('uses only score-eligible findings for Bayesian and synthetic composite inputs', async () => {
+    getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
+    const dir = mkdtempSync(join(tmpdir(), 'slopbrick-score-authority-'));
+    tempDirs.push(dir);
+    mkdirSync(join(dir, 'src'));
+    const filePath = join(dir, 'src', 'a.ts');
+    writeFileSync(filePath, 'export const value = 1;\n');
+
+    const eligibleRuleId = 'context/import-path-mismatch';
+    const diagnosticRuleId = 'ai/any-density';
+    const compositeId = 'composite/policy-score-authority';
+    const registry = new RuleRegistry();
+    registry.register(createRule({
+      id: eligibleRuleId,
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: false,
+      create: () => ({}),
+      analyze: () => [emittedIssue(eligibleRuleId, false)],
+    }));
+    registry.register(createRule({
+      id: diagnosticRuleId,
+      category: 'logic',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: true,
+      create: () => ({}),
+      analyze: () => [emittedIssue(diagnosticRuleId, true)],
+    }));
+    const composite: CompositeRule = {
+      id: compositeId,
+      category: 'ai',
+      severity: 'medium',
+      aiSpecific: true,
+      defaultOff: false,
+      description: 'Policy score-authority test composite',
+      ruleIds: [eligibleRuleId, diagnosticRuleId],
+      minMatch: 2,
+      create: () => ({}),
+      analyze: () => [],
+    };
+    loadCompositesInto(registry, [composite]);
+    const config: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      include: ['src/**/*.ts'],
+      exclude: [],
+      rules: {
+        ...DEFAULT_CONFIG.rules,
+        [diagnosticRuleId]: 'low',
+      },
+    };
+
+    const result = await scanFile(filePath, config, registry, dir);
+    const emittedRuleIds = result.issues.map((issue) => issue.ruleId);
+
+    expect(emittedRuleIds).toContain(eligibleRuleId);
+    expect(emittedRuleIds).toContain(diagnosticRuleId);
+    expect(emittedRuleIds).not.toContain(compositeId);
+    expect(result.compositeScore).toEqual(compositeScore(
+      [eligibleRuleId],
+      loadSignalStrength(),
+    ));
+  });
+
   it('keeps no-findings scores neutral for empty, tiny, and large analyzed repositories', () => {
     const empty = aggregateFiles([]);
     const tiny = aggregateFiles([cleanFile('src/tiny.ts')]);
