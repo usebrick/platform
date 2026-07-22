@@ -3,9 +3,16 @@ import { describe, expect, it } from 'vitest';
 
 import * as slopbrick from '../../src/index';
 import {
+  OUTCOME_ACTION_DECISIONS_V1,
+  OUTCOME_ACTION_REASONS_V1,
   OUTCOME_DETECTOR_IDS_V1,
   OUTCOME_EVENT_SCHEMA_V1,
   OUTCOME_EVENT_VERSION_V1,
+  OUTCOME_FINDING_ASSESSMENTS_V1,
+  OUTCOME_RETURN_WINDOWS_V1,
+  OUTCOME_SCAN_COMPARISONS_V1,
+  OUTCOME_SCAN_KINDS_V1,
+  OUTCOME_SCAN_STATUSES_V1,
   validateOutcomeEventV1,
   type OutcomeEventV1,
 } from '../../src/telemetry/outcome-event';
@@ -161,6 +168,68 @@ describe('privacy-safe local outcome event contract', () => {
       expect(validateOutcomeEventV1(event).ok, JSON.stringify(event)).toBe(false);
       expect(validateSchema(event), JSON.stringify(event)).toBe(false);
     }
+  });
+
+  it('keeps the JSON Schema and runtime validator aligned across closed cross-products', () => {
+    const validateSchema = new Ajv2020({ allErrors: true, strict: true })
+      .compile(OUTCOME_EVENT_SCHEMA_V1);
+    const common = {
+      version: OUTCOME_EVENT_VERSION_V1,
+      observedOn: '2026-07-22',
+      producerVersion: '0.45.0',
+      context: { framework: 'mixed', repositorySize: '101-500' },
+    } as const;
+    let checked = 0;
+    const assertParity = (event: unknown): void => {
+      const runtimeAccepted = validateOutcomeEventV1(event).ok;
+      const schemaAccepted = validateSchema(event) === true;
+      expect(runtimeAccepted, JSON.stringify(event)).toBe(schemaAccepted);
+      checked += 1;
+    };
+
+    const scanKinds = [...OUTCOME_SCAN_KINDS_V1, 'invalid'];
+    const statuses = [...OUTCOME_SCAN_STATUSES_V1, 'invalid'];
+    const comparisons = [...OUTCOME_SCAN_COMPARISONS_V1, 'invalid'];
+    for (const scanKind of scanKinds) {
+      for (const status of statuses) {
+        for (const comparison of comparisons) {
+          assertParity({
+            ...common,
+            event: 'scan-completed',
+            scanKind,
+            status,
+            comparison,
+          });
+        }
+      }
+    }
+
+    for (const decision of [...OUTCOME_ACTION_DECISIONS_V1, 'invalid']) {
+      for (const reason of [...OUTCOME_ACTION_REASONS_V1, 'invalid']) {
+        assertParity({
+          ...common,
+          event: 'action-decided',
+          detectorId: 'logic/heaps-deviation',
+          decision,
+          reason,
+        });
+      }
+    }
+
+    for (const assessment of [...OUTCOME_FINDING_ASSESSMENTS_V1, 'invalid']) {
+      assertParity({
+        ...common,
+        event: 'first-finding-assessed',
+        detectorId: 'logic/heaps-deviation',
+        evidenceTier: 'quality-candidate-unmeasured',
+        assessment,
+      });
+    }
+    for (const window of [...OUTCOME_RETURN_WINDOWS_V1, 'invalid']) {
+      assertParity({ ...common, event: 'return-observed', window });
+    }
+
+    expect(checked).toBe(89);
   });
 
   it('publishes the local outcome contract and lifecycle operations through SlopBrick', () => {

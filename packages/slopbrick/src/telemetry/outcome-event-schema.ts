@@ -1,11 +1,21 @@
 import {
+  OUTCOME_ACTION_DECISIONS_V1,
+  OUTCOME_ACTION_REASONS_V1,
+  OUTCOME_COMPLETE_RESCAN_COMPARISONS_V1,
   OUTCOME_DETECTOR_IDS_V1,
+  OUTCOME_DECLINED_ACTION_REASONS_V1,
   OUTCOME_EVENT_VERSION_V1,
   OUTCOME_EVIDENCE_TIERS_V1,
+  OUTCOME_FINDING_ASSESSMENTS_V1,
   OUTCOME_FRAMEWORK_BUCKETS_V1,
+  OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1,
   OUTCOME_OBSERVED_ON_PATTERN_V1,
   OUTCOME_PRODUCER_VERSION_PATTERN_V1,
   OUTCOME_REPOSITORY_SIZE_BUCKETS_V1,
+  OUTCOME_RETURN_WINDOWS_V1,
+  OUTCOME_SCAN_COMPARISONS_V1,
+  OUTCOME_SCAN_KINDS_V1,
+  OUTCOME_SCAN_STATUSES_V1,
 } from './outcome-event-types';
 
 const contextSchema = {
@@ -70,10 +80,10 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
       properties: {
         ...commonProperties,
         event: { const: 'scan-completed', description: 'Records completion of an initial scan or rescan.' },
-        scanKind: { enum: ['initial', 'rescan'], description: 'Whether this was the first observed scan or a rescan.' },
-        status: { enum: ['complete', 'incomplete', 'not-applicable'], description: 'The existing first-scan completion state.' },
+        scanKind: { enum: OUTCOME_SCAN_KINDS_V1, description: 'Whether this was the first observed scan or a rescan.' },
+        status: { enum: OUTCOME_SCAN_STATUSES_V1, description: 'The existing first-scan completion state.' },
         comparison: {
-          enum: ['not-evaluated', 'unchanged', 'changed', 'unavailable'],
+          enum: OUTCOME_SCAN_COMPARISONS_V1,
           description: 'Coarse rescan comparison; it carries no finding details.',
         },
       },
@@ -87,13 +97,13 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
             properties: { scanKind: { const: 'rescan' }, status: { const: 'complete' } },
             required: ['scanKind', 'status'],
           },
-          then: { properties: { comparison: { enum: ['unchanged', 'changed'] } } },
+          then: { properties: { comparison: { enum: OUTCOME_COMPLETE_RESCAN_COMPARISONS_V1 } } },
         },
         {
           if: {
             properties: {
               scanKind: { const: 'rescan' },
-              status: { enum: ['incomplete', 'not-applicable'] },
+              status: { enum: OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1 },
             },
             required: ['scanKind', 'status'],
           },
@@ -114,7 +124,7 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
           description: 'Evidence tier projected by the first-scan contract; not an authorship label.',
         },
         assessment: {
-          enum: ['useful', 'not-useful', 'uncertain'],
+          enum: OUTCOME_FINDING_ASSESSMENTS_V1,
           description: 'User assessment of review utility; it is not a calibration label.',
         },
       },
@@ -127,9 +137,9 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
         ...commonProperties,
         event: { const: 'action-decided', description: 'Records whether a bounded action was applied, declined, or deferred.' },
         detectorId: detectorIdSchema,
-        decision: { enum: ['applied', 'declined', 'deferred'], description: 'Coarse action disposition.' },
+        decision: { enum: OUTCOME_ACTION_DECISIONS_V1, description: 'Coarse action disposition.' },
         reason: {
-          enum: ['finding-bound-repair', 'no-safe-repair', 'user-choice', 'needs-review'],
+          enum: OUTCOME_ACTION_REASONS_V1,
           description: 'Broad reason that excludes source, path, and free-form user text.',
         },
       },
@@ -140,7 +150,7 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
         },
         {
           if: { properties: { decision: { const: 'declined' } }, required: ['decision'] },
-          then: { properties: { reason: { enum: ['no-safe-repair', 'user-choice'] } } },
+          then: { properties: { reason: { enum: OUTCOME_DECLINED_ACTION_REASONS_V1 } } },
         },
         {
           if: { properties: { decision: { const: 'deferred' } }, required: ['decision'] },
@@ -156,7 +166,7 @@ export const OUTCOME_EVENT_SCHEMA_V1 = {
         ...commonProperties,
         event: { const: 'return-observed', description: 'Records a local return inside a bounded observation window.' },
         window: {
-          enum: ['within-1-day', 'within-7-days', 'within-30-days', 'within-90-days'],
+          enum: OUTCOME_RETURN_WINDOWS_V1,
           description: 'Coarse elapsed-time bucket; exact timestamps and persistent identifiers are absent.',
         },
       },

@@ -1,11 +1,20 @@
 import {
+  OUTCOME_ACTION_DECISIONS_V1,
+  OUTCOME_COMPLETE_RESCAN_COMPARISONS_V1,
   OUTCOME_DETECTOR_IDS_V1,
+  OUTCOME_DECLINED_ACTION_REASONS_V1,
   OUTCOME_EVENT_VERSION_V1,
   OUTCOME_EVIDENCE_TIERS_V1,
+  OUTCOME_FINDING_ASSESSMENTS_V1,
   OUTCOME_FRAMEWORK_BUCKETS_V1,
+  OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1,
   OUTCOME_OBSERVED_ON_PATTERN_V1,
   OUTCOME_PRODUCER_VERSION_PATTERN_V1,
   OUTCOME_REPOSITORY_SIZE_BUCKETS_V1,
+  OUTCOME_RETURN_WINDOWS_V1,
+  OUTCOME_SCAN_COMPARISONS_V1,
+  OUTCOME_SCAN_KINDS_V1,
+  OUTCOME_SCAN_STATUSES_V1,
   type OutcomeEventV1,
 } from './outcome-event-types';
 
@@ -120,20 +129,20 @@ function validateDetectorId(value: unknown, errors: string[]): void {
 
 function validateScanCompleted(value: DataRecord, errors: string[]): void {
   exactKeys(value, SCAN_KEYS, errors);
-  if (!includes(['initial', 'rescan'] as const, value.scanKind)) addError(errors, 'scanKind is invalid');
-  if (!includes(['complete', 'incomplete', 'not-applicable'] as const, value.status)) {
+  if (!includes(OUTCOME_SCAN_KINDS_V1, value.scanKind)) addError(errors, 'scanKind is invalid');
+  if (!includes(OUTCOME_SCAN_STATUSES_V1, value.status)) {
     addError(errors, 'status is invalid');
   }
-  if (!includes(['not-evaluated', 'unchanged', 'changed', 'unavailable'] as const, value.comparison)) {
+  if (!includes(OUTCOME_SCAN_COMPARISONS_V1, value.comparison)) {
     addError(errors, 'comparison is invalid');
   }
   if (value.scanKind === 'initial' && value.comparison !== 'not-evaluated') {
     addError(errors, 'initial scan comparison is invalid');
   } else if (value.scanKind === 'rescan' && value.status === 'complete'
-    && !includes(['unchanged', 'changed'] as const, value.comparison)) {
+    && !includes(OUTCOME_COMPLETE_RESCAN_COMPARISONS_V1, value.comparison)) {
     addError(errors, 'complete rescan comparison is invalid');
   } else if (value.scanKind === 'rescan'
-    && includes(['incomplete', 'not-applicable'] as const, value.status)
+    && includes(OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1, value.status)
     && value.comparison !== 'unavailable') {
     addError(errors, 'incomplete rescan comparison is invalid');
   }
@@ -143,7 +152,7 @@ function validateFirstFinding(value: DataRecord, errors: string[]): void {
   exactKeys(value, FINDING_KEYS, errors);
   validateDetectorId(value.detectorId, errors);
   if (!includes(OUTCOME_EVIDENCE_TIERS_V1, value.evidenceTier)) addError(errors, 'evidenceTier is invalid');
-  if (!includes(['useful', 'not-useful', 'uncertain'] as const, value.assessment)) {
+  if (!includes(OUTCOME_FINDING_ASSESSMENTS_V1, value.assessment)) {
     addError(errors, 'assessment is invalid');
   }
 }
@@ -153,18 +162,18 @@ function validateAction(value: DataRecord, errors: string[]): void {
   validateDetectorId(value.detectorId, errors);
   if (value.decision === 'applied' && value.reason !== 'finding-bound-repair') {
     addError(errors, 'applied action reason is invalid');
-  } else if (value.decision === 'declined' && !includes(['no-safe-repair', 'user-choice'] as const, value.reason)) {
+  } else if (value.decision === 'declined' && !includes(OUTCOME_DECLINED_ACTION_REASONS_V1, value.reason)) {
     addError(errors, 'declined action reason is invalid');
   } else if (value.decision === 'deferred' && value.reason !== 'needs-review') {
     addError(errors, 'deferred action reason is invalid');
-  } else if (!includes(['applied', 'declined', 'deferred'] as const, value.decision)) {
+  } else if (!includes(OUTCOME_ACTION_DECISIONS_V1, value.decision)) {
     addError(errors, 'decision is invalid');
   }
 }
 
 function validateReturn(value: DataRecord, errors: string[]): void {
   exactKeys(value, RETURN_KEYS, errors);
-  if (!includes(['within-1-day', 'within-7-days', 'within-30-days', 'within-90-days'] as const, value.window)) {
+  if (!includes(OUTCOME_RETURN_WINDOWS_V1, value.window)) {
     addError(errors, 'window is invalid');
   }
 }

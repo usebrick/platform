@@ -54,15 +54,40 @@ export const OUTCOME_EVIDENCE_TIERS_V1 = Object.freeze([
   'advisory',
 ] as const satisfies readonly Exclude<FirstScanEvidenceTier, 'calibrated'>[]);
 
+export const OUTCOME_SCAN_KINDS_V1 = Object.freeze(['initial', 'rescan'] as const);
+export const OUTCOME_SCAN_STATUSES_V1 = Object.freeze([
+  'complete', 'incomplete', 'not-applicable',
+] as const satisfies readonly FirstScanStatus[]);
+export const OUTCOME_SCAN_COMPARISONS_V1 = Object.freeze([
+  'not-evaluated', 'unchanged', 'changed', 'unavailable',
+] as const);
+export const OUTCOME_COMPLETE_RESCAN_COMPARISONS_V1 = Object.freeze([
+  'unchanged', 'changed',
+] as const);
+export const OUTCOME_INCOMPLETE_RESCAN_STATUSES_V1 = Object.freeze([
+  'incomplete', 'not-applicable',
+] as const satisfies readonly Exclude<FirstScanStatus, 'complete'>[]);
+export const OUTCOME_FINDING_ASSESSMENTS_V1 = Object.freeze([
+  'useful', 'not-useful', 'uncertain',
+] as const);
+export const OUTCOME_ACTION_DECISIONS_V1 = Object.freeze([
+  'applied', 'declined', 'deferred',
+] as const);
+export const OUTCOME_ACTION_REASONS_V1 = Object.freeze([
+  'finding-bound-repair', 'no-safe-repair', 'user-choice', 'needs-review',
+] as const);
+export const OUTCOME_DECLINED_ACTION_REASONS_V1 = Object.freeze([
+  'no-safe-repair', 'user-choice',
+] as const);
+export const OUTCOME_RETURN_WINDOWS_V1 = Object.freeze([
+  'within-1-day', 'within-7-days', 'within-30-days', 'within-90-days',
+] as const);
+
 export type OutcomeFrameworkBucketV1 = typeof OUTCOME_FRAMEWORK_BUCKETS_V1[number];
 export type OutcomeRepositorySizeBucketV1 = typeof OUTCOME_REPOSITORY_SIZE_BUCKETS_V1[number];
 export type OutcomeEvidenceTierV1 = typeof OUTCOME_EVIDENCE_TIERS_V1[number];
 export type OutcomeDetectorIdV1 = typeof OUTCOME_DETECTOR_IDS_V1[number];
-export type OutcomeReturnWindowV1 =
-  | 'within-1-day'
-  | 'within-7-days'
-  | 'within-30-days'
-  | 'within-90-days';
+export type OutcomeReturnWindowV1 = typeof OUTCOME_RETURN_WINDOWS_V1[number];
 
 export interface OutcomeEventContextV1 {
   readonly framework: OutcomeFrameworkBucketV1;
@@ -101,7 +126,7 @@ export interface FirstFindingAssessedOutcomeEventV1 extends OutcomeEventBaseV1 {
   readonly event: 'first-finding-assessed';
   readonly detectorId: OutcomeDetectorIdV1;
   readonly evidenceTier: OutcomeEvidenceTierV1;
-  readonly assessment: 'useful' | 'not-useful' | 'uncertain';
+  readonly assessment: typeof OUTCOME_FINDING_ASSESSMENTS_V1[number];
 }
 
 type ActionOutcomeV1 =
