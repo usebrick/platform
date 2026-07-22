@@ -28,16 +28,73 @@ export function loadSignalStrength(): Record<string, SignalStrengthEntry> {
   return DATA;
 }
 
+export type HistoricalV101Signal = 'strong' | 'weak' | 'dormant' | 'inverted';
+
+export interface HistoricalSignalStrengthEntry {
+  readonly status: 'historical-point-estimate-only';
+  readonly dataset: 'v10.1';
+  readonly signal: HistoricalV101Signal;
+  readonly precision: number;
+  readonly recall: number;
+  readonly f1: number;
+  readonly positiveFires: number;
+  readonly negativeFires: number;
+}
+
 export interface HistoricalSignalStrengthTable {
   readonly status: 'historical-point-estimate-only';
   readonly dataset: 'v10.1';
-  readonly entries: Readonly<Record<string, SignalStrengthEntry>>;
+  readonly entries: Readonly<Record<string, HistoricalSignalStrengthEntry>>;
+}
+
+const HISTORICAL_V10_1_RULE_COUNT = 103;
+const HISTORICAL_V10_1_SIGNALS = new Set<HistoricalV101Signal>([
+  'strong', 'weak', 'dormant', 'inverted',
+]);
+
+function historicalV101Entry(
+  ruleId: string,
+  raw: Record<string, unknown>,
+): HistoricalSignalStrengthEntry | undefined {
+  const fields = [
+    '_v10_1Signal', '_v10_1Precision', '_v10_1Recall', '_v10_1F1',
+    '_v10_1PositiveFires', '_v10_1NegativeFires',
+  ] as const;
+  if (fields.every((field) => raw[field] === undefined)) return undefined;
+  const signal = raw._v10_1Signal;
+  const rates = [raw._v10_1Precision, raw._v10_1Recall, raw._v10_1F1];
+  const counts = [raw._v10_1PositiveFires, raw._v10_1NegativeFires];
+  if (typeof signal !== 'string' || !HISTORICAL_V10_1_SIGNALS.has(signal as HistoricalV101Signal)
+    || rates.some((value) => typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1)
+    || counts.some((value) => !Number.isSafeInteger(value) || (value as number) < 0)) {
+    throw new TypeError(`Historical v10.1 signal entry is invalid for ${ruleId}`);
+  }
+  return Object.freeze({
+    status: 'historical-point-estimate-only',
+    dataset: 'v10.1',
+    signal: signal as HistoricalV101Signal,
+    precision: rates[0] as number,
+    recall: rates[1] as number,
+    f1: rates[2] as number,
+    positiveFires: counts[0] as number,
+    negativeFires: counts[1] as number,
+  });
+}
+
+const HISTORICAL_V10_1_ENTRIES = Object.freeze(Object.fromEntries(
+  Object.entries(RULE_ENTRIES).flatMap(([ruleId, value]) => {
+    const entry = historicalV101Entry(ruleId, value as Record<string, unknown>);
+    return entry === undefined ? [] : [[ruleId, entry] as const];
+  }),
+));
+if (Object.keys(HISTORICAL_V10_1_ENTRIES).length !== HISTORICAL_V10_1_RULE_COUNT) {
+  throw new TypeError(`Historical v10.1 signal table must contain exactly ${HISTORICAL_V10_1_RULE_COUNT} rows`);
 }
 
 const HISTORICAL_SIGNAL_STRENGTH: HistoricalSignalStrengthTable = Object.freeze({
   status: 'historical-point-estimate-only',
   dataset: 'v10.1',
-  entries: DATA,
+  entries: HISTORICAL_V10_1_ENTRIES,
 });
 
 /**

@@ -7,6 +7,7 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 }));
 
 import { DEFAULT_CONFIG } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 import { normalizeWatchResult } from '../../src/cli/watch';
 import { getDefaultOffRules } from '../../src/rules/signal-strength';
 import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
@@ -72,14 +73,17 @@ describe('watch result normalization', () => {
         },
       ],
     } as unknown as FileScanResult;
-    const config = {
+    const config = bindExplicitRuleOverrides({
       ...DEFAULT_CONFIG,
       rules: {
         ...DEFAULT_CONFIG.rules,
         'logic/ghost-defensive': 'high' as const,
         'ai/any-density': 'low' as const,
       },
-    };
+    }, {
+      'logic/ghost-defensive': 'high',
+      'ai/any-density': 'low',
+    });
 
     normalizeWatchResult(result, config, {});
 

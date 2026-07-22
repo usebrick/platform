@@ -1,5 +1,6 @@
 import { builtinRules } from './builtins';
 import { getCurrentEvidencePolicyAccessors } from './current-evidence-policy-runtime';
+import { getExplicitRuleOverrides } from '../config/rule-override-provenance';
 import type { Issue, Rule, RuleContext, ResolvedConfig } from '../types';
 
 export interface EnabledRule {
@@ -116,8 +117,9 @@ export class RuleRegistry {
       hotspotIssues,
     };
     const currentPolicy = getCurrentEvidencePolicyAccessors();
+    const explicitRuleOverrides = getExplicitRuleOverrides(config);
     return this.getRules()
-      .filter((rule) => currentPolicy?.isRuleRunnable(rule.id, config.rules) ?? true)
+      .filter((rule) => currentPolicy?.isRuleRunnable(rule.id, explicitRuleOverrides) ?? true)
       .map((rule) => ({
         rule,
         context: rule.create(context),

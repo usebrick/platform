@@ -17,6 +17,7 @@ import {
 } from '../../src/mcp/patterns';
 import { handleToolCall, TOOL_DEFINITIONS, toMcpFinding } from '../../src/mcp/tools';
 import { DEFAULT_CONFIG } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 import type { ResolvedConfig, Constitution } from '../../src/types';
 import { buildRuleExplanation } from '../../src/rules/explanation';
 import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
@@ -92,7 +93,10 @@ describe('MCP evidence contract', () => {
       id: 'ai/any-density', category: 'ai' as const, severity: 'medium' as const, aiSpecific: true,
       description: 'Any density', create: () => ({}), analyze: () => [],
     };
-    const config = { ...TEST_CONFIG, rules: { 'ai/any-density': 'medium' as const } };
+    const config = bindExplicitRuleOverrides(
+      { ...TEST_CONFIG, rules: { 'ai/any-density': 'medium' as const } },
+      { 'ai/any-density': 'medium' },
+    );
     const cliExplanation = buildRuleExplanation(rule, config, {});
     const result = await handleToolCall(
       'slop_explain_rule',

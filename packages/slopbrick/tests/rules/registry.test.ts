@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,6 +13,8 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 
 import { RuleRegistry } from '../../src/rules/registry';
 import { createRule } from '../../src/rules/rule';
+import { loadConfig } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 import type { Issue, ResolvedConfig, Rule, ScanFacts } from '../../src/types';
 import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 
@@ -63,7 +67,7 @@ async function discoverRuleModules(): Promise<RuleModuleInfo[]> {
 }
 
 function makeConfig(rules: ResolvedConfig['rules'] = {}): ResolvedConfig {
-  return {
+  return bindExplicitRuleOverrides({
     include: [],
     exclude: [],
     rules,
@@ -76,7 +80,7 @@ function makeConfig(rules: ResolvedConfig['rules'] = {}): ResolvedConfig {
       p90Slop: 0,
       individualSlopThreshold: 0,
     },
-  };
+  }, rules);
 }
 
 describe('RuleRegistry', () => {
@@ -166,27 +170,36 @@ describe('RuleRegistry', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('requires an own explicit opt-in before instantiating a permitted default-off rule', () => {
+  it('requires a user-authored opt-in even when the merged severity equals the built-in default', async () => {
     getCurrentEvidencePolicyAccessorsMock.mockReturnValue(approvedCurrentPolicyFixture());
     const registry = new RuleRegistry();
     const create = vi.fn(() => ({}));
     registry.register(createRule({
-      id: 'ai/any-density',
-      category: 'logic',
-      severity: 'medium',
-      aiSpecific: true,
+      id: 'component/giant-component',
+      category: 'component',
+      severity: 'high',
+      aiSpecific: false,
       defaultOff: true,
       create,
       analyze: (): Issue[] => [],
     }));
 
-    expect(registry.createContexts(makeConfig(), 'src/a.ts', '/tmp')).toEqual([]);
-    expect(registry.createContexts(
-      makeConfig({ 'ai/any-density': 'low' }),
-      'src/a.ts',
-      '/tmp',
-    )).toHaveLength(1);
-    expect(create).toHaveBeenCalledOnce();
+    const workspace = mkdtempSync(path.join(tmpdir(), 'slopbrick-rule-provenance-'));
+    try {
+      const inherited = await loadConfig(workspace);
+      expect(inherited.rules['component/giant-component']).toBe('high');
+      expect(registry.createContexts(inherited, 'src/a.ts', workspace)).toEqual([]);
+
+      writeFileSync(
+        path.join(workspace, 'slopbrick.config.mjs'),
+        "export default { rules: { 'component/giant-component': 'high' } };\n",
+      );
+      const explicit = await loadConfig(workspace);
+      expect(registry.createContexts(explicit, 'src/a.ts', workspace)).toHaveLength(1);
+      expect(create).toHaveBeenCalledOnce();
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
   });
 
   it('honors explicit off for a current default-on rule', () => {

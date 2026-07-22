@@ -9,6 +9,10 @@ import { extractFacts } from './visitor';
 import { RuleRegistry } from '../rules/registry';
 import { effectiveIssuesForScore } from '../cli/effective-issues.js';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
+import {
+  bindExplicitRuleOverrides,
+  type RuleOverrideMap,
+} from '../config/rule-override-provenance.js';
 import { setLoggerQuiet } from './logger';
 import { compositeScore } from '@usebrick/engine';
 import { loadSignalStrength } from '../rules/signal-strength.js';
@@ -292,6 +296,7 @@ export async function scanFile(
 async function run(): Promise<void> {
   const data = workerData as {
     config: unknown;
+    explicitRuleOverrides?: unknown;
     cwd?: unknown;
     quiet?: unknown;
     rule?: string;
@@ -303,6 +308,13 @@ async function run(): Promise<void> {
   }
   setLoggerQuiet(data.quiet === true);
   const { config } = data as { config: ResolvedConfig };
+  const explicitRuleOverrides = data.explicitRuleOverrides;
+  if (explicitRuleOverrides !== undefined
+    && (typeof explicitRuleOverrides !== 'object' || explicitRuleOverrides === null
+      || Array.isArray(explicitRuleOverrides))) {
+    throw new Error('workerData.explicitRuleOverrides must be a rule override object');
+  }
+  bindExplicitRuleOverrides(config, explicitRuleOverrides as RuleOverrideMap | undefined);
   const cwd = typeof data.cwd === 'string' ? data.cwd : process.cwd();
 
   const registry = new RuleRegistry();

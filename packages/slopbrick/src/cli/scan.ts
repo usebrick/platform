@@ -32,6 +32,10 @@ import {
   resolveConfigPath as findConfigPath,
 } from '../config';
 import {
+  copyExplicitRuleOverrides,
+  getExplicitRuleOverrides,
+} from '../config/rule-override-provenance.js';
+import {
   classifyDiscoveryCandidates,
   isExcludedBySelfScan,
   type SelectionAccounting,
@@ -192,10 +196,10 @@ async function runScanWithScopedState(
   }
   const configPath = findConfigPath(cwd);
   const loadedConfig = await loadConfig(cwd);
-  const config: ResolvedConfig = {
+  const config: ResolvedConfig = copyExplicitRuleOverrides(loadedConfig, {
     ...loadedConfig,
     rules: { ...loadedConfig.rules },
-  };
+  });
 
   if (options.framework) {
     config.framework = options.framework;
@@ -584,11 +588,12 @@ async function runScanWithScopedState(
     options.rule === duplicateRuleId ||
     options.includeRules?.includes(duplicateRuleId) === true;
   const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const explicitRuleOverrides = getExplicitRuleOverrides(config);
   const currentDuplicatePolicy = currentPolicy?.getCurrentRulePolicy(duplicateRuleId);
   const duplicateCoordinatorEnabled =
     registry.has(duplicateRuleId) &&
     (currentPolicy !== undefined && currentDuplicatePolicy !== undefined
-      ? currentPolicy.isRuleRunnable(duplicateRuleId, config.rules)
+      ? currentPolicy.isRuleRunnable(duplicateRuleId, explicitRuleOverrides)
       : !getDefaultOffRules().has(duplicateRuleId) || duplicateExplicitlyEnabled);
   let duplicateIssues: IdenticalBlockIssueMap | undefined;
   let duplicateCachedIssues: Issue[] = [];

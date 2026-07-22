@@ -10,6 +10,7 @@ vi.mock('../../src/rules/current-evidence-policy-runtime', () => ({
 }));
 
 import { DEFAULT_CONFIG } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 import { aggregateReport } from '../../src/engine/metrics';
 import { scanFile } from '../../src/engine/worker';
 import { RuleRegistry } from '../../src/rules/registry';
@@ -168,7 +169,7 @@ describe('Gate 1 score-contract category matrix', () => {
       analyze: () => [],
     };
     loadCompositesInto(registry, [composite]);
-    const config: ResolvedConfig = {
+    const config: ResolvedConfig = bindExplicitRuleOverrides({
       ...DEFAULT_CONFIG,
       include: ['src/**/*.ts'],
       exclude: [],
@@ -176,7 +177,7 @@ describe('Gate 1 score-contract category matrix', () => {
         ...DEFAULT_CONFIG.rules,
         [diagnosticRuleId]: 'low',
       },
-    };
+    }, { [diagnosticRuleId]: 'low' });
 
     const result = await scanFile(filePath, config, registry, dir);
     const emittedRuleIds = result.issues.map((issue) => issue.ruleId);

@@ -12,8 +12,7 @@ import { registerCalibration } from '../src/cli/commands/calibration';
 // The spec test imports the raw JSON, but TypeScript's JSON inference
 // produces a heterogeneous union (some entries have defaultOff, some
 // don't) that fails the typecheck when entry.defaultOff is accessed.
-// Use the Zod-validated loader so the shape is uniform — same data,
-// typed. Test bodies below are unchanged from the spec.
+// Use the Zod-validated loader so the legacy compatibility shape is uniform.
 const signalStrengthData = loadSignalStrength();
 
 afterEach(() => {
@@ -25,7 +24,23 @@ describe('signal-strength contract (Zod-validated)', () => {
     const historical = loadHistoricalSignalStrength();
 
     expect(historical.status).toBe('historical-point-estimate-only');
-    expect(historical.entries).toBe(signalStrengthData);
+    expect(historical.dataset).toBe('v10.1');
+    expect(Object.keys(historical.entries)).toHaveLength(103);
+    expect(historical.entries).not.toBe(signalStrengthData);
+    expect(historical.entries['ai/any-density']).toEqual({
+      status: 'historical-point-estimate-only',
+      dataset: 'v10.1',
+      signal: 'weak',
+      precision: 0.63156,
+      recall: 0.00623,
+      f1: 0.01235,
+      positiveFires: 1913,
+      negativeFires: 1116,
+    });
+    expect(signalStrengthData['ai/any-density']?.precision).toBe(0.6523);
+    expect(Object.isFrozen(historical)).toBe(true);
+    expect(Object.isFrozen(historical.entries)).toBe(true);
+    expect(Object.isFrozen(historical.entries['ai/any-density'])).toBe(true);
     expect(JSON.stringify(historical)).not.toMatch(/currentPolicy|current-quality/i);
   });
 
@@ -41,12 +56,38 @@ describe('signal-strength contract (Zod-validated)', () => {
       'node', 'slopbrick', 'rules', '--show-signal-strength', '--json',
     ]);
     const rows = JSON.parse(logged.join('')) as Array<{
+      id: string;
       metricsStatus: string;
+      historicalDataset: string;
       historicalVerdict: string | null;
+      historicalMetrics: {
+        status: string;
+        dataset: string;
+        precision?: number;
+        recall?: number;
+      };
+      strengthStatus: string;
       strength?: { precision: number };
     }>;
-    expect(rows[0]).toMatchObject({
+    const anyDensity = rows.find((row) => row.id === 'ai/any-density');
+    expect(anyDensity).toMatchObject({
       metricsStatus: 'historical-point-estimate-only',
+      historicalDataset: 'v10.1',
+      historicalVerdict: 'USEFUL',
+      historicalMetrics: {
+        status: 'historical-point-estimate-only',
+        dataset: 'v10.1',
+        precision: 0.63156,
+        recall: 0.00623,
+      },
+      strengthStatus: 'legacy-compatibility',
+      strength: { precision: 0.6523 },
+    });
+    const noV101 = rows.find((row) => row.id === 'kt/force-unwrap');
+    expect(noV101).toMatchObject({
+      metricsStatus: 'unavailable',
+      historicalDataset: 'v10.1',
+      historicalMetrics: { status: 'unavailable', dataset: 'v10.1' },
     });
     expect(rows.some((row) => row.historicalVerdict !== null)).toBe(true);
 
@@ -64,6 +105,43 @@ describe('signal-strength contract (Zod-validated)', () => {
     const output = chunks.join('');
     expect(output).toContain('historical v10.1 point estimates');
     expect(output).toContain('not current quality policy and not authorship evidence');
+  });
+
+  it('projects calibration JSON from the actual v10.1 fields', async () => {
+    const chunks: string[] = [];
+    vi.spyOn(process.stdout, 'write').mockImplementation(((chunk: string | Uint8Array) => {
+      chunks.push(String(chunk));
+      return true;
+    }) as typeof process.stdout.write);
+    const program = new Command();
+    program.exitOverride();
+    registerCalibration(program);
+
+    await program.parseAsync(['node', 'slopbrick', 'calibration', '--json', '--no-color']);
+    const report = JSON.parse(chunks.join('')) as {
+      metricsStatus: string;
+      dataset: string;
+      totalRules: number;
+      rules: Array<{
+        ruleId: string;
+        precision: number;
+        recall: number;
+        f1: number;
+        historicalVerdict: string;
+      }>;
+    };
+
+    expect(report).toMatchObject({
+      metricsStatus: 'historical-point-estimate-only',
+      dataset: 'v10.1',
+      totalRules: 103,
+    });
+    expect(report.rules.find((row) => row.ruleId === 'ai/any-density')).toMatchObject({
+      precision: 0.63156,
+      recall: 0.00623,
+      f1: 0.01235,
+      historicalVerdict: 'USEFUL',
+    });
   });
 
   it('loads the calibration data successfully', () => {

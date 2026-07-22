@@ -3,6 +3,10 @@ import { cpus } from 'os';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'url';
 import { logger } from './logger';
+import {
+  getExplicitRuleOverrides,
+  type RuleOverrideMap,
+} from '../config/rule-override-provenance.js';
 import type { FileScanResult, ResolvedConfig } from '../types';
 
 export interface WorkerPoolOptions {
@@ -78,6 +82,7 @@ function isEsmWorkerScript(script: string): boolean {
 export class WorkerPool {
   private workerScript: string;
   private config: ResolvedConfig;
+  private explicitRuleOverrides: RuleOverrideMap;
   private cwd: string;
   private threadCount: number;
   private workerTimeoutMs: number;
@@ -89,6 +94,7 @@ export class WorkerPool {
 
   constructor(options: WorkerPoolOptions) {
     this.config = options.config;
+    this.explicitRuleOverrides = getExplicitRuleOverrides(options.config);
     this.cwd = options.cwd ?? process.cwd();
     this.workerTimeoutMs = options.workerTimeoutMs ?? DEFAULT_WORKER_TIMEOUT_MS;
     this.quiet = options.quiet ?? false;
@@ -292,6 +298,7 @@ export class WorkerPool {
           worker = this.workerFactory(this.workerScript, {
             workerData: {
               config: this.config,
+              explicitRuleOverrides: this.explicitRuleOverrides,
               cwd: this.cwd,
               quiet: this.quiet,
               rule: this.rule,

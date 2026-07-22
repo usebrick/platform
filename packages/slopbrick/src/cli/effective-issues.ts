@@ -1,5 +1,6 @@
 import { getDefaultOffRules } from '../rules/signal-strength.js';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime.js';
+import { getExplicitRuleOverrides } from '../config/rule-override-provenance.js';
 import { filterByDisabledDirectives, filterIssues, type IssueFilterOptions } from './threshold';
 import { bindIssueFixes } from '../fix/binding';
 import type { FileScanResult, Issue, ResolvedConfig } from '../types';
@@ -34,13 +35,14 @@ export function markDefaultOffIssuesForAudit(
   config: Pick<ResolvedConfig, 'rules'>,
 ): number {
   const currentPolicy = getCurrentEvidencePolicyAccessors();
+  const explicitRuleOverrides = getExplicitRuleOverrides(config);
   let defaultOff: ReadonlySet<string> | undefined;
   let applied = 0;
   for (const issue of issues) {
     const currentRow = currentPolicy?.getCurrentRulePolicy(issue.ruleId);
     let shouldRemainAuditOnly: boolean;
     if (currentPolicy !== undefined && currentRow !== undefined) {
-      shouldRemainAuditOnly = !currentPolicy.isRuleRunnable(issue.ruleId, config.rules);
+      shouldRemainAuditOnly = !currentPolicy.isRuleRunnable(issue.ruleId, explicitRuleOverrides);
     } else {
       defaultOff ??= getDefaultOffRules();
       shouldRemainAuditOnly = defaultOff.has(issue.ruleId)

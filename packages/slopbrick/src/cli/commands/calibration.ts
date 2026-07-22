@@ -2,28 +2,26 @@
  * v0.37.0: `slopbrick calibration` — show historical v10.1 point estimates.
  *
  * Reads `src/rules/signal-strength.json` and prints a per-rule
- * summary of the historical v10.1 calibration: verdict, precision, recall,
- * F1, lift, and per-source fire counts.
+ * summary of the historical v10.1 calibration: legacy verdict, precision,
+ * recall, F1, and per-source fire counts.
  *
  * Filters:
  *   --top N          show only the top N rules by F1
- *   --signal STRONG  show only rules with a given v10 signal
+ *   --signal STRONG  show only rules with a given v10.1 signal
  *   --min-precision  minimum precision to include (0-1)
  *   --no-color       disable ANSI colors
  *   --json           output as JSON
  *
  * Historical source: src/rules/signal-strength.json (each rule
- * entry has _v10* fields added by v0.36.1's merge-full.mjs).
+ * entry has `_v10_1*` metrics plus frozen `_v10*` source metadata).
  */
 
 import { Command } from 'commander';
 
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import signalStrength from '../../rules/signal-strength.json';
 import { colorEnabled } from '../render.js';
 
-interface V10Stats {
+interface V101Stats {
   precision: number;
   recall: number;
   f1: number;
@@ -44,12 +42,12 @@ interface RuleEntry {
   precision?: number;
   ratio?: number;
   fpRate?: number;
-  _v10Precision?: number;
-  _v10Recall?: number;
-  _v10F1?: number;
-  _v10Signal?: string;
-  _v10PositiveFires?: number;
-  _v10NegativeFires?: number;
+  _v10_1Precision?: number;
+  _v10_1Recall?: number;
+  _v10_1F1?: number;
+  _v10_1Signal?: string;
+  _v10_1PositiveFires?: number;
+  _v10_1NegativeFires?: number;
   _v10PositiveFiles?: number;
   _v10NegativeFiles?: number;
   _v10Category?: string;
@@ -57,7 +55,6 @@ interface RuleEntry {
   _v10Source?: string;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 // signal-strength.json is bundled by tsup into dist/index.cjs, so we
 // import it directly. Works in both source (tsx) and built modes.
 
@@ -65,8 +62,8 @@ function loadData(): Record<string, RuleEntry> {
   return signalStrength as unknown as Record<string, RuleEntry>;
 }
 
-function hasV10(entry: RuleEntry): boolean {
-  return entry._v10Signal !== undefined;
+function hasV101(entry: RuleEntry): boolean {
+  return entry._v10_1Signal !== undefined;
 }
 
 function color(s: string, code: string, enabled: boolean): string {
@@ -82,16 +79,16 @@ function fmtNum(n: number): string {
   return n.toLocaleString('en-US');
 }
 
-function v10StatsOf(entry: RuleEntry): V10Stats {
+function v101StatsOf(entry: RuleEntry): V101Stats {
   return {
-    precision: entry._v10Precision ?? 0,
-    recall: entry._v10Recall ?? 0,
-    f1: entry._v10F1 ?? 0,
-    posFires: entry._v10PositiveFires ?? 0,
-    negFires: entry._v10NegativeFires ?? 0,
+    precision: entry._v10_1Precision ?? 0,
+    recall: entry._v10_1Recall ?? 0,
+    f1: entry._v10_1F1 ?? 0,
+    posFires: entry._v10_1PositiveFires ?? 0,
+    negFires: entry._v10_1NegativeFires ?? 0,
     posFiles: entry._v10PositiveFiles ?? 0,
     negFiles: entry._v10NegativeFiles ?? 0,
-    signal: entry._v10Signal ?? 'DORMANT',
+    signal: entry._v10_1Signal ?? 'dormant',
     category: entry._v10Category ?? '?',
     severity: entry._v10Severity ?? '?',
     source: entry._v10Source ?? '?',
@@ -110,7 +107,7 @@ export function registerCalibration(program: Command): void {
     .command('calibration')
     .description('Show historical v10.1 point estimates per rule (not current policy or authorship proof)')
     .option('--top <N>', 'show only the top N rules by F1', (v) => parseInt(v, 10))
-    .option('--signal <signal>', 'filter by v10 signal (strong|weak|dormant|inverted)')
+    .option('--signal <signal>', 'filter by v10.1 signal (strong|weak|dormant|inverted)')
     .option('--min-precision <p>', 'minimum precision 0-1', (v) => parseFloat(v))
     .option('--no-color', 'disable ANSI colors')
     .option('--json', 'output as JSON')
@@ -122,13 +119,14 @@ export function registerCalibration(program: Command): void {
       json?: boolean;
     }) => {
       const data = loadData();
-      const entries = Object.entries(data).filter(([, e]) => hasV10(e));
+      const entries = Object.entries(data).filter(([, e]) => hasV101(e));
 
       // Build rows
       const rows = entries.map(([ruleId, e]) => ({
         ruleId,
-        ...v10StatsOf(e),
+        ...v101StatsOf(e),
         verdict: e.verdict ?? '?',
+        historicalVerdict: e.verdict ?? '?',
         aiSpecific: e.aiSpecific ?? false,
       }));
 

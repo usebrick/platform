@@ -1,7 +1,10 @@
 import { Command } from 'commander';
 import { logger } from '../../engine/logger';
 import { builtinRules } from '../../rules/builtins';
-import { loadHistoricalSignalStrength, isReliableSignal } from '../../rules/signal-strength.js';
+import {
+  loadHistoricalSignalStrength,
+  loadSignalStrength,
+} from '../../rules/signal-strength.js';
 import { formatRulesList } from '../render.js';
 
 /**
@@ -25,8 +28,9 @@ export function registerRules(program: Command): void {
     .option('--category <name>', 'filter to a single category (visual, typo, layout, etc.)')
     .option('--ai-only', 'only show AI-specific rules')
     .option('--json', 'emit JSON instead of a pretty table')
-    // category-grouped listing. Sorted by ratio descending (worst signal
-    // first) so noisy rules surface to the top.
+    // Historical v10.1 metrics are a detached projection. The legacy
+    // `strength` field remains in JSON only for compatibility and is labeled
+    // separately so callers cannot mistake it for the v10.1 projection.
     .option('--show-signal-strength', 'print historical v10.1 precision/recall point estimates')
     .action((
       cmdOptions: { category?: string; aiOnly?: boolean; json?: boolean; showSignalStrength?: boolean },
@@ -43,39 +47,53 @@ export function registerRules(program: Command): void {
       }
       if (cmdOptions.showSignalStrength) {
         const historical = loadHistoricalSignalStrength();
-        const strengths = historical.entries;
+        const legacyStrengths = loadSignalStrength();
         const rows = rules
-          .map((r) => ({
-            id: r.id,
-            category: r.category,
-            severity: r.severity,
-            aiSpecific: r.aiSpecific,
-            metricsStatus: historical.status,
-            historicalVerdict: strengths[r.id]?.verdict ?? null,
-            strength: strengths[r.id],
-          }))
+          .map((r) => {
+            const historicalMetrics = historical.entries[r.id];
+            return {
+              id: r.id,
+              category: r.category,
+              severity: r.severity,
+              aiSpecific: r.aiSpecific,
+              metricsStatus: historicalMetrics?.status ?? 'unavailable',
+              historicalDataset: historical.dataset,
+              historicalVerdict: legacyStrengths[r.id]?.verdict ?? null,
+              historicalMetrics: historicalMetrics ?? {
+                status: 'unavailable' as const,
+                dataset: historical.dataset,
+              },
+              strengthStatus: 'legacy-compatibility' as const,
+              strength: legacyStrengths[r.id],
+            };
+          })
           .sort((a, b) => {
-            // Sort by ratio descending (nulls last). Worst signals first.
-            const ra = a.strength?.ratio ?? -1;
-            const rb = b.strength?.ratio ?? -1;
-            return rb - ra;
+            const af1 = a.historicalMetrics.status === 'historical-point-estimate-only'
+              ? a.historicalMetrics.f1
+              : -1;
+            const bf1 = b.historicalMetrics.status === 'historical-point-estimate-only'
+              ? b.historicalMetrics.f1
+              : -1;
+            return bf1 - af1 || a.id.localeCompare(b.id);
           });
         if (wantJson) {
           logger.info(JSON.stringify(rows, null, 2));
           return;
         }
         const lines: string[] = [];
-        lines.push(`slopbrick signal-strength — historical v10.1 point estimates — ${rows.length} rules (worst signal first)\n`);
-        lines.push('  rule id                                  precision  recall  fpRate  ratio   notes');
-        lines.push('  ---------------------------------------  ---------  ------  ------  ------  -----');
+        lines.push(`slopbrick signal-strength — historical v10.1 point estimates — ${rows.length} rules (highest F1 first; unavailable last)\n`);
+        lines.push('  rule id                                  signal    precision  recall     F1  pos fires  neg fires  notes');
+        lines.push('  ---------------------------------------  --------  ---------  ------  -----  ---------  ---------  -----');
         for (const row of rows) {
-          const s = row.strength;
-          const precision = s ? (s.precision * 100).toFixed(0).padStart(7) + '%' : '    n/a ';
-          const recall = s ? s.recall.toFixed(2).padStart(6) : '   n/a';
-          const fpRate = s ? s.fpRate.toFixed(2).padStart(6) : '   n/a';
-          const ratio = s ? (s.ratio >= 99 ? '   ∞×  ' : s.ratio.toFixed(2).padStart(5) + '×') : '  n/a ';
-          const tag = !s ? 'no calibration data' : !isReliableSignal(s) ? '⚠ low signal' : 'ok';
-          lines.push(`  ${row.id.padEnd(39)} ${precision}  ${recall}  ${fpRate}  ${ratio}  ${tag}`);
+          const metrics = row.historicalMetrics;
+          if (metrics.status === 'unavailable') {
+            lines.push(`  ${row.id.padEnd(39)} ${'n/a'.padEnd(8)}  ${'n/a'.padStart(9)}  ${'n/a'.padStart(6)}  ${'n/a'.padStart(5)}  ${'n/a'.padStart(9)}  ${'n/a'.padStart(9)}  no v10.1 metrics`);
+            continue;
+          }
+          const precision = `${(metrics.precision * 100).toFixed(1)}%`.padStart(9);
+          const recall = `${(metrics.recall * 100).toFixed(1)}%`.padStart(6);
+          const f1 = metrics.f1.toFixed(3).padStart(5);
+          lines.push(`  ${row.id.padEnd(39)} ${metrics.signal.padEnd(8)}  ${precision}  ${recall}  ${f1}  ${String(metrics.positiveFires).padStart(9)}  ${String(metrics.negativeFires).padStart(9)}  historical only`);
         }
         logger.info(lines.join('\n'));
         return;

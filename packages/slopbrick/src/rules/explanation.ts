@@ -8,6 +8,7 @@ import type {
   CAL002RuntimeOutcomeV2,
 } from '../calibration/cal-002/contracts-v2.js';
 import type { CAL002PolicyProvenanceV2 } from '../calibration/cal-002/matrix-v2.js';
+import { getExplicitRuleOverrides } from '../config/rule-override-provenance.js';
 import type { ResolvedConfig, Rule, RuleSeverity } from '../types';
 
 const RULES_BASE_URL = 'https://github.com/usebrick/platform/blob/main/packages/slopbrick/src/rules';
@@ -49,6 +50,7 @@ export function describeRulePolicy(
   currentPolicy: CurrentEvidencePolicyAccessors | undefined = getCurrentEvidencePolicyAccessors(),
 ): RulePolicy {
   const configuredSeverity = config.rules[rule.id] ?? null;
+  const explicitRuleOverrides = getExplicitRuleOverrides(config);
   const currentRow = currentPolicy?.getCurrentRulePolicy(rule.id);
   const defaultOff = currentRow === undefined
     ? rule.defaultOff === true || getDefaultOffRules().has(rule.id)
@@ -62,7 +64,7 @@ export function describeRulePolicy(
     }
     if (!currentRow.enabledByDefault
       && currentRow.runnableByExplicitOptIn
-      && Object.hasOwn(config.rules, rule.id)) {
+      && Object.hasOwn(explicitRuleOverrides, rule.id)) {
       return { configuredSeverity, defaultOff, policyState: 'current-explicit-diagnostic' };
     }
     if (configuredSeverity !== null && configuredSeverity !== 'auto') {

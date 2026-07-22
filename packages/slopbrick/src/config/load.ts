@@ -17,6 +17,7 @@ import { ConfigValidationError, validateConfig } from './validation';
 import { DEFAULT_CONFIG } from './defaults';
 import { detectStack } from './detect';
 import { detectConstitution, resolveConstitution } from './conventions';
+import { bindExplicitRuleOverrides } from './rule-override-provenance';
 import type { ResolvedConfig } from '../types';
 
 function deepMerge<T extends object>(target: T, source: Partial<T>): T {
@@ -86,10 +87,10 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
   const detectedConstitution = detectConstitution(cwd);
   const configPath = resolveConfigPath(cwd);
   if (!configPath) {
-    return {
+    return bindExplicitRuleOverrides({
       ...deepMerge(DEFAULT_CONFIG, detected),
       constitution: resolveConstitution(undefined, detectedConstitution),
-    };
+    }, undefined);
   }
   let user: Partial<ResolvedConfig>;
   try {
@@ -114,5 +115,5 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
     (user as Partial<ResolvedConfig>).constitution,
     detectedConstitution,
   );
-  return merged;
+  return bindExplicitRuleOverrides(merged, user.rules);
 }

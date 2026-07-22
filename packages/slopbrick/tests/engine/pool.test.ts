@@ -6,6 +6,7 @@ import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { DEFAULT_CONFIG } from '../../src/config';
+import { bindExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 
 const createTmpDir = () => mkdtempSync(join(tmpdir(), 'slopbrick-pool-test-'));
 
@@ -34,6 +35,48 @@ class ControlledWorker extends EventEmitter {
 }
 
 describe('WorkerPool', () => {
+  it('transports only user-authored rule overrides across the worker boundary', async () => {
+    const worker = new ControlledWorker();
+    let workerData: unknown;
+    worker.postMessage.mockImplementation((message: { filePath: string }) => {
+      queueMicrotask(() => {
+        worker.emit('message', {
+          type: 'result',
+          result: {
+            filePath: message.filePath,
+            componentCount: 0,
+            issues: [],
+            gapValues: [],
+            styleSources: [],
+          },
+        });
+        worker.emit('message', { type: 'ready' });
+      });
+    });
+    const config = bindExplicitRuleOverrides(
+      { ...DEFAULT_CONFIG, rules: { ...DEFAULT_CONFIG.rules } },
+      { 'component/giant-component': 'high' },
+    );
+    const pool = new WorkerPool({
+      config,
+      threadCount: 1,
+      workerScript: 'controlled-worker.cjs',
+      workerFactory: (_script, options) => {
+        workerData = options.workerData;
+        return worker as never;
+      },
+    });
+
+    const scan = pool.scan(['src/a.ts']);
+    worker.emit('message', { type: 'ready' });
+    await expect(scan).resolves.toHaveLength(1);
+    expect(workerData).toMatchObject({
+      explicitRuleOverrides: { 'component/giant-component': 'high' },
+    });
+    expect((workerData as { explicitRuleOverrides: Record<string, string> })
+      .explicitRuleOverrides).not.toHaveProperty('layout/gap-monopoly');
+  });
+
   it('scans multiple files round-robin', async () => {
     const dir = createTmpDir();
     try {
