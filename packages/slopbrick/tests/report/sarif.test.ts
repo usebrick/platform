@@ -335,7 +335,7 @@ describe('formatSarif — additive first-scan contract', () => {
     expect(results[1]!.properties).not.toHaveProperty('firstScan');
     expect(results[2]!.properties.firstScan).toMatchObject({
       area: 'repository-coherence',
-      evidenceTier: 'calibrated',
+      evidenceTier: 'legacy-calibrated',
       change: 'unchanged',
     });
     expect(results[3]!.properties.firstScan).toMatchObject({

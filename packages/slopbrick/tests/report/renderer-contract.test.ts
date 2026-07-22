@@ -14,6 +14,7 @@ import { formatSarif } from '../../src/report/sarif.js';
 import { SCORE_BRIEFS } from '../../src/report/score-contract.js';
 import { outputScanResults } from '../../src/cli/report/renderOutput.js';
 import type { Issue, ProjectReport, ResolvedConfig } from '../../src/types.js';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2.js';
 
 const scoreBasis = {
   denominator: 7,
@@ -124,7 +125,7 @@ describe('headline score renderer contract', () => {
     expect(legacy).toContain('Engineering findings (1)');
   });
 
-  it('renders the complete calibrated-evidence boundary in compact recommendations and full rows', () => {
+  it('renders the complete historical-evidence boundary in compact recommendations and full rows', () => {
     const calibratedIssue: Issue = {
       ...activeIssue,
       ruleId: 'logic/zipf-slope-anomaly',
@@ -154,15 +155,87 @@ describe('headline score renderer contract', () => {
     const full = formatPretty(input, { full: true, cwd: '/workspace' });
     const fullDetail = full.split('\n\nFull report\n\n')[1] ?? '';
     for (const output of [compact, fullDetail]) {
-      expect(output).toContain('verdict USEFUL');
-      expect(output).toContain('precision 63.69%');
+      expect(output).toContain('historical verdict USEFUL');
+      expect(output).toContain('historical precision 63.69%');
       expect(output).toContain('last calibrated 2026-07-04');
-      expect(output).toContain('Measured rule behavior; not proof of authorship.');
-      expect(output).toContain('Not a quality verdict.');
+      expect(output).toContain(
+        'Historical rule metrics only; not current policy evidence and not proof of who wrote the code.',
+      );
     }
     expect(input.firstScan.findings[0]?.evidence.claim).toBe(
-      'Measured rule behavior; not proof of authorship.',
+      'Historical rule metrics only; not current policy evidence and not proof of who wrote the code.',
     );
+  });
+
+  it('renders one current-policy evidence object and copy across terminal, JSON, Markdown, HTML, and SARIF', () => {
+    const policyIssue: Issue = {
+      ...activeIssue,
+      ruleId: 'ai/any-density',
+      category: 'ai',
+      aiSpecific: true,
+      filePath: '/workspace/src/unsafe.ts',
+      message: 'Type assertions weaken static checking.',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'value as any',
+        location: { start: { line: 3, column: 2 }, end: { line: 3, column: 14 } },
+      },
+      signalStrength: {
+        recall: 0.8,
+        fpRate: 0.01,
+        ratio: 80,
+        precision: 0.99,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+        verdict: 'USEFUL',
+      },
+    };
+    const input = Object.assign(report(), {
+      completionStatus: 'complete' as const,
+      scoreValidity: 'valid' as const,
+      issues: [policyIssue],
+    }) as ProjectReport;
+    input.firstScan = projectFirstScan(input, {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      currentPolicy: approvedCurrentPolicyFixture(),
+    });
+
+    const json = JSON.parse(formatJson(input)) as {
+      firstScan: { findings: Array<{ evidence: Record<string, unknown> }> };
+    };
+    const sarif = JSON.parse(formatSarif(input, { cwd: '/workspace' })) as {
+      runs: Array<{ results: Array<{ properties: { slopbrickEvidence?: Record<string, unknown> } }> }>;
+    };
+    const expected = json.firstScan.findings[0]!.evidence;
+
+    expect(expected).toMatchObject({
+      tier: 'quality-candidate-unmeasured',
+      claim: 'Accepted quality concern; owner measurement was not requested.',
+      sourceSpan: 'exact',
+      policyVersion: 'slopbrick-rule-evidence-policy-v2',
+      qualityDomain: 'type-safety',
+      claimClass: 'contextual-heuristic',
+      readiness: 'evidence-ready',
+      scoreEligible: false,
+      admitted: false,
+      legacyMetrics: {
+        verdict: 'USEFUL',
+        precision: 0.99,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+      },
+    });
+    expect(sarif.runs[0]!.results[0]!.properties.slopbrickEvidence).toEqual(expected);
+
+    for (const output of [
+      formatPretty(input, { full: false, cwd: '/workspace' }),
+      formatPretty(input, { full: true, cwd: '/workspace' }),
+      formatMarkdown(input),
+      formatHtml(input),
+    ]) {
+      expect(output).toContain('quality-candidate-unmeasured');
+      expect(output).toContain('Accepted quality concern; owner measurement was not requested.');
+    }
   });
 
   it('matches exact evidence by stable finding identity through the CLI render path', async () => {

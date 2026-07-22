@@ -12,6 +12,9 @@ import {
 import type { FirstScanExperience } from '../../src/types/first-scan';
 import type { Category, GateDecision, Issue, ProjectReport } from '../../src/types';
 import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
+import type { CAL002PolicyProvenanceV2 } from '../../src/calibration/cal-002/matrix-v2';
+import type { CurrentEvidencePolicyAccessors } from '../../src/rules/current-evidence-policy';
+import { approvedCurrentPolicyFixture } from '../helpers/current-evidence-policy-v2';
 
 const CATEGORIES: Category[] = [
   'visual',
@@ -114,6 +117,31 @@ function report(overrides: Partial<ProjectReport> = {}): ProjectReport {
 function project(input: ProjectReport): FirstScanExperience {
   return projectFirstScan(input, { cwd: '/workspace', configHash: 'config-a' });
 }
+
+function policyFixtureWithProvenance(
+  ruleId: string,
+  provenance: CAL002PolicyProvenanceV2,
+): CurrentEvidencePolicyAccessors {
+  const approved = approvedCurrentPolicyFixture();
+  const seed = approved.getCurrentRulePolicy('ai/any-density');
+  if (!seed) throw new Error('approved current-policy fixture is missing ai/any-density');
+  const row = { ...seed, ruleId, provenance };
+  return {
+    ...approved,
+    getCurrentRulePolicy: (candidate) => candidate === ruleId ? row : undefined,
+    getRuleEvidenceProvenance: (candidate) => candidate === ruleId ? provenance : undefined,
+  };
+}
+
+const CURRENT_POLICY_COPY_CASES = [
+  ['deterministic-finding-evidence', 'deterministic', 'Current deterministic quality evidence.'],
+  ['current-quality-calibrated', 'current-quality-calibrated', 'Current owner-reviewed quality evidence.'],
+  ['current-quality-advisory', 'current-quality-advisory', 'Review utility only; disabled and score-neutral.'],
+  ['quality-candidate-unmeasured', 'quality-candidate-unmeasured', 'Accepted quality concern; owner measurement was not requested.'],
+  ['current-quality-failed-claim-bar', 'current-quality-failed', 'Current quality claim bar was not met; diagnostic only.'],
+  ['insufficient-evidence', 'insufficient-evidence', 'Current evidence is insufficient; diagnostic only.'],
+  ['internal-origin-association', 'internal-origin-association', 'Internal origin association only; not quality evidence and does not identify who wrote the code.'],
+] as const satisfies ReadonlyArray<readonly [CAL002PolicyProvenanceV2, string, string]>;
 
 const PASSED_GATE: GateDecision = {
   kind: 'slopbrick-gate-decision-v1',
@@ -277,9 +305,9 @@ describe('first-scan public contract', () => {
 
     expect(byRule.get('typo/placeholder-text')?.evidence.tier).toBe('deterministic');
     expect(byRule.get('logic/zipf-slope-anomaly')?.evidence).toMatchObject({
-      tier: 'calibrated',
-      claim: 'Measured rule behavior; not proof of authorship.',
-      calibration: {
+      tier: 'legacy-calibrated',
+      claim: 'Historical rule metrics only; not current policy evidence and not proof of who wrote the code.',
+      legacyMetrics: {
         verdict: 'USEFUL',
         precision: 0.6369,
         lastCalibratedAt: '2026-07-04T00:00:00Z',
@@ -294,8 +322,8 @@ describe('first-scan public contract', () => {
       /No safe bounded repair is available\.$/,
     );
     expect(byRule.get('visual/arbitrary-escape')?.action).toMatchObject({
-      kind: 'apply-finding-bound-fix',
-      repairSafety: 'finding-bound',
+      kind: 'manual-review',
+      repairSafety: 'no-safe-repair',
     });
     expect(result.findings.map(({ ruleId }) => ruleId)).toEqual([
       'logic/zipf-slope-anomaly',
@@ -318,6 +346,144 @@ describe('first-scan public contract', () => {
     });
     expect(input).toEqual(before);
   });
+
+  it('projects the approved current authority without promoting historical metrics or unsafe repairs', () => {
+    const signalStrength = {
+      recall: 0.8,
+      fpRate: 0.01,
+      ratio: 80,
+      precision: 0.99,
+      lastCalibratedAt: '2026-07-04T00:00:00Z',
+      verdict: 'USEFUL' as const,
+    };
+    const unmeasured = issue('ai', {
+      ruleId: 'ai/any-density',
+      severity: 'medium',
+      filePath: '/workspace/src/unsafe.ts',
+      line: 3,
+      column: 2,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: 'value as any',
+        location: { start: { line: 3, column: 2 }, end: { line: 3, column: 14 } },
+      },
+      signalStrength,
+      fix: {
+        kind: 'replace',
+        description: 'Replace the assertion',
+        targetFile: '/workspace/src/unsafe.ts',
+        oldValue: 'value as any',
+        newValue: 'value',
+        binding: {
+          kind: 'slopbrick-fix-binding-v1',
+          ruleId: 'ai/any-density',
+          filePath: '/workspace/src/unsafe.ts',
+          line: 3,
+          column: 2,
+          sourceSha256: 'a'.repeat(64),
+        },
+      },
+    });
+    const origin = issue('ai', {
+      ruleId: 'ai/comment-ratio',
+      severity: 'medium',
+      signalStrength: { ...signalStrength, precision: 1 },
+    });
+    const deterministic = issue('context', {
+      ruleId: 'context/import-path-mismatch',
+      severity: 'medium',
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: "import './missing.js'",
+        location: { start: { line: 1, column: 1 }, end: { line: 1, column: 22 } },
+      },
+    });
+    const legacy = issue('logic', {
+      ruleId: 'plugin/historical-only',
+      severity: 'medium',
+      signalStrength: { ...signalStrength, precision: 1 },
+    });
+
+    const result = projectFirstScan(report({
+      issues: [origin, legacy, unmeasured, deterministic],
+    }), {
+      cwd: '/workspace',
+      configHash: 'config-a',
+      currentPolicy: approvedCurrentPolicyFixture(),
+    });
+    const byRule = new Map(result.findings.map((finding) => [finding.ruleId, finding]));
+
+    expect(byRule.get('ai/any-density')?.evidence).toEqual({
+      tier: 'quality-candidate-unmeasured',
+      claim: 'Accepted quality concern; owner measurement was not requested.',
+      sourceSpan: 'exact',
+      policyVersion: 'slopbrick-rule-evidence-policy-v2',
+      qualityDomain: 'type-safety',
+      claimClass: 'contextual-heuristic',
+      readiness: 'evidence-ready',
+      scoreEligible: false,
+      admitted: false,
+      legacyMetrics: {
+        verdict: 'USEFUL',
+        precision: 0.99,
+        lastCalibratedAt: '2026-07-04T00:00:00Z',
+      },
+    });
+    expect(byRule.get('ai/any-density')?.action).toMatchObject({
+      kind: 'manual-review',
+      repairSafety: 'no-safe-repair',
+    });
+    expect(byRule.get('ai/comment-ratio')?.evidence).toMatchObject({
+      tier: 'internal-origin-association',
+      scoreEligible: false,
+      admitted: false,
+    });
+    expect(byRule.get('ai/comment-ratio')?.evidence.claim).toContain('association only');
+    expect(byRule.get('ai/comment-ratio')?.evidence.claim).not.toMatch(
+      /authorship|AI-generated|human-written/i,
+    );
+    expect(byRule.get('context/import-path-mismatch')?.evidence).toMatchObject({
+      tier: 'deterministic',
+      sourceSpan: 'exact',
+      scoreEligible: true,
+      admitted: false,
+    });
+    expect(byRule.get('plugin/historical-only')?.evidence).toMatchObject({
+      tier: 'legacy-calibrated',
+      legacyMetrics: { precision: 1 },
+    });
+    expect(byRule.get('plugin/historical-only')?.evidence).not.toHaveProperty('policyVersion');
+    expect(result.recommendedActions.map(({ ruleId }) => ruleId)).toEqual([
+      'context/import-path-mismatch',
+      'ai/any-density',
+      'ai/comment-ratio',
+    ]);
+    expect(JSON.stringify(result.findings.map(({ evidence }) => evidence))).not.toMatch(
+      /evidenceSha256|finalMatrixSha256|policyRowsSha256/,
+    );
+  });
+
+  it.each(CURRENT_POLICY_COPY_CASES)(
+    'maps the %s policy copy contract to %s without claiming that the case is populated',
+    (provenance, tier, claim) => {
+      const ruleId = `contract/${provenance}`;
+      const result = projectFirstScan(report({ issues: [issue('logic', { ruleId })] }), {
+        cwd: '/workspace',
+        configHash: 'config-a',
+        currentPolicy: policyFixtureWithProvenance(ruleId, provenance),
+      });
+
+      expect(result.findings[0]?.evidence).toMatchObject({
+        tier,
+        claim,
+        sourceSpan: 'absent',
+        policyVersion: 'slopbrick-rule-evidence-policy-v2',
+        admitted: false,
+      });
+    },
+  );
 
   it('uses ruleId ascending as the final recommendation tie-breaker', () => {
     const ties = ['logic/z-last', 'logic/a-first', 'logic/m-middle', 'logic/b-second']
@@ -579,15 +745,15 @@ describe('first-scan pretty renderer contract', () => {
           Why: Untrusted input reaches a sensitive operation.
           Action: manual review — Review input handling before release. No safe bounded repair is available.
         2. Code and Logic — logic/zipf-slope-anomaly [medium]
-          Evidence tier: calibrated; verdict USEFUL; precision 63.69%; last calibrated 2026-07-04. Measured rule behavior; not
-          proof of authorship. Not a quality verdict.
+          Evidence tier: legacy-calibrated; historical verdict USEFUL; historical precision 63.69%; last calibrated 2026-07-04.
+          Historical rule metrics only; not current policy evidence and not proof of who wrote the code.
           Reach: single-file; 1 finding across 1 file.
           Change: unchanged.
           Why: Identifier frequency differs from the measured baseline.
           Action: manual review — Review identifier vocabulary in domain context. No safe bounded repair is available.
         3. Code and Logic — logic/heaps-deviation [medium]
-          Evidence tier: calibrated; verdict USEFUL; precision 58%; last calibrated 2026-07-05. Measured rule behavior; not
-          proof of authorship. Not a quality verdict.
+          Evidence tier: legacy-calibrated; historical verdict USEFUL; historical precision 58%; last calibrated 2026-07-05.
+          Historical rule metrics only; not current policy evidence and not proof of who wrote the code.
           Reach: single-file; 1 finding across 1 file.
           Change: new.
           Why: Vocabulary growth differs from the measured baseline.
@@ -612,7 +778,7 @@ describe('first-scan pretty renderer contract', () => {
     expect(headingLines).toEqual(headings);
     expect(headingLines.filter((heading) => heading === 'Repository Health')).toHaveLength(1);
     expect(plain).toContain('high');
-    expect(plain).toContain('calibrated');
+    expect(plain).toContain('legacy-calibrated');
     expect(plain).toContain('manual review');
     expect(plain).toContain('unchanged');
     expect(plain.toLowerCase()).toContain('no safe bounded repair');
