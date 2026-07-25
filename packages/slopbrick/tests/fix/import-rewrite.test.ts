@@ -207,6 +207,11 @@ describe('exact import rewrite planner', () => {
         mend: { importRewrites: { [oldValue]: newValue } },
       } as ResolvedConfig;
 
+      const binding = issue.fix!.binding;
+      delete issue.fix!.binding;
+      expect(formatUnifiedDiff(report, workspace, config)).toBe('');
+      issue.fix!.binding = binding;
+
       const preview = formatUnifiedDiff(report, workspace, config);
       expect(preview).toContain("-import { Button } from '@/legacy/Button';");
       expect(preview).toContain("+import { Button } from '@/components/ui/Button';");
