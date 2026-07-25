@@ -214,6 +214,10 @@ export interface ResolvedConfig {
   lock?: {
     waivers?: import('./lock').LockWaiver[];
   };
+  /** Repository-owned, exact deterministic repair policy. */
+  mend?: {
+    importRewrites?: Record<string, string>;
+  };
   wcag: {
     targetSizeExemptSelectors: string[];
     targetSizeRequireTailwind?: boolean;
