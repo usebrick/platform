@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { isAbsolute, join, posix, win32 } from 'node:path';
 import { compareFindingBaseline } from '../../report/finding-delta';
 import {
@@ -247,8 +255,23 @@ export function saveDebtBaseline(projectPath: string, baseline: DebtBaseline): v
     throw new Error('Cannot save invalid debt baseline.');
   }
   const path = debtBaselinePath(projectPath);
+  const temporaryPath = `${path}.${process.pid}-${randomUUID()}.tmp`;
   mkdirSync(join(projectPath, '.slopbrick', 'cache'), { recursive: true });
-  writeFileSync(path, JSON.stringify(projectDebtBaseline(baseline), null, 2), 'utf8');
+  try {
+    writeFileSync(
+      temporaryPath,
+      JSON.stringify(projectDebtBaseline(baseline), null, 2),
+      { encoding: 'utf8', flag: 'wx', mode: 0o600 },
+    );
+    renameSync(temporaryPath, path);
+  } catch (error) {
+    try {
+      unlinkSync(temporaryPath);
+    } catch {
+      // The staged file may not exist when creation itself failed.
+    }
+    throw error;
+  }
 }
 
 function notEvaluated(
