@@ -227,6 +227,9 @@ export function rollbackExactImportRewrite(
   if (receipt.filePath !== filePath) {
     return { status: 'rejected', reason: 'receipt-mismatch' };
   }
+  if (sha256Bytes(receipt.originalBytes) !== receipt.beforeSha256) {
+    return { status: 'rejected', reason: 'receipt-mismatch' };
+  }
 
   let currentBytes: Buffer;
   try {
