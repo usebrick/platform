@@ -117,13 +117,15 @@ export function exactImportRewriteInputFromFinding(
     return { status: 'rejected', reason: 'unauthorized-repair' };
   }
 
+  const oldValue = fix.oldValue;
+  const newValue = fix.newValue;
   const rewrites = config.mend?.importRewrites;
   if (
     !rewrites
-    || !Object.prototype.hasOwnProperty.call(rewrites, fix.oldValue)
-    || rewrites[fix.oldValue] !== fix.newValue
+    || !Object.prototype.hasOwnProperty.call(rewrites, oldValue)
+    || rewrites[oldValue] !== newValue
     || !Array.isArray(config.allowedImports)
-    || !config.allowedImports.some((prefix) => fix.newValue!.startsWith(prefix))
+    || !config.allowedImports.some((prefix) => newValue.startsWith(prefix))
   ) {
     return { status: 'rejected', reason: 'unauthorized-repair' };
   }
@@ -132,10 +134,10 @@ export function exactImportRewriteInputFromFinding(
   if (
     evidence?.status !== 'exact'
     || evidence.kind !== 'matched-source-span'
-    || evidence.snippet !== fix.oldValue
+    || evidence.snippet !== oldValue
     || evidence.matched.field !== 'import-source'
     || evidence.matched.key !== 'module-specifier'
-    || evidence.matched.value !== fix.oldValue
+    || evidence.matched.value !== oldValue
     || evidence.details?.policyField !== 'allowedImports'
   ) {
     return { status: 'rejected', reason: 'invalid-evidence' };
@@ -144,8 +146,8 @@ export function exactImportRewriteInputFromFinding(
   return {
     status: 'accepted',
     input: {
-      oldValue: fix.oldValue,
-      newValue: fix.newValue,
+      oldValue,
+      newValue,
       location: evidence.location,
     },
   };
