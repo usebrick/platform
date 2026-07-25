@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
+import { buildDebtBaseline, saveDebtBaseline } from '../../src/cli/report/debt-baseline';
 import { evaluateLockNewDebt } from '../../src/cli/report/lock-new-debt';
+import { runScan } from '../../src/cli/scan';
+import { hashConfig } from '../../src/engine/cache';
 import { findingIdentity } from '../../src/report/finding-identity';
 import type { Issue, ProjectReport } from '../../src/types';
 
@@ -175,4 +179,65 @@ describe('LOCK-001 new-debt decision', () => {
       summary: expect.stringMatching(/incomplete scan/i),
     });
   });
+
+  it('attaches the failed Lock receipt to a real scan with one introduced violation', async () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-lock-e2e-'));
+    try {
+      mkdirSync(join(workspace, 'src'), { recursive: true });
+      writeFileSync(
+        join(workspace, 'slopbrick.config.mjs'),
+        `export default { allowedImports: ['@/approved/'] };\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(workspace, 'src', 'Existing.tsx'),
+        `import { Existing } from '@/legacy/Existing';\nexport const value = Existing;\n`,
+        'utf8',
+      );
+
+      const first = await runScan({
+        workspace,
+        quiet: true,
+        telemetry: false,
+        threadCount: 1,
+      });
+      saveDebtBaseline(
+        workspace,
+        buildDebtBaseline(first.report, workspace, hashConfig(first.config), 'commit-a'),
+      );
+      writeFileSync(
+        join(workspace, 'src', 'New.tsx'),
+        `import { NewValue } from '@/legacy/New';\nexport const value = NewValue;\n`,
+        'utf8',
+      );
+
+      const current = await runScan({
+        workspace,
+        quiet: true,
+        telemetry: false,
+        threadCount: 1,
+        ciGate: { lockNewDebt: true },
+      });
+
+      expect(current.lockFailure).toBe(true);
+      expect(current.report.lockDecision).toMatchObject({
+        status: 'failed',
+        failed: true,
+        policy: {
+          ruleId: 'context/import-path-mismatch',
+          source: 'slopbrick.config.mjs#allowedImports',
+        },
+        qualifyingFindingCount: 2,
+        newFindingCount: 1,
+        blockedFindingCount: 1,
+        findings: [{
+          filePath: 'src/New.tsx',
+          disposition: 'blocked',
+          evidence: { matched: { value: '@/legacy/New' } },
+        }],
+      });
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  }, 30_000);
 });
