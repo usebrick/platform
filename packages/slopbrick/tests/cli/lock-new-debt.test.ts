@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { buildDebtBaseline } from '../../src/cli/report/debt-baseline';
 import { evaluateLockNewDebt } from '../../src/cli/report/lock-new-debt';
+import { findingIdentity } from '../../src/report/finding-identity';
 import type { Issue, ProjectReport } from '../../src/types';
 
 const cwd = '/workspace';
@@ -94,6 +95,55 @@ describe('LOCK-001 new-debt decision', () => {
           status: 'exact',
           matched: { value: '@/legacy/New' },
         },
+      }],
+    });
+  });
+
+  it('passes an owned active waiver but visibly blocks the same waiver after expiry', () => {
+    const introduced = importPolicyIssue('src/New.tsx', '@/legacy/New', 8);
+    const baseline = buildDebtBaseline(report([]), cwd, 'config-a', 'commit-a');
+    const waiver = {
+      findingIdentity: findingIdentity(introduced, cwd),
+      owner: 'architecture-owner',
+      reason: 'Migration remains open until the shared component lands.',
+      expiresAt: '2026-08-01T00:00:00.000Z',
+    };
+    const input = {
+      report: report([introduced]),
+      baseline,
+      cwd,
+      configHash: 'config-a',
+      policySource: 'slopbrick.config.mjs#allowedImports',
+      waivers: [waiver],
+    } as const;
+
+    expect(evaluateLockNewDebt({
+      ...input,
+      now: new Date('2026-07-25T00:00:00.000Z'),
+    })).toMatchObject({
+      status: 'passed',
+      failed: false,
+      newFindingCount: 1,
+      blockedFindingCount: 0,
+      waivedFindingCount: 1,
+      findings: [{
+        disposition: 'waived',
+        waiver: { ...waiver, status: 'active' },
+      }],
+    });
+
+    expect(evaluateLockNewDebt({
+      ...input,
+      now: new Date('2026-08-02T00:00:00.000Z'),
+    })).toMatchObject({
+      status: 'failed',
+      failed: true,
+      newFindingCount: 1,
+      blockedFindingCount: 1,
+      waivedFindingCount: 0,
+      findings: [{
+        disposition: 'blocked',
+        waiver: { ...waiver, status: 'expired' },
       }],
     });
   });
