@@ -38,6 +38,39 @@ describe('ci gates the current scan outcome', () => {
     expect(result.stdout).not.toMatch(/\x1b\[/);
   });
 
+  it('forwards --lock-new-debt as an explicit bounded Lock gate', async () => {
+    const program = new Command().name('slopbrick').exitOverride();
+    let receivedLockGate: boolean | undefined;
+    registerCi(program, async (_paths, options) => {
+      receivedLockGate = options.ciGate?.lockNewDebt;
+      return {
+        report: {
+          scoreValidity: 'not-applicable',
+          aiSlopScore: 0,
+        } as ProjectReport,
+        config: DEFAULT_CONFIG,
+        scanStats: {
+          status: 'empty',
+          requested: 0,
+          analyzed: 0,
+          failed: 0,
+          skipped: 0,
+          scanId: 'test-lock-scan',
+          fileCount: 0,
+          ruleCount: 0,
+          durationMs: 0,
+        },
+        baseExitCode: 0,
+        exitCode: 0,
+        noIncreaseFailure: false,
+      };
+    });
+
+    await program.parseAsync(['node', 'slopbrick', 'ci', '--lock-new-debt']);
+
+    expect(receivedLockGate).toBe(true);
+  });
+
   it('passes --max-slop 1 for a clean current scan', async () => {
     const dir = workspace();
     const result = await run(['ci', '--workspace', dir, '--max-slop', '1', '--format', 'json']);
