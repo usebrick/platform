@@ -21,7 +21,7 @@ status and dependency edges live in
        observe -> preserve -> compile -> prevent -> repair -> verify
           │          │          │          │          │         │
       SlopBrick    policy     Memory      Lock       Mend      Render
-       shipped     authoring  M0 local   candidate   parked     Labs
+       shipped     authoring  M0 local   qualified  exact M0  Labs
 ```
 
 | Product or capability | Architectural role | Delivery boundary |
@@ -31,7 +31,7 @@ status and dependency edges live in
 | **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 locally qualified and unshipped; broader adapters/store remain gated |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
 | **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family locally qualified in the unreleased CLI; team and paid value remain unproven |
-| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | Parked; no arbitrary repository-wide AI refactoring |
+| **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | One exact repository-owned import rewrite is in local proof; no arbitrary repository-wide AI refactoring |
 | **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
 The Memory capability is not vendor-owned chat history, a transcript archive,

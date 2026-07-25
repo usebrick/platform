@@ -23,7 +23,7 @@ hypothesis has not yet been collected.
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
 | **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
 | **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is locally qualified in the unreleased v0.45 CLI; paid/team value remains unproven |
-| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Parked until detection and enforcement earn trust |
+| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | First owner-approved local proof is in progress for one exact import rewrite; no general refactoring authority |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
@@ -306,9 +306,9 @@ observe facts and runtime evidence
 ```
 
 Today, the `slopbrick` CLI and embedded MCP server implement the observation
-and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory,
-Lock, Mend, and Render Labs remain planned, parked, or experimental capability
-boundaries as labeled above.
+and evidence front door over `@usebrick/engine` and `@usebrick/core`. Memory and
+Lock have bounded local proofs, the first Mend proof is in progress, and Render
+Labs remains experimental as labeled above.
 
 The long-term moat is the coherence graph connecting observed facts, approved
 intent, provenance and freshness, human outcomes, enforcement decisions,

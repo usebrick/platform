@@ -46,7 +46,7 @@ and pricing scenarios live in the dated
 | **Memory capability** | M0 compiles four declared package facts; broader observed facts and approved intent remain post-M0 | Private M0 locally qualified; benchmark broader adapters before adding a store or package |
 | **Pick flow** | Initialize the Constitution, approved stack, and policy | Fold into onboarding and policy authoring |
 | **Lock capability** | Prevent newly introduced verified drift | One import-policy family is locally qualified in the unreleased CLI; first paid workflow remains a hypothesis |
-| **Mend capability** | Apply narrow deterministic repairs with proof and rollback | Parked until enforcement earns trust |
+| **Mend capability** | Apply narrow deterministic repairs with proof and rollback | First exact import-rewrite proof in progress after owner acceptance of Lock |
 | **RenderBrick Labs** | Test incremental value from rendered and runtime evidence | Benchmark only; stop if value is not material |
 | **Enterprise controls** | Shared policy, approvals, audit, and multi-repository governance | Build only after repeated paid-team demand |
 
@@ -230,18 +230,23 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
    import-policy family now has stable identity, reviewed-baseline comparison,
    changed evidence, owned expiring waivers, human and machine receipts, and
    incomplete-scan failure semantics in the unreleased CLI. Do not generalize
-   it into team trust or a paid claim. Start `MEND-001` only after the owner
-   explicitly accepts the workflow and selects one deterministic repair.
+   it into team trust or a paid claim. On 2026-07-26 the owner accepted that
+   bounded workflow as locally useful and selected one exact repository-owned
+   import rewrite for `MEND-001`; do not infer replacement targets or widen the
+   proof into general refactoring.
 3. Run `LABS-001` with fixed defects and blind source-only versus rendered
    evidence scoring. Stop if incremental value is not material.
 4. Run external sessions and test pricing only after separate participant
    authorization. Keep every price and buyer claim hypothetical until observed.
 
-## Later — repair and team governance
+## Current repair proof and later team governance
 
-- Start Mend with a small set of deterministic transformations: token
-  replacement, approved-component reuse, forbidden-dependency replacement, or
-  another mechanically bounded change with byte-identical rollback.
+- Prove exactly one source-to-target module-specifier mapping through the
+  existing scanner and fix path, with exact finding binding, dry-run/apply
+  parity, idempotent rescan, repository checks, and byte-identical rollback.
+- Consider token replacement, approved-component reuse, or other deterministic
+  transforms only after this first proof closes and receives a separate owner
+  disposition.
 - Add shared policy, exceptions, approvals, PR receipts, and hosted history
   only when they improve the proven local workflow.
 - Add cross-repository context and enterprise controls only after several
@@ -267,7 +272,7 @@ These are packaging and pricing hypotheses, not offers or validated demand.
 | Outcome intelligence | Events are inspectable, privacy-safe, useful, and explicitly consented for outbound use | Keep outcomes local or disable the path |
 | Repository intelligence | Repository-owned context improves predeclared tasks without stale or bloated context | Keep Memory read-only and experimental |
 | Team enforcement | Lock prevents verified new debt with acceptable false-block and waiver burden | Keep enforcement in shadow mode |
-| Repair | A bounded fix applies, rescans, tests, and rolls back byte-identically | Keep Mend parked |
+| Repair | A bounded fix applies, rescans, tests, and rolls back byte-identically | Stop after the exact import proof; do not widen Mend |
 | Rendered evidence | Blind comparison shows material incremental detection without unacceptable false positives | Stop Render Labs |
 | Monetization | Teams repeatedly use Lock and demonstrate willingness to pay | Stay free and product-led |
 | Enterprise | Several paying teams independently request the same controls | Do not build enterprise infrastructure |

@@ -1,10 +1,10 @@
 # MEND-001 — Prove the first deterministic reversible repair
 
-- **Status:** `parked`
+- **Status:** `in_progress`
 - **Priority:** 11
 - **Track / lane:** implementation / mend
 - **Owner:** UseBrick platform
-- **Updated:** 2026-07-25
+- **Updated:** 2026-07-26
 
 ## Outcome
 
@@ -15,11 +15,10 @@ without collateral edits.
 ## Current truth
 
 The Mend capability is not shipped, and arbitrary AI refactoring is outside the
-product boundary. `LOCK-001` now proves one deterministic local enforcement
-family, but this plan remains parked because the owner has not yet accepted its
-usefulness and selected a transformation to evaluate. Any selected repair must
-still have deterministic, byte-identical rollback proof. Team demand remains
-separate and unproven.
+product boundary. On 2026-07-26 the owner selected option 1: accept the bounded
+`LOCK-001` workflow as locally useful and evaluate one exact repository-owned
+import rewrite. This satisfies only the local resume gate. Team usefulness,
+demand, pricing, and release remain separate and unproven.
 
 The earlier GIR proposal survives only as deterministic transformation logic
 inside this capability. It does not authorize a separate migrator product or
@@ -27,28 +26,35 @@ arbitrary model-driven refactoring.
 
 ## Scope
 
-- Select one high-confidence, mechanically expressible Lock finding.
-- Define preconditions, exact edit boundary, dry-run diff, idempotence, rescan,
-  repository gate, and rollback contracts.
-- Run on fixtures, then owner-controlled repositories selected explicitly for
-  local validation.
-- Start with transformations such as approved-token replacement, approved-
-  component reuse, or forbidden-dependency replacement only when exact
-  preconditions and rollback can be proven.
+- Add one optional repository-owned `mend.importRewrites` map from an exact
+  current module specifier to one exact replacement module specifier.
+- Emit a repair only for an exact `context/import-path-mismatch` finding when
+  its complete source string has a configured mapping and the replacement
+  already matches repository `allowedImports` policy.
+- Change only the parser-evidenced module-specifier span. Reuse the existing
+  finding/source-snapshot binding and one pure rewrite planner for preview and
+  apply.
+- Prove strict config rejection, stale/ambiguous/unsupported rejection,
+  dry-run/apply parity, no mutation during dry-run, idempotent rescan,
+  repository checks, and byte-identical rollback.
+- Run on fixtures and one owner-controlled local scenario; do not infer a
+  replacement from an allowed prefix.
 
 ## Non-goals
 
 - General autonomous refactoring, multi-file architectural migrations,
   model-only fixes, or repairs without repository test verification.
-- Starting before the Lock trust gate.
+- Prefix, glob, package-name, or model-inferred replacements; import-binding
+  changes; file moves; dependency installation; or target discovery.
+- A standalone Mend package, a new public `usebrick` command, or widening
+  existing generic token replacement semantics.
 
 ## Dependencies
 
 - `requires`: `LOCK-001`
 - `benefitsFrom`: `CAL-001`
-- Resume gate: Lock owner-validation precision is accepted and at least
-  one enforced finding has a deterministic transformation the owner wants to
-  evaluate.
+- Resume gate: satisfied locally on 2026-07-26 when the owner selected option 1
+  and the exact import-rewrite proof. This is not external or team evidence.
 
 ## Acceptance criteria
 
@@ -62,14 +68,17 @@ arbitrary model-driven refactoring.
 
 ## Execution steps
 
-1. Select the repair only after the resume gate -> verify: cite the trusted
-   Lock finding and explicit owner usefulness decision.
-2. Red-test preconditions, dry-run, apply, idempotence, and rollback -> verify:
-   run the focused repair test with one worker.
-3. Implement the deterministic transformer -> verify: byte-for-byte fixture
-   comparison and second-run no-op.
-4. Owner-controlled opt-in -> verify: rescan, repository tests, rollback, and
-   owner acceptance receipts.
+1. Record the accepted exact repair and start boundary -> verify: execution
+   Revision 78, this plan, and the evidence receipt agree.
+2. Red-test strict `mend.importRewrites` config admission -> verify: run the
+   focused config test with one worker.
+3. Red-test and implement the exact finding-bound span transformer -> verify:
+   dry-run/apply parity, stale and ambiguous rejection, and byte-for-byte
+   rollback tests pass with one worker.
+4. Exercise the existing CLI -> verify: dry-run leaves bytes unchanged, apply
+   changes only the selected span, rescan removes the intended finding, second
+   apply is a no-op, repository tests pass, and rollback restores original
+   bytes.
 
 ## Verification
 
@@ -87,6 +96,6 @@ repository checks and scan.
 
 ## Next action
 
-Remain parked until the owner explicitly accepts or revises the completed
-`LOCK-001` proof. On acceptance, choose one deterministic repair for evaluation
-with complete rollback proof; do not infer that choice from Lock completion.
+Write and checkpoint the failing strict-config contract before adding
+`mend.importRewrites` to runtime configuration. Do not implement the
+transformer while that contract is red.

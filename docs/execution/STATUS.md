@@ -1,7 +1,7 @@
 # UseBrick execution status
 
-**Snapshot:** 2026-07-25
-**Index revision:** 77
+**Snapshot:** 2026-07-26
+**Index revision:** 78
 **Global status:** `advancing`
 
 ## Executive state
@@ -42,6 +42,10 @@ Revision 77 removes a validator-library declaration leak from the private Core
 facade without changing validation behavior, schemas, versions, roadmap scope,
 or release authority. The recursive build is now clean of the former Zod
 named-export warnings.
+Revision 78 records the owner's option 1 decision: the bounded local Lock
+workflow is accepted as useful for this owner-controlled proof, and `MEND-001`
+starts at implementation WIP `1/2` for one exact repository-owned import
+rewrite. This does not establish team usefulness or authorize broader repair.
 Revision 74 records the owner's option `1` authorization for exactly one local
 checkpoint commit carrying this qualified byte set and synchronized docs.
 Push, merge, tag, release, publication, and deployment remain gated.
@@ -333,7 +337,7 @@ passed and 5 skipped files; Core, Website, and Engine pass 285, 54, and 60
 tests. Final TEL reviewers each returned 98/100 with no must-fix or should-fix
 finding. CAL-002, SB-UX-001, and TEL-001 are `done`; their closeout left
 implementation WIP at `0/2` before revision 47 started the MEM decision slice.
-Current implementation WIP is `0/2` after `LOCK-001` local closeout.
+Current implementation WIP is `1/2` after the owner-approved `MEND-001` start.
 
 LOCK-001 now adds one qualified, explicit `ci --lock-new-debt` workflow to the
 unreleased candidate. It blocks only exact new
@@ -635,8 +639,8 @@ WIP while waiting.
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
-| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `done` | — | Preserve the local gate and obtain an explicit owner usefulness disposition before Mend. |
-| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | — | Await owner acceptance and selection of one deterministic repair with byte-identical rollback. |
+| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `done` | — | Preserve the accepted local gate and hand only its exact import-policy finding contract to Mend. |
+| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `in_progress` | — | Red-test strict repository-owned exact import-rewrite config before implementation. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | — | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
@@ -712,18 +716,19 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`MEM-001` and `LOCK-001` are `done`, and implementation WIP is `0/2`.
+`MEM-001` and `LOCK-001` are `done`; `MEND-001` is `in_progress`, and
+implementation WIP is `1/2`.
 Revision 76 closes the bounded local Lock proof with its
-[owner receipt](evidence/LOCK-001-owner-validation.md). The next implementation
-decision is not automatic: `MEND-001` remains parked until the owner explicitly
-accepts the Lock workflow as useful and selects one deterministic repair, or
-names a reproducible Lock revision instead. Revision 69 records the
+[owner receipt](evidence/LOCK-001-owner-validation.md). Revision 78 records the
+owner's option 1 acceptance and starts exactly one source-to-target import
+rewrite proof. The next implementation action is the red strict-config
+contract; no replacement may be inferred from `allowedImports`. Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorizes exactly
 one local checkpoint commit; it does not authorize any remote or public
 action. Revision 77 records only the warning-free Core validation-facade
-cleanup and does not alter that next-decision boundary. Revision 68 makes the focused
+cleanup. Revision 68 makes the focused
 [acceptance contract](../decisions/memorybrick-m0-acceptance.md) the sole active
 behavioral authority under the accepted
 [`ADR`](../decisions/memorybrick-m0.md). Pinned

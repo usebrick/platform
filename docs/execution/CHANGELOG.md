@@ -3,6 +3,27 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 78 — 2026-07-26
+
+### MEND-001 exact repair start
+
+- Recorded the owner's option 1 decision as local acceptance of the bounded
+  `LOCK-001` workflow and selection of one exact repository-owned import
+  rewrite for the first Mend proof.
+- Moved `MEND-001` from `parked`/`later` to `in_progress`/`now` and set
+  implementation WIP to `1/2`.
+- Froze the repair boundary to an exact `mend.importRewrites` source-to-target
+  entry, an exact `context/import-path-mismatch` finding, a target already
+  allowed by repository policy, one parser-evidenced span, shared preview/apply
+  planning, idempotent rescan, repository checks, and byte-identical rollback.
+- Set the first implementation action to a test-only strict-config contract.
+
+### Boundary
+
+- This start does not authorize inferred or prefix rewrites, dependency or file
+  changes, arbitrary refactoring, another Mend family, team or demand claims,
+  push, merge, tag, release, publication, or deployment.
+
 ## Revision 77 — 2026-07-25
 
 ### Private declaration-boundary cleanup
