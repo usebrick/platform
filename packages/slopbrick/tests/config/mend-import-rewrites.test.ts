@@ -115,6 +115,22 @@ describe('mend.importRewrites configuration', () => {
       },
       error: 'mend.importRewrites: target must be a canonical non-empty string',
     },
+    {
+      name: 'a target containing a quote',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/legacy/Button': '@/components/ui/But"ton' } },
+      },
+      error: 'mend.importRewrites: target must be a canonical non-empty string',
+    },
+    {
+      name: 'a target containing a backslash',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/legacy/Button': '@/components/ui/Button\\legacy' } },
+      },
+      error: 'mend.importRewrites: target must be a canonical non-empty string',
+    },
   ])('rejects $name', ({ input, error }) => {
     expect(validateConfig(input).errors.some((message) => message.includes(error))).toBe(true);
   });
