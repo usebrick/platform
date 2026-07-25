@@ -87,11 +87,11 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
   const detectedConstitution = detectConstitution(cwd);
   const configPath = resolveConfigPath(cwd);
   if (!configPath) {
-    const resolved = bindExplicitRuleOverrides({
+    const resolved = {
       ...deepMerge(DEFAULT_CONFIG, detected),
       constitution: resolveConstitution(undefined, detectedConstitution),
-    }, undefined);
-    return {
+    };
+    return bindExplicitRuleOverrides({
       ...resolved,
       policySources: {
         allowedImports: {
@@ -99,7 +99,7 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
           source: 'built-in-default#allowedImports',
         },
       },
-    };
+    }, undefined);
   }
   let user: Partial<ResolvedConfig>;
   try {
@@ -124,11 +124,10 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
     (user as Partial<ResolvedConfig>).constitution,
     detectedConstitution,
   );
-  const resolved = bindExplicitRuleOverrides(merged, user.rules);
   const repositoryOwnsAllowedImports = Object.prototype.hasOwnProperty.call(user, 'allowedImports')
     && Array.isArray(user.allowedImports);
-  return {
-    ...resolved,
+  return bindExplicitRuleOverrides({
+    ...merged,
     policySources: {
       allowedImports: repositoryOwnsAllowedImports
         ? {
@@ -140,5 +139,5 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
             source: 'built-in-default#allowedImports',
           },
     },
-  };
+  }, user.rules);
 }
