@@ -839,7 +839,7 @@ async function runScanWithScopedState(
   // Finalize: build the ProjectReport and persist all side-effects.
   // The finalize phase handles parseErrors, topOffenders, previousRun,
   // enrichment, assembly, --no-increase check, and persistence.
-  const { report, noIncreaseFailure, newDebtFailure } = await finalizeReport({
+  const { report, noIncreaseFailure, newDebtFailure, lockFailure } = await finalizeReport({
     cwd,
     config,
     options: {
@@ -945,6 +945,7 @@ async function runScanWithScopedState(
     config,
     noIncreaseFailure,
     newDebtFailure,
+    lockFailure,
     baseline,
     machineReadableStdout,
     // v0.24.0 (Workstream C): stats for the opt-in network beacon.

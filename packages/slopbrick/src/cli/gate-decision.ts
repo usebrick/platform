@@ -12,6 +12,7 @@ export interface GateDecisionInput {
   stagedGating?: StagedGatingResult;
   strictFailure?: boolean;
   newDebtFailure?: boolean;
+  lockFailure?: boolean;
   gitScopedEmptySelection?: boolean;
   maxSlop?: number;
   constitutionDrift?: number;
@@ -32,6 +33,8 @@ function reasonLabel(reason: GateDecision['reasons'][number], failedThresholds: 
       return 'max-slop limit';
     case 'max-new-issues':
       return 'max-new-issues limit';
+    case 'lock-new-debt':
+      return 'Lock new-debt policy';
     case 'constitution':
       return 'constitution gate';
     case 'incomplete-scan':
@@ -99,6 +102,7 @@ export function evaluateGateDecision(input: GateDecisionInput): GateDecision {
   if (input.strictFailure) reasons.push('strict');
   if (input.maxSlop !== undefined && report.aiSlopScore > input.maxSlop) reasons.push('max-slop');
   if (input.newDebtFailure) reasons.push('max-new-issues');
+  if (input.lockFailure) reasons.push('lock-new-debt');
   if (input.strictConstitution && (input.constitutionDrift ?? 0) > 0) reasons.push('constitution');
 
   return reasons.length === 0

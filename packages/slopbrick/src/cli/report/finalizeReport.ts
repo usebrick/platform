@@ -29,6 +29,7 @@ import { enrichReport } from './enrichReport';
 import { assembleScanReport } from './assembleScanReport';
 import { persistRun } from './persistRun';
 import { evaluateNewDebt, loadDebtBaselineState } from './debt-baseline';
+import { evaluateLockNewDebt } from './lock-new-debt';
 import { hashConfig } from '../../engine/cache';
 import { projectFirstScan } from '../../report/first-scan';
 import { effectiveIssuesForGate } from '../effective-issues.js';
@@ -95,6 +96,7 @@ export interface FinalizeReportResult {
   report: ProjectReport;
   noIncreaseFailure: boolean;
   newDebtFailure: boolean;
+  lockFailure: boolean;
 }
 
 export async function finalizeReport(
@@ -215,7 +217,7 @@ export async function finalizeReport(
   Object.assign(report, scanMetadata);
 
   const configHash = hashConfig(config);
-  const debtBaselineState = validScan
+  const debtBaselineState = validScan || options.ciGate?.lockNewDebt
     ? loadDebtBaselineState(cwd)
     : { status: 'missing' as const };
   const firstScanProjectionOptions = {
@@ -230,11 +232,11 @@ export async function finalizeReport(
   report.firstScan = projectFirstScan(report, firstScanProjectionOptions);
 
   let newDebtFailure = false;
+  const gateEligibleReport = {
+    ...report,
+    issues: effectiveIssuesForGate(report.issues, config),
+  };
   if (validScan && options.ciGate?.maxNewIssues !== undefined) {
-    const gateEligibleReport = {
-      ...report,
-      issues: effectiveIssuesForGate(report.issues, config),
-    };
     const newDebt = evaluateNewDebt(
       gateEligibleReport,
       debtBaselineState.status === 'loaded' ? debtBaselineState.baseline : undefined,
@@ -246,6 +248,28 @@ export async function finalizeReport(
     newDebtFailure = newDebt.failed;
     if (newDebt.failed && !options.quiet) {
       logger.error(newDebt.summary);
+    }
+  }
+
+  let lockFailure = false;
+  if (options.ciGate?.lockNewDebt) {
+    const policy = config.policySources?.allowedImports ?? {
+      authority: 'built-in-default' as const,
+      source: 'built-in-default#allowedImports',
+    };
+    const lockDecision = evaluateLockNewDebt({
+      report: gateEligibleReport,
+      baseline: debtBaselineState.status === 'loaded' ? debtBaselineState.baseline : undefined,
+      cwd,
+      configHash,
+      policySource: policy.source,
+      policyAuthority: policy.authority,
+      waivers: config.lock?.waivers ?? [],
+    });
+    report.lockDecision = lockDecision;
+    lockFailure = lockDecision.failed;
+    if (lockDecision.failed && !options.quiet) {
+      logger.error(lockDecision.summary);
     }
   }
 
@@ -313,5 +337,5 @@ export async function finalizeReport(
   // gate decisions above remain the pre-persistence scan contract.
   report.firstScan = projectFirstScan(report, firstScanProjectionOptions);
 
-  return { report, noIncreaseFailure, newDebtFailure };
+  return { report, noIncreaseFailure, newDebtFailure, lockFailure };
 }

@@ -22,6 +22,7 @@ import type {
 } from './report';
 import type { BaselineMeta, NewDebtDecision, ResearchMetrics } from './baseline';
 import type { FirstScanExperience } from './first-scan';
+import type { LockDecision } from './lock';
 
 /**
  * Accounting for every file selected by a CLI scan. Optional so historical
@@ -87,6 +88,7 @@ export interface GateDecision {
     | 'strict'
     | 'max-slop'
     | 'max-new-issues'
+    | 'lock-new-debt'
     | 'constitution'
     | 'incomplete-scan'
     | 'no-files-analyzed'
@@ -157,6 +159,8 @@ export interface ProjectReport {
   gateDecision?: GateDecision;
   /** Optional finding-identity delta used by the CI max-new-issues gate. */
   newDebt?: NewDebtDecision;
+  /** Optional bounded repository-policy enforcement receipt. */
+  lockDecision?: LockDecision;
   /** Additive evidence-led projection for the default scan-to-rescan UX. */
   firstScan?: FirstScanExperience;
   requested?: number;

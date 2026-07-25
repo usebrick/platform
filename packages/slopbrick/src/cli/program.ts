@@ -135,6 +135,7 @@ export interface ScanActionOutcome {
   exitCode: 0 | 1 | 2;
   noIncreaseFailure: boolean;
   newDebtFailure?: boolean;
+  lockFailure?: boolean;
   gateDecision?: GateDecision;
 }
 
@@ -368,6 +369,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         config,
         noIncreaseFailure,
         newDebtFailure,
+        lockFailure,
         baseline,
         machineReadableStdout,
         scanStats,
@@ -385,6 +387,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         config,
         noIncreaseFailure,
         newDebtFailure,
+        lockFailure,
         stagedGating: stagedGatingResult,
         strictFailure,
         maxSlop: options.ciGate?.maxSlop,
@@ -430,6 +433,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
           exitCode,
           noIncreaseFailure: false,
           newDebtFailure: false,
+          lockFailure,
           gateDecision,
         };
         if (invokedByCi) return outcome;
@@ -605,7 +609,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
       }
       if (invokedByCi) {
-        return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure, newDebtFailure, gateDecision };
+        return { report, config, scanStats, baseExitCode, exitCode, noIncreaseFailure, newDebtFailure, lockFailure, gateDecision };
       }
       process.exitCode = exitCode;
       return;

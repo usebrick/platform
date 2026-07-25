@@ -23,6 +23,7 @@ export interface EvaluateLockNewDebtInput {
   cwd: string;
   configHash?: string;
   policySource: string;
+  policyAuthority?: 'repository' | 'built-in-default';
   waivers?: readonly LockWaiver[];
   now?: Date;
 }
@@ -46,7 +47,11 @@ function notEvaluated(
     status: 'not-evaluated',
     failed: true,
     evaluated: false,
-    policy: { ruleId: LOCK_RULE_ID, source: input.policySource },
+    policy: {
+      ruleId: LOCK_RULE_ID,
+      source: input.policySource,
+      authority: input.policyAuthority ?? 'repository',
+    },
     baselineAvailable: input.baseline !== undefined,
     ...(input.baseline ? { baselineRevision: input.baseline.baseline_revision } : {}),
     qualifyingFindingCount,
@@ -74,6 +79,13 @@ export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecisi
       input,
       qualifying.length,
       'Lock gate not evaluated: no files were analyzed.',
+    );
+  }
+  if (input.policyAuthority === 'built-in-default') {
+    return notEvaluated(
+      input,
+      qualifying.length,
+      'Lock gate not evaluated: allowedImports is using built-in defaults. Declare allowedImports in slopbrick.config.mjs to approve repository enforcement.',
     );
   }
   if (!input.baseline) {
@@ -144,7 +156,11 @@ export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecisi
     status: failed ? 'failed' : 'passed',
     failed,
     evaluated: true,
-    policy: { ruleId: LOCK_RULE_ID, source: input.policySource },
+    policy: {
+      ruleId: LOCK_RULE_ID,
+      source: input.policySource,
+      authority: input.policyAuthority ?? 'repository',
+    },
     baselineAvailable: true,
     baselineRevision: input.baseline.baseline_revision,
     qualifyingFindingCount: byIdentity.size,

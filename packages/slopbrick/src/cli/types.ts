@@ -148,6 +148,7 @@ export interface ScanRunResult {
   config: import('../types').ResolvedConfig;
   noIncreaseFailure: boolean;
   newDebtFailure: boolean;
+  lockFailure: boolean;
   baseline?: import('../types').BaselineCache;
   machineReadableStdout: boolean;
   /** v0.24.0: always present; consumed by `BeaconEmitter` when

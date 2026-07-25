@@ -2,6 +2,7 @@
 export interface LockPolicyReceipt {
   ruleId: 'context/import-path-mismatch';
   source: string;
+  authority: 'repository' | 'built-in-default';
 }
 
 /** Repository-owned exception bound to one semantic finding identity. */
