@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import type { IssueEvidenceLocation, IssueEvidencePosition } from '../types';
+import type {
+  FixSuggestion,
+  Issue,
+  IssueEvidenceLocation,
+  IssueEvidencePosition,
+  ResolvedConfig,
+} from '../types';
 
 export type ExactImportRewriteRejectReason =
   | 'no-candidates'
@@ -11,6 +17,7 @@ export type ExactImportRewriteRejectReason =
   | 'already-fixed'
   | 'stale-repair'
   | 'receipt-mismatch'
+  | 'unauthorized-repair'
   | 'write-failed'
   | 'rollback-failed';
 
@@ -54,6 +61,10 @@ export type ExactImportRewriteRollbackResult =
   | { status: 'rolled-back' }
   | { status: 'rejected'; reason: ExactImportRewriteRejectReason };
 
+export type ExactImportRewriteInputResult =
+  | { status: 'accepted'; input: ExactImportRewriteInput }
+  | { status: 'rejected'; reason: ExactImportRewriteRejectReason };
+
 function sha256Bytes(value: Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -88,6 +99,56 @@ function isLiteralSpecifier(value: string): boolean {
   return value.length > 0
     && value === value.trim()
     && !/['"\\\0\r\n]/.test(value);
+}
+
+export function exactImportRewriteInputFromFinding(
+  issue: Issue,
+  fix: FixSuggestion,
+  config: ResolvedConfig,
+): ExactImportRewriteInputResult {
+  if (
+    fix.kind !== 'module-specifier'
+    || issue.ruleId !== 'context/import-path-mismatch'
+    || !issue.filePath
+    || fix.targetFile !== issue.filePath
+    || typeof fix.oldValue !== 'string'
+    || typeof fix.newValue !== 'string'
+  ) {
+    return { status: 'rejected', reason: 'unauthorized-repair' };
+  }
+
+  const rewrites = config.mend?.importRewrites;
+  if (
+    !rewrites
+    || !Object.prototype.hasOwnProperty.call(rewrites, fix.oldValue)
+    || rewrites[fix.oldValue] !== fix.newValue
+    || !Array.isArray(config.allowedImports)
+    || !config.allowedImports.some((prefix) => fix.newValue!.startsWith(prefix))
+  ) {
+    return { status: 'rejected', reason: 'unauthorized-repair' };
+  }
+
+  const evidence = issue.evidence;
+  if (
+    evidence?.status !== 'exact'
+    || evidence.kind !== 'matched-source-span'
+    || evidence.snippet !== fix.oldValue
+    || evidence.matched.field !== 'import-source'
+    || evidence.matched.key !== 'module-specifier'
+    || evidence.matched.value !== fix.oldValue
+    || evidence.details?.policyField !== 'allowedImports'
+  ) {
+    return { status: 'rejected', reason: 'invalid-evidence' };
+  }
+
+  return {
+    status: 'accepted',
+    input: {
+      oldValue: fix.oldValue,
+      newValue: fix.newValue,
+      location: evidence.location,
+    },
+  };
 }
 
 function resolveEdit(

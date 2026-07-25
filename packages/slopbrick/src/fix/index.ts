@@ -4,6 +4,12 @@ import { applyFocusRingFix } from './focus-ring';
 import { applyLayoutTokenFix, countWholeClassOccurrences } from './layout-token';
 import { applyUseClientFix } from './use-client';
 import { sha256Text } from './binding';
+import {
+  applyExactImportRewritePlan,
+  exactImportRewriteInputFromFinding,
+  planExactImportRewrites,
+} from './import-rewrite';
+import type { ExactImportRewriteInput } from './import-rewrite';
 
 export interface FixApplication {
   ruleId: string;
@@ -24,6 +30,10 @@ interface GroupedFixes {
   replaces: FixSuggestion[];
   replaceApps: FixApplication[];
   cssAnchors: FixApplication[];
+  moduleSpecifiers: Array<{
+    input: ExactImportRewriteInput;
+    app: FixApplication;
+  }>;
   preSkipped: FixApplication[];
 }
 
@@ -112,6 +122,7 @@ export async function applyFixes(
         replaces: [],
         replaceApps: [],
         cssAnchors: [],
+        moduleSpecifiers: [],
         preSkipped: [],
       };
       const app: FixApplication = {
@@ -134,6 +145,13 @@ export async function applyFixes(
         group.replaceApps.push(app);
       } else if (fix.kind === 'css-anchor') {
         group.cssAnchors.push(app);
+      } else if (fix.kind === 'module-specifier') {
+        const candidate = exactImportRewriteInputFromFinding(issue, fix, config);
+        if (candidate.status === 'accepted') {
+          group.moduleSpecifiers.push({ input: candidate.input, app });
+        } else {
+          group.preSkipped.push({ ...app, reason: candidate.reason });
+        }
       }
 
       byFile.set(fix.targetFile, group);
@@ -146,6 +164,46 @@ export async function applyFixes(
     const applied: FixApplication[] = [];
     const skipped: FixApplication[] = [...group.preSkipped];
     const errors: string[] = [];
+
+    if (group.moduleSpecifiers.length > 0) {
+      const hasConflictingFixKind = group.inserts.length > 0
+        || group.replaces.length > 0
+        || group.cssAnchors.length > 0;
+      if (hasConflictingFixKind) {
+        skipped.push(...group.moduleSpecifiers.map(({ app }) => ({
+          ...app,
+          reason: 'conflicting-fix',
+        })));
+      } else {
+        try {
+          const source = readFileSync(filePath, 'utf8');
+          const planned = planExactImportRewrites(
+            source,
+            group.moduleSpecifiers.map(({ input }) => input),
+          );
+          if (planned.status === 'rejected') {
+            skipped.push(...group.moduleSpecifiers.map(({ app }) => ({
+              ...app,
+              reason: planned.reason,
+            })));
+          } else {
+            const result = applyExactImportRewritePlan(filePath, planned.plan);
+            if (result.status === 'applied') {
+              applied.push(...group.moduleSpecifiers.map(({ app }) => app));
+            } else if (result.reason === 'write-failed') {
+              errors.push(`import rewrite failed for ${filePath}: ${result.reason}`);
+            } else {
+              skipped.push(...group.moduleSpecifiers.map(({ app }) => ({
+                ...app,
+                reason: result.reason,
+              })));
+            }
+          }
+        } catch (err) {
+          errors.push(`import rewrite failed for ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    }
 
     if (group.inserts.length > 0) {
       try {

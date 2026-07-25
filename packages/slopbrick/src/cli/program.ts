@@ -508,8 +508,8 @@ export async function runCli({ start }: { start: number }): Promise<void> {
         // v0.10.1: --show-fixes-diff prints what would change (renamed from
         // --diff to free --diff <ref> for the VibeDrift-compatible git-ref
         // alias of --since). With --dry-run, we skip the apply step entirely.
-        if (options.showFixesDiff) {
-          const diff = formatUnifiedDiff(report, cwd);
+        if (options.showFixesDiff || options.dryRun) {
+          const diff = formatUnifiedDiff(report, cwd, config);
           if (diff) logger.info(diff);
         }
         if (options.dryRun) {
@@ -539,7 +539,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
       // --show-fixes-diff without --fix: just show the diff (no apply).
       if (options.showFixesDiff) {
-        const diff = formatUnifiedDiff(report, cwd);
+        const diff = formatUnifiedDiff(report, cwd, config);
         if (diff) logger.info(diff);
       }
 
