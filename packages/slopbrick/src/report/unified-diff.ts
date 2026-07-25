@@ -42,23 +42,17 @@ function applyFixesToString(
   }
 
   if (moduleEntries.length > 0 && !hasConflictingFixKind && config) {
-    const inputs = moduleEntries.map(({ issue, fix }) => (
-      exactImportRewriteInputFromFinding(issue, fix, config)
-    ));
-    if (inputs.every((result) => result.status === 'accepted')) {
-      const planned = planExactImportRewrites(
-        original,
-        inputs.map((result) => result.status === 'accepted' ? result.input : neverImportRewriteInput()),
-      );
-      if (planned.status === 'planned') content = planned.plan.after;
+    const inputs = [];
+    for (const { issue, fix } of moduleEntries) {
+      const result = exactImportRewriteInputFromFinding(issue, fix, config);
+      if (result.status === 'rejected') return content;
+      inputs.push(result.input);
     }
+    const planned = planExactImportRewrites(original, inputs);
+    if (planned.status === 'planned') content = planned.plan.after;
   }
 
   return content;
-}
-
-function neverImportRewriteInput(): never {
-  throw new Error('unreachable rejected import rewrite');
 }
 
 /**
