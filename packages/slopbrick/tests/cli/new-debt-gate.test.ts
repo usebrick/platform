@@ -11,6 +11,7 @@ import {
   saveDebtBaseline,
 } from '../../src/cli/report/debt-baseline';
 import { compareFindingBaseline } from '../../src/report/finding-delta';
+import { legacyFindingIdentity } from '../../src/report/finding-identity';
 import type { DebtBaseline, Issue, ProjectReport } from '../../src/types';
 import { runScan } from '../../src/cli/scan';
 import { hashConfig } from '../../src/engine/cache';
@@ -102,6 +103,32 @@ describe('durable new-debt baseline', () => {
     expect(findingIdentity(shiftedFinding, cwd)).toBe(
       findingIdentity(baselineFinding, cwd),
     );
+  });
+
+  it('versions semantic baselines without invalidating unmarked revision-2 identities', () => {
+    const finding = exactIssue('src/A.tsx', '@/legacy/Button', 4);
+    const semantic = buildDebtBaseline(report([finding]), cwd, 'config-a', 'commit-a');
+    expect(
+      (semantic as DebtBaseline & { finding_identity_version?: number }).finding_identity_version,
+    ).toBe(2);
+
+    const legacyIdentity = legacyFindingIdentity(finding, cwd);
+    const legacy: DebtBaseline & { finding_identity_version?: number } = {
+      ...semantic,
+      finding_ids: [legacyIdentity],
+      finding_snapshots: semantic.finding_snapshots?.map((snapshot) => ({
+        ...snapshot,
+        identity: legacyIdentity,
+      })),
+    };
+    delete legacy.finding_identity_version;
+
+    expect(compareFindingBaseline(report([finding]), legacy, cwd, 'config-a')).toMatchObject({
+      status: 'compared',
+      newCount: 0,
+      unchangedCount: 1,
+      resolvedCount: 0,
+    });
   });
 
   it('builds a bounded revision-2 snapshot set from active unique findings', () => {
