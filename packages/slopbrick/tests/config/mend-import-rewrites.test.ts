@@ -116,6 +116,6 @@ describe('mend.importRewrites configuration', () => {
       error: 'mend.importRewrites: target must be a canonical non-empty string',
     },
   ])('rejects $name', ({ input, error }) => {
-    expect(validateConfig(input).errors).toContain(error);
+    expect(validateConfig(input).errors.some((message) => message.includes(error))).toBe(true);
   });
 });

@@ -123,6 +123,19 @@ function validateStringArray(
   }
 }
 
+const MEND_IMPORT_SPECIFIER_MAX_CHARS = 256;
+const MEND_IMPORT_SPECIFIER_MAX_BYTES = 768;
+const PROJECT_ALIAS_RE = /^[@~]\//;
+
+function isCanonicalImportSpecifier(value: unknown): value is string {
+  return typeof value === 'string'
+    && value.length > 0
+    && value === value.trim()
+    && !/[\0\r\n]/.test(value)
+    && value.length <= MEND_IMPORT_SPECIFIER_MAX_CHARS
+    && new TextEncoder().encode(value).byteLength <= MEND_IMPORT_SPECIFIER_MAX_BYTES;
+}
+
 export interface ConfigValidationResult {
   valid: boolean;
   errors: string[];
@@ -292,6 +305,61 @@ export function validateConfig(config: unknown): ConfigValidationResult {
               }
             }
           });
+        }
+      }
+    }
+  }
+
+  if ('mend' in config && config.mend !== undefined) {
+    if (!isPlainObject(config.mend)) {
+      errors.push('mend: must be an object.');
+    } else {
+      for (const key of Object.keys(config.mend)) {
+        if (key !== 'importRewrites') {
+          errors.push(`mend: unknown key "${key}".`);
+        }
+      }
+
+      if ('importRewrites' in config.mend && config.mend.importRewrites !== undefined) {
+        if (!isPlainObject(config.mend.importRewrites)) {
+          errors.push('mend.importRewrites: must be an object.');
+        } else {
+          const rewrites = Object.entries(config.mend.importRewrites);
+          if (rewrites.length !== 1) {
+            errors.push('mend.importRewrites: must contain exactly one mapping.');
+          }
+
+          const allowedImports = Array.isArray(config.allowedImports)
+            && config.allowedImports.length > 0
+            && config.allowedImports.every((value) => typeof value === 'string')
+            ? config.allowedImports
+            : undefined;
+          if (!allowedImports) {
+            errors.push('mend.importRewrites: requires a non-empty repository allowedImports array.');
+          }
+
+          for (const [source, target] of rewrites) {
+            const canonicalSource = isCanonicalImportSpecifier(source);
+            const canonicalTarget = isCanonicalImportSpecifier(target);
+            if (!canonicalSource) {
+              errors.push('mend.importRewrites: source must be a canonical non-empty string.');
+            }
+            if (!canonicalTarget) {
+              errors.push('mend.importRewrites: target must be a canonical non-empty string.');
+            }
+            if (canonicalSource && !PROJECT_ALIAS_RE.test(source)) {
+              errors.push('mend.importRewrites: source must start with "@/" or "~/".');
+            }
+            if (canonicalSource && canonicalTarget && source === target) {
+              errors.push('mend.importRewrites: source and target must differ.');
+            }
+            if (allowedImports && canonicalSource && allowedImports.some((prefix) => source.startsWith(prefix))) {
+              errors.push('mend.importRewrites: source must violate allowedImports.');
+            }
+            if (allowedImports && canonicalTarget && !allowedImports.some((prefix) => target.startsWith(prefix))) {
+              errors.push('mend.importRewrites: target must match allowedImports.');
+            }
+          }
         }
       }
     }
