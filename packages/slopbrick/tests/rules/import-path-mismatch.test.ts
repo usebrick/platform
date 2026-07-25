@@ -54,6 +54,27 @@ describe('context/import-path-mismatch', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0].ruleId).toBe('context/import-path-mismatch');
     expect(issues[0].message).toContain('@/components/Button');
+    expect(issues[0]).toMatchObject({
+      aiSpecific: false,
+      evidence: {
+        kind: 'matched-source-span',
+        status: 'exact',
+        snippet: '@/components/Button',
+        location: {
+          start: { line: 1, column: 25 },
+          end: { line: 1, column: 43 },
+        },
+        matched: {
+          field: 'import-source',
+          key: 'module-specifier',
+          value: '@/components/Button',
+        },
+        details: {
+          policyField: 'allowedImports',
+          allowedPrefixCount: 1,
+        },
+      },
+    });
   });
 
   it('does not flag imports that match an allowed prefix', async () => {
