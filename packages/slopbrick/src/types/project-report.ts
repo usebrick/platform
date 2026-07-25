@@ -287,9 +287,9 @@ export interface ProjectReport {
   docDrift?: DocDriftLevel;
   /** Per-finding list behind the doc-freshness score. */
   docFindings?: DocFinding[];
-  /** Phase 8 — Database Health (0-100, higher = better). Static-only
-   *  analysis via `pgsql-parser` (libpg_query port). 100 = no anti-patterns
-   *  found in SQL / Prisma / Drizzle schema files. */
+  /** Legacy Database Health compatibility score (0-100, higher = better).
+   *  Derived only from the remaining TypeScript `db/sql-concat` rule; the
+   *  former schema rules and SQL parser are retired. */
   dbHealth?: number;
   /** Categorical drift band, derived from `dbHealth`. */
   dbDrift?: DbDriftLevel;

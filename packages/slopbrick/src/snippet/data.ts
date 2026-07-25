@@ -201,7 +201,7 @@ const RULE_HINTS: Record<string, string> = {
     "If the project needs shared caching, retries, error boundaries, or abort handling, route component requests through its data-fetching layer. Direct fetch() is fine when those capabilities are intentionally unnecessary.",
   'ai/console-debug-storm':
     "Without a structured logger, either 10 or more debug statements or five console.log calls in a 30-line window create unbounded noise. Remove them before commit or use the project's logger or debugger.",
-  // v0.17.0 — db/* rules (Postgres static analysis via pgsql-parser)
+  // v0.17.0 compatibility hint for the sole remaining db/* rule.
   'db/sql-concat':
     'Never build SQL with template-literal interpolation — `db.query(\`SELECT … WHERE id = ${id}\`)` is a SQL injection vector. Use parameterized queries (`db.query("… WHERE id = $1", [id])`) or your ORM query builder.',
   // v0.17.0 — docs/* rules (markdown drift detection)

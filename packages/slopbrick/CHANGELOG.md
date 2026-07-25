@@ -68,6 +68,17 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Changed
 
+- Removed the dormant `pgsql-parser` runtime dependency and corrected the
+  legacy `db`, `lock`, and `watch` descriptions so they no longer claim
+  retired schema rules or the not-yet-proven Lock workflow. The current
+  database compatibility surface contains only `db/sql-concat`, which the
+  approved policy normally supersedes with `security/sql-construction`.
+- Hardened the candidate dependency tree by moving `minimatch` to its patched
+  release line, aligning Node type declarations with the supported Node 22/24
+  runtimes, and removing duplicate package build invocations.
+- Removed runtime import cycles between Core loaders/validators, scan/watch,
+  documentation rules/orchestration, spacing configuration, and calibration
+  overlap verification without changing their public compatibility exports.
 - Aligned the unreleased workspace-candidate documentation around UseBrick as
   the sole quality, coherence, and verification product and SlopBrick as its
   central AI-slop scanner, shipped CLI/MCP front door, and acquisition surface.

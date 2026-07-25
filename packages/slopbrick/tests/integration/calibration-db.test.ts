@@ -9,17 +9,9 @@ import { filelistPath } from '../../src/corpus-paths';
 /**
  * db/* corpus calibration using .sql files via the `db` subcommand.
  *
- * The db/* rules in v0.8+ (src/engine/db-health.ts) parse SQL DDL with
- * pgsql-parser and fire on:
- *   - db/missing-fk-index    (REFERENCES without index)
- *   - db/duplicate-index
- *   - db/missing-not-null
- *   - db/enum-sprawl
- *   - db/naming-inconsistency
- *   - db/sql-concat          (template-literal SQL in TS/TSX/JS)
- *
- * The first 5 only fire on actual .sql files. db/sql-concat fires on
- * TS/TSX/JS code too.
+ * Historical corpus harness for the one remaining db/* compatibility rule,
+ * `db/sql-concat`. The five schema rules and their SQL parser are retired;
+ * current policy normally routes the behavior to `security/sql-construction`.
  *
  * Negative corpus (353 .sql files): supabase/migrations, sqlfluff fixtures,
  *   ollama schema, langchaingo examples, flask tutorial data, prisma examples.
@@ -130,22 +122,13 @@ function scanSqlFiles(sqlListPath: string, tsListPath: string, cachePath?: strin
 }
 
 /**
- * db/* rules — 6 total in src/engine/db-health.ts
+ * Sole remaining db/* compatibility rule in src/engine/db-health.ts.
  *
  * Thresholds: currently permissive (1.0× floor) since the positive .sql
  * corpus is small (11 files). Tighten as more AI-coded repos with SQL
  * migrations are cloned.
  */
 const RATIO_THRESHOLDS: Array<{ ruleId: string; minRatio: number; measured: number; category: string; note: string }> = [
-  // db/* rules — currently mostly INVERTED on this corpus because the negative
-  // side has more SQL schema migrations (django, keycloak, saleor, supabase)
-  // than the positive side (small AI-coded apps). Thresholds set to detect
-  // catastrophic regressions only. Will tighten as positive corpus grows.
-  { ruleId: 'db/missing-fk-index', minRatio: 0.06, measured: 0.12, category: 'db', note: 'AI misses FK index on hot path (INVERTED — neg has way more schema migrations)' },
-  { ruleId: 'db/duplicate-index', minRatio: 0.0, measured: 0, category: 'db', note: 'AI creates duplicate indexes (DORMANT — neither corpus has dup indexes)' },
-  { ruleId: 'db/missing-not-null', minRatio: 0.05, measured: 0.11, category: 'db', note: 'AI leaves NOT NULL unset (INVERTED — neg has more migrations)' },
-  { ruleId: 'db/enum-sprawl', minRatio: 0.0, measured: 0, category: 'db', note: 'AI adds too many enum values (DORMANT)' },
-  { ruleId: 'db/naming-inconsistency', minRatio: 0.0, measured: 0.00, category: 'db', note: 'AI mixes snake_case and camelCase (DORMANT on positive)' },
   { ruleId: 'db/sql-concat', minRatio: 0.05, measured: 0, category: 'db', note: 'AI concatenates SQL strings (DORMANT on positive — needs AI TS repos with SQL templates)' },
 ];
 

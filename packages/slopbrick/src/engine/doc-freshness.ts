@@ -28,10 +28,7 @@ import type { DocFinding, DocDriftLevel, ResolvedConfig, Issue, Rule } from '../
 
 import { effectiveIssuesForGate, effectiveIssuesForScore } from '../cli/effective-issues';
 import { getRunnableRuleOverrides } from '../config/rule-override-provenance';
-import { brokenLinkRule } from '../rules/docs/broken-link';
 import { getCurrentEvidencePolicyAccessors } from '../rules/current-evidence-policy-runtime';
-import { staleFunctionReferenceRule } from '../rules/docs/stale-function-reference';
-import { stalePackageReferenceRule } from '../rules/docs/stale-package-reference';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -537,6 +534,18 @@ export async function buildDocFreshness(
   config: ResolvedConfig,
   options: BuildDocFreshnessOptions = {},
 ): Promise<BuildDocFreshnessResult> {
+  // Rules consume the markdown helpers exported by this module. Load the rule
+  // objects only after this module is initialized so the helper layer does not
+  // form a static rule-orchestrator import cycle.
+  const [
+    { brokenLinkRule },
+    { staleFunctionReferenceRule },
+    { stalePackageReferenceRule },
+  ] = await Promise.all([
+    import('../rules/docs/broken-link'),
+    import('../rules/docs/stale-function-reference'),
+    import('../rules/docs/stale-package-reference'),
+  ]);
   const maxDocFiles = options.maxDocFiles ?? 500;
   const maxSourceFiles = options.maxSourceFiles ?? 500;
   const docInclude = ['**/*.md', '**/*.mdx'];

@@ -339,7 +339,7 @@ export async function enrichReport(input: EnrichmentInput): Promise<EnrichmentRe
     }
   }
 
-  // DB Health (Postgres-static, via pgsql-parser). Failure is non-fatal.
+  // Legacy DB Health compatibility score. Failure is non-fatal.
   let dbHealth: ProjectReport['dbHealth'];
   let dbDrift: ProjectReport['dbDrift'];
   let dbFindings: ProjectReport['dbFindings'];

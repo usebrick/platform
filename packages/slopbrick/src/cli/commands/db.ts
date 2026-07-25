@@ -11,16 +11,15 @@ import { isGitScopedEmptySelection, isIncompleteScan } from '../../report/scan-v
 /**
  * v0.18.x (R-H1): db subcommand extracted from cli/program.ts.
  *
- * Database Health (0-100) — static-only Postgres analysis via
- * pgsql-parser (libpg_query port). 6 rules: missing-fk-index,
- * duplicate-index, missing-not-null, enum-sprawl, naming-inconsistency,
- * sql-concat.
+ * Compatibility database-health surface. The five former schema rules are
+ * retired; the only remaining rule is `db/sql-concat`, normally superseded by
+ * `security/sql-construction` in the main scanner.
  */
 export function registerDb(program: Command): void {
   program
     .command('db')
     .description(
-      'Database Health (0-100) — static-only Postgres analysis via pgsql-parser (libpg_query port). 6 rules: missing-fk-index, duplicate-index, missing-not-null, enum-sprawl, naming-inconsistency, sql-concat.',
+      'legacy TypeScript SQL-construction health check; schema-level database rules are retired',
     )
     .option('--format <text|json|markdown>', 'output format', 'text')
     .option('--strict', 'exit 1 on high/critical drift (CI gate)', false)

@@ -10,7 +10,7 @@
 import type { Issue, Rule, RuleContext, ScanFacts } from '../../types';
 import { createRule } from '../rule';
 import {   splitClassName, parseStyleObject, classNamesFromJsx , STYLE_BLOCK_RE, lineOfSource , matchAll } from '../utils';
-import { DEFAULT_SPACING_SCALE } from '../../config';
+import { DEFAULT_SPACING_SCALE } from '../../config/defaults';
 
 const SPACING_PREFIX_RE = /^-?(p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml|gap|gap-x|gap-y|space-x|space-y)-(.+)$/;
 const ARBITRARY_VALUE_RE = /^(-?\d+(?:\.\d+)?)(px|rem)$/;

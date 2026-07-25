@@ -11,8 +11,9 @@
 // Categorical bands:
 //   80-100 low, 60-79 medium, 40-59 high, 0-39 critical
 //
-// The pgsql-parser dep is retained in package.json — future schema rules
-// can re-use it without adding a new dep.
+// No SQL parser is loaded. Reintroducing schema rules requires a fresh,
+// evidence-backed dependency decision rather than retaining dormant runtime
+// weight in the published package.
 
 import { readFileSync } from 'node:fs';
 import { extname, relative, resolve } from 'node:path';

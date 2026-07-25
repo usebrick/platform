@@ -1,8 +1,9 @@
 // Database Health CLI surface (Phase 8 — target 0.8.0).
 //
-// `slopbrick db` walks the project's SQL / TS files, runs the 6
-// db-health rules, and computes the dbHealth score (0-100, higher =
-// better) plus a categorical `dbDrift` band.
+// `slopbrick db` is a compatibility surface for the one remaining legacy
+// db-health rule (`db/sql-concat`). It scans TypeScript source only; the
+// approved evidence policy normally supersedes that rule with
+// `security/sql-construction` in the main scanner.
 //
 //   runDbScan(cwd, config, options) -> { result, scan }
 //   formatDbReport(result, { json?, markdown? }) -> string
@@ -39,7 +40,7 @@ export const DB_NOT_APPLICABLE_MESSAGE =
 
 /**
  * Run the db scan. We re-use `runScan` to load config + cache, then
- * call `buildDbHealth` which does the schema analysis.
+ * call `buildDbHealth` for the legacy TypeScript SQL-construction analysis.
  */
 export async function runDbScan(
   cwd: string,

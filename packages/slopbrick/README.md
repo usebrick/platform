@@ -211,13 +211,14 @@ in documentation.
 
 ```bash
 npx slopbrick ci
-npx slopbrick lock      # install the pre-commit gate
+npx slopbrick lock      # install the legacy staged-scan pre-commit hook
 npx slopbrick watch
 ```
 
-These are current SlopBrick commands. The planned Lock capability is a future
-policy/governance boundary inside UseBrick; it is not a separate product or
-package and does not change what the current CLI ships.
+These are current SlopBrick commands. The command named `lock` only installs a
+generic staged-scan hook; it is not the planned Lock new-debt policy workflow.
+That capability remains a future governance boundary inside UseBrick, not a
+separate product or package.
 
 `scan --baseline` writes the score baseline and a separate durable finding
 baseline under `.slopbrick/cache/`. `ci --max-new-issues <n>` compares stable

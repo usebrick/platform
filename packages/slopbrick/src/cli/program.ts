@@ -30,8 +30,8 @@ import {
   printFixSummary,
   renderOutput,
   outputScanResults,
-  watchProject,
 } from './scan';
+import { watchProject } from './watch';
 import { runInitWizard, runDoctor } from './init';
 // v0.17.5 (R-H1): per-command wiring lives in `cli/commands/<name>.ts`.
 // `program.ts` is the single source of truth for which commands exist;

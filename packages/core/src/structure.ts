@@ -16,16 +16,16 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+import type { RepositoryStructureInventory as InventoryFile } from './generated/inventory';
+import type { RepositoryStructureConstitution as ConstitutionFile } from './generated/constitution';
+import type { RepositoryStructureHealth as HealthFile } from './generated/health';
+import type { FileMtimeEntry } from './structure-primitives';
 import {
-  type RepositoryStructureInventory as InventoryFile,
-  type RepositoryStructureConstitution as ConstitutionFile,
-  type RepositoryStructureHealth as HealthFile,
-  type FileMtimeEntry,
   isInventoryFile,
   isConstitutionFile,
   isFileMtimeEntry,
   isHealthFile,
-} from './index';
+} from './validators';
 
 export const INVENTORY_FILENAME = 'inventory.json';
 export const CONSTITUTION_FILENAME = 'constitution.json';

@@ -7,8 +7,8 @@ import { installHook, uninstallHook } from '../installer.js';
  * v0.18.x (R-H1): lock subcommand extracted from cli/program.ts.
  *
  * Installs a Git pre-commit hook that runs `slopbrick scan --staged`
- * on every commit. The LockBrick prevention loop: block AI-introduced
- * slop from ever reaching the repo.
+ * on every commit. This is a legacy convenience hook, not the planned Lock
+ * new-debt policy workflow.
  *
  * Distinct from `install`/`uninstall` (the legacy hook install) and
  * `LockBrick` (the platform concept). The `--husky` flag forces
@@ -18,7 +18,7 @@ import { installHook, uninstallHook } from '../installer.js';
 export function registerLock(program: Command): void {
   program
     .command('lock')
-    .description('install a Git pre-commit hook that runs `slopbrick scan --staged` on every commit. The LockBrick prevention loop: block AI-introduced slop from ever reaching the repo.')
+    .description('install the legacy Git pre-commit hook that runs `slopbrick scan --staged`')
     .option('--uninstall', 'remove the pre-commit hook instead of installing it')
     .option('--husky', 'force-install under .husky/pre-commit (Husky v9). Default auto-detects via .husky/ dir.')
     .option('--workspace <path>', 'workspace directory', process.cwd())

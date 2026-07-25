@@ -32,22 +32,7 @@
  * types from `@usebrick/core` (re-exported from `./generated/*`).
  */
 
-export const STRUCTURE_SCHEMA_VERSION = '5' as const;
-
-/**
- * Per-file mtime + fingerprint for the incremental refresh path.
- * Stored as `.slopbrick/cache.json` (not part of the public schema). This is
- * distinct from SlopBrick's root-level `.slopbrick-cache.json` incremental
- * scan cache, which has a different format.
- */
-export interface FileMtimeEntry {
-  /** Absolute path of the scanned file. */
-  file: string;
-  /** mtime in milliseconds since epoch. */
-  mtimeMs: number;
-  /** Hash of the file content at scan time. */
-  hash: string;
-}
+export { STRUCTURE_SCHEMA_VERSION, type FileMtimeEntry } from './structure-primitives';
 
 // Re-export the validators from their new home. Kept here as a
 // backward-compat shim so existing imports of the form

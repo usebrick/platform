@@ -41,7 +41,7 @@
  * shapes.
  */
 
-import { STRUCTURE_SCHEMA_VERSION } from './structure-types';
+import { STRUCTURE_SCHEMA_VERSION } from './structure-primitives';
 import type {
   Pattern as StructurePattern,
   Component as ComponentFingerprint,

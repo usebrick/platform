@@ -125,7 +125,6 @@ export type {
 export { buildBaselineCache } from './report/baseline-cache';
 export { printFixSummary, type FixSummary } from './report/printFixSummary';
 export { renderOutput, outputScanResults } from './report/renderOutput';
-export { watchProject } from './watch';
 
 // Cross-file duplicate detection and the parser-cache adapter currently use
 // process-scoped state. Serialize public runScan() calls until those internals

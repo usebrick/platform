@@ -5,7 +5,7 @@ import type { CliGlobalOptions } from '../scan.js';
  * v0.18.x (R-H1): watch subcommand extracted from cli/program.ts.
  *
  * Re-runs scan on every file change. Flags new violations as you write.
- * The LockBrick prevention loop entry.
+ * This is an interactive scan loop, not the planned Lock new-debt gate.
  *
  * The `scanAction` is passed as a parameter (not imported) because
  * it is a closure defined inside `runCli` that captures the global
@@ -15,7 +15,7 @@ import type { CliGlobalOptions } from '../scan.js';
 export function registerWatch(program: Command, scanAction: (paths: string[], options: CliGlobalOptions, command: Command) => Promise<void>): void {
   program
     .command('watch')
-    .description('re-run scan on every file change. Flags new violations as you write. The LockBrick prevention loop entry.')
+    .description('re-run the current scan on every file change')
     .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
       const rawGlobals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
       const options: CliGlobalOptions = {

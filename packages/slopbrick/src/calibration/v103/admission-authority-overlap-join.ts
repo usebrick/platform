@@ -31,7 +31,7 @@ import {
 } from '@usebrick/core';
 
 import type { AdmissionToolAuthorityReceiptResolution } from './admission-publication';
-import { verifyOverlapArtifactRelations } from './admission-overlap-publication';
+import { verifyOverlapArtifactRelations } from './admission-overlap-relations';
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true });

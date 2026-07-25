@@ -83,7 +83,7 @@ These scores use heuristics that are calibrated against real projects but not as
 | **Test Quality** | 0–100 | Canonical effective finding set, including effective `test/*` findings | Heuristic (FP control deferred to 0.9.x) |
 | **Business Logic Coherence** | 0–100 | 8 `business-logic/*` rules | Heuristic (named constants, regex) |
 | **Documentation Freshness** | 0–100 + `docDrift` band | 4 `docs/*` rules (2 deferred) | Heuristic + arXiv 2606.04769 baseline F1=96.73% |
-| **Database Health** | 0–100 + `dbDrift` band | 6 `db/*` rules + `pgsql-parser` | Heuristic (live-DB in 8.1) |
+| **Database Health** | 0–100 + `dbDrift` band | Legacy `db/sql-concat` compatibility rule; normally superseded by `security/sql-construction` | Legacy heuristic; no schema parser |
 
 ### Tier 3 — Derived (composites)
 
@@ -214,7 +214,7 @@ These are the unresolved design tensions as of 0.9.0. They're documented so futu
 |-----------|----------------|-----|---------------|
 | Two-user framing | Agent-primary | MCP tools are the highest-leverage surface | Is the human a first-class user or just a consumer of agent outputs? |
 | Heuristic Tier 2 FPs | Ship with documented FPs | Better to ship a useful-but-noisy rule than no rule | When to gate on real user feedback vs. ship more rules? |
-| Postgres-only DB | v1 Postgres-static via `pgsql-parser` | Multi-dialect tax doesn't pay off in AI-built segment | When (if ever) does MySQL support justify the maintenance burden? |
+| Database schema analysis | Retired until admitted evidence justifies a parser and rule family | Dormant rules do not justify published dependency weight | Which schema problems and dialects earn a new evidence-backed implementation? |
 | Docs stale-env-var + route | Deferred to 0.9.x | IEEE 2025 + Docsie case studies show high FP | When does user feedback justify shipping them? |
 | Phase 9 Product Consistency | Not in 0.9.0 | Lower leverage than the composite endgame | When does a project grow enough to need terminology drift detection? |
 | Per-phase MCP tools | Shipped alongside `slop_governance` | Avoid forcing early users to learn a new shape | When to deprecate per-phase tools? |
