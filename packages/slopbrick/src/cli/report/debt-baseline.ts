@@ -74,6 +74,7 @@ export function buildDebtBaseline(
     git_head: gitHead,
     baseline_created: new Date().toISOString(),
     baseline_revision: 2,
+    finding_identity_version: 2,
     finding_ids: findingSnapshots.map(({ identity }) => identity),
     finding_snapshots: findingSnapshots,
   };
@@ -160,6 +161,9 @@ function isDebtBaseline(value: unknown): value is DebtBaseline {
     typeof record.git_head === 'string' &&
     typeof record.baseline_created === 'string' &&
     (record.baseline_revision === 1 || record.baseline_revision === 2) &&
+    (record.finding_identity_version === undefined
+      || record.finding_identity_version === 1
+      || record.finding_identity_version === 2) &&
     Array.isArray(record.finding_ids) &&
     record.finding_ids.every((id) => typeof id === 'string')
   )) return false;
@@ -228,6 +232,9 @@ function projectDebtBaseline(baseline: DebtBaseline): DebtBaseline {
     git_head: baseline.git_head,
     baseline_created: baseline.baseline_created,
     baseline_revision: baseline.baseline_revision,
+    ...(baseline.finding_identity_version !== undefined
+      ? { finding_identity_version: baseline.finding_identity_version }
+      : {}),
     finding_ids: [...baseline.finding_ids],
     ...(baseline.finding_snapshots
       ? { finding_snapshots: baseline.finding_snapshots.map(projectFindingSnapshot) }

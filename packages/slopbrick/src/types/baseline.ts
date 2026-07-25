@@ -47,6 +47,11 @@ export interface DebtBaseline {
   git_head: string;
   baseline_created: string;
   baseline_revision: number;
+  /**
+   * Finding identity algorithm used by `finding_ids` and snapshots.
+   * Unmarked historical baselines are interpreted as legacy version 1.
+   */
+  finding_identity_version?: 1 | 2;
   finding_ids: string[];
   finding_snapshots?: DebtBaselineFindingSnapshot[];
 }

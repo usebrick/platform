@@ -5,18 +5,23 @@ import type {
   FirstScanFindingDelta,
   ProjectReport,
 } from '../types';
-import { findingIdentity } from './finding-identity';
+import { findingIdentity, legacyFindingIdentity } from './finding-identity';
 
 export interface FindingBaselineComparison extends FirstScanFindingDelta {
   findingChanges: ReadonlyMap<string, FirstScanFindingChange>;
   resolvedSnapshots?: DebtBaselineFindingSnapshot[];
 }
 
-function activeFindingIds(report: ProjectReport, cwd: string): string[] {
+function activeFindingIds(
+  report: ProjectReport,
+  cwd: string,
+  identityVersion: 1 | 2,
+): string[] {
+  const identify = identityVersion === 1 ? legacyFindingIdentity : findingIdentity;
   return [...new Set(
     (report.issues ?? [])
       .filter((issue) => (issue.severity as string) !== 'off')
-      .map((issue) => findingIdentity(issue, cwd)),
+      .map((issue) => identify(issue, cwd)),
   )].sort();
 }
 
@@ -26,7 +31,8 @@ export function compareFindingBaseline(
   cwd: string,
   configHash?: string,
 ): FindingBaselineComparison {
-  const currentIds = activeFindingIds(current, cwd);
+  const identityVersion = baseline?.finding_identity_version ?? (baseline ? 1 : 2);
+  const currentIds = activeFindingIds(current, cwd, identityVersion);
   if (!baseline) {
     return {
       kind: 'slopbrick-finding-delta-v1',
