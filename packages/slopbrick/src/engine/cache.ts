@@ -79,6 +79,7 @@ const BASELINE_HASH_KEYS = new Set<keyof ResolvedConfig>([
   'typographyScale',
   'arbitraryValueAllowlist',
   'clampAllowlist',
+  'allowedImports',
   'wcag',
   'include',
   'exclude',
