@@ -7,10 +7,15 @@ packages/slopbrick/slopbrick-*.tgz
 
 # Build output
 dist/
+/.astro/
+/output/
+/src/env.d.ts
 
 # Agent session / cache
 .worktrees/
 .kimi-code/
+/.playwright-cli/
+/pet-runs/
 # Kimi session exports accidentally committed in v0.39.0; sweep the
 # pattern so future exports stay out of the tree. Matches the
 # `kimi-export-session_<ts>.md` shape produced by the Kimi CLI's
