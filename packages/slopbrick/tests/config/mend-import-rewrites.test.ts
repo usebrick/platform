@@ -35,4 +35,87 @@ describe('mend.importRewrites configuration', () => {
       rmSync(workspace, { recursive: true, force: true });
     }
   });
+
+  it.each([
+    {
+      name: 'a non-object Mend section',
+      input: { allowedImports: ['@/components/ui/'], mend: true },
+      error: 'mend: must be an object',
+    },
+    {
+      name: 'an unknown Mend key',
+      input: { allowedImports: ['@/components/ui/'], mend: { inferImports: true } },
+      error: 'mend: unknown key "inferImports"',
+    },
+    {
+      name: 'a non-object rewrite map',
+      input: { allowedImports: ['@/components/ui/'], mend: { importRewrites: [] } },
+      error: 'mend.importRewrites: must be an object',
+    },
+    {
+      name: 'an empty rewrite map',
+      input: { allowedImports: ['@/components/ui/'], mend: { importRewrites: {} } },
+      error: 'mend.importRewrites: must contain exactly one mapping',
+    },
+    {
+      name: 'more than one rewrite',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: {
+          importRewrites: {
+            '@/legacy/Button': '@/components/ui/Button',
+            '@/legacy/Card': '@/components/ui/Card',
+          },
+        },
+      },
+      error: 'mend.importRewrites: must contain exactly one mapping',
+    },
+    {
+      name: 'a rewrite without repository import policy',
+      input: { mend: { importRewrites: { '@/legacy/Button': '@/components/ui/Button' } } },
+      error: 'mend.importRewrites: requires a non-empty repository allowedImports array',
+    },
+    {
+      name: 'a non-project source alias',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { react: '@/components/ui/React' } },
+      },
+      error: 'mend.importRewrites: source must start with "@/" or "~/"',
+    },
+    {
+      name: 'a source that is already allowed',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/components/ui/Button': '@/components/ui/CanonicalButton' } },
+      },
+      error: 'mend.importRewrites: source must violate allowedImports',
+    },
+    {
+      name: 'a target outside repository policy',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/legacy/Button': '@/other/Button' } },
+      },
+      error: 'mend.importRewrites: target must match allowedImports',
+    },
+    {
+      name: 'an identity rewrite',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/legacy/Button': '@/legacy/Button' } },
+      },
+      error: 'mend.importRewrites: source and target must differ',
+    },
+    {
+      name: 'a target with surrounding whitespace',
+      input: {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { '@/legacy/Button': '  @/components/ui/Button' } },
+      },
+      error: 'mend.importRewrites: target must be a canonical non-empty string',
+    },
+  ])('rejects $name', ({ input, error }) => {
+    expect(validateConfig(input).errors).toContain(error);
+  });
 });
