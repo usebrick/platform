@@ -13,6 +13,7 @@ import {
   legacyFindingIdentity,
   repositoryRelativeFindingLocation,
 } from '../../report/finding-identity';
+import { isIncompleteScan, isNotApplicableScan } from '../../report/scan-validity';
 
 const LOCK_RULE_ID = 'context/import-path-mismatch' as const;
 
@@ -46,7 +47,8 @@ function notEvaluated(
     failed: true,
     evaluated: false,
     policy: { ruleId: LOCK_RULE_ID, source: input.policySource },
-    baselineAvailable: false,
+    baselineAvailable: input.baseline !== undefined,
+    ...(input.baseline ? { baselineRevision: input.baseline.baseline_revision } : {}),
     qualifyingFindingCount,
     findings: [],
     summary,
@@ -60,6 +62,20 @@ function notEvaluated(
  */
 export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecision {
   const qualifying = (input.report.issues ?? []).filter(isQualifyingFinding);
+  if (isIncompleteScan(input.report)) {
+    return notEvaluated(
+      input,
+      qualifying.length,
+      'Lock gate not evaluated: incomplete scan results cannot prove repository policy compliance.',
+    );
+  }
+  if (isNotApplicableScan(input.report)) {
+    return notEvaluated(
+      input,
+      qualifying.length,
+      'Lock gate not evaluated: no files were analyzed.',
+    );
+  }
   if (!input.baseline) {
     return notEvaluated(
       input,
