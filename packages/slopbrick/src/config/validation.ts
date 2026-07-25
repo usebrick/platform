@@ -131,7 +131,7 @@ function isCanonicalImportSpecifier(value: unknown): value is string {
   return typeof value === 'string'
     && value.length > 0
     && value === value.trim()
-    && !/[\0\r\n]/.test(value)
+    && !/[\0\r\n'"\\]/.test(value)
     && value.length <= MEND_IMPORT_SPECIFIER_MAX_CHARS
     && new TextEncoder().encode(value).byteLength <= MEND_IMPORT_SPECIFIER_MAX_BYTES;
 }
