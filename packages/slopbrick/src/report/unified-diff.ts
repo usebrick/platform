@@ -72,7 +72,7 @@ function isCurrentBoundFix(
   config?: ResolvedConfig,
 ): boolean {
   const binding = fix.binding;
-  if (!binding) return true;
+  if (!binding) return fix.kind !== 'module-specifier';
   if (
     !issue.filePath ||
     !fix.targetFile ||
