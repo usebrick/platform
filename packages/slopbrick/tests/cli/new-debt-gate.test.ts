@@ -50,12 +50,58 @@ function report(issues: Issue[]): ProjectReport {
   return { issues } as ProjectReport;
 }
 
+function exactIssue(
+  fileName: string,
+  matchedValue: string,
+  line: number,
+  message = `Import '${matchedValue}' violates the approved path policy.`,
+): Issue {
+  return {
+    ruleId: 'context/import-path-mismatch',
+    category: 'arch',
+    severity: 'medium',
+    aiSpecific: false,
+    filePath: join(cwd, fileName),
+    message,
+    line,
+    column: 1,
+    evidence: {
+      kind: 'matched-source-span',
+      status: 'exact',
+      snippet: `import value from '${matchedValue}'`,
+      location: {
+        start: { line, column: 1 },
+        end: { line, column: 26 + matchedValue.length },
+      },
+      matched: {
+        field: 'import-source',
+        key: 'module-specifier',
+        value: matchedValue,
+      },
+    },
+  };
+}
+
 describe('durable new-debt baseline', () => {
   it('preserves the pre-extraction finding identity bytes', () => {
     expect(findingIdentity(
       issue('src/A.tsx', "Layout arbitrary value 'p-[13px]'", 4),
       cwd,
     )).toBe('d3d60674df286693c4022f5443e67841b487ed8bd3c5ebd857c4373e9ca63f17');
+  });
+
+  it('keeps exact-evidence identity stable across line and message changes', () => {
+    const baselineFinding = exactIssue('src/A.tsx', '@/legacy/Button', 4);
+    const shiftedFinding = exactIssue(
+      'src/A.tsx',
+      '@/legacy/Button',
+      19,
+      "Import '@/legacy/Button' is outside the repository's approved aliases.",
+    );
+
+    expect(findingIdentity(shiftedFinding, cwd)).toBe(
+      findingIdentity(baselineFinding, cwd),
+    );
   });
 
   it('builds a bounded revision-2 snapshot set from active unique findings', () => {
