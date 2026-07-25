@@ -7,6 +7,7 @@ import { evaluateLockNewDebt } from '../../src/cli/report/lock-new-debt';
 import { runScan } from '../../src/cli/scan';
 import { hashConfig } from '../../src/engine/cache';
 import { findingIdentity } from '../../src/report/finding-identity';
+import { formatPretty } from '../../src/report/pretty';
 import type { Issue, ProjectReport } from '../../src/types';
 
 const cwd = '/workspace';
@@ -236,6 +237,11 @@ describe('LOCK-001 new-debt decision', () => {
           evidence: { matched: { value: '@/legacy/New' } },
         }],
       });
+      const pretty = formatPretty(current.report, { full: false, cwd: workspace });
+      expect(pretty).toContain('Lock new debt');
+      expect(pretty).toContain('slopbrick.config.mjs#allowedImports');
+      expect(pretty).toContain('BLOCKED src/New.tsx:1');
+      expect(pretty).toContain('@/legacy/New');
     } finally {
       rmSync(workspace, { recursive: true, force: true });
     }
