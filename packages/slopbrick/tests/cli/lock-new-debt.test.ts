@@ -147,4 +147,32 @@ describe('LOCK-001 new-debt decision', () => {
       }],
     });
   });
+
+  it('fails closed without evaluating debt when the scan is incomplete', () => {
+    const baseline = buildDebtBaseline(report([]), cwd, 'config-a', 'commit-a');
+    const incomplete = {
+      ...report([]),
+      completionStatus: 'partial' as const,
+      scoreValidity: 'incomplete' as const,
+      requested: 2,
+      analyzed: 1,
+      failed: 1,
+    };
+
+    expect(evaluateLockNewDebt({
+      report: incomplete,
+      baseline,
+      cwd,
+      configHash: 'config-a',
+      policySource: 'slopbrick.config.mjs#allowedImports',
+    })).toMatchObject({
+      status: 'not-evaluated',
+      failed: true,
+      evaluated: false,
+      baselineAvailable: true,
+      baselineRevision: 2,
+      findings: [],
+      summary: expect.stringMatching(/incomplete scan/i),
+    });
+  });
 });
