@@ -7,7 +7,10 @@ import { extractFacts } from '../../src/engine/visitor';
 import { importPathMismatchRule } from '../../src/rules/context/import-path-mismatch';
 import type { Issue, ResolvedConfig, RuleContext } from '../../src/types';
 
-function makeConfig(allowedImports?: string[]): ResolvedConfig {
+function makeConfig(
+  allowedImports?: string[],
+  importRewrites?: Record<string, string>,
+): ResolvedConfig {
   return {
     include: [],
     exclude: [],
@@ -22,6 +25,7 @@ function makeConfig(allowedImports?: string[]): ResolvedConfig {
       individualSlopThreshold: 0,
     },
     allowedImports,
+    ...(importRewrites ? { mend: { importRewrites } } : {}),
   };
 }
 
@@ -84,6 +88,42 @@ describe('context/import-path-mismatch', () => {
       makeConfig(['@/components/ui/']),
     );
     expect(issues).toHaveLength(0);
+  });
+
+  it('offers a module-specifier repair only for the exact configured source and an allowed target', async () => {
+    const source = `import { Button } from '@/legacy/Button';\nexport const X = () => <Button>x</Button>;\n`;
+    const mapped = await runRule(
+      source,
+      makeConfig(
+        ['@/components/ui/'],
+        { '@/legacy/Button': '@/components/ui/Button' },
+      ),
+    );
+    expect(mapped[0].fix).toMatchObject({
+      kind: 'module-specifier',
+      description: "Rewrite import '@/legacy/Button' to '@/components/ui/Button'",
+      oldValue: '@/legacy/Button',
+      newValue: '@/components/ui/Button',
+    });
+    expect(mapped[0].fix?.targetFile).toMatch(/Component\.tsx$/);
+
+    const unmapped = await runRule(
+      source,
+      makeConfig(
+        ['@/components/ui/'],
+        { '@/legacy/Other': '@/components/ui/Other' },
+      ),
+    );
+    expect(unmapped[0].fix).toBeUndefined();
+
+    const disallowedTarget = await runRule(
+      source,
+      makeConfig(
+        ['@/components/ui/'],
+        { '@/legacy/Button': '@/other/Button' },
+      ),
+    );
+    expect(disallowedTarget[0].fix).toBeUndefined();
   });
 
   it('does not flag third-party imports', async () => {
