@@ -14,7 +14,7 @@ export default defineConfig({
   outExtension({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' };
   },
-  target: 'node18',
+  target: 'node22',
   platform: 'node',
   splitting: false,
   sourcemap: true,

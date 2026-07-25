@@ -14,8 +14,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
-export const NODE_API_FLOOR = 20;
-export const EXPECTED_BUILD_TARGET = 'node18';
+export const NODE_API_FLOOR = 22;
+export const EXPECTED_BUILD_TARGET = 'node22';
 export const EXPECTED_PYTHON_VERSION = '3.14.4';
 export const EXPECTED_PYARROW_VERSION = '25.0.0';
 // No machine-specific corpus path is part of the bootstrap contract. A caller

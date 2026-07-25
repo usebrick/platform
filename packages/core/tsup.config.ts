@@ -5,7 +5,7 @@ export default defineConfig({
   // @usebrick/engine must not pull the root facade's filesystem adapters.
   entry: { index: 'src/index.ts', verdicts: 'src/verdicts.ts' },
   format: ['esm', 'cjs'],
-  target: 'node18',
+  target: 'node22',
   dts: true,
   sourcemap: true,
   clean: true,

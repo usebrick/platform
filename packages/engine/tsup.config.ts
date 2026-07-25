@@ -9,5 +9,5 @@ export default defineConfig({
   // import resolution while silently omitting an engine fix.
   sourcemap: true,
   clean: true,
-  target: 'node18',
+  target: 'node22',
 });

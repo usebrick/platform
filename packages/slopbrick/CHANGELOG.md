@@ -75,7 +75,8 @@ current publisher-attested internal Corpus v1 evaluation path.
   approved policy normally supersedes with `security/sql-construction`.
 - Hardened the candidate dependency tree by moving `minimatch` to its patched
   release line, aligning Node type declarations with the supported Node 22/24
-  runtimes, and removing duplicate package build invocations.
+  runtimes, compiling all workspace packages to the Node 22 floor, and
+  removing duplicate package build invocations.
 - Removed runtime import cycles between Core loaders/validators, scan/watch,
   documentation rules/orchestration, spacing configuration, and calibration
   overlap verification without changing their public compatibility exports.
