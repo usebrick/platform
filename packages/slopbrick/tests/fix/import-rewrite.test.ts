@@ -7,7 +7,15 @@ import {
   planExactImportRewrites,
   rollbackExactImportRewrite,
 } from '../../src/fix/import-rewrite';
-import type { IssueEvidencePosition } from '../../src/types';
+import { applyFixes } from '../../src/fix';
+import { sha256Text } from '../../src/fix/binding';
+import { formatUnifiedDiff } from '../../src/report/unified-diff';
+import type {
+  Issue,
+  IssueEvidencePosition,
+  ProjectReport,
+  ResolvedConfig,
+} from '../../src/types';
 
 function positionAt(source: string, offset: number): IssueEvidencePosition {
   const before = source.slice(0, offset);
@@ -135,6 +143,86 @@ describe('exact import rewrite planner', () => {
 
       expect(result).toEqual({ status: 'rejected', reason: 'receipt-mismatch' });
       expect(readFileSync(filePath)).toEqual(repairedBytes);
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('previews and applies the same finding-bound import bytes, then rejects replay', async () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-mend-integration-'));
+    try {
+      const filePath = join(workspace, 'Button.tsx');
+      const source = "import { Button } from '@/legacy/Button';\nexport const View = () => <Button />;\n";
+      const expected = "import { Button } from '@/components/ui/Button';\nexport const View = () => <Button />;\n";
+      writeFileSync(filePath, source, 'utf8');
+      const oldValue = '@/legacy/Button';
+      const newValue = '@/components/ui/Button';
+      const startOffset = source.indexOf(`'${oldValue}'`) + 1;
+      const endOffset = startOffset + oldValue.length - 1;
+      const location = {
+        start: positionAt(source, startOffset),
+        end: positionAt(source, endOffset),
+      };
+      const issue: Issue = {
+        ruleId: 'context/import-path-mismatch',
+        category: 'arch',
+        severity: 'medium',
+        aiSpecific: false,
+        filePath,
+        message: 'Import violates repository policy.',
+        line: 1,
+        column: 1,
+        evidence: {
+          kind: 'matched-source-span',
+          status: 'exact',
+          snippet: oldValue,
+          location,
+          matched: {
+            field: 'import-source',
+            key: 'module-specifier',
+            value: oldValue,
+          },
+          details: { policyField: 'allowedImports', allowedPrefixCount: 1 },
+        },
+        fix: {
+          kind: 'module-specifier',
+          description: `Rewrite import '${oldValue}' to '${newValue}'`,
+          targetFile: filePath,
+          oldValue,
+          newValue,
+          binding: {
+            kind: 'slopbrick-fix-binding-v1',
+            ruleId: 'context/import-path-mismatch',
+            filePath,
+            line: 1,
+            column: 1,
+            sourceSha256: sha256Text(source),
+            targetSha256: sha256Text(source),
+          },
+        },
+      };
+      const report = { issues: [issue] } as ProjectReport;
+      const config = {
+        allowedImports: ['@/components/ui/'],
+        mend: { importRewrites: { [oldValue]: newValue } },
+      } as ResolvedConfig;
+
+      const preview = formatUnifiedDiff(report, workspace, config);
+      expect(preview).toContain("-import { Button } from '@/legacy/Button';");
+      expect(preview).toContain("+import { Button } from '@/components/ui/Button';");
+      expect(readFileSync(filePath, 'utf8')).toBe(source);
+
+      const [applied] = await applyFixes(report, config);
+      expect(applied.applied).toHaveLength(1);
+      expect(applied.skipped).toHaveLength(0);
+      expect(readFileSync(filePath, 'utf8')).toBe(expected);
+
+      const [replayed] = await applyFixes(report, config);
+      expect(replayed.applied).toHaveLength(0);
+      expect(replayed.skipped).toEqual([
+        expect.objectContaining({ reason: 'stale-finding' }),
+      ]);
+      expect(readFileSync(filePath, 'utf8')).toBe(expected);
     } finally {
       rmSync(workspace, { recursive: true, force: true });
     }
