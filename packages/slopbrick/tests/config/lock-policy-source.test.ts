@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '../../src/config/load';
+import { getExplicitRuleOverrides } from '../../src/config/rule-override-provenance';
 
 const temporaryProjects: string[] = [];
 
@@ -19,11 +20,17 @@ describe('Lock policy provenance', () => {
     temporaryProjects.push(defaultProject, repositoryProject);
     writeFileSync(
       join(repositoryProject, 'slopbrick.config.mjs'),
-      `export default { allowedImports: ['@/approved/'] };\n`,
+      `export default {
+  allowedImports: ['@/approved/'],
+  rules: { 'component/giant-component': 'high' },
+};\n`,
       'utf8',
     );
 
-    await expect(loadConfig(defaultProject)).resolves.toMatchObject({
+    const defaultConfig = await loadConfig(defaultProject);
+    const repositoryConfig = await loadConfig(repositoryProject);
+
+    expect(defaultConfig).toMatchObject({
       policySources: {
         allowedImports: {
           authority: 'built-in-default',
@@ -31,7 +38,7 @@ describe('Lock policy provenance', () => {
         },
       },
     });
-    await expect(loadConfig(repositoryProject)).resolves.toMatchObject({
+    expect(repositoryConfig).toMatchObject({
       allowedImports: ['@/approved/'],
       policySources: {
         allowedImports: {
@@ -39,6 +46,9 @@ describe('Lock policy provenance', () => {
           source: 'slopbrick.config.mjs#allowedImports',
         },
       },
+    });
+    expect(getExplicitRuleOverrides(repositoryConfig)).toEqual({
+      'component/giant-component': 'high',
     });
   });
 });
