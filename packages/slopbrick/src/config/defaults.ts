@@ -168,8 +168,8 @@ export const DEFAULT_CONFIG: ResolvedConfig = {
     'top-[var(--header-height)]',
   ],
   clampAllowlist: [],
-  /** Phase 2 §10: brick.config.json import paths. Defaults to common
-   *  shadcn-style paths. Override via `allowedImports` in slopbrick.config.cjs. */
+  /** Phase 2 §10: canonical import paths. Defaults to common shadcn-style
+   *  paths. Override via `allowedImports` in `slopbrick.config.mjs`. */
   allowedImports: [
     '@/components/ui/',
     '@/components/',

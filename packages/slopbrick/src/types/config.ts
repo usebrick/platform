@@ -199,8 +199,8 @@ export interface ResolvedConfig {
   typographyScale?: string[];
   arbitraryValueAllowlist: (string | RegExp)[];
   clampAllowlist?: (string | RegExp)[];
-  /** Phase 2 §10: allowed import paths from brick.config.json. Imports
-   *  from `@/components/*` not matching these patterns are flagged by
+  /** Phase 2 §10: allowed import paths from `slopbrick.config.*`. Imports
+   *  from project aliases not matching these prefixes are flagged by
    *  `context/import-path-mismatch`. */
   allowedImports?: string[];
   wcag: {

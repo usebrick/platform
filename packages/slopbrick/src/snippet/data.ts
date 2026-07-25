@@ -93,7 +93,7 @@ const RULE_HINTS: Record<string, string> = {
   'component/shadcn-prop-mismatch':
     'Select shadcn variants via the `variant` prop, not long `className` overrides. See the component registry for available variants.',
   'context/import-path-mismatch':
-    'Use only the canonical import paths declared in brick.config.json (e.g. @/components/ui/, @/lib/).',
+    'Use only the canonical import paths declared in slopbrick.config.mjs#allowedImports (e.g. @/components/ui/, @/lib/).',
   'layout/gap-monopoly':
     'Review repeated gap values against the spacing system and visual hierarchy. Repetition is correct when intentional; do not vary gaps solely to change a statistical signal.',
   'layout/math-element-uniformity':
