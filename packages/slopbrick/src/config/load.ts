@@ -10,7 +10,7 @@
 // field), and merges it on top of DEFAULT_CONFIG + detected framework.
 
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { logger } from '../engine/logger';
 import { ConfigValidationError, validateConfig } from './validation';
@@ -87,10 +87,19 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
   const detectedConstitution = detectConstitution(cwd);
   const configPath = resolveConfigPath(cwd);
   if (!configPath) {
-    return bindExplicitRuleOverrides({
+    const resolved = bindExplicitRuleOverrides({
       ...deepMerge(DEFAULT_CONFIG, detected),
       constitution: resolveConstitution(undefined, detectedConstitution),
     }, undefined);
+    return {
+      ...resolved,
+      policySources: {
+        allowedImports: {
+          authority: 'built-in-default',
+          source: 'built-in-default#allowedImports',
+        },
+      },
+    };
   }
   let user: Partial<ResolvedConfig>;
   try {
@@ -115,5 +124,21 @@ export async function loadConfig(cwd: string): Promise<ResolvedConfig> {
     (user as Partial<ResolvedConfig>).constitution,
     detectedConstitution,
   );
-  return bindExplicitRuleOverrides(merged, user.rules);
+  const resolved = bindExplicitRuleOverrides(merged, user.rules);
+  const repositoryOwnsAllowedImports = Object.prototype.hasOwnProperty.call(user, 'allowedImports')
+    && Array.isArray(user.allowedImports);
+  return {
+    ...resolved,
+    policySources: {
+      allowedImports: repositoryOwnsAllowedImports
+        ? {
+            authority: 'repository',
+            source: `${basename(configPath)}#allowedImports`,
+          }
+        : {
+            authority: 'built-in-default',
+            source: 'built-in-default#allowedImports',
+          },
+    },
+  };
 }

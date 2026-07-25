@@ -164,6 +164,13 @@ export type ClusterParamOverrides = Partial<ClusterParams>;
 
 
 export interface ResolvedConfig {
+  /** Trusted runtime provenance added by the loader, never taken from user input. */
+  policySources?: {
+    allowedImports: {
+      authority: 'built-in-default' | 'repository';
+      source: string;
+    };
+  };
   framework?: string;
   hasTailwind?: boolean;
   supportsRsc?: boolean;

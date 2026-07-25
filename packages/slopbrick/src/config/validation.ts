@@ -62,6 +62,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   'typographyScale',
   'arbitraryValueAllowlist',
   'clampAllowlist',
+  'allowedImports',
   'wcag',
   'constitution',
   'lock',
@@ -209,6 +210,9 @@ export function validateConfig(config: unknown): ConfigValidationResult {
   }
   if ('exclude' in config && config.exclude !== undefined) {
     validateStringArray('exclude', config.exclude, errors);
+  }
+  if ('allowedImports' in config && config.allowedImports !== undefined) {
+    validateStringArray('allowedImports', config.allowedImports, errors);
   }
 
   if ('selfScan' in config && config.selfScan !== undefined) {
