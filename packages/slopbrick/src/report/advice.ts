@@ -49,7 +49,9 @@ const remediation: Record<Category, string> = {
 
 function hasSafeFix(issue: Issue): boolean {
   if (!issue.fix) return false;
-  return issue.fix.kind === 'replace' || issue.fix.kind === 'insert';
+  return issue.fix.kind === 'replace'
+    || issue.fix.kind === 'insert'
+    || issue.fix.kind === 'module-specifier';
 }
 
 function formatIssueLocation(issue: Issue): string {
