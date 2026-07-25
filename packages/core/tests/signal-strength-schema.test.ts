@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { parseSignalStrength } from '../src';
 import { signalStrengthSchema } from '../src/signal-strength-schema';
 
 describe('signal-strength schema', () => {
+  it('exposes validation through a third-party-type-free facade', () => {
+    expect(parseSignalStrength({
+      'test/rule': {
+        recall: 0.5,
+        fpRate: 0.1,
+        ratio: 5,
+        precision: 0.83,
+        lastCalibratedAt: '2026-06-27T12:00:00Z',
+        verdict: 'USEFUL',
+      },
+    })).toMatchObject({ 'test/rule': { verdict: 'USEFUL' } });
+
+    expect(() => parseSignalStrength({ 'test/rule': { verdict: 'BOGUS' } })).toThrow();
+  });
+
   it('accepts a valid entry', () => {
     const result = signalStrengthSchema.safeParse({
       'test/rule': {
