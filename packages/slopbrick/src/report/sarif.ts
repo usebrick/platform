@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { Category, Issue, IssueEvidence, ProjectReport, Severity } from '../types';
 import { matchesFirstScanFinding, normalizeFirstScanForSerialization } from './first-scan.js';
+import { isIssueEvidenceSelfConsistent } from './finding-evidence.js';
 import { isIncompleteScan, isNotApplicableScan, projectNotApplicableScan } from './scan-validity.js';
 
 type FirstScanExperience = NonNullable<ProjectReport['firstScan']>;
@@ -360,7 +361,7 @@ function buildResultFromIssue(
     aiSpecific: issue.aiSpecific,
     category: issue.category,
     severity: issue.severity,
-    ...(issue.evidence ? { evidence: issue.evidence } : {}),
+    ...(isIssueEvidenceSelfConsistent(issue.evidence) ? { evidence: issue.evidence } : {}),
     ...(slopbrickEvidence ? { slopbrickEvidence } : {}),
     ...(firstScan ? { firstScan } : {}),
   };
@@ -470,6 +471,7 @@ export function formatSarif(
           ...(report.selectionAccounting !== undefined ? { selectionAccounting: report.selectionAccounting } : {}),
           ...(report.gateDecision !== undefined ? { gateDecision: report.gateDecision } : {}),
           ...(report.newDebt !== undefined ? { newDebt: report.newDebt } : {}),
+          ...(report.lockDecision !== undefined ? { lockDecision: report.lockDecision } : {}),
           ...(firstScan !== undefined
             ? { firstScan: projectFirstScanSummary(firstScan) }
             : {}),

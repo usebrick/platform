@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, relative } from 'node:path';
 import type { Issue } from '../types';
+import { isIssueEvidenceSelfConsistent } from './finding-evidence';
 
 export function repositoryRelativeFindingLocation(issue: Issue, cwd: string): string {
   if (!issue.filePath) return '<project>';
@@ -32,6 +33,7 @@ export function findingIdentity(issue: Issue, cwd: string): string {
   const evidence = issue.evidence;
   if (
     evidence?.status !== 'exact'
+    || !isIssueEvidenceSelfConsistent(evidence)
     || !evidence.matched
     || typeof evidence.matched.field !== 'string'
     || typeof evidence.matched.key !== 'string'

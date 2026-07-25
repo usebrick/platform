@@ -14,6 +14,7 @@ import { formatFindingContext } from './finding-context.js';
 import { FIRST_SCAN_AREAS, formatFirstScanFindingEvidence } from './first-scan.js';
 import { formatFirstScanPretty } from './first-scan-pretty.js';
 import { findingIdentity } from './finding-identity.js';
+import { isIssueEvidenceSelfConsistent } from './finding-evidence.js';
 // v0.17.1: redact any secret-looking strings in issue messages / advice
 // before they reach the terminal. Same regex set the security/secret-leak
 // rules use on user code, applied to our own output.
@@ -1025,7 +1026,35 @@ function formatThresholds(report: ProjectReport): string[] {
   const result: string[] = ['Threshold (CI gate)', `  AI Slop Score  ${valueText}  ${status}`];
   if (report.gateDecision) result.push(`  ${report.gateDecision.summary}`);
   if (report.newDebt) result.push(`  ${report.newDebt.summary}`);
+  if (report.lockDecision) result.push(...formatLockDecision(report));
   return result;
+}
+
+function formatLockDecision(report: ProjectReport): string[] {
+  const decision = report.lockDecision;
+  if (!decision) return [];
+  const lines = [
+    'Lock new debt',
+    `  ${decision.status} — ${redactSecrets(decision.summary)}`,
+    `  Policy: ${decision.policy.ruleId} from ${decision.policy.source} (${decision.policy.authority})`,
+  ];
+  for (const finding of decision.findings) {
+    const location = finding.filePath
+      ? `${finding.filePath}:${finding.line}`
+      : `<project>:${finding.line}`;
+    lines.push(
+      `  ${finding.disposition.toUpperCase()} ${location} — ${finding.ruleId} — ` +
+      `${finding.evidence.matched.field}/${finding.evidence.matched.key}: ` +
+      `${redactSecrets(finding.evidence.matched.value)}`,
+    );
+    if (finding.waiver) {
+      lines.push(
+        `    Waiver ${finding.waiver.status}: owner ${redactSecrets(finding.waiver.owner)}; ` +
+        `reason ${redactSecrets(finding.waiver.reason)}; expires ${finding.waiver.expiresAt}`,
+      );
+    }
+  }
+  return lines;
 }
 
 function formatTopComponents(components: ComponentScore[], topOffenders?: TopOffender[]): string {
@@ -1114,7 +1143,7 @@ function formatFindingLanes(issues: Issue[], full: boolean): string[] {
 
 function formatIssueEvidence(issue: Issue): string | null {
   const evidence = issue.evidence;
-  if (!evidence) return null;
+  if (!isIssueEvidenceSelfConsistent(evidence)) return null;
   const start = evidence.location.start;
   const end = evidence.location.end;
   const location = `${start.line}:${start.column}-${end.line}:${end.column}`;
@@ -1392,12 +1421,16 @@ export function formatPretty(report: ProjectReport, options: PrettyOptions = { f
     meanSlop: report.thresholds?.meanSlop,
     aiSlopScore: report.aiSlopScore,
   });
+  const lockScreen = report.lockDecision
+    ? formatLockDecision(report).join('\n')
+    : '';
+  const firstScreenWithLock = lockScreen ? `${firstScreen}\n\n${lockScreen}` : firstScreen;
 
   if (options.full !== true || report.firstScan.status !== 'complete') {
-    return firstScreen;
+    return firstScreenWithLock;
   }
 
-  return `${firstScreen}\n\nFull report\n\n${formatDetailedReport(report, options)}`;
+  return `${firstScreenWithLock}\n\nFull report\n\n${formatDetailedReport(report, options)}`;
 }
 
 /**

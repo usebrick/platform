@@ -14,6 +14,7 @@ import {
   repositoryRelativeFindingLocation,
 } from '../../report/finding-identity';
 import { isIncompleteScan, isNotApplicableScan } from '../../report/scan-validity';
+import { isIssueEvidenceSelfConsistent } from '../../report/finding-evidence';
 
 const LOCK_RULE_ID = 'context/import-path-mismatch' as const;
 
@@ -34,7 +35,9 @@ function isQualifyingFinding(
   return issue.ruleId === LOCK_RULE_ID
     && (issue.severity as string) !== 'off'
     && issue.evidence?.kind === 'matched-source-span'
-    && issue.evidence.status === 'exact';
+    && issue.evidence.status === 'exact'
+    && typeof issue.evidence.matched?.value === 'string'
+    && isIssueEvidenceSelfConsistent(issue.evidence);
 }
 
 function notEvaluated(

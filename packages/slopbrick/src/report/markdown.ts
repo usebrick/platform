@@ -12,6 +12,8 @@ import {
 import { formatFindingContext } from './finding-context.js';
 import { formatFirstScanFindingEvidence, matchesFirstScanFinding } from './first-scan.js';
 import type { Verdict } from '@usebrick/core';
+import { redactSecrets } from '../cli/render.js';
+import { isIssueEvidenceSelfConsistent } from './finding-evidence.js';
 
 /**
  * v0.15.0 (U.3) — ProjectReport fields that U.5 will add to the type.
@@ -38,7 +40,7 @@ function ruleDisplayName(ruleId: string): string {
  * producer-omitted spans stay explicitly omitted rather than becoming a
  * misleading empty code fragment. */
 function formatIssueEvidence(evidence: Issue['evidence']): string | null {
-  if (!evidence) return null;
+  if (!isIssueEvidenceSelfConsistent(evidence)) return null;
   const start = evidence.location.start;
   const end = evidence.location.end;
   const location = `${start.line}:${start.column}-${end.line}:${end.column}`;
@@ -192,6 +194,23 @@ export function formatMarkdown(report: ProjectReport): string {
   }
   if (report.gateDecision) lines.push(`- **Gate decision:** ${report.gateDecision.summary}`);
   if (report.newDebt) lines.push(`- **New debt:** ${report.newDebt.summary}`);
+  if (report.lockDecision) {
+    lines.push(`- **Lock new debt:** ${report.lockDecision.summary}`);
+    lines.push(`- **Lock policy:** ${report.lockDecision.policy.ruleId} from ${report.lockDecision.policy.source} (${report.lockDecision.policy.authority})`);
+    for (const finding of report.lockDecision.findings) {
+      const location = finding.filePath ? `${finding.filePath}:${finding.line}` : `<project>:${finding.line}`;
+      lines.push(
+        `  - **${finding.disposition.toUpperCase()}** ${location} — ${finding.ruleId} — ` +
+        `${finding.evidence.matched.field}/${finding.evidence.matched.key}: ${redactSecrets(finding.evidence.matched.value)}`,
+      );
+      if (finding.waiver) {
+        lines.push(
+          `    - Waiver ${finding.waiver.status}; owner ${redactSecrets(finding.waiver.owner)}; ` +
+          `reason ${redactSecrets(finding.waiver.reason)}; expires ${finding.waiver.expiresAt}`,
+        );
+      }
+    }
+  }
   const accountingSummary = formatScanAccountingSummary(report);
   if (accountingSummary) lines.push(`- ${accountingSummary}`);
   const defaultOff = summarizeDefaultOffIssues(report.issues);
