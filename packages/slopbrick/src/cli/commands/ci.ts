@@ -41,6 +41,21 @@ export function registerCi(
         command: Command,
       ) => {
         const globals = command.optsWithGlobals() as CliGlobalOptions & { increase?: boolean };
+        // Commander assigns a duplicated --format flag to the root command,
+        // even when it appears after `ci`. Preserve CI's JSON default, but
+        // honor an explicit root value so `ci --format pretty` reaches the
+        // human renderer.
+        const explicitGlobalFormat = program.getOptionValueSource('format') === 'cli'
+          ? globals.format
+          : undefined;
+        const rawFormat = explicitGlobalFormat ?? cmdOptions.format ?? 'json';
+        if (rawFormat !== 'pretty' && rawFormat !== 'json') {
+          command.error(
+            `error: option '--format <pretty|json>' argument '${rawFormat}' is invalid`,
+            { exitCode: 2, code: 'commander.invalidArgument' },
+          );
+        }
+        const format = rawFormat as 'pretty' | 'json';
         const options: CliGlobalOptions = {
           ...globals,
           noIncrease: true,                  // force fail on increase
@@ -51,7 +66,7 @@ export function registerCi(
             lockNewDebt: cmdOptions.lockNewDebt,
             strictConstitution: cmdOptions.strictConstitution,
           },
-          format: (cmdOptions.format ?? 'json') as 'pretty' | 'json' | 'sarif' | 'html',
+          format,
         };
         const outcome = await scanAction([], options, command);
         if (!outcome) {
@@ -70,7 +85,7 @@ export function registerCi(
         }
         const exitCode = outcome.gateDecision?.exitCode ?? outcome.exitCode;
         const constitutionDrift = (outcome.report as typeof outcome.report & { constitutionDrift?: number }).constitutionDrift ?? 0;
-        if (exitCode === 0 && cmdOptions.format !== 'json') {
+        if (exitCode === 0 && format !== 'json') {
           logger.info(`CI gate passed: repositoryHealth=${outcome.report.repositoryHealth}, constitutionDrift=${constitutionDrift}`);
         }
         withExitCode(outcome, () => exitCode, exitCode === 0
