@@ -1,0 +1,88 @@
+{
+  "profile": "memory-m0-registry-v2",
+  "stringProfile": "ascii-bytewise-v1",
+  "caps": {
+    "maxSources": 65,
+    "maxPackageManifests": 64,
+    "maxSourceBytes": 262144,
+    "maxTotalSourceBytes": 4194304,
+    "maxJsonDepth": 32,
+    "maxJsonTokens": 16384,
+    "maxAssertions": 256,
+    "maxValueBytes": 256,
+    "maxProjectionBytes": 262144,
+    "maxRenderPayloadBytes": 2048,
+    "maxRenderedBytes": 4096,
+    "maxFixtures": 3,
+    "maxTasks": 9,
+    "maxCells": 27,
+    "maxClaimKeySubjectBytes": 256,
+    "maxClaimKeySlotBytes": 16,
+    "maxClaimKeyBytes": 512,
+    "maxKeysPerTask": 8,
+    "maxNativeKeysPerContext": 8,
+    "maxNativeContextBytes": 4096,
+    "maxSuiteKeyReferences": 256,
+    "maxSuiteKeyBytes": 65536,
+    "maxSuiteSourceBytes": 8388608,
+    "maxSuiteNativeBytes": 36864,
+    "maxBenchmarkVectorBytes": 131072,
+    "maxBenchmarkResultBytes": 131072
+  },
+  "extractors": [
+    {
+      "id": "package-json-root-v2",
+      "version": "2.1.0",
+      "sourceKinds": ["root-package-json"],
+      "parserProfile": "bounded-json-v2"
+    },
+    {
+      "id": "package-manifest-v2",
+      "version": "2.1.0",
+      "sourceKinds": ["package-manifest"],
+      "parserProfile": "bounded-json-v2"
+    }
+  ],
+  "predicates": [
+    {
+      "id": "repo.command",
+      "authority": "declared",
+      "sourceKinds": ["root-package-json"],
+      "subjectGrammar": "repository-literal",
+      "scope": "repository",
+      "slotGrammar": "build|test|lint|typecheck",
+      "valueGrammar": "true",
+      "priority": 800
+    },
+    {
+      "id": "repo.package-manager",
+      "authority": "declared",
+      "sourceKinds": ["root-package-json"],
+      "subjectGrammar": "repository-literal",
+      "scope": "repository",
+      "slotGrammar": "singleton",
+      "valueGrammar": "package-manager-literal",
+      "priority": 1000
+    },
+    {
+      "id": "repo.package-manifest",
+      "authority": "declared",
+      "sourceKinds": ["root-package-json", "package-manifest"],
+      "subjectGrammar": "registered-manifest-path",
+      "scope": "repository",
+      "slotGrammar": "singleton",
+      "valueGrammar": "package-name",
+      "priority": 600
+    },
+    {
+      "id": "repo.runtime-node",
+      "authority": "declared",
+      "sourceKinds": ["root-package-json", "package-manifest"],
+      "subjectGrammar": "repository-literal",
+      "scope": "repository",
+      "slotGrammar": "singleton",
+      "valueGrammar": "node-range-literal",
+      "priority": 900
+    }
+  ]
+}

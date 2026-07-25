@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "OWNER-MEM-M0-SLICE-B-DECISION",
+  "planId": "MEM-001",
+  "revision": 70,
+  "recordedAt": "2026-07-24T15:10:02Z",
+  "authority": "trusted-owner",
+  "ownerInput": "authorized slice b",
+  "decision": "accept-slice-b",
+  "status": "accepted",
+  "baseCommit": "a0c29dd37dc024425336c03f98b1c6aa360c191a",
+  "prerequisiteEvidence": "docs/execution/evidence/MEM-001-local-m0.md",
+  "requirements": [
+    "M0-F01",
+    "M0-F02",
+    "M0-F03",
+    "M0-D01",
+    "M0-D02",
+    "M0-H01",
+    "M0-L01"
+  ],
+  "authorizes": [
+    "private Engine extraction of exactly four declared package fact families",
+    "deterministic merge and conflict-preserving immutable projection",
+    "documented source-content, registry, and projection SHA-256 preimages",
+    "focused tests, local Node 22 and 24 validation, advisory review, and Slice B evidence"
+  ],
+  "doesNotAuthorize": [
+    "Slice C preview or exact-vector harness implementation",
+    "filesystem acquisition or source-code parsing",
+    "network, provider, process, credential, persistence, or telemetry transport",
+    "public schema, package export, CLI command, Structure version, or new package",
+    "commit, push, merge, release, publication, or deployment"
+  ],
+  "contract": "docs/decisions/memorybrick-m0-acceptance.md",
+  "plan": "docs/execution/plans/MEM-001-read-only-m0.md"
+}

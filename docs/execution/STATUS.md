@@ -1,7 +1,7 @@
 # UseBrick execution status
 
-**Snapshot:** 2026-07-22
-**Index revision:** 46
+**Snapshot:** 2026-07-25
+**Index revision:** 74
 **Global status:** `advancing`
 
 ## Executive state
@@ -22,8 +22,119 @@ The applied 119-row policy remains non-admitting and public release authority
 remains separate. `GTM-001` is `ready` to prepare planning materials for 10–20
 consent-safe observed external sessions; completed sessions remain zero and
 outreach is false. `LABS-001` is `draft` for a bounded rendered-evidence
-benchmark. Neither plan is active, so company WIP remains `0/1`. No
-implementation plan is active, so implementation WIP is `0/2`.
+benchmark. Neither company plan is active, so company WIP remains `0/1`.
+Revision 68 records the owner's option 1 process reset for `MEM-001`. Revisions
+69 and 70 record the separate trusted-owner **Accept Slice A** and **Accept
+Slice B** decisions before product-code changes; Revision 71 closes Slice B.
+Revision 72 records the owner's explicit `continue` instruction as **Accept
+Slice C**. Revision 73 closes the complete private M0 after the reproduced
+caller-freeze correction, focused Node 22/24 checks, exact 3/9/27 reconstruction,
+package/workspace qualification, no-baseline self-scan, and two fresh blind
+PASS reviews with no blocker. `MEM-001` is `done`; implementation WIP is
+`0/2`. The focused 20-row requirement-to-test contract owns active behavior,
+registry v2 and the exact vector remain fixed test data, and the former
+`94/100` dual-review gate remains retired. Deferred Memory capabilities,
+Structure v5, public API, package exports, and commands remain unchanged.
+Revision 74 records the owner's option `1` authorization for exactly one local
+checkpoint commit carrying this qualified byte set and synchronized docs.
+Push, merge, tag, release, publication, and deployment remain gated.
+
+Historical MEM-001 chronology through Revision 67 follows. Revision 47
+explicitly started `MEM-001` as a decision-only implementation slice. The
+Revision 67 proposal left Structure v5 unchanged, narrowed extraction to four
+declared facts from registered root/package JSON only, and added no product
+code.
+Revision 52 records that
+final review round 5 rejected at 88/100 and 82/100, exhausting the authorized
+cycle. Post-cycle rework in the ADR plus ten annexes adds typed unknown recovery
+costs, provenance-bound dynamic completion limits, exhaustive deletion targets
+and verified predecessor files, corrected live-run gate order, and current status
+language while preserving opaque aliases, post-injection integrity, host
+capabilities, crash-total closure, and private/redacted receipt separation. The
+owner then chose **Revise**. Revision 53 records its narrow authority for exactly
+one additional fresh dual-blind review over identical frozen bytes. Revision 54
+records both 84/100 `REQUEST CHANGES` verdicts and the five-domain must-fix
+union. The owner then issued a new trusted **Revise**. Revision 55 applied that
+bounded authority and froze a 22-file packet at aggregate fingerprint
+`7d18ae54dfd9b2e2a53ec1197d0c5a01fff86e9120311a864de4e7109d34d705`.
+Revision 56 records the one authorized fresh dual-blind review at 80/100 and
+84/100, both `REQUEST CHANGES`. The blocking union spans grader evidence/output
+identity, comparator/native digest semantics, fake-endpoint reconstruction,
+progress-transition and output-index contracts, and exhaustive lifecycle
+identity/partition/deletion. The owner then issued a new trusted **Revise**.
+Revision 57 applied the comprehensive correction and froze a 24-file,
+445,373-byte packet at aggregate fingerprint
+`cdb85ceb316cc5113674ef2dee40d2bea9fde64a9f9f64165655ffc387e36243`
+over base `a0c29dd37dc024425336c03f98b1c6aa360c191a`. Revision 58 records
+the one authorized dual-blind review: Reviewer A scored 76/100 with nine
+must-fixes and Reviewer B scored 72/100 with eight; both returned
+`REQUEST CHANGES`. The strict AND-gate failed. The reconciled blocking union
+spans executable hash/identifier closure; typed applicable output identity and
+crash recovery; deterministic preflight and producer-independent grading;
+comparator and native materialization; non-circular lifecycle sinks and
+current-state deletion; final fixture inventory; hard resource bounds; private
+commitments; and provider-evidence freshness. **Accept** is unavailable.
+The owner then selected **Simplify M0** and issued a new trusted **Revise**.
+Revision 59 removes every live client/provider, credential, process, journal,
+private-artifact, accounting, retention, and deletion concern from M0. Current
+authority now covers only a local compiler contract, bounded target-labelled
+preview renderers, a synthetic 27–96-cell fact-coverage benchmark, and registry
+v2. Revision 60 records the one authorized review over an unchanged 16-file,
+286,602-byte packet: Reviewer A scored 86/100 and Reviewer B 88/100; both
+returned `REQUEST CHANGES`. The strict gate failed. Six blocking domains remain:
+byte decoding/extraction, total error precedence, workspace classification and
+provenance, truthful rendered-literal safety, benchmark expansion bounds, and
+exact reducer/count semantics. The owner then issued a trusted **Revise**.
+Revision 61 authorizes one bounded correction of every reconciled must-fix and
+should-fix plus exactly one fresh dual-blind review over identical frozen
+bytes. The correction and required self-audit are complete; packet freeze and
+that one review pair completed. Revision 62 records Reviewer A at 84/100 and
+Reviewer B at 81/100, both `REQUEST CHANGES`; the strict gate failed. Seven
+reconciled must-fix domains remain: total limit/pass precedence, executable
+fd-relative snapshot capability, physical identity uniqueness, benchmark
+capture/error mapping, key-byte bounds, phase-major invalid semantics, and the
+plan/compiler byte-decoding contradiction. **Accept** and implementation remain
+unavailable. The owner then issued a trusted **Revise**. Revision 63 applies a
+research-backed exact-byte reset: filesystem acquisition and physical identity
+leave M0; compiler limits use explicit global subphases; synthetic fixtures
+carry source/native bytes directly; claim keys gain component, per-key, and
+aggregate byte caps; every invalid benchmark result has one phase reason and
+zero counts; rendering consumes compiler-branded projections, fences fact rows,
+warns for every field/path, and pins Unicode 17.0.0 control handling. The
+correction passed local documentation validation and was frozen. Revision 64
+records the owner's exactly one authorized blind dual review over that packet:
+Reviewer A scored 77/100 and Reviewer B 78/100, both `REQUEST CHANGES`. The
+strict gate failed on bounded compiler admission, total host-independent static
+parsing, comparator binding, executable registration/key grammar, and benchmark
+non-vacuity. **Accept** and implementation remain unavailable. The owner then
+chose option 1, authorizing exactly one documentation-only correction of the
+complete five-must/four-should/one-consider finding union, followed by local
+validation and one new freeze. Revision 65 removes static-module parsing,
+restricts semantic output to ASCII, closes runtime/order/registration/key and
+parent/leaf semantics, requires a recursively frozen private compiler
+capability, and pins one exact 3-fixture/9-task/27-cell benchmark vector with
+complete expected compiler/renderer values, an exact result preflight, and a
+discriminated result union. Local validation passed and the corrected packet is
+frozen. Revision 66 records the separately authorized blind dual review over
+those unchanged bytes: Reviewer A scored 80/100 and Reviewer B 84/100, both
+`REQUEST CHANGES`. The strict gate failed. The reconciled union contains four
+must-fix domains—bounded own-key admission, accessor-free array admission,
+manifest-path grammar, and reachable limit/vector obligations—and four
+should-fix domains—prototype-safe parsed members, reflective exception
+attribution, payload-omission presentation, and pre-allocation base64url cap
+ordering. The owner then authorized one bounded documentation-only correction,
+local validation, and a new freeze. Revision 67 replaces caller own-key
+enumeration with ordered expected-field descriptors, requires data-only array
+indexes, fixes the manifest-path grammar, replaces impossible compiler/result
+errors with exact 135-candidate, 235,370-byte projection, and 14,570-byte result
+drift proofs, uses prototype-safe parsed maps, closes reflection attribution,
+makes both omission classes visible in preview text, and preflights base64url
+decoded caps before allocation. **Accept** and implementation remain
+unavailable. Another review, commit, push, merge, release, deployment,
+filesystem adapter, or live experiment is not automatic.
+Revision 68 supersedes only that historical review gate and active artifact
+ordering; the recorded findings, packet identities, and rejected designs remain
+unchanged history.
 The deterministic router preserves every existing Mendeley and CAL-001 hash
 while failing closed for pending, reference-only, unregistered, malformed, or
 manually widened source dispositions. The local v0.45 trust-release
@@ -33,8 +144,11 @@ quality/origin provenance contract consumed by completed `SB-UX-001`.
 `VAL-001` remains ready with its one owner-attested self-scan-to-rescan row
 preserved. Revision 46 closes `TEL-001` at implementation checkpoint
 `be2a784f5` after dual 98/100 review, recursive qualification, packed-consumer
-proof, and a fresh no-baseline self-scan. `MEM-001` now has no unmet dependency
-but remains `draft`. Revision 45 started TEL after a clean preflight and a
+proof, and a fresh no-baseline self-scan. `MEM-001` now has no unmet dependency;
+its complete private Slices A-C are locally qualified, locally checkpointed,
+and unshipped, establishing deterministic local fixture conformance only.
+Revision 45 started TEL after a clean
+preflight and a
 test-fixture-only canonical-temp repair. Revision 44 closed all eight SB-UX
 tasks after the fresh 11-file focused matrix, package
 and recursive gates, 296/296-file no-baseline self-scan with zero failures,
@@ -210,8 +324,9 @@ matrix passes 30 tests with one platform-conditional skip; packed-consumer
 tests pass 9/9; recursive SlopBrick tests pass 4,603 with 18 skips across 392
 passed and 5 skipped files; Core, Website, and Engine pass 285, 54, and 60
 tests. Final TEL reviewers each returned 98/100 with no must-fix or should-fix
-finding. CAL-002, SB-UX-001, and TEL-001 are `done`; implementation WIP is
-`0/2`.
+finding. CAL-002, SB-UX-001, and TEL-001 are `done`; their closeout left
+implementation WIP at `0/2` before revision 47 started the MEM decision slice.
+Current implementation WIP is `0/2`.
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
 remain unchanged.
@@ -436,8 +551,44 @@ owner approval and does not block local product work.
 | Company | 0 | 1 | None |
 
 `SB-045`, `CAL-002`, `SB-UX-001`, and `TEL-001` are done. `VAL-001` is ready
-with RUN-001 preserved. `MEM-001` has no unmet dependency but remains `draft`;
-no implementation plan is active.
+with RUN-001 preserved. `MEM-001` is `done`: private Slices A-C are locally
+qualified, locally checkpointed, and unshipped. Any broader Memory capability
+or remote/public integration action requires separate authority.
+Historical review chronology through Revision 67: the reopened cycle failed
+through round 5: round 1 scored
+86/83, round 2 scored 78/82, round 3 produced failed 82/86 evidence, round 4
+scored 86/89, and final round 5 scored 88/82. The owner-authorized additional
+dual-blind review then failed at 84/84. A new trusted owner **Revise** authorized
+the bounded Revision 55 correction and one fresh review; that review failed at
+80/84 with must-fix findings from both reviewers. The owner's next **Revise**
+authorized Revision 57's comprehensive eleven-annex correction and exactly one
+fresh review; it failed at 76/72 with must-fixes from both reviewers. The owner
+then selected **Simplify M0**. Revision 59 retains one ADR plus four local-only
+artifacts and removes the eight live-run annexes. Revision 60 records the one
+authorized review at 86/88 with must-fixes from both reviewers. Repository
+evidence cannot authenticate the owner. The owner's trusted **Revise** now
+authorizes Revision 61's one bounded correction and exactly one fresh review
+pair. Revision 62 records that pair's failed 84/81 result. **Accept** remains
+unavailable. The owner's next trusted **Revise** authorizes Revision 63's one
+research-backed correction, local validation, and packet freeze only. The owner
+then authorized exactly one blind dual review. Revision 64 records its failed
+77/78 result and returns authority to the owner. The owner chose option 1.
+Revision 65 used exactly one documentation correction plus validation and
+freeze to resolve the complete five-must/four-should/one-consider union. The
+packet was reviewed unchanged under the owner's later `start again` authority.
+Revision 66 records the failed 80/84 result and complete four-must/four-should
+union. The owner's next trusted **Revise** authorized Revision 67's one bounded
+documentation correction, local validation, and freeze. That correction closed
+the complete union. Revision 68 now replaces the score gate with one focused
+acceptance matrix and a reproducible blocker rule. Revision 69 records the
+separate trusted-owner **Accept Slice A** decision and green local receipt.
+Revision 70 separately authorized Slice B, and Revision 71 records its green
+local receipt. Revision 72 authorized Slice C, and Revision 73 records its
+corrected, blocker-free local receipt. Revision 74 authorizes exactly one local
+checkpoint commit and no remote or public action. MEM-001 has no live benchmark gate;
+any source-code parser,
+filesystem adapter, or future live experiment starts under a separate plan and
+ADR.
 `REL-001` and `DOC-PRUNE-001` are
 waiting external and consume no WIP. `GTM-001` is ready for planning materials
 only, targets 10–20 observed sessions, records zero completed sessions, and
@@ -458,7 +609,7 @@ WIP while waiting.
 | 6 | [`SB-UX-001`](plans/SB-UX-001-first-scan.md) | `done` | — | Preserve the first-scan contract and its typed boundary now consumed by completed TEL-001. |
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
-| 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `draft` | — | Approve the M0 storage/provenance/freshness ADR before explicitly starting implementation. |
+| 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
 | 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | — | Red-test one deterministic new-debt gate after explicitly starting the plan. |
 | 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
@@ -473,7 +624,7 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | Satisfied | Recursive lint, typecheck, full test, and build gates pass in the current checkout; the build emits only the existing zod declaration-bundling warnings. |
+| Current checkout gates | Qualified with timing caveat | Recursive typecheck and build pass, as do the complete Core, Website, and affected Engine suites. SlopBrick had an earlier complete 4,603-pass/18-skip run; post-correction aggregate retries exposed rotating unrelated load-sensitive timing assertions that each pass in isolation. The exact final aggregate and timings are preserved in the Slice C receipt; no unqualified current full-suite pass is claimed. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
@@ -511,8 +662,14 @@ continue with another eligible source or a smaller honest corpus.
   those evaluations separately.
 - Large corpus operations can consume time and memory without improving
   evidence. Start with bounded inventories and 100/100 smoke runs.
-- Memory can become stale or context-heavy. M0 remains read-only and benchmark
-  gated.
+- Memory can become stale, conflicted, or context-heavy. The accepted M0 ADR
+  intentionally accepts exact caller-supplied bytes rather than claiming secure
+  acquisition; it requires conflict-preserving compilation, target-independent
+  bounded selection, no native-file writes, and a synthetic in-memory offline
+  benchmark. The complete private profile/parser, compiler/projection, and
+  preview/exact-vector Slices A-C are locally qualified. Any filesystem
+  adapter, source parser, durable store, live agent, or later capability still
+  requires its own plan, ADR, and owner authority.
 - Cross-study market arithmetic can be mistaken for measured demand. Keep it
   in the dated research note and label it as a scenario, not a forecast.
 - Rendered evidence may add cost or false positives without incremental value.
@@ -526,7 +683,45 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`TEL-001` is done and implementation WIP is `0/2`. Revision 46 records its
+`MEM-001` is `done` and implementation WIP is `0/2`. Revision 69 records the
+green local Slice A qualification, Revision 71 closes Slice B after Revision
+70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
+complete private M0 local receipt. Revision 74 separately authorizes exactly
+one local checkpoint commit; it does not authorize any remote or public
+action. Revision 68 makes the focused
+[acceptance contract](../decisions/memorybrick-m0-acceptance.md) the sole active
+behavioral authority under the accepted
+[`ADR`](../decisions/memorybrick-m0.md). Pinned
+[registry v2](../decisions/memorybrick-m0-registry-v2.json) and the exact
+[benchmark vector v2](../decisions/memorybrick-m0-benchmark-vector-v2.json)
+remain fixed test data. Revision 67's compiler, renderer, benchmark, research,
+review results, and packet identities remain historical evidence.
+
+The active matrix has 20 stable requirements assigned to three slices:
+A profile/parser, B compiler/projection, and C previews/exact-vector
+integration. Numeric reviewer scores no longer gate progress. A finding can
+block only when it names an active requirement and the controller reproduces
+its failing input, test, or mechanical proof. The trusted owner accepted Slice
+A after Revision 68 validation. `M0-S01` through `M0-P02` passed focused tests
+and typechecks on Node 22 and 24, full Core/Engine package gates, and one
+independent advisory review with no blocker. The local receipt is
+[`MEM-001-local-m0.md`](evidence/MEM-001-local-m0.md). `M0-F01` through
+`M0-L01` also passed 31/31 focused tests on Node 22 and 24, full Engine
+140/140, and one independent advisory review with no blocker; the Slice B
+receipt is
+[`MEM-001-local-m0-slice-b.md`](evidence/MEM-001-local-m0-slice-b.md).
+`M0-R01` through `M0-C01` passed 10/10 focused tests and Engine typecheck on
+Node 22 and 24, current Engine 150/150, exact three-artifact/27-cell
+reconstruction, a 303/303 no-baseline self-scan, and two fresh blind PASS
+reviews with no blocker. The reproduced caller-freeze defect and correction,
+workspace gates, rotating unrelated SlopBrick timing caveats, and exact hashes
+are recorded in
+[`MEM-001-local-m0-slice-c.md`](evidence/MEM-001-local-m0-slice-c.md).
+Push, merge, tag, release, publication, deployment, source-code parsing,
+filesystem acquisition, durable Memory, and live outcome work remain
+unauthorized.
+
+`TEL-001` remains done. Revision 46 records its
 clean isolated worktree, final implementation checkpoint `be2a784f5`, dual
 98/100 review pass, green recursive lint/typecheck/test/build gates, passing
 packed ESM/CJS consumer proof, and fresh 99.94/100 package-local self-scan.
@@ -542,9 +737,12 @@ TEL behavior. Revision 44 preserves SB-UX-001's completed first-scan evidence
 and owner comprehension acceptance. CAL-002 remains complete at Task 20
 checkpoint `bd47dbd7e`; its 119-row policy remains locally applied and
 non-admitting. Protected owner state, frozen historical evidence, and CAL-001
-remain unchanged. `MEM-001`'s dependencies are now satisfied, but it remains
-draft until its storage/provenance/freshness/threat-model ADR is approved and
-the plan is explicitly started. `VAL-001` remains ready and may
+remain unchanged. `MEM-001`'s dependencies are satisfied, and Slices A-C are
+locally qualified under their separate owner decisions. Revision 73 closes
+only the private M0 proof; those slice decisions do not authorize integration,
+public action, or live runs. Revision 74 separately authorizes the one local
+checkpoint commit and nothing beyond it.
+`VAL-001` remains ready and may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
 evidence. `REL-001` remains the separate public-authority checkpoint and keeps

@@ -1,6 +1,6 @@
 # Impact Assessment — UseBrick AI-slop and coherence positioning
 
-**Updated:** 2026-07-22
+**Updated:** 2026-07-24
 
 ## Target
 
@@ -48,7 +48,15 @@ maps the affected work:
 - `GTM-001`: changes from dormant protocol to ready external-session plan;
   execution remains separately authorized and consent-bound.
 - `TEL-001`: outcome measures become the privacy-safe scan-to-rescan contract.
-- `MEM-001`: cross-agent repository-owned context benchmark.
+- `MEM-001`: deterministic compilation of four declared package facts from
+  trusted internal registrations containing untrusted in-memory JSON bytes,
+  target-labelled previews with omission disclosure, and one exact 3/9/27
+  conformance vector under a focused requirement-to-test matrix; public
+  hostile-host-object admission, static code parsing, filesystem acquisition,
+  and any live cross-agent benchmark are separately gated. Its complete private
+  Slices A-C are locally qualified, locally checkpointed, and unshipped; that
+  result is deterministic local fixture conformance only, not market or
+  efficacy evidence.
 - `LOCK-001`: first paid workflow hypothesis and new-debt enforcement proof.
 - `MEND-001`: remains gated on trusted deterministic repair.
 - `ENT-001`: remains gated on repeated paid-team demand.
@@ -67,13 +75,14 @@ maps the affected work:
 - Existing language-support and runtime-policy tests protect generated facts
   referenced by the website.
 
-Gaps to close in the implementation plan:
+The current validators preserve these required invariants:
 
 - assert the AI-slop wedge and one-product lifecycle together;
 - assert the Slop Index future/current boundary;
 - assert repository intelligence versus opt-in global outcomes;
 - assert plan-header priority parity with the execution index;
-- remove stale CAL-002/SB-UX state and obsolete revision numbers; and
+- keep mutable CAL-002/SB-UX/MEM state in execution authority rather than
+  durable positioning; and
 - preserve real `slopbrick` commands, zero-session truth, and release authority.
 
 ## Risk: High
@@ -85,7 +94,8 @@ an accidental shipped/release/market-demand claim.
 
 ## Recommended action
 
-Apply one next-revision documentation convergence. Keep volatile evidence in
-the dated research note, current state in execution authority, and durable
-positioning in the roadmap. Update current projections and validators; do not
-rewrite historical evidence or infer deployment identity from live copy.
+Preserve the converged positioning. Keep volatile evidence in the dated
+research note, current state in execution authority, and durable positioning in
+the roadmap. The local-only Memory M0 experiment may narrow without changing
+the one-product thesis; do not rewrite historical evidence or infer deployment
+identity from live copy.

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "OWNER-MEM-M0-DECISION",
+  "planId": "MEM-001",
+  "revision": 69,
+  "recordedAt": "2026-07-24T14:15:07Z",
+  "authority": "trusted-owner",
+  "ownerInput": "1",
+  "decision": "accept-slice-a",
+  "status": "accepted",
+  "baseCommit": "a0c29dd37dc024425336c03f98b1c6aa360c191a",
+  "requirements": [
+    "M0-S01",
+    "M0-S02",
+    "M0-I01",
+    "M0-I02",
+    "M0-I03",
+    "M0-P01",
+    "M0-P02"
+  ],
+  "authorizes": [
+    "private Core profile, types, and module-owned registry",
+    "pure Engine request validation, defensive byte copying, and bounded package JSON parsing",
+    "focused tests, local validation, advisory review, and Slice A evidence"
+  ],
+  "doesNotAuthorize": [
+    "Slice B compiler or projection implementation",
+    "Slice C preview or conformance-harness implementation",
+    "filesystem acquisition or source-code parsing",
+    "network, provider, process, credential, persistence, or telemetry transport",
+    "commit, push, merge, release, publication, or deployment"
+  ],
+  "contract": "docs/decisions/memorybrick-m0-acceptance.md",
+  "plan": "docs/execution/plans/MEM-001-read-only-m0.md"
+}

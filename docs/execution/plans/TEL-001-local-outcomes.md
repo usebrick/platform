@@ -119,6 +119,8 @@ the supported delete path. Preserve schema/test evidence for review.
 ## Next action
 
 Preserve the qualified local v1 contract and its separation from normal scans,
-the existing opt-in beacon, calibration authority, and public release. Hand the
-completed dependency to draft `MEM-001`; reopen TEL only for a demonstrated
-regression or a separately approved outbound-transport proposal.
+the existing opt-in beacon, calibration authority, and public release. Its
+completed dependency now feeds `MEM-001`'s locally qualified private Slice A-C
+M0 boundary; reopen TEL only for a
+demonstrated regression or a separately approved
+outbound-transport proposal.

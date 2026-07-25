@@ -175,5 +175,26 @@ Planned:
 - LockBrick applies reviewed policy and “new debt” gates;
 - MendBrick later performs only trusted, deterministic, reversible repairs.
 
+The accepted [`MEM-001` M0 ADR](../../../docs/decisions/memorybrick-m0.md)
+keeps this artifact contract unchanged. Revision 68's focused
+[requirement-to-test contract](../../../docs/decisions/memorybrick-m0-acceptance.md)
+is the sole active behavioral authority; pinned
+[registry v2](../../../docs/decisions/memorybrick-m0-registry-v2.json) and the
+exact [benchmark vector
+v2](../../../docs/decisions/memorybrick-m0-benchmark-vector-v2.json) remain
+fixed test data. M0 accepts trusted internal registrations containing untrusted
+root/package JSON bytes, compiles four declared fact families, returns frozen
+in-memory values, and warns when previews may omit facts. It defines no public
+hostile-host-object contract, static-module parser, filesystem discovery, live
+client/provider, credential, persistence, retention, or deletion concern. The
+numeric reviewer-score gate is retired; Revision 69 locally qualifies the
+private Slice A profile/parser implementation, Revision 70 authorized private
+Slice B compiler/projection work, Revision 71 records that slice's green local
+receipt, Revision 72 authorized Slice C, and Revision 73 records the complete
+private M0 local receipt. Revision 74 records one owner-authorized local
+checkpoint commit; all three slices remain unshipped.
+Any filesystem adapter, source parser, durable store, or live experiment needs
+separate authority.
+
 See the root [roadmap](../../../ROADMAP.md) and [execution
 ledger](../../../docs/execution/README.md) for actual milestone status.

@@ -36,8 +36,22 @@ roadmap](../../ROADMAP.md); volatile market observations belong in the dated
 
 AI slop and repository context are two halves of one product problem:
 SlopBrick exposes low-quality or context-blind implementation, while the
-planned Memory capability supplies repository-owned facts and approved intent
-that make those findings more specific. Privacy-safe, explicitly opted-in
+planned Memory capability may later supply repository-owned facts and approved
+intent that make those findings more specific. Its current locally qualified,
+locally checkpointed private Slice A-C
+[`MEM-001` M0](../../docs/decisions/memorybrick-m0.md) is narrower: four
+declared package facts over registered root/package JSON, immutable descriptive
+previews with visible omission warning, and one exact offline conformance
+vector. Revision 68 binds that design to one focused requirement-to-test
+contract and three implementation slices; it removes a public hostile-host-
+object API and the numeric reviewer-score gate; Revision 69 locally qualified
+the private profile/parser slice, Revision 70 authorized private compiler/
+projection work, Revision 71 records that slice's green local receipt, Revision
+72 authorized preview/exact-vector Slice C, and Revision 73 records the complete
+private M0 local receipt. Revision 74 authorizes one local checkpoint commit
+only. It includes no source-code parser, filesystem
+acquisition, approved intent, durable store, or live agent. The result is
+deterministic local fixture conformance only. Privacy-safe, explicitly opted-in
 outcome events may later improve global priors, but local approved policy wins
 and outcomes cannot silently become source, calibration, severity, or
 authorship authority.

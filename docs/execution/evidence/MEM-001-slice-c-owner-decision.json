@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "OWNER-MEM-M0-SLICE-C-DECISION",
+  "planId": "MEM-001",
+  "revision": 72,
+  "recordedAt": "2026-07-25T15:36:50Z",
+  "authority": "trusted-owner",
+  "ownerInput": "continue",
+  "decision": "accept-slice-c",
+  "status": "accepted",
+  "baseCommit": "a0c29dd37dc024425336c03f98b1c6aa360c191a",
+  "prerequisiteEvidence": "docs/execution/evidence/MEM-001-local-m0-slice-b.md",
+  "requirements": [
+    "M0-S02",
+    "M0-H01",
+    "M0-L01",
+    "M0-R01",
+    "M0-R02",
+    "M0-R03",
+    "M0-B01",
+    "M0-B02",
+    "M0-C01"
+  ],
+  "authorizes": [
+    "one target-independent 2048-byte fact selection and three bounded value-only descriptive previews",
+    "one private test-only harness over the committed 3-fixture, 9-task, 27-cell vector",
+    "focused red-first tests, local Node 22 and 24 validation, recursive workspace qualification, independent vector reconstruction, package-local self-scan, advisory review, and Slice C evidence"
+  ],
+  "doesNotAuthorize": [
+    "filesystem acquisition or source-code parsing",
+    "network, provider, process, credential, persistence, native-file writing, or telemetry transport",
+    "public schema, package export, CLI command, Structure version, new package, or arbitrary-suite evaluator",
+    "agent efficacy, real-repository improvement, market, policy, release, or public-availability claims",
+    "commit, push, merge, release, publication, or deployment"
+  ],
+  "contract": "docs/decisions/memorybrick-m0-acceptance.md",
+  "plan": "docs/execution/plans/MEM-001-read-only-m0.md"
+}

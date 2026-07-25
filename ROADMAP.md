@@ -1,6 +1,6 @@
 # UseBrick roadmap
 
-**Updated:** 2026-07-22
+**Updated:** 2026-07-25
 **Execution status:** [docs/execution/STATUS.md](docs/execution/STATUS.md)
 
 ## Product thesis
@@ -43,7 +43,7 @@ and pricing scenarios live in the dated
 | --- | --- | --- |
 | **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free scanner, and acquisition surface |
-| **Memory capability** | Compile observed facts, approved intent, provenance, and freshness into bounded context | Begin read-only; benchmark before adding a store or package |
+| **Memory capability** | M0 compiles four declared package facts; broader observed facts and approved intent remain post-M0 | Begin read-only; benchmark before adding a store or package |
 | **Pick flow** | Initialize the Constitution, approved stack, and policy | Fold into onboarding and policy authoring |
 | **Lock capability** | Prevent newly introduced verified drift | First paid workflow hypothesis inside the existing CLI |
 | **Mend capability** | Apply narrow deterministic repairs with proof and rollback | Parked until enforcement earns trust |
@@ -200,9 +200,32 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
 
 ## Next — make the scanner repository-aware and enforceable
 
-1. After explicitly starting the still-draft plan and approving its ADR, build
-   `MEM-001` as a read-only projection of facts, intent, provenance, and
-   freshness. Benchmark it against native context across agents.
+1. `MEM-001` has locally qualified and locally checkpointed the complete
+   private M0 across Slices A-C. Revision 68 makes its focused
+   [requirement-to-test contract](docs/decisions/memorybrick-m0-acceptance.md)
+   the sole active behavioral authority under the
+   [ADR](docs/decisions/memorybrick-m0.md); pinned
+   [registry v2](docs/decisions/memorybrick-m0-registry-v2.json) and exact
+   [benchmark vector
+   v2](docs/decisions/memorybrick-m0-benchmark-vector-v2.json) remain fixed
+   test data. M0 compiles four declared facts from trusted internal
+   registrations containing untrusted root/package JSON bytes, renders bounded
+   additive previews, and evaluates one internal 3-fixture/9-task/27-cell
+   conformance vector. It defines no public hostile-host-object API,
+   static-module parser, filesystem acquisition, live client/provider, or
+   private run state. The former numeric dual-review gate is retired; a review
+   item blocks only when the controller reproduces a named requirement
+   violation. Revision 69 records the trusted owner's **Accept Slice A**
+   decision and green local profile/parser receipt. Revision 70 separately
+   authorized compiler/projection Slice B, Revision 71 records its green local
+   receipt, Revision 72 authorized previews/exact-vector Slice C, and Revision
+   73 records the final local receipt. Revision 74 separately authorizes the
+   one local checkpoint commit; no push, merge, tag, release, publication, or
+   deployment follows from it. The result is deterministic local
+   fixture conformance only; it does not establish agent efficacy, product
+   demand, release qualification, or public availability. Any
+   filesystem adapter or live outcome experiment requires a separate future
+   plan, ADR, and owner authority.
 2. Prove `LOCK-001` on one deterministic new-debt family in the existing CLI,
    including changed evidence, waivers, and incomplete-scan failure semantics.
 3. Run `LABS-001` with fixed defects and blind source-only versus rendered

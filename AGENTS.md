@@ -12,8 +12,8 @@ The home of every `usebrick.dev` tool:
 
 | Package | Status | Notes |
 |---------|--------|-------|
-| `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure contract (types + loaders + JSON Schemas), and the deterministic starting point for future MemoryBrick work. |
-| `packages/engine/` | **private** — workspace-only | The scanning engine. `@usebrick/engine/pure` owns pure parsing/scoring APIs; the root exposes explicit Node compatibility adapters. The pure boundary has no hidden I/O, `console.log`, or `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
+| `packages/core/` | **private** — workspace-only, not on npm | The Repository Structure contract (types + loaders + JSON Schemas) plus the package-private, unexported MemoryBrick M0 profile/types/registry from locally qualified Slice A. Structure remains v5. |
+| `packages/engine/` | **private** — workspace-only | The scanning engine. `@usebrick/engine/pure` owns pure parsing/scoring APIs; the root exposes explicit Node compatibility adapters. Package-private, unexported MemoryBrick M0 Slices A-C bounded-parse registered package JSON, compile four declared fact families, preserve conflicts, render three bounded descriptive previews, and exercise the exact committed vector without I/O. The public pure boundary has no hidden I/O, `console.log`, or `process.exit`. Reusable from CLI, MCP, and future web IDEs. |
 | `packages/slopbrick/` | **published** as `slopbrick` | The free local scanner and main product entry point. Latest verified npm release v0.43.0: its tagged generated catalog and exact tarball README record 103 rules in 22 categories; package metadata saying 24 is known drift. The workspace is an unreleased v0.45.0 candidate with 119 rules in 27 categories; historical v10.1 evidence covers 576,750 analyzed files from 581,550 sampled paths and is not current v10.3 admission evidence. |
 | `packages/website/` | **private** — workspace-only, prepared for Cloudflare Pages | The usebrick.dev marketing site. Astro + native browser APIs + CSS brick surface; live deployment still requires owner/SHA verification. |
 
@@ -21,7 +21,11 @@ The roadmap folds Pick into `init` and policy authoring. MemoryBrick is the
 repository-owned substrate/compiler, LockBrick is the first paid team layer,
 and MendBrick follows only with deterministic, reversible repairs. Do not
 create standalone packages for these names before an approved architecture
-decision. The MCP server already ships inside `slopbrick`; a standalone
+decision. MemoryBrick's complete private M0 Slices A-C are locally qualified
+and locally checkpointed but unshipped under Revisions 73-74. That proof
+establishes only deterministic local fixture conformance; broader Memory
+capability and every remote or public action remain separately gated. The MCP server already
+ships inside `slopbrick`; a standalone
 `@usebrick/mcp` package remains a possible future extraction.
 
 ## Planning authority

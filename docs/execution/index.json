@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": 46,
-  "updatedAt": "2026-07-22",
+  "revision": 74,
+  "updatedAt": "2026-07-25",
   "cal002Status": "done",
   "cal002NextAction": {
     "text": "Preserve the applied, non-admitting Task 20 policy at checkpoint bd47dbd7e, retain its completed SB-UX-001 provenance handoff, and keep public actions under REL-001.",
@@ -269,7 +269,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the qualified local v1 outcome contract at be2a784f5, hand its completed dependency to draft MEM-001, and reopen only for a demonstrated regression or separately approved outbound transport.",
+        "text": "Preserve the qualified local v1 outcome contract at be2a784f5, retain its completed dependency handoff to MEM-001's locally qualified private Slice A-C M0 boundary, and reopen only for a demonstrated regression or separately approved outbound transport.",
         "verify": "corepack pnpm --filter slopbrick exec vitest run tests/telemetry/outcome-event.test.ts tests/telemetry/outcome-store.test.ts tests/beacon/emitter.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/TEL-001-contract.md"
       },
@@ -281,11 +281,11 @@
     },
     {
       "id": "MEM-001",
-      "title": "Benchmark the read-only Memory capability",
+      "title": "Prove deterministic local Memory compilation",
       "track": "implementation",
       "lane": "memory",
-      "horizon": "next",
-      "status": "draft",
+      "horizon": "now",
+      "status": "done",
       "priority": 9,
       "path": "docs/execution/plans/MEM-001-read-only-m0.md",
       "dependencies": {
@@ -300,11 +300,26 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Approve the storage, provenance, freshness, and threat-model ADR before adding a new canonical memory format.",
-        "verify": "test -f docs/decisions/memorybrick-m0.md",
-        "evidencePath": "docs/decisions/memorybrick-m0.md"
+        "text": "Preserve the owner-authorized local MEM-001 checkpoint and return to the owner before any push, merge, tag, release, publication, deployment, or broader Memory capability.",
+        "verify": "corepack pnpm --filter @usebrick/engine exec vitest run tests/memory-m0-renderer.test.ts tests/memory-m0-vector.test.ts --maxWorkers=1 --minWorkers=1 && corepack pnpm --filter @usebrick/engine typecheck",
+        "evidencePath": "docs/execution/evidence/MEM-001-local-commit-owner-decision.json"
       },
       "evidence": [
+        "docs/execution/evidence/MEM-001-owner-decision.json",
+        "docs/execution/evidence/MEM-001-local-m0.md",
+        "docs/execution/evidence/MEM-001-slice-b-owner-decision.json",
+        "docs/execution/evidence/MEM-001-local-m0-slice-b.md",
+        "docs/execution/evidence/MEM-001-slice-c-owner-decision.json",
+        "docs/execution/evidence/MEM-001-local-m0-slice-c.md",
+        "docs/execution/evidence/MEM-001-local-commit-owner-decision.json",
+        "docs/decisions/memorybrick-m0.md",
+        "docs/decisions/memorybrick-m0-acceptance.md",
+        "docs/decisions/memorybrick-m0-contract.md",
+        "docs/decisions/memorybrick-m0-rendering.md",
+        "docs/decisions/memorybrick-m0-benchmark.md",
+        "docs/decisions/memorybrick-m0-registry-v2.json",
+        "docs/decisions/memorybrick-m0-benchmark-vector-v2.json",
+        "docs/decisions/memorybrick-m0-research.md",
         "docs/ARCHITECTURE.md",
         "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
         "docs/research/usebrick-market-positioning-2026-07-19.md"

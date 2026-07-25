@@ -83,7 +83,7 @@ These three changes are not features. They are evidence that the lifecycle is op
 |-------|----------------------|------------------|
 | Define | **PickBrick** (the Constitution) | Policy initialization and approved intent are part of UseBrick onboarding, not another package |
 | Detect | **SlopBrick** (the scanner) | Shipped as `slopbrick@0.20.0` when this article was written; the verified current public release is governed by the root roadmap and release receipt |
-| Preserve and compile | **MemoryBrick** | Planned repository-owned context capability |
+| Preserve and compile | **MemoryBrick** | Planned repository-owned context capability; complete private M0 Slices A-C are locally qualified, locally checkpointed, and unshipped, proving only deterministic local fixture conformance with no source parser, store, or live agent |
 | Prevent | **LockBrick** (the CI gate) | Planned new-debt protection inside the current CLI |
 | Repair | **MendBrick** (the migrator) | Parked pending trust and rollback proof |
 | Verify runtime | **Render Labs** | Benchmark-only Labs experiment; no browser or rendered-evidence product claim |

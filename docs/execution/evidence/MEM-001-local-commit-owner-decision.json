@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "OWNER-MEM-M0-LOCAL-COMMIT",
+  "planId": "MEM-001",
+  "revision": 74,
+  "recordedAt": "2026-07-25T17:25:05Z",
+  "authority": "trusted-owner",
+  "ownerInput": "1",
+  "decision": "authorize-local-commit",
+  "status": "accepted",
+  "baseCommit": "a0c29dd37dc024425336c03f98b1c6aa360c191a",
+  "prerequisiteEvidence": "docs/execution/evidence/MEM-001-local-m0-slice-c.md",
+  "authorizes": [
+    "one local Conventional Commit containing the qualified private Memory M0 Slices A-C implementation, tests, decisions, receipts, and synchronized documentation"
+  ],
+  "doesNotAuthorize": [
+    "push, merge, tag, release, publication, or deployment",
+    "public schema, package export, CLI command, Structure version, or new package",
+    "filesystem acquisition, source-code parsing, durable Memory, live agents, providers, credentials, persistence, native-file writing, or telemetry transport",
+    "agent efficacy, real-repository improvement, market, policy, release, or public-availability claims"
+  ],
+  "contract": "docs/decisions/memorybrick-m0-acceptance.md",
+  "plan": "docs/execution/plans/MEM-001-read-only-m0.md"
+}

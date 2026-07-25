@@ -21,19 +21,49 @@ hypothesis has not yet been collected.
 | --- | --- | --- |
 | **UseBrick** | The quality, coherence, and verification product and repository-owned contract | Sole customer-facing product |
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
-| **Memory capability** | Compile facts, approved intent, provenance, and freshness into bounded agent context | Planned read-only substrate; no new package or store is authorized |
+| **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
 | **Lock capability** | Prevent newly introduced verified drift with approved policy | Planned paid-workflow hypothesis inside the current CLI |
 | **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Parked until detection and enforcement earn trust |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
 The Memory capability does not mean vendor-owned chat history or unrestricted
-agent memory. Its intended job is to combine observed repository facts with
-approved intent, rationale, provenance, and freshness, then compile bounded
-context for agents and CI. The deterministic Repository Structure schemas
+agent memory. M0 compiles only current package-manager, Node-range, command-
+presence, and package-name declarations with exact evidence; broader observed
+facts, approved intent, and rationale require separate authority. The
+deterministic Repository Structure schemas
 already in this monorepo are its technical starting point. Capability names
 describe responsibilities and sequencing boundaries; they do not authorize
 separately marketed products or workspace packages.
+
+Current Memory decision work is tracked by
+[`MEM-001`](./docs/execution/plans/MEM-001-read-only-m0.md). Its
+[M0 ADR](./docs/decisions/memorybrick-m0.md) and focused
+[requirement-to-test contract](./docs/decisions/memorybrick-m0-acceptance.md)
+now have a locally qualified and locally checkpointed private Slice A-C
+implementation;
+pinned [registry v2](./docs/decisions/memorybrick-m0-registry-v2.json)
+and exact [benchmark vector
+v2](./docs/decisions/memorybrick-m0-benchmark-vector-v2.json) are fixed test
+data. M0 covers only deterministic local compilation of four declared facts
+from trusted internal registrations containing untrusted root/package JSON,
+bounded previews with visible omission warnings, and one internal
+3-fixture/9-task/27-cell conformance harness. It defines no public
+hostile-host-object contract, source-code parser, filesystem acquisition,
+client/provider invocation, credentials, private run state, persistence,
+retention, or deletion system. Structure v5 remains unchanged. The former
+numeric reviewer-score gate is retired; Revision 69 records the owner's
+**Accept Slice A** decision and its green local receipt. Revision 70 separately
+authorized Slice B, Revision 71 records its green local receipt, and Revision
+72 authorized Slice C. Revision 73 records the complete private M0 local
+receipt after focused Node 22/24 checks, exact-vector reconstruction, targeted
+review, and bounded workspace qualification. Revision 74 records the owner's
+authorization for one local checkpoint commit only. This is deterministic
+local fixture conformance only, not agent efficacy or a shipped Memory product. Current
+state and full history live exclusively in the
+[execution index](./docs/execution/index.json),
+[execution status](./docs/execution/STATUS.md), and
+[changelog](./docs/execution/CHANGELOG.md).
 
 AI slop and repository memory solve different halves of one problem. Slop is
 the visible inconsistency; context loss is one major cause. Memory learns one

@@ -73,6 +73,23 @@ future deterministic transformation logic inside Mend. The MCP Registry Bridge
 remains an integration. BRICK Cloud is delayed hosted history and governance,
 gated by paid-team demand.
 
+The accepted [`MEM-001` M0 decision](./decisions/memorybrick-m0.md) preserves
+this boundary: private types stay in Core, unexported compilation and rendering
+stay in the existing Engine boundary, and the exact-vector harness remains
+test-only in Engine.
+Its focused [acceptance contract](./decisions/memorybrick-m0-acceptance.md)
+compiles only registered root/package JSON from a trusted internal request,
+deliberately omits hostile-host-object admission, static-module parsing and
+filesystem acquisition, and evaluates one pinned exact offline vector.
+Revision 69 locally qualifies the private Slice A profile/parser work;
+Revision 70 authorized private Slice B compiler/projection work, Revision 71
+records its green local receipt, Revision 72 authorized Slice C, and Revision
+73 records the complete private M0 local receipt. Revision 74 authorizes one
+local checkpoint commit only. That M0 proves only
+deterministic local fixture conformance; it
+would not satisfy the two-consumer extraction gate or authorize a source
+parser, filesystem adapter, or live agent experiment.
+
 ## When NOT to extract
 
 Premature splitting hurts more than it helps. Resist the urge to extract when:
@@ -88,7 +105,7 @@ Premature splitting hurts more than it helps. Resist the urge to extract when:
 | `@usebrick/core` | Private workspace contract package | A public cross-language consumer and a reviewed schema/versioning ADR |
 | `@usebrick/engine` | Private pure scanning package | A second shipped runtime needs the stable pure API independently of SlopBrick |
 | `slopbrick` | Published CLI and embedded MCP server | Keep together while one release lifecycle and one owner are simpler |
-| Memory capability | Planned read-only context compiler | M0 beats native agent context, the interface stabilizes, and two consumers need it independently |
+| Memory capability | Private M0 proof locally qualified; broader read-only context capability remains planned | A later live-outcome ADR proves value, the interface stabilizes, and two consumers need it independently |
 | Lock capability | Planned paid-workflow hypothesis inside `slopbrick` | Real use proves a separately versioned policy engine reduces coupling for two consumers |
 | Mend capability | Parked narrow reversible repair | Trusted enforcement and rollback proof produce a stable repair contract needed by two consumers |
 | RenderBrick Labs | Draft source-only versus rendered-evidence benchmark | Material benchmark value plus two real consumers and an approved runtime boundary ADR |

@@ -3,6 +3,1353 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 74 — 2026-07-25
+
+### Local checkpoint authority
+
+- Recorded the trusted owner's option `1` as authorization for exactly one
+  local Conventional Commit containing the already qualified private MEM-001
+  Slices A-C implementation, tests, decisions, receipts, and synchronized
+  documentation.
+- Bound that authority to base commit
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a` and the Revision 73 Slice C
+  receipt. The containing commit is the local checkpoint; no self-referential
+  commit SHA is embedded in its own content.
+- Updated mutable roadmap, architecture, status, plan, product, and repository
+  documentation from the pre-commit `uncommitted` state to the locally
+  checkpointed, unshipped state. Historical Slice A/B/C decision records remain
+  unchanged and retain their original narrower authority.
+
+### Boundary
+
+- This decision does not authorize push, merge, tag, release, publication,
+  deployment, public API/schema/CLI expansion, filesystem acquisition,
+  source-code parsing, durable Memory, live agents, or broader efficacy and
+  market claims.
+
+## Revision 73 — 2026-07-25
+
+### Slice C implementation and correction
+
+- Added one package-private, value-only Memory M0 renderer in Engine: one
+  target-independent 2,048-byte complete-row selection, bounded descriptive
+  Codex/Claude/Copilot previews, omission sidecars, rendered-text byte counts
+  and SHA-256, and recursively frozen output.
+- Added one Engine test-only harness over exactly the committed
+  3-fixture/9-task/27-cell vector. No caller-authored suite evaluator, public
+  facade, export-map entry, schema, command, package, or durable store was
+  added.
+- Reproduced the first targeted review's caller-freeze defect with a failing
+  regression, then cloned every selected assertion/key/evidence and omitted key
+  before freezing returned values. Two fresh blind reviews returned PASS at
+  96/100 and 98/100 with no must-fix or should-fix finding; scores remain
+  advisory.
+
+### Local qualification
+
+- Passed the 10/10 focused Slice C matrix and Engine typecheck on Node
+  22.22.3/`C` and Node 24.15.0/`de_DE.UTF-8`; current package suites passed at
+  Core 288/288, Website 54/54, and Engine 150/150.
+- Independently reconstructed all three exact artifacts and all 27 reducer
+  cells; preserved artifact JCS SHA-256
+  `874e1b8bf3b671f63f01dd9d1d3009e6e79c7f004e07901e92a8f57f7d521506`
+  and result JCS SHA-256
+  `5aedb337d082714eb070535806f154a7b5a80b45fe0468739c2a830f7319eafc`.
+- Passed recursive typecheck/build and a 303/303 package-local no-telemetry
+  self-scan without creating a baseline. The complete SlopBrick suite had an
+  earlier 4,603-pass/18-skip run; post-correction aggregates exposed rotating
+  unrelated publication, watch-poll, and performance timing assertions, each
+  passing alone. The final one-worker aggregate and isolated timings are
+  recorded without changing unrelated scanner code.
+
+### Control-plane closeout
+
+- Marked `MEM-001` `done` and synchronized the ADR, acceptance contract,
+  roadmap, architecture, root/package documentation, extraction boundary,
+  positioning impact, TEL handoff, status, execution index, and Slice C
+  receipt to the complete private M0 boundary.
+- Classified the result only as deterministic local fixture conformance.
+  MemoryBrick remains planned and unshipped; filesystem/source adapters,
+  durable Memory, live agents, efficacy or market claims, commit, push, merge,
+  release, publication, and deployment remain separately gated.
+
+## Revision 72 — 2026-07-25
+
+### Authority
+
+- Recorded the trusted owner's explicit `continue` instruction as **Accept
+  Slice C** for `MEM-001` after the green Slice B receipt.
+- Cleared `OWNER-MEM-M0-SLICE-C-DECISION` through
+  `docs/execution/evidence/MEM-001-slice-c-owner-decision.json` before Slice C
+  product-code changes.
+
+### Authorized implementation boundary
+
+- Authorized only `M0-R01` through `M0-C01` plus the cross-slice `M0-S02`,
+  `M0-H01`, and `M0-L01` checks: one target-independent bounded selection,
+  three value-only descriptive previews, and one private harness over the
+  committed 3-fixture/9-task/27-cell vector.
+- Authorized red-first focused tests, Node 22/24 validation, recursive
+  workspace qualification, independent golden reconstruction, package-local
+  self-scan, one advisory review, and a separate Slice C receipt.
+- Kept filesystem acquisition, source-code parsing, providers, persistence,
+  native-file writing, arbitrary-suite evaluation, public APIs/commands/
+  schemas, commit, push, merge, release, publication, and deployment
+  unauthorized.
+
+### Next action
+
+- Implement the smallest exact Slice C surface, qualify it locally, record its
+  evidence, and stop before integration or public action.
+
+## Revision 71 — 2026-07-24
+
+### Slice B implementation
+
+- Added package-private canonicalization, fact compilation, and immutable
+  projection modules inside Engine without changing Structure v5, package
+  facades, export maps, schemas, CLI commands, or releases.
+- Implemented exactly four declared package fact families with ASCII grammar
+  checks, exact JSON-pointer evidence, deterministic equal-value merge,
+  conflict-only ambiguity, named semantic comparators, recursive freezing, and
+  the three authorized Slice B SHA-256 preimages.
+- Added 31 focused tests covering extraction, recognized-field failures,
+  grammar boundaries, evidence, conflicts, shuffled/repeated runs, JCS,
+  digest reconstruction, the exact 135-candidate constructor, and the
+  235,370-byte conservative projection proof.
+
+### Qualification and review
+
+- Passed all 31 focused tests under exact Node 22.22.3 with `LC_ALL=C` and
+  Node 24.15.0 with `LC_ALL=de_DE.UTF-8`, plus Engine typecheck on both
+  runtimes.
+- Passed full Engine 140/140 and Core 288/288 tests, both package typechecks
+  and builds, Core contract/schema freshness, public-surface checks, and
+  `git diff --check`.
+- One independent read-only advisory review returned **APPROVE** with no
+  blocker. The controller removed its one noted unlisted behavior—duplicate
+  package-name rejection—and reran all affected gates green.
+- Recorded the complete local, uncommitted proof in
+  `docs/execution/evidence/MEM-001-local-m0-slice-b.md`.
+
+### Boundary and next action
+
+- Marked `MEM-001` `ready` behind
+  `OWNER-MEM-M0-SLICE-C-DECISION`; implementation WIP returns to `0/2`.
+- Slice C, commit, push, merge, release, publication, deployment, filesystem
+  acquisition, source-code parsing, providers, persistence, and live
+  experiments remain unauthorized.
+
+## Revision 70 — 2026-07-24
+
+### Authority
+
+- Recorded the owner's explicit `authorized slice b` instruction as **Accept
+  Slice B** for `MEM-001` after the green Slice A receipt.
+- Cleared `OWNER-MEM-M0-SLICE-B-DECISION` through
+  `docs/execution/evidence/MEM-001-slice-b-owner-decision.json` before Slice B
+  product-code changes.
+
+### Authorized implementation boundary
+
+- Authorized only `M0-F01` through `M0-L01`: extraction of four declared
+  package fact families, exact evidence and ASCII grammars, deterministic
+  equal-value merge and visible conflict preservation, named comparators,
+  immutable projection, three documented Slice B hash preimages, and bound
+  drift assertions.
+- Authorized focused failing tests, local Node 22/24 validation, one advisory
+  review, and a separate Slice B receipt.
+- Kept Slice C, filesystem acquisition, source-code parsing, providers,
+  persistence, outbound telemetry, public exports/commands/schemas, commit,
+  push, merge, release, publication, and deployment unauthorized.
+
+### Next action
+
+- Implement the smallest exact Slice B surface, qualify it locally, record its
+  evidence, and stop before Slice C.
+
+## Revision 69 — 2026-07-24
+
+### Authority
+
+- Recorded the trusted owner's `1` selection as **Accept Slice A** for
+  `MEM-001` after Revision 68 validation.
+- Cleared `OWNER-MEM-M0-DECISION` through
+  `docs/execution/evidence/MEM-001-owner-decision.json` before any product-code
+  change.
+
+### Authorized implementation boundary
+
+- Authorized only `M0-S01` through `M0-P02`: private Core profile/types and
+  module-owned registry, plus pure Engine registration validation, defensive
+  byte copying, and bounded package-JSON parsing.
+- Authorized focused tests, local Node 22/24 validation, one advisory review,
+  and a local Slice A evidence receipt.
+- Kept Slice B, Slice C, filesystem acquisition, source-code parsing, live
+  providers, persistence, outbound telemetry, commit, push, merge, release,
+  publication, and deployment unauthorized.
+
+### Slice A implementation
+
+- Added the private Core `memory-m0-v2` profile, trusted request types, and
+  exact recursively frozen registry-v2 constant without changing Structure
+  v5, package exports, public entrypoints, or CLI commands.
+- Added a package-private pure Engine boundary for root/package-manifest
+  registration, lexical path and count checks, per-source and aggregate byte
+  admission, defensive byte copying, fatal UTF-8, BOM rejection, and iterative
+  duplicate-key-rejecting JSON parsing.
+- Split tokenizer, iterative parser, and admission responsibilities into small
+  modules and added 3 focused Core tests plus 49 focused Engine tests covering
+  every Slice A requirement and adjacent bounds.
+
+### Qualification and review
+
+- Passed the focused Core 3/3 and Engine 49/49 suites and both package
+  typechecks on exact Node 22.22.3 and 24.15.0 binaries.
+- Passed the current full Core suite at 288/288 and full Engine suite at
+  109/109, Core contract freshness and schema validation, both package builds,
+  the public-surface base-diff check, and `git diff --check`.
+- One independent read-only adversarial review returned **APPROVE** with no
+  blocking finding under the four-part requirement rule. Three residual
+  evidence/immutability notes remain advisory and are recorded in the local
+  receipt rather than widening Slice A.
+- Recorded the complete local, uncommitted qualification at
+  `docs/execution/evidence/MEM-001-local-m0.md`.
+
+### Next action
+
+- Preserve the locally qualified Slice A boundary and await an explicit owner
+  disposition to authorize Slice B, revise Slice A through a reproducible
+  named-requirement failure, or hold `MEM-001`.
+- Keep commit, push, merge, release, publication, deployment, filesystem
+  acquisition, source-code parsing, and live experiments unauthorized.
+
+## Revision 68 — 2026-07-24
+
+### Authority
+
+- Recorded the owner's option 1 selection as authority to replace MEM-001's
+  repeated generic review-score loop with a focused executable process.
+- This authority covers one documentation/process reset, full affected-doc
+  convergence, local validation, and a stop for the next owner decision. It
+  does not authorize product implementation, review, commit, push, merge,
+  release, publication, deployment, source-code parsing, filesystem
+  acquisition, or a live experiment.
+
+### Focused contract
+
+- Added `memorybrick-m0-acceptance.md` as the sole active human-readable
+  behavioral contract: 20 stable requirement IDs, an executable verification
+  for every row, and ownership by one of three implementation slices.
+- Kept the ADR as scope/rationale and retained registry v2 plus the exact
+  3-fixture/9-task/27-cell vector as fixed test data.
+- Reclassified the Revision 67 compiler, renderer, benchmark, and research
+  documents as historical design references. They remain readable evidence but
+  cannot add unlisted requirements or override the focused matrix.
+- Narrowed the private trust boundary to trusted UseBrick request containers
+  holding untrusted repository JSON bytes. Public `unknown`, hostile
+  `Proxy`/accessor/cross-realm, caller-authored registry, and arbitrary-suite
+  admission contracts are no longer M0 requirements.
+
+### Execution and review reset
+
+- Split later implementation into Slice A profile/parser, Slice B
+  compiler/projection, and Slice C previews/exact-vector integration. Each
+  starts from focused failing tests and receives its own checkpoint.
+- Retired the two-reviewer `94/100` AND-gate. Reviewer scores are advisory. A
+  finding blocks only when it names an active requirement, supplies a
+  reproducible failing input/test/proof, demonstrates an in-scope consequence,
+  proposes the smallest correction, and is reproduced by the controller.
+- Made `OWNER-MEM-M0-DECISION` the only pre-implementation authority after
+  Revision 68 validation. The next owner choice is **Accept** Slice A,
+  **Revise** the focused matrix, or **Hold** MEM-001.
+
+### Boundary
+
+- The deterministic package-fact, conflict, preview-warning, exact-vector, and
+  fixture-conformance outcomes remain proposed. Structure v5, public APIs,
+  package exports, commands, and product code are unchanged.
+
+### Validation
+
+- `corepack pnpm plans:validate` passed: 18 plans, implementation WIP `1/2`,
+  company WIP `0/1`.
+- `corepack pnpm exec node --test scripts/validate-execution-docs.test.mjs`
+  passed all 21 tests, and `corepack pnpm positioning:validate` passed all 12
+  positioning tests.
+- The execution index, registry v2, and benchmark vector v2 parsed as JSON; the
+  focused matrix contained exactly 20 unique requirement IDs spanning slices
+  A/B/C; and all 139 local targets across 18 changed Markdown files resolved.
+- `git diff --check` and the changed-file trailing-whitespace scan passed.
+
+## Revision 67 — 2026-07-24
+
+### Authority
+
+- Recorded the owner's `continue` instruction as **Revise** authority for one
+  bounded documentation-only correction of the complete Revision 66
+  four-must/four-should union, local validation, and one new freeze.
+- This authority includes no implementation, another review, source-code
+  parser, filesystem adapter, live experiment, commit, push, merge, release,
+  deployment, or publication. **Accept** remains unavailable.
+
+### Complete must-fix closure
+
+- Replaced unbounded caller-controlled `Reflect.ownKeys` exact-shape admission
+  with fixed expected-field descriptor views. Captured intrinsics inspect only
+  named own descriptors; expected fields must be enumerable data descriptors;
+  ordinary reads, spread, iteration, and own-key enumeration are forbidden;
+  arbitrarily many extra string/symbol/accessor properties are inert.
+- Capped a source array from its intrinsic own length data descriptor before
+  requesting any numeric index descriptor. Every visited index must be an own
+  enumerable data descriptor and only `descriptor.value` is consumed, so holes
+  and indexed accessors fail without invocation.
+- Replaced the malformed manifest-path ABNF with explicit lowercase/digit
+  terminals, required grouping, a 63-byte continuation, exact regex
+  equivalence, and 14–256-byte whole-path bounds. Required vectors cover each
+  initial class plus segment/path adjacent boundaries and forbidden forms.
+- Removed unreachable public `assertion-limit` and `projection-limit` results
+  and their fictitious first-overflow vectors. Exact executable proofs establish
+  `7 + 64*2 = 135` candidates and a deliberately conservative 235,370-byte JCS
+  projection, 26,774 bytes below the unchanged 262,144-byte defensive ceiling.
+
+### Complete should-fix closure
+
+- Defined prototype-safe bounded JSON objects as private maps with
+  duplicate-before-insert and exact intrinsic `has`/`get` extraction.
+  `__proto__`, `constructor`, `prototype`, and polluted ambient prototypes have
+  no inherited or prototype-setting behavior.
+- Closed the exact inspection order and phase-local exception attribution.
+  Caller-container reflection maps to `invalid-input`; registry admission is
+  reference identity only and maps mismatch to `invalid-registry`; no
+  caller-authored registry tree is traversed.
+- Made conflict and payload-budget omission visible in every preview with the
+  fixed text-only warning `Facts may be omitted for conflict or payload budget.
+  This preview may be incomplete.` Exact omission sidecars remain unchanged.
+- Required base64url alphabet/remainder/unused-bit validation, arithmetic
+  decoded lengths, and per-field plus saturating aggregate decoded caps before
+  any decoded-buffer allocation. Re-encoding equality remains a post-decode
+  assertion; native ClaimKey markers use the same preflight.
+- Applied the same reachability audit to the exact benchmark and removed its
+  impossible `result-limit` invalid reason. The fixed 14,570-byte conservative
+  result envelope remains a mandatory executable drift proof under the
+  unchanged 131,072-byte defensive ceiling.
+
+### Exact vector and documentation convergence
+
+- Updated only the nine expected preview texts, byte counts, and text hashes in
+  the pinned vector. Its new identity is 103,296 raw bytes at
+  `08eef8255613d7e84614ff49a221debb6834da4fd3cf1dc07f360dc243569dde`
+  and 61,257 JCS bytes at
+  `85e113094aef6f7612373b1c3ef7e17e7346ecefdef3078a2cc2dc4f72ca234b`;
+  expected-artifact JCS is 43,112 bytes. The registry domain hash, source and
+  projection values/hashes, selections, exact omission sidecars, tasks, native
+  markers, 27 cells, 9,144-byte golden result, and golden hash remain unchanged.
+- Recomputed empty wrappers at 451/452/453 bytes and maximum previews at
+  2,499/2,500/2,501 bytes, all below 4,096.
+- Synchronized the ADR, compiler, renderer, benchmark, vector, research report,
+  MEM-001 plan, roadmap, root README, architecture, extraction boundary,
+  SlopBrick package/Repository Structure docs, website lifecycle note,
+  positioning impact, execution status, and execution index. Historical review
+  packets and their exact hashes/counts remain unchanged as history.
+- Added primary-source grounding from ECMAScript's `Reflect.ownKeys` and
+  `Object.getOwnPropertyDescriptor` algorithms, RFC 5234 precedence/grouping,
+  and RFC 4648 canonical unused-bit rules.
+
+### Validation and freeze
+
+- Passed plan validation at implementation WIP `1/2` and company WIP `0/1`, all
+  21 execution-document tests, all 12 positioning tests, JSON parsing,
+  changed-document local-link checks, `git diff --check`, and the trailing-
+  whitespace scan.
+- Independently reconstructed every source fact, conflict, projection/hash,
+  target-independent selection, omission, preview byte/hash, native marker,
+  27-cell reduction, and unchanged golden result from the committed vector.
+  Canonical base64url preflight, exact path admission, vector/JCS identities,
+  135/235,370/14,570 proofs, and 451/452/453 wrappers all match the contracts.
+- Froze one corrected documentation packet after final ledger synchronization.
+  No implementation/package test, reviewer verdict, or public/git action is
+  claimed.
+
+## Revision 66 — 2026-07-24
+
+### Authority and review integrity
+
+- Recorded the owner's `start again` instruction as authority for exactly one
+  fresh blind dual review over the frozen Revision 65 packet. It authorized no
+  correction, implementation, filesystem adapter, source-code parser, live
+  experiment, commit, push, merge, release, deployment, or publication.
+- Both reviewers independently matched branch `codex/mem-001-adr`, base
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a`, all 20 regular non-link files,
+  495,458 total bytes, and packet fingerprint
+  `2b541eb69ec2e99da337a93ed7101f0a9dcec488abcf7b2b287251700a550d0d`
+  before and after review. The controller independently reproduced the same
+  post-review identity before recording this revision.
+
+### Review result
+
+- Reviewer A scored 80/100 with two must-fix and three should-fix findings.
+  Reviewer B scored 84/100 with three must-fix and three should-fix findings.
+  Both returned `REQUEST CHANGES`; the strict 94-plus/zero-must-fix AND gate
+  failed.
+- Both independently passed plan validation, all 21 execution-document tests,
+  all 12 positioning tests, JSON parsing, `git diff --check`, and whitespace
+  checks. Both independently reproduced the exact raw/JCS/vector/registry,
+  projection/render, native-marker, 3/9/27 reducer, golden-result, wrapper, and
+  14,570-byte preflight evidence. Mechanical and artifact consistency does not
+  establish contract readiness.
+- Controller probes independently reproduced an accessor-backed dense array
+  satisfying the written key/prototype conditions, a 100,003-own-key record
+  that forces complete `Reflect.ownKeys` materialization, the malformed path
+  grammar, and the exact 135-row semantic maximum below attempted row 257.
+
+### Reconciled findings
+
+- Reconciled four must-fix domains: remove unbounded caller-controlled
+  `Reflect.ownKeys` enumeration before applicable caps; require and consume
+  own enumerable data descriptors for every admitted array index without
+  invoking accessors; correct the manifest-path grammar so the normative
+  contract admits its exact vector; and make every required candidate/projection
+  limit and first-overflow vector reachable, or remove/retune the unreachable
+  errors and obligations with an exact proof.
+- Reconciled four should-fix domains: define prototype-safe bounded-JSON object
+  materialization and own-member lookup for `__proto__`, `constructor`, and
+  related names; close phase-local reflective-operation order and exception
+  attribution; make payload-budget omission visible through deterministic text
+  or a required consumer presentation contract; and check canonical base64url
+  decoded lengths and aggregate caps before decoded-buffer allocation.
+- Neither reviewer reported a consideration. A lower-severity duplicate about
+  unreachable `assertion-limit` was subsumed by the stricter combined limit
+  domain.
+
+### Authority
+
+- **Accept** and implementation remain unavailable. Authority returns to the
+  owner: **Revise** may authorize one bounded documentation-only correction of
+  the complete Revision 66 union, local validation, and one new packet freeze;
+  **Hold** parks MEM-001. Another review is not automatic.
+- This revision records review outcome only. The six Revision 65 proposal
+  artifacts, including the exact vector and registry, remain byte-unchanged.
+  No schema, compiler, renderer, benchmark harness, product code, git/public,
+  release, or deployment action was taken.
+
+## Revision 65 — 2026-07-24
+
+### Authority
+
+- Recorded the owner's option 1 choice after Revision 64's failed 77/78 blind
+  review. It authorizes exactly one documentation-only correction of the
+  complete five-must-fix, four-should-fix, one-consideration union, followed by
+  local validation and one newly frozen packet.
+- It does not authorize another reviewer pair, schema/compiler implementation,
+  static source parsing, filesystem acquisition, live clients/providers,
+  commit, push, merge, release, deployment, publication, or any other public
+  action. A review requires a fresh owner choice after freeze; **Accept** remains
+  unavailable.
+
+### Research-backed scope correction
+
+- Reproduced the decisive totality failure: exact local `typescript@5.9.3` on
+  Node 24.15.0 throws `RangeError` for a valid 1,409-byte source containing 700
+  nested parentheses under the default stack, while the same bytes return zero
+  diagnostics under `--stack_size=8192`. The official TypeScript Compiler API
+  describes AST construction but supplies no M0-compatible host-stack/resource
+  guarantee.
+- Removed JavaScript/TypeScript/static-module extraction from M0 rather than
+  masking host-dependent behavior with exception mapping. The active source
+  surface is now root/package-manifest JSON only, parsed by one iterative
+  duplicate-key-rejecting algorithm with exact byte, depth, and token caps.
+- Consulted official Node `util.types` documentation, the TypeScript Compiler
+  API, RFC 8785, RFC 8259, WHATWG Encoding, RFC 4648, and CommonMark. Separated
+  RFC 8785 object-property order from named semantic comparators and replaced
+  the previous NFC/Unicode-version surface with strict ASCII semantic grammars.
+
+### Complete finding closure
+
+- Closed all five must-fix domains: compiler phase 3 checks intrinsic source
+  count before any element traversal; static parsing is removed; every source,
+  evidence, value, key, and benchmark order binds to a named comparator or
+  explicit enum; registration and predicate-specific ClaimKey grammars are
+  complete; and only one reviewed exact 3-fixture/9-task/27-cell vector can
+  produce a claim-bearing benchmark result.
+- Closed all four should-fix domains: successful projection graphs are
+  recursively readonly/frozen with module-private `WeakSet` capability
+  membership; the benchmark has one synchronous pure entry point and snapshots
+  the entire input; a streaming conservative JCS preflight precedes result-cell
+  allocation and valid/invalid result shapes are disjoint; and exact
+  proxy/record/array/byte-view, bounded JSON, and recognized parent/leaf tables
+  close runtime behavior.
+- Resolved the NFC consideration by allowing only exact 7-bit ASCII semantic
+  IDs, paths, keys, pointers, values, and labels. Ignored source JSON may contain
+  other valid UTF-8, but no host normalization/category data enters an M0 result.
+
+### Exact vector and evidence boundary
+
+- Added `memorybrick-m0-benchmark-vector-v2.json`: 102,801 reviewed raw bytes,
+  three fixed fixtures, three tasks per fixture, three targets per task,
+  non-empty required/forbidden/native evidence, all four predicates, both
+  conflict and payload-budget negative controls, and complete expected
+  projection/renderer values for every fixture.
+- Bound the evaluator to exact vector bytes, exact registry domain hash, strict
+  base64url/native marker evidence, a 131,072-byte conservative result
+  preflight, and one golden 27-cell result. Mutated or implementation-authored
+  suites can return only `invalid`, never `pass` or `fail`.
+- Kept the claim narrow: a pass is deterministic fixture conformance, not agent
+  efficacy, real-repository value, market validation, owner acceptance,
+  implementation authority, or release evidence.
+
+### Documentation convergence
+
+- Synchronized the ADR, compiler, renderer, benchmark, registry, exact vector,
+  research report, MEM-001 plan, roadmap, root README, architecture, future
+  extraction boundary, package README/Repository Structure guide, website
+  lifecycle note, positioning impact, execution status, and execution index.
+- Preserved all historical failed-review records as history; current authority
+  comes only from Revision 65's active six-artifact proposal and live execution
+  control plane.
+
+### Validation and freeze
+
+- Passed `corepack pnpm plans:validate` with 18 plans at implementation WIP
+  `1/2` and company WIP `0/1`; all 21 execution-document tests and all 12
+  positioning tests passed. JSON parsing, local-link checks, `git diff --check`,
+  and the changed-document trailing-whitespace scan are green.
+- Independently recomputed the exact registry/vector/JCS/golden hashes and
+  counts. The vector is 102,801 raw bytes, 60,762 JCS bytes, 6,949 JSON tokens,
+  depth 10, and 42,617 expected-artifact JCS bytes, all within the pinned caps.
+- Independently reconstructed every source fact, conflict, projection hash,
+  target-independent selection, omission, preview byte count/text hash, native
+  marker, 27-cell reducer result, and the 14,570-byte conservative result
+  preflight. Empty wrapper bytes remain 396/397/398 and maximum preview bytes
+  remain 2,444/2,445/2,446.
+- Froze one corrected documentation packet after final ledger synchronization.
+  No implementation or package test is claimed because no product code exists
+  in this slice. No reviewer verdict is claimed and no public/git action was
+  taken.
+
+## Revision 64 — 2026-07-23
+
+### Authority and review integrity
+
+- Recorded the owner's `start` instruction as authority for exactly one fresh
+  blind dual review over the frozen Revision 63 packet. It authorized no
+  correction, implementation, filesystem adapter, live experiment, commit,
+  push, merge, release, or deployment.
+- Both reviewers independently matched base
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a`, all 17 regular non-link files,
+  393,385 total bytes, and packet fingerprint
+  `733f91a89c01ea0ab7970b05beb5b9f3f2d39b75863e43b572ab39e78573c4fc`
+  before and after review. The controller independently reproduced the same
+  post-review identity before recording this revision.
+
+### Review result
+
+- Reviewer A scored 77/100 with four must-fix findings, four should-fix
+  findings, and one consideration. Reviewer B scored 78/100 with four
+  must-fix findings, four should-fix findings, and one consideration. Both
+  returned `REQUEST CHANGES`, so the strict 94-plus/zero-must-fix AND gate
+  failed.
+- Both independently passed plan validation, all 21 execution-document tests,
+  all 12 positioning tests, JSON parsing, `git diff --check`, and packet
+  identity checks. Mechanical green does not establish contract readiness.
+- A controller-side read-only probe reproduced the parser blocker: exact
+  `typescript@5.9.3` on Node 24.15.0 threw `RangeError` for a valid 1,409-byte
+  source with 700 nested parentheses under the default stack, while the same
+  bytes returned zero diagnostics with `--stack_size=8192`. A second probe
+  confirmed that allowed U+E000 and U+10000 strings reverse order between
+  JavaScript's default UTF-16 comparison and the contract's UTF-8 tuple order.
+
+### Reconciled findings
+
+- Reconciled five must-fix domains: enforce the source-count cap before any
+  unbounded element traversal and publish the resulting phase precedence; make
+  static-module parsing total and host-independent through an exact bounded
+  syntax admission rule or remove it from M0; bind every source, evidence,
+  value, identifier, and benchmark sort to named executable comparators; define
+  complete registration-path and predicate-specific `ClaimKey` subject/slot
+  grammars; and prevent a vacuous benchmark pass with a reviewed normative
+  fixture/task inventory or equivalent closed non-vacuity requirements.
+- Reconciled four should-fix domains: make the branded projection recursively
+  immutable or define a closed renderer failure; define one synchronous pure
+  benchmark entrypoint and a complete immutable input snapshot; specify the
+  exact result-preflight equation and discriminated valid/invalid result
+  variants; and close runtime object/array/byte-view plus recognized JSON
+  container and top-level TypeScript AST edge states with executable tables.
+- Recorded one consideration: pin NFC normalization data and version-skew
+  vectors as explicitly as the Unicode 17.0.0 General_Category table.
+
+### Authority
+
+- **Accept** remains unavailable. Authority returns to the owner: a new trusted
+  **Revise** may authorize one bounded correction of the complete Revision 64
+  finding union and define a later review, while **Hold** parks MEM-001. No
+  correction or review is automatic.
+- This revision records review outcome only. The five normative Revision 63
+  artifacts and supporting research remain byte-unchanged. No schema,
+  compiler, renderer, benchmark harness, product code, commit, push, merge,
+  release, or deployment is added.
+
+## Revision 63 — 2026-07-23
+
+### Authority
+
+- Recorded the owner's new trusted **Revise** after Revision 62's failed 84/81
+  review. This authority covers one research-backed correction of the complete
+  finding union, local documentation validation, and one packet freeze.
+- It does not authorize a reviewer pair, schema/compiler implementation,
+  filesystem adapter, live client/provider experiment, commit, push, merge,
+  release, or deployment. A later review requires a fresh owner instruction;
+  **Accept** remains unavailable until the strict review gate passes.
+
+### Research-backed scope correction
+
+- Consulted official Node filesystem and Node-API documentation, POSIX
+  `openat`, Linux `openat2`, Windows `CreateFile`, RFC 8785 and RFC 4648,
+  WHATWG Encoding, Unicode UAX 9/UTS 55, CommonMark, and the TypeScript Compiler
+  API. The sources show that race-resistant component-relative acquisition is
+  a platform/native subsystem, not one portable Node adapter contract.
+- Removed filesystem discovery, root/handle acquisition, stable double reads,
+  physical identity, alias policy, and fixture-file rebinding from M0. The pure
+  compiler now stops at explicit registrations beside attached non-shared byte
+  arrays and privately copies admitted bytes. A future acquisition adapter
+  requires its own plan, ADR, supported-platform matrix, and review.
+
+### Finding closure
+
+- Split compiler `source-limit` into globally ordered source-count,
+  per-source-byte, and aggregate-byte subphases with exact attribution. All
+  parsing completes before semantic validation; all semantic validation
+  completes before candidate-limit return.
+- Replaced benchmark file references with in-memory source/native bytes and
+  removed unreachable path, capture, content, and render invalid variants.
+  Bounded suite admission now maps every malformed/cap failure to one
+  `suite-invalid` result with zero counts; later execution is phase-major.
+- Added claim-key subject, slot, per-key JCS, aggregate key-reference,
+  aggregate key-byte, suite-source-byte, suite-native-byte, and native-context
+  caps before corresponding JCS/base64/set/copy allocation.
+- Made renderer input an in-process compiler-branded projection and narrowed
+  revalidation to intrinsic invariants. Every fact field and source path is
+  labelled untrusted, each JCS row is inside a fenced code block, and exact
+  wrapper bytes were remeasured at 396/397/398.
+- Pinned Unicode 17.0.0 and rejected semantic-string categories
+  `Cc|Cf|Zl|Zp`, covering CR/LF, U+2028/U+2029, BOM, bidi controls, and other
+  format controls without host-Unicode drift.
+- Synchronized the ADR, compiler, renderer, benchmark, registry, MEM-001 plan,
+  roadmap/architecture/package descriptions, status, and execution index. The
+  plan no longer assigns malformed-byte rejection to a removed adapter.
+
+### Validation and freeze
+
+- Passed `corepack pnpm plans:validate` with 18 plans at implementation WIP
+  `1/2` and company WIP `0/1`; all 21 execution-document tests and all 12
+  positioning tests passed. Both JSON documents parse, `git diff --check`
+  passes, and the normative/research trailing-whitespace scan is clean.
+- Independently measured empty wrapper bytes at 396/397/398 and maximum
+  wrapper-plus-payload bytes at 12,684/12,685/12,686, all below 16,384.
+- Froze the corrected documentation packet for a possible later review. No
+  review verdict is claimed, and the five normative artifacts remain
+  unimplemented.
+
+## Revision 62 — 2026-07-23
+
+### Review result
+
+- Recorded the exactly one Revision 61 dual-blind review pair authorized by the
+  owner's trusted **Revise**. Both reviewers independently matched base
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a`, all 16 regular non-link files,
+  301,871 total bytes, and aggregate fingerprint
+  `091682f931781e3cd3d413df768a232f30c51934ae5739f369f8eca22ed29f31`
+  before and after review.
+- Reviewer A scored 84/100 with five must-fix findings. Reviewer B scored
+  81/100 with six. Both returned `REQUEST CHANGES`, so the strict
+  94-plus/zero-must-fix AND gate failed.
+- Both independently passed plan validation, all 21 execution-document tests,
+  all 12 positioning tests, JSON parsing, `git diff --check`, and Memory-M0
+  whitespace checks. Mechanical green does not replace contract acceptance.
+
+### Reconciled findings
+
+- Reconciled seven must-fix domains: ordered compiler/snapshot `source-limit`
+  co-failure and first/second-pass precedence; an executable fd-relative
+  snapshot backend and root/handle contract; physical `(dev,ino)` uniqueness
+  across logical paths and fixture roles; exact physical-fixture-to-logical-
+  registration rebinding plus exhaustive component-error mapping and removal
+  of unreachable benchmark `render`; per-key and aggregate key-byte caps before
+  JCS/base64/set expansion; envelope/limit/semantic validation phases with
+  phase-major fixture traversal and bounded invalid counts; and correction of
+  the plan's malformed-byte ownership contradiction.
+- Reconciled three should-fix domains: warn that every rendered fact field and
+  path—not values alone—is untrusted; reject or deterministically escape
+  U+2028/U+2029 and formatting controls that break the one-line claim; and
+  limit renderer revalidation claims to intrinsic projection invariants or a
+  branded compiler result.
+- Recorded one consideration: pin a Unicode property/version and consider bidi
+  and HTML-significant path-character hardening after the blocking line/control
+  behavior is closed.
+- Both reviewers agreed that fatal UTF-8/BOM/NFC handling, pinned TypeScript
+  extraction, segment-safe workspace provenance, the local-only/non-efficacy
+  authority boundary, and the no-implementation gate are closed.
+
+### Authority
+
+- **Accept** remains unavailable. Implementation, live experiments, and public
+  actions remain unauthorized. Authority returns to the owner: a new trusted
+  **Revise** may authorize one bounded correction and define a later review;
+  **Hold** parks MEM-001. No correction or review is automatic.
+- This revision records review outcome only. The five normative Revision 61
+  artifacts remain byte-unchanged from the reviewed packet. No schema,
+  compiler, renderer, fixture harness, product code, commit, push, merge,
+  release, or deployment is added.
+
+## Revision 61 — 2026-07-23
+
+### Authority
+
+- Recorded the owner's trusted **Revise** choice after Revision 60. It
+  authorizes one bounded correction of the complete reconciled review finding
+  set and exactly one fresh dual-blind review over identical frozen bytes.
+- The correction must close all six blocking domains: static-module byte
+  decoding and exact literal extraction; total compiler, snapshot, and renderer
+  error precedence and attribution; segment-safe workspace classification with
+  complete provenance; truthful rendered-literal safety boundaries; benchmark
+  key/result resource bounds; and exact reducer equations plus malformed-suite
+  count semantics.
+- It also applies both actionable should-fixes: forbidden exposure evaluates
+  rendered preview keys rather than omission metadata, and mutable review
+  scores/status remain in execution authority rather than durable product
+  descriptions. The successful local-only and no-efficacy scope reset remains
+  invariant.
+
+### Boundary
+
+- This authority covers documentation, the proposed pinned registry, local
+  validation, packet freezing, and one review pair only. It does not authorize
+  schema/compiler implementation, a live agent or provider experiment, a
+  commit, push, merge, release, deployment, or public claim.
+- **Accept** remains unavailable until both fresh reviewers score at least
+  94/100 with zero must-fix findings. The review result does not itself
+  authorize implementation; a separate trusted owner **Accept** would still be
+  required.
+
+### Changed
+
+- Replaced implicit source-text handling with one BOM-rejecting fatal UTF-8
+  path, no normalization or replacement decoding, pinned TypeScript parser
+  inputs, cooked module-specifier values, and complete raw-token evidence.
+- Defined total compiler and snapshot error phases, attribution, and triggers;
+  removed unreachable compiler variants. Reduced the renderer to its two
+  caller-triggerable errors and made their precedence exact.
+- Made workspace matching segment-safe (`N` or `N + "/"`) and attached both
+  module-token and matching manifest-name evidence to every workspace row.
+- Replaced categorical rendered-literal safety claims with tighter literal
+  grammars, exact 352/353/354-byte wrappers, a repository-controlled-data
+  warning, one-line JCS rows, and an explicit no-secret-classifier boundary.
+- Added reachable per-task, native-context, aggregate key-reference, and final
+  result caps. The suite now allows 3–10 fixtures, 32 tasks, and 27–96 cells;
+  the aggregate key-reference cap is 3,072 and the benchmark result cap is
+  1,048,576 bytes.
+- Defined the reducer's exact per-cell equations and per-cell summary sums,
+  malformed-suite count behavior, invalid precedence, pre-expansion result
+  upper bound, and preview-only forbidden-exposure rule.
+- Removed mutable review scores/revision state from README, roadmap,
+  architecture, positioning, and package-facing descriptions. Those durable
+  surfaces point to execution authority for current state.
+
+### Audit evidence
+
+- The required self-audit found and corrected four pre-review inconsistencies:
+  an unreachable 12-fixture cap, an unreachable 8,192 aggregate-key cap, a
+  `required` set/number mismatch, and result-limit evaluation ahead of its
+  declared invalid precedence.
+- Registry invariants now prove 128 = 1 + 64 + 63 sources, 96 = 32 × 3 cells,
+  3 × 10 <= 32 minimum class tasks, a reachable 3,072 aggregate cap below the
+  3,968 per-item maximum, and 354 + 12,288 = 12,642 rendered bytes below the
+  16,384 cap.
+- Plan validation, all 21 execution-document tests, all 12 positioning tests,
+  JSON parsing, Memory-M0 local-link closure, whitespace checks, and
+  `git diff --check` pass. No product source, schema, dependency, or release
+  artifact changes in this correction.
+
+## Revision 60 — 2026-07-23
+
+### Review result
+
+- Recorded the one Revision 59 dual-blind review authorized by the owner's
+  trusted **Revise**. Both reviewers independently matched the frozen base
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a`, 16-file, 286,602-byte packet and
+  aggregate fingerprint
+  `79e233df78a67568d0e4e8008792a6efedb169eb73efa39c2b59cdac180baac9`
+  before reporting; the fingerprint matched again after both reports.
+- Reviewer A scored 86/100 with five must-fix findings. Reviewer B scored
+  88/100 with four. Both returned `REQUEST CHANGES`, so the strict
+  94-plus/zero-must-fix AND-gate failed.
+- Reconciled six blocking domains: fatal static-module byte decoding and exact
+  literal extraction; total validation/error precedence and attribution;
+  segment-safe workspace classification plus provenance; truthful treatment of
+  rendered source-controlled literals; bounded benchmark key/result expansion;
+  and exact summary equations plus malformed-suite count semantics.
+- Recorded three non-blocking follow-ups: define forbidden exposure as preview
+  text rather than omission metadata, keep mutable review state in execution
+  authority, and preserve the successful local-only/non-efficacy scope reset.
+- Updated current status surfaces to report the failed gate. The five Revision
+  59 normative artifacts remain byte-unchanged from the reviewed packet.
+
+### Authority
+
+- **Accept** remains unavailable. Implementation and live experiments remain
+  unauthorized. Authority returns to the owner: a new trusted **Revise** may
+  authorize one bounded correction and define a future review; **Hold** parks
+  MEM-001. No correction or second review is automatic.
+- This revision records review outcome only. It adds no schema, compiler,
+  renderer, fixture harness, product code, commit, push, merge, release, or
+  deployment.
+
+## Revision 59 — 2026-07-23
+
+### Changed
+
+- Recorded the owner's trusted **Revise** choice to **Simplify M0** after
+  Revision 58's failed 76/72 dual review. The authority covers one local-only
+  scope reset and exactly one fresh dual-blind review; it covers neither
+  implementation nor a live experiment.
+- Replaced the eleven-annex live-run proposal with an ADR, local compiler
+  contract, deterministic renderer contract, offline fixture benchmark, and
+  pinned registry v2. Removed the foundations, publication, evaluation,
+  isolation, transmission, run, conformance, and accounting annexes from
+  current authority.
+- Reduced M0 to explicit stable source bytes -> bounded current
+  `observed|declared` facts -> target-labelled additive previews -> synthetic
+  deterministic fact-coverage cells. Structure v5 remains unchanged.
+- Removed every provider/client invocation, credential, prompt/response,
+  process runner, model grader, preflight, retry, journal, private artifact,
+  cost/timing account, retention control, deletion receipt, and live-run owner
+  gate from MEM-001. Any such work now requires a separate future plan and ADR.
+- Addressed the Revision 58 finding union by eliminating the removed machinery
+  and retaining exact local safeguards: four enumerated hash preimages; no
+  hash-derived IDs; stable no-follow source reads; explicit provenance and
+  conflicts; fixed source/value/projection/render/fixture/task/cell caps; and
+  a closed deterministic `pass|fail|invalid` coverage reducer.
+- Synchronized README, roadmap, architecture, package docs, extraction guidance,
+  positioning impact, TEL handoff, MEM-001, status, and execution index revision
+  59. **Accept** remains unavailable pending one fresh strict dual pass.
+
+### Boundary
+
+- Offline fixture coverage is technical-feasibility evidence, not agent
+  efficacy, real-repository improvement, market validation, or a shipping claim.
+- This revision changes documentation and the proposed registry only. It adds
+  no schema, compiler, renderer, fixture harness, product code, provider call,
+  commit, push, release, or deployment.
+
+## Revision 58 — 2026-07-23
+
+### Changed
+
+- Recorded the one owner-authorized dual-blind review of the frozen Revision 57
+  packet. Reviewer A scored 76/100 with nine must-fix findings; Reviewer B
+  scored 72/100 with eight. Both returned `REQUEST CHANGES`, so the strict
+  94-plus/zero-must-fix AND-gate failed.
+- Bound both reports to base commit
+  `a0c29dd37dc024425336c03f98b1c6aa360c191a` and the same 24-file,
+  445,373-byte packet fingerprint
+  `cdb85ceb316cc5113674ef2dee40d2bea9fde64a9f9f64165655ffc387e36243`.
+  The fingerprint matched before both reviews and again after both reports.
+- Reconciled thirteen blocking domains: complete executable hash/identifier
+  discovery, preimages, ordering, profiles, and cycle rejection; profile-bound
+  applicable output identity with canonical slot/path allocation; first-missing
+  semantics; crash-safe pre-egress/output journaling; deterministic preflight
+  outcomes; producer-independent blind grading and trace binding; comparator
+  normalization for operational coordinate identity; total native sentinel
+  materialization; non-circular manifest/authorization lifecycle sinks;
+  retry-time deletion reproof; authoritative final fixture-state inventory;
+  hard cardinality and byte limits; repository-safe private commitments; and
+  provider-policy/account snapshot freshness.
+- Returned authority to the owner. A new trusted **Revise** may authorize one
+  bounded correction and define a later review; **Hold** parks M0. **Accept** is
+  unavailable because neither reviewer passed and both reported must-fixes.
+
+### Evidence
+
+- Both reviewers independently reran plan validation, all 21 execution-document
+  tests, all 12 positioning tests, `git diff --check`, JSON/link/file-hygiene
+  checks, annex limits, shared-type ownership, `ContractRef` closure, and
+  `PrivateOutputRef` kind coverage. The mechanical gates passed.
+- This revision records review and authority state only. It changes no normative
+  annex, pinned registry byte, schema, compiler, runner, product code, provider
+  state, release, or deployment.
+
+### Review boundary
+
+- No automatic rework or second review is authorized after this failure.
+- Implementation remains behind `OWNER-MEM-M0-DECISION`; live calls remain
+  behind the later exact-manifest `OWNER-MEM-M0-RUN` decision.
+
+## Revision 57 — 2026-07-23
+
+### Changed
+
+- Recorded the owner's new trusted **Revise** after Revision 56's failed 80/84
+  dual review. It authorizes one comprehensive correction and one fresh
+  parallel dual-blind review over identical frozen bytes; it authorizes neither
+  implementation nor live client calls.
+- Added the normative deterministic-foundations annex: canonical structural
+  diff/apply, machine-checkable hash-preimage closure, collision-free typed
+  output slots and reconstructable observed indexes, the exact 27-preflight/81-assignment
+  progress machine, and exhaustive path identity/lifecycle partition rules.
+- Reworked conformance so comparator patches carry replayable values, native
+  token/bundle hashes have explicit preimages, fake-endpoint qualification binds
+  complete roots, and the grader independently derives typed command/test/
+  architecture outcomes from pinned raw evidence.
+- Bound output refs to exact kind/coordinate/sequence/slot/order, retained the
+  full plan in the capsule plus hash-chained progress deltas, and made recovery
+  derive first-missing evidence only from the reconstructed index.
+- Closed physical/hard-link aliasing, directory/file identity, exhaustive
+  bundle/fixture/broker/output inventory, first-failure stop and not-attempted
+  deletion states, retry semantics, split usage semantic/parser/grammar
+  identities, and a retained-control owner-disposition deadline.
+- Synchronized ADR, roadmap, architecture, package docs, plan, status, index,
+  and authority language. **Accept** remains unavailable until both fresh
+  reviewers score at least 94 with zero must-fix findings. Fingerprint and
+  verdict remain pending final gates.
+
+## Revision 56 — 2026-07-23
+
+### Changed
+
+- Recorded the one owner-authorized fresh dual-blind review of Revision 55.
+  Reviewer A scored 80/100 with six must-fix findings; Reviewer B scored 84/100
+  with four must-fix and two should-fix findings. Both returned
+  `REQUEST CHANGES`, so the strict 94-plus/zero-must-fix AND gate failed.
+- Reconciled seven blocking domains: producer-independent grader evidence and
+  collision-free output identity; canonical comparator diff and observed-patch
+  hashes; exact native-materialization hash preimages; reconstructable
+  fake-endpoint patches; a complete progress-journal transition grammar; a
+  closed output-index contract; and exhaustive private-path identity,
+  partition, set-digest, directory, interruption, and deletion states.
+- Retained fake-endpoint reconstruction as must-fix under the strict union rule:
+  one reviewer found its patch values/policy reconstruction incomplete even
+  though the other considered that prior domain closed.
+- Recorded two should-fix findings: artifact-bundle physical paths must be
+  unique and non-aliasing, and usage parsing needs distinct semantic, grammar,
+  and executable bindings.
+- Recorded two non-blocking considerations without applying them: add a
+  machine-readable inventory for every hash preimage, and define a later owner
+  disposition deadline for retained controls.
+
+### Evidence
+
+- Both reviewers independently recomputed the same 22-file packet fingerprint
+  before and after review:
+  `7d18ae54dfd9b2e2a53ec1197d0c5a01fff86e9120311a864de4e7109d34d705`
+  from base `a0c29dd37dc024425336c03f98b1c6aa360c191a`.
+- Plan validation, all 21 execution-ledger tests, all 12 positioning tests,
+  JSON parsing, 197/197 local links, ten-annex line limits, registry bytes/domain
+  digest, secret scan, and `git diff --check` passed on the frozen packet.
+- Reviewers made no edits, provider calls, network calls, or delegated reviews.
+  The main process independently confirmed the post-review fingerprint before
+  recording this state revision.
+
+### Review boundary
+
+- Review authority has returned to the owner. No correction or follow-up review
+  is automatic. A new **Revise** may authorize another bounded correction;
+  **Hold** parks M0. **Accept** is unavailable.
+- Implementation remains behind `OWNER-MEM-M0-DECISION`; live calls remain
+  behind the later exact-manifest `OWNER-MEM-M0-RUN` decision.
+
+## Revision 55 — 2026-07-23
+
+### Changed
+
+- Recorded the owner's new trusted **Revise** decision, authorizing one bounded
+  correction of the reconciled findings and exactly one fresh dual-blind review
+  over identical frozen bytes.
+- Closed all five must-fix domains in the proposed contracts: deterministic
+  outcome grading; exact comparator digest preimages; typed fake-endpoint
+  substitution; reconstructable closure after run-root loss; and exhaustive
+  identity-safe deletion covering mappings, controls, and qualification probes.
+- Closed all five should-fix findings: resource-use terminology no longer
+  implies monetary cost; native sentinel materialization is byte-bound;
+  review-packet identity has one deterministic fingerprint; the Node
+  predecessor-open sequence is exact; and repeated score chronology is removed
+  from roadmap, architecture, and package-facing documentation.
+- Preserved the strict review gate: both fresh reviewers must score 94/100 or
+  higher with zero must-fix findings. Failure returns authority to the owner;
+  no retry is automatic.
+
+### Evidence
+
+- The bounded rework changes only the proposed ADR, annexes, plan, and authority
+  documentation. It adds no shipped schema, compiler, runner, product code,
+  provider call, release, publication, or deployment.
+- Structure v5 and the pinned registry bytes remain unchanged. The registry is
+  exactly 1,648 bytes and its declared domain hash remains
+  `1cc340d0f063950f59d3220d2c0463c6396cf29737c3a2dd618c4ace4dd91765`.
+- Plan validation reports 18 valid plans at implementation WIP `1/2` and
+  company WIP `0/1`; all 21 execution-ledger tests and all 12 positioning tests
+  pass.
+- Both JSON files parse; all 197 local references across the 20 changed
+  Markdown files resolve; all 22 packet files are regular non-link files with
+  final LF and no CR bytes; the ten normative annexes remain at or below 300
+  lines; secret, dependency-change, whitespace, authority-consistency, and
+  contract-closure checks pass.
+- The fresh dual-blind result is recorded only after both reviewers complete
+  against the frozen packet fingerprint.
+
+### Review boundary
+
+- A dual pass makes owner **Accept** available; it does not itself authorize
+  implementation.
+- Live calls remain behind the later exact-manifest `OWNER-MEM-M0-RUN` gate.
+
+## Revision 54 — 2026-07-23
+
+### Changed
+
+- Recorded the owner-authorized additional dual-blind review's two independent
+  84/100 `REQUEST CHANGES` verdicts. The strict 94-plus/zero-must-fix AND-gate
+  failed.
+- Reconciled five distinct must-fix domains: deterministic outcome-grader
+  derivation; exact condition-comparator digest preimages; typed fake-endpoint
+  substitution and receipt binding; reconstructable closure after run-root
+  loss; and exhaustive identity-safe deletion covering mappings, controls, and
+  qualification probes.
+- Returned review authority to the owner. A new **Revise** may authorize a
+  bounded correction cycle and later fresh dual review; **Hold** parks M0.
+  **Accept** remains unavailable.
+
+### Evidence
+
+- Both reviewers read the same frozen 22-file revision-53 packet independently
+  and made no edits or provider calls.
+- The reports independently converged on unrecoverable closure and deletion.
+  One also found the missing grader derivation; the other found missing digest
+  preimages and fake-endpoint substitution semantics.
+- This revision records review state only. It changes no normative annex,
+  registry byte, schema, compiler, runner, product code, provider state, or
+  release state.
+
+### Review boundary
+
+- No automatic rework or additional review is authorized after this failure.
+- Implementation remains behind `OWNER-MEM-M0-DECISION`; live calls remain
+  behind the later exact-manifest `OWNER-MEM-M0-RUN` decision.
+
+## Revision 53 — 2026-07-23
+
+### Changed
+
+- Recorded the owner's trusted user-role **Revise** decision after the prior
+  review cycle was exhausted.
+- Bounded that authority to exactly one additional fresh dual-blind review over
+  identical frozen bytes. The pass gate remains both reviewers at 94/100 or
+  higher with zero must-fix findings.
+- Made failure handling explicit: if either reviewer misses the gate, review
+  authority returns to the owner for a new Revise or Hold; no follow-up round is
+  automatic.
+- Preserved every later boundary. Revise does not authorize owner Accept,
+  implementation, live provider calls, commit, push, merge, release, publish,
+  or deployment.
+
+### Evidence
+
+- This revision changes only authority and execution-control documentation. It
+  adds no schema, compiler, runner, product code, provider call, or release.
+- On the revision-53 bytes, plan validation passes with 18 plans at
+  implementation WIP `1/2` and company WIP `0/1`; all 21 execution-document
+  tests and all 12 positioning tests pass.
+- Both JSON files parse; all 195 local references across the 20 changed
+  Markdown files resolve; all 22 packet files pass whitespace and final-LF
+  checks; the ten normative annexes stay at or below 300 lines; the authority,
+  round-5 closure, registry-digest, and diff gates pass.
+
+### Review boundary
+
+- Two fresh reviewers receive the same frozen 22-file packet and remain blind
+  to each other's report.
+- A dual pass makes the proposal eligible for a separate owner Accept decision;
+  it does not itself authorize implementation or the later live benchmark.
+
+## Revision 52 — 2026-07-23
+
+### Changed
+
+- Recorded final review round 5's 88/100 and 82/100 `REQUEST CHANGES`
+  verdicts. The authorized reopened cycle is exhausted; no round 6, owner
+  acceptance, implementation, or live-run authority is implied.
+- Made every potentially incomplete recovery-cost scalar an `AccountedUInt` so
+  wall time, requests, tools, tokens, and context bytes can remain unknown
+  without invented zeroes; budget recovery uses the same typed evidence.
+- Made the completion-token parameter the sole bounded dynamic model parameter,
+  with provenance over the manifest limit and every contiguous prior usage
+  receipt. Unknown usage or zero remaining tokens blocks egress.
+- Bound deletion to the manifest/path-review target set, preserved that complete
+  set across retries, defined exact terminal status derivation, and required
+  sequential no-follow verification of every predecessor control file and hash.
+- Corrected the plan so fake-endpoint client/runner conformance,
+  preregistration, and the exact manifest precede `OWNER-MEM-M0-RUN`; only that
+  later Accept permits live preflights or scored calls.
+- Corrected stale status/roadmap/ADR language. The next authority choice is
+  **Revise** to authorize another fresh dual review or **Hold** to park M0;
+  **Accept** remains unavailable before a later dual pass.
+
+### Evidence
+
+- This revision changes documentation and the execution-index JSON only. It
+  adds no schema, compiler, runner, product code, provider call, release, or
+  deployment; the pinned registry remains unchanged.
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12 positioning
+  tests pass.
+- Both JSON files parse; all 20 changed Markdown links resolve; all 22 changed
+  files pass whitespace checks; every annex stays at or below 300 lines; the six
+  round-5 rework contracts and revision-52 authority markers pass; `git diff
+  --check` passes; and the 1,648-byte registry pin remains exact.
+
+### Review boundary
+
+- The post-cycle bytes must pass documentation, link, JSON, digest, whitespace,
+  line-limit, and authority-consistency gates before an owner choice is requested.
+- A Revise may authorize a newly bounded dual-review cycle. It does not itself
+  authorize implementation or live calls. Hold parks M0 without changing the
+  rest of the roadmap.
+
+## Revision 51 — 2026-07-23
+
+### Changed
+
+- Recorded fresh review round 4's independent 86/100 and 89/100 `REQUEST
+  CHANGES` verdicts. The proposal remains non-owner-ready and no implementation
+  or live-run authority is claimed.
+- Replaced repository-visible task and assignment identifiers with keyed opaque
+  aliases in a distinct `RepositoryBenchmarkReceipt`; raw IDs and private
+  receipt references remain owner-private.
+- Added per-preflight/per-attempt budget receipts that enforce monotonic wall,
+  provider completion-token, and broker tool-call limits. Exceeded or unproved
+  limits are invalid and retain cost/safety evidence without entering uplift.
+- Added byte-for-byte post-credential-injection integrity, permitting only one
+  policy-named credential header before the immutable TLS-bound request buffer.
+- Replaced the single deletion key with append-only predecessor-bound attempt
+  keys and made uncertain control publication an explicit owner incident.
+- Added typed host-backend capabilities for namespace, mount, credential,
+  complete-trace, control, and clock enforcement; corrected stale review labels.
+
+### Evidence
+
+- This revision changes documentation and the execution-index JSON only; the
+  pinned registry bytes remain unchanged. It adds no schema, compiler, runner, product code,
+  provider call, repository telemetry, release, or deployment.
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12 positioning
+  tests pass.
+- Both changed JSON files parse; all 20 changed Markdown files resolve local
+  links; all 22 changed files pass whitespace checks; every normative annex is
+  at or below 300 lines; `git diff --check` passes; and the registry remains
+  exactly 1,648 bytes with its pinned domain-separated digest.
+
+### Review boundary
+
+- Round 5 is the final reopened-cycle review. After documentation, link, JSON,
+  digest, whitespace, and consistency gates pass on frozen bytes, two fresh
+  blind reviewers must each score at least 94 with zero must-fix findings.
+- Only a dual pass may produce an owner-decision candidate. A later trusted-
+  session owner Accept would authorize implementation only; live calls remain
+  separately gated by `OWNER-MEM-M0-RUN` over the exact private manifest.
+
+## Revision 50 — 2026-07-23
+
+### Changed
+
+- Recorded that fresh review round 3 failed. One formal report scored 82/100
+  and summarized its pair as 82/86; a separate formal report scored 86/100 and
+  disclosed that one nested reviewer was interrupted. This is failed evidence,
+  not a clean dual-review result or owner-readiness claim.
+- Added normative experiment-conformance and accounting/closure annexes, making
+  ten annexes total. Every bank task's native/memory/on-demand expansions are
+  compared before eligibility; only tasks whose three client comparators pass
+  may enter the draw, and the selected nine receipts enter the private manifest.
+- Bound typed native sentinels, exact namespace destinations/CWD, mount and
+  counter templates, a non-exportable trusted-session capability, and
+  wall/monotonic/boot expiry checks. Hidden request retry or replay is invalid.
+- Added versioned inbound response parsing, subvalue/composite provenance,
+  exact metadata generators, provider usage formulas, unanswered billable-
+  request accounting, and closed seven-kind safety-event derivation.
+- Made closure total over every completed, invalid, suppressed, aborted, and
+  not-run assignment, with offline recovery receipts and typed unknown costs.
+  The exact manifest and raw evidence stay private; only redacted run and
+  sanitized benchmark JSON receipts may enter the repository.
+- Removed every conditional-unlink claim from Node control publication, added
+  seed claim before seed generation, made closure/deletion create-once, and put
+  local deletion evidence in a separate private control leaf outside the
+  deleted run root. Every declared compile limit now has an exact error code.
+
+### Evidence
+
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12 positioning
+  tests pass.
+- All ten normative annexes remain at or below 300 lines. JSON parsing, local
+  links across all 20 changed Markdown files, tracked/untracked whitespace,
+  `git diff --check`, current-review-state scans, and the registry's exact
+  1,648-byte pinned digest pass.
+
+### Review boundary
+
+- The proposal remains `Proposed`. Round 4 may run only after the ten-annex
+  packet passes the documentation, link, JSON, digest, whitespace, and
+  consistency gates. Two fresh reviewers must each score at least 94 with zero
+  must-fix findings on identical frozen bytes before an owner disposition.
+- No schema/product implementation, provider call, commit, push, release,
+  publication, deployment, outreach, or public claim is authorized.
+
+## Revision 49 — 2026-07-23
+
+### Changed
+
+- Recorded fresh review round 2's independent 78/100 and 82/100 `REQUEST
+  CHANGES` verdicts. No owner-readiness or implementation authority is claimed.
+- Added an eighth normative vendor-transmission annex. Its closed request-state
+  grammar covers all request sequences, exact wire framing/cardinality,
+  fixed/dynamic preimages, model-requested tool-path provenance, and a fresh
+  manifest/authorization expiry check before every egress.
+- Separated the condition-invariant native open set from explicit treatment
+  overlays and bound both generated treatment conditions into eligibility,
+  preflight, attempt, trace, and benchmark evidence.
+- Replaced the unnecessary reusable-cache, hard-link tree, and native-helper
+  publication design with public Node `fs` direct exclusive creation for only
+  seed/start controls. Generated bytes live only in a fresh private run bundle;
+  partial or uncertain control files permanently poison their key.
+- Bound exact host/backend artifacts, stable invocation aliases to fresh
+  per-invocation realizations, strict redirect-free TLS/IP/pin policy, complete
+  prompt/completion/total-token costs, deterministic array ordering, and total
+  compile-error precedence.
+- Bound every preflight to a fresh environment, every provider response and
+  tool result to a coordinate-specific private output, and later-request
+  provenance to exact prior response/tool-call, operation, path/command, and
+  before/after source evidence.
+
+### Evidence
+
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12 positioning
+  tests pass.
+- The ADR and eight normative annexes are each at or below the 300-line circuit
+  breaker. JSON parsing, links across all 18 changed Markdown files, tracked and
+  untracked M0 whitespace, `git diff --check`, stale-contract scans, and the
+  registry's exact 1,648-byte pinned digest pass.
+
+### Review boundary
+
+- The proposal remains `Proposed`. Blind round 3 may run only after the revised
+  eight-annex packet validates. Both reviewers must pass the same bytes at 94 or
+  higher with zero must-fix findings before an owner disposition is requested.
+- No schema/product implementation, live provider call, push, release,
+  publication, deployment, outreach, or public claim is authorized.
+
+## Revision 48 — 2026-07-23
+
+### Changed
+
+- Recorded the owner's explicit reopening of one fresh dual-review cycle for
+  `MEM-001` and fresh round 1's independent 86/100 and 83/100 `REQUEST CHANGES`
+  verdicts. No owner-readiness or implementation authority is claimed.
+- Added a seventh normative isolation/transmission annex with closed fixture,
+  alias, UID, namespace, filesystem, process, network, trace, broker,
+  transmitted-boundary, attempt-environment, and adversarial-receipt schemas.
+- Required every scored attempt and retry to use a new byte-identical fixture,
+  HOME/config and output roots, namespaces, client/broker sessions, and
+  counters while preserving all prior-attempt artifacts, safety, and cost.
+- Expanded the vendor boundary to every plaintext request field, including
+  default/system prompts, tool schemas, model parameters, metadata, and
+  telemetry. A local gateway must attest the exact pre-credential request
+  before broker injection and TLS egress; opaque or bypassing clients are
+  unsupported.
+- Replaced generic isolation artifacts with typed semantic and exact-file
+  references, completed digest identities and stable source-failure codes,
+  hardened publication around pinned descriptor-relative anchors, and added
+  exact authorization-expiry and preservation-state rules.
+- Made the reducer total over all 81 scheduled cells, nullable and
+  denominator-explicit when inconclusive, and accountable for every retry's
+  safety and cost. Reordered execution so compiler, renderers, materializer,
+  and runner qualify before task eligibility, seed, draw, and run authorization.
+
+### Evidence
+
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12 positioning
+  tests pass.
+- All eight M0 ADR/annex Markdown files remain below the 300-line circuit
+  breaker. Changed-document local links, JSON parsing, `git diff --check`, and
+  the registry's exact 1,648-byte pinned digest also pass.
+
+### Review boundary
+
+- The proposal remains `Proposed`. Blind round 2 may run only after this
+  bounded rework validates; both reviewers must score at least 94 with zero
+  must-fix findings before an owner disposition is requested.
+- The existing implementation and live-run gates remain separate. No schema,
+  product code, provider call, push, release, publication, deployment,
+  outreach, or public claim is authorized by this documentation revision.
+
+## Revision 47 — 2026-07-22
+
+### Changed
+
+- Explicitly started `MEM-001` as a decision-only implementation slice and
+  moved implementation WIP from `0/2` to `1/2`.
+- Proposed one short M0 ADR with six separate normative data, publication,
+  client/rendering, evaluation/authorization, run-artifact, and
+  benchmark/reducer annexes plus one exact pinned registry.
+- Proposed no new canonical Memory store or package. M0 adds a strict
+  `memory-m0-v1` companion schema while leaving every Structure v5 document
+  valid, and writes only when the caller explicitly selects disposable output.
+- Closed M0 to current `observed|declared` assertions from root/package
+  manifests and statically parsed modules. Claim slots preserve legitimate
+  multi-value facts; exact referential invariants, canonical bytes, two source
+  passes, and no prior-projection input make the projection reproducible.
+- Replaced an unavailable directory no-replace primitive with the repository's
+  qualified private-tree plus atomic hard-link reference pattern.
+- Split authority into two manual gates: one trusted-session owner decision for
+  implementation and one later exact-manifest decision for live clients. JSON
+  receipts are audit records and cannot authenticate the owner.
+- Defined exhaustive client-native context manifests; fixed rendering templates
+  and budgets; noncircular additive challenges; one deterministic on-demand
+  command; process-separated credential/tool/network confinement; strict
+  manifest/start/attempt/benchmark schemas; an outcome-blind task draw; 81
+  valid assignments; and explicit inconclusive/insufficient-failure outcomes.
+- Recorded that final independent review round 5 rejected the prior draft at
+  84/100 and 87/100. Post-review rework closes dynamic native-source tracing,
+  artifact resolution and exact invocation mounts, provider/account snapshots,
+  filesystem qualification, the frozen task bank and eligibility receipt,
+  single-publication seed and start controls, exact assignment preimages,
+  retry safety accounting, and deterministic reduction. The reworked bytes
+  have not yet received a newly authorized independent review.
+
+### Evidence
+
+- The ADR and each normative annex remain independently below the 300-line
+  documentation circuit breaker.
+- Current official Codex, Claude Code, and GitHub Copilot documentation was
+  rechecked for the proposed additive instruction surfaces; documentation is
+  treated as discovery evidence rather than runtime conformance proof.
+- Final review round 5 returned 84/100 and 87/100, both `REQUEST CHANGES`; no
+  owner-readiness or independent pass is claimed for the post-review rework.
+- Execution-plan validation passes with 18 plans at implementation WIP `1/2`
+  and company WIP `0/1`; all 21 execution-document tests and all 12
+  positioning checks pass.
+
+### Boundary
+
+- The ADR remains `Proposed`; it does not authorize schema code, a compiler,
+  a Memory package/store, native instruction-file mutation, benchmark claims,
+  Lock enforcement, telemetry transport, release, push, publication,
+  deployment, or outreach.
+- The exhausted five-round review cycle cannot be silently extended. Explicit
+  authority must reopen one fresh dual review, and both reviewers must pass
+  before asking the owner to choose `Accept`, `Revise`, or `Hold` for an exact
+  proposal checkpoint. A later implementation Accept cannot authorize the
+  separately gated live benchmark.
+
 ## Revision 46 — 2026-07-22
 
 ### Changed

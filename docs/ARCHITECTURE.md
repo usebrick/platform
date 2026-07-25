@@ -1,6 +1,6 @@
 # UseBrick architecture
 
-**Updated:** 2026-07-22
+**Updated:** 2026-07-25
 **Status:** Current product and package reference
 
 UseBrick keeps AI-generated software coherent. It is the repository-owned
@@ -312,26 +312,53 @@ separate privacy and authorization decision.
 ## Planned Memory capability flow
 
 The Memory capability must extend the existing deterministic model in bounded
-stages:
+stages. M0 stops at local compilation and offline coverage:
 
 ```text
-code + config + approved docs and decisions
-                    │
-                    ▼
-        repository-owned memory model
- observed facts │ declared intent │ rationale │ evolution
-                    │
-          provenance + freshness
-                    │
-          ┌─────────┴──────────┐
-          ▼                    ▼
-  native agent adapters   Lock capability policy
-  boot/scoped/on-demand   deterministic CI
+registered root/package JSON bytes
+          │
+          ▼
+ explicit registered byte arrays
+          │
+          ▼
+ local Memory projection
+ four declared package facts │ conflicts
+          │
+          ▼
+ bounded target-labelled previews
+          │
+          ▼
+ exact 3/9/27 offline conformance vector
+
+future live agents and Lock policy require separate ADRs
 ```
 
-The first stage is read-only projection and evaluation. A new `.usebrick/`
-store, schema migration, or instruction-file writer requires its own ADR,
-threat model, ownership rules, and compatibility plan.
+`MEM-001` has locally qualified and locally checkpointed the complete private
+M0 across Slices A-C. Revision 68 makes its focused
+[requirement-to-test contract](./decisions/memorybrick-m0-acceptance.md) the
+sole active behavioral authority under the accepted
+[M0 ADR](./decisions/memorybrick-m0.md). Pinned
+[registry v2](./decisions/memorybrick-m0-registry-v2.json) and the exact
+[benchmark vector v2](./decisions/memorybrick-m0-benchmark-vector-v2.json)
+remain fixed test data. A trusted private request carries untrusted
+root/package-manifest bytes into bounded JSON parsing, four declared fact
+families, immutable projection, target-independent selection, three previews,
+and one internal deterministic conformance result. Structure v5 stays
+unchanged. M0 defines no public hostile-host-object API, static-module parser,
+filesystem acquisition, live client/provider, credentials, persistence,
+retention, or deletion. The former numeric review-score gate is retired;
+Revision 69 records the owner's **Accept Slice A** decision and green local
+profile/parser receipt. Revision 70 separately authorized the private
+compiler/projection Slice B, Revision 71 records its green local receipt,
+Revision 72 authorized preview/exact-vector Slice C, and Revision 73 records
+the complete local M0 receipt. Revision 74 authorizes exactly one local
+checkpoint commit and no remote or public action. The proof is deterministic
+local fixture conformance only. Any filesystem adapter, source parser, live agent, durable
+store, or live outcome evaluation needs separate authority.
+
+A durable `.usebrick/` store, required-field schema migration, new package,
+automatic approval path, or in-place native instruction-file writer remains a
+separate future decision with its own ownership and compatibility plan.
 
 ## RenderBrick Labs boundary
 
