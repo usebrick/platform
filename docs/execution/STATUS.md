@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-25
-**Index revision:** 74
+**Index revision:** 75
 **Global status:** `advancing`
 
 ## Executive state
@@ -30,8 +30,10 @@ Revision 72 records the owner's explicit `continue` instruction as **Accept
 Slice C**. Revision 73 closes the complete private M0 after the reproduced
 caller-freeze correction, focused Node 22/24 checks, exact 3/9/27 reconstruction,
 package/workspace qualification, no-baseline self-scan, and two fresh blind
-PASS reviews with no blocker. `MEM-001` is `done`; implementation WIP is
-`0/2`. The focused 20-row requirement-to-test contract owns active behavior,
+PASS reviews with no blocker. `MEM-001` is `done`. Revision 75 records the
+owner's instruction to continue `LOCK-001` as its explicit bounded local
+start; `LOCK-001` is `in_progress` and implementation WIP is `1/2`. The
+focused 20-row requirement-to-test contract owns active behavior,
 registry v2 and the exact vector remain fixed test data, and the former
 `94/100` dual-review gate remains retired. Deferred Memory capabilities,
 Structure v5, public API, package exports, and commands remain unchanged.
@@ -326,7 +328,7 @@ passed and 5 skipped files; Core, Website, and Engine pass 285, 54, and 60
 tests. Final TEL reviewers each returned 98/100 with no must-fix or should-fix
 finding. CAL-002, SB-UX-001, and TEL-001 are `done`; their closeout left
 implementation WIP at `0/2` before revision 47 started the MEM decision slice.
-Current implementation WIP is `0/2`.
+Current implementation WIP is `1/2` because `LOCK-001` is `in_progress`.
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
 remain unchanged.
@@ -610,7 +612,7 @@ WIP while waiting.
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
-| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `draft` | — | Red-test one deterministic new-debt gate after explicitly starting the plan. |
+| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `in_progress` | — | Red-test one deterministic new-debt gate in the existing CLI. |
 | 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
 | 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
@@ -683,7 +685,12 @@ continue with another eligible source or a smaller honest corpus.
 
 ## Next checkpoint
 
-`MEM-001` is `done` and implementation WIP is `0/2`. Revision 69 records the
+`MEM-001` is `done`, `LOCK-001` is `in_progress`, and implementation WIP is
+`1/2`. Revision 75 records the owner's instruction to continue LOCK-001 as the
+explicit start of its bounded local five-step plan. Its current action is the
+red baseline-delta contract for one deterministic critical finding; no Lock
+implementation or enforcement claim exists until that contract is reproduced
+and satisfied. Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorizes exactly
@@ -741,7 +748,9 @@ remain unchanged. `MEM-001`'s dependencies are satisfied, and Slices A-C are
 locally qualified under their separate owner decisions. Revision 73 closes
 only the private M0 proof; those slice decisions do not authorize integration,
 public action, or live runs. Revision 74 separately authorizes the one local
-checkpoint commit and nothing beyond it.
+MEM checkpoint commit and nothing beyond it. Revision 75 authorizes local
+LOCK-001 execution only; it does not authorize push, release, publication,
+deployment, participant work, or a paid-product claim.
 `VAL-001` remains ready and may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand

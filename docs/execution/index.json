@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 74,
+  "revision": 75,
   "updatedAt": "2026-07-25",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -330,8 +330,8 @@
       "title": "Validate deterministic new-debt enforcement",
       "track": "implementation",
       "lane": "lock",
-      "horizon": "next",
-      "status": "draft",
+      "horizon": "now",
+      "status": "in_progress",
       "priority": 10,
       "path": "docs/execution/plans/LOCK-001-new-debt-gate.md",
       "dependencies": {

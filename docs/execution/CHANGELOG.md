@@ -3,6 +3,23 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 75 — 2026-07-25
+
+### LOCK-001 start
+
+- Recorded the owner's instruction to continue `LOCK-001` as the explicit
+  start of its approved five-step local execution plan.
+- Moved `LOCK-001` from `draft`/`next` to `in_progress`/`now`; its required
+  `SB-UX-001` dependency is done and implementation WIP is now `1/2`.
+- Preserved the first action as a red baseline-delta CLI contract for one
+  deterministic critical finding before implementation.
+
+### Boundary
+
+- This transition authorizes bounded local implementation and verification
+  only. It does not authorize push, tag, release, publication, deployment,
+  external participant work, package extraction, or a paid-demand claim.
+
 ## Revision 74 — 2026-07-25
 
 ### Local checkpoint authority

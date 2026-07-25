@@ -1,6 +1,6 @@
 # LOCK-001 — Validate deterministic new-debt enforcement
 
-- **Status:** `draft`
+- **Status:** `in_progress`
 - **Priority:** 10
 - **Track / lane:** implementation / lock
 - **Owner:** SlopBrick and UseBrick platform
@@ -25,8 +25,10 @@ evidence and repository-owned intent into a repeatable prevention workflow;
 it is not a separate marketed product.
 
 `SB-UX-001` is complete, so this plan's required first-scan and stable
-finding-delta boundary is satisfied. `LOCK-001` remains `draft`; dependency
-clearance does not start implementation or establish paid demand.
+finding-delta boundary is satisfied. The owner's 2026-07-25 instruction to
+continue `LOCK-001` explicitly starts this bounded local plan. It does not
+establish paid demand or authorize push, release, publication, deployment, or
+external participant work.
 
 ## Scope
 
@@ -102,4 +104,4 @@ and decision receipts so the failure can be reproduced.
 ## Next action
 
 Write the red baseline-delta contract for one deterministic critical finding
-in the existing CLI after this draft plan is explicitly started.
+in the existing CLI.
