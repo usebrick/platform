@@ -6,6 +6,11 @@
   authority to apply policy, admit evidence, or perform a release action;
   remote state is outside the receipt.
 
+> **Current-status note (2026-07-25):** Dependency-audit statements below are
+> preserved as point-in-time CAL-002 evidence. Revision 76 records the current
+> 377-package audit as green at the high threshold. Release authority remains
+> separate under REL-001.
+
 ## Inputs
 
 - Approved design:
@@ -566,9 +571,10 @@ corepack pnpm security:audit
 git diff --check
 ```
 
-The final audit command currently exits nonzero on the separately recorded
-release advisories. It does not invalidate the preceding Task 19 behavior
-gates and must not be described as green.
+At the Task 19 checkpoint, the final audit command exited nonzero on the
+separately recorded release advisories. That result did not invalidate the
+preceding Task 19 behavior gates; the current superseding audit state is noted
+at the top of this historical receipt.
 
 ## Revision-42 Task 20 local application and closeout
 

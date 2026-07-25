@@ -22,9 +22,9 @@ roadmap status never substitute for the decisions below.
   wording, and the capability ladder. The deployed commit/SHA is unknown, so
   this content check neither proves which source integration is live nor
   authorizes a future deployment.
-- Current high-severity dependency audit: blocked by transitive
-  `brace-expansion` and `svgo` advisories. One moderate Astro advisory is also
-  present. No Task 19 dependency or lockfile change attempted to resolve them.
+- Current high-severity dependency audit (2026-07-25): passes after the
+  reviewed workspace dependency cleanup; 377 production packages were checked
+  with zero advisories at the high threshold.
 
 ## Owner dispositions
 
@@ -38,8 +38,9 @@ either `hold` or `authorize` for each surface. An authorization must include the
 exact commit/SHA and, for npm, the exact tag before any action begins.
 
 An npm authorization is necessary but not sufficient: public release execution
-also requires the high-severity dependency audit to pass after a separately
-reviewed correction. Local CAL-002 qualification does not waive that gate.
+also requires the high-severity dependency audit to pass on the exact selected
+candidate. The current checkout passes, but local CAL-002 or LOCK-001
+qualification does not waive a release-time rerun.
 
 ## Verification
 
@@ -49,5 +50,5 @@ corepack pnpm security:audit
 git diff --check
 ```
 
-The audit command currently exits nonzero; that result is the recorded release
-blocker, not a successful verification claim.
+The audit command currently exits zero. That clears only the technical audit
+precondition for this checkout; npm and website actions remain unauthorized.

@@ -70,7 +70,7 @@ This is what you get from `npx slopbrick init` with no answers (the
 
 ## Strict CI gate
 
-For CI to fail the build when the score is below 70:
+For CI to fail when raw `aiSlopScore` exceeds the configured ceiling:
 
 ```js
 import { defineConfig } from 'slopbrick';
@@ -99,6 +99,40 @@ For more aggressive gating (lower threshold):
 ```js
 thresholds: { meanSlop: 5, p90Slop: 10, individualSlopThreshold: 30 },
 ```
+
+### Bounded Lock gate (unreleased v0.45 candidate)
+
+Declare the repository import policy before enabling Lock. Built-in defaults
+are deliberately insufficient authority:
+
+```js
+import { defineConfig } from 'slopbrick';
+
+export default defineConfig({
+  allowedImports: ['@/approved/', 'react'],
+  lock: { waivers: [] },
+});
+```
+
+Review and save current debt once, then opt into the bounded gate:
+
+```bash
+npx slopbrick scan --baseline
+npx slopbrick ci --lock-new-debt --format pretty
+```
+
+Only exact new `context/import-path-mismatch` findings can block this first
+workflow. Existing matching debt remains in the baseline; incomplete scans,
+missing or incompatible baselines, built-in policy defaults, and expired
+waivers fail closed. Omitting `--lock-new-debt` preserves the existing CI
+contract. This option is locally qualified in the unreleased workspace
+candidate and is not present in the verified public v0.43.0 package.
+
+When a failed receipt exposes an exact semantic finding identity, an exception
+may add that 64-character lowercase hexadecimal identity to `lock.waivers`
+together with non-empty `owner` and `reason` strings plus an exact ISO
+`expiresAt`. Do not invent or shorten the identity, and do not refresh the
+baseline to avoid reviewing the decision.
 
 ---
 

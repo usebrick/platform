@@ -21,16 +21,16 @@ status and dependency edges live in
        observe -> preserve -> compile -> prevent -> repair -> verify
           │          │          │          │          │         │
       SlopBrick    policy     Memory      Lock       Mend      Render
-       shipped     authoring  planned    planned     parked     Labs
+       shipped     authoring  M0 local   candidate   parked     Labs
 ```
 
 | Product or capability | Architectural role | Delivery boundary |
 | --- | --- | --- |
 | **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
 | **SlopBrick** | Detect visual, frontend, code, and repository slop; emit evidence, scores, artifacts, MCP, and CI primitives | Shipped npm package, current CLI, free scanner, and acquisition surface |
-| **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Planned read-only projection before any new store, migration, or package |
+| **Memory capability** | Compile observed facts, declared intent, rationale, evolution, provenance, and freshness into bounded agent context | Private four-fact M0 locally qualified and unshipped; broader adapters/store remain gated |
 | **Pick flow** | Initialization, approved intent, and policy authoring | Part of onboarding, not a product or package |
-| **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | Planned first paid-workflow hypothesis inside the existing CLI |
+| **Lock capability** | Deterministic enforcement of approved policy against newly introduced verified drift | One import-policy family locally qualified in the unreleased CLI; team and paid value remain unproven |
 | **Mend capability** | Narrow deterministic and reversible repairs with receipts for findings teams already trust | Parked; no arbitrary repository-wide AI refactoring |
 | **RenderBrick Labs** | Compare source-only analysis with screenshots and runtime evidence | Draft benchmark only; not a browser product, package, or proven customer capability |
 
@@ -84,6 +84,11 @@ the architectural moat.
   `publisher_attested` + `internal_analysis` for origin measurement and
   calibration evaluation; its labels are not witnessed authorship or quality.
 - Current v10.3 admission: zero admitted units.
+- Private Memory M0: complete local Slices A-C fixture-conformance proof;
+  unshipped and unchanged Structure v5.
+- LOCK-001: complete local owner-only proof for explicit
+  `ci --lock-new-debt` over one repository import-policy family; unshipped and
+  not team-validated.
 
 ## Monorepo boundaries
 

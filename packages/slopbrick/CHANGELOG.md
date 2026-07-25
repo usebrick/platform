@@ -9,6 +9,16 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Added
 
+- Added the explicit, bounded `ci --lock-new-debt` candidate workflow for one
+  repository-authorized policy family. It compares exact
+  `context/import-path-mismatch` evidence with the reviewed durable debt
+  baseline, preserves existing debt, blocks only new violations, fails closed
+  for built-in policy defaults or incomplete evidence, and emits typed human,
+  JSON, Markdown, and SARIF decisions. Semantic finding identity v2, legacy
+  baseline migration, atomic writes, policy-bound config identity, and owned
+  expiring waivers support the workflow. This is locally qualified in the
+  unreleased candidate; it is not a team-demand, paid-feature, or public-release
+  claim.
 - Added a strict `slopbrick-outcome-event-v1` local library contract for scan,
   first-finding usefulness, action or decline, rescan, and bounded-return
   observations. Its public API validates, appends, inspects, exports, and

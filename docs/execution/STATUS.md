@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-25
-**Index revision:** 75
+**Index revision:** 76
 **Global status:** `advancing`
 
 ## Executive state
@@ -32,8 +32,9 @@ caller-freeze correction, focused Node 22/24 checks, exact 3/9/27 reconstruction
 package/workspace qualification, no-baseline self-scan, and two fresh blind
 PASS reviews with no blocker. `MEM-001` is `done`. Revision 75 records the
 owner's instruction to continue `LOCK-001` as its explicit bounded local
-start; `LOCK-001` is `in_progress` and implementation WIP is `1/2`. The
-focused 20-row requirement-to-test contract owns active behavior,
+start. Revision 76 records the qualified owner-controlled implementation:
+`LOCK-001` is `done` and implementation WIP is `0/2`. The focused 20-row
+Memory requirement-to-test contract owns active Memory behavior,
 registry v2 and the exact vector remain fixed test data, and the former
 `94/100` dual-review gate remains retired. Deferred Memory capabilities,
 Structure v5, public API, package exports, and commands remain unchanged.
@@ -328,7 +329,23 @@ passed and 5 skipped files; Core, Website, and Engine pass 285, 54, and 60
 tests. Final TEL reviewers each returned 98/100 with no must-fix or should-fix
 finding. CAL-002, SB-UX-001, and TEL-001 are `done`; their closeout left
 implementation WIP at `0/2` before revision 47 started the MEM decision slice.
-Current implementation WIP is `1/2` because `LOCK-001` is `in_progress`.
+Current implementation WIP is `0/2` after `LOCK-001` local closeout.
+
+LOCK-001 now adds one qualified, explicit `ci --lock-new-debt` workflow to the
+unreleased candidate. It blocks only exact new
+`context/import-path-mismatch` findings derived from repository-authored
+`allowedImports` policy and a compatible reviewed debt baseline. Existing debt
+passes; correction passes; built-in defaults, missing or mismatched baselines,
+and incomplete scans fail closed. Owned expiring waivers and typed human/JSON/
+Markdown/SARIF receipts preserve the applicable policy and exact import
+evidence. The focused matrix passes 75/75. Current recursive gates pass Core
+288, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips;
+typecheck and build pass. The production audit checks 377 packages with zero
+high-threshold advisories, the runtime graph has zero cycles across 654 source
+files, and the package self-scan completes 307/307 at 99.94/100 with a passing
+policy gate. This is owner-only local evidence, not team precision, demand,
+pricing, release, or publication evidence.
+
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
 remain unchanged.
@@ -612,9 +629,9 @@ WIP while waiting.
 | 7 | [`CAL-002`](plans/CAL-002-complete-calibration.md) | `done` | — | Preserve the applied, non-admitting Task 20 policy and completed SB-UX provenance handoff; route public actions through `REL-001`. |
 | 8 | [`TEL-001`](plans/TEL-001-local-outcomes.md) | `done` | — | Preserve the qualified local v1 outcome contract and reopen only for regression or separately approved transport. |
 | 9 | [`MEM-001`](plans/MEM-001-read-only-m0.md) | `done` | — | Preserve the owner-authorized local checkpoint and return before any push, merge, tag, release, publication, deployment, or broader Memory work. |
-| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `in_progress` | — | Red-test one deterministic new-debt gate in the existing CLI. |
-| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | `LOCK-001` | Wait for enforcement trust, then prove one reversible repair. |
-| 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | `LOCK-001` | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
+| 10 | [`LOCK-001`](plans/LOCK-001-new-debt-gate.md) | `done` | — | Preserve the local gate and obtain an explicit owner usefulness disposition before Mend. |
+| 11 | [`MEND-001`](plans/MEND-001-repair-proof.md) | `parked` | — | Await owner acceptance and selection of one deterministic repair with byte-identical rollback. |
+| 12 | [`ENT-001`](plans/ENT-001-demand-gate.md) | `parked` | — | Wait for explicit future external-demand evidence; owner testing cannot satisfy it. |
 | 13 | [`DOC-PRUNE-001`](plans/DOC-PRUNE-001-approved-cleanup.md) | `waiting_external` | — | Await exact owner approval for the numbered stale-path inventory while other lanes continue. |
 | 14 | [`VAL-001`](plans/VAL-001-owner-validation.md) | `ready` | — | Preserve RUN-001 and repeat only when the owner selects another input. |
 | 15 | [`GTM-001`](plans/GTM-001-vibecoder-pilots.md) | `ready` | — | Prepare the profile, script, consent text, and redacted receipt for 10–20 sessions; do not contact or schedule anyone. |
@@ -626,11 +643,12 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | Qualified with timing caveat | Recursive typecheck and build pass, as do the complete Core, Website, and affected Engine suites. SlopBrick had an earlier complete 4,603-pass/18-skip run; post-correction aggregate retries exposed rotating unrelated load-sensitive timing assertions that each pass in isolation. The exact final aggregate and timings are preserved in the Slice C receipt; no unqualified current full-suite pass is claimed. |
+| Current checkout gates | PASS locally | Recursive typecheck, test, and build pass. Current counts are Core 288, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips. This does not authorize release. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
+| LOCK-001 owner proof | PASS locally | One exact repository import-policy family passes the baseline/new/correction, waiver, policy-authority, and incomplete-scan matrix; external precision and team usefulness remain open. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
-| High-severity dependency audit | BLOCKED | Current audit reports high transitive advisories in `brace-expansion` and `svgo`; resolve them before any public release execution. |
+| High-severity dependency audit | PASS locally | The current production audit checks 377 packages and reports zero advisories at the high threshold. Release still requires separate REL-001 authority. |
 | Public claims and metadata | Partially verified | The npm package remains v0.43.0. A read-only live-site check shows aligned copy, but deployed SHA is unknown and future public mutations remain under `REL-001`. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
 | Website deployment | Not authorized | Current live copy is aligned at a read-only content level; deployed SHA and any future deployment still require owner/SHA review and separate authorization. |
@@ -680,17 +698,20 @@ continue with another eligible source or a smaller honest corpus.
 - The stable-identity `ci --max-new-issues` contract is now implemented under
   `SB-045`; future UX work must preserve its tested current/new-debt semantics
   and must not reintroduce the retired `.slop-audit-cache.json` path.
+- The first Lock family is locally deterministic but has no external precision,
+  team-repeat-use, or willingness-to-pay evidence. Keep it opt-in and do not
+  widen blocking authority from global priors or advisory findings.
 - Archive/delete candidates still require explicit path-level approval; that
   approval does not prevent additive documentation and product work.
 
 ## Next checkpoint
 
-`MEM-001` is `done`, `LOCK-001` is `in_progress`, and implementation WIP is
-`1/2`. Revision 75 records the owner's instruction to continue LOCK-001 as the
-explicit start of its bounded local five-step plan. Its current action is the
-red baseline-delta contract for one deterministic critical finding; no Lock
-implementation or enforcement claim exists until that contract is reproduced
-and satisfied. Revision 69 records the
+`MEM-001` and `LOCK-001` are `done`, and implementation WIP is `0/2`.
+Revision 76 closes the bounded local Lock proof with its
+[owner receipt](evidence/LOCK-001-owner-validation.md). The next implementation
+decision is not automatic: `MEND-001` remains parked until the owner explicitly
+accepts the Lock workflow as useful and selects one deterministic repair, or
+names a reproducible Lock revision instead. Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorizes exactly
@@ -749,13 +770,15 @@ locally qualified under their separate owner decisions. Revision 73 closes
 only the private M0 proof; those slice decisions do not authorize integration,
 public action, or live runs. Revision 74 separately authorizes the one local
 MEM checkpoint commit and nothing beyond it. Revision 75 authorizes local
-LOCK-001 execution only; it does not authorize push, release, publication,
-deployment, participant work, or a paid-product claim.
+LOCK-001 execution, and Revision 76 closes only that local proof; neither
+revision authorizes push, release, publication, deployment, participant work,
+or a paid-product claim.
 `VAL-001` remains ready and may
 accumulate only real owner-controlled receipts when the owner chooses; it has
 no target-count gate and cannot establish participant, team, or market-demand
-evidence. `REL-001` remains the separate public-authority checkpoint and keeps
-the high-severity dependency audit blocked independently of CAL-002.
+evidence. `REL-001` remains the separate public-authority checkpoint. The
+current high-severity dependency audit is green, but npm and website authority
+remain blocked on their independent owner dispositions.
 `GTM-001` may prepare only its participant profile, script, consent text, and
 redacted receipt template; its completed-session count stays zero and outreach
 stays false. `LABS-001` remains draft until its fixed defects, blind rubric,

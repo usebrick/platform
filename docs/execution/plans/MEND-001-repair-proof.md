@@ -4,7 +4,7 @@
 - **Priority:** 11
 - **Track / lane:** implementation / mend
 - **Owner:** UseBrick platform
-- **Updated:** 2026-07-22
+- **Updated:** 2026-07-25
 
 ## Outcome
 
@@ -15,10 +15,11 @@ without collateral edits.
 ## Current truth
 
 The Mend capability is not shipped, and arbitrary AI refactoring is outside the
-product boundary. The plan remains parked until owner-side Lock validation
-demonstrates trusted enforcement and a selected transformation has
-deterministic, byte-identical rollback proof. Team demand remains separate and
-unproven.
+product boundary. `LOCK-001` now proves one deterministic local enforcement
+family, but this plan remains parked because the owner has not yet accepted its
+usefulness and selected a transformation to evaluate. Any selected repair must
+still have deterministic, byte-identical rollback proof. Team demand remains
+separate and unproven.
 
 The earlier GIR proposal survives only as deterministic transformation logic
 inside this capability. It does not authorize a separate migrator product or
@@ -86,5 +87,6 @@ repository checks and scan.
 
 ## Next action
 
-Remain parked until `LOCK-001` proves a trusted enforced finding and the owner
-chooses its deterministic repair for evaluation with complete rollback proof.
+Remain parked until the owner explicitly accepts or revises the completed
+`LOCK-001` proof. On acceptance, choose one deterministic repair for evaluation
+with complete rollback proof; do not infer that choice from Lock completion.

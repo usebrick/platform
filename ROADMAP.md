@@ -43,9 +43,9 @@ and pricing scenarios live in the dated
 | --- | --- | --- |
 | **UseBrick** | Repository-owned quality, coherence, and verification contract | Sole customer-facing product |
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free scanner, and acquisition surface |
-| **Memory capability** | M0 compiles four declared package facts; broader observed facts and approved intent remain post-M0 | Begin read-only; benchmark before adding a store or package |
+| **Memory capability** | M0 compiles four declared package facts; broader observed facts and approved intent remain post-M0 | Private M0 locally qualified; benchmark broader adapters before adding a store or package |
 | **Pick flow** | Initialize the Constitution, approved stack, and policy | Fold into onboarding and policy authoring |
-| **Lock capability** | Prevent newly introduced verified drift | First paid workflow hypothesis inside the existing CLI |
+| **Lock capability** | Prevent newly introduced verified drift | One import-policy family is locally qualified in the unreleased CLI; first paid workflow remains a hypothesis |
 | **Mend capability** | Apply narrow deterministic repairs with proof and rollback | Parked until enforcement earns trust |
 | **RenderBrick Labs** | Test incremental value from rendered and runtime evidence | Benchmark only; stop if value is not material |
 | **Enterprise controls** | Shared policy, approvals, audit, and multi-repository governance | Build only after repeated paid-team demand |
@@ -226,8 +226,12 @@ state belong in [STATUS](docs/execution/STATUS.md), not this roadmap.
    demand, release qualification, or public availability. Any
    filesystem adapter or live outcome experiment requires a separate future
    plan, ADR, and owner authority.
-2. Prove `LOCK-001` on one deterministic new-debt family in the existing CLI,
-   including changed evidence, waivers, and incomplete-scan failure semantics.
+2. Preserve the completed local `LOCK-001` proof: one repository-authored
+   import-policy family now has stable identity, reviewed-baseline comparison,
+   changed evidence, owned expiring waivers, human and machine receipts, and
+   incomplete-scan failure semantics in the unreleased CLI. Do not generalize
+   it into team trust or a paid claim. Start `MEND-001` only after the owner
+   explicitly accepts the workflow and selects one deterministic repair.
 3. Run `LABS-001` with fixed defects and blind source-only versus rendered
    evidence scoring. Stop if incremental value is not material.
 4. Run external sessions and test pricing only after separate participant

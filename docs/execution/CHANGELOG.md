@@ -3,6 +3,46 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 76 — 2026-07-25
+
+### LOCK-001 local closeout
+
+- Completed the first bounded Lock workflow inside the existing unreleased
+  SlopBrick CLI. `ci --lock-new-debt` now evaluates only exact new
+  `context/import-path-mismatch` findings authorized by repository
+  `allowedImports` policy against the reviewed durable debt baseline.
+- Added semantic finding identity v2 with legacy baseline migration, atomic
+  persistence, policy-bound baseline hashing, repository-policy provenance,
+  owned expiring waivers, fail-closed incomplete-scan behavior, and typed
+  machine/human decision receipts.
+- Recorded owner-controlled baseline/pass, new-debt/fail, correction/pass,
+  built-in-default rejection, active/expired waiver, and partial-scan
+  scenarios in `LOCK-001-owner-validation.md` without team, demand, or timing
+  claims.
+
+### Qualification and status
+
+- Passed the focused 75/75 Lock matrix, recursive typecheck/test/build gates,
+  4,616 SlopBrick tests with 18 intentional skips, a 377-package
+  high-threshold audit with zero advisories, a 654-file zero-cycle runtime
+  graph, and a complete 307/307 package self-scan with a passing policy gate.
+- Cleared the stale REL-001 dependency-audit blocker in the live plan, receipt,
+  status, and index. The green audit remains a technical precondition only;
+  npm and website still require independent exact owner dispositions.
+- Reproduced and corrected one config object-identity regression that dropped
+  explicit rule provenance. A separate packaging identity event did not
+  reproduce under focused, concurrent, or full-suite reruns; its strict guard
+  remains unchanged and both incident records are retained.
+- Moved `LOCK-001` from `in_progress` to `done`; implementation WIP returns to
+  `0/2`. `MEND-001` remains parked behind its separate owner usefulness and
+  deterministic-repair selection gate.
+
+### Boundary
+
+- The result is local and unreleased. It does not authorize push, merge, tag,
+  npm publication, website deployment, package extraction, participant work,
+  paid positioning, or broader Lock enforcement claims.
+
 ## Revision 75 — 2026-07-25
 
 ### LOCK-001 start

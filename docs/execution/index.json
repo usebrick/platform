@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 75,
+  "revision": 76,
   "updatedAt": "2026-07-25",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -331,7 +331,7 @@
       "track": "implementation",
       "lane": "lock",
       "horizon": "now",
-      "status": "in_progress",
+      "status": "done",
       "priority": 10,
       "path": "docs/execution/plans/LOCK-001-new-debt-gate.md",
       "dependencies": {
@@ -346,13 +346,14 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Write the failing baseline-delta contract for one deterministic critical finding in the existing CLI.",
-        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/new-debt-gate.test.ts --maxWorkers=1 --minWorkers=1",
+        "text": "Preserve the qualified local Lock gate and obtain an explicit owner usefulness disposition before starting any MEND-001 repair implementation.",
+        "verify": "corepack pnpm --filter slopbrick exec vitest run tests/cli/ci.test.ts tests/cli/debt-baseline-atomic.test.ts tests/cli/lock-new-debt.test.ts tests/cli/new-debt-gate.test.ts tests/config/lock-config.test.ts tests/config/lock-policy-source.test.ts tests/engine/cache.test.ts tests/rules/import-path-mismatch.test.ts --maxWorkers=1 --minWorkers=1",
         "evidencePath": "docs/execution/evidence/LOCK-001-owner-validation.md"
       },
       "evidence": [
         "docs/superpowers/specs/2026-07-19-usebrick-coherence-positioning-design.md",
-        "docs/research/usebrick-market-positioning-2026-07-19.md"
+        "docs/research/usebrick-market-positioning-2026-07-19.md",
+        "docs/execution/evidence/LOCK-001-owner-validation.md"
       ]
     },
     {
@@ -375,7 +376,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "After the LockBrick trust gate, select one deterministic finding with an idempotent fix and complete rollback coverage.",
+        "text": "Await explicit owner acceptance of the completed local Lock proof, then select one deterministic finding with an idempotent fix and complete rollback coverage.",
         "verify": "test -f docs/execution/evidence/MEND-001-repair-proof.md",
         "evidencePath": "docs/execution/evidence/MEND-001-repair-proof.md"
       },
@@ -519,7 +520,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Await explicit owner dispositions and keep public actions blocked; independently clear the high-severity dependency audit before any release execution.",
+        "text": "Await explicit owner dispositions for npm and website, keep public actions blocked, and rerun the currently green dependency audit against any exact release candidate.",
         "verify": "corepack pnpm security:audit",
         "evidencePath": "docs/execution/evidence/REL-001-public-claim-disposition.md"
       },

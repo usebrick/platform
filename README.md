@@ -22,7 +22,7 @@ hypothesis has not yet been collected.
 | **UseBrick** | The quality, coherence, and verification product and repository-owned contract | Sole customer-facing product |
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
 | **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
-| **Lock capability** | Prevent newly introduced verified drift with approved policy | Planned paid-workflow hypothesis inside the current CLI |
+| **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is locally qualified in the unreleased v0.45 CLI; paid/team value remains unproven |
 | **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | Parked until detection and enforcement earn trust |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
@@ -64,6 +64,15 @@ state and full history live exclusively in the
 [execution index](./docs/execution/index.json),
 [execution status](./docs/execution/STATUS.md), and
 [changelog](./docs/execution/CHANGELOG.md).
+
+`LOCK-001` is also locally complete in the unreleased workspace candidate.
+After a reviewed baseline, `slopbrick ci --lock-new-debt` can block only exact
+new import-policy violations authorized by repository `allowedImports`.
+Built-in defaults, incomplete scans, and incompatible baselines fail closed;
+owned expiring waivers and decision evidence remain visible. This is one
+owner-controlled implementation proof, not a shipped paid feature or evidence
+of team demand. See the
+[Lock receipt](./docs/execution/evidence/LOCK-001-owner-validation.md).
 
 AI slop and repository memory solve different halves of one problem. Slop is
 the visible inconsistency; context loss is one major cause. Memory learns one
@@ -145,6 +154,11 @@ npx slopbrick mcp
 
 # Gate new work against the repository policy.
 npx slopbrick ci
+
+# In the unreleased workspace candidate, opt into the bounded Lock gate after
+# reviewing a baseline and declaring allowedImports in repository config.
+npx slopbrick scan --baseline
+npx slopbrick ci --lock-new-debt
 ```
 
 See [`packages/slopbrick/README.md`](./packages/slopbrick/README.md) for the
@@ -187,6 +201,11 @@ baseline. Ordinary rescans never refresh it automatically. A compatible rescan
 reports `new`, `resolved`, and `unchanged` findings; missing or incompatible
 baselines claim no comparison. JSON and SARIF preserve their existing fields
 and expose `firstScan` as an additive, optional contract.
+
+The unreleased candidate's explicit Lock gate is narrower than the generic
+finding-delta gate: it considers only exact new
+`context/import-path-mismatch` findings from repository-authored
+`allowedImports`. Omitting `--lock-new-debt` preserves existing CI behavior.
 
 ## What a scan writes
 

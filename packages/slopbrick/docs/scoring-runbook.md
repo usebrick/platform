@@ -90,6 +90,7 @@ presented as the repository's full score.
 npx slopbrick scan --baseline
 npx slopbrick scan --no-increase
 npx slopbrick ci --max-new-issues 0
+npx slopbrick ci --lock-new-debt
 ```
 
 `aiSlopScore` is lower-is-better. An increase is a regression. Review the
@@ -98,6 +99,10 @@ merely to silence a failure. `scan --baseline` also writes a separate
 `.slopbrick/cache/debt-baseline.json` containing stable finding identities.
 `ci --max-new-issues <n>` compares the current effective findings against that
 reviewed debt baseline and fails closed when it is missing or config-invalid.
+The explicit Lock option is narrower: it evaluates only exact new
+`context/import-path-mismatch` findings authorized by repository
+`allowedImports`. It also fails closed when policy authority is only a built-in
+default or the scan is incomplete.
 
 ## Gate behavior
 
@@ -118,16 +123,24 @@ before wiring a new external gate to them.
 baseline.
 `--max-new-issues` is a separate finding-identity gate; it does not treat a
 score-baseline change as proof of new debt.
+`--lock-new-debt` uses the same reviewed finding baseline but adds a typed
+repository-policy decision. Active waivers require one semantic identity,
+owner, reason, and expiry; expired waivers remain visible and block.
 
 ### CI command
 
 ```bash
 npx slopbrick ci --max-slop <n> --strict-constitution
+npx slopbrick ci --lock-new-debt --format pretty
 ```
 
 The current `ci` command forces changed-file selection and no-increase
 behavior. `--max-slop` is a ceiling on raw `aiSlopScore`; higher values are
 worse. `--strict-constitution` fails on declared-policy violations.
+
+The bounded Lock command is an unreleased v0.45 candidate feature. Its first
+family does not turn other scanner findings, scores, global priors, or advisory
+evidence into blocking policy.
 
 Treat the runtime help and tests as authoritative. Do not document an option as
 working merely because Commander displays it; its behavior must be covered by

@@ -13,3 +13,17 @@ bugs:
     scope: cal-002-catalog-test-fixture
     summary: CAL-002 catalog fallback uses a noncanonical macOS temp path
     file: specs/bugs/BUG-2026-07-22T172218-cal002-catalog-temp-root.md
+  - bug_id: BUG-2026-07-25T211300
+    date: 2026-07-25
+    severity: high
+    priority: P0
+    scope: slopbrick-current-policy-provenance
+    summary: Resolved config object replacement drops explicit rule authority
+    file: specs/bugs/BUG-2026-07-25T211300-current-policy-suite-drift.md
+  - bug_id: BUG-2026-07-25T211301
+    date: 2026-07-25
+    severity: low
+    priority: P2
+    scope: slopbrick-pack-verification
+    summary: Package builder identity event did not reproduce under three reruns
+    file: specs/bugs/BUG-2026-07-25T211301-pack-builder-identity-drift.md

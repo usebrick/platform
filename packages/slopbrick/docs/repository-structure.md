@@ -169,10 +169,16 @@ Today:
 - MCP exposes repository-aware suggestions and checks.
 - current CLI/pre-commit/CI commands provide early prevention primitives.
 
+Current unreleased candidate:
+
+- the private Memory M0 proves only four declared facts and bounded previews;
+- `ci --lock-new-debt` applies reviewed repository `allowedImports` policy to
+  exact new import findings, with owned expiring waivers and fail-closed scan
+  semantics.
+
 Planned:
 
-- MemoryBrick adds provenance, freshness, scoped context, and agent adapters;
-- LockBrick applies reviewed policy and “new debt” gates;
+- broader Memory provenance, freshness, scoped context, and agent adapters;
 - MendBrick later performs only trusted, deterministic, reversible repairs.
 
 The accepted [`MEM-001` M0 ADR](../../../docs/decisions/memorybrick-m0.md)

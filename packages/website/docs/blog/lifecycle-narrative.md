@@ -17,7 +17,7 @@ tags: [lifecycle, code-quality, ai-coding, detect-fix-verify]
 > lives in the root [roadmap](../../../../ROADMAP.md) and [execution
 > index](../../../../docs/execution/index.json).
 >
-> **Account-wide strategy correction (2026-07-22):** SlopBrick remains the
+> **Account-wide strategy correction (updated 2026-07-25):** SlopBrick remains the
 > central AI-slop scanner and free acquisition surface. Memory makes findings
 > repository-aware, Lock prevents new drift, and Mend repairs only trusted
 > findings. The current moat hypothesis is the coherence graph joining facts,
@@ -49,7 +49,7 @@ The Detect stage is the most visible part of any code quality tool. It's also th
 
 ### 3. Prevent — the structural immune system
 
-**Prevent** is the stage that turns findings into structural rules. Once you know a class of violation exists, you block its reintroduction. The article originally called the planned boundary **LockBrick**; current authority calls it the planned Lock capability inside UseBrick. The `dup/identical-block` rule was offered as an example of detection that could later inform a reviewed new-debt gate, not proof that paid enforcement ships today.
+**Prevent** is the stage that turns findings into structural rules. Once you know a class of violation exists, you block its reintroduction. The article originally called the boundary **LockBrick**. Current authority keeps Lock as a capability inside UseBrick, and the unreleased v0.45 workspace candidate now has one locally qualified import-policy new-debt family. The `dup/identical-block` example remains historical and does not authorize blocking, and the local proof is not evidence that paid enforcement ships today.
 
 Most tools stop at Detect. Some go to Detect + Repair. The Prevent stage is what makes the lifecycle *compound*: every Prevent rule means a Detect finding never reappears. Over 18 months, the codebase gets structurally healthier even if the team never actively repairs anything.
 
@@ -84,11 +84,11 @@ These three changes are not features. They are evidence that the lifecycle is op
 | Define | **PickBrick** (the Constitution) | Policy initialization and approved intent are part of UseBrick onboarding, not another package |
 | Detect | **SlopBrick** (the scanner) | Shipped as `slopbrick@0.20.0` when this article was written; the verified current public release is governed by the root roadmap and release receipt |
 | Preserve and compile | **MemoryBrick** | Planned repository-owned context capability; complete private M0 Slices A-C are locally qualified, locally checkpointed, and unshipped, proving only deterministic local fixture conformance with no source parser, store, or live agent |
-| Prevent | **LockBrick** (the CI gate) | Planned new-debt protection inside the current CLI |
+| Prevent | **LockBrick** (the CI gate) | One import-policy family locally qualified in the unreleased CLI; unshipped and not team-validated |
 | Repair | **MendBrick** (the migrator) | Parked pending trust and rollback proof |
 | Verify runtime | **Render Labs** | Benchmark-only Labs experiment; no browser or rendered-evidence product claim |
 
-At publication, only the Detect stage was described as productionized. That boundary still matters: the Constitution format already shipped inside SlopBrick, but an existing contract is not authorization to market each capability or create another package.
+At publication, only the Detect stage was described as productionized. That historical boundary still matters: the Constitution format already shipped inside SlopBrick, and the current unreleased candidate has one local Lock proof, but neither fact authorizes marketing each capability, creating another package, or claiming team demand.
 
 ## The moat
 

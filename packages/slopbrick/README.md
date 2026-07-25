@@ -201,6 +201,9 @@ npx slopbrick scan --baseline
 
 # Fail CI only when stable finding identities exceed the reviewed debt baseline.
 npx slopbrick ci --max-new-issues 0
+
+# Unreleased v0.45 candidate: block exact new repository import-policy drift.
+npx slopbrick ci --lock-new-debt
 ```
 
 Use `--workspace <path>` for another project and `npx slopbrick --help` for the
@@ -215,15 +218,24 @@ npx slopbrick lock      # install the legacy staged-scan pre-commit hook
 npx slopbrick watch
 ```
 
-These are current SlopBrick commands. The command named `lock` only installs a
-generic staged-scan hook; it is not the planned Lock new-debt policy workflow.
-That capability remains a future governance boundary inside UseBrick, not a
-separate product or package.
+These are current SlopBrick commands. The command named `lock` still only
+installs a generic staged-scan hook. The bounded new-debt policy workflow is
+the separate, explicit `ci --lock-new-debt` option in the unreleased v0.45
+workspace candidate; it is not a standalone product or package and is not in
+the verified public v0.43.0 release.
 
 `scan --baseline` writes the score baseline and a separate durable finding
 baseline under `.slopbrick/cache/`. `ci --max-new-issues <n>` compares stable
 finding identities with that reviewed debt baseline; it fails closed when the
 debt baseline is missing or its config identity no longer matches.
+
+`ci --lock-new-debt` is narrower and policy-authorized. It evaluates only exact
+new `context/import-path-mismatch` findings when the repository explicitly
+declares `allowedImports`. Built-in defaults cannot authorize a block. Waivers
+under `lock.waivers` must bind one finding identity and include `owner`,
+`reason`, and an exact ISO `expiresAt`; active and expired dispositions remain
+visible in human and machine receipts. Incomplete scans and incompatible
+baselines fail closed.
 
 For CI and monorepo configurations, see [EXAMPLES.md](./EXAMPLES.md) and the
 [ready-to-copy examples](./examples/).

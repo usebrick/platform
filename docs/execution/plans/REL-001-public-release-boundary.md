@@ -4,7 +4,7 @@
 - **Priority:** 16
 - **Track / lane:** implementation / release
 - **Owner:** repository owner / release maintainer
-- **Updated:** 2026-07-22
+- **Updated:** 2026-07-25
 
 ## Outcome
 
@@ -28,12 +28,11 @@ first network wording, and capability ladder. That resolves the older copy-
 drift observation only. The deployed commit identity remains unverified, and
 no future deployment or npm authority is inferred.
 
-The current high-severity dependency audit is also blocked: transitive
-`brace-expansion` and `svgo` ranges have high advisories, and Astro has one
-moderate advisory. This technical release precondition is independent of the
-owner dispositions. Even an exact owner authorization cannot execute a public
-release until the high-severity audit is green through a separately reviewed
-dependency correction.
+The current high-severity dependency audit is green after the reviewed
+workspace dependency cleanup: 377 production packages were checked with zero
+advisories at the high threshold. That clears the recorded technical audit
+blocker but does not supply either owner disposition or authorize a public
+action.
 
 ## Scope
 
@@ -101,8 +100,9 @@ corepack pnpm security:audit
 git diff --check
 ```
 
-`security:audit` currently exits nonzero and is intentionally recorded as a
-release blocker. Do not relabel it as a passing check.
+`security:audit` currently exits zero for the reviewed local checkout. Re-run
+it against the exact release candidate; do not infer publication authority
+from the result.
 
 ## Evidence destination
 
@@ -124,8 +124,8 @@ release blocker. Do not relabel it as a passing check.
   records the still-unresolved public decisions.
 - **Resume condition:** both public surfaces have explicit `hold` or
   `authorize` decisions; each authorization names its exact reviewed
-  identifiers. Any authorized npm execution additionally waits for a green
-  high-severity dependency audit.
+  identifiers. The dependency audit is currently green but must be rerun on
+  any exact npm release candidate.
 - **Recheck:** compare npm registry metadata, GitHub release/workflow state,
   live-site claims, and deployment provenance with the recorded decisions.
 - **Parallel safe:** `TEL-001` and owner-selected `VAL-001` work
@@ -140,7 +140,7 @@ to an exact reviewed deployment and record that action in the receipt.
 
 ## Next action
 
-Await the two explicit owner dispositions and separately clear the
-high-severity dependency audit through reviewed implementation work. Until
-then, keep npm publication and website deployment unauthorized while local
-roadmap work continues. Neither gate substitutes for the other.
+Await the two explicit owner dispositions. Keep npm publication and
+website deployment unauthorized while local roadmap work continues, and rerun
+the currently green dependency audit against any exact authorized npm
+candidate.

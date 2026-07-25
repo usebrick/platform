@@ -157,8 +157,9 @@ self-scan scores 99.81/100, reports 13 active medium findings, auto-suppresses
 reviews returned 98/100 with zero findings. The production provider remains
 `undefined`; no policy is applied or activated. The single human-facing Task
 19 checkpoint is the implementation identifier above; leaf SHA-256 values stay
-machine-only. High dependency advisories remain a separate `REL-001` release
-blocker.
+machine-only. High dependency advisories were a separate `REL-001` blocker at
+that checkpoint; Revision 76 records the current 377-package high-threshold
+audit as green without granting release authority.
 
 Task 20 is application-checkpointed at `bd47dbd7e`. The owner approved the
 qualified finding, provenance, score, gate, and action boundaries before the
