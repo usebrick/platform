@@ -169,6 +169,19 @@ describe('baseline config identity', () => {
     }
   });
 
+  it('changes when the repository allowedImports policy changes', () => {
+    const initial: ResolvedConfig = {
+      ...DEFAULT_CONFIG,
+      allowedImports: ['@/approved/'],
+    };
+    const revised: ResolvedConfig = {
+      ...initial,
+      allowedImports: ['@/approved/', '@/migration/'],
+    };
+
+    expect(hashConfig(revised)).not.toBe(hashConfig(initial));
+  });
+
   it('keeps default stripping and deterministic hashing intact', () => {
     const explicitDefaults: ResolvedConfig = {
       ...DEFAULT_CONFIG,
