@@ -1,5 +1,16 @@
 import { z } from 'zod';
-import { VERDICTS } from './verdicts';
+import { VERDICTS, type Verdict } from './verdicts';
+
+export interface SignalStrengthEntry {
+  recall: number;
+  fpRate: number;
+  ratio: number;
+  precision: number;
+  lastCalibratedAt: string;
+  verdict: Verdict;
+  defaultOff?: boolean;
+  aiSpecific?: boolean;
+}
 
 /**
  * v0.14.5+: Zod schema for the signal-strength.json shape.
@@ -36,4 +47,7 @@ export const signalStrengthSchema = z.record(
   }),
 );
 
-export type SignalStrengthEntry = z.infer<typeof signalStrengthSchema>[string];
+/** Validate signal-strength data without exposing the Zod implementation type. */
+export function parseSignalStrength(value: unknown): Record<string, SignalStrengthEntry> {
+  return signalStrengthSchema.parse(value);
+}

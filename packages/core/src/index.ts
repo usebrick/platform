@@ -48,7 +48,7 @@ export {
 
 export { VERDICTS, isDefaultOff, type Verdict } from './verdicts';
 
-export { signalStrengthSchema, type SignalStrengthEntry } from './signal-strength-schema';
+export { parseSignalStrength, type SignalStrengthEntry } from './signal-strength-schema';
 
 export { calibrationAdmissionBindingSha256, calibrationCorpusSourceId, isCalibrationCorpusManifestV103 } from './corpus-manifest';
 export {

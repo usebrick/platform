@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import signalStrengthData from './signal-strength.json' with { type: 'json' };
-import { signalStrengthSchema, isDefaultOff } from '@usebrick/core';
+import { parseSignalStrength, isDefaultOff } from '@usebrick/core';
 import type { Verdict, SignalStrengthEntry } from '@usebrick/core';
 
 /**
@@ -17,7 +17,7 @@ import type { Verdict, SignalStrengthEntry } from '@usebrick/core';
 const RULE_ENTRIES = Object.fromEntries(
   Object.entries(signalStrengthData).filter(([key]) => !key.startsWith('_')),
 );
-const PARSED = signalStrengthSchema.parse(RULE_ENTRIES);
+const PARSED = parseSignalStrength(RULE_ENTRIES);
 export const DATA: Record<string, SignalStrengthEntry> = PARSED;
 
 /**
