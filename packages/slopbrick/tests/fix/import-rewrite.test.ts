@@ -65,4 +65,78 @@ describe('exact import rewrite planner', () => {
       rmSync(workspace, { recursive: true, force: true });
     }
   });
+
+  it('rejects stale, invalid, overlapping, and unsupported evidence', () => {
+    const source = "import { Button } from '@/legacy/Button';\n";
+    const oldValue = '@/legacy/Button';
+    const quotedOffset = source.indexOf(`'${oldValue}'`);
+    const startOffset = quotedOffset + 1;
+    const endOffset = startOffset + oldValue.length - 1;
+    const input = {
+      oldValue,
+      newValue: '@/components/ui/Button',
+      location: {
+        start: positionAt(source, startOffset),
+        end: positionAt(source, endOffset),
+      },
+    };
+
+    expect(planExactImportRewrites(source, [{
+      ...input,
+      oldValue: '@/legacy/Other',
+    }])).toEqual({ status: 'rejected', reason: 'stale-finding' });
+    expect(planExactImportRewrites(source, [{
+      ...input,
+      location: {
+        start: { line: 9, column: 1 },
+        end: { line: 9, column: 2 },
+      },
+    }])).toEqual({ status: 'rejected', reason: 'invalid-evidence' });
+    expect(planExactImportRewrites(source, [input, input])).toEqual({
+      status: 'rejected',
+      reason: 'ambiguous-finding',
+    });
+    expect(planExactImportRewrites(source, [{
+      ...input,
+      newValue: "@/components/ui/'Button",
+    }])).toEqual({ status: 'rejected', reason: 'unsupported-source' });
+    expect(planExactImportRewrites(source, [{
+      ...input,
+      newValue: oldValue,
+    }])).toEqual({ status: 'rejected', reason: 'already-fixed' });
+  });
+
+  it('rejects a corrupted rollback receipt before mutating the repaired file', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-mend-rollback-'));
+    try {
+      const filePath = join(workspace, 'Button.tsx');
+      const source = "import { Button } from '@/legacy/Button';\n";
+      writeFileSync(filePath, source, 'utf8');
+      const oldValue = '@/legacy/Button';
+      const startOffset = source.indexOf(`'${oldValue}'`) + 1;
+      const endOffset = startOffset + oldValue.length - 1;
+      const planned = planExactImportRewrites(source, [{
+        oldValue,
+        newValue: '@/components/ui/Button',
+        location: {
+          start: positionAt(source, startOffset),
+          end: positionAt(source, endOffset),
+        },
+      }]);
+      if (planned.status !== 'planned') throw new Error(planned.reason);
+      const applied = applyExactImportRewritePlan(filePath, planned.plan);
+      if (applied.status !== 'applied') throw new Error(applied.reason);
+      const repairedBytes = readFileSync(filePath);
+
+      const result = rollbackExactImportRewrite(filePath, {
+        ...applied.receipt,
+        originalBytes: Uint8Array.from(Buffer.from('corrupted receipt', 'utf8')),
+      });
+
+      expect(result).toEqual({ status: 'rejected', reason: 'receipt-mismatch' });
+      expect(readFileSync(filePath)).toEqual(repairedBytes);
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
 });
