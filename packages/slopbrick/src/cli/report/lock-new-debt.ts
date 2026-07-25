@@ -4,6 +4,8 @@ import type {
   Issue,
   LockDecision,
   LockFindingDecision,
+  LockWaiver,
+  LockWaiverReceipt,
   ProjectReport,
 } from '../../types';
 import {
@@ -20,6 +22,8 @@ export interface EvaluateLockNewDebtInput {
   cwd: string;
   configHash?: string;
   policySource: string;
+  waivers?: readonly LockWaiver[];
+  now?: Date;
 }
 
 function isQualifyingFinding(
@@ -75,6 +79,10 @@ export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecisi
     ? legacyFindingIdentity
     : findingIdentity;
   const baselineIds = new Set(input.baseline.finding_ids);
+  const waiverByIdentity = new Map(
+    (input.waivers ?? []).map((waiver) => [waiver.findingIdentity, waiver]),
+  );
+  const now = input.now ?? new Date();
   const byIdentity = new Map<string, Issue & { ruleId: typeof LOCK_RULE_ID; evidence: ExactIssueEvidence }>();
   for (const issue of qualifying) {
     const identity = identify(issue, input.cwd);
@@ -85,19 +93,36 @@ export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecisi
   for (const [identity, issue] of byIdentity) {
     if (baselineIds.has(identity)) continue;
     const filePath = repositoryRelativeFindingLocation(issue, input.cwd);
+    const waiver = waiverByIdentity.get(identity);
+    let waiverReceipt: LockWaiverReceipt | undefined;
+    if (waiver) {
+      const expiry = Date.parse(waiver.expiresAt);
+      waiverReceipt = {
+        ...waiver,
+        status: Number.isNaN(expiry)
+          ? 'invalid'
+          : expiry > now.getTime()
+            ? 'active'
+            : 'expired',
+      };
+    }
+    const disposition = waiverReceipt?.status === 'active' ? 'waived' : 'blocked';
     findings.push({
       identity,
       ruleId: LOCK_RULE_ID,
       ...(filePath === '<project>' ? {} : { filePath }),
       line: issue.line,
       column: issue.column,
-      disposition: 'blocked',
+      disposition,
       evidence: issue.evidence,
+      ...(waiverReceipt ? { waiver: waiverReceipt } : {}),
     });
   }
   findings.sort((left, right) => left.identity.localeCompare(right.identity));
 
-  const failed = findings.length > 0;
+  const blockedFindingCount = findings.filter(({ disposition }) => disposition === 'blocked').length;
+  const waivedFindingCount = findings.length - blockedFindingCount;
+  const failed = blockedFindingCount > 0;
   return {
     kind: 'slopbrick-lock-decision-v1',
     status: failed ? 'failed' : 'passed',
@@ -108,10 +133,11 @@ export function evaluateLockNewDebt(input: EvaluateLockNewDebtInput): LockDecisi
     baselineRevision: input.baseline.baseline_revision,
     qualifyingFindingCount: byIdentity.size,
     newFindingCount: findings.length,
-    blockedFindingCount: findings.length,
+    blockedFindingCount,
+    waivedFindingCount,
     findings,
     summary: failed
-      ? `Lock gate failed: ${findings.length} new import-policy finding${findings.length === 1 ? '' : 's'} blocked by ${input.policySource}.`
-      : `Lock gate passed: no new import-policy findings against ${input.policySource}.`,
+      ? `Lock gate failed: ${blockedFindingCount} unwaived new import-policy finding${blockedFindingCount === 1 ? '' : 's'} blocked by ${input.policySource}; ${waivedFindingCount} waived.`
+      : `Lock gate passed: no unwaived new import-policy findings against ${input.policySource}; ${waivedFindingCount} waived.`,
   };
 }

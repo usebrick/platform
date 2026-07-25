@@ -4,6 +4,18 @@ export interface LockPolicyReceipt {
   source: string;
 }
 
+/** Repository-owned exception bound to one semantic finding identity. */
+export interface LockWaiver {
+  findingIdentity: string;
+  owner: string;
+  reason: string;
+  expiresAt: string;
+}
+
+export interface LockWaiverReceipt extends LockWaiver {
+  status: 'active' | 'expired' | 'invalid';
+}
+
 /** Exact new finding considered by the Lock decision. */
 export interface LockFindingDecision {
   identity: string;
@@ -11,8 +23,9 @@ export interface LockFindingDecision {
   filePath?: string;
   line: number;
   column: number;
-  disposition: 'blocked';
+  disposition: 'blocked' | 'waived';
   evidence: import('./scan').ExactIssueEvidence;
+  waiver?: LockWaiverReceipt;
 }
 
 /** Machine-readable receipt for the bounded LOCK-001 new-debt gate. */
@@ -27,6 +40,7 @@ export interface LockDecision {
   qualifyingFindingCount: number;
   newFindingCount?: number;
   blockedFindingCount?: number;
+  waivedFindingCount?: number;
   findings: LockFindingDecision[];
   summary: string;
 }
