@@ -7,6 +7,14 @@
 
 import type { ScanAccounting } from '../types';
 
+export interface CiGateOptions {
+  maxSlop?: number;
+  maxNewIssues?: number;
+  strictConstitution?: boolean;
+  /** Opt in to the bounded LOCK-001 import-policy new-debt decision. */
+  lockNewDebt?: boolean;
+}
+
 export interface ScanProjectOptions {
   cwd: string;
   framework?: string;
@@ -50,7 +58,7 @@ export interface ScanProjectOptions {
 
 export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
   /** Internal CI-only gate inputs; not a public scan flag. */
-  ciGate?: { maxSlop?: number; maxNewIssues?: number; strictConstitution?: boolean };
+  ciGate?: CiGateOptions;
   workspace?: string;
   fix?: boolean;
   dryRun?: boolean;
@@ -85,7 +93,7 @@ export interface ScanRunOptions extends Omit<ScanProjectOptions, 'cwd'> {
 
 export interface CliGlobalOptions extends ScanRunOptions {
   /** Internal CI-only gate inputs; never parsed from global scan flags. */
-  ciGate?: { maxSlop?: number; maxNewIssues?: number; strictConstitution?: boolean };
+  ciGate?: CiGateOptions;
   // format/json/html are inherited from ScanRunOptions — no need to redeclare.
   suggest?: boolean;
   heatmap?: boolean;

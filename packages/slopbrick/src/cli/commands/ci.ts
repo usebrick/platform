@@ -26,6 +26,7 @@ export function registerCi(
     .description('CI gate: run a scan and exit 1 on constitution violations, threshold breach, no-increase regression, or configured new debt. Use this in GitHub Actions / GitLab CI.')
     .option('--max-slop <n>', 'exit 1 if aiSlopScore exceeds this number (lower = cleaner since v0.21)', parseCount)
     .option('--max-new-issues <n>', 'exit 1 if stable finding identities exceed this new-debt limit (requires a durable baseline)', parseNonNegativeCount)
+    .option('--lock-new-debt', 'block exact new import-policy violations declared by the repository (requires a durable baseline)')
     .option('--strict-constitution', 'exit 1 on any constitution violation')
     .option('--format <pretty|json>', 'output format', 'json')
     .action(
@@ -33,6 +34,7 @@ export function registerCi(
         cmdOptions: {
           maxSlop?: number;
           maxNewIssues?: number;
+          lockNewDebt?: boolean;
           strictConstitution?: boolean;
           format?: string;
         },
@@ -46,6 +48,7 @@ export function registerCi(
           ciGate: {
             maxSlop: cmdOptions.maxSlop,
             maxNewIssues: cmdOptions.maxNewIssues,
+            lockNewDebt: cmdOptions.lockNewDebt,
             strictConstitution: cmdOptions.strictConstitution,
           },
           format: (cmdOptions.format ?? 'json') as 'pretty' | 'json' | 'sarif' | 'html',
