@@ -30,9 +30,9 @@ function fakeRunner(responses: Readonly<Record<string, { readonly status: number
 describe('v10.3 admission bootstrap probes', () => {
   it('rejects a missing or unsupported Node runtime before probing tools', () => {
     expect(evaluateNodeVersion(undefined)).toMatchObject({ ok: false, reason: 'missing-node' });
-    expect(evaluateNodeVersion('v18.20.0')).toMatchObject({ ok: false, reason: 'node-api-floor' });
-    expect(evaluateNodeVersion('v20.19.6')).toMatchObject({ ok: true, major: 20 });
-    expect(NODE_API_FLOOR).toBe(20);
+    expect(evaluateNodeVersion('v20.19.6')).toMatchObject({ ok: false, reason: 'node-api-floor' });
+    expect(evaluateNodeVersion('v22.22.3')).toMatchObject({ ok: true, major: 22 });
+    expect(NODE_API_FLOOR).toBe(22);
   });
 
   it('requires the exact behavior/version floors for Corepack, pnpm, Git, and Python/pyarrow', () => {
@@ -57,7 +57,7 @@ describe('v10.3 admission bootstrap probes', () => {
       gitCommand: '/usr/bin/git',
       pythonCommand: '/python',
       repoRoot: '/repo',
-      buildTargetSource: "export default { target: 'node18' };",
+      buildTargetSource: "export default { target: 'node22' };",
     });
     expect(diagnostic.ready).toBe(true);
     expect(diagnostic.checks.corepack.status).toBe('pass');
@@ -91,7 +91,7 @@ describe('v10.3 admission bootstrap probes', () => {
 
   it('fails wrong build targets and failed Node API behavior probes', () => {
     expect(evaluateBuildTarget("export default { target: 'node20' };")).toMatchObject({ ok: false });
-    expect(evaluateBuildTarget("export default { target: 'node18' };")).toMatchObject({ ok: true, target: 'node18' });
+    expect(evaluateBuildTarget("export default { target: 'node22' };")).toMatchObject({ ok: true, target: 'node22' });
     expect(evaluateNodeApiProbe('missing')).toMatchObject({ ok: false });
     expect(evaluateNodeApiProbe('ok')).toMatchObject({ ok: true });
   });
@@ -126,10 +126,25 @@ describe('v10.3 admission bootstrap probes', () => {
       nodeVersion: 'v24.15.0',
       nodeApiProbe: 'ok',
       runner: fakeRunner({}),
-      buildTargetSource: "export default { target: 'node18' };",
+      buildTargetSource: "export default { target: 'node22' };",
     });
     expect(diagnostic.network.policy).toBe('denied');
     expect(diagnostic.network.clientSurface).toBe('none');
     expect(diagnostic.candidateBytes.accessed).toBe(false);
+  });
+
+  it('keeps every workspace build target on the supported Node 22 floor', () => {
+    const packageRoot = new URL('../../', import.meta.url);
+    const targets = [
+      new URL('../core/tsup.config.ts', packageRoot),
+      new URL('../engine/tsup.config.ts', packageRoot),
+      new URL('tsup.config.ts', packageRoot),
+    ];
+    for (const target of targets) {
+      expect(evaluateBuildTarget(readFileSync(target, 'utf8'))).toMatchObject({
+        ok: true,
+        target: 'node22',
+      });
+    }
   });
 });
