@@ -38,6 +38,16 @@ describe('ci gates the current scan outcome', () => {
     expect(result.stdout).not.toMatch(/\x1b\[/);
   });
 
+  it('honors an explicit pretty format for the human CI receipt', async () => {
+    const result = await run([
+      'ci', '--workspace', workspace(), '--threads', '1', '--no-color', '--format', 'pretty',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Repository Health');
+    expect(result.stdout.trimStart()).not.toMatch(/^\{/);
+  });
+
   it('forwards --lock-new-debt as an explicit bounded Lock gate', async () => {
     const program = new Command().name('slopbrick').exitOverride();
     let receivedLockGate: boolean | undefined;
