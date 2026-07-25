@@ -64,6 +64,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   'clampAllowlist',
   'wcag',
   'constitution',
+  'lock',
   'prScoreThreshold',
   'selfScan',
 ]);
@@ -220,6 +221,74 @@ export function validateConfig(config: unknown): ConfigValidationResult {
         }
       }
       validateStringArray('selfScan.excludePaths', config.selfScan.excludePaths, errors);
+    }
+  }
+
+  if ('lock' in config && config.lock !== undefined) {
+    if (!isPlainObject(config.lock)) {
+      errors.push('lock: must be an object.');
+    } else {
+      for (const key of Object.keys(config.lock)) {
+        if (key !== 'waivers') {
+          errors.push(`lock: unknown key "${key}".`);
+        }
+      }
+      if ('waivers' in config.lock && config.lock.waivers !== undefined) {
+        if (!Array.isArray(config.lock.waivers)) {
+          errors.push('lock.waivers: must be an array.');
+        } else {
+          const identities = new Set<string>();
+          config.lock.waivers.forEach((waiver, index) => {
+            const section = `lock.waivers[${index}]`;
+            if (!isPlainObject(waiver)) {
+              errors.push(`${section}: must be an object.`);
+              return;
+            }
+            const knownWaiverKeys = new Set([
+              'findingIdentity',
+              'owner',
+              'reason',
+              'expiresAt',
+            ]);
+            const unknownKeys = Object.keys(waiver).filter((key) => !knownWaiverKeys.has(key));
+            if (unknownKeys.length > 0) {
+              errors.push(`${section}: unknown key${unknownKeys.length === 1 ? '' : 's'} ${unknownKeys.map((key) => `"${key}"`).join(', ')}.`);
+            }
+            if (
+              typeof waiver.findingIdentity !== 'string'
+              || !/^[a-f0-9]{64}$/.test(waiver.findingIdentity)
+            ) {
+              errors.push(`${section}: findingIdentity must be a 64-character lowercase SHA-256 identity.`);
+            } else if (identities.has(waiver.findingIdentity)) {
+              errors.push(`${section}: findingIdentity must be unique within lock.waivers.`);
+            } else {
+              identities.add(waiver.findingIdentity);
+            }
+            if (
+              typeof waiver.owner !== 'string'
+              || waiver.owner.trim().length === 0
+              || waiver.owner.length > 200
+            ) {
+              errors.push(`${section}: owner must be a non-empty string no longer than 200 characters.`);
+            }
+            if (
+              typeof waiver.reason !== 'string'
+              || waiver.reason.trim().length === 0
+              || waiver.reason.length > 1000
+            ) {
+              errors.push(`${section}: reason must be a non-empty string no longer than 1000 characters.`);
+            }
+            if (typeof waiver.expiresAt !== 'string') {
+              errors.push(`${section}: expiresAt must be a canonical UTC ISO timestamp.`);
+            } else {
+              const expiry = new Date(waiver.expiresAt);
+              if (Number.isNaN(expiry.getTime()) || expiry.toISOString() !== waiver.expiresAt) {
+                errors.push(`${section}: expiresAt must be a canonical UTC ISO timestamp.`);
+              }
+            }
+          });
+        }
+      }
     }
   }
 

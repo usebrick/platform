@@ -203,6 +203,10 @@ export interface ResolvedConfig {
    *  from project aliases not matching these prefixes are flagged by
    *  `context/import-path-mismatch`. */
   allowedImports?: string[];
+  /** Repository-owned Lock exceptions. Enforcement remains opt-in at CI. */
+  lock?: {
+    waivers?: import('./lock').LockWaiver[];
+  };
   wcag: {
     targetSizeExemptSelectors: string[];
     targetSizeRequireTailwind?: boolean;
