@@ -29,7 +29,7 @@ export interface FixFindingBinding {
 }
 
 export interface FixSuggestion {
-  kind: 'insert' | 'replace' | 'css-anchor';
+  kind: 'insert' | 'replace' | 'css-anchor' | 'module-specifier';
   description: string;
   targetFile?: string;
   anchor?: string;

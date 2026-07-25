@@ -126,6 +126,31 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
       const matches = prefixes.some((prefix) => source.startsWith(prefix));
       if (matches) continue;
 
+      const evidence = importSourceEvidence(
+        facts.v2._source,
+        source,
+        imp.line,
+        imp.column,
+        prefixes.length,
+      );
+      const importRewrites = context.config.mend?.importRewrites;
+      const replacement = importRewrites
+        && Object.prototype.hasOwnProperty.call(importRewrites, source)
+        ? importRewrites[source]
+        : undefined;
+      const fix = evidence?.status === 'exact'
+        && typeof replacement === 'string'
+        && replacement !== source
+        && prefixes.some((prefix) => replacement.startsWith(prefix))
+        ? {
+            kind: 'module-specifier' as const,
+            description: `Rewrite import '${source}' to '${replacement}'`,
+            targetFile: context.filePath,
+            oldValue: source,
+            newValue: replacement,
+          }
+        : undefined;
+
       issues.push({
         ruleId: 'context/import-path-mismatch',
         category: 'arch',
@@ -135,13 +160,8 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
         line: imp.line,
         column: imp.column,
         advice: `Use one of the canonical import paths: ${prefixes.join(', ')}. If '${source}' should be allowed, update slopbrick.config.mjs#allowedImports.`,
-        evidence: importSourceEvidence(
-          facts.v2._source,
-          source,
-          imp.line,
-          imp.column,
-          prefixes.length,
-        ),
+        evidence,
+        ...(fix ? { fix } : {}),
       });
     }
 
