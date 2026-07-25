@@ -3,6 +3,27 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 77 — 2026-07-25
+
+### Private declaration-boundary cleanup
+
+- Replaced Core's concrete `signalStrengthSchema` facade export with a typed
+  `parseSignalStrength` behavior boundary and a plain result interface.
+  Validation behavior, schemas, package versions, and rule authority remain
+  unchanged.
+- Removed the transitive Zod type graph from Core's generated public workspace
+  declarations. SlopBrick's CJS, ESM, and DTS builds now complete without the
+  former Zod CommonJS named-export warnings; no diagnostic suppression was
+  added.
+- Passed Core 289/289, the affected SlopBrick matrix 39/39, packed consumers
+  9/9, and the complete recursive typecheck, test, and build gates. SlopBrick
+  remains 4,616 passed tests with 18 intentional skips.
+
+### Boundary
+
+- This cleanup does not reopen `LOCK-001`, start `MEND-001`, change the roadmap,
+  or authorize push, merge, tag, release, publication, or deployment.
+
 ## Revision 76 — 2026-07-25
 
 ### LOCK-001 local closeout

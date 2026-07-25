@@ -78,6 +78,10 @@ current publisher-attested internal Corpus v1 evaluation path.
 
 ### Changed
 
+- Replaced SlopBrick's dependency on Core's concrete Zod signal-strength
+  schema export with a typed validation function. Runtime validation and data
+  contracts are unchanged, while generated declarations no longer traverse
+  Zod's CommonJS type surface or emit named-export warnings.
 - Removed the dormant `pgsql-parser` runtime dependency and corrected the
   legacy `db`, `lock`, and `watch` descriptions so they no longer claim
   retired schema rules or the not-yet-proven Lock workflow. The current

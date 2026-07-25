@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-25
-**Index revision:** 76
+**Index revision:** 77
 **Global status:** `advancing`
 
 ## Executive state
@@ -38,6 +38,10 @@ Memory requirement-to-test contract owns active Memory behavior,
 registry v2 and the exact vector remain fixed test data, and the former
 `94/100` dual-review gate remains retired. Deferred Memory capabilities,
 Structure v5, public API, package exports, and commands remain unchanged.
+Revision 77 removes a validator-library declaration leak from the private Core
+facade without changing validation behavior, schemas, versions, roadmap scope,
+or release authority. The recursive build is now clean of the former Zod
+named-export warnings.
 Revision 74 records the owner's option `1` authorization for exactly one local
 checkpoint commit carrying this qualified byte set and synchronized docs.
 Push, merge, tag, release, publication, and deployment remain gated.
@@ -339,12 +343,14 @@ passes; correction passes; built-in defaults, missing or mismatched baselines,
 and incomplete scans fail closed. Owned expiring waivers and typed human/JSON/
 Markdown/SARIF receipts preserve the applicable policy and exact import
 evidence. The focused matrix passes 75/75. Current recursive gates pass Core
-288, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips;
+289, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips;
 typecheck and build pass. The production audit checks 377 packages with zero
 high-threshold advisories, the runtime graph has zero cycles across 654 source
 files, and the package self-scan completes 307/307 at 99.94/100 with a passing
-policy gate. This is owner-only local evidence, not team precision, demand,
-pricing, release, or publication evidence.
+policy gate. The Core facade now exposes a type-neutral signal-strength parser,
+and the SlopBrick declaration build is warning-free. This is owner-only local
+evidence, not team precision, demand, pricing, release, or publication
+evidence.
 
 CAL-001 remains
 `applied: false` and `admitted: false`; protected state and frozen evidence
@@ -643,7 +649,7 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | PASS locally | Recursive typecheck, test, and build pass. Current counts are Core 288, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips. This does not authorize release. |
+| Current checkout gates | PASS locally | Recursive typecheck, test, and build pass without the former Zod declaration warnings. Current counts are Core 289, Engine 150, Website 54, and SlopBrick 4,616 with 18 intentional skips. This does not authorize release. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | LOCK-001 owner proof | PASS locally | One exact repository import-policy family passes the baseline/new/correction, waiver, policy-authority, and incomplete-scan matrix; external precision and team usefulness remain open. |
@@ -716,7 +722,8 @@ green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorizes exactly
 one local checkpoint commit; it does not authorize any remote or public
-action. Revision 68 makes the focused
+action. Revision 77 records only the warning-free Core validation-facade
+cleanup and does not alter that next-decision boundary. Revision 68 makes the focused
 [acceptance contract](../decisions/memorybrick-m0-acceptance.md) the sole active
 behavioral authority under the accepted
 [`ADR`](../decisions/memorybrick-m0.md). Pinned

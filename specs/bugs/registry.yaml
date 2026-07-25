@@ -27,3 +27,10 @@ bugs:
     scope: slopbrick-pack-verification
     summary: Package builder identity event did not reproduce under three reruns
     file: specs/bugs/BUG-2026-07-25T211301-pack-builder-identity-drift.md
+  - bug_id: BUG-2026-07-25T223900
+    date: 2026-07-25
+    severity: low
+    priority: P1
+    scope: core-slopbrick-declaration-boundary
+    summary: Core Zod schema type leaks into SlopBrick declaration bundling
+    file: specs/bugs/BUG-2026-07-25T223900-zod-declaration-boundary.md
