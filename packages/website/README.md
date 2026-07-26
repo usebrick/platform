@@ -73,9 +73,41 @@ src/
 The site is prepared for **Cloudflare Pages** (project `platform`, custom
 domain `usebrick.dev`). This checkout contains no proof of a current
 production deployment; a release owner must run and verify the documented
-Cloudflare deployment flow before calling the site live. `packages/website/dist/`
-can be uploaded with `wrangler pages deploy` after the local build and preview
-gates pass (see [`docs/operations/cloudflare-pages-setup.md`](../../docs/operations/cloudflare-pages-setup.md)).
+Cloudflare deployment flow before calling the site live.
+
+### Path A: Cloudflare Connect to Git
+
+Configure the Pages project from the repository root, use
+`pnpm install --frozen-lockfile && pnpm --filter @usebrick/website run build`,
+and set the output directory to `packages/website/dist`. Cloudflare owns this
+path; `.github/workflows/deploy-website.yml` is not involved.
+
+### Path B: guarded GitHub Actions deployment
+
+Configure these repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_PAGES_PROJECT_NAME`
+
+A green source CI run is necessary but does not authorize deployment. For an
+automatic post-CI deploy, set the repository variable `WEBSITE_DEPLOY_SHA` to
+that run's exact 40-character commit SHA before it completes (or set it and
+re-run that exact CI run). The job skips when the variable is absent or does
+not match. Clear the variable afterward; an old value cannot authorize a later
+commit.
+
+For an owner-triggered first deploy or recovery, dispatch `deploy-website`
+manually and provide the exact current-main SHA in `commit_sha`. Both paths
+verify the authorization, checkout, and current `origin/main` commit, check all
+three credentials before tool setup, build and inspect `dist`, then re-check
+the SHA before the upload. The upload uses the immutable
+`cloudflare/wrangler-action@v4.0.0` commit, pinned Wrangler `4.114.0`, and the
+action's isolated npm installer.
+
+The optional `cloudflare-pages` GitHub environment remains commented out. If a
+second human approval is required, enable that environment in the workflow and
+configure required reviewers before authorizing a SHA.
 
 GitHub Actions (`.github/workflows/ci.yml` + `publish.yml`) handle the
 **other** packages:

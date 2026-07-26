@@ -7,6 +7,11 @@ const workflow = (name: string): string => readFileSync(
   'utf8',
 );
 
+const repoFile = (path: string): string => readFileSync(
+  resolve(process.cwd(), '../..', path),
+  'utf8',
+);
+
 function actionRefs(source: string): Array<{ action: string; ref: string }> {
   return [...source.matchAll(/^\s+uses:\s+([^@\s]+)@([^\s#]+)\s*$/gm)]
     .map((match) => ({ action: match[1]!, ref: match[2]! }));
@@ -54,6 +59,32 @@ describe('release workflow contracts', () => {
       const step = namedStep(workflow(workflowName), stepName);
       expect(step).toMatch(/env:\s*\n\s+SLOPBRICK_VITEST_WORKERS:\s*['"]?1['"]?/);
     }
+  });
+
+  it('fails closed before any website deployment without exact-SHA owner authorization', () => {
+    const source = workflow('deploy-website.yml');
+    const setup = repoFile('packages/website/README.md');
+
+    expect(source).toContain('commit_sha:');
+    expect(source).toContain("vars.WEBSITE_DEPLOY_SHA == github.event.workflow_run.head_sha");
+    expect(source).toContain("vars.WEBSITE_DEPLOY_SHA != ''");
+    expect(namedStep(source, 'Verify exact owner-authorized deployment SHA')).toContain(
+      'TARGET_SHA" =~ ^[0-9a-f]{40}$',
+    );
+    expect(namedStep(source, 'Verify Cloudflare deployment credentials')).toContain(
+      'CLOUDFLARE_PAGES_PROJECT_NAME',
+    );
+
+    const deployStep = namedStep(source, 'Deploy to Cloudflare Pages');
+    expect(deployStep).toContain(
+      'uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0',
+    );
+    expect(deployStep).toContain('wranglerVersion: 4.114.0');
+    expect(deployStep).toContain('packageManager: npm');
+
+    expect(setup).toContain('WEBSITE_DEPLOY_SHA');
+    expect(setup).toContain('exact 40-character commit SHA');
+    expect(setup).not.toContain('triggers on `push: branches: [main]` with a path filter');
   });
 
   it('keeps manual PR review inputs and threshold/runtime exit semantics explicit', () => {

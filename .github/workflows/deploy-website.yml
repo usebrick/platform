@@ -5,24 +5,24 @@ name: deploy-website
 # Two paths exist for getting the site live:
 #   Path A — Cloudflare dashboard "Connect to Git" (CF builds directly
 #            from the repo, this workflow is bypassed). See Path A in
-#            docs/operations/cloudflare-pages-setup.md.
+#            packages/website/README.md.
 #   Path B — THIS file. GitHub Actions builds the site and pushes the
 #            dist via wrangler-action. Use this path when you want a
 #            CI gate, a staging environment, or different deploy cadence
 #            than Path A's "every push to main".
 #
-# Required GitHub repo secrets (configured by the operator per Path B
-# step 3 in docs/operations/cloudflare-pages-setup.md):
+# Required GitHub repo secrets (configured by the operator per Path B in
+# packages/website/README.md):
 #   - CLOUDFLARE_API_TOKEN      — scoped API token with "Edit Cloudflare Pages"
 #   - CLOUDFLARE_ACCOUNT_ID     — the 32-char hex account ID
 #   - CLOUDFLARE_PAGES_PROJECT_NAME — e.g. "usebrick-dev"
 #
 # Why this is separate from ci.yml:
-#   - CI runs on every PR and push. Automatic production deployment starts only
-#     after the complete `ci` workflow succeeds on main, so candidate-derived
-#     facts cannot race ahead of a failing repository gate.
+#   - CI runs on every PR and push. A successful main run is deploy-eligible
+#     only when the repository variable WEBSITE_DEPLOY_SHA names that exact
+#     commit, so source authorization never implies website authorization.
 #   - Manual dispatch remains available for an explicitly owner-authorized
-#     first deploy or recovery; the selected workflow ref is the deployed ref.
+#     first deploy or recovery and requires the exact current-main commit SHA.
 #
 # Why Core and SlopBrick changes trigger this workflow:
 #   The website `prebuild` reads Core's package version and SlopBrick's
@@ -36,8 +36,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
-    # Manual re-deploy / first-time setup trigger. Required inputs are
-    # the same repo secrets the schedule path uses.
+    inputs:
+      commit_sha:
+        description: Exact 40-character current main commit SHA to deploy
+        required: true
+        type: string
 
 concurrency:
   # Production is one ordered lane. A newer eligible run cancels an older one
@@ -54,12 +57,14 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' ||
           (github.event.workflow_run.conclusion == 'success' &&
            github.event.workflow_run.event == 'push' &&
-           github.event.workflow_run.head_branch == 'main') }}
+           github.event.workflow_run.head_branch == 'main' &&
+           vars.WEBSITE_DEPLOY_SHA != '' &&
+           vars.WEBSITE_DEPLOY_SHA == github.event.workflow_run.head_sha) }}
     runs-on: ubuntu-latest
     # The `cloudflare-pages` GitHub environment is OPTIONAL. If
     # defined in repo Settings → Environments with required reviewers,
-    # the deploy will pause for human approval before running. See
-    # Path B step 4 last paragraph in docs/operations/cloudflare-pages-setup.md.
+    # the deploy will pause for human approval before running. See the
+    # Path B environment note in packages/website/README.md.
     # To enable, uncomment the `environment:` block below.
     #
     # environment: cloudflare-pages
@@ -69,18 +74,47 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_sha || github.event.workflow_run.head_sha }}
 
-      - name: Verify automatic deploy is the current main commit
-        if: ${{ github.event_name == 'workflow_run' }}
+      - name: Verify exact owner-authorized deployment SHA
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TARGET_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_sha || github.event.workflow_run.head_sha }}
+          AUTHORIZED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_sha || vars.WEBSITE_DEPLOY_SHA }}
         run: |
           set -euo pipefail
+          if [[ ! "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Deployment SHA must be exactly 40 lowercase hexadecimal characters"
+            exit 1
+          fi
+          if [ "$AUTHORIZED_SHA" != "$TARGET_SHA" ]; then
+            echo "::error::Refusing deployment without exact-SHA owner authorization"
+            exit 1
+          fi
+          CHECKED_OUT_SHA="$(git rev-parse HEAD)"
+          if [ "$CHECKED_OUT_SHA" != "$TARGET_SHA" ]; then
+            echo "::error::Checked-out SHA $CHECKED_OUT_SHA does not match authorized SHA $TARGET_SHA"
+            exit 1
+          fi
           git fetch --no-tags origin main
           MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
-          if [ "$EXPECTED_SHA" != "$MAIN_SHA" ]; then
-            echo "::error::Refusing stale deploy: successful CI SHA $EXPECTED_SHA is no longer main ($MAIN_SHA)"
+          if [ "$TARGET_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Refusing stale deploy: authorized SHA $TARGET_SHA is no longer main ($MAIN_SHA)"
+            exit 1
+          fi
+
+      - name: Verify Cloudflare deployment credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing+=(CLOUDFLARE_API_TOKEN)
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing+=(CLOUDFLARE_ACCOUNT_ID)
+          [ -n "$CLOUDFLARE_PAGES_PROJECT_NAME" ] || missing+=(CLOUDFLARE_PAGES_PROJECT_NAME)
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "::error::Missing required Cloudflare deployment credentials: ${missing[*]}"
             exit 1
           fi
 
@@ -141,32 +175,35 @@ jobs:
       #   working-directory: packages/website
       #   run: pnpm test:a11y
 
-      - name: Re-verify automatic deploy is still the current main commit
-        if: ${{ github.event_name == 'workflow_run' }}
+      - name: Re-verify deployment SHA is still the current main commit
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TARGET_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_sha || github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
           MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
-          if [ "$EXPECTED_SHA" != "$MAIN_SHA" ]; then
-            echo "::error::Refusing stale deploy: successful CI SHA $EXPECTED_SHA is no longer main ($MAIN_SHA)"
+          if [ "$TARGET_SHA" != "$MAIN_SHA" ]; then
+            echo "::error::Refusing stale deploy: authorized SHA $TARGET_SHA is no longer main ($MAIN_SHA)"
             exit 1
           fi
 
       - name: Deploy to Cloudflare Pages
-        # wrangler-action@v3 is the supported CF Pages upload action.
+        # wrangler-action@v4 is the supported CF Pages upload action.
         # Uses the `pages deploy` subcommand directly. Flags:
         #   --project-name  required, matches the CF Pages project
         #   --branch        main, so usebrick.dev serves the new
         #                   build on its next request
         #   --commit-dirty  allow dirty working tree (CI checkout has
         #                   uncommitted version.json — harmless)
-        # v3
-        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd
+        # v4.0.0
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: 4.114.0
+          # Avoid pnpm's workspace-root add guard when the action installs its
+          # isolated, pinned Wrangler runtime.
+          packageManager: npm
           command: pages deploy packages/website/dist --project-name=${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main --commit-dirty=true
         env:
           # wrangler-action picks up these env vars automatically;
@@ -177,10 +214,12 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## Cloudflare Pages deploy summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Project: \`${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch: \`main\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Result: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- usebrick.dev: https://usebrick.dev" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Cloudflare Pages deploy summary"
+            echo ""
+            echo "- Project: \`${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}\`"
+            echo "- Branch: \`main\`"
+            echo "- Commit: \`${{ github.event_name == 'workflow_dispatch' && inputs.commit_sha || github.event.workflow_run.head_sha }}\`"
+            echo "- Result: ${{ job.status }}"
+            echo "- usebrick.dev: https://usebrick.dev"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -45,3 +45,11 @@ bugs:
     verification_run: 30192189009
     summary: Clean CI cannot run SlopBrick generated checks before Core is built
     file: specs/bugs/BUG-2026-07-26T052118-ci-generated-check-bootstrap.md
+  - bug_id: BUG-2026-07-26T084000
+    date: 2026-07-26
+    severity: high
+    priority: P0
+    scope: website-deploy-authorization
+    status: in_progress
+    summary: Green source CI can enter website deployment without exact-SHA owner authorization
+    file: specs/bugs/BUG-2026-07-26T084000-website-deploy-authorization.md
