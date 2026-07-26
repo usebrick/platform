@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const BIN = resolve(process.cwd(), 'bin', 'slopbrick.js');
+const PARTIAL_SCAN_TIMEOUT_MS = 30_000;
 
 function skipIfNoBin(): boolean {
   return !existsSync(BIN);
@@ -142,22 +143,28 @@ async function waitForValidHealth(cwd: string, requested: number): Promise<void>
 }
 
 async function waitForPartialHealth(
+  handle: WatchHandle,
   cwd: string,
   requested: number,
   analyzed: number,
   failed: number,
 ): Promise<void> {
-  await waitUntil(() => {
-    const health = readHealth(cwd);
-    return health?.scoreValidity === 'incomplete' &&
-      health.completionStatus === 'partial' &&
-      health.requested === requested &&
-      health.analyzed === analyzed &&
-      health.failed === failed;
-  // The recursive workspace gate runs this opt-in subprocess suite alongside
-  // the other packages. Allow the child scan a little more wall time under
-  // that load while keeping the assertion bounded.
-  }, 15_000);
+  try {
+    await waitUntil(() => {
+      const health = readHealth(cwd);
+      return health?.scoreValidity === 'incomplete' &&
+        health.completionStatus === 'partial' &&
+        health.requested === requested &&
+        health.analyzed === analyzed &&
+        health.failed === failed;
+    // The recursive release gate can run after another complete local gate.
+    // Keep this bounded while allowing a valid child scan to finish on a
+    // sustained-load host rather than converting host latency into a failure.
+    }, PARTIAL_SCAN_TIMEOUT_MS);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${message}\nwatch output:\n${handle.output()}`, { cause: error });
+  }
 }
 
 function watchNoticeCount(output: string): number {
@@ -370,7 +377,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           mkdirSync(join(dir, 'src'), { recursive: true });
           writeFileSync(join(dir, 'src', 'valid.ts'), 'export const value = 1;\n');
           writeFileSync(join(dir, 'src', 'broken.ts'), 'export const = ;\n');
-          await waitForPartialHealth(dir, 2, 1, 1);
+          await waitForPartialHealth(handle, dir, 2, 1, 1);
 
           const health = readHealth(dir);
           expect(health).toMatchObject({
@@ -432,7 +439,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
           rmSync(dir, { recursive: true, force: true });
         }
-      }, 35_000);
+      }, 50_000);
     }
   }
 

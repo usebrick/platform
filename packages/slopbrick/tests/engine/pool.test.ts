@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { Worker } from 'node:worker_threads';
-import { WorkerPool } from '../../src/engine/pool';
+import { pathToFileURL } from 'node:url';
+import {
+  defaultWorkerScriptCandidates,
+  workerExecArgv,
+  WorkerPool,
+} from '../../src/engine/pool';
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
@@ -38,6 +43,34 @@ class ControlledWorker extends EventEmitter {
 }
 
 describe('WorkerPool', () => {
+  it('prefers the built CommonJS worker when executing the TypeScript source', () => {
+    const sourceModuleUrl = pathToFileURL(resolve(__dirname, '../../src/engine/pool.ts')).href;
+    const candidates = defaultWorkerScriptCandidates(sourceModuleUrl, true);
+    const builtWorker = resolve(__dirname, '../../dist/engine/worker.cjs');
+    const sourceWorker = resolve(__dirname, '../../src/engine/worker.ts');
+
+    expect(candidates).toContain(builtWorker);
+    expect(candidates).toContain(sourceWorker);
+    expect(candidates.indexOf(builtWorker)).toBeLessThan(candidates.indexOf(sourceWorker));
+  });
+
+  it('removes only tsx loader flags from built worker execution', () => {
+    const argv = [
+      '--trace-warnings',
+      '--import',
+      '/workspace/node_modules/tsx/dist/loader.mjs',
+      '--conditions=development',
+    ];
+
+    expect(workerExecArgv('/workspace/dist/engine/worker.cjs', argv)).toEqual([
+      '--trace-warnings',
+      '--conditions=development',
+    ]);
+    expect(workerExecArgv('/workspace/src/engine/worker.ts', argv)).toBeUndefined();
+    expect(workerExecArgv('/workspace/dist/engine/worker.cjs', ['--trace-warnings']))
+      .toBeUndefined();
+  });
+
   it('transports repository and invocation rule provenance separately across the worker boundary', async () => {
     const worker = new ControlledWorker();
     let workerData: unknown;

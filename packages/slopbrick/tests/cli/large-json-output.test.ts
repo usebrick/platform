@@ -24,7 +24,8 @@ describe('large JSON scan output', () => {
     mkdirSync(srcDir);
 
     const cleanFileCount = 320;
-    const pathPadding = 'x'.repeat(180);
+    // Keep enough margin above 128 KiB for platform-specific path serialization.
+    const pathPadding = 'x'.repeat(200);
     for (let index = 0; index < cleanFileCount; index += 1) {
       const suffix = String(index).padStart(4, '0');
       writeFileSync(

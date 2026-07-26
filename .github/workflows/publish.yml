@@ -85,6 +85,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run release quality gates
+        env:
+          SLOPBRICK_VITEST_WORKERS: '1'
         run: |
           node --test --test-concurrency=1 scripts/validate-execution-docs.test.mjs
           corepack pnpm plans:validate

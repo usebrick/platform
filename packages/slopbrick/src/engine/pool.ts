@@ -39,24 +39,72 @@ const MAX_RETRIES = 2;
 const MAX_STARTUP_FAILURES = 3;
 const DEFAULT_WORKER_TIMEOUT_MS = 60_000;
 
-function runsWithTsxLoader(): boolean {
-  return process.execArgv.some(
-    (argument) =>
-      argument === 'tsx' ||
-      argument.startsWith('tsx/') ||
-      argument.includes('/node_modules/tsx/') ||
-      argument.includes('\\node_modules\\tsx\\'),
-  );
+function isTsxLoaderSpecifier(argument: string): boolean {
+  return argument === 'tsx' ||
+    argument.startsWith('tsx/') ||
+    argument.includes('/node_modules/tsx/') ||
+    argument.includes('\\node_modules\\tsx\\');
 }
 
-function defaultWorkerScript(): string {
+function runsWithTsxLoader(): boolean {
+  return process.execArgv.some(isTsxLoaderSpecifier);
+}
+
+export function workerExecArgv(
+  workerScript: string,
+  execArgv: readonly string[] = process.execArgv,
+): string[] | undefined {
+  if (/\.tsx?$/.test(workerScript)) return undefined;
+
+  const filtered: string[] = [];
+  let removedLoader = false;
+  for (let index = 0; index < execArgv.length; index += 1) {
+    const argument = execArgv[index]!;
+    const next = execArgv[index + 1];
+    if (
+      ['--import', '--loader', '--require', '-r'].includes(argument) &&
+      next !== undefined &&
+      isTsxLoaderSpecifier(next)
+    ) {
+      removedLoader = true;
+      index += 1;
+      continue;
+    }
+    const equalsMatch = argument.match(/^(?:--import|--loader|--require)=(.+)$/);
+    if (equalsMatch?.[1] && isTsxLoaderSpecifier(equalsMatch[1])) {
+      removedLoader = true;
+      continue;
+    }
+    filtered.push(argument);
+  }
+
+  return removedLoader ? filtered : undefined;
+}
+
+export function defaultWorkerScriptCandidates(
+  moduleUrl = import.meta.url,
+  includeTsxWorker = runsWithTsxLoader(),
+): string[] {
   // Prefer the CJS worker build: Node >= v24.14.0 can abort under concurrent
   // ESM->CJS preparse in worker threads (nodejs/node#63323). The CJS worker
   // uses require() for its dependencies and avoids that path.
-  const relativeCandidates = ['./engine/worker.cjs', './engine/worker.js', './engine/worker.mjs'];
-  if (runsWithTsxLoader()) relativeCandidates.push('./worker.ts');
+  const relativeCandidates = [
+    // Bundled entry point: dist/index.{js,cjs} -> dist/engine/worker.*
+    './engine/worker.cjs',
+    './engine/worker.js',
+    './engine/worker.mjs',
+    // Source entry point: src/engine/pool.ts -> dist/engine/worker.*
+    '../../dist/engine/worker.cjs',
+    '../../dist/engine/worker.js',
+    '../../dist/engine/worker.mjs',
+  ];
+  if (includeTsxWorker) relativeCandidates.push('./worker.ts');
 
-  const candidates = relativeCandidates.map((path) => fileURLToPath(new URL(path, import.meta.url)));
+  return relativeCandidates.map((path) => fileURLToPath(new URL(path, moduleUrl)));
+}
+
+function defaultWorkerScript(): string {
+  const candidates = defaultWorkerScriptCandidates();
   const workerScript = candidates.find(existsSync);
   if (workerScript) return workerScript;
 
@@ -298,7 +346,9 @@ export class WorkerPool {
         if (settled) return;
         let worker: Worker;
         try {
+          const execArgv = workerExecArgv(this.workerScript);
           worker = this.workerFactory(this.workerScript, {
+            ...(execArgv ? { execArgv } : {}),
             workerData: {
               config: this.config,
               explicitRuleOverrides: this.explicitRuleOverrides,

@@ -578,6 +578,8 @@ function runPackage(args: readonly string[], input: string) {
 
 function packageMachineOutput(stdout: string): unknown {
   const lines = stdout.trim().split('\n');
+  while (lines.at(-1)?.trim() === '::endgroup::') lines.pop();
+  if (lines.length === 0) throw new Error('Package wrapper emitted no machine output');
   return JSON.parse(lines.at(-1)!);
 }
 
@@ -599,6 +601,11 @@ afterEach(() => {
 });
 
 describe('CAL-002 review-quality CLI', () => {
+  it('reads machine output before a GitHub runner end-group marker', () => {
+    expect(packageMachineOutput('wrapper output\n{"ok":true,"status":"completed"}\n::endgroup::\n'))
+      .toEqual({ ok: true, status: 'completed' });
+  });
+
   it('exposes the package dispatcher script', () => {
     const packageJson = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
     expect(packageJson.scripts?.['cal:complete']).toBe('node --import tsx scripts/cal/cal-002.ts');

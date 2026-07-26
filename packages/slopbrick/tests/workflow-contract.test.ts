@@ -12,6 +12,14 @@ function actionRefs(source: string): Array<{ action: string; ref: string }> {
     .map((match) => ({ action: match[1]!, ref: match[2]! }));
 }
 
+function namedStep(source: string, name: string): string {
+  const marker = `      - name: ${name}`;
+  const start = source.indexOf(marker);
+  expect(start, `missing workflow step: ${name}`).toBeGreaterThanOrEqual(0);
+  const next = source.indexOf('\n      - name:', start + marker.length);
+  return source.slice(start, next === -1 ? undefined : next);
+}
+
 describe('release workflow contracts', () => {
   it('pins every third-party action in the reviewed workflows', () => {
     const refs = [
@@ -35,6 +43,16 @@ describe('release workflow contracts', () => {
       .map(workflow);
     for (const source of sources) {
       expect(source).not.toMatch(/uses:\s+pnpm\/action-setup@[\da-f]+[\s\S]{0,180}version:\s*9\b/);
+    }
+  });
+
+  it('keeps hosted full-suite worker budgets aligned with the release pre-push gate', () => {
+    for (const [workflowName, stepName] of [
+      ['ci.yml', 'Test all packages'],
+      ['publish.yml', 'Run release quality gates'],
+    ] as const) {
+      const step = namedStep(workflow(workflowName), stepName);
+      expect(step).toMatch(/env:\s*\n\s+SLOPBRICK_VITEST_WORKERS:\s*['"]?1['"]?/);
     }
   });
 

@@ -89,6 +89,8 @@ jobs:
       - name: Test all packages
         # Vitest itself uses the SlopBrick worker budget below; serializing
         # workspace packages prevents four package graphs from co-residing.
+        env:
+          SLOPBRICK_VITEST_WORKERS: '1'
         run: pnpm --workspace-concurrency=1 -r test
 
       - name: Validate JSON schemas against fixtures
