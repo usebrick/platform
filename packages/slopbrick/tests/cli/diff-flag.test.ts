@@ -92,22 +92,18 @@ describe('--diff <ref> flag (v0.10.1 VibeDrift-compatible PR filter)', () => {
       setupDiffFixture(
         dir,
         {
-          // Baseline: clean auth middleware.
+          // Baseline: no dynamic code execution.
           'src/middleware.ts':
-            'export function check(req, res, next) {\n' +
-            '  if (!req.user) return res.status(401).send("Unauthorized");\n' +
-            '  next();\n' +
+            'export function parsePayload(raw) {\n' +
+            '  return JSON.parse(raw);\n' +
             '}\n',
         },
         {
-          // PR change: introduces fail-open-auth (security/fail-open-auth),
-          // a USEFUL rule (precision 100%, lift \u221e per v4 calibration)
-          // that is NOT default-off. Severity: high (\u00d710 weight).
+          // PR change: introduces security/eval, a current-policy,
+          // score-eligible high-severity finding (\u00d710 weight).
           'src/middleware.ts':
-            'export function check(req, res, next) {\n' +
-            '  if (process.env.NODE_ENV !== "production") return next();\n' +
-            '  if (!req.user) return res.status(401).send("Unauthorized");\n' +
-            '  next();\n' +
+            'export function parsePayload(raw) {\n' +
+            '  return eval(raw);\n' +
             '}\n',
         },
       );
@@ -118,8 +114,18 @@ describe('--diff <ref> flag (v0.10.1 VibeDrift-compatible PR filter)', () => {
         diffRef: 'main',
         quiet: true,
       });
+      expect(report.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'security/eval', severity: 'high' }),
+      ]));
       expect(report.prSlopScore).toBeDefined();
-      expect(report.prSlopScore).toBeGreaterThan(0);
+      expect(
+        report.prSlopScore,
+        JSON.stringify({
+          completionStatus: report.completionStatus,
+          scanAccounting: report.scanAccounting,
+          issues: report.issues,
+        }, null, 2),
+      ).toBeGreaterThan(0);
       expect(report.diffRef).toBe('main');
     } finally {
       rmSync(dir, { recursive: true, force: true });

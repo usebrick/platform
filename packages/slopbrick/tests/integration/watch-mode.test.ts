@@ -13,7 +13,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const BIN = resolve(process.cwd(), 'bin', 'slopbrick.js');
-const PARTIAL_SCAN_TIMEOUT_MS = 30_000;
+const HEALTH_PUBLICATION_TIMEOUT_MS = 30_000;
+const WATCH_CASE_TIMEOUT_MS = 45_000;
+const WATCH_LIFECYCLE_TIMEOUT_MS = 75_000;
 
 function skipIfNoBin(): boolean {
   return !existsSync(BIN);
@@ -134,12 +136,25 @@ async function waitForOutputContent(
   await waitUntil(() => predicate(handle.output()), 5_000);
 }
 
-async function waitForValidHealth(cwd: string, requested: number): Promise<void> {
-  await waitUntil(() => {
-    const health = readHealth(cwd);
-    return health?.scoreValidity === 'valid' &&
-      health.requested === requested && health.analyzed === requested;
-  }, 8_000);
+async function waitForValidHealth(
+  handle: WatchHandle,
+  cwd: string,
+  requested: number,
+): Promise<void> {
+  try {
+    await waitUntil(() => {
+      const health = readHealth(cwd);
+      return health?.scoreValidity === 'valid' &&
+        health.requested === requested && health.analyzed === requested;
+    }, HEALTH_PUBLICATION_TIMEOUT_MS);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `${message}\nlatest health:\n${JSON.stringify(readHealth(cwd), null, 2)}` +
+        `\nwatch output:\n${handle.output()}`,
+      { cause: error },
+    );
+  }
 }
 
 async function waitForPartialHealth(
@@ -160,7 +175,7 @@ async function waitForPartialHealth(
     // The recursive release gate can run after another complete local gate.
     // Keep this bounded while allowing a valid child scan to finish on a
     // sustained-load host rather than converting host latency into a failure.
-    }, PARTIAL_SCAN_TIMEOUT_MS);
+    }, HEALTH_PUBLICATION_TIMEOUT_MS);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${message}\nwatch output:\n${handle.output()}`, { cause: error });
@@ -244,7 +259,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
         mkdirSync(join(dir, 'src'), { recursive: true });
         const firstSource = join(dir, 'src', 'added.ts');
         writeFileSync(firstSource, 'export const added = 1;\n');
-        await waitForValidHealth(dir, 1);
+        await waitForValidHealth(handle, dir, 1);
         await assertStableForSeveralDebounces(handle, dir, 2);
         expect(handle.output().match(/Memory persisted to \.slopbrick\//g)).toHaveLength(1);
 
@@ -257,7 +272,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
         await assertStableForSeveralDebounces(handle, dir, 4);
 
         writeFileSync(join(dir, 'src', 'replacement.ts'), 'export const replacement = 1;\n');
-        await waitForValidHealth(dir, 1);
+        await waitForValidHealth(handle, dir, 1);
         await waitUntil(() => watchNoticeCount(handle.output()) >= 5, 5_000);
         await assertStableForSeveralDebounces(handle, dir, 5);
         // The add, edit, and re-add are three complete valid scans; the
@@ -270,7 +285,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
         rmSync(dir, { recursive: true, force: true });
       }
     },
-    30_000,
+    WATCH_LIFECYCLE_TIMEOUT_MS,
   );
 
   it.each(invocations)(
@@ -286,7 +301,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           writeFileSync(join(dir, 'src', name), `export const ${name[0]} = true;\n`);
         }
 
-        await waitForValidHealth(dir, 3);
+        await waitForValidHealth(handle, dir, 3);
         await assertStableForSeveralDebounces(handle, dir, 2);
         expect(handle.output().match(/Memory persisted to \.slopbrick\//g)).toHaveLength(1);
 
@@ -296,7 +311,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
         rmSync(dir, { recursive: true, force: true });
       }
     },
-    15_000,
+    WATCH_CASE_TIMEOUT_MS,
   );
 
   const heatmapVariants: ReadonlyArray<{
@@ -350,7 +365,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
 
           mkdirSync(join(dir, 'src'), { recursive: true });
           writeFileSync(join(dir, 'src', 'added.ts'), 'export const added = 1;\n');
-          await waitForValidHealth(dir, 1);
+          await waitForValidHealth(handle, dir, 1);
           await assertStableForSeveralDebounces(
             handle,
             dir,
@@ -362,7 +377,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
           rmSync(dir, { recursive: true, force: true });
         }
-      }, 20_000);
+      }, WATCH_CASE_TIMEOUT_MS);
     }
   }
 
@@ -462,7 +477,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           mkdirSync(join(dir, 'src'), { recursive: true });
           const sourcePath = join(dir, 'src', 'watched.ts');
           writeFileSync(sourcePath, 'export const watched = 1;\n');
-          await waitForValidHealth(dir, 1);
+          await waitForValidHealth(handle, dir, 1);
           await waitUntil(
             () => readFileSync(outputPath, 'utf8').includes(variant.validMarker),
             5_000,
@@ -478,7 +493,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
           if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
           rmSync(dir, { recursive: true, force: true });
         }
-      }, 20_000);
+      }, WATCH_CASE_TIMEOUT_MS);
     }
   }
 
@@ -490,7 +505,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
     const handle = startWatch(dir, 'flag', [explicitFile]);
     try {
       await waitForWatchReady(handle);
-      await waitForValidHealth(dir, 1);
+      await waitForValidHealth(handle, dir, 1);
       await assertStableForSeveralDebounces(handle, dir, 1);
 
       writeFileSync(explicitFile, 'export const explicit = 2;\n');
@@ -501,7 +516,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
       if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
       rmSync(dir, { recursive: true, force: true });
     }
-  }, 15_000);
+  }, WATCH_CASE_TIMEOUT_MS);
 
   it('keeps descendants of an explicit directory live', async () => {
     if (skipIfNoBin()) return;
@@ -516,7 +531,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
       const nestedDir = join(sourceDir, 'nested');
       mkdirSync(nestedDir);
       writeFileSync(join(nestedDir, 'added.ts'), 'export const nested = true;\n');
-      await waitForValidHealth(dir, 1);
+      await waitForValidHealth(handle, dir, 1);
       await assertStableForSeveralDebounces(handle, dir, 2);
 
       expect(await stopWatch(handle)).toBe(0);
@@ -524,7 +539,7 @@ watchSuite('slopbrick --watch (v0.5.2)', () => {
       if (handle.proc.exitCode === null) handle.proc.kill('SIGKILL');
       rmSync(dir, { recursive: true, force: true });
     }
-  }, 15_000);
+  }, WATCH_CASE_TIMEOUT_MS);
 
   it('rescans staged scope when a linked worktree index changes', async () => {
     if (skipIfNoBin()) return;

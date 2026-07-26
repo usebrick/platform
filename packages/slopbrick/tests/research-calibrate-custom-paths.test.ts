@@ -35,11 +35,18 @@ describe('research calibrate — custom corpus paths (v0.5.2)', () => {
         negativeDir,
         positiveLimit: 3,
         negativeLimit: 3,
+        // This test verifies custom corpus routing, not the default policy.
+        // Opt into the exact diagnostic whose fixture is designed to trigger
+        // so a policy revision cannot turn this into an incidental-rule test.
+        includeRules: ['visual/inline-style-dominance'],
       });
       expect(report.positiveFileCount).toBe(3);
       expect(report.negativeFileCount).toBe(3);
       expect(Array.isArray(report.rules)).toBe(true);
-      expect(report.rules.length).toBeGreaterThan(0);
+      expect(
+        report.rules.some((rule) => rule.ruleId === 'visual/inline-style-dominance'),
+        JSON.stringify({ skippedChunks: report.skippedChunks, rules: report.rules }, null, 2),
+      ).toBe(true);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
