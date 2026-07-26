@@ -58,6 +58,13 @@ Risk level: Low.
    command lists with it.
    **verify**: `node --test scripts/validate-generated-check-bootstrap.test.mjs`
 
+2. **RED**: Require all four generated surfaces, the release workflow, and
+   pre-push-before-mutation ordering after blind review exposes the remaining
+   false-green paths.
+   **GREEN**: Delegate release checks to the shared command and move pre-push
+   freshness verification ahead of recursive test/build generation.
+   **verify**: `node --test scripts/validate-generated-check-bootstrap.test.mjs`
+
 **REFACTOR**: Keep generation ownership in SlopBrick and build ownership in
 Core; only the workspace orchestration belongs at the repository root.
 
