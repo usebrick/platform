@@ -50,6 +50,10 @@ bugs:
     severity: high
     priority: P0
     scope: website-deploy-authorization
-    status: in_progress
+    status: resolved
+    resolved_at: 2026-07-26
+    resolution_commit: 2664235978d7e654ce59079046b4031db5c41f6b
+    verification_run: 30193626877
+    deployment_verification_run: 30194092698
     summary: Green source CI can enter website deployment without exact-SHA owner authorization
     file: specs/bugs/BUG-2026-07-26T084000-website-deploy-authorization.md

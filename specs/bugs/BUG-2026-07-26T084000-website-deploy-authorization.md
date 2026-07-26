@@ -57,14 +57,37 @@ Risk level: High until the guarded workflow is on `main`; low afterward.
 ## Acceptance Criteria
 
 - [x] The focused workflow regression passes.
-- [ ] The workflow parses and all execution-document validators pass.
-- [ ] Recursive typecheck, test, build, and security gates remain green.
-- [ ] Hosted Node 22/24 CI passes for the correction commit.
-- [ ] The downstream website workflow skips without exact-SHA authorization.
-- [ ] No website deployment occurs.
+- [x] The workflow parses and all execution-document validators pass.
+- [x] Recursive typecheck, test, build, and security gates remain green.
+- [x] Hosted Node 22/24 CI passes for the correction commit.
+- [x] The downstream website workflow skips without exact-SHA authorization.
+- [x] No website deployment occurs.
 
 ## Resolution
 
-Implementation is locally in progress. Final resolution requires the hosted CI
-and downstream skip receipts above; source qualification alone is not a site
-release claim.
+Resolved in source commit
+`2664235978d7e654ce59079046b4031db5c41f6b`. Automatic admission now requires
+the owner-controlled `WEBSITE_DEPLOY_SHA` repository variable to equal the
+successful CI head SHA. Manual dispatch requires an exact `commit_sha`. Both
+paths validate a lowercase 40-hex SHA, verify that it is current
+`origin/main`, check Cloudflare configuration before setup, and recheck the
+commit immediately before deployment. The immutable Wrangler action v4 commit
+uses npm with pinned Wrangler `4.114.0`, avoiding monorepo package-manager
+inference.
+
+The RED workflow contract failed before the correction and passed 7/7 after
+it. `actionlint`, execution-plan validation, the protected seven-stage
+pre-push gate, recursive typecheck/test/build, the production security audit,
+and packed-consumer checks passed. Hosted CI run
+[`30193626877`](https://github.com/usebrick/platform/actions/runs/30193626877)
+passed Node 22, Node 24, security, and both packed-consumer jobs; it recorded
+Core 289, Website 54, Engine 150, and SlopBrick 4,648 passed tests with 18
+intentional SlopBrick skips. Its downstream website run
+[`30194092698`](https://github.com/usebrick/platform/actions/runs/30194092698)
+was skipped because no exact SHA was authorized. No deploy job step ran and no
+website deployment occurred.
+
+The earlier failed runs `30192639625` and `30193387636` remain reproduction
+evidence only: each stopped before Cloudflare authentication or deployment.
+This resolution hardens the release boundary; it does not authorize a website
+deployment, tag, GitHub Release, or npm publication.

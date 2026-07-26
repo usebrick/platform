@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 83,
+  "revision": 84,
   "updatedAt": "2026-07-26",
   "cal002Status": "done",
   "cal002NextAction": {
@@ -522,7 +522,7 @@
         "conflictsWith": []
       },
       "nextAction": {
-        "text": "Preserve the Revision 83 CI-qualified source state, await explicit owner dispositions for npm and website, keep release and deployment actions blocked, and rerun the currently green dependency audit against any exact release candidate.",
+        "text": "Preserve the Revision 84 exact-SHA-gated website workflow and CI-qualified source state, await explicit owner dispositions for npm and website, keep release and deployment actions blocked, and rerun the currently green dependency audit against any exact release candidate.",
         "verify": "corepack pnpm security:audit",
         "evidencePath": "docs/execution/evidence/REL-001-public-claim-disposition.md"
       },

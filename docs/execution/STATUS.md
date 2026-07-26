@@ -1,7 +1,7 @@
 # UseBrick execution status
 
 **Snapshot:** 2026-07-26
-**Index revision:** 83
+**Index revision:** 84
 **Global status:** `advancing`
 
 ## Executive state
@@ -72,10 +72,21 @@ portable across the supported hosts. Protected pre-push passed all seven
 stages, and hosted CI run `30192189009` passed Node 22, Node 24, security, and
 both packed-consumer jobs. This is source/CI hardening only and preserves every
 public-action boundary above.
+Revision 84 closes the website-deployment authorization incident at current
+source checkpoint `2664235978d7e654ce59079046b4031db5c41f6b`. Automatic
+deployment now fails closed unless owner-controlled `WEBSITE_DEPLOY_SHA`
+exactly matches the successful CI head SHA; manual dispatch requires an exact
+commit SHA, and both paths verify current `origin/main`, configured deployment
+inputs, and commit identity again before deployment. Hosted CI run
+`30193626877` passed Node 22, Node 24, security, and both packed consumers with
+Core 289, Engine 150, Website 54, and SlopBrick 4,648 passed tests plus 18
+intentional skips. Downstream website run `30194092698` skipped because no SHA
+was authorized. No deploy step ran and no site mutation occurred.
 Revision 74 remains the historical authority for one local MEM checkpoint;
-Revision 82 is the distinct later integration authority, and Revision 83 is
-its clean-runner closure. Tag, GitHub Release, npm publication, website
-deployment, participant action, and broader capability claims remain gated.
+Revision 82 is the distinct later integration authority, Revision 83 is its
+clean-runner closure, and Revision 84 hardens but does not grant the website
+release boundary. Tag, GitHub Release, npm publication, website deployment,
+participant action, and broader capability claims remain gated.
 
 Historical MEM-001 chronology through Revision 67 follows. Revision 47
 explicitly started `MEM-001` as a decision-only implementation slice. The
@@ -699,17 +710,17 @@ WIP while waiting.
 | Gate | State | Meaning |
 | --- | --- | --- |
 | Candidate scope | Satisfied | v0.45 is a trust/reliability release; no new rules are planned. |
-| Current checkout gates | PASS locally and hosted | Recursive typecheck, test, and build pass. Hosted run `30192189009` records Core 289, Engine 150, Website 54, and SlopBrick 4,647 passed tests with 18 intentional SlopBrick skips on both supported Node versions. This does not authorize release. |
+| Current checkout gates | PASS locally and hosted | Recursive typecheck, test, and build pass. Hosted run `30193626877` records Core 289, Engine 150, Website 54, and SlopBrick 4,648 passed tests with 18 intentional SlopBrick skips on both supported Node versions. This does not authorize release. |
 | SB-045 qualification self-scan | PASS | The frozen qualification receipt records 263/263 files complete with no runtime failures; 0 active AI-specific signals; AI Slop Score 0.0 against threshold 15. |
 | Owner self-scan | Recorded | VAL-001-RUN-001 records 270/270 initial and repeat scans, a useful review signal, no safe bounded fix, and unchanged normalized outcomes. |
 | LOCK-001 owner proof | PASS locally | One exact repository import-policy family passes the baseline/new/correction, waiver, policy-authority, and incomplete-scan matrix; external precision and team usefulness remain open. |
 | MEND-001 exact repair proof | ACCEPTED locally; closed at Revision 81 | One repository-owned import mapping passes strict authority, 306/306 focused checks on Node 22/24, parser-owned span selection, config-aware preview/apply parity, staged atomic publication, failed-staging no-mutation, clean rescan, no-op replay, byte-identical rollback, and a 308/308 package self-scan. Acceptance does not authorize broader repair, release, or team claims. |
-| Source integration | PASS; Revision 83 current | `main` is clean-runner qualified at `ffb196d00fbb6d467a078374eb7583a6a3f3186`, with qualified product checkpoint `3170a90d592b9a2a471744a9523ced5e02eb6107` in ancestry. The source-only integration changes neither the verified npm package nor the deployed website. |
+| Source integration | PASS; Revision 84 current | `main` is exact-SHA-deploy-gated and CI-qualified at `2664235978d7e654ce59079046b4031db5c41f6b`, with clean-runner checkpoint `ffb196d00fbb6d467a078374eb7583a6a3f3186` and qualified product checkpoint `3170a90d592b9a2a471744a9523ced5e02eb6107` in ancestry. The source-only integration changes neither the verified npm package nor the deployed website. |
 | Local qualification | Complete | `SB-045` owns the completed local contract; public decisions have moved to `REL-001`. |
-| High-severity dependency audit | PASS locally and hosted | The current production audit checks 377 packages and reports zero advisories at the high threshold; hosted run `30192189009` passed the same gate. Release still requires separate REL-001 authority. |
+| High-severity dependency audit | PASS locally and hosted | The current production audit checks 377 packages and reports zero advisories at the high threshold; hosted run `30193626877` passed the same gate. Release still requires separate REL-001 authority. |
 | Public claims and metadata | Partially verified | The npm package remains v0.43.0. A read-only live-site check shows aligned copy, but deployed SHA is unknown and future public mutations remain under `REL-001`. |
 | Publish authorization | Not authorized | A green local candidate is not a release. GitHub Release + OIDC remains the only publish path. |
-| Website deployment | Not authorized | Current live copy is aligned at a read-only content level; deployed SHA and any future deployment still require owner/SHA review and separate authorization. |
+| Website deployment | Not authorized; fail-closed gate verified | Current live copy is aligned at a read-only content level; deployed SHA is unknown. Automatic deployment requires owner-controlled `WEBSITE_DEPLOY_SHA` to match the CI head SHA, manual deployment requires an exact SHA, and downstream run `30194092698` skipped with no authorization. |
 
 ## Waiting external
 
@@ -782,7 +793,9 @@ Revision 82 separately source-integrates the qualified Memory, Lock, and Mend
 checkpoint into `main`; it does not authorize a package release, website
 deployment, or additional capability. Revision 83 closes its clean-checkout
 and hosted CI portability incident at `ffb196d00`; it likewise adds no product
-or public-action scope. Revision 69 records the
+or public-action scope. Revision 84 closes the exact-SHA website authorization
+incident at `2664235978`; its downstream run skipped and it likewise grants no
+deployment or release authority. Revision 69 records the
 green local Slice A qualification, Revision 71 closes Slice B after Revision
 70 authority, Revision 72 authorizes Slice C, and Revision 73 records the
 complete private M0 local receipt. Revision 74 separately authorized exactly
@@ -817,7 +830,7 @@ reviews with no blocker. The reproduced caller-freeze defect and correction,
 workspace gates, rotating unrelated SlopBrick timing caveats, and exact hashes
 are recorded in
 [`MEM-001-local-m0-slice-c.md`](evidence/MEM-001-local-m0-slice-c.md).
-Source integration is current and hosted-green under Revision 83. Tag,
+Source integration is current and hosted-green under Revision 84. Tag,
 release, publication, deployment, source-code parsing, filesystem acquisition,
 durable Memory, and
 live outcome work remain unauthorized.

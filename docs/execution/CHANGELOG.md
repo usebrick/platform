@@ -3,6 +3,42 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 84 — 2026-07-26
+
+### Exact-SHA website deployment boundary
+
+- Closed `BUG-2026-07-26T084000` after two successful source CI runs exposed
+  that the downstream website workflow could enter its deploy job without a
+  separate exact-SHA owner authorization. Neither failed run deployed: both
+  stopped before Cloudflare authentication when the former v3 action inferred
+  pnpm and attempted a workspace-root Wrangler installation.
+- Made automatic deployment fail closed unless the owner-controlled
+  `WEBSITE_DEPLOY_SHA` repository variable exactly matches the successful CI
+  head SHA. Manual dispatch now requires `commit_sha`; both paths validate the
+  exact 40-hex identifier, verify current `origin/main`, perform credential and
+  project preflight, and recheck the commit before the deploy step.
+- Pinned the immutable Wrangler action v4 commit, npm package-manager mode, and
+  Wrangler `4.114.0`. Moved the two supported deployment paths and exact-SHA
+  authorization procedure into the tracked website README.
+- Added a workflow contract regression that passed 7/7 after its RED
+  reproduction, and passed `actionlint`, plan validation, the protected
+  seven-stage pre-push gate, recursive typecheck/test/build, production
+  security audit, and packed-consumer checks at source checkpoint
+  `2664235978d7e654ce59079046b4031db5c41f6b`.
+- Hosted CI run `30193626877` passed Node 22, Node 24, security, and both packed
+  consumers. Its downstream website run `30194092698` was skipped because no
+  exact SHA was authorized; no deploy step ran and no website mutation
+  occurred.
+
+### Boundary
+
+- This revision repairs authorization enforcement; it grants no release
+  authority. Website deployment, tag creation, GitHub Release, npm publication,
+  participant work, and broader product scope remain unchanged and separately
+  gated under `REL-001`.
+- `ROADMAP.md` remains unchanged because this is infrastructure hardening, not
+  a product-role, priority, or company-direction decision.
+
 ## Revision 83 — 2026-07-26
 
 ### Clean-checkout and hosted CI closure
