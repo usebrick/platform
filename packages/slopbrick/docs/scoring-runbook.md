@@ -116,10 +116,13 @@ npx slopbrick scan --rule context/import-path-mismatch --fix
 
 `mend.importRewrites` must contain exactly one complete source-to-target entry,
 and the target must already match repository `allowedImports`. Dry-run and
-apply share the same parser-evidenced exact-span plan. A stale finding, changed
-source, unsafe literal, missing mapping, or disallowed target is not repaired.
-This is a locally qualified candidate path, not a public rollback interface,
-general refactoring authority, or a feature in verified public v0.43.0.
+apply share the same parser-owned exact-span plan; scan/suggest/watch rendering
+uses the resolved repository config. Apply and rollback stage bytes beside the
+target and publish by atomic rename after a stale-state recheck. A stale
+finding, changed source, escaped or unsafe literal, missing mapping, or
+disallowed target is not repaired. This is the Revision 80 corrected locally
+qualified candidate path, not a public rollback interface, general refactoring
+authority, or a feature in verified public v0.43.0.
 
 ## Gate behavior
 

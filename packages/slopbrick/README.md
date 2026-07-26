@@ -243,9 +243,11 @@ For CI and monorepo configurations, see [EXAMPLES.md](./EXAMPLES.md) and the
 ### Exact local repair proof (unreleased v0.45 candidate)
 
 The workspace candidate contains one narrowly qualified Mend path inside the
-existing `scan --fix` interface. Repository config must own exactly one full
-module-specifier replacement, and its target must already satisfy
-`allowedImports`:
+existing scan, suggestion, and `scan --fix` interfaces. Revision 80 supersedes
+its first qualification after correcting quoted-decoy/Unicode span selection,
+direct target writes, and config-free suggestion rendering. Repository config
+must own exactly one full module-specifier replacement, and its target must
+already satisfy `allowedImports`:
 
 ```js
 // slopbrick.config.mjs
@@ -262,17 +264,22 @@ export default {
 Preview the exact patch without writing, then apply only after review:
 
 ```bash
+npx slopbrick scan --rule context/import-path-mismatch --suggest
 npx slopbrick scan --rule context/import-path-mismatch --fix --dry-run
 npx slopbrick scan --rule context/import-path-mismatch --fix
 ```
 
 This path activates only for an exact `context/import-path-mismatch` finding
-whose source span and current bytes still match. Preview and apply share one
-planner; the local proof covers clean rescan, no-op replay, and byte-identical
-internal rollback. The CLI does not expose rollback as a public command, does
-not infer a target from an allowed prefix, and does not authorize additional
-mapping families or general refactoring. The feature is not present in the
-verified public `0.43.0` release.
+whose parser-owned module-source span and current bytes still match. Escaped
+spellings fail closed, while SWC byte offsets are converted before JavaScript
+string slicing. Preview and apply share one planner; apply and rollback stage
+bytes beside the source and publish by atomic rename after a stale-state
+recheck. The local proof covers failed-staging no-mutation, mode preservation,
+clean rescan, no-op replay, and byte-identical internal rollback. The CLI does
+not expose rollback as a public command, does not infer a target from an
+allowed prefix, and does not authorize additional mapping families or general
+refactoring. The feature is not present in the verified public `0.43.0`
+release.
 
 ## MCP integration
 

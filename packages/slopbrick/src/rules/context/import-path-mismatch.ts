@@ -20,18 +20,6 @@ import { createRule } from '../rule';
  *   (with a flipped direction in v6.0; originally INVERTED in v5).
  *   Common in both arms; humans write dead imports during refactors. */
 const PROJECT_ALIAS_RE = /^[@~]\//;
-const MAX_IMPORT_SEARCH_CHARS = 4096;
-
-function lineStartOffset(source: string, line: number): number | undefined {
-  if (!Number.isInteger(line) || line < 1) return undefined;
-  let offset = 0;
-  for (let currentLine = 1; currentLine < line; currentLine += 1) {
-    const newline = source.indexOf('\n', offset);
-    if (newline === -1) return undefined;
-    offset = newline + 1;
-  }
-  return offset;
-}
 
 function positionAt(source: string, offset: number): { line: number; column: number } {
   const before = source.slice(0, offset);
@@ -43,25 +31,27 @@ function positionAt(source: string, offset: number): { line: number; column: num
 function importSourceEvidence(
   sourceText: string | undefined,
   importSource: string,
-  line: number,
-  column: number,
+  sourceValueSpan: ScanFacts['v2']['imports'][number]['sourceValueSpan'],
   allowedPrefixCount: number,
 ): IssueEvidence | undefined {
-  if (!sourceText) return undefined;
-  const lineStart = lineStartOffset(sourceText, line);
-  if (lineStart === undefined) return undefined;
-  const declarationStart = lineStart + Math.max(0, column - 1);
-  const searchEnd = Math.min(sourceText.length, declarationStart + MAX_IMPORT_SEARCH_CHARS);
-  const quotedCandidates = [`'${importSource}'`, `"${importSource}"`];
-  const quotedOffset = quotedCandidates.reduce<number | undefined>((earliest, quoted) => {
-    const candidate = sourceText.indexOf(quoted, declarationStart);
-    if (candidate === -1 || candidate >= searchEnd) return earliest;
-    return earliest === undefined ? candidate : Math.min(earliest, candidate);
-  }, undefined);
-  if (quotedOffset === undefined) return undefined;
+  if (!sourceText || !sourceValueSpan) return undefined;
+  const { startOffset, endOffsetExclusive } = sourceValueSpan;
+  if (
+    !Number.isInteger(startOffset)
+    || !Number.isInteger(endOffsetExclusive)
+    || startOffset < 1
+    || endOffsetExclusive <= startOffset
+    || endOffsetExclusive >= sourceText.length
+    || sourceText.slice(startOffset, endOffsetExclusive) !== importSource
+  ) return undefined;
 
-  const startOffset = quotedOffset + 1;
-  const endOffset = startOffset + importSource.length - 1;
+  const openingQuote = sourceText[startOffset - 1];
+  if (
+    (openingQuote !== "'" && openingQuote !== '"')
+    || sourceText[endOffsetExclusive] !== openingQuote
+  ) return undefined;
+
+  const endOffset = endOffsetExclusive - 1;
   const location = {
     start: positionAt(sourceText, startOffset),
     end: positionAt(sourceText, endOffset),
@@ -129,8 +119,7 @@ export const importPathMismatchRule = createRule<RuleContext & { allowedPrefixes
       const evidence = importSourceEvidence(
         facts.v2._source,
         source,
-        imp.line,
-        imp.column,
+        imp.sourceValueSpan,
         prefixes.length,
       );
       const importRewrites = context.config.mend?.importRewrites;

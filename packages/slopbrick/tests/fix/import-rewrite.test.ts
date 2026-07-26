@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -37,7 +37,7 @@ describe('exact import rewrite planner', () => {
           + 'export const View = () => <Button />;\r\n',
         'utf8',
       );
-      writeFileSync(filePath, originalBytes);
+      writeFileSync(filePath, originalBytes, { mode: 0o640 });
       const source = originalBytes.toString('utf8');
       const oldValue = '@/legacy/Button';
       const newValue = '@/components/ui/Button';
@@ -64,11 +64,13 @@ describe('exact import rewrite planner', () => {
       expect(applied.status).toBe('applied');
       if (applied.status !== 'applied') throw new Error(applied.reason);
       expect(readFileSync(filePath)).toEqual(Buffer.from(planned.plan.after, 'utf8'));
+      expect(statSync(filePath).mode & 0o777).toBe(0o640);
 
       expect(rollbackExactImportRewrite(filePath, applied.receipt)).toEqual({
         status: 'rolled-back',
       });
       expect(readFileSync(filePath)).toEqual(originalBytes);
+      expect(statSync(filePath).mode & 0o777).toBe(0o640);
     } finally {
       rmSync(workspace, { recursive: true, force: true });
     }
@@ -147,6 +149,73 @@ describe('exact import rewrite planner', () => {
       rmSync(workspace, { recursive: true, force: true });
     }
   });
+
+  it.runIf(process.platform !== 'win32')(
+    'keeps the original file intact when atomic apply publication cannot stage',
+    () => {
+      const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-mend-atomic-apply-'));
+      try {
+        const filePath = join(workspace, 'Button.tsx');
+        const source = "import { Button } from '@/legacy/Button';\n";
+        writeFileSync(filePath, source, 'utf8');
+        const oldValue = '@/legacy/Button';
+        const startOffset = source.indexOf(`'${oldValue}'`) + 1;
+        const planned = planExactImportRewrites(source, [{
+          oldValue,
+          newValue: '@/components/ui/Button',
+          location: {
+            start: positionAt(source, startOffset),
+            end: positionAt(source, startOffset + oldValue.length - 1),
+          },
+        }]);
+        if (planned.status !== 'planned') throw new Error(planned.reason);
+
+        chmodSync(workspace, 0o500);
+        const result = applyExactImportRewritePlan(filePath, planned.plan);
+        expect(result).toEqual({ status: 'rejected', reason: 'write-failed' });
+        expect(readFileSync(filePath, 'utf8')).toBe(source);
+      } finally {
+        chmodSync(workspace, 0o700);
+        rmSync(workspace, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it.runIf(process.platform !== 'win32')(
+    'keeps the repaired file intact when atomic rollback publication cannot stage',
+    () => {
+      const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-mend-atomic-rollback-'));
+      try {
+        const filePath = join(workspace, 'Button.tsx');
+        const source = "import { Button } from '@/legacy/Button';\n";
+        writeFileSync(filePath, source, 'utf8');
+        const oldValue = '@/legacy/Button';
+        const startOffset = source.indexOf(`'${oldValue}'`) + 1;
+        const planned = planExactImportRewrites(source, [{
+          oldValue,
+          newValue: '@/components/ui/Button',
+          location: {
+            start: positionAt(source, startOffset),
+            end: positionAt(source, startOffset + oldValue.length - 1),
+          },
+        }]);
+        if (planned.status !== 'planned') throw new Error(planned.reason);
+        const applied = applyExactImportRewritePlan(filePath, planned.plan);
+        if (applied.status !== 'applied') throw new Error(applied.reason);
+        const repaired = readFileSync(filePath);
+
+        chmodSync(workspace, 0o500);
+        expect(rollbackExactImportRewrite(filePath, applied.receipt)).toEqual({
+          status: 'rejected',
+          reason: 'rollback-failed',
+        });
+        expect(readFileSync(filePath)).toEqual(repaired);
+      } finally {
+        chmodSync(workspace, 0o700);
+        rmSync(workspace, { recursive: true, force: true });
+      }
+    },
+  );
 
   it('previews and applies the same finding-bound import bytes, then rejects replay', async () => {
     const workspace = mkdtempSync(join(tmpdir(), 'slopbrick-mend-integration-'));

@@ -126,6 +126,48 @@ describe('context/import-path-mismatch', () => {
     expect(disallowedTarget[0].fix).toBeUndefined();
   });
 
+  it.each([
+    {
+      name: 'a quoted comment before the module source',
+      source: 'import /* "@/legacy/Button" */ Button from "@/legacy/Button";\nexport { Button };\n',
+    },
+    {
+      name: 'a string-named import matching the module source',
+      source: 'import { "@/legacy/Button" as Button } from "@/legacy/Button";\nexport { Button };\n',
+    },
+    {
+      name: 'a non-ASCII prefix whose SWC column is byte-based',
+      source: `/* ${'😀'.repeat(24)} */ import Button from "@/legacy/Button";\nexport { Button };\n`,
+    },
+  ])('binds repair evidence to the actual module source with $name', async ({ source }) => {
+    const oldValue = '@/legacy/Button';
+    const issues = await runRule(
+      source,
+      makeConfig(
+        ['@/components/ui/'],
+        { [oldValue]: '@/components/ui/Button' },
+      ),
+    );
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].fix?.kind).toBe('module-specifier');
+    expect(issues[0].evidence?.status).toBe('exact');
+    if (issues[0].evidence?.status !== 'exact') throw new Error('expected exact evidence');
+
+    const expectedStart = source.lastIndexOf(`"${oldValue}"`) + 1;
+    const expectedEnd = expectedStart + oldValue.length - 1;
+    expect(issues[0].evidence.location).toEqual({
+      start: {
+        line: 1,
+        column: expectedStart + 1,
+      },
+      end: {
+        line: 1,
+        column: expectedEnd + 1,
+      },
+    });
+  });
+
   it('does not flag third-party imports', async () => {
     const source = `import React from 'react';\nexport const X = () => <div>x</div>;\n`;
     const issues = await runRule(

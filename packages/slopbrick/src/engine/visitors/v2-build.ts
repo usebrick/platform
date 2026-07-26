@@ -71,7 +71,13 @@ export interface InternalFacts {
   stateBindings?: StateBinding[];
   staticClassNames: ClassNameFact[];
   allElements: ElementFact[];
-  imports: Array<{ source: string; line: number; column: number; importedNames?: string[] }>;
+  imports: Array<{
+    source: string;
+    line: number;
+    column: number;
+    importedNames?: string[];
+    sourceValueSpan?: { startOffset: number; endOffsetExclusive: number };
+  }>;
   hooks: HookFact[];
   logicalExpressions: LogicalExpressionFact[];
   styleProps: StylePropFact[];
@@ -202,6 +208,7 @@ function buildImportRecords(
       isAllowed: allowed,
       line: imp.line,
       column: imp.column,
+      ...(imp.sourceValueSpan ? { sourceValueSpan: imp.sourceValueSpan } : {}),
     };
   });
 }

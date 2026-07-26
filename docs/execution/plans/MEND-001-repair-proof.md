@@ -20,11 +20,13 @@ product boundary. On 2026-07-26 the owner selected option 1: accept the bounded
 import rewrite. This satisfies only the local resume gate. Team usefulness,
 demand, pricing, and release remain separate and unproven.
 
-The exact implementation and local technical qualification are now complete.
-`MEND-001` remains `in_progress` because the final acceptance criterion is an
-explicit owner disposition over the resulting receipt. Until then the proof
-may be inspected but not widened into another mapping family, command, package,
-or product claim.
+The exact implementation and corrected local technical qualification are now
+complete. Revision 80 supersedes Revision 79's qualification after an
+adversarial review reproduced wrong-span selection, non-atomic target writes,
+and config-free suggestion rendering. `MEND-001` remains `in_progress` because
+the final acceptance criterion is an explicit owner disposition over the
+corrected receipt. Until then the proof may be inspected but not widened into
+another mapping family, command, package, or product claim.
 
 The earlier GIR proposal survives only as deterministic transformation logic
 inside this capability. It does not authorize a separate migrator product or
@@ -37,12 +39,14 @@ arbitrary model-driven refactoring.
 - Emit a repair only for an exact `context/import-path-mismatch` finding when
   its complete source string has a configured mapping and the replacement
   already matches repository `allowedImports` policy.
-- Change only the parser-evidenced module-specifier span. Reuse the existing
-  finding/source-snapshot binding and one pure rewrite planner for preview and
-  apply.
+- Change only the parser-owned module-source literal span. Convert the parser's
+  UTF-8 byte offsets to JavaScript UTF-16 offsets, reject escaped spellings,
+  and reuse the existing finding/source-snapshot binding plus one pure rewrite
+  planner for preview and apply.
 - Prove strict config rejection, stale/ambiguous/unsupported rejection,
-  dry-run/apply parity, no mutation during dry-run, idempotent rescan,
-  repository checks, and byte-identical rollback.
+  dry-run/apply parity across scan/suggest/watch renderers, no mutation during
+  dry-run, atomic source publication, idempotent rescan, repository checks,
+  mode preservation, and byte-identical rollback.
 - Run on fixtures and one owner-controlled local scenario; do not infer a
   replacement from an allowed prefix.
 
@@ -68,7 +72,8 @@ arbitrary model-driven refactoring.
 - Dry-run shows the exact bounded edit and never mutates.
 - Apply is deterministic and a second apply is a no-op.
 - Rescan removes only the intended finding and repository checks pass.
-- Rollback restores byte-identical original files.
+- A failed pre-publication apply or rollback leaves the current file unchanged.
+- Rollback restores byte-identical original files while preserving file mode.
 - The repository owner explicitly accepts or rejects the repair; rejected
   repairs remain evidence without becoming participant or demand claims.
 
@@ -79,21 +84,25 @@ arbitrary model-driven refactoring.
 2. **Complete:** red-test strict `mend.importRewrites` config admission -> the
    config rejects absent authority, multiple mappings, disallowed targets, and
    unsafe literal forms.
-3. **Complete:** red-test and implement the exact finding-bound span
-   transformer -> dry-run/apply parity, stale and ambiguous rejection,
-   source-snapshot authority, and byte-for-byte rollback pass.
-4. **Complete:** exercise the existing CLI -> dry-run leaves bytes unchanged,
+3. **Complete:** red-test and implement the exact parser-owned module-source
+   span transformer -> quoted decoys, non-ASCII prefixes, stale and ambiguous
+   evidence, source-snapshot authority, and byte-for-byte rollback pass.
+4. **Complete:** correct the adversarial review findings -> apply/rollback use
+   same-directory staged atomic publication, and scan/suggest/watch all receive
+   repository config when rendering the shared plan.
+5. **Complete:** exercise the existing CLI -> dry-run leaves bytes unchanged,
    apply changes only the selected span, rescan removes the intended finding,
    and a second apply is a no-op.
-5. **Pending owner:** accept, revise with a named reproducible issue, or hold
+6. **Pending owner:** accept, revise with a named reproducible issue, or hold
    the locally qualified proof without widening Mend.
 
 ## Verification
 
-The local proof passes fixture hashes, dry-run/apply parity, idempotence,
-rescan, repository tests, and byte-identical rollback. The final captured
-commands and counts live in the evidence receipt; local qualification is not
-release or team-use evidence.
+The corrected local proof passes 306/306 focused checks on Node 22.22.3 and
+24.15.0, fixture hashes, config-aware suggestion parity, atomic apply/rollback
+failure controls, idempotence, rescan, recursive repository gates, and
+byte-identical rollback. The final captured commands and counts live in the
+evidence receipt; local qualification is not release or team-use evidence.
 
 ## Evidence destination
 
@@ -101,8 +110,9 @@ release or team-use evidence.
 
 ## Rollback
 
-Use the stored pre-edit bytes to restore affected files, then rerun the same
-repository checks and scan.
+Use the stored pre-edit bytes through the same staged atomic publisher to
+restore affected files, then rerun the same repository checks and scan. No
+public rollback command is introduced by this proof.
 
 ## Next action
 

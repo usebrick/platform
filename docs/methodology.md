@@ -5,7 +5,9 @@
 > scanner, CLI, and evidence-producing front door. Memory, Lock, and Mend
 > identify capabilities and sequencing boundaries, not products, packages, or
 > authorization for new commands; bounded local proofs do not change that
-> boundary. See the [root roadmap](../ROADMAP.md) for
+> boundary. The current Mend proof is the Revision 80 corrected exact-import
+> path; it does not extend calibration or rule authority. See the
+> [root roadmap](../ROADMAP.md) for
 > direction and the dated
 > [positioning research note](./research/usebrick-market-positioning-2026-07-19.md)
 > for volatile market evidence.

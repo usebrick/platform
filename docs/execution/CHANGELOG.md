@@ -3,6 +3,42 @@
 This is an append-only history of roadmap and plan-control changes. Product
 release notes remain in package changelogs.
 
+## Revision 80 — 2026-07-26
+
+### MEND-001 adversarial correction and requalification
+
+- Superseded Revision 79's technical qualification after review reproduced
+  three defects: textual first-match selection could bind the wrong quoted
+  text, apply and rollback wrote the target directly, and suggestion renderers
+  could omit repository-authorized module rewrites when config was not passed.
+- Replaced textual matching with the parser-owned module-source literal span,
+  including SWC UTF-8-byte to JavaScript UTF-16 offset conversion and
+  fail-closed handling for escaped spellings. Quoted comments, string-named
+  imports, and non-ASCII prefixes now prove the selected span.
+- Changed apply and rollback to stage exact bytes in an exclusive same-directory
+  temporary file, sync and mode-bind the staged file, recheck target identity
+  and bytes, publish by atomic rename, and verify the published bytes and mode.
+  Pre-publication staging failures now leave the original target unchanged.
+- Threaded the resolved repository config through `scan --suggest`, standalone
+  `suggest`, watch output, and every module-rewrite-capable diff renderer. The
+  initial correction RED run recorded 7 failures and 9 passes across the three
+  adversarial test files before the fixes were applied.
+- Requalified 306/306 focused checks with one worker on Node 22.22.3 and
+  24.15.0, recursive typecheck/test/build, and the package-local no-telemetry
+  self-scan. Recursive tests now record Core 289, Engine 150, Website 54, and
+  SlopBrick 4,643 passed tests with 18 intentional SlopBrick skips. The
+  self-scan analyzed 308/308 selected files with zero runtime failures and a
+  passing gate; the production audit reports no known vulnerabilities.
+- Kept `MEND-001` `in_progress` at implementation WIP `1/2`. The corrected
+  receipt still requires explicit owner accept/revise/hold disposition.
+
+### Boundary
+
+- Revision 79 remains historical implementation evidence but is not the
+  current qualification authority. No additional repair family, public
+  rollback command, push, merge, tag, release, publication, deployment, team
+  claim, or market claim follows from this correction.
+
 ## Revision 79 — 2026-07-26
 
 ### MEND-001 exact repair local qualification

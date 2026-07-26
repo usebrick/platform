@@ -176,8 +176,10 @@ Current unreleased candidate:
   exact new import findings, with owned expiring waivers and fail-closed scan
   semantics; and
 - one strict `mend.importRewrites` entry can repair that exact finding through
-  a shared exact-span preview/apply plan, clean rescan, no-op replay, and
-  byte-identical internal rollback. The local proof awaits owner disposition.
+  a parser-owned exact-span plan shared by config-aware preview/apply paths,
+  staged atomic publication, failed-staging no-mutation, clean rescan, no-op
+  replay, and byte-identical internal rollback. The Revision 80 corrected local
+  proof awaits owner disposition.
 
 Planned:
 

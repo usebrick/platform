@@ -1,5 +1,18 @@
-import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import {
+  closeSync,
+  constants,
+  existsSync,
+  fchmodSync,
+  fsyncSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import type {
   FixSuggestion,
   Issue,
@@ -67,6 +80,99 @@ export type ExactImportRewriteInputResult =
 
 function sha256Bytes(value: Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+interface ExactFileSnapshot {
+  bytes: Buffer;
+  device: number;
+  inode: number;
+  mode: number;
+}
+
+type AtomicPublicationResult = 'published' | 'stale-target' | 'failed' | 'verification-failed';
+
+function readRegularFileSnapshot(filePath: string): ExactFileSnapshot | undefined {
+  try {
+    const before = lstatSync(filePath);
+    if (!before.isFile() || before.isSymbolicLink()) return undefined;
+    const bytes = readFileSync(filePath);
+    const after = lstatSync(filePath);
+    if (
+      !after.isFile()
+      || after.isSymbolicLink()
+      || before.dev !== after.dev
+      || before.ino !== after.ino
+    ) return undefined;
+    return {
+      bytes,
+      device: after.dev,
+      inode: after.ino,
+      mode: after.mode & 0o777,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Stage replacement bytes beside the target and publish with one rename. Any
+ * failure before rename leaves the source inode untouched. The target identity
+ * and exact bytes are rechecked after staging so stale state observed before
+ * publication is rejected; rename then prevents a partially written target.
+ */
+function publishBytesAtomically(
+  filePath: string,
+  expected: ExactFileSnapshot,
+  replacement: Uint8Array,
+): AtomicPublicationResult {
+  const temporaryPath = join(
+    dirname(filePath),
+    `.${basename(filePath)}.${process.pid}.${randomBytes(12).toString('hex')}.tmp`,
+  );
+  let descriptor: number | undefined;
+
+  try {
+    descriptor = openSync(
+      temporaryPath,
+      constants.O_WRONLY
+        | constants.O_CREAT
+        | constants.O_EXCL
+        | (constants.O_NOFOLLOW ?? 0),
+      expected.mode,
+    );
+    fchmodSync(descriptor, expected.mode);
+    writeFileSync(descriptor, replacement);
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+
+    const current = readRegularFileSnapshot(filePath);
+    if (
+      !current
+      || current.device !== expected.device
+      || current.inode !== expected.inode
+      || current.mode !== expected.mode
+      || !current.bytes.equals(expected.bytes)
+    ) return 'stale-target';
+
+    renameSync(temporaryPath, filePath);
+    const published = readRegularFileSnapshot(filePath);
+    if (
+      !published
+      || published.mode !== expected.mode
+      || !published.bytes.equals(Buffer.from(replacement))
+    ) return 'verification-failed';
+    return 'published';
+  } catch {
+    return 'failed';
+  } finally {
+    if (descriptor !== undefined) {
+      try { closeSync(descriptor); } catch { /* preserve publication result */ }
+    }
+    if (existsSync(temporaryPath)) {
+      try { unlinkSync(temporaryPath); } catch { /* best-effort unique temp cleanup */ }
+    }
+  }
 }
 
 function offsetAtPosition(
@@ -244,12 +350,9 @@ export function applyExactImportRewritePlan(
   filePath: string,
   plan: ExactImportRewritePlan,
 ): ExactImportRewriteApplyResult {
-  let originalBytes: Buffer;
-  try {
-    originalBytes = readFileSync(filePath);
-  } catch {
-    return { status: 'rejected', reason: 'stale-finding' };
-  }
+  const snapshot = readRegularFileSnapshot(filePath);
+  if (!snapshot) return { status: 'rejected', reason: 'stale-finding' };
+  const originalBytes = snapshot.bytes;
 
   const decoded = originalBytes.toString('utf8');
   if (
@@ -265,11 +368,14 @@ export function applyExactImportRewritePlan(
     return { status: 'rejected', reason: 'stale-repair' };
   }
 
-  try {
-    writeFileSync(filePath, afterBytes);
-  } catch {
-    return { status: 'rejected', reason: 'write-failed' };
+  const publication = publishBytesAtomically(filePath, snapshot, afterBytes);
+  if (publication === 'stale-target') {
+    return { status: 'rejected', reason: 'stale-finding' };
   }
+  if (publication === 'verification-failed') {
+    return { status: 'rejected', reason: 'stale-repair' };
+  }
+  if (publication === 'failed') return { status: 'rejected', reason: 'write-failed' };
 
   return {
     status: 'applied',
@@ -294,24 +400,16 @@ export function rollbackExactImportRewrite(
     return { status: 'rejected', reason: 'receipt-mismatch' };
   }
 
-  let currentBytes: Buffer;
-  try {
-    currentBytes = readFileSync(filePath);
-  } catch {
-    return { status: 'rejected', reason: 'stale-repair' };
-  }
-  if (sha256Bytes(currentBytes) !== receipt.afterSha256) {
+  const snapshot = readRegularFileSnapshot(filePath);
+  if (!snapshot || sha256Bytes(snapshot.bytes) !== receipt.afterSha256) {
     return { status: 'rejected', reason: 'stale-repair' };
   }
 
-  try {
-    writeFileSync(filePath, receipt.originalBytes);
-    if (sha256Bytes(readFileSync(filePath)) !== receipt.beforeSha256) {
-      return { status: 'rejected', reason: 'rollback-failed' };
-    }
-  } catch {
-    return { status: 'rejected', reason: 'rollback-failed' };
+  const publication = publishBytesAtomically(filePath, snapshot, receipt.originalBytes);
+  if (publication === 'stale-target') {
+    return { status: 'rejected', reason: 'stale-repair' };
   }
+  if (publication !== 'published') return { status: 'rejected', reason: 'rollback-failed' };
 
   return { status: 'rolled-back' };
 }

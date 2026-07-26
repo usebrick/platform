@@ -28,7 +28,7 @@ export function registerSuggest(program: Command): void {
     .description('print remediation advice')
     .action(async (_cmdOptions: Record<string, unknown>, command: Command) => {
       const options = command.optsWithGlobals() as CliGlobalOptions;
-      const { report } = await runScan(options);
+      const { report, config } = await runScan(options);
       const cwd = resolve(options.workspace ?? process.cwd());
 
       // Keep the standalone subcommand on the same fail-closed boundary as
@@ -51,7 +51,7 @@ export function registerSuggest(program: Command): void {
       }
 
       logger.info(formatAdvice(report));
-      const diff = formatUnifiedDiff(report, cwd);
+      const diff = formatUnifiedDiff(report, cwd, config);
       if (diff) logger.info(diff);
       process.exit(0);
     });

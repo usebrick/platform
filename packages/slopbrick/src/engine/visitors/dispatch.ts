@@ -32,6 +32,7 @@ import {
   jsxAttrName,
   jsxElementName,
   stringLiteralValue,
+  stringLiteralValueSpan,
   extractElementFact,
   unwrapJsxExpression,
   staticClassValue,
@@ -205,6 +206,7 @@ export function handleImportDeclaration(
   const source = stringLiteralValue(node.source as AnyNode);
   if (source) {
     const { line, column } = positionFrom(node, vctx.lineOffsets);
+    const sourceValueSpan = stringLiteralValueSpan(node.source as AnyNode, vctx.source, source);
     const importedNames: string[] = [];
     // Type-only declarations and inline `type` named specifiers should not
     // be flagged by dead/unused-import (TypeScript elides them at build time).
@@ -280,7 +282,13 @@ export function handleImportDeclaration(
         }
       }
     }
-    vctx.facts.imports.push({ source, line, column, importedNames });
+    vctx.facts.imports.push({
+      source,
+      line,
+      column,
+      importedNames,
+      ...(sourceValueSpan ? { sourceValueSpan } : {}),
+    });
   }
   return false;
 }

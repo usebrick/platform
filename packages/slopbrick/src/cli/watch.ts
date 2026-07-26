@@ -227,7 +227,7 @@ export async function watchProject(
       currentFiles.clear();
       for (const result of results) currentFiles.add(resolve(result.filePath));
 
-      await outputScanResults(report, options, cwd);
+      await outputScanResults(report, options, cwd, config);
 
       if (!options.quiet) {
         if (report.baseline) logger.info(baselineStatusMessage(report.baseline));

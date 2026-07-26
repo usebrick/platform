@@ -55,7 +55,7 @@ Most tools stop at Detect. Some go to Detect + Repair. The Prevent stage is what
 
 ### 4. Repair — the migrator
 
-**Repair** is the stage that closes the loop on existing violations. Once you've detected 10,000 `useState` calls in server components, you don't want to fix them by hand. The article called this planned boundary **MendBrick**. Under current authority, one exact import-rewrite path is locally qualified inside the unreleased SlopBrick CLI and awaits owner disposition. Mend still does not ship as a product, expose general refactoring, or authorize the historical broad migration example.
+**Repair** is the stage that closes the loop on existing violations. Once you've detected 10,000 `useState` calls in server components, you don't want to fix them by hand. The article called this planned boundary **MendBrick**. Under current authority, one exact import-rewrite path is corrected and locally requalified at Revision 80 inside the unreleased SlopBrick CLI, with parser-owned span selection and staged atomic publication, and awaits owner disposition. Mend still does not ship as a product, expose general refactoring, or authorize the historical broad migration example.
 
 Repair is also the stage where the lifecycle gets tested. A repair that introduces a new violation is worse than no repair. The verification step (run Detect after Repair, compare scores) is what makes Repair trustworthy.
 

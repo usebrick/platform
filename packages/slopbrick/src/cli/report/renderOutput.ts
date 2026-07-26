@@ -29,7 +29,7 @@ import {
   isNotApplicableScan,
 } from '../../report/scan-validity.js';
 import type { CliGlobalOptions } from '../scan';
-import type { ProjectReport } from '../../types';
+import type { ProjectReport, ResolvedConfig } from '../../types';
 import { validateOutputFormat } from './output-format.js';
 
 /**
@@ -58,7 +58,12 @@ function withoutScoreDerivedViews(options: CliGlobalOptions): CliGlobalOptions {
   };
 }
 
-export function renderOutput(report: ProjectReport, options: CliGlobalOptions, cwd: string): void {
+export function renderOutput(
+  report: ProjectReport,
+  options: CliGlobalOptions,
+  cwd: string,
+  config?: ResolvedConfig,
+): void {
   validateOutputFormat(options.format);
 
   const machineReportRequested = Boolean(options.html || options.json) ||
@@ -151,7 +156,7 @@ export function renderOutput(report: ProjectReport, options: CliGlobalOptions, c
   if (options.suggest) {
     if (!options.quiet) {
       logger.info(formatAdvice(report));
-      const diff = formatUnifiedDiff(report, cwd);
+      const diff = formatUnifiedDiff(report, cwd, config);
       if (diff) {
         logger.info(diff);
       }
@@ -215,9 +220,10 @@ export async function outputScanResults(
   report: ProjectReport,
   options: CliGlobalOptions,
   cwd: string,
+  config?: ResolvedConfig,
 ): Promise<void> {
   if (isNotApplicableScan(report) || isIncompleteScan(report)) {
-    renderOutput(report, options, cwd);
+    renderOutput(report, options, cwd, config);
     return;
   }
   if (options.heatmap) {
@@ -234,5 +240,5 @@ export async function outputScanResults(
     }
     return;
   }
-  renderOutput(report, options, cwd);
+  renderOutput(report, options, cwd, config);
 }

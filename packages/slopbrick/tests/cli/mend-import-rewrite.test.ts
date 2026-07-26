@@ -83,6 +83,17 @@ describe('MEND-001 exact import rewrite CLI proof', () => {
     expect(preview.stdout).toContain('--dry-run: skipping apply step');
     expect(readFileSync(fixture.sourcePath)).toEqual(fixture.before);
 
+    const scanSuggest = await run([...common, '--suggest']);
+    expect(scanSuggest.stdout).toContain('Suggested patches');
+    expect(scanSuggest.stdout).toContain('+import { Button } from "@/components/ui/Button";');
+
+    const standaloneSuggest = await run([
+      'suggest',
+      '--workspace', fixture.workspace,
+    ]);
+    expect(standaloneSuggest.stdout).toContain('Suggested patches');
+    expect(standaloneSuggest.stdout).toContain('+import { Button } from "@/components/ui/Button";');
+
     const apply = await run([...common, '--fix']);
     expect(apply.stdout).toContain('Fixes applied: 1, skipped: 0');
     expect(readFileSync(fixture.sourcePath)).toEqual(fixture.after);
@@ -96,5 +107,43 @@ describe('MEND-001 exact import rewrite CLI proof', () => {
     const secondApply = await run([...common, '--fix']);
     expect(secondApply.stdout).toContain('Fixes applied: 0, skipped: 0');
     expect(readFileSync(fixture.sourcePath)).toEqual(fixture.after);
+  });
+
+  it('rewrites the module source rather than matching quoted comments or import names', async () => {
+    const fixture = createWorkspace();
+    const before = Buffer.from(
+      'import /* "@/legacy/Button" */ { "@/legacy/Button" as Button } from "@/legacy/Button";\r\n\r\nexport { Button };\r\n',
+      'utf8',
+    );
+    const after = Buffer.from(
+      'import /* "@/legacy/Button" */ { "@/legacy/Button" as Button } from "@/components/ui/Button";\r\n\r\nexport { Button };\r\n',
+      'utf8',
+    );
+    writeFileSync(fixture.sourcePath, before);
+
+    const common = [
+      'scan',
+      '--workspace', fixture.workspace,
+      '--rule', 'context/import-path-mismatch',
+      '--threads', '1',
+      '--no-telemetry',
+      '--no-color',
+    ];
+
+    const preview = await run([...common, '--fix', '--dry-run']);
+    expect(preview.stdout).toContain(
+      '+import /* "@/legacy/Button" */ { "@/legacy/Button" as Button } from "@/components/ui/Button";',
+    );
+    expect(readFileSync(fixture.sourcePath)).toEqual(before);
+
+    const apply = await run([...common, '--fix']);
+    expect(apply.stdout).toContain('Fixes applied: 1, skipped: 0');
+    expect(readFileSync(fixture.sourcePath)).toEqual(after);
+
+    const rescan = await run([...common, '--format', 'json']);
+    const report = JSON.parse(rescan.stdout) as {
+      issues: Array<{ ruleId: string }>;
+    };
+    expect(report.issues.some((issue) => issue.ruleId === 'context/import-path-mismatch')).toBe(false);
   });
 });

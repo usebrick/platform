@@ -409,7 +409,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
               `Scan ${scanStats.status}: requested ${scanStats.requested}, analyzed ${scanStats.analyzed}, failed ${scanStats.failed}. Check workspace/include patterns and retry.`,
             );
           }
-          renderOutput(report, options, cwd);
+          renderOutput(report, options, cwd, config);
           if (!options.quiet && !machineReadableStdout) {
             logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
           }
@@ -422,7 +422,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
             logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
           }
         } else {
-          renderOutput(report, options, cwd);
+          renderOutput(report, options, cwd, config);
         }
 
         const outcome: ScanActionOutcome = {
@@ -544,7 +544,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
       }
 
       if (options.heatmap) {
-        await outputScanResults(report, options, cwd);
+        await outputScanResults(report, options, cwd, config);
         if (!options.quiet && !machineReadableStdout) {
           logger.info(`(scan took ${scanElapsed}ms, total ${totalElapsed}ms)`);
         }
@@ -553,7 +553,7 @@ export async function runCli({ start }: { start: number }): Promise<void> {
 
       const baseExitCode: 0 | 1 = gateDecision.failedThresholds.length > 0 ? 1 : 0;
       const exitCode: 0 | 1 = gateDecision.exitCode;
-      renderOutput(report, options, cwd);
+      renderOutput(report, options, cwd, config);
       for (const notice of deferredFirstScanNotices) logger.info(notice);
       if (strictFailure) {
         if (!options.quiet) {

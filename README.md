@@ -23,7 +23,7 @@ hypothesis has not yet been collected.
 | **SlopBrick** | Detect and explain visual, frontend, code, and repository slop | Shipped npm package, current CLI, free local scanner, and acquisition surface |
 | **Memory capability** | M0 proves four declared package facts and bounded previews; broader observed facts and approved intent remain separately gated | Complete private Slices A-C locally qualified, locally checkpointed, and unshipped; no new package, adapter, or store is authorized |
 | **Lock capability** | Prevent newly introduced verified drift with approved policy | One import-policy family is locally qualified in the unreleased v0.45 CLI; paid/team value remains unproven |
-| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | One exact import-rewrite proof is locally implemented and qualified; owner disposition is pending and no general refactoring authority exists |
+| **Mend capability** | Apply narrow, deterministic, reversible repairs with receipts | One exact import-rewrite proof is corrected and locally requalified at Revision 80; owner disposition is pending and no general refactoring authority exists |
 | **RenderBrick Labs** | Compare source-only work with rendered/runtime evidence | Draft benchmark only; not a browser product or package |
 | **Pick flow** | Initialize repository policy and approved intent | Part of onboarding and policy authoring, not a product |
 
@@ -76,13 +76,17 @@ of team demand. See the
 
 `MEND-001` now proves one exact repair inside the same unreleased CLI. A
 repository may declare one strict `mend.importRewrites` source-to-target entry;
-only an exact `context/import-path-mismatch` finding with matching parser
-evidence and an already-allowed target can reach the shared preview/apply
-planner. The local proof covers no-write dry-run, exact-span apply, clean
-rescan, second-run no-op, and byte-identical internal rollback. It does not
-infer replacements, expose a public rollback command, authorize another repair
-family, or establish shipped/team value. The owner still must accept, revise,
-or hold the [Mend receipt](./docs/execution/evidence/MEND-001-repair-proof.md).
+only an exact `context/import-path-mismatch` finding with its parser-owned
+module-source span and an already-allowed target can reach the shared
+preview/apply planner. Revision 80 supersedes the first qualification after
+fixing wrong quoted-text selection, direct target writes, and config-free
+suggestion rendering. The corrected proof covers config-aware dry-run and
+suggestion views, staged atomic apply/rollback publication, failed-staging
+no-mutation, clean rescan, second-run no-op, mode preservation, and
+byte-identical internal rollback. It does not infer replacements, expose a
+public rollback command, authorize another repair family, or establish
+shipped/team value. The owner still must accept, revise, or hold the
+[corrected Mend receipt](./docs/execution/evidence/MEND-001-repair-proof.md).
 
 AI slop and repository memory solve different halves of one problem. Slop is
 the visible inconsistency; context loss is one major cause. Memory learns one

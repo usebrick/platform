@@ -3,7 +3,8 @@
 - **Date started:** 2026-07-26
 - **Branch:** `codex/lock-001-new-debt`
 - **Workspace candidate:** unreleased `slopbrick@0.45.0`
-- **Disposition:** locally qualified; explicit owner accept/revise/hold pending
+- **Disposition:** corrected and locally requalified; explicit owner
+  accept/revise/hold pending
 
 ## Owner decision
 
@@ -19,8 +20,13 @@ verification only.
 - The source must be the exact module specifier in an exact
   `context/import-path-mismatch` finding.
 - The target must already satisfy repository `allowedImports` policy.
-- The edit may replace only that parser-evidenced module-specifier span.
+- The edit may replace only the parser-owned module-source literal span after
+  exact UTF-8-byte to UTF-16 offset conversion; escaped spellings fail closed.
 - Preview and apply must share one planner; dry-run never writes.
+- Apply and rollback must publish staged bytes atomically and preserve the
+  target mode; a staging failure must leave the current target unchanged.
+- Every suggestion-capable CLI path must render with the resolved repository
+  config so an authorized module rewrite is neither invented nor omitted.
 - A rescan must remove the intended finding, a second run must be a no-op, and
   rollback must restore the original bytes exactly.
 
@@ -47,17 +53,36 @@ umbrella command, network path, or outbound data.
 The pure planner resolves only the evidenced module-specifier span, rejects
 overlap and stale bytes, applies edits in descending offset order, and binds
 before/after SHA-256 values to an internal rollback receipt. Apply rechecks the
-current bytes before writing; rollback rejects the wrong file, a modified
+current bytes before publication; rollback rejects the wrong file, a modified
 post-repair file, or corrupt original bytes before restoration.
+
+### Adversarial review correction
+
+Revision 79's first qualification was revoked after review. The initial
+correction run reproduced 7 failures and 9 passes across the rule, transformer,
+and CLI proof files:
+
+1. quoted comments or string-named imports could be selected before the real
+   module source, and SWC byte offsets were unsafe to use as JavaScript string
+   offsets after non-ASCII text;
+2. direct target writes could expose a partially written source on failure;
+3. `scan --suggest` and standalone `suggest` could silently omit the exact
+   repository-authorized patch because their diff renderer lacked config.
+
+The corrected path carries the parser-owned source span through `facts.v2`,
+stages exact bytes beside the target before atomic rename, verifies bytes and
+mode after publication, and passes config through scan, suggest, watch, and
+shared output rendering. Failure injection against a non-writable parent proves
+that failed apply and rollback staging preserve the pre-call target bytes.
 
 ### Local qualification
 
-- Focused MEND/config/fix/rule/report/CLI and documentation-authority matrix:
-  240/240 PASS with one worker on Node 24.15.0 and again on the supported Node
+- Focused parser/config/fix/rule/report/CLI and documentation-authority matrix:
+  306/306 PASS with one worker on Node 24.15.0 and again on the supported Node
   22.22.3 floor.
 - Recursive workspace typecheck: PASS on Node 24.15.0.
 - Recursive workspace test: PASS — Core 289, Engine 150, Website 54, and
-  SlopBrick 4,637 passed with 18 intentional SlopBrick skips.
+  SlopBrick 4,643 passed with 18 intentional SlopBrick skips.
 - Recursive workspace build: PASS.
 - Package-local no-telemetry self-scan: 308/308 selected files analyzed, zero
   parse/timeout/crash/internal failures, valid scores, AI Slop 0.0, Repository
@@ -67,24 +92,26 @@ post-repair file, or corrupt original bytes before restoration.
 - Diff audit: no new dependency, secret, network/auth surface, unsafe cast,
   ignored diagnostic, or unrelated workspace mutation.
 
-The first recursive test attempt exposed a quality-authority/public-copy
-integration defect. That failure was reproduced and corrected by the final
-RED/GREEN pair above; only the later captured green run qualifies this receipt.
+The earlier quality-authority/public-copy integration defect and the later
+three-finding adversarial review are both retained as evidence. Only the
+Revision 80 corrected bytes and later captured green runs qualify this receipt.
 
 ## Owner-controlled scenario
 
 The CLI test creates a temporary CRLF TypeScript workspace with exactly one
 disallowed import and one repository-authored mapping. It proves:
 
-1. `scan --fix --dry-run` prints the exact one-line patch and leaves bytes
-   unchanged;
+1. `scan --fix --dry-run`, `scan --suggest`, and standalone `suggest` print the
+   exact repository-authorized patch and leave bytes unchanged;
 2. `scan --fix` changes only the module-specifier bytes;
 3. JSON rescan contains no `context/import-path-mismatch` finding; and
 4. a second `scan --fix` applies zero fixes and preserves the repaired bytes.
 
-Separate pure-transformer tests prove duplicate old text outside the import is
-untouched and rollback restores the original CRLF bytes byte-for-byte. The CLI
-does not yet expose rollback as a public command.
+Separate parser and pure-transformer tests prove quoted decoys and non-ASCII
+prefixes cannot redirect the edit, duplicate old text outside the import is
+untouched, apply/rollback staging failure leaves source intact, file mode is
+preserved, and rollback restores the original CRLF bytes byte-for-byte. The CLI
+does not expose rollback as a public command.
 
 ## Remaining boundary
 

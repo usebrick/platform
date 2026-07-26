@@ -57,6 +57,57 @@ export function spanEnd(node: AnyNode): number | undefined {
   return undefined;
 }
 
+function utf16OffsetAtUtf8ByteOffset(source: string, targetByteOffset: number): number | undefined {
+  if (!Number.isInteger(targetByteOffset) || targetByteOffset < 0) return undefined;
+
+  let byteOffset = 0;
+  for (let sourceOffset = 0; sourceOffset < source.length;) {
+    if (byteOffset === targetByteOffset) return sourceOffset;
+    const codePoint = source.codePointAt(sourceOffset);
+    if (codePoint === undefined) return undefined;
+    const value = String.fromCodePoint(codePoint);
+    byteOffset += Buffer.byteLength(value, 'utf8');
+    sourceOffset += value.length;
+    if (byteOffset > targetByteOffset) return undefined;
+  }
+
+  return byteOffset === targetByteOffset ? source.length : undefined;
+}
+
+/**
+ * Convert an SWC StringLiteral span into exact source-string offsets for the
+ * unquoted value. SWC spans are one-based UTF-8 byte offsets while JavaScript
+ * slicing uses UTF-16 code units, so direct column arithmetic is unsafe for
+ * non-ASCII prefixes. Escaped literals are deliberately omitted because their
+ * parsed value is not a byte-for-byte source replacement target.
+ */
+export function stringLiteralValueSpan(
+  node: AnyNode,
+  source: string,
+  expectedValue: string,
+): { startOffset: number; endOffsetExclusive: number } | undefined {
+  const rawStart = spanStart(node);
+  const rawEnd = spanEnd(node);
+  if (rawStart === undefined || rawEnd === undefined || rawEnd <= rawStart) return undefined;
+
+  const literalStart = utf16OffsetAtUtf8ByteOffset(source, rawStart - 1);
+  const literalEndExclusive = utf16OffsetAtUtf8ByteOffset(source, rawEnd - 1);
+  if (
+    literalStart === undefined
+    || literalEndExclusive === undefined
+    || literalEndExclusive - literalStart < 2
+  ) return undefined;
+
+  const openingQuote = source[literalStart];
+  if (openingQuote !== "'" && openingQuote !== '"') return undefined;
+  if (source[literalEndExclusive - 1] !== openingQuote) return undefined;
+
+  const startOffset = literalStart + 1;
+  const endOffsetExclusive = literalEndExclusive - 1;
+  if (source.slice(startOffset, endOffsetExclusive) !== expectedValue) return undefined;
+  return { startOffset, endOffsetExclusive };
+}
+
 export function buildLineOffsets(source: string): number[] {
   const offsets: number[] = [0];
   let byteOffset = 0;

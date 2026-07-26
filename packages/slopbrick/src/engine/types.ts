@@ -49,6 +49,15 @@ export interface ImportRecord {
   /** Source location. */
   line: number;
   column: number;
+  /**
+   * Exact UTF-16 source offsets for the module-specifier value, excluding its
+   * quotes. Present only when the parser literal maps byte-for-byte to source
+   * text; escaped or otherwise non-literal spellings fail closed.
+   */
+  sourceValueSpan?: {
+    startOffset: number;
+    endOffsetExclusive: number;
+  };
 }
 
 // ---------------------------------------------------------------------------
